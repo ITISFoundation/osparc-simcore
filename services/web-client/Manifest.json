@@ -1,0 +1,32 @@
+{
+  "info" :
+  {
+    "name" : "qxapp",
+
+    "summary" : "Front-end application for the oSPARC platform",
+    "description" : "",
+
+    "homepage" : "",
+
+    "license" : "MIT license",
+    "authors" : [
+  {
+    "name": "maiz",
+    "email": ""
+  }
+],
+
+    "version" : "1.0.0",
+    "qooxdoo-range": "6.0.0-alpha"
+  },
+
+  "provides" :
+  {
+    "namespace"   : "qxapp",
+    "encoding"    : "utf-8",
+    "class"       : "source/class",
+    "resource"    : "source/resource",
+    "translation" : "source/translation",
+    "type"        : "application"
+  }
+}
