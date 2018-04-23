@@ -5,4 +5,5 @@
         ".*rc": "ini",
         ".env*": "ini"
     },
+    "files.eol": "\n",
 }
