@@ -1,0 +1,12 @@
+# Order is important. The last matching pattern has the most precedence.
+
+# files and folders recursively
+/docs/                   @pcrespov
+/services/web-client     @odeimaiz
+/services/web-server     @pcrespov
+/services/modeling       @sanderegg
+/services/authentication @pcrespov
+/services/computation    @mguidon
+
+# any change in travis
+/.travis.yml     @odeimaiz
