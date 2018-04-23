@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "lintWebClient": "eslint ./services/web-client/source/class/qxapp/**/*.js"
+  }
+}
