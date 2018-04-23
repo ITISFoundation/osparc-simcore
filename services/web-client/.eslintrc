@@ -2,5 +2,11 @@
   "parserOptions": {
       "ecmaVersion": 2017
   },
-  "extends": "qx"
+  "extends": "qx",
+  "overrides": [
+    {
+      "files": "class/*.js",
+      "excludedFiles": "resource/*.js"
+    }
+  ]
 }
