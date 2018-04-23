@@ -1,0 +1,8 @@
+{
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
+    "files.associations": {
+        ".*rc": "ini",
+        ".env*": "ini"
+    },
+}

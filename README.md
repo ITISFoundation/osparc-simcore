@@ -1,2 +1,3 @@
-# osparc-simcore
-Main osparc repostory for development
+# osparc-simcore platform
+
+
