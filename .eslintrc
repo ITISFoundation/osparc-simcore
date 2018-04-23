@@ -1,0 +1,10 @@
+{
+    "extends": "google",
+    "parser": "babel-eslint",
+    "rules": {
+        "max-len":[2, 150],
+        "new-cap":"off",
+        "require-jsdoc":"off",
+        "linebreak-style":0
+    }
+}
