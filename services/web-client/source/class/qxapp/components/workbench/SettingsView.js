@@ -104,6 +104,42 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       }, this);
 
       this._settingsBox.add(new qx.ui.form.renderer.Single(form));
+
+
+      // Show viewer
+      if (Object.prototype.hasOwnProperty.call(node.getMetaData(), "viewer")) {
+        let button = new qx.ui.form.Button("Open Viewer");
+        button.setEnabled(node.getMetaData().viewer.port !== null);
+        let scope = this;
+        button.addListener("execute", function(e) {
+          let url = node.getMetaData().viewer.ip + ":" + node.getMetaData().viewer.port;
+          let modelerWin = scope.createModelerWindow(url);
+          modelerWin.open();
+          // Too hacky
+          scope.getLayoutParent().getChildren()[1]._desktop.add(modelerWin);
+        }, scope);
+        this._settingsBox.add(button);
+      }
+    },
+
+    createModelerWindow: function(url) {
+      console.log("Accessing:", url);
+      let win = new qx.ui.window.Window("Modeler");
+      win.setShowMinimize(false);
+      win.setLayout(new qx.ui.layout.VBox(5));
+      let iframe = new qx.ui.embed.Iframe().set({
+        width: 900,
+        height: 700,
+        minWidth: 500,
+        minHeight: 500,
+        source: url,
+        decorator : null
+      });
+      win.add(iframe, {flex: 1});
+      win.setModal(true);
+      win.moveTo(150, 150);
+
+      return win;
     },
 
     _fromMetadataToQxSetting: function(metadata) {
