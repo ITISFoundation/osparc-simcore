@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.components.SettingsView", {
+qx.Class.define("qxapp.components.workbench.SettingsView", {
   extend: qx.ui.container.Composite,
 
   construct: function() {

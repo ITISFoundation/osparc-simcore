@@ -1,6 +1,6 @@
 /* global qxapp */
 
-qx.Class.define("qxapp.components.NodeBase", {
+qx.Class.define("qxapp.components.workbench.NodeBase", {
   extend: qx.ui.window.Window,
 
   construct: function(metadata) {

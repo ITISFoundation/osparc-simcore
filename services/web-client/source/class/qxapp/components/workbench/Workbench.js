@@ -6,7 +6,7 @@
 /* global qxapp */
 /* eslint new-cap: [2, {capIsNewExceptions: ["Set"]}] */
 
-qx.Class.define("qxapp.components.Workbench", {
+qx.Class.define("qxapp.components.workbench.Workbench", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
@@ -17,7 +17,7 @@ qx.Class.define("qxapp.components.Workbench", {
       layout: canvas
     });
 
-    this._svgWidget = new qxapp.components.SvgWidget();
+    this._svgWidget = new qxapp.components.workbench.SvgWidget();
     this.add(this._svgWidget, {
       left: 0,
       top: 0,
@@ -137,7 +137,7 @@ qx.Class.define("qxapp.components.Workbench", {
     },
 
     _addNode: function(node) {
-      let nodeBase = new qxapp.components.NodeBase(node);
+      let nodeBase = new qxapp.components.workbench.NodeBase(node);
       this._addNodeToWorkbench(nodeBase);
 
       let scope = this;
@@ -177,7 +177,7 @@ qx.Class.define("qxapp.components.Workbench", {
       const x2 = pointList[1][0];
       const y2 = pointList[1][1];
       let linkRepresentation = this._svgWidget.drawCurve(x1, y1, x2, y2);
-      let linkBase = new qxapp.components.LinkBase(linkRepresentation);
+      let linkBase = new qxapp.components.workbench.LinkBase(linkRepresentation);
       linkBase.setInputNodeId(node1.getNodeId());
       linkBase.setOutputNodeId(node2.getNodeId());
       node1.addOutputLinkID(linkBase.getLinkId());
@@ -242,7 +242,7 @@ qx.Class.define("qxapp.components.Workbench", {
       win.setAllowMaximize(false);
       win.open();
 
-      let threeWidget = new qxapp.components.ThreeWidget(minWidth, minHeight, "#3F3F3F");
+      let threeWidget = new qxapp.components.workbench.ThreeWidget(minWidth, minHeight, "#3F3F3F");
       win.add(threeWidget, {flex: 1});
 
       win.addListener("resize", function(e) {

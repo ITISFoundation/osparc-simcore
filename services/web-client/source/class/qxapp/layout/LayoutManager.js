@@ -21,7 +21,7 @@ qx.Class.define("qxapp.layout.LayoutManager", {
     this._pane = new qx.ui.splitpane.Pane("horizontal");
 
     const settingsWidth = 500;
-    this._settingsView = new qxapp.components.SettingsView();
+    this._settingsView = new qxapp.components.workbench.SettingsView();
     this._settingsView.set({
       minWidth: settingsWidth*0.5,
       maxWidth: settingsWidth,
@@ -29,7 +29,7 @@ qx.Class.define("qxapp.layout.LayoutManager", {
     });
     this._pane.add(this._settingsView, 0);
 
-    this._workbench = new qxapp.components.Workbench();
+    this._workbench = new qxapp.components.workbench.Workbench();
     this._pane.add(this._workbench, 1);
 
     this.add(this._pane, {
