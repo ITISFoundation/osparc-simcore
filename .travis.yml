@@ -1,0 +1,14 @@
+language: node_js
+node_js:
+  - "8"
+install:
+  - "npm install -g npm@latest"
+  - "npm install --save-dev eslint"
+  - "npm install --save-dev babel-eslint"
+  - "npm install --save-dev eslint-config-google"
+  - "npm install --save-dev eslint-config-qx"
+  - "npm install --save-dev eslint-plugin-qx-rules"
+before_script:
+  - eslint --version
+script:
+  - npm run lint
