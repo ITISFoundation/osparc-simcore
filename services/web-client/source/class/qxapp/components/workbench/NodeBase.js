@@ -17,13 +17,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     });
 
     this.setNodeId(qxapp.utils.Utils.uuidv4());
-    if (metadata.input.length === 0 && metadata.output.length > 0) {
-      this.setNodeType(0);
-    } else if (metadata.input.length > 0 && metadata.output.length > 0) {
-      this.setNodeType(1);
-    } else if (metadata.input.length > 0 && metadata.output.length === 0) {
-      this.setNodeType(2);
-    }
 
     let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
     this.setLayout(nodeLayout);
@@ -72,6 +65,16 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         qx.event.Registration.addListener(label, "focusout", this._onLabelFocusOut, this);
         this._outputPorts.add(label);
       });
+
+      this.setNodeImageId(this._metadata.id);
+
+      if (metadata.input.length === 0 && metadata.output.length > 0) {
+        this.setNodeType(0);
+      } else if (metadata.input.length > 0 && metadata.output.length > 0) {
+        this.setNodeType(1);
+      } else if (metadata.input.length > 0 && metadata.output.length === 0) {
+        this.setNodeType(2);
+      }
     }
   },
 
@@ -81,6 +84,11 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
   properties: {
     nodeId: {
+      check: "String",
+      nullable: false
+    },
+
+    nodeImageId: {
       check: "String",
       nullable: false
     },
