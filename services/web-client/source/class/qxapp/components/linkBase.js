@@ -6,7 +6,7 @@ qx.Class.define("qxapp.components.LinkBase", {
   construct: function(representation) {
     this.base();
 
-    this.setLinkId(qxapp.utils.utils.uuidv4());
+    this.setLinkId(qxapp.utils.Utils.uuidv4());
 
     this.setRepresentation(representation);
   },

@@ -16,7 +16,7 @@ qx.Class.define("qxapp.components.NodeBase", {
       minWidth: 180
     });
 
-    this.setNodeId(qxapp.utils.utils.uuidv4());
+    this.setNodeId(qxapp.utils.Utils.uuidv4());
 
     let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
     this.setLayout(nodeLayout);

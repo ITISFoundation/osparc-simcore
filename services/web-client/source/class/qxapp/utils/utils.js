@@ -1,6 +1,6 @@
 /* global window */
 
-qx.Class.define("qxapp.utils.utils", {
+qx.Class.define("qxapp.utils.Utils", {
   type: "static",
 
   statics:
