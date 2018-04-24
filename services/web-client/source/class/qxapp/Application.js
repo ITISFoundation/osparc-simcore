@@ -63,7 +63,7 @@ qx.Class.define("qxapp.Application", {
       let doc = this.getRoot();
 
       // openning web socket
-      this._socket = new qxapp.wrappers.WebSocket("app");
+      this._socket = qxapp.wrappers.WebSocket.getInstance();
       this._socket.connect();
 
       let loginWin = new qxapp.login.Login();
