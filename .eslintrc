@@ -5,6 +5,10 @@
         "max-len":[2, 150],
         "new-cap":"off",
         "require-jsdoc":"off",
-        "linebreak-style":0
+        "linebreak-style": ["error","unix"],
+        "curly": ["warn","all"],
+        "block-scoped-var": "warn",
+        "brace-style": ["warn","stroustrup"],
+        "indent": ["warn", 2]
     }
 }
