@@ -36,11 +36,16 @@ qx.Class.define("qxapp.components.Workbench", {
     this._nodes = [];
     this._links = [];
 
-    let plusButton = this._getPlusButton();
-    this.add(plusButton, {
+    this._plusButton = this._getPlusButton();
+    this.add(this._plusButton, {
       right: 20,
       bottom: 20
     });
+    let scope = this;
+    this._plusButton.addListener("execute", function() {
+      scope._plusButton.setMenu(scope._getMatchingServicesMenu());
+    }, scope);
+    this._plusButtonCount = 0;
 
     let playButton = this._getPlayButton();
     this.add(playButton, {
@@ -58,24 +63,29 @@ qx.Class.define("qxapp.components.Workbench", {
     _links: null,
     _desktop: null,
     _svgWidget: null,
+    _plusButton: null,
+    _selection: null,
 
     _getPlusButton: function() {
-      let menuNodeTypes = new qx.ui.menu.Menu();
-
-      let producersButton = new qx.ui.menu.Button("Producers", null, null, this._getProducers());
-      let computationalsButton = new qx.ui.menu.Button("Computationals", null, null, this._getComputationals());
-      let analysesButton = new qx.ui.menu.Button("Analyses", null, null, this._getAnalyses());
-
-      menuNodeTypes.add(producersButton);
-      menuNodeTypes.add(computationalsButton);
-      menuNodeTypes.add(analysesButton);
-
-      let plusButton = new qx.ui.form.MenuButton(null, "qxapp/icons/workbench/add-icon.png", menuNodeTypes);
+      let plusButton = new qx.ui.form.MenuButton(null, "qxapp/icons/workbench/add-icon.png", this._getMatchingServicesMenu());
       plusButton.set({
         width: 50,
         height: 50
       });
       return plusButton;
+    },
+
+    _getMatchingServicesMenu: function() {
+      let menuNodeTypes = new qx.ui.menu.Menu();
+
+      let producersButton = new qx.ui.menu.Button("Producers", null, null, this._getProducers());
+      menuNodeTypes.add(producersButton);
+      let computationalsButton = new qx.ui.menu.Button("Computationals", null, null, this._getComputationals());
+      menuNodeTypes.add(computationalsButton);
+      let analysesButton = new qx.ui.menu.Button("Analyses", null, null, this._getAnalyses());
+      menuNodeTypes.add(analysesButton);
+
+      return menuNodeTypes;
     },
 
     _getPlayButton: function() {
