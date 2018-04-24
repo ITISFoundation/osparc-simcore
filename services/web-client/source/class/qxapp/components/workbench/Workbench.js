@@ -140,6 +140,18 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let nodeBase = new qxapp.components.workbench.NodeBase(node);
       this._addNodeToWorkbench(nodeBase);
 
+      if (nodeBase.getNodeImageId() === "modeler" && nodeBase.getNodeType() === 0) {
+        if (!qxapp.wrappers.WebSocket.getInstance().slotExists("ModelerCreated")) {
+          qxapp.wrappers.WebSocket.getInstance().on("ModelerCreated", function(val) {
+            if (val.type === "ModelerCreated") {
+              let portNumber = val.value;
+              nodeBase.getMetaData().viewer.port = portNumber;
+            }
+          }, this);
+        }
+        qxapp.wrappers.WebSocket.getInstance().emit("ModelerCreated", nodeBase.getNodeId());
+      }
+
       let scope = this;
       nodeBase.addListener("move", function(e) {
         let linksInvolved = new Set([]);
@@ -279,7 +291,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     _getProducers: function() {
       const producers = [{
-        "id": "ModelerID",
+        "id": "modeler",
         "name": "Modeler",
         "input": [],
         "output": [{
@@ -296,7 +308,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           "text": "Select ViP Model",
           "type": "select",
           "value": 0
-        }]
+        }],
+        "viewer": {
+          "ip": "http://osparc01.speag.com",
+          "port": null
+        }
       },
       {
         "id": "NumberGeneratorID",
