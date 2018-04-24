@@ -141,12 +141,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this._addNodeToWorkbench(nodeBase);
 
       if (nodeBase.getNodeImageId() === "modeler" && nodeBase.getNodeType() === 0) {
-        const slotName = "ModelerCreated";
+        const slotName = "startModeler";
         let socket = qxapp.wrappers.WebSocket.getInstance();
         if (!socket.slotExists(slotName)) {
           socket.on(slotName, function(val) {
-            if (val.type === slotName) {
-              let portNumber = val.value;
+            if (val["service uuid"] === nodeBase.getNodeId()) {
+              let portNumber = val["containers"][0]["published_ports"];
               nodeBase.getMetaData().viewer.port = portNumber;
             }
           }, this);
