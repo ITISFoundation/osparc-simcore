@@ -141,15 +141,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this._addNodeToWorkbench(nodeBase);
 
       if (nodeBase.getNodeImageId() === "modeler" && nodeBase.getNodeType() === 0) {
-        if (!qxapp.wrappers.WebSocket.getInstance().slotExists("ModelerCreated")) {
-          qxapp.wrappers.WebSocket.getInstance().on("ModelerCreated", function(val) {
-            if (val.type === "ModelerCreated") {
+        const slotName = "ModelerCreated";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        if (!socket.slotExists(slotName)) {
+          socket.on(slotName, function(val) {
+            if (val.type === slotName) {
               let portNumber = val.value;
               nodeBase.getMetaData().viewer.port = portNumber;
             }
           }, this);
         }
-        qxapp.wrappers.WebSocket.getInstance().emit("ModelerCreated", nodeBase.getNodeId());
+        socket.emit(slotName, nodeBase.getNodeId());
       }
 
       let scope = this;
