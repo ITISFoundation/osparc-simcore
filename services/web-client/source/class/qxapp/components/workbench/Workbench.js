@@ -145,7 +145,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let socket = qxapp.wrappers.WebSocket.getInstance();
         if (!socket.slotExists(slotName)) {
           socket.on(slotName, function(val) {
-            if (val["service uuid"] === nodeBase.getNodeId()) {
+            if (val["service_uuid"] === nodeBase.getNodeId()) {
               let portNumber = val["containers"][0]["published_ports"];
               nodeBase.getMetaData().viewer.port = portNumber;
             }
@@ -312,7 +312,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           "value": 0
         }],
         "viewer": {
-          "ip": "http://osparc01.speag.com",
+          "ip": "http://localhost",
           "port": null
         }
       },
