@@ -1,5 +1,6 @@
 {
   "scripts": {
-    "lintAllServices": "eslint ./services/**/*.js"
+    "lintJsServices": "eslint ./services/**/*.js",
+    "lintPyServices": "pylint ./services"
   }
 }
