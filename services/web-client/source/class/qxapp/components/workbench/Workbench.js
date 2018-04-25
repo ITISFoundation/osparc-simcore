@@ -6,7 +6,7 @@
 /* global qxapp */
 /* eslint new-cap: [2, {capIsNewExceptions: ["Set"]}] */
 
-qx.Class.define("qxapp.components.Workbench", {
+qx.Class.define("qxapp.components.workbench.Workbench", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
@@ -17,7 +17,7 @@ qx.Class.define("qxapp.components.Workbench", {
       layout: canvas
     });
 
-    this._svgWidget = new qxapp.components.SvgWidget();
+    this._svgWidget = new qxapp.components.workbench.SvgWidget();
     this.add(this._svgWidget, {
       left: 0,
       top: 0,
@@ -36,11 +36,16 @@ qx.Class.define("qxapp.components.Workbench", {
     this._nodes = [];
     this._links = [];
 
-    let plusButton = this._getPlusButton();
-    this.add(plusButton, {
+    this._plusButton = this._getPlusButton();
+    this.add(this._plusButton, {
       right: 20,
       bottom: 20
     });
+    let scope = this;
+    this._plusButton.addListener("execute", function() {
+      scope._plusButton.setMenu(scope._getMatchingServicesMenu());
+    }, scope);
+    this._plusButtonCount = 0;
 
     let playButton = this._getPlayButton();
     this.add(playButton, {
@@ -58,24 +63,29 @@ qx.Class.define("qxapp.components.Workbench", {
     _links: null,
     _desktop: null,
     _svgWidget: null,
+    _plusButton: null,
+    _selection: null,
 
     _getPlusButton: function() {
-      let menuNodeTypes = new qx.ui.menu.Menu();
-
-      let producersButton = new qx.ui.menu.Button("Producers", null, null, this._getProducers());
-      let computationalsButton = new qx.ui.menu.Button("Computationals", null, null, this._getComputationals());
-      let analysesButton = new qx.ui.menu.Button("Analyses", null, null, this._getAnalyses());
-
-      menuNodeTypes.add(producersButton);
-      menuNodeTypes.add(computationalsButton);
-      menuNodeTypes.add(analysesButton);
-
-      let plusButton = new qx.ui.form.MenuButton(null, "qxapp/icons/workbench/add-icon.png", menuNodeTypes);
+      let plusButton = new qx.ui.form.MenuButton(null, "qxapp/icons/workbench/add-icon.png", this._getMatchingServicesMenu());
       plusButton.set({
         width: 50,
         height: 50
       });
       return plusButton;
+    },
+
+    _getMatchingServicesMenu: function() {
+      let menuNodeTypes = new qx.ui.menu.Menu();
+
+      let producersButton = new qx.ui.menu.Button("Producers", null, null, this._getProducers());
+      menuNodeTypes.add(producersButton);
+      let computationalsButton = new qx.ui.menu.Button("Computationals", null, null, this._getComputationals());
+      menuNodeTypes.add(computationalsButton);
+      let analysesButton = new qx.ui.menu.Button("Analyses", null, null, this._getAnalyses());
+      menuNodeTypes.add(analysesButton);
+
+      return menuNodeTypes;
     },
 
     _getPlayButton: function() {
@@ -127,8 +137,22 @@ qx.Class.define("qxapp.components.Workbench", {
     },
 
     _addNode: function(node) {
-      let nodeBase = new qxapp.components.NodeBase(node);
+      let nodeBase = new qxapp.components.workbench.NodeBase(node);
       this._addNodeToWorkbench(nodeBase);
+
+      if (nodeBase.getNodeImageId() === "modeler" && nodeBase.getNodeType() === 0) {
+        const slotName = "startModeler";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        if (!socket.slotExists(slotName)) {
+          socket.on(slotName, function(val) {
+            if (val["service_uuid"] === nodeBase.getNodeId()) {
+              let portNumber = val["containers"][0]["published_ports"];
+              nodeBase.getMetaData().viewer.port = portNumber;
+            }
+          }, this);
+        }
+        socket.emit(slotName, nodeBase.getNodeId());
+      }
 
       let scope = this;
       nodeBase.addListener("move", function(e) {
@@ -167,7 +191,7 @@ qx.Class.define("qxapp.components.Workbench", {
       const x2 = pointList[1][0];
       const y2 = pointList[1][1];
       let linkRepresentation = this._svgWidget.drawCurve(x1, y1, x2, y2);
-      let linkBase = new qxapp.components.LinkBase(linkRepresentation);
+      let linkBase = new qxapp.components.workbench.LinkBase(linkRepresentation);
       linkBase.setInputNodeId(node1.getNodeId());
       linkBase.setOutputNodeId(node2.getNodeId());
       node1.addOutputLinkID(linkBase.getLinkId());
@@ -232,8 +256,10 @@ qx.Class.define("qxapp.components.Workbench", {
       win.setAllowMaximize(false);
       win.open();
 
-      let threeWidget = new qxapp.components.ThreeWidget(minWidth, minHeight, "#3F3F3F");
-      win.add(threeWidget, {flex: 1});
+      let threeWidget = new qxapp.components.workbench.ThreeWidget(minWidth, minHeight, "#3F3F3F");
+      win.add(threeWidget, {
+        flex: 1
+      });
 
       win.addListener("resize", function(e) {
         threeWidget.viewResized(e.getData().width, e.getData().height);
@@ -269,7 +295,7 @@ qx.Class.define("qxapp.components.Workbench", {
 
     _getProducers: function() {
       const producers = [{
-        "id": "ModelerID",
+        "id": "modeler",
         "name": "Modeler",
         "input": [],
         "output": [{
@@ -286,7 +312,11 @@ qx.Class.define("qxapp.components.Workbench", {
           "text": "Select ViP Model",
           "type": "select",
           "value": 0
-        }]
+        }],
+        "viewer": {
+          "ip": "http://localhost",
+          "port": null
+        }
       },
       {
         "id": "NumberGeneratorID",

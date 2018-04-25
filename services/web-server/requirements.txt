@@ -1,0 +1,3 @@
+aiohttp
+python-socketio
+requests

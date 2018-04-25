@@ -63,11 +63,22 @@ qx.Class.define("qxapp.Application", {
       let doc = this.getRoot();
 
       // openning web socket
-      this._socket = new qxapp.wrappers.WebSocket("app");
+      this._socket = qxapp.wrappers.WebSocket.getInstance();
       this._socket.connect();
 
-      this._layoutManager = new qxapp.layout.LayoutManager();
-      doc.add(this._layoutManager);
+      let loginWin = new qxapp.login.Login();
+      loginWin.addListener("Login", function(e) {
+        if (e.getData() === true) {
+          this._layoutManager = new qxapp.layout.LayoutManager();
+          doc.add(this._layoutManager);
+        }
+      });
+
+      this.getRoot().add(loginWin, {
+        left:400,
+        top:400
+      });
+      loginWin.open();
     }
   }
 });

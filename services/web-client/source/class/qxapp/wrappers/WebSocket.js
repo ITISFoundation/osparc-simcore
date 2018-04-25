@@ -12,6 +12,8 @@
 qx.Class.define("qxapp.wrappers.WebSocket", {
   extend: qx.core.Object,
 
+  type : "singleton",
+
   // Socket.io events
   events: {
     /** socket.io connect event */
@@ -100,7 +102,9 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
    */
   construct(namespace) {
     // this.base();
-    // if (namespace !== null) {
+    if (namespace === undefined) {
+      namespace = "app";
+    }
     if (namespace) {
       this.setNamespace(namespace);
     }

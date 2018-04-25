@@ -1,12 +1,12 @@
 /* global qxapp */
 
-qx.Class.define("qxapp.components.LinkBase", {
+qx.Class.define("qxapp.components.workbench.LinkBase", {
   extend: qx.core.Object,
 
   construct: function(representation) {
     this.base();
 
-    this.setLinkId(qxapp.utils.utils.uuidv4());
+    this.setLinkId(qxapp.utils.Utils.uuidv4());
 
     this.setRepresentation(representation);
   },

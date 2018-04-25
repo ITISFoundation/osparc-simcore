@@ -2,7 +2,7 @@
 
 const LINKS_LAYER_ID = "drawing";
 
-qx.Class.define("qxapp.components.SvgWidget", {
+qx.Class.define("qxapp.components.workbench.SvgWidget", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

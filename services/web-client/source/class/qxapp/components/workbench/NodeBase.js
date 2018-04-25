@@ -1,6 +1,6 @@
 /* global qxapp */
 
-qx.Class.define("qxapp.components.NodeBase", {
+qx.Class.define("qxapp.components.workbench.NodeBase", {
   extend: qx.ui.window.Window,
 
   construct: function(metadata) {
@@ -16,23 +16,29 @@ qx.Class.define("qxapp.components.NodeBase", {
       minWidth: 180
     });
 
-    this.setNodeId(qxapp.utils.utils.uuidv4());
+    this.setNodeId(qxapp.utils.Utils.uuidv4());
 
     let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
     this.setLayout(nodeLayout);
 
     let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
-    this.add(inputsOutputsLayout, {flex: 1});
+    this.add(inputsOutputsLayout, {
+      flex: 1
+    });
 
     let inputsBox = new qx.ui.layout.VBox(5);
     inputsBox.setAlignX("left");
-    this._inputsLabels = new qx.ui.container.Composite(inputsBox);
-    inputsOutputsLayout.add(this._inputsLabels, {width: "50%"});
+    this._inputPorts = new qx.ui.container.Composite(inputsBox);
+    inputsOutputsLayout.add(this._inputPorts, {
+      width: "50%"
+    });
 
     let outputsBox = new qx.ui.layout.VBox(5);
     outputsBox.setAlignX("right");
-    this._outputsLabels = new qx.ui.container.Composite(outputsBox);
-    inputsOutputsLayout.add(this._outputsLabels, {width: "50%"});
+    this._outputPorts = new qx.ui.container.Composite(outputsBox);
+    inputsOutputsLayout.add(this._outputPorts, {
+      width: "50%"
+    });
 
     let progressBox = new qx.ui.layout.HBox(5);
     progressBox.setAlignX("center");
@@ -49,50 +55,78 @@ qx.Class.define("qxapp.components.NodeBase", {
       this.setServiceName(this._metadata.name);
       this._metadata.input.forEach(input => {
         let label = new qx.ui.basic.Label(input.name);
+        label.portId = qxapp.utils.Utils.uuidv4();
+        label.type = input.type;
         label.setFocusable(true);
         qx.event.Registration.addListener(label, "focusin", this._onLabelFocusIn, this);
         qx.event.Registration.addListener(label, "focusout", this._onLabelFocusOut, this);
-        this._inputsLabels.add(label);
+        this._inputPorts.add(label);
       });
       this._metadata.output.forEach(output => {
         let label = new qx.ui.basic.Label(output.name);
+        label.portId = qxapp.utils.Utils.uuidv4();
+        label.type = output.type;
         label.setFocusable(true);
         qx.event.Registration.addListener(label, "focusin", this._onLabelFocusIn, this);
         qx.event.Registration.addListener(label, "focusout", this._onLabelFocusOut, this);
-        this._outputsLabels.add(label);
+        this._outputPorts.add(label);
       });
+
+      this.setNodeImageId(this._metadata.id);
+
+      if (metadata.input.length === 0 && metadata.output.length > 0) {
+        this.setNodeType(0);
+      } else if (metadata.input.length > 0 && metadata.output.length > 0) {
+        this.setNodeType(1);
+      } else if (metadata.input.length > 0 && metadata.output.length === 0) {
+        this.setNodeType(2);
+      }
     }
   },
 
   events: {
-
+    "PortSelected": "qx.event.type.Data"
   },
 
   properties: {
     nodeId: {
       check: "String",
       nullable: false
+    },
+
+    nodeImageId: {
+      check: "String",
+      nullable: false
+    },
+
+    nodeType: {
+      check: "Number",
+      nullable: false
     }
   },
 
   members: {
     _metadata: null,
-    _inputsLabels: null,
-    _outputsLabels: null,
+    _inputPorts: null,
+    _outputPorts: null,
     _progressLabel: null,
     _inputLinkIDs: null,
     _outputLinkIDs: null,
 
     _onLabelFocusIn: function(e) {
-      console.log("_onLabelFocusIn", e.getTarget());
-      console.log(this);
+      // console.log("event", e);
+      console.log("Port Selected", e.getTarget());
+      console.log("Node: ", this);
       // e.getTarget().setBackgroundColor("red");
+      this.fireDataEvent("PortSelected", e.getTarget().portId);
     },
 
     _onLabelFocusOut: function(e) {
-      console.log("_onLabelFocusOut", e.getTarget());
-      console.log(this);
+      // console.log("event", e);
+      console.log("Port Unselected", e.getTarget());
+      console.log("Node: ", this);
       // e.getTarget().resetBackgroundColor();
+      this.fireDataEvent("PortSelected", e.getTarget().portId);
     },
 
     getMetaData: function() {
@@ -106,14 +140,14 @@ qx.Class.define("qxapp.components.NodeBase", {
     setInputs: function(names) {
       names.forEach(name => {
         let label = new qx.ui.basic.Label(name);
-        this._inputsLabels.add(label);
+        this._inputPorts.add(label);
       });
     },
 
     setOutputs: function(names) {
       names.forEach(name => {
         let label = new qx.ui.basic.Label(name);
-        this._outputsLabels.add(label);
+        this._outputPorts.add(label);
       });
     },
 

@@ -1,0 +1,67 @@
+{
+  "extends": "eslint:recommended",
+  "parser": "babel-eslint",
+  "globals": {
+    "osparc": false
+  },
+  "rules": {
+    "max-len": [
+      2,
+      150
+    ],
+    "new-cap": "off",
+    "require-jsdoc": "off",
+    "linebreak-style": [
+      "error",
+      "unix"
+    ],
+    "curly": [
+      "warn",
+      "all"
+    ],
+    "block-scoped-var": "warn",
+    "brace-style": [
+      "warn",
+      "stroustrup"
+    ],
+    "indent": [
+      "warn",
+      2
+    ],
+    "object-property-newline": "warn",
+    "object-curly-newline": [
+      "warn",
+      {
+        "ObjectExpression": {
+          "multiline": true,
+          "minProperties": 1
+        },
+        "ObjectPattern": {
+          "multiline": true,
+          "minProperties": 1
+        }
+      }
+    ],
+    "key-spacing": [
+      "warn",
+      {
+        "singleLine": {
+          "beforeColon": false,
+          "afterColon": true
+        },
+        "multiLine": {
+          "beforeColon": false,
+          "afterColon": true
+        }
+      }
+    ],
+    "no-dupe-keys": "warn",
+    "no-dupe-class-members": "warn",
+    "no-unused-vars": [
+      "warn",
+      {
+        "args": "none"
+      }
+    ]
+  }
+}

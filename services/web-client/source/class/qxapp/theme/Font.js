@@ -11,7 +11,5 @@
 qx.Theme.define("qxapp.theme.Font", {
   extend: qx.theme.indigo.Font,
 
-  fonts:
-  {
-  }
+  fonts: {}
 });

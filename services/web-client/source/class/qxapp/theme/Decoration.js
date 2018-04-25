@@ -11,6 +11,5 @@
 qx.Theme.define("qxapp.theme.Decoration", {
   extend: qx.theme.indigo.Decoration,
 
-  decorations: {
-  }
+  decorations: {}
 });
