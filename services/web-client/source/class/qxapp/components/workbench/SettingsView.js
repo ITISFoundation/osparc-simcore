@@ -12,7 +12,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
     this.set({
       layout: box,
       padding: 10,
-      backgroundColor: "#eee"
+      backgroundColor: "dark-blue" // It is defined in theme/Color
     });
 
     this._InitTitle();
