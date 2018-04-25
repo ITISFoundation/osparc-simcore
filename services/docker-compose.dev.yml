@@ -1,0 +1,42 @@
+version: '3'
+services:
+  director-dev:
+    build:
+      context: .
+      dockerfile: _dockerfiles/director/Dockerfile-dev
+    ports:
+      - '8001:8001'
+    environment:
+    # on Windows follow http://www.computerperformance.co.uk/powershell/powershell_profile_ps1.htm
+    # currently needs to set $Env:COMPOSE_CONVERT_WINDOWS_PATHS=1 in powershell to make this works
+    # on a windows machine
+      - REGISTRY_URL=masu.speag.com
+      - REGISTRY_AUTH=True
+      - REGISTRY_USER=z43
+      - REGISTRY_PW=z43
+    volumes:
+      - './director:/home/app'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+  build-qx-dev:
+    build:
+      context: .
+      dockerfile: _dockerfiles/build-qx/Dockerfile
+    volumes:
+      - './web-client:/home/node/qxapp'
+  webserver-dev:
+    build:
+      context: .
+      dockerfile: _dockerfiles/qxapp/python/Dockerfile-dev
+      args:
+        serverdir: web-server
+    env_file: .env
+    ports:
+      - '8080:8080'
+    environment:
+      - DIRECTOR_HOST=http://director-dev
+      - DIRECTOR_PORT=8001
+    volumes:
+      - './web-server:/usr/src/app'
+      - './web-client/source-output:/usr/src/app/client'
+    depends_on:
+      - build-qx-dev

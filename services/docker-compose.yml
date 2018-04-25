@@ -1,0 +1,31 @@
+version: '3'
+services:
+  director:
+    build:
+      context: .
+      dockerfile: _dockerfiles/director/Dockerfile
+    ports:
+      - '8001:8001'
+    environment:
+    # on Windows follow http://www.computerperformance.co.uk/powershell/powershell_profile_ps1.htm
+    # currently needs to set $Env:COMPOSE_CONVERT_WINDOWS_PATHS=1 in powershell to make this works
+    # on a windows machine
+      - REGISTRY_URL=masu.speag.com
+      - REGISTRY_AUTH=True
+      - REGISTRY_USER=z43
+      - REGISTRY_PW=z43
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+  webserver:
+    build:
+      context: .
+      dockerfile: _dockerfiles/qxapp/python/Dockerfile
+      args:
+        serverdir: web-server
+        web_outdir: /usr/src/app/client
+    ports:
+      - '9081:8080'
+    environment:
+      - DIRECTOR_HOST=http://director
+      - DIRECTOR_PORT=8001
+      - SIMCORE_WEB_CONFIG=production

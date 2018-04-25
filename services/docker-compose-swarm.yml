@@ -1,0 +1,35 @@
+version: '3'
+services:
+  director:
+    image: masu.speag.com/simcore/workbench/director:1.4
+    ports:
+      - '8001:8001'
+    dns:
+      - 172.16.8.15
+    environment:
+      - REGISTRY_URL=masu.speag.com
+      - REGISTRY_AUTH=True
+      - REGISTRY_USER=z43
+      - REGISTRY_PW=z43
+    deploy:
+      placement:
+       constraints: 
+          - node.platform.os == linux
+          - node.role == manager
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+  webserver:
+    image: masu.speag.com/simcore/workbench/webserver:1.4
+    ports:
+      - '9081:8080'
+    dns:
+      - 172.16.8.15
+    environment:
+      - DIRECTOR_HOST:director
+      - DIRECTOR_PORT:8001
+      - SIMCORE_WEB_CONFIG=production
+    deploy:
+      placement:
+        constraints: 
+          - node.platform.os == linux
+          - node.role == manager

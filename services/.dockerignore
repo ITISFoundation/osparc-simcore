@@ -1,0 +1,8 @@
+# qx 
+*/source-output/*
+
+# node 
+*/node_modules/*
+
+# python
+*/__pycache__/*
