@@ -1,0 +1,12 @@
+{
+  "parserOptions": {
+      "ecmaVersion": 2017
+  },
+  "extends": "qx",
+  "globals": {
+    "qx": false,
+    "q": false,
+    "qxWeb": false,
+    "qxapp": false
+  }
+}
