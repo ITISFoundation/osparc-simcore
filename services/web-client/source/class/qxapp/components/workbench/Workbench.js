@@ -314,7 +314,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           "value": 0
         }],
         "viewer": {
-          "ip": "http://localhost",
+          "ip": "http://osparc01.speag.com",
           "port": null
         }
       },

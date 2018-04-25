@@ -31,10 +31,12 @@ services:
         serverdir: web-server
     env_file: .env
     ports:
-      - '8080:8080'
+      - '9081:9081'
+      - '9082:9082'
     environment:
       - DIRECTOR_HOST=http://director-dev
       - DIRECTOR_PORT=8001
+      - SIMCORE_WEB_PORT=9081
     volumes:
       - './web-server:/usr/src/app'
       - './web-client/source-output:/usr/src/app/client'
