@@ -1,10 +1,10 @@
 FROM jupyter/base-notebook
 LABEL maintainer="sanderegg"
 
-# execute this command when building on linux --build-arg VCS_REF='git rev-parse - short HEAD'
-ARG VCS_REF="git rev-parse - short HEAD"
-# execute this command when building on linux --build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”`
+# call date -u +”%Y-%m-%dT%H:%M:%SZ” in a bash
+ARG VCS_REF
 ARG BUILD_DATE
+# call git rev-parse — short HEAD in a bash
 ARG BUILD_VERSION
 
 # Labels.
@@ -19,7 +19,7 @@ LABEL org.label-schema.vendor="IT'IS foundation"
 LABEL org.label-schema.version=$BUILD_VERSION
 LABEL org.label-schema.docker.cmd="docker run -it --rm -p 8888:8888 jupyter/base-notebook start-notebook.sh --NotebookApp.token=''"
 # service runtime settings
-LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 8888}]'
+LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
 
 # TODO san: this is probably not wise
 # starts notebook without token
