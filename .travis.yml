@@ -19,6 +19,7 @@ matrix:
       python:
         - "3.6"
       install:
+        - npm install -g npm@latest
         - pip3 install pylint
       before_script:
         - pylint --version
