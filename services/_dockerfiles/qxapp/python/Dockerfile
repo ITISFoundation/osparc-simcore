@@ -12,6 +12,11 @@ ENV PATH="/home/node/node_modules/.bin/:${PATH}"
 WORKDIR /home/node/qxapp
 COPY web-client/source source
 COPY web-client/*.json ./
+
+# Add dark theme to web-client
+RUN qx contrib update
+RUN qx contrib list
+RUN qx contrib install ITISFoundation/qx-osparc-theme
 RUN qx compile
 
 

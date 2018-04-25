@@ -21,7 +21,13 @@
     {
       "class": "qxapp.Application",
       "theme": "qxapp.theme.Theme",
-      "name": "qxapp"
+      "name": "qxapp",
+      "include": [
+        "qx.theme.Indigo",
+        "qx.theme.Modern",
+        "qx.theme.Simple",
+        "osparc.theme.OSparcDark"
+      ]
     }
   ],
 
