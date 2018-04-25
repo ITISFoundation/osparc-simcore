@@ -174,7 +174,9 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
     },
 
     _downloadBinJSON: function(exportObj, fileName) {
-      let blob = new Blob([exportObj], {type: "application/octet-stream"});
+      let blob = new Blob([exportObj], {
+        type: "application/octet-stream"
+      });
       let url = window.URL.createObjectURL(blob);
       let downloadAnchorNode = document.createElement("a");
       downloadAnchorNode.setAttribute("href", url);
@@ -306,7 +308,9 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
 
     createPoint: function(position) {
       let sphereGeo = this.createSphere(0.07, position, 8, 8);
-      let sphere = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({color: 0xffffff}));
+      let sphere = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({
+        color: 0xffffff
+      }));
       sphere.position.x = position.x;
       sphere.position.y = position.y;
       sphere.position.z = position.z;
@@ -454,7 +458,9 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
 
     createLine: function(points) {
       let geometry = new THREE.BufferGeometry().setFromPoints(points);
-      let material = new THREE.LineBasicMaterial({color: 0xffffff});
+      let material = new THREE.LineBasicMaterial({
+        color: 0xffffff
+      });
       let curveObject = new THREE.Line(geometry, material);
       return curveObject;
     },

@@ -22,17 +22,23 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     this.setLayout(nodeLayout);
 
     let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
-    this.add(inputsOutputsLayout, {flex: 1});
+    this.add(inputsOutputsLayout, {
+      flex: 1
+    });
 
     let inputsBox = new qx.ui.layout.VBox(5);
     inputsBox.setAlignX("left");
     this._inputPorts = new qx.ui.container.Composite(inputsBox);
-    inputsOutputsLayout.add(this._inputPorts, {width: "50%"});
+    inputsOutputsLayout.add(this._inputPorts, {
+      width: "50%"
+    });
 
     let outputsBox = new qx.ui.layout.VBox(5);
     outputsBox.setAlignX("right");
     this._outputPorts = new qx.ui.container.Composite(outputsBox);
-    inputsOutputsLayout.add(this._outputPorts, {width: "50%"});
+    inputsOutputsLayout.add(this._outputPorts, {
+      width: "50%"
+    });
 
     let progressBox = new qx.ui.layout.HBox(5);
     progressBox.setAlignX("center");

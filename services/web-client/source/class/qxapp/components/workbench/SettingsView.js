@@ -40,7 +40,9 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       });
       let doneBtn = new qx.ui.form.Button(this.tr("Done"));
 
-      titleBox.add(settLabel, {width: "75%"});
+      titleBox.add(settLabel, {
+        width: "75%"
+      });
       titleBox.add(doneBtn);
       this.add(titleBox);
 
@@ -135,7 +137,9 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
         source: url,
         decorator : null
       });
-      win.add(iframe, {flex: 1});
+      win.add(iframe, {
+        flex: 1
+      });
       win.setModal(true);
       win.moveTo(150, 150);
 

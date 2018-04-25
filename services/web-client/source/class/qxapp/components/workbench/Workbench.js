@@ -257,7 +257,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       win.open();
 
       let threeWidget = new qxapp.components.workbench.ThreeWidget(minWidth, minHeight, "#3F3F3F");
-      win.add(threeWidget, {flex: 1});
+      win.add(threeWidget, {
+        flex: 1
+      });
 
       win.addListener("resize", function(e) {
         threeWidget.viewResized(e.getData().width, e.getData().height);

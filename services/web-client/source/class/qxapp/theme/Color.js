@@ -11,7 +11,5 @@
 qx.Theme.define("qxapp.theme.Color", {
   extend: qx.theme.indigo.Color,
 
-  colors:
-  {
-  }
+  colors: {}
 });

@@ -59,9 +59,7 @@ qx.Class.define("qxapp.layout.LayoutManager", {
     }, scope);
   },
 
-  events: {
-
-  },
+  events: {},
 
   members: {
     _pane: null,
