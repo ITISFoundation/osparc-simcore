@@ -63,6 +63,8 @@ qx.Class.define("qxapp.layout.LayoutManager", {
 
   members: {
     _pane: null,
+    _settingsView: null,
+    _workbench: null,
 
     _getDocWidth: function() {
       let body = document.body;
