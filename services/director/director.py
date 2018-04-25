@@ -9,7 +9,7 @@ import registry_proxy
 import producer
 
 app = Flask(__name__)
-
+registry_proxy.setup_registry_connection()
 
 @app.route('/')
 def hello_world():
@@ -63,6 +63,4 @@ def stop_service():
         abort(500)
 
 if __name__ == "__main__":
-    registry_proxy.setup_registry_connection()    
-
     app.run(host='0.0.0.0', debug=False, port=8001, threaded=True)

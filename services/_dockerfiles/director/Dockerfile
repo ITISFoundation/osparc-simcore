@@ -16,4 +16,4 @@ ENV LOCAL_MODE='True'
 EXPOSE 8001
 COPY /director /home/app
 
-ENTRYPOINT [ "python", "director.py" ]
+ENTRYPOINT [ "flask", "run", "--host=0.0.0.0", "--port=8001"]
