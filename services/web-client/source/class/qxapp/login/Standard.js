@@ -47,7 +47,7 @@ qx.Class.define("qxapp.login.Standard", {
       // TODO: bind label and icon to this property
 
       let header = new qx.ui.basic.Atom().set({
-        icon: "qxapp/itis.png",
+        icon: "qxapp/itis-white.png",
         iconPosition: "top",
       });
 
