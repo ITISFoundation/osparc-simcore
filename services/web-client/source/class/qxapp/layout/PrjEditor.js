@@ -1,5 +1,4 @@
 /* global document */
-/* global window */
 
 qx.Class.define("qxapp.layout.PrjEditor", {
   extend: qx.ui.container.Composite,
