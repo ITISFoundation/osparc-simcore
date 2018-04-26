@@ -14,43 +14,19 @@ qx.Class.define("qxapp.layout.LayoutManager", {
     });
 
     this.set({
-      layout: new qx.ui.layout.Canvas()
+      layout: new qx.ui.layout.VBox()
     });
 
-    // Create a horizontal split pane
-    this._pane = new qx.ui.splitpane.Pane("horizontal");
+    this._NavBar = this._createNavigationBar();
+    this._NavBar.setHeight(100);
+    this.add(this._NavBar);
 
-    const settingsWidth = 500;
-    this._settingsView = new qxapp.components.workbench.SettingsView();
-    this._settingsView.set({
-      minWidth: settingsWidth*0.5,
-      maxWidth: settingsWidth,
-      width: settingsWidth*0.75
+    this._PrjStack = this._getPrjStack();
+    this.add(this._PrjStack, {
+      flex: 1
     });
-    this._pane.add(this._settingsView, 0);
-
-    this._workbench = new qxapp.components.workbench.Workbench();
-    this._pane.add(this._workbench, 1);
-
-    this.add(this._pane, {
-      left: 0,
-      top: 0,
-      right: 0,
-      bottom: 0
-    });
-
-    this._showSettings(false);
 
     let scope = this;
-    this._settingsView.addListener("SettingsEditionDone", function() {
-      scope._showSettings(false);
-    }, scope);
-
-    this._workbench.addListener("NodeDoubleClicked", function(e) {
-      scope._showSettings(true);
-      scope._settingsView.setNodeMetadata(e.getData());
-    }, scope);
-
     window.addEventListener("resize", function() {
       scope.set({
         width: scope._getDocWidth(),
@@ -80,14 +56,37 @@ qx.Class.define("qxapp.layout.LayoutManager", {
       return docHeight;
     },
 
-    _showSettings: function(showSettings) {
-      if (showSettings) {
-        this._settingsView.show();
-        this._workbench.show();
-      } else {
-        this._settingsView.exclude();
-        this._workbench.show();
-      }
+    _createNavigationBar: function() {
+      let navBar = new qxapp.layout.NavigationBar();
+
+      let scope = this;
+      navBar.addListener("HomePressed", function() {
+        console.log("HomePressed");
+        scope._PrjStack.setSelection([scope._PrjStack.getChildren()[0]]);
+        scope._NavBar.setCurrentStatus("Browser");
+      }, scope);
+
+      navBar.setCurrentStatus("Browser");
+
+      return navBar;
+    },
+
+    _getPrjStack: function() {
+      let prjStack = new qx.ui.container.Stack();
+
+      let prjBrowser = new qxapp.layout.PrjBrowser();
+      let scope = this;
+      prjBrowser.addListener("StartPrj", function(e) {
+        console.log(e.getData());
+        scope._PrjStack.setSelection([scope._PrjStack.getChildren()[1]]);
+        scope._NavBar.setCurrentStatus(e.getData());
+      }, scope);
+      prjStack.add(prjBrowser);
+
+      let prjEditor = new qxapp.layout.PrjEditor();
+      prjStack.add(prjEditor);
+
+      return prjStack;
     }
   },
 
