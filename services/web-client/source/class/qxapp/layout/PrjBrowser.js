@@ -38,30 +38,11 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
         padding: 10
       });
 
-      var button1 = new qx.ui.form.Button("Temp1");
-      button1.set({
-        maxWidth: 100,
-        minWidth: 100,
-        maxHeight: 100,
-        alignY:"middle"
-      });
-      comp.add(button1);
-      let scope = this;
-      button1.addListener("execute", function() {
-        scope.fireDataEvent("StartPrj", "Temp1");
-      }, scope);
-
-      var button2 = new qx.ui.form.Button("Temp2");
-      button2.set({
-        maxWidth: 100,
-        minWidth: 100,
-        maxHeight: 100,
-        alignY:"middle"
-      });
-      comp.add(button2);
-      button2.addListener("execute", function() {
-        scope.fireDataEvent("StartPrj", "Temp2");
-      }, scope);
+      let tempPrjs = ["Temp1", "Temp2"];
+      for (let i = 0; i < tempPrjs.length; i++) {
+        let button = this._createStartPrjBtn(tempPrjs[i]);
+        comp.add(button);
+      }
 
       return comp;
     },
@@ -73,30 +54,11 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
         padding: 10
       });
 
-      var button1 = new qx.ui.form.Button("User1");
-      button1.set({
-        maxWidth: 100,
-        minWidth: 100,
-        maxHeight: 100,
-        alignY:"middle"
-      });
-      comp.add(button1);
-      let scope = this;
-      button1.addListener("execute", function() {
-        scope.fireDataEvent("StartPrj", "User1");
-      }, scope);
-
-      var button2 = new qx.ui.form.Button("User2");
-      button2.set({
-        maxWidth: 100,
-        minWidth: 100,
-        maxHeight: 100,
-        alignY:"middle"
-      });
-      comp.add(button2);
-      button2.addListener("execute", function() {
-        scope.fireDataEvent("StartPrj", "User2");
-      }, scope);
+      let userPrjs = ["User1", "User2"];
+      for (let i = 0; i < userPrjs.length; i++) {
+        let button = this._createStartPrjBtn(userPrjs[i]);
+        comp.add(button);
+      }
 
       return comp;
     },
@@ -108,6 +70,23 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
         padding: 10
       });
       return comp;
+    },
+
+    _createStartPrjBtn: function(info) {
+      let button = new qx.ui.form.Button(info);
+      button.set({
+        maxWidth: 100,
+        minWidth: 100,
+        maxHeight: 100,
+        alignY:"middle"
+      });
+
+      let scope = this;
+      button.addListener("execute", function() {
+        scope.fireDataEvent("StartPrj", info);
+      }, scope);
+
+      return button;
     }
   }
 });
