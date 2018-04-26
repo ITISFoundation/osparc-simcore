@@ -115,7 +115,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
         let scope = this;
         button.addListener("execute", function(e) {
           let url = node.getMetaData().viewer.ip + ":" + node.getMetaData().viewer.port;
-          let modelerWin = scope.createModelerWindow(url);
+          let modelerWin = scope.createBrowserWindow(url, node.getMetaData().name);
           modelerWin.open();
           // Too hacky
           scope.getLayoutParent().getChildren()[1]._desktop.add(modelerWin);
@@ -124,9 +124,9 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       }
     },
 
-    createModelerWindow: function(url) {
+    createBrowserWindow: function(url, name) {
       console.log("Accessing:", url);
-      let win = new qx.ui.window.Window("Modeler");
+      let win = new qx.ui.window.Window(name);
       win.setShowMinimize(false);
       win.setLayout(new qx.ui.layout.VBox(5));
       let iframe = new qx.ui.embed.Iframe().set({
@@ -140,7 +140,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       win.add(iframe, {
         flex: 1
       });
-      win.setModal(true);
+      // win.setModal(true);
       win.moveTo(150, 150);
 
       return win;
