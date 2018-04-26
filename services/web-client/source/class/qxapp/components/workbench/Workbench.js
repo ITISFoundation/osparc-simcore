@@ -67,7 +67,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     _selection: null,
 
     _getPlusButton: function() {
-      let plusButton = new qx.ui.form.MenuButton(null, "qxapp/icons/workbench/add-icon.png", this._getMatchingServicesMenu());
+      // TODO: change icon
+      const icon = qxapp.utils.Placeholders.getIcon("fa-plus", 32); // "qxapp/icons/workbench/add-icon.png"
+      let plusButton = new qx.ui.form.MenuButton(null, icon, this._getMatchingServicesMenu());
       plusButton.set({
         width: 50,
         height: 50
@@ -89,7 +91,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     _getPlayButton: function() {
-      let playButton = new qx.ui.form.Button(null, "qxapp/icons/workbench/play-icon.png");
+      // TODO: change icon
+      const icon = qxapp.utils.Placeholders.getIcon("fa-play", 32); // ""qxapp/icons/workbench/play-icon.png""
+      let playButton = new qx.ui.form.Button(null, icon);
       playButton.set({
         width: 50,
         height: 50
