@@ -3,7 +3,8 @@
     "python.linting.enabled": true,
     "files.associations": {
         ".*rc": "ini",
-        ".env*": "ini"
+        ".env*": "ini",
+        "Dockerfile*": "dockerfile"
     },
     "files.eol": "\n",
     "files.insertFinalNewline": true,
