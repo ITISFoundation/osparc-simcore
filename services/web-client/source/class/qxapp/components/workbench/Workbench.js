@@ -148,26 +148,22 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (nodeBase.getNodeImageId() === "modeler") {
         const slotName = "startModeler";
         let socket = qxapp.wrappers.WebSocket.getInstance();
-        if (!socket.slotExists(slotName)) {
-          socket.on(slotName, function(val) {
-            if (val["service_uuid"] === nodeBase.getNodeId()) {
-              let portNumber = val["containers"][0]["published_ports"];
-              nodeBase.getMetaData().viewer.port = portNumber;
-            }
-          }, this);
-        }
+        socket.on(slotName, function(val) {
+          if (val["service_uuid"] === nodeBase.getNodeId()) {
+            let portNumber = val["containers"][0]["published_ports"];
+            nodeBase.getMetaData().viewer.port = portNumber;
+          }
+        }, this);
         socket.emit(slotName, nodeBase.getNodeId());
       } else if (nodeBase.getNodeImageId() === "jupyter-base-notebook") {
         const slotName = "startJupyter";
         let socket = qxapp.wrappers.WebSocket.getInstance();
-        if (!socket.slotExists(slotName)) {
-          socket.on(slotName, function(val) {
-            if (val["service_uuid"] === nodeBase.getNodeId()) {
-              let portNumber = val["containers"][0]["published_ports"];
-              nodeBase.getMetaData().viewer.port = portNumber;
-            }
-          }, this);
-        }
+        socket.on(slotName, function(val) {
+          if (val["service_uuid"] === nodeBase.getNodeId()) {
+            let portNumber = val["containers"][0]["published_ports"];
+            nodeBase.getMetaData().viewer.port = portNumber;
+          }
+        }, this);
         socket.emit(slotName, nodeBase.getNodeId());
       }
 
