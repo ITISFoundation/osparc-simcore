@@ -21,6 +21,6 @@ LABEL org.label-schema.docker.cmd="docker run -it --rm -p 8888:8888 jupyter/base
 # service runtime settings
 LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
 
-# TODO san: this is probably not wise
+COPY osparc-demo.ipynb .
 # starts notebook without token
 CMD [ "start-notebook.sh", "--NotebookApp.token=''", "--NotebookApp.tornado_settings={\"headers\":{\"Content-Security-Policy\":\"frame-ancestors+'self'+http://osparc01.speag.com:9081;+report-uri/api/security/csp-report\"}}" ]
