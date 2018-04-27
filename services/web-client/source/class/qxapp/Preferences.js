@@ -115,7 +115,34 @@ qx.Class.define("qxapp.Preferences", {
     __getDisplay: function() {
       const iconUrl = qxapp.utils.Placeholders.getIcon("fa-eye", 32);
       let page = this.__createPage("Display", iconUrl);
+      let themes = qx.Theme.getAll();
 
+      let select = new qx.ui.form.SelectBox("Theme");
+      page.add(select);
+
+      let themeMgr = qx.theme.manager.Meta.getInstance();
+      let currentTheme = themeMgr.getTheme();
+
+
+      for (let key in themes) {
+        let theme = themes[key];
+        if (theme.type === "meta") {
+          let item = new qx.ui.form.ListItem(theme.name);
+          item.setUserData("theme", theme.name);
+          select.add(item);
+          if (theme.name == currentTheme.name) {
+            select.setSelection([item]);
+          }
+        }
+      }
+
+      select.addListener("changeSelection", function(evt) {
+        var selected = evt.getData()[0].getUserData("theme");
+        var theme = qx.Theme.getByName(selected);
+        if (theme) {
+          themeMgr.setTheme(theme);
+        }
+      });
       return page;
     },
 
