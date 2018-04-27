@@ -1,128 +1,130 @@
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.Preferences", {
-    extend: qx.ui.window.Window,
+  extend: qx.ui.window.Window,
 
-    construct: function () {
-        this.base(arguments, this.tr("Account Settings"));
+  construct: function() {
+    this.base(arguments, this.tr("Account Settings"));
 
-        // window
-        // TODO: fix-sized modal preference window
-        this.set({
-            modal: true,
-            width: 500,
-            height: 500 * 1.2,
-            showClose: true,
-            showMaximize: false,
-            showMinimize: false,
-            resizable: false
-        });
-        this.setLayout(new qx.ui.layout.VBox(10));
+    // window
+    // TODO: fix-sized modal preference window
+    this.set({
+      modal: true,
+      width: 500,
+      height: 500 * 1.2,
+      showClose: true,
+      showMaximize: false,
+      showMinimize: false,
+      resizable: false
+    });
+    this.setLayout(new qx.ui.layout.VBox(10));
 
 
-        var tabView = new qx.ui.tabview.TabView().set({
-            barPosition: 'left'
-        });
-        tabView.add(this.__getGeneral());
-        tabView.add(this.__getSecurity());
-        // TODO: groups?
-        // TODO: notifications?
-        tabView.add(this.__getDisplay());
-        tabView.add(this.__getAdvanced());
+    var tabView = new qx.ui.tabview.TabView().set({
+      barPosition: "left"
+    });
+    tabView.add(this.__getGeneral());
+    tabView.add(this.__getSecurity());
+    // TODO: groups?
+    // TODO: notifications?
+    tabView.add(this.__getDisplay());
+    tabView.add(this.__getAdvanced());
 
-        this.add(tabView, {
-            flex: 1
-        });
+    this.add(tabView, {
+      flex: 1
+    });
+  },
+
+  members: {
+    _data: null,
+
+    __createPage: function(name, iconSrc = null) {
+      let page = new qx.ui.tabview.Page(name, iconSrc);
+      page.setLayout(new qx.ui.layout.VBox(10).set({
+        spacing: 10,
+        alignX: "center"
+      }));
+
+      // title
+      page.add(new qx.ui.basic.Label("<h3>" + name + " Settings</h3>").set({
+        rich: true
+      }));
+
+      // spacer
+      page.add(new qx.ui.core.Spacer(null, 10)); // TODO add decorator?
+      return page;
     },
 
-    members: {
-        _data: null,
+    __getGeneral: function() {
+      const iconUrl = qxapp.utils.Placeholders.getIcon("ion-ios-settings", 32);
+      let page = this.__createPage("General", iconUrl);
 
-        __createPage: function (name, iconSrc = null) {
-            let page = new qx.ui.tabview.Page(name, iconSrc);
-            page.setLayout(new qx.ui.layout.VBox(10).set({
-                spacing: 10,
-                alignX: "center"
-            }));
+      // content
+      let username = new qx.ui.form.TextField().set({
+        value: "bizzi",
+        placeholder: "User Name"
+      });
+      page.add(username);
 
-            //title
-            page.add(new qx.ui.basic.Label("<h3>" + name + " Settings</h3>").set({
-                rich: true
-            }));
+      let fullname = new qx.ui.form.TextField().set({
+        placeholder: "Full Name"
+      });
 
-            // spacer
-            page.add(new qx.ui.core.Spacer(null, 10)); // TODO add decorator?
-            return page;
-        },
+      page.add(fullname);
 
-        __getGeneral: function () {
-            const iconUrl = qxapp.utils.Placeholders.getIcon("ion-ios-settings", 32);
-            let page = this.__createPage("General", iconUrl);
+      let email = new qx.ui.form.TextField().set({
+        placeholder: "Email"
+      });
+      page.add(email);
 
-            // content
-            let username = new qx.ui.form.TextField().set({
-                value: "bizzi",
-                placeholder: "User Name"
-            })
-            page.add(username);
+      // const url = qxapp.utils.Placeholders.getIcon("fa-user", 200);
+      let img = new qx.ui.basic.Image().set({
+        source: qxapp.utils.Placeholders.getGravatar(email.getValue() || "bizzi@simcore.io", 200)
+      });
+      page.add(img);
 
-            let fullname = new qx.ui.form.TextField().set({
-                placeholder: "Full Name"
-            });
+      return page;
+    },
 
-            page.add(fullname);
+    __getSecurity: function() {
+      const iconUrl = qxapp.utils.Placeholders.getIcon("fa-lock", 32);
+      let page = this.__createPage("Security", iconUrl);
 
-            let email = new qx.ui.form.TextField().set({
-                placeholder: "Email",
-            });
-            page.add(email);
+      // content
+      page.add(new qx.ui.form.PasswordField().set({
+        placeholder: "Password"
+      }));
 
-            // const url = qxapp.utils.Placeholders.getIcon("fa-user", 200);
-            let img = new qx.ui.basic.Image().set({
-                source: qxapp.utils.Placeholders.getGravatar(email.getValue() || "bizzi@simcore.io", 200)
-            });
-            page.add(img);
+      page.add(new qx.ui.form.PasswordField().set({
+        placeholder: "Re-type Password"
+      }));
 
-            return page;
-        },
+      page.add(new qx.ui.basic.Atom("<h3>DAT-CORE</h3>").set({
+        rich: true
+      }));
 
-        __getSecurity: function () {
-            const iconUrl = qxapp.utils.Placeholders.getIcon("fa-lock", 32);
-            let page = this.__createPage("Security", iconUrl);
+      let tokens = new qx.ui.form.TextField();
+      tokens.set({
+        placeholder: "Personal Access Token"
+      });
+      page.add(tokens);
 
-            // content
-            page.add(new qx.ui.form.PasswordField().set({
-                placeholder: "Password"
-            }));
+      return page;
+    },
 
-            page.add( new qx.ui.form.PasswordField().set({
-                placeholder: "Re-type Password"
-            }) );
+    __getDisplay: function() {
+      const iconUrl = qxapp.utils.Placeholders.getIcon("fa-eye", 32);
+      let page = this.__createPage("Display", iconUrl);
 
-            page.add(new qx.ui.basic.Atom("<h3>DAT-CORE</h3>").set({
-                rich: true
-            }));
+      return page;
+    },
 
-            let tokens = new qx.ui.form.TextField();
-            tokens.set({
-                placeholder: "Personal Access Token"
-            })
-            page.add(tokens);
+    __getAdvanced: function() {
+      const iconUrl = qxapp.utils.Placeholders.getIcon("fa-rebel", 32);
+      let page = this.__createPage("Advanced", iconUrl);
 
-            return page;
-        },
-
-        __getDisplay: function () {
-            const iconUrl = qxapp.utils.Placeholders.getIcon("fa-eye", 32);
-            let page = this.__createPage("Display", iconUrl);
-
-            return page;
-        },
-
-        __getAdvanced: function () {
-            const iconUrl = qxapp.utils.Placeholders.getIcon("fa-rebel", 32);
-            let page = this.__createPage("Advanced", iconUrl);
-
-            return page;
-        }
+      return page;
     }
+  }
 
 });

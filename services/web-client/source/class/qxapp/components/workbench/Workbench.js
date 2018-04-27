@@ -5,6 +5,7 @@
 
 /* global qxapp */
 /* eslint new-cap: [2, {capIsNewExceptions: ["Set"]}] */
+/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.components.workbench.Workbench", {
   extend: qx.ui.container.Composite,

@@ -1,7 +1,9 @@
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.layout.NavigationBar", {
   extend: qx.ui.container.Composite,
 
-  construct: function () {
+  construct: function() {
     this.base(arguments, new qx.ui.layout.HBox());
 
     this.set({
@@ -13,14 +15,14 @@ qx.Class.define("qxapp.layout.NavigationBar", {
     });
     this.getLayout().set({
       spacing: 10,
-      alignY: "middle",
+      alignY: "middle"
     });
 
     const commonBtnSettings = {
       allowGrowY: false,
       minWidth: 32,
-      minHeight: 32,
-    }
+      minHeight: 32
+    };
 
     let homeBtn = new qx.ui.form.Button();
     homeBtn.set(commonBtnSettings);
@@ -28,7 +30,7 @@ qx.Class.define("qxapp.layout.NavigationBar", {
     this.add(homeBtn);
 
     this._currentState = new qx.ui.basic.Label().set({
-      minWidth: 20,
+      minWidth: 20
     });
     this.add(this._currentState);
 
@@ -37,11 +39,11 @@ qx.Class.define("qxapp.layout.NavigationBar", {
     });
 
     let userLbl = new qx.ui.basic.Label("@bizzi").set({
-      minWidth: 20,
+      minWidth: 20
     });
     this.add(userLbl);
 
-    let userBtn = this.__createUserBtn()
+    let userBtn = this.__createUserBtn();
     userBtn.set(commonBtnSettings);
     userBtn.setIcon(qxapp.utils.Placeholders.getGravatar("bizzi@simcore.io", 32));
     this.add(userBtn);
@@ -49,10 +51,9 @@ qx.Class.define("qxapp.layout.NavigationBar", {
 
     // Connect listeners
     let scope = this;
-    homeBtn.addListener("execute", function () {
+    homeBtn.addListener("execute", function() {
       scope.fireEvent("HomePressed");
     }, scope);
-
   },
 
   events: {
@@ -61,11 +62,11 @@ qx.Class.define("qxapp.layout.NavigationBar", {
 
   members: {
 
-    setCurrentStatus: function (newLabel) {
+    setCurrentStatus: function(newLabel) {
       this._currentState.setValue("Showing: " + newLabel);
     },
 
-    __createUserBtn: function () {
+    __createUserBtn: function() {
       var menu = new qx.ui.menu.Menu();
 
       // Account Settings
@@ -96,7 +97,7 @@ qx.Class.define("qxapp.layout.NavigationBar", {
       return button;
     },
 
-    __onOpenAccountSettings: function () {
+    __onOpenAccountSettings: function() {
       if (!this.__preferencesWin) {
         this.__preferencesWin = new qxapp.Preferences();
       }

@@ -4,7 +4,7 @@
  * TODO: Use faker https://scotch.io/tutorials/generate-fake-data-for-your-javascript-applications-using-faker
  */
 qx.Class.define("qxapp.data.Fake", {
-  type: 'static',
+  type: "static",
 
   statics: {
 
@@ -21,7 +21,7 @@ qx.Class.define("qxapp.data.Fake", {
     /**
      * Returns a qx array with projects associated to a user
      */
-    getUserProjects: function (count = 3, username = "bizzy") {
+    getUserProjects: function(count = 3, username = "bizzy") {
       let rawData = [];
 
       for (var i = 0; i < count; i++) {

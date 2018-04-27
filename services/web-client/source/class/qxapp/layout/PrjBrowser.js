@@ -1,7 +1,9 @@
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.layout.PrjBrowser", {
   extend: qx.ui.container.Composite,
 
-  construct: function () {
+  construct: function() {
     this.base(arguments, new qx.ui.layout.VBox());
 
     // layout
@@ -16,19 +18,18 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
 
     // controller
 
-    let prjCtr = this.__controller = new qx.data.controller.List(qxapp.layout.PrjBrowser.getFakeModel(), prjLst, 'name');
+    let prjCtr = this.__controller = new qx.data.controller.List(qxapp.layout.PrjBrowser.getFakeModel(), prjLst, "name");
     this.__setDelegate(prjCtr);
     // FIXME: selection does not work if model is not passed in the constructor!!!!
-    //prjCtr.setModel();
+    // prjCtr.setModel();
 
     // Monitors change in selection
-    prjCtr.getSelection().addListener("change", function (e) {
+    prjCtr.getSelection().addListener("change", function(e) {
       console.debug("Selected", this.__controller.getSelection());
 
       const selectedItem = e.getTarget().toArray()[0];
       this.fireDataEvent("StartPrj", selectedItem.getName());
     }, this);
-
   },
 
   events: {
@@ -42,11 +43,10 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
     /**
      * Delegates apperance and binding of each project item
      */
-    __setDelegate: function (projectController) {
-
+    __setDelegate: function(projectController) {
       let delegate = {
         // Item's Layout
-        configureItem: function (item) {
+        configureItem: function(item) {
           item.set({
             iconPosition: "top",
             gap: 0,
@@ -56,14 +56,14 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
           });
         },
         // Item's data binding
-        bindItem: function (controler, item, id) {
+        bindItem: function(controler, item, id) {
           controler.bindProperty("name", "label", {
-            converter: function (data, model, source, target) {
+            converter: function(data, model, source, target) {
               return "<b>" + data + "</b>"; // + model.getDescription();
             }
           }, item, id);
           controler.bindProperty("thumbnail", "icon", {
-            converter: function (data) {
+            converter: function(data) {
               return data === null ? "http://via.placeholder.com/171x96" : data;
             }
           }, item, id);
@@ -71,7 +71,7 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
       };
 
       projectController.setDelegate(delegate);
-    },
+    }
 
   }, // members
 
@@ -80,7 +80,7 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
     /**
      * Mockup data
      */
-    getFakeModel: function () {
+    getFakeModel: function() {
       let data = qxapp.data.Fake.getUserProjects(3, "bizzy");
       data.insertAt(0, qxapp.data.Fake.NEW_PROJECT_DESCRIPTOR);
       return data;

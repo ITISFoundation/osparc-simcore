@@ -1,9 +1,11 @@
 /* global qxapp */
 
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.login.Login", {
   extend: qx.ui.container.Composite,
 
-  construct: function () {
+  construct: function() {
     this.base(arguments, new qx.ui.layout.HBox(30));
 
     // standard login. i.e. using app database
@@ -20,7 +22,7 @@ qx.Class.define("qxapp.login.Login", {
     this.add(externalLogin);
 
     // TODO: check how to bypass child events to parent
-    platformLogin.addListener("login", function (e) {
+    platformLogin.addListener("login", function(e) {
       this.fireDataEvent("login", e.getData());
     }, this);
   },
@@ -31,31 +33,31 @@ qx.Class.define("qxapp.login.Login", {
 
   members: {
 
-    __createExternalLogin: function () {
+    __createExternalLogin: function() {
       /**
        * For demo purposes
        */
       let layout = new qx.ui.layout.VBox(10).set({
         alignY: "middle"
-      })
+      });
       let loginGroup = new qx.ui.container.Composite(layout);
 
       let loginOpenId = new qx.ui.form.Button().set({
-        label: "Continue with openID",
+        label: "Continue with openID"
         // FIXME: icon size
-        //icon: "https://upload.wikimedia.org/wikipedia/commons/8/88/Openid.svg",
+        // icon: "https://upload.wikimedia.org/wikipedia/commons/8/88/Openid.svg",
       });
       loginGroup.add(loginOpenId);
 
       let loginNIH = new qx.ui.form.Button().set({
-        label: "Continue with NIH",
+        label: "Continue with NIH"
         // FIXME: icon size
-        //icon: "qxapp/nih-419.png",
+        // icon: "qxapp/nih-419.png",
       });
       loginGroup.add(loginNIH);
 
       // Connect dummy
-      loginOpenId.addListener("execute", function () {
+      loginOpenId.addListener("execute", function() {
         const img = "https://upload.wikimedia.org/wikipedia/commons/8/88/Openid.svg";
 
         let win = new qx.ui.window.Window("External Login");
@@ -65,7 +67,7 @@ qx.Class.define("qxapp.login.Login", {
         win.open();
       });
 
-      loginNIH.addListener("execute", function () {
+      loginNIH.addListener("execute", function() {
         const img = "qxapp/nih-419.png";
 
         let win = new qx.ui.window.Window("External Login");
@@ -76,6 +78,6 @@ qx.Class.define("qxapp.login.Login", {
       });
 
       return loginGroup;
-    },
+    }
   }
 });

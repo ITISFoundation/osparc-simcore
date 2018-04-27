@@ -15,6 +15,7 @@
  */
 
 /* global qxapp */
+/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.Application", {
   extend: qx.application.Standalone,
@@ -70,17 +71,19 @@ qx.Class.define("qxapp.Application", {
       login.addListener("login", function(e) {
         // FIXME: For the moment, password is not checked
         // if (e.getData() === true) {
-          this._layoutManager = new qxapp.layout.LayoutManager();
-          doc.remove(login);
-          doc.add(this._layoutManager);
+        this._layoutManager = new qxapp.layout.LayoutManager();
+        doc.remove(login);
+        doc.add(this._layoutManager);
         // }
       });
 
-      doc.set({backgroundColor: "dark-blue"});
+      doc.set({
+        backgroundColor: "dark-blue"
+      });
       doc.add(login, {
         left: "10%",
         top: "10%",
-        height: "30%",
+        height: "30%"
       });
     }
   }

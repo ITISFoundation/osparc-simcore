@@ -6,6 +6,9 @@
  *    - Some decoration
  *
  */
+
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.login.Standard", {
 
   extend: qx.ui.container.Composite,
@@ -15,7 +18,7 @@ qx.Class.define("qxapp.login.Standard", {
      CONSTRUCTOR
   *****************************************************************************
   */
-  construct: function () {
+  construct: function() {
     this.base(arguments);
 
     let header = this.__createHeader();
@@ -41,55 +44,56 @@ qx.Class.define("qxapp.login.Standard", {
     __token: null,
     __info: null,
 
-    __createHeader: function () {
-      const isDev = qx.core.Environment.get("qx.debug") ? true : false;
+    __createHeader: function() {
+      // const isDev = Boolean(qx.core.Environment.get("qx.debug"));
 
       // TODO: bind label and icon to this property
 
       let header = new qx.ui.basic.Atom().set({
         icon: "qxapp/itis-white.png",
-        iconPosition: "top",
+        iconPosition: "top"
       });
 
       return header;
     },
 
-    __createLayout: function (header, login, footer) {
+    __createLayout: function(header, login, footer) {
       // http://www.qooxdoo.org/5.0.2/pages/desktop/ui_layouting.html
       // http://www.qooxdoo.org/5.0.2/pages/layout.html
       // http://www.qooxdoo.org/5.0.2/pages/layout/box.html
       // http://www.qooxdoo.org/5.0.2/demobrowser/#layout~VBox.html
 
-      const isDev = qx.core.Environment.get("qx.debug") ? true : false;
+      // const isDev = Boolean(qx.core.Environment.get("qx.debug"));
 
       // LayoutItem
       this.set({
-        padding: 10,
+        padding: 10
       });
 
       this.setLayoutProperties({
         allowGrowY: false
       });
 
+      /*
       login.set({
-        //backgroundColor: isDev ? "red" : null,
+        // backgroundColor: isDev ? "red" : null,
         // width: 100 // TODO: themed?
       });
 
       // Set buttom wider
       login.getLayout().set({
-        //spacingY: 10 // TODO: themed?
+        // spacingY: 10 // TODO: themed?
       });
 
       footer.set({
         // backgroundColor: isDev ? "blue" : null
       });
-
+      */
 
       // Children's layout management
       let layout = new qx.ui.layout.VBox().set({
         alignY: "middle",
-        spacing: 20, // TODO: themed?
+        spacing: 20 // TODO: themed?
       });
       this.setLayout(layout);
 
@@ -103,7 +107,7 @@ qx.Class.define("qxapp.login.Standard", {
       // this.add(footer);
     },
 
-    __onSubmitLogin: function (e) {
+    __onSubmitLogin: function(e) {
       // this is user's input
       var loginData = e.getData();
 
@@ -114,12 +118,12 @@ qx.Class.define("qxapp.login.Standard", {
       // TODO: encapsulate entire request in separate class
       // let req = new qxapp.io.request.Login(loginData());
 
-      //let serializer = function (object) {
+      // let serializer = function (object) {
       //  if (object instanceof qx.ui.form.ListItem) {
       //    return object.getLabel();
       //  }
-      //};
-      //console.debug("You are sending: " +
+      // };
+      // console.debug("You are sending: " +
       //  qx.util.Serializer.toUriParameter(model, serializer));
 
       // Requests authentication to server
@@ -138,7 +142,7 @@ qx.Class.define("qxapp.login.Standard", {
       req.send();
     },
 
-    __onLoginSucceed: function (e) {
+    __onLoginSucceed: function(e) {
       let _req = e.getTarget();
       console.debug("Everything went fine!!");
       console.debug("status  :", _req.getStatus());
@@ -155,7 +159,7 @@ qx.Class.define("qxapp.login.Standard", {
       this.fireDataEvent("login", true);
     },
 
-    __onLoginFailed: function (e) {
+    __onLoginFailed: function(e) {
       // Display error page!
       let _req = e.getTarget();
       console.debug("Something went wrong!!");
@@ -165,7 +169,7 @@ qx.Class.define("qxapp.login.Standard", {
 
       // TODO: invalidate form view and flash error!
       this.fireDataEvent("login", false);
-    },
+    }
 
   },
 
@@ -176,6 +180,6 @@ qx.Class.define("qxapp.login.Standard", {
   */
   events: {
     "login": "qx.event.type.Data"
-  },
+  }
 
 });
