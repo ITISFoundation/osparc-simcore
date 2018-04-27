@@ -23,4 +23,4 @@ LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 8888}
 
 # TODO san: this is probably not wise
 # starts notebook without token
-CMD [ "start-notebook.sh", "--NotebookApp.token=''" ]
+CMD [ "start-notebook.sh", "--NotebookApp.token=''", "--NotebookApp.tornado_settings={\"headers\":{\"Content-Security-Policy\":\"frame-ancestors+'self'+http://osparc01.speag.com:9081;+report-uri/api/security/csp-report\"}}" ]
