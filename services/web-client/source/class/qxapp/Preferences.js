@@ -122,7 +122,7 @@ qx.Class.define("qxapp.Preferences", {
 
       let themeMgr = qx.theme.manager.Meta.getInstance();
       let currentTheme = themeMgr.getTheme();
-      let currentThemeItem;
+
 
       for (let key in themes) {
         let theme = themes[key];
@@ -130,17 +130,17 @@ qx.Class.define("qxapp.Preferences", {
           let item = new qx.ui.form.ListItem(theme.name);
           item.setUserData("theme", theme.name);
           select.add(item);
-          if (theme.name == currentTheme.name){
+          if (theme.name == currentTheme.name) {
             select.setSelection([item]);
           }
         }
       }
 
-      select.addListener("changeSelection", function (evt) {
+      select.addListener("changeSelection", function(evt) {
         var selected = evt.getData()[0].getUserData("theme");
         var theme = qx.Theme.getByName(selected);
         if (theme) {
-            themeMgr.setTheme(theme);
+          themeMgr.setTheme(theme);
         }
       });
       return page;
