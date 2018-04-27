@@ -1,25 +1,34 @@
 qx.Class.define("qxapp.layout.PrjBrowser", {
   extend: qx.ui.container.Composite,
 
-  construct: function() {
-    this.base();
+  construct: function () {
+    this.base(arguments, new qx.ui.layout.VBox());
 
-    this.set({
-      layout: new qx.ui.layout.VBox()
+    // layout
+    let prjLst = this.__list = new qx.ui.form.List();
+    prjLst.set({
+      orientation: "horizontal",
+      spacing: 0,
+      allowGrowY: false
     });
 
-    this._PrjTemplateList = this._getPrjTemplateList();
-    this._PrjTemplateList.setHeight(200);
-    this.add(this._PrjTemplateList);
+    this.add(prjLst);
 
-    this._PrjUserList = this._getPrjUserList();
-    this.add(this._PrjUserList, {
-      flex: 1
-    });
+    // controller
 
-    this._PrjInfoViewer = this._getPrjInfoViewer();
-    this._PrjInfoViewer.setHeight(300);
-    this.add(this._PrjInfoViewer);
+    let prjCtr = this.__controller = new qx.data.controller.List(qxapp.layout.PrjBrowser.getFakeModel(), prjLst, 'name');
+    this.__setDelegate(prjCtr);
+    // FIXME: selection does not work if model is not passed in the constructor!!!!
+    //prjCtr.setModel();
+
+    // Monitors change in selection
+    prjCtr.getSelection().addListener("change", function (e) {
+      console.debug("Selected", this.__controller.getSelection());
+
+      const selectedItem = e.getTarget().toArray()[0];
+      this.fireDataEvent("StartPrj", selectedItem.getName());
+    }, this);
+
   },
 
   events: {
@@ -27,66 +36,55 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
   },
 
   members: {
-    _PrjTemplateList: null,
-    _PrjUserList: null,
-    _PrjInfoViewer: null,
+    __controller: null,
+    __list: null,
 
-    _getPrjTemplateList: function() {
-      let comp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      comp.set({
-        backgroundColor: "red",
-        padding: 10
-      });
+    /**
+     * Delegates apperance and binding of each project item
+     */
+    __setDelegate: function (projectController) {
 
-      let tempPrjs = ["Temp1", "Temp2"];
-      for (let i = 0; i < tempPrjs.length; i++) {
-        let button = this._createStartPrjBtn(tempPrjs[i]);
-        comp.add(button);
-      }
+      let delegate = {
+        // Item's Layout
+        configureItem: function (item) {
+          item.set({
+            iconPosition: "top",
+            gap: 0,
+            rich: true,
+            allowGrowY: false,
+            maxWidth: 200
+          });
+        },
+        // Item's data binding
+        bindItem: function (controler, item, id) {
+          controler.bindProperty("name", "label", {
+            converter: function (data, model, source, target) {
+              return "<b>" + data + "</b>"; // + model.getDescription();
+            }
+          }, item, id);
+          controler.bindProperty("thumbnail", "icon", {
+            converter: function (data) {
+              return data === null ? "http://via.placeholder.com/171x96" : data;
+            }
+          }, item, id);
+        }
+      };
 
-      return comp;
+      projectController.setDelegate(delegate);
     },
 
-    _getPrjUserList: function() {
-      let comp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      comp.set({
-        backgroundColor: "black",
-        padding: 10
-      });
+  }, // members
 
-      let userPrjs = ["User1", "User2"];
-      for (let i = 0; i < userPrjs.length; i++) {
-        let button = this._createStartPrjBtn(userPrjs[i]);
-        comp.add(button);
-      }
+  statics: {
 
-      return comp;
-    },
-
-    _getPrjInfoViewer: function() {
-      let comp = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      comp.set({
-        backgroundColor: "purple",
-        padding: 10
-      });
-      return comp;
-    },
-
-    _createStartPrjBtn: function(info) {
-      let button = new qx.ui.form.Button(info);
-      button.set({
-        maxWidth: 100,
-        minWidth: 100,
-        maxHeight: 100,
-        alignY:"middle"
-      });
-
-      let scope = this;
-      button.addListener("execute", function() {
-        scope.fireDataEvent("StartPrj", info);
-      }, scope);
-
-      return button;
+    /**
+     * Mockup data
+     */
+    getFakeModel: function () {
+      let data = qxapp.data.Fake.getUserProjects(3, "bizzy");
+      data.insertAt(0, qxapp.data.Fake.NEW_PROJECT_DESCRIPTOR);
+      return data;
     }
-  }
+
+  } // statics
 });

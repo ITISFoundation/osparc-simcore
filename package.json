@@ -2,5 +2,10 @@
   "scripts": {
     "lintJsServices": "eslint ./services",
     "lintPyServices": "pylint ./services"
+  },
+  "devDependencies": {
+    "babel-eslint": "^8.2.3",
+    "eslint-config-qx": "^0.1.0",
+    "eslint-plugin-qx-rules": "^0.1.0"
   }
 }

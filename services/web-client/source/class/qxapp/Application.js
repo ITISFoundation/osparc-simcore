@@ -66,19 +66,22 @@ qx.Class.define("qxapp.Application", {
       this._socket = qxapp.wrappers.WebSocket.getInstance();
       this._socket.connect();
 
-      let loginWin = new qxapp.login.Login();
-      loginWin.addListener("Login", function(e) {
-        if (e.getData() === true) {
+      let login = new qxapp.login.Login();
+      login.addListener("login", function(e) {
+        // FIXME: For the moment, password is not checked
+        // if (e.getData() === true) {
           this._layoutManager = new qxapp.layout.LayoutManager();
+          doc.remove(login);
           doc.add(this._layoutManager);
-        }
+        // }
       });
 
-      this.getRoot().add(loginWin, {
-        left:400,
-        top:400
+      doc.set({backgroundColor: "dark-blue"});
+      doc.add(login, {
+        left: "10%",
+        top: "10%",
+        height: "30%",
       });
-      loginWin.open();
     }
   }
 });

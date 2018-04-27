@@ -75,6 +75,8 @@ qx.Class.define("qxapp.layout.LayoutManager", {
       let prjStack = new qx.ui.container.Stack();
 
       let prjBrowser = new qxapp.layout.PrjBrowser();
+
+
       let scope = this;
       prjBrowser.addListener("StartPrj", function(e) {
         console.log(e.getData());

@@ -1,41 +1,81 @@
 /* global qxapp */
 
 qx.Class.define("qxapp.login.Login", {
-  extend: qx.ui.window.Window,
+  extend: qx.ui.container.Composite,
 
-  construct: function() {
-    this.base();
+  construct: function () {
+    this.base(arguments, new qx.ui.layout.HBox(30));
 
-    this.setCaption("Login");
-    this.setShowMinimize(false);
-    this.setShowMaximize(false);
-    this.setShowClose(false);
+    // standard login. i.e. using app database
+    let platformLogin = new qxapp.login.Standard();
+    this.add(platformLogin, {
+      width: "60%"
+    });
 
-    this.setLayout(new qx.ui.layout.VBox());
+    // login could offer different types. eg. standard, NIH, lDAP ...
+    // or other third parties. Each login can be added as a different
+    // widget. Can be e.g. implemented as a Tabview as in gitlab or
+    // with buttons on the side as in wix
+    let externalLogin = this.__createExternalLogin();
+    this.add(externalLogin);
 
-    let form = new qx.ui.form.Form();
-    let userName = new qx.ui.form.TextField();
-    // userName.setRequired(true);
-    form.add(userName, "Name");
-    let password = new qx.ui.form.PasswordField();
-    // password.setRequired(true);
-    form.add(password, "Password");
-    let sendButton = new qx.ui.form.Button("Login");
-    let scope = this;
-    sendButton.addListener("execute", function() {
-      if (form.validate()) {
-        if (qxapp.utils.Utils.inHouse(form.getGroups()[0].items[1].getValue())) {
-          this.fireDataEvent("Login", true);
-          this.close();
-        }
-      }
-    }, scope);
-    form.addButton(sendButton);
-
-    this.add(new qx.ui.form.renderer.Single(form));
+    // TODO: check how to bypass child events to parent
+    platformLogin.addListener("login", function (e) {
+      this.fireDataEvent("login", e.getData());
+    }, this);
   },
 
   events: {
-    "Login": "qx.event.type.Event"
+    "login": "qx.event.type.Data"
+  },
+
+  members: {
+
+    __createExternalLogin: function () {
+      /**
+       * For demo purposes
+       */
+      let layout = new qx.ui.layout.VBox(10).set({
+        alignY: "middle"
+      })
+      let loginGroup = new qx.ui.container.Composite(layout);
+
+      let loginOpenId = new qx.ui.form.Button().set({
+        label: "Continue with openID",
+        // FIXME: icon size
+        //icon: "https://upload.wikimedia.org/wikipedia/commons/8/88/Openid.svg",
+      });
+      loginGroup.add(loginOpenId);
+
+      let loginNIH = new qx.ui.form.Button().set({
+        label: "Continue with NIH",
+        // FIXME: icon size
+        //icon: "qxapp/nih-419.png",
+      });
+      loginGroup.add(loginNIH);
+
+      // Connect dummy
+      loginOpenId.addListener("execute", function () {
+        const img = "https://upload.wikimedia.org/wikipedia/commons/8/88/Openid.svg";
+
+        let win = new qx.ui.window.Window("External Login");
+        win.setLayout(new qx.ui.layout.Basic());
+        win.setModal(true);
+        win.add(new qx.ui.basic.Image(img));
+        win.open();
+      });
+
+      loginNIH.addListener("execute", function () {
+        const img = "qxapp/nih-419.png";
+
+        let win = new qx.ui.window.Window("External Login");
+        win.setLayout(new qx.ui.layout.Basic());
+        win.setModal(true);
+        win.add(new qx.ui.basic.Image(img));
+        win.open();
+      });
+
+      return loginGroup;
+    },
   }
 });
