@@ -145,8 +145,20 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let nodeBase = new qxapp.components.workbench.NodeBase(node);
       this._addNodeToWorkbench(nodeBase);
 
-      if (nodeBase.getNodeImageId() === "modeler" && nodeBase.getNodeType() === 0) {
+      if (nodeBase.getNodeImageId() === "modeler") {
         const slotName = "startModeler";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        if (!socket.slotExists(slotName)) {
+          socket.on(slotName, function(val) {
+            if (val["service_uuid"] === nodeBase.getNodeId()) {
+              let portNumber = val["containers"][0]["published_ports"];
+              nodeBase.getMetaData().viewer.port = portNumber;
+            }
+          }, this);
+        }
+        socket.emit(slotName, nodeBase.getNodeId());
+      } else if (nodeBase.getNodeImageId() === "jupyter-base-notebook") {
+        const slotName = "startJupyter";
         let socket = qxapp.wrappers.WebSocket.getInstance();
         if (!socket.slotExists(slotName)) {
           socket.on(slotName, function(val) {
@@ -500,15 +512,19 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     _getAnalyses: function() {
       const analyses = [{
-        "id": "Analysis1",
-        "name": "Analysis 1",
+        "id": "jupyter-base-notebook",
+        "name": "Jupyter",
         "input": [{
           "name": "Number",
           "type": "number",
           "value": ""
         }],
         "output": [],
-        "settings": []
+        "settings": [],
+        "viewer": {
+          "ip": "http://osparc01.speag.com",
+          "port": null
+        }
       },
       {
         "id": "Analysis2",

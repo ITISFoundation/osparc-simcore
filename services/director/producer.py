@@ -2,10 +2,11 @@ import os
 import registry_proxy
 import json
 import docker
+import time
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
 
-def IsServiceAWebServer(dockerImagePath):    
+def IsServiceAWebServer(dockerImagePath):
     return str(dockerImagePath).find('webserver') != -1
 
 def login_docker_registry(dockerClient):
@@ -14,7 +15,7 @@ def login_docker_registry(dockerClient):
         registry_url = os.environ.get('REGISTRY_URL')
         username = os.environ.get('REGISTRY_USER')
         password = os.environ.get('REGISTRY_PW')
-        dockerClient.login(registry=registry_url + '/v2', username=username, password=password)        
+        dockerClient.login(registry=registry_url + '/v2', username=username, password=password)
     except docker.errors.APIError as e:
         raise Exception('Error while loging to registry: ' + str(e))
 
@@ -25,7 +26,7 @@ def check_service_uuid_available(dockerClient, service_uuid):
         raise Exception('A service with the same uuid is already running: ' + service_uuid)
 
 def get_service_runtime_parameters_labels(image, tag):
-    image_labels = registry_proxy.retrieve_labels_of_image(image, tag)    
+    image_labels = registry_proxy.retrieve_labels_of_image(image, tag)
     runtime_parameters = dict()
     if SERVICE_RUNTIME_SETTINGS in image_labels:
         runtime_parameters = json.loads(image_labels[SERVICE_RUNTIME_SETTINGS])
@@ -101,6 +102,24 @@ def remove_overlay_network_of_swarm(docker_client, service_uuid):
     except docker.errors.APIError as e:
         raise Exception("docker server error while removing networks for service with uuid " + service_uuid)
 
+def wait_until_service_running_or_failed(service_id):
+    client = docker.APIClient()
+
+    # some times one has to wait until the task info is filled
+    while True:
+        task_infos_json = client.tasks(filters={'service':service_id})
+        if len(task_infos_json) > 0:
+            # check the status
+            status_json = task_infos_json[0]["Status"]
+            task_state = status_json["State"]
+            if task_state == "running":
+                # great it is running
+                break
+            elif task_state == 'failed' or task_state == "rejected":
+                # error
+                raise Exception("the service could not be started")
+        time.sleep(0.005) # 5ms
+
 def start_service(service_name, service_tag, service_uuid):
     # find the ones containing the service name
     listOfReposForService = registry_proxy.retrieve_list_of_interactive_services_with_name(service_name)
@@ -108,12 +127,12 @@ def start_service(service_name, service_tag, service_uuid):
     listOfImages = {}
     for repo in listOfReposForService:
         listOfImages[repo] = registry_proxy.retrieve_list_of_images_in_repo(repo)
-    
+
     # initialise docker client and check the uuid is available
     dockerClient = docker.from_env()
     check_service_uuid_available(dockerClient, service_uuid)
     login_docker_registry(dockerClient)
-    
+
     # create a new network to connect the differnt containers
     docker_network = create_overlay_network_in_swarm(dockerClient, service_name, service_uuid)
     # create services
@@ -126,28 +145,29 @@ def start_service(service_name, service_tag, service_uuid):
         tag = availableTagsList[len(availableTagsList)-1]
         if not service_tag == 'latest' and availableTagsList.count(service_tag) == 1:
             tag = service_tag
-        
+
         dockerImageFullPath = os.environ.get('REGISTRY_URL') +'/' + dockerImagePath + ':' + tag
-        
+
         # prepare runtime parameters
         service_runtime_parameters_labels = get_service_runtime_parameters_labels(dockerImagePath, tag)
         docker_service_runtime_parameters = convert_labels_to_docker_runtime_parameters(service_runtime_parameters_labels, service_uuid)
-        add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)        
+        add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
         add_network_to_service_runtime_params(docker_service_runtime_parameters, docker_network)
         set_service_name(docker_service_runtime_parameters, registry_proxy.get_service_sub_name(dockerImagePath), service_uuid)
         # let-s start the service
-        try:            
+        try:
             service = dockerClient.services.create(dockerImageFullPath, **docker_service_runtime_parameters)
+            wait_until_service_running_or_failed(service.id)
             published_ports = get_docker_image_published_ports(service.id)
             container_meta_data = {"container_id":service.id, "published_ports":published_ports}
-            containers_meta_data.append(container_meta_data)               
+            containers_meta_data.append(container_meta_data)
         except docker.errors.ImageNotFound as e:
             # first cleanup
             stop_service(service_uuid)
             raise Exception('Error service not found: ' + str(e))
         except docker.errors.APIError as e:
             # first cleanup
-            stop_service(service_uuid)            
+            stop_service(service_uuid)
             raise Exception('Error while accessing docker server: ' + str(e))
     service_meta_data = {"service_name":service_name, "service_uuid":service_uuid, "containers":containers_meta_data}
     return json.dumps(service_meta_data)
@@ -156,11 +176,10 @@ def stop_service(service_uuid):
     # get the docker client
     dockerClient = docker.from_env()
     login_docker_registry(dockerClient)
-    
-    try:        
+
+    try:
         listOfRunningServicesWithUUID = dockerClient.services.list(filters={'label':'uuid=' + service_uuid})
         [service.remove() for service in listOfRunningServicesWithUUID]
         remove_overlay_network_of_swarm(dockerClient, service_uuid)
     except docker.errors.APIError as e:
         raise Exception('Error while stopping container' + str(e))
-    
