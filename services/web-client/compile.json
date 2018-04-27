@@ -14,7 +14,7 @@
     }
   ],
   "defaultTarget": "source",
-  "locales": ["en", "de"],
+  "locales": [],
   "lint-check": true,
 
   "applications": [
@@ -49,7 +49,7 @@
       }
     ]
   },
-  
+
   "eslintConfig": {
     "parserOptions": {
       "ecmaVersion": 2017,
@@ -57,7 +57,7 @@
     },
     "globals": {
       "JSZip": false
-    }, 
+    },
     "extends": [
       "qx/browser"
     ]
