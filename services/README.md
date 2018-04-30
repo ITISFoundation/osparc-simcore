@@ -22,6 +22,14 @@ Workbench-backend is a first draft of the architecture that shall provide client
 To build the workbench-backend, the computer must be part of a swarm.
 
 ```!bash
+  cd /path/to/services
   docker swarm init
-  docker-compose up
+  docker-compose -f docker-compose-swarm.yml up
+```
+
+## Development Workflow
+
+```!bash
+  docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
+
 ```

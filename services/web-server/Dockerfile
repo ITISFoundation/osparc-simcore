@@ -1,6 +1,5 @@
-FROM node:8.9.2
-
-LABEL maintainer=pcrespov
+#FROM itisfoundation/qooxdoo-compiler:latest as qx-stage
+FROM node:8.9.2 as qx-stage
 
 ENV NPM_CONFIG_LOGLEVEL warn
 
@@ -9,20 +8,23 @@ WORKDIR /home/node/
 RUN npm install qxcompiler
 ENV PATH="/home/node/node_modules/.bin/:${PATH}"
 
-WORKDIR /home/node/qxapp
-COPY web-client/source source
-COPY web-client/*.json ./
+WORKDIR /home/node/src
+
+# ---
+USER node
+
+# client's source code
+COPY --chown=node:node web-client/source source
+COPY --chown=node:node web-client/compile.json compile.json
+COPY --chown=node:node web-client/Manifest.json Manifest.json
 
 # Add dark theme to web-client
-RUN qx contrib update
-RUN qx contrib list
+RUN qx contrib update && qx contrib list
 RUN qx contrib install ITISFoundation/qx-osparc-theme
 RUN qx compile
 
-
-#------------------------------------------------------------------------
-
-FROM python:3
+# --------------------------
+FROM python:3 as production
 
 # Selects appropriate 'server-py-*/' folder
 ARG serverdir
@@ -33,7 +35,7 @@ ENV SIMCORE_WEB_OUTDIR=$web_outdir
 
 WORKDIR /usr/src/app
 
-COPY --from=0 /home/node/qxapp/source-output $web_outdir
+COPY --from=qx-stage /home/node/qxapp/source-output $web_outdir
 
 COPY $serverdir/requirements.txt requirements.txt
 
