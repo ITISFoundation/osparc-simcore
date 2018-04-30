@@ -2,8 +2,7 @@ version: '3'
 services:
   director:
     build:
-      context: .
-      dockerfile: _dockerfiles/director/Dockerfile
+      context: director
     ports:
       - '8001:8001'
     environment:
