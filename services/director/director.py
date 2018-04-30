@@ -46,8 +46,8 @@ def start_service():
     except Exception as e:
         logging.exception(e)
         abort(500)
-    
-    
+
+
 
 @app.route('/stop_service', methods=['POST'])
 def stop_service():
@@ -63,4 +63,4 @@ def stop_service():
         abort(500)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug=False, port=8001, threaded=True)
+  app.run(host='0.0.0.0', debug=False, port=8001, threaded=True)
