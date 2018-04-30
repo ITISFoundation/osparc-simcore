@@ -1,22 +1,10 @@
-version: '3'
+version: '3.4'
 services:
-  director-dev:
+  director:
     build:
-      context: director
-    ports:
-      - '8001:8001'
-    environment:
-    # on Windows follow http://www.computerperformance.co.uk/powershell/powershell_profile_ps1.htm
-    # currently needs to set $Env:COMPOSE_CONVERT_WINDOWS_PATHS=1 in powershell to make this works
-    # on a windows machine
-      - FLASK_DEBUG=1
-      - REGISTRY_URL=masu.speag.com
-      - REGISTRY_AUTH=True
-      - REGISTRY_USER=z43
-      - REGISTRY_PW=z43
+      target: development
     volumes:
       - './director:/home/app'
-      - '/var/run/docker.sock:/var/run/docker.sock'
   build-qx-dev:
     build:
       context: .

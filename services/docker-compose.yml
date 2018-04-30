@@ -1,8 +1,9 @@
-version: '3'
+version: '3.4'
 services:
   director:
     build:
-      context: director
+      context: ./director
+      target: production
     ports:
       - '8001:8001'
     environment:

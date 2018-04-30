@@ -1,4 +1,4 @@
-FROM python:3.6-alpine
+FROM python:3.6-alpine as common
 
 LABEL maintainer="Sylvain Anderegg"
 
@@ -20,17 +20,29 @@ ENV LOCAL_MODE='True'
 
 ENV FLASK_APP=director.py
 
-# TODO: in dev mode this is instead mounted from host
-COPY . /home/app
-RUN chmod +x boot.sh
-RUN chown -R app:app ./
-
-USER app
-
 VOLUME /var/run/docker.sock
 EXPOSE 8001
 
+# Development stage ---------------
+FROM common as development
+
+ENV FLASK_DEBUG=1
+
+COPY boot.sh boot.sh
+RUN chmod +x boot.sh
+
+USER app
+VOLUME /home/app
+
 ENTRYPOINT ["./boot.sh"]
 
-# TODO: warning this is a development server! use unicorn instead!
-# CMD [ "flask", "run", "--host=0.0.0.0", "--port=8001"]
+# Production stage -------------------
+FROM common as production
+
+COPY --chown=app:app . /home/app
+RUN chmod +x boot.sh
+#RUN chown -R app:app ./
+
+USER app
+
+ENTRYPOINT ["./boot.sh"]
