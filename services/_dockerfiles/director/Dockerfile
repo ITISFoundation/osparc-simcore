@@ -8,11 +8,12 @@ RUN pip install docker
 WORKDIR /home/app
 
 ENV FLASK_APP=director.py
+
 ENV REGISTRY_AUTH = ''
 ENV REGISTRY_USER = ''
 ENV REGISTRY_PW = ''
 ENV REGISTRY_URL = ''
-ENV LOCAL_MODE='True'
+
 EXPOSE 8001
 COPY /director /home/app
 
