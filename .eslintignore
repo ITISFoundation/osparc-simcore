@@ -1,3 +1,6 @@
 services/web-client/source/resource/
 services/web-client/contrib/
 services/web-client/source-output/
+services/modeling/source/resource/
+services/modeling/thrift/
+services/modeling/source-output/

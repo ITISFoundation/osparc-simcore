@@ -1,0 +1,41 @@
+{
+  "targets": [
+    {
+      "type": "source",
+      "outputPath": "source-output"
+    },
+    {
+      "type": "hybrid",
+      "outputPath": "hybrid-output"
+    },
+    {
+      "type": "build",
+      "outputPath": "build-output"
+    }
+  ],
+  "defaultTarget": "source",
+
+  "applications": [
+    {
+      "class": "qxapp.Application",
+      "theme": "qxapp.theme.Theme",
+      "name": "qxapp"
+    }
+  ],
+
+  "libraries": [
+    "../node_modules/qooxdoo-sdk/framework",
+    "."
+  ],
+
+  "common" : {
+    "add-script" : [
+      {
+        "uri" : "resource/socketio/socket.io.js"
+      },
+      {
+	    "uri" : "resource/three/*"
+      }
+    ]
+  }
+}
