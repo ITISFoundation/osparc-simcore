@@ -133,8 +133,9 @@ def start_service(service_name, service_tag, service_uuid):
     check_service_uuid_available(dockerClient, service_uuid)
     login_docker_registry(dockerClient)
 
-    # create a new network to connect the differnt containers
-    docker_network = create_overlay_network_in_swarm(dockerClient, service_name, service_uuid)
+    if len(listOfImages) > 1:
+      # create a new network to connect the differnt containers
+      docker_network = create_overlay_network_in_swarm(dockerClient, service_name, service_uuid)
     # create services
     containers_meta_data = list()
     for dockerImagePath in listOfImages:
@@ -152,7 +153,8 @@ def start_service(service_name, service_tag, service_uuid):
         service_runtime_parameters_labels = get_service_runtime_parameters_labels(dockerImagePath, tag)
         docker_service_runtime_parameters = convert_labels_to_docker_runtime_parameters(service_runtime_parameters_labels, service_uuid)
         add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
-        add_network_to_service_runtime_params(docker_service_runtime_parameters, docker_network)
+        if len(listOfImages) > 1:
+          add_network_to_service_runtime_params(docker_service_runtime_parameters, docker_network)
         set_service_name(docker_service_runtime_parameters, registry_proxy.get_service_sub_name(dockerImagePath), service_uuid)
         # let-s start the service
         try:
