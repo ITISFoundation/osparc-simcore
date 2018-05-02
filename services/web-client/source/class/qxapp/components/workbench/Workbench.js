@@ -353,7 +353,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     _getComputationals: function() {
       const computationals = [{
         "id": "ColleenClancy",
-        "name": "Colleen Clancy",
+        "name": "Colleen Clancy - dummy",
         "input": [
           {
             "name": "NaValue",
