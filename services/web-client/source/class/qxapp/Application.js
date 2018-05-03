@@ -60,7 +60,7 @@ qx.Class.define("qxapp.Application", {
       login.addListener("login", function(e) {
         // FIXME: For the moment, password is not checked
         // if (e.getData() === true) {
-        this.__layoutManager = new qxapp.layout.LayoutManager();
+        this.__layoutManager = new qxapp.desktop.LayoutManager();
         doc.remove(login);
         doc.add(this.__layoutManager);
         // }

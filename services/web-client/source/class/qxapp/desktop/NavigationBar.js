@@ -1,6 +1,6 @@
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.layout.NavigationBar", {
+qx.Class.define("qxapp.desktop.NavigationBar", {
   extend: qx.ui.container.Composite,
 
   construct: function() {

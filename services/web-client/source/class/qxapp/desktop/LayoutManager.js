@@ -2,7 +2,7 @@
 /* global window */
 /* global document */
 
-qx.Class.define("qxapp.layout.LayoutManager", {
+qx.Class.define("qxapp.desktop.LayoutManager", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
@@ -57,7 +57,7 @@ qx.Class.define("qxapp.layout.LayoutManager", {
     },
 
     _createNavigationBar: function() {
-      let navBar = new qxapp.layout.NavigationBar();
+      let navBar = new qxapp.desktop.NavigationBar();
 
       let scope = this;
       navBar.addListener("HomePressed", function() {
@@ -74,7 +74,7 @@ qx.Class.define("qxapp.layout.LayoutManager", {
     _getPrjStack: function() {
       let prjStack = new qx.ui.container.Stack();
 
-      let prjBrowser = new qxapp.layout.PrjBrowser();
+      let prjBrowser = new qxapp.desktop.PrjBrowser();
 
 
       let scope = this;
@@ -85,7 +85,7 @@ qx.Class.define("qxapp.layout.LayoutManager", {
       }, scope);
       prjStack.add(prjBrowser);
 
-      let prjEditor = new qxapp.layout.PrjEditor();
+      let prjEditor = new qxapp.desktop.PrjEditor();
       prjStack.add(prjEditor);
 
       return prjStack;
