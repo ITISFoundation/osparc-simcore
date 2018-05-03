@@ -56,7 +56,7 @@ qx.Class.define("qxapp.Application", {
       // openning web socket
       qxapp.wrappers.WebSocket.getInstance().connect();
 
-      let login = new qxapp.login.Login();
+      let login = new qxapp.components.login.Login();
       login.addListener("login", function(e) {
         // FIXME: For the moment, password is not checked
         // if (e.getData() === true) {
