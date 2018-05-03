@@ -11,8 +11,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
 
     this.set({
       layout: box,
-      padding: 10,
-      backgroundColor: "dark-blue" // It is defined in theme/Color
+      padding: 10
     });
 
     this._InitTitle();

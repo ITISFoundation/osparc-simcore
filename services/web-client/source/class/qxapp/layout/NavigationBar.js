@@ -7,8 +7,6 @@ qx.Class.define("qxapp.layout.NavigationBar", {
     this.base(arguments, new qx.ui.layout.HBox());
 
     this.set({
-      backgroundColor: "#00264d", // FIXME: add theme color
-      textColor: "white",
       paddingLeft: 10,
       paddingRight: 10,
       maxHeight: 50
