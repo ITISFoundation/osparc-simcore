@@ -14,5 +14,8 @@ ENV PATH="/home/node/node_modules/.bin/:${PATH}"
 
 VOLUME /home/node/qxapp
 WORKDIR /home/node/qxapp
-
-ENTRYPOINT [ "qx", "compile", "--watch" ]
+# Add dark theme to web-client
+ENTRYPOINT qx contrib update && \
+           qx contrib list && \
+           qx contrib install ITISFoundation/qx-osparc-theme && \
+           qx compile --watch

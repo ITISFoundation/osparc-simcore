@@ -29,7 +29,7 @@ services:
       dockerfile: _dockerfiles/qxapp/python/Dockerfile-dev
       args:
         serverdir: web-server
-    env_file: .env
+        web_outdir: /usr/src/app/client
     ports:
       - '9081:9081'
       - '9082:9082'
@@ -37,6 +37,7 @@ services:
       - DIRECTOR_HOST=http://director-dev
       - DIRECTOR_PORT=8001
       - SIMCORE_WEB_PORT=9081
+      - SIMCORE_WEB_CONFIG=development
     volumes:
       - './web-server:/usr/src/app'
       - './web-client/source-output:/usr/src/app/client'
