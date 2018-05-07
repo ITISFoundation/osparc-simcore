@@ -1,4 +1,6 @@
-# Workbench-backend: Provide access to services from docker registry
+# services
+
+Provide access to services from docker registry
 
 ## Overview
 
@@ -16,7 +18,6 @@ Workbench-backend is a first draft of the architecture that shall provide client
 2. Define a _uuid_ and start a service using one of the names returned in 1.
 3. After the service is started its published port(s) are returned and may be used to browse to. The service own webserver will serve at this location.
 4. Using the service uuid the service may be stopped.
-
 
 ## Development Workflow
 
