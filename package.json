@@ -1,7 +1,7 @@
 {
   "scripts": {
     "lintJsServices": "eslint ./services",
-    "lintPyServices": "pylint ./services"
+    "lintPyServices": "find services -iname '*.py' | xargs pylint --rcfile=.pylintrc --disable=import-error --disable=fixme"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
