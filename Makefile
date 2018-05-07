@@ -4,8 +4,14 @@
 rebuild:
 	docker-compose -f services/docker-compose.yml build --no-cache
 
+build-dev:
+	docker-compose -f services/docker-compose.yml -f services/docker-compose.dev.yml build --no-cache
+
 build:
 	docker-compose -f services/docker-compose.yml build
+
+build-dev:
+	docker-compose -f services/docker-compose.yml -f services/docker-compose.dev.yml build
 
 demo:
 	docker swarm init
