@@ -4,7 +4,6 @@
  */
 
 /* global qxapp */
-/* global window */
 /* eslint new-cap: [2, {capIsNewExceptions: ["Set"]}] */
 /* eslint no-warning-comments: "off" */
 
@@ -328,7 +327,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           "value": 0
         }],
         "viewer": {
-          "hostname": "http://" + window.location.hostname,
           "port": null
         }
       },
@@ -519,7 +517,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         "output": [],
         "settings": [],
         "viewer": {
-          "hostname": "http://" + window.location.hostname,
           "port": null
         }
       },
