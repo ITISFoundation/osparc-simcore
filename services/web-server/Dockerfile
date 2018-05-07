@@ -32,7 +32,7 @@ RUN qx compile
 
 # -------------------------------------------------------------
 # TODO: use python:3.6-alpine
-FROM python:3 as production
+FROM python:3 as common-py-stage
 
 ARG server_dir=web-server
 
@@ -53,10 +53,23 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 RUN python --version \
     && pip list --format=columns
 
-# server
-COPY $server_dir/* ./
-
 EXPOSE 8080
+
+# -------------------------------------------------------------
+FROM common-py-stage as development
+
+EXPOSE 9081
+EXPOSE 9082
+
+CMD ["python", "-m", "aiohttp.web -H ${SIMCORE_WEB_HOSTNAME} -P ${SIMCORE_WEB_PORT} server:create_app"]
+
+
+# -------------------------------------------------------------
+FROM common-py-stage as production
+
+ARG server_dir=web-server
+
+COPY $server_dir/* ./
 
 # TODO: why not directly python?
 ENTRYPOINT ["sh", "-c", "python -m aiohttp.web -H ${SIMCORE_WEB_HOSTNAME} -P ${SIMCORE_WEB_PORT} server:create_app"]
