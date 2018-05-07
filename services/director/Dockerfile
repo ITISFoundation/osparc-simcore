@@ -20,6 +20,10 @@ ENV LOCAL_MODE='True'
 
 ENV FLASK_APP=director.py
 
+COPY boot.sh boot.sh
+RUN chmod +x boot.sh
+
+USER app
 VOLUME /var/run/docker.sock
 EXPOSE 8001
 
@@ -28,21 +32,13 @@ FROM common as development
 
 ENV FLASK_DEBUG=1
 
-COPY boot.sh boot.sh
-RUN chmod +x boot.sh
-
-USER app
 VOLUME /home/app
 
-ENTRYPOINT ["./boot.sh"]
+CMD ["./boot.sh"]
 
 # Production stage -------------------
 FROM common as production
 
-COPY --chown=app:app . /home/app
-RUN chmod +x boot.sh
-#RUN chown -R app:app ./
-
-USER app
+COPY --chown=app:app ./source /home/app
 
 ENTRYPOINT ["./boot.sh"]
