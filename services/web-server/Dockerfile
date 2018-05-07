@@ -48,15 +48,21 @@ ENV DIRECTOR_PORT=8001
 COPY --from=qx-stage /home/node/src/source-output client
 
 # packages
-COPY $server_dir/requirements.txt requirements.txt
-RUN pip3 install --no-cache-dir -r requirements.txt
+COPY $server_dir/requirements/common.txt requirements/common.txt
+RUN pip3 install --no-cache-dir -r requirements/common.txt
+
 RUN python --version \
-    && pip list --format=columns
+ && pip list --format=columns
 
 EXPOSE 8080
 
 # -------------------------------------------------------------
 FROM common-py-stage as development
+
+ARG server_dir=web-server
+
+COPY $server_dir/requirements/dev.txt requirements/dev.txt
+RUN pip3 install --no-cache-dir -r requirements/dev.txt
 
 EXPOSE 9081
 EXPOSE 9082
@@ -69,7 +75,10 @@ FROM common-py-stage as production
 
 ARG server_dir=web-server
 
-COPY $server_dir/* ./
+COPY $server_dir/requirements/prod.txt requirements/prod.txt
+RUN pip3 install --no-cache-dir -r requirements/prod.txt
+
+COPY $server_dir/source ./
 
 # TODO: why not directly python?
 ENTRYPOINT ["sh", "-c", "python -m aiohttp.web -H ${SIMCORE_WEB_HOSTNAME} -P ${SIMCORE_WEB_PORT} server:create_app"]
