@@ -1,3 +1,4 @@
+/* global window */
 qx.Class.define("qxapp.components.workbench.SettingsView", {
   extend: qx.ui.container.Composite,
 
@@ -114,7 +115,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
         button.setEnabled(node.getMetaData().viewer.port !== null);
         let scope = this;
         button.addListener("execute", function(e) {
-          let url = node.getMetaData().viewer.ip + ":" + node.getMetaData().viewer.port;
+          let url = "http://" + window.location.hostname + ":" + node.getMetaData().viewer.port;
           let modelerWin = scope.createBrowserWindow(url, node.getMetaData().name);
           modelerWin.open();
           // Too hacky

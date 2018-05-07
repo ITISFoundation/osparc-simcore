@@ -24,7 +24,7 @@ def registry_request(path, method="GET"):
     except RequestException as e:
         raise Exception("Problem during docker registry connection")
 
-def retrieve_list_of_repositories():    
+def retrieve_list_of_repositories():
     request_result = registry_request('_catalog')
     result_json = request_result.json()['repositories']
     return result_json
@@ -40,18 +40,18 @@ def retrieve_labels_of_image(image, tag):
     labels = json.loads(result_json["history"][0]["v1Compatibility"])["container_config"]["Labels"]
     return labels
 
-def retrieve_list_of_repos_with_interactive_services():    
-    listOfAllRepos = retrieve_list_of_repositories()
+def retrieve_list_of_repos_with_interactive_services():
+    list_all_repos = retrieve_list_of_repositories()
     # get the services repos
-    list_of_interactive_repos = [repo for repo in listOfAllRepos if str(repo).startswith(INTERACTIVE_SERVICES_PREFIX)]
+    list_of_interactive_repos = [repo for repo in list_all_repos if str(repo).startswith(INTERACTIVE_SERVICES_PREFIX)]
     return list_of_interactive_repos
 
 def retrieve_list_of_interactive_services_with_name(service_name):
-    listOfInteractiveServicesRepositories = retrieve_list_of_repos_with_interactive_services()
+    list_interactive_services_repositories = retrieve_list_of_repos_with_interactive_services()
     # find the ones containing the service name
-    listOfReposForService = []
-    [listOfReposForService.append(i) for i in listOfInteractiveServicesRepositories if get_service_name(i) == service_name]
-    return listOfReposForService
+    list_repos_for_service = []
+    [list_repos_for_service.append(i) for i in list_interactive_services_repositories if get_service_name(i) == service_name]
+    return list_repos_for_service
 
 def get_service_name(repository_name):
     service_name_suffixes = str(repository_name)[len(INTERACTIVE_SERVICES_PREFIX):]

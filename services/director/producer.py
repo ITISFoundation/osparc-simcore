@@ -9,19 +9,19 @@ SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
 def IsServiceAWebServer(dockerImagePath):
     return str(dockerImagePath).find('webserver') != -1
 
-def login_docker_registry(dockerClient):
+def login_docker_registry(docker_client):
     try:
         # login
         registry_url = os.environ.get('REGISTRY_URL')
         username = os.environ.get('REGISTRY_USER')
         password = os.environ.get('REGISTRY_PW')
-        dockerClient.login(registry=registry_url + '/v2', username=username, password=password)
+        docker_client.login(registry=registry_url + '/v2', username=username, password=password)
     except docker.errors.APIError as e:
         raise Exception('Error while loging to registry: ' + str(e))
 
-def check_service_uuid_available(dockerClient, service_uuid):
+def check_service_uuid_available(docker_client, service_uuid):
     # check if service with same uuid already exists
-    listOfRunningServicesWithUUID = dockerClient.services.list(filters={'label':'uuid=' + service_uuid})
+    listOfRunningServicesWithUUID = docker_client.services.list(filters={'label':'uuid=' + service_uuid})
     if (len(listOfRunningServicesWithUUID) != 0):
         raise Exception('A service with the same uuid is already running: ' + service_uuid)
 
@@ -122,41 +122,43 @@ def wait_until_service_running_or_failed(service_id):
 
 def start_service(service_name, service_tag, service_uuid):
     # find the ones containing the service name
-    listOfReposForService = registry_proxy.retrieve_list_of_interactive_services_with_name(service_name)
+    list_repos_for_service = registry_proxy.retrieve_list_of_interactive_services_with_name(service_name)
     # get the available image for each service (syntax is image:tag)
-    listOfImages = {}
-    for repo in listOfReposForService:
-        listOfImages[repo] = registry_proxy.retrieve_list_of_images_in_repo(repo)
+    list_of_images = {}
+    for repo in list_repos_for_service:
+        list_of_images[repo] = registry_proxy.retrieve_list_of_images_in_repo(repo)
 
     # initialise docker client and check the uuid is available
-    dockerClient = docker.from_env()
-    check_service_uuid_available(dockerClient, service_uuid)
-    login_docker_registry(dockerClient)
+    docker_client = docker.from_env()
+    check_service_uuid_available(docker_client, service_uuid)
+    login_docker_registry(docker_client)
 
-    # create a new network to connect the differnt containers
-    docker_network = create_overlay_network_in_swarm(dockerClient, service_name, service_uuid)
+    if len(list_of_images) > 1:
+      # create a new network to connect the differnt containers
+      docker_network = create_overlay_network_in_swarm(docker_client, service_name, service_uuid)
     # create services
     containers_meta_data = list()
-    for dockerImagePath in listOfImages:
-        availableTagsList = sorted(listOfImages[dockerImagePath]['tags'])
-        if len(availableTagsList) == 0:
-            raise Exception('No available image in ' + dockerImagePath)
+    for docker_image_path in list_of_images:
+        available_tags_list = sorted(list_of_images[docker_image_path]['tags'])
+        if len(available_tags_list) == 0:
+            raise Exception('No available image in ' + docker_image_path)
 
-        tag = availableTagsList[len(availableTagsList)-1]
-        if not service_tag == 'latest' and availableTagsList.count(service_tag) == 1:
+        tag = available_tags_list[len(available_tags_list)-1]
+        if not service_tag == 'latest' and available_tags_list.count(service_tag) == 1:
             tag = service_tag
 
-        dockerImageFullPath = os.environ.get('REGISTRY_URL') +'/' + dockerImagePath + ':' + tag
+        docker_image_full_path = os.environ.get('REGISTRY_URL') +'/' + docker_image_path + ':' + tag
 
         # prepare runtime parameters
-        service_runtime_parameters_labels = get_service_runtime_parameters_labels(dockerImagePath, tag)
+        service_runtime_parameters_labels = get_service_runtime_parameters_labels(docker_image_path, tag)
         docker_service_runtime_parameters = convert_labels_to_docker_runtime_parameters(service_runtime_parameters_labels, service_uuid)
         add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
-        add_network_to_service_runtime_params(docker_service_runtime_parameters, docker_network)
-        set_service_name(docker_service_runtime_parameters, registry_proxy.get_service_sub_name(dockerImagePath), service_uuid)
+        if len(list_of_images) > 1:
+          add_network_to_service_runtime_params(docker_service_runtime_parameters, docker_network)
+        set_service_name(docker_service_runtime_parameters, registry_proxy.get_service_sub_name(docker_image_path), service_uuid)
         # let-s start the service
         try:
-            service = dockerClient.services.create(dockerImageFullPath, **docker_service_runtime_parameters)
+            service = docker_client.services.create(docker_image_full_path, **docker_service_runtime_parameters)
             wait_until_service_running_or_failed(service.id)
             published_ports = get_docker_image_published_ports(service.id)
             container_meta_data = {"container_id":service.id, "published_ports":published_ports}
@@ -174,12 +176,12 @@ def start_service(service_name, service_tag, service_uuid):
 
 def stop_service(service_uuid):
     # get the docker client
-    dockerClient = docker.from_env()
-    login_docker_registry(dockerClient)
+    docker_client = docker.from_env()
+    login_docker_registry(docker_client)
 
     try:
-        listOfRunningServicesWithUUID = dockerClient.services.list(filters={'label':'uuid=' + service_uuid})
-        [service.remove() for service in listOfRunningServicesWithUUID]
-        remove_overlay_network_of_swarm(dockerClient, service_uuid)
+        list_running_services_with_uuid = docker_client.services.list(filters={'label':'uuid=' + service_uuid})
+        [service.remove() for service in list_running_services_with_uuid]
+        remove_overlay_network_of_swarm(docker_client, service_uuid)
     except docker.errors.APIError as e:
         raise Exception('Error while stopping container' + str(e))
