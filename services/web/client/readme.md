@@ -1,4 +1,4 @@
-# web-client
+# web/client
 
 ``qxapp`` is the main client-side application of the sim-core platform.
 
@@ -6,7 +6,7 @@ To ease development, we have encapsulated the [qx]-compiler and all setup needed
 The docker-compose files in place help running ``qxapp`` stand-alone using a dev server in [qx]. This is a common workflow:
 
 ```bash
-cd /.../web-client
+cd /.../web/client
 
 # 1. the first time you checkout, you need to pull qx contribution packages
 docker-compose -f docker-compose.yml -f ./docker/docker-compose.init.yml run qx

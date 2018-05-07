@@ -1,7 +1,7 @@
 FROM node:8.9.2 as qx-stage
 #FIXME: FROM itisfoundation/qooxdoo-compiler:latest as qx-stage
 
-ARG client_dir=web-client
+ARG client_dir=web/client
 
 # workdir
 WORKDIR /home/node/src
@@ -25,7 +25,7 @@ COPY --chown=node:node $client_dir/Manifest.json Manifest.json
 
 RUN ln -s $QOOXDOO_COMPILER_DIR/node_modules /home/node
 
-# Add dark theme to web-client
+# Add dark theme to web/client
 RUN qx contrib update && qx contrib list
 RUN qx contrib install ITISFoundation/qx-osparc-theme
 RUN qx compile
@@ -37,12 +37,12 @@ FROM python:3.6-alpine as common-py-stage
 # + /usr/src
 #    + /requirements
 #    + /test
-#    + /source        <-- web-server/source (pwd)
-#        + /client    <-- web-client/source-output
+#    + /source        <-- web/server/source (pwd)
+#        + /client    <-- web/client/source-output
 
 # TODO: create non-root user
 
-ARG server_dir=web-server
+ARG server_dir=web/server
 
 WORKDIR /usr/src/source
 
@@ -64,7 +64,7 @@ EXPOSE 8080
 # ----------------------------development---------------------------------
 FROM common-py-stage as development
 
-ARG server_dir=web-server
+ARG server_dir=web/server
 
 COPY $server_dir/requirements/dev.txt /usr/src/requirements/dev.txt
 RUN pip3 install --no-cache-dir -r /usr/src/requirements/dev.txt \
@@ -82,7 +82,7 @@ CMD ["python", "-m", "aiohttp.web", "-H", "0.0.0.0", "-P", "8080", "server:creat
 # -----------------------------production--------------------------------
 FROM common-py-stage as production
 
-ARG server_dir=web-server
+ARG server_dir=web/server
 
 COPY $server_dir/requirements/prod.txt /usr/src/requirements/prod.txt
 RUN pip3 install --no-cache-dir -r /usr/src/requirements/prod.txt

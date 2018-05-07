@@ -5,6 +5,9 @@ sylvain, we can use this file to keep track of remaining issues.
 
 - [ ] update README and in general all documentation
 - [ ] rename folders under services using prefix to identify 3rd parties and dynamic
+- [x] move web-client and web-server into the same folder
+- [ ] label and tagging strategy (numbering, label-standard and automation scripts)
+
 
 ## Open Questions
 
