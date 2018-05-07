@@ -1,6 +1,6 @@
 /* global document */
 
-qx.Class.define("qxapp.layout.PrjEditor", {
+qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.container.Composite,
 
   construct: function() {

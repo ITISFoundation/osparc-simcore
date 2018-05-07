@@ -9,7 +9,7 @@
 
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.login.Standard", {
+qx.Class.define("qxapp.components.login.Standard", {
 
   extend: qx.ui.container.Composite,
 
@@ -22,7 +22,7 @@ qx.Class.define("qxapp.login.Standard", {
     this.base(arguments);
 
     let header = this.__createHeader();
-    this.__form = new qxapp.login.Form();
+    this.__form = new qxapp.components.login.Form();
 
     // TODO : add Forgot Password? | Create Account? links
     let footer = new qx.ui.core.Widget();

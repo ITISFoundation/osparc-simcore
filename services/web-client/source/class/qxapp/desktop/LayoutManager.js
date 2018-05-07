@@ -2,7 +2,8 @@
 /* global window */
 /* global document */
 
-qx.Class.define("qxapp.layout.LayoutManager", {
+// TODO: prefer this to scope in listeners
+qx.Class.define("qxapp.desktop.LayoutManager", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
@@ -26,6 +27,7 @@ qx.Class.define("qxapp.layout.LayoutManager", {
       flex: 1
     });
 
+    // FIXME: use layout for this
     let scope = this;
     window.addEventListener("resize", function() {
       scope.set({
@@ -42,6 +44,7 @@ qx.Class.define("qxapp.layout.LayoutManager", {
     _settingsView: null,
     _workbench: null,
 
+    // FIXME: remove. prefex qx to API low level calls
     _getDocWidth: function() {
       let body = document.body;
       let html = document.documentElement;
@@ -49,6 +52,7 @@ qx.Class.define("qxapp.layout.LayoutManager", {
       return docWidth;
     },
 
+    // FIXME: remove. prefer qx to API low level calls
     _getDocHeight: function() {
       let body = document.body;
       let html = document.documentElement;
@@ -57,7 +61,7 @@ qx.Class.define("qxapp.layout.LayoutManager", {
     },
 
     _createNavigationBar: function() {
-      let navBar = new qxapp.layout.NavigationBar();
+      let navBar = new qxapp.desktop.NavigationBar();
 
       let scope = this;
       navBar.addListener("HomePressed", function() {
@@ -74,18 +78,18 @@ qx.Class.define("qxapp.layout.LayoutManager", {
     _getPrjStack: function() {
       let prjStack = new qx.ui.container.Stack();
 
-      let prjBrowser = new qxapp.layout.PrjBrowser();
-
+      let prjBrowser = new qxapp.desktop.PrjBrowser();
 
       let scope = this;
       prjBrowser.addListener("StartPrj", function(e) {
         console.log(e.getData());
+        // FIXME: select prjEditor and not index to children
         scope._PrjStack.setSelection([scope._PrjStack.getChildren()[1]]);
         scope._NavBar.setCurrentStatus(e.getData());
       }, scope);
       prjStack.add(prjBrowser);
 
-      let prjEditor = new qxapp.layout.PrjEditor();
+      let prjEditor = new qxapp.desktop.PrjEditor();
       prjStack.add(prjEditor);
 
       return prjStack;

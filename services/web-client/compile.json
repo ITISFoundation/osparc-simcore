@@ -14,7 +14,7 @@
     }
   ],
   "defaultTarget": "source",
-  "locales": [],
+  "locales": ["en"],
   "lint-check": true,
 
   "applications": [
