@@ -26,6 +26,18 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       bottom: 0
     });
 
+    this._svgWidget.addListener("SvgWidgetReady", function() {
+      // Will be called only the first time Svg lib is loaded
+      this._deserializeData();
+    }, this);
+
+    this._svgWidget.addListener("SvgWidgetReady", function() {
+      this._svgWidget.addListener("appear", function() {
+        // Will be called once Svg lib is loaded and appears
+        this._deserializeData();
+      }, this);
+    }, this);
+
     this._desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
     this.add(this._desktop, {
       left: 0,
@@ -66,6 +78,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     _svgWidget: null,
     _plusButton: null,
     _selection: null,
+    __myData: null,
 
     _getPlusButton: function() {
       // TODO: change icon
@@ -102,8 +115,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       let scope = this;
       playButton.addListener("execute", function() {
-        let pipelineDataStructure = scope._serializePipelineDataStructure();
-        console.log(pipelineDataStructure);
+        let pipelineData = scope._serializeData();
+        console.log(pipelineData);
       }, scope);
 
       return playButton;
@@ -117,7 +130,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
         let scope = this;
         nodeButton.addListener("execute", function() {
-          scope._addNode(node);
+          let nodeItem = scope._createNode(node);
+          scope._addNodeToWorkbench(nodeItem);
+          scope._createLinkToLast();
         }, scope);
 
         buttonsListMenu.add(nodeButton);
@@ -126,24 +141,32 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return buttonsListMenu;
     },
 
-    _addNodeToWorkbench(node) {
-      let nNodesB = this._nodes.length;
-      node.moveTo(50 + nNodesB*250, 200);
-      this._desktop.add(node);
-      node.open();
-      this._nodes.push(node);
-
-      let nNodesA = this._nodes.length;
-      if (nNodesA > 1) {
-        // force rendering to get the node"s updated position
-        qx.ui.core.queue.Layout.flush();
-        this._addLink(this._nodes[nNodesA-2], this._nodes[nNodesA-1]);
+    _addNodeToWorkbench(node, position) {
+      if (position === undefined) {
+        let nNodes = this._nodes.length;
+        node.moveTo(50 + nNodes*250, 200);
+        this._desktop.add(node);
+        node.open();
+        this._nodes.push(node);
+      } else {
+        node.moveTo(position.x, position.y);
+        this._desktop.add(node);
+        node.open();
+        this._nodes.push(node);
       }
     },
 
-    _addNode: function(node) {
+    _createLinkToLast: function(node) {
+      let nNodes = this._nodes.length;
+      if (nNodes > 1) {
+        // force rendering to get the node's updated position
+        qx.ui.core.queue.Layout.flush();
+        this._addLink(this._nodes[nNodes-2], this._nodes[nNodes-1]);
+      }
+    },
+
+    _createNode: function(node) {
       let nodeBase = new qxapp.components.workbench.NodeBase(node);
-      this._addNodeToWorkbench(nodeBase);
 
       if (nodeBase.getNodeImageId() === "modeler") {
         const slotName = "startModeler";
@@ -195,6 +218,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       nodeBase.addListener("dblclick", function(e) {
         scope.fireDataEvent("NodeDoubleClicked", nodeBase);
       }, scope);
+
+      return nodeBase;
     },
 
     _addLink: function(node1, node2) {
@@ -212,7 +237,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this._links.push(linkBase);
 
       linkBase.getRepresentation().node.addEventListener("click", function(e) {
-        console.log("clicked", linkBase.getLinkId(), e);
+
       });
     },
 
@@ -279,7 +304,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
     },
 
-    _serializePipelineDataStructure: function() {
+    _serializeData: function() {
       let pipeline = {};
       for (let i = 0; i < this._nodes.length; i++) {
         const nodeId = this._nodes[i].getNodeId();
@@ -306,233 +331,81 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return pipeline;
     },
 
-    _getProducers: function() {
-      const producers = [{
-        "id": "modeler",
-        "name": "Modeler",
-        "input": [],
-        "output": [{
-          "name": "Scene",
-          "type": "scene",
-          "value": ""
-        }],
-        "settings": [{
-          "name": "ViPModel",
-          "options": [
-            "Rat",
-            "Sphere"
-          ],
-          "text": "Select ViP Model",
-          "type": "select",
-          "value": 0
-        }],
-        "viewer": {
-          "ip": "http://osparc01.speag.com",
-          "port": null
+    setData: function(pipeData) {
+      this.__myData = pipeData;
+    },
+
+    __removeNode: function(node) {
+      this._desktop.remove(node);
+    },
+
+    __removeAllNodes: function() {
+      while (this._nodes.length > 0) {
+        this.__removeNode(this._nodes[this._nodes.length-1]);
+        this._nodes.pop();
+      }
+    },
+
+    __removeLink: function(link) {
+      this._svgWidget.removeCurve(link.getRepresentation());
+    },
+
+    __removeAllLinks: function() {
+      while (this._links.length > 0) {
+        this.__removeLink(this._links[this._links.length-1]);
+        this._links.pop();
+      }
+    },
+
+    removeAll: function() {
+      this.__removeAllNodes();
+      this.__removeAllLinks();
+    },
+
+    _deserializeData: function() {
+      console.log("__myData", this.__myData);
+      if (this.__myData === null) {
+        this.removeAll();
+        return;
+      }
+
+      // add nodes
+      for (let i = 0; i < this.__myData.length; i++) {
+        let nodeItem = this._createNode(this.__myData[i]);
+        nodeItem.setNodeId(this.__myData[i].uuid);
+        if (Object.prototype.hasOwnProperty.call(this.__myData[i], "position")) {
+          this._addNodeToWorkbench(nodeItem, this.__myData[i].position);
+        } else {
+          this._addNodeToWorkbench(nodeItem);
         }
-      },
-      {
-        "id": "NumberGeneratorID",
-        "name": "Number Generator",
-        "input": [],
-        "output": [{
-          "name": "Number",
-          "type": "number",
-          "value": ""
-        }],
-        "settings": [{
-          "name": "number",
-          "text": "Number",
-          "type": "number",
-          "value": 0
-        }]
-      }];
+      }
+
+      qx.ui.core.queue.Layout.flush();
+
+      // add links
+      for (let i = 0; i < this.__myData.length; i++) {
+        if (this.__myData[i].children.length > 0) {
+          let node1 = this._getNode(this.__myData[i].uuid);
+          for (let j = 0; j < this.__myData[i].children.length; j++) {
+            let node2 = this._getNode(this.__myData[i].children[j]);
+            this._addLink(node1, node2);
+          }
+        }
+      }
+    },
+
+    _getProducers: function() {
+      const producers = qxapp.data.Fake.getProducers();
       return this._createMenuFromList(producers);
     },
 
     _getComputationals: function() {
-      const computationals = [{
-        "id": "ColleenClancy",
-        "name": "Colleen Clancy - dummy",
-        "input": [
-          {
-            "name": "NaValue",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "KrValue",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "BCLValue",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "beatsValue",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "LigandValue",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "cAMKIIValue",
-            "type": "number",
-            "value": 10
-          }
-        ],
-        "output": [
-          {
-            "name": "outputFolder",
-            "type": "folder",
-            "value": "url"
-          },
-          {
-            "name": "Allresults",
-            "order": [
-              "t",
-              "I_Ca_store",
-              "Ito",
-              "Itof",
-              "Itos",
-              "INa",
-              "IK1",
-              "s1",
-              "k1",
-              "Jserca",
-              "Iks",
-              "Jleak",
-              "ICFTR",
-              "Incx"
-            ],
-            "type": "csv"
-          }
-        ],
-        "settings": [
-          {
-            "name": "NaValue",
-            "text": "Na blocker drug concentration",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "KrValue",
-            "text": "Kr blocker drug concentration",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "BCLValue",
-            "text": "Basic cycle length (BCL)",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "beatsValue",
-            "text": "Number of beats",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "LigandValue",
-            "text": "Ligand concentration",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "cAMKIIValue",
-            "options": [
-              "A",
-              "B",
-              "C",
-              "D"
-            ],
-            "text": "Adjust cAMKII activity level",
-            "type": "select",
-            "value": 0
-          }
-        ]
-      },
-      {
-        "id": "Computational2",
-        "name": "Computational 2",
-        "input": [{
-          "name": "Scene",
-          "type": "scene",
-          "value": ""
-        }],
-        "output": [{
-          "name": "Other numbers",
-          "type": "number",
-          "value": ""
-        }],
-        "settings": []
-      },
-      {
-        "id": "Computational3",
-        "name": "Computational 3",
-        "input": [{
-          "name": "Number",
-          "type": "number",
-          "value": ""
-        }],
-        "output": [{
-          "name": "Some numbers",
-          "type": "number",
-          "value": ""
-        }],
-        "settings": []
-      },
-      {
-        "id": "Computational4",
-        "name": "Computational 4",
-        "input": [{
-          "name": "Number",
-          "type": "number",
-          "value": ""
-        }],
-        "output": [{
-          "name": "Other numbers",
-          "type": "number",
-          "value": ""
-        }],
-        "settings": []
-      }];
+      const computationals = qxapp.data.Fake.getComputationals();
       return this._createMenuFromList(computationals);
     },
 
     _getAnalyses: function() {
-      const analyses = [{
-        "id": "jupyter-base-notebook",
-        "name": "Jupyter",
-        "input": [{
-          "name": "Number",
-          "type": "number",
-          "value": ""
-        }],
-        "output": [],
-        "settings": [],
-        "viewer": {
-          "ip": "http://osparc01.speag.com",
-          "port": null
-        }
-      },
-      {
-        "id": "Analysis2",
-        "name": "Analysis 2",
-        "input": [{
-          "name": "Number",
-          "type": "scene",
-          "value": ""
-        }],
-        "output": [],
-        "settings": []
-      }];
+      const analyses = qxapp.data.Fake.getAnalyses();
       return this._createMenuFromList(analyses);
     }
   }

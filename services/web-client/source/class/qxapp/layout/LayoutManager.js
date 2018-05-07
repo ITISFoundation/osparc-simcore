@@ -61,7 +61,6 @@ qx.Class.define("qxapp.layout.LayoutManager", {
 
       let scope = this;
       navBar.addListener("HomePressed", function() {
-        console.log("HomePressed");
         scope._PrjStack.setSelection([scope._PrjStack.getChildren()[0]]);
         scope._NavBar.setCurrentStatus("Browser");
       }, scope);
@@ -75,18 +74,25 @@ qx.Class.define("qxapp.layout.LayoutManager", {
       let prjStack = new qx.ui.container.Stack();
 
       let prjBrowser = new qxapp.layout.PrjBrowser();
-
-
-      let scope = this;
-      prjBrowser.addListener("StartPrj", function(e) {
-        console.log(e.getData());
-        scope._PrjStack.setSelection([scope._PrjStack.getChildren()[1]]);
-        scope._NavBar.setCurrentStatus(e.getData());
-      }, scope);
       prjStack.add(prjBrowser);
 
       let prjEditor = new qxapp.layout.PrjEditor();
       prjStack.add(prjEditor);
+
+      let scope = this;
+      prjBrowser.addListener("StartPrj", function(e) {
+        console.log(e.getData());
+        scope._PrjStack.setSelection([prjEditor]);
+        scope._NavBar.setCurrentStatus(e.getData().getName());
+        /*
+        if (e.getData().getPrjId() !== null) {
+          if (qxapp.data.Fake.getPrjData(e.getData().getPrjId()) !== null) {
+            prjEditor.setData(qxapp.data.Fake.getPrjData(e.getData().getPrjId()));
+          }
+        }
+        */
+        prjEditor.setData(qxapp.data.Fake.getPrjData(e.getData().getPrjId()));
+      }, scope);
 
       return prjStack;
     }

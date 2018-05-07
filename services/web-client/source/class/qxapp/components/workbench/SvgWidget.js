@@ -23,6 +23,8 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
             .appendChild(svgPlaceholder);
 
           scope._linksCanvas = scope._svgWrapper.createEmptyCanvas(LINKS_LAYER_ID);
+
+          scope.fireDataEvent("SvgWidgetReady", true);
         } else {
           console.log("svg.js was not loaded");
         }
@@ -32,12 +34,16 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
     }, scope);
   },
 
+  events: {
+    "SvgWidgetReady": "qx.event.type.Data"
+  },
+
   members: {
     _svgWrapper: null,
     _linksCanvas: null,
 
     _getControls(x1, y1, x2, y2) {
-      const offset = 100;
+      const offset = 50;
       return [{
         x: x1,
         y: y1
@@ -61,6 +67,10 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
     updateCurve: function(curve, x1, y1, x2, y2) {
       const controls = this._getControls(x1, y1, x2, y2);
       this._svgWrapper.updateCurve(curve, controls);
+    },
+
+    removeCurve: function(curve) {
+      this._svgWrapper.removeCurve(curve);
     }
   }
 });
