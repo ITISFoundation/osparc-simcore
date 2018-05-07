@@ -1,7 +1,7 @@
 {
   "scripts": {
     "lintJsServices": "eslint ./services",
-    "lintPyServices": "find ./services -iname '*.py' | xargs pylint"
+    "lintPyServices": "pylint ./services/web-server/async_sio.py"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
