@@ -328,7 +328,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           "value": 0
         }],
         "viewer": {
-          "ip": "http://" + window.location.hostname,
+          "hostname": "http://" + window.location.hostname,
           "port": null
         }
       },
@@ -519,7 +519,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         "output": [],
         "settings": [],
         "viewer": {
-          "ip": "http://" + window.location.hostname,
+          "hostname": "http://" + window.location.hostname,
           "port": null
         }
       },
