@@ -1,4 +1,3 @@
-# Pipelines Project Make File
 # author: Sylvain Anderegg
 
 rebuild:
@@ -7,11 +6,11 @@ rebuild:
 build:
 	docker-compose -f services/docker-compose.yml build
 
-start-swarm:
+deploy_up:
 	docker swarm init
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml up
 
-stop-swarm:
+deploy_down:
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml down
 	docker swarm leave -f
 

@@ -13,7 +13,7 @@ registry_proxy.setup_registry_connection()
 
 @app.route('/')
 def hello_world():
-    return 'Hello I\'m alive!'
+    return "<h1>Hoi, the directory here. I am alive!</h1>"
 
 @app.route('/list_interactive_services', methods=['GET'])
 def list_interactive_services():
