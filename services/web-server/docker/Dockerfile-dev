@@ -2,10 +2,14 @@ FROM python:3
 
 # Selects appropriate 'server-py-*/' folder
 ARG serverdir
+ARG web_outdir=/usr/src/app/client
 
-ENV SIMCORE_WEB_OUTDIR=/usr/src/app/client
+ENV SIMCORE_WEB_OUTDIR=$web_outdir
 ENV SIMCORE_WEB_HOSTNAME='0.0.0.0'
-ENV SIMCORE_WEB_PORT=9081
+ENV DIRECTOR_HOST='http://director-dev'
+ENV DIRECTOR_PORT=8001
+EXPOSE 8080
+
 
 WORKDIR /usr/src/app
 
