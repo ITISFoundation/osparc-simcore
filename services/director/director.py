@@ -1,19 +1,20 @@
-import os
 import json
-import docker
 import logging
+import os
 
-from flask import Flask, request
-from flask import abort
-import registry_proxy
+import docker
 import producer
+import registry_proxy
+from flask import Flask, abort, request
 
 app = Flask(__name__)
 registry_proxy.setup_registry_connection()
 
+
 @app.route('/')
 def hello_world():
     return 'Hello I\'m alive!'
+
 
 @app.route('/list_interactive_services', methods=['GET'])
 def list_interactive_services():
@@ -22,11 +23,13 @@ def list_interactive_services():
     # some services may have several parts, fuse these
     # the syntax of services are simcore/services/%SERVICENAME%/...
     list_of_interactive_services = []
-    [list_of_interactive_services.append(registry_proxy.get_service_name(i)) for i in list_of_interactive_repos if not list_of_interactive_services.count(registry_proxy.get_service_name(i))]
+    [list_of_interactive_services.append(registry_proxy.get_service_name(
+        i)) for i in list_of_interactive_repos if not list_of_interactive_services.count(registry_proxy.get_service_name(i))]
 
     #list_of_interactive_services = [registry_proxy.retrieve_list_of_images_in_repo(repo) for repo in list_of_interactive_repos]
 
     return json.dumps(list_of_interactive_services)
+
 
 @app.route('/start_service', methods=['POST'])
 def start_service():
@@ -46,8 +49,7 @@ def start_service():
     except Exception as e:
         logging.exception(e)
         abort(500)
-    
-    
+
 
 @app.route('/stop_service', methods=['POST'])
 def stop_service():
@@ -61,6 +63,7 @@ def stop_service():
     except Exception as e:
         logging.exception(e)
         abort(500)
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=False, port=8001, threaded=True)
