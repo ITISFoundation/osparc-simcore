@@ -13,7 +13,7 @@ _CDIR = os.path.dirname(sys.argv[0] if __name__ == '__main__' else __file__)
 
 
 def default_client_dir():
-    """ Location of qx ourdir when compiled using docker-compose -f docker-compose.dev.yml run build-qx"""
+    """ Location of qx ourdir when docker-compose is run in debug mode"""
     return os.path.normpath(os.path.join(_CDIR, "..", "web-client", "source-output"))
 
 

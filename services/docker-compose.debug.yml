@@ -13,19 +13,19 @@ services:
     build:
       target: development
     ports:
-      - '9080:8080'
-      - '9081:9081'
-      - '9082:9082'
+      - '9081:8080'
+      #- '9082:9082'
     environment:
       - DIRECTOR_HOST=director-dev
       - DIRECTOR_PORT=8001
       - SIMCORE_WEB_CONFIG=development
-      - SIMCORE_WEB_PORT=9081
     volumes:
-      - './web-server:/usr/src/app'
-      - './web-client/source-output:/usr/src/app/client'
-    depends_on:
-      - build-qx
+      - './web-server/source:/usr/src/source'
+      - './web-client/source-output:/usr/src/source/client'
+      - './web-server/test:/usr/src/test'
+      # TODO: do test go in production or development or debug??
+    #depends_on:
+    #  - build-qx
   #--------------------------------------------------------------------
   build-qx:
     image: itisfoundation/qooxdoo-compiler:latest
