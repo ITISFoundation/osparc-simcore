@@ -1,4 +1,5 @@
 FROM jupyter/base-notebook
+
 LABEL maintainer="sanderegg"
 
 # call date -u +”%Y-%m-%dT%H:%M:%SZ” in a bash
