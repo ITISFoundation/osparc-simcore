@@ -46,10 +46,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     this.setNodeId(qxapp.utils.Utils.uuidv4());
   },
 
-  events: {
-    "PortSelected": "qx.event.type.Data"
-  },
-
   properties: {
     nodeId: {
       check: "String",

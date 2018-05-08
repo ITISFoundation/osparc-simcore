@@ -48,10 +48,9 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
 
     // Connect listeners
-    let scope = this;
     homeBtn.addListener("execute", function() {
-      scope.fireEvent("HomePressed");
-    }, scope);
+      this.fireEvent("HomePressed");
+    }, this);
   },
 
   events: {

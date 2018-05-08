@@ -113,7 +113,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
         button.setEnabled(node.getMetadata().viewer.port !== null);
         button.addListener("execute", function(e) {
           let url = "http://" + window.location.hostname + ":" + node.getMetadata().viewer.port;
-          let modelerWin = scope.createBrowserWindow(url, node.getMetadata().name);
+          let modelerWin = this.createBrowserWindow(url, node.getMetadata().name);
           modelerWin.open();
           // Too hacky
           this.getLayoutParent().getChildren()[1]._desktop.add(modelerWin);
