@@ -1,3 +1,4 @@
+# FIXME: add tag with concrete version!
 FROM jupyter/base-notebook
 
 LABEL maintainer="sanderegg"

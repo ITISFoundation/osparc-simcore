@@ -2,8 +2,12 @@
 
 ``qxapp`` is the main client-side application of the sim-core platform.
 
-To ease development, we have encapsulated the [qx]-compiler and all setup needed to run the client in a docker container.
-The docker-compose files in place help running ``qxapp`` stand-alone using a dev server in [qx]. This is a common workflow:
+## Development
+
+To ease development of the client, we have encapsulated the [qx]-compiler and all setup needed to run the client in a contiainer. This way, we can develop the
+client without connecting to the final server but instead emulating it.
+
+The docker-compose files in this directory help running ``qxapp`` stand-alone using a dev server in [qx]. This is a common workflow:
 
 ```bash
 cd /.../web/client
@@ -19,12 +23,13 @@ docker-compose up
 docker-compose down
 ```
 
-In order to access other features of [qx]-compiler CLI, here are some typical commands:
+To access [qx]-compiler CLI simply type ```docker-compose run qx [qx commands/options]```. Some examples:
 
 ```bash
 
 docker-compose run qx --help
 
+# compiles code and recompiles as sources changes
 docker-compose run qx compile --watch
 
 docker-compose run qx lint
