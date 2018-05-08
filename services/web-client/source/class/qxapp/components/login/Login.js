@@ -1,15 +1,13 @@
-/* global qxapp */
-
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.login.Login", {
+qx.Class.define("qxapp.components.login.Login", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
     this.base(arguments, new qx.ui.layout.HBox(30));
 
     // standard login. i.e. using app database
-    let platformLogin = new qxapp.login.Standard();
+    let platformLogin = new qxapp.components.login.Standard();
     this.add(platformLogin, {
       width: "60%"
     });

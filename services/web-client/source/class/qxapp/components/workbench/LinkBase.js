@@ -1,5 +1,3 @@
-/* global qxapp */
-
 qx.Class.define("qxapp.components.workbench.LinkBase", {
   extend: qx.core.Object,
 

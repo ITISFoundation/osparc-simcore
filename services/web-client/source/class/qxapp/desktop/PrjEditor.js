@@ -1,4 +1,5 @@
-qx.Class.define("qxapp.layout.PrjEditor", {
+
+qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
@@ -32,15 +33,14 @@ qx.Class.define("qxapp.layout.PrjEditor", {
 
     this.__showSettings(false);
 
-    let scope = this;
     this.__SettingsView.addListener("SettingsEditionDone", function() {
-      scope.__showSettings(false);
-    }, scope);
+      this.__showSettings(false);
+    }, this);
 
     this.__Workbench.addListener("NodeDoubleClicked", function(e) {
-      scope.__showSettings(true);
-      scope.__SettingsView.setNodeMetadata(e.getData());
-    }, scope);
+      this.__showSettings(true);
+      this.__SettingsView.setNodeMetadata(e.getData());
+    }, this);
   },
 
   members: {

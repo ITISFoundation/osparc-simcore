@@ -1,35 +1,62 @@
-import os
+"""
+    The director takes care of starting/stopping services.
+"""
+
 import json
-import docker
 import logging
+import os
 
-from flask import Flask, request
-from flask import abort
-import registry_proxy
+import docker
 import producer
+import registry_proxy
+from flask import Flask, abort, request
 
-app = Flask(__name__)
+_LOGGER = logging.getLogger(__name__)
+
+APP = Flask(__name__)
 registry_proxy.setup_registry_connection()
 
-@app.route('/')
+
+@APP.route('/')
 def hello_world():
+    """ Routing to test that the director is online
+
+    Returns:
+        [type] -- [description]
+    """
+
     return 'Hello I\'m alive!'
 
-@app.route('/list_interactive_services', methods=['GET'])
+
+@APP.route('/list_interactive_services', methods=['GET'])
 def list_interactive_services():
+    """[summary]
+
+    Returns:
+        [type] -- [description]
+    """
+
     # get the services repos
     list_of_interactive_repos = registry_proxy.retrieve_list_of_repos_with_interactive_services()
     # some services may have several parts, fuse these
     # the syntax of services are simcore/services/%SERVICENAME%/...
     list_of_interactive_services = []
-    [list_of_interactive_services.append(registry_proxy.get_service_name(i)) for i in list_of_interactive_repos if not list_of_interactive_services.count(registry_proxy.get_service_name(i))]
+    [list_of_interactive_services.append(registry_proxy.get_service_name(
+        i)) for i in list_of_interactive_repos if not list_of_interactive_services.count(registry_proxy.get_service_name(i))]
 
     #list_of_interactive_services = [registry_proxy.retrieve_list_of_images_in_repo(repo) for repo in list_of_interactive_repos]
 
     return json.dumps(list_of_interactive_services)
 
-@app.route('/start_service', methods=['POST'])
+
+@APP.route('/start_service', methods=['POST'])
 def start_service():
+    """[summary]
+
+    Returns:
+        [type] -- [description]
+    """
+
     # check syntax
     if not request.json or not 'service_name' in request.json or not 'service_uuid' in request.json:
         abort(400)
@@ -43,14 +70,20 @@ def start_service():
         service_tag = 'latest'
     try:
         return producer.start_service(service_name, service_tag, uuid), 201
-    except Exception as e:
-        logging.exception(e)
+    except:
+        _LOGGER.exception("Failed to start service %s:%s",
+                          service_name, servirce_tag)
         abort(500)
-    
-    
 
-@app.route('/stop_service', methods=['POST'])
+
+@APP.route('/stop_service', methods=['POST'])
 def stop_service():
+    """[summary]
+
+    Returns:
+        [type] -- [description]
+    """
+
     # check syntax
     if not request.json or not 'service_uuid' in request.json:
         abort(400)
@@ -58,9 +91,10 @@ def stop_service():
     try:
         producer.stop_service(service_uuid)
         return json.dumps('service stopped'), 201
-    except Exception as e:
-        logging.exception(e)
+    except:
+        _LOGGER.exception("Failed to stop service")
         abort(500)
 
+
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug=False, port=8001, threaded=True)
+    APP.run(host='0.0.0.0', debug=False, port=8001, threaded=True)

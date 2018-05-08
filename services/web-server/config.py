@@ -1,5 +1,4 @@
-"""
-
+""" Basic configuration file
 
 TODO create create_environment_file(.) to build a template env file with defaults
 """
@@ -22,7 +21,8 @@ def default_thrift_dirs():
     return utils.get_thrift_api_folders(basedir)
 
 
-THRIFT_GEN_OUTDIR = os.environ.get('THRIFT_GEN_OUTDIR') or default_thrift_dirs()
+THRIFT_GEN_OUTDIR = os.environ.get(
+    'THRIFT_GEN_OUTDIR') or default_thrift_dirs()
 
 
 class CommonConfig:
@@ -30,7 +30,8 @@ class CommonConfig:
     # Web service
     SIMCORE_WEB_HOSTNAME = os.environ.get('SIMCORE_WEB_HOSTNAME', '0.0.0.0')
     SIMCORE_WEB_PORT = os.environ.get('SIMCORE_WEB_PORT', 8080)
-    SIMCORE_CLIENT_OUTDIR = os.environ.get('SIMCORE_WEB_OUTDIR') or default_client_dir()
+    SIMCORE_CLIENT_OUTDIR = os.environ.get(
+        'SIMCORE_WEB_OUTDIR') or default_client_dir()
 
     # S4L computational service (rpc-thrift)
     CS_S4L_HOSTNAME = os.environ.get('CS_S4L_HOSTNAME', '172.16.9.89')
@@ -38,7 +39,8 @@ class CommonConfig:
     CS_S4L_PORT_MOD = os.environ.get('CS_S4L_PORT_MOD', 9096)
 
     THRIFT_GEN_OUTDIR = THRIFT_GEN_OUTDIR
-    THRIFT_USE_MULTIPLEXED_SERVER = os.environ.get('THRIFT_USE_MULTIPLEXED_SERVER', True)
+    THRIFT_USE_MULTIPLEXED_SERVER = os.environ.get(
+        'THRIFT_USE_MULTIPLEXED_SERVER', True)
 
     @staticmethod
     def init_app(app):

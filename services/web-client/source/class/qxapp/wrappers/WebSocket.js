@@ -126,60 +126,52 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
         socketIOPath
       ]);
 
-      let scope = this;
       dynLoader.addListenerOnce("ready", function(e) {
         console.log(socketIOPath + " loaded");
-        scope.setLibReady(true);
+        this.setLibReady(true);
 
 
-        if (scope.getSocket() !== null) {
-          scope.getSocket().removeAllListeners();
-          scope.getSocket().disconnect();
+        if (this.getSocket() !== null) {
+          this.getSocket().removeAllListeners();
+          this.getSocket().disconnect();
         }
 
-        let dir = scope.getUrl() + ":" + scope.getPort();
+        let dir = this.getUrl() + ":" + this.getPort();
         console.log("socket in", dir);
         let mySocket = io.connect(dir, {
-          "port": scope.getPort(),
-          "reconnect": scope.getReconnect(),
-          "connect timeout": scope.getConnectTimeout(),
-          "reconnection delay": scope.getReconnectionDelay(),
-          "max reconnection attempts": scope.getMaxReconnectionAttemps(),
+          "port": this.getPort(),
+          "reconnect": this.getReconnect(),
+          "connect timeout": this.getConnectTimeout(),
+          "reconnection delay": this.getReconnectionDelay(),
+          "max reconnection attempts": this.getMaxReconnectionAttemps(),
           "force new connection": true
         });
-        scope.setSocket(mySocket);
+        this.setSocket(mySocket);
 
-        scope.on("connect", function() {
-          scope.fireEvent("connect");
-        }, scope);
-        scope.on("connecting", function(ev) {
-          scope.fireDataEvent("connecting", ev);
-        }, scope);
-        scope.on("connect_failed", function() {
-          scope.fireEvent("connect_failed");
-        }, scope);
-        scope.on("message", function(ev) {
-          scope.fireDataEvent("message", ev);
-        }, scope);
-        scope.on("close", function(ev) {
-          scope.fireDataEvent("close", ev);
-        }, scope);
-        scope.on("disconnect", function() {
-          scope.fireEvent("disconnect");
-        }, scope);
-        scope.on("reconnect", function(ev) {
-          scope.fireDataEvent("reconnect", ev);
-        }, scope);
-        scope.on("reconnecting", function(ev) {
-          scope.fireDataEvent("reconnecting", ev);
-        }, scope);
-        scope.on("reconnect_failed", function() {
-          scope.fireEvent("reconnect_failed");
-        }, scope);
-        scope.on("error", function(ev) {
-          scope.fireDataEvent("error", ev);
-        }, scope);
-      }, scope);
+        [
+          "connecting",
+          "message",
+          "close",
+          "reconnect",
+          "reconnecting",
+          "error"
+        ].forEach(event => {
+          this.on(event, ev => {
+            this.fireDataEvent(event, ev);
+          }, this);
+        }, this);
+
+        [
+          "connect",
+          "connect_failed",
+          "disconnect",
+          "reconnect_failed"
+        ].forEach(event => {
+          this.on(event, () => {
+            this.fireDataEvent(event);
+          }, this);
+        }, this);
+      }, this);
 
       dynLoader.start();
     },

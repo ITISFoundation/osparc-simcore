@@ -6,7 +6,7 @@
 
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.login.Form", {
+qx.Class.define("qxapp.components.login.Form", {
   extend: qx.ui.form.Form,
 
   construct: function() {

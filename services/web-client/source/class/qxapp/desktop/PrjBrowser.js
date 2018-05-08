@@ -1,13 +1,13 @@
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.layout.PrjBrowser", {
+qx.Class.define("qxapp.desktop.PrjBrowser", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
     this.base(arguments, new qx.ui.layout.VBox());
 
-    this.createUserList();
-    this.createTempList();
+    this.__createUserList();
+    this.__createTempList();
   },
 
   events: {
@@ -20,7 +20,7 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
     __controller2: null,
     __list2: null,
 
-    createUserList: function() {
+    __createUserList: function() {
       // layout
       let prjLst = this.__list = new qx.ui.form.List();
       prjLst.set({
@@ -33,7 +33,7 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
 
       // controller
 
-      let prjCtr = this.__controller = new qx.data.controller.List(qxapp.layout.PrjBrowser.getFakeUserModel(), prjLst, "name");
+      let prjCtr = this.__controller = new qx.data.controller.List(qxapp.desktop.PrjBrowser.getFakeUserModel(), prjLst, "name");
       this.__setDelegate(prjCtr);
       // FIXME: selection does not work if model is not passed in the constructor!!!!
       // prjCtr.setModel();
@@ -47,7 +47,7 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
       }, this);
     },
 
-    createTempList: function() {
+    __createTempList: function() {
       // layout
       let prjLst = this.__list2 = new qx.ui.form.List();
       prjLst.set({
@@ -60,7 +60,7 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
 
       // controller
 
-      let prjCtr = this.__controller2 = new qx.data.controller.List(qxapp.layout.PrjBrowser.getFakeTempModel(), prjLst, "name");
+      let prjCtr = this.__controller2 = new qx.data.controller.List(qxapp.desktop.PrjBrowser.getFakeTempModel(), prjLst, "name");
       this.__setDelegate(prjCtr);
       // FIXME: selection does not work if model is not passed in the constructor!!!!
       // prjCtr.setModel();

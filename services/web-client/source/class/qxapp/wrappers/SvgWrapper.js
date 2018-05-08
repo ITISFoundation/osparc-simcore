@@ -34,18 +34,17 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
         svgPathPath
       ]);
 
-      let scope = this;
       dynLoader.addListenerOnce("ready", function(e) {
         console.log(svgPath + " loaded");
-        scope.setLibReady(true);
-        scope.fireDataEvent("SvgLibReady", true);
-      }, scope);
+        this.setLibReady(true);
+        this.fireDataEvent("SvgLibReady", true);
+      }, this);
 
       dynLoader.addListener("failed", function(e) {
         let data = e.getData();
         console.log("failed to load " + data.script);
-        scope.fireDataEvent("SvgLibReady", false);
-      }, scope);
+        this.fireDataEvent("SvgLibReady", false);
+      }, this);
 
       dynLoader.start();
     },
