@@ -3,7 +3,7 @@
     "lintJsServices": "eslint ./web-client/source/class/**/*.js",
     "lintPyServices": "pylint .",
     "buildQxApp": "cd ./web-client && qx compile --target=source",
-    "installQxContrib": "cd ./web-client && qx contrib update && qx contrib install ITISFoundation/qx-osparc-theme"
+    "installQxContrib": "cd ./web-client && qx contrib update && qx contrib list && qx contrib install ITISFoundation/qx-osparc-theme"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
