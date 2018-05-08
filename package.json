@@ -1,7 +1,6 @@
 {
   "scripts": {
-    "lintJsServices": "eslint ./services",
-    "lintPyServices": "pylint ./services"
+    "linter": "eslint ./services"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
