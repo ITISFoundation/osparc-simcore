@@ -3,16 +3,23 @@ matrix:
     - language: node_js
       node_js:
         - "8"
+
+      cache:
+        directories:
+          - node_modules
+          - services/web-client/contrib
+
       install:
-        - npm install -g npm@latest
-        - npm install --save-dev eslint
-        - npm install --save-dev babel-eslint
-        - npm install --save-dev eslint-config-qx
-        - npm install --save-dev eslint-plugin-qx-rules
-      before_script:
-        - eslint --version
+        - pushd services
+        - npm install
+        - npm run installQxContrib
+        - popd
+
       script:
+        - pushd services
         - npm run lintJsServices
+        - npm run buildQxApp
+        - popd
 
     - language: python
       python:

@@ -1,0 +1,23 @@
+{
+  "scripts": {
+    "lintJsServices": "eslint ./web-client/source/class/**/*.js",
+    "lintPyServices": "pylint .",
+    "buildQxApp": "cd ./web-client && qx compile --target=source",
+    "installQxContrib": "cd ./web-client && qx contrib update && qx contrib install ITISFoundation/qx-osparc-theme"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "babel-eslint": "^8.2.3",
+    "eslint-config-qx": "^0.1.0",
+    "eslint-plugin-qx-rules": "^0.1.0",
+    "qooxdoo-sdk": "^6.0.0-alpha",
+    "qxcompiler": "^0.2.11"
+  },
+  "version": "0.0.0",
+  "name": "osparc-simcore",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ITISFoundation/osparc-simcore.git"
+  },
+  "license": "MIT"
+}
