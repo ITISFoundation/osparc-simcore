@@ -1,5 +1,3 @@
-/* global qxapp */
-
 qx.Class.define("qxapp.components.login.BasicWindow", {
   extend: qx.ui.window.Window,
 

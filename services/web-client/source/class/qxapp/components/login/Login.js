@@ -1,5 +1,3 @@
-/* global qxapp */
-
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.components.login.Login", {

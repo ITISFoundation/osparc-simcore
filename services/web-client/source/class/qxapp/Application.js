@@ -14,7 +14,6 @@
  * @asset(qxapp/*)
  */
 
-/* global qxapp */
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.Application", {
