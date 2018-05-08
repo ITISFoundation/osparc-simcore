@@ -276,7 +276,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           "value": 0
         }],
         "viewer": {
-          "ip": "http://osparc01.speag.com",
           "port": null
         }
       },
@@ -467,7 +466,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         "output": [],
         "settings": [],
         "viewer": {
-          "ip": "http://osparc01.speag.com",
           "port": null
         }
       },

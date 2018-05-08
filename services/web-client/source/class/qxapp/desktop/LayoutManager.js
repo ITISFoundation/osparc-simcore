@@ -1,3 +1,4 @@
+
 qx.Class.define("qxapp.desktop.LayoutManager", {
   extend: qx.ui.container.Composite,
 

@@ -1,3 +1,4 @@
+
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.container.Composite,
 
