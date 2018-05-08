@@ -85,14 +85,15 @@ FROM common-py-stage as production
 ARG server_dir=web/server
 
 COPY $server_dir/requirements/prod.txt /usr/src/requirements/prod.txt
-RUN pip3 install --no-cache-dir -r /usr/src/requirements/prod.txt
+RUN pip3 install --no-cache-dir -r /usr/src/requirements/prod.txt \
+    && python --version \
+    && pip list --format=columns
 
-COPY $server_dir/source ./source
 
-RUN python --version \
-  && pip list --format=columns \
-  && echo \
-  && ls -l $PWD
+COPY $server_dir/source .
+
+RUN ls -l $PWD
 
 # TODO: why not directly python?
-ENTRYPOINT ["sh", "-c", "python -m aiohttp.web -H 0.0.0.0 -P 8080 server:create_app"]
+ENTRYPOINT ["python", "-m", "aiohttp.web"]
+CMD ["-H", "0.0.0.0", "-P", "8080", "server:create_app"]
