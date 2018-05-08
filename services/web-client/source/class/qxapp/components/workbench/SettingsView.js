@@ -15,8 +15,8 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       padding: 10
     });
 
-    this.__InitTitle();
-    this.__InitSettings();
+    this.__initTitle();
+    this.__initSettings();
   },
 
   events: {
@@ -26,7 +26,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
   members: {
     __SettingsBox: null,
 
-    __InitTitle: function() {
+    __initTitle: function() {
       let box = new qx.ui.layout.HBox();
       box.set({
         spacing: 10,
@@ -51,7 +51,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       }, this);
     },
 
-    __InitSettings: function() {
+    __initSettings: function() {
       this.__SettingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       this.add(this.__SettingsBox);
     },

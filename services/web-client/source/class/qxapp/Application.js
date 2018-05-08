@@ -70,7 +70,6 @@ qx.Class.define("qxapp.Application", {
         // }
       }, this);
 
-      doc.set({});
       doc.add(login, {
         left: "10%",
         top: "10%",
