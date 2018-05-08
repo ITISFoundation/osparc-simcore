@@ -1,3 +1,8 @@
+"""
+This module is responsible for communicating with the director entity
+"""
+
+# pylint: disable=C0111
 import sys
 import os
 import logging
@@ -5,7 +10,9 @@ import json
 
 from requests import RequestException, Session
 
-session = Session()
+_LOGGER = logging.getLogger(__name__)
+
+_SESSION = Session()
 
 
 def director_request(path, method="GET", data=dict()):
@@ -13,27 +20,25 @@ def director_request(path, method="GET", data=dict()):
         ':' + os.environ.get('DIRECTOR_PORT', '8001') + '/' + path
     try:
         if len(data) == 0:
-            request_result = getattr(session, method.lower())(api_url)
+            request_result = getattr(_SESSION, method.lower())(api_url)
         else:
             request_result = getattr(
-                session, method.lower())(api_url, json=data)
+                _SESSION, method.lower())(api_url, json=data)
 
         # TODO: we should only check for success (e.g. 201), and handle any error in a dedicated function
         if request_result.status_code == 400:
-            raise Exception(
-                'Return Code was 400, Bad request, malformed syntax!')
+            raise Exception('Return Code was 400, Bad request, malformed syntax!')
         if request_result.status_code == 401:
-            raise Exception(
-                'Return Code was 401, Authentication required / not successful!')
+            raise Exception('Return Code was 401, Authentication required / not successful!')
         elif request_result.status_code == 404:
             raise Exception('Return code 404, Unknown URL used!')
         elif request_result.status_code == 500:
             raise Exception('Return code 500, Internal Server Error!')
         else:
-            logging.warning('return ok: %s', request_result.json())
+            _LOGGER.warning('return ok: %s', request_result.json())
             return request_result
-    except RequestException as e:
-        raise Exception("Problem during connection to director" + str(e))
+    except RequestException as err:
+        raise RequestException("Problem during connection to director" + str(e))
 
 
 def retrieve_interactive_services():

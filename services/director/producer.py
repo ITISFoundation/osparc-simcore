@@ -1,3 +1,8 @@
+"""[summary]
+
+"""
+# pylint: disable=C0111
+
 import json
 import os
 import time
@@ -8,8 +13,8 @@ import registry_proxy
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
 
 
-def IsServiceAWebServer(dockerImagePath):
-    return str(dockerImagePath).find('webserver') != -1
+def is_service_a_web_server(docker_image_path):
+    return str(docker_image_path).find('webserver') != -1
 
 
 def login_docker_registry(docker_client):
@@ -20,20 +25,21 @@ def login_docker_registry(docker_client):
         password = os.environ.get('REGISTRY_PW')
         docker_client.login(registry=registry_url + '/v2',
                             username=username, password=password)
-    except docker.errors.APIError as e:
-        raise Exception('Error while loging to registry: ' + str(e))
+    except docker.errors.APIError as err:
+        raise Exception('Error while loging to registry: ' + str(err))
 
 
 def check_service_uuid_available(docker_client, service_uuid):
     # check if service with same uuid already exists
-    listOfRunningServicesWithUUID = docker_client.services.list(
+    list_of_running_services_w_uuid = docker_client.services.list(
         filters={'label': 'uuid=' + service_uuid})
-    if (len(listOfRunningServicesWithUUID) != 0):
+    if (len(list_of_running_services_w_uuid) != 0):
         raise Exception(
             'A service with the same uuid is already running: ' + service_uuid)
 
 
 def get_service_runtime_parameters_labels(image, tag):
+    # pylint: disable=C0103
     image_labels = registry_proxy.retrieve_labels_of_image(image, tag)
     runtime_parameters = dict()
     if SERVICE_RUNTIME_SETTINGS in image_labels:
@@ -42,6 +48,7 @@ def get_service_runtime_parameters_labels(image, tag):
 
 
 def convert_labels_to_docker_runtime_parameters(service_runtime_parameters_labels, service_uuid):
+    # pylint: disable=C0103
     runtime_params = dict()
     for param in service_runtime_parameters_labels:
         if 'name' not in param or 'type' not in param or 'value' not in param:
@@ -65,6 +72,7 @@ def convert_labels_to_docker_runtime_parameters(service_runtime_parameters_label
 
 
 def add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid):
+    # pylint: disable=C0103
     # add the service uuid to the docker service
     if "labels" in docker_service_runtime_parameters:
         docker_service_runtime_parameters["labels"]["uuid"] = service_uuid
@@ -73,6 +81,7 @@ def add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, 
 
 
 def add_network_to_service_runtime_params(docker_service_runtime_parameters, docker_network):
+    # pylint: disable=C0103
     if "networks" in docker_service_runtime_parameters:
         docker_service_runtime_parameters["networks"].append(docker_network.id)
     else:
@@ -80,11 +89,13 @@ def add_network_to_service_runtime_params(docker_service_runtime_parameters, doc
 
 
 def set_service_name(docker_service_runtime_parameters, service_name, service_uuid):
+    # pylint: disable=C0103
     docker_service_runtime_parameters["name"] = service_name + \
         "_" + service_uuid
 
 
 def get_docker_image_published_ports(service_id):
+    # pylint: disable=C0103
     low_level_client = docker.APIClient()
     service_infos_json = low_level_client.services(filters={'id': service_id})
     published_ports = list()
@@ -108,9 +119,9 @@ def create_overlay_network_in_swarm(docker_client, service_name, service_uuid):
         docker_network = docker_client.networks.create(
             network_name, driver="overlay", scope="swarm", labels={"uuid": service_uuid})
         return docker_network
-    except docker.errors.APIError as e:
+    except docker.errors.APIError as err:
         raise Exception(
-            'Docker server error while creating network: ' + str(e))
+            'Docker server error while creating network: ' + str(err))
 
 
 def remove_overlay_network_of_swarm(docker_client, service_uuid):
@@ -120,12 +131,13 @@ def remove_overlay_network_of_swarm(docker_client, service_uuid):
         # remove any network in the list (should be only one)
         for network in networks:
             network.remove()
-    except docker.errors.APIError as e:
+    except docker.errors.APIError:
         raise Exception(
             "docker server error while removing networks for service with uuid " + service_uuid)
 
 
 def wait_until_service_running_or_failed(service_id):
+    # pylint: disable=C0103
     client = docker.APIClient()
 
     # some times one has to wait until the task info is filled
@@ -145,6 +157,7 @@ def wait_until_service_running_or_failed(service_id):
 
 
 def start_service(service_name, service_tag, service_uuid):
+    # pylint: disable=C0103
     # find the ones containing the service name
     list_repos_for_service = registry_proxy.retrieve_list_of_interactive_services_with_name(
         service_name)
@@ -198,14 +211,16 @@ def start_service(service_name, service_tag, service_uuid):
             container_meta_data = {
                 "container_id": service.id, "published_ports": published_ports}
             containers_meta_data.append(container_meta_data)
-        except docker.errors.ImageNotFound as e:
+        except docker.errors.ImageNotFound as err:
             # first cleanup
+            # TODO: check exceptions policy
             stop_service(service_uuid)
-            raise Exception('Error service not found: ' + str(e))
-        except docker.errors.APIError as e:
+            raise Exception('Error service not found: ' + str(err))
+        except docker.errors.APIError as err:
             # first cleanup
+            # TODO: check exceptions policy
             stop_service(service_uuid)
-            raise Exception('Error while accessing docker server: ' + str(e))
+            raise Exception('Error while accessing docker server: ' + str(err))
     service_meta_data = {"service_name": service_name,
                          "service_uuid": service_uuid, "containers": containers_meta_data}
     return json.dumps(service_meta_data)
@@ -221,5 +236,6 @@ def stop_service(service_uuid):
             filters={'label': 'uuid=' + service_uuid})
         [service.remove() for service in list_running_services_with_uuid]
         remove_overlay_network_of_swarm(docker_client, service_uuid)
-    except docker.errors.APIError as e:
-        raise Exception('Error while stopping container' + str(e))
+    except docker.errors.APIError as err:
+        # TODO: check exceptions policy
+        raise Exception('Error while stopping container' + str(err))

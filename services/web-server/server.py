@@ -7,7 +7,7 @@ import os
 
 from aiohttp import web
 
-from async_sio import sio
+from async_sio import SIO
 from config import CONFIG
 
 
@@ -23,7 +23,7 @@ def create_app(args=()):
     client_dir = app_config.SIMCORE_CLIENT_OUTDIR
 
     app = web.Application()
-    sio.attach(app)
+    SIO.attach(app)
 
     # http requests handlers
     async def _index(request):
@@ -31,8 +31,8 @@ def create_app(args=()):
         logging.debug("index.request:\n %s", request)
 
         index_path = os.path.join(client_dir, 'index.html')
-        with open(index_path) as f:
-            return web.Response(text=f.read(), content_type='text/html')
+        with open(index_path) as fhnd:
+            return web.Response(text=fhnd.read(), content_type='text/html')
 
     # TODO: check whether this can be done at once
     app.router.add_static('/qxapp', os.path.join(client_dir, 'qxapp'))

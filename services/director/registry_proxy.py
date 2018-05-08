@@ -1,32 +1,37 @@
+"""[summary]
+
+"""
+# pylint: disable=C0111
 import json
 import os
 
 from requests import RequestException, Session
 
 INTERACTIVE_SERVICES_PREFIX = 'simcore/services/'
-session = Session()
+_SESSION = Session()
 
 
 def setup_registry_connection():
     # get authentication state or set default value
-    REGISTRY_AUTH = os.environ.get('REGISTRY_AUTH', False)
-    if REGISTRY_AUTH == "True" or REGISTRY_AUTH == "true":
-        session.auth = (os.environ['REGISTRY_USER'], os.environ['REGISTRY_PW'])
+    registry_auth = os.environ.get('REGISTRY_AUTH', False)
+    if registry_auth == "True" or registry_auth == "true":
+        _SESSION.auth = (os.environ['REGISTRY_USER'], os.environ['REGISTRY_PW'])
 
 
 def registry_request(path, method="GET"):
+    # TODO: is is always ssh?
     api_url = 'https://' + os.environ['REGISTRY_URL'] + '/v2/' + path
 
     try:
         # r = s.get(api_url, verify=False) #getattr(s, method.lower())(api_url)
-        request_result = getattr(session, method.lower())(api_url)
+        request_result = getattr(_SESSION, method.lower())(api_url)
         if request_result.status_code == 401:
             raise Exception(
                 'Return Code was 401, Authentication required / not successful!')
         else:
             return request_result
-    except RequestException as e:
-        raise Exception("Problem during docker registry connection")
+    except RequestException as err:
+        raise RequestException("Problem during docker registry connection: {}".format(err))
 
 
 def retrieve_list_of_repositories():
@@ -50,6 +55,7 @@ def retrieve_labels_of_image(image, tag):
 
 
 def retrieve_list_of_repos_with_interactive_services():
+    # pylint: disable=C0103
     list_all_repos = retrieve_list_of_repositories()
     # get the services repos
     list_of_interactive_repos = [repo for repo in list_all_repos if str(
@@ -58,6 +64,7 @@ def retrieve_list_of_repos_with_interactive_services():
 
 
 def retrieve_list_of_interactive_services_with_name(service_name):
+    # pylint: disable=C0103
     list_interactive_services_repositories = retrieve_list_of_repos_with_interactive_services()
     # find the ones containing the service name
     list_repos_for_service = []
