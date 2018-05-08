@@ -1,5 +1,3 @@
-/* global qxapp */
-
 const LINKS_LAYER_ID = "drawing";
 
 qx.Class.define("qxapp.components.workbench.SvgWidget", {
@@ -8,10 +6,9 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
   construct: function() {
     this.base();
 
-    let scope = this;
     this.addListenerOnce("appear", function() {
-      scope._svgWrapper = new qxapp.wrappers.SvgWrapper();
-      scope._svgWrapper.addListener(("SvgLibReady"), function(e) {
+      this.__SvgWrapper = new qxapp.wrappers.SvgWrapper();
+      this.__SvgWrapper.addListener(("SvgLibReady"), function(e) {
         let ready = e.getData();
         if (ready) {
           let svgPlaceholder = qx.dom.Element.create("div");
@@ -19,25 +16,25 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
           qx.bom.element.Style.set(svgPlaceholder, "z-index", 12);
           qx.bom.element.Style.set(svgPlaceholder, "width", "100%");
           qx.bom.element.Style.set(svgPlaceholder, "height", "100%");
-          scope.getContentElement().getDomElement()
+          this.getContentElement().getDomElement()
             .appendChild(svgPlaceholder);
 
-          scope._linksCanvas = scope._svgWrapper.createEmptyCanvas(LINKS_LAYER_ID);
+          this.__LinksCanvas = this.__SvgWrapper.createEmptyCanvas(LINKS_LAYER_ID);
         } else {
           console.log("svg.js was not loaded");
         }
-      }, scope);
+      }, this);
 
-      scope._svgWrapper.init();
-    }, scope);
+      this.__SvgWrapper.init();
+    }, this);
   },
 
   members: {
-    _svgWrapper: null,
-    _linksCanvas: null,
+    __SvgWrapper: null,
+    __LinksCanvas: null,
 
-    _getControls(x1, y1, x2, y2) {
-      const offset = 100;
+    __getControls(x1, y1, x2, y2) {
+      const offset = 50;
       return [{
         x: x1,
         y: y1
@@ -54,13 +51,13 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
     },
 
     drawCurve: function(x1, y1, x2, y2) {
-      const controls = this._getControls(x1, y1, x2, y2);
-      return this._svgWrapper.drawCurve(this._linksCanvas, controls);
+      const controls = this.__getControls(x1, y1, x2, y2);
+      return this.__SvgWrapper.drawCurve(this.__LinksCanvas, controls);
     },
 
     updateCurve: function(curve, x1, y1, x2, y2) {
-      const controls = this._getControls(x1, y1, x2, y2);
-      this._svgWrapper.updateCurve(curve, controls);
+      const controls = this.__getControls(x1, y1, x2, y2);
+      this.__SvgWrapper.updateCurve(curve, controls);
     }
   }
 });

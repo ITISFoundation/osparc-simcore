@@ -14,7 +14,6 @@
  * @asset(qxapp/*)
  */
 
-/* global qxapp */
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.Application", {
@@ -30,8 +29,7 @@ qx.Class.define("qxapp.Application", {
 
   members:
   {
-    _socket: null,
-    _layoutManager: null,
+    __layoutManager: null,
 
     /**
      * This method contains the initial application code and gets called
@@ -45,41 +43,33 @@ qx.Class.define("qxapp.Application", {
       if (qx.core.Environment.get("qx.debug")) {
         // support native logging capabilities, e.g. Firebug for Firefox
         qx.log.appender.Native;
-        // support additional cross-browser console. Press F7 to toggle visibility
-        qx.log.appender.Console;
       }
 
       /*
-      -------------------------------------------------------------------------
-        Below is your actual application code...
-      -------------------------------------------------------------------------
+      TODO: change name of app: osparc instead of qxapp
+
       */
-
-      qx.locale.Manager.getInstance().setLocale("en");
-      qx.locale.Manager.getInstance().addListener("changeLocale", function(e) {
-        qx.locale.Manager.getInstance().setLocale(e.getData());
-      }, this);
-
       // Document is the application root
       let doc = this.getRoot();
 
       // openning web socket
-      this._socket = qxapp.wrappers.WebSocket.getInstance();
-      this._socket.connect();
+      qxapp.wrappers.WebSocket.getInstance().connect();
 
-      let login = new qxapp.login.Login();
+      let login = new qxapp.components.login.Login();
       login.addListener("login", function(e) {
         // FIXME: For the moment, password is not checked
         // if (e.getData() === true) {
-        this._layoutManager = new qxapp.layout.LayoutManager();
+        this.__layoutManager = new qxapp.desktop.LayoutManager();
         doc.remove(login);
-        doc.add(this._layoutManager);
+        doc.add(this.__layoutManager, {
+          left: "0%",
+          top: "0%",
+          height: "100%",
+          width: "100%"
+        });
         // }
-      });
+      }, this);
 
-      doc.set({
-        backgroundColor: "dark-blue"
-      });
       doc.add(login, {
         left: "10%",
         top: "10%",
