@@ -12,15 +12,14 @@ matrix:
       before_script:
         - eslint --version
       script:
-        - npm run lintJsServices
+        - npm run linter
 
     - language: python
       python:
         - "3.6"
       install:
-        - npm install -g npm@latest
         - pip3 install pylint
       before_script:
         - pylint --version
       script:
-        - npm run lintPyServices
+        - make pylint

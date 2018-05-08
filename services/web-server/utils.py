@@ -1,3 +1,6 @@
+"""
+    General utilities and helper functions
+"""
 import os
 import sys
 
@@ -5,7 +8,7 @@ CDIR = os.path.dirname(sys.argv[0] if __name__ == '__main__' else __file__)
 
 
 def import_with_retry(module_name, *extended_paths):
-    """ 
+    """
         Imports module_name and if it fails, it retries
         but including extended_path in the sys.path
     """
@@ -18,7 +21,7 @@ def import_with_retry(module_name, *extended_paths):
         try:
             sys.path = list(extended_paths) + sys.path
             module = importlib.import_module(module_name)
-        except ImportError as ee:
+        except ImportError:
             sys.path = snapshot
             # TODO: should I remove from sys.path even if it does not fail?
 
@@ -40,5 +43,11 @@ def get_thrift_api_folders(startdir):
 
 
 def import_thrift_api_module(module_name):
+    """
+        Imports of thrift API and retries including different paths
+        in sys.path.
+
+        If all retrials fail, it raises ImportError
+    """
     from config import THRIFT_GEN_OUTDIR
     return import_with_retry(module_name, *list(THRIFT_GEN_OUTDIR))
