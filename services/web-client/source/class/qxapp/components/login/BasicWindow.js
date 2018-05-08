@@ -1,6 +1,4 @@
-/* global qxapp */
-
-qx.Class.define("qxapp.login.BasicWindow", {
+qx.Class.define("qxapp.components.login.BasicWindow", {
   extend: qx.ui.window.Window,
 
   construct: function() {

@@ -1,4 +1,3 @@
-/* global qxapp */
 /* global document */
 /* global window */
 

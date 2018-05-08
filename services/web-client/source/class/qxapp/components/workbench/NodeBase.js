@@ -1,9 +1,7 @@
-/* global qxapp */
-
 qx.Class.define("qxapp.components.workbench.NodeBase", {
   extend: qx.ui.window.Window,
 
-  construct: function(metadata) {
+  construct: function() {
     this.base();
 
     this.set({
@@ -16,8 +14,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       minWidth: 180
     });
 
-    this.setNodeId(qxapp.utils.Utils.uuidv4());
-
     let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
     this.setLayout(nodeLayout);
 
@@ -28,64 +24,26 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     let inputsBox = new qx.ui.layout.VBox(5);
     inputsBox.setAlignX("left");
-    this._inputPorts = new qx.ui.container.Composite(inputsBox);
-    inputsOutputsLayout.add(this._inputPorts, {
+    this.__inputPorts = new qx.ui.container.Composite(inputsBox);
+    inputsOutputsLayout.add(this.__inputPorts, {
       width: "50%"
     });
 
     let outputsBox = new qx.ui.layout.VBox(5);
     outputsBox.setAlignX("right");
-    this._outputPorts = new qx.ui.container.Composite(outputsBox);
-    inputsOutputsLayout.add(this._outputPorts, {
+    this.__outputPorts = new qx.ui.container.Composite(outputsBox);
+    inputsOutputsLayout.add(this.__outputPorts, {
       width: "50%"
     });
 
     let progressBox = new qx.ui.layout.HBox(5);
     progressBox.setAlignX("center");
     let progressLayout = new qx.ui.container.Composite(progressBox);
-    this._progressLabel = new qx.ui.basic.Label("0%");
-    progressLayout.add(this._progressLabel);
+    this.__progressLabel = new qx.ui.basic.Label("0%");
+    progressLayout.add(this.__progressLabel);
     this.add(progressLayout);
 
-    this._inputLinkIDs = [];
-    this._outputLinkIDs = [];
-
-    if (metadata != undefined) {
-      this._metadata = metadata;
-      this.setServiceName(this._metadata.name);
-      this._metadata.input.forEach(input => {
-        let label = new qx.ui.basic.Label(input.name);
-        label.portId = qxapp.utils.Utils.uuidv4();
-        label.type = input.type;
-        label.setFocusable(true);
-        qx.event.Registration.addListener(label, "focusin", this._onLabelFocusIn, this);
-        qx.event.Registration.addListener(label, "focusout", this._onLabelFocusOut, this);
-        this._inputPorts.add(label);
-      });
-      this._metadata.output.forEach(output => {
-        let label = new qx.ui.basic.Label(output.name);
-        label.portId = qxapp.utils.Utils.uuidv4();
-        label.type = output.type;
-        label.setFocusable(true);
-        qx.event.Registration.addListener(label, "focusin", this._onLabelFocusIn, this);
-        qx.event.Registration.addListener(label, "focusout", this._onLabelFocusOut, this);
-        this._outputPorts.add(label);
-      });
-
-      this.setNodeImageId(this._metadata.id);
-
-      if (metadata.input.length === 0 && metadata.output.length > 0) {
-        this.setNodeType(0);
-      } else if (metadata.input.length > 0 && metadata.output.length > 0) {
-        this.setNodeType(1);
-      } else if (metadata.input.length > 0 && metadata.output.length === 0) {
-        this.setNodeType(2);
-      }
-    }
-  },
-
-  events: {
-    "PortSelected": "qx.event.type.Data"
+    this.setNodeId(qxapp.utils.Utils.uuidv4());
   },
 
   properties: {
@@ -99,38 +57,45 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       nullable: false
     },
 
-    nodeType: {
-      check: "Number",
+    metadata: {
+      apply : "__applyMetadata"
+    },
+
+    inputLinkIDs: {
+      check: "Array",
+      init: [],
+      nullable: false
+    },
+
+    outputLinkIDs: {
+      check: "Array",
+      init: [],
       nullable: false
     }
   },
 
   members: {
-    _metadata: null,
-    _inputPorts: null,
-    _outputPorts: null,
-    _progressLabel: null,
-    _inputLinkIDs: null,
-    _outputLinkIDs: null,
+    __inputPorts: null,
+    __outputPorts: null,
+    __progressLabel: null,
 
-    _onLabelFocusIn: function(e) {
-      // console.log("event", e);
-      console.log("Port Selected", e.getTarget());
-      console.log("Node: ", this);
-      // e.getTarget().setBackgroundColor("red");
-      this.fireDataEvent("PortSelected", e.getTarget().portId);
-    },
+    __applyMetadata: function(value, old) {
+      if (value != undefined) {
+        this.setMetadata(value);
+        this.setServiceName(this.getMetadata().name);
+        this.getMetadata().input.forEach(input => {
+          let label = new qx.ui.basic.Label(input.name);
+          label.portId = qxapp.utils.Utils.uuidv4();
+          this.__inputPorts.add(label);
+        });
+        this.getMetadata().output.forEach(output => {
+          let label = new qx.ui.basic.Label(output.name);
+          label.portId = qxapp.utils.Utils.uuidv4();
+          this.__outputPorts.add(label);
+        });
 
-    _onLabelFocusOut: function(e) {
-      // console.log("event", e);
-      console.log("Port Unselected", e.getTarget());
-      console.log("Node: ", this);
-      // e.getTarget().resetBackgroundColor();
-      this.fireDataEvent("PortSelected", e.getTarget().portId);
-    },
-
-    getMetaData: function() {
-      return this._metadata;
+        this.setNodeImageId(this.getMetadata().id);
+      }
     },
 
     setServiceName: function(name) {
@@ -140,31 +105,23 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     setInputs: function(names) {
       names.forEach(name => {
         let label = new qx.ui.basic.Label(name);
-        this._inputPorts.add(label);
+        this.__inputPorts.add(label);
       });
     },
 
     setOutputs: function(names) {
       names.forEach(name => {
         let label = new qx.ui.basic.Label(name);
-        this._outputPorts.add(label);
+        this.__outputPorts.add(label);
       });
     },
 
     addInputLinkID: function(linkID) {
-      this._inputLinkIDs.push(linkID);
-    },
-
-    getInputLinkIDs: function() {
-      return this._inputLinkIDs;
+      this.getInputLinkIDs().push(linkID);
     },
 
     addOutputLinkID: function(linkID) {
-      this._outputLinkIDs.push(linkID);
-    },
-
-    getOutputLinkIDs: function() {
-      return this._outputLinkIDs;
+      this.getOutputLinkIDs().push(linkID);
     }
   }
 });

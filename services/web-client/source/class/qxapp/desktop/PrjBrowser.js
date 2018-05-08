@@ -1,6 +1,6 @@
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.layout.PrjBrowser", {
+qx.Class.define("qxapp.desktop.PrjBrowser", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
@@ -18,7 +18,7 @@ qx.Class.define("qxapp.layout.PrjBrowser", {
 
     // controller
 
-    let prjCtr = this.__controller = new qx.data.controller.List(qxapp.layout.PrjBrowser.getFakeModel(), prjLst, "name");
+    let prjCtr = this.__controller = new qx.data.controller.List(qxapp.desktop.PrjBrowser.getFakeModel(), prjLst, "name");
     this.__setDelegate(prjCtr);
     // FIXME: selection does not work if model is not passed in the constructor!!!!
     // prjCtr.setModel();

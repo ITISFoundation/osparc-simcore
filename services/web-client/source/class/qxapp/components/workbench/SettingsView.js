@@ -12,12 +12,11 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
 
     this.set({
       layout: box,
-      padding: 10,
-      backgroundColor: "dark-blue" // It is defined in theme/Color
+      padding: 10
     });
 
-    this._InitTitle();
-    this._InitSettings();
+    this.__initTitle();
+    this.__initSettings();
   },
 
   events: {
@@ -25,9 +24,9 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
   },
 
   members: {
-    _settingsBox: null,
+    __SettingsBox: null,
 
-    _InitTitle: function() {
+    __initTitle: function() {
       let box = new qx.ui.layout.HBox();
       box.set({
         spacing: 10,
@@ -47,25 +46,24 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       titleBox.add(doneBtn);
       this.add(titleBox);
 
-      let scope = this;
       doneBtn.addListener("execute", function() {
-        scope.fireEvent("SettingsEditionDone");
-      }, scope);
+        this.fireEvent("SettingsEditionDone");
+      }, this);
     },
 
-    _InitSettings: function() {
-      this._settingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      this.add(this._settingsBox);
+    __initSettings: function() {
+      this.__SettingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      this.add(this.__SettingsBox);
     },
 
     setNodeMetadata: function(node) {
-      this._settingsBox.removeAll();
+      this.__SettingsBox.removeAll();
 
       let form = new qx.ui.form.Form();
       {
         // Expose title
         let input = new qx.ui.form.TextField().set({
-          value: node.getMetaData().name
+          value: node.getMetadata().name
         });
         if (input) {
           form.add(input, this.tr("Node Title"), null, "NodeTitle");
@@ -73,9 +71,9 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       }
 
       // Expose settings
-      for (let i = 0; i < node.getMetaData().settings.length; i++) {
-        let sett = node.getMetaData().settings[i];
-        let input = this._fromMetadataToQxSetting(sett);
+      for (let i = 0; i < node.getMetadata().settings.length; i++) {
+        let sett = node.getMetadata().settings[i];
+        let input = this.__fromMetadataToQxSetting(sett);
         if (input) {
           form.add(input, sett.text, null, sett.name);
         }
@@ -92,12 +90,12 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
 
       computeButton.addListener("execute", function() {
         if (form.validate()) {
-          node.getMetaData().name = model.get("NodeTitle");
-          node.setServiceName(node.getMetaData().name);
+          node.getMetadata().name = model.get("NodeTitle");
+          node.setServiceName(node.getMetadata().name);
 
-          for (let i = 0; i < node.getMetaData().settings.length; i++) {
-            let settKey = node.getMetaData().settings[i].name;
-            node.getMetaData().settings[i].value = model.get(settKey);
+          for (let i = 0; i < node.getMetadata().settings.length; i++) {
+            let settKey = node.getMetadata().settings[i].name;
+            node.getMetadata().settings[i].value = model.get(settKey);
           }
         }
       }, this);
@@ -106,26 +104,25 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
         form.reset();
       }, this);
 
-      this._settingsBox.add(new qx.ui.form.renderer.Single(form));
+      this.__SettingsBox.add(new qx.ui.form.renderer.Single(form));
 
 
       // Show viewer
-      if (Object.prototype.hasOwnProperty.call(node.getMetaData(), "viewer")) {
+      if (Object.prototype.hasOwnProperty.call(node.getMetadata(), "viewer")) {
         let button = new qx.ui.form.Button("Open Viewer");
-        button.setEnabled(node.getMetaData().viewer.port !== null);
-        let scope = this;
+        button.setEnabled(node.getMetadata().viewer.port !== null);
         button.addListener("execute", function(e) {
-          let url = "http://" + window.location.hostname + ":" + node.getMetaData().viewer.port;
-          let modelerWin = scope.createBrowserWindow(url, node.getMetaData().name);
+          let url = "http://" + window.location.hostname + ":" + node.getMetadata().viewer.port;
+          let modelerWin = this.createBrowserWindow(url, node.getMetadata().name);
           modelerWin.open();
           // Too hacky
-          scope.getLayoutParent().getChildren()[1]._desktop.add(modelerWin);
-        }, scope);
-        this._settingsBox.add(button);
+          this.getLayoutParent().getChildren()[1]._desktop.add(modelerWin);
+        }, this);
+        this.__SettingsBox.add(button);
       }
     },
 
-    createBrowserWindow: function(url, name) {
+    __createBrowserWindow: function(url, name) {
       console.log("Accessing:", url);
       let win = new qx.ui.window.Window(name);
       win.setShowMinimize(false);
@@ -147,7 +144,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       return win;
     },
 
-    _fromMetadataToQxSetting: function(metadata) {
+    __fromMetadataToQxSetting: function(metadata) {
       let input;
       switch (metadata.type) {
         case "number":

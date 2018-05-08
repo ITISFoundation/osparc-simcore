@@ -1,14 +1,12 @@
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.layout.NavigationBar", {
+qx.Class.define("qxapp.desktop.NavigationBar", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
     this.base(arguments, new qx.ui.layout.HBox());
 
     this.set({
-      backgroundColor: "#00264d", // FIXME: add theme color
-      textColor: "white",
       paddingLeft: 10,
       paddingRight: 10,
       maxHeight: 50
@@ -50,10 +48,9 @@ qx.Class.define("qxapp.layout.NavigationBar", {
 
 
     // Connect listeners
-    let scope = this;
     homeBtn.addListener("execute", function() {
-      scope.fireEvent("HomePressed");
-    }, scope);
+      this.fireEvent("HomePressed");
+    }, this);
   },
 
   events: {
