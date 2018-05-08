@@ -22,4 +22,4 @@ matrix:
       before_script:
         - pylint --version
       script:
-        - make lint
+        - make pylint
