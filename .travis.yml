@@ -6,7 +6,7 @@ matrix:
 
       cache:
         directories:
-          - node_modules
+          - services/node_modules
           - services/web-client/contrib
 
       install:
