@@ -148,35 +148,28 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
         });
         this.setSocket(mySocket);
 
-        this.on("connect", function() {
-          this.fireEvent("connect");
+        [
+          "connecting",
+          "message",
+          "close",
+          "reconnect",
+          "reconnecting",
+          "error"
+        ].forEach(event => {
+          this.on(event, ev => {
+            this.fireDataEvent(event, ev);
+          }, this);
         }, this);
-        this.on("connecting", function(ev) {
-          this.fireDataEvent("connecting", ev);
-        }, this);
-        this.on("connect_failed", function() {
-          this.fireEvent("connect_failed");
-        }, this);
-        this.on("message", function(ev) {
-          this.fireDataEvent("message", ev);
-        }, this);
-        this.on("close", function(ev) {
-          this.fireDataEvent("close", ev);
-        }, this);
-        this.on("disconnect", function() {
-          this.fireEvent("disconnect");
-        }, this);
-        this.on("reconnect", function(ev) {
-          this.fireDataEvent("reconnect", ev);
-        }, this);
-        this.on("reconnecting", function(ev) {
-          this.fireDataEvent("reconnecting", ev);
-        }, this);
-        this.on("reconnect_failed", function() {
-          this.fireEvent("reconnect_failed");
-        }, this);
-        this.on("error", function(ev) {
-          this.fireDataEvent("error", ev);
+
+        [
+          "connect",
+          "connect_failed",
+          "disconnect",
+          "reconnect_failed"
+        ].forEach(event => {
+          this.on(event, () => {
+            this.fireDataEvent(event);
+          }, this);
         }, this);
       }, this);
 
