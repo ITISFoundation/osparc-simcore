@@ -25,9 +25,13 @@ matrix:
       python:
         - "3.6"
       install:
-        - npm install -g npm@latest
+        - pushd services
+        - npm install
         - pip3 install pylint
+        - popd
       before_script:
         - pylint --version
       script:
+        - pushd services
         - npm run lintPyServices
+        - popd
