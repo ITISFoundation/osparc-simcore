@@ -115,46 +115,20 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       node.open();
       this.__Nodes.push(node);
 
+      // force rendering to get the node"s updated position
+      qx.ui.core.queue.Layout.flush();
+
       let nNodesA = this.__Nodes.length;
       if (nNodesA > 1) {
-        // force rendering to get the node"s updated position
-        qx.ui.core.queue.Layout.flush();
         this.__addLink(this.__Nodes[nNodesA-2], this.__Nodes[nNodesA-1]);
       }
-    },
 
-    __addNode: function(node) {
-      let nodeBase = new qxapp.components.workbench.NodeBase(node);
-      this.__addNodeToWorkbench(nodeBase);
-
-      if (nodeBase.getNodeImageId() === "modeler") {
-        const slotName = "startModeler";
-        let socket = qxapp.wrappers.WebSocket.getInstance();
-        socket.on(slotName, function(val) {
-          if (val["service_uuid"] === nodeBase.getNodeId()) {
-            let portNumber = val["containers"][0]["published_ports"];
-            nodeBase.getMetaData().viewer.port = portNumber;
-          }
-        }, this);
-        socket.emit(slotName, nodeBase.getNodeId());
-      } else if (nodeBase.getNodeImageId() === "jupyter-base-notebook") {
-        const slotName = "startJupyter";
-        let socket = qxapp.wrappers.WebSocket.getInstance();
-        socket.on(slotName, function(val) {
-          if (val["service_uuid"] === nodeBase.getNodeId()) {
-            let portNumber = val["containers"][0]["published_ports"];
-            nodeBase.getMetaData().viewer.port = portNumber;
-          }
-        }, this);
-        socket.emit(slotName, nodeBase.getNodeId());
-      }
-
-      nodeBase.addListener("move", function(e) {
+      node.addListener("move", function(e) {
         let linksInvolved = new Set([]);
-        nodeBase.getInputLinkIDs().forEach(linkId => {
+        node.getInputLinkIDs().forEach(linkId => {
           linksInvolved.add(linkId);
         });
-        nodeBase.getOutputLinkIDs().forEach(linkId => {
+        node.getOutputLinkIDs().forEach(linkId => {
           linksInvolved.add(linkId);
         });
 
@@ -173,9 +147,37 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         });
       }, this);
 
-      nodeBase.addListener("dblclick", function(e) {
-        this.fireDataEvent("NodeDoubleClicked", nodeBase);
+      node.addListener("dblclick", function(e) {
+        this.fireDataEvent("NodeDoubleClicked", node);
       }, this);
+    },
+
+    __addNode: function(node) {
+      let nodeBase = new qxapp.components.workbench.NodeBase();
+      nodeBase.setMetadata(node);
+      this.__addNodeToWorkbench(nodeBase);
+
+      if (nodeBase.getNodeImageId() === "modeler") {
+        const slotName = "startModeler";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        socket.on(slotName, function(val) {
+          if (val["service_uuid"] === nodeBase.getNodeId()) {
+            let portNumber = val["containers"][0]["published_ports"];
+            nodeBase.getMetadata().viewer.port = portNumber;
+          }
+        }, this);
+        socket.emit(slotName, nodeBase.getNodeId());
+      } else if (nodeBase.getNodeImageId() === "jupyter-base-notebook") {
+        const slotName = "startJupyter";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        socket.on(slotName, function(val) {
+          if (val["service_uuid"] === nodeBase.getNodeId()) {
+            let portNumber = val["containers"][0]["published_ports"];
+            nodeBase.getMetadata().viewer.port = portNumber;
+          }
+        }, this);
+        socket.emit(slotName, nodeBase.getNodeId());
+      }
     },
 
     __addLink: function(node1, node2) {
@@ -231,10 +233,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       for (let i = 0; i < this.__Nodes.length; i++) {
         const nodeId = this.__Nodes[i].getNodeId();
         pipeline[nodeId] = {};
-        pipeline[nodeId].serviceId = this.__Nodes[i].getMetaData().id;
-        pipeline[nodeId].input = this.__Nodes[i].getMetaData().input;
-        pipeline[nodeId].output = this.__Nodes[i].getMetaData().output;
-        pipeline[nodeId].settings = this.__Nodes[i].getMetaData().settings;
+        pipeline[nodeId].serviceId = this.__Nodes[i].getMetadata().id;
+        pipeline[nodeId].input = this.__Nodes[i].getMetadata().input;
+        pipeline[nodeId].output = this.__Nodes[i].getMetadata().output;
+        pipeline[nodeId].settings = this.__Nodes[i].getMetadata().settings;
         pipeline[nodeId].children = [];
         for (let j = 0; j < this.__Links.length; j++) {
           if (nodeId === this.__Links[j].getInputNodeId()) {

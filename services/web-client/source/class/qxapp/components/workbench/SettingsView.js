@@ -62,7 +62,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       {
         // Expose title
         let input = new qx.ui.form.TextField().set({
-          value: node.getMetaData().name
+          value: node.getMetadata().name
         });
         if (input) {
           form.add(input, this.tr("Node Title"), null, "NodeTitle");
@@ -70,8 +70,8 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       }
 
       // Expose settings
-      for (let i = 0; i < node.getMetaData().settings.length; i++) {
-        let sett = node.getMetaData().settings[i];
+      for (let i = 0; i < node.getMetadata().settings.length; i++) {
+        let sett = node.getMetadata().settings[i];
         let input = this.__fromMetadataToQxSetting(sett);
         if (input) {
           form.add(input, sett.text, null, sett.name);
@@ -89,12 +89,12 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
 
       computeButton.addListener("execute", function() {
         if (form.validate()) {
-          node.getMetaData().name = model.get("NodeTitle");
-          node.setServiceName(node.getMetaData().name);
+          node.getMetadata().name = model.get("NodeTitle");
+          node.setServiceName(node.getMetadata().name);
 
-          for (let i = 0; i < node.getMetaData().settings.length; i++) {
-            let settKey = node.getMetaData().settings[i].name;
-            node.getMetaData().settings[i].value = model.get(settKey);
+          for (let i = 0; i < node.getMetadata().settings.length; i++) {
+            let settKey = node.getMetadata().settings[i].name;
+            node.getMetadata().settings[i].value = model.get(settKey);
           }
         }
       }, this);
@@ -107,12 +107,12 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
 
 
       // Show viewer
-      if (Object.prototype.hasOwnProperty.call(node.getMetaData(), "viewer")) {
+      if (Object.prototype.hasOwnProperty.call(node.getMetadata(), "viewer")) {
         let button = new qx.ui.form.Button("Open Viewer");
-        button.setEnabled(node.getMetaData().viewer.port !== null);
+        button.setEnabled(node.getMetadata().viewer.port !== null);
         button.addListener("execute", function(e) {
-          let url = node.getMetaData().viewer.ip + ":" + node.getMetaData().viewer.port;
-          let modelerWin = this.__createBrowserWindow(url, node.getMetaData().name);
+          let url = node.getMetadata().viewer.ip + ":" + node.getMetadata().viewer.port;
+          let modelerWin = this.__createBrowserWindow(url, node.getMetadata().name);
           modelerWin.open();
           // Too hacky
           this.getLayoutParent().getChildren()[1]._desktop.add(modelerWin);
