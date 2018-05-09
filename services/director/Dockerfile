@@ -20,7 +20,7 @@ ENV LOCAL_MODE='True'
 
 ENV FLASK_APP=director.py
 
-COPY boot.sh boot.sh
+COPY --chown=app:app boot.sh boot.sh
 RUN chmod +x boot.sh
 
 USER app
@@ -41,4 +41,4 @@ FROM common as production
 
 COPY --chown=app:app ./source /home/app
 
-ENTRYPOINT ["./boot.sh"]
+ENTRYPOINT ["sh", "./boot.sh"]
