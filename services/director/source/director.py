@@ -13,21 +13,21 @@ from flask import Flask, abort, request
 
 _LOGGER = logging.getLogger(__name__)
 
-app = Flask(__name__)
+APP = Flask(__name__)
 registry_proxy.setup_registry_connection()
 
 
-@app.route('/')
+@APP.route('/')
 def hello_world():
     """ Routing to test that the director is online
 
     Returns:
         [type] -- [description]
     """
-    return "<h1>Hoi, the directory here. I am alive!</h1>"
+    return "<h1>Hoi zaeme! Salut les d'jeunz!</h1><h3>This is {} responding!</h2>".format(__name__)
 
 
-@app.route('/list_interactive_services', methods=['GET'])
+@APP.route('/list_interactive_services', methods=['GET'])
 def list_interactive_services():
     """[summary]
 
@@ -48,13 +48,14 @@ def list_interactive_services():
     return json.dumps(list_of_interactive_services)
 
 
-@app.route('/start_service', methods=['POST'])
+@APP.route('/start_service', methods=['POST'])
 def start_service():
     """[summary]
 
     Returns:
         [type] -- [description]
     """
+    _LOGGER.info(request.json)
 
     # check syntax
     if not request.json or not 'service_name' in request.json or not 'service_uuid' in request.json:
@@ -75,7 +76,7 @@ def start_service():
         abort(500)
 
 
-@app.route('/stop_service', methods=['POST'])
+@APP.route('/stop_service', methods=['POST'])
 def stop_service():
     """[summary]
 
@@ -96,4 +97,4 @@ def stop_service():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug=False, port=8001, threaded=True)
+    APP.run(host='0.0.0.0', debug=False, port=8001, threaded=True)
