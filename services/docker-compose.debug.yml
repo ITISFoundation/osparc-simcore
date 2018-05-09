@@ -6,7 +6,7 @@ services:
     build:
       target: development
     volumes:
-      - './director/source:/home/app'
+      - './director/source:/home/app/source'
   #--------------------------------------------------------------------
   webserver:
     image: services_webserver:dev

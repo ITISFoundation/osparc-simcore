@@ -31,13 +31,13 @@ FROM common as development
 
 ENV FLASK_DEBUG=1
 
-VOLUME /home/app
-
-CMD ["./boot.sh"]
+VOLUME /home/app/source
+WORKDIR /home/app/source
+CMD ["sh", "../boot.sh"]
 
 # Production stage -------------------
 FROM common as production
 
-COPY --chown=app:app ./source /home/app
+COPY --chown=app:app ./source /home/app/source
 
 ENTRYPOINT ["sh", "./boot.sh"]
