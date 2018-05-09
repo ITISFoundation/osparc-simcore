@@ -21,7 +21,7 @@ ENV FLASK_APP=director.py
 
 COPY --chown=app:app boot.sh boot.sh
 RUN chmod +x boot.sh
-
+#RUN usermod -a -G docker $USER
 USER app
 VOLUME /var/run/docker.sock
 EXPOSE 8001
