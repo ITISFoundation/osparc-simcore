@@ -4,7 +4,8 @@
 version: '3.4'
 services:
   director:
-    image: masu.speag.com/simcore/workbench/director:2.3
+    #image: masu.speag.com/simcore/workbench/director:2.3
+    image: services_director:latest
     dns:
       - 172.16.8.15
     deploy:
@@ -13,7 +14,8 @@ services:
           - node.platform.os == linux
           - node.role == manager
   webserver:
-    image: masu.speag.com/simcore/workbench/webserver:2.3
+    #image: masu.speag.com/simcore/workbench/webserver:2.3
+    image: services_webserver:latest
     dns:
       - 172.16.8.15
     deploy:

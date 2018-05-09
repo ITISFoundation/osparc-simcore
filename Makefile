@@ -8,11 +8,11 @@ build:
 rebuild:
 	docker-compose -f services/docker-compose.yml build --no-cache
 
-deploy_up:
+up:
 	docker swarm init
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml up -d
+	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml up
 
-deploy_down:
+down:
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml down
 	docker swarm leave -f
 
