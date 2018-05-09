@@ -23,7 +23,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     settingsView.addListenerOnce("appear", () => {
       settingsView.getContentElement().getDomElement()
         .addEventListener("transitionend", () => {
-          console.log(settingsView.getWidth());
           settingsView.resetDecorator();
           if (settingsView.getWidth() === 0) {
             settingsView.exclude();
@@ -37,8 +36,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     workbench.addListenerOnce("appear", () => {
       workbench.getContentElement().getDomElement()
         .addEventListener("transitionend", () => {
-          console.log(workbench.getWidth());
-          workbench.resetDecorator()
+          workbench.resetDecorator();
         });
     });
 
@@ -62,7 +60,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     }, this);
 
     this.__TransDeco = new qx.ui.decoration.Decorator().set({
-      transitionProperty: ["left","right","width"],
+      transitionProperty: ["left", "right", "width"],
       transitionDuration: "0.1s",
       transitionTimingFunction: "ease"
     });
