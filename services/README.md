@@ -1,39 +1,46 @@
 # services
 
 ## Overview
+
 Each folder contains a service for use wihtin or from the osparc workbench. Here follows a quick description of each service.
 
 ### authentication
+
 User login/authentication service...
 
 ### computation
+
 Computational services...
 
 ### director
+
 The director is responsible for making dynamic services and computational services available in a docker registry to the workbench application.
 It is also responsible for starting and stopping such a service on demand. A service may be composed of 1 to N connected docker images.
 
 ### jupyter
+
 This is a third party service based on jupyter notebook images. It brings the jupyter notebook in the osparc workbench.
 
 ### modeling
+
 This is a service providing 3D modeling capabilities.
 
 ### web
-This is a service that provides the server/client infrastructure of the the workbench application.
 
+This is a service that provides the server/client infrastructure of the the workbench application.
 
 ## Architecture
 
 ### workbench
+
 The association of the web, authentication and director services creates the so-called workbench application. It provides the main entry point for the user.
 
 ### workbench nodes
+
 The other services are made available through a docker registry to the workbench application.
 When a node is created in the workbench frontend, the director starts the respective services accordingly.
 The started services are dispatched on the available cluster and connected to the workbench application.
 When the user closes a node or disconnects, any running service will be automatically closed.
-
 
 ## Development Workflow
 
