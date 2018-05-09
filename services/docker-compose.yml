@@ -31,3 +31,4 @@ services:
       - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8001
       - SIMCORE_WEB_CONFIG=production
+    #command: ["python", "server.py"]

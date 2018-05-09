@@ -3,10 +3,9 @@ This module is responsible for communicating with the director entity
 """
 
 # pylint: disable=C0111
-import sys
 import os
+import re
 import logging
-import json
 
 from requests import RequestException, Session
 
@@ -15,15 +14,22 @@ _LOGGER = logging.getLogger(__name__)
 _SESSION = Session()
 
 
-def director_request(path, method="GET", data=dict()):
+def director_request(path, method="GET", data=None):
+    if data is None:
+        data = dict()
+
     api_url = os.environ.get('DIRECTOR_HOST', '0.0.0.0') + \
         ':' + os.environ.get('DIRECTOR_PORT', '8001') + '/' + path
+
+    # TODO: Unsafe! Improve linking of service. Check https://docs.docker.com/docker-cloud/apps/service-links/#using-service-links-for-service-discovery
+    if not re.match(r"http[s]*://", api_url):
+        api_url = 'http://' + api_url
+
     try:
-        if len(data) == 0:
-            request_result = getattr(_SESSION, method.lower())(api_url)
+        if data:
+            request_result = getattr(_SESSION, method.lower())(api_url, json=data)
         else:
-            request_result = getattr(
-                _SESSION, method.lower())(api_url, json=data)
+            request_result = getattr(_SESSION, method.lower())(api_url)
 
         # TODO: we should only check for success (e.g. 201), and handle any error in a dedicated function
         if request_result.status_code == 400:
@@ -38,7 +44,7 @@ def director_request(path, method="GET", data=dict()):
             _LOGGER.warning('return ok: %s', request_result.json())
             return request_result
     except RequestException as err:
-        raise RequestException("Problem during connection to director" + str(e))
+        raise RequestException("Problem during connection to director" + str(err))
 
 
 def retrieve_interactive_services():

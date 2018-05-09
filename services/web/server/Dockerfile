@@ -66,6 +66,8 @@ FROM common-py-stage as development
 
 ARG server_dir=web/server
 
+ENV SIMCORE_WEB_CONFIG=development
+
 COPY $server_dir/requirements/dev.txt /usr/src/requirements/dev.txt
 RUN pip3 install --no-cache-dir -r /usr/src/requirements/dev.txt \
   && python --version \
@@ -84,11 +86,12 @@ FROM common-py-stage as production
 
 ARG server_dir=web/server
 
+ENV SIMCORE_WEB_CONFIG=production
+
 COPY $server_dir/requirements/prod.txt /usr/src/requirements/prod.txt
 RUN pip3 install --no-cache-dir -r /usr/src/requirements/prod.txt \
     && python --version \
     && pip list --format=columns
-
 
 COPY $server_dir/source .
 
