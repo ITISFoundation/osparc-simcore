@@ -13,11 +13,11 @@ from flask import Flask, abort, request
 
 _LOGGER = logging.getLogger(__name__)
 
-APP = Flask(__name__)
+app = Flask(__name__)
 registry_proxy.setup_registry_connection()
 
 
-@APP.route('/')
+@app.route('/')
 def hello_world():
     """ Routing to test that the director is online
 
@@ -27,7 +27,7 @@ def hello_world():
     return "<h1>Hoi, the directory here. I am alive!</h1>"
 
 
-@APP.route('/list_interactive_services', methods=['GET'])
+@app.route('/list_interactive_services', methods=['GET'])
 def list_interactive_services():
     """[summary]
 
@@ -48,7 +48,7 @@ def list_interactive_services():
     return json.dumps(list_of_interactive_services)
 
 
-@APP.route('/start_service', methods=['POST'])
+@app.route('/start_service', methods=['POST'])
 def start_service():
     """[summary]
 
@@ -71,11 +71,11 @@ def start_service():
         return producer.start_service(service_name, service_tag, uuid), 201
     except:
         _LOGGER.exception("Failed to start service %s:%s",
-                          service_name, servirce_tag)
+                          service_name, service_tag)
         abort(500)
 
 
-@APP.route('/stop_service', methods=['POST'])
+@app.route('/stop_service', methods=['POST'])
 def stop_service():
     """[summary]
 
@@ -96,4 +96,4 @@ def stop_service():
 
 
 if __name__ == "__main__":
-    APP.run(host='0.0.0.0', debug=False, port=8001, threaded=True)
+    app.run(host='0.0.0.0', debug=False, port=8001, threaded=True)
