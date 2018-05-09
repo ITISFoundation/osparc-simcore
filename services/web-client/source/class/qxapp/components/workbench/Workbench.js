@@ -59,7 +59,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __SvgWidget: null,
 
     __getPlusButton: function() {
-      const icon = qxapp.utils.Placeholders.getIcon("fa-plus", 32);
+      const icon = "@FontAwesome5/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
       let plusButton = new qx.ui.form.MenuButton(null, icon, this.__getMatchingServicesMenu());
       plusButton.set({
         width: 50,

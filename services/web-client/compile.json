@@ -20,19 +20,20 @@
   "applications": [
     {
       "class": "qxapp.Application",
-      "theme": "qxapp.theme.Theme",
+      "theme": "osparc.theme.OSparcDark",
       "name": "qxapp",
       "include": [
         "qx.theme.Indigo",
         "qx.theme.Modern",
         "qx.theme.Simple",
-        "osparc.theme.OSparcDark"
+        "iconfont.material.Include",
+        "iconfont.fontawesome5.Include"
       ]
     }
   ],
 
   "libraries": [
-    "../node_modules/qooxdoo-sdk/framework",
+    "../qooxdoo-sdk/framework",
     "."
   ],
 
