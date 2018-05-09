@@ -24,7 +24,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
   },
 
   members: {
-    __SettingsBox: null,
+    __settingsBox: null,
 
     __initTitle: function() {
       let box = new qx.ui.layout.HBox();
@@ -52,12 +52,12 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
     },
 
     __initSettings: function() {
-      this.__SettingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      this.add(this.__SettingsBox);
+      this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      this.add(this.__settingsBox);
     },
 
     setNodeMetadata: function(node) {
-      this.__SettingsBox.removeAll();
+      this.__settingsBox.removeAll();
 
       let form = new qx.ui.form.Form();
       {
@@ -104,7 +104,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
         form.reset();
       }, this);
 
-      this.__SettingsBox.add(new qx.ui.form.renderer.Single(form));
+      this.__settingsBox.add(new qx.ui.form.renderer.Single(form));
 
 
       // Show viewer
@@ -112,13 +112,14 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
         let button = new qx.ui.form.Button("Open Viewer");
         button.setEnabled(node.getMetadata().viewer.port !== null);
         button.addListener("execute", function(e) {
+          // FIXME: avoid hard-coding url sheme!
           let url = "http://" + window.location.hostname + ":" + node.getMetadata().viewer.port;
-          let modelerWin = this.createBrowserWindow(url, node.getMetadata().name);
+          let modelerWin = this.__createBrowserWindow(url, node.getMetadata().name);
           modelerWin.open();
-          // Too hacky
-          this.getLayoutParent().getChildren()[1]._desktop.add(modelerWin);
+          // FIXME: Too hacky
+          this.getLayoutParent().getChildren()[1].__Desktop.add(modelerWin);
         }, this);
-        this.__SettingsBox.add(button);
+        this.__settingsBox.add(button);
       }
     },
 
