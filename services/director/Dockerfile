@@ -16,13 +16,12 @@ ENV REGISTRY_AUTH = ''
 ENV REGISTRY_USER = ''
 ENV REGISTRY_PW = ''
 ENV REGISTRY_URL = ''
-ENV LOCAL_MODE='True'
 
 ENV FLASK_APP=director.py
 
-COPY boot.sh boot.sh
+COPY --chown=app:app boot.sh boot.sh
 RUN chmod +x boot.sh
-
+#RUN usermod -a -G docker $USER
 USER app
 VOLUME /var/run/docker.sock
 EXPOSE 8001
@@ -32,13 +31,13 @@ FROM common as development
 
 ENV FLASK_DEBUG=1
 
-VOLUME /home/app
-
-CMD ["./boot.sh"]
+VOLUME /home/app/source
+WORKDIR /home/app/source
+CMD ["sh", "../boot.sh"]
 
 # Production stage -------------------
 FROM common as production
 
-COPY --chown=app:app ./source /home/app
+COPY --chown=app:app ./source /home/app/source
 
-ENTRYPOINT ["./boot.sh"]
+ENTRYPOINT ["sh", "./boot.sh"]

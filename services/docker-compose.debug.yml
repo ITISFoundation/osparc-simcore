@@ -6,7 +6,7 @@ services:
     build:
       target: development
     volumes:
-      - './director/source:/home/app'
+      - './director/source:/home/app/source'
   #--------------------------------------------------------------------
   webserver:
     image: services_webserver:dev
@@ -16,7 +16,7 @@ services:
       - '9081:8080'
       #- '9082:9082'
     environment:
-      - DIRECTOR_HOST=director-dev
+      - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8001
       - SIMCORE_WEB_CONFIG=development
     volumes:

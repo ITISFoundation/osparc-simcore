@@ -16,7 +16,7 @@ _SESSION = Session()
 
 
 def director_request(path, method="GET", data=dict()):
-    api_url = os.environ.get('DIRECTOR_HOST', 'http://localhost') + \
+    api_url = os.environ.get('DIRECTOR_HOST', '0.0.0.0') + \
         ':' + os.environ.get('DIRECTOR_PORT', '8001') + '/' + path
     try:
         if len(data) == 0:
