@@ -3,11 +3,14 @@
 PY_FILES = $(strip $(shell find services -iname '*.py'))
 
 build:
+	docker-compose -f services/docker-compose.yml build
+
+rebuild:
 	docker-compose -f services/docker-compose.yml build --no-cache
 
 deploy_up:
 	docker swarm init
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml up
+	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml up -d
 
 deploy_down:
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml down
