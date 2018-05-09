@@ -44,7 +44,7 @@ async def start_modeler_handler(sid, data):
     # Add mechanism to handle these situations (retry, abandon...)
     try:
         await SIO.emit('startModeler', data=result, room=sid)
-    except ErrorIO as err:
+    except IOError as err:
         _LOGGER.exception(err)
 
 

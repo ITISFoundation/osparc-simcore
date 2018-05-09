@@ -1,12 +1,11 @@
 """
     The director takes care of starting/stopping services.
 """
+# pylint: disable=bare-except
 
 import json
 import logging
-import os
 
-import docker
 import producer
 import registry_proxy
 from flask import Flask, abort, request
@@ -40,8 +39,10 @@ def list_interactive_services():
     # some services may have several parts, fuse these
     # the syntax of services are simcore/services/%SERVICENAME%/...
     list_of_interactive_services = []
-    [list_of_interactive_services.append(registry_proxy.get_service_name(
-        i)) for i in list_of_interactive_repos if not list_of_interactive_services.count(registry_proxy.get_service_name(i))]
+    for repo in list_of_interactive_repos:
+        service_name = registry_proxy.get_service_name(repo)
+        if service_name not in list_of_interactive_services:
+            list_of_interactive_services.append(service_name)
 
     #list_of_interactive_services = [registry_proxy.retrieve_list_of_images_in_repo(repo) for repo in list_of_interactive_repos]
 

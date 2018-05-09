@@ -33,7 +33,7 @@ def check_service_uuid_available(docker_client, service_uuid):
     # check if service with same uuid already exists
     list_of_running_services_w_uuid = docker_client.services.list(
         filters={'label': 'uuid=' + service_uuid})
-    if (len(list_of_running_services_w_uuid) != 0):
+    if list_of_running_services_w_uuid:
         raise Exception(
             'A service with the same uuid is already running: ' + service_uuid)
 
@@ -53,7 +53,7 @@ def convert_labels_to_docker_runtime_parameters(service_runtime_parameters_label
     for param in service_runtime_parameters_labels:
         if 'name' not in param or 'type' not in param or 'value' not in param:
             pass
-        index = str(param['value']).find("%service_uuid%")
+        # index = str(param['value']).find("%service_uuid%")
         if str(param['value']).find("%service_uuid%") != -1:
             dummy_string = json.dumps(param['value'])
             dummy_string = dummy_string.replace("%service_uuid%", service_uuid)
@@ -143,7 +143,7 @@ def wait_until_service_running_or_failed(service_id):
     # some times one has to wait until the task info is filled
     while True:
         task_infos_json = client.tasks(filters={'service': service_id})
-        if len(task_infos_json) > 0:
+        if task_infos_json:
             # check the status
             status_json = task_infos_json[0]["Status"]
             task_state = status_json["State"]
@@ -180,7 +180,7 @@ def start_service(service_name, service_tag, service_uuid):
     containers_meta_data = list()
     for docker_image_path in list_of_images:
         available_tags_list = sorted(list_of_images[docker_image_path]['tags'])
-        if len(available_tags_list) == 0:
+        if not available_tags_list:
             raise Exception('No available image in ' + docker_image_path)
 
         tag = available_tags_list[len(available_tags_list)-1]
@@ -234,7 +234,8 @@ def stop_service(service_uuid):
     try:
         list_running_services_with_uuid = docker_client.services.list(
             filters={'label': 'uuid=' + service_uuid})
-        [service.remove() for service in list_running_services_with_uuid]
+        for service in list_running_services_with_uuid:
+            service.remove()
         remove_overlay_network_of_swarm(docker_client, service_uuid)
     except docker.errors.APIError as err:
         # TODO: check exceptions policy

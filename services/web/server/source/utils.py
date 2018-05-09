@@ -34,7 +34,7 @@ def get_thrift_api_folders(startdir):
         This is the folder layout produced by the thrift generator
     """
     folders = []
-    for root, dirs, files in os.walk(startdir):
+    for root, dirs, _ in os.walk(startdir):
         dirs[:] = [d for d in dirs if not d.startswith('.')]
         if "gen-py" in dirs:
             dirs[:] = []  # stop looking under this node

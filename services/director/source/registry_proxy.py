@@ -58,8 +58,7 @@ def retrieve_list_of_repos_with_interactive_services():
     # pylint: disable=C0103
     list_all_repos = retrieve_list_of_repositories()
     # get the services repos
-    list_of_interactive_repos = [repo for repo in list_all_repos if str(
-        repo).startswith(INTERACTIVE_SERVICES_PREFIX)]
+    list_of_interactive_repos = [repo for repo in list_all_repos if str(repo).startswith(INTERACTIVE_SERVICES_PREFIX)]
     return list_of_interactive_repos
 
 
@@ -68,14 +67,14 @@ def retrieve_list_of_interactive_services_with_name(service_name):
     list_interactive_services_repositories = retrieve_list_of_repos_with_interactive_services()
     # find the ones containing the service name
     list_repos_for_service = []
-    [list_repos_for_service.append(
-        i) for i in list_interactive_services_repositories if get_service_name(i) == service_name]
+    for repo in list_interactive_services_repositories:
+        if get_service_name(repo) == service_name:
+            list_repos_for_service.append(repo)
     return list_repos_for_service
 
 
 def get_service_name(repository_name):
-    service_name_suffixes = str(repository_name)[
-        len(INTERACTIVE_SERVICES_PREFIX):]
+    service_name_suffixes = str(repository_name)[len(INTERACTIVE_SERVICES_PREFIX):]
     return service_name_suffixes.split('/')[0]
 
 
