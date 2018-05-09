@@ -22,7 +22,7 @@ qx.Class.define("qxapp.utils.Placeholders", {
       // see https://placeholder.com/
 
       height = (height === null) ? width : height;
-      const url = "http://via.placeholder.com/" + width + "x" + height;
+      const url = "//via.placeholder.com/" + width + "x" + height;
 
       // e.g. http://via.placeholder.com/350x150
       return url;
