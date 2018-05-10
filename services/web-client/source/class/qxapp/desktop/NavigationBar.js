@@ -24,7 +24,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     let homeBtn = new qx.ui.form.Button();
     homeBtn.set(commonBtnSettings);
-    homeBtn.setIcon(qxapp.utils.Placeholders.getIcon("ion-home", 32));
+    homeBtn.setIcon("@FontAwesome5Solid/home/32");
     this.add(homeBtn);
 
     this._currentState = new qx.ui.basic.Label().set({
