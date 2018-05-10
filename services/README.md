@@ -2,7 +2,9 @@
 
 ## Overview
 
-Each folder contains a service for use wihtin or from the osparc workbench. Here follows a quick description of each service.
+Each folder contains a service for use within or from the osparc workbench. Here follows a quick description of each service.
+
+[![service-web](../docs/img/service-web.svg)](http://interactive.blockdiag.com/?compression=deflate&src=eJxdjs0KwjAQhO99imXPFtNbpcYXkR7ys2hw6UqSKiK-uymxiF7nm28Yy-IuPpgTPBsAvJPdOg40ZYRjOpsr6UkyjUOB_tEmirfgKH0YaEDHMnsshX993x5qsEgUyx4bS6x3qu824IQlastz3f4pFtGHSC5LXCXsleqw3ljRUvteGprXG1PtQR0)
 
 ### authentication
 
