@@ -1,0 +1,4 @@
+-r common.txt
+aiohttp-devtools
+pylint
+autopep8
