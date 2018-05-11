@@ -3,15 +3,17 @@
 """
 # pylint: disable=C0111
 
-import json
 import os
 import time
+import json
+import logging
 
 import docker
 import registry_proxy
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
 
+_LOGGER = logging.getLogger(__name__)
 
 def is_service_a_web_server(docker_image_path):
     return str(docker_image_path).find('webserver') != -1
@@ -63,8 +65,7 @@ def convert_labels_to_docker_runtime_parameters(service_runtime_parameters_label
 
         if param['name'] == 'ports':
             # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
-            enpoint_spec = docker.types.EndpointSpec(
-                ports={0: int(param['value'])})
+            enpoint_spec = docker.types.EndpointSpec(ports={0: int(param['value'])})
             runtime_params["endpoint_spec"] = enpoint_spec
         else:
             runtime_params[param['name']] = param['value']
@@ -98,8 +99,12 @@ def get_docker_image_published_ports(service_id):
     # pylint: disable=C0103
     low_level_client = docker.APIClient()
     service_infos_json = low_level_client.services(filters={'id': service_id})
+
+    if len(service_infos_json) != 1:
+        _LOGGER.warning("Expected a single port per service, got %s", service_infos_json)
+
     published_ports = list()
-    for service_info in service_infos_json:  # there should be only one actually
+    for service_info in service_infos_json:
         if 'Endpoint' in service_info:
             service_endpoints = service_info['Endpoint']
             if 'Ports' in service_endpoints:
@@ -147,25 +152,27 @@ def wait_until_service_running_or_failed(service_id):
             # check the status
             status_json = task_infos_json[0]["Status"]
             task_state = status_json["State"]
+
+            _LOGGER.debug("%s %s", service_id, task_state)
             if task_state == "running":
-                # great it is running
                 break
             elif task_state == 'failed' or task_state == "rejected":
-                # error
                 raise Exception("the service could not be started")
+        # TODO: all these functions should be async and here one could use await sleep which
+        # would allow dealing with other events instead of wasting time here
         time.sleep(0.005)  # 5ms
 
 
 def start_service(service_name, service_tag, service_uuid):
     # pylint: disable=C0103
+
     # find the ones containing the service name
-    list_repos_for_service = registry_proxy.retrieve_list_of_interactive_services_with_name(
-        service_name)
+    list_repos_for_service = registry_proxy.retrieve_list_of_interactive_services_with_name(service_name)
+
     # get the available image for each service (syntax is image:tag)
     list_of_images = {}
     for repo in list_repos_for_service:
-        list_of_images[repo] = registry_proxy.retrieve_list_of_images_in_repo(
-            repo)
+        list_of_images[repo] = registry_proxy.retrieve_list_of_images_in_repo(repo)
 
     # initialise docker client and check the uuid is available
     docker_client = docker.from_env()
@@ -176,6 +183,7 @@ def start_service(service_name, service_tag, service_uuid):
         # create a new network to connect the differnt containers
         docker_network = create_overlay_network_in_swarm(
             docker_client, service_name, service_uuid)
+
     # create services
     containers_meta_data = list()
     for docker_image_path in list_of_images:
@@ -187,29 +195,29 @@ def start_service(service_name, service_tag, service_uuid):
         if not service_tag == 'latest' and available_tags_list.count(service_tag) == 1:
             tag = service_tag
 
-        docker_image_full_path = os.environ.get(
-            'REGISTRY_URL') + '/' + docker_image_path + ':' + tag
+        docker_image_full_path = os.environ.get('REGISTRY_URL') + '/' + docker_image_path + ':' + tag
 
         # prepare runtime parameters
-        service_runtime_parameters_labels = get_service_runtime_parameters_labels(
-            docker_image_path, tag)
-        docker_service_runtime_parameters = convert_labels_to_docker_runtime_parameters(
-            service_runtime_parameters_labels, service_uuid)
-        add_uuid_label_to_service_runtime_params(
-            docker_service_runtime_parameters, service_uuid)
+        service_runtime_parameters_labels = get_service_runtime_parameters_labels(docker_image_path, tag)
+        docker_service_runtime_parameters = convert_labels_to_docker_runtime_parameters(service_runtime_parameters_labels, service_uuid)
+        add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
         if len(list_of_images) > 1:
-            add_network_to_service_runtime_params(
-                docker_service_runtime_parameters, docker_network)
-        set_service_name(docker_service_runtime_parameters, registry_proxy.get_service_sub_name(
-            docker_image_path), service_uuid)
+            add_network_to_service_runtime_params(docker_service_runtime_parameters, docker_network)
+
+        set_service_name(docker_service_runtime_parameters,
+            registry_proxy.get_service_sub_name(docker_image_path),
+            service_uuid)
+
         # let-s start the service
         try:
-            service = docker_client.services.create(
-                docker_image_full_path, **docker_service_runtime_parameters)
+            _LOGGER.debug("Starting service with parameters %s", docker_service_runtime_parameters)
+            service = docker_client.services.create(docker_image_full_path, **docker_service_runtime_parameters)
             wait_until_service_running_or_failed(service.id)
             published_ports = get_docker_image_published_ports(service.id)
             container_meta_data = {
-                "container_id": service.id, "published_ports": published_ports}
+                "container_id": service.id,
+                "published_ports": published_ports
+                }
             containers_meta_data.append(container_meta_data)
         except docker.errors.ImageNotFound as err:
             # first cleanup
@@ -221,8 +229,12 @@ def start_service(service_name, service_tag, service_uuid):
             # TODO: check exceptions policy
             stop_service(service_uuid)
             raise Exception('Error while accessing docker server: ' + str(err))
-    service_meta_data = {"service_name": service_name,
-                         "service_uuid": service_uuid, "containers": containers_meta_data}
+
+    service_meta_data = {
+        "service_name": service_name,
+        "service_uuid": service_uuid,
+        "containers": containers_meta_data
+        }
     return json.dumps(service_meta_data)
 
 

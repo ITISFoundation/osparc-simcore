@@ -15,7 +15,10 @@ CONFIG = config.CONFIG[os.environ.get('SIMCORE_WEB_CONFIG', 'default')]
 LOGGER = logging.getLogger(__file__)
 
 # TODO: add logging level via command line (e.g. increase logger level in production for diagonstics)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(levelname)s:%(name)s-%(lineno)d: %(message)s'
+    )
 
 def create_app(args=()):
     """ Creates main application

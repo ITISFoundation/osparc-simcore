@@ -60,7 +60,6 @@ RUN pip3 install --no-cache-dir -r /usr/src/requirements/common.txt
 EXPOSE 8080
 
 
-
 # ----------------------------development---------------------------------
 FROM common-py-stage as development
 
@@ -74,8 +73,6 @@ RUN pip3 install --no-cache-dir -r /usr/src/requirements/dev.txt \
   && pip list --format=columns \
   && echo \
   && ls -l $PWD
-
-#EXPOSE 9082
 
 CMD ["python", "-m", "aiohttp.web", "-H", "0.0.0.0", "-P", "8080", "server:create_app"]
 
@@ -97,6 +94,6 @@ COPY $server_dir/source .
 
 RUN ls -l $PWD
 
-# TODO: why not directly python?
 ENTRYPOINT ["python", "-m", "aiohttp.web"]
+
 CMD ["-H", "0.0.0.0", "-P", "8080", "server:create_app"]

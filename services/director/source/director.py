@@ -12,9 +12,14 @@ from flask import Flask, abort, request
 
 _LOGGER = logging.getLogger(__name__)
 
+# TODO: configure via command line or config file
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(levelname)s:%(name)s-%(lineno)d: %(message)s'
+    )
+
 APP = Flask(__name__)
 registry_proxy.setup_registry_connection()
-
 
 @APP.route('/')
 def hello_world():
@@ -56,24 +61,25 @@ def start_service():
     Returns:
         [type] -- [description]
     """
-    _LOGGER.info(request.json)
-
     # check syntax
     if not request.json or not 'service_name' in request.json or not 'service_uuid' in request.json:
+        _LOGGER.debug("Rejected start_service request: %s", request.json)
         abort(400)
+
     # get required parameters
     service_name = request.json['service_name']
     uuid = request.json['service_uuid']
+
     # get optional tag parameter
     if 'tag' in request.json:
         service_tag = request.json['tag']
     else:
         service_tag = 'latest'
+
     try:
         return producer.start_service(service_name, service_tag, uuid), 201
     except:
-        _LOGGER.exception("Failed to start service %s:%s",
-                          service_name, service_tag)
+        _LOGGER.exception("Failed to start service %s:%s", service_name, service_tag)
         abort(500)
 
 

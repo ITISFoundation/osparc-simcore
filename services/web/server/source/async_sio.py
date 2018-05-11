@@ -38,7 +38,7 @@ async def get_interactive_services_handler(sid, data):
 
 @SIO.on('startModeler')
 async def start_modeler_handler(sid, data):
-    _LOGGER.debug("client %s starts modeler %s", sid, data)
+    _LOGGER.debug("client %s requests start modeler %s", sid, data)
     result = interactive_services_manager.start_service(sid, 'modeler', data)
     # TODO: Connection failure raises exception that is not treated, which stops the webserver
     # Add mechanism to handle these situations (retry, abandon...)
@@ -50,22 +50,23 @@ async def start_modeler_handler(sid, data):
 
 @SIO.on('stopModeler')
 async def stop_modeler_handler(sid, data):
-    _LOGGER.debug("client %s stops modeler %s", sid, data)
+    _LOGGER.debug("client %s requests stop modeler %s", sid, data)
     result = interactive_services_manager.stop_service(sid, data)
     await SIO.emit('stopModeler', data=result, room=sid)
 
 
 @SIO.on('startJupyter')
 async def start_jupyter_handler(sid, data):
-    _LOGGER.debug("client %s starts jupyter %s", sid, data)
+    _LOGGER.debug("client %s requests start jupyter %s", sid, data)
     result = interactive_services_manager.start_service(
         sid, 'jupyter-base-notebook', data)
+    _LOGGER.debug("director %s starts jupyter %s: %s", sid, data, result)
     await SIO.emit('startJupyter', data=result, room=sid)
 
 
 @SIO.on('stopJupyter')
 async def stop_jupyter_handler(sid, data):
-    _LOGGER.debug("client %s stops jupyter %s", sid, data)
+    _LOGGER.debug("client %s requests stop jupyter %s", sid, data)
     result = interactive_services_manager.stop_service(sid, data)
     await SIO.emit('stopJupyter', data=result, room=sid)
 
