@@ -1,10 +1,17 @@
 # services
 
-## Overview
+Each folder contains a services that is part or can be spawned by the platform.
+The prefix *dy-* in the naming indicates that this service is not a building
+part of the application (i.e. not listed as an services in the docker-compose file)
+but instead it is *dy*namically spawned by the director as a back-end service.
 
-Each folder contains a service for use within or from the osparc workbench. Here follows a quick description of each service.
+## overview
+
+This is a schematic of how services are interconnected:
 
 [![service-web](../docs/img/service-web.svg)](http://interactive.blockdiag.com/?compression=deflate&src=eJxdjs0KwjAQhO99imXPFtNbpcYXkR7ys2hw6UqSKiK-uymxiF7nm28Yy-IuPpgTPBsAvJPdOg40ZYRjOpsr6UkyjUOB_tEmirfgKH0YaEDHMnsshX993x5qsEgUyx4bS6x3qu824IQlastz3f4pFtGHSC5LXCXsleqw3ljRUvteGprXG1PtQR0)
+
+and here follows a quick description of each service.
 
 ### authentication
 
