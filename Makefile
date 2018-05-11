@@ -1,6 +1,9 @@
 # author: Sylvain Anderegg
 
+# TODO: add flavours by combinging docker-compose files. Namely development, test and production.
+
 PY_FILES = $(strip $(shell find services -iname '*.py'))
+
 
 build:
 	docker-compose -f services/docker-compose.yml build
@@ -14,13 +17,6 @@ up:
 
 down:
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml down
-	docker swarm leave -f
-
-start:
-	docker-compose -f services/docker-compose.yml up
-
-stop:
-	docker-compose -f services/docker-compose.yml down
 	docker swarm leave -f
 
 pylint:
