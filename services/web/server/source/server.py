@@ -2,7 +2,6 @@
     Uses socketio and aiohtttp framework
 """
 import os
-import sys
 import logging
 
 from aiohttp import web
