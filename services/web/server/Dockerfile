@@ -92,8 +92,6 @@ RUN pip3 install --no-cache-dir -r /usr/src/requirements/prod.txt \
 
 COPY $server_dir/source .
 
-RUN ls -l $PWD
-
 ENTRYPOINT ["python", "-m", "aiohttp.web"]
 
 CMD ["-H", "0.0.0.0", "-P", "8080", "server:create_app"]

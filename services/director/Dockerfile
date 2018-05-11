@@ -25,18 +25,17 @@ WORKDIR /home/app
 #    + boot.sh
 
 COPY --chown=app:app requirements.txt requirements.txt
-COPY --chown=app:app boot.sh boot.sh
-
-RUN chmod +x boot.sh
 
 RUN python -m venv venv \
-  && chown -R app:app venv
+ && chown -R app:app venv
 
 RUN venv/bin/pip install --upgrade pip \
  && venv/bin/pip install -r requirements.txt
 
-# FIXME: fails when docker-compose run in production !?
-# VOLUME /var/run/docker.sock
+COPY --chown=app:app boot.sh boot.sh
+RUN chmod +x boot.sh
+
+# VOLUME /var/run/docker.sock # FIXME: fails when docker-compose run in production !?
 EXPOSE 8001
 
 # --------------------------Development stage -------------------

@@ -25,7 +25,6 @@ def create_app(args=()):
 
     """
     #pylint: disable=W0613
-    print("Createing app ", file=sys.stderr)
     LOGGER.debug("Starting as %s ...", CONFIG)
 
     client_dir = CONFIG.SIMCORE_CLIENT_OUTDIR
