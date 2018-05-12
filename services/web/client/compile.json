@@ -25,13 +25,15 @@
       "include": [
         "qx.theme.Indigo",
         "qx.theme.Modern",
-        "qx.theme.Simple"
+        "qx.theme.Simple",
+        "iconfont.material.Include",
+        "iconfont.fontawesome5.Include"
       ]
     }
   ],
 
   "libraries": [
-    "../node_modules/qooxdoo-sdk/framework",
+    "../qooxdoo-sdk/framework",
     "."
   ],
 
