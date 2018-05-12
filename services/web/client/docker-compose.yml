@@ -11,10 +11,4 @@ services:
       - '.:/home/node/client'
     ports:
       - '8080:8080'
-    working_dir: /home/node/client
-  qx-prod:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: production
-    command: echo qx-prod built and ready to use
+    working_dir: /home/node/clients

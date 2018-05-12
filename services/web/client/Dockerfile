@@ -31,7 +31,6 @@ RUN npm i npm@latest && \
     npm install && \
     git clone --depth 1 https://github.com/qooxdoo/qooxdoo.git qooxdoo-sdk
 
-
 WORKDIR /home/node/client
 COPY scripts scripts
 RUN chmod +x scripts/*.sh
@@ -39,14 +38,10 @@ RUN chmod +x scripts/*.sh
 # ------------------------------------------------------------------------------------------
 FROM base-stage as development
 
-# NOTE: keeps contrib and source-output within container does not work well because links remain in host
-#VOLUME /home/node/client/contrib
-#VOLUME /home/node/client/source-output
-
+# NOTE: cannot expose contrib and source-output volumes (to keep them inside)
+# within container does not work well because links remain in host
 VOLUME /home/node/client
 
-#ENTRYPOINT /bin/bash ./scripts/install-contrib.sh && \
-#  qx serve
 ENTRYPOINT /bin/bash ./scripts/entrypoint.sh
 
 
@@ -65,7 +60,7 @@ COPY Manifest.json Manifest.json
 RUN qx compile
 
 # production exec
-VOLUME /home/node/client/source-output
+VOLUME /home/node/client
 EXPOSE 8080
 
 CMD ["qx", "serve"]
