@@ -12,7 +12,7 @@ ENV PATH="/home/node/qooxdoo-sdk/tool/bin:/home/node/node_modules/.bin/:${PATH}"
 #    + client/             $WORKDIR
 #       - compile.json
 #       + contrib/
-#       - contrib.json 
+#       - contrib.json
 #    + node_modules/
 #    - package-lock.json
 #    - package.json
@@ -31,57 +31,41 @@ RUN npm i npm@latest && \
     npm install && \
     git clone --depth 1 https://github.com/qooxdoo/qooxdoo.git qooxdoo-sdk
 
-# (2) Installs qooxdoo contributions in $WORKDIR/contrib/ within container
+
 WORKDIR /home/node/client
+COPY scripts scripts
+RUN chmod +x scripts/*.sh
 
-COPY compile.json compile.json
-COPY source/resource/iconfont/create-links-to-contrib.sh source/resource/iconfont/create-links-to-contrib.sh
-
-RUN qx contrib update && \
-  qx contrib list && \
-  qx contrib install ITISFoundation/qx-osparc-theme && \
-  qx contrib install ITISFoundation/qx-iconfont-material && \
-  qx contrib install ITISFoundation/qx-iconfont-fontawesome5 && \
-  cp contrib.json /home/node/contrib.json && \
-  rm compile.json
- 
 # ------------------------------------------------------------------------------------------
 FROM base-stage as development
 
-RUN cd source/resource/iconfont/ && \
-  chmod +x create-links-to-contrib.sh && \
-  /bin/sh ./create-links-to-contrib.sh
+# NOTE: keeps contrib and source-output within container does not work well because links remain in host
+#VOLUME /home/node/client/contrib
+#VOLUME /home/node/client/source-output
 
-WORKDIR /home/node/client
-
-VOLUME /home/node/client/contrib
-VOLUME /home/node/client/source/resource/iconfont
 VOLUME /home/node/client
 
-#ENTRYPOINT qx contrib update && \
-#  qx contrib list && \
-#  qx contrib install ITISFoundation/qx-osparc-theme && \
-#  qx contrib install ITISFoundation/qx-iconfont-material && \
-#  qx contrib install ITISFoundation/qx-iconfont-fontawesome5 && \
-#  qx serve 
-#  qx compile --watch
-ENTRYPOINT ln -s ../contrib.json contrib.json && \
-  qx serve
+#ENTRYPOINT /bin/bash ./scripts/install-contrib.sh && \
+#  qx serve
+ENTRYPOINT /bin/bash ./scripts/entrypoint.sh
+
 
 # ------------------------------------------------------------------------------------------
 FROM base-stage as production
 
-WORKDIR /home/node/client
-
-COPY source source
+# (2) Installs qooxdoo contributions in $WORKDIR/contrib/ within container
 COPY compile.json compile.json
+
+RUN bash ./scripts/install-contrib.sh
+
+# (3) compiles source
+COPY source source
 COPY Manifest.json Manifest.json
 
-RUN cd source/resource/iconfont/ && \
-  chmod +x create-links-to-contrib.sh && \
-  /bin/sh ./create-links-to-contrib.sh && \
-  cd $OLD_PWD
+RUN qx compile
 
-RUN qx compile 
+# production exec
+VOLUME /home/node/client/source-output
+EXPOSE 8080
 
 CMD ["qx", "serve"]
