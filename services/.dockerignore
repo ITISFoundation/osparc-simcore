@@ -1,7 +1,9 @@
-# qx 
+# qx
 */source-output/*
+*/contrib/*
+contrib*
 
-# node 
+# node
 */node_modules/*
 
 # python
