@@ -1,8 +1,8 @@
 # qooxdoo's compilation output folder
--output/*
+*-output/
 
 # qooxdoo contributions folder and json config file
-contrib*
+contrib/
 
 # npm modules
-node_modules/*
+node_modules/
