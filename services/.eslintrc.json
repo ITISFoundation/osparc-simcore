@@ -1,8 +1,16 @@
 {
-  "extends": "eslint:recommended",
+  "extends": "qx",
   "parser": "babel-eslint",
+  "parserOptions": {
+    "ecmaVersion": 2017
+  },
   "globals": {
-    "osparc": false
+    "window": false,
+    "document": false,
+    "qx": false,
+    "q": false,
+    "qxWeb": false,
+    "qxapp": false
   },
   "rules": {
     "max-len": [

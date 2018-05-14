@@ -1,5 +1,5 @@
 # qooxdoo's compilation output folder
-source-output/*
+-output/*
 
 # qooxdoo contributions folder and json config file
 contrib*
