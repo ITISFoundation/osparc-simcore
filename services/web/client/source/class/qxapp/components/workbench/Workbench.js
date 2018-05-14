@@ -121,7 +121,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return buttonsListMenu;
     },
 
-    __addNodeToWorkbench(node, position) {
+    __addNodeToWorkbench: function(node, position) {
       if (position === undefined) {
         let nNodes = this.__nodes.length;
         node.moveTo(50 + nNodes*250, 200);

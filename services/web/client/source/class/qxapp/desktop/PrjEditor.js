@@ -38,7 +38,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     }, this);
 
     this.__settingsView.addListener("ShowViewer", function(e) {
-      // FIXME: avoid hard-coding url sheme!
       let url = "http://" + window.location.hostname + ":" + e.getData().viewer.port;
       let viewerWin = this.__createBrowserWindow(url, e.getData().name);
       this.__workbench.addWindowToDesktop(viewerWin);
@@ -48,6 +47,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__showSettings(true);
       this.__settingsView.setNodeMetadata(e.getData());
     }, this);
+
+    var asdfAsdf_asd = 5;
+    this.__workbench.show(asdfAsdf_asd);
   },
 
   members: {
