@@ -47,9 +47,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__showSettings(true);
       this.__settingsView.setNodeMetadata(e.getData());
     }, this);
-
-    var asdfAsdf_asd = 5;
-    this.__workbench.show(asdfAsdf_asd);
   },
 
   members: {
