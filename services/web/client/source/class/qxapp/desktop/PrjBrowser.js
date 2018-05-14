@@ -6,30 +6,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   construct: function() {
     this.base(arguments, new qx.ui.layout.VBox());
 
-    // layout
-    let prjLst = this.__list = new qx.ui.form.List();
-    prjLst.set({
-      orientation: "horizontal",
-      spacing: 0,
-      allowGrowY: false
-    });
-
-    this.add(prjLst);
-
-    // controller
-
-    let prjCtr = this.__controller = new qx.data.controller.List(qxapp.desktop.PrjBrowser.getFakeModel(), prjLst, "name");
-    this.__setDelegate(prjCtr);
-    // FIXME: selection does not work if model is not passed in the constructor!!!!
-    // prjCtr.setModel();
-
-    // Monitors change in selection
-    prjCtr.getSelection().addListener("change", function(e) {
-      console.debug("Selected", this.__controller.getSelection());
-
-      const selectedItem = e.getTarget().toArray()[0];
-      this.fireDataEvent("StartPrj", selectedItem.getName());
-    }, this);
+    this.__createUserList();
+    this.__createTempList();
   },
 
   events: {
@@ -39,6 +17,62 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   members: {
     __controller: null,
     __list: null,
+    __controller2: null,
+    __list2: null,
+
+    __createUserList: function() {
+      // layout
+      let prjLst = this.__list = new qx.ui.form.List();
+      prjLst.set({
+        orientation: "horizontal",
+        spacing: 0,
+        allowGrowY: false
+      });
+
+      this.add(prjLst);
+
+      // controller
+
+      let prjCtr = this.__controller = new qx.data.controller.List(qxapp.desktop.PrjBrowser.getFakeUserModel(), prjLst, "name");
+      this.__setDelegate(prjCtr);
+      // FIXME: selection does not work if model is not passed in the constructor!!!!
+      // prjCtr.setModel();
+
+      // Monitors change in selection
+      prjCtr.getSelection().addListener("change", function(e) {
+        console.debug("Selected", this.__controller.getSelection());
+
+        const selectedItem = e.getTarget().toArray()[0];
+        this.fireDataEvent("StartPrj", selectedItem);
+      }, this);
+    },
+
+    __createTempList: function() {
+      // layout
+      let prjLst = this.__list2 = new qx.ui.form.List();
+      prjLst.set({
+        orientation: "horizontal",
+        spacing: 0,
+        allowGrowY: false
+      });
+
+      this.add(prjLst);
+
+      // controller
+
+      let prjCtr = this.__controller2 = new qx.data.controller.List(qxapp.desktop.PrjBrowser.getFakeTempModel(), prjLst, "name");
+      this.__setDelegate(prjCtr);
+      // FIXME: selection does not work if model is not passed in the constructor!!!!
+      // prjCtr.setModel();
+
+      // Monitors change in selection
+      prjCtr.getSelection().addListener("change", function(e) {
+        console.debug("Selected", this.__controller2.getSelection());
+
+        const selectedItem = e.getTarget().toArray()[0];
+        this.fireDataEvent("StartPrj", selectedItem);
+      }, this);
+    },
 
     /**
      * Delegates apperance and binding of each project item
@@ -80,8 +114,14 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     /**
      * Mockup data
      */
-    getFakeModel: function() {
+    getFakeUserModel: function() {
       let data = qxapp.data.Fake.getUserProjects(3, "bizzy");
+      data.insertAt(0, qxapp.data.Fake.NEW_PROJECT_DESCRIPTOR);
+      return data;
+    },
+
+    getFakeTempModel: function() {
+      let data = qxapp.data.Fake.getTemplateProjects();
       data.insertAt(0, qxapp.data.Fake.NEW_PROJECT_DESCRIPTOR);
       return data;
     }
