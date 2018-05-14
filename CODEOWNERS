@@ -2,8 +2,8 @@
 
 # files and folders recursively
 /docs/                   @pcrespov
-/services/web-client     @odeimaiz
-/services/web-server     @pcrespov
+/services/web/client     @odeimaiz
+/services/web/server     @pcrespov
 /services/modeling       @sanderegg
 /services/authentication @pcrespov
 /services/computation    @mguidon

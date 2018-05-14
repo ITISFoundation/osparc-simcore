@@ -1,0 +1,10 @@
+version: '3'
+services:
+  qx:
+    image: itisfoundation/qooxdoo-compiler:latest
+    volumes:
+      - '.:/home/node/src'
+    ports:
+      - '8080:8080'
+    working_dir: /home/node/src
+    command: serve
