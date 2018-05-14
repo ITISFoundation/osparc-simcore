@@ -114,13 +114,13 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
      */
     connect: function() {
       // initialize the script loading
-      var socket_io_path = "socketio/socket.io.js";
-      var dynLoader = new qx.util.DynamicScriptLoader([
-        socket_io_path
+      let socketIoPath = "socketio/socket.io.js";
+      let dynLoader = new qx.util.DynamicScriptLoader([
+        socketIoPath
       ]);
 
-      dynLoader.addListenerOnce("ready", function(ev) {
-        console.log(socket_io_path + " loaded");
+      dynLoader.addListenerOnce("ready", function(e) {
+        console.log(socketIoPath + " loaded");
         this.setLibReady(true);
 
 
@@ -129,9 +129,9 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
           this.getSocket().disconnect();
         }
 
-        var dir = this.getUrl() + ":" + this.getPort();
+        let dir = this.getUrl() + ":" + this.getPort();
         console.log("socket in", dir);
-        var mySocket = io.connect(dir, {
+        let mySocket = io.connect(dir, {
           "port": this.getPort(),
           "reconnect": this.getReconnect(),
           "connect timeout": this.getConnectTimeout(),
@@ -141,35 +141,28 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
         });
         this.setSocket(mySocket);
 
-        this.on("connect", function() {
-          this.fireEvent("connect");
+        [
+          "connecting",
+          "message",
+          "close",
+          "reconnect",
+          "reconnecting",
+          "error"
+        ].forEach(event => {
+          this.on(event, ev => {
+            this.fireDataEvent(event, ev);
+          }, this);
         }, this);
-        this.on("connecting", function(e) {
-          this.fireDataEvent("connecting", e);
-        }, this);
-        this.on("connect_failed", function() {
-          this.fireEvent("connect_failed");
-        }, this);
-        this.on("message", function(e) {
-          this.fireDataEvent("message", e);
-        }, this);
-        this.on("close", function(e) {
-          this.fireDataEvent("close", e);
-        }, this);
-        this.on("disconnect", function() {
-          this.fireEvent("disconnect");
-        }, this);
-        this.on("reconnect", function(e) {
-          this.fireDataEvent("reconnect", e);
-        }, this);
-        this.on("reconnecting", function(e) {
-          this.fireDataEvent("reconnecting", e);
-        }, this);
-        this.on("reconnect_failed", function() {
-          this.fireEvent("reconnect_failed");
-        }, this);
-        this.on("error", function(e) {
-          this.fireDataEvent("error", e);
+
+        [
+          "connect",
+          "connect_failed",
+          "disconnect",
+          "reconnect_failed"
+        ].forEach(event => {
+          this.on(event, () => {
+            this.fireDataEvent(event);
+          }, this);
         }, this);
       }, this);
 
@@ -204,7 +197,7 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
     },
 
     slotExists: function(name) {
-      for (var i = 0; i < this.__name.length; ++i) {
+      for (let i = 0; i < this.__name.length; ++i) {
         if (this.__name[i] === name) {
           return true;
         }
@@ -220,7 +213,7 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
     if (this.getSocket() !== null) {
       // Deleting listeners
       if (this.__name !== null && this.__name.length >= 1) {
-        for (var i = 0; i < this.__name.length; ++i) {
+        for (let i = 0; i < this.__name.length; ++i) {
           this.getSocket().removeAllListeners(this.__name[i]);
         }
       }

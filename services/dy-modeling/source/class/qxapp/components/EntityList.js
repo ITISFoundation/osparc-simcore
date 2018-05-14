@@ -1,11 +1,12 @@
 /* eslint no-warning-comments: "off" */
+/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true, "allow": ["__widgetChildren"] }] */
 
 qx.Class.define("qxapp.components.EntityList", {
   extend: qx.ui.window.Window,
 
-  include : [qx.locale.MTranslation],
+  include: [qx.locale.MTranslation],
 
-  construct : function(width, height, backgroundColor, fontColor) {
+  construct: function(width, height, backgroundColor, fontColor) {
     this.base(arguments, this.tr("Entity List"));
 
     this.set({
@@ -24,78 +25,77 @@ qx.Class.define("qxapp.components.EntityList", {
     this.setHeight(height-30);
 
     // create and add the tree
-    this._tree = new qx.ui.tree.Tree();
-    this._tree.set({
+    this.__tree = new qx.ui.tree.Tree();
+    this.__tree.set({
       backgroundColor: backgroundColor,
       textColor: fontColor
     });
-    this._tree.setSelectionMode("multi");
-    this._tree.setWidth(width);
-    this._tree.setHeight(height);
+    this.__tree.setSelectionMode("multi");
+    this.__tree.setWidth(width);
+    this.__tree.setHeight(height);
 
     let root = new qx.ui.tree.TreeFolder("Model");
     root.setOpen(true);
-    this._tree.setRoot(root);
+    this.__tree.setRoot(root);
 
-    this._tree.addListener("changeSelection", this._onSelectionChanged.bind(this));
+    this.__tree.addListener("changeSelection", this.__onSelectionChanged.bind(this));
 
-    let remove_button = new qx.ui.form.Button(this.tr("Remove entity"));
-    remove_button.set({
+    let removeBtn = new qx.ui.form.Button(this.tr("Remove entity"));
+    removeBtn.set({
       width: 100,
       height: 30,
       textColor: "black"
     });
-    remove_button.addListener("execute", this._removeEntityPressed.bind(this));
+    removeBtn.addListener("execute", this.__removeEntityPressed.bind(this));
 
-    scroller.add(this._tree);
-    this.add(remove_button);
+    scroller.add(this.__tree);
+    this.add(removeBtn);
   },
 
-  events : {
+  events: {
     "removeEntityRequested": "qx.event.type.Data",
     "selectionChanged": "qx.event.type.Data",
     "visibilityChanged": "qx.event.type.Data"
   },
 
   members: {
-    _currentList: null,
-    _tree: null,
+    __tree: null,
 
-    _onSelectionChanged : function(e) {
-      let selected_ids = [];
+    __onSelectionChanged: function(e) {
+      let selectedIds = [];
       for (let i = 0; i < e.getData().length; i++) {
-        selected_ids.push(e.getData()[i].id);
+        selectedIds.push(e.getData()[i].id);
       }
-      this.fireDataEvent("selectionChanged", selected_ids);
+      this.fireDataEvent("selectionChanged", selectedIds);
     },
 
-    _removeEntityPressed : function() {
+    __removeEntityPressed: function() {
       let selectedIds = this.getSelectedEntityIds();
       for (let i = 0; i < selectedIds.length; i++) {
         this.fireDataEvent("removeEntityRequested", selectedIds[i]);
       }
     },
 
-    _getSelectedEntities : function() {
-      return this._tree.getSelection();
+    __getSelectedEntities: function() {
+      return this.__tree.getSelection();
     },
 
-    getSelectedEntityId : function() {
-      if (this._getSelectedEntities().length > 0) {
-        return this._getSelectedEntities()[0].id;
+    getSelectedEntityId: function() {
+      if (this.__getSelectedEntities().length > 0) {
+        return this.__getSelectedEntities()[0].id;
       }
       return null;
     },
 
-    getSelectedEntityIds : function() {
+    getSelectedEntityIds: function() {
       let selectedIds = [];
-      for (let i = 0; i < this._getSelectedEntities().length; i++) {
-        selectedIds.push(this._getSelectedEntities()[i].id);
+      for (let i = 0; i < this.__getSelectedEntities().length; i++) {
+        selectedIds.push(this.__getSelectedEntities()[i].id);
       }
       return selectedIds;
     },
 
-    addEntity : function(id, name) {
+    addEntity: function(id, name) {
       let newItem = new qx.ui.tree.TreeFile();
 
       // A checkbox comes right after the tree icon
@@ -103,49 +103,47 @@ qx.Class.define("qxapp.components.EntityList", {
       checkbox.setFocusable(false);
       checkbox.setValue(true);
       newItem.addWidget(checkbox);
-      let that = this;
-      checkbox.addListener("changeValue",
-        function(e) {
-          that.fireDataEvent("visibilityChanged", [id, e.getData()]);
-          let selectedIds = that.getSelectedEntityIds();
-          for (let i = 0; i < that._tree.getRoot().getChildren().length; i++) {
-            if (selectedIds.indexOf(that._tree.getRoot().getChildren()[i].id) >= 0) {
-              // ToDo: Look for a better solution
-              for (let j = 0; j < that._tree.getRoot().getChildren()[i].__widgetChildren.length; j++) {
-                if (that._tree.getRoot().getChildren()[i].__widgetChildren[j].basename === "CheckBox") {
-                  that._tree.getRoot().getChildren()[i].__widgetChildren[j].setValue(e.getData());
-                }
+      checkbox.addListener("changeValue", function(e) {
+        this.fireDataEvent("visibilityChanged", [id, e.getData()]);
+        let selectedIds = this.getSelectedEntityIds();
+        for (let i = 0; i < this.__tree.getRoot().getChildren().length; i++) {
+          if (selectedIds.indexOf(this.__tree.getRoot().getChildren()[i].id) >= 0) {
+            // ToDo: Look for a better solution
+            for (let j = 0; j < this.__tree.getRoot().getChildren()[i].__widgetChildren.length; j++) {
+              if (this.__tree.getRoot().getChildren()[i].__widgetChildren[j].basename === "CheckBox") {
+                this.__tree.getRoot().getChildren()[i].__widgetChildren[j].setValue(e.getData());
               }
             }
           }
-        }, that);
+        }
+      }, this);
 
       newItem.addLabel(name);
 
       newItem.id = id;
-      this._tree.getRoot().add(newItem);
-      this._tree.setSelection([newItem]);
+      this.__tree.getRoot().add(newItem);
+      this.__tree.setSelection([newItem]);
     },
 
-    removeEntity : function(uuid) {
-      for (let i = 0; i < this._tree.getRoot().getChildren().length; i++) {
-        if (this._tree.getRoot().getChildren()[i].id === uuid) {
-          this._tree.getRoot().remove(this._tree.getRoot().getChildren()[i]);
+    removeEntity: function(uuid) {
+      for (let i = 0; i < this.__tree.getRoot().getChildren().length; i++) {
+        if (this.__tree.getRoot().getChildren()[i].id === uuid) {
+          this.__tree.getRoot().remove(this.__tree.getRoot().getChildren()[i]);
         }
       }
     },
 
-    onEntitySelectedChanged : function(uuids) {
+    onEntitySelectedChanged: function(uuids) {
       if (uuids === null) {
-        this._tree.resetSelection();
+        this.__tree.resetSelection();
       } else {
         let selected = [];
-        for (let i = 0; i < this._tree.getRoot().getChildren().length; i++) {
-          if (uuids.indexOf(this._tree.getRoot().getChildren()[i].id) >= 0) {
-            selected.push(this._tree.getRoot().getChildren()[i]);
+        for (let i = 0; i < this.__tree.getRoot().getChildren().length; i++) {
+          if (uuids.indexOf(this.__tree.getRoot().getChildren()[i].id) >= 0) {
+            selected.push(this.__tree.getRoot().getChildren()[i]);
           }
         }
-        this._tree.setSelection(selected);
+        this.__tree.setSelection(selected);
       }
     }
   }

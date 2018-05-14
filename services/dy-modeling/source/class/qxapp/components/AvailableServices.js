@@ -3,9 +3,9 @@
 qx.Class.define("qxapp.components.AvailableServices", {
   extend: qx.ui.container.Composite,
 
-  include : [qx.locale.MTranslation],
+  include: [qx.locale.MTranslation],
 
-  construct : function(width, height, backgroundColor, fontColor) {
+  construct: function(width, height, backgroundColor, fontColor) {
     this.base(arguments);
 
     let box = new qx.ui.layout.HBox();
@@ -21,11 +21,11 @@ qx.Class.define("qxapp.components.AvailableServices", {
       height: height
     });
 
-    let bar = this.getAvailableServicesBar(width, backgroundColor);
+    let bar = this.__getAvailableServicesBar(width, backgroundColor);
     this.add(bar);
   },
 
-  events : {
+  events: {
     "selectionModeChanged": "qx.event.type.Data",
     "moveToolRequested": "qx.event.type.Data",
     "rotateToolRequested": "qx.event.type.Data",
@@ -38,16 +38,24 @@ qx.Class.define("qxapp.components.AvailableServices", {
   },
 
   members: {
-    _menubar: null,
-    _moveBtn: null,
-    _rotateBtn: null,
-    _sphereBtn: null,
-    _blockBtn: null,
-    _cylinderBtn: null,
-    _dodecaBtn: null,
-    _splineBtn: null,
+    __menubar: null,
+    __moveBtn: null,
+    __rotateBtn: null,
+    __sphereBtn: null,
+    __blockBtn: null,
+    __cylinderBtn: null,
+    __dodecaBtn: null,
+    __splineBtn: null,
 
-    getAvailableServicesBar : function(width, backgroundColor) {
+    getMoveBtn: function() {
+      return this.__moveBtn;
+    },
+
+    getRotateBtn: function() {
+      return this.__rotateBtn;
+    },
+
+    __getAvailableServicesBar: function(width, backgroundColor) {
       let frame = new qx.ui.container.Composite(new qx.ui.layout.Grow());
 
       let toolbar = new qx.ui.toolbar.ToolBar();
@@ -68,42 +76,42 @@ qx.Class.define("qxapp.components.AvailableServices", {
       let selectionPart = new qx.ui.toolbar.Part();
       toolbar.add(selectionPart);
 
-      let disabled_btn = new qx.ui.toolbar.RadioButton(this.tr("Disabled"));
-      disabled_btn.addListener("execute", function(e) {
+      let disabledBtn = new qx.ui.toolbar.RadioButton(this.tr("Disabled"));
+      disabledBtn.addListener("execute", function(e) {
         this.fireDataEvent("selectionModeChanged", 0);
       }, this);
 
-      let sel_ent_btn = new qx.ui.toolbar.RadioButton(this.tr("Select entity"));
-      sel_ent_btn.addListener("execute", function(e) {
+      let selEntBtn = new qx.ui.toolbar.RadioButton(this.tr("Select entity"));
+      selEntBtn.addListener("execute", function(e) {
         this.fireDataEvent("selectionModeChanged", 2);
       }, this);
 
-      let sel_face_btn = new qx.ui.toolbar.RadioButton(this.tr("Select face"));
-      sel_face_btn.addListener("execute", function(e) {
+      let selFaceBtn = new qx.ui.toolbar.RadioButton(this.tr("Select face"));
+      selFaceBtn.addListener("execute", function(e) {
         this.fireDataEvent("selectionModeChanged", 3);
       }, this);
 
-      selectionPart.add(disabled_btn);
-      selectionPart.add(sel_ent_btn);
-      selectionPart.add(sel_face_btn);
+      selectionPart.add(disabledBtn);
+      selectionPart.add(selEntBtn);
+      selectionPart.add(selFaceBtn);
 
-      let selectionGroup = new qx.ui.form.RadioGroup(disabled_btn, sel_ent_btn, sel_face_btn);
+      let selectionGroup = new qx.ui.form.RadioGroup(disabledBtn, selEntBtn, selFaceBtn);
       selectionGroup.setAllowEmptySelection(true);
 
       // Move
       let transformPart = new qx.ui.toolbar.Part();
       toolbar.add(transformPart);
 
-      this._moveBtn = new qx.ui.toolbar.CheckBox(this.tr("Move"));
-      this._moveBtn.addListener("execute", this._onMoveToolRequested.bind(this));
+      this.__moveBtn = new qx.ui.toolbar.CheckBox(this.tr("Move"));
+      this.__moveBtn.addListener("execute", this.__onMoveToolRequested.bind(this));
 
-      this._rotateBtn = new qx.ui.toolbar.CheckBox(this.tr("Rotate"));
-      this._rotateBtn.addListener("execute", this._onRotateToolRequested.bind(this));
+      this.__rotateBtn = new qx.ui.toolbar.CheckBox(this.tr("Rotate"));
+      this.__rotateBtn.addListener("execute", this.__onRotateToolRequested.bind(this));
 
-      transformPart.add(this._moveBtn);
-      transformPart.add(this._rotateBtn);
+      transformPart.add(this.__moveBtn);
+      transformPart.add(this.__rotateBtn);
 
-      let transformGroup = new qx.ui.form.RadioGroup(this._moveBtn, this._rotateBtn);
+      let transformGroup = new qx.ui.form.RadioGroup(this.__moveBtn, this.__rotateBtn);
       transformGroup.setAllowEmptySelection(true);
       transformGroup.setSelection([]);
 
@@ -111,28 +119,28 @@ qx.Class.define("qxapp.components.AvailableServices", {
       let drawingPart = new qx.ui.toolbar.Part();
       toolbar.add(drawingPart);
 
-      this._sphereBtn = new qx.ui.toolbar.RadioButton(this.tr("Add Sphere"));
-      this._sphereBtn.addListener("execute", this._onAddSphereRequested, this);
+      this.__sphereBtn = new qx.ui.toolbar.RadioButton(this.tr("Add Sphere"));
+      this.__sphereBtn.addListener("execute", this.__onAddSphereRequested, this);
 
-      this._blockBtn = new qx.ui.toolbar.RadioButton(this.tr("Add Box"));
-      this._blockBtn.addListener("execute", this._onAddBlockRequested.bind(this));
+      this.__blockBtn = new qx.ui.toolbar.RadioButton(this.tr("Add Box"));
+      this.__blockBtn.addListener("execute", this.__onAddBlockRequested.bind(this));
 
-      this._cylinderBtn = new qx.ui.toolbar.RadioButton(this.tr("Add Cylinder"));
-      this._cylinderBtn.addListener("execute", this._onAddCylinderRequested.bind(this));
+      this.__cylinderBtn = new qx.ui.toolbar.RadioButton(this.tr("Add Cylinder"));
+      this.__cylinderBtn.addListener("execute", this._onAddCylinderRequested.bind(this));
 
-      this._dodecaBtn = new qx.ui.toolbar.RadioButton(this.tr("Add Dodecahedron"));
-      this._dodecaBtn.addListener("execute", this._onAddDodecaRequested.bind(this));
+      this.__dodecaBtn = new qx.ui.toolbar.RadioButton(this.tr("Add Dodecahedron"));
+      this.__dodecaBtn.addListener("execute", this.__onAddDodecaRequested.bind(this));
 
-      this._splineBtn = new qx.ui.toolbar.RadioButton(this.tr("Add Spline"));
-      this._splineBtn.addListener("execute", this._onAddSplineRequested.bind(this));
+      this.__splineBtn = new qx.ui.toolbar.RadioButton(this.tr("Add Spline"));
+      this.__splineBtn.addListener("execute", this.__onAddSplineRequested.bind(this));
 
-      drawingPart.add(this._sphereBtn);
-      drawingPart.add(this._blockBtn);
-      drawingPart.add(this._cylinderBtn);
-      drawingPart.add(this._dodecaBtn);
-      drawingPart.add(this._splineBtn);
+      drawingPart.add(this.__sphereBtn);
+      drawingPart.add(this.__blockBtn);
+      drawingPart.add(this.__cylinderBtn);
+      drawingPart.add(this.__dodecaBtn);
+      drawingPart.add(this.__splineBtn);
 
-      let drawingGroup = new qx.ui.form.RadioGroup(this._sphereBtn, this._blockBtn, this._cylinderBtn, this._dodecaBtn, this._splineBtn);
+      let drawingGroup = new qx.ui.form.RadioGroup(this.__sphereBtn, this.__blockBtn, this.__cylinderBtn, this.__dodecaBtn, this.__splineBtn);
       drawingGroup.setAllowEmptySelection(true);
       drawingGroup.setSelection([]);
 
@@ -141,22 +149,22 @@ qx.Class.define("qxapp.components.AvailableServices", {
       toolbar.add(menuPart);
 
       let booleanMenu = new qx.ui.toolbar.MenuButton("Boolean operations");
-      booleanMenu.setMenu(this._getBooleanMenu());
+      booleanMenu.setMenu(this.__getBooleanMenu());
       menuPart.add(booleanMenu);
 
       return frame;
     },
 
-    _getBooleanMenu : function() {
+    __getBooleanMenu: function() {
       let menu = new qx.ui.menu.Menu();
 
       let uniteButton = new qx.ui.menu.Button(this.tr("Unite"));
       let intersectButton = new qx.ui.menu.Button(this.tr("Intersect"));
       let substractButton = new qx.ui.menu.Button(this.tr("Substract"));
 
-      uniteButton.addListener("execute", this._onBooleanUniteRequested.bind(this));
-      intersectButton.addListener("execute", this._onBooleanIntersectRequested.bind(this));
-      substractButton.addListener("execute", this._onBooleanSubstractRequested.bind(this));
+      uniteButton.addListener("execute", this.__onBooleanUniteRequested.bind(this));
+      intersectButton.addListener("execute", this.__onBooleanIntersectRequested.bind(this));
+      substractButton.addListener("execute", this.__onBooleanSubstractRequested.bind(this));
 
       menu.add(uniteButton);
       menu.add(intersectButton);
@@ -165,43 +173,43 @@ qx.Class.define("qxapp.components.AvailableServices", {
       return menu;
     },
 
-    _onAddSphereRequested : function() {
-      this.fireDataEvent("newSphereRequested", this._sphereBtn.getValue());
+    __onAddSphereRequested: function() {
+      this.fireDataEvent("newSphereRequested", this.__sphereBtn.getValue());
     },
 
-    _onAddBlockRequested : function() {
-      this.fireDataEvent("newBlockRequested", this._blockBtn.getValue());
+    __onAddBlockRequested: function() {
+      this.fireDataEvent("newBlockRequested", this.__blockBtn.getValue());
     },
 
-    _onAddCylinderRequested : function() {
-      this.fireDataEvent("newCylinderRequested", this._cylinderBtn.getValue());
+    _onAddCylinderRequested: function() {
+      this.fireDataEvent("newCylinderRequested", this.__cylinderBtn.getValue());
     },
 
-    _onAddDodecaRequested : function() {
-      this.fireDataEvent("newDodecaRequested", this._dodecaBtn.getValue());
+    __onAddDodecaRequested: function() {
+      this.fireDataEvent("newDodecaRequested", this.__dodecaBtn.getValue());
     },
 
-    _onAddSplineRequested : function() {
-      this.fireDataEvent("newSplineRequested", this._splineBtn.getValue());
+    __onAddSplineRequested: function() {
+      this.fireDataEvent("newSplineRequested", this.__splineBtn.getValue());
     },
 
-    _onMoveToolRequested : function() {
-      this.fireDataEvent("moveToolRequested", this._moveBtn.getValue());
+    __onMoveToolRequested: function() {
+      this.fireDataEvent("moveToolRequested", this.__moveBtn.getValue());
     },
 
-    _onRotateToolRequested : function() {
-      this.fireDataEvent("rotateToolRequested", this._rotateBtn.getValue());
+    __onRotateToolRequested: function() {
+      this.fireDataEvent("rotateToolRequested", this.__rotateBtn.getValue());
     },
 
-    _onBooleanUniteRequested : function() {
+    __onBooleanUniteRequested: function() {
       this.fireDataEvent("booleanOperationRequested", 0);
     },
 
-    _onBooleanIntersectRequested : function() {
+    __onBooleanIntersectRequested: function() {
       this.fireDataEvent("booleanOperationRequested", 1);
     },
 
-    _onBooleanSubstractRequested : function() {
+    __onBooleanSubstractRequested: function() {
       this.fireDataEvent("booleanOperationRequested", 2);
     }
   }

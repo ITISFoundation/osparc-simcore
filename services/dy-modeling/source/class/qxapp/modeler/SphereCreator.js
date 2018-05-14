@@ -1,68 +1,68 @@
 qx.Class.define("qxapp.modeler.SphereCreator", {
   extend: qx.core.Object,
 
-  construct : function(threeViewer) {
-    this._threeView = threeViewer;
+  construct: function(threeViewer) {
+    this.__threeView = threeViewer;
 
-    this._steps = {
+    this.__steps = {
       centerPoint: 0,
       radius: 1
     };
   },
 
-  members : {
-    _threeView: null,
-    _steps: null,
-    _nextStep: 0,
-    _centerPoint: null,
-    _radius: null,
-    _sphere_material: null,
-    _sphere_temp: null,
+  members: {
+    __threeView: null,
+    __steps: null,
+    __nextStep: 0,
+    __centerPoint: null,
+    __radius: null,
+    __sphereMaterial: null,
+    __sphereTemp: null,
 
-    startTool : function() {
-      const fixed_axe = 2;
-      const fixed_pos = 0;
-      this._threeView.addInvisiblePlane(fixed_axe, fixed_pos);
+    startTool: function() {
+      const fixedAxe = 2;
+      const fixedPos = 0;
+      this.__threeView.addInvisiblePlane(fixedAxe, fixedPos);
     },
 
-    stopTool : function() {
-      this._threeView.removeInvisiblePlane();
+    stopTool: function() {
+      this.__threeView.removeInvisiblePlane();
     },
 
-    onMouseHover : function(event, intersects) {
-      if (intersects.length > 0 && this._nextStep === this._steps.radius) {
+    onMouseHover: function(event, intersects) {
+      if (intersects.length > 0 && this.__nextStep === this.__steps.radius) {
         let intersect = intersects[0];
-        let temp_radius = Math.hypot(intersect.point.x-this._centerPoint.x, intersect.point.y-this._centerPoint.y);
-        if (this._sphere_temp) {
-          this._threeView._threeWrapper.removeEntityFromScene(this._sphere_temp);
+        let tempRadius = Math.hypot(intersect.point.x-this.__centerPoint.x, intersect.point.y-this.__centerPoint.y);
+        if (this.__sphereTemp) {
+          this.__threeView.getThreeWrapper().removeEntityFromScene(this.__sphereTemp);
         }
-        let sphereGeometry = this._threeView._threeWrapper.createSphere(temp_radius);
-        if (this._sphere_material === null) {
-          this._sphere_material = this._threeView._threeWrapper.createNewMaterial();
+        let sphereGeometry = this.__threeView.getThreeWrapper().createSphere(tempRadius);
+        if (this.__sphereMaterial === null) {
+          this.__sphereMaterial = this.__threeView.getThreeWrapper().createNewMaterial();
         }
-        this._sphere_temp = this._threeView._threeWrapper.createEntity(sphereGeometry, this._sphere_material);
+        this.__sphereTemp = this.__threeView.getThreeWrapper().createEntity(sphereGeometry, this.__sphereMaterial);
 
-        this._updatePostion(this._sphere_temp, this._centerPoint);
+        this.__updatePostion(this.__sphereTemp, this.__centerPoint);
 
-        this._threeView._threeWrapper.addEntityToScene(this._sphere_temp);
+        this.__threeView.getThreeWrapper().addEntityToScene(this.__sphereTemp);
       }
 
       return true;
     },
 
-    onMouseDown : function(event, intersects) {
+    onMouseDown: function(event, intersects) {
       if (intersects.length > 0) {
         let intersect = intersects[0];
 
-        if (this._centerPoint === null) {
-          this._centerPoint = intersect.point;
-          this._nextStep = this._steps.radius;
+        if (this.__centerPoint === null) {
+          this.__centerPoint = intersect.point;
+          this.__nextStep = this.__steps.radius;
           return true;
         }
 
-        if (this._radius === null) {
-          this._radius = Math.hypot(intersect.point.x-this._centerPoint.x, intersect.point.y-this._centerPoint.y);
-          this._consolidateSphere();
+        if (this.__radius === null) {
+          this.__radius = Math.hypot(intersect.point.x-this.__centerPoint.x, intersect.point.y-this.__centerPoint.y);
+          this.__consolidateSphere();
           return true;
         }
       }
@@ -70,29 +70,29 @@ qx.Class.define("qxapp.modeler.SphereCreator", {
       return true;
     },
 
-    _updatePostion : function(mesh, center) {
+    __updatePostion: function(mesh, center) {
       mesh.position.x = center.x;
       mesh.position.y = center.y;
       mesh.position.z = center.z;
     },
 
-    _consolidateSphere : function() {
-      if (this._sphere_temp) {
-        this._threeView._threeWrapper.removeEntityFromScene(this._sphere_temp);
-        this._sphere_temp = null;
+    __consolidateSphere: function() {
+      if (this.__sphereTemp) {
+        this.__threeView.getThreeWrapper().removeEntityFromScene(this.__sphereTemp);
+        this.__sphereTemp = null;
       }
 
-      let geometry = this._threeView._threeWrapper.createSphere(this._radius);
-      if (this._sphere_material === null) {
-        this._sphere_material = this._threeView._threeWrapper.createNewMaterial();
+      let geometry = this.__threeView.getThreeWrapper().createSphere(this.__radius);
+      if (this.__sphereMaterial === null) {
+        this.__sphereMaterial = this.__threeView.getThreeWrapper().createNewMaterial();
       }
-      let entity = this._threeView._threeWrapper.createEntity(geometry, this._sphere_material);
+      let entity = this.__threeView.getThreeWrapper().createEntity(geometry, this.__sphereMaterial);
       entity.name = "Sphere";
 
-      this._updatePostion(entity, this._centerPoint);
+      this.__updatePostion(entity, this.__centerPoint);
 
-      this._threeView.addEntityToScene(entity);
-      this._threeView.stopTool();
+      this.__threeView.addEntityToScene(entity);
+      this.__threeView.stopTool();
     }
   }
 });

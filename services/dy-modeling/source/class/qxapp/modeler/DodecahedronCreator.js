@@ -1,50 +1,50 @@
 qx.Class.define("qxapp.modeler.DodecahedronCreator", {
   extend: qx.core.Object,
 
-  construct : function(threeViewer) {
-    this._threeView = threeViewer;
+  construct: function(threeViewer) {
+    this.__threeView = threeViewer;
 
-    this._steps = {
+    this.__steps = {
       centerPoint: 0,
       radius: 1
     };
   },
 
-  members : {
-    _threeView: null,
-    _steps: null,
-    _nextStep: 0,
-    _centerPoint: null,
-    _radius: null,
-    _dodecahedron_material: null,
-    _dodecahedron_temp: null,
+  members: {
+    __threeView: null,
+    __steps: null,
+    __nextStep: 0,
+    __centerPoint: null,
+    __radius: null,
+    __dodecahedronMaterial: null,
+    __dodecahedronTemp: null,
 
-    startTool : function() {
-      const fixed_axe = 2;
-      const fixed_pos = 0;
-      this._threeView.addInvisiblePlane(fixed_axe, fixed_pos);
+    startTool: function() {
+      const fixedAxe = 2;
+      const fixedPos = 0;
+      this.__threeView.addInvisiblePlane(fixedAxe, fixedPos);
     },
 
-    stopTool : function() {
-      this._threeView.removeInvisiblePlane();
+    stopTool: function() {
+      this.__threeView.removeInvisiblePlane();
     },
 
-    onMouseHover : function(event, intersects) {
-      if (intersects.length > 0 && this._nextStep === this._steps.radius) {
+    onMouseHover: function(event, intersects) {
+      if (intersects.length > 0 && this.__nextStep === this.__steps.radius) {
         let intersect = intersects[0];
-        let temp_radius = Math.hypot(intersect.point.x-this._centerPoint.x, intersect.point.y-this._centerPoint.y);
-        if (this._dodecahedron_temp) {
-          this._threeView._threeWrapper.removeEntityFromScene(this._dodecahedron_temp);
+        let tempRadius = Math.hypot(intersect.point.x-this.__centerPoint.x, intersect.point.y-this.__centerPoint.y);
+        if (this.__dodecahedronTemp) {
+          this.__threeView.getThreeWrapper().removeEntityFromScene(this.__dodecahedronTemp);
         }
-        let dodecahedronGeometry = this._threeView._threeWrapper.createDodecahedron(temp_radius);
-        if (this._dodecahedron_material === null) {
-          this._dodecahedron_material = this._threeView._threeWrapper.createNewMaterial();
+        let dodecahedronGeometry = this.__threeView.getThreeWrapper().createDodecahedron(tempRadius);
+        if (this.__dodecahedronMaterial === null) {
+          this.__dodecahedronMaterial = this.__threeView.getThreeWrapper().createNewMaterial();
         }
-        this._dodecahedron_temp = this._threeView._threeWrapper.createEntity(dodecahedronGeometry, this._dodecahedron_material);
+        this.__dodecahedronTemp = this.__threeView.getThreeWrapper().createEntity(dodecahedronGeometry, this.__dodecahedronMaterial);
 
-        this._updatePostion(this._dodecahedron_temp, this._centerPoint);
+        this.__updatePostion(this.__dodecahedronTemp, this.__centerPoint);
 
-        this._threeView._threeWrapper.addEntityToScene(this._dodecahedron_temp);
+        this.__threeView.getThreeWrapper().addEntityToScene(this.__dodecahedronTemp);
       }
 
       return true;
@@ -54,15 +54,15 @@ qx.Class.define("qxapp.modeler.DodecahedronCreator", {
       if (intersects.length > 0) {
         let intersect = intersects[0];
 
-        if (this._centerPoint === null) {
-          this._centerPoint = intersect.point;
-          this._nextStep = this._steps.radius;
+        if (this.__centerPoint === null) {
+          this.__centerPoint = intersect.point;
+          this.__nextStep = this.__steps.radius;
           return true;
         }
 
-        if (this._radius === null) {
-          this._radius = Math.hypot(intersect.point.x-this._centerPoint.x, intersect.point.y-this._centerPoint.y);
-          this._consolidateDodecahedron();
+        if (this.__radius === null) {
+          this.__radius = Math.hypot(intersect.point.x-this.__centerPoint.x, intersect.point.y-this.__centerPoint.y);
+          this.__consolidateDodecahedron();
           return true;
         }
       }
@@ -70,29 +70,29 @@ qx.Class.define("qxapp.modeler.DodecahedronCreator", {
       return true;
     },
 
-    _updatePostion : function(mesh, center) {
+    __updatePostion : function(mesh, center) {
       mesh.position.x = center.x;
       mesh.position.y = center.y;
       mesh.position.z = center.z;
     },
 
-    _consolidateDodecahedron : function() {
-      if (this._dodecahedron_temp) {
-        this._threeView._threeWrapper.removeEntityFromScene(this._dodecahedron_temp);
-        this._dodecahedron_temp = null;
+    __consolidateDodecahedron: function() {
+      if (this.__dodecahedronTemp) {
+        this.__threeView.getThreeWrapper().removeEntityFromScene(this.__dodecahedronTemp);
+        this.__dodecahedronTemp = null;
       }
 
-      let geometry = this._threeView._threeWrapper.createDodecahedron(this._radius);
-      if (this._dodecahedron_material === null) {
-        this._dodecahedron_material = this._threeView._threeWrapper.createNewMaterial();
+      let geometry = this.__threeView.getThreeWrapper().createDodecahedron(this.__radius);
+      if (this.__dodecahedronMaterial === null) {
+        this.__dodecahedronMaterial = this.__threeView.getThreeWrapper().createNewMaterial();
       }
-      let entity = this._threeView._threeWrapper.createEntity(geometry, this._dodecahedron_material);
+      let entity = this.__threeView.getThreeWrapper().createEntity(geometry, this.__dodecahedronMaterial);
       entity.name = "Dodecahedron";
 
-      this._updatePostion(entity, this._centerPoint);
+      this.__updatePostion(entity, this.__centerPoint);
 
-      this._threeView.addEntityToScene(entity);
-      this._threeView.stopTool();
+      this.__threeView.addEntityToScene(entity);
+      this.__threeView.stopTool();
     }
   }
 });

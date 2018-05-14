@@ -2,9 +2,9 @@ qx.Class.define("qxapp.modeler.BoxCreator", {
   extend: qx.core.Object,
 
   construct : function(threeViewer) {
-    this._threeView = threeViewer;
+    this.__threeView = threeViewer;
 
-    this._steps = {
+    this.__steps = {
       corner0: 0,
       corner1: 1,
       corner2: 2
@@ -12,91 +12,91 @@ qx.Class.define("qxapp.modeler.BoxCreator", {
   },
 
   members: {
-    _threeView: null,
-    _steps: null,
-    _nextStep: 0,
-    _corner0Pos: null,
-    _corner1Pos: null,
-    _corner2Pos: null,
-    _plane_material: null,
-    _square_temp: null,
-    _box_material: null,
-    _box_temp: null,
+    __threeView: null,
+    __steps: null,
+    __nextStep: 0,
+    __corner0Pos: null,
+    __corner1Pos: null,
+    __corner2Pos: null,
+    __planeMaterial: null,
+    __squareTemp: null,
+    __boxMaterial: null,
+    __boxTemp: null,
 
-    startTool : function() {
-      const fixed_axe = 2;
-      const fixed_pos = 0;
-      this._threeView.addInvisiblePlane(fixed_axe, fixed_pos);
+    startTool: function() {
+      const fixedAxe = 2;
+      const fixedPos = 0;
+      this.__threeView.addInvisiblePlane(fixedAxe, fixedPos);
     },
 
-    stopTool : function() {
-      this._threeView.removeInvisiblePlane();
+    stopTool: function() {
+      this.__threeView.removeInvisiblePlane();
     },
 
-    _removeTemps : function() {
-      if (this._square_temp) {
-        this._threeView._threeWrapper.removeEntityFromScene(this._square_temp);
+    __removeTemps: function() {
+      if (this.__squareTemp) {
+        this.__threeView.getThreeWrapper().removeEntityFromScene(this.__squareTemp);
       }
-      if (this._box_temp) {
-        this._threeView._threeWrapper.removeEntityFromScene(this._box_temp);
+      if (this.__boxTemp) {
+        this.__threeView.getThreeWrapper().removeEntityFromScene(this.__boxTemp);
       }
     },
 
-    onMouseHover : function(event, intersects) {
+    onMouseHover: function(event, intersects) {
       if (intersects.length > 0) {
         let intersect = intersects[0];
-        if (this._nextStep === this._steps.corner1) {
-          this._removeTemps();
+        if (this.__nextStep === this.__steps.corner1) {
+          this.__removeTemps();
 
-          let squareGeometry = this._threeView._threeWrapper.createBox(this._corner0Pos, intersect.point);
-          if (this._plane_material === null) {
-            this._plane_material = this._threeView._threeWrapper.createNewPlaneMaterial();
+          let squareGeometry = this.__threeView.getThreeWrapper().createBox(this.__corner0Pos, intersect.point);
+          if (this.__planeMaterial === null) {
+            this.__planeMaterial = this.__threeView.getThreeWrapper().createNewPlaneMaterial();
           }
-          this._square_temp = this._threeView._threeWrapper.createEntity(squareGeometry, this._plane_material);
+          this.__squareTemp = this.__threeView.getThreeWrapper().createEntity(squareGeometry, this.__planeMaterial);
 
-          this._updatePosition(this._square_temp, this._corner0Pos, intersect.point);
+          this.__updatePosition(this.__squareTemp, this.__corner0Pos, intersect.point);
 
-          this._threeView._threeWrapper.addEntityToScene(this._square_temp);
-        } else if (this._nextStep === this._steps.corner2) {
-          this._removeTemps();
+          this.__threeView.getThreeWrapper().addEntityToScene(this.__squareTemp);
+        } else if (this.__nextStep === this.__steps.corner2) {
+          this.__removeTemps();
 
-          let boxGeometry = this._threeView._threeWrapper.createBox(this._corner0Pos, this._corner1Pos, intersect.point);
-          if (this._box_material === null) {
-            this._box_material = this._threeView._threeWrapper.createNewMaterial(this._plane_material.color.r, this._plane_material.color.g, this._plane_material.color.b);
+          let boxGeometry = this.__threeView.getThreeWrapper().createBox(this.__corner0Pos, this.__corner1Pos, intersect.point);
+          if (this.__boxMaterial === null) {
+            this.__boxMaterial = this.__threeView.getThreeWrapper().createNewMaterial(this.__planeMaterial.color.r, this.__planeMaterial.color.g, this.__planeMaterial.color.b);
           }
-          this._box_temp = this._threeView._threeWrapper.createEntity(boxGeometry, this._box_material);
+          this.__boxTemp = this.__threeView.getThreeWrapper().createEntity(boxGeometry, this.__boxMaterial);
 
-          this._updatePosition(this._box_temp, this._corner0Pos, this._corner1Pos, intersect.point);
+          this.__updatePosition(this.__boxTemp, this.__corner0Pos, this.__corner1Pos, intersect.point);
 
-          this._threeView._threeWrapper.addEntityToScene(this._box_temp);
+          this.__threeView.getThreeWrapper().addEntityToScene(this.__boxTemp);
         }
       }
       return true;
     },
 
-    onMouseDown : function(event, intersects) {
+    onMouseDown: function(event, intersects) {
       if (intersects.length > 0) {
         let intersect = intersects[0];
 
-        if (this._corner0Pos === null) {
-          this._corner0Pos = intersect.point;
-          this._nextStep = this._steps.corner1;
-        } else if (this._corner1Pos === null) {
-          this._corner1Pos = intersect.point;
-          this._nextStep = this._steps.corner2;
-          this._threeView.removeInvisiblePlane();
-          this._threeView.addInvisiblePlane(0, this._corner1Pos.x);
-        } else if (this._corner2Pos === null) {
-          this._corner2Pos = intersect.point;
-          this._consolidateBox();
-          this._nextStep = 3;
+        if (this.__corner0Pos === null) {
+          this.__corner0Pos = intersect.point;
+          this.__nextStep = this.__steps.corner1;
+        } else if (this.__corner1Pos === null) {
+          this.__corner1Pos = intersect.point;
+          this.__nextStep = this.__steps.corner2;
+          this.__threeView.removeInvisiblePlane();
+          this.__threeView.addInvisiblePlane(0, this.__corner1Pos.x);
+        } else if (this.__corner2Pos === null) {
+          this.__corner2Pos = intersect.point;
+          this.__consolidateBox();
+          this.__nextStep = 3;
         }
       }
 
       return true;
     },
 
-    _updatePosition(mesh, p1, p2, p3) {
+    __updatePosition: function(mesh, p1, p2, p3) {
       let width = Math.abs(p2.x - p1.x);
       let height = Math.abs(p2.y - p1.y);
       let depth = 0;
@@ -115,26 +115,26 @@ qx.Class.define("qxapp.modeler.BoxCreator", {
       mesh.position.z = originZ + depth/2;
     },
 
-    _consolidateBox : function() {
-      this._removeTemps();
-      if (this._square_temp) {
-        this._square_temp = null;
+    __consolidateBox: function() {
+      this.__removeTemps();
+      if (this.__squareTemp) {
+        this.__squareTemp = null;
       }
-      if (this._box_temp) {
-        this._box_temp = null;
+      if (this.__boxTemp) {
+        this.__boxTemp = null;
       }
 
-      let geometry = this._threeView._threeWrapper.createBox(this._corner0Pos, this._corner1Pos, this._corner2Pos);
-      if (this._box_material === null) {
-        this._box_material = this._threeView._threeWrapper.createNewMaterial();
+      let geometry = this.__threeView.getThreeWrapper().createBox(this.__corner0Pos, this.__corner1Pos, this.__corner2Pos);
+      if (this.__boxMaterial === null) {
+        this.__boxMaterial = this.__threeView.getThreeWrapper().createNewMaterial();
       }
-      let entity = this._threeView._threeWrapper.createEntity(geometry, this._box_material);
+      let entity = this.__threeView.getThreeWrapper().createEntity(geometry, this.__boxMaterial);
       entity.name = "Box";
 
-      this._updatePosition(entity, this._corner0Pos, this._corner1Pos, this._corner2Pos);
+      this.__updatePosition(entity, this.__corner0Pos, this.__corner1Pos, this.__corner2Pos);
 
-      this._threeView.addEntityToScene(entity);
-      this._threeView.stopTool();
+      this.__threeView.addEntityToScene(entity);
+      this.__threeView.stopTool();
     }
   }
 });

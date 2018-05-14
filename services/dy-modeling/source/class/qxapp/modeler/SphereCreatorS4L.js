@@ -4,11 +4,11 @@ qx.Class.define("qxapp.modeler.SphereCreatorS4L", {
   extend: qx.core.Object,
 
   construct : function(threeViewer) {
-    this._threeView = threeViewer;
-    this._my_uuid = this.uuidv4();
-    console.log("new id", this._my_uuid);
+    this.__threeView = threeViewer;
+    this.__myUuid = this.uuidv4();
+    console.log("new id", this.__myUuid);
 
-    this._steps = {
+    this.__steps = {
       centerPoint: 0,
       radius: 1
     };
@@ -19,59 +19,59 @@ qx.Class.define("qxapp.modeler.SphereCreatorS4L", {
   },
 
   members : {
-    _threeView: null,
-    _steps: null,
-    _nextStep: 0,
-    _centerPoint: null,
-    _radius: null,
-    _sphere_material: null,
-    _sphere_temp: null,
-    _uuid_temp: "",
-    _my_uuid: "",
+    __threeView: null,
+    __steps: null,
+    __nextStep: 0,
+    __centerPoint: null,
+    __radius: null,
+    __sphereMaterial: null,
+    __sphereTemp: null,
+    __uuidTemp: "",
+    __myUuid: "",
 
-    uuidv4 : function() {
+    uuidv4: function() {
       return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     },
 
-    startTool : function() {
-      const fixed_axe = 2;
-      const fixed_pos = 0;
-      this._threeView.addInvisiblePlane(fixed_axe, fixed_pos);
+    startTool: function() {
+      const fixedAxe = 2;
+      const fixedPos = 0;
+      this.__threeView.addInvisiblePlane(fixedAxe, fixedPos);
     },
 
-    stopTool : function() {
-      this._threeView.removeInvisiblePlane();
+    stopTool: function() {
+      this.__threeView.removeInvisiblePlane();
     },
 
-    onMouseHover : function(event, intersects) {
-      if (this._uuid_temp === "") {
+    onMouseHover: function(event, intersects) {
+      if (this.__uuidTemp === "") {
         return;
       }
 
-      if (intersects.length > 0 && this._nextStep === this._steps.radius) {
+      if (intersects.length > 0 && this.__nextStep === this.__steps.radius) {
         let intersect = intersects[0];
-        let temp_radius = Math.hypot(intersect.point.x-this._centerPoint.x, intersect.point.y-this._centerPoint.y);
-        this.fireDataEvent("newSphereS4LRequested", [temp_radius, this._centerPoint, this._uuid_temp]);
+        let tempRadius = Math.hypot(intersect.point.x-this.__centerPoint.x, intersect.point.y-this.__centerPoint.y);
+        this.fireDataEvent("newSphereS4LRequested", [tempRadius, this.__centerPoint, this.__uuidTemp]);
       }
     },
 
-    onMouseDown : function(event, intersects) {
+    onMouseDown: function(event, intersects) {
       if (intersects.length > 0) {
         let intersect = intersects[0];
 
-        if (this._centerPoint === null) {
-          this._centerPoint = intersect.point;
-          this._nextStep = this._steps.radius;
+        if (this.__centerPoint === null) {
+          this.__centerPoint = intersect.point;
+          this.__nextStep = this.__steps.radius;
           let dummyRadius = 0.0001;
-          this._uuid_temp = this.uuidv4();
-          this.fireDataEvent("newSphereS4LRequested", [dummyRadius, this._centerPoint, this._uuid_temp]);
+          this.__uuidTemp = this.uuidv4();
+          this.fireDataEvent("newSphereS4LRequested", [dummyRadius, this.__centerPoint, this.__uuidTemp]);
           return true;
         }
 
-        if (this._radius === null) {
-          this._radius = Math.hypot(intersect.point.x-this._centerPoint.x, intersect.point.y-this._centerPoint.y);
-          this.fireDataEvent("newSphereS4LRequested", [this._radius, this._centerPoint, this._my_uuid]);
+        if (this.__radius === null) {
+          this.__radius = Math.hypot(intersect.point.x-this.__centerPoint.x, intersect.point.y-this.__centerPoint.y);
+          this.fireDataEvent("newSphereS4LRequested", [this.__radius, this.__centerPoint, this.__myUuid]);
           return true;
         }
       }
@@ -79,35 +79,35 @@ qx.Class.define("qxapp.modeler.SphereCreatorS4L", {
       return true;
     },
 
-    sphereFromS4L : function(response) {
-      let sphereGeometry = this._threeView._threeWrapper.fromEntityMeshToEntity(response.value[0]);
-      // let sphereMaterial = this._threeView._threeWrapper.CreateMeshNormalMaterial();
+    sphereFromS4L: function(response) {
+      let sphereGeometry = this.__threeView.getThreeWrapper().fromEntityMeshToEntity(response.value[0]);
+      // let sphereMaterial = this.__threeView.getThreeWrapper().CreateMeshNormalMaterial();
       let color = response.value[0].material.diffuse;
-      let sphereMaterial = this._threeView._threeWrapper.createNewMaterial(color.r, color.g, color.b);
-      let sphere = this._threeView._threeWrapper.createEntity(sphereGeometry, sphereMaterial);
+      let sphereMaterial = this.__threeView.getThreeWrapper().createNewMaterial(color.r, color.g, color.b);
+      let sphere = this.__threeView.getThreeWrapper().createEntity(sphereGeometry, sphereMaterial);
 
-      this._threeView._threeWrapper.applyTransformationMatrixToEntity(sphere, response.value[0].transform4x4);
+      this.__threeView.getThreeWrapper().applyTransformationMatrixToEntity(sphere, response.value[0].transform4x4);
 
       sphere.name = "Sphere_S4L";
       sphere.uuid = response.uuid;
 
-      if (this._sphere_temp) {
-        this._threeView._threeWrapper.removeEntityFromScene(this._sphere_temp);
+      if (this.__sphereTemp) {
+        this.__threeView.getThreeWrapper().removeEntityFromScene(this.__sphereTemp);
       }
 
-      if (this._my_uuid === sphere.uuid) {
-        this._consolidateSphere(sphere);
+      if (this.__myUuid === sphere.uuid) {
+        this.__consolidateSphere(sphere);
       } else {
-        this._sphere_temp = sphere;
-        this._threeView._threeWrapper.addEntityToScene(this._sphere_temp);
+        this.__sphereTemp = sphere;
+        this.__threeView.getThreeWrapper().addEntityToScene(this.__sphereTemp);
       }
     },
 
-    _consolidateSphere : function(sphere) {
+    __consolidateSphere: function(sphere) {
       sphere.name = "Sphere_S4L";
-      this._threeView.addEntityToScene(sphere);
-      this._uuid_temp = "";
-      this._threeView.stopTool();
+      this.__threeView.addEntityToScene(sphere);
+      this.__uuidTemp = "";
+      this.__threeView.stopTool();
     }
   }
 });

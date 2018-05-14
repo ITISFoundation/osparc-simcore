@@ -1,104 +1,104 @@
 qx.Class.define("qxapp.modeler.CylinderCreator", {
   extend: qx.core.Object,
 
-  construct : function(threeViewer) {
-    this._threeView = threeViewer;
+  construct: function(threeViewer) {
+    this.__threeView = threeViewer;
 
-    this._steps = {
+    this.__steps = {
       center: 0,
       radius: 1,
       height: 2
     };
   },
 
-  members : {
-    _threeView: null,
-    _steps: null,
-    _nextStep: 0,
-    _centerPos: null,
-    _radius: null,
-    _height: null,
-    _plane_material: null,
-    _circle_temp: null,
-    _cylinder_material: null,
-    _cylinder_temp: null,
+  members: {
+    __threeView: null,
+    __steps: null,
+    __nextStep: 0,
+    __centerPos: null,
+    __radius: null,
+    __height: null,
+    __planeMaterial: null,
+    __circleTemp: null,
+    __cylinderMaterial: null,
+    __cylinderTemp: null,
 
-    startTool : function() {
-      const fixed_axe = 2;
-      const fixed_pos = 0;
-      this._threeView.addInvisiblePlane(fixed_axe, fixed_pos);
+    startTool: function() {
+      const fixedAxe = 2;
+      const fixedPos = 0;
+      this.__threeView.addInvisiblePlane(fixedAxe, fixedPos);
     },
 
-    stopTool : function() {
-      this._threeView.removeInvisiblePlane();
+    stopTool: function() {
+      this.__threeView.removeInvisiblePlane();
     },
 
-    _removeTemps : function() {
-      if (this._circle_temp) {
-        this._threeView._threeWrapper.removeEntityFromScene(this._circle_temp);
+    __removeTemps: function() {
+      if (this.__circleTemp) {
+        this.__threeView.getThreeWrapper().removeEntityFromScene(this.__circleTemp);
       }
-      if (this._cylinder_temp) {
-        this._threeView._threeWrapper.removeEntityFromScene(this._cylinder_temp);
+      if (this.__cylinderTemp) {
+        this.__threeView.getThreeWrapper().removeEntityFromScene(this.__cylinderTemp);
       }
     },
 
-    onMouseHover : function(event, intersects) {
+    onMouseHover: function(event, intersects) {
       if (intersects.length > 0) {
         let intersect = intersects[0];
-        if (this._nextStep === this._steps.radius) {
-          this._removeTemps();
+        if (this.__nextStep === this.__steps.radius) {
+          this.__removeTemps();
 
-          let temp_radius = Math.hypot(intersect.point.x-this._centerPos.x, intersect.point.y-this._centerPos.y);
-          let circleGeometry = this._threeView._threeWrapper.createCylinder(temp_radius);
-          if (this._plane_material === null) {
-            this._plane_material = this._threeView._threeWrapper.createNewPlaneMaterial();
+          let tempRadius = Math.hypot(intersect.point.x-this.__centerPos.x, intersect.point.y-this.__centerPos.y);
+          let circleGeometry = this.__threeView.getThreeWrapper().createCylinder(tempRadius);
+          if (this.__planeMaterial === null) {
+            this.__planeMaterial = this.__threeView.getThreeWrapper().createNewPlaneMaterial();
           }
-          this._circle_temp = this._threeView._threeWrapper.createEntity(circleGeometry, this._plane_material);
+          this.__circleTemp = this.__threeView.getThreeWrapper().createEntity(circleGeometry, this.__planeMaterial);
 
-          this._updatePosition(this._circle_temp, this._centerPos);
+          this.__updatePosition(this.__circleTemp, this.__centerPos);
 
-          this._threeView._threeWrapper.addEntityToScene(this._circle_temp);
-        } else if (this._nextStep === this._steps.height) {
-          this._removeTemps();
+          this.__threeView.getThreeWrapper().addEntityToScene(this.__circleTemp);
+        } else if (this.__nextStep === this.__steps.height) {
+          this.__removeTemps();
 
-          let temp_height = intersect.point.z - this._centerPos.z;
-          let cylinderGeometry = this._threeView._threeWrapper.createCylinder(this._radius, temp_height);
-          if (this._cylinder_material === null) {
-            this._cylinder_material = this._threeView._threeWrapper.createNewMaterial(this._plane_material.color.r, this._plane_material.color.g, this._plane_material.color.b);
+          let tempHeight = intersect.point.z - this.__centerPos.z;
+          let cylinderGeometry = this.__threeView.getThreeWrapper().createCylinder(this.__radius, tempHeight);
+          if (this.__cylinderMaterial === null) {
+            this.__cylinderMaterial = this.__threeView.getThreeWrapper().createNewMaterial(this.__planeMaterial.color.r, this.__planeMaterial.color.g, this.__planeMaterial.color.b);
           }
-          this._cylinder_temp = this._threeView._threeWrapper.createEntity(cylinderGeometry, this._cylinder_material);
+          this.__cylinderTemp = this.__threeView.getThreeWrapper().createEntity(cylinderGeometry, this.__cylinderMaterial);
 
-          this._updatePosition(this._cylinder_temp, this._centerPos, temp_height);
+          this.__updatePosition(this.__cylinderTemp, this.__centerPos, tempHeight);
 
-          this._threeView._threeWrapper.addEntityToScene(this._cylinder_temp);
+          this.__threeView.getThreeWrapper().addEntityToScene(this.__cylinderTemp);
         }
       }
       return true;
     },
 
-    onMouseDown : function(event, intersects) {
+    onMouseDown: function(event, intersects) {
       if (intersects.length > 0) {
         let intersect = intersects[0];
 
-        if (this._centerPos === null) {
-          this._centerPos = intersect.point;
-          this._nextStep = this._steps.radius;
-        } else if (this._radius === null) {
-          this._radius = Math.hypot(intersect.point.x-this._centerPos.x, intersect.point.y-this._centerPos.y);
-          this._nextStep = this._steps.height;
-          this._threeView.removeInvisiblePlane();
-          this._threeView.addInvisiblePlane(0, this._centerPos.x);
-        } else if (this._height === null) {
-          this._height = intersect.point.z - this._centerPos.z;
+        if (this.__centerPos === null) {
+          this.__centerPos = intersect.point;
+          this.__nextStep = this.__steps.radius;
+        } else if (this.__radius === null) {
+          this.__radius = Math.hypot(intersect.point.x-this.__centerPos.x, intersect.point.y-this.__centerPos.y);
+          this.__nextStep = this.__steps.height;
+          this.__threeView.removeInvisiblePlane();
+          this.__threeView.addInvisiblePlane(0, this.__centerPos.x);
+        } else if (this.__height === null) {
+          this.__height = intersect.point.z - this.__centerPos.z;
           this._consolidateCylinder();
-          this._nextStep = 3;
+          this.__nextStep = 3;
         }
       }
 
       return true;
     },
 
-    _updatePosition(mesh, center, height) {
+    __updatePosition: function(mesh, center, height) {
       if (height === undefined) {
         mesh.position.x = center.x;
         mesh.position.y = center.y;
@@ -111,26 +111,26 @@ qx.Class.define("qxapp.modeler.CylinderCreator", {
       }
     },
 
-    _consolidateCylinder : function() {
-      this._removeTemps();
-      if (this._circle_temp) {
-        this._circle_temp = null;
+    _consolidateCylinder: function() {
+      this.__removeTemps();
+      if (this.__circleTemp) {
+        this.__circleTemp = null;
       }
-      if (this._cylinder_temp) {
-        this._cylinder_temp = null;
+      if (this.__cylinderTemp) {
+        this.__cylinderTemp = null;
       }
 
-      let geometry = this._threeView._threeWrapper.createCylinder(this._radius, this._height);
-      if (this._cylinder_material === null) {
-        this._cylinder_material = this._threeView._threeWrapper.createNewMaterial();
+      let geometry = this.__threeView.getThreeWrapper().createCylinder(this.__radius, this.__height);
+      if (this.__cylinderMaterial === null) {
+        this.__cylinderMaterial = this.__threeView.getThreeWrapper().createNewMaterial();
       }
-      let entity = this._threeView._threeWrapper.createEntity(geometry, this._cylinder_material);
+      let entity = this.__threeView.getThreeWrapper().createEntity(geometry, this.__cylinderMaterial);
       entity.name = "Cylinder";
 
-      this._updatePosition(entity, this._centerPos, this._height);
+      this.__updatePosition(entity, this.__centerPos, this.__height);
 
-      this._threeView.addEntityToScene(entity);
-      this._threeView.stopTool();
+      this.__threeView.addEntityToScene(entity);
+      this.__threeView.stopTool();
     }
   }
 });

@@ -2,72 +2,72 @@ qx.Class.define("qxapp.modeler.SplineCreatorS4L", {
   extend: qx.core.Object,
 
   construct : function(threeViewer) {
-    this._threeView = threeViewer;
+    this.__threeView = threeViewer;
 
-    this._pointList = [];
-    this._controlPoints = [];
+    this.__pointList = [];
+    this.__controlPoints = [];
   },
 
-  events : {
+  events: {
     "newSplineS4LRequested": "qx.event.type.Data"
   },
 
-  members : {
-    _threeView: null,
-    _pointList: null,
-    _controlPoints: null,
-    _spline_temp: null,
-    _uuid_temp: "",
+  members: {
+    __threeView: null,
+    __pointList: null,
+    __controlPoints: null,
+    __splineTemp: null,
+    __uuidTemp: "",
 
-    startTool : function() {
-      const fixed_axe = 2;
-      const fixed_pos = 0;
-      this._threeView.addInvisiblePlane(fixed_axe, fixed_pos);
-      this._pointList = [];
-      this._controlPoints = [];
-      this._spline_temp = null;
-      this._uuid_temp = "";
+    startTool: function() {
+      const fixedAxe = 2;
+      const fixedPos = 0;
+      this.__threeView.addInvisiblePlane(fixedAxe, fixedPos);
+      this.__pointList = [];
+      this.__controlPoints = [];
+      this.__splineTemp = null;
+      this.__uuidTemp = "";
     },
 
-    stopTool : function() {
-      this._threeView.removeInvisiblePlane();
+    stopTool: function() {
+      this.__threeView.removeInvisiblePlane();
     },
 
-    onMouseHover : function(event, intersects) {
-      if (this._uuid_temp === "") {
+    onMouseHover: function(event, intersects) {
+      if (this.__uuidTemp === "") {
         return;
       }
 
       if (intersects.length > 0) {
         let intersect = intersects[0];
-        let hoverPointList = this._pointList.concat([intersect.point]);
+        let hoverPointList = this.__pointList.concat([intersect.point]);
         if (hoverPointList.length>1) {
-          this.fireDataEvent("newSplineS4LRequested", [hoverPointList, this._uuid_temp]);
+          this.fireDataEvent("newSplineS4LRequested", [hoverPointList, this.__uuidTemp]);
         }
       }
     },
 
-    onMouseDown : function(event, intersects) {
+    onMouseDown: function(event, intersects) {
       if (intersects.length > 0) {
         let intersect = intersects[0];
-        this._pointList.push(intersect.point);
+        this.__pointList.push(intersect.point);
 
-        let control_point = this._threeView._threeWrapper.createPoint(intersect.point);
-        this._threeView._threeWrapper.addEntityToScene(control_point);
-        this._controlPoints.push(control_point);
+        let controlPoint = this.__threeView.getThreeWrapper().createPoint(intersect.point);
+        this.__threeView.getThreeWrapper().addEntityToScene(controlPoint);
+        this.__controlPoints.push(controlPoint);
 
-        if (this._pointList.length === 1) {
-          let dummy_point = JSON.parse(JSON.stringify(this._pointList[0]));
-          dummy_point.x *= 1.00001;
-          let temp_list = [this._pointList[0], dummy_point];
-          this.fireDataEvent("newSplineS4LRequested", [temp_list, this._uuid_temp]);
+        if (this.__pointList.length === 1) {
+          let dummyPoint = JSON.parse(JSON.stringify(this.__pointList[0]));
+          dummyPoint.x *= 1.00001;
+          let tempList = [this.__pointList[0], dummyPoint];
+          this.fireDataEvent("newSplineS4LRequested", [tempList, this.__uuidTemp]);
         }
 
-        if (this._pointList.length>1) {
+        if (this.__pointList.length>1) {
           if (event.button === 0) {
-            this.fireDataEvent("newSplineS4LRequested", [this._pointList, this._uuid_temp]);
+            this.fireDataEvent("newSplineS4LRequested", [this.__pointList, this.__uuidTemp]);
           } else if (event.button === 2) {
-            this.fireDataEvent("newSplineS4LRequested", [this._pointList, ""]);
+            this.fireDataEvent("newSplineS4LRequested", [this.__pointList, ""]);
           }
         }
       }
@@ -76,39 +76,39 @@ qx.Class.define("qxapp.modeler.SplineCreatorS4L", {
     },
 
     splineFromS4L : function(response) {
-      let spline = this._threeView._threeWrapper.createSpline(response.value);
+      let spline = this.__threeView.getThreeWrapper().createSpline(response.value);
       spline.name = "Spline_S4L";
       spline.uuid = response.uuid;
 
-      if (this._uuid_temp === "") {
-        this._uuid_temp = spline.uuid;
+      if (this.__uuidTemp === "") {
+        this.__uuidTemp = spline.uuid;
       }
 
-      if (this._spline_temp) {
-        this._threeView._threeWrapper.removeEntityFromScene(this._spline_temp);
+      if (this.__splineTemp) {
+        this.__threeView.getThreeWrapper().removeEntityFromScene(this.__splineTemp);
       }
 
-      if (this._uuid_temp === spline.uuid) {
-        this._spline_temp = spline;
-        this._threeView._threeWrapper.addEntityToScene(this._spline_temp);
+      if (this.__uuidTemp === spline.uuid) {
+        this.__splineTemp = spline;
+        this.__threeView.getThreeWrapper().addEntityToScene(this.__splineTemp);
       } else {
-        this._consolidateSpline(spline);
+        this.__consolidateSpline(spline);
       }
     },
 
-    _consolidateSpline : function(spline) {
+    __consolidateSpline : function(spline) {
       spline.name = "Spline_S4L";
 
-      for (let i = 0; i < this._controlPoints.length; i++) {
-        this._threeView._threeWrapper.removeEntityFromScene(this._controlPoints[i]);
-        spline.add(this._controlPoints[i]);
+      for (let i = 0; i < this.__controlPoints.length; i++) {
+        this.__threeView.getThreeWrapper().removeEntityFromScene(this.__controlPoints[i]);
+        spline.add(this.__controlPoints[i]);
       }
-      this._threeView.addEntityToScene(spline);
-      // this._spline_temp = null;
-      this._uuid_temp = "";
-      this._pointList = [];
-      this._controlPoints = [];
-      this._threeView.stopTool();
+      this.__threeView.addEntityToScene(spline);
+      // this.__splineTemp = null;
+      this.__uuidTemp = "";
+      this.__pointList = [];
+      this.__controlPoints = [];
+      this.__threeView.stopTool();
     }
   }
 });

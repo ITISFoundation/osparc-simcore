@@ -1,5 +1,6 @@
 /* global document */
 /* global window */
+/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true, "allow": ["__dirtyColors"] }] */
 
 const NO_TOOL = 0;
 const TOOL_ACTIVE = 1;
@@ -27,39 +28,38 @@ qx.Class.define("qxapp.components.ThreeView", {
       layout: box
     });
 
-    this._transformControls = [];
-    this._entities = [];
+    this.__transformControls = [];
+    this.__entities = [];
 
-    this._threeWrapper = new qxapp.wrappers.ThreeWrapper();
+    this.__threeWrapper = new qxapp.wrappers.ThreeWrapper();
 
-    this._threeWrapper.addListener(("ThreeLibReady"), function(e) {
+    this.__threeWrapper.addListener(("ThreeLibReady"), function(e) {
       let ready = e.getData();
       if (ready) {
-        this._threeDViewer = new qx.ui.core.Widget();
-        this.add(this._threeDViewer, {
+        this.__threeDViewer = new qx.ui.core.Widget();
+        this.add(this.__threeDViewer, {
           flex: 1
         });
 
-        this._threeDViewer.addListenerOnce("appear", function() {
-          this._threeDViewer.getContentElement().getDomElement()
-            .appendChild(this._threeWrapper.getDomElement());
+        this.__threeDViewer.addListenerOnce("appear", function() {
+          this.__threeDViewer.getContentElement().getDomElement()
+            .appendChild(this.__threeWrapper.getDomElement());
 
-          this._threeWrapper.setBackgroundColor(backgroundColor);
-          // this._threeWrapper.SetCameraPosition(18, 0, 25);
-          this._threeWrapper.setCameraPosition(21, 21, 9); // Z up
-          this._threeWrapper.setSize(this.getWidth(), this.getHeight());
+          this.__threeWrapper.setBackgroundColor(backgroundColor);
+          // this.__threeWrapper.SetCameraPosition(18, 0, 25);
+          this.__threeWrapper.setCameraPosition(21, 21, 9); // Z up
+          this.__threeWrapper.setSize(this.getWidth(), this.getHeight());
 
           document.addEventListener("mousedown", this._onMouseDown.bind(this), false);
           document.addEventListener("mousemove", this._onMouseHover.bind(this), false);
 
-          let that = this;
           window.addEventListener("resize", function() {
-            that.set({
+            this.set({
               width: window.innerWidth,
               height: window.innerHeight
             });
-            that._threeWrapper.setSize(window.innerWidth, window.innerHeight);
-          }, that);
+            this.__threeWrapper.setSize(window.innerWidth, window.innerHeight);
+          }, this);
 
           this._render();
         }, this);
@@ -68,14 +68,14 @@ qx.Class.define("qxapp.components.ThreeView", {
       }
     }, this);
 
-    this._threeWrapper.addListener(("EntityToBeAdded"), function(e) {
+    this.__threeWrapper.addListener(("EntityToBeAdded"), function(e) {
       let newEntity = e.getData();
       if (newEntity) {
         this.addEntityToScene(newEntity);
       }
     }, this);
 
-    this._threeWrapper.addListener(("SceneToBeExported"), function(e) {
+    this.__threeWrapper.addListener(("SceneToBeExported"), function(e) {
       this.fireDataEvent("SceneToBeExported", e.getData());
     }, this);
   },
@@ -90,28 +90,36 @@ qx.Class.define("qxapp.components.ThreeView", {
   },
 
   members: {
-    _threeDViewer: null,
-    _threeWrapper: null,
-    _transformControls: null,
-    _entities: null,
-    _intersected: null,
-    _selectionMode: NO_TOOL,
-    _activeTool: null,
+    __threeDViewer: null,
+    __threeWrapper: null,
+    __transformControls: null,
+    __entities: null,
+    __intersected: null,
+    __selectionMode: NO_TOOL,
+    __activeTool: null,
 
-    _render : function() {
-      this._threeWrapper.render();
+    getThreeWrapper: function() {
+      return this.__threeWrapper;
     },
 
-    _updateTransformControls : function() {
-      for (let i = 0; i < this._transformControls.length; i++) {
-        this._transformControls[i].update();
+    getEntities: function() {
+      return this.__entities;
+    },
+
+    _render: function() {
+      this.__threeWrapper.render();
+    },
+
+    _updateTransformControls: function() {
+      for (let i = 0; i < this.__transformControls.length; i++) {
+        this.__transformControls[i].update();
       }
       this._render();
     },
 
-    _onMouseHover : function(event) {
+    _onMouseHover: function(event) {
       event.preventDefault();
-      if (this._selectionMode === NO_TOOL ||
+      if (this.__selectionMode === NO_TOOL ||
         // hacky
         event.target.nodeName != "CANVAS") {
         return;
@@ -120,23 +128,23 @@ qx.Class.define("qxapp.components.ThreeView", {
       let posX = (event.clientX / window.innerWidth) * 2 - 1;
       let posY = -(event.clientY / window.innerHeight) * 2 + 1;
 
-      if (this._selectionMode === TOOL_ACTIVE && this._activeTool) {
+      if (this.__selectionMode === TOOL_ACTIVE && this.__activeTool) {
         let isShiftKeyPressed = event.shiftKey;
         if (isShiftKeyPressed) {
           return;
         }
 
-        let intersects = this._threeWrapper.intersectEntities(this._entities, posX, posY);
-        let attended = this._activeTool.onMouseHover(event, intersects);
+        let intersects = this.__threeWrapper.intersectEntities(this.__entities, posX, posY);
+        let attended = this.__activeTool.onMouseHover(event, intersects);
         if (attended) {
           return;
         }
       }
     },
 
-    _onMouseDown : function(event) {
+    _onMouseDown: function(event) {
       event.preventDefault();
-      if (this._selectionMode === NO_TOOL ||
+      if (this.__selectionMode === NO_TOOL ||
         // hacky
         event.target.nodeName != "CANVAS") {
         return;
@@ -144,159 +152,159 @@ qx.Class.define("qxapp.components.ThreeView", {
 
       let posX = (event.clientX / window.innerWidth) * 2 - 1;
       let posY = -(event.clientY / window.innerHeight) * 2 + 1;
-      let intersects = this._threeWrapper.intersectEntities(this._entities, posX, posY);
+      let intersects = this.__threeWrapper.intersectEntities(this.__entities, posX, posY);
 
-      if (this._selectionMode === TOOL_ACTIVE && this._activeTool) {
+      if (this.__selectionMode === TOOL_ACTIVE && this.__activeTool) {
         let isShiftKeyPressed = event.shiftKey;
         if (isShiftKeyPressed) {
           return;
         }
 
-        let attended = this._activeTool.onMouseDown(event, intersects);
+        let attended = this.__activeTool.onMouseDown(event, intersects);
         if (attended) {
           return;
         }
       }
 
       if (intersects.length > 0) {
-        if (this._selectionMode === ENTITY_PICKING) {
+        if (this.__selectionMode === ENTITY_PICKING) {
           let isCtrlKeyPressed = event.ctrlKey;
-          if (this._intersected !== null && !isCtrlKeyPressed) {
+          if (this.__intersected !== null && !isCtrlKeyPressed) {
             this.unhighlightAll();
           }
-          this._intersected = intersects[0];
+          this.__intersected = intersects[0];
           if (isCtrlKeyPressed) {
-            this.fireDataEvent("entitySelectedAdd", this._intersected.object.uuid);
+            this.fireDataEvent("entitySelectedAdd", this.__intersected.object.uuid);
           } else {
-            this.fireDataEvent("entitySelected", this._intersected.object.uuid);
+            this.fireDataEvent("entitySelected", this.__intersected.object.uuid);
           }
-          this.highlightEntities([this._intersected.object.uuid]);
-        } else if (this._selectionMode === FACE_PICKING) {
-          if (this._intersected !== null) {
-            this._intersected.face.color.setHex(this._intersected.currentHex);
+          this.highlightEntities([this.__intersected.object.uuid]);
+        } else if (this.__selectionMode === FACE_PICKING) {
+          if (this.__intersected !== null) {
+            this.__intersected.face.color.setHex(this.__intersected.currentHex);
           }
-          this._intersected = intersects[0];
+          this.__intersected = intersects[0];
           this.fireDataEvent("entitySelected", null);
-          this._intersected.currentHex = this._intersected.face.color.getHex();
+          this.__intersected.currentHex = this.__intersected.face.color.getHex();
           const highlightedColor = 0x000000;
-          this._intersected.face.color.setHex(highlightedColor);
+          this.__intersected.face.color.setHex(highlightedColor);
         }
-        this._intersected.object.geometry.__dirtyColors = true;
-        this._intersected.object.geometry.colorsNeedUpdate = true;
+        this.__intersected.object.geometry.__dirtyColors = true;
+        this.__intersected.object.geometry.colorsNeedUpdate = true;
       } else {
-        if (this._intersected) {
+        if (this.__intersected) {
           this.fireDataEvent("entitySelected", null);
-          if (this._selectionMode === ENTITY_PICKING) {
+          if (this.__selectionMode === ENTITY_PICKING) {
             this.unhighlightAll();
-          } else if (this._selectionMode === FACE_PICKING) {
-            this._intersected.face.color.setHex(this._intersected.currentHex);
+          } else if (this.__selectionMode === FACE_PICKING) {
+            this.__intersected.face.color.setHex(this.__intersected.currentHex);
           }
-          this._intersected.object.geometry.__dirtyColors = true;
-          this._intersected.object.geometry.colorsNeedUpdate = true;
+          this.__intersected.object.geometry.__dirtyColors = true;
+          this.__intersected.object.geometry.colorsNeedUpdate = true;
         }
         // remove previous intersection object reference
-        this._intersected = null;
+        this.__intersected = null;
       }
 
       this._render();
     },
 
-    addEntityToScene : function(entity) {
-      this._threeWrapper.addEntityToScene(entity);
-      this._entities.push(entity);
+    addEntityToScene: function(entity) {
+      this.__threeWrapper.addEntityToScene(entity);
+      this.__entities.push(entity);
       this.fireDataEvent("entityAdded", [entity.uuid, entity.name]);
     },
 
-    removeAll : function() {
-      for (let i = this._entities.length-1; i >= 0; i--) {
-        this.removeEntity(this._entities[i]);
+    removeAll: function() {
+      for (let i = this.__entities.length-1; i >= 0; i--) {
+        this.removeEntity(this.__entities[i]);
       }
     },
 
-    removeEntity : function(entity) {
+    removeEntity: function(entity) {
       let uuid = null;
-      for (let i = 0; i < this._entities.length; i++) {
-        if (this._entities[i] === entity) {
-          uuid = this._entities[i].uuid;
-          this._entities.splice(i, 1);
+      for (let i = 0; i < this.__entities.length; i++) {
+        if (this.__entities[i] === entity) {
+          uuid = this.__entities[i].uuid;
+          this.__entities.splice(i, 1);
           break;
         }
       }
 
       if (uuid) {
-        this._threeWrapper.removeEntityFromSceneById(uuid);
+        this.__threeWrapper.removeEntityFromSceneById(uuid);
         this.fireDataEvent("entityRemoved", uuid);
         this._render();
       }
     },
 
-    removeEntityByID : function(uuid) {
-      for (let i = 0; i < this._entities.length; i++) {
-        if (this._entities[i].uuid === uuid) {
-          this.removeEntity(this._entities[i]);
+    removeEntityByID: function(uuid) {
+      for (let i = 0; i < this.__entities.length; i++) {
+        if (this.__entities[i].uuid === uuid) {
+          this.removeEntity(this.__entities[i]);
           return;
         }
       }
     },
 
-    startTool : function(myTool) {
-      this._activeTool = myTool;
-      this._activeTool.startTool();
+    startTool: function(myTool) {
+      this.__activeTool = myTool;
+      this.__activeTool.startTool();
       this.setSelectionMode(TOOL_ACTIVE);
     },
 
-    stopTool : function() {
-      if (this._activeTool) {
-        this._activeTool.stopTool();
+    stopTool: function() {
+      if (this.__activeTool) {
+        this.__activeTool.stopTool();
       }
-      this._activeTool = null;
+      this.__activeTool = null;
       this.setSelectionMode(NO_TOOL);
     },
 
-    addInvisiblePlane : function(fixed_axe = 2, fixed_position = 0) {
-      let instersection_plane = this._threeWrapper.createInvisiblePlane(fixed_axe, fixed_position);
-      instersection_plane.name = "InvisiblePlaneForSnapping";
-      this._entities.push(instersection_plane);
+    addInvisiblePlane: function(fixedAxe = 2, fixedPosition = 0) {
+      let instersectionPlane = this.__threeWrapper.createInvisiblePlane(fixedAxe, fixedPosition);
+      instersectionPlane.name = "InvisiblePlaneForSnapping";
+      this.__entities.push(instersectionPlane);
     },
 
-    removeInvisiblePlane : function() {
-      for (let i = 0; i < this._entities.length; i++) {
-        if (this._entities[i].name === "InvisiblePlaneForSnapping") {
-          this._entities.splice(i, 1);
+    removeInvisiblePlane: function() {
+      for (let i = 0; i < this.__entities.length; i++) {
+        if (this.__entities[i].name === "InvisiblePlaneForSnapping") {
+          this.__entities.splice(i, 1);
           break;
         }
       }
     },
 
-    startMoveTool : function(selObjId, mode) {
-      for (let i = 0; i < this._entities.length; i++) {
-        if (this._entities[i].uuid === selObjId) {
-          let transformControl = this._threeWrapper.createTransformControls();
+    startMoveTool: function(selObjId, mode) {
+      for (let i = 0; i < this.__entities.length; i++) {
+        if (this.__entities[i].uuid === selObjId) {
+          let transformControl = this.__threeWrapper.createTransformControls();
           transformControl.addEventListener("change", this._updateTransformControls.bind(this));
           if (mode === "rotate") {
             transformControl.setMode("rotate");
           } else {
             transformControl.setMode("translate");
           }
-          transformControl.attach(this._entities[i]);
-          this._transformControls.push(transformControl);
-          this._threeWrapper.addEntityToScene(transformControl);
+          transformControl.attach(this.__entities[i]);
+          this.__transformControls.push(transformControl);
+          this.__threeWrapper.addEntityToScene(transformControl);
         }
       }
       this._render();
     },
 
-    stopMoveTool : function() {
-      for (let i = 0; i < this._transformControls.length; i++) {
-        if (this._threeWrapper.removeEntityFromScene(this._transformControls[i])) {
-          this._transformControls[i].detach();
+    stopMoveTool: function() {
+      for (let i = 0; i < this.__transformControls.length; i++) {
+        if (this.__threeWrapper.removeEntityFromScene(this.__transformControls[i])) {
+          this.__transformControls[i].detach();
         }
       }
-      this._transformControls = [];
+      this.__transformControls = [];
       this._render();
     },
 
-    setSelectionMode : function(mode) {
+    setSelectionMode: function(mode) {
       if (mode === FACE_PICKING) {
         this._showEdges(true);
         this.highlightAll();
@@ -305,81 +313,81 @@ qx.Class.define("qxapp.components.ThreeView", {
         this.unhighlightAll();
       }
 
-      this._selectionMode = mode;
+      this.__selectionMode = mode;
       this.stopMoveTool();
       this._render();
     },
 
-    createEntityFromResponse : function(response, name, uuid) {
-      let sphereGeometry = this._threeWrapper.fromEntityMeshToEntity(response[0]);
-      // let sphereMaterial = this._threeWrapper.CreateMeshNormalMaterial();
+    createEntityFromResponse: function(response, name, uuid) {
+      let sphereGeometry = this.__threeWrapper.fromEntityMeshToEntity(response[0]);
+      // let sphereMaterial = this.__threeWrapper.CreateMeshNormalMaterial();
       let color = response[0].material.diffuse;
-      let sphereMaterial = this._threeWrapper.createNewMaterial(color.r, color.g, color.b);
-      let entity = this._threeWrapper.createEntity(sphereGeometry, sphereMaterial);
+      let sphereMaterial = this.__threeWrapper.createNewMaterial(color.r, color.g, color.b);
+      let entity = this.__threeWrapper.createEntity(sphereGeometry, sphereMaterial);
 
-      this._threeWrapper.applyTransformationMatrixToEntity(entity, response[0].transform4x4);
+      this.__threeWrapper.applyTransformationMatrixToEntity(entity, response[0].transform4x4);
 
       entity.name = name;
       entity.uuid = uuid;
       this.addEntityToScene(entity);
     },
 
-    highlightAll : function() {
-      for (let i = 0; i < this._entities.length; i++) {
-        this._entities[i].material.opacity = 0.9;
+    highlightAll: function() {
+      for (let i = 0; i < this.__entities.length; i++) {
+        this.__entities[i].material.opacity = 0.9;
       }
       this._render();
     },
 
-    unhighlightAll : function() {
-      for (let i = 0; i < this._entities.length; i++) {
-        this._entities[i].material.opacity = 0.6;
+    unhighlightAll: function() {
+      for (let i = 0; i < this.__entities.length; i++) {
+        this.__entities[i].material.opacity = 0.6;
       }
       this._render();
     },
 
-    highlightEntities : function(ids) {
-      for (let i = 0; i < this._entities.length; i++) {
-        if (ids.indexOf(this._entities[i].uuid) >= 0) {
-          this._entities[i].material.opacity = 0.9;
+    highlightEntities: function(ids) {
+      for (let i = 0; i < this.__entities.length; i++) {
+        if (ids.indexOf(this.__entities[i].uuid) >= 0) {
+          this.__entities[i].material.opacity = 0.9;
         }
       }
       this._render();
     },
 
-    showHideEntity : function(id, show) {
-      for (let i = 0; i < this._entities.length; i++) {
-        if (this._entities[i].uuid === id) {
-          this._entities[i].visible = show;
+    showHideEntity: function(id, show) {
+      for (let i = 0; i < this.__entities.length; i++) {
+        if (this.__entities[i].uuid === id) {
+          this.__entities[i].visible = show;
           break;
         }
       }
       this._render();
     },
 
-    _showEdges : function(show_edges) {
-      if (show_edges) {
-        for (let i = 0; i < this._entities.length; i++) {
-          let wireframe = this._threeWrapper.createWireframeFromGeometry(this._entities[i].geometry);
-          this._entities[i].add(wireframe);
+    _showEdges: function(showEdges) {
+      if (showEdges) {
+        for (let i = 0; i < this.__entities.length; i++) {
+          let wireframe = this.__threeWrapper.createWireframeFromGeometry(this.__entities[i].geometry);
+          this.__entities[i].add(wireframe);
         }
       } else {
-        for (let i = 0; i < this._entities.length; i++) {
-          let wireObj = this._entities[i].getObjectByName("wireframe");
+        for (let i = 0; i < this.__entities.length; i++) {
+          let wireObj = this.__entities[i].getObjectByName("wireframe");
           if (wireObj) {
-            this._entities[i].remove(wireObj);
+            this.__entities[i].remove(wireObj);
           }
         }
       }
       this._render();
     },
 
-    importSceneFromBuffer : function(model_buffer) {
-      this._threeWrapper.importSceneFromBuffer(model_buffer);
+    importSceneFromBuffer: function(modelBuffer) {
+      this.__threeWrapper.importSceneFromBuffer(modelBuffer);
     },
 
-    serializeScene : function(downloadFile, exportSceneAsBinary) {
-      this._threeWrapper.exportScene(downloadFile, exportSceneAsBinary);
+    serializeScene: function(downloadFile, exportSceneAsBinary) {
+      this.__threeWrapper.exportScene(downloadFile, exportSceneAsBinary);
     }
   }
 });

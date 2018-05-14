@@ -3,9 +3,9 @@
 qx.Class.define("qxapp.components.MenuBar", {
   extend: qx.ui.container.Composite,
 
-  include : [qx.locale.MTranslation],
+  include: [qx.locale.MTranslation],
 
-  construct : function(width, height, backgroundColor, fontColor) {
+  construct: function(width, height, backgroundColor, fontColor) {
     this.base(arguments);
 
     let box = new qx.ui.layout.HBox();
@@ -21,7 +21,7 @@ qx.Class.define("qxapp.components.MenuBar", {
       height: height
     });
 
-    let bar = this.getMenuBar(width, backgroundColor, fontColor);
+    let bar = this.__getMenuBar(width, backgroundColor, fontColor);
     this.add(bar);
   },
 
@@ -35,7 +35,7 @@ qx.Class.define("qxapp.components.MenuBar", {
   },
 
   members: {
-    getMenuBar : function(width, backgroundColor, fontColor) {
+    __getMenuBar: function(width, backgroundColor, fontColor) {
       let frame = new qx.ui.container.Composite(new qx.ui.layout.Grow());
 
       let menubar = new qx.ui.menubar.MenuBar();
@@ -52,8 +52,8 @@ qx.Class.define("qxapp.components.MenuBar", {
 
       frame.add(menubar);
 
-      let fileMenu = new qx.ui.menubar.Button(this.tr("File"), null, this.getFileMenu());
-      let editMenu = new qx.ui.menubar.Button(this.tr("Edit"), null, this.getEditMenu());
+      let fileMenu = new qx.ui.menubar.Button(this.tr("File"), null, this.__getFileMenu());
+      let editMenu = new qx.ui.menubar.Button(this.tr("Edit"), null, this.__getEditMenu());
       let viewMenu = new qx.ui.menubar.Button(this.tr("View"), null, null);
       let helpMenu = new qx.ui.menubar.Button(this.tr("Help"), null, null);
       let menuOpts = [fileMenu, editMenu, viewMenu, helpMenu];
@@ -66,14 +66,14 @@ qx.Class.define("qxapp.components.MenuBar", {
       return frame;
     },
 
-    getFileMenu : function() {
+    __getFileMenu: function() {
       let fileMenu = new qx.ui.menu.Menu();
 
       let newButton = new qx.ui.menu.Button(this.tr("New"), null, null);
       let loadSceneButton = new qx.ui.menu.Button(this.tr("Load scene"), null, null);
       let saveSceneButton = new qx.ui.menu.Button(this.tr("Save scene"), null, null);
       let downloadSceneButton = new qx.ui.menu.Button(this.tr("Download scene"), null, null);
-      let loadModelsButton = new qx.ui.menu.Button(this.tr("Load Models"), null, null, this.getModelsList());
+      let loadModelsButton = new qx.ui.menu.Button(this.tr("Load Models"), null, null, this.__getModelsList());
 
       newButton.addListener("execute", function(e) {
         this.fireDataEvent("fileNewPressed");
@@ -100,7 +100,7 @@ qx.Class.define("qxapp.components.MenuBar", {
       return fileMenu;
     },
 
-    getModelsList : function() {
+    __getModelsList: function() {
       let modelsMenu = new qx.ui.menu.Menu();
 
       let ratButton = new qx.ui.menu.Button("Rat", null, null);
@@ -118,7 +118,7 @@ qx.Class.define("qxapp.components.MenuBar", {
       return modelsMenu;
     },
 
-    getEditMenu : function() {
+    __getEditMenu: function() {
       let editMenu = new qx.ui.menu.Menu();
 
       let preferencesButton = new qx.ui.menu.Button(this.tr("Preferences"), null, null);

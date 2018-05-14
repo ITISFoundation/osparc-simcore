@@ -29,8 +29,9 @@ qx.Class.define("qxapp.Application", {
 
   members:
   {
-    _threeView: null,
-    _entityList: null,
+    __threeView: null,
+    __entityList: null,
+    __availableServicesBar: null,
 
     /**
      * This method contains the initial application code and gets called
@@ -90,18 +91,18 @@ qx.Class.define("qxapp.Application", {
           .getBackground(), this._appModel.getColors().getMenuBar()
           .getFont());
 
-      this._availableServicesBar = new qxapp.components.AvailableServices(
+      this.__availableServicesBar = new qxapp.components.AvailableServices(
         docWidth, avaiBarHeight,
         this._appModel.getColors().getToolBar()
           .getBackground(), this._appModel.getColors().getToolBar()
           .getFont());
 
-      this._threeView = new qxapp.components.ThreeView(
+      this.__threeView = new qxapp.components.ThreeView(
         docWidth, docHeight,
         this._appModel.getColors().get3DView()
           .getBackground());
 
-      this._entityList = new qxapp.components.EntityList(
+      this.__entityList = new qxapp.components.EntityList(
         250, 300,
         this._appModel.getColors().getSettingsView()
           .getBackground(), this._appModel.getColors().getSettingsView()
@@ -109,23 +110,23 @@ qx.Class.define("qxapp.Application", {
 
 
       // components to document
-      doc.add(this._threeView);
+      doc.add(this.__threeView);
 
       let toolBarcontainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(1)).set({
         backgroundColor: "white",
         allowGrowY: false
       });
       toolBarcontainer.add(this._menuBar);
-      toolBarcontainer.add(this._availableServicesBar);
-      // toolBarcontainer.add(this._threeView);
+      toolBarcontainer.add(this.__availableServicesBar);
+      // toolBarcontainer.add(this.__threeView);
       doc.add(toolBarcontainer);
 
       doc.add(this._userMenu, {
         right: 30
       });
 
-      this._entityList.moveTo(10, menuBarHeight + avaiBarHeight + 10);
-      this._entityList.open();
+      this.__entityList.moveTo(10, menuBarHeight + avaiBarHeight + 10);
+      this.__entityList.open();
 
       this._initSignals();
     },
@@ -171,7 +172,7 @@ qx.Class.define("qxapp.Application", {
       return myDefaultData;
     },
 
-    _getActiveUserName: function() {
+    getActiveUserName: function() {
       const activeUserId = this._appModel.getActiveUser();
       return this._appModel.getUsers().toArray()[activeUserId].getName();
     },
@@ -179,30 +180,30 @@ qx.Class.define("qxapp.Application", {
     _initSignals: function() {
       // Menu bar
       this._menuBar.addListener("fileNewPressed", function(e) {
-        this._threeView.removeAll();
+        this.__threeView.removeAll();
       }, this);
 
       this._menuBar.addListener("fileLoadScenePressed", function(e) {
         if (!this._socket.slotExists("importScene")) {
           this._socket.on("importScene", function(val) {
             if (val.type === "importScene") {
-              this._threeView.importSceneFromBuffer(val.value);
+              this.__threeView.importSceneFromBuffer(val.value);
             }
           }, this);
         }
-        this._socket.emit("importScene", this._getActiveUserName());
+        this._socket.emit("importScene", this.getActiveUserName());
       }, this);
 
       this._menuBar.addListener("fileSaveScenePressed", function(e) {
         const donwloadFile = false;
         const exportSceneAsBinary = this._appModel.getExportSceneAsBinary();
-        this._threeView.serializeScene(donwloadFile, exportSceneAsBinary);
+        this.__threeView.serializeScene(donwloadFile, exportSceneAsBinary);
       }, this);
 
       this._menuBar.addListener("fileDownloadScenePressed", function(e) {
         const donwloadFile = true;
         const exportSceneAsBinary = this._appModel.getExportSceneAsBinary();
-        this._threeView.serializeScene(donwloadFile, exportSceneAsBinary);
+        this.__threeView.serializeScene(donwloadFile, exportSceneAsBinary);
       }, this);
 
       this._menuBar.addListener("fileLoadModelPressed", function(e) {
@@ -210,7 +211,7 @@ qx.Class.define("qxapp.Application", {
         if (!this._socket.slotExists("importModelScene")) {
           this._socket.on("importModelScene", function(val) {
             if (val.type === "importModelScene") {
-              this._threeView.importSceneFromBuffer(val.value);
+              this.__threeView.importSceneFromBuffer(val.value);
             }
           }, this);
         }
@@ -222,35 +223,35 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       // Services
-      this._availableServicesBar.addListener("selectionModeChanged", function(e) {
+      this.__availableServicesBar.addListener("selectionModeChanged", function(e) {
         let selectionMode = e.getData();
-        this._threeView.setSelectionMode(selectionMode);
+        this.__threeView.setSelectionMode(selectionMode);
       }, this);
 
-      this._availableServicesBar.addListener("newBlockRequested", function(e) {
+      this.__availableServicesBar.addListener("newBlockRequested", function(e) {
         let enableBoxTool = Boolean(e.getData());
         if (enableBoxTool) {
           // let useExternalModeler = this._appModel.getUseExternalModeler();
-          let boxCreator = new qxapp.modeler.BoxCreator(this._threeView);
-          this._threeView.startTool(boxCreator);
+          let boxCreator = new qxapp.modeler.BoxCreator(this.__threeView);
+          this.__threeView.startTool(boxCreator);
         } else {
-          this._threeView.stopTool();
+          this.__threeView.stopTool();
         }
       }, this);
 
-      this._availableServicesBar.addListener("newSphereRequested", function(e) {
+      this.__availableServicesBar.addListener("newSphereRequested", function(e) {
         let enableSphereTool = Boolean(e.getData());
         if (enableSphereTool) {
           let useExternalModeler = Boolean(this._appModel.getUseExternalModeler());
           if (useExternalModeler === false) {
-            let sphereCreator = new qxapp.modeler.SphereCreator(this._threeView);
-            this._threeView.startTool(sphereCreator);
+            let sphereCreator = new qxapp.modeler.SphereCreator(this.__threeView);
+            this.__threeView.startTool(sphereCreator);
           } else {
-            let sphereCreator = new qxapp.modeler.SphereCreatorS4L(this._threeView);
-            this._threeView.startTool(sphereCreator);
+            let sphereCreator = new qxapp.modeler.SphereCreatorS4L(this.__threeView);
+            this.__threeView.startTool(sphereCreator);
             sphereCreator.addListenerOnce("newSphereS4LRequested", function(ev) {
               let radius = ev.getData()[0];
-              let center_point = ev.getData()[1];
+              let centerPoint = ev.getData()[1];
               let uuid = ev.getData()[2];
               if (!this._socket.slotExists("newSphereS4LRequested")) {
                 this._socket.on("newSphereS4LRequested", function(val) {
@@ -259,47 +260,47 @@ qx.Class.define("qxapp.Application", {
                   }
                 }, this);
               }
-              this._socket.emit("newSphereS4LRequested", [radius, center_point, uuid]);
+              this._socket.emit("newSphereS4LRequested", [radius, centerPoint, uuid]);
             }, this);
           }
         } else {
-          this._threeView.stopTool();
+          this.__threeView.stopTool();
         }
       }, this);
 
-      this._availableServicesBar.addListener("newCylinderRequested", function(e) {
+      this.__availableServicesBar.addListener("newCylinderRequested", function(e) {
         let enableCylinderTool = Boolean(e.getData());
         if (enableCylinderTool) {
           // let useExternalModeler = this._appModel.getUseExternalModeler();
-          let cylinderCreator = new qxapp.modeler.CylinderCreator(this._threeView);
-          this._threeView.startTool(cylinderCreator);
+          let cylinderCreator = new qxapp.modeler.CylinderCreator(this.__threeView);
+          this.__threeView.startTool(cylinderCreator);
         } else {
-          this._threeView.stopTool();
+          this.__threeView.stopTool();
         }
       }, this);
 
-      this._availableServicesBar.addListener("newDodecaRequested", function(e) {
+      this.__availableServicesBar.addListener("newDodecaRequested", function(e) {
         let enableDodecahedronTool = Boolean(e.getData());
         if (enableDodecahedronTool) {
           // let useExternalModeler = this._appModel.getUseExternalModeler();
-          let dodecahedronCreator = new qxapp.modeler.DodecahedronCreator(this._threeView);
-          this._threeView.startTool(dodecahedronCreator);
+          let dodecahedronCreator = new qxapp.modeler.DodecahedronCreator(this.__threeView);
+          this.__threeView.startTool(dodecahedronCreator);
         } else {
-          this._threeView.stopTool();
+          this.__threeView.stopTool();
         }
       }, this);
 
-      this._availableServicesBar.addListener("newSplineRequested", function(e) {
-        // this._threeView.SetSelectionMode(0);
+      this.__availableServicesBar.addListener("newSplineRequested", function(e) {
+        // this.__threeView.SetSelectionMode(0);
         let enableSplineTool = Boolean(e.getData());
         if (enableSplineTool) {
           let useExternalModeler = Boolean(this._appModel.getUseExternalModeler());
           if (useExternalModeler === false) {
-            let splineCreator = new qxapp.modeler.SplineCreator(this._threeView);
-            this._threeView.startTool(splineCreator);
+            let splineCreator = new qxapp.modeler.SplineCreator(this.__threeView);
+            this.__threeView.startTool(splineCreator);
           } else {
-            let splineCreator = new qxapp.modeler.SplineCreatorS4L(this._threeView);
-            this._threeView.startTool(splineCreator);
+            let splineCreator = new qxapp.modeler.SplineCreatorS4L(this.__threeView);
+            this.__threeView.startTool(splineCreator);
             splineCreator.addListenerOnce("newSplineS4LRequested", function(ev) {
               let pointList = ev.getData()[0];
               let uuid = ev.getData()[1];
@@ -314,110 +315,110 @@ qx.Class.define("qxapp.Application", {
             }, this);
           }
         } else {
-          this._threeView.stopTool();
+          this.__threeView.stopTool();
         }
       }, this);
 
-      this._availableServicesBar.addListener("moveToolRequested", function(e) {
-        this._threeView.setSelectionMode(0);
+      this.__availableServicesBar.addListener("moveToolRequested", function(e) {
+        this.__threeView.setSelectionMode(0);
         let enableMoveTool = Boolean(e.getData());
         if (enableMoveTool) {
-          let selObjId = this._entityList.getSelectedEntityId();
+          let selObjId = this.__entityList.getSelectedEntityId();
           if (selObjId) {
-            this._threeView.startMoveTool(selObjId, "translate");
+            this.__threeView.startMoveTool(selObjId, "translate");
           } else {
-            this._availableServicesBar._moveBtn.setValue(false);
+            this.__availableServicesBar.getMoveBtn().setValue(false);
           }
         } else {
-          this._threeView.stopMoveTool();
+          this.__threeView.stopMoveTool();
         }
       }, this);
 
-      this._availableServicesBar.addListener("rotateToolRequested", function(e) {
-        this._threeView.setSelectionMode(0);
+      this.__availableServicesBar.addListener("rotateToolRequested", function(e) {
+        this.__threeView.setSelectionMode(0);
         let enableRotateTool = Boolean(e.getData());
         if (enableRotateTool) {
-          let selObjId = this._entityList.getSelectedEntityId();
+          let selObjId = this.__entityList.getSelectedEntityId();
           if (selObjId) {
-            this._threeView.startMoveTool(selObjId, "rotate");
+            this.__threeView.startMoveTool(selObjId, "rotate");
           } else {
-            this._availableServicesBar._rotateBtn.setValue(false);
+            this.__availableServicesBar.getRotateBtn().setValue(false);
           }
         } else {
-          this._threeView.stopMoveTool();
+          this.__threeView.stopMoveTool();
         }
       }, this);
 
-      this._availableServicesBar.addListener("booleanOperationRequested", function(e) {
+      this.__availableServicesBar.addListener("booleanOperationRequested", function(e) {
         let operationType = e.getData();
-        if (this._threeView._entities.length>1) {
-          let entityMeshesIDs = this._entityList.getSelectedEntityIds();
+        if (this.__threeView.getEntities().length>1) {
+          let entityMeshesIDs = this.__entityList.getSelectedEntityIds();
           if (entityMeshesIDs.length>1) {
-            this._threeView._threeWrapper.addListenerOnce("sceneWithMeshesToBeExported", function(ev) {
+            this.__threeView.getThreeWrapper().addListenerOnce("sceneWithMeshesToBeExported", function(ev) {
               let sceneWithMeshes = ev.getData();
               if (!this._socket.slotExists("newBooleanOperationRequested")) {
                 this._socket.on("newBooleanOperationRequested", function(val) {
                   if (val.type === "newBooleanOperationRequested") {
-                    this._threeView.importSceneFromBuffer(val.value);
+                    this.__threeView.importSceneFromBuffer(val.value);
                   }
                 }, this);
               }
               this._socket.emit("newBooleanOperationRequested", [JSON.stringify(sceneWithMeshes), operationType]);
             }, this);
-            this._threeView._threeWrapper.createSceneWithMeshes(entityMeshesIDs);
+            this.__threeView.getThreeWrapper().createSceneWithMeshes(entityMeshesIDs);
           }
         }
       }, this);
 
 
       // Entity list
-      this._entityList.addListener("removeEntityRequested", function(e) {
+      this.__entityList.addListener("removeEntityRequested", function(e) {
         let entityId = e.getData();
-        if (this._threeView.removeEntityByID(entityId)) {
-          this._entityList.removeEntity(entityId);
+        if (this.__threeView.removeEntityByID(entityId)) {
+          this.__entityList.removeEntity(entityId);
         }
       }, this);
 
-      this._entityList.addListener("selectionChanged", function(e) {
+      this.__entityList.addListener("selectionChanged", function(e) {
         let entityIds = e.getData();
-        this._threeView.unhighlightAll();
-        this._threeView.highlightEntities(entityIds);
+        this.__threeView.unhighlightAll();
+        this.__threeView.highlightEntities(entityIds);
       }, this);
 
-      this._entityList.addListener("visibilityChanged", function(e) {
+      this.__entityList.addListener("visibilityChanged", function(e) {
         let entityId = e.getData()[0];
         let show = e.getData()[1];
-        this._threeView.showHideEntity(entityId, show);
+        this.__threeView.showHideEntity(entityId, show);
       }, this);
 
 
       // 3D View
-      this._threeView.addListener("entitySelected", function(e) {
+      this.__threeView.addListener("entitySelected", function(e) {
         let entityId = e.getData();
-        this._entityList.onEntitySelectedChanged([entityId]);
+        this.__entityList.onEntitySelectedChanged([entityId]);
       }, this);
 
-      this._threeView.addListener("entitySelectedAdd", function(e) {
+      this.__threeView.addListener("entitySelectedAdd", function(e) {
         let entityId = e.getData();
-        let selectedEntityIds = this._entityList.getSelectedEntityIds();
+        let selectedEntityIds = this.__entityList.getSelectedEntityIds();
         if (selectedEntityIds.indexOf(entityId) === -1) {
           selectedEntityIds.push(entityId);
-          this._entityList.onEntitySelectedChanged(selectedEntityIds);
+          this.__entityList.onEntitySelectedChanged(selectedEntityIds);
         }
       }, this);
 
-      this._threeView.addListener("entityAdded", function(e) {
+      this.__threeView.addListener("entityAdded", function(e) {
         let entityName = e.getData()[0];
         let entityId = e.getData()[1];
-        this._entityList.addEntity(entityName, entityId);
+        this.__entityList.addEntity(entityName, entityId);
       }, this);
 
-      this._threeView.addListener("entityRemoved", function(e) {
+      this.__threeView.addListener("entityRemoved", function(e) {
         let entityId = e.getData();
-        this._entityList.removeEntity(entityId);
+        this.__entityList.removeEntity(entityId);
       }, this);
 
-      this._threeView.addListener(("entitiesToBeExported"), function(e) {
+      this.__threeView.addListener(("entitiesToBeExported"), function(e) {
         if (!this._socket.slotExists("exportEntities")) {
           this._socket.on("exportEntities", function(val) {
             if (val.type === "exportEntities") {
@@ -425,10 +426,10 @@ qx.Class.define("qxapp.Application", {
             }
           }, this);
         }
-        this._socket.emit("exportEntities", [this._getActiveUserName(), e.getData()]);
+        this._socket.emit("exportEntities", [this.getActiveUserName(), e.getData()]);
       }, this);
 
-      this._threeView.addListener(("SceneToBeExported"), function(e) {
+      this.__threeView.addListener(("SceneToBeExported"), function(e) {
         if (!this._socket.slotExists("exportScene")) {
           this._socket.on("exportScene", function(val) {
             if (val.type === "exportScene") {
@@ -436,7 +437,7 @@ qx.Class.define("qxapp.Application", {
             }
           }, this);
         }
-        this._socket.emit("exportScene", [this._getActiveUserName(), e.getData()]);
+        this._socket.emit("exportScene", [this.getActiveUserName(), e.getData()]);
       }, this);
     },
 

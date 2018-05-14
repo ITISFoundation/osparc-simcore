@@ -6,7 +6,7 @@ qx.Class.define("qxapp.components.UserMenu", {
   construct : function(model, backgroundColor, fontColor) {
     this.base(arguments);
 
-    this._model = model;
+    this.__model = model;
 
     this.setLayout(new qx.ui.layout.HBox(0));
 
@@ -17,27 +17,27 @@ qx.Class.define("qxapp.components.UserMenu", {
       allowGrowY: false
     }));
 
-    this._userLabel = new qx.ui.basic.Label(this._getActiveUserName()).set({
+    this.__userLabel = new qx.ui.basic.Label(this.getActiveUserName()).set({
       backgroundColor : backgroundColor,
       textColor: fontColor,
       padding : 6,
       allowGrowY: false
     });
-    this.add(this._userLabel);
+    this.add(this.__userLabel);
 
 
-    this._model.addListener("changeActiveUser", function(e) {
-      this._userLabel.setValue(this._getActiveUserName());
+    this.__model.addListener("changeActiveUser", function(e) {
+      this.__userLabel.setValue(this.getActiveUserName());
     }, this);
   },
 
   members: {
-    _model: null,
-    _userLabel: null,
+    __model: null,
+    __userLabel: null,
 
-    _getActiveUserName : function() {
-      const activeUserId = this._model.getActiveUser();
-      return this._model.getUsers().toArray()[activeUserId].getName();
+    getActiveUserName: function() {
+      const activeUserId = this.__model.getActiveUser();
+      return this.__model.getUsers().toArray()[activeUserId].getName();
     }
   }
 });
