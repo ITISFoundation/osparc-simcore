@@ -8,5 +8,20 @@
     "q": false,
     "qxWeb": false,
     "qxapp": false
+  },
+  "rules": {
+    "camelcase": [
+      "error",
+      {
+        "properties": "always"
+      }
+    ],
+    "no-underscore-dangle": [
+      "error",
+      {
+        "allowAfterThis": true,
+        "enforceInMethodNames": true
+      }
+    ]
   }
 }
