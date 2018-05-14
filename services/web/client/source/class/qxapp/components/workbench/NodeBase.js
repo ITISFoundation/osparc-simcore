@@ -83,18 +83,9 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       if (value != undefined) {
         this.setMetadata(value);
         this.setServiceName(this.getMetadata().name);
-        this.getMetadata().input.forEach(input => {
-          let label = new qx.ui.basic.Label(input.name);
-          label.portId = qxapp.utils.Utils.uuidv4();
-          this.__inputPorts.add(label);
-        });
-        this.getMetadata().output.forEach(output => {
-          let label = new qx.ui.basic.Label(output.name);
-          label.portId = qxapp.utils.Utils.uuidv4();
-          this.__outputPorts.add(label);
-        });
-
         this.setNodeImageId(this.getMetadata().id);
+        this.setInputs(this.getMetadata().input);
+        this.setOutputs(this.getMetadata().output);
       }
     },
 
@@ -102,18 +93,30 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.setCaption(name);
     },
 
-    setInputs: function(names) {
-      names.forEach(name => {
-        let label = new qx.ui.basic.Label(name);
+    setInputs: function(inputs) {
+      inputs.forEach(input => {
+        let label = this.__createPort(true, input.name);
         this.__inputPorts.add(label);
       });
     },
 
-    setOutputs: function(names) {
-      names.forEach(name => {
-        let label = new qx.ui.basic.Label(name);
+    setOutputs: function(ouputs) {
+      ouputs.forEach(ouput => {
+        let label = this.__createPort(false, ouput.name);
         this.__outputPorts.add(label);
       });
+    },
+
+    __createPort: function(isInput, name) {
+      let label = new qx.ui.basic.Label(name);
+      label.portId = qxapp.utils.Utils.uuidv4();
+      label.isInput = isInput;
+      label.setDraggable(true);
+      label.setDroppable(true);
+      label.addListener("dragstart", function(e) {
+        console.log("Drag");
+      }, this);
+      return label;
     },
 
     addInputLinkID: function(linkID) {
