@@ -9,36 +9,36 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       layout: canvas
     });
 
-    this.__SvgWidget = new qxapp.components.workbench.SvgWidget();
-    this.add(this.__SvgWidget, {
+    this.__svgWidget = new qxapp.components.workbench.SvgWidget();
+    this.add(this.__svgWidget, {
       left: 0,
       top: 0,
       right: 0,
       bottom: 0
     });
 
-    this.__SvgWidget.addListener("SvgWidgetReady", function() {
+    this.__svgWidget.addListener("SvgWidgetReady", function() {
       // Will be called only the first time Svg lib is loaded
       this.__deserializeData();
     }, this);
 
-    this.__SvgWidget.addListener("SvgWidgetReady", function() {
-      this.__SvgWidget.addListener("appear", function() {
+    this.__svgWidget.addListener("SvgWidgetReady", function() {
+      this.__svgWidget.addListener("appear", function() {
         // Will be called once Svg lib is loaded and appears
         this.__deserializeData();
       }, this);
     }, this);
 
-    this.__Desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
-    this.add(this.__Desktop, {
+    this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
+    this.add(this.__desktop, {
       left: 0,
       top: 0,
       right: 0,
       bottom: 0
     });
 
-    this.__Nodes = [];
-    this.__Links = [];
+    this.__nodes = [];
+    this.__links = [];
 
     let plusButton = this.__getPlusButton();
     this.add(plusButton, {
@@ -65,10 +65,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
   },
 
   members: {
-    __Nodes: null,
-    __Links: null,
-    __Desktop: null,
-    __SvgWidget: null,
+    __nodes: null,
+    __links: null,
+    __desktop: null,
+    __svgWidget: null,
 
     __getPlusButton: function() {
       const icon = qxapp.utils.Placeholders.getIcon("fa-plus", 32);
@@ -123,16 +123,16 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __addNodeToWorkbench(node, position) {
       if (position === undefined) {
-        let nNodes = this.__Nodes.length;
+        let nNodes = this.__nodes.length;
         node.moveTo(50 + nNodes*250, 200);
-        this.__Desktop.add(node);
+        this.__desktop.add(node);
         node.open();
-        this.__Nodes.push(node);
+        this.__nodes.push(node);
       } else {
         node.moveTo(position.x, position.y);
-        this.__Desktop.add(node);
+        this.__desktop.add(node);
         node.open();
-        this.__Nodes.push(node);
+        this.__nodes.push(node);
       }
 
       node.addListener("move", function(e) {
@@ -154,7 +154,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             const y1 = pointList[0][1];
             const x2 = pointList[1][0];
             const y2 = pointList[1][1];
-            this.__SvgWidget.updateCurve(link.getRepresentation(), x1, y1, x2, y2);
+            this.__svgWidget.updateCurve(link.getRepresentation(), x1, y1, x2, y2);
           }
         });
       }, this);
@@ -165,11 +165,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __createLinkToLastNode: function() {
-      let nNodes = this.__Nodes.length;
+      let nNodes = this.__nodes.length;
       if (nNodes > 1) {
         // force rendering to get the node's updated position
         qx.ui.core.queue.Layout.flush();
-        this.__addLink(this.__Nodes[nNodes-2], this.__Nodes[nNodes-1]);
+        this.__addLink(this.__nodes[nNodes-2], this.__nodes[nNodes-1]);
       }
     },
 
@@ -197,6 +197,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           }
         }, this);
         socket.emit(slotName, nodeBase.getNodeId());
+        nodeBase.getMetadata().viewer.port = 1234;
       }
 
       return nodeBase;
@@ -208,13 +209,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       const y1 = pointList[0][1];
       const x2 = pointList[1][0];
       const y2 = pointList[1][1];
-      let linkRepresentation = this.__SvgWidget.drawCurve(x1, y1, x2, y2);
+      let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
       let linkBase = new qxapp.components.workbench.LinkBase(linkRepresentation);
       linkBase.setInputNodeId(node1.getNodeId());
       linkBase.setOutputNodeId(node2.getNodeId());
       node1.addOutputLinkID(linkBase.getLinkId());
       node2.addInputLinkID(linkBase.getLinkId());
-      this.__Links.push(linkBase);
+      this.__links.push(linkBase);
 
       linkBase.getRepresentation().node.addEventListener("click", function(e) {
 
@@ -233,42 +234,42 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __getNode: function(id) {
-      for (let i = 0; i < this.__Nodes.length; i++) {
-        if (this.__Nodes[i].getNodeId() === id) {
-          return this.__Nodes[i];
+      for (let i = 0; i < this.__nodes.length; i++) {
+        if (this.__nodes[i].getNodeId() === id) {
+          return this.__nodes[i];
         }
       }
       return null;
     },
 
     __getLink: function(id) {
-      for (let i = 0; i < this.__Links.length; i++) {
-        if (this.__Links[i].getLinkId() === id) {
-          return this.__Links[i];
+      for (let i = 0; i < this.__links.length; i++) {
+        if (this.__links[i].getLinkId() === id) {
+          return this.__links[i];
         }
       }
       return null;
     },
 
     __removeNode: function(node) {
-      this.__Desktop.remove(node);
+      this.__desktop.remove(node);
     },
 
     __removeAllNodes: function() {
-      while (this.__Nodes.length > 0) {
-        this.__removeNode(this.__Nodes[this.__Nodes.length-1]);
-        this.__Nodes.pop();
+      while (this.__nodes.length > 0) {
+        this.__removeNode(this.__nodes[this.__nodes.length-1]);
+        this.__nodes.pop();
       }
     },
 
     __removeLink: function(link) {
-      this.__SvgWidget.removeCurve(link.getRepresentation());
+      this.__svgWidget.removeCurve(link.getRepresentation());
     },
 
     __removeAllLinks: function() {
-      while (this.__Links.length > 0) {
-        this.__removeLink(this.__Links[this.__Links.length-1]);
-        this.__Links.pop();
+      while (this.__links.length > 0) {
+        this.__removeLink(this.__links[this.__links.length-1]);
+        this.__links.pop();
       }
     },
 
@@ -279,17 +280,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __serializeData: function() {
       let pipeline = {};
-      for (let i = 0; i < this.__Nodes.length; i++) {
-        const nodeId = this.__Nodes[i].getNodeId();
+      for (let i = 0; i < this.__nodes.length; i++) {
+        const nodeId = this.__nodes[i].getNodeId();
         pipeline[nodeId] = {};
-        pipeline[nodeId].serviceId = this.__Nodes[i].getMetadata().id;
-        pipeline[nodeId].input = this.__Nodes[i].getMetadata().input;
-        pipeline[nodeId].output = this.__Nodes[i].getMetadata().output;
-        pipeline[nodeId].settings = this.__Nodes[i].getMetadata().settings;
+        pipeline[nodeId].serviceId = this.__nodes[i].getMetadata().id;
+        pipeline[nodeId].input = this.__nodes[i].getMetadata().input;
+        pipeline[nodeId].output = this.__nodes[i].getMetadata().output;
+        pipeline[nodeId].settings = this.__nodes[i].getMetadata().settings;
         pipeline[nodeId].children = [];
-        for (let j = 0; j < this.__Links.length; j++) {
-          if (nodeId === this.__Links[j].getInputNodeId()) {
-            pipeline[nodeId].children.push(this.__Links[j].getOutputNodeId());
+        for (let j = 0; j < this.__links.length; j++) {
+          if (nodeId === this.__links[j].getInputNodeId()) {
+            pipeline[nodeId].children.push(this.__links[j].getOutputNodeId());
           }
         }
       }
@@ -339,6 +340,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           }
         }
       }
+    },
+
+    addWindowToDesktop(node) {
+      this.__desktop.add(node);
+      node.open();
     },
 
     __getProducers: function() {
