@@ -103,3 +103,9 @@ ENV/
 # node
 # Dependency directories
 node_modules/
+
+
+# IDEs config
+.vscode/
+
+services/docker-compose.override.yml

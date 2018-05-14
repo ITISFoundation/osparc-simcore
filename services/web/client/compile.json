@@ -1,0 +1,64 @@
+{
+  "targets": [
+    {
+      "type": "source",
+      "outputPath": "source-output"
+    },
+    {
+      "type": "hybrid",
+      "outputPath": "hybrid-output"
+    },
+    {
+      "type": "build",
+      "outputPath": "build-output"
+    }
+  ],
+  "defaultTarget": "source",
+  "locales": ["en"],
+  "lint-check": true,
+
+  "applications": [
+    {
+      "class": "qxapp.Application",
+      "theme": "osparc.theme.OSparcDark",
+      "name": "qxapp",
+      "include": [
+        "qx.theme.Indigo",
+        "qx.theme.Modern",
+        "qx.theme.Simple"
+      ]
+    }
+  ],
+
+  "libraries": [
+    "../node_modules/qooxdoo-sdk/framework",
+    "."
+  ],
+
+  "common" : {
+    "add-script": [
+      {
+        "uri" : "resource/socketio/socket.io.js"
+      },
+      {
+        "uri" : "resource/three/*.js"
+      },
+      {
+        "uri" : "resource/workbench/svg*.js"
+      }
+    ]
+  },
+
+  "eslintConfig": {
+    "parserOptions": {
+      "ecmaVersion": 2017,
+      "sourceType": "module"
+    },
+    "globals": {
+      "JSZip": false
+    },
+    "extends": [
+      "qx/browser"
+    ]
+  }
+}

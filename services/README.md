@@ -1,30 +1,87 @@
-# Workbench-backend: Provide access to services from docker registry
+# services
 
+Each folder contains a services that is part or can be spawned by the platform.
+The prefix *dy-* in the naming indicates that this service is not a building
+part of the application (i.e. not listed as an services in the docker-compose file)
+but instead it is *dy*namically spawned by the director as a back-end service.
 
-Overview
-========
+## overview
 
-Workbench-backend is a first draft of the architecture that shall provide clients with interactive services available in the docker registry. It allows for listing, starting and stopping simcore services. These simcore services may be composed of 1 to N docker images. The workbench-backend shall automatically connect these docker container as needed.
+This is a schematic of how services are interconnected:
 
+[![service-web](../docs/img/service-web.svg)](http://interactive.blockdiag.com/?compression=deflate&src=eJxdjs0KwjAQhO99imXPFtNbpcYXkR7ys2hw6UqSKiK-uymxiF7nm28Yy-IuPpgTPBsAvJPdOg40ZYRjOpsr6UkyjUOB_tEmirfgKH0YaEDHMnsshX993x5qsEgUyx4bS6x3qu824IQlastz3f4pFtGHSC5LXCXsleqw3ljRUvteGprXG1PtQR0)
 
-Architecture
- ===========
- - light-weight workbench client/server (using python aiohttp,requests)
- - director (using python flask, docker, requests)
- - docker registry (on masu computer)
+and here follows a quick description of each service.
 
-Workflow
- =======
- 1. Get list of available services (returns their name)
- 2. Define a _uuid_ and start a service using one of the names returned in 1.
- 3. After the service is started its published port(s) are returned and may be used to browse to. The service own webserver will serve at this location.
- 4. Using the service uuid the service may be stopped.
+### authentication
 
- Building Services
- =================
-To build the workbench-backend, the computer must be part of a swarm.
+User login/authentication service...
 
-<code>
-$ docker swarm init
-$ docker-compose up
-</code>
+### computation
+
+Computational services...
+
+### director
+
+The director is responsible for making dynamic services and computational services available in a docker registry to the workbench application.
+It is also responsible for starting and stopping such a service on demand. A service may be composed of 1 to N connected docker images.
+
+### jupyter
+
+This is a third party service based on jupyter notebook images. It brings the jupyter notebook in the osparc workbench.
+
+### modeling
+
+This is a service providing 3D modeling capabilities.
+
+### web
+
+This is a service that provides the server/client infrastructure of the the workbench application.
+
+## Architecture
+
+### workbench
+
+The association of the web, authentication and director services creates the so-called workbench application. It provides the main entry point for the user.
+
+### workbench nodes
+
+The other services are made available through a docker registry to the workbench application.
+When a node is created in the workbench frontend, the director starts the respective services accordingly.
+The started services are dispatched on the available cluster and connected to the workbench application.
+When the user closes a node or disconnects, any running service will be automatically closed.
+
+## Development Workflow
+
+To build images for development
+
+```!bash
+  cd /path/to/services
+  docker-compose -f docker-compose.yml -f docker-compose.debug.yml build
+```
+
+To build images for production (w/o tagging)
+
+```!bash
+  cd /path/to/services
+  docker-compose -f docker-compose.yml build
+```
+
+## Deploying Services
+
+``docker-compose.deploy.yml`` defines the exact images tags to be used in the swarm.
+
+To build and tag these images:
+
+```!bash
+  cd /path/to/services
+  docker-compose -f docker-compose.yml -f docker-compose.deploy.yml build
+```
+
+To deploy the application in a single-node swarm
+
+```!bash
+  cd /path/to/services
+  docker swarm init
+  docker-compose -f docker-compose.yml -f docker-compose.deploy.yml up
+```
