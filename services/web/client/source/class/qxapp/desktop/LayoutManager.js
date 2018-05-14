@@ -9,32 +9,33 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       layout: new qx.ui.layout.VBox()
     });
 
-    this.__NavBar = this.__createNavigationBar();
-    this.__NavBar.setHeight(100);
-    this.add(this.__NavBar);
+    this.__navBar = this.__createNavigationBar();
+    this.__navBar.setHeight(100);
+    this.add(this.__navBar);
 
-    this.__PrjStack = this.__getPrjStack();
-    this.add(this.__PrjStack, {
+    this.__prjStack = this.__getPrjStack();
+    this.add(this.__prjStack, {
       flex: 1
     });
 
-    this.__NavBar.addListener("HomePressed", function() {
-      this.__PrjStack.setSelection([this.__PrjBrowser]);
-      this.__NavBar.setCurrentStatus("Browser");
+    this.__navBar.addListener("HomePressed", function() {
+      this.__prjStack.setSelection([this.__prjBrowser]);
+      this.__navBar.setCurrentStatus("Browser");
     }, this);
 
-    this.__PrjBrowser.addListener("StartPrj", function(e) {
-      this.__PrjStack.setSelection([this.__PrjEditor]);
-      this.__NavBar.setCurrentStatus(e.getData());
+    this.__prjBrowser.addListener("StartPrj", function(e) {
+      this.__prjStack.setSelection([this.__PrjEditor]);
+      this.__navBar.setCurrentStatus(e.getData().getName());
+      this.__PrjEditor.setData(qxapp.data.Fake.getPrjData(e.getData().getPrjId()));
     }, this);
   },
 
   events: {},
 
   members: {
-    __NavBar: null,
-    __PrjStack: null,
-    __PrjBrowser: null,
+    __navBar: null,
+    __prjStack: null,
+    __prjBrowser: null,
     __PrjEditor: null,
 
     __createNavigationBar: function() {
@@ -46,8 +47,8 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     __getPrjStack: function() {
       let prjStack = new qx.ui.container.Stack();
 
-      this.__PrjBrowser = new qxapp.desktop.PrjBrowser();
-      prjStack.add(this.__PrjBrowser);
+      this.__prjBrowser = new qxapp.desktop.PrjBrowser();
+      prjStack.add(this.__prjBrowser);
 
       this.__PrjEditor = new qxapp.desktop.PrjEditor();
       prjStack.add(this.__PrjEditor);

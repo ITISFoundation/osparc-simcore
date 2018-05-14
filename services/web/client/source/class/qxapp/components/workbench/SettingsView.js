@@ -1,4 +1,3 @@
-/* global window */
 qx.Class.define("qxapp.components.workbench.SettingsView", {
   extend: qx.ui.container.Composite,
 
@@ -20,7 +19,8 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
   },
 
   events: {
-    "SettingsEditionDone": "qx.event.type.Event"
+    "SettingsEditionDone": "qx.event.type.Event",
+    "ShowViewer": "qx.event.type.Data"
   },
 
   members: {
@@ -112,37 +112,10 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
         let button = new qx.ui.form.Button("Open Viewer");
         button.setEnabled(node.getMetadata().viewer.port !== null);
         button.addListener("execute", function(e) {
-          // FIXME: avoid hard-coding url sheme!
-          let url = "http://" + window.location.hostname + ":" + node.getMetadata().viewer.port;
-          let modelerWin = this.__createBrowserWindow(url, node.getMetadata().name);
-          modelerWin.open();
-          // FIXME: Too hacky
-          this.getLayoutParent().getChildren()[1].__Desktop.add(modelerWin);
+          this.fireDataEvent("ShowViewer", node.getMetadata());
         }, this);
         this.__settingsBox.add(button);
       }
-    },
-
-    __createBrowserWindow: function(url, name) {
-      console.log("Accessing:", url);
-      let win = new qx.ui.window.Window(name);
-      win.setShowMinimize(false);
-      win.setLayout(new qx.ui.layout.VBox(5));
-      let iframe = new qx.ui.embed.Iframe().set({
-        width: 900,
-        height: 700,
-        minWidth: 500,
-        minHeight: 500,
-        source: url,
-        decorator : null
-      });
-      win.add(iframe, {
-        flex: 1
-      });
-      // win.setModal(true);
-      win.moveTo(150, 150);
-
-      return win;
     },
 
     __fromMetadataToQxSetting: function(metadata) {

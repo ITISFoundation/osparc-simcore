@@ -7,8 +7,8 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
     this.base();
 
     this.addListenerOnce("appear", function() {
-      this.__SvgWrapper = new qxapp.wrappers.SvgWrapper();
-      this.__SvgWrapper.addListener(("SvgLibReady"), function(e) {
+      this.__svgWrapper = new qxapp.wrappers.SvgWrapper();
+      this.__svgWrapper.addListener(("SvgLibReady"), function(e) {
         let ready = e.getData();
         if (ready) {
           let svgPlaceholder = qx.dom.Element.create("div");
@@ -18,22 +18,26 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
           qx.bom.element.Style.set(svgPlaceholder, "height", "100%");
           this.getContentElement().getDomElement()
             .appendChild(svgPlaceholder);
-
-          this.__LinksCanvas = this.__SvgWrapper.createEmptyCanvas(LINKS_LAYER_ID);
+          this.__linksCanvas = this.__svgWrapper.createEmptyCanvas(LINKS_LAYER_ID);
+          this.fireDataEvent("SvgWidgetReady", true);
         } else {
           console.log("svg.js was not loaded");
         }
       }, this);
 
-      this.__SvgWrapper.init();
+      this.__svgWrapper.init();
     }, this);
   },
 
-  members: {
-    __SvgWrapper: null,
-    __LinksCanvas: null,
+  events: {
+    "SvgWidgetReady": "qx.event.type.Data"
+  },
 
-    __getControls(x1, y1, x2, y2) {
+  members: {
+    __svgWrapper: null,
+    __linksCanvas: null,
+
+    __getControls: function(x1, y1, x2, y2) {
       const offset = 50;
       return [{
         x: x1,
@@ -52,12 +56,16 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
 
     drawCurve: function(x1, y1, x2, y2) {
       const controls = this.__getControls(x1, y1, x2, y2);
-      return this.__SvgWrapper.drawCurve(this.__LinksCanvas, controls);
+      return this.__svgWrapper.drawCurve(this.__linksCanvas, controls);
     },
 
     updateCurve: function(curve, x1, y1, x2, y2) {
       const controls = this.__getControls(x1, y1, x2, y2);
-      this.__SvgWrapper.updateCurve(curve, controls);
+      this.__svgWrapper.updateCurve(curve, controls);
+    },
+
+    removeCurve: function(curve) {
+      this.__svgWrapper.removeCurve(curve);
     }
   }
 });

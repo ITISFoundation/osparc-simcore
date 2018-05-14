@@ -9,24 +9,36 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       layout: canvas
     });
 
-    this.__SvgWidget = new qxapp.components.workbench.SvgWidget();
-    this.add(this.__SvgWidget, {
+    this.__svgWidget = new qxapp.components.workbench.SvgWidget();
+    this.add(this.__svgWidget, {
       left: 0,
       top: 0,
       right: 0,
       bottom: 0
     });
 
-    this.__Desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
-    this.add(this.__Desktop, {
+    this.__svgWidget.addListener("SvgWidgetReady", function() {
+      // Will be called only the first time Svg lib is loaded
+      this.__deserializeData();
+    }, this);
+
+    this.__svgWidget.addListener("SvgWidgetReady", function() {
+      this.__svgWidget.addListener("appear", function() {
+        // Will be called once Svg lib is loaded and appears
+        this.__deserializeData();
+      }, this);
+    }, this);
+
+    this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
+    this.add(this.__desktop, {
       left: 0,
       top: 0,
       right: 0,
       bottom: 0
     });
 
-    this.__Nodes = [];
-    this.__Links = [];
+    this.__nodes = [];
+    this.__links = [];
 
     let plusButton = this.__getPlusButton();
     this.add(plusButton, {
@@ -43,7 +55,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       bottom: 20
     });
     playButton.addListener("execute", function() {
-      let pipelineDataStructure = this._serializePipelineDataStructure();
+      let pipelineDataStructure = this.__serializeData();
       console.log(pipelineDataStructure);
     }, this);
   },
@@ -53,10 +65,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
   },
 
   members: {
-    __Nodes: null,
-    __Links: null,
-    __Desktop: null,
-    __SvgWidget: null,
+    __nodes: null,
+    __links: null,
+    __desktop: null,
+    __svgWidget: null,
 
     __getPlusButton: function() {
       const icon = qxapp.utils.Placeholders.getIcon("fa-plus", 32);
@@ -88,7 +100,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         width: 50,
         height: 50
       });
-
       return playButton;
     },
 
@@ -99,7 +110,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let nodeButton = new qx.ui.menu.Button(node.name);
 
         nodeButton.addListener("execute", function() {
-          this.__addNode(node);
+          let nodeItem = this.__createNode(node);
+          this.__addNodeToWorkbench(nodeItem);
+          this.__createLinkToLastNode();
         }, this);
 
         buttonsListMenu.add(nodeButton);
@@ -108,19 +121,18 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return buttonsListMenu;
     },
 
-    __addNodeToWorkbench(node) {
-      let nNodesB = this.__Nodes.length;
-      node.moveTo(50 + nNodesB*250, 200);
-      this.__Desktop.add(node);
-      node.open();
-      this.__Nodes.push(node);
-
-      // force rendering to get the node"s updated position
-      qx.ui.core.queue.Layout.flush();
-
-      let nNodesA = this.__Nodes.length;
-      if (nNodesA > 1) {
-        this.__addLink(this.__Nodes[nNodesA-2], this.__Nodes[nNodesA-1]);
+    __addNodeToWorkbench: function(node, position) {
+      if (position === undefined) {
+        let nNodes = this.__nodes.length;
+        node.moveTo(50 + nNodes*250, 200);
+        this.__desktop.add(node);
+        node.open();
+        this.__nodes.push(node);
+      } else {
+        node.moveTo(position.x, position.y);
+        this.__desktop.add(node);
+        node.open();
+        this.__nodes.push(node);
       }
 
       node.addListener("move", function(e) {
@@ -142,7 +154,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             const y1 = pointList[0][1];
             const x2 = pointList[1][0];
             const y2 = pointList[1][1];
-            this.__SvgWidget.updateCurve(link.getRepresentation(), x1, y1, x2, y2);
+            this.__svgWidget.updateCurve(link.getRepresentation(), x1, y1, x2, y2);
           }
         });
       }, this);
@@ -152,10 +164,18 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
     },
 
-    __addNode: function(node) {
+    __createLinkToLastNode: function() {
+      let nNodes = this.__nodes.length;
+      if (nNodes > 1) {
+        // force rendering to get the node's updated position
+        qx.ui.core.queue.Layout.flush();
+        this.__addLink(this.__nodes[nNodes-2], this.__nodes[nNodes-1]);
+      }
+    },
+
+    __createNode: function(node) {
       let nodeBase = new qxapp.components.workbench.NodeBase();
       nodeBase.setMetadata(node);
-      this.__addNodeToWorkbench(nodeBase);
 
       if (nodeBase.getNodeImageId() === "modeler") {
         const slotName = "startModeler";
@@ -177,7 +197,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           }
         }, this);
         socket.emit(slotName, nodeBase.getNodeId());
+        nodeBase.getMetadata().viewer.port = 1234;
       }
+
+      return nodeBase;
     },
 
     __addLink: function(node1, node2) {
@@ -186,16 +209,16 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       const y1 = pointList[0][1];
       const x2 = pointList[1][0];
       const y2 = pointList[1][1];
-      let linkRepresentation = this.__SvgWidget.drawCurve(x1, y1, x2, y2);
+      let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
       let linkBase = new qxapp.components.workbench.LinkBase(linkRepresentation);
       linkBase.setInputNodeId(node1.getNodeId());
       linkBase.setOutputNodeId(node2.getNodeId());
       node1.addOutputLinkID(linkBase.getLinkId());
       node2.addInputLinkID(linkBase.getLinkId());
-      this.__Links.push(linkBase);
+      this.__links.push(linkBase);
 
       linkBase.getRepresentation().node.addEventListener("click", function(e) {
-        console.log("clicked", linkBase.getLinkId(), e);
+
       });
     },
 
@@ -211,36 +234,63 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __getNode: function(id) {
-      for (let i = 0; i < this.__Nodes.length; i++) {
-        if (this.__Nodes[i].getNodeId() === id) {
-          return this.__Nodes[i];
+      for (let i = 0; i < this.__nodes.length; i++) {
+        if (this.__nodes[i].getNodeId() === id) {
+          return this.__nodes[i];
         }
       }
       return null;
     },
 
     __getLink: function(id) {
-      for (let i = 0; i < this.__Links.length; i++) {
-        if (this.__Links[i].getLinkId() === id) {
-          return this.__Links[i];
+      for (let i = 0; i < this.__links.length; i++) {
+        if (this.__links[i].getLinkId() === id) {
+          return this.__links[i];
         }
       }
       return null;
     },
 
-    _serializePipelineDataStructure: function() {
+    __removeNode: function(node) {
+      this.__desktop.remove(node);
+    },
+
+    __removeAllNodes: function() {
+      while (this.__nodes.length > 0) {
+        this.__removeNode(this.__nodes[this.__nodes.length-1]);
+        this.__nodes.pop();
+      }
+    },
+
+    __removeLink: function(link) {
+      this.__svgWidget.removeCurve(link.getRepresentation());
+    },
+
+    __removeAllLinks: function() {
+      while (this.__links.length > 0) {
+        this.__removeLink(this.__links[this.__links.length-1]);
+        this.__links.pop();
+      }
+    },
+
+    removeAll: function() {
+      this.__removeAllNodes();
+      this.__removeAllLinks();
+    },
+
+    __serializeData: function() {
       let pipeline = {};
-      for (let i = 0; i < this.__Nodes.length; i++) {
-        const nodeId = this.__Nodes[i].getNodeId();
+      for (let i = 0; i < this.__nodes.length; i++) {
+        const nodeId = this.__nodes[i].getNodeId();
         pipeline[nodeId] = {};
-        pipeline[nodeId].serviceId = this.__Nodes[i].getMetadata().id;
-        pipeline[nodeId].input = this.__Nodes[i].getMetadata().input;
-        pipeline[nodeId].output = this.__Nodes[i].getMetadata().output;
-        pipeline[nodeId].settings = this.__Nodes[i].getMetadata().settings;
+        pipeline[nodeId].serviceId = this.__nodes[i].getMetadata().id;
+        pipeline[nodeId].input = this.__nodes[i].getMetadata().input;
+        pipeline[nodeId].output = this.__nodes[i].getMetadata().output;
+        pipeline[nodeId].settings = this.__nodes[i].getMetadata().settings;
         pipeline[nodeId].children = [];
-        for (let j = 0; j < this.__Links.length; j++) {
-          if (nodeId === this.__Links[j].getInputNodeId()) {
-            pipeline[nodeId].children.push(this.__Links[j].getOutputNodeId());
+        for (let j = 0; j < this.__links.length; j++) {
+          if (nodeId === this.__links[j].getInputNodeId()) {
+            pipeline[nodeId].children.push(this.__links[j].getOutputNodeId());
           }
         }
       }
@@ -255,231 +305,60 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return pipeline;
     },
 
-    __getProducers: function() {
-      const producers = [{
-        "id": "modeler",
-        "name": "Modeler",
-        "input": [],
-        "output": [{
-          "name": "Scene",
-          "type": "scene",
-          "value": ""
-        }],
-        "settings": [{
-          "name": "ViPModel",
-          "options": [
-            "Rat",
-            "Sphere"
-          ],
-          "text": "Select ViP Model",
-          "type": "select",
-          "value": 0
-        }],
-        "viewer": {
-          "port": null
+    setData: function(pipeData) {
+      this.__myData = pipeData;
+    },
+
+    __deserializeData: function() {
+      console.log("__myData", this.__myData);
+
+      this.removeAll();
+      if (this.__myData === null) {
+        return;
+      }
+
+      // add nodes
+      for (let i = 0; i < this.__myData.length; i++) {
+        let nodeItem = this.__createNode(this.__myData[i]);
+        nodeItem.setNodeId(this.__myData[i].uuid);
+        if (Object.prototype.hasOwnProperty.call(this.__myData[i], "position")) {
+          this.__addNodeToWorkbench(nodeItem, this.__myData[i].position);
+        } else {
+          this.__addNodeToWorkbench(nodeItem);
         }
-      },
-      {
-        "id": "NumberGeneratorID",
-        "name": "Number Generator",
-        "input": [],
-        "output": [{
-          "name": "Number",
-          "type": "number",
-          "value": ""
-        }],
-        "settings": [{
-          "name": "number",
-          "text": "Number",
-          "type": "number",
-          "value": 0
-        }]
-      }];
+      }
+
+      qx.ui.core.queue.Layout.flush();
+
+      // add links
+      for (let i = 0; i < this.__myData.length; i++) {
+        if (this.__myData[i].children.length > 0) {
+          let node1 = this.__getNode(this.__myData[i].uuid);
+          for (let j = 0; j < this.__myData[i].children.length; j++) {
+            let node2 = this.__getNode(this.__myData[i].children[j]);
+            this.__addLink(node1, node2);
+          }
+        }
+      }
+    },
+
+    addWindowToDesktop(node) {
+      this.__desktop.add(node);
+      node.open();
+    },
+
+    __getProducers: function() {
+      const producers = qxapp.data.Fake.getProducers();
       return this.__createMenuFromList(producers);
     },
 
     __getComputationals: function() {
-      const computationals = [{
-        "id": "ColleenClancy",
-        "name": "Colleen Clancy - dummy",
-        "input": [
-          {
-            "name": "NaValue",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "KrValue",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "BCLValue",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "beatsValue",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "LigandValue",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "cAMKIIValue",
-            "type": "number",
-            "value": 10
-          }
-        ],
-        "output": [
-          {
-            "name": "outputFolder",
-            "type": "folder",
-            "value": "url"
-          },
-          {
-            "name": "Allresults",
-            "order": [
-              "t",
-              "I_Ca_store",
-              "Ito",
-              "Itof",
-              "Itos",
-              "INa",
-              "IK1",
-              "s1",
-              "k1",
-              "Jserca",
-              "Iks",
-              "Jleak",
-              "ICFTR",
-              "Incx"
-            ],
-            "type": "csv"
-          }
-        ],
-        "settings": [
-          {
-            "name": "NaValue",
-            "text": "Na blocker drug concentration",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "KrValue",
-            "text": "Kr blocker drug concentration",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "BCLValue",
-            "text": "Basic cycle length (BCL)",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "beatsValue",
-            "text": "Number of beats",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "LigandValue",
-            "text": "Ligand concentration",
-            "type": "number",
-            "value": 10
-          },
-          {
-            "name": "cAMKIIValue",
-            "options": [
-              "A",
-              "B",
-              "C",
-              "D"
-            ],
-            "text": "Adjust cAMKII activity level",
-            "type": "select",
-            "value": 0
-          }
-        ]
-      },
-      {
-        "id": "Computational2",
-        "name": "Computational 2",
-        "input": [{
-          "name": "Scene",
-          "type": "scene",
-          "value": ""
-        }],
-        "output": [{
-          "name": "Other numbers",
-          "type": "number",
-          "value": ""
-        }],
-        "settings": []
-      },
-      {
-        "id": "Computational3",
-        "name": "Computational 3",
-        "input": [{
-          "name": "Number",
-          "type": "number",
-          "value": ""
-        }],
-        "output": [{
-          "name": "Some numbers",
-          "type": "number",
-          "value": ""
-        }],
-        "settings": []
-      },
-      {
-        "id": "Computational4",
-        "name": "Computational 4",
-        "input": [{
-          "name": "Number",
-          "type": "number",
-          "value": ""
-        }],
-        "output": [{
-          "name": "Other numbers",
-          "type": "number",
-          "value": ""
-        }],
-        "settings": []
-      }];
+      const computationals = qxapp.data.Fake.getComputationals();
       return this.__createMenuFromList(computationals);
     },
 
     __getAnalyses: function() {
-      const analyses = [{
-        "id": "jupyter-base-notebook",
-        "name": "Jupyter",
-        "input": [{
-          "name": "Number",
-          "type": "number",
-          "value": ""
-        }],
-        "output": [],
-        "settings": [],
-        "viewer": {
-          "port": null
-        }
-      },
-      {
-        "id": "Analysis2",
-        "name": "Analysis 2",
-        "input": [{
-          "name": "Number",
-          "type": "scene",
-          "value": ""
-        }],
-        "output": [],
-        "settings": []
-      }];
+      const analyses = qxapp.data.Fake.getAnalyses();
       return this.__createMenuFromList(analyses);
     }
   }
