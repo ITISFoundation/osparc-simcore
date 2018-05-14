@@ -16,8 +16,14 @@ matrix:
         - popd
 
       script:
-        - pushd services
-        - npm run lintJsServices
-        - npm run buildQxApp
-        - popd
+        - npm run linter
 
+    - language: python
+      python:
+        - "3.6"
+      install:
+        - pip3 install pylint
+      before_script:
+        - pylint --version
+      script:
+        - make pylint

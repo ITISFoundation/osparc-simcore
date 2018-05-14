@@ -1,9 +1,9 @@
-version: '3'
+version: '3.4'
 services:
   director:
     build:
-      context: .
-      dockerfile: _dockerfiles/director/Dockerfile
+      context: ./director
+      target: production
     ports:
       - '8001:8001'
     environment:
@@ -16,16 +16,19 @@ services:
       - REGISTRY_PW=z43
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
+  #--------------------------------------------------------------------
   webserver:
     build:
       context: .
-      dockerfile: _dockerfiles/qxapp/python/Dockerfile
+      dockerfile: web/server/Dockerfile
+      target: production
       args:
-        serverdir: web-server
-        web_outdir: /usr/src/app/client
+        client_dir: web/client
+        server_dir: web/server
     ports:
       - '9081:8080'
     environment:
-      - DIRECTOR_HOST=http://director
+      - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8001
       - SIMCORE_WEB_CONFIG=production
+    #command: ["python", "server.py"]
