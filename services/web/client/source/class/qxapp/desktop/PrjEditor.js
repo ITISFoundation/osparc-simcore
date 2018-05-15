@@ -30,7 +30,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         });
     });
 
-    this.__Pane.add(settingsView, 0);
+    this.__pane.add(settingsView, 0);
 
     let workbench = this.__workbench = new qxapp.components.workbench.Workbench();
     workbench.addListenerOnce("appear", () => {
