@@ -13,7 +13,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     this.__pane = new qx.ui.splitpane.Pane("horizontal");
 
     const settingsWidth = this.__settingsWidth = 500;
-    let settingsView = this.__SettingsView = new qxapp.components.workbench.SettingsView().set({
+    let settingsView = this.__settingsView = new qxapp.components.workbench.SettingsView().set({
       maxWidth: settingsWidth,
       width: 0,
       minWidth: 0,
@@ -87,9 +87,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__settingsView.show();
       }
       qx.ui.core.queue.Manager.flush();
-      this.__SettingsView.set({
-        decorator: this.__TransDeco,
-        width: showSettings ? Math.round(this.__SettingsWidth * 0.75) : 0
+      this.__settingsView.set({
+        decorator: this.__transDeco,
+        width: showSettings ? Math.round(this.__settingsWidth * 0.75) : 0
       });
     },
 
