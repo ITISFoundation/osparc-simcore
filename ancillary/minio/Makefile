@@ -2,11 +2,11 @@
 
 # note: 'up' requires that swarm is already initialized,  will not stop swarm on 'down'
 
-#build:
-#	docker-compose -f docker-compose.yml build
+build:
+	docker-compose -f docker-compose.yml build
 
-#rebuild:
-#	docker-compose -f docker-compose.yml build --no-cache
+rebuild:
+	docker-compose -f docker-compose.yml build --no-cache
 
 up:
 	/bin/bash -c "ak=$$(pwgen -sB 20 1); docker secret create access_key $${ak}; echo $${ak}"
