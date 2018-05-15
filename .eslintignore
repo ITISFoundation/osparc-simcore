@@ -2,3 +2,6 @@ services/web/client/source/resource/
 services/web/client/contrib/
 services/web/client/source-output/
 services/*node_modules/
+services/dy-modeling/client/source/resource/
+services/dy-modeling/client/source-output/
+services/dy-modeling/server/thrift/

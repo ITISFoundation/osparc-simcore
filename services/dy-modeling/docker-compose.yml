@@ -1,0 +1,13 @@
+version: '3'
+services:
+  qxapp:
+    build:
+      context: .
+      dockerfile: _dockerfiles/qxapp/node/Dockerfile
+      args:
+        web_app_port: 9090
+        s4l_ip: "172.16.9.89"
+        s4l_port_app: 9095
+        s4l_port_mod: 9096
+    ports:
+      - '8080:9090'
