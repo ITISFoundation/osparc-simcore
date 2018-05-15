@@ -1,0 +1,119 @@
+version: '3.4'
+services:
+
+  minio01:
+    image: minio/minio:RELEASE.2018-05-11T00-29-24Z
+    volumes:
+      - minio01-data:/export
+    ports:
+      - "10001:9000"
+    networks:
+      - minio_distributed
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+      restart_policy:
+        delay: 10s
+        max_attempts: 10
+        window: 60s
+    command: server http://minio01/export http://minio02/export http://minio03/export http://minio04/export
+    secrets:
+      - secret_key
+      - access_key
+
+  minio02:
+    image: minio/minio:RELEASE.2018-04-12T23-41-09Z
+    volumes:
+      - minio02-data:/export
+    ports:
+      - "10002:9000"
+    networks:
+      - minio_distributed
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+      restart_policy:
+        delay: 10s
+        max_attempts: 10
+        window: 60s
+    command: server http://minio01/export http://minio02/export http://minio03/export http://minio04/export
+    secrets:
+      - secret_key
+      - access_key
+
+  minio03:
+    image: minio/minio:RELEASE.2018-04-12T23-41-09Z
+    volumes:
+      - minio03-data:/export
+    ports:
+      - "10003:9000"
+    networks:
+      - minio_distributed
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+      restart_policy:
+        delay: 10s
+        max_attempts: 10
+        window: 60s
+    command: server http://minio01/export http://minio02/export http://minio03/export http://minio04/export
+    secrets:
+      - secret_key
+      - access_key
+
+  minio04:
+    image: minio/minio:RELEASE.2018-04-12T23-41-09Z
+    volumes:
+      - minio04-data:/export
+    ports:
+      - "10004:9000"
+    networks:
+      - minio_distributed
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+      restart_policy:
+        delay: 10s
+        max_attempts: 10
+        window: 60s
+    command: server http://minio01/export http://minio02/export http://minio03/export http://minio04/export
+    secrets:
+      - secret_key
+      - access_key
+
+volumes:
+  minio01-data:
+    driver_opts:
+      type: none
+      device: /data/minio/minio01-export
+      o: bind
+  minio02-data:
+    driver_opts:
+      type: none
+      device: /data/minio/minio02-export
+      o: bind
+  minio03-data:
+    driver_opts:
+      type: none
+      device: /data/minio/minio03-export
+      o: bind
+  minio04-data:
+    driver_opts:
+      type: none
+      device: /data/minio/minio04-export
+      o: bind
+
+networks:
+  minio_distributed:
+    driver: overlay
+
+secrets:
+  secret_key:
+    external: true
+  access_key:
+    external: true
+
