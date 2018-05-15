@@ -23,6 +23,7 @@ ENV CS_S4L_PORT_MOD $s4l_port_mod
 #    + source/  server   source files
 WORKDIR /home/node/
 COPY package.json /home/node/package.json
+VOLUME /home/node/source-output
 #--------------------Development------------------
 FROM common AS development
 
@@ -33,10 +34,9 @@ CMD ["nodemon", "-L", "start"]
 
 #---------------------Production------------------
 FROM common AS production
-
-
-COPY --from=client-prod:latest /home/node/app/source-output source-output
-COPY --chown=node:node source /home/node/source
+WORKDIR /home/node/
+COPY --from=client-prod:latest /home/node/qxapp/build-output source-output
+COPY source /home/node/source
 RUN npm install -y
 
 ENTRYPOINT ["npm", "start"]

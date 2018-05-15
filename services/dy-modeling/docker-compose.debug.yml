@@ -6,7 +6,7 @@ services:
       target: development
     image: client-dev
     volumes:
-      - './client:/home/node/app'
+      - './client:/home/node/qxapp'
   server:
     build:
       target: development
