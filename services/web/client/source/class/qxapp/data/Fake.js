@@ -47,14 +47,23 @@ qx.Class.define("qxapp.data.Fake", {
     getTemplateProjects: function() {
       let rawData = [];
 
-      var item = qx.data.marshal.Json.createModel({
+      let item1 = qx.data.marshal.Json.createModel({
         name: "Template #1",
         description: "Sample used for the unidirectional pipelining",
         thumbnail: null,
         created: null,
         prjId: "00000000-0000-0000-0000-000000000001"
       });
-      rawData.push(item);
+      rawData.push(item1);
+
+      let item2 = qx.data.marshal.Json.createModel({
+        name: "Template #2",
+        description: "Two not connected nodes",
+        thumbnail: null,
+        created: null,
+        prjId: "00000000-0000-0000-0000-000000000002"
+      });
+      rawData.push(item2);
 
       // A wrapper around raw array to make it "bindable"
       var data = new qx.data.Array(rawData);
@@ -62,8 +71,11 @@ qx.Class.define("qxapp.data.Fake", {
     },
 
     getPrjData: function(prjId) {
-      if (prjId === "00000000-0000-0000-0000-000000000001") {
-        return this.getTemp1Data();
+      switch (prjId) {
+        case "00000000-0000-0000-0000-000000000001":
+          return this.getTemp1Data();
+        case "00000000-0000-0000-0000-000000000002":
+          return this.getTemp2Data();
       }
       return null;
     },
@@ -219,6 +231,59 @@ qx.Class.define("qxapp.data.Fake", {
         "children": []
       }];
       return temp1Data;
+    },
+
+    getTemp2Data: function() {
+      let temp2Data = [{
+        "uuid": "cd90ad2c-8dac-49b5-8552-dd9fbf785273",
+        "id": "sleeper",
+        "name": "Node 1",
+        "position": {
+          "x": 50,
+          "y": 100
+        },
+        "input": [],
+        "output": [{
+          "name": "Number",
+          "type": "number",
+          "value": ""
+        }],
+        "settings": [],
+        "children": []
+      }, {
+        "uuid": "ad45ba4e-2dac-43bb-afad-86c9d50a2ec9",
+        "id": "sleeper",
+        "name": "Node 2",
+        "position": {
+          "x": 400,
+          "y": 100
+        },
+        "input": [{
+          "name": "Number",
+          "type": "number",
+          "value": ""
+        }],
+        "output": [],
+        "settings": [],
+        "children": []
+      }, {
+        "uuid": "13e1915f-b463-47c5-bb94-fe25effe30da",
+        "id": "sleeper",
+        "name": "Node 3",
+        "position": {
+          "x": 400,
+          "y": 300
+        },
+        "input": [{
+          "name": "String",
+          "type": "string",
+          "value": ""
+        }],
+        "output": [],
+        "settings": [],
+        "children": []
+      }];
+      return temp2Data;
     },
 
     getProducers: function() {
