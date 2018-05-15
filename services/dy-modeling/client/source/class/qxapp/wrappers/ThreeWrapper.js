@@ -3,15 +3,66 @@
  * @ignore(THREE)
  */
 
+/* global window */
+/* global document */
 /* global THREE */
 /* global Blob */
-/* global document */
-/* global window */
+/* eslint new-cap: [2, {capIsNewExceptions: ["THREE", "Blob"]}] */
+/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true, "allow": ["__downloadBinJSON", "__downloadJSON"] }] */
 
 qx.Class.define("qxapp.wrappers.ThreeWrapper", {
   extend: qx.core.Object,
 
   construct: function() {
+    // initialize the script loading
+    let threePath = "three/three.min.js";
+    let orbitPath = "three/OrbitControls.js";
+    let transformPath = "three/TransformControls.js";
+    let gltfLoaderPath = "three/GLTFLoader.js";
+    let gltfExporterPath = "three/GLTFExporter.js";
+    let vtkLoaderPath = "three/VTKLoader.js";
+    let dynLoader = new qx.util.DynamicScriptLoader([
+      threePath,
+      orbitPath,
+      transformPath,
+      gltfLoaderPath,
+      gltfExporterPath,
+      vtkLoaderPath
+    ]);
+
+    dynLoader.addListenerOnce("ready", function(e) {
+      console.log(threePath + " loaded");
+      this.setLibReady(true);
+
+      this._scene = new THREE.Scene();
+
+      this._camera = new THREE.PerspectiveCamera();
+      this._camera.far = 10000;
+      this._camera.up.set(0, 0, 1);
+      this._scene.add(this._camera);
+
+      this.__addCameraLight();
+      this.__addGridHelper();
+      this.__addAxesHelper();
+
+      this._mouse = new THREE.Vector2();
+      this._raycaster = new THREE.Raycaster();
+
+      this._renderer = new THREE.WebGLRenderer();
+
+      this.__addOrbitControls();
+      this.render();
+
+      this.fireDataEvent("ThreeLibReady", true);
+    }, this);
+
+    dynLoader.addListener("failed", function(e) {
+      let data = e.getData();
+      console.log("failed to load " + data.script);
+      this.fireDataEvent("ThreeLibReady", false);
+    }, this);
+
+    dynLoader.start();
   },
 
   properties: {
@@ -25,7 +76,7 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
   events: {
     "ThreeLibReady": "qx.event.type.Data",
     "EntityToBeAdded": "qx.event.type.Data",
-    "sceneToBeExported": "qx.event.type.Data",
+    "SceneToBeExported": "qx.event.type.Data",
     "sceneWithMeshesToBeExported": "qx.event.type.Data"
   },
 
@@ -37,57 +88,6 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
     _orbitControls: null,
     _mouse: null,
 
-    init: function() {
-      // initialize the script loading
-      let threePath = "three/three.min.js";
-      let orbitPath = "three/OrbitControls.js";
-      let transformPath = "three/TransformControls.js";
-      let gltfLoaderPath = "three/GLTFLoader.js";
-      let gltfExporterPath = "three/GLTFExporter.js";
-      let dynLoader = new qx.util.DynamicScriptLoader([
-        threePath,
-        orbitPath,
-        transformPath,
-        gltfLoaderPath,
-        gltfExporterPath
-      ]);
-
-      let scope = this;
-      dynLoader.addListenerOnce("ready", function(e) {
-        console.log(threePath + " loaded");
-        scope.setLibReady(true);
-
-        scope._scene = new THREE.Scene();
-
-        scope._camera = new THREE.PerspectiveCamera();
-        scope._camera.far = 10000;
-        scope._camera.up.set(0, 0, 1);
-        scope._scene.add(scope._camera);
-
-        scope._addCameraLight();
-        scope._addGridHelper();
-        scope._addAxesHelper();
-
-        scope._mouse = new THREE.Vector2();
-        scope._raycaster = new THREE.Raycaster();
-
-        scope._renderer = new THREE.WebGLRenderer();
-
-        scope._addOrbitControls();
-        scope.render();
-
-        scope.fireDataEvent("ThreeLibReady", true);
-      }, scope);
-
-      dynLoader.addListener("failed", function(e) {
-        let data = e.getData();
-        console.log("failed to load " + data.script);
-        scope.fireDataEvent("ThreeLibReady", false);
-      }, scope);
-
-      dynLoader.start();
-    },
-
     getDomElement: function() {
       return this._renderer.domElement;
     },
@@ -96,12 +96,12 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       this._renderer.render(this._scene, this._camera);
     },
 
-    addEntityToScene: function(objToScene) {
+    addEntityToScene : function(objToScene) {
       this._scene.add(objToScene);
       this.render();
     },
 
-    importSceneFromBuffer: function(modelBuffer) {
+    importSceneFromBuffer : function(modelBuffer) {
       let scope = this;
 
       function onLoad(myScene) {
@@ -124,7 +124,7 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       );
     },
 
-    createSceneWithMeshes: function(meshIds) {
+    createSceneWithMeshes : function(meshIds) {
       let options = {
         binary: false
       };
@@ -148,7 +148,7 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
         options);
     },
 
-    exportScene: function(downloadScene = false, exportSceneAsBinary = false) {
+    exportScene : function(downloadScene = false, exportSceneAsBinary = false) {
       let options = {
         binary: exportSceneAsBinary
       };
@@ -158,12 +158,12 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       function onCompleted(gltf) {
         if (downloadScene) {
           if (options.binary) {
-            scope._downloadBinJSON(gltf, "myScene.glb");
+            scope.__downloadBinJSON(gltf, "myScene.glb");
           } else {
-            scope._downloadJSON(gltf, "myScene.gltf");
+            scope.__downloadJSON(gltf, "myScene.gltf");
           }
         } else {
-          scope.fireDataEvent("sceneToBeExported", gltf);
+          scope.fireDataEvent("SceneToBeExported", gltf);
         }
       }
 
@@ -173,7 +173,7 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
         options);
     },
 
-    _downloadBinJSON: function(exportObj, fileName) {
+    __downloadBinJSON: function(exportObj, fileName) {
       let blob = new Blob([exportObj], {
         type: "application/octet-stream"
       });
@@ -185,7 +185,7 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       downloadAnchorNode.remove();
     },
 
-    _downloadJSON: function(exportObj, fileName) {
+    __downloadJSON: function(exportObj, fileName) {
       let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
       let downloadAnchorNode = document.createElement("a");
       downloadAnchorNode.setAttribute("href", dataStr);
@@ -204,14 +204,14 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
     },
 
     removeEntityFromSceneById: function(uuid) {
-      let objInScene = this.getEntityFromScene(uuid);
+      let objInScene = this.__getEntityFromScene(uuid);
       if (objInScene) {
         return this.removeEntityFromScene(objInScene);
       }
       return false;
     },
 
-    getEntityFromScene: function(uuid) {
+    __getEntityFromScene: function(uuid) {
       for (let i = 0; i < this._scene.children.length; i++) {
         if (this._scene.children[i].uuid === uuid) {
           return this._scene.children[i];
@@ -258,7 +258,7 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
     createNewMaterial: function(red, green, blue) {
       let color;
       if (red === undefined || green === undefined || blue === undefined) {
-        color = this._randomRGBColor();
+        color = this.__randomRGBColor();
       } else {
         color = "rgb("+Math.round(255*red)+","+Math.round(255*green)+","+Math.round(255*blue)+")";
       }
@@ -275,13 +275,8 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       return material;
     },
 
-    _randomRGBColor: function() {
+    __randomRGBColor: function() {
       return Math.random() * 0xffffff;
-    },
-
-    createMeshNormalMaterial: function() {
-      let material = new THREE.MeshNormalMaterial();
-      return material;
     },
 
     createEntity: function(geometry, material) {
@@ -318,27 +313,26 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
     },
 
     createBox: function(point0, point1, point2) {
-      let geometry = null;
       if (point2 === undefined) {
         let width = Math.abs(point1.x - point0.x);
         let height = Math.abs(point1.y - point0.y);
-        geometry = new THREE.PlaneGeometry(width, height);
-      } else {
-        let width = Math.abs(point1.x - point0.x);
-        let height = Math.abs(point1.y - point0.y);
-        let depth = Math.abs(point2.z - point1.z);
-        geometry = new THREE.BoxGeometry(width, height, depth);
+        // let depth = 0;
+        let geometry = new THREE.PlaneGeometry(width, height);
+        return geometry;
       }
+      let width = Math.abs(point1.x - point0.x);
+      let height = Math.abs(point1.y - point0.y);
+      let depth = Math.abs(point2.z - point1.z);
+      let geometry = new THREE.BoxGeometry(width, height, depth);
       return geometry;
     },
 
     createCylinder: function(radius, height) {
-      let geometry = null;
       if (height === undefined) {
-        geometry = new THREE.CircleGeometry(radius, 32);
-      } else {
-        geometry = new THREE.CylinderGeometry(radius, radius, height, 16);
+        let geometry = new THREE.CircleGeometry(radius, 32);
+        return geometry;
       }
+      let geometry = new THREE.CylinderGeometry(radius, radius, height, 16);
       return geometry;
     },
 
@@ -348,10 +342,10 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
     },
 
     createSpline: function(listOfPoints) {
-      let curvePoints = this._arrayToThreePoints(listOfPoints);
+      let curvePoints = this.__arrayToThreePoints(listOfPoints);
       let curve = new THREE.CatmullRomCurve3(curvePoints);
       let points = curve.getPoints(listOfPoints.length * 10);
-      return this.createLine(points);
+      return this.__createLine(points);
     },
 
     fromEntityMeshToEntity: function(entityMesh) {
@@ -414,7 +408,8 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
         }
       } else {
         // BufferGeometries
-        for (i = 0; i < entity.geometry.vertices.count; i += 3) {
+        let vertices = entity.geometry.getAttribute("position");
+        for (i = 0; i < vertices.count; i += 3) {
           for (m = 0; m < 3; m++) {
             j = i + m + 1;
             // j = i + m;
@@ -448,7 +443,7 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       entity.matrix.fromArray(transformation);
     },
 
-    _arrayToThreePoints: function(listOfPoints) {
+    __arrayToThreePoints: function(listOfPoints) {
       let threePoints = [];
       for (let i = 0; i < listOfPoints.length; i++) {
         threePoints.push(new THREE.Vector3(listOfPoints[i].x, listOfPoints[i].y, listOfPoints[i].z));
@@ -456,16 +451,16 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       return threePoints;
     },
 
-    createLine: function(points) {
+    __createLine: function(points) {
       let geometry = new THREE.BufferGeometry().setFromPoints(points);
       let material = new THREE.LineBasicMaterial({
-        color: 0xffffff
+        color : 0xffffff
       });
       let curveObject = new THREE.Line(geometry, material);
       return curveObject;
     },
 
-    createInvisiblePlane: function(fixedAxe = 2, fixed_position = 0) {
+    createInvisiblePlane: function(fixedAxe = 2, fixedPosition = 0) {
       let planeMaterial = new THREE.MeshBasicMaterial({
         alphaTest: 0,
         visible: false
@@ -475,15 +470,15 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       switch (fixedAxe) {
         case 0:
           plane.geometry.rotateY(Math.PI / 2);
-          plane.geometry.translate(fixed_position, 0, 0);
+          plane.geometry.translate(fixedPosition, 0, 0);
           break;
         case 1:
           plane.geometry.rotateZ(Math.PI / 2);
-          plane.geometry.translate(0, fixed_position, 0);
+          plane.geometry.translate(0, fixedPosition, 0);
           break;
         case 2:
           // plane.geometry.rotateX( Math.PI / 2 );
-          plane.geometry.translate(0, 0, fixed_position);
+          plane.geometry.translate(0, 0, fixedPosition);
           break;
         default:
           break;
@@ -496,31 +491,13 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       return (new THREE.TransformControls(this._camera, this._renderer.domElement));
     },
 
-    _addCameraLight: function(camera) {
+    __addCameraLight: function(camera) {
       let pointLight = new THREE.PointLight(0xffffff);
       pointLight.position.set(1, 1, 2);
       this._camera.add(pointLight);
     },
 
-    _addPointLight1: function() {
-      let pointLight = new THREE.PointLight(0xBBBBBB);
-      pointLight.position.x = -10;
-      pointLight.position.y = 10;
-      pointLight.position.z = 40;
-      pointLight.name = "PointLight1";
-      this._scene.add(pointLight);
-    },
-
-    _addPointLight2: function() {
-      let pointLight2 = new THREE.PointLight(0xFFFFFF);
-      pointLight2.position.x = 10;
-      pointLight2.position.y = -10;
-      pointLight2.position.z = -40;
-      pointLight2.name = "PointLight2";
-      this._scene.add(pointLight2);
-    },
-
-    _addGridHelper: function() {
+    __addGridHelper: function() {
       const gridSize = 20;
       const gridDivisions = 20;
       const centerLineColor = new THREE.Color(0x666666);
@@ -535,19 +512,19 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       this._scene.add(gridHelper);
     },
 
-    _addAxesHelper: function() {
+    __addAxesHelper: function() {
       let axes = new THREE.AxesHelper(1);
       axes.name = "AxesHelper";
       this._scene.add(axes);
     },
 
-    _addOrbitControls: function() {
+    __addOrbitControls: function() {
       this._orbitControls = new THREE.OrbitControls(this._camera, this._renderer.domElement);
-      this._orbitControls.addEventListener("change", this._updateOrbitControls.bind(this));
+      this._orbitControls.addEventListener("change", this.__updateOrbitControls.bind(this));
       this._orbitControls.update();
     },
 
-    _updateOrbitControls: function() {
+    __updateOrbitControls: function() {
       this.render();
     }
   }

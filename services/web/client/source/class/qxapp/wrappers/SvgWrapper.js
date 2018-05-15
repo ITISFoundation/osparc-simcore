@@ -74,6 +74,12 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
         cSegment.coords = [controls[1].x, controls[1].y, controls[2].x, controls[2].y, controls[3].x, controls[3].y];
         curve.replaceSegment(1, cSegment);
       }
+    },
+
+    removeCurve: function(curve) {
+      if (curve.type === "path") {
+        curve.remove();
+      }
     }
   }
 });

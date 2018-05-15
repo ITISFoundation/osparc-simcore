@@ -143,14 +143,14 @@ qx.Class.define("qxapp.components.login.Standard", {
     },
 
     __onLoginSucceed: function(e) {
-      let _req = e.getTarget();
+      let req = e.getTarget();
       console.debug("Everything went fine!!");
-      console.debug("status  :", _req.getStatus());
-      console.debug("phase   :", _req.getPhase());
-      console.debug("response: ", _req.getResponse());
+      console.debug("status  :", req.getStatus());
+      console.debug("phase   :", req.getPhase());
+      console.debug("response: ", req.getResponse());
 
-      this.__info = _req.getResponse();
-      this.__token = _req.getResponse().userToken;
+      this.__info = req.getResponse();
+      this.__token = req.getResponse().userToken;
 
       // TODO: implement token-based authentication: we can request token and from that moment on,
       // just use that...
@@ -161,11 +161,11 @@ qx.Class.define("qxapp.components.login.Standard", {
 
     __onLoginFailed: function(e) {
       // Display error page!
-      let _req = e.getTarget();
+      let req = e.getTarget();
       console.debug("Something went wrong!!");
-      console.debug("status  :", _req.getStatus());
-      console.debug("phase   :", _req.getPhase());
-      console.debug("response: ", _req.getResponse());
+      console.debug("status  :", req.getStatus());
+      console.debug("phase   :", req.getPhase());
+      console.debug("response: ", req.getResponse());
 
       // TODO: invalidate form view and flash error!
       this.fireDataEvent("login", false);

@@ -1,0 +1,1 @@
+# Dynamic modeling service using a [qooxdoo](http://qooxdoo.org/) + [three.js](https://threejs.org/) client and a [node.js] (https://nodejs.org/) server
