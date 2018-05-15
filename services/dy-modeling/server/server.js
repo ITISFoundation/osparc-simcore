@@ -1,3 +1,9 @@
+/* global require */
+/* global process */
+/* global __dirname */
+/* global console */
+/* eslint no-console: "off" */
+
 // #run script:
 // node server.js
 
@@ -95,19 +101,19 @@ io.on('connection', function(socketClient) {
     let center = radiusCenterUUID[1];
     let uuid = radiusCenterUUID[2];
     connectToS4LServer()
-    .then(function() {
-      console.log('calling createSpheres4L');
-      return createSphereS4L(radius, center, uuid);
-    })
-    .then(function(uuid) {
-      console.log('calling get entity meshes' + uuid);
-      return getEntityMeshes(uuid, 'newSphereS4LRequested');
-    })
-    .then(function(meshEntity) {
-      console.log('emitting back ' + meshEntity.value);
-      socketClient.emit('newSphereS4LRequested', meshEntity);
-    })
-    .catch(failureCallback);
+      .then(function() {
+        console.log('calling createSpheres4L');
+        return createSphereS4L(radius, center, uuid);
+      })
+      .then(function(uuid) {
+        console.log('calling get entity meshes' + uuid);
+        return getEntityMeshes(uuid, 'newSphereS4LRequested');
+      })
+      .then(function(meshEntity) {
+        console.log('emitting back ' + meshEntity.value);
+        socketClient.emit('newSphereS4LRequested', meshEntity);
+      })
+      .catch(failureCallback);
   });
 
   socketClient.on('newBooleanOperationRequested', function(entityMeshesSceneOperationType) {
@@ -116,7 +122,7 @@ io.on('connection', function(socketClient) {
     connectToS4LServer().then(function() {
       booleanOperationS4L(socketClient, entityMeshesScene, operationType);
     }).
-    catch(failureCallback);
+      catch(failureCallback);
   });
 });
 
@@ -127,17 +133,17 @@ function failureCallback(error) {
 function connectToS4LServer() {
   return new Promise(function(resolve, reject) {
     createThriftConnection(S4L_IP, S4L_PORT_APP, thrApplication, s4lAppClient, disconnectFromApplicationServer)
-    .then(function(client) {
-      s4lAppClient = client;
-      createThriftConnection(S4L_IP, S4L_PORT_MOD, thrModeler, s4lModelerClient, disconnectFromModelerServer)
-        .then(function(client) {
-          s4lModelerClient = client;
-          resolve();
-        });
-    })
-    .catch(function(err) {
-      reject(err);
-    });
+      .then(function(client) {
+        s4lAppClient = client;
+        createThriftConnection(S4L_IP, S4L_PORT_MOD, thrModeler, s4lModelerClient, disconnectFromModelerServer)
+          .then(function(client) {
+            s4lModelerClient = client;
+            resolve();
+          });
+      })
+      .catch(function(err) {
+        reject(err);
+      });
   });
 }
 
@@ -188,7 +194,8 @@ function createThriftConnection(host, port, thing, client, disconnectionCB) {
         console.log('connection error to ' + host + ':' + port);
         reject(err);
       });
-    } else {
+    }
+    else {
       resolve(client);
     }
   });
@@ -211,7 +218,9 @@ function getEntityMeshes(uuid, valueType) {
   return new Promise(function(resolve, reject) {
     const getNormals = false;
     s4lModelerClient.GetEntityMeshes( uuid, getNormals, function(err2, response2) {
-      if (err2) reject(err2);
+      if (err2) {
+        reject(err2);
+      }
       let meshEntity = {
         type: valueType,
         value: response2,
@@ -228,8 +237,19 @@ function createSplineS4L(socketClient, pointList, uuid) {
     0.0, 1.0, 0.0, 0.0,
     0.0, 0.0, 1.0, 0.0,
     0.0, 0.0, 0.0, 1.0];
-  let color = {diffuse: {r: 1.0, g: 0.3, b: 0.65, a: 1.0}};
-  let spline = {vertices: pointList, transform4x4: transform4x4, material: color};
+  let color = {
+    diffuse: {
+      r: 1.0,
+      g: 0.3,
+      b: 0.65,
+      a: 1.0
+    }
+  };
+  let spline = {
+    vertices: pointList,
+    transform4x4: transform4x4,
+    material: color
+  };
   s4lModelerClient.CreateSpline( spline, uuid, function(err, responseUUID) {
     s4lModelerClient.GetEntityWire( responseUUID, function(err2, response2) {
       let listOfPoints = {
@@ -262,7 +282,7 @@ function importScene(socketClient, activeUser) {
       });
     }
   });
-};
+}
 
 function exportScene(socketClient, activeUser, sceneJson) {
   const modelsDirectory = APP_PATH + MODELS_PATH + activeUser + '/myScene.gltf';
@@ -275,7 +295,8 @@ function exportScene(socketClient, activeUser, sceneJson) {
     response.value = false;
     if (err) {
       console.log('Error: ', err);
-    } else {
+    }
+    else {
       console.log(modelsDirectory, ' file was saved!');
       response.value = true;
     }
@@ -284,56 +305,57 @@ function exportScene(socketClient, activeUser, sceneJson) {
       throw err;
     }
   });
-};
+}
 
 function importModelS4L(socketClient, modelName) {
   s4lAppClient.NewDocument( function(err, response) {
     let modelPath;
     switch (modelName) {
-      case 'Thelonious':
-        modelPath = 'c:/app/data/thelonius_reduced.smash';
-        break;
-      case 'Rat':
-        modelPath = 'c:/app/data/ratmodel_simplified.smash';
-        break;
-      case 'BigRat':
-        modelPath = 'c:/app/data/Rat_Male_567g_v2.0b02.sat';
-        break;
-      default:
-        modelPath = 'c:/app/data/ratmodel_simplified.smash';
-        break;
+    case 'Thelonious':
+      modelPath = 'c:/app/data/thelonius_reduced.smash';
+      break;
+    case 'Rat':
+      modelPath = 'c:/app/data/ratmodel_simplified.smash';
+      break;
+    case 'BigRat':
+      modelPath = 'c:/app/data/Rat_Male_567g_v2.0b02.sat';
+      break;
+    default:
+      modelPath = 'c:/app/data/ratmodel_simplified.smash';
+      break;
     }
     console.log('Importing', modelName);
     s4lModelerClient.ImportModel( modelPath, function(err2, response2) {
       console.log('Importing path', modelPath);
       s4lModelerClient.GetFilteredEntities(thrModelerTypes.EntityFilterType.BODY_AND_MESH,
         function(err3, response3) {
-        console.log('Total meshes', response3.length);
+          console.log('Total meshes', response3.length);
 
-        let nMeshes = response3.length;
-        for (let i = 0; i <nMeshes; i++) {
-          let meshId = response3[i].uuid;
-          s4lModelerClient.GetEntitiesEncodedScene([meshId], thrModelerTypes.SceneFileFormat.GLTF,
-            function(err4, response4) {
-            let encodedScene = {
-              type: 'importModelScene',
-              value: response4.data,
-            };
-            let storeAllInServerFirst = false;
-            if (storeAllInServerFirst) {
-              let listOfEncodedScenes = [];
-              listOfEncodedScenes.push(encodedScene);
-              // socketClient.emit('importModelScene', meshEntity);
-              console.log(i);
-              if (i === nMeshes-1) {
-                sendEncodedScenesToTheClient(socketClient, listOfEncodedScenes);
-              }
-            } else {
-              sendEncodedScenesToTheClient(socketClient, [encodedScene]);
-            }
-          });
-        }
-      });
+          let nMeshes = response3.length;
+          for (let i = 0; i <nMeshes; i++) {
+            let meshId = response3[i].uuid;
+            s4lModelerClient.GetEntitiesEncodedScene([meshId], thrModelerTypes.SceneFileFormat.GLTF,
+              function(err4, response4) {
+                let encodedScene = {
+                  type: 'importModelScene',
+                  value: response4.data,
+                };
+                let storeAllInServerFirst = false;
+                if (storeAllInServerFirst) {
+                  let listOfEncodedScenes = [];
+                  listOfEncodedScenes.push(encodedScene);
+                  // socketClient.emit('importModelScene', meshEntity);
+                  console.log(i);
+                  if (i === nMeshes-1) {
+                    sendEncodedScenesToTheClient(socketClient, listOfEncodedScenes);
+                  }
+                }
+                else {
+                  sendEncodedScenesToTheClient(socketClient, [encodedScene]);
+                }
+              });
+          }
+        });
     });
   });
 
@@ -342,7 +364,7 @@ function importModelS4L(socketClient, modelName) {
       socketClient.emit('importModelScene', listOfEncodedScenes[i]);
     }
   }
-};
+}
 
 function booleanOperationS4L(socketClient, entityMeshesScene, operationType) {
   let myEncodedScene = {
@@ -353,34 +375,38 @@ function booleanOperationS4L(socketClient, entityMeshesScene, operationType) {
   s4lAppClient.NewDocument( function(err, response) {
     if (err) {
       console.log('New Document creation failed ' + err);
-    } else {
+    }
+    else {
       s4lModelerClient.CreateEntitiesFromScene(myEncodedScene, function(err, response) {
         if (err) {
           console.log('Entities creation failed: ' + err);
-        } else {
+        }
+        else {
           s4lModelerClient.BooleanOperation(response, operationType, function(err2, response2) {
             if (err2) {
               console.log('Boolean operation failed: ' + err2);
-            } else {
+            }
+            else {
               s4lModelerClient.GetEntitiesEncodedScene([response2], thrModelerTypes.SceneFileFormat.GLTF,
                 function(err3, response3) {
-                if (err3) {
-                  console.log('Getting entities failed: ' + err3);
-                } else {
-                  let encodedScene = {
-                    type: 'newBooleanOperationRequested',
-                    value: response3.data,
-                  };
-                  socketClient.emit('newBooleanOperationRequested', encodedScene);
-                }
-              });
+                  if (err3) {
+                    console.log('Getting entities failed: ' + err3);
+                  }
+                  else {
+                    let encodedScene = {
+                      type: 'newBooleanOperationRequested',
+                      value: response3.data,
+                    };
+                    socketClient.emit('newBooleanOperationRequested', encodedScene);
+                  }
+                });
             }
           });
         }
       });
     }
   });
-};
+}
 
 
 console.log('server started on ' + PORT + '/app');
