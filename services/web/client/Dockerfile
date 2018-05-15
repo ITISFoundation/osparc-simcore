@@ -57,7 +57,7 @@ RUN ./scripts/install-contrib.sh
 COPY source source
 COPY Manifest.json Manifest.json
 
-RUN qx compile
+RUN qx compile --target=build
 
 # production exec
 VOLUME /home/node/client

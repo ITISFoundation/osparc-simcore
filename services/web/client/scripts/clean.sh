@@ -4,7 +4,7 @@
 
 echo "Cleaning qooxdoo outputs ..."
 
-source ./scripts/.env
+source $(dirname $0)/.env
 
 # WARNING: do not call this script with 'source'
 echo "client dir: " ${CLIENT_DIR}
