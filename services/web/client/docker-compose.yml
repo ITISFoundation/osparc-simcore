@@ -11,4 +11,4 @@ services:
       - '.:/home/node/client'
     ports:
       - '8080:8080'
-    working_dir: /home/node/clients
+    working_dir: /home/node/client

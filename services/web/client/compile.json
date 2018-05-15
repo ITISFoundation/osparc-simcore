@@ -26,8 +26,8 @@
         "qx.theme.Indigo",
         "qx.theme.Modern",
         "qx.theme.Simple",
-        "iconfont.material.Include",
-        "iconfont.fontawesome5.Include"
+        "iconfont.Material",
+        "iconfont.FontAwesome5"
       ]
     }
   ],
