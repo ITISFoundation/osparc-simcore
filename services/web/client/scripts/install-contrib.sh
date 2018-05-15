@@ -24,9 +24,10 @@ popd;
 mkdir -p ${FONTS_DIR}
 pushd ${FONTS_DIR};
 
+
 # FIXME: set proper contrib version automatically!
-ln -s ../../../contrib/ITISFoundation_qx-iconfont-fontawesome5_v0.0.2/source/resource/iconfont/fontawesome5/ fontawesome5
-ln -s ../../../contrib/ITISFoundation_qx-iconfont-material_v0.0.1/source/resource/iconfont/material/ material
+ln -s ../../../contrib/ITISFoundation_qx-iconfont-fontawesome5_0.0.2/source/resource/iconfont/fontawesome5/ fontawesome5
+ln -s ../../../contrib/ITISFoundation_qx-iconfont-material_0.0.1/source/resource/iconfont/material/ material
 ls -l
 
 popd;

@@ -42,7 +42,7 @@ FROM base-stage as development
 # within container does not work well because links remain in host
 VOLUME /home/node/client
 
-ENTRYPOINT /bin/bash ./scripts/entrypoint.sh
+ENTRYPOINT ./scripts/entrypoint.sh
 
 
 # ------------------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ FROM base-stage as production
 # (2) Installs qooxdoo contributions in $WORKDIR/contrib/ within container
 COPY compile.json compile.json
 
-RUN bash ./scripts/install-contrib.sh
+RUN ./scripts/install-contrib.sh
 
 # (3) compiles source
 COPY source source
