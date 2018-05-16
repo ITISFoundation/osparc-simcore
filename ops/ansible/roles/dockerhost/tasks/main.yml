@@ -1,0 +1,9 @@
+---
+# roles/dockerhost/tasks/main.yml
+# Docker host setup
+- name: 'setup docker hosts (ubuntu)'
+  import_tasks: ubuntu.yml
+  when: ansible_os_platform|lower == 'ubuntu'
+#- name: 'setup docker hosts (windows)'
+#  import_tasks: windows.yml
+#  when: ansible_os_platform|lower == 'windows'

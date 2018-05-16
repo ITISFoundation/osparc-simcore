@@ -1,0 +1,11 @@
+---
+# roles/minio/tasks/ubuntu.yml
+
+# Setup file structure for persistent data
+- name: Create minio container named volume bind mountpoints
+  file:
+    path: "/data/minio/{{ item }}-export"
+    state: directory
+    group: docker
+    mode: 0775
+  with_sequence: "start=1 end=4 format=minio%02x"

@@ -1,0 +1,17 @@
+# Ansible inventory file for osparc-simcore PRODUCTION environment
+[all]
+masu ansible_host=172.16.8.125 ansible_port=22 ansible_user=ans
+osparc01 ansible_host=172.16.8.252 ansible_port=22 ansible_user=ans
+osparc02 ansible_host=172.16.8.253 ansible_port=22 ansible_user=ans
+osparc03 ansible_host=172.16.8.254 ansible_port=22 ansible_user=ans
+
+[docker-hosts]
+osparc01 ansible_host=172.16.8.252 ansible_port=22 ansible_user=ans
+osparc02 ansible_host=172.16.8.253 ansible_port=22 ansible_user=ans
+osparc03 ansible_host=172.16.8.254 ansible_port=22 ansible_user=ans
+
+[docker-swarm-managers]
+osparc01 ansible_host=172.16.8.252 ansible_port=22 ansible_user=ans
+
+[docker-registry]
+masu ansible_host=172.16.8.125 ansible_port=22 ansible_user=ans

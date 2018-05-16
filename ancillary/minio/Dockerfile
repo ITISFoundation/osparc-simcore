@@ -1,3 +1,4 @@
+# 20180516 - this file not being used yet... placeholder
 FROM minio/minio
 
 LABEL maintainer="Elliott Zastrow <ehzastrow@gmail.com>"
