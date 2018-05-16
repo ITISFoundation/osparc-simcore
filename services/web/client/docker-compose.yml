@@ -1,10 +1,14 @@
-version: '3'
+version: '3.4'
 services:
   qx:
-    image: itisfoundation/qooxdoo-compiler:latest
+    #image: itisfoundation/qooxdoo-compiler:latest
+    image: client_qx:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
     volumes:
-      - '.:/home/node/src'
+      - '.:/home/node/client'
     ports:
       - '8080:8080'
-    working_dir: /home/node/src
-    command: serve
+    working_dir: /home/node/client
