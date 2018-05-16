@@ -91,6 +91,7 @@ qx.Class.define("qxapp.data.Fake", {
         },
         "input": [],
         "output": [{
+          "uuid": "b17e3436-a214-4280-b40f-01cddd8237bb",
           "name": "Number",
           "type": "number",
           "value": ""
@@ -107,6 +108,7 @@ qx.Class.define("qxapp.data.Fake", {
         },
         "input": [],
         "output": [{
+          "uuid": "3e25e028-a1f1-42ec-967a-3416417913e2",
           "name": "Number",
           "type": "number",
           "value": ""
@@ -122,11 +124,13 @@ qx.Class.define("qxapp.data.Fake", {
           "y": 100
         },
         "input": [{
+          "uuid": "ccea40bd-53ee-453a-8154-32ee7e5a80b8",
           "name": "Number",
           "type": "number",
           "value": ""
         }],
         "output": [{
+          "uuid": "fff13fb5-35fd-4d1b-92a3-e3fb57b5a948",
           "name": "Number",
           "type": "number",
           "value": ""
@@ -142,11 +146,13 @@ qx.Class.define("qxapp.data.Fake", {
           "y": 300
         },
         "input": [{
+          "uuid": "8f296d86-bf95-4ad0-8a74-4b0a932d9f37",
           "name": "Number",
           "type": "number",
           "value": ""
         }],
         "output": [{
+          "uuid": "62a8c0f7-e2b2-4c94-89a9-34a89d0d7cd2",
           "name": "Number",
           "type": "number",
           "value": ""
@@ -162,11 +168,13 @@ qx.Class.define("qxapp.data.Fake", {
           "y": 200
         },
         "input": [{
+          "uuid": "c28f007c-b8e8-44b2-9400-52b0715a04e4",
           "name": "Number",
           "type": "number",
           "value": ""
         }],
         "output": [{
+          "uuid": "99a3e2c7-197b-4169-803f-000c4a403232",
           "name": "Number",
           "type": "number",
           "value": ""
@@ -182,11 +190,13 @@ qx.Class.define("qxapp.data.Fake", {
           "y": 100
         },
         "input": [{
+          "uuid": "acdda27c-12bc-4af3-9eda-1a3a29f36768",
           "name": "Number",
           "type": "number",
           "value": ""
         }],
         "output": [{
+          "uuid": "30974de2-6fe3-4c70-be7c-0b472c7596fa",
           "name": "Number",
           "type": "number",
           "value": ""
@@ -202,11 +212,13 @@ qx.Class.define("qxapp.data.Fake", {
           "y": 300
         },
         "input": [{
+          "uuid": "92d41a2f-7e0f-48f5-839e-b94905d3f8a1",
           "name": "Number",
           "type": "number",
           "value": ""
         }],
         "output": [{
+          "uuid": "50a54668-4f9d-495a-82c4-a1521acb188c",
           "name": "Number",
           "type": "number",
           "value": ""
@@ -222,6 +234,7 @@ qx.Class.define("qxapp.data.Fake", {
         "id": "sleeper",
         "name": "Node 8",
         "input": [{
+          "uuid": "bce542bc-7787-4c2c-b7a7-fe13c692c0a5",
           "name": "Number",
           "type": "number",
           "value": ""
@@ -244,6 +257,7 @@ qx.Class.define("qxapp.data.Fake", {
         },
         "input": [],
         "output": [{
+          "uuid": "7d4a5879-443d-4387-99f9-31da91e38f2e",
           "name": "Number",
           "type": "number",
           "value": ""
@@ -259,6 +273,7 @@ qx.Class.define("qxapp.data.Fake", {
           "y": 100
         },
         "input": [{
+          "uuid": "3fe506fc-8c43-46af-bb65-2c4fea471059",
           "name": "Number",
           "type": "number",
           "value": ""
@@ -275,6 +290,7 @@ qx.Class.define("qxapp.data.Fake", {
           "y": 300
         },
         "input": [{
+          "uuid": "2fd31c28-ee78-4dd1-9736-97ee83c19da3",
           "name": "String",
           "type": "string",
           "value": ""
@@ -292,6 +308,7 @@ qx.Class.define("qxapp.data.Fake", {
         "name": "Modeler",
         "input": [],
         "output": [{
+          "uuid": "772337ea-cc39-4117-a60d-ec5d2820355e",
           "name": "Scene",
           "type": "scene",
           "value": ""
@@ -316,6 +333,7 @@ qx.Class.define("qxapp.data.Fake", {
         "name": "Number Generator",
         "input": [],
         "output": [{
+          "uuid": "22cb66af-5315-4eef-bf7a-deebc57c0e8d",
           "name": "Number",
           "type": "number",
           "value": ""
@@ -337,11 +355,13 @@ qx.Class.define("qxapp.data.Fake", {
         "input": [],
         "output": [
           {
+            "uuid": "4f07978b-9c24-4756-b9e0-7655146c70c2",
             "name": "outputFolder",
             "type": "folder",
             "value": "url"
           },
           {
+            "uuid": "9b77dc5d-0a79-4f95-8941-5005b66280f3",
             "name": "Allresults",
             "order": [
               "t",
@@ -417,11 +437,13 @@ qx.Class.define("qxapp.data.Fake", {
         "id": "Computational2",
         "name": "Computational 2",
         "input": [{
+          "uuid": "83d9c13a-6ddd-4de1-a949-ff92c4570627",
           "name": "Scene",
           "type": "scene",
           "value": ""
         }],
         "output": [{
+          "uuid": "17cf124a-c020-41ea-8a87-6d21221d2de8",
           "name": "Other numbers",
           "type": "number",
           "value": ""
@@ -432,11 +454,13 @@ qx.Class.define("qxapp.data.Fake", {
         "id": "Computational3",
         "name": "Computational 3",
         "input": [{
+          "uuid": "3774b462-f112-4b95-bb38-12d20386ccbc",
           "name": "Number",
           "type": "number",
           "value": ""
         }],
         "output": [{
+          "uuid": "f29bd50d-4744-4519-940f-81ced733d497",
           "name": "Some numbers",
           "type": "number",
           "value": ""
@@ -447,11 +471,13 @@ qx.Class.define("qxapp.data.Fake", {
         "id": "Computational4",
         "name": "Computational 4",
         "input": [{
+          "uuid": "e003029a-fc04-42bc-80cc-6d97a54a399a",
           "name": "Number",
           "type": "number",
           "value": ""
         }],
         "output": [{
+          "uuid": "b5d576f1-6cb0-4fd9-ad9c-d0c0a3234474",
           "name": "Other numbers",
           "type": "number",
           "value": ""
@@ -466,6 +492,7 @@ qx.Class.define("qxapp.data.Fake", {
         "id": "jupyter-base-notebook",
         "name": "Jupyter",
         "input": [{
+          "uuid": "47f9aa28-6536-4ca2-9a88-89047635475c",
           "name": "Number",
           "type": "number",
           "value": ""
@@ -481,6 +508,7 @@ qx.Class.define("qxapp.data.Fake", {
         "id": "Analysis2",
         "name": "Analysis 2",
         "input": [{
+          "uuid": "a774384c-417b-4aed-9868-f90bd0371229",
           "name": "Number",
           "type": "scene",
           "value": ""
