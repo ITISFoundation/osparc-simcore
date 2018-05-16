@@ -12,17 +12,37 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     // Create a horizontal split pane
     this.__pane = new qx.ui.splitpane.Pane("horizontal");
 
-    const settingsWidth = 500;
-    this.__settingsView = new qxapp.components.workbench.SettingsView();
-    this.__settingsView.set({
-      minWidth: settingsWidth*0.5,
+    const settingsWidth = this.__settingsWidth = 500;
+    let settingsView = this.__settingsView = new qxapp.components.workbench.SettingsView().set({
       maxWidth: settingsWidth,
-      width: settingsWidth*0.75
+      width: 0,
+      minWidth: 0,
+      visibility: "excluded"
     });
-    this.__pane.add(this.__settingsView, 0);
 
-    this.__workbench = new qxapp.components.workbench.Workbench();
-    this.__pane.add(this.__workbench, 1);
+    settingsView.addListenerOnce("appear", () => {
+      settingsView.getContentElement().getDomElement()
+        .addEventListener("transitionend", () => {
+          settingsView.resetDecorator();
+          if (settingsView.getWidth() === 0) {
+            settingsView.exclude();
+          }
+        });
+    });
+
+    this.__pane.add(settingsView, 0);
+
+    let workbench = this.__workbench = new qxapp.components.workbench.Workbench();
+    workbench.addListenerOnce("appear", () => {
+      workbench.getContentElement().getDomElement()
+        .addEventListener("transitionend", () => {
+          workbench.resetDecorator();
+        });
+    });
+
+    this.__pane.add(workbench, 1);
+
+
 
     this.add(this.__pane, {
       left: 0,
@@ -47,21 +67,30 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__showSettings(true);
       this.__settingsView.setNodeMetadata(e.getData());
     }, this);
+
+    this.__transDeco = new qx.ui.decoration.Decorator().set({
+      transitionProperty: ["left", "right", "width"],
+      transitionDuration: "0.1s",
+      transitionTimingFunction: "ease"
+    });
   },
 
   members: {
     __pane: null,
     __settingsView: null,
     __workbench: null,
+    __settingsWidth: null,
+    __transDeco: null,
 
     __showSettings: function(showSettings) {
       if (showSettings) {
         this.__settingsView.show();
-        this.__workbench.show();
-      } else {
-        this.__settingsView.exclude();
-        this.__workbench.show();
       }
+      qx.ui.core.queue.Manager.flush();
+      this.__settingsView.set({
+        decorator: this.__transDeco,
+        width: showSettings ? Math.round(this.__settingsWidth * 0.75) : 0
+      });
     },
 
     __createBrowserWindow: function(url, name) {
