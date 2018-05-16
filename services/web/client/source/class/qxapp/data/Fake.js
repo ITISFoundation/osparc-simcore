@@ -97,7 +97,10 @@ qx.Class.define("qxapp.data.Fake", {
           "value": ""
         }],
         "settings": [],
-        "children": ["3a97f542-93c4-419c-b5c9-bcf9ff3ada7e"]
+        "children": [{
+          "nodeId": "3a97f542-93c4-419c-b5c9-bcf9ff3ada7e",
+          "portId": "ccea40bd-53ee-453a-8154-32ee7e5a80b8"
+        }]
       }, {
         "uuid": "3fad99a2-31b3-48a2-9066-1a66fc21aa52",
         "id": "sleeper",
@@ -114,7 +117,10 @@ qx.Class.define("qxapp.data.Fake", {
           "value": ""
         }],
         "settings": [],
-        "children": ["9c35ecbc-8219-4538-ba2e-bad8b6e64cda"]
+        "children": [{
+          "nodeId": "9c35ecbc-8219-4538-ba2e-bad8b6e64cda",
+          "portId": "8f296d86-bf95-4ad0-8a74-4b0a932d9f37"
+        }]
       }, {
         "uuid": "3a97f542-93c4-419c-b5c9-bcf9ff3ada7e",
         "id": "sleeper",
@@ -136,7 +142,10 @@ qx.Class.define("qxapp.data.Fake", {
           "value": ""
         }],
         "settings": [],
-        "children": ["51ad1bc0-615e-406a-9886-e3639f51208c"]
+        "children": [{
+          "nodeId": "51ad1bc0-615e-406a-9886-e3639f51208c",
+          "portId": "c28f007c-b8e8-44b2-9400-52b0715a04e4"
+        }]
       }, {
         "uuid":"9c35ecbc-8219-4538-ba2e-bad8b6e64cda",
         "id": "sleeper",
@@ -158,7 +167,10 @@ qx.Class.define("qxapp.data.Fake", {
           "value": ""
         }],
         "settings": [],
-        "children": ["51ad1bc0-615e-406a-9886-e3639f51208c"]
+        "children": [{
+          "nodeId": "51ad1bc0-615e-406a-9886-e3639f51208c",
+          "portId": "c28f007c-b8e8-44b2-9400-52b0715a04e4"
+        }]
       }, {
         "uuid":"51ad1bc0-615e-406a-9886-e3639f51208c",
         "id": "sleeper",
@@ -180,7 +192,13 @@ qx.Class.define("qxapp.data.Fake", {
           "value": ""
         }],
         "settings": [],
-        "children": ["5df77702-29d5-4513-b3f8-f2a40ed317fe", "de2c84ed-a3bc-47c2-b54d-84a5c048236b"]
+        "children": [{
+          "nodeId": "5df77702-29d5-4513-b3f8-f2a40ed317fe",
+          "portId": "acdda27c-12bc-4af3-9eda-1a3a29f36768"
+        }, {
+          "nodeId": "de2c84ed-a3bc-47c2-b54d-84a5c048236b",
+          "portId": "92d41a2f-7e0f-48f5-839e-b94905d3f8a1"
+        }]
       }, {
         "uuid":"5df77702-29d5-4513-b3f8-f2a40ed317fe",
         "id": "sleeper",
@@ -202,7 +220,10 @@ qx.Class.define("qxapp.data.Fake", {
           "value": ""
         }],
         "settings": [],
-        "children": ["ba22104c-99e1-45c9-a09d-228400a6f9fb"]
+        "children": [{
+          "nodeId": "ba22104c-99e1-45c9-a09d-228400a6f9fb",
+          "portId": "bce542bc-7787-4c2c-b7a7-fe13c692c0a5"
+        }]
       }, {
         "uuid": "de2c84ed-a3bc-47c2-b54d-84a5c048236b",
         "id": "sleeper",
@@ -224,7 +245,10 @@ qx.Class.define("qxapp.data.Fake", {
           "value": ""
         }],
         "settings": [],
-        "children": ["ba22104c-99e1-45c9-a09d-228400a6f9fb"]
+        "children": [{
+          "nodeId": "ba22104c-99e1-45c9-a09d-228400a6f9fb",
+          "portId": "bce542bc-7787-4c2c-b7a7-fe13c692c0a5"
+        }]
       }, {
         "uuid": "ba22104c-99e1-45c9-a09d-228400a6f9fb",
         "position": {
@@ -286,6 +310,21 @@ qx.Class.define("qxapp.data.Fake", {
           "uuid": "4bf3665e-0dfe-4c58-8d43-278768b396be",
           "name": "String",
           "type": "string",
+          "value": ""
+        }, {
+          "uuid": "4bf3665e-0dfe-4c58-8d43-278768b39634",
+          "name": "Bool",
+          "type": "bool",
+          "value": ""
+        }, {
+          "uuid": "4bf3665e-0dfe-4c58-8d43-278768b39635",
+          "name": "Bool",
+          "type": "bool",
+          "value": ""
+        }, {
+          "uuid": "4bf3665e-0dfe-4c58-8d43-278768b39636",
+          "name": "Bool",
+          "type": "bool",
           "value": ""
         }],
         "outputs": [],
