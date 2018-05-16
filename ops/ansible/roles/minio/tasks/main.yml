@@ -3,4 +3,4 @@
 # Minio Stack Deploy
 - name: 'Deploy to ubuntu hosts'
   import_tasks: ubuntu.yml
-  when: ansible_os_platform|lower == 'ubuntu'
+  when: ansible_distribution|lower == 'ubuntu'
