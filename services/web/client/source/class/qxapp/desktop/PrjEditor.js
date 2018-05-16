@@ -3,7 +3,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
-    this.base();
+    this.base(arguments);
 
     this.set({
       layout: new qx.ui.layout.Canvas()

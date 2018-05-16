@@ -1,0 +1,7 @@
+# Usage `docker-compose -f docker-compose.yml -f docker-compose.production.yml ...
+version: '3.4'
+services:
+  qx:
+    image: client_qx:prod
+    build:
+      target: production
