@@ -87,12 +87,25 @@ services:
 
 volumes:
   minio01-data:
-
+    driver_opts:
+      type: none
+      device: /data/minio/minio01-export
+      o: bind
   minio02-data:
-
+    driver_opts:
+      type: none
+      device: /data/minio/minio02-export
+      o: bind
   minio03-data:
-
+    driver_opts:
+      type: none
+      device: /data/minio/minio03-export
+      o: bind
   minio04-data:
+    driver_opts:
+      type: none
+      device: /data/minio/minio04-export
+      o: bind
 
 networks:
   minio_distributed:
