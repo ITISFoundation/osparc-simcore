@@ -1,3 +1,5 @@
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.components.workbench.Workbench", {
   extend: qx.ui.container.Composite,
 
@@ -69,6 +71,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __links: null,
     __desktop: null,
     __svgWidget: null,
+    __tempLinkNodeId: null,
+    __tempLinkPortId: null,
+    __tempLinkRepr: null,
 
     __getPlusButton: function() {
       const icon = qxapp.utils.Placeholders.getIcon("fa-plus", 32);
@@ -197,8 +202,30 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           }
         }, this);
         socket.emit(slotName, nodeBase.getNodeId());
-        nodeBase.getMetadata().viewer.port = 1234;
       }
+
+      const evType = "pointermove";
+      nodeBase.addListener("StartTempConn", function(e) {
+        this.__tempLinkNodeId = e.getData()[0];
+        this.__tempLinkPortId = e.getData()[1];
+        qx.bom.Element.addListener(
+          this.__desktop,
+          evType,
+          this.__startTempLink,
+          this
+        );
+      }, this);
+      nodeBase.addListener("EndTempConn", function(e) {
+        let nodeId = e.getData()[0];
+        let portId = e.getData()[1];
+        this.__endTempLink(nodeId, portId);
+        qx.bom.Element.removeListener(
+          this.__desktop,
+          evType,
+          this.__startTempLink,
+          this
+        );
+      }, this);
 
       return nodeBase;
     },
@@ -220,6 +247,78 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       linkBase.getRepresentation().node.addEventListener("click", function(e) {
 
       });
+    },
+
+    __startTempLink: function(pointerEvent) {
+      if (this.__tempLinkNodeId === null || this.__tempLinkPortId === null) {
+        return;
+      }
+      let node = this.__getNode(this.__tempLinkNodeId);
+      if (node === null) {
+        return;
+      }
+      let port = node.getPort(this.__tempLinkPortId);
+      if (port === null) {
+        return;
+      }
+
+      let x1;
+      let y1;
+      let x2;
+      let y2;
+      // FIXME:
+      const navBarHeight = 50;
+      if (port.isInput) {
+        x1 = pointerEvent.getViewportLeft();
+        y1 = pointerEvent.getViewportTop() - navBarHeight;
+        x2 = node.getBounds().left;
+        y2 = node.getBounds().top + 50;
+      } else {
+        x1 = node.getBounds().left + node.getBounds().width;
+        y1 = node.getBounds().top + 50;
+        x2 = pointerEvent.getViewportLeft();
+        y2 = pointerEvent.getViewportTop() - navBarHeight;
+      }
+
+      if (this.__tempLinkRepr === null) {
+        this.__tempLinkRepr = this.__svgWidget.drawCurve(x1, y1, x2, y2);
+      } else {
+        this.__svgWidget.updateCurve(this.__tempLinkRepr, x1, y1, x2, y2);
+      }
+    },
+
+    __endTempLink: function(nodeId, portId) {
+      if (this.__tempLinkNodeId === null || this.__tempLinkPortId === null) {
+        return;
+      }
+      let nodeA = this.__getNode(this.__tempLinkNodeId);
+      if (nodeA === null) {
+        return;
+      }
+      let portA = nodeA.getPort(this.__tempLinkPortId);
+      if (portA === null) {
+        return;
+      }
+      let nodeB = this.__getNode(nodeId);
+      if (nodeB === null) {
+        return;
+      }
+      let portB = nodeB.getPort(portId);
+      if (portB === null) {
+        return;
+      }
+
+      this.__removeTempLink();
+      this.__addLink(nodeA, nodeB);
+    },
+
+    __removeTempLink: function() {
+      if (this.__tempLinkRepr !== null) {
+        this.__svgWidget.removeCurve(this.__tempLinkRepr);
+      }
+      this.__tempLinkRepr = null;
+      this.__tempLinkNodeId = null;
+      this.__tempLinkPortId = null;
     },
 
     __getLinkPoints: function(node1, node2) {
@@ -284,8 +383,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         const nodeId = this.__nodes[i].getNodeId();
         pipeline[nodeId] = {};
         pipeline[nodeId].serviceId = this.__nodes[i].getMetadata().id;
-        pipeline[nodeId].input = this.__nodes[i].getMetadata().input;
-        pipeline[nodeId].output = this.__nodes[i].getMetadata().output;
+        pipeline[nodeId].inputs = this.__nodes[i].getMetadata().inputs;
+        pipeline[nodeId].outputs = this.__nodes[i].getMetadata().outputs;
         pipeline[nodeId].settings = this.__nodes[i].getMetadata().settings;
         pipeline[nodeId].children = [];
         for (let j = 0; j < this.__links.length; j++) {
