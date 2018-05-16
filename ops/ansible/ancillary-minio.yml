@@ -61,4 +61,4 @@
   - debug: 
       msg: "Minio Access Key: {{ access_key.stdout }}"
   - debug:
-      var: "Minio Secret Key: {{ secret_key.stdout }}"
+      msg: "Minio Secret Key: {{ secret_key.stdout }}"
