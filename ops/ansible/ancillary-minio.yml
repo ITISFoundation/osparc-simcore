@@ -43,8 +43,21 @@
     delay: 20
     register: result
     until: result.rc == 0
+  - name: Create directory for local docker-compose file
+    file:
+      path: "/tmp/osparc-simcore/ops/ansible/roles/minio/files"
+      state: directory
+      group: docker
+      mode: 0775
+  - name: example copying file with owner and permissions
+    copy:
+      src: "./roles/minio/files/docker-compose.yml"
+      dest: "/tmp/osparc-simcore/ops/ansible/roles/minio/files/docker-compose.yml"
+      owner: root
+      group: foo
+      mode: 0644
   - name: Deploy minio stack
-    command: "/usr/bin/docker stack deploy --compose-file=./roles/minio/files/docker-compose.yml minio"
+    command: "/usr/bin/docker stack deploy --compose-file=/tmp/osparc-simcore/ops/ansible/roles/minio/files/docker-compose.yml minio"
   - debug: 
       var: access_key
   - debug:
