@@ -1,9 +1,0 @@
-# Overrides docker-compose.yml
-#
-# Usage:  docker-compose -f docker-compose.yml -f docker-compose.init.yml run qx
-#
-version: '3'
-services:
-  qx:
-    entrypoint: /bin/bash
-    command: -c "qx contrib update && qx contrib list && qx contrib install ITISFoundation/qx-osparc-theme"
