@@ -10,7 +10,7 @@
     repo: deb https://download.docker.com/linux/ubuntu xenial stable
 - name: Package docker-ce is installed
   apt:
-    pkg: docker-ce=17.12.1-ce
+    pkg: docker-ce=17.12.1~ce-0~ubuntu
 - name: Make sure docker group exists
   group:
     name: docker

@@ -12,4 +12,5 @@ The following are the minimum requirements for using Ansible:
 1. Ansible package installed on host from which you run these playbooks
 1. SSH public key for your control host is installed into `/home/ans/.ssh/authorized_keys` on every host you intend to control
 1. An entry has been added to `~/.ssh/known_hosts` on your control host for every remote host you intend to control.
-1. package `python-minimal` or equivilent python installed on every host you intend to control.
+1. package `python-minimal` or equivilent python installed on every remote host you intend to control.
+1. package `python-apt` installed on remote hosts (to allow `apt` module)
