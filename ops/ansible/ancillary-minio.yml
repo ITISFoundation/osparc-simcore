@@ -32,13 +32,13 @@
     register: secret_key
     changed_when: False
   - name: Create docker secret access_key
-    shell: "echo {{ access_key.std_out }} | /usr/bin/docker secret create access_key -"
+    shell: "echo {{ access_key.stdout }} | /usr/bin/docker secret create access_key -"
     retries: 3
     delay: 20
     register: result
     until: result.rc == 0
   - name: Create docker secret secret_key
-    shell: "echo {{ secret_key.std_out }} | /usr/bin/docker secret create secret_key -"
+    shell: "echo {{ secret_key.stdout }} | /usr/bin/docker secret create secret_key -"
     retries: 3
     delay: 20
     register: result
@@ -59,6 +59,6 @@
   - name: Deploy minio stack
     command: "/usr/bin/docker stack deploy --compose-file=/tmp/osparc-simcore/ops/ansible/roles/minio/files/docker-compose.yml minio"
   - debug: 
-      msg: "Minio Access Key: {{ access_key.std_out }}"
+      msg: "Minio Access Key: {{ access_key.stdout }}"
   - debug:
-      var: "Minio Secret Key: {{ secret_key.std_out] }}"
+      var: "Minio Secret Key: {{ secret_key.stdout] }}"
