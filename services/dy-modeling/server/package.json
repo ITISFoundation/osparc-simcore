@@ -2,10 +2,10 @@
   "name": "server-nex",
   "version": "1.0.0",
   "description": "boilerplate nodejs express server",
-  "main": "server.js",
+  "main": "source/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node source/server.js"
   },
   "author": "",
   "license": "ISC",
