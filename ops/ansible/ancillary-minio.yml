@@ -54,7 +54,7 @@
       src: "./roles/minio/files/docker-compose.yml"
       dest: "/tmp/osparc-simcore/ops/ansible/roles/minio/files/docker-compose.yml"
       owner: root
-      group: foo
+      group: docker
       mode: 0644
   - name: Deploy minio stack
     command: "/usr/bin/docker stack deploy --compose-file=/tmp/osparc-simcore/ops/ansible/roles/minio/files/docker-compose.yml minio"
