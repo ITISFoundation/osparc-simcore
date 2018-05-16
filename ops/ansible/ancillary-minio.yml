@@ -44,7 +44,7 @@
     register: result
     until: result.rc == 0
   - name: Deploy minio stack
-    command: "/usr/bin/docker stack deploy --compose-file={{ role_path }}/files/docker-compose.yml minio"
+    command: "/usr/bin/docker stack deploy --compose-file=./roles/minio/files/docker-compose.yml minio"
   - debug: 
       var: access_key
   - debug:
