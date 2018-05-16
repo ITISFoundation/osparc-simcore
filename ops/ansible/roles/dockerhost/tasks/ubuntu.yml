@@ -2,7 +2,7 @@
 # roles/dockerhosts/tasks/ubuntu.yml
 
 # Setup docker environment
-- name: Apt key is installed: docker
+- name: Apt key is installed (docker)
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
 - name: Add Docker Repository
