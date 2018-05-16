@@ -261,6 +261,12 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Number",
           "type": "number",
           "value": ""
+        },
+        {
+          "uuid": "53bdb908-1b00-42d9-9c37-473a9fff4f79",
+          "name": "String",
+          "type": "string",
+          "value": ""
         }],
         "settings": [],
         "children": []
@@ -276,6 +282,12 @@ qx.Class.define("qxapp.data.Fake", {
           "uuid": "3fe506fc-8c43-46af-bb65-2c4fea471059",
           "name": "Number",
           "type": "number",
+          "value": ""
+        },
+        {
+          "uuid": "4bf3665e-0dfe-4c58-8d43-278768b396be",
+          "name": "String",
+          "type": "string",
           "value": ""
         }],
         "output": [],
@@ -293,6 +305,12 @@ qx.Class.define("qxapp.data.Fake", {
           "uuid": "2fd31c28-ee78-4dd1-9736-97ee83c19da3",
           "name": "String",
           "type": "string",
+          "value": ""
+        },
+        {
+          "uuid": "0dc9edf6-e48a-4696-8aaa-86b7b700d925",
+          "name": "Number",
+          "type": "number",
           "value": ""
         }],
         "output": [],
