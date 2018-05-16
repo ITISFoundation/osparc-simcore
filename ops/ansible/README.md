@@ -14,3 +14,11 @@ The following are the minimum requirements for using Ansible:
 1. An entry has been added to `~/.ssh/known_hosts` on your control host for every remote host you intend to control.
 1. package `python-minimal` or equivilent python installed on every remote host you intend to control.
 1. package `python-apt` installed on remote hosts (to allow `apt` module)
+
+### Example deployment
+
+From internal ansible control host: 
+
+```
+ans@ansible:~/Repositories/github.com/ehzastrow/osparc-simcore/ops/ansible$ ansible-playbook -i testing ancillary-minio.yml
+```
