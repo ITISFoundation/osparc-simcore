@@ -37,24 +37,6 @@
     command: "docker secret rm minio_secret_key"
     when: result.stdout != ""
 
-# Destroy and recreate any existing minio service data stores
-- hosts: docker-hosts
-  become: yes
-  become_method: sudo
-  tasks:
-  - name: Create minio data stores
-    file:
-      path: "/data/minio/{{ item }}-export"
-      state: absent
-    with_sequence: "start=1 end=4 format=minio%02x"
-  - name: Create minio data stores
-    file:
-      path: "/data/minio/{{ item }}-export"
-      state: directory
-      group: docker
-      mode: 0775
-    with_sequence: "start=1 end=4 format=minio%02x"
-
 # Deploy Minio docker swarm stack
 - hosts: docker-swarm-managers[0]
   become: yes
