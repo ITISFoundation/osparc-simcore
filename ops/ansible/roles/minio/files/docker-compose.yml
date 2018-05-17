@@ -22,8 +22,8 @@ services:
         window: 60s
     command: server http://minio01/export http://minio02/export http://minio03/export http://minio04/export
     secrets:
-      - secret_key
-      - access_key
+      - minio_secret_key
+      - minio_access_key
 
   minio02:
     image: minio/minio
@@ -46,8 +46,8 @@ services:
         window: 60s
     command: server http://minio01/export http://minio02/export http://minio03/export http://minio04/export
     secrets:
-      - secret_key
-      - access_key
+      - minio_secret_key
+      - minio_access_key
 
   minio03:
     image: minio/minio
@@ -70,8 +70,8 @@ services:
         window: 60s
     command: server http://minio01/export http://minio02/export http://minio03/export http://minio04/export
     secrets:
-      - secret_key
-      - access_key
+      - minio_secret_key
+      - minio_access_key
 
   minio04:
     image: minio/minio
@@ -94,8 +94,8 @@ services:
         window: 60s
     command: server http://minio01/export http://minio02/export http://minio03/export http://minio04/export
     secrets:
-      - secret_key
-      - access_key
+      - minio_secret_key
+      - minio_access_key
 
 volumes:
   minio01-data:
