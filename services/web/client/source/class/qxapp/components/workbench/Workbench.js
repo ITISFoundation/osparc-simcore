@@ -226,7 +226,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       nodeBase.addListener("EndTempConn", function(e) {
         let nodeId = e.getData()[0];
         let portId = e.getData()[1];
-        this.__endTempLink(nodeId, portId);
+        if (nodeId !== null && portId !== null) {
+          this.__endTempLink(nodeId, portId);
+        }
+        this.__removeTempLink();
         qx.bom.Element.removeListener(
           this.__desktop,
           evType,
@@ -324,7 +327,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         return;
       }
 
-      this.__removeTempLink();
       this.__addLink(node1, port1, node2, port2);
     },
 
