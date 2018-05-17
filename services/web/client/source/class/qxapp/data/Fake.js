@@ -569,7 +569,7 @@ qx.Class.define("qxapp.data.Fake", {
         "inputs": [{
           "uuid": "a774384c-417b-4aed-9868-f90bd0371229",
           "name": "Number",
-          "type": "scene",
+          "type": "number",
           "value": ""
         }],
         "outputs": [],
