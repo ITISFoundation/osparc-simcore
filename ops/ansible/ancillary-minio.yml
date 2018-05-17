@@ -13,21 +13,21 @@
   become_method: sudo
   tasks:
   - name: Check for existing minio stack
-    shell: "docker stack ls | grep -e '^workbench[[:space:]].*[0-9].*$'"
+    shell: "docker stack ls | grep -e '^minio[[:space:]]+[1-9][0-9]*$' | cat"
     register: result
     changed_when: False
   - name: Remove existing minio stack
     command: "docker stack rm minio"
     when: result.stdout != ""
   - name: Check for existing docker secret minio_access_key
-    shell: "docker secret ls | grep minio_access_key"
+    shell: "docker secret ls | grep minio_access_key | cat"
     register: result
     changed_when: False
   - name: Remove existing docker secret access_key
     command: "docker secret rm minio_access_key"
     when: result.stdout != ""
   - name: Check for existing docker secret minio_secret_key
-    shell: "docker secret ls | grep minio_secret_key"
+    shell: "docker secret ls | grep minio_secret_key | cat"
     register: result
     changed_when: False
   - name: Remove existing docker secret secret_key
