@@ -5,7 +5,7 @@
   become_method: sudo
   tasks:
   - name: "Determine swarm status"
-    shell: "docker info | egrep '^Swarm: ' | cut -d ' ' -f2"
+    shell: "docker info | grep -E '^Swarm: ' | cut -d ' ' -f2"
     register: swarm_status
     changed_when: False
   - name: "Initialize docker swarm as manager"
@@ -26,7 +26,7 @@
   become_method: sudo
   tasks:
   - name: "Determine swarm status"
-    shell: "docker info | egrep '^Swarm: ' | cut -d ' ' -f2"
+    shell: "docker info | grep -E '^Swarm: ' | cut -d ' ' -f2"
     register: swarm_status
     changed_when: False
   - name: "Join docker swarm as a manager"
@@ -43,7 +43,7 @@
   become_method: sudo
   tasks:
   - name: "Determine swarm status"
-    shell: "docker info | egrep '^Swarm: ' | cut -d ' ' -f2"
+    shell: "docker info | grep -E '^Swarm: ' | cut -d ' ' -f2"
     register: swarm_status
     changed_when: False
   - name: "Join docker swarm as a worker"

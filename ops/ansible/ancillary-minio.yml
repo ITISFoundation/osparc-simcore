@@ -16,7 +16,7 @@
   become_method: sudo
   tasks:
   - name: Check for existing minio stack
-    shell: "docker stack ls | grep -e '^minio[[:space:]]+[1-9][0-9]*$' | cat"
+    shell: "docker stack ls | grep -E '^minio[[:space:]]+[1-9][0-9]*$' | cat"
     register: result
     changed_when: False
   - name: Remove existing minio stack
