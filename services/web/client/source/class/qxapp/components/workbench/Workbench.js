@@ -117,7 +117,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         nodeButton.addListener("execute", function() {
           let nodeItem = this.__createNode(node);
           this.__addNodeToWorkbench(nodeItem);
-          this.__createLinkToLastNode();
+          // this.__createLinkToLastNode();
         }, this);
 
         buttonsListMenu.add(nodeButton);
@@ -128,8 +128,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __addNodeToWorkbench: function(node, position) {
       if (position === undefined) {
-        let nNodes = this.__nodes.length;
-        node.moveTo(50 + nNodes*250, 200);
+        let farthestRight = 0;
+        for (let i=0; i < this.__nodes.length; i++) {
+          let boundPos = this.__nodes[i].getBounds();
+          let rightPos = boundPos.left + boundPos.width;
+          if (farthestRight < rightPos) {
+            farthestRight = rightPos;
+          }
+        }
+        node.moveTo(50 + farthestRight, 200);
         this.__desktop.add(node);
         node.open();
         this.__nodes.push(node);
@@ -170,7 +177,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         this.fireDataEvent("NodeDoubleClicked", node);
       }, this);
     },
-
+    /*
     __createLinkToLastNode: function() {
       let nNodes = this.__nodes.length;
       if (nNodes > 1) {
@@ -185,7 +192,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         }
       }
     },
-
+    */
     __createNode: function(node) {
       let nodeBase = new qxapp.components.workbench.NodeBase();
       nodeBase.setMetadata(node);
