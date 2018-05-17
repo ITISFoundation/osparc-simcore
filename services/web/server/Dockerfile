@@ -1,34 +1,38 @@
-FROM node:8.9.2 as qx-stage
 #FIXME: FROM itisfoundation/qooxdoo-compiler:latest as qx-stage
-
+FROM node:8.9.2 as qx-stage
 ARG client_dir=web/client
 
 # workdir
-WORKDIR /home/node/src
-RUN chown -R node:node /home/node/src
+WORKDIR /home/node
+
+RUN chown -R node:node /home/node
 
 # user defined in base image
 USER node
 
 # npm variables
-ENV NPM_CONFIG_LOGLEVEL=warn
-ENV NPM_CONFIG_PREFIX=/home/node/.npm-global
-ENV QOOXDOO_COMPILER_DIR=$NPM_CONFIG_PREFIX/lib/node_modules/qxcompiler
-ENV PATH=$NPM_CONFIG_PREFIX/bin:$PATH
+ENV PATH=/home/node/node_modules/.bin:$PATH
 
-RUN npm install -g qxcompiler
+COPY --chown=node:node $client_dir/package*.json .
+
+RUN npm install ; \
+    git clone --depth=1 https://github.com/qooxdoo/qooxdoo.git qooxdoo-sdk ; \
+    mkdir src
+
+# workdir
+WORKDIR /home/node/src
+
+USER node
+
+COPY --chown=node:node $client_dir/source source
+COPY --chown=node:node $client_dir/scripts scripts
+COPY --chown=node:node $client_dir/compile.json .
+COPY --chown=node:node $client_dir/Manifest.json .
 
 # client's source code TODO: move everything under webapp
-COPY --chown=node:node $client_dir/source source
-COPY --chown=node:node $client_dir/compile.json compile.json
-COPY --chown=node:node $client_dir/Manifest.json Manifest.json
 
-RUN ln -s $QOOXDOO_COMPILER_DIR/node_modules /home/node
-
-# Add dark theme to web/client
-RUN qx contrib update && qx contrib list
-RUN qx contrib install ITISFoundation/qx-osparc-theme
-RUN qx compile
+RUN ls -l ; ./scripts/install-contrib.sh ; \
+    qx compile
 
 # -------------------------common-py-stage------------------------------------
 FROM python:3.6-alpine as common-py-stage

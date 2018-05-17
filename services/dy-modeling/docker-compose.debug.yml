@@ -1,0 +1,18 @@
+# USAGE:  docker-compose -f docker-compose.yml -f docker-compose.debug.yml ...
+version: '3.4'
+services:
+  client:
+    build:
+      target: development
+    image: client-dev
+    volumes:
+      - './client:/home/node/qxapp'
+  server:
+    build:
+      target: development
+    image: server-dev
+    ports:
+      - '8080:9090'
+    volumes: 
+      - './server/source:/home/node/source'
+      - './client/source-output:/home/node/source-output'
