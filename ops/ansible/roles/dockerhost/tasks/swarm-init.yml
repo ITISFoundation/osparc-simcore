@@ -14,9 +14,11 @@
   - name: "Get docker swarm manager token"
     command: "docker swarm join-token -q manager"
     register: manager_token
+    changed_when: False
   - name: "Get docker swarm worker token"
     command: "docker swarm join-token -q worker"
     register: worker_token
+    changed_when: False
 
 # Join additional mangers
 - hosts: docker-swarm-managers

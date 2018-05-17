@@ -81,6 +81,6 @@
   - name: Deploy minio stack
     command: "docker stack deploy --compose-file=/tmp/osparc-simcore/ops/ansible/roles/minio/files/docker-compose.yml minio"
   - debug: 
-      msg: "Minio Access Key: {{ access_key.stdout }}"
+      msg: "Minio Access Key: {{ minio_access_key.stdout }}"
   - debug:
-      msg: "Minio Secret Key: {{ secret_key.stdout }}"
+      msg: "Minio Secret Key: {{ minio_secret_key.stdout }}"
