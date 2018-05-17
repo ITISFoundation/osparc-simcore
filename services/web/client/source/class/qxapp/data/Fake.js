@@ -400,8 +400,28 @@ qx.Class.define("qxapp.data.Fake", {
           "ip": "http://" + window.location.hostname,
           "port": null
         }
-      },
-      {
+      }, {
+        "id": "FileReader",
+        "name": "File Reader",
+        "inputs": [],
+        "outputs": [{
+          "uuid": "aca2065e-d3a1-4cdb-89c2-cbffab8d8cc9",
+          "name": "File-link",
+          "type": "file-link",
+          "value": ""
+        }],
+        "settings": [{
+          "name": "number",
+          "text": "Number",
+          "type": "number",
+          "value": 0
+        }, {
+          "name": "file",
+          "text": "File",
+          "type": "number",
+          "value": 0
+        }]
+      }, {
         "id": "NumberGeneratorID",
         "name": "Number Generator",
         "inputs": [],
@@ -425,7 +445,17 @@ qx.Class.define("qxapp.data.Fake", {
       const computationals = [{
         "id": "ColleenClancy",
         "name": "Colleen Clancy - dummy",
-        "inputs": [],
+        "inputs": [{
+          "uuid": "437f156d-c243-4a85-9b96-59d180141601",
+          "name": "File-link",
+          "type": "file-link",
+          "value": ""
+        }, {
+          "uuid": "de3529f1-aa5b-4cb3-8257-e84b6b0eebb5",
+          "name": "File-link",
+          "type": "file-link",
+          "value": ""
+        }],
         "outputs": [{
           "uuid": "4f07978b-9c24-4756-b9e0-7655146c70c2",
           "name": "outputFolder",
