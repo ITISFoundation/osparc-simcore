@@ -9,6 +9,9 @@ services:
       - "10001:9000"
     networks:
       - minio_distributed
+    environment:
+      - MINIO_ACCESS_KEY_FILE=minio_access_key
+      - MINIO_SECRET_KEY_FILE=minio_secret_key
     deploy:
       placement:
         constraints:
@@ -30,6 +33,9 @@ services:
       - "10002:9000"
     networks:
       - minio_distributed
+    environment:
+      - MINIO_ACCESS_KEY_FILE=minio_access_key
+      - MINIO_SECRET_KEY_FILE=minio_secret_key
     deploy:
       placement:
         constraints:
@@ -51,6 +57,9 @@ services:
       - "10003:9000"
     networks:
       - minio_distributed
+    environment:
+      - MINIO_ACCESS_KEY_FILE=minio_access_key
+      - MINIO_SECRET_KEY_FILE=minio_secret_key
     deploy:
       placement:
         constraints:
@@ -72,6 +81,9 @@ services:
       - "10004:9000"
     networks:
       - minio_distributed
+    environment:
+      - MINIO_ACCESS_KEY_FILE=minio_access_key
+      - MINIO_SECRET_KEY_FILE=minio_secret_key
     deploy:
       placement:
         constraints:
@@ -112,8 +124,8 @@ networks:
     driver: overlay
 
 secrets:
-  secret_key:
+  minio_secret_key:
     external: true
-  access_key:
+  minio_access_key:
     external: true
 

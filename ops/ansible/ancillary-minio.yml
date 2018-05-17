@@ -1,12 +1,57 @@
 ---
 # file: ops/ansible/ancillary-minio.yml
-# osparc-simcore ancillary deployment playbook - minio
+# Setup Minio Roles
 - hosts: docker-hosts
   roles:
     - dockerhost
     - minio
 
 # Deploy minio stack
+# Bring down and destroy any existing minio stack
+- hosts: docker-swarm-managers[0]
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: Check for existing minio stack
+    shell: "docker stack ls | grep -e '^minio[[:space:]]+.*$'"
+    register: result
+    changed_when: False
+  - name: Remove existing minio stack
+    command: "docker stack rm minio"
+    when: result.stdout != ""
+  - name: Check for existing docker secret minio_access_key
+    shell: "docker secret ls | grep minio_access_key"
+    register: result
+    changed_when: False
+  - name: Remove existing docker secret access_key
+    command: "docker secret rm minio_access_key"
+    when: result.stdout != ""
+  - name: Check for existing docker secret minio_secret_key
+    shell: "docker secret ls | grep minio_secret_key"
+    register: result
+    changed_when: False
+  - name: Remove existing docker secret secret_key
+    command: "docker secret rm minio_secret_key"
+    when: result.stdout != ""
+
+# Destroy and recreate any existing minio service data stores
+- hosts: docker-hosts
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: Create minio data stores
+    file:
+      path: "/data/minio/{{ item }}-export"
+      state: absent
+    with_sequence: "start=1 end=4 format=minio%02x"
+  - name: Create minio data stores
+    file:
+      path: "/data/minio/{{ item }}-export"
+      state: directory
+      group: docker
+      mode: 0775
+    with_sequence: "start=1 end=4 format=minio%02x"
+
 # Deploy Minio docker swarm stack
 - hosts: docker-swarm-managers[0]
   become: yes
@@ -15,30 +60,22 @@
   - name: Package pwgen is installed
     apt:
       pkg: pwgen
-    # Key removal will fail if key does not already exist.  This is OK, if a bit ugly.
-    # ToDo: dangerous, these keys need their own namespace: e.g. minio_access_key, so we don't delete some other necessary key in the future
-  - name: Remove docker secret access_key
-    shell: "docker secret rm access_key"
-    ignore_errors: yes
-  - name: Remove docker secret secret_key
-    shell: "docker secret rm secret_key"
-    ignore_errors: yes
-  - name: Generate minio access key
-    command: "/usr/bin/pwgen -sB 20 1"
-    register: access_key
+  - name: Generate new minio_access_key
+    command: "pwgen -sB 20 1"
+    register: minio_access_key
     changed_when: False
-  - name: Generate minio secret key
-    command: "/usr/bin/pwgen -sB 32 1"
-    register: secret_key
+  - name: Generate new minio_secret_key
+    command: "pwgen -sB 32 1"
+    register: minio_secret_key
     changed_when: False
   - name: Create docker secret access_key
-    shell: "echo {{ access_key.stdout }} | /usr/bin/docker secret create access_key -"
+    shell: "echo {{ access_key.stdout }} | docker secret create access_key -"
     retries: 3
     delay: 20
     register: result
     until: result.rc == 0
   - name: Create docker secret secret_key
-    shell: "echo {{ secret_key.stdout }} | /usr/bin/docker secret create secret_key -"
+    shell: "echo {{ secret_key.stdout }} | docker secret create secret_key -"
     retries: 3
     delay: 20
     register: result
@@ -57,7 +94,7 @@
       group: docker
       mode: 0644
   - name: Deploy minio stack
-    command: "/usr/bin/docker stack deploy --compose-file=/tmp/osparc-simcore/ops/ansible/roles/minio/files/docker-compose.yml minio"
+    command: "docker stack deploy --compose-file=/tmp/osparc-simcore/ops/ansible/roles/minio/files/docker-compose.yml minio"
   - debug: 
       msg: "Minio Access Key: {{ access_key.stdout }}"
   - debug:
