@@ -1,0 +1,51 @@
+---
+# Initialize swarm if not existing
+- hosts: docker-swarm-managers[0]
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: "Determine swarm status"
+    shell: "docker info | egrep '^Swarm: ' | cut -d ' ' -f2"
+    register: swarm_status
+    changed_when: False
+  - name: "Initialize docker swarm as manager"
+    command: "docker swarm init --advertise-addr {{ ansible_eno1['ipv4']['address'] }}"
+    when: "'active' not in swarm_status.stdout_lines"
+  - name: "Get docker swarm manager token"
+    command: "docker swarm join-token -q manager"
+    register: manager_token
+  - name: "Get docker swarm worker token"
+    command: "docker swarm join-token -q worker"
+    register: worker_token
+
+# Join additional mangers
+- hosts: docker-swarm-managers
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: "Determine swarm status"
+    shell: "docker info | egrep '^Swarm: ' | cut -d ' ' -f2"
+    register: swarm_status
+    changed_when: False
+  - name: "Join docker swarm as a manager"
+    command: "docker swarm join --token {{ hostvars[groups['docker-swarm-managers'][0]]['manager_token']['stdout'] }} {{ hostvars[groups['docker-swarm-managers'][0]]['ansible_eno1']['ipv4']['address'] }}:2377"
+    when: 
+    - "'active' not in swarm_status.stdout_lines"
+    - "inventory_hostname != groups['docker-swarm-managers'][0]"
+    retries: 3
+    delay: 20
+
+# Join additional workers
+- hosts: docker-hosts
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: "Determine swarm status"
+    shell: "docker info | egrep '^Swarm: ' | cut -d ' ' -f2"
+    register: swarm_status
+    changed_when: False
+  - name: "Join docker swarm as a worker"
+    command: "docker swarm join --token {{ hostvars[groups['docker-swarm-managers'][0]]['worker_token']['stdout'] }} {{ hostvars[groups['docker-swarm-managers'][0]]['ansible_eno1']['ipv4']['address'] }}:2377"
+    when: "'active' not in swarm_status.stdout_lines"
+    retries: 3
+    delay: 20

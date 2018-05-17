@@ -6,6 +6,9 @@
     - dockerhost
     - minio
 
+# Create Swarm (if necessary)
+- import_playbook: roles/dockerhost/tasks/swarm-init.yml
+
 # Deploy minio stack
 # Bring down and destroy any existing minio stack
 - hosts: docker-swarm-managers[0]
@@ -68,14 +71,14 @@
     command: "pwgen -sB 32 1"
     register: minio_secret_key
     changed_when: False
-  - name: Create docker secret access_key
-    shell: "echo {{ access_key.stdout }} | docker secret create access_key -"
+  - name: Create docker secret minio_access_key
+    shell: "echo {{ minio_access_key.stdout }} | docker secret create minio_access_key -"
     retries: 3
     delay: 20
     register: result
     until: result.rc == 0
-  - name: Create docker secret secret_key
-    shell: "echo {{ secret_key.stdout }} | docker secret create secret_key -"
+  - name: Create docker secret minio_secret_key
+    shell: "echo {{ minio_secret_key.stdout }} | docker secret create minio_secret_key -"
     retries: 3
     delay: 20
     register: result
