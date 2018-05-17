@@ -281,16 +281,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let y1;
       let x2;
       let y2;
+      const portPos = this.__getLinkPoint(node, port);
       // FIXME:
       const navBarHeight = 50;
       if (port.isInput) {
         x1 = pointerEvent.getViewportLeft();
         y1 = pointerEvent.getViewportTop() - navBarHeight;
-        x2 = node.getBounds().left;
-        y2 = node.getBounds().top + 50;
+        x2 = portPos[0];
+        y2 = portPos[1];
       } else {
-        x1 = node.getBounds().left + node.getBounds().width;
-        y1 = node.getBounds().top + 50;
+        x1 = portPos[0];
+        y1 = portPos[1];
         x2 = pointerEvent.getViewportLeft();
         y2 = pointerEvent.getViewportTop() - navBarHeight;
       }
@@ -336,18 +337,21 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__tempLinkPortId = null;
     },
 
-    __getLinkPoints: function(node1, port1, node2, port2) {
-      const node1Pos = node1.getBounds();
-      const node2Pos = node2.getBounds();
-      const port1Idx = node1.getPortIndex(port1.portId);
-      const port2Idx = node2.getPortIndex(port2.portId);
+    __getLinkPoint: function(node, port) {
+      const nodeBounds = node.getBounds();
+      const portIdx = node.getPortIndex(port.portId);
+      let x = nodeBounds.left;
+      let y = nodeBounds.top + 4 + 33 + 10 + 16/2 + (16+5)*portIdx;
+      if (port.isInput === false) {
+        x += nodeBounds.width;
+      }
+      return [x, y];
+    },
 
-      const x1 = node1Pos.left + node1Pos.width;
-      // spacing + title + spacing + halfHeight + (height+spacing)*idx
-      const y1 = node1Pos.top + 4 + 33 + 10 + 16/2 + (16+5)*port1Idx;
-      const x2 = node2Pos.left;
-      const y2 = node2Pos.top + 4 + 33 + 10 + 16/2 + (16+5)*port2Idx;
-      return [[x1, y1], [x2, y2]];
+    __getLinkPoints: function(node1, port1, node2, port2) {
+      let p1 = this.__getLinkPoint(node1, port1);
+      let p2 = this.__getLinkPoint(node2, port2);
+      return [p1, p2];
     },
 
     __getNode: function(id) {
