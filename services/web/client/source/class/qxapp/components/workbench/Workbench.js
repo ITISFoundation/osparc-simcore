@@ -153,8 +153,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           let link = this.__getLink(linkId);
           if (link) {
             let node1 = this.__getNode(link.getInputNodeId());
+            let port1 = node1.getPort(link.getInputPortId());
             let node2 = this.__getNode(link.getOutputNodeId());
-            const pointList = this.__getLinkPoints(node1, node2);
+            let port2 = node2.getPort(link.getOutputPortId());
+            const pointList = this.__getLinkPoints(node1, port1, node2, port2);
             const x1 = pointList[0][0];
             const y1 = pointList[0][1];
             const x2 = pointList[1][0];
@@ -174,7 +176,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (nNodes > 1) {
         // force rendering to get the node's updated position
         qx.ui.core.queue.Layout.flush();
-        this.__addLink(this.__nodes[nNodes-2], this.__nodes[nNodes-1]);
+        let node1 = this.__nodes[nNodes-2];
+        let port1 = node1.getOutputPorts()[0];
+        let node2 = this.__nodes[nNodes-1];
+        let port2 = node2.getInputPorts()[0];
+        if (port1 !== undefined && port2 !== undefined) {
+          this.__addLink(node1, port1, node2, port2);
+        }
       }
     },
 
@@ -230,8 +238,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return nodeBase;
     },
 
-    __addLink: function(node1, node2) {
-      const pointList = this.__getLinkPoints(node1, node2);
+    __addLink: function(node1, port1, node2, port2, linkId) {
+      const pointList = this.__getLinkPoints(node1, port1, node2, port2);
       const x1 = pointList[0][0];
       const y1 = pointList[0][1];
       const x2 = pointList[1][0];
@@ -239,14 +247,21 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
       let linkBase = new qxapp.components.workbench.LinkBase(linkRepresentation);
       linkBase.setInputNodeId(node1.getNodeId());
+      linkBase.setInputPortId(port1.portId);
       linkBase.setOutputNodeId(node2.getNodeId());
+      linkBase.setOutputPortId(port2.portId);
+      if (linkId !== undefined) {
+        linkBase.setLinkId(linkId);
+      }
       node1.addOutputLinkID(linkBase.getLinkId());
       node2.addInputLinkID(linkBase.getLinkId());
       this.__links.push(linkBase);
 
       linkBase.getRepresentation().node.addEventListener("click", function(e) {
-
+        console.log("Link selected", e.getData(e));
       });
+
+      return linkBase;
     },
 
     __startTempLink: function(pointerEvent) {
@@ -291,25 +306,25 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (this.__tempLinkNodeId === null || this.__tempLinkPortId === null) {
         return;
       }
-      let nodeA = this.__getNode(this.__tempLinkNodeId);
-      if (nodeA === null) {
+      let node1 = this.__getNode(this.__tempLinkNodeId);
+      if (node1 === null) {
         return;
       }
-      let portA = nodeA.getPort(this.__tempLinkPortId);
-      if (portA === null) {
+      let port1 = node1.getPort(this.__tempLinkPortId);
+      if (port1 === null) {
         return;
       }
-      let nodeB = this.__getNode(nodeId);
-      if (nodeB === null) {
+      let node2 = this.__getNode(nodeId);
+      if (node2 === null) {
         return;
       }
-      let portB = nodeB.getPort(portId);
-      if (portB === null) {
+      let port2 = node2.getPort(portId);
+      if (port2 === null) {
         return;
       }
 
       this.__removeTempLink();
-      this.__addLink(nodeA, nodeB);
+      this.__addLink(node1, port1, node2, port2);
     },
 
     __removeTempLink: function() {
@@ -321,14 +336,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__tempLinkPortId = null;
     },
 
-    __getLinkPoints: function(node1, node2) {
+    __getLinkPoints: function(node1, port1, node2, port2) {
       const node1Pos = node1.getBounds();
       const node2Pos = node2.getBounds();
+      const port1Idx = node1.getPortIndex(port1.portId);
+      const port2Idx = node2.getPortIndex(port2.portId);
 
       const x1 = node1Pos.left + node1Pos.width;
-      const y1 = node1Pos.top + 50;
+      // spacing + title + spacing + halfHeight + (height+spacing)*idx
+      const y1 = node1Pos.top + 4 + 33 + 10 + 16/2 + (16+5)*port1Idx;
       const x2 = node2Pos.left;
-      const y2 = node2Pos.top + 50;
+      const y2 = node2Pos.top + 4 + 33 + 10 + 16/2 + (16+5)*port2Idx;
       return [[x1, y1], [x2, y2]];
     },
 
@@ -389,6 +407,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         pipeline[nodeId].children = [];
         for (let j = 0; j < this.__links.length; j++) {
           if (nodeId === this.__links[j].getInputNodeId()) {
+            // TODO: add portID
             pipeline[nodeId].children.push(this.__links[j].getOutputNodeId());
           }
         }
@@ -409,35 +428,33 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __deserializeData: function() {
-      console.log("__myData", this.__myData);
-
       this.removeAll();
       if (this.__myData === null) {
         return;
       }
 
       // add nodes
-      for (let i = 0; i < this.__myData.length; i++) {
-        let nodeItem = this.__createNode(this.__myData[i]);
-        nodeItem.setNodeId(this.__myData[i].uuid);
-        if (Object.prototype.hasOwnProperty.call(this.__myData[i], "position")) {
-          this.__addNodeToWorkbench(nodeItem, this.__myData[i].position);
+      let nodes = this.__myData.nodes;
+      for (let i = 0; i < nodes.length; i++) {
+        let nodeUi = this.__createNode(nodes[i]);
+        nodeUi.setNodeId(nodes[i].uuid);
+        if (Object.prototype.hasOwnProperty.call(nodes[i], "position")) {
+          this.__addNodeToWorkbench(nodeUi, nodes[i].position);
         } else {
-          this.__addNodeToWorkbench(nodeItem);
+          this.__addNodeToWorkbench(nodeUi);
         }
       }
 
       qx.ui.core.queue.Layout.flush();
 
       // add links
-      for (let i = 0; i < this.__myData.length; i++) {
-        if (this.__myData[i].children.length > 0) {
-          let node1 = this.__getNode(this.__myData[i].uuid);
-          for (let j = 0; j < this.__myData[i].children.length; j++) {
-            let node2 = this.__getNode(this.__myData[i].children[j]);
-            this.__addLink(node1, node2);
-          }
-        }
+      let links = this.__myData.links;
+      for (let i = 0; i < links.length; i++) {
+        let node1 = this.__getNode(links[i].node1Id);
+        let port1 = node1.getPort(links[i].port1Id);
+        let node2 = this.__getNode(links[i].node2Id);
+        let port2 = node2.getPort(links[i].port2Id);
+        this.__addLink(node1, port1, node2, port2, links[i].linkId);
       }
     },
 

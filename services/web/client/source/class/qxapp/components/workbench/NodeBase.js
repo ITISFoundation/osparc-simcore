@@ -1,5 +1,3 @@
-/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true, "allow": ["__widgetChildren"] }] */
-
 qx.Class.define("qxapp.components.workbench.NodeBase", {
   extend: qx.ui.window.Window,
 
@@ -45,6 +43,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     progressLayout.add(this.__progressLabel);
     this.add(progressLayout);
 
+    this.__inputPorts = [];
+    this.__outputPorts = [];
+    this.__inputLinkIDs = [];
+    this.__outputLinkIDs = [];
     this.setNodeId(qxapp.utils.Utils.uuidv4());
   },
 
@@ -63,24 +65,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       apply : "__applyMetadata"
     },
 
-    inputPorts: {
-      check: "Array",
-      init: [],
-      nullable: false
-    },
-
-    outputPorts: {
-      check: "Array",
-      init: [],
-      nullable: false
-    },
-
-    inputLinkIDs: {
-      check: "Array",
-      init: [],
-      nullable: false
-    },
-
     outputLinkIDs: {
       check: "Array",
       init: [],
@@ -94,9 +78,29 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
   },
 
   members: {
+    __inputPorts: null,
+    __outputPorts: null,
+    __inputLinkIDs: null,
+    __outputLinkIDs: null,
     __inputPortsUI: null,
     __outputPortsUI: null,
     __progressLabel: null,
+
+    getInputPorts: function() {
+      return this.__inputPorts;
+    },
+
+    getOutputPorts: function() {
+      return this.__outputPorts;
+    },
+
+    getInputLinkIDs: function() {
+      return this.__inputLinkIDs;
+    },
+
+    getOutputLinkIDs: function() {
+      return this.__outputLinkIDs;
+    },
 
     __applyMetadata: function(value, old) {
       if (value != undefined) {
@@ -138,6 +142,22 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return null;
     },
 
+    getPortIndex: function(portId) {
+      const nInPorts = this.getInputPorts().length;
+      for (let i = 0; i < nInPorts; i++) {
+        if (this.getInputPorts()[i].portId === portId) {
+          return i;
+        }
+      }
+      const nOutPorts = this.getOutputPorts().length;
+      for (let i = 0; i < nOutPorts; i++) {
+        if (this.getOutputPorts()[i].portId === portId) {
+          return i;
+        }
+      }
+      return 0;
+    },
+
     setInputs: function(inputs) {
       for (let inputData of inputs) {
         let label = this.__createPort(true, inputData);
@@ -163,6 +183,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       label.portType = portData.portType;
 
       label.ui = new qx.ui.basic.Label(portData.name);
+      label.ui.setHeight(16);
       label.ui.setDraggable(true);
       label.ui.setDroppable(true);
       label.ui.addListener("dragstart", function(e) {
