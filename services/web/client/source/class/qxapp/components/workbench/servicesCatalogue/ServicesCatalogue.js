@@ -30,11 +30,11 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     });
     this.add(searchLayout);
 
-    let rawData = qxapp.data.Fake.getServices();
+    this.__allServices = qxapp.data.Fake.getServices();
     // TODO: OM & PC replace this with delegates
     let rawData2 = [];
-    for (let i = 0; i < rawData.length; i++) {
-      rawData2.push(rawData[i].name);
+    for (let i = 0; i < this.__allServices.length; i++) {
+      rawData2.push(this.__allServices[i].name);
     }
     this.__rawData = new qx.data.Array(rawData2);
 
@@ -78,7 +78,12 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     this.add(buttonsLayout);
   },
 
+  events: {
+    "AddService": "qx.event.type.Data"
+  },
+
   members: {
+    __allServices: null,
     __rawData: null,
     __list: null,
     __controller: null,
@@ -90,7 +95,24 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     },
 
     __updateCompatibleList: function() {
-      let newData = ["Guau"];
+      let newData = [];
+      for (let i = 0; i < this.__allServices.length; i++) {
+        if (this.__contextPort.isInput === true) {
+          for (let j = 0; j < this.__allServices[i].outputs.length; j++) {
+            if (this.__allServices[i].outputs[j].type === this.__contextPort.portType) {
+              newData.push(this.__allServices[i].name);
+              break;
+            }
+          }
+        } else {
+          for (let j = 0; j < this.__allServices[i].inputs.length; j++) {
+            if (this.__allServices[i].inputs[j].type === this.__contextPort.portType) {
+              newData.push(this.__allServices[i].name);
+              break;
+            }
+          }
+        }
+      }
       this.__setNewData(newData);
     },
 
@@ -100,7 +122,13 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     },
 
     __onAddService: function() {
-      console.log(this.__list.getSelection());
+      let selection = this.__list.getSelection()[0].getLabel();
+      for (let i = 0; i < this.__allServices.length; i++) {
+        if (selection === this.__allServices[i].name) {
+          this.fireDataEvent("AddService", [this.__allServices[i], this.__contextPort]);
+        }
+      }
+      this.close();
     },
 
     __onCancel: function() {

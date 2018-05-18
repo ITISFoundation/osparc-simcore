@@ -63,6 +63,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
       srvCat.moveTo(x, y);
       srvCat.open();
+      srvCat.addListener("AddService", function(e) {
+        this.__addServiceFromCatalogue(e, [x, y]);
+      }, this);
     }, this);
   },
 
@@ -90,6 +93,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
         srvCat.moveTo(200, 200);
         srvCat.open();
+        srvCat.addListener("AddService", function(e) {
+          this.__addServiceFromCatalogue(e);
+        }, this);
       }, this);
       return plusButton;
     },
@@ -134,6 +140,24 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return playButton;
     },
 
+    __addServiceFromCatalogue: function(e, pos) {
+      let newNode = e.getData()[0];
+      let portA = e.getData()[1];
+
+      let nodeB = this.__createNode(newNode);
+      this.__addNodeToWorkbench(nodeB);
+
+      if (portA !== null) {
+        let nodeA = this.__getNodeWithPort(portA.portId);
+        let portB = this.__findCompatiblePort(nodeB, portA);
+        this.__addLink(nodeA, portA, nodeB, portB);
+      }
+
+      if (pos !== null && pos !== undefined) {
+        nodeB.moveTo(pos[0], pos[1]);
+      }
+    },
+
     __createMenuFromList: function(nodesList) {
       let buttonsListMenu = new qx.ui.menu.Menu();
 
@@ -143,7 +167,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         nodeButton.addListener("execute", function() {
           let nodeItem = this.__createNode(node);
           this.__addNodeToWorkbench(nodeItem);
-          // this.__createLinkToLastNode();
         }, this);
 
         buttonsListMenu.add(nodeButton);
@@ -203,23 +226,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         this.fireDataEvent("NodeDoubleClicked", node);
         e.stopPropagation();
       }, this);
+
+      qx.ui.core.queue.Layout.flush();
     },
-    /*
-    __createLinkToLastNode: function() {
-      let nNodes = this.__nodes.length;
-      if (nNodes > 1) {
-        // force rendering to get the node's updated position
-        qx.ui.core.queue.Layout.flush();
-        let node1 = this.__nodes[nNodes-2];
-        let port1 = node1.getOutputPorts()[0];
-        let node2 = this.__nodes[nNodes-1];
-        let port2 = node2.getInputPorts()[0];
-        if (port1 !== undefined && port2 !== undefined) {
-          this.__addLink(node1, port1, node2, port2);
-        }
-      }
-    },
-    */
+
     __createNode: function(node) {
       let nodeBase = new qxapp.components.workbench.NodeBase();
       nodeBase.setMetadata(node);
@@ -247,9 +257,20 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
 
       const evType = "pointermove";
-      nodeBase.addListener("StartTempConn", function(e) {
-        this.__tempLinkNodeId = e.getData()[0];
-        this.__tempLinkPortId = e.getData()[1];
+      nodeBase.addListener("LinkDragStart", function(e) {
+        let event = e.getData()[0];
+        let nodeA = e.getData()[1];
+        let portA = e.getData()[2];
+
+        // Register supported actions
+        event.addAction("move");
+
+        // Register supported types
+        event.addType("osparc-metadata");
+        event.addData("osparc-metadata", this.__getNode(nodeA).getPort(portA));
+
+        this.__tempLinkNodeId = nodeA;
+        this.__tempLinkPortId = portA;
         qx.bom.Element.addListener(
           this.__desktop,
           evType,
@@ -257,11 +278,49 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           this
         );
       }, this);
-      nodeBase.addListener("EndTempConn", function(e) {
-        let nodeId = e.getData()[0];
-        let portId = e.getData()[1];
-        if (nodeId !== null && portId !== null) {
-          this.__endTempLink(nodeId, portId);
+
+      nodeBase.addListener("LinkDragOver", function(e) {
+        let event = e.getData()[0];
+        let nodeB = e.getData()[1];
+        let portB = e.getData()[2];
+
+        if (this.__isDragCompatible(event, nodeB, portB) === false) {
+          event.preventDefault();
+        }
+      }, this);
+
+      nodeBase.addListener("LinkDrop", function(e) {
+        // let event = e.getData()[0];
+        let nodeB = e.getData()[1];
+        let portB = e.getData()[2];
+
+        this.__endTempLink(nodeB, portB);
+        this.__removeTempLink();
+        qx.bom.Element.removeListener(
+          this.__desktop,
+          evType,
+          this.__startTempLink,
+          this
+        );
+      }, this);
+
+      nodeBase.addListener("LinkDragEnd", function(e) {
+        let event = e.getData()[0];
+        let nodeA = e.getData()[1];
+        let portA = e.getData()[2];
+
+        console.log(event);
+        console.log(nodeA);
+        console.log(portA);
+
+        if (this.__tempLinkNodeId !== null && this.__tempLinkPortId !== null) {
+          let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
+          srvCat.setContextPort(this.__getNode(this.__tempLinkNodeId).getPort(this.__tempLinkPortId));
+          srvCat.moveTo(200, 200);
+          srvCat.open();
+          srvCat.addListener("AddService", function(ev) {
+            this.__addServiceFromCatalogue(ev);
+          }, this);
         }
         this.__removeTempLink();
         qx.bom.Element.removeListener(
@@ -273,6 +332,36 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       return nodeBase;
+    },
+
+    __isDragCompatible: function(e, nodeId, portId) {
+      let compatible = false;
+      if (e.supportsType("osparc-metadata")) {
+        let dragTarget = e.getData("osparc-metadata");
+        let dragType = dragTarget.portType;
+        let dropType = this.__getNode(nodeId).getPort(portId).portType;
+        compatible = (dragType === dropType);
+      }
+      return compatible;
+    },
+
+    __findCompatiblePort: function(nodeB, portA) {
+      if (portA.isInput) {
+        let portsB = nodeB.getOutputPorts();
+        for (let i = 0; i < portsB.length; i++) {
+          if (portA.portType === portsB[i].portType) {
+            return portsB[i];
+          }
+        }
+      } else {
+        let portsB = nodeB.getInputPorts();
+        for (let i = 0; i < portsB.length; i++) {
+          if (portA.portType === portsB[i].portType) {
+            return portsB[i];
+          }
+        }
+      }
+      return null;
     },
 
     __addLink: function(node1, port1, node2, port2, linkId) {
@@ -385,14 +474,30 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __getLinkPoints: function(node1, port1, node2, port2) {
-      let p1 = this.__getLinkPoint(node1, port1);
-      let p2 = this.__getLinkPoint(node2, port2);
+      let p1 = null;
+      let p2 = null;
+      if (port2.isInput) {
+        p1 = this.__getLinkPoint(node1, port1);
+        p2 = this.__getLinkPoint(node2, port2);
+      } else {
+        p1 = this.__getLinkPoint(node2, port2);
+        p2 = this.__getLinkPoint(node1, port1);
+      }
       return [p1, p2];
     },
 
     __getNode: function(id) {
       for (let i = 0; i < this.__nodes.length; i++) {
         if (this.__nodes[i].getNodeId() === id) {
+          return this.__nodes[i];
+        }
+      }
+      return null;
+    },
+
+    __getNodeWithPort: function(portId) {
+      for (let i = 0; i < this.__nodes.length; i++) {
+        if (this.__nodes[i].getPort(portId) !== null) {
           return this.__nodes[i];
         }
       }
@@ -484,8 +589,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           this.__addNodeToWorkbench(nodeUi);
         }
       }
-
-      qx.ui.core.queue.Layout.flush();
 
       // add links
       let links = this.__myData.links;

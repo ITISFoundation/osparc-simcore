@@ -73,8 +73,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
   },
 
   events: {
-    "StartTempConn": "qx.event.type.Data",
-    "EndTempConn": "qx.event.type.Data"
+    "LinkDragStart": "qx.event.type.Data",
+    "LinkDragOver": "qx.event.type.Data",
+    "LinkDrop": "qx.event.type.Data",
+    "LinkDragEnd": "qx.event.type.Data"
   },
 
   members: {
@@ -187,20 +189,17 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       label.ui.setDraggable(true);
       label.ui.setDroppable(true);
       label.ui.addListener("dragstart", function(e) {
-        this.__handleDragStart(e, this.getNodeId(), label.portId);
-      }, this);
-      label.ui.addListener("droprequest", function(e) {
-        this.__handleDropRequest(e);
+        this.fireDataEvent("LinkDragStart", [e, this.getNodeId(), label.portId]);
       }, this);
       label.ui.addListener("dragover", function(e) {
-        this.__handleDragOver(e, this.getNodeId(), label.portId);
+        this.fireDataEvent("LinkDragOver", [e, this.getNodeId(), label.portId]);
       }, this);
       label.ui.addListener("drop", function(e) {
-        this.__handleDrop(e, this.getNodeId(), label.portId);
+        this.fireDataEvent("LinkDrop", [e, this.getNodeId(), label.portId]);
       }, this);
       label.ui.addListener("dragend", function(e) {
-        this.fireDataEvent("EndTempConn", [null, null]);
-      }, this);
+        this.fireDataEvent("LinkDragEnd", [e, this.getNodeId(), label.portId]);
+      }, this, true);
       return label;
     },
 
@@ -210,61 +209,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     addOutputLinkID: function(linkID) {
       this.getOutputLinkIDs().push(linkID);
-    },
-
-    __handleDragStart: function(e, nodeId, portId) {
-      console.log("dragstart", e, nodeId, portId);
-
-      // Register supported actions
-      e.addAction("move");
-
-      // Register supported types
-      e.addType("osparc-metadata");
-      e.addData("osparc-metadata", this.getPort(portId));
-
-      this.fireDataEvent("StartTempConn", [nodeId, portId]);
-    },
-
-    __handleDropRequest: function(e) {
-      console.log("droprequest", e);
-      /*
-      let type = e.getCurrentType();
-      let action = e.getCurrentAction();
-      let dragTarget = e.getDragTarget();
-      if (type === "osparc-metadata") {
-        if (action === "move") {
-          let result = dragTarget.portType;
-          e.addData(type, result);
-        }
-      }
-      */
-    },
-
-    __handleDragOver: function(e, nodeId, portId) {
-      console.log("dragover", e, nodeId, portId);
-
-      if (this.__isCompatible(e, nodeId, portId) === false) {
-        e.preventDefault();
-      }
-    },
-
-    __handleDrop: function(e, nodeId, portId) {
-      console.log("drop", e, nodeId, portId);
-
-      if (e.supportsType("osparc-metadata")) {
-        this.fireDataEvent("EndTempConn", [nodeId, portId]);
-      }
-    },
-
-    __isCompatible: function(e, nodeId, portId) {
-      let compatible = false;
-      if (e.supportsType("osparc-metadata")) {
-        let dragTarget = e.getData("osparc-metadata");
-        let dragType = dragTarget.portType;
-        let dropType = this.getPort(portId).portType;
-        compatible = (dragType === dropType);
-      }
-      return compatible;
     }
   }
 });
