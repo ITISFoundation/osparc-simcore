@@ -220,7 +220,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
       // Register supported types
       e.addType("osparc-metadata");
-      e.addData("osparc-metadata", this.getPort(portId).portType);
+      e.addData("osparc-metadata", this.getPort(portId));
 
       this.fireDataEvent("StartTempConn", [nodeId, portId]);
     },
@@ -259,15 +259,11 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     __isCompatible: function(e, nodeId, portId) {
       let compatible = false;
       if (e.supportsType("osparc-metadata")) {
-        // Very Hacky. It's just the concept
+        let dragTarget = e.getData("osparc-metadata");
+        let dragType = dragTarget.portType;
         let dropType = this.getPort(portId).portType;
-        dropType = dropType.charAt(0).toUpperCase() + dropType.slice(1);
-        let dragTarget = e.getDragTarget();
-        // let dragType = dragTarget.portType;
-        let dragType = dragTarget.getValue();
         compatible = (dragType === dropType);
       }
-      console.log(compatible);
       return compatible;
     }
   }
