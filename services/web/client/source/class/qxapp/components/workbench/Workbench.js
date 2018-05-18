@@ -47,18 +47,22 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       right: 20,
       bottom: 20
     });
-    plusButton.addListener("execute", function() {
-      plusButton.setMenu(this.__getMatchingServicesMenu());
-    }, this);
 
     let playButton = this.__getPlayButton();
     this.add(playButton, {
       right: 50+20+20,
       bottom: 20
     });
-    playButton.addListener("execute", function() {
-      let pipelineDataStructure = this.__serializeData();
-      console.log(pipelineDataStructure);
+
+    this.addListener("dblclick", function(pointerEvent) {
+      // FIXME:
+      const navBarHeight = 50;
+      let x = pointerEvent.getViewportLeft() - this.getBounds().left;
+      let y = pointerEvent.getViewportTop() - navBarHeight;
+
+      let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
+      srvCat.moveTo(x, y);
+      srvCat.open();
     }, this);
   },
 
@@ -77,11 +81,29 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __getPlusButton: function() {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
+      let plusButton = new qx.ui.form.Button(null, icon);
+      plusButton.set({
+        width: 50,
+        height: 50
+      });
+      plusButton.addListener("execute", function() {
+        let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
+        srvCat.moveTo(200, 200);
+        srvCat.open();
+      }, this);
+      return plusButton;
+    },
+
+    __getPlusMenuButton: function() {
+      const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
       let plusButton = new qx.ui.form.MenuButton(null, icon, this.__getMatchingServicesMenu());
       plusButton.set({
         width: 50,
         height: 50
       });
+      plusButton.addListener("execute", function() {
+        plusButton.setMenu(this.__getMatchingServicesMenu());
+      }, this);
       return plusButton;
     },
 
@@ -105,6 +127,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         width: 50,
         height: 50
       });
+      playButton.addListener("execute", function() {
+        let pipelineDataStructure = this.__serializeData();
+        console.log(pipelineDataStructure);
+      }, this);
       return playButton;
     },
 
@@ -175,6 +201,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       node.addListener("dblclick", function(e) {
         this.fireDataEvent("NodeDoubleClicked", node);
+        e.stopPropagation();
       }, this);
     },
     /*
@@ -295,14 +322,14 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       // FIXME:
       const navBarHeight = 50;
       if (port.isInput) {
-        x1 = pointerEvent.getViewportLeft();
+        x1 = pointerEvent.getViewportLeft() - this.getBounds().left;
         y1 = pointerEvent.getViewportTop() - navBarHeight;
         x2 = portPos[0];
         y2 = portPos[1];
       } else {
         x1 = portPos[0];
         y1 = portPos[1];
-        x2 = pointerEvent.getViewportLeft();
+        x2 = pointerEvent.getViewportLeft() - this.getBounds().left;
         y2 = pointerEvent.getViewportTop() - navBarHeight;
       }
 
