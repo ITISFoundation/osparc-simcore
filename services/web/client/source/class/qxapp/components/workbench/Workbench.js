@@ -81,6 +81,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __tempLinkNodeId: null,
     __tempLinkPortId: null,
     __tempLinkRepr: null,
+    __pointerPosX: null,
+    __pointerPosY: null,
 
     __getPlusButton: function() {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
@@ -305,21 +307,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       nodeBase.addListener("LinkDragEnd", function(e) {
-        let event = e.getData()[0];
-        let nodeA = e.getData()[1];
-        let portA = e.getData()[2];
-
-        console.log(event);
-        console.log(nodeA);
-        console.log(portA);
-
+        let posX = this.__pointerPosX;
+        let posY = this.__pointerPosY;
         if (this.__tempLinkNodeId !== null && this.__tempLinkPortId !== null) {
           let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
           srvCat.setContextPort(this.__getNode(this.__tempLinkNodeId).getPort(this.__tempLinkPortId));
-          srvCat.moveTo(200, 200);
+          srvCat.moveTo(posX, posY);
           srvCat.open();
           srvCat.addListener("AddService", function(ev) {
-            this.__addServiceFromCatalogue(ev);
+            this.__addServiceFromCatalogue(ev, [posX, posY]);
           }, this);
         }
         this.__removeTempLink();
@@ -410,16 +406,19 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       const portPos = this.__getLinkPoint(node, port);
       // FIXME:
       const navBarHeight = 50;
+      this.__pointerPosX = pointerEvent.getViewportLeft() - this.getBounds().left;
+      this.__pointerPosY = pointerEvent.getViewportTop() - navBarHeight;
+
       if (port.isInput) {
-        x1 = pointerEvent.getViewportLeft() - this.getBounds().left;
-        y1 = pointerEvent.getViewportTop() - navBarHeight;
+        x1 = this.__pointerPosX;
+        y1 = this.__pointerPosY;
         x2 = portPos[0];
         y2 = portPos[1];
       } else {
         x1 = portPos[0];
         y1 = portPos[1];
-        x2 = pointerEvent.getViewportLeft() - this.getBounds().left;
-        y2 = pointerEvent.getViewportTop() - navBarHeight;
+        x2 = this.__pointerPosX;
+        y2 = this.__pointerPosY;
       }
 
       if (this.__tempLinkRepr === null) {
@@ -460,6 +459,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__tempLinkRepr = null;
       this.__tempLinkNodeId = null;
       this.__tempLinkPortId = null;
+      this.__pointerPosX = null;
+      this.__pointerPosY = null;
     },
 
     __getLinkPoint: function(node, port) {
