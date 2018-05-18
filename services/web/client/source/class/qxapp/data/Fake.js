@@ -375,6 +375,14 @@ qx.Class.define("qxapp.data.Fake", {
       return temp2Data;
     },
 
+    getServices: function() {
+      let availableServices = [];
+      Array.prototype.push.apply(availableServices, qxapp.data.Fake.getProducers());
+      Array.prototype.push.apply(availableServices, qxapp.data.Fake.getComputationals());
+      Array.prototype.push.apply(availableServices, qxapp.data.Fake.getAnalyses());
+      return availableServices;
+    },
+
     getProducers: function() {
       const producers = [{
         "id": "modeler",
