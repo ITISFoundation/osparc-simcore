@@ -9,7 +9,7 @@
 
 ```bash
   git clone git@github.com:ITISFoundation/osparc-simcore.git
-  cd ospacr-simcore
+  cd osparc-simcore
 
   # build service images
   make build
