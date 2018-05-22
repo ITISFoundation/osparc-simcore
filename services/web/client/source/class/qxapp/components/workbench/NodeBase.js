@@ -36,12 +36,25 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       width: "50%"
     });
 
-    let progressBox = new qx.ui.layout.HBox(5);
-    progressBox.setAlignX("center");
-    let progressLayout = new qx.ui.container.Composite(progressBox);
+
+    var progressBox = new qx.ui.container.Composite(new qx.ui.layout.Basic());
+    progressBox.setMinWidth(160);
+
+    this.__progressBar = new qx.ui.indicator.ProgressBar();
+    this.__progressBar.setWidth(160);
+    progressBox.add(this.__progressBar, {
+      top: 0,
+      left: 0
+    });
+
     this.__progressLabel = new qx.ui.basic.Label("0%");
-    progressLayout.add(this.__progressLabel);
-    this.add(progressLayout);
+    progressBox.add(this.__progressLabel, {
+      top: 3,
+      left: 70
+    });
+
+    this.add(progressBox);
+
 
     this.__inputPorts = [];
     this.__outputPorts = [];
@@ -87,6 +100,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     __inputPortsUI: null,
     __outputPortsUI: null,
     __progressLabel: null,
+    __progressBar: null,
 
     getInputPorts: function() {
       return this.__inputPorts;
@@ -209,6 +223,11 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     addOutputLinkID: function(linkID) {
       this.getOutputLinkIDs().push(linkID);
+    },
+
+    setProgress: function(progress) {
+      this.__progressLabel.setValue(progress + "%");
+      this.__progressBar.setValue(progress);
     }
   }
 });
