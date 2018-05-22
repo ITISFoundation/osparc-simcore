@@ -412,20 +412,20 @@ qx.Class.define("qxapp.data.Fake", {
         "name": "File Reader",
         "inputs": [],
         "outputs": [{
-          "name": "File-link",
-          "type": "file-link",
+          "name": "File-url",
+          "type": "file-url",
           "value": ""
         }],
         "settings": [{
-          "name": "number",
-          "text": "Number",
-          "type": "number",
-          "value": 0
-        }, {
           "name": "file",
           "text": "File",
-          "type": "number",
-          "value": 0
+          "type": "file",
+          "value": ""
+        }, {
+          "name": "text",
+          "text": "File type",
+          "type": "text",
+          "value": ""
         }]
       }, {
         "id": "NumberGeneratorID",
@@ -451,12 +451,12 @@ qx.Class.define("qxapp.data.Fake", {
         "id": "ColleenClancy",
         "name": "Colleen Clancy - dummy",
         "inputs": [{
-          "name": "File-link",
-          "type": "file-link",
+          "name": "File-url",
+          "type": "file-url",
           "value": ""
         }, {
-          "name": "File-link",
-          "type": "file-link",
+          "name": "File-url",
+          "type": "file-url",
           "value": ""
         }],
         "outputs": [{
