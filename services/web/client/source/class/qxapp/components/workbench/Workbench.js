@@ -44,13 +44,19 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     let plusButton = this.__getPlusMenuButton();
     this.add(plusButton, {
-      right: 20,
+      right: 2*(50+10) + 20,
+      bottom: 20
+    });
+
+    let removeButton = this.__getRemoveButton();
+    this.add(removeButton, {
+      right: 1*(50+10) + 20,
       bottom: 20
     });
 
     let playButton = this.__getPlayButton();
     this.add(playButton, {
-      right: 50+20+20,
+      right: 0*(50+10) + 20,
       bottom: 20
     });
 
@@ -142,6 +148,19 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return playButton;
     },
 
+    __getRemoveButton: function() {
+      const icon = "@FontAwesome5Solid/trash/32";
+      let removeButton = new qx.ui.form.Button(null, icon);
+      removeButton.set({
+        width: 50,
+        height: 50
+      });
+      removeButton.addListener("execute", function() {
+        this.__removeSelectedNode();
+      }, this);
+      return removeButton;
+    },
+
     __addServiceFromCatalogue: function(e, pos) {
       let newNode = e.getData()[0];
       let portA = e.getData()[1];
@@ -188,13 +207,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           }
         }
         node.moveTo(50 + farthestRight, 200);
-        this.__desktop.add(node);
-        node.open();
+        this.addWindowToDesktop(node);
         this.__nodes.push(node);
       } else {
         node.moveTo(position.x, position.y);
-        this.__desktop.add(node);
-        node.open();
+        this.addWindowToDesktop(node);
         this.__nodes.push(node);
       }
 
@@ -328,6 +345,20 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       return nodeBase;
+    },
+
+    __removeSelectedNode: function() {
+      console.log(this.__desktop.getActiveWindow());
+      for (let i=0; i<this.__nodes.length; i++) {
+        if (this.__desktop.getActiveWindow() === this.__nodes[i]) {
+          let connectedLinks = this.__getConnectedLinks(this.__nodes[i].getNodeId());
+          for (let j=0; j<connectedLinks.length; j++) {
+            this.__removeLink(this.__getLink(connectedLinks[j]));
+          }
+          this.__removeNode(this.__nodes[i]);
+          return;
+        }
+      }
     },
 
     __isDragCompatible: function(e, nodeId, portId) {
@@ -503,6 +534,19 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         }
       }
       return null;
+    },
+
+    __getConnectedLinks: function(nodeId) {
+      let connectedLinks = [];
+      for (let i = 0; i < this.__links.length; i++) {
+        if (this.__links[i].getInputNodeId() === nodeId) {
+          connectedLinks.push(this.__links[i].getLinkId());
+        }
+        if (this.__links[i].getOutputNodeId() === nodeId) {
+          connectedLinks.push(this.__links[i].getLinkId());
+        }
+      }
+      return connectedLinks;
     },
 
     __getLink: function(id) {
