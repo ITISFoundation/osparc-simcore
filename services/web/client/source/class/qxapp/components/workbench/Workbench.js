@@ -42,7 +42,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     this.__nodes = [];
     this.__links = [];
 
-    let plusButton = this.__getPlusButton();
+    let plusButton = this.__getPlusMenuButton();
     this.add(plusButton, {
       right: 20,
       bottom: 20
@@ -104,18 +104,18 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __getPlusMenuButton: function() {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
-      let plusButton = new qx.ui.form.MenuButton(null, icon, this.__getMatchingServicesMenu());
+      let plusButton = new qx.ui.form.MenuButton(null, icon, this.__getServicesMenu());
       plusButton.set({
         width: 50,
         height: 50
       });
       plusButton.addListener("execute", function() {
-        plusButton.setMenu(this.__getMatchingServicesMenu());
+        plusButton.setMenu(this.__getServicesMenu());
       }, this);
       return plusButton;
     },
 
-    __getMatchingServicesMenu: function() {
+    __getServicesMenu: function() {
       let menuNodeTypes = new qx.ui.menu.Menu();
 
       let producersButton = new qx.ui.menu.Button("Producers", null, null, this.__getProducers());
