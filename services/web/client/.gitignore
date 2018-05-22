@@ -5,4 +5,6 @@
 contrib/
 
 # npm modules
-node_modules/
+node_modules/*
+source/resource/iconfont/fontawesome5
+source/resource/iconfont/material
