@@ -63,6 +63,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__workbench.addWindowToDesktop(viewerWin);
     }, this);
 
+    this.__settingsView.addListener("NodeProgress", function(e) {
+      const nodeId = e.getData()[0];
+      const progress = e.getData()[1];
+      this.__workbench.updateProgress(nodeId, progress);
+    }, this);
+
     this.__workbench.addListener("NodeDoubleClicked", function(e) {
       this.__showSettings(true);
       this.__settingsView.setNodeMetadata(e.getData());
