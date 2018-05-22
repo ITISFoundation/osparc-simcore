@@ -69,8 +69,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
       srvCat.moveTo(x, y);
       srvCat.open();
+      let pos = {
+        x: x,
+        y: y
+      };
       srvCat.addListener("AddService", function(e) {
-        this.__addServiceFromCatalogue(e, [x, y]);
+        this.__addServiceFromCatalogue(e, pos);
       }, this);
     }, this);
   },
@@ -166,16 +170,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let portA = e.getData()[1];
 
       let nodeB = this.__createNode(newNode);
-      this.__addNodeToWorkbench(nodeB);
+      this.__addNodeToWorkbench(nodeB, pos);
 
       if (portA !== null) {
         let nodeA = this.__getNodeWithPort(portA.portId);
         let portB = this.__findCompatiblePort(nodeB, portA);
         this.__addLink(nodeA, portA, nodeB, portB);
-      }
-
-      if (pos !== null && pos !== undefined) {
-        nodeB.moveTo(pos[0], pos[1]);
       }
     },
 
@@ -197,7 +197,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __addNodeToWorkbench: function(node, position) {
-      if (position === undefined) {
+      if (position === undefined || position === null) {
         let farthestRight = 0;
         for (let i=0; i < this.__nodes.length; i++) {
           let boundPos = this.__nodes[i].getBounds();
@@ -215,14 +215,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         this.__nodes.push(node);
       }
 
-      node.addListener("move", function(e) {
-        let linksInvolved = new Set([]);
-        node.getInputLinkIDs().forEach(linkId => {
-          linksInvolved.add(linkId);
-        });
-        node.getOutputLinkIDs().forEach(linkId => {
-          linksInvolved.add(linkId);
-        });
+      node.addListener("NodeMoving", function(e) {
+        let linksInvolved = this.__getConnectedLinks(node.getNodeId());
 
         linksInvolved.forEach(linkId => {
           let link = this.__getLink(linkId);
@@ -331,8 +325,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           srvCat.setContextPort(this.__getNode(this.__tempLinkNodeId).getPort(this.__tempLinkPortId));
           srvCat.moveTo(posX, posY);
           srvCat.open();
+          let pos = {
+            x: posX,
+            y: posY
+          };
           srvCat.addListener("AddService", function(ev) {
-            this.__addServiceFromCatalogue(ev, [posX, posY]);
+            this.__addServiceFromCatalogue(ev, pos);
           }, this);
         }
         this.__removeTempLink();
@@ -495,7 +493,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __getLinkPoint: function(node, port) {
-      const nodeBounds = node.getBounds();
+      const nodeBounds = node.getCurrentBounds();
       const portIdx = node.getPortIndex(port.portId);
       let x = nodeBounds.left;
       let y = nodeBounds.top + 4 + 33 + 10 + 16/2 + (16+5)*portIdx;
@@ -537,6 +535,16 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __getConnectedLinks: function(nodeId) {
+      let linksInvolved = [];
+      const node = this.__getNode(nodeId);
+      node.getInputLinkIDs().forEach(linkId => {
+        linksInvolved.push(linkId);
+      });
+      node.getOutputLinkIDs().forEach(linkId => {
+        linksInvolved.push(linkId);
+      });
+      return linksInvolved;
+      /*
       let connectedLinks = [];
       for (let i = 0; i < this.__links.length; i++) {
         if (this.__links[i].getInputNodeId() === nodeId) {
@@ -547,6 +555,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         }
       }
       return connectedLinks;
+      */
     },
 
     __getLink: function(id) {

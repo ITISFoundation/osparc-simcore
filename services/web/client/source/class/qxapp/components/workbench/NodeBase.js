@@ -89,7 +89,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     "LinkDragStart": "qx.event.type.Data",
     "LinkDragOver": "qx.event.type.Data",
     "LinkDrop": "qx.event.type.Data",
-    "LinkDragEnd": "qx.event.type.Data"
+    "LinkDragEnd": "qx.event.type.Data",
+    "NodeMoving":  "qx.event.type.Data"
   },
 
   members: {
@@ -116,6 +117,27 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     getOutputLinkIDs: function() {
       return this.__outputLinkIDs;
+    },
+
+    // override qx.ui.window.Window "move" event listener
+    _onMovePointerMove: function(e) {
+      this.base(arguments, e);
+      if (e.getPropagationStopped() === true) {
+        this.fireDataEvent("NodeMoving", null);
+      }
+    },
+
+    getCurrentBounds: function() {
+      let bounds = this.getBounds();
+      if (this.getContentElement() && this.getContentElement().getDomElement()) {
+        let domeEle = this.getContentElement().getDomElement();
+        bounds.left = parseInt(domeEle.style.left);
+        bounds.top = parseInt(domeEle.style.top);
+        // NavigationBar hegiht must be subtracted
+        // bounds.left = this.getContentLocation().left;
+        // bounds.top = this.getContentLocation().top;
+      }
+      return bounds;
     },
 
     __applyMetadata: function(value, old) {
