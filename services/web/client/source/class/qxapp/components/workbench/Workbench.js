@@ -602,9 +602,14 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
     },
 
-    addWindowToDesktop(node) {
+    addWindowToDesktop: function(node) {
       this.__desktop.add(node);
       node.open();
+    },
+
+    updateProgress: function(nodeId, progress) {
+      let node = this.__getNode(nodeId);
+      node.setProgress(progress);
     },
 
     __getProducers: function() {
