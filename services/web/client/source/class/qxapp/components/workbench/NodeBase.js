@@ -133,8 +133,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         this.setMetadata(value);
         this.setServiceName(this.getMetadata().name);
         this.setNodeImageId(this.getMetadata().id);
-        this.setInputs(this.getMetadata().inputs);
-        this.setOutputs(this.getMetadata().outputs);
+        this.addInputs(this.getMetadata().inputs);
+        this.addOutputs(this.getMetadata().outputs);
       }
     },
 
@@ -184,14 +184,14 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return 0;
     },
 
-    setInputs: function(inputs) {
+    addInputs: function(inputs) {
       for (let inputData of inputs) {
         let label = this.__createPort(true, inputData);
         this.__addInputPort(label);
       }
     },
 
-    setOutputs: function(outputs) {
+    addOutputs: function(outputs) {
       for (let outputData of outputs) {
         let label = this.__createPort(false, outputData);
         this.__addOutputPort(label);
