@@ -1,5 +1,8 @@
 /* eslint no-warning-comments: "off" */
 
+const BUTTON_SIZE = 50;
+const BUTTON_SPACING = 10;
+
 qx.Class.define("qxapp.components.workbench.Workbench", {
   extend: qx.ui.container.Composite,
 
@@ -44,19 +47,19 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     let plusButton = this.__getPlusMenuButton();
     this.add(plusButton, {
-      right: 2*(50+10) + 20,
+      right: 2*(BUTTON_SIZE+BUTTON_SPACING) + 20,
       bottom: 20
     });
 
     let removeButton = this.__getRemoveButton();
     this.add(removeButton, {
-      right: 1*(50+10) + 20,
+      right: 1*(BUTTON_SIZE+BUTTON_SPACING) + 20,
       bottom: 20
     });
 
     let playButton = this.__getPlayButton();
     this.add(playButton, {
-      right: 0*(50+10) + 20,
+      right: 0*(BUTTON_SIZE+BUTTON_SPACING) + 20,
       bottom: 20
     });
 
@@ -98,8 +101,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
       let plusButton = new qx.ui.form.Button(null, icon);
       plusButton.set({
-        width: 50,
-        height: 50
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE
       });
       plusButton.addListener("execute", function() {
         let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
@@ -116,8 +119,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
       let plusButton = new qx.ui.form.MenuButton(null, icon, this.__getServicesMenu());
       plusButton.set({
-        width: 50,
-        height: 50
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE
       });
       plusButton.addListener("execute", function() {
         plusButton.setMenu(this.__getServicesMenu());
@@ -142,8 +145,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       const icon = "@FontAwesome5Solid/play/32";
       let playButton = new qx.ui.form.Button(null, icon);
       playButton.set({
-        width: 50,
-        height: 50
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE
       });
       playButton.addListener("execute", function() {
         let pipelineDataStructure = this.__serializeData();
@@ -156,8 +159,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       const icon = "@FontAwesome5Solid/trash/32";
       let removeButton = new qx.ui.form.Button(null, icon);
       removeButton.set({
-        width: 50,
-        height: 50
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE
       });
       removeButton.addListener("execute", function() {
         this.__removeSelectedNode();
