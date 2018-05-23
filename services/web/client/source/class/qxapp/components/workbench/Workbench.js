@@ -186,7 +186,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let buttonsListMenu = new qx.ui.menu.Menu();
 
       nodesList.forEach(node => {
-        let nodeButton = new qx.ui.menu.Button(node.name);
+        let nodeButton = new qx.ui.menu.Button(node.label);
 
         nodeButton.addListener("execute", function() {
           let nodeItem = this.__createNode(node);
