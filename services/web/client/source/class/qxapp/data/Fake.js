@@ -232,13 +232,21 @@ qx.Class.define("qxapp.data.Fake", {
           "value": ""
         }],
         "settings": [{
-          "name": "ViPModel",
-          "options": [
-            "Rat",
-            "Sphere"
-          ],
-          "text": "Select ViP Model",
-          "type": "select",
+          "key": "ViPModel",
+          "label": "Select ViP Model",
+          "widget": "selectBox",
+          "cfg": {
+            structure: [
+              {
+                key: "rat",
+                label: "Rat"
+              },
+              {
+                key: "phere",
+                label: "Sphere"
+              }
+            ]
+          },
           "value": 0
         }],
         "viewer": {
@@ -256,10 +264,12 @@ qx.Class.define("qxapp.data.Fake", {
           "value": ""
         }],
         "settings": [{
-          "name": "number",
-          "text": "Number",
-          "type": "number",
-          "value": 0
+          "key": "number",
+          "label": "Number",
+          "widget": "integer",
+          set: {
+            value: 0
+          }
         }]
       }];
       return producers;
@@ -299,50 +309,70 @@ qx.Class.define("qxapp.data.Fake", {
         ],
         "settings": [
           {
-            "name": "NaValue",
-            "text": "Na blocker drug concentration",
-            "type": "number",
+            "key": "NaValue",
+            "label": "Na blocker drug concentration",
+            "widget": "integer",
             "exposed": false,
-            "value": 10
+            "defaultValue": 10
           },
           {
-            "name": "KrValue",
-            "text": "Kr blocker drug concentration",
-            "type": "number",
+            "key": "KrValue",
+            "label": "Kr blocker drug concentration",
+            "widget": "integer",
             "exposed": false,
-            "value": 10
+            "defaultValue": 10
           },
           {
-            "name": "BCLValue",
-            "text": "Basic cycle length (BCL)",
-            "type": "number",
+            "key": "BCLValue",
+            "label": "Basic cycle length (BCL)",
+            "widget": "integer",
             "exposed": false,
-            "value": 10
+            "defaultValue": 10
           },
           {
-            "name": "beatsValue",
-            "text": "Number of beats",
-            "type": "number",
+            "key": "beatsValue",
+            "label": "Number of beats",
+            "widget": "integer",
             "exposed": false,
-            "value": 10
+            "defaultValue": 10
           },
           {
-            "name": "LigandValue",
-            "text": "Ligand concentration",
-            "type": "number",
+            "key": "LigandValue",
+            "label": "Ligand concentration",
+            "widget": "integer",
             "exposed": false,
-            "value": 10
+            "defaultValue": 10
           },
           {
-            "name": "cAMKIIValue",
+            "key": "cAMKIIValue",
             "options": [
               "A",
               "B",
               "C",
               "D"
             ],
-            "text": "Adjust cAMKII activity level",
-            "type": "select",
+            "label": "Adjust cAMKII activity level",
+            "widget": "selectBox",
+            "cfg": {
+              structure: [
+                {
+                  key: "a",
+                  label: "A"
+                },
+                {
+                  key: "b",
+                  label: "B"
+                },
+                {
+                  key: "c",
+                  label: "C"
+                },
+                {
+                  key: "d",
+                  label: "D"
+                }
+              ]
+            },
             "exposed": false,
             "value": 0
           }

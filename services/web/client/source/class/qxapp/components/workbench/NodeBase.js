@@ -58,7 +58,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     },
 
     metadata: {
-      apply : "__applyMetadata"
+      apply : "_applyMetadata"
     },
 
     inputLinkIDs: {
@@ -71,6 +71,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       check: "Array",
       init: [],
       nullable: false
+    },
+
+    settingsWidget: {
+      check: "qxapp.components.form.renderer.NoteForm"
     }
   },
 
@@ -78,23 +82,27 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     __inputPorts: null,
     __outputPorts: null,
     __progressLabel: null,
+    __settingForm: null,
 
-    __applyMetadata: function(value, old) {
-      if (value != undefined) {
-        this.setMetadata(value);
-        this.setServiceName(this.getMetadata().name);
-        this.getMetadata().input.forEach(input => {
+    _applyMetadata: function(metaData, old) {
+      if (metaData != undefined) {
+        this.setMetadata(metaData);
+        this.setServiceName(metaData.name);
+        this.setNodeImageId(metaData.id);
+        let form = this.__settingsForm = new qxapp.components.form.Auto(metaData.settings);
+        this.setSettingsWidget(new qxapp.components.form.renderer.NoteForm(form));
+
+        metaData.input.forEach(input => {
           let label = new qx.ui.basic.Label(input.name);
           label.portId = qxapp.utils.Utils.uuidv4();
           this.__inputPorts.add(label);
         });
-        this.getMetadata().output.forEach(output => {
+
+        metaData.output.forEach(output => {
           let label = new qx.ui.basic.Label(output.name);
           label.portId = qxapp.utils.Utils.uuidv4();
           this.__outputPorts.add(label);
         });
-
-        this.setNodeImageId(this.getMetadata().id);
       }
     },
 
