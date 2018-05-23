@@ -58,7 +58,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     },
 
     metadata: {
-      apply : "_applyMetadata"
+      apply : "__applyMetadata"
     },
 
     inputLinkIDs: {
@@ -74,7 +74,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     },
 
     settingsWidget: {
-      check: "qxapp.components.form.renderer.NoteForm"
+      check: "qxapp.components.form.renderer.PropForm"
     }
   },
 
@@ -84,13 +84,13 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     __progressLabel: null,
     __settingForm: null,
 
-    _applyMetadata: function(metaData, old) {
+    __applyMetadata: function(metaData, old) {
       if (metaData != undefined) {
         this.setMetadata(metaData);
         this.setServiceName(metaData.name);
         this.setNodeImageId(metaData.id);
         let form = this.__settingsForm = new qxapp.components.form.Auto(metaData.settings);
-        this.setSettingsWidget(new qxapp.components.form.renderer.NoteForm(form));
+        this.setSettingsWidget(new qxapp.components.form.renderer.PropForm(form));
 
         metaData.input.forEach(input => {
           let label = new qx.ui.basic.Label(input.name);

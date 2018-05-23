@@ -312,35 +312,35 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "NaValue",
             "label": "Na blocker drug concentration",
             "widget": "integer",
-            "exposed": false,
+            "exposable": true,
             "defaultValue": 10
           },
           {
             "key": "KrValue",
             "label": "Kr blocker drug concentration",
             "widget": "integer",
-            "exposed": false,
+            "exposable": true,
             "defaultValue": 10
           },
           {
             "key": "BCLValue",
             "label": "Basic cycle length (BCL)",
             "widget": "integer",
-            "exposed": false,
+            "exposable": true,
             "defaultValue": 10
           },
           {
             "key": "beatsValue",
             "label": "Number of beats",
             "widget": "integer",
-            "exposed": false,
+            "exposable": true,
             "defaultValue": 10
           },
           {
             "key": "LigandValue",
             "label": "Ligand concentration",
             "widget": "integer",
-            "exposed": false,
+            "exposable": true,
             "defaultValue": 10
           },
           {

@@ -22,7 +22,7 @@
  *     ]
  *
  * The following widgets are supported:
- *
+ *     header: { label: "header text"},
  *     text: { },
  *     integer: {},
  *     selectBox: { cfg: { structure: [ {key: x, label: y}, ...] } },
@@ -326,19 +326,24 @@ qx.Class.define("qxapp.components.form.Auto", {
       ctrl.setModel(sbModel);
     },
     __addField: function(s) {
-      let extra = s.note ? {
-        note: this["tr"](s.note)
-      } : null;
+      let option = {
+        exposable: s.exposable
+      }; // for passing info into the form renderer
 
       if (s.widget == "header") {
-        this.addGroupHeader(s.label === null ? null : this["tr"](s.label), extra);
+        this.addGroupHeader(s.label === null ? null : this["tr"](s.label), option);
         return;
       }
 
       if (s.key === null) {
         throw new Error("the key property is required");
       }
-
+      if (s.defaultValue) {
+        if (!s.set) {
+          s.set = {};
+        }
+     //   s.set.value = s.defaultValue;
+      }
       let control;
       let setup;
       switch (s.widget) {
@@ -384,9 +389,9 @@ qx.Class.define("qxapp.components.form.Auto", {
           throw new Error("unknown widget type " + s.widget);
       }
       this.__ctrlMap[s.key] = control;
-      this.add(control, s.label === null ? null : this["tr"](s.label), null, s.key, null, extra);
+      this.add(control, s.label === null ? null : this["tr"](s.label), null, s.key, null, option);
 
-      setup.call(this,s, control);
+      setup.call(this, s, control);
 
       if (s.set) {
         if (s.set.filter) {
