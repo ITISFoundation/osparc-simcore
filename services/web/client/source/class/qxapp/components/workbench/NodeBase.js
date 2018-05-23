@@ -37,7 +37,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     });
 
 
-    var progressBox = new qx.ui.container.Composite(new qx.ui.layout.Basic());
+    let progressBox = new qx.ui.container.Composite(new qx.ui.layout.Basic());
     progressBox.setMinWidth(160);
 
     this.__progressBar = new qx.ui.indicator.ProgressBar();
@@ -74,12 +74,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     metadata: {
       apply : "__applyMetadata"
-    },
-
-    outputLinkIDs: {
-      check: "Array",
-      init: [],
-      nullable: false
     }
   },
 
