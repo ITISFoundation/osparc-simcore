@@ -134,8 +134,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     __applyMetadata: function(value, old) {
       if (value != undefined) {
         this.setMetadata(value);
-        this.setServiceName(this.getMetadata().name);
-        this.setNodeImageId(this.getMetadata().id);
+        this.setServiceName(this.getMetadata().label);
+        this.setNodeImageId(this.getMetadata().key);
         this.addInputs(this.getMetadata().inputs);
         this.addOutputs(this.getMetadata().outputs);
       }
@@ -203,15 +203,11 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     __createPort: function(isInput, portData) {
       let label = {};
-      if ("uuid" in portData && portData.uuid !== undefined) {
-        label.portId = portData.uuid;
-      } else {
-        label.portId = qxapp.utils.Utils.uuidv4();
-      }
+      label.portId = portData.key;
       label.isInput = isInput;
       label.portType = portData.type;
 
-      label.ui = new qx.ui.basic.Label(portData.name).set({
+      label.ui = new qx.ui.basic.Label(portData.label).set({
         height: 16,
         draggable: true,
         droppable: true
