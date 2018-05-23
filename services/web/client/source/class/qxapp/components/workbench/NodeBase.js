@@ -117,11 +117,12 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     getCurrentBounds: function() {
       let bounds = this.getBounds();
-      if (this.getContentElement() && this.getContentElement().getDomElement()) {
-        let domeEle = this.getContentElement().getDomElement();
+      let cel = this.getContentElement();
+      if (cel) {
+        let domeEle = cel.getDomElement();
         bounds.left = parseInt(domeEle.style.left);
         bounds.top = parseInt(domeEle.style.top);
-        // NavigationBar hegiht must be subtracted
+        // NavigationBar height must be subtracted
         // bounds.left = this.getContentLocation().left;
         // bounds.top = this.getContentLocation().top;
       }
