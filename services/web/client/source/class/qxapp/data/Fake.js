@@ -428,8 +428,8 @@ qx.Class.define("qxapp.data.Fake", {
           "value": ""
         }]
       }, {
-        "id": "NumberGeneratorID",
-        "name": "Number Generator",
+        "id": "RandomNumberGeneratorID",
+        "name": "Random Number Generator",
         "inputs": [],
         "outputs": [{
           "name": "Number",
@@ -437,10 +437,15 @@ qx.Class.define("qxapp.data.Fake", {
           "value": ""
         }],
         "settings": [{
-          "name": "number",
-          "text": "Number",
+          "name": "numberMin",
+          "text": "Number Min",
           "type": "number",
           "value": 0
+        }, {
+          "name": "numberMax",
+          "text": "Number Max",
+          "type": "number",
+          "value": 10
         }]
       }];
       return producers;
@@ -568,6 +573,28 @@ qx.Class.define("qxapp.data.Fake", {
           "value": ""
         }],
         "settings": []
+      }, {
+        "id": "Sleeper",
+        "name": "Sleeper",
+        "inputs": [{
+          "name": "Sleeper-url",
+          "type": "sleeper-url",
+          "value": ""
+        }],
+        "outputs": [{
+          "name": "Sleeper-url",
+          "type": "sleeper-url",
+          "value": ""
+        }, {
+          "name": "Number",
+          "type": "number",
+          "value": 0
+        }],
+        "settings": [{
+          "name": "Number",
+          "type": "number",
+          "value": ""
+        }]
       }];
       return computationals;
     },
