@@ -211,10 +211,11 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       label.isInput = isInput;
       label.portType = portData.type;
 
-      label.ui = new qx.ui.basic.Label(portData.name);
-      label.ui.setHeight(16);
-      label.ui.setDraggable(true);
-      label.ui.setDroppable(true);
+      label.ui = new qx.ui.basic.Label(portData.name).set({
+        height: 16,
+        draggable: true,
+        droppable: true
+      });
       label.ui.addListener("dragstart", function(e) {
         this.fireDataEvent("LinkDragStart", [e, this.getNodeId(), label.portId]);
       }, this);
