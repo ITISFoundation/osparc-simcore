@@ -648,7 +648,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let port1 = node1.getPort(links[i].port1Id);
         let node2 = this.__getNode(links[i].node2Id);
         let port2 = node2.getPort(links[i].port2Id);
-        this.__addLink(node1, port1, node2, port2, links[i].linkId);
+        this.__addLink(node1, port1, node2, port2, links[i].uuid);
       }
     },
 

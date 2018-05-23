@@ -258,49 +258,49 @@ qx.Class.define("qxapp.data.Fake", {
           "settings": []
         }],
         "links": [{
-          "linkId": "348729ae-f24c-49dd-9382-29b8dc83c36f",
+          "uuid": "348729ae-f24c-49dd-9382-29b8dc83c36f",
           "node1Id": "dd329e10-a906-42da-a7b3-4c4fec4a786f",
           "port1Id": "out_1",
           "node2Id": "3a97f542-93c4-419c-b5c9-bcf9ff3ada7e",
           "port2Id": "in_1"
         }, {
-          "linkId": "81b0fd72-ff2b-451f-9d3e-2d2e99967302",
+          "uuid": "81b0fd72-ff2b-451f-9d3e-2d2e99967302",
           "node1Id": "3fad99a2-31b3-48a2-9066-1a66fc21aa52",
           "port1Id": "out_1",
           "node2Id": "9c35ecbc-8219-4538-ba2e-bad8b6e64cda",
           "port2Id": "in_1"
         }, {
-          "linkId": "f458bdd2-34b0-4989-a8fb-e6aad9362e10",
+          "uuid": "f458bdd2-34b0-4989-a8fb-e6aad9362e10",
           "node1Id": "3a97f542-93c4-419c-b5c9-bcf9ff3ada7e",
           "port1Id": "out_1",
           "node2Id": "51ad1bc0-615e-406a-9886-e3639f51208c",
           "port2Id": "in_1"
         }, {
-          "linkId": "95728bbf-a910-4136-a1e0-756bb786c14e",
+          "uuid": "95728bbf-a910-4136-a1e0-756bb786c14e",
           "node1Id": "9c35ecbc-8219-4538-ba2e-bad8b6e64cda",
           "port1Id": "out_1",
           "node2Id": "51ad1bc0-615e-406a-9886-e3639f51208c",
           "port2Id": "in_1"
         }, {
-          "linkId": "3d280cee-9a90-4333-96ae-d6ee2526223c",
+          "uuid": "3d280cee-9a90-4333-96ae-d6ee2526223c",
           "node1Id": "51ad1bc0-615e-406a-9886-e3639f51208c",
           "port1Id": "out_1",
           "node2Id": "5df77702-29d5-4513-b3f8-f2a40ed317fe",
           "port2Id": "in_1"
         }, {
-          "linkId": "fc5eae4c-5632-4aba-8047-40ab47ae8f58",
+          "uuid": "fc5eae4c-5632-4aba-8047-40ab47ae8f58",
           "node1Id": "51ad1bc0-615e-406a-9886-e3639f51208c",
           "port1Id": "out_1",
           "node2Id": "de2c84ed-a3bc-47c2-b54d-84a5c048236b",
           "port2Id": "in_1"
         }, {
-          "linkId": "b2e7ec46-eac5-44a1-90b8-0e571b5bf695",
+          "uuid": "b2e7ec46-eac5-44a1-90b8-0e571b5bf695",
           "node1Id": "5df77702-29d5-4513-b3f8-f2a40ed317fe",
           "port1Id": "out_1",
           "node2Id": "ba22104c-99e1-45c9-a09d-228400a6f9fb",
           "port2Id": "in_1"
         }, {
-          "linkId": "653c5a2a-81a2-4266-a06d-34624a760e67",
+          "uuid": "653c5a2a-81a2-4266-a06d-34624a760e67",
           "node1Id": "de2c84ed-a3bc-47c2-b54d-84a5c048236b",
           "port1Id": "out_1",
           "node2Id": "ba22104c-99e1-45c9-a09d-228400a6f9fb",
@@ -406,7 +406,7 @@ qx.Class.define("qxapp.data.Fake", {
 
     getProducers: function() {
       const producers = [{
-        "key": "Modeler",
+        "key": "modeler",
         "label": "Modeler",
         "desc": "Modeler",
         "inputs": [],
