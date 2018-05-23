@@ -365,9 +365,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let compatible = false;
       if (e.supportsType("osparc-metadata")) {
         let dragTarget = e.getData("osparc-metadata");
+        let dropTarget = this.__getNode(nodeId).getPort(portId);
         let dragType = dragTarget.portType;
-        let dropType = this.__getNode(nodeId).getPort(portId).portType;
+        let dropType = dropTarget.portType;
         compatible = (dragType === dropType);
+        compatible = compatible && (dragTarget.isInput !== dropTarget.isInput);
       }
       return compatible;
     },
