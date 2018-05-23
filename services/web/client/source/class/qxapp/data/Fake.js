@@ -460,8 +460,8 @@ qx.Class.define("qxapp.data.Fake", {
           "value": ""
         }],
         "outputs": [{
-          "name": "outputFolder",
-          "type": "folder",
+          "name": "csv-url",
+          "type": "csv-url",
           "value": "url"
         }, {
           "name": "Allresults",
@@ -597,6 +597,20 @@ qx.Class.define("qxapp.data.Fake", {
         }],
         "outputs": [],
         "settings": []
+      }, {
+        "id": "csv-table-graph",
+        "name": "CSV Viewer",
+        "inputs": [{
+          "name": "csv-url",
+          "type": "csv-url",
+          "value": ""
+        }],
+        "outputs": [],
+        "settings": [],
+        "viewer": {
+          "ip": "http://" + window.location.hostname,
+          "port": null
+        }
       }];
       return analyses;
     }
