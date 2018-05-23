@@ -592,8 +592,10 @@ qx.Class.define("qxapp.data.Fake", {
         }],
         "settings": [{
           "name": "Number",
+          "text": "Sleep extra sec",
           "type": "number",
-          "value": ""
+          "exposed": false,
+          "value": 0
         }]
       }];
       return computationals;
