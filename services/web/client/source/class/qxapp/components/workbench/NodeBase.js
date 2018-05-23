@@ -120,12 +120,14 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       let cel = this.getContentElement();
       if (cel) {
         let domeEle = cel.getDomElement();
-        bounds.left = parseInt(domeEle.style.left);
-        bounds.top = parseInt(domeEle.style.top);
-        // NavigationBar height must be subtracted
-        // bounds.left = this.getContentLocation().left;
-        // bounds.top = this.getContentLocation().top;
+        if (domeEle) {
+          bounds.left = parseInt(domeEle.style.left);
+          bounds.top = parseInt(domeEle.style.top);
+        }
       }
+      // NavigationBar height must be subtracted
+      // bounds.left = this.getContentLocation().left;
+      // bounds.top = this.getContentLocation().top;
       return bounds;
     },
 
