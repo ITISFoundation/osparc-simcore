@@ -58,8 +58,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     this.__inputPorts = [];
     this.__outputPorts = [];
-    this.__inputLinkIDs = [];
-    this.__outputLinkIDs = [];
     this.setNodeId(qxapp.utils.Utils.uuidv4());
   },
 
@@ -96,8 +94,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
   members: {
     __inputPorts: null,
     __outputPorts: null,
-    __inputLinkIDs: null,
-    __outputLinkIDs: null,
     __inputPortsUI: null,
     __outputPortsUI: null,
     __progressLabel: null,
@@ -109,14 +105,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     getOutputPorts: function() {
       return this.__outputPorts;
-    },
-
-    getInputLinkIDs: function() {
-      return this.__inputLinkIDs;
-    },
-
-    getOutputLinkIDs: function() {
-      return this.__outputLinkIDs;
     },
 
     // override qx.ui.window.Window "move" event listener
@@ -237,14 +225,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         this.fireDataEvent("LinkDragEnd", [e, this.getNodeId(), label.portId]);
       }, this, true);
       return label;
-    },
-
-    addInputLinkID: function(linkID) {
-      this.getInputLinkIDs().push(linkID);
-    },
-
-    addOutputLinkID: function(linkID) {
-      this.getOutputLinkIDs().push(linkID);
     },
 
     setProgress: function(progress) {

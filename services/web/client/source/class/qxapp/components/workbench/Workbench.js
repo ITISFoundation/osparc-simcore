@@ -346,7 +346,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __removeSelectedNode: function() {
-      console.log(this.__desktop.getActiveWindow());
       for (let i=0; i<this.__nodes.length; i++) {
         if (this.__desktop.getActiveWindow() === this.__nodes[i]) {
           let connectedLinks = this.__getConnectedLinks(this.__nodes[i].getNodeId());
@@ -404,8 +403,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (linkId !== undefined) {
         linkBase.setLinkId(linkId);
       }
-      node1.addOutputLinkID(linkBase.getLinkId());
-      node2.addInputLinkID(linkBase.getLinkId());
       this.__links.push(linkBase);
 
       linkBase.getRepresentation().node.addEventListener("click", function(e) {
@@ -535,16 +532,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __getConnectedLinks: function(nodeId) {
-      let linksInvolved = [];
-      const node = this.__getNode(nodeId);
-      node.getInputLinkIDs().forEach(linkId => {
-        linksInvolved.push(linkId);
-      });
-      node.getOutputLinkIDs().forEach(linkId => {
-        linksInvolved.push(linkId);
-      });
-      return linksInvolved;
-      /*
       let connectedLinks = [];
       for (let i = 0; i < this.__links.length; i++) {
         if (this.__links[i].getInputNodeId() === nodeId) {
@@ -555,7 +542,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         }
       }
       return connectedLinks;
-      */
     },
 
     __getLink: function(id) {
@@ -569,23 +555,29 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __removeNode: function(node) {
       this.__desktop.remove(node);
+      let index = this.__nodes.indexOf(node);
+      if (index > -1) {
+        this.__nodes.splice(index, 1);
+      }
     },
 
     __removeAllNodes: function() {
       while (this.__nodes.length > 0) {
         this.__removeNode(this.__nodes[this.__nodes.length-1]);
-        this.__nodes.pop();
       }
     },
 
     __removeLink: function(link) {
       this.__svgWidget.removeCurve(link.getRepresentation());
+      let index = this.__links.indexOf(link);
+      if (index > -1) {
+        this.__links.splice(index, 1);
+      }
     },
 
     __removeAllLinks: function() {
       while (this.__links.length > 0) {
         this.__removeLink(this.__links[this.__links.length-1]);
-        this.__links.pop();
       }
     },
 
