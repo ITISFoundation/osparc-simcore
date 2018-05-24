@@ -125,13 +125,13 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return bounds;
     },
 
-    __applyMetadata: function(value, old) {
-      if (value != undefined) {
-        this.setMetadata(value);
-        this.setServiceName(this.getMetadata().label);
-        this.setNodeImageId(this.getMetadata().key);
-        this.addInputs(this.getMetadata().inputs);
-        this.addOutputs(this.getMetadata().outputs);
+    __applyMetadata: function(metadata, old) {
+      if (metadata != undefined) {
+        this.setMetadata(metadata);
+        this.setServiceName(metadata.label);
+        this.setNodeImageId(metadata.key);
+        this.addInputs(metadata.inputs);
+        this.addOutputs(metadata.outputs);
       }
     },
 
