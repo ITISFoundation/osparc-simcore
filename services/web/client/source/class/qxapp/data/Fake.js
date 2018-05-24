@@ -334,6 +334,12 @@ qx.Class.define("qxapp.data.Fake", {
             "desc": "String",
             "type": "string",
             "value": ""
+          }, {
+            "key": "out_3",
+            "label": "Bool",
+            "desc": "Bool",
+            "type": "boolean",
+            "value": null
           }],
           "settings": []
         }, {
@@ -361,11 +367,23 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_3",
             "label": "Bool",
             "desc": "Bool",
-            "type": "bool",
+            "type": "boolean",
             "value": null
           }],
           "outputs": [],
-          "settings": []
+          "settings": [{
+            "key": "sett_1",
+            "label": "Bool_1",
+            "desc": "Bool_1",
+            "type": "boolean",
+            "value": 0
+          }, {
+            "key": "sett_2",
+            "label": "Bool_2",
+            "desc": "Bool_2",
+            "type": "boolean",
+            "value": 0
+          }]
         }, {
           "uuid": "13e1915f-b463-47c5-bb94-fe25effe30da",
           "key": "node3",

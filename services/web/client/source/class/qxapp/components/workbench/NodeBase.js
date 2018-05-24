@@ -82,7 +82,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     "LinkDragOver": "qx.event.type.Data",
     "LinkDrop": "qx.event.type.Data",
     "LinkDragEnd": "qx.event.type.Data",
-    "NodeMoving":  "qx.event.type.Data"
+    "NodeMoving":  "qx.event.type.Event"
   },
 
   members: {
@@ -101,11 +101,21 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return this.__outputPorts;
     },
 
+    getSetting: function(settingId) {
+      let settings = this.getMetadata().settings;
+      for (let i = 0; i < settings.length; i++) {
+        if (settings[i].key === settingId) {
+          return settings[i];
+        }
+      }
+      return null;
+    },
+
     // override qx.ui.window.Window "move" event listener
     _onMovePointerMove: function(e) {
       this.base(arguments, e);
       if (e.getPropagationStopped() === true) {
-        this.fireDataEvent("NodeMoving", null);
+        this.fireEvent("NodeMoving");
       }
     },
 
@@ -145,6 +155,14 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.__inputPortsUI.add(input.ui);
     },
 
+    __removeInputPort: function(port) {
+      var index = this.getInputPorts().indexOf(port);
+      if (index > -1) {
+        this.__inputPortsUI.remove(port.ui);
+        this.getInputPorts().splice(index, 1);
+      }
+    },
+
     __addOutputPort: function(input) {
       this.getOutputPorts().push(input);
       this.__outputPortsUI.add(input.ui);
@@ -182,17 +200,29 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return 0;
     },
 
+    addInput: function(inputData) {
+      let label = this.__createPort(true, inputData);
+      this.__addInputPort(label);
+    },
+
     addInputs: function(inputs) {
       for (let inputData of inputs) {
-        let label = this.__createPort(true, inputData);
-        this.__addInputPort(label);
+        this.addInput(inputData);
       }
+    },
+
+    removeInput: function(port) {
+      this.__removeInputPort(port);
+    },
+
+    addOutput: function(outputData) {
+      let label = this.__createPort(false, outputData);
+      this.__addOutputPort(label);
     },
 
     addOutputs: function(outputs) {
       for (let outputData of outputs) {
-        let label = this.__createPort(false, outputData);
-        this.__addOutputPort(label);
+        this.addOutput(outputData);
       }
     },
 

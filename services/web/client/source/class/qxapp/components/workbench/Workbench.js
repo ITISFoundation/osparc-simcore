@@ -218,24 +218,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         this.__nodes.push(node);
       }
 
-      node.addListener("NodeMoving", function(e) {
-        let linksInvolved = this.__getConnectedLinks(node.getNodeId());
-
-        linksInvolved.forEach(linkId => {
-          let link = this.__getLink(linkId);
-          if (link) {
-            let node1 = this.__getNode(link.getInputNodeId());
-            let port1 = node1.getPort(link.getInputPortId());
-            let node2 = this.__getNode(link.getOutputNodeId());
-            let port2 = node2.getPort(link.getOutputPortId());
-            const pointList = this.__getLinkPoints(node1, port1, node2, port2);
-            const x1 = pointList[0][0];
-            const y1 = pointList[0][1];
-            const x2 = pointList[1][0];
-            const y2 = pointList[1][1];
-            this.__svgWidget.updateCurve(link.getRepresentation(), x1, y1, x2, y2);
-          }
-        });
+      node.addListener("NodeMoving", function() {
+        this.__updateLinks(node);
       }, this);
 
       node.addListener("dblclick", function(e) {
@@ -415,6 +399,26 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       });
 
       return linkBase;
+    },
+
+    __updateLinks: function(node) {
+      let linksInvolved = this.__getConnectedLinks(node.getNodeId());
+
+      linksInvolved.forEach(linkId => {
+        let link = this.__getLink(linkId);
+        if (link) {
+          let node1 = this.__getNode(link.getInputNodeId());
+          let port1 = node1.getPort(link.getInputPortId());
+          let node2 = this.__getNode(link.getOutputNodeId());
+          let port2 = node2.getPort(link.getOutputPortId());
+          const pointList = this.__getLinkPoints(node1, port1, node2, port2);
+          const x1 = pointList[0][0];
+          const y1 = pointList[0][1];
+          const x2 = pointList[1][0];
+          const y2 = pointList[1][1];
+          this.__svgWidget.updateCurve(link.getRepresentation(), x1, y1, x2, y2);
+        }
+      });
     },
 
     __startTempLink: function(pointerEvent) {
@@ -660,6 +664,23 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     updateProgress: function(nodeId, progress) {
       let node = this.__getNode(nodeId);
       node.setProgress(progress);
+    },
+
+    settingExposed: function(nodeId, settingId, expose) {
+      let node = this.__getNode(nodeId);
+      if (expose) {
+        node.addInput(node.getSetting(settingId));
+      } else {
+        let connectedLinks = this.__getConnectedLinks(nodeId);
+        for (let i=0; i<connectedLinks.length; i++) {
+          let link = this.__getLink(connectedLinks[i]);
+          if (link.getOutputPortId() === settingId) {
+            this.__removeLink(link);
+          }
+        }
+        node.removeInput(node.getPort(settingId));
+        this.__updateLinks(node);
+      }
     },
 
     __getProducers: function() {
