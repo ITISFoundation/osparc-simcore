@@ -739,9 +739,9 @@ qx.Class.define("qxapp.data.Fake", {
         "desc": "Sleeper",
         "inputs": [{
           "key": "in_1",
-          "label": "Sleeper-url",
-          "desc": "Sleeper-url",
-          "type": "sleeper-url",
+          "label": "File-url",
+          "desc": "File-url",
+          "type": "file-url",
           "value": null
         }, {
           "key": "in_2",
@@ -752,9 +752,9 @@ qx.Class.define("qxapp.data.Fake", {
         }],
         "outputs": [{
           "key": "out_1",
-          "label": "Sleeper-url",
-          "desc": "Sleeper-url",
-          "type": "sleeper-url",
+          "label": "File-url",
+          "desc": "File-url",
+          "type": "file-url",
           "value": null
         }, {
           "key": "out_2",

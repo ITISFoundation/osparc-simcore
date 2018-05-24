@@ -259,18 +259,22 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
         let event = e.getData()[0];
-        let nodeA = e.getData()[1];
-        let portA = e.getData()[2];
+        let dragNodeId = e.getData()[1];
+        let dragPortId = e.getData()[2];
 
         // Register supported actions
         event.addAction("move");
 
         // Register supported types
         event.addType("osparc-metadata");
-        event.addData("osparc-metadata", this.__getNode(nodeA).getPort(portA));
+        let dragData = {
+          dragNodeId: dragNodeId,
+          dragPortId: dragPortId
+        };
+        event.addData("osparc-metadata", dragData);
 
-        this.__tempLinkNodeId = nodeA;
-        this.__tempLinkPortId = portA;
+        this.__tempLinkNodeId = dragData.dragNodeId;
+        this.__tempLinkPortId = dragData.dragPortId;
         qx.bom.Element.addListener(
           this.__desktop,
           evType,
@@ -281,27 +285,44 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       nodeBase.addListener("LinkDragOver", function(e) {
         let event = e.getData()[0];
-        let nodeB = e.getData()[1];
-        let portB = e.getData()[2];
+        let dropNodeId = e.getData()[1];
+        let dropPortId = e.getData()[2];
 
-        if (this.__isDragCompatible(event, nodeB, portB) === false) {
+        let compatible = false;
+        if (event.supportsType("osparc-metadata")) {
+          const dragNodeId = event.getData("osparc-metadata").dragNodeId;
+          const dragPortId = event.getData("osparc-metadata").dragPortId;
+          const dragTarget = this.__getNode(dragNodeId).getPort(dragPortId);
+          const dropTarget = this.__getNode(dropNodeId).getPort(dropPortId);
+          compatible = this.__arePortsCompatible(dragTarget, dropTarget);
+        }
+
+        if (!compatible) {
           event.preventDefault();
         }
       }, this);
 
       nodeBase.addListener("LinkDrop", function(e) {
-        // let event = e.getData()[0];
-        let nodeB = e.getData()[1];
-        let portB = e.getData()[2];
+        let event = e.getData()[0];
+        let dropNodeId = e.getData()[1];
+        let dropPortId = e.getData()[2];
 
-        this.__endTempLink(nodeB, portB);
-        this.__removeTempLink();
-        qx.bom.Element.removeListener(
-          this.__desktop,
-          evType,
-          this.__startTempLink,
-          this
-        );
+        if (event.supportsType("osparc-metadata")) {
+          let dragNodeId = event.getData("osparc-metadata").dragNodeId;
+          let dragPortId = event.getData("osparc-metadata").dragPortId;
+          let nodeA = this.__getNode(dragNodeId);
+          let portA = nodeA.getPort(dragPortId);
+          let nodeB = this.__getNode(dropNodeId);
+          let portB = nodeB.getPort(dropPortId);
+          this.__addLink(nodeA, portA, nodeB, portB);
+          this.__removeTempLink();
+          qx.bom.Element.removeListener(
+            this.__desktop,
+            evType,
+            this.__startTempLink,
+            this
+          );
+        }
       }, this);
 
       nodeBase.addListener("LinkDragEnd", function(e) {
@@ -345,16 +366,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
     },
 
-    __isDragCompatible: function(e, nodeId, portId) {
-      let compatible = false;
-      if (e.supportsType("osparc-metadata")) {
-        let dragTarget = e.getData("osparc-metadata");
-        let dropTarget = this.__getNode(nodeId).getPort(portId);
-        let dragType = dragTarget.portType;
-        let dropType = dropTarget.portType;
-        compatible = (dragType === dropType);
-        compatible = compatible && (dragTarget.isInput !== dropTarget.isInput);
-      }
+    __arePortsCompatible: function(port1, port2) {
+      let compatible = (port1.portType === port2.portType);
+      compatible = compatible && (port1.isInput !== port2.isInput);
       return compatible;
     },
 
@@ -461,30 +475,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       } else {
         this.__svgWidget.updateCurve(this.__tempLinkRepr, x1, y1, x2, y2);
       }
-    },
-
-    __endTempLink: function(nodeId, portId) {
-      if (this.__tempLinkNodeId === null || this.__tempLinkPortId === null) {
-        return;
-      }
-      let node1 = this.__getNode(this.__tempLinkNodeId);
-      if (node1 === null) {
-        return;
-      }
-      let port1 = node1.getPort(this.__tempLinkPortId);
-      if (port1 === null) {
-        return;
-      }
-      let node2 = this.__getNode(nodeId);
-      if (node2 === null) {
-        return;
-      }
-      let port2 = node2.getPort(portId);
-      if (port2 === null) {
-        return;
-      }
-
-      this.__addLink(node1, port1, node2, port2);
     },
 
     __removeTempLink: function() {
