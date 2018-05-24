@@ -248,7 +248,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       }, this);
       label.ui.addListener("dragend", function(e) {
         this.fireDataEvent("LinkDragEnd", [e, this.getNodeId(), label.portId]);
-      }, this, true);
+      }, this);
       return label;
     },
 

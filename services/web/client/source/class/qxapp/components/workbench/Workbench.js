@@ -326,22 +326,26 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       nodeBase.addListener("LinkDragEnd", function(e) {
+        // let event = e.getData()[0];
+        let dragNodeId = e.getData()[1];
+        let dragPortId = e.getData()[2];
+
         let posX = this.__pointerPosX;
         let posY = this.__pointerPosY;
-        if (this.__tempLinkNodeId !== null && this.__tempLinkPortId !== null) {
-          let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
-          srvCat.setContextPort(this.__getNode(this.__tempLinkNodeId).getPort(this.__tempLinkPortId));
-          srvCat.moveTo(posX, posY);
-          srvCat.open();
-          let pos = {
-            x: posX,
-            y: posY
-          };
-          srvCat.addListener("AddService", function(ev) {
-            this.__addServiceFromCatalogue(ev, pos);
-          }, this);
-        }
-        this.__removeTempLink();
+        let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
+        srvCat.setContextPort(this.__getNode(dragNodeId).getPort(dragPortId));
+        srvCat.moveTo(posX, posY);
+        srvCat.open();
+        let pos = {
+          x: posX,
+          y: posY
+        };
+        srvCat.addListener("AddService", function(ev) {
+          this.__addServiceFromCatalogue(ev, pos);
+        }, this);
+        srvCat.addListener("close", function(ev) {
+          this.__removeTempLink();
+        }, this);
         qx.bom.Element.removeListener(
           this.__desktop,
           evType,

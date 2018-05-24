@@ -126,6 +126,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
       for (let i = 0; i < this.__allServices.length; i++) {
         if (selection === this.__allServices[i].label) {
           this.fireDataEvent("AddService", [this.__allServices[i], this.__contextPort]);
+          break;
         }
       }
       this.close();
