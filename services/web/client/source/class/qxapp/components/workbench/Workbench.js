@@ -596,7 +596,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       for (let i = 0; i < this.__nodes.length; i++) {
         const nodeId = this.__nodes[i].getNodeId();
         pipeline[nodeId] = {};
-        pipeline[nodeId].serviceId = this.__nodes[i].getMetadata().id;
+        pipeline[nodeId].serviceId = this.__nodes[i].getMetadata().key;
         pipeline[nodeId].inputs = this.__nodes[i].getMetadata().inputs;
         pipeline[nodeId].outputs = this.__nodes[i].getMetadata().outputs;
         pipeline[nodeId].settings = this.__nodes[i].getMetadata().settings;

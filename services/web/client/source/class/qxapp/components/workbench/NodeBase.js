@@ -127,9 +127,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     __applyMetadata: function(metadata, old) {
       if (metadata != undefined) {
-        this.setMetadata(metadata);
-        this.setServiceName(metadata.label);
-        this.setNodeImageId(metadata.key);
+        this.set({
+          serviceName: metadata.label,
+          nodeImageId: metadata.key
+        });
         this.addInputs(metadata.inputs);
         this.addOutputs(metadata.outputs);
       }
