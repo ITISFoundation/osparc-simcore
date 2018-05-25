@@ -1,24 +1,30 @@
 {
-    "timestamp":"2018-05-23T15:34:51.511Z",
-    "simcore":{
-        "input1":{
-        "type":"file",
-        "format":"csv",
-        "value":"test.csv",
-        "label":"computational data",
-        "timestamp":"2018-05-23T15:34:51.511Z"
+    "timestamp": "2018-05-23T15:34:53.511Z",
+    "inputs": [
+        {
+            "key": "in_1",
+            "label": "computational data",
+            "desc": "these are computed data out of a pipeline",
+            "type": "file-url",
+            "value": "test.csv",
+            "timestamp": "2018-05-23T15:34:53.511Z"
         },
-        "input4":{
-            "type":"int",
-            "value":"666",
-            "label":"some number",
-            "timestamp":"2018-05-23T15:34:51.511Z"
-        },
-        "output1":{
-            "type":"bool",
-            "value":"none",
-            "label":"some boolean output",
-            "timestamp":"2018-05-23T15:34:51.511Z"
+        {
+            "key": "in_5",
+            "label": "hell",
+            "desc": "the beast",
+            "type": "integer",
+            "value": "666",
+            "timestamp": "2018-05-23T15:34:53.511Z"
         }
-    }    
+    ],
+    "outputs": [
+        {
+            "key": "out_1",
+            "type": "bool",
+            "value": "none",
+            "label": "some boolean output",
+            "timestamp": "2018-05-23T15:34:53.511Z"
+        }
+    ]
 }
