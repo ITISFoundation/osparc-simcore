@@ -13,7 +13,7 @@ import dateutil.parser
 from simcore_api import config
 
 class Simcore(object):
-    __timestamp = datetime.now()
+    __timestamp = datetime.utcnow()
     __initializing = True
     def __init__(self, definition):
         print("initiliasiing Simcore with ", definition)

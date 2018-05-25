@@ -1,5 +1,5 @@
 {
-    "timestamp":"2018-05-23T15:36:51.511Z",
+    "timestamp":"2018-05-23T15:34:51.511Z",
     "simcore":{
         "input1":{
         "type":"file",
@@ -10,15 +10,15 @@
         },
         "input4":{
             "type":"int",
-            "value:":"666",
+            "value":"666",
             "label":"some number",
-            "timestamp":"2018-05-23T15:36:51.511Z"
+            "timestamp":"2018-05-23T15:34:51.511Z"
         },
         "output1":{
             "type":"bool",
             "value":"none",
-            "label":"some boolean",
-            "timestamp":"2018-05-23T15:31:50.511Z"
+            "label":"some boolean output",
+            "timestamp":"2018-05-23T15:34:51.511Z"
         }
     }    
 }
