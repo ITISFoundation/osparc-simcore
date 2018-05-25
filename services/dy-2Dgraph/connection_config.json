@@ -1,0 +1,24 @@
+{
+    "timestamp":"2018-05-23T15:36:51.511Z",
+    "simcore":{
+        "input1":{
+        "type":"file",
+        "format":"csv",
+        "value":"test.csv",
+        "label":"computational datablahdjlksjdb",
+        "timestamp":"2018-05-23T15:34:51.511Z"
+        },
+        "input4":{
+            "type":"int",
+            "value:":"666",
+            "label":"some number",
+            "timestamp":"2018-05-23T15:36:51.511Z"
+        },
+        "output1":{
+            "type":"bool",
+            "value":"none",
+            "label":"some boolean",
+            "timestamp":"2018-05-23T15:31:50.511Z"
+        }
+    }    
+}
