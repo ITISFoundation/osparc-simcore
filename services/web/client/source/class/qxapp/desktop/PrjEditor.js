@@ -59,13 +59,27 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     this.__settingsView.addListener("ShowViewer", function(e) {
       let url = "http://" + window.location.hostname + ":" + e.getData().viewer.port;
-      let viewerWin = this.__createBrowserWindow(url, e.getData().name);
+      let viewerWin = this.__createBrowserWindow(url, e.getData().label);
       this.__workbench.addWindowToDesktop(viewerWin);
     }, this);
 
+    this.__settingsView.addListener("NodeProgress", function(e) {
+      const nodeId = e.getData()[0];
+      const progress = e.getData()[1];
+      this.__workbench.updateProgress(nodeId, progress);
+    }, this);
+
+    this.__settingsView.addListener("SettingExposed", function(e) {
+      const nodeId = e.getData()[0];
+      const settingId = e.getData()[1];
+      const expose = e.getData()[2];
+      this.__workbench.settingExposed(nodeId, settingId, expose);
+    }, this);
+
     this.__workbench.addListener("NodeDoubleClicked", function(e) {
+      let node = e.getData();
+      this.__settingsView.setNodeMetadata(node);
       this.__showSettings(true);
-      this.__settingsView.setNodeMetadata(e.getData());
     }, this);
 
     this.__transDeco = new qx.ui.decoration.Decorator().set({

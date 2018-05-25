@@ -4,9 +4,9 @@ qx.Class.define("qxapp.components.workbench.LinkBase", {
   construct: function(representation) {
     this.base();
 
-    this.setLinkId(qxapp.utils.Utils.uuidv4());
-
     this.setRepresentation(representation);
+
+    this.setLinkId(qxapp.utils.Utils.uuidv4());
   },
 
   properties: {
@@ -21,7 +21,15 @@ qx.Class.define("qxapp.components.workbench.LinkBase", {
       init: null,
       check: "String"
     },
+    inputPortId: {
+      init: null,
+      check: "String"
+    },
     outputNodeId: {
+      init: null,
+      check: "String"
+    },
+    outputPortId: {
       init: null,
       check: "String"
     }
