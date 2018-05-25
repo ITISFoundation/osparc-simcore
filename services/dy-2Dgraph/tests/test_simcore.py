@@ -11,7 +11,7 @@ def test_input1():
     assert(simcore.input1.type == "file")
     assert(simcore.input1.format == "csv")
     assert(simcore.input1.value == "test.csv")
-    assert(simcore.input1.label == "computational datablahdjlksjdb")
+    assert(simcore.input1.label == "computational data")
     assert(simcore.input1.timestamp.isoformat(timespec='milliseconds').replace("+00:00","Z") == "2018-05-23T15:34:51.511Z")
 
 def test_input4():
