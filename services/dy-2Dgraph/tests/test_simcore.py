@@ -30,6 +30,6 @@ def test_output1():
     from simcore_api import simcore
     assert(simcore.outputs[0].key == "out_1")
     assert(simcore.outputs[0].type == "bool")
-    assert(simcore.outputs[0].value == "none")
+    assert(simcore.outputs[0].value == "null")
     assert(simcore.outputs[0].label == "some boolean output")
     assert(simcore.outputs[0].timestamp.isoformat(timespec='milliseconds').replace("+00:00","Z") == "2018-05-23T15:34:53.511Z")

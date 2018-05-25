@@ -22,7 +22,7 @@
         {
             "key": "out_1",
             "type": "bool",
-            "value": "none",
+            "value": "null",
             "label": "some boolean output",
             "timestamp": "2018-05-23T15:34:53.511Z"
         }
