@@ -32,6 +32,7 @@ RUN pip install plotly \
     jupyter nbextension enable hide_input/main
 COPY --chown=jovyan:users plotly.ipynb .
 COPY --chown=jovyan:users /simcore_api ./simcore_api
+RUN jupyter trust plotly.ipynb
 
 # define where the inputs shall be defined
 VOLUME /home/jovyan/data
