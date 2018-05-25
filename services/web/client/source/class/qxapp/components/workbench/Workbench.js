@@ -45,21 +45,28 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     this.__nodes = [];
     this.__links = [];
 
+    let nButtons = 4;
     let plusButton = this.__getPlusMenuButton();
     this.add(plusButton, {
-      right: 2*(BUTTON_SIZE+BUTTON_SPACING) + 20,
+      right: (--nButtons)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
       bottom: 20
     });
 
     let removeButton = this.__getRemoveButton();
     this.add(removeButton, {
-      right: 1*(BUTTON_SIZE+BUTTON_SPACING) + 20,
+      right: (--nButtons)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
       bottom: 20
     });
 
     let playButton = this.__getPlayButton();
     this.add(playButton, {
-      right: 0*(BUTTON_SIZE+BUTTON_SPACING) + 20,
+      right: (--nButtons)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
+      bottom: 20
+    });
+
+    let stopButton = this.__getStopButton();
+    this.add(stopButton, {
+      right: (--nButtons)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
       bottom: 20
     });
 
@@ -84,6 +91,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
   events: {
     "NodeDoubleClicked": "qx.event.type.Data"
+  },
+
+  properties: {
+    canStart: {
+      nullable: false,
+      init: true,
+      check: "Boolean",
+      apply : "__applyCanStart"
+    }
   },
 
   members: {
@@ -148,11 +164,66 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         width: BUTTON_SIZE,
         height: BUTTON_SIZE
       });
+
       playButton.addListener("execute", function() {
-        let pipelineDataStructure = this.__serializeData();
-        console.log(pipelineDataStructure);
+        let currentPipeline = this.__serializeData();
+        console.log(currentPipeline);
+
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        if (!socket.slotExists("pipeline")) {
+          socket.on("pipeline", function(val) {
+            console.log(val);
+          });
+        }
+        if (!socket.slotExists("logger")) {
+          socket.on("logger", function(data) {
+            console.log("logger", data);
+          });
+        }
+        if (!socket.slotExists("progress")) {
+          socket.on("progress", function(data) {
+            console.log("progress", data);
+            // updateFromProgress(data);
+            let done = true;
+            for (var i=0; i<data.length; i++) {
+              if (data[i] != 1.0) {
+                done = false;
+                break;
+              }
+            }
+            this.setCanStart(done);
+          });
+        }
+
+        if (this.getCanStart()) {
+          this.__startPipeline();
+          socket.emit("pipeline", currentPipeline);
+          socket.emit("progress");
+          socket.emit("logger");
+          this.setCanStart(false);
+        }
       }, this);
+
       return playButton;
+    },
+
+    __getStopButton: function() {
+      const icon = "@FontAwesome5Solid/stop-circle/32";
+      let stopButton = new qx.ui.form.Button(null, icon);
+      stopButton.set({
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE
+      });
+
+      stopButton.addListener("execute", function() {
+        this.__stopPipeline();
+        this.setCanStart(true);
+      }, this);
+      return stopButton;
+    },
+
+    __applyCanStart: function(value, old) {
+      console.log("CanStart", value);
     },
 
     __getRemoveButton: function() {
@@ -590,29 +661,27 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __serializeData: function() {
-      let pipeline = {};
+      let pipeline = {
+        "nodes": [],
+        "links": []
+      };
       for (let i = 0; i < this.__nodes.length; i++) {
-        const nodeId = this.__nodes[i].getNodeId();
-        pipeline[nodeId] = {};
-        pipeline[nodeId].serviceId = this.__nodes[i].getMetadata().key;
-        pipeline[nodeId].inputs = this.__nodes[i].getMetadata().inputs;
-        pipeline[nodeId].outputs = this.__nodes[i].getMetadata().outputs;
-        pipeline[nodeId].settings = this.__nodes[i].getMetadata().settings;
-        pipeline[nodeId].children = [];
-        for (let j = 0; j < this.__links.length; j++) {
-          if (nodeId === this.__links[j].getInputNodeId()) {
-            // TODO: add portID
-            pipeline[nodeId].children.push(this.__links[j].getOutputNodeId());
-          }
-        }
+        let node = {};
+        node["uuid"] = this.__nodes[i].getNodeId();
+        node["serviceId"] = this.__nodes[i].getMetadata().key;
+        node["inputs"] = this.__nodes[i].getMetadata().inputs;
+        node["outputs"] = this.__nodes[i].getMetadata().outputs;
+        node["settings"] = this.__nodes[i].getMetadata().settings;
+        pipeline["nodes"].push(node);
       }
-      // remove nodes with no offspring
-      for (let nodeId in pipeline) {
-        if (Object.prototype.hasOwnProperty.call(pipeline, nodeId)) {
-          if (pipeline[nodeId].children.length === 0) {
-            delete pipeline[nodeId];
-          }
-        }
+      for (let i = 0; i < this.__links.length; i++) {
+        let link = {};
+        link["uuid"] = this.__links[i].getLinkId();
+        link["node1Id"] = this.__links[i].getInputNodeId();
+        link["port1Id"] = this.__links[i].getInputPortId();
+        link["node2Id"] = this.__links[i].getOutputNodeId();
+        link["port2Id"] = this.__links[i].getOutputPortId();
+        pipeline["links"].push(link);
       }
       return pipeline;
     },
@@ -653,6 +722,18 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     addWindowToDesktop: function(node) {
       this.__desktop.add(node);
       node.open();
+    },
+
+    __startPipeline: function() {
+      for (let i = 0; i < this.__nodes.length; i++) {
+        this.__nodes[i].setProgress(1);
+      }
+    },
+
+    __stopPipeline: function() {
+      for (let i = 0; i < this.__nodes.length; i++) {
+        this.__nodes[i].setProgress(0);
+      }
     },
 
     updateProgress: function(nodeId, progress) {
