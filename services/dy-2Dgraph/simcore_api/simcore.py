@@ -2,11 +2,8 @@
     data going to following nodes.
 """
 import collections
-import json
 from collections.abc import MutableSequence
-from datetime import datetime
-
-from simcore_api import config
+import json
 
 DATA_ITEM_KEYS = ["key", "label", "description", "type", "value", "timestamp"]
 DataItem = collections.namedtuple("DataItem", DATA_ITEM_KEYS)
@@ -33,7 +30,7 @@ class DataItemsList(MutableSequence):
     def insert(self, index, value):
         self.lst.insert(index, value)
 
-
+#pylint: disable=C0111
 class Simcore(object):
     """This class allow the client to access the inputs and outputs assigned to the node."""
 
@@ -55,34 +52,33 @@ class Simcore(object):
         
     def update_from_json_file(self, path):
         with open(path) as json_config:
-            updated_simcore = json.load(json_config, object_hook=SimcoreDecoder)
+            updated_simcore = json.load(json_config, object_hook=simcore_decoder)
         self.__inputs = updated_simcore.__inputs
         self._outputs = updated_simcore._outputs
         
     @classmethod
     def create_from_json_file(cls, path):
         with open(path) as json_config:
-            simcore = json.load(json_config, object_hook=SimcoreDecoder)
+            simcore = json.load(json_config, object_hook=simcore_decoder)
         simcore._path = path
         simcore._autoupdate = True
         return simcore
-        
 
-class SimcoreEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Simcore):
-            return {
-                "version": obj._version,
-                "inputs": obj._inputs,
-                "outputs": obj._outputs
-            }
-        elif isinstance(obj, DataItemsList):
-            items = [data_item._asdict() for data_item in obj]
-            return items
-        
-        return json.JSONEncoder.default(self, obj)
+    class _SimcoreEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, Simcore):
+                return {
+                    "version": obj._version,
+                    "inputs": obj._inputs,
+                    "outputs": obj._outputs
+                }
+            elif isinstance(obj, DataItemsList):
+                items = [data_item._asdict() for data_item in obj]
+                return items
+            
+            return json.JSONEncoder.default(self, obj)
     
-def SimcoreDecoder(dct):
+def simcore_decoder(dct):
     if "version" in dct and dct["version"] == "0.1" and "inputs" in dct and "outputs" in dct:
         return Simcore(dct["version"], DataItemsList(dct["inputs"]), DataItemsList(dct["outputs"]))
     else:
