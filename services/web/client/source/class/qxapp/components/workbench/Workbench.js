@@ -231,13 +231,14 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __addServiceFromCatalogue: function(e, pos) {
       let newNode = e.getData()[0];
-      let portA = e.getData()[1];
+      let nodeAId = e.getData()[1];
+      let portA = e.getData()[2];
 
       let nodeB = this.__createNode(newNode);
       this.__addNodeToWorkbench(nodeB, pos);
 
-      if (portA !== null) {
-        let nodeA = this.__getNodeWithPort(portA.portId);
+      if (nodeAId !== null && portA !== null) {
+        let nodeA = this.__getNode(nodeAId);
         let portB = this.__findCompatiblePort(nodeB, portA);
         this.__addLink(nodeA, portA, nodeB, portB);
       }
@@ -393,20 +394,22 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
         let posX = this.__pointerPosX;
         let posY = this.__pointerPosY;
-        let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
-        srvCat.setContextPort(this.__getNode(dragNodeId).getPort(dragPortId));
-        srvCat.moveTo(posX, posY);
-        srvCat.open();
-        let pos = {
-          x: posX,
-          y: posY
-        };
-        srvCat.addListener("AddService", function(ev) {
-          this.__addServiceFromCatalogue(ev, pos);
-        }, this);
-        srvCat.addListener("close", function(ev) {
-          this.__removeTempLink();
-        }, this);
+        if (this.__tempLinkNodeId === dragNodeId && this.__tempLinkPortId === dragPortId) {
+          let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
+          srvCat.setContext(dragNodeId, this.__getNode(dragNodeId).getPort(dragPortId));
+          srvCat.moveTo(posX, posY);
+          srvCat.open();
+          let pos = {
+            x: posX,
+            y: posY
+          };
+          srvCat.addListener("AddService", function(ev) {
+            this.__addServiceFromCatalogue(ev, pos);
+          }, this);
+          srvCat.addListener("close", function(ev) {
+            this.__removeTempLink();
+          }, this);
+        }
         qx.bom.Element.removeListener(
           this.__desktop,
           evType,
@@ -580,15 +583,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __getNode: function(id) {
       for (let i = 0; i < this.__nodes.length; i++) {
         if (this.__nodes[i].getNodeId() === id) {
-          return this.__nodes[i];
-        }
-      }
-      return null;
-    },
-
-    __getNodeWithPort: function(portId) {
-      for (let i = 0; i < this.__nodes.length; i++) {
-        if (this.__nodes[i].getPort(portId) !== null) {
           return this.__nodes[i];
         }
       }
