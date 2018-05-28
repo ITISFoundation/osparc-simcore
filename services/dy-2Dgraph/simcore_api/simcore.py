@@ -64,19 +64,19 @@ class Simcore(object):
         simcore._autoupdate = True
         return simcore
 
-    class _SimcoreEncoder(json.JSONEncoder):
-        def default(self, obj):
-            if isinstance(obj, Simcore):
-                return {
-                    "version": obj._version,
-                    "inputs": obj._inputs,
-                    "outputs": obj._outputs
-                }
-            elif isinstance(obj, DataItemsList):
-                items = [data_item._asdict() for data_item in obj]
-                return items
-            
-            return json.JSONEncoder.default(self, obj)
+class _SimcoreEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Simcore):
+            return {
+                "version": obj._version,
+                "inputs": obj._inputs,
+                "outputs": obj._outputs
+            }
+        elif isinstance(obj, DataItemsList):
+            items = [data_item._asdict() for data_item in obj]
+            return items
+        
+        return json.JSONEncoder.default(self, obj)
     
 def simcore_decoder(dct):
     if "version" in dct and dct["version"] == "0.1" and "inputs" in dct and "outputs" in dct:
