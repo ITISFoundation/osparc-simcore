@@ -84,7 +84,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     this.__transDeco = new qx.ui.decoration.Decorator().set({
       transitionProperty: ["left", "right", "width"],
-      transitionDuration: "0.1s",
+      transitionDuration: "1s",
       transitionTimingFunction: "ease"
     });
   },
