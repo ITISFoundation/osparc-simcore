@@ -40,33 +40,44 @@ class Simcore(object):
         self._version = version
         if inputs is None:
             inputs = DataItemsList()
-        self._inputs = inputs
+        self.__inputs = inputs
         if outputs is None:
             outputs = DataItemsList()
-        self._outputs = outputs
-        self._path = r""
+        self.__outputs = outputs
+        self.path = r""
         self.autoupdate = False
         
     @property
-    def _inputs(self):
+    def inputs(self):
         if self.autoupdate:            
-            self.update_from_json_file(self._path)
+            self.update_from_json_file(self.path)
         return self.__inputs
-    @_inputs.setter
-    def _inputs(self, inputs):
-        self.__inputs = inputs
+
+    @inputs.setter
+    def inputs(self, value):
+        self.__inputs = value
         
+    @property
+    def outputs(self):
+        if self.autoupdate:
+            self.update_from_json_file(self.path)
+        return self.__outputs
+
+    @outputs.setter
+    def outputs(self, value):
+        self.__outputs = value
+
     def update_from_json_file(self, path):
         with open(path) as json_config:
             updated_simcore = json.load(json_config, object_hook=simcore_decoder)
-        self.__inputs = updated_simcore._inputs
-        self._outputs = updated_simcore._outputs
+        self.__inputs = updated_simcore.inputs
+        self.outputs = updated_simcore.outputs
         
     @classmethod
     def create_from_json_file(cls, path):
         with open(path) as json_config:
             simcore = json.load(json_config, object_hook=simcore_decoder)
-        simcore._path = path
+        simcore.path = path
         simcore.autoupdate = True
         return simcore
 
