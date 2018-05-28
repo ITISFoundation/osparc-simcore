@@ -2,8 +2,8 @@
 This class allow the client to access the inputs and outputs assigned to the node.
 
 Example:
-    $ import Simcore
-    $ Simcore.input1.type
+    $ import simcore
+    $ simcore._input[0].type
 
 """
 
