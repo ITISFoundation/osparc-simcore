@@ -12,7 +12,9 @@ DataItem = collections.namedtuple("DataItem", DATA_ITEM_KEYS)
 class DataItemsList(MutableSequence):
     """This class contains a list of Data Items."""
 
-    def __init__(self, data=list()):
+    def __init__(self, data=None):
+        if data is None:
+            data = []
         self.lst = data
     
     def __setitem__(self, index, value):
@@ -34,16 +36,20 @@ class DataItemsList(MutableSequence):
 class Simcore(object):
     """This class allow the client to access the inputs and outputs assigned to the node."""
 
-    def __init__(self, version="0.1", inputs=DataItemsList(), outputs=DataItemsList()):
+    def __init__(self, version="0.1", inputs=None, outputs=None):
         self._version = version
+        if inputs is None:
+            inputs = DataItemsList()
         self._inputs = inputs
+        if outputs is None:
+            outputs = DataItemsList()
         self._outputs = outputs
         self._path = r""
-        self._autoupdate = False
+        self.autoupdate = False
         
     @property
     def _inputs(self):
-        if self._autoupdate:            
+        if self.autoupdate:            
             self.update_from_json_file(self._path)
         return self.__inputs
     @_inputs.setter
@@ -53,7 +59,7 @@ class Simcore(object):
     def update_from_json_file(self, path):
         with open(path) as json_config:
             updated_simcore = json.load(json_config, object_hook=simcore_decoder)
-        self.__inputs = updated_simcore.__inputs
+        self.__inputs = updated_simcore._inputs
         self._outputs = updated_simcore._outputs
         
     @classmethod
@@ -61,22 +67,23 @@ class Simcore(object):
         with open(path) as json_config:
             simcore = json.load(json_config, object_hook=simcore_decoder)
         simcore._path = path
-        simcore._autoupdate = True
+        simcore.autoupdate = True
         return simcore
 
 class _SimcoreEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Simcore):
+    # SAN: looks like pylint is having an issue here
+    def default(self, o): # pylint: disable=E0202
+        if isinstance(o, Simcore):
             return {
-                "version": obj._version,
-                "inputs": obj._inputs,
-                "outputs": obj._outputs
+                "version": o._version, # pylint: disable=W0212
+                "inputs": o._inputs, # pylint: disable=W0212
+                "outputs": o._outputs # pylint: disable=W0212
             }
-        elif isinstance(obj, DataItemsList):
-            items = [data_item._asdict() for data_item in obj]
+        elif isinstance(o, DataItemsList):
+            items = [data_item._asdict() for data_item in o]
             return items
         
-        return json.JSONEncoder.default(self, obj)
+        return json.JSONEncoder.default(self, o)
     
 def simcore_decoder(dct):
     if "version" in dct and dct["version"] == "0.1" and "inputs" in dct and "outputs" in dct:
