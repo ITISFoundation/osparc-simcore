@@ -34,13 +34,14 @@ def test_default_configuration():
 
 def test_default_configuration_json_decoding():
     from simcore_api import simcore
+    from simcore_api.simcore import _SimcoreEncoder
     import json
     import os
 
-    json_data = json.dumps(simcore, cls=simcore_api.simcore._SimcoreEncoder)
+    json_data = json.dumps(simcore, cls=_SimcoreEncoder)
     default_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), r"../config/connection_config.json")
     with open(default_config_path) as file:
         original_json_data = file.read()
-    assert(json_data == original_json_data)
+    assert(json.loads(json_data) == json.loads(original_json_data))
 
 
