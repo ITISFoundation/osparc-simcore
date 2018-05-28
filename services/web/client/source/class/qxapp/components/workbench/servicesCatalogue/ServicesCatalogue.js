@@ -87,9 +87,11 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     __rawData: null,
     __list: null,
     __controller: null,
+    __contextNodeId: null,
     __contextPort: null,
 
-    setContextPort: function(port) {
+    setContext: function(nodeId, port) {
+      this.__contextNodeId = nodeId;
       this.__contextPort = port;
       this.__updateCompatibleList();
     },
@@ -125,7 +127,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
       let selection = this.__list.getSelection()[0].getLabel();
       for (let i = 0; i < this.__allServices.length; i++) {
         if (selection === this.__allServices[i].label) {
-          this.fireDataEvent("AddService", [this.__allServices[i], this.__contextPort]);
+          this.fireDataEvent("AddService", [this.__allServices[i], this.__contextNodeId, this.__contextPort]);
           break;
         }
       }
