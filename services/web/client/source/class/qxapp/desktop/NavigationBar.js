@@ -36,14 +36,17 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       flex: 1
     });
 
-    let userLbl = new qx.ui.basic.Label("@bizzi").set({
+    const dummy_user="bizzy";
+    let userLbl = new qx.ui.basic.Label("@" + dummy_user).set({
       minWidth: 20
     });
     this.add(userLbl);
 
     let userBtn = this.__createUserBtn();
     userBtn.set(commonBtnSettings);
-    userBtn.setIcon(qxapp.utils.Placeholders.getGravatar("bizzi@simcore.io", 32));
+    userBtn.setIcon(qxapp.utils.Placeholders.getGravatar(
+        dummy_user + '@' + 'itis.ethz.ch',
+        32));
     this.add(userBtn);
 
 
