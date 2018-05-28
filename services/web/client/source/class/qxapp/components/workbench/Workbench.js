@@ -42,31 +42,41 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       bottom: 0
     });
 
+    this.__logger = new qxapp.components.workbench.logger.LoggerView();
+    this.__desktop.add(this.__logger);
+
     this.__nodes = [];
     this.__links = [];
 
-    let nButtons = 4;
+    let nButtonsLeft = 0;
+    let loggerButton = this.__getShowLoggerButton();
+    this.add(loggerButton, {
+      left: (nButtonsLeft++)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
+      bottom: 20
+    });
+
+    let nButtonsRight = 4;
     let plusButton = this.__getPlusMenuButton();
     this.add(plusButton, {
-      right: (--nButtons)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
+      right: (--nButtonsRight)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
       bottom: 20
     });
 
     let removeButton = this.__getRemoveButton();
     this.add(removeButton, {
-      right: (--nButtons)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
+      right: (--nButtonsRight)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
       bottom: 20
     });
 
     let playButton = this.__getPlayButton();
     this.add(playButton, {
-      right: (--nButtons)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
+      right: (--nButtonsRight)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
       bottom: 20
     });
 
     let stopButton = this.__getStopButton();
     this.add(stopButton, {
-      right: (--nButtons)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
+      right: (--nButtonsRight)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
       bottom: 20
     });
 
@@ -107,11 +117,31 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __links: null,
     __desktop: null,
     __svgWidget: null,
+    __logger: null,
     __tempLinkNodeId: null,
     __tempLinkPortId: null,
     __tempLinkRepr: null,
     __pointerPosX: null,
     __pointerPosY: null,
+
+    __getShowLoggerButton: function() {
+      const icon = "@FontAwesome5Solid/list-alt/32";
+      let loggerButton = new qx.ui.form.Button(null, icon);
+      loggerButton.set({
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE
+      });
+      loggerButton.addListener("execute", function() {
+        const bounds = loggerButton.getBounds();
+        loggerButton.hide();
+        this.__logger.moveTo(bounds.left, bounds.top+bounds.height - this.__logger.getHeight());
+        this.__logger.open();
+        this.__logger.addListenerOnce("close", function() {
+          loggerButton.show();
+        }, this);
+      }, this);
+      return loggerButton;
+    },
 
     __getPlusButton: function() {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
@@ -231,13 +261,14 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __addServiceFromCatalogue: function(e, pos) {
       let newNode = e.getData()[0];
-      let portA = e.getData()[1];
+      let nodeAId = e.getData()[1];
+      let portA = e.getData()[2];
 
       let nodeB = this.__createNode(newNode);
       this.__addNodeToWorkbench(nodeB, pos);
 
-      if (portA !== null) {
-        let nodeA = this.__getNodeWithPort(portA.portId);
+      if (nodeAId !== null && portA !== null) {
+        let nodeA = this.__getNode(nodeAId);
         let portB = this.__findCompatiblePort(nodeB, portA);
         this.__addLink(nodeA, portA, nodeB, portB);
       }
@@ -393,20 +424,22 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
         let posX = this.__pointerPosX;
         let posY = this.__pointerPosY;
-        let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
-        srvCat.setContextPort(this.__getNode(dragNodeId).getPort(dragPortId));
-        srvCat.moveTo(posX, posY);
-        srvCat.open();
-        let pos = {
-          x: posX,
-          y: posY
-        };
-        srvCat.addListener("AddService", function(ev) {
-          this.__addServiceFromCatalogue(ev, pos);
-        }, this);
-        srvCat.addListener("close", function(ev) {
-          this.__removeTempLink();
-        }, this);
+        if (this.__tempLinkNodeId === dragNodeId && this.__tempLinkPortId === dragPortId) {
+          let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
+          srvCat.setContext(dragNodeId, this.__getNode(dragNodeId).getPort(dragPortId));
+          srvCat.moveTo(posX, posY);
+          srvCat.open();
+          let pos = {
+            x: posX,
+            y: posY
+          };
+          srvCat.addListener("AddService", function(ev) {
+            this.__addServiceFromCatalogue(ev, pos);
+          }, this);
+          srvCat.addListener("close", function(ev) {
+            this.__removeTempLink();
+          }, this);
+        }
         qx.bom.Element.removeListener(
           this.__desktop,
           evType,
@@ -586,15 +619,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return null;
     },
 
-    __getNodeWithPort: function(portId) {
-      for (let i = 0; i < this.__nodes.length; i++) {
-        if (this.__nodes[i].getPort(portId) !== null) {
-          return this.__nodes[i];
-        }
-      }
-      return null;
-    },
-
     __getConnectedLinks: function(nodeId) {
       let connectedLinks = [];
       for (let i = 0; i < this.__links.length; i++) {
@@ -740,6 +764,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       socket.emit("logger");
 
       this.setCanStart(false);
+
+      this.__logger.addLog("Starting pipeline");
     },
 
     // register for logs
@@ -761,12 +787,14 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       for (let i = 0; i < this.__nodes.length; i++) {
         this.__nodes[i].setProgress(0);
       }
+      this.__logger.addLog("Stopping pipeline", "Workbench");
     },
 
     __updateLogger: function(nodeId, msg) {
-      // TODO
-      let newLogText = nodeId + " reports: " + msg + "\n";
-      console.log("Logger", newLogText);
+      let node = this.__getNode(nodeId);
+      if (node) {
+        this.__logger.addLog(msg, node.getCaption());
+      }
     },
 
     __clearProgressData: function() {
