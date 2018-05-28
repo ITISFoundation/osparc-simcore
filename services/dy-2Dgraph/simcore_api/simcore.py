@@ -46,7 +46,6 @@ class Simcore(object):
         
     @property
     def _inputs(self):
-        print("getting the inputs")
         if self._autoupdate == True:            
             self.update_from_json_file(self._path)
         return self.__inputs
@@ -55,7 +54,6 @@ class Simcore(object):
         self.__inputs = inputs
         
     def update_from_json_file(self, path):
-        print("updating the inputs from ", path)
         with open(path) as json_config:
             updated_simcore = json.load(json_config, object_hook=SimcoreDecoder)
         self.__inputs = updated_simcore.__inputs
