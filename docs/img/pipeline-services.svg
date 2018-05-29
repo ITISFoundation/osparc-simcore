@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg viewBox="0 0 848 280" xmlns="http://www.w3.org/2000/svg" xmlns:inkspace="http://www.inkscape.org/namespaces/inkscape" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs id="defs_block">
+    <filter height="1.504" id="filter_blur" inkspace:collect="always" width="1.1575" x="-0.07875" y="-0.252">
+      <feGaussianBlur id="feGaussianBlur3780" inkspace:collect="always" stdDeviation="4.2" />
+    </filter>
+  </defs>
+  <title>blockdiag</title>
+  <desc />
+  <path d="M 67 54 A64,8 0 0 1 195 54 L 195 78 A64,8 0 0 1 67 78 L 67 54" fill="rgb(0,0,0)" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="67" y="126" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="363" y="126" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="363" y="206" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="659" y="126" />
+  <polygon fill="rgb(0,0,0)" points="259,126 283,126 299,142 299,166 259,166 259,126" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <polygon fill="rgb(0,0,0)" points="259,206 283,206 299,222 299,246 259,246 259,206" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <polygon fill="rgb(0,0,0)" points="555,126 579,126 595,142 595,166 555,166 555,126" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <polygon fill="rgb(0,0,0)" points="555,206 579,206 595,222 595,246 555,246 555,206" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <path d="M 64 48 A64,8 0 0 1 192 48 L 192 72 A64,8 0 0 1 64 72 L 64 48" fill="rgb(255,255,255)" stroke="rgb(0,0,0)" />
+  <path d="M 192 48 A64,8 0 0 1 64 48" fill="rgb(255,255,255)" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="13" x="128" y="70">S3</text>
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="64" y="120" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="7" x="128" y="146">A</text>
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="360" y="120" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="7" x="424" y="146">B</text>
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="360" y="200" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="7" x="424" y="226">C</text>
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="656" y="120" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="7" x="720" y="146">D</text>
+  <polygon fill="rgb(255,228,181)" points="256,120 280,120 296,136 296,160 256,160 256,120" stroke="rgb(0,0,0)" />
+  <path d="M 280 120 L 280 136" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 280 136 L 296 136" fill="none" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="37" x="276" y="146">vol-ab</text>
+  <polygon fill="rgb(255,228,181)" points="256,200 280,200 296,216 296,240 256,240 256,200" stroke="rgb(0,0,0)" />
+  <path d="M 280 200 L 280 216" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 280 216 L 296 216" fill="none" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="37" x="276" y="226">vol-ac</text>
+  <polygon fill="rgb(255,228,181)" points="552,120 576,120 592,136 592,160 552,160 552,120" stroke="rgb(0,0,0)" />
+  <path d="M 576 120 L 576 136" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 576 136 L 592 136" fill="none" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="37" x="572" y="146">vol-bd</text>
+  <polygon fill="rgb(255,228,181)" points="552,200 576,200 592,216 592,240 552,240 552,200" stroke="rgb(0,0,0)" />
+  <path d="M 576 200 L 576 216" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 576 216 L 592 216" fill="none" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="37" x="572" y="226">vol-cd</text>
+  <path d="M 128 80 L 128 112" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <polygon fill="rgb(0,0,0)" points="128,119 124,112 132,112 128,119" stroke="rgb(0,0,0)" />
+  <path d="M 192 140 L 248 140" fill="none" stroke="rgb(0,0,0)" />
+  <polygon fill="rgb(0,0,0)" points="255,140 248,136 248,144 255,140" stroke="rgb(0,0,0)" />
+  <path d="M 192 140 L 224 140" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 224 140 L 224 220" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 224 220 L 248 220" fill="none" stroke="rgb(0,0,0)" />
+  <polygon fill="rgb(0,0,0)" points="255,220 248,216 248,224 255,220" stroke="rgb(0,0,0)" />
+  <path d="M 488 140 L 544 140" fill="none" stroke="rgb(0,0,0)" />
+  <polygon fill="rgb(0,0,0)" points="551,140 544,136 544,144 551,140" stroke="rgb(0,0,0)" />
+  <path d="M 488 220 L 544 220" fill="none" stroke="rgb(0,0,0)" />
+  <polygon fill="rgb(0,0,0)" points="551,220 544,216 544,224 551,220" stroke="rgb(0,0,0)" />
+  <path d="M 784 140 L 800 140" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 800 140 L 800 25" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 128 25 L 800 25" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 128 25 L 128 32" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <polygon fill="rgb(0,0,0)" points="128,39 124,32 132,32 128,39" stroke="rgb(0,0,0)" />
+  <path d="M 296 140 L 352 140" fill="none" stroke="rgb(0,0,0)" />
+  <polygon fill="rgb(0,0,0)" points="359,140 352,136 352,144 359,140" stroke="rgb(0,0,0)" />
+  <path d="M 296 220 L 352 220" fill="none" stroke="rgb(0,0,0)" />
+  <polygon fill="rgb(0,0,0)" points="359,220 352,216 352,224 359,220" stroke="rgb(0,0,0)" />
+  <path d="M 592 140 L 648 140" fill="none" stroke="rgb(0,0,0)" />
+  <polygon fill="rgb(0,0,0)" points="655,140 648,136 648,144 655,140" stroke="rgb(0,0,0)" />
+  <path d="M 592 220 L 640 220" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 640 220 L 640 140" fill="none" stroke="rgb(0,0,0)" />
+  <path d="M 640 140 L 648 140" fill="none" stroke="rgb(0,0,0)" />
+  <polygon fill="rgb(0,0,0)" points="655,140 648,136 648,144 655,140" stroke="rgb(0,0,0)" />
+  <rect fill="white" height="15" stroke="rgb(0,0,0)" width="41" x="156" y="83" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="25" x="176" y="96">pull</text>
+  <rect fill="white" height="15" stroke="rgb(0,0,0)" width="41" x="780" y="103" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="25" x="800" y="116">push</text>
+</svg>
