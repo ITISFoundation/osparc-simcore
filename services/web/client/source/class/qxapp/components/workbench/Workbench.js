@@ -55,29 +55,18 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       bottom: 20
     });
 
-    let nButtonsRight = 4;
-    let plusButton = this.__getPlusMenuButton();
-    this.add(plusButton, {
-      right: (--nButtonsRight)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
-      bottom: 20
+    let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
+    this.add(buttonContainer, {
+      bottom: 20,
+      right: 20
     });
-
-    let removeButton = this.__getRemoveButton();
-    this.add(removeButton, {
-      right: (--nButtonsRight)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
-      bottom: 20
-    });
-
-    let playButton = this.__getPlayButton();
-    this.add(playButton, {
-      right: (--nButtonsRight)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
-      bottom: 20
-    });
-
-    let stopButton = this.__getStopButton();
-    this.add(stopButton, {
-      right: (--nButtonsRight)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
-      bottom: 20
+    [
+      this.__getPlusMenuButton(),
+      this.__getRemoveButton(),
+      this.__getPlayButton(),
+      this.__getStopButton()
+    ].forEach(widget => {
+      buttonContainer.add(widget);
     });
 
     this.addListener("dblclick", function(pointerEvent) {
