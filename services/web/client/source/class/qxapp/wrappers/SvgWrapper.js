@@ -60,7 +60,7 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
         .fill("none")
         .stroke({
           width: 3,
-          color: "#00F"
+          color: qxapp.theme.Color.colors["workbench-link-active"]
         });
     },
 
