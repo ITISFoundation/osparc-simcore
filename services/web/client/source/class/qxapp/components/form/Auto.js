@@ -342,7 +342,7 @@ qx.Class.define("qxapp.components.form.Auto", {
         if (!s.set) {
           s.set = {};
         }
-     //   s.set.value = s.defaultValue;
+        //   s.set.value = s.defaultValue;
       }
       let control;
       let setup;

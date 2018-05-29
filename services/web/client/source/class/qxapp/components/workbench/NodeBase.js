@@ -152,16 +152,16 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return bounds;
     },
 
-    __applyMetadata: function(metadata, old) {
-      if (metadata != undefined) {
+    __applyMetadata: function(metaData, old) {
+      if (metaData != undefined) {
         let form = this.__settingsForm = new qxapp.components.form.Auto(metaData.settings);
         this.set({
-          serviceName: metadata.label,
-          nodeImageId: metadata.key,
+          serviceName: metaData.label,
+          nodeImageId: metaData.key,
           settingsWidget: new qxapp.components.form.renderer.PropForm(form)
         });
-        this.addInputs(metadata.inputs);
-        this.addOutputs(metadata.outputs);
+        this.addInputs(metaData.inputs);
+        this.addOutputs(metaData.outputs);
       }
     },
 
