@@ -48,10 +48,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     this.__nodes = [];
     this.__links = [];
 
-    let nButtonsLeft = 0;
     let loggerButton = this.__getShowLoggerButton();
     this.add(loggerButton, {
-      left: (nButtonsLeft++)*(BUTTON_SIZE+BUTTON_SPACING) + 20,
+      left: BUTTON_SIZE + BUTTON_SPACING + 20,
       bottom: 20
     });
 
