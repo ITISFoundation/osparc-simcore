@@ -9,7 +9,7 @@
     register: swarm_status
     changed_when: False
   - name: "Initialize docker swarm as manager"
-    command: "docker swarm init --advertise-addr {{ hostvars[groups[['managers'][0]].ansible_host }}"
+    command: "docker swarm init --advertise-addr {{ hostvars[groups['managers'][0]].ansible_host }}"
     when: "'active' not in swarm_status.stdout_lines"
   - name: "Get docker swarm manager token"
     command: "docker swarm join-token -q manager"
