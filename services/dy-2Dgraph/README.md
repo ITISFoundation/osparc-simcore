@@ -14,6 +14,42 @@ A simple workflow is shown in the workbench containing Filereader, Computational
 
 A python-based node needs some mechanism to access its input/output ports configuration and the data that might have been assigned to it. Therefore the simcore_api package comes in play.
 
+A workbench node input/output ports json-based configuration is described as follow:
+
+```javascript
+{
+    "version":"0.1",
+    "inputs": [
+        {
+            "key": "in_1",
+            "label": "computational data",
+            "description": "these are computed data out of a pipeline",
+            "type": "file-url",
+            "value": "/home/jovyan/data/outputControllerOut.dat",
+            "timestamp": "2018-05-23T15:34:53.511Z"
+        },
+        {
+            "key": "in_5",
+            "label": "some number",
+            "description": "numbering things",
+            "type": "integer",
+            "value": "666",
+            "timestamp": "2018-05-23T15:34:53.511Z"
+        }
+    ],
+    "outputs": [
+        {
+            "key": "out_1",
+            "label": "some boolean output",
+            "description": "could be true or false...",
+            "type": "bool",
+            "value": "null",
+            "timestamp": "2018-05-23T15:34:53.511Z"
+        }
+    ]
+}
+```
+
 ### simcore_api package
 
 The simcore_api python package is a component of this service that allows direct access to the service input and output connections.
