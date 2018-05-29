@@ -2,12 +2,10 @@
 #pylint: disable=W0212
 #pylint: disable=C0111
 
-def import_simcore_api():
+def test_default_configuration():
     from simcore_api import simcore
     assert simcore.Simcore
 
-def test_default_configuration():
-    from simcore_api import simcore
     assert len(simcore._inputs) == 2
     assert simcore._inputs[0].key == "in_1"
     assert simcore._inputs[0].label == "computational data"
@@ -31,7 +29,7 @@ def test_default_configuration():
     assert simcore._outputs[0].value == "null"
     assert simcore._outputs[0].timestamp == "2018-05-23T15:34:53.511Z"
 
-def test_default_json_decoding():
+def test_default_json_encoding():
     from simcore_api import simcore
     from simcore_api.simcore import _SimcoreEncoder
     import json
@@ -42,3 +40,49 @@ def test_default_json_decoding():
     with open(default_config_path) as file:
         original_json_data = file.read()
     assert json.loads(json_data) == json.loads(original_json_data)
+
+def test_no_inputs_outputs():
+    import pytest
+    import os
+    import tempfile
+    import json
+    # create temporary json file
+    temp_file = tempfile.NamedTemporaryFile()
+    temp_file.close()
+    # create empty configuration
+    config = {
+        "version":"0.1",
+        "inputs": [
+        ],
+        "outputs": [       
+        ]
+    }   
+    with open(temp_file.name) as fp:
+        json.dump(config, fp)
+
+    os.environ["SIMCORE_CONFIG_PATH"] = temp_file.name
+    from simcore_api import simcore
+
+    assert simcore.inputs == None
+    assert simcore.outputs == None
+
+    with pytest.raises(UnboundPortError, message="Expecting UnboundPortError") as excinfo:
+        simcore.inputs[0]
+    assert "Unbound port index" in str(excinfo.value)
+
+    with pytest.raises(UnboundPortError, message="Expecting UnboundPortError") as excinfo:
+        simcore.outputs[0]
+    assert "Unbound port index" in str(excinfo.value)
+
+    os.unlink(temp_file.name)
+    assert os.path.exists(temp_file.name)
+
+def test_adding_new_input():
+    import os
+    import tempfile
+
+    # create temporary json file
+    temp_file = tempfile.NamedTemporaryFile()
+
+    os.environ["SIMCORE_CONFIG_PATH"] = r"C:\Users\anderegg\Desktop\alternative_config.json"
+    from simcore_api import simcore
