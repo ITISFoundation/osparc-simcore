@@ -1,7 +1,7 @@
 ---
 # file: ops/ansible/ancillary-minio-deploy.yml
 # Setup Minio Roles
-- hosts: workers
+- hosts: managers workers
   roles:
     - dockerhost
     - minio
