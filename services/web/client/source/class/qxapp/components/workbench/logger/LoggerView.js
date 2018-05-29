@@ -23,57 +23,60 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       layout: new qx.ui.layout.VBox(10)
     });
 
-    // create the textfield
     let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
     let clearButton = new qx.ui.form.Button("Clear");
     clearButton.addListener("execute", function(e) {
-      this.__clearLogger();
+      this.clearLogger();
     }, this);
     filterLayout.add(clearButton);
 
     let searchLabel = new qx.ui.basic.Label("Filter");
     filterLayout.add(searchLabel);
-    let textfield = new qx.ui.form.TextField();
-    textfield.setLiveUpdate(true);
-    filterLayout.add(textfield, {
+    this.__textfield = new qx.ui.form.TextField();
+    this.__textfield.setLiveUpdate(true);
+    filterLayout.add(this.__textfield, {
       flex: 1
     });
 
+    var logLevelButtons = new qx.ui.toolbar.Part();
+
     let showDebugButton = new qx.ui.form.ToggleButton("Debug");
-    showDebugButton.setValue(true);
-    showDebugButton.addListener("changeValue", function(e) {
-      this.__activeLogLevel = LOG_LEVEL.debug;
-      console.log("show", this.__activeLogLevel);
-    }, this);
-    filterLayout.add(showDebugButton);
+    showDebugButton.logLevel = LOG_LEVEL.debug;
+    logLevelButtons.add(showDebugButton);
 
     let showInfoButton = new qx.ui.form.ToggleButton("Info");
-    showInfoButton.setValue(true);
-    showInfoButton.addListener("changeValue", function(e) {
-      this.__activeLogLevel = LOG_LEVEL.info;
-      console.log("show", this.__activeLogLevel);
-    });
-    filterLayout.add(showInfoButton);
+    showInfoButton.logLevel = LOG_LEVEL.info;
+    logLevelButtons.add(showInfoButton);
 
     let showWarnButton = new qx.ui.form.ToggleButton("Warning");
-    showWarnButton.setValue(true);
-    showWarnButton.addListener("changeValue", function(e) {
-      this.__activeLogLevel = LOG_LEVEL.warn;
-      console.log("show", this.__activeLogLevel);
-    });
-    filterLayout.add(showWarnButton);
+    showWarnButton.logLevel = LOG_LEVEL.warning;
+    logLevelButtons.add(showWarnButton);
 
     let showErrorButton = new qx.ui.form.ToggleButton("Error");
-    showErrorButton.setValue(true);
-    showErrorButton.addListener("changeValue", function(e) {
-      this.__activeLogLevel = LOG_LEVEL.error;
-      console.log("show", this.__activeLogLevel);
-    });
-    filterLayout.add(showErrorButton);
+    showErrorButton.logLevel = LOG_LEVEL.error;
+    logLevelButtons.add(showErrorButton);
+
+    filterLayout.add(logLevelButtons);
+
+    let logLevelBtns = [showDebugButton, showInfoButton, showWarnButton, showErrorButton];
 
     let group = new qx.ui.form.RadioGroup();
-    group.add(showDebugButton, showInfoButton, showWarnButton, showErrorButton);
+    let defSelected = [];
+    for (let i=0; i<logLevelBtns.length; i++) {
+      let logLevelBtn = logLevelBtns[i];
+      group.add(logLevelBtn);
+      if (this.getLogLevel() === logLevelBtn.logLevel) {
+        defSelected.push(logLevelBtn);
+      }
+      logLevelBtn.addListener("changeValue", function(e) {
+        if (e.getData() === true) {
+          this.setLogLevel(logLevelBtn.logLevel);
+        }
+      }, this);
+    }
+    group.setSelection(defSelected);
+    group.setAllowEmptySelection(false);
 
     this.add(filterLayout);
 
@@ -87,21 +90,31 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
 
     this.__messengerColors = new Set();
 
-    this.__logs = [];
-    let initLog = this.__createInitMsg();
-    this.__logs.push(initLog);
+    this.__createInitMsg();
 
-    textfield.addListener("changeValue", this.__filterString, this);
+    this.__textfield.addListener("changeValue", this.__applyFilters, this);
   },
 
   events: {},
 
+  properties: {
+    logLevel: {
+      apply : "__applyFilters",
+      nullable: false,
+      check : "Number",
+      init: LOG_LEVEL.debug
+    },
+    caseSensitive: {
+      nullable: false,
+      check : "Boolean",
+      init: false
+    }
+  },
+
   members: {
-    __textArea: null,
+    __textfield: null,
     __logList: null,
     __messengerColors: null,
-    __logs: null,
-    __activeLogLevel: LOG_LEVEL.debug,
 
     addLog: function(who = "System", what = "", logLevel = LOG_LEVEL.info) {
       const whoRich = this.__addWhoColorTag(who);
@@ -115,6 +128,9 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       label.what = what;
       label.logLevel = logLevel;
       this.__logList.add(label);
+
+      let show = label.logLevel >= this.getLogLevel();
+      this.__showMessage(label, show);
     },
 
     __addWhoColorTag: function(who) {
@@ -157,24 +173,46 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       return ("<font color=" + logColor +">" + what + "</font>");
     },
 
-    __filterString: function(e) {
-      const caseSensitive = false;
-      let searchString = e.getData();
-      if (caseSensitive === false) {
+    __showMessage: function(label, show) {
+      // FIXME: Hacky
+      if (show) {
+        label.setHeight(15);
+      } else {
+        label.setHeight(0);
+      }
+    },
+
+    __filterByString: function(label) {
+      let searchString = this.__textfield.getValue();
+      if (searchString === null) {
+        return true;
+      }
+      if (searchString && !this.isCaseSensitive()) {
         searchString = searchString.toUpperCase();
       }
+      let msg = label.who + ": " + label.what;
+      if (!this.isCaseSensitive()) {
+        msg = msg.toUpperCase();
+      }
+      const show = msg.includes(searchString);
+      return show;
+    },
+
+    __filterByLogLevel: function(label) {
+      const show = label.logLevel >= this.getLogLevel();
+      return show;
+    },
+
+    __applyFilters: function() {
+      if (this.__logList === null) {
+        return;
+      }
+
       for (let i=0; i<this.__logList.getChildren().length; i++) {
         let label = this.__logList.getChildren()[i];
-        let msg = label.who + ": " + label.what;
-        if (caseSensitive === false) {
-          msg = msg.toUpperCase();
-        }
-        // FIXME: Hacky
-        if (msg.search(searchString) === -1) {
-          label.setHeight(0);
-        } else {
-          label.setHeight(15);
-        }
+        const showStr = this.__filterByString(label);
+        const showLog = this.__filterByLogLevel(label);
+        this.__showMessage(label, showStr && showLog);
       }
     },
 
@@ -185,7 +223,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       this.addLog(who, what, logLevel);
     },
 
-    __clearLogger: function() {
+    clearLogger: function() {
       this.__logList.removeAll();
     }
   }

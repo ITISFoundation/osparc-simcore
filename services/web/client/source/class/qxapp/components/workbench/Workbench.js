@@ -765,7 +765,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       this.setCanStart(false);
 
-      this.__logger.addLog(null, "Starting pipeline");
+      this.__logger.addLog("Workbench", "Starting pipeline");
     },
 
     // register for logs
