@@ -765,7 +765,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       this.setCanStart(false);
 
-      this.__logger.addLog("Starting pipeline");
+      this.__logger.addLog(null, "Starting pipeline");
     },
 
     // register for logs
@@ -787,13 +787,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       for (let i = 0; i < this.__nodes.length; i++) {
         this.__nodes[i].setProgress(0);
       }
-      this.__logger.addLog("Stopping pipeline", "Workbench");
+      this.__logger.addLog("Workbench", "Stopping pipeline");
     },
 
     __updateLogger: function(nodeId, msg) {
       let node = this.__getNode(nodeId);
       if (node) {
-        this.__logger.addLog(msg, node.getCaption());
+        this.__logger.addLog(node.getCaption(), msg);
       }
     },
 

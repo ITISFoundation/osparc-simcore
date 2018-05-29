@@ -103,10 +103,10 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     __logs: null,
     __activeLogLevel: LOG_LEVEL.debug,
 
-    addLog: function(what, who = "System", logLevel = LOG_LEVEL.info) {
+    addLog: function(who = "System", what = "", logLevel = LOG_LEVEL.info) {
       const whoRich = this.__addWhoColorTag(who);
       const whatRich = this.__addLevelColorTag(what, logLevel);
-      const richMsg = whoRich + ": " + whatRich;
+      const richMsg = whoRich + whatRich;
       let label = new qx.ui.basic.Label(richMsg).set({
         selectable: true,
         rich: true
@@ -130,7 +130,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
         this.__messengerColors.add([who, whoColor]);
       }
 
-      return ("<font color=" + whoColor +">" + who + "</font>");
+      return ("<font color=" + whoColor +">" + who + ": </font>");
     },
 
     __addLevelColorTag: function(what, logLevel) {
@@ -182,17 +182,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       const who = "System";
       const what = "Logger intialized";
       const logLevel = LOG_LEVEL.debug;
-      const whoRich = this.__addWhoColorTag(who);
-      const whatRich = this.__addLevelColorTag(what, logLevel);
-      const richMsg = whoRich + ": " + whatRich;
-      let label = new qx.ui.basic.Label(richMsg).set({
-        selectable: true,
-        rich: true
-      });
-      label.who = who;
-      label.what = what;
-      label.logLevel = logLevel;
-      this.__logList.add(label);
+      this.addLog(who, what, logLevel);
     },
 
     __clearLogger: function() {
