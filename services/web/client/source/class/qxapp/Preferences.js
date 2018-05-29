@@ -80,10 +80,7 @@ qx.Class.define("qxapp.Preferences", {
       let img = new qx.ui.basic.Image().set({
         source: qxapp.utils.Placeholders.getGravatar(
             email.getValue() ||
-                ('bizzy' +
-                 '@' +
-                 'itis.ethz.ch'),
-            200)
+            ("bizzy" + "@" + "itis.ethz.ch"), 200)
       });
       page.add(img);
 
