@@ -11,18 +11,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     let settingsView = this.__settingsView = new qxapp.components.workbench.SettingsView().set({
       width: Math.round(0.75 * settingsWidth)
     });
-    settingsView.addListenerOnce("appear", () => {
-      settingsView.getContentElement().getDomElement()
-        .addEventListener("transitionend", () => {
-          settingsView.resetDecorator();
-        });
-    });
-    splitter.addListenerOnce("appear", () => {
-      splitter.getContentElement().getDomElement()
-        .addEventListener("transitionend", () => {
-          splitter.resetDecorator();
-        });
-    });
 
     let settingsBox = this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
       minWidth: 0,
@@ -30,21 +18,14 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       maxWidth: settingsWidth,
       width: Math.round(0.75 * settingsWidth)
     });
+
     settingsBox.add(settingsView, {
       top: 0,
       right: 0
     });
+
     this.add(settingsBox, 0);
 
-    settingsBox.addListenerOnce("appear", () => {
-      settingsBox.getContentElement().getDomElement()
-        .addEventListener("transitionend", () => {
-          settingsBox.resetDecorator();
-          if (settingsBox.getWidth() === 0) {
-            settingsBox.exclude();
-          }
-        });
-    });
     settingsBox.addListener("changeWidth", e => {
       let width = e.getData();
       if (width != 0) {
@@ -52,15 +33,29 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
     });
 
+
+
     let workbench = this.__workbench = new qxapp.components.workbench.Workbench();
+    this.add(workbench, 1);
+
     workbench.addListenerOnce("appear", () => {
       workbench.getContentElement().getDomElement()
         .addEventListener("transitionend", () => {
-          workbench.resetDecorator();
+          [
+            settingsView,
+            splitter,
+            settingsBox,
+            workbench
+          ].forEach(w => {
+            w.resetDecorator();
+          });
+          if (settingsBox.getWidth() === 0) {
+            settingsBox.exclude();
+          }
         });
     });
 
-    this.add(workbench, 1);
+
 
     this.__showSettings(false);
 
@@ -95,7 +90,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     this.__transDeco = new qx.ui.decoration.Decorator().set({
       transitionProperty: ["left", "right", "width"],
-      transitionDuration: "1s",
+      transitionDuration: "0.3s",
       transitionTimingFunction: "ease"
     });
   },
