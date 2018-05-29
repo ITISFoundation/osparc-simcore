@@ -1,36 +1,56 @@
 /* global window */
 qx.Class.define("qxapp.desktop.PrjEditor", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.splitpane.Pane,
 
   construct: function() {
-    this.base(arguments);
+    this.base(arguments, "horizontal");
 
-    this.set({
-      layout: new qx.ui.layout.Canvas()
-    });
-
-    // Create a horizontal split pane
-    this.__pane = new qx.ui.splitpane.Pane("horizontal");
+    let splitter = this.__splitter = this.getChildControl("splitter");
 
     const settingsWidth = this.__settingsWidth = 500;
     let settingsView = this.__settingsView = new qxapp.components.workbench.SettingsView().set({
-      maxWidth: settingsWidth,
-      width: 0,
-      minWidth: 0,
-      visibility: "excluded"
+      width: Math.round(0.75 * settingsWidth)
     });
-
     settingsView.addListenerOnce("appear", () => {
       settingsView.getContentElement().getDomElement()
         .addEventListener("transitionend", () => {
           settingsView.resetDecorator();
-          if (settingsView.getWidth() === 0) {
-            settingsView.exclude();
-          }
+        });
+    });
+    splitter.addListenerOnce("appear", () => {
+      splitter.getContentElement().getDomElement()
+        .addEventListener("transitionend", () => {
+          splitter.resetDecorator();
         });
     });
 
-    this.__pane.add(settingsView, 0);
+    let settingsBox = this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
+      minWidth: 0,
+      visibility: "excluded",
+      maxWidth: settingsWidth,
+      width: Math.round(0.75 * settingsWidth)
+    });
+    settingsBox.add(settingsView, {
+      top: 0,
+      right: 0
+    });
+    this.add(settingsBox, 0);
+
+    settingsBox.addListenerOnce("appear", () => {
+      settingsBox.getContentElement().getDomElement()
+        .addEventListener("transitionend", () => {
+          settingsBox.resetDecorator();
+          if (settingsBox.getWidth() === 0) {
+            settingsBox.exclude();
+          }
+        });
+    });
+    settingsBox.addListener("changeWidth", e => {
+      let width = e.getData();
+      if (width != 0) {
+        settingsView.setWidth(width);
+      }
+    });
 
     let workbench = this.__workbench = new qxapp.components.workbench.Workbench();
     workbench.addListenerOnce("appear", () => {
@@ -40,16 +60,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         });
     });
 
-    this.__pane.add(workbench, 1);
-
-
-
-    this.add(this.__pane, {
-      left: 0,
-      top: 0,
-      right: 0,
-      bottom: 0
-    });
+    this.add(workbench, 1);
 
     this.__showSettings(false);
 
@@ -92,18 +103,29 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   members: {
     __pane: null,
     __settingsView: null,
+    __settingsBox: null,
     __workbench: null,
     __settingsWidth: null,
     __transDeco: null,
+    __splitter: null,
 
     __showSettings: function(showSettings) {
       if (showSettings) {
-        this.__settingsView.show();
+        this.__settingsBox.show();
       }
       qx.ui.core.queue.Manager.flush();
-      this.__settingsView.set({
+      this.__settingsBox.set({
         decorator: this.__transDeco,
         width: showSettings ? Math.round(this.__settingsWidth * 0.75) : 0
+      });
+      this.__settingsView.set({
+        decorator: this.__transDeco
+      });
+      this.__workbench.set({
+        decorator: this.__transDeco
+      });
+      this.__splitter.set({
+        decorator: this.__transDeco
       });
     },
 
