@@ -1,4 +1,0 @@
----
-# file: ops/ansible/osparc-simcore.yml
-# osparc-simcore master deployment playbook
-- import_playbook: ancillary-minio.yml

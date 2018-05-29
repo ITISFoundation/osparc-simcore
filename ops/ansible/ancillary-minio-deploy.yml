@@ -1,7 +1,7 @@
 ---
-# file: ops/ansible/ancillary-minio.yml
+# file: ops/ansible/ancillary-minio-deploy.yml
 # Setup Minio Roles
-- hosts: docker-hosts
+- hosts: workers
   roles:
     - dockerhost
     - minio
@@ -11,7 +11,7 @@
 
 # Deploy minio stack
 # Bring down and destroy any existing minio stack
-- hosts: docker-swarm-managers[0]
+- hosts: managers[0]
   become: yes
   become_method: sudo
   tasks:
@@ -38,7 +38,7 @@
     when: result.stdout != ""
 
 # Deploy Minio docker swarm stack
-- hosts: docker-swarm-managers[0]
+- hosts: managers[0]
   become: yes
   become_method: sudo
   tasks:

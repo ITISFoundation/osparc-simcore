@@ -5,13 +5,16 @@ osparc01 ansible_host=172.16.8.252 ansible_port=22 ansible_user=ans
 osparc02 ansible_host=172.16.8.253 ansible_port=22 ansible_user=ans
 osparc03 ansible_host=172.16.8.254 ansible_port=22 ansible_user=ans
 
-[docker-hosts]
+[control]
+masu ansible_host=172.16.8.125 ansible_port=22 ansible_user=ans
+
+[workers]
 osparc01 ansible_host=172.16.8.252 ansible_port=22 ansible_user=ans
 osparc02 ansible_host=172.16.8.253 ansible_port=22 ansible_user=ans
 osparc03 ansible_host=172.16.8.254 ansible_port=22 ansible_user=ans
 
-[docker-swarm-managers]
+[managers]
 osparc01 ansible_host=172.16.8.252 ansible_port=22 ansible_user=ans
 
-[docker-registry]
+[dockerregistry]
 masu ansible_host=172.16.8.125 ansible_port=22 ansible_user=ans
