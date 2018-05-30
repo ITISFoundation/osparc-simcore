@@ -222,3 +222,15 @@ def test_removing_ports(special_simcore_configuration):
     assert simcore.inputs[0].value == "15"
     assert simcore.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
+    # let's do the same for the second output
+    del special_configuration["outputs"][1]
+    update_config_file(config_file, special_configuration)
+    assert len(simcore.inputs) == 1
+    assert len(simcore.outputs) == 1
+
+    assert simcore.outputs[0].key == "out_15"
+    assert simcore.outputs[0].label == "additional data"
+    assert simcore.outputs[0].description == "here some additional data"
+    assert simcore.outputs[0].type == "int"
+    assert simcore.outputs[0].value == "15"
+    assert simcore.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
