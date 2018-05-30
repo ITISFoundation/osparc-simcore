@@ -85,8 +85,8 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       flex: 1
     });
 
-    this.__logList = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-    scroller.add(this.__logList);
+    this.__logView = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    scroller.add(this.__logView);
 
     this.__messengerColors = new Set();
 
@@ -113,22 +113,22 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
 
   members: {
     __textfield: null,
-    __logList: null,
+    __logView: null,
     __messengerColors: null,
 
-    addLogDebug: function(who = "System", what = "") {
+    debug: function(who = "System", what = "") {
       this.__addLog(who, what, LOG_LEVEL.debug);
     },
 
-    addLogInfo: function(who = "System", what = "") {
+    info: function(who = "System", what = "") {
       this.__addLog(who, what, LOG_LEVEL.info);
     },
 
-    addLogWarning: function(who = "System", what = "") {
+    warn: function(who = "System", what = "") {
       this.__addLog(who, what, LOG_LEVEL.warning);
     },
 
-    addLogError: function(who = "System", what = "") {
+    error: function(who = "System", what = "") {
       this.__addLog(who, what, LOG_LEVEL.error);
     },
 
@@ -143,7 +143,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       label.who = who;
       label.what = what;
       label.logLevel = logLevel;
-      this.__logList.add(label);
+      this.__logView.add(label);
 
       let show = label.logLevel >= this.getLogLevel();
       this.__showMessage(label, show);
@@ -218,12 +218,12 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     },
 
     __applyFilters: function() {
-      if (this.__logList === null) {
+      if (this.__logView === null) {
         return;
       }
 
-      for (let i=0; i<this.__logList.getChildren().length; i++) {
-        let label = this.__logList.getChildren()[i];
+      for (let i=0; i<this.__logView.getChildren().length; i++) {
+        let label = this.__logView.getChildren()[i];
         const showStr = this.__filterByString(label);
         const showLog = this.__filterByLogLevel(label);
         this.__showMessage(label, showStr && showLog);
@@ -233,11 +233,11 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     __createInitMsg: function() {
       const who = "System";
       const what = "Logger intialized";
-      this.addLogDebug(who, what);
+      this.debug(who, what);
     },
 
     clearLogger: function() {
-      this.__logList.removeAll();
+      this.__logView.removeAll();
     }
   }
 });
