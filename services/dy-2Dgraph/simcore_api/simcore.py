@@ -4,6 +4,7 @@
 import collections
 from collections.abc import MutableSequence
 import json
+import simcore_api.exceptions
 
 DATA_ITEM_KEYS = ["key", "label", "description", "type", "value", "timestamp"]
 DataItem = collections.namedtuple("DataItem", DATA_ITEM_KEYS)
@@ -21,6 +22,8 @@ class DataItemsList(MutableSequence):
         self.lst[index] = value
 
     def __getitem__(self, index):
+        if index not in self.lst:
+            raise simcore_api.exceptions.UnboundPortError(index)
         return self.lst[index]
 
     def __len__(self):
@@ -87,8 +90,8 @@ class _SimcoreEncoder(json.JSONEncoder):
         if isinstance(o, Simcore):
             return {
                 "version": o._version, # pylint: disable=W0212
-                "inputs": o._inputs, # pylint: disable=W0212
-                "outputs": o._outputs # pylint: disable=W0212
+                "inputs": o.inputs, # pylint: disable=W0212
+                "outputs": o.outputs # pylint: disable=W0212
             }
         elif isinstance(o, DataItemsList):
             items = [data_item._asdict() for data_item in o]
@@ -104,18 +107,3 @@ def simcore_decoder(dct):
             if key not in dct:
                 return dct
         return DataItem(**dct)
-
-
-class SimcoreException(Exception):
-    """Basic exception for errors raised in simcore_api"""
-    def __init__(self, msg=None):
-        if msg is None:
-            msg = "An error occured in simcore"
-        super(SimcoreException, self).__init__(msg)
-
-class UnboundPortError(SimcoreException):
-    """Accessed port is not configured"""
-    def __init__(self, port_index, msg=None):
-        msg = "No port bound at index %s" % (port_index)
-        super(UnboundPortError, self).__init__(msg)
-        self.port_index = port_index
