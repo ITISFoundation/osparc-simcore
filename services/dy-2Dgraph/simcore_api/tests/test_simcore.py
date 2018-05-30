@@ -30,7 +30,6 @@ def test_default_configuration():
     assert simcore.outputs[0].value == "null"
     assert simcore.outputs[0].timestamp == "2018-05-23T15:34:53.511Z"
 
-
 def test_default_json_encoding():
     from .. import simcore
     from ..simcore import _SimcoreEncoder
@@ -43,7 +42,6 @@ def test_default_json_encoding():
     with open(default_config_path) as file:
         original_json_data = file.read()
     assert json.loads(json_data) == json.loads(original_json_data)
-
 
 @pytest.fixture()
 def special_simcore_configuration(request):
@@ -70,18 +68,21 @@ def special_simcore_configuration(request):
         assert os.path.exists(temp_file.name)
         # set the environment variable such that simcore will use the special file
         os.environ["SIMCORE_CONFIG_PATH"] = temp_file.name
+        return temp_file.name
     return create_special_config
 
-#pylint: disable=w0621
-def test_noinputsoutputs(special_simcore_configuration):
-    # create empty configuration
-    special_configuration = {
+def get_empty_config():
+    return {
         "version": "0.1",
         "inputs": [
         ],
         "outputs": [
         ]
     }
+#pylint: disable=w0621
+def test_noinputsoutputs(special_simcore_configuration):
+    # create empty configuration
+    special_configuration = get_empty_config()
     special_simcore_configuration(special_configuration)
 
     from .. import simcore
@@ -100,13 +101,62 @@ def test_noinputsoutputs(special_simcore_configuration):
         print(output0)
     assert "No port bound at index" in str(excinfo.value)
 
+def update_config_file(path, config):
+    import json
+    with open(path, "w") as json_file:
+        json.dump(config, json_file)
 
-# def test_adding_new_input():
-#     import os
-#     import tempfile
+def test_adding_new_input(special_simcore_configuration):
+    special_configuration = get_empty_config()
+    config_file = special_simcore_configuration(special_configuration)
+    from .. import simcore
+    # check empty configuration
+    assert not simcore.inputs
+    assert not simcore.outputs
 
-#     # create temporary json file
-#     temp_file = tempfile.NamedTemporaryFile()
+    # replace the configuration now, add an input
+    special_configuration["inputs"].append({
+            "key": "in_15",
+            "label": "additional data",
+            "description": "here some additional data",
+            "type": "int",
+            "value": "15",
+            "timestamp": "2018-05-22T19:34:53.511Z"
+        })
+    update_config_file(config_file, special_configuration)
+    
+    assert len(simcore.inputs) == 1
+    assert simcore.inputs[0].key == "in_15"
+    assert simcore.inputs[0].label == "additional data"
+    assert simcore.inputs[0].description == "here some additional data"
+    assert simcore.inputs[0].type == "int"
+    assert simcore.inputs[0].value == "15"
+    assert simcore.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
-#     os.environ["SIMCORE_CONFIG_PATH"] = r"C:\Users\anderegg\Desktop\alternative_config.json"
-#     from simcore_api import simcore
+    # replace the configuration now, add an output
+    special_configuration["outputs"].append({
+            "key": "out_15",
+            "label": "output data",
+            "description": "a cool output",
+            "type": "bool",
+            "value": "null",
+            "timestamp": "2018-05-22T19:34:53.511Z"
+        })
+    update_config_file(config_file, special_configuration)
+
+    # no change on inputs
+    assert len(simcore.inputs) == 1
+    assert simcore.inputs[0].key == "in_15"
+    assert simcore.inputs[0].label == "additional data"
+    assert simcore.inputs[0].description == "here some additional data"
+    assert simcore.inputs[0].type == "int"
+    assert simcore.inputs[0].value == "15"
+    assert simcore.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
+    # new output
+    assert len(simcore.outputs) == 1
+    assert simcore.outputs[0].key == "out_15"
+    assert simcore.outputs[0].label == "output data"
+    assert simcore.outputs[0].description == "a cool output"
+    assert simcore.outputs[0].type == "bool"
+    assert simcore.outputs[0].value == "null"
+    assert simcore.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"

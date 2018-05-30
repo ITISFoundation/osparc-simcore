@@ -39,7 +39,7 @@ class DataItemsList(MutableSequence):
 #pylint: disable=C0111
 class Simcore(object):
     """This class allow the client to access the inputs and outputs assigned to the node."""
-
+    #TODO: define a mechanism for version. it shall be able to be backwards compatible.
     def __init__(self, version="0.1", inputs=None, outputs=None):
         self._version = version
         if inputs is None:
