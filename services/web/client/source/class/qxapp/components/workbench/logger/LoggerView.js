@@ -88,6 +88,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     this.__logView = new qx.ui.container.Composite(new qx.ui.layout.VBox());
     scroller.add(this.__logView);
 
+    this.__logs = [];
     this.__messengerColors = new Set();
 
     this.__createInitMsg();
@@ -113,6 +114,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
 
   members: {
     __textfield: null,
+    __logs: null,
     __logView: null,
     __messengerColors: null,
 
@@ -133,6 +135,11 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     },
 
     __addLog: function(who = "System", what = "", logLevel = 0) {
+      this.__logs.push({
+        who: who,
+        what: what
+      });
+
       const whoRich = this.__addWhoColorTag(who);
       const whatRich = this.__addLevelColorTag(what, logLevel);
       const richMsg = whoRich + whatRich;
