@@ -80,13 +80,31 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
 
     this.add(filterLayout);
 
-    let scroller = new qx.ui.container.Scroll();
-    this.add(scroller, {
+    this.__logModel = new qx.ui.table.model.Simple();
+    this.__logModel.setColumns(["who", "what"]);
+
+    let custom = {
+      tableColumnModel : function(obj) {
+        return new qx.ui.table.columnmodel.Resize(obj);
+      }
+    };
+
+    // table
+    let table = this.__logView = new qx.ui.table.Table(this.__logModel, custom).set({
+      selectable: true,
+      headerCellsVisible: false,
+      statusBarVisible: false
+    });
+    var colModel = table.getTableColumnModel();
+    colModel.setDataCellRenderer(0, new qx.ui.table.cellrenderer.Html());
+    colModel.setDataCellRenderer(1, new qx.ui.table.cellrenderer.Html());
+    let resizeBehavior = colModel.getBehavior();
+    resizeBehavior.setWidth(0, "15%");
+    resizeBehavior.setWidth(1, "85%");
+
+    this.add(table, {
       flex: 1
     });
-
-    this.__logView = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-    scroller.add(this.__logView);
 
     this.__logs = [];
     this.__messengerColors = new Set();
@@ -115,6 +133,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
   members: {
     __textfield: null,
     __logs: null,
+    __logModel: null,
     __logView: null,
     __messengerColors: null,
 
@@ -150,7 +169,8 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       label.who = who;
       label.what = what;
       label.logLevel = logLevel;
-      this.__logView.add(label);
+
+      this.__logModel.addRows([[whoRich, whatRich]]);
 
       let show = label.logLevel >= this.getLogLevel();
       this.__showMessage(label, show);
@@ -250,7 +270,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     },
 
     clearLogger: function() {
-      this.__logView.removeAll();
+      this.__logModel.removeRows(0, this.__logModel.getRowCount());
     }
   }
 });
