@@ -116,7 +116,23 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     __logList: null,
     __messengerColors: null,
 
-    addLog: function(who = "System", what = "", logLevel = LOG_LEVEL.info) {
+    addLogDebug: function(who = "System", what = "") {
+      this.__addLog(who, what, LOG_LEVEL.debug);
+    },
+
+    addLogInfo: function(who = "System", what = "") {
+      this.__addLog(who, what, LOG_LEVEL.info);
+    },
+
+    addLogWarning: function(who = "System", what = "") {
+      this.__addLog(who, what, LOG_LEVEL.warning);
+    },
+
+    addLogError: function(who = "System", what = "") {
+      this.__addLog(who, what, LOG_LEVEL.error);
+    },
+
+    __addLog: function(who = "System", what = "", logLevel = 0) {
       const whoRich = this.__addWhoColorTag(who);
       const whatRich = this.__addLevelColorTag(what, logLevel);
       const richMsg = whoRich + whatRich;
@@ -151,7 +167,6 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
 
     __addLevelColorTag: function(what, logLevel) {
       let logColor = null;
-
       switch (logLevel) {
         case LOG_LEVEL.debug:
           logColor = qxapp.theme.Color.colors["logger-debug-message"];
@@ -169,7 +184,6 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
           logColor = qxapp.theme.Color.colors["logger-info-message"];
           break;
       }
-
       return ("<font color=" + logColor +">" + what + "</font>");
     },
 
@@ -219,8 +233,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     __createInitMsg: function() {
       const who = "System";
       const what = "Logger intialized";
-      const logLevel = LOG_LEVEL.debug;
-      this.addLog(who, what, logLevel);
+      this.addLogDebug(who, what);
     },
 
     clearLogger: function() {
