@@ -19,6 +19,12 @@ qx.Class.define("qxapp.utils.Utils", {
       return color;
     },
 
+    getColorLuminance: function(hexColor) {
+      const rgb = qx.util.ColorUtil.hexStringToRgb(hexColor);
+      const luminance = 0.2126*(rgb[0]/255) + 0.7152*(rgb[1]/255) + 0.0722*(rgb[2]/255);
+      return luminance;
+    },
+
     inHouse: function(password) {
       if (password === "itis") {
         return true;

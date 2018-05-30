@@ -165,7 +165,13 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
         }
       }
       if (whoColor === null) {
-        whoColor = qxapp.utils.Utils.getRandomColor();
+        const luminanceBG = qxapp.utils.Utils.getColorLuminance(qxapp.theme.Color.colors["table-row-background-selected"]);
+        let luminanceText = null;
+        do {
+          whoColor = qxapp.utils.Utils.getRandomColor();
+          luminanceText = qxapp.utils.Utils.getColorLuminance(whoColor);
+        } while (Math.abs(luminanceBG-luminanceText) < 0.4);
+
         this.__messengerColors.add([who, whoColor]);
       }
 
