@@ -5,7 +5,7 @@ class SimcoreException(Exception):
             msg = "An error occured in simcore"
         super(SimcoreException, self).__init__(msg)
 
-class UnboundPortError(SimcoreException):
+class UnboundPortError(SimcoreException, IndexError):
     """Accessed port is not configured"""
     def __init__(self, port_index, msg=None):
         msg = "No port bound at index %s" % (port_index)

@@ -5,7 +5,7 @@ import pytest
 
 
 def test_default_configuration():
-    from simcore_api import simcore
+    from .. import simcore
 
     assert len(simcore.inputs) == 2
     assert simcore.inputs[0].key == "in_1"
@@ -32,14 +32,14 @@ def test_default_configuration():
 
 
 def test_default_json_encoding():
-    from simcore_api import simcore
-    from simcore_api.simcore import _SimcoreEncoder
+    from .. import simcore
+    from ..simcore import _SimcoreEncoder
     import json
     import os
 
     json_data = json.dumps(simcore, cls=_SimcoreEncoder)
     default_config_path = os.path.join(os.path.dirname(
-        os.path.realpath(__file__)), r"../config/connection_config.json")
+        os.path.realpath(__file__)), r"../../config/connection_config.json")
     with open(default_config_path) as file:
         original_json_data = file.read()
     assert json.loads(json_data) == json.loads(original_json_data)
@@ -47,7 +47,7 @@ def test_default_json_encoding():
 
 @pytest.fixture()
 def special_simcore_configuration(request):
-    def create_special_config(configuration):
+    def create_special_config(configuration):        
         import os
         import json
         import tempfile
@@ -84,8 +84,8 @@ def test_noinputsoutputs(special_simcore_configuration):
     }
     special_simcore_configuration(special_configuration)
 
-    from simcore_api import simcore
-    from simcore_api import exceptions
+    from .. import simcore
+    from .. import exceptions
 
     assert not simcore.inputs
     assert not simcore.outputs
@@ -101,12 +101,12 @@ def test_noinputsoutputs(special_simcore_configuration):
     assert "No port bound at index" in str(excinfo.value)
 
 
-def test_adding_new_input():
-    import os
-    import tempfile
+# def test_adding_new_input():
+#     import os
+#     import tempfile
 
-    # create temporary json file
-    temp_file = tempfile.NamedTemporaryFile()
+#     # create temporary json file
+#     temp_file = tempfile.NamedTemporaryFile()
 
-    os.environ["SIMCORE_CONFIG_PATH"] = r"C:\Users\anderegg\Desktop\alternative_config.json"
-    from simcore_api import simcore
+#     os.environ["SIMCORE_CONFIG_PATH"] = r"C:\Users\anderegg\Desktop\alternative_config.json"
+#     from simcore_api import simcore

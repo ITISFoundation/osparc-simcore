@@ -22,9 +22,10 @@ class DataItemsList(MutableSequence):
         self.lst[index] = value
 
     def __getitem__(self, index):
-        if index not in self.lst:
-            raise simcore_api.exceptions.UnboundPortError(index)
-        return self.lst[index]
+        if index < len(self.lst):
+            return self.lst[index]
+        raise simcore_api.exceptions.UnboundPortError(index)
+        
 
     def __len__(self):
         return len(self.lst)
@@ -47,13 +48,13 @@ class Simcore(object):
         if outputs is None:
             outputs = DataItemsList()
         self.__outputs = outputs
-        self.path = r""
+        self.__json_config = None
         self.autoupdate = False
         
     @property
     def inputs(self):
         if self.autoupdate:            
-            self.update_from_json_file(self.path)
+            self.update_from_json()
         return self.__inputs
 
     @inputs.setter
@@ -63,26 +64,33 @@ class Simcore(object):
     @property
     def outputs(self):
         if self.autoupdate:
-            self.update_from_json_file(self.path)
+            self.update_from_json()
         return self.__outputs
 
     @outputs.setter
     def outputs(self, value):
         self.__outputs = value
 
-    def update_from_json_file(self, path):
-        with open(path) as json_config:
-            updated_simcore = json.load(json_config, object_hook=simcore_decoder)
+    @property
+    def json_config(self):
+        return self.__json_config
+
+    @json_config.setter
+    def json_config(self, value):
+        self.__json_config = value
+
+    def update_from_json(self):
+        updated_simcore = json.loads(self.__json_config(), object_hook=simcore_decoder)
         self.__inputs = updated_simcore.inputs
         self.outputs = updated_simcore.outputs
-        
+
     @classmethod
-    def create_from_json_file(cls, path):
-        with open(path) as json_config:
-            simcore = json.load(json_config, object_hook=simcore_decoder)
-        simcore.path = path
+    def create_from_json(cls, json_config):
+        simcore = json.loads(json_config(), object_hook=simcore_decoder)
+        simcore.json_config = json_config
         simcore.autoupdate = True
         return simcore
+
 
 class _SimcoreEncoder(json.JSONEncoder):
     # SAN: looks like pylint is having an issue here
