@@ -1,10 +1,12 @@
 
 #pylint: disable=W0212
 #pylint: disable=C0111
+import pytest
+
 
 def test_default_configuration():
     from simcore_api import simcore
-    
+
     assert len(simcore.inputs) == 2
     assert simcore.inputs[0].key == "in_1"
     assert simcore.inputs[0].label == "computational data"
@@ -28,6 +30,7 @@ def test_default_configuration():
     assert simcore.outputs[0].value == "null"
     assert simcore.outputs[0].timestamp == "2018-05-23T15:34:53.511Z"
 
+
 def test_default_json_encoding():
     from simcore_api import simcore
     from simcore_api.simcore import _SimcoreEncoder
@@ -35,33 +38,52 @@ def test_default_json_encoding():
     import os
 
     json_data = json.dumps(simcore, cls=_SimcoreEncoder)
-    default_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), r"../config/connection_config.json")
+    default_config_path = os.path.join(os.path.dirname(
+        os.path.realpath(__file__)), r"../config/connection_config.json")
     with open(default_config_path) as file:
         original_json_data = file.read()
     assert json.loads(json_data) == json.loads(original_json_data)
 
-def test_noinputsoutputs():   
 
-    import pytest
-    import os
-    import tempfile
-    import json
-    # create temporary json file
-    temp_file = tempfile.NamedTemporaryFile()
-    temp_file.close()
+@pytest.fixture()
+def special_simcore_configuration(request):
+    def create_special_config(configuration):
+        import os
+        import json
+        import tempfile
+        # create temporary json file
+        temp_file = tempfile.NamedTemporaryFile()
+        temp_file.close()
+        # ensure the file is removed at the end whatever happens
+
+        def fin():
+            if os.path.exists(temp_file.name):
+                os.unlink(temp_file.name)
+            assert not os.path.exists(temp_file.name)
+        request.addfinalizer(fin)
+        # get the configuration to set up
+        config = configuration
+        assert config
+        # create the special configuration file
+        with open(temp_file.name, "w") as file_pointer:
+            json.dump(config, file_pointer)
+        assert os.path.exists(temp_file.name)
+        # set the environment variable such that simcore will use the special file
+        os.environ["SIMCORE_CONFIG_PATH"] = temp_file.name
+    return create_special_config
+
+#pylint: disable=w0621
+def test_noinputsoutputs(special_simcore_configuration):
     # create empty configuration
-    config = {
-        "version":"0.1",
+    special_configuration = {
+        "version": "0.1",
         "inputs": [
         ],
-        "outputs": [       
+        "outputs": [
         ]
-    }   
-    with open(temp_file.name, "w") as file_pointer:
-        json.dump(config, file_pointer)
-    assert os.path.exists(temp_file.name)
+    }
+    special_simcore_configuration(special_configuration)
 
-    os.environ["SIMCORE_CONFIG_PATH"] = temp_file.name
     from simcore_api import simcore
     from simcore_api import exceptions
 
@@ -78,8 +100,6 @@ def test_noinputsoutputs():
         print(output0)
     assert "No port bound at index" in str(excinfo.value)
 
-    os.unlink(temp_file.name)
-    assert not os.path.exists(temp_file.name)
 
 def test_adding_new_input():
     import os
