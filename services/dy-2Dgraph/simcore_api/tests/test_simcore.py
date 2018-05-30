@@ -30,6 +30,7 @@ def test_default_configuration():
     assert simcore.outputs[0].value == "null"
     assert simcore.outputs[0].timestamp == "2018-05-23T15:34:53.511Z"
 
+
 def test_default_json_encoding():
     from .. import simcore
     from ..simcore import _SimcoreEncoder
@@ -43,9 +44,10 @@ def test_default_json_encoding():
         original_json_data = file.read()
     assert json.loads(json_data) == json.loads(original_json_data)
 
+
 @pytest.fixture()
 def special_simcore_configuration(request):
-    def create_special_config(configuration):        
+    def create_special_config(configuration):
         import os
         import json
         import tempfile
@@ -71,6 +73,7 @@ def special_simcore_configuration(request):
         return temp_file.name
     return create_special_config
 
+
 def get_empty_config():
     return {
         "version": "0.1",
@@ -80,6 +83,8 @@ def get_empty_config():
         ]
     }
 #pylint: disable=w0621
+
+
 def test_noinputsoutputs(special_simcore_configuration):
     # create empty configuration
     special_configuration = get_empty_config()
@@ -101,12 +106,14 @@ def test_noinputsoutputs(special_simcore_configuration):
         print(output0)
     assert "No port bound at index" in str(excinfo.value)
 
+
 def update_config_file(path, config):
     import json
     with open(path, "w") as json_file:
         json.dump(config, json_file)
 
-def test_adding_new_input(special_simcore_configuration):
+
+def test_adding_new_ports(special_simcore_configuration):
     special_configuration = get_empty_config()
     config_file = special_simcore_configuration(special_configuration)
     from .. import simcore
@@ -116,15 +123,15 @@ def test_adding_new_input(special_simcore_configuration):
 
     # replace the configuration now, add an input
     special_configuration["inputs"].append({
-            "key": "in_15",
-            "label": "additional data",
-            "description": "here some additional data",
-            "type": "int",
-            "value": "15",
-            "timestamp": "2018-05-22T19:34:53.511Z"
-        })
+        "key": "in_15",
+        "label": "additional data",
+        "description": "here some additional data",
+        "type": "int",
+        "value": "15",
+        "timestamp": "2018-05-22T19:34:53.511Z"
+    })
     update_config_file(config_file, special_configuration)
-    
+
     assert len(simcore.inputs) == 1
     assert simcore.inputs[0].key == "in_15"
     assert simcore.inputs[0].label == "additional data"
@@ -135,13 +142,13 @@ def test_adding_new_input(special_simcore_configuration):
 
     # replace the configuration now, add an output
     special_configuration["outputs"].append({
-            "key": "out_15",
-            "label": "output data",
-            "description": "a cool output",
-            "type": "bool",
-            "value": "null",
-            "timestamp": "2018-05-22T19:34:53.511Z"
-        })
+        "key": "out_15",
+        "label": "output data",
+        "description": "a cool output",
+        "type": "bool",
+        "value": "null",
+        "timestamp": "2018-05-22T19:34:53.511Z"
+    })
     update_config_file(config_file, special_configuration)
 
     # no change on inputs
@@ -160,3 +167,58 @@ def test_adding_new_input(special_simcore_configuration):
     assert simcore.outputs[0].type == "bool"
     assert simcore.outputs[0].value == "null"
     assert simcore.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
+
+
+def test_removing_ports(special_simcore_configuration):
+    special_configuration = get_empty_config()
+    # add inputs
+    special_configuration["inputs"].append({
+        "key": "in_15",
+        "label": "additional data",
+        "description": "here some additional data",
+        "type": "int",
+        "value": "15",
+        "timestamp": "2018-05-22T19:34:53.511Z"
+    })
+    special_configuration["inputs"].append({
+        "key": "in_17",
+        "label": "additional data",
+        "description": "here some additional data",
+        "type": "int",
+        "value": "15",
+        "timestamp": "2018-05-22T19:34:53.511Z"
+    })
+    special_configuration["outputs"].append({
+        "key": "out_15",
+        "label": "additional data",
+        "description": "here some additional data",
+        "type": "int",
+        "value": "15",
+        "timestamp": "2018-05-22T19:34:53.511Z"
+    })
+    special_configuration["outputs"].append({
+        "key": "out_17",
+        "label": "additional data",
+        "description": "here some additional data",
+        "type": "int",
+        "value": "15",
+        "timestamp": "2018-05-22T19:34:53.511Z"
+    })
+
+    config_file = special_simcore_configuration(special_configuration)
+    from .. import simcore
+    assert len(simcore.inputs) == 2
+    assert len(simcore.outputs) == 2
+    # let's remove the first input
+    del special_configuration["inputs"][0]
+    update_config_file(config_file, special_configuration)
+    assert len(simcore.inputs) == 1
+    assert len(simcore.outputs) == 2
+
+    assert simcore.inputs[0].key == "in_17"
+    assert simcore.inputs[0].label == "additional data"
+    assert simcore.inputs[0].description == "here some additional data"
+    assert simcore.inputs[0].type == "int"
+    assert simcore.inputs[0].value == "15"
+    assert simcore.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
+

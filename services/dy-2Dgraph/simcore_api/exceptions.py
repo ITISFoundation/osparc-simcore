@@ -1,3 +1,4 @@
+"""Defines the different exceptions that may arise in the simcore_api package"""
 class SimcoreException(Exception):
     """Basic exception for errors raised in simcore_api"""
     def __init__(self, msg=None):
