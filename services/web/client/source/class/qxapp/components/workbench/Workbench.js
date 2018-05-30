@@ -50,7 +50,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     let loggerButton = this.__getShowLoggerButton();
     this.add(loggerButton, {
-      left: BUTTON_SIZE + BUTTON_SPACING + 20,
+      left: 20,
       bottom: 20
     });
 
