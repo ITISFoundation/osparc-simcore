@@ -39,9 +39,11 @@ class DataItemsList(MutableSequence):
 #pylint: disable=C0111
 class Simcore(object):
     """This class allow the client to access the inputs and outputs assigned to the node."""
-    #TODO: define a mechanism for version. it shall be able to be backwards compatible.
-    def __init__(self, version="0.1", inputs=None, outputs=None):
-        self._version = version
+    _version = "0.1"
+    def __init__(self, version, inputs=None, outputs=None):
+        if self._version != version:
+            raise simcore_api.exceptions.WrongProtocolVersionError(self._version, version)
+        
         if inputs is None:
             inputs = DataItemsList()
         self.__inputs = inputs
@@ -108,10 +110,10 @@ class _SimcoreEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
     
 def simcore_decoder(dct):
-    if "version" in dct and dct["version"] == "0.1" and "inputs" in dct and "outputs" in dct:
+    if "version" in dct and "inputs" in dct and "outputs" in dct:
         return Simcore(dct["version"], DataItemsList(dct["inputs"]), DataItemsList(dct["outputs"]))
     else:
         for key in DATA_ITEM_KEYS:
             if key not in dct:
-                return dct
+                raise simcore_api.exceptions.InvalidProtocolError(dct)
         return DataItem(**dct)

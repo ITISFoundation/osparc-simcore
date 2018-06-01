@@ -30,7 +30,6 @@ def test_default_configuration():
     assert simcore.outputs[0].value == "null"
     assert simcore.outputs[0].timestamp == "2018-05-23T15:34:53.511Z"
 
-
 def test_default_json_encoding():
     from .. import simcore
     from ..simcore import _SimcoreEncoder
@@ -84,6 +83,27 @@ def get_empty_config():
     }
 #pylint: disable=w0621
 
+def test_wrong_version(special_simcore_configuration):
+    special_configuration = get_empty_config()
+    #change version to a different one
+    special_configuration["version"] = "0.0"
+    special_simcore_configuration(special_configuration)
+
+    from .. import exceptions    
+    with pytest.raises(exceptions.WrongProtocolVersionError, message="Expecting WrongProtocolVersionError") as excinfo:
+        from .. import simcore
+        print(simcore.inputs)
+    assert "Expecting version 0.1, found version 0.0" in str(excinfo.value)
+
+def test_invalid_configuration(special_simcore_configuration):
+    special_configuration = {"whatever":"stuff"}
+    special_simcore_configuration(special_configuration)
+
+    from .. import exceptions
+    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting WrongProtocol") as excinfo:
+        from .. import simcore
+        print(simcore.inputs)
+    assert "Invalid configuration file"
 
 def test_noinputsoutputs(special_simcore_configuration):
     # create empty configuration
