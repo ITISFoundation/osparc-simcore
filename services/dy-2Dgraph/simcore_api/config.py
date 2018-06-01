@@ -5,28 +5,54 @@
 
 import os
 import logging
+from enum import Enum
 
+# simcore_api is a library for accessing data linked to the node
+# in that sense it should not log stuff unless the application code wants it to be so.
+logging.getLogger(__name__).addHandler(logging.NullHandler())
 _LOGGER = logging.getLogger(__name__)
 
+# pylint: disable=C0111
+
+class Location(Enum):
+    FILE = "file"
+    DATABASE = "database"
+
+class CommonConfig(object):
+    DEFAULT_FILE_LOCATION = r"../config/connection_config.json"
+    LOCATION = Location.FILE
+
+    @classmethod    
+    def get_ports_configuration(cls):
+        """returns the json configuration of the node ports where this code is running. 
+        
+        Returns:
+            string -- a json containing the ports configuration                
+        """
+        _LOGGER.debug("Getting ports configuration using %s", cls.LOCATION)
+        if cls.LOCATION == Location.FILE:
+            
+            file_location = os.environ.get('SIMCORE_CONFIG_PATH', cls.DEFAULT_FILE_LOCATION)
+            config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), file_location)
+            _LOGGER.debug("Reading ports configuration from %s", config_file)
+            with open(config_file) as simcore_config:
+                return simcore_config.read()
+        else:
+            raise NotImplementedError
+
+class DevelopmentConfig(CommonConfig):
+    LOG_LEVEL = logging.DEBUG
+
+class TestingConfig(CommonConfig):
+    LOG_LEVEL = logging.DEBUG
+
+class ProductionConfig(CommonConfig):
+    LOG_LEVEL = logging.WARNING
+
 CONFIG = {
-    "config_location":"file"
+    "development": DevelopmentConfig,
+    "testing": TestingConfig,
+    "production": ProductionConfig,
+
+    "default": DevelopmentConfig
 }
-
-_DEFAULT_FILE_LOCATION = r"../config/connection_config.json"
-
-def get_ports_configuration():
-    """returns the json configuration of the node ports where this code is running. 
-    
-    Returns:
-        string -- a json containing the ports configuration                
-    """
-    _LOGGER.debug("Getting ports configuration using %s", CONFIG["config_location"])
-    if CONFIG["config_location"] == "file":
-        file_location = os.environ.get('SIMCORE_CONFIG_PATH', _DEFAULT_FILE_LOCATION)
-        config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), file_location)
-        _LOGGER.debug("Reading ports configuration from %s", config_file)
-        with open(config_file) as simcore_config:
-            return simcore_config.read()
-    else:
-        assert "not implemented yet"
-        return ""
