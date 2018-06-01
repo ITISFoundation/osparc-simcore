@@ -27,5 +27,6 @@ def get_ports_configuration():
         _LOGGER.debug("Reading ports configuration from %s", config_file)
         with open(config_file) as simcore_config:
             return simcore_config.read()
-
-    assert "not implemented yet"
+    else:
+        assert "not implemented yet"
+        return ""

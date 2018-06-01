@@ -13,7 +13,7 @@ DATA_ITEM_KEYS = ["key", "label", "description", "type", "value", "timestamp"]
 DataItem = collections.namedtuple("DataItem", DATA_ITEM_KEYS)
 
 
-class DataItemsList(MutableSequence):
+class DataItemsList(MutableSequence): # pylint: disable=too-many-ancestors
     """This class contains a list of Data Items."""
 
     def __init__(self, data=None):
@@ -136,9 +136,8 @@ def simcore_decoder(dct):
     if "version" in dct and "inputs" in dct and "outputs" in dct:
         _LOGGER.debug("Decoding Simcore json: %s", dct)
         return Simcore(dct["version"], DataItemsList(dct["inputs"]), DataItemsList(dct["outputs"]))
-    else:
-        for key in DATA_ITEM_KEYS:
-            if key not in dct:
-                raise simcore_api.exceptions.InvalidProtocolError(dct)
-        _LOGGER.debug("Decoding Data time json: %s", dct)
-        return DataItem(**dct)
+    for key in DATA_ITEM_KEYS:
+        if key not in dct:
+            raise simcore_api.exceptions.InvalidProtocolError(dct)
+    _LOGGER.debug("Decoding Data time json: %s", dct)
+    return DataItem(**dct)
