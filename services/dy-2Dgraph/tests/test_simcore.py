@@ -5,7 +5,7 @@ import pytest
 
 
 def test_default_configuration():
-    from .. import simcore
+    from simcore_api import simcore
 
     assert len(simcore.inputs) == 2
     assert simcore.inputs[0].key == "in_1"
@@ -31,14 +31,14 @@ def test_default_configuration():
     assert simcore.outputs[0].timestamp == "2018-05-23T15:34:53.511Z"
 
 def test_default_json_encoding():
-    from .. import simcore
-    from ..simcore import _SimcoreEncoder
+    from simcore_api import simcore
+    from simcore_api.simcore import _SimcoreEncoder
     import json
     import os
 
     json_data = json.dumps(simcore, cls=_SimcoreEncoder)
     default_config_path = os.path.join(os.path.dirname(
-        os.path.realpath(__file__)), r"../../config/connection_config.json")
+        os.path.realpath(__file__)), r"../config/connection_config.json")
     with open(default_config_path) as file:
         original_json_data = file.read()
     assert json.loads(json_data) == json.loads(original_json_data)
@@ -89,9 +89,9 @@ def test_wrong_version(special_simcore_configuration):
     special_configuration["version"] = "0.0"
     special_simcore_configuration(special_configuration)
 
-    from .. import exceptions    
+    from simcore_api import exceptions    
     with pytest.raises(exceptions.WrongProtocolVersionError, message="Expecting WrongProtocolVersionError") as excinfo:
-        from .. import simcore
+        from simcore_api import simcore
         print(simcore.inputs)
     assert "Expecting version 0.1, found version 0.0" in str(excinfo.value)
 
@@ -99,9 +99,9 @@ def test_invalid_configuration(special_simcore_configuration):
     special_configuration = {"whatever":"stuff"}
     special_simcore_configuration(special_configuration)
 
-    from .. import exceptions
+    from simcore_api import exceptions
     with pytest.raises(exceptions.InvalidProtocolError, message="Expecting WrongProtocol") as excinfo:
-        from .. import simcore
+        from simcore_api import simcore
         print(simcore.inputs)
     assert "Invalid protocol used in" in str(excinfo.value)
 
@@ -110,8 +110,8 @@ def test_noinputsoutputs(special_simcore_configuration):
     special_configuration = get_empty_config()
     special_simcore_configuration(special_configuration)
 
-    from .. import simcore
-    from .. import exceptions
+    from simcore_api import simcore
+    from simcore_api import exceptions
 
     assert not simcore.inputs
     assert not simcore.outputs
@@ -136,7 +136,7 @@ def update_config_file(path, config):
 def test_adding_new_ports(special_simcore_configuration):
     special_configuration = get_empty_config()
     config_file = special_simcore_configuration(special_configuration)
-    from .. import simcore
+    from simcore_api import simcore
     # check empty configuration
     assert not simcore.inputs
     assert not simcore.outputs
@@ -226,7 +226,7 @@ def test_removing_ports(special_simcore_configuration):
     })
 
     config_file = special_simcore_configuration(special_configuration)
-    from .. import simcore
+    from simcore_api import simcore
     assert len(simcore.inputs) == 2
     assert len(simcore.outputs) == 2
     # let's remove the first input
