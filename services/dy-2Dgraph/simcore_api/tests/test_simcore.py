@@ -103,7 +103,7 @@ def test_invalid_configuration(special_simcore_configuration):
     with pytest.raises(exceptions.InvalidProtocolError, message="Expecting WrongProtocol") as excinfo:
         from .. import simcore
         print(simcore.inputs)
-    assert "Invalid configuration file"
+    assert "Invalid protocol used in" in str(excinfo.value)
 
 def test_noinputsoutputs(special_simcore_configuration):
     # create empty configuration
