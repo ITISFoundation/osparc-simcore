@@ -26,7 +26,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
   properties: {
     node: {
       check: "qxapp.components.workbench.NodeBase",
-      apply: "_applyNode"
+      apply: "__applyNode"
     }
   },
   members: {
@@ -62,7 +62,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       this.add(this.__settingsBox);
     },
 
-    _applyNode: function(node, oldNode, propertyName) {
+    __applyNode: function(node, oldNode, propertyName) {
       this.__settingsBox.removeAll();
       this.__settingsBox.add(node.getSettingsWidget());
     },
@@ -70,7 +70,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
     /**
      * DEPRECATED ... the node settings from is now stored in a property of the node.
      */
-    setNodeMetadata: function(node) {
+    XXXsetNodeMetadata: function(node) {
       this.__settingsBox.removeAll();
 
       let form = new qx.ui.form.Form();

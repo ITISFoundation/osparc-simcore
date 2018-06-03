@@ -14,6 +14,7 @@
  *         {
  *           key: 'xyc',             // unique name
  *           label: 'label',
+ *           type: string|integer|boolean,
  *           widget: 'text',
  *           cfg: {},                // widget specific configuration
  *           set: {}                 // normal qx porperties to apply
@@ -21,10 +22,15 @@
  *          ....
  *     ]
  *
+ * The default widgets for data types are as follows:
+ *
+ *     string: text
+ *     integer: spinner
+ *     bool:  checkBox
+ *
  * The following widgets are supported:
  *     header: { label: "header text"},
  *     text: { },
- *     integer: {},
  *     selectBox: { cfg: { structure: [ {key: x, label: y}, ...] } },
  *     date: { }, // following unix tradition, dates are represented in epoc seconds
  *     password: {},
@@ -46,14 +52,14 @@ qx.Class.define("qxapp.components.form.Auto", {
   /**
      * @param structure {Array} form structure
      */
-  construct : function(structure) {
+  construct : function(content) {
     this.base(arguments);
     this.__ctrlMap = {};
     let formCtrl = this.__formCtrl = new qx.data.controller.Form(null, this);
     this.__boxCtrl = {};
     this.__typeMap = {};
 
-    structure.forEach(this.__addField, this);
+    content.forEach(this.__addField, this);
 
     let model = this.__model = formCtrl.createModel(true);
 
@@ -239,12 +245,12 @@ qx.Class.define("qxapp.components.form.Auto", {
             "dd.MM.yyyy"
         )
       );
-      let dateValue = s.set.value;
+      let dateValue = s.defaultValue;
       if (dateValue !== null) {
         if (typeof dateValue == "number") {
-          s.set.value = new Date(dateValue * 1000);
+          s.defaultValue = new Date(dateValue * 1000);
         } else {
-          s.set.value = new Date(dateValue);
+          s.defaultValue = new Date(dateValue);
         }
       }
     },
@@ -262,15 +268,12 @@ qx.Class.define("qxapp.components.form.Auto", {
         }
       );
     },
-    __setupIntegerField: function(s) {
+    __setupSpinner: function(s) {
       if (!s.set) {
         s.set = {};
       }
-      if (!s.set.filter) {
-        s.set.filter = "/\d/";
-      }
-      if (s.set.value) {
-        s.set.value = parseInt(s.set.value);
+      if (s.defaultValue) {
+        s.set.value = parseInt(s.defaultValue);
       }
       this.__formCtrl.addBindingOptions(s.key,
         { // model2target
@@ -300,7 +303,7 @@ qx.Class.define("qxapp.components.form.Auto", {
       let cfg = s.cfg;
       if (cfg.structure) {
         cfg.structure.forEach(function(item) {
-          item.label = item.label === null ? null : this["tr"](item.label);
+          item.label = item.label ? this["tr"](item.label) : null;
         }, this);
       } else {
         cfg.strucuture = [{
@@ -308,7 +311,10 @@ qx.Class.define("qxapp.components.form.Auto", {
           key   : null
         }];
       }
-      console.log(cfg.structure);
+      if (s.set.value) {
+        s.set.value = [s.set.value];
+      }
+      // console.log(cfg.structure);
       let sbModel = qx.data.marshal.Json.createModel(cfg.structure);
       controller.setModel(sbModel);
     },
@@ -317,7 +323,7 @@ qx.Class.define("qxapp.components.form.Auto", {
       let cfg = s.cfg;
       if (cfg.structure) {
         cfg.structure.forEach(function(item) {
-          item = item === null ? null : this["tr"](item);
+          item = item ? this["tr"](item):null;
         }, this);
       } else {
         cfg.structure = [];
@@ -331,18 +337,25 @@ qx.Class.define("qxapp.components.form.Auto", {
       }; // for passing info into the form renderer
 
       if (s.widget == "header") {
-        this.addGroupHeader(s.label === null ? null : this["tr"](s.label), option);
+        this.addGroupHeader(s.label ? this["tr"](s.label):null, option);
         return;
       }
 
-      if (s.key === null) {
+      if (!s.key) {
         throw new Error("the key property is required");
       }
       if (s.defaultValue) {
         if (!s.set) {
           s.set = {};
         }
-        //   s.set.value = s.defaultValue;
+        s.set.value = s.defaultValue;
+      }
+      if (!s.widget) {
+        s.widget = {
+          string: "text",
+          integer: "spinner",
+          bool: "checkBox"
+        }[s.type];
       }
       let control;
       let setup;
@@ -352,12 +365,12 @@ qx.Class.define("qxapp.components.form.Auto", {
           setup = this.__setupDateField;
           break;
         case "text":
-          control = new qx.ui.form.DateField();
+          control = new qx.ui.form.TextField();
           setup = this.__setupTextField;
           break;
-        case "integer":
-          control = new qx.ui.form.TextField();
-          setup = this.__setupIntegerField;
+        case "spinner":
+          control = new qx.ui.form.Spinner();
+          setup = this.__setupSpinner;
           break;
         case "password":
           control = new qx.ui.form.PasswordField();
@@ -389,7 +402,7 @@ qx.Class.define("qxapp.components.form.Auto", {
           throw new Error("unknown widget type " + s.widget);
       }
       this.__ctrlMap[s.key] = control;
-      this.add(control, s.label === null ? null : this["tr"](s.label), null, s.key, null, option);
+      this.add(control, s.label ? this["tr"](s.label):null, null, s.key, null, option);
 
       setup.call(this, s, control);
 
@@ -403,6 +416,7 @@ qx.Class.define("qxapp.components.form.Auto", {
         if (s.set.label) {
           s.set.label = this["tr"](s.set.label);
         }
+        console.log(s.set);
         control.set(s.set);
       }
       this.__ctrlMap[s.key] = control;
