@@ -4,7 +4,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
   construct: function() {
     this.base();
 
-    let box = new qx.ui.layout.VBox(10, null, "separator-vertical");
+    let box = new qx.ui.layout.VBox(10);
     box.set({
       alignX: "center"
     });
@@ -23,6 +23,12 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
     "ShowViewer": "qx.event.type.Data"
   },
 
+  properties: {
+    node: {
+      check: "qxapp.components.workbench.NodeBase",
+      apply: "__applyNode"
+    }
+  },
   members: {
     __settingsBox: null,
 
@@ -52,11 +58,19 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
     },
 
     __initSettings: function() {
-      this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Grow());
       this.add(this.__settingsBox);
     },
 
-    setNodeMetadata: function(node) {
+    __applyNode: function(node, oldNode, propertyName) {
+      this.__settingsBox.removeAll();
+      this.__settingsBox.add(node.getSettingsWidget());
+    },
+
+    /**
+     * DEPRECATED ... the node settings from is now stored in a property of the node.
+     */
+    XXXsetNodeMetadata: function(node) {
       this.__settingsBox.removeAll();
 
       let form = new qx.ui.form.Form();
