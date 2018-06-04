@@ -5,7 +5,6 @@ LABEL maintainer=pcrespov
 # TODO:  set as host user, otherwise outdir is set as root in the host
 
 ENV NPM_CONFIG_LOGLEVEL warn
-ENV PATH="/home/node/qooxdoo-sdk/tool/bin:/home/node/node_modules/.bin/:${PATH}"
 
 #
 # + /home/node/            $HOME
@@ -27,9 +26,20 @@ COPY package*.json ./
 # FIXME: npm WARN node description, ...
 # FIXME: npm WARN notice [SECURITY] tunnel-agen
 # FIXME: npm WARN notice [SECURITY] hoek
+
+# 1) Installs from npm
+#ENV PATH="/home/node/qooxdoo-sdk/tool/bin:/home/node/node_modules/.bin/:${PATH}"
+#RUN npm i npm@latest && \
+#    npm install && \
+#    git clone --depth 1 https://github.com/qooxdoo/qooxdoo.git qooxdoo-sdk
+
+# 2) checkout master
+ENV PATH="/home/node/qooxdoo-sdk/tool/bin:/home/node/qooxdoo-compiler/:/home/node/node_modules/.bin/:${PATH}"
 RUN npm i npm@latest && \
+    git clone --depth 1 https://github.com/qooxdoo/qooxdoo-compiler.git qooxdoo-compiler && \
     npm install && \
     git clone --depth 1 https://github.com/qooxdoo/qooxdoo.git qooxdoo-sdk
+
 
 WORKDIR /home/node/client
 COPY scripts scripts
