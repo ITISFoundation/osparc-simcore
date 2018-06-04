@@ -1,5 +1,6 @@
 
 #pylint: disable=C0111
+#pylint: disable=W0621
 import pytest
 import simcore_api.config
 @pytest.fixture(scope="module",
