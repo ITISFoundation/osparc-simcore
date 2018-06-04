@@ -76,18 +76,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       apply : "__applyMetadata"
     },
 
-    inputLinkIDs: {
-      check: "Array",
-      init: [],
-      nullable: false
-    },
-
-    outputLinkIDs: {
-      check: "Array",
-      init: [],
-      nullable: false
-    },
-
     settingsWidget: {
       check: "qxapp.components.form.renderer.PropForm"
     }
