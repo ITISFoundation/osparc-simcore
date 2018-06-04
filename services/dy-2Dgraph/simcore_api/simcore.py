@@ -41,7 +41,6 @@ class DataItemsList(MutableSequence): # pylint: disable=too-many-ancestors
         self.lst = data
         self.read_only = read_only
         self.change_notifier = None
-        self.change_notifier_data = None
     
     def __setitem__(self, index, value):
         _LOGGER.debug("Setting item %s with %s", index, value)
@@ -52,7 +51,7 @@ class DataItemsList(MutableSequence): # pylint: disable=too-many-ancestors
             index = self.__find_index_from_key(index)
         self.lst[index] = value
         if self.change_notifier and callable(self.change_notifier):
-            self.change_notifier(self.change_notifier_data)
+            self.change_notifier()
 
     def __getitem__(self, index):
         _LOGGER.debug("Getting item %s", index)
@@ -100,7 +99,6 @@ class Simcore(object):
         self.__outputs = outputs
         #self.__outputs.read_only = True
         self.__outputs.change_notifier = self.save_to_json
-        self.__outputs.change_notifier_data = self
         self.__json_reader = None
         self.__json_writer = None
         self.autoupdate = False
@@ -157,26 +155,23 @@ class Simcore(object):
     def update_from_json(self):
         _LOGGER.debug("Updating json configuration")
         change_notifier = self.__outputs.change_notifier
-        change_notifier_data = self.__outputs.change_notifier_data
         updated_simcore = json.loads(self.__json_reader(), object_hook=simcore_decoder)
         self.__inputs = updated_simcore.inputs
         self.__outputs = updated_simcore.outputs
         self.__outputs.change_notifier = change_notifier
-        self.__outputs.change_notifier_data = change_notifier_data
         _LOGGER.debug("Updated json configuration")
     
-    @classmethod
-    def save_to_json(cls, simcore_obj):
+    def save_to_json(self):
         _LOGGER.info("Saving Simcore object to json")
-        auto_update_state = simcore_obj.autoupdate
+        auto_update_state = self.autoupdate
         try:
-            simcore_obj.autoupdate = False
-            simcore_json = json.dumps(simcore_obj, cls=_SimcoreEncoder)
+            self.autoupdate = False
+            simcore_json = json.dumps(self, cls=_SimcoreEncoder)
         finally:
-            simcore_obj.autoupdate = auto_update_state
+            self.autoupdate = auto_update_state
         
-        if callable(simcore_obj.json_writer):
-            simcore_obj.json_writer(simcore_json)
+        if callable(self.json_writer):
+            self.json_writer(simcore_json) #pylint: disable=E1102
         _LOGGER.debug("Saved Simcore object to json: %s", simcore_json)
 
     @classmethod
