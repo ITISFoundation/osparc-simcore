@@ -48,44 +48,44 @@ def get_empty_config():
     }
 
 def test_default_configuration(default_simcore_configuration): # pylint: disable=W0613, W0621
-    from simcore_api import simcore
+    from simcore_api import PORTS
 
-    assert len(simcore.inputs) == 2
-    assert simcore.inputs[0].key == "in_1"
-    assert simcore.inputs[0].label == "computational data"
-    assert simcore.inputs[0].description == "these are computed data out of a pipeline"
-    assert simcore.inputs[0].type == "file-url"
-    assert simcore.inputs[0].value == "/home/jovyan/data/outputControllerOut.dat"
-    assert simcore.inputs[0].timestamp == "2018-05-23T15:34:53.511Z"
+    assert len(PORTS.inputs) == 2
+    assert PORTS.inputs[0].key == "in_1"
+    assert PORTS.inputs[0].label == "computational data"
+    assert PORTS.inputs[0].description == "these are computed data out of a pipeline"
+    assert PORTS.inputs[0].type == "file-url"
+    assert PORTS.inputs[0].value == "/home/jovyan/data/outputControllerOut.dat"
+    assert PORTS.inputs[0].timestamp == "2018-05-23T15:34:53.511Z"
 
-    assert simcore.inputs[1].key == "in_5"
-    assert simcore.inputs[1].label == "some number"
-    assert simcore.inputs[1].description == "numbering things"
-    assert simcore.inputs[1].type == "int"
-    assert simcore.inputs[1].value == "666"
-    assert simcore.inputs[1].timestamp == "2018-05-23T15:34:53.511Z"
+    assert PORTS.inputs[1].key == "in_5"
+    assert PORTS.inputs[1].label == "some number"
+    assert PORTS.inputs[1].description == "numbering things"
+    assert PORTS.inputs[1].type == "int"
+    assert PORTS.inputs[1].value == "666"
+    assert PORTS.inputs[1].timestamp == "2018-05-23T15:34:53.511Z"
 
-    assert len(simcore.outputs) == 1
-    assert simcore.outputs[0].key == "out_1"
-    assert simcore.outputs[0].label == "some boolean output"
-    assert simcore.outputs[0].description == "could be true or false..."
-    assert simcore.outputs[0].type == "bool"
-    assert simcore.outputs[0].value == "null"
-    assert simcore.outputs[0].timestamp == "2018-05-23T15:34:53.511Z"
+    assert len(PORTS.outputs) == 1
+    assert PORTS.outputs[0].key == "out_1"
+    assert PORTS.outputs[0].label == "some boolean output"
+    assert PORTS.outputs[0].description == "could be true or false..."
+    assert PORTS.outputs[0].type == "bool"
+    assert PORTS.outputs[0].value == "null"
+    assert PORTS.outputs[0].timestamp == "2018-05-23T15:34:53.511Z"
 
 def test_access_with_key(default_simcore_configuration): # pylint: disable=W0613, W0621
-    from simcore_api import simcore
+    from simcore_api import PORTS
 
-    assert simcore.inputs["in_1"] == simcore.inputs[0]
-    assert simcore.inputs["in_5"] == simcore.inputs[1]
-    assert simcore.outputs["out_1"] == simcore.outputs[0]
+    assert PORTS.inputs["in_1"] == PORTS.inputs[0]
+    assert PORTS.inputs["in_5"] == PORTS.inputs[1]
+    assert PORTS.outputs["out_1"] == PORTS.outputs[0]
 
 def test_port_value_getters(default_simcore_configuration): # pylint: disable=W0613, W0621
-    from simcore_api import simcore
+    from simcore_api import PORTS
 
-    assert simcore.inputs["in_1"].get() == "/home/jovyan/data/outputControllerOut.dat"
-    assert simcore.inputs["in_5"].get() == 666
-    assert simcore.outputs["out_1"].get() is None
+    assert PORTS.inputs["in_1"].get() == "/home/jovyan/data/outputControllerOut.dat"
+    assert PORTS.inputs["in_5"].get() == 666
+    assert PORTS.outputs["out_1"].get() is None
 
 def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0613, W0621
     
@@ -99,19 +99,32 @@ def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0
         "timestamp": "2018-05-22T19:34:53.511Z"
     })
     special_simcore_configuration(special_config)
+    from simcore_api import PORTS
+    from simcore_api.simcore import DataItem
 
-    from simcore_api import simcore
-    assert simcore.outputs["out_15"].get() is None
-    simcore.outputs["out_15"].set(26)
-    assert simcore.outputs["out_15"].get() == 26
+    assert PORTS.outputs["out_15"].get() is None
+
+    modified_output = DataItem(key="out_15", 
+                               label="new additional data", 
+                               description="new description", 
+                               type="bool", 
+                               value="True", 
+                               timestamp="2018-05-28T19:34:53.511Z")
+    PORTS.outputs["out_15"] = modified_output
+    assert PORTS.outputs["out_15"].get()
+
+    
+    
+    #simcore.outputs["out_15"].set(26)
+    #assert simcore.outputs["out_15"].get() == 26
 
 def test_default_json_encoding(default_simcore_configuration): # pylint: disable=W0613, W0621
-    from simcore_api import simcore
+    from simcore_api import PORTS
     from simcore_api.simcore import _SimcoreEncoder
     import json
     import os
 
-    json_data = json.dumps(simcore, cls=_SimcoreEncoder)
+    json_data = json.dumps(PORTS, cls=_SimcoreEncoder)
     default_config_path = os.path.join(os.path.dirname(
         os.path.realpath(__file__)), r"../config/connection_config.json")
     with open(default_config_path) as file:
@@ -129,8 +142,8 @@ def test_wrong_version(special_simcore_configuration):
 
     from simcore_api import exceptions    
     with pytest.raises(exceptions.WrongProtocolVersionError, message="Expecting WrongProtocolVersionError") as excinfo:
-        from simcore_api import simcore
-        print(simcore.inputs)
+        from simcore_api import PORTS
+        print(PORTS.inputs)
     assert "Expecting version 0.1, found version 0.0" in str(excinfo.value)
 
 def test_invalid_configuration(special_simcore_configuration):
@@ -139,8 +152,8 @@ def test_invalid_configuration(special_simcore_configuration):
 
     from simcore_api import exceptions
     with pytest.raises(exceptions.InvalidProtocolError, message="Expecting WrongProtocol") as excinfo:
-        from simcore_api import simcore
-        print(simcore.inputs)
+        from simcore_api import PORTS
+        print(PORTS.inputs)
     assert "Invalid protocol used in" in str(excinfo.value)
 
 def test_noinputsoutputs(special_simcore_configuration):
@@ -148,19 +161,19 @@ def test_noinputsoutputs(special_simcore_configuration):
     special_configuration = get_empty_config()
     special_simcore_configuration(special_configuration)
 
-    from simcore_api import simcore
+    from simcore_api import PORTS
     from simcore_api import exceptions
 
-    assert not simcore.inputs
-    assert not simcore.outputs
+    assert not PORTS.inputs
+    assert not PORTS.outputs
 
     with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError") as excinfo:
-        input0 = simcore.inputs[0]
+        input0 = PORTS.inputs[0]
         print(input0)
     assert "No port bound at index" in str(excinfo.value)
 
     with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError") as excinfo:
-        output0 = simcore.outputs[0]
+        output0 = PORTS.outputs[0]
         print(output0)
     assert "No port bound at index" in str(excinfo.value)
 
@@ -174,10 +187,10 @@ def update_config_file(path, config):
 def test_adding_new_ports(special_simcore_configuration):
     special_configuration = get_empty_config()
     config_file = special_simcore_configuration(special_configuration)
-    from simcore_api import simcore
+    from simcore_api import PORTS
     # check empty configuration
-    assert not simcore.inputs
-    assert not simcore.outputs
+    assert not PORTS.inputs
+    assert not PORTS.outputs
 
     # replace the configuration now, add an input
     special_configuration["inputs"].append({
@@ -190,13 +203,13 @@ def test_adding_new_ports(special_simcore_configuration):
     })
     update_config_file(config_file, special_configuration)
 
-    assert len(simcore.inputs) == 1
-    assert simcore.inputs[0].key == "in_15"
-    assert simcore.inputs[0].label == "additional data"
-    assert simcore.inputs[0].description == "here some additional data"
-    assert simcore.inputs[0].type == "int"
-    assert simcore.inputs[0].value == "15"
-    assert simcore.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
+    assert len(PORTS.inputs) == 1
+    assert PORTS.inputs[0].key == "in_15"
+    assert PORTS.inputs[0].label == "additional data"
+    assert PORTS.inputs[0].description == "here some additional data"
+    assert PORTS.inputs[0].type == "int"
+    assert PORTS.inputs[0].value == "15"
+    assert PORTS.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
     # replace the configuration now, add an output
     special_configuration["outputs"].append({
@@ -210,21 +223,21 @@ def test_adding_new_ports(special_simcore_configuration):
     update_config_file(config_file, special_configuration)
 
     # no change on inputs
-    assert len(simcore.inputs) == 1
-    assert simcore.inputs[0].key == "in_15"
-    assert simcore.inputs[0].label == "additional data"
-    assert simcore.inputs[0].description == "here some additional data"
-    assert simcore.inputs[0].type == "int"
-    assert simcore.inputs[0].value == "15"
-    assert simcore.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
+    assert len(PORTS.inputs) == 1
+    assert PORTS.inputs[0].key == "in_15"
+    assert PORTS.inputs[0].label == "additional data"
+    assert PORTS.inputs[0].description == "here some additional data"
+    assert PORTS.inputs[0].type == "int"
+    assert PORTS.inputs[0].value == "15"
+    assert PORTS.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
     # new output
-    assert len(simcore.outputs) == 1
-    assert simcore.outputs[0].key == "out_15"
-    assert simcore.outputs[0].label == "output data"
-    assert simcore.outputs[0].description == "a cool output"
-    assert simcore.outputs[0].type == "bool"
-    assert simcore.outputs[0].value == "null"
-    assert simcore.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
+    assert len(PORTS.outputs) == 1
+    assert PORTS.outputs[0].key == "out_15"
+    assert PORTS.outputs[0].label == "output data"
+    assert PORTS.outputs[0].description == "a cool output"
+    assert PORTS.outputs[0].type == "bool"
+    assert PORTS.outputs[0].value == "null"
+    assert PORTS.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
 
 def test_removing_ports(special_simcore_configuration):
@@ -264,42 +277,42 @@ def test_removing_ports(special_simcore_configuration):
     })
 
     config_file = special_simcore_configuration(special_configuration)
-    from simcore_api import simcore
-    assert len(simcore.inputs) == 2
-    assert len(simcore.outputs) == 2
+    from simcore_api import PORTS
+    assert len(PORTS.inputs) == 2
+    assert len(PORTS.outputs) == 2
     # let's remove the first input
     del special_configuration["inputs"][0]
     update_config_file(config_file, special_configuration)
-    assert len(simcore.inputs) == 1
-    assert len(simcore.outputs) == 2
+    assert len(PORTS.inputs) == 1
+    assert len(PORTS.outputs) == 2
 
-    assert simcore.inputs[0].key == "in_17"
-    assert simcore.inputs[0].label == "additional data"
-    assert simcore.inputs[0].description == "here some additional data"
-    assert simcore.inputs[0].type == "int"
-    assert simcore.inputs[0].value == "15"
-    assert simcore.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
+    assert PORTS.inputs[0].key == "in_17"
+    assert PORTS.inputs[0].label == "additional data"
+    assert PORTS.inputs[0].description == "here some additional data"
+    assert PORTS.inputs[0].type == "int"
+    assert PORTS.inputs[0].value == "15"
+    assert PORTS.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
     # let's do the same for the second output
     del special_configuration["outputs"][1]
     update_config_file(config_file, special_configuration)
-    assert len(simcore.inputs) == 1
-    assert len(simcore.outputs) == 1
+    assert len(PORTS.inputs) == 1
+    assert len(PORTS.outputs) == 1
 
-    assert simcore.outputs[0].key == "out_15"
-    assert simcore.outputs[0].label == "additional data"
-    assert simcore.outputs[0].description == "here some additional data"
-    assert simcore.outputs[0].type == "int"
-    assert simcore.outputs[0].value == "15"
-    assert simcore.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
+    assert PORTS.outputs[0].key == "out_15"
+    assert PORTS.outputs[0].label == "additional data"
+    assert PORTS.outputs[0].description == "here some additional data"
+    assert PORTS.outputs[0].type == "int"
+    assert PORTS.outputs[0].value == "15"
+    assert PORTS.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
 def test_changing_inputs_error(default_simcore_configuration): # pylint: disable=W0613
-    from simcore_api import simcore
+    from simcore_api import PORTS
     from simcore_api.simcore import DataItemsList
     from simcore_api import exceptions
 
     with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
-        simcore.inputs = DataItemsList()
+        PORTS.inputs = DataItemsList()
     assert "Trying to modify read-only object" in str(excinfo.value)
 
 
@@ -311,16 +324,16 @@ def test_changing_inputs_error(default_simcore_configuration): # pylint: disable
                          value="233", 
                          timestamp="2018-06-04T09:46:43:343")
     with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
-        simcore.inputs[1] = new_input
+        PORTS.inputs[1] = new_input
     assert "Trying to modify read-only object" in str(excinfo.value)
 
 def test_changing_outputs_error(default_simcore_configuration): # pylint: disable=W0613
-    from simcore_api import simcore
+    from simcore_api import PORTS
     from simcore_api.simcore import DataItemsList
     from simcore_api import exceptions
 
     with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
-        simcore.outputs = DataItemsList()
+        PORTS.outputs = DataItemsList()
     assert "Trying to modify read-only object" in str(excinfo.value)
 
 
