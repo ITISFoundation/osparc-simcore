@@ -3,46 +3,12 @@
 #pylint: disable=C0111
 import pytest
 
-
-def test_default_configuration():
-    from simcore_api import simcore
-
-    assert len(simcore.inputs) == 2
-    assert simcore.inputs[0].key == "in_1"
-    assert simcore.inputs[0].label == "computational data"
-    assert simcore.inputs[0].description == "these are computed data out of a pipeline"
-    assert simcore.inputs[0].type == "file-url"
-    assert simcore.inputs[0].value == "/home/jovyan/data/outputControllerOut.dat"
-    assert simcore.inputs[0].timestamp == "2018-05-23T15:34:53.511Z"
-
-    assert simcore.inputs[1].key == "in_5"
-    assert simcore.inputs[1].label == "some number"
-    assert simcore.inputs[1].description == "numbering things"
-    assert simcore.inputs[1].type == "integer"
-    assert simcore.inputs[1].value == "666"
-    assert simcore.inputs[1].timestamp == "2018-05-23T15:34:53.511Z"
-
-    assert len(simcore.outputs) == 1
-    assert simcore.outputs[0].key == "out_1"
-    assert simcore.outputs[0].label == "some boolean output"
-    assert simcore.outputs[0].description == "could be true or false..."
-    assert simcore.outputs[0].type == "bool"
-    assert simcore.outputs[0].value == "null"
-    assert simcore.outputs[0].timestamp == "2018-05-23T15:34:53.511Z"
-
-def test_default_json_encoding():
-    from simcore_api import simcore
-    from simcore_api.simcore import _SimcoreEncoder
-    import json
+@pytest.fixture()
+def default_simcore_configuration():
     import os
-
-    json_data = json.dumps(simcore, cls=_SimcoreEncoder)
     default_config_path = os.path.join(os.path.dirname(
         os.path.realpath(__file__)), r"../config/connection_config.json")
-    with open(default_config_path) as file:
-        original_json_data = file.read()
-    assert json.loads(json_data) == json.loads(original_json_data)
-
+    os.environ["SIMCORE_CONFIG_PATH"] = default_config_path    
 
 @pytest.fixture()
 def special_simcore_configuration(request):
@@ -72,7 +38,6 @@ def special_simcore_configuration(request):
         return temp_file.name
     return create_special_config
 
-
 def get_empty_config():
     return {
         "version": "0.1",
@@ -81,6 +46,79 @@ def get_empty_config():
         "outputs": [
         ]
     }
+
+def test_default_configuration(default_simcore_configuration): # pylint: disable=W0613, W0621
+    from simcore_api import simcore
+
+    assert len(simcore.inputs) == 2
+    assert simcore.inputs[0].key == "in_1"
+    assert simcore.inputs[0].label == "computational data"
+    assert simcore.inputs[0].description == "these are computed data out of a pipeline"
+    assert simcore.inputs[0].type == "file-url"
+    assert simcore.inputs[0].value == "/home/jovyan/data/outputControllerOut.dat"
+    assert simcore.inputs[0].timestamp == "2018-05-23T15:34:53.511Z"
+
+    assert simcore.inputs[1].key == "in_5"
+    assert simcore.inputs[1].label == "some number"
+    assert simcore.inputs[1].description == "numbering things"
+    assert simcore.inputs[1].type == "int"
+    assert simcore.inputs[1].value == "666"
+    assert simcore.inputs[1].timestamp == "2018-05-23T15:34:53.511Z"
+
+    assert len(simcore.outputs) == 1
+    assert simcore.outputs[0].key == "out_1"
+    assert simcore.outputs[0].label == "some boolean output"
+    assert simcore.outputs[0].description == "could be true or false..."
+    assert simcore.outputs[0].type == "bool"
+    assert simcore.outputs[0].value == "null"
+    assert simcore.outputs[0].timestamp == "2018-05-23T15:34:53.511Z"
+
+def test_access_with_key(default_simcore_configuration): # pylint: disable=W0613, W0621
+    from simcore_api import simcore
+
+    assert simcore.inputs["in_1"] == simcore.inputs[0]
+    assert simcore.inputs["in_5"] == simcore.inputs[1]
+    assert simcore.outputs["out_1"] == simcore.outputs[0]
+
+def test_port_value_getters(default_simcore_configuration): # pylint: disable=W0613, W0621
+    from simcore_api import simcore
+
+    assert simcore.inputs["in_1"].get() == "/home/jovyan/data/outputControllerOut.dat"
+    assert simcore.inputs["in_5"].get() == 666
+    assert simcore.outputs["out_1"].get() is None
+
+def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0613, W0621
+    
+    special_config = get_empty_config()
+    special_config["outputs"].append({
+        "key": "out_15",
+        "label": "additional data",
+        "description": "here some additional data",
+        "type": "int",
+        "value": "null",
+        "timestamp": "2018-05-22T19:34:53.511Z"
+    })
+    special_simcore_configuration(special_config)
+
+    from simcore_api import simcore
+    assert simcore.outputs["out_15"].get() is None
+    simcore.outputs["out_15"].set(26)
+    assert simcore.outputs["out_15"].get() == 26
+
+def test_default_json_encoding(default_simcore_configuration): # pylint: disable=W0613, W0621
+    from simcore_api import simcore
+    from simcore_api.simcore import _SimcoreEncoder
+    import json
+    import os
+
+    json_data = json.dumps(simcore, cls=_SimcoreEncoder)
+    default_config_path = os.path.join(os.path.dirname(
+        os.path.realpath(__file__)), r"../config/connection_config.json")
+    with open(default_config_path) as file:
+        original_json_data = file.read()
+    assert json.loads(json_data) == json.loads(original_json_data)
+
+
 #pylint: disable=w0621
 
 def test_wrong_version(special_simcore_configuration):
@@ -254,3 +292,45 @@ def test_removing_ports(special_simcore_configuration):
     assert simcore.outputs[0].type == "int"
     assert simcore.outputs[0].value == "15"
     assert simcore.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
+
+def test_changing_inputs_error(default_simcore_configuration): # pylint: disable=W0613
+    from simcore_api import simcore
+    from simcore_api.simcore import DataItemsList
+    from simcore_api import exceptions
+
+    with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
+        simcore.inputs = DataItemsList()
+    assert "Trying to modify read-only object" in str(excinfo.value)
+
+
+    from simcore_api.simcore import DataItem
+    new_input = DataItem(key="dummy_1", 
+                         label="new label", 
+                         description="new description", 
+                         type="int", 
+                         value="233", 
+                         timestamp="2018-06-04T09:46:43:343")
+    with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
+        simcore.inputs[1] = new_input
+    assert "Trying to modify read-only object" in str(excinfo.value)
+
+def test_changing_outputs_error(default_simcore_configuration): # pylint: disable=W0613
+    from simcore_api import simcore
+    from simcore_api.simcore import DataItemsList
+    from simcore_api import exceptions
+
+    with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
+        simcore.outputs = DataItemsList()
+    assert "Trying to modify read-only object" in str(excinfo.value)
+
+
+    from simcore_api.simcore import DataItem
+    new_output = DataItem(key="dummy_1", 
+                          label="new label", 
+                          description="new description", 
+                          type="int", 
+                          value="233", 
+                          timestamp="2018-06-04T09:46:43:343")
+    # with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
+    #     simcore.outputs[0] = new_output
+    # assert "Trying to modify read-only object" in str(excinfo.value)

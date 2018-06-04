@@ -31,12 +31,25 @@ class CommonConfig(object):
         """
         _LOGGER.debug("Getting ports configuration using %s", cls.LOCATION)
         if cls.LOCATION == Location.FILE:
-            
             file_location = os.environ.get('SIMCORE_CONFIG_PATH', cls.DEFAULT_FILE_LOCATION)
             config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), file_location)
             _LOGGER.debug("Reading ports configuration from %s", config_file)
             with open(config_file) as simcore_config:
                 return simcore_config.read()
+        else:
+            raise NotImplementedError
+
+    @classmethod
+    def write_ports_configuration(cls, json_configuration):
+        """writes the json configuration of the node ports.
+        """
+        _LOGGER.debug("Writing ports configuration to %s", cls.LOCATION)
+        if cls.LOCATION == Location.FILE:
+            file_location = os.environ.get('SIMCORE_CONFIG_PATH', cls.DEFAULT_FILE_LOCATION)
+            config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), file_location)
+            _LOGGER.debug("Writing ports configuration to %s", config_file)
+            with open(config_file, "w") as simcore_file:
+                simcore_file.write(json_configuration)
         else:
             raise NotImplementedError
 

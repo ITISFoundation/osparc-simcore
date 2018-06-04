@@ -13,7 +13,7 @@
             "key": "in_5",
             "label": "some number",
             "description": "numbering things",
-            "type": "integer",
+            "type": "int",
             "value": "666",
             "timestamp": "2018-05-23T15:34:53.511Z"
         }

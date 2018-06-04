@@ -7,4 +7,4 @@ from simcore_api import config
 
 CONFIG = config.CONFIG[os.environ.get("SIMCORE_API_CONFIG", "default")]
 # create initial Simcore object
-simcore = simcore.Simcore.create_from_json(CONFIG.get_ports_configuration)
+simcore = simcore.Simcore.create_from_json(CONFIG.get_ports_configuration, CONFIG.write_ports_configuration)

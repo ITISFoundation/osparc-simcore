@@ -28,6 +28,13 @@ class UnboundPortError(SimcoreException, IndexError):
         super(UnboundPortError, self).__init__(msg)
         self.port_index = port_index
 
+class InvalidKeyError(SimcoreException):
+    """Accessed key does not exist"""
+    def __init__(self, item_key, msg=None):
+        msg = "No port bound with key %s" % (item_key)
+        super(InvalidKeyError, self).__init__(msg)
+        self.item_key = item_key
+
 class InvalidProtocolError(SimcoreException):
     """Invalid protocol used"""
     def __init__(self, dct):

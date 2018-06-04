@@ -10,8 +10,26 @@ import simcore_api.exceptions
 
 _LOGGER = logging.getLogger(__name__)
 DATA_ITEM_KEYS = ["key", "label", "description", "type", "value", "timestamp"]
-DataItem = collections.namedtuple("DataItem", DATA_ITEM_KEYS)
+_DataItem = collections.namedtuple("_DataItem", DATA_ITEM_KEYS)
+_TYPE_TO_PYTHON_TYPE_MAP = {"int":int, "float":float, "file-url":str, "bool":bool, "string":str}
 
+class DataItem(_DataItem):
+    """This class encapsulate a Data Item and provide accessors functions"""
+    def get(self): #pylint: disable=C0111
+        if self.type not in _TYPE_TO_PYTHON_TYPE_MAP:
+            raise simcore_api.exceptions.InvalidProtocolError(self.type)
+        if self.value == "null":
+            return None
+        return _TYPE_TO_PYTHON_TYPE_MAP[self.type](self.value)
+
+    def set(self, value): #pylint: disable=C0111
+        # let's create a new data
+        data_dct = self._asdict()
+        new_value = str(value)
+        if new_value != data_dct["value"]:
+            data_dct["value"] = str(value)
+            newData = DataItem(**data_dct)
+            #notify_new_data(newData)
 
 class DataItemsList(MutableSequence): # pylint: disable=too-many-ancestors
     """This class contains a list of Data Items."""
@@ -22,25 +40,27 @@ class DataItemsList(MutableSequence): # pylint: disable=too-many-ancestors
             data = []
         self.lst = data
         self.read_only = read_only
+        self.json_writer = None
     
     def __setitem__(self, index, value):
         _LOGGER.debug("Setting item %s with %s", index, value)
         if self.read_only:
-            raise simcore_api.exceptions.ReadOnlyError(self)
+            raise simcore_api.exceptions.ReadOnlyError(self)        
+        if (isinstance(index, str)):
+            # it might be a key            
+            index = self.__find_index_from_key(index)
         self.lst[index] = value
+        if self.json_writer and callable(self.json_writer):
+            self.json_writer()
 
     def __getitem__(self, index):
         _LOGGER.debug("Getting item %s", index)
         if isinstance(index, str):
-            # access by key
-            input_by_key = [i for i in self.lst if i.key == index]
-            if input_by_key is None:
-                raise simcore_api.exceptions.UnboundPortError(index)
-            return input_by_key[0]
+            # it might be a key
+            index = self.__find_index_from_key(index)
         if index < len(self.lst):
             return self.lst[index]
         raise simcore_api.exceptions.UnboundPortError(index)
-        
 
     def __len__(self):        
         return len(self.lst)
@@ -52,6 +72,14 @@ class DataItemsList(MutableSequence): # pylint: disable=too-many-ancestors
     def insert(self, index, value):
         _LOGGER.debug("Inserting item %s at %s", value, index)
         self.lst.insert(index, value)
+
+    def __find_index_from_key(self, item_key):
+        indices = [index for index in range(0, len(self.lst)) if self.lst[index].key == item_key]
+        if indices is None:
+            raise simcore_api.exceptions.InvalidKeyError(item_key)
+        if len(indices) > 1:
+            raise simcore_api.exceptions.InvalidProtocolError(indices)
+        return indices[0]
 
 #pylint: disable=C0111
 class Simcore(object):
@@ -69,7 +97,10 @@ class Simcore(object):
         if outputs is None:
             outputs = DataItemsList()
         self.__outputs = outputs
-        self.__json_config = None
+        #self.__outputs.read_only = True
+        self.__outputs.json_writer = save_to_json
+        self.__json_reader = None
+        self.__json_writer = None
         self.autoupdate = False
         _LOGGER.debug("Initialised Simcore object with version %s, inputs %s and outputs %s", version, inputs, outputs)
         
@@ -102,31 +133,49 @@ class Simcore(object):
         #self.__outputs = value
 
     @property
-    def json_config(self):
+    def json_reader(self):
         _LOGGER.debug("Getting json configuration")
-        return self.__json_config
+        return self.__json_reader
 
-    @json_config.setter
-    def json_config(self, value):
+    @json_reader.setter
+    def json_reader(self, value):
         _LOGGER.debug("Setting json configuration with %s", value)
-        self.__json_config = value
+        self.__json_reader = value
+    
+    @property
+    def json_writer(self):
+        _LOGGER.debug("Getting json writer")
+        return self.__json_writer
+
+    @json_writer.setter
+    def json_writer(self, value):
+        _LOGGER.debug("Setting json writer with %s", value)
+        self.__json_writer = value
+        self.__outputs.json_writer = value
 
     def update_from_json(self):
         _LOGGER.debug("Updating json configuration")
-        updated_simcore = json.loads(self.__json_config(), object_hook=simcore_decoder)
+        updated_simcore = json.loads(self.__json_reader(), object_hook=simcore_decoder)
         self.__inputs = updated_simcore.inputs
         self.__outputs = updated_simcore.outputs
         _LOGGER.debug("Updated json configuration")
 
     @classmethod
-    def create_from_json(cls, json_config):
-        _LOGGER.debug("Creating Simcore object with json configuration: %s", json_config)
-        simcore = json.loads(json_config(), object_hook=simcore_decoder)
-        simcore.json_config = json_config
+    def create_from_json(cls, json_reader, json_writer):
+        _LOGGER.debug("Creating Simcore object with json reader: %s, json writer: %s", json_reader, json_writer)
+        simcore = json.loads(json_reader(), object_hook=simcore_decoder)
+        simcore.json_reader = json_reader
+        simcore.json_writer = json_writer
         simcore.autoupdate = True
         _LOGGER.debug("Created Simcore object")
         return simcore
 
+    def save_to_json(self):
+        _LOGGER.info("Saving Simcore object to json")
+        simcore_json = json.dumps(self, cls=_SimcoreEncoder)
+        if self.json_writer and callable(self.json_writer):
+            self.json_writer(simcore_json)
+        _LOGGER.debug("Saved Simcore object to json: %s", simcore_json)
 
 class _SimcoreEncoder(json.JSONEncoder):
     # SAN: looks like pylint is having an issue here
