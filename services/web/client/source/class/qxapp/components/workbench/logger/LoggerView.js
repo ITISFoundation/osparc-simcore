@@ -80,8 +80,9 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
 
     this.add(filterLayout);
 
-    this.__logModel = new qx.ui.table.model.Simple();
-    this.__logModel.setColumns(["who", "what"]);
+    // let tableModel = this.__logModel = new qx.ui.table.model.Filtered();
+    let tableModel = this.__logModel = new qxapp.components.workbench.logger.RemoteTableModel();
+    tableModel.setColumns(["Origin", "Message", "Msg"], ["whoRich", "whatRich", "msg"]);
 
     let custom = {
       tableColumnModel : function(obj) {
@@ -90,9 +91,8 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     };
 
     // table
-    let table = this.__logView = new qx.ui.table.Table(this.__logModel, custom).set({
+    let table = this.__logView = new qx.ui.table.Table(tableModel, custom).set({
       selectable: true,
-      headerCellsVisible: false,
       statusBarVisible: false
     });
     var colModel = table.getTableColumnModel();
@@ -156,24 +156,21 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     __addLog: function(who = "System", what = "", logLevel = 0) {
       this.__logs.push({
         who: who,
-        what: what
+        what: what,
+        logLevel: logLevel
       });
 
       const whoRich = this.__addWhoColorTag(who);
       const whatRich = this.__addLevelColorTag(what, logLevel);
-      const richMsg = whoRich + whatRich;
-      let label = new qx.ui.basic.Label(richMsg).set({
-        selectable: true,
-        rich: true
-      });
-      label.who = who;
-      label.what = what;
-      label.logLevel = logLevel;
+      let msg = {
+        who: who,
+        what: what,
+        logLevel: logLevel
+      };
+      this.__logModel.addRows([[whoRich, whatRich, msg]]);
 
-      this.__logModel.addRows([[whoRich, whatRich]]);
-
-      let show = label.logLevel >= this.getLogLevel();
-      this.__showMessage(label, show);
+      this.__logModel.reloadData();
+      // this.__applyFilters();
     },
 
     __addWhoColorTag: function(who) {
@@ -220,16 +217,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       return ("<font color=" + logColor +">" + what + "</font>");
     },
 
-    __showMessage: function(label, show) {
-      // FIXME: Hacky
-      if (show) {
-        label.setHeight(15);
-      } else {
-        label.setHeight(0);
-      }
-    },
-
-    __filterByString: function(label) {
+    __filterByString: function(msg) {
       let searchString = this.__textfield.getValue();
       if (searchString === null) {
         return true;
@@ -237,7 +225,6 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       if (searchString && !this.isCaseSensitive()) {
         searchString = searchString.toUpperCase();
       }
-      let msg = label.who + ": " + label.what;
       if (!this.isCaseSensitive()) {
         msg = msg.toUpperCase();
       }
@@ -245,22 +232,40 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       return show;
     },
 
-    __filterByLogLevel: function(label) {
-      const show = label.logLevel >= this.getLogLevel();
+    __filterByLogLevel: function(logLevel) {
+      const show = logLevel >= this.getLogLevel();
       return show;
     },
 
     __applyFilters: function() {
-      if (this.__logView === null) {
+      if (this.__logModel === null) {
         return;
       }
 
-      for (let i=0; i<this.__logView.getChildren().length; i++) {
-        let label = this.__logView.getChildren()[i];
-        const showStr = this.__filterByString(label);
-        const showLog = this.__filterByLogLevel(label);
-        this.__showMessage(label, showStr && showLog);
-      }
+      this.__logModel.setFilterString(this.__textfield.getValue());
+      this.__logModel.setFilterLogLevel(this.getLogLevel());
+      this.__logModel.reloadData();
+
+      // this.__logModel.resetHiddenRows();
+      // for (let i=0; i<this.__logModel.getRowCount(); i++) {
+      /*
+        let rowData = this.__logModel.getRowData(i)[2];
+        const showStrWho = this.__filterByString(rowData.who);
+        const showStrWhat = this.__filterByString(rowData.what);
+        const showLog = this.__filterByLogLevel(rowData.logLevel);
+      */
+      /*
+        let value = this.__textfield.getValue();
+        this.__logModel.resetHiddenRows();
+        this.__logModel.addNotRegex(value, "login", true);
+        this.__logModel.applyFilters();
+      */
+      /*
+        if (!(showStrWho && showStrWhat && showLog)) {
+          this.__logModel.hideRows(i, 1);
+        }
+      */
+      // }
     },
 
     __createInitMsg: function() {
