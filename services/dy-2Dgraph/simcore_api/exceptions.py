@@ -6,6 +6,13 @@ class SimcoreException(Exception):
             msg = "An error occured in simcore"
         super(SimcoreException, self).__init__(msg)
 
+class ReadOnlyError(SimcoreException):
+    """Trying to modify read-only object"""
+    def __init__(self, obj):
+        msg = "Trying to modify read-only object %s" % (obj)
+        super(ReadOnlyError, self).__init__(msg)
+        self.obj = obj
+
 class WrongProtocolVersionError(SimcoreException):
     """Using wrong protocol version"""
     def __init__(self, expected_version, found_version):

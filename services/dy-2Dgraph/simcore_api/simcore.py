@@ -16,18 +16,27 @@ DataItem = collections.namedtuple("DataItem", DATA_ITEM_KEYS)
 class DataItemsList(MutableSequence): # pylint: disable=too-many-ancestors
     """This class contains a list of Data Items."""
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, read_only=False):
         _LOGGER.debug("Creating DataItemsList with %s", data)
         if data is None:
             data = []
         self.lst = data
+        self.read_only = read_only
     
     def __setitem__(self, index, value):
         _LOGGER.debug("Setting item %s with %s", index, value)
+        if self.read_only:
+            raise simcore_api.exceptions.ReadOnlyError(self)
         self.lst[index] = value
 
     def __getitem__(self, index):
         _LOGGER.debug("Getting item %s", index)
+        if isinstance(index, str):
+            # access by key
+            input_by_key = [i for i in self.lst if i.key == index]
+            if input_by_key is None:
+                raise simcore_api.exceptions.UnboundPortError(index)
+            return input_by_key[0]
         if index < len(self.lst):
             return self.lst[index]
         raise simcore_api.exceptions.UnboundPortError(index)
@@ -56,6 +65,7 @@ class Simcore(object):
         if inputs is None:
             inputs = DataItemsList()
         self.__inputs = inputs
+        self.__inputs.read_only = True
         if outputs is None:
             outputs = DataItemsList()
         self.__outputs = outputs
@@ -72,8 +82,10 @@ class Simcore(object):
 
     @inputs.setter
     def inputs(self, value):
-        _LOGGER.debug("Setting inputs")
-        self.__inputs = value
+        # this is forbidden        
+        _LOGGER.debug("Setting inputs with %s", value)
+        raise simcore_api.exceptions.ReadOnlyError(self.__inputs)
+        #self.__inputs = value
         
     @property
     def outputs(self):
@@ -84,8 +96,10 @@ class Simcore(object):
 
     @outputs.setter
     def outputs(self, value):
-        _LOGGER.debug("Setting outputs")
-        self.__outputs = value
+        # this is forbidden        
+        _LOGGER.debug("Setting outputs with %s", value)
+        raise simcore_api.exceptions.ReadOnlyError(self.__outputs)
+        #self.__outputs = value
 
     @property
     def json_config(self):
@@ -94,14 +108,14 @@ class Simcore(object):
 
     @json_config.setter
     def json_config(self, value):
-        _LOGGER.debug("Setting json configuration")
+        _LOGGER.debug("Setting json configuration with %s", value)
         self.__json_config = value
 
     def update_from_json(self):
         _LOGGER.debug("Updating json configuration")
         updated_simcore = json.loads(self.__json_config(), object_hook=simcore_decoder)
         self.__inputs = updated_simcore.inputs
-        self.outputs = updated_simcore.outputs
+        self.__outputs = updated_simcore.outputs
         _LOGGER.debug("Updated json configuration")
 
     @classmethod
