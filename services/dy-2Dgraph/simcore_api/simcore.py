@@ -90,15 +90,20 @@ class Simcore(object):
         if self._version != version:
             raise simcore_api.exceptions.WrongProtocolVersionError(self._version, version)
         
+        # inputs are per definition read-only
         if inputs is None:
             inputs = DataItemsList()
         self.__inputs = inputs
         self.__inputs.read_only = True
+
+        # outputs are currently read-only as we do not allow dynamic change of
+        # number of outputs or changing their type or so for now.
         if outputs is None:
             outputs = DataItemsList()
         self.__outputs = outputs
         self.__outputs.read_only = True
         self.__outputs.change_notifier = self.save_to_json
+        
         self.__json_reader = None
         self.__json_writer = None
         self.autoupdate = False
@@ -165,6 +170,8 @@ class Simcore(object):
         _LOGGER.info("Saving Simcore object to json")
         auto_update_state = self.autoupdate
         try:
+            # dumping triggers a load of unwanted auto-updates
+            # which do not make sense for saving purpose.
             self.autoupdate = False
             simcore_json = json.dumps(self, cls=_SimcoreEncoder)
         finally:
