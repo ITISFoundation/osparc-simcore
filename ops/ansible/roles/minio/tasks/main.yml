@@ -1,0 +1,8 @@
+---
+# roles/minio/tasks/main.yml
+# Minio Stack Deploy
+- name: 'Deploy to ubuntu hosts'
+  become: yes
+  become_method: sudo
+  import_tasks: ubuntu.yml
+  when: ansible_distribution|lower == 'ubuntu'

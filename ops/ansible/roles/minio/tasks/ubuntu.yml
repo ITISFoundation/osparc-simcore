@@ -1,0 +1,17 @@
+---
+# roles/minio/tasks/ubuntu.yml
+
+# Setup file structure for persistent data
+# Destroy and recreate any existing minio service data stores
+- name: Remove existing minio data stores
+  file:
+    path: "/data/minio/{{ item }}-export"
+    state: absent
+  with_sequence: "start=1 end=4 format=minio%02x"
+- name: Create minio data stores
+  file:
+    path: "/data/minio/{{ item }}-export"
+    state: directory
+    group: docker
+    mode: 0775
+  with_sequence: "start=1 end=4 format=minio%02x"
