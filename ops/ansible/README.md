@@ -1,11 +1,11 @@
-## osparc-simcore -> ops -> ansible
+# osparc-simcore/ops/ansible
 
-__Ansible deployment roles & playbooks__
+## Ansible deployment roles & playbooks
 
 * Follow [Ansible playbooks structure best practices](http://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.html)
 * Reference [Ansible container roles best practices](https://docs.ansible.com/ansible-container/roles/writing.html)
 
-### Ansible Minimal Prerequisites
+## Ansible Minimal Prerequisites
 
 The following are the minimum requirements for using Ansible:
 
@@ -15,10 +15,12 @@ The following are the minimum requirements for using Ansible:
 1. package `python-minimal` or equivilent python installed on every remote host you intend to control.
 1. package `python-apt` installed on remote hosts (to allow `apt` module)
 
-### Example deployment
+## Example deployment
 
-From internal ansible control host: 
+From internal ansible control host:
 
-```
-ans@ansible:~/Repositories/github.com/ehzastrow/osparc-simcore/ops/ansible$ ansible-playbook -i testing ancillary-minio.yml
+``` bash
+
+ansible-playbook -i testing ancillary-minio.yml
+
 ```
