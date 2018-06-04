@@ -149,7 +149,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     setServiceName: function(name) {
       this.setCaption(name);
     },
- 
+
     addSettings: function(settings) {
       let form = this.__settingsForm = new qxapp.components.form.Auto(settings);
       this.setSettingsWidget(new qxapp.components.form.renderer.PropForm(form));
