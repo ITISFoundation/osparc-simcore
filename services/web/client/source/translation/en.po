@@ -1,0 +1,27 @@
+#: qxapp/Preferences.js:7
+msgid "Account Settings"
+msgstr ""
+
+#: qxapp/components/workbench/SettingsView.js:42
+msgid "Settings"
+msgstr ""
+
+#: qxapp/components/workbench/SettingsView.js:47
+msgid "Done"
+msgstr ""
+
+#: qxapp/components/workbench/SettingsView.js:83
+msgid "Node Title"
+msgstr ""
+
+#: qxapp/components/workbench/SettingsView.js:97
+msgid "Save"
+msgstr ""
+
+#: qxapp/components/workbench/SettingsView.js:99
+msgid "Reset"
+msgstr ""
+
+#: qx/ui/form/validation/Manager.js:37
+msgid "This field is required"
+msgstr ""

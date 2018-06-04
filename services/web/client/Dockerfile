@@ -34,7 +34,7 @@ COPY package*.json ./
 #    git clone --depth 1 https://github.com/qooxdoo/qooxdoo.git qooxdoo-sdk
 
 # 2) checkout master
-ENV PATH="/home/node/qooxdoo-sdk/tool/bin:/home/node/qooxdoo-compiler/:${PATH}"
+ENV PATH="/home/node/qooxdoo-sdk/tool/bin:/home/node/qooxdoo-compiler/:/home/node/node_modules/.bin/:${PATH}"
 RUN npm i npm@latest && \
     git clone --depth 1 https://github.com/qooxdoo/qooxdoo-compiler.git qooxdoo-compiler && \
     npm install && \
