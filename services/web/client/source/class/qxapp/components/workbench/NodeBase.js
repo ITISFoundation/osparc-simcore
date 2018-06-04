@@ -74,6 +74,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     metadata: {
       apply : "__applyMetadata"
+    },
+
+    settingsWidget: {
+      check: "qxapp.components.form.renderer.PropForm"
     }
   },
 
@@ -91,6 +95,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     __inputPortsUI: null,
     __outputPortsUI: null,
     __progressLabel: null,
+    __settingsForm: null,
     __progressBar: null,
 
     getInputPorts: function() {
@@ -101,14 +106,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return this.__outputPorts;
     },
 
-    getSetting: function(settingId) {
-      let settings = this.getMetadata().settings;
-      for (let i = 0; i < settings.length; i++) {
-        if (settings[i].key === settingId) {
-          return settings[i];
-        }
-      }
-      return null;
+    getSetting: function(key) {
+      return this.getSettingsWidget().getData()[key];
     },
 
     // override qx.ui.window.Window "move" event listener
@@ -135,19 +134,25 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return bounds;
     },
 
-    __applyMetadata: function(metadata, old) {
-      if (metadata != undefined) {
+    __applyMetadata: function(metaData, old) {
+      if (metaData != undefined) {
         this.set({
-          serviceName: metadata.label,
-          nodeImageId: metadata.key
+          serviceName: metaData.label,
+          nodeImageId: metaData.key
         });
-        this.addInputs(metadata.inputs);
-        this.addOutputs(metadata.outputs);
+        this.addSettings(metaData.settings);
+        this.addInputs(metaData.inputs);
+        this.addOutputs(metaData.outputs);
       }
     },
 
     setServiceName: function(name) {
       this.setCaption(name);
+    },
+
+    addSettings: function(settings) {
+      let form = this.__settingsForm = new qxapp.components.form.Auto(settings);
+      this.setSettingsWidget(new qxapp.components.form.renderer.PropForm(form));
     },
 
     __addInputPort: function(input) {
