@@ -115,8 +115,8 @@ def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0
 
     
     
-    #simcore.outputs["out_15"].set(26)
-    #assert simcore.outputs["out_15"].get() == 26
+    PORTS.outputs["out_15"].set(26)
+    assert PORTS.outputs["out_15"].get() == 26
 
 def test_default_json_encoding(default_simcore_configuration): # pylint: disable=W0613, W0621
     from simcore_api import PORTS
@@ -344,6 +344,7 @@ def test_changing_outputs_error(default_simcore_configuration): # pylint: disabl
                           type="int", 
                           value="233", 
                           timestamp="2018-06-04T09:46:43:343")
-    # with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
-    #     simcore.outputs[0] = new_output
-    # assert "Trying to modify read-only object" in str(excinfo.value)
+     
+    with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
+        PORTS.outputs[0] = new_output
+    assert "Trying to modify read-only object" in str(excinfo.value)

@@ -97,7 +97,7 @@ class Simcore(object):
         if outputs is None:
             outputs = DataItemsList()
         self.__outputs = outputs
-        #self.__outputs.read_only = True
+        self.__outputs.read_only = True
         self.__outputs.change_notifier = self.save_to_json
         self.__json_reader = None
         self.__json_writer = None
