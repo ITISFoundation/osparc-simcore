@@ -84,7 +84,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     this.__workbench.addListener("NodeDoubleClicked", function(e) {
       let node = e.getData();
-      this.__settingsView.setNodeMetadata(node);
+      this.__settingsView.setNode(node);
       this.__showSettings(true);
     }, this);
 
