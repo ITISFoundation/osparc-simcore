@@ -2,7 +2,7 @@
 import json
 import logging
 
-from simcore_api import simcore
+from simcore_api import simcore #pylint: disable=cyclic-import
 from simcore_api._itemslist import DataItemsList
 from simcore_api._item import DataItem
 from simcore_api import exceptions
