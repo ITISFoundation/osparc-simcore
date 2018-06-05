@@ -96,7 +96,7 @@ def test_read_only():
     assert "Trying to modify read-only object" in str(excinfo.value)
 
 
-def test_modifying_items_triggers_cb():
+def test_modifying_items_triggers_cb(): #pylint: disable=C0103
     import mock
     mock_method = mock.Mock()
 

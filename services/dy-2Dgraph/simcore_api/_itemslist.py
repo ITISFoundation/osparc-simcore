@@ -122,3 +122,4 @@ class DataItemsList(MutableSequence):
         data_keys = set([item.key for item in dataitems])
         if len(dataitems) != len(data_keys):
             raise exceptions.InvalidProtocolError(dataitems)
+            
