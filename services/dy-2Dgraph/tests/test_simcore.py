@@ -3,51 +3,7 @@
 #pylint: disable=C0111
 import pytest
 
-@pytest.fixture()
-def default_simcore_configuration():
-    import os
-    default_config_path = os.path.join(os.path.dirname(
-        os.path.realpath(__file__)), r"../config/connection_config.json")
-    os.environ["SIMCORE_CONFIG_PATH"] = default_config_path    
-
-@pytest.fixture()
-def special_simcore_configuration(request):
-    def create_special_config(configuration):
-        import os
-        import json
-        import tempfile
-        # create temporary json file
-        temp_file = tempfile.NamedTemporaryFile()
-        temp_file.close()
-        # ensure the file is removed at the end whatever happens
-
-        def fin():
-            if os.path.exists(temp_file.name):
-                os.unlink(temp_file.name)
-            assert not os.path.exists(temp_file.name)
-        request.addfinalizer(fin)
-        # get the configuration to set up
-        config = configuration
-        assert config
-        # create the special configuration file
-        with open(temp_file.name, "w") as file_pointer:
-            json.dump(config, file_pointer)
-        assert os.path.exists(temp_file.name)
-        # set the environment variable such that simcore will use the special file
-        os.environ["SIMCORE_CONFIG_PATH"] = temp_file.name
-        return temp_file.name
-    return create_special_config
-
-def get_empty_config():
-    return {
-        "version": "0.1",
-        "inputs": [
-        ],
-        "outputs": [
-        ]
-    }
-
-def test_default_configuration(default_simcore_configuration): # pylint: disable=W0613, W0621
+def test_default_file_configuration(default_simcore_configuration): # pylint: disable=W0613, W0621
     from simcore_api import PORTS
 
     assert len(PORTS.inputs) == 2
@@ -88,8 +44,8 @@ def test_port_value_getters(default_simcore_configuration): # pylint: disable=W0
     assert PORTS.outputs["out_1"].get() is None
 
 def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0613, W0621
-    
-    special_config = get_empty_config()
+    import helpers
+    special_config = helpers.get_empty_config() #pylint: disable=E1101
     special_config["outputs"].append({
         "key": "out_15",
         "label": "additional data",
@@ -100,66 +56,17 @@ def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0
     })
     special_simcore_configuration(special_config)
     from simcore_api import PORTS
-    from simcore_api._item import DataItem
-    from simcore_api import exceptions
 
     assert PORTS.outputs["out_15"].get() is None
 
-    modified_output = DataItem(key="out_15", 
-                               label="new additional data", 
-                               description="new description", 
-                               type="bool", 
-                               value="True", 
-                               timestamp="2018-05-28T19:34:53.511Z")
-
-    with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
-        PORTS.outputs["out_15"] = modified_output
-    assert "Trying to modify read-only object" in str(excinfo.value)                           
-    
     PORTS.outputs["out_15"].set(26)
     assert PORTS.outputs["out_15"].get() == 26
 
-def test_default_json_encoding(default_simcore_configuration): # pylint: disable=W0613, W0621
-    from simcore_api import PORTS
-    from simcore_api.serialization import _SimcoreEncoder
-    import json
-    import os
-
-    json_data = json.dumps(PORTS, cls=_SimcoreEncoder)
-    default_config_path = os.path.join(os.path.dirname(
-        os.path.realpath(__file__)), r"../config/connection_config.json")
-    with open(default_config_path) as file:
-        original_json_data = file.read()
-    assert json.loads(json_data) == json.loads(original_json_data)
-
-
-#pylint: disable=w0621
-
-def test_wrong_version(special_simcore_configuration):
-    special_configuration = get_empty_config()
-    #change version to a different one
-    special_configuration["version"] = "0.0"
-    special_simcore_configuration(special_configuration)
-
-    from simcore_api import exceptions    
-    with pytest.raises(exceptions.WrongProtocolVersionError, message="Expecting WrongProtocolVersionError") as excinfo:
-        from simcore_api import PORTS
-        print(PORTS.inputs)
-    assert "Expecting version 0.1, found version 0.0" in str(excinfo.value)
-
-def test_invalid_configuration(special_simcore_configuration):
-    special_configuration = {"whatever":"stuff"}
-    special_simcore_configuration(special_configuration)
-
-    from simcore_api import exceptions
-    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting WrongProtocol") as excinfo:
-        from simcore_api import PORTS
-        print(PORTS.inputs)
-    assert "Invalid protocol used in" in str(excinfo.value)
 
 def test_noinputsoutputs(special_simcore_configuration):
     # create empty configuration
-    special_configuration = get_empty_config()
+    import helpers
+    special_configuration = helpers.get_empty_config() #pylint: disable=E1101
     special_simcore_configuration(special_configuration)
 
     from simcore_api import PORTS
@@ -179,14 +86,10 @@ def test_noinputsoutputs(special_simcore_configuration):
     assert "No port bound at index" in str(excinfo.value)
 
 
-def update_config_file(path, config):
-    import json
-    with open(path, "w") as json_file:
-        json.dump(config, json_file)
-
 
 def test_adding_new_ports(special_simcore_configuration):
-    special_configuration = get_empty_config()
+    import helpers
+    special_configuration = helpers.get_empty_config() #pylint: disable=E1101
     config_file = special_simcore_configuration(special_configuration)
     from simcore_api import PORTS
     # check empty configuration
@@ -202,7 +105,7 @@ def test_adding_new_ports(special_simcore_configuration):
         "value": "15",
         "timestamp": "2018-05-22T19:34:53.511Z"
     })
-    update_config_file(config_file, special_configuration)
+    helpers.update_config_file(config_file, special_configuration) #pylint: disable=E1101
 
     assert len(PORTS.inputs) == 1
     assert PORTS.inputs[0].key == "in_15"
@@ -221,7 +124,7 @@ def test_adding_new_ports(special_simcore_configuration):
         "value": "null",
         "timestamp": "2018-05-22T19:34:53.511Z"
     })
-    update_config_file(config_file, special_configuration)
+    helpers.update_config_file(config_file, special_configuration) #pylint: disable=E1101
 
     # no change on inputs
     assert len(PORTS.inputs) == 1
@@ -242,7 +145,8 @@ def test_adding_new_ports(special_simcore_configuration):
 
 
 def test_removing_ports(special_simcore_configuration):
-    special_configuration = get_empty_config()
+    import helpers    
+    special_configuration = helpers.get_empty_config() #pylint: disable=E1101
     # add inputs
     special_configuration["inputs"].append({
         "key": "in_15",
@@ -283,7 +187,7 @@ def test_removing_ports(special_simcore_configuration):
     assert len(PORTS.outputs) == 2
     # let's remove the first input
     del special_configuration["inputs"][0]
-    update_config_file(config_file, special_configuration)
+    helpers.update_config_file(config_file, special_configuration) #pylint: disable=E1101
     assert len(PORTS.inputs) == 1
     assert len(PORTS.outputs) == 2
 
@@ -296,7 +200,7 @@ def test_removing_ports(special_simcore_configuration):
 
     # let's do the same for the second output
     del special_configuration["outputs"][1]
-    update_config_file(config_file, special_configuration)
+    helpers.update_config_file(config_file, special_configuration) #pylint: disable=E1101
     assert len(PORTS.inputs) == 1
     assert len(PORTS.outputs) == 1
 
