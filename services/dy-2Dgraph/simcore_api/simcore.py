@@ -1,114 +1,16 @@
 """this module allows to get the data to import from the connected previous nodes and to set the
     data going to following nodes.
 """
-import collections
-from collections.abc import MutableSequence
 import json
 import logging
+from simcore_api import exceptions
+from simcore_api import config
+from simcore_api._itemslist import DataItemsList
+from simcore_api._item import DataItem
 
-import simcore_api.exceptions
+
 
 _LOGGER = logging.getLogger(__name__)
-DATA_ITEM_KEYS = ["key", "label", "description", "type", "value", "timestamp"]
-_DataItem = collections.namedtuple("_DataItem", DATA_ITEM_KEYS)
-_TYPE_TO_PYTHON_TYPE_MAP = {"int":int, "float":float, "file-url":str, "bool":bool, "string":str}
-
-class DataItem(_DataItem):
-    """This class encapsulate a Data Item and provide accessors functions"""
-    def __new__(cls, **kwargs):        
-        self = super(DataItem, cls).__new__(cls, **kwargs)
-        self.new_data_notifier = None
-        return self
-
-    def get(self): #pylint: disable=C0111
-        if self.type not in _TYPE_TO_PYTHON_TYPE_MAP:
-            raise simcore_api.exceptions.InvalidProtocolError(self.type)
-        if self.value == "null":
-            return None
-        return _TYPE_TO_PYTHON_TYPE_MAP[self.type](self.value)
-
-    def set(self, value): #pylint: disable=C0111
-        # let's create a new data
-        data_dct = self._asdict()
-        new_value = str(value)
-        if new_value != data_dct["value"]:
-            data_dct["value"] = str(value)
-            new_data = DataItem(**data_dct)
-            if self.new_data_notifier:
-                self.new_data_notifier(new_data) #pylint: disable=not-callable
-            #notify_new_data(newData)
-
-class DataItemsList(MutableSequence): # pylint: disable=too-many-ancestors
-    """This class contains a list of Data Items."""
-
-    def __init__(self, data=None, read_only=False):
-        _LOGGER.debug("Creating DataItemsList with %s", data)
-        if data is None:
-            data = []
-        self.lst = data
-        self.read_only = read_only
-        self.__change_notifier = None
-    
-    @property
-    def change_notifier(self):
-        """Callback function to be set if client code wants notifications when
-        an item is modified or replaced"""
-        return self.__change_notifier
-    
-    @change_notifier.setter
-    def change_notifier(self, value):
-        self.__change_notifier = value
-        self.__assign_change_notifier_to_data()
-
-    def __setitem__(self, index, value):
-        _LOGGER.debug("Setting item %s with %s", index, value)
-        if self.read_only:
-            raise simcore_api.exceptions.ReadOnlyError(self)        
-        if isinstance(index, str):
-            # it might be a key            
-            index = self.__find_index_from_key(index)
-        self.lst[index] = value
-        if self.change_notifier and callable(self.change_notifier):
-            self.change_notifier() #pylint: disable=not-callable
-
-    def __getitem__(self, index):
-        _LOGGER.debug("Getting item %s", index)
-        if isinstance(index, str):
-            # it might be a key
-            index = self.__find_index_from_key(index)
-        if index < len(self.lst):
-            return self.lst[index]
-        raise simcore_api.exceptions.UnboundPortError(index)
-
-    def __len__(self):        
-        return len(self.lst)
-
-    def __delitem__(self, index):
-        _LOGGER.debug("Deleting item %s", index)
-        del self.lst[index]
-
-    def insert(self, index, value):
-        _LOGGER.debug("Inserting item %s at %s", value, index)
-        self.lst.insert(index, value)
-
-    def __find_index_from_key(self, item_key):
-        indices = [index for index in range(0, len(self.lst)) if self.lst[index].key == item_key]
-        if indices is None:
-            raise simcore_api.exceptions.InvalidKeyError(item_key)
-        if len(indices) > 1:
-            raise simcore_api.exceptions.InvalidProtocolError(indices)
-        return indices[0]
-
-    def __assign_change_notifier_to_data(self):
-        for data in self.lst:
-            data.new_data_notifier = self.__item_value_updated_cb
-
-    def __item_value_updated_cb(self, new_data_item):
-        # a new item shall replace the current one
-        item_index = self.__find_index_from_key(new_data_item.key)
-        self.lst[item_index] = new_data_item
-        if self.change_notifier and callable(self.change_notifier):
-            self.change_notifier() #pylint: disable=not-callable
 
 #pylint: disable=C0111
 class Simcore(object):
@@ -117,7 +19,7 @@ class Simcore(object):
     def __init__(self, version, inputs=None, outputs=None):
         _LOGGER.debug("Initialising Simcore object with version %s, inputs %s and outputs %s", version, inputs, outputs)
         if self._version != version:
-            raise simcore_api.exceptions.WrongProtocolVersionError(self._version, version)
+            raise exceptions.WrongProtocolVersionError(self._version, version)
         
         # inputs are per definition read-only
         if inputs is None:
@@ -149,7 +51,7 @@ class Simcore(object):
     def inputs(self, value):
         # this is forbidden        
         _LOGGER.debug("Setting inputs with %s", value)
-        raise simcore_api.exceptions.ReadOnlyError(self.__inputs)
+        raise exceptions.ReadOnlyError(self.__inputs)
         #self.__inputs = value
         
     @property
@@ -163,7 +65,7 @@ class Simcore(object):
     def outputs(self, value):
         # this is forbidden        
         _LOGGER.debug("Setting outputs with %s", value)
-        raise simcore_api.exceptions.ReadOnlyError(self.__outputs)
+        raise exceptions.ReadOnlyError(self.__outputs)
         #self.__outputs = value
 
     @property
@@ -242,8 +144,8 @@ def simcore_decoder(dct):
     if "version" in dct and "inputs" in dct and "outputs" in dct:
         _LOGGER.debug("Decoding Simcore json: %s", dct)
         return Simcore(dct["version"], DataItemsList(dct["inputs"]), DataItemsList(dct["outputs"]))
-    for key in DATA_ITEM_KEYS:
+    for key in config.DATA_ITEM_KEYS:
         if key not in dct:
-            raise simcore_api.exceptions.InvalidProtocolError(dct)
+            raise exceptions.InvalidProtocolError(dct)
     _LOGGER.debug("Decoding Data time json: %s", dct)
     return DataItem(**dct)
