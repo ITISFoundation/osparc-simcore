@@ -100,7 +100,7 @@ def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0
     })
     special_simcore_configuration(special_config)
     from simcore_api import PORTS
-    from simcore_api.simcore import DataItem
+    from simcore_api._item import DataItem
     from simcore_api import exceptions
 
     assert PORTS.outputs["out_15"].get() is None
@@ -121,7 +121,7 @@ def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0
 
 def test_default_json_encoding(default_simcore_configuration): # pylint: disable=W0613, W0621
     from simcore_api import PORTS
-    from simcore_api.simcore import _SimcoreEncoder
+    from simcore_api.serialization import _SimcoreEncoder
     import json
     import os
 
@@ -317,7 +317,7 @@ def test_changing_inputs_error(default_simcore_configuration): # pylint: disable
     assert "Trying to modify read-only object" in str(excinfo.value)
 
 
-    from simcore_api.simcore import DataItem
+    from simcore_api._item import DataItem
     new_input = DataItem(key="dummy_1", 
                          label="new label", 
                          description="new description", 
@@ -338,7 +338,7 @@ def test_changing_outputs_error(default_simcore_configuration): # pylint: disabl
     assert "Trying to modify read-only object" in str(excinfo.value)
 
 
-    from simcore_api.simcore import DataItem
+    from simcore_api._item import DataItem
     new_output = DataItem(key="dummy_1", 
                           label="new label", 
                           description="new description", 

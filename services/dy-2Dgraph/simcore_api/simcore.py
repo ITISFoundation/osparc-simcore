@@ -1,13 +1,10 @@
 """this module allows to get the data to import from the connected previous nodes and to set the
     data going to following nodes.
 """
-import json
 import logging
 from simcore_api import exceptions
-from simcore_api import config
+from simcore_api import serialization
 from simcore_api._itemslist import DataItemsList
-from simcore_api._item import DataItem
-
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -91,7 +88,7 @@ class Simcore(object):
     def update_from_json(self):
         _LOGGER.debug("Updating json configuration")
         change_notifier = self.__outputs.change_notifier
-        updated_simcore = json.loads(self.__json_reader(), object_hook=simcore_decoder)
+        updated_simcore = serialization.create_from_json(self.json_reader)        
         self.__inputs = updated_simcore.inputs
         self.__outputs = updated_simcore.outputs
         self.__outputs.change_notifier = change_notifier
@@ -99,53 +96,4 @@ class Simcore(object):
     
     def save_to_json(self):
         _LOGGER.info("Saving Simcore object to json")
-        auto_update_state = self.autoupdate
-        try:
-            # dumping triggers a load of unwanted auto-updates
-            # which do not make sense for saving purpose.
-            self.autoupdate = False
-            simcore_json = json.dumps(self, cls=_SimcoreEncoder)
-        finally:
-            self.autoupdate = auto_update_state
-        
-        if callable(self.json_writer):
-            self.json_writer(simcore_json) #pylint: disable=E1102
-        _LOGGER.debug("Saved Simcore object to json: %s", simcore_json)
-
-    @classmethod
-    def create_from_json(cls, json_reader, json_writer):
-        _LOGGER.debug("Creating Simcore object with json reader: %s, json writer: %s", json_reader, json_writer)
-        simcore = json.loads(json_reader(), object_hook=simcore_decoder)
-        simcore.json_reader = json_reader
-        simcore.json_writer = json_writer
-        simcore.autoupdate = True
-        _LOGGER.debug("Created Simcore object")
-        return simcore
-
-class _SimcoreEncoder(json.JSONEncoder):
-    # SAN: looks like pylint is having an issue here
-    def default(self, o): # pylint: disable=E0202
-        _LOGGER.debug("Encoding object: %s", o)
-        if isinstance(o, Simcore):
-            _LOGGER.debug("Encoding Simcore object")
-            return {
-                "version": o._version, # pylint: disable=W0212
-                "inputs": o.inputs, # pylint: disable=W0212
-                "outputs": o.outputs # pylint: disable=W0212
-            }
-        elif isinstance(o, DataItemsList):
-            _LOGGER.debug("Encoding DataItemsList object")
-            items = [data_item._asdict() for data_item in o]
-            return items
-        _LOGGER.debug("Encoding object using defaults")
-        return json.JSONEncoder.default(self, o)
-    
-def simcore_decoder(dct):
-    if "version" in dct and "inputs" in dct and "outputs" in dct:
-        _LOGGER.debug("Decoding Simcore json: %s", dct)
-        return Simcore(dct["version"], DataItemsList(dct["inputs"]), DataItemsList(dct["outputs"]))
-    for key in config.DATA_ITEM_KEYS:
-        if key not in dct:
-            raise exceptions.InvalidProtocolError(dct)
-    _LOGGER.debug("Decoding Data time json: %s", dct)
-    return DataItem(**dct)
+        serialization.save_to_json(self)
