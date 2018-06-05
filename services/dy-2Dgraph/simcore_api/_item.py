@@ -11,17 +11,17 @@ _DataItem = collections.namedtuple("_DataItem", config.DATA_ITEM_KEYS)
 
 class DataItem(_DataItem):
     """This class encapsulate a Data Item and provide accessors functions"""
-    def __new__(cls, new_data_cb=None, **kwargs):        
+    def __new__(cls, **kwargs):        
         _LOGGER.debug("Creating new data item with %s", kwargs)
         self = super(DataItem, cls).__new__(cls, **kwargs)
-        self.new_data_cb = new_data_cb
+        self.new_data_cb = None
         return self
 
     def get(self):
         """returns the data converted to the underlying type.
 
             Can throw InvalidPtrotocolError if the underling type is unknown.
-            Can throw TypeError if the conversion fails.
+            Can throw ValueError if the conversion fails.
             returns the converted value or None if no value is defined
         """
         _LOGGER.debug("Getting data item")
