@@ -581,12 +581,21 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "sett_1",
           "label": "ViPModel",
           "desc": "Select ViP Model",
-          "type": "select",
-          "options": [
-            "Rat",
-            "Sphere"
-          ],
-          "value": 0
+          "type": "string",
+          "defaultValue": "rat",
+          "widget": "selectBox",
+          "cfg": {
+            structure: [
+              {
+                key: "rat",
+                label: "Rat"
+              },
+              {
+                key: "sphere",
+                label: "Sphere"
+              }
+            ]
+          }
         }],
         "viewer": {
           "ip": "http://" + window.location.hostname,
@@ -608,14 +617,12 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "sett_1",
           "label": "File",
           "desc": "File",
-          "type": "file",
-          "value": null
+          "type": "string"
         }, {
           "key": "sett_2",
           "label": "File type",
           "desc": "File type",
-          "type": "text",
-          "value": null
+          "type": "string"
         }]
       }, {
         "key": "RandomNumberGeneratorID",
@@ -633,14 +640,14 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "sett_1",
           "label": "Number Min",
           "desc": "Number Min",
-          "type": "number",
-          "value": 0
+          "type": "integer",
+          "defaultValue": 0
         }, {
           "key": "sett_2",
           "label": "Number Max",
           "desc": "Number Max",
-          "type": "number",
-          "value": 10
+          "type": "integer",
+          "defaultValue": 10
         }]
       }];
       return producers;
@@ -655,13 +662,13 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "in_1",
           "label": "File-url",
           "desc": "File-url",
-          "type": "file-url",
+          "type": "upload",
           "value": null
         }, {
           "key": "in_2",
           "label": "File-url",
           "desc": "File-url",
-          "type": "file-url",
+          "type": "upload",
           "value": null
         }],
         "outputs": [{
@@ -671,49 +678,56 @@ qx.Class.define("qxapp.data.Fake", {
           "type": "csv-url",
           "value": null
         }],
-        "settings": [{
-          "key": "sett_1",
-          "label": "NaValue",
-          "desc": "Na blocker drug concentration",
-          "type": "number",
-          "value": 10
-        }, {
-          "key": "sett_2",
-          "label": "KrValue",
-          "desc": "Kr blocker drug concentration",
-          "type": "number",
-          "value": 10
-        }, {
-          "key": "sett_3",
-          "label": "BCLValue",
-          "desc": "Basic cycle length (BCL)",
-          "type": "number",
-          "value": 10
-        }, {
-          "key": "sett_4",
-          "label": "beatsValue",
-          "desc": "Number of beats",
-          "type": "number",
-          "value": 10
-        }, {
-          "key": "sett_5",
-          "label": "LigandValue",
-          "desc": "Ligand concentration",
-          "type": "number",
-          "value": 10
-        }, {
-          "key": "sett_6",
-          "label": "cAMKIIValue",
-          "desc": "Adjust cAMKII activity level",
-          "type": "select",
-          "options": [
-            "A",
-            "B",
-            "C",
-            "D"
-          ],
-          "value": 0
-        }]
+        "settings": [
+          {
+            "key": "sett_1",
+            "label": "NaValue",
+            "desc": "Na blocker drug concentration",
+            "type": "integer",
+            "defaultValue": 10
+          }, {
+            "key": "sett_2",
+            "label": "KrValue",
+            "desc": "Kr blocker drug concentration",
+            "type": "integer",
+            "defaultValue": 10
+          }, {
+            "key": "sett_3",
+            "label": "BCLValue",
+            "desc": "Basic cycle length (BCL)",
+            "type": "integer",
+            "defaultValue": 10
+          }, {
+            "key": "sett_4",
+            "label": "beatsValue",
+            "desc": "Number of beats",
+            "type": "integer",
+            "defaultValue": 10
+          }, {
+            "key": "sett_5",
+            "label": "LigandValue",
+            "desc": "Ligand concentration",
+            "type": "integer",
+            "defaultValue": 10
+          }, {
+            "key": "sett_6",
+            "label": "cAMKIIValue",
+            "desc": "Adjust cAMKII activity level",
+            "type": "string",
+            "widget": "selectBox",
+            "cfg": {
+              structure:
+                ["A", "B", "C", "D"].map(
+                  k => ({
+                    key: k.toLowerCase(),
+                    label: k
+                  })
+                )
+
+            },
+            "defaultValue": "c"
+          }
+        ]
       }, {
         "key": "Computational2",
         "label": "Computational 2",
@@ -767,8 +781,8 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "sett_1",
           "label": "Number",
           "desc": "Sleep extra sec",
-          "type": "number",
-          "value": 0
+          "type": "integer",
+          "defaultValue": 0
         }]
       }];
       return computationals;

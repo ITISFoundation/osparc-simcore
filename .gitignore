@@ -104,8 +104,11 @@ ENV/
 # Dependency directories
 node_modules/
 
-
 # IDEs config
 .vscode/
 
+# Manual overrides
 services/docker-compose.override.yml
+
+# mac
+.DS_Store
