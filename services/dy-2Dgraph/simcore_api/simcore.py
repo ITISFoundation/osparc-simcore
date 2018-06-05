@@ -15,6 +15,11 @@ _TYPE_TO_PYTHON_TYPE_MAP = {"int":int, "float":float, "file-url":str, "bool":boo
 
 class DataItem(_DataItem):
     """This class encapsulate a Data Item and provide accessors functions"""
+    def __new__(cls, **kwargs):        
+        self = super(DataItem, cls).__new__(cls, **kwargs)
+        self.new_data_notifier = None
+        return self
+
     def get(self): #pylint: disable=C0111
         if self.type not in _TYPE_TO_PYTHON_TYPE_MAP:
             raise simcore_api.exceptions.InvalidProtocolError(self.type)
@@ -28,7 +33,9 @@ class DataItem(_DataItem):
         new_value = str(value)
         if new_value != data_dct["value"]:
             data_dct["value"] = str(value)
-            newData = DataItem(**data_dct)
+            new_data = DataItem(**data_dct)
+            if self.new_data_notifier:
+                self.new_data_notifier(new_data) #pylint: disable=not-callable
             #notify_new_data(newData)
 
 class DataItemsList(MutableSequence): # pylint: disable=too-many-ancestors
@@ -40,8 +47,19 @@ class DataItemsList(MutableSequence): # pylint: disable=too-many-ancestors
             data = []
         self.lst = data
         self.read_only = read_only
-        self.change_notifier = None
+        self.__change_notifier = None
     
+    @property
+    def change_notifier(self):
+        """Callback function to be set if client code wants notifications when
+        an item is modified or replaced"""
+        return self.__change_notifier
+    
+    @change_notifier.setter
+    def change_notifier(self, value):
+        self.__change_notifier = value
+        self.__assign_change_notifier_to_data()
+
     def __setitem__(self, index, value):
         _LOGGER.debug("Setting item %s with %s", index, value)
         if self.read_only:
@@ -51,7 +69,7 @@ class DataItemsList(MutableSequence): # pylint: disable=too-many-ancestors
             index = self.__find_index_from_key(index)
         self.lst[index] = value
         if self.change_notifier and callable(self.change_notifier):
-            self.change_notifier()
+            self.change_notifier() #pylint: disable=not-callable
 
     def __getitem__(self, index):
         _LOGGER.debug("Getting item %s", index)
@@ -81,6 +99,17 @@ class DataItemsList(MutableSequence): # pylint: disable=too-many-ancestors
             raise simcore_api.exceptions.InvalidProtocolError(indices)
         return indices[0]
 
+    def __assign_change_notifier_to_data(self):
+        for data in self.lst:
+            data.new_data_notifier = self.__item_value_updated_cb
+
+    def __item_value_updated_cb(self, new_data_item):
+        # a new item shall replace the current one
+        item_index = self.__find_index_from_key(new_data_item.key)
+        self.lst[item_index] = new_data_item
+        if self.change_notifier and callable(self.change_notifier):
+            self.change_notifier() #pylint: disable=not-callable
+
 #pylint: disable=C0111
 class Simcore(object):
     """This class allow the client to access the inputs and outputs assigned to the node."""
@@ -103,7 +132,7 @@ class Simcore(object):
         self.__outputs = outputs
         self.__outputs.read_only = True
         self.__outputs.change_notifier = self.save_to_json
-        
+
         self.__json_reader = None
         self.__json_writer = None
         self.autoupdate = False

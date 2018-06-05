@@ -101,6 +101,7 @@ def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0
     special_simcore_configuration(special_config)
     from simcore_api import PORTS
     from simcore_api.simcore import DataItem
+    from simcore_api import exceptions
 
     assert PORTS.outputs["out_15"].get() is None
 
@@ -110,10 +111,10 @@ def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0
                                type="bool", 
                                value="True", 
                                timestamp="2018-05-28T19:34:53.511Z")
-    PORTS.outputs["out_15"] = modified_output
-    assert PORTS.outputs["out_15"].get()
 
-    
+    with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
+        PORTS.outputs["out_15"] = modified_output
+    assert "Trying to modify read-only object" in str(excinfo.value)                           
     
     PORTS.outputs["out_15"].set(26)
     assert PORTS.outputs["out_15"].get() == 26
