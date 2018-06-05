@@ -15,7 +15,7 @@ def create_item(item_type, item_value, timestamp=None):
                     description="a description", 
                     type=item_type, 
                     value=item_value, 
-                    timestamp = timestamp)
+                    timestamp=timestamp)
 
 def test_default_item():
     #pylint: disable=W0612

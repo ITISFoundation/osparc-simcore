@@ -4,6 +4,7 @@
 import logging
 from collections.abc import MutableSequence
 from simcore_api import exceptions
+from simcore_api._item import DataItem
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,7 +15,16 @@ class DataItemsList(MutableSequence):
         _LOGGER.debug("Creating DataItemsList with %s", data)
         if data is None:
             data = []
-        self.lst = data
+        
+        data_keys = set()
+        for item in data:
+            if not isinstance(item, DataItem):
+                raise TypeError
+            data_keys.add(item.key)
+        # check uniqueness... we could use directly a set for this as well
+        if len(data_keys) != len(data):
+            raise exceptions.InvalidProtocolError(data)
+        self.__lst = data
         self.read_only = read_only
         self.__change_notifier = change_cb
         self.__assign_change_notifier_to_data()
@@ -33,13 +43,23 @@ class DataItemsList(MutableSequence):
     def __setitem__(self, index, value):
         _LOGGER.debug("Setting item %s with %s", index, value)
         if self.read_only:
-            raise exceptions.ReadOnlyError(self)        
+            raise exceptions.ReadOnlyError(self)
+        if not isinstance(value, DataItem):
+            raise TypeError
         if isinstance(index, str):
             # it might be a key            
             index = self.__find_index_from_key(index)
-        self.lst[index] = value
+        if not index < len(self.__lst):
+            raise exceptions.UnboundPortError(index)    
+        # check for uniqueness
+        stored_index = self.__find_index_from_key(value.key)
+        if stored_index != index:
+            # not the same key not allowed
+            raise exceptions.InvalidProtocolError(value._asdict())
+        self.__lst[index] = value
         self.__assign_change_notifier_to_data()
         self.__notify_client()
+        
 
     def __notify_client(self):
         if self.change_notifier and callable(self.change_notifier):
@@ -49,32 +69,43 @@ class DataItemsList(MutableSequence):
         _LOGGER.debug("Getting item %s", index)
         if isinstance(index, str):
             # it might be a key
-            index = self.__find_index_from_key(index)
-        if index < len(self.lst):
-            return self.lst[index]
+            index = self.__find_index_from_key(index)            
+        if index < len(self.__lst):
+            return self.__lst[index]
         raise exceptions.UnboundPortError(index)
 
     def __len__(self):        
-        return len(self.lst)
+        return len(self.__lst)
 
     def __delitem__(self, index):
         _LOGGER.debug("Deleting item %s", index)
-        del self.lst[index]
+        if self.read_only:
+            raise exceptions.ReadOnlyError(self)
+        del self.__lst[index]
 
     def insert(self, index, value):
         _LOGGER.debug("Inserting item %s at %s", value, index)
-        self.lst.insert(index, value)
+        if self.read_only:
+            raise exceptions.ReadOnlyError(self)
+        if not isinstance(value, DataItem):
+            raise TypeError
+        if self.__find_index_from_key(value.key) < len(self.__lst):
+            # the key already exists
+            raise exceptions.InvalidProtocolError(value._asdict())
+        self.__lst.insert(index, value)
+        self.__assign_change_notifier_to_data()
+        self.__notify_client()
 
     def __find_index_from_key(self, item_key):
-        indices = [index for index in range(0, len(self.lst)) if self.lst[index].key == item_key]
-        if indices is None:
-            raise exceptions.InvalidKeyError(item_key)
+        indices = [index for index in range(0, len(self.__lst)) if self.__lst[index].key == item_key]
+        if not indices:
+            return len(self.__lst)            
         if len(indices) > 1:
             raise exceptions.InvalidProtocolError(indices)
         return indices[0]
 
     def __assign_change_notifier_to_data(self):
-        for data in self.lst:
+        for data in self.__lst:
             data.new_data_cb = self.__item_value_updated_cb
 
     def __item_value_updated_cb(self, new_data_item):
@@ -84,4 +115,10 @@ class DataItemsList(MutableSequence):
 
     def __replace_item(self, new_data_item):
         item_index = self.__find_index_from_key(new_data_item.key)
-        self.lst[item_index] = new_data_item
+        self.__lst[item_index] = new_data_item
+
+    @classmethod
+    def __check_uniqueness(cls, dataitems):
+        data_keys = set([item.key for item in dataitems])
+        if len(dataitems) != len(data_keys):
+            raise exceptions.InvalidProtocolError(dataitems)
