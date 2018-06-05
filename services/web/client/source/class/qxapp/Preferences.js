@@ -61,7 +61,7 @@ qx.Class.define("qxapp.Preferences", {
 
       // content
       let username = new qx.ui.form.TextField().set({
-        value: "bizzi",
+        value: "bizzy",
         placeholder: "User Name"
       });
       page.add(username);
@@ -77,9 +77,8 @@ qx.Class.define("qxapp.Preferences", {
       });
       page.add(email);
 
-      // const url = qxapp.utils.Placeholders.getIcon("fa-user", 200);
       let img = new qx.ui.basic.Image().set({
-        source: qxapp.utils.Placeholders.getGravatar(email.getValue() || "bizzi@simcore.io", 200)
+        source: qxapp.utils.Placeholders.getGravatar(email.getValue() || "bizzy@itis.ethz.ch", 200)
       });
       page.add(img);
 

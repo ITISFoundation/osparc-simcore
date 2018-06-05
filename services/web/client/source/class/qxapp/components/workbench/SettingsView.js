@@ -4,7 +4,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
   construct: function() {
     this.base();
 
-    let box = new qx.ui.layout.VBox(10, null, "separator-vertical");
+    let box = new qx.ui.layout.VBox(10);
     box.set({
       alignX: "center"
     });
@@ -23,6 +23,12 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
     "ShowViewer": "qx.event.type.Data"
   },
 
+  properties: {
+    node: {
+      check: "qxapp.components.workbench.NodeBase",
+      apply: "__applyNode"
+    }
+  },
   members: {
     __settingsBox: null,
 
@@ -52,18 +58,26 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
     },
 
     __initSettings: function() {
-      this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Grow());
       this.add(this.__settingsBox);
     },
 
-    setNodeMetadata: function(node) {
+    __applyNode: function(node, oldNode, propertyName) {
+      this.__settingsBox.removeAll();
+      this.__settingsBox.add(node.getSettingsWidget());
+    },
+
+    /**
+     * DEPRECATED ... the node settings from is now stored in a property of the node.
+     */
+    XXXsetNodeMetadata: function(node) {
       this.__settingsBox.removeAll();
 
       let form = new qx.ui.form.Form();
       {
         // Expose title
         let input = new qx.ui.form.TextField().set({
-          value: node.getMetadata().name
+          value: node.getMetadata().label
         });
         if (input) {
           form.add(input, this.tr("Node Title"), null, "NodeTitle");
@@ -75,26 +89,26 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
         let sett = node.getMetadata().settings[i];
         let input = this.__fromMetadataToQxSetting(sett);
         if (input) {
-          form.add(input, sett.text, null, sett.name);
+          form.add(input, sett.desc, null, sett.key);
         }
       }
 
       // form with Compute and reset button
-      let computeButton = new qx.ui.form.Button(this.tr("Save"));
-      form.addButton(computeButton);
+      let saveButton = new qx.ui.form.Button(this.tr("Save"));
+      form.addButton(saveButton);
       let resetButton = new qx.ui.form.Button(this.tr("Reset"));
       form.addButton(resetButton);
 
       let controller = new qx.data.controller.Form(null, form);
       let model = controller.createModel();
 
-      computeButton.addListener("execute", function() {
+      saveButton.addListener("execute", function() {
         if (form.validate()) {
-          node.getMetadata().name = model.get("NodeTitle");
-          node.setServiceName(node.getMetadata().name);
+          node.getMetadata().label = model.get("NodeTitle");
+          node.setServiceName(node.getMetadata().label);
 
           for (let i = 0; i < node.getMetadata().settings.length; i++) {
-            let settKey = node.getMetadata().settings[i].name;
+            let settKey = node.getMetadata().settings[i].key;
             node.getMetadata().settings[i].value = model.get(settKey);
           }
         }
@@ -119,21 +133,23 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
     },
 
     __fromMetadataToQxSetting: function(metadata) {
-      let input;
+      let input = null;
       switch (metadata.type) {
-        case "number":
+        case "number": {
           input = new qx.ui.form.Spinner();
           input.set({
             value: metadata.value
           });
           break;
-        case "text":
+        }
+        case "text": {
           input = new qx.ui.form.TextField();
           input.set({
             value: metadata.value
           });
           break;
-        case "select":
+        }
+        case "select": {
           input = new qx.ui.form.SelectBox();
           for (let j = 0; j < metadata.options.length; j++) {
             let optionItem = new qx.ui.form.ListItem(metadata.options[j], null, j);
@@ -143,15 +159,14 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
             input.setSelection([input.getSelectables()[metadata.value]]);
           }
           break;
-        case "boolean":
+        }
+        case "boolean": {
           input = new qx.ui.form.CheckBox();
           input.set({
             value: (metadata.value === 1)
           });
           break;
-        default:
-          input = null;
-          break;
+        }
       }
       return input;
     }
