@@ -27,12 +27,12 @@ def create_from_json(json_reader_cb, json_writer_cb=None, auto_update=False):
     _LOGGER.debug("Creating Simcore object with json reader: %s, json writer: %s", json_reader_cb, json_writer_cb)
     if json_reader_cb is None:
         raise exceptions.SimcoreException("json reader callback is empty, this is not allowed")
-    simcore = json.loads(json_reader_cb(), object_hook=simcore_decoder)
-    simcore.json_reader = json_reader_cb
-    simcore.json_writer = json_writer_cb
-    simcore.autoupdate = auto_update
+    simcore_obj = json.loads(json_reader_cb(), object_hook=simcore_decoder)
+    simcore_obj.json_reader = json_reader_cb
+    simcore_obj.json_writer = json_writer_cb
+    simcore_obj.autoupdate = auto_update
     _LOGGER.debug("Created Simcore object")
-    return simcore
+    return simcore_obj
 
 def save_to_json(obj):
     """encodes a Simcore object to json and calls a linked writer if available.
