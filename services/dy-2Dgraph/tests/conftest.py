@@ -1,9 +1,11 @@
 #pylint: disable C0111
 """defines fixtures for pytests."""
 
-import pytest
-import sys
 import os
+import sys
+
+import pytest
+
 sys.path.append(os.path.join(os.path.dirname(__file__), "helpers"))
 
 
@@ -11,8 +13,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "helpers"))
 def default_simcore_configuration():
     """initialise simcore with default configuration file
     """
-
-    import os
     default_config_path = os.path.join(os.path.dirname(
         os.path.realpath(__file__)), r"../config/connection_config.json")
     os.environ["SIMCORE_CONFIG_PATH"] = default_config_path    
@@ -39,7 +39,6 @@ def special_simcore_configuration(request):
                         The file is automatically deleted.
         """
 
-        import os
         import json
         import tempfile
         # create temporary json file
@@ -48,6 +47,7 @@ def special_simcore_configuration(request):
         # ensure the file is removed at the end whatever happens
 
         def fin():
+            """ensures configuration file is deleted at the end of the test"""
             if os.path.exists(temp_file.name):
                 os.unlink(temp_file.name)
             assert not os.path.exists(temp_file.name)

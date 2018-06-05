@@ -1,4 +1,4 @@
-#pylint: disable C0111
+#pylint: disable=C0111
 def update_config_file(path, config):
     import json
     with open(path, "w") as json_file:
