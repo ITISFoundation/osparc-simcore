@@ -54,7 +54,10 @@ A workbench node input/output ports json-based configuration is described as fol
 
 The simcoreapi python package is a component of this service that allows direct access to the service input and output connections.
 
-The simcoreapi package takes care of reading out the configuration of the node and exposing the inputs/outputs defined in the workbench.
+The simcoreapi package takes care of reading/writing out the configuration of the node and exposing the inputs/outputs defined in the workbench.
+
+Through its _get()_ method an input/output is automatically converted to a fitting python type.
+Using the _set()_ method with an output will automatically convert it to a string and update the port configuration.
 
 ### (in development)
 
@@ -64,21 +67,21 @@ Reversely the simcoreapi takes care of pushing data back to the external storage
 ### basic usage
 
 ```python
-from simcoreapi import simcore
+from simcoreapi import PORTS
 # access input0 as defined as defined in the workbench
-input0 = simcore.inputs[0]
+input0 = PORTS.inputs[0]
 print(input0.key)
 print(input0.value)
 
 # access input1 and a file path as defined in the workbench
-data_path = simcore.inputs[1].get()
+data_path = PORTS.inputs[1].get()
 
 # set the output0 to some value
-output0 = simcore.outputs[0]
+output0 = PORTS.outputs[0]
 output0.set(someFctThatOutputsABoolean())
 
 resultingFilePath = someFctThatOutputsAFile()
-output1 = simcore.outputs[1]
+output1 = PORTS.outputs[1]
 output1.set(resultingFilePath)
 ```
 
