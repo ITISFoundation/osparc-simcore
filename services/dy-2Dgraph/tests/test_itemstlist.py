@@ -3,8 +3,8 @@ import datetime
 
 import pytest
 
-from simcore_api._item import DataItem
-from simcore_api._itemslist import DataItemsList
+from simcoreapi._item import DataItem
+from simcoreapi._itemslist import DataItemsList
 
 
 def create_item(key, item_type, item_value, timestamp=None):    
@@ -25,7 +25,7 @@ def test_default_list():
     assert itemslist.change_notifier is None
 
 def test_reject_items_with_same_key():
-    from simcore_api import exceptions
+    from simcoreapi import exceptions
     with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
         DataItemsList([create_item("1", "int", "333"), create_item("1", "int", "444"), create_item("3", "int", "333")])
     
@@ -60,7 +60,7 @@ def test_accessing_by_key():
         assert itemslist[item.key] == item
 
 def test_access_by_wrong_key():
-    from simcore_api import exceptions
+    from simcoreapi import exceptions
     itemslist = DataItemsList([create_item("1", "int", "333"), create_item("2", "int", "333"), create_item("3", "int", "333")], read_only=True)    
     with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError"):
         print(itemslist["fdoiht"])
@@ -79,7 +79,7 @@ def test_adding_bad_items():
         itemslist.insert(0, "blahblah")
 
 def test_read_only():
-    from simcore_api import exceptions
+    from simcoreapi import exceptions
     itemslist = DataItemsList([create_item("1", "int", "333"), create_item("2", "int", "333"), create_item("3", "int", "333")], read_only=True)    
     assert len(itemslist) == 3
     

@@ -2,7 +2,7 @@
 import pytest
 
 def test_default_json_decoding(default_simcore_configuration):
-    from simcore_api import PORTS
+    from simcoreapi import PORTS
 
     assert len(PORTS.inputs) == 2
     assert PORTS.inputs[0].key == "in_1"
@@ -28,8 +28,8 @@ def test_default_json_decoding(default_simcore_configuration):
     assert PORTS.outputs[0].timestamp == "2018-05-23T15:34:53.511Z"
 
 def test_default_json_encoding(default_simcore_configuration): 
-    from simcore_api import PORTS
-    from simcore_api.serialization import _SimcoreEncoder
+    from simcoreapi import PORTS
+    from simcoreapi.serialization import _SimcoreEncoder
     import json
     import os
 
@@ -47,9 +47,9 @@ def test_wrong_version(special_simcore_configuration):
     special_configuration["version"] = "0.0"
     special_simcore_configuration(special_configuration)
 
-    from simcore_api import exceptions    
+    from simcoreapi import exceptions    
     with pytest.raises(exceptions.WrongProtocolVersionError, message="Expecting WrongProtocolVersionError") as excinfo:
-        from simcore_api import PORTS
+        from simcoreapi import PORTS
         print(PORTS.inputs)
     assert "Expecting version 0.1, found version 0.0" in str(excinfo.value)
 
@@ -57,9 +57,9 @@ def test_invalid_configuration(special_simcore_configuration):
     special_configuration = {"whatever":"stuff"}
     special_simcore_configuration(special_configuration)
 
-    from simcore_api import exceptions
+    from simcoreapi import exceptions
     with pytest.raises(exceptions.InvalidProtocolError, message="Expecting WrongProtocol") as excinfo:
-        from simcore_api import PORTS
+        from simcoreapi import PORTS
         print(PORTS.inputs)
     assert "Invalid protocol used in" in str(excinfo.value)
 
@@ -69,8 +69,8 @@ def test_noinputsoutputs(special_simcore_configuration):
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
     special_simcore_configuration(special_configuration)
 
-    from simcore_api import PORTS
-    from simcore_api import exceptions
+    from simcoreapi import PORTS
+    from simcoreapi import exceptions
 
     assert not PORTS.inputs
     assert not PORTS.outputs

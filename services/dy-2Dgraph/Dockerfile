@@ -31,7 +31,7 @@ RUN pip install plotly \
     jupyter dashboards quick-setup --sys-prefix && \    
     jupyter nbextension enable hide_input/main
 COPY --chown=jovyan:users plotly.ipynb .
-COPY --chown=jovyan:users /simcore_api ./simcore_api
+COPY --chown=jovyan:users /simcoreapi ./simcoreapi
 RUN jupyter trust plotly.ipynb
 
 # define where the inputs shall be defined

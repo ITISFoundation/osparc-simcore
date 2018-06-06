@@ -3,8 +3,8 @@ import datetime
 
 import pytest
 
-from simcore_api import config, exceptions
-from simcore_api._item import DataItem
+from simcoreapi import config, exceptions
+from simcoreapi._item import DataItem
 
 
 def create_item(item_type, item_value, timestamp=None):    

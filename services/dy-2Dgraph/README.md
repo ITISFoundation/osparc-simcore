@@ -12,7 +12,7 @@ A reminder of the architecture is visible here ![workbench architecture](./diagr
 
 A simple workflow is shown in the workbench containing Filereader, Computational pipeline and Analysis entities. Each of these entities interacts with some kind of data on an external S3 storage. The configuration of the workflow and of the node connections is stored in an external database.
 
-A python-based node needs some mechanism to access its input/output ports configuration and the data that might have been assigned to it. Therefore the simcore_api package comes in play.
+A python-based node needs some mechanism to access its input/output ports configuration and the data that might have been assigned to it. Therefore the simcoreapi package comes in play.
 
 A workbench node input/output ports json-based configuration is described as follow:
 
@@ -50,21 +50,21 @@ A workbench node input/output ports json-based configuration is described as fol
 }
 ```
 
-### simcore_api package
+### simcoreapi package
 
-The simcore_api python package is a component of this service that allows direct access to the service input and output connections.
+The simcoreapi python package is a component of this service that allows direct access to the service input and output connections.
 
-The simcore_api package takes care of reading out the configuration of the node and exposing the inputs/outputs defined in the workbench.
+The simcoreapi package takes care of reading out the configuration of the node and exposing the inputs/outputs defined in the workbench.
 
 ### (in development)
 
-The simcore_api seamlessly pulls any necessary data from the external storage to the local storage. It will also take care of updating it in case it changed.
-Reversely the simcore_api takes care of pushing data back to the external storage from the local storage if there is such an output defined for the node.
+The simcoreapi seamlessly pulls any necessary data from the external storage to the local storage. It will also take care of updating it in case it changed.
+Reversely the simcoreapi takes care of pushing data back to the external storage from the local storage if there is such an output defined for the node.
 
 ### basic usage
 
 ```python
-from simcore_api import simcore
+from simcoreapi import simcore
 # access input0 as defined as defined in the workbench
 input0 = simcore.inputs[0]
 print(input0.key)
