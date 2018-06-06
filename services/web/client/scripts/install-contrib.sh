@@ -27,6 +27,6 @@ cd ${FONTS_DIR}
 
 # TODO: with the next release of qx-compiler these lines can be removed
 rm *
-ln -s ../../../contrib/ITISFoundation_qx-iconfont-fontawesome5_v0.0.2/source/resource/iconfont/fontawesome5/ fontawesome5
-ln -s ../../../contrib/ITISFoundation_qx-iconfont-material_v0.0.1/source/resource/iconfont/material/ material
-ls -l
+#ln -s ../../../contrib/ITISFoundation_qx-iconfont-fontawesome5_v0.0.2/source/resource/iconfont/fontawesome5/ fontawesome5
+#ln -s ../../../contrib/ITISFoundation_qx-iconfont-material_v0.0.1/source/resource/iconfont/material/ material
+#ls -l
