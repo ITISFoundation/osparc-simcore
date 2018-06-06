@@ -9,7 +9,7 @@ from simcoreapi._item import DataItem
 
 def create_item(item_type, item_value, timestamp=None):    
     if not timestamp:
-        timestamp = datetime.datetime.now().isoformat()
+        timestamp = datetime.datetime.utcnow().isoformat()
     return DataItem(key="a key", 
                     label="a label", 
                     description="a description", 

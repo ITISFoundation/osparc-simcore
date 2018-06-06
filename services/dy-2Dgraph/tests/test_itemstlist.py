@@ -9,7 +9,7 @@ from simcoreapi._itemslist import DataItemsList
 
 def create_item(key, item_type, item_value, timestamp=None):    
     if not timestamp:
-        timestamp = datetime.datetime.now().isoformat()
+        timestamp = datetime.datetime.utcnow().isoformat()
     return DataItem(key=key, 
                     label="a label", 
                     description="a description", 
@@ -109,4 +109,13 @@ def test_modifying_items_triggers_cb(): #pylint: disable=C0103
     mock_method.reset_mock()
     itemslist[0].set(234)
     mock_method.assert_called_once()
-    
+
+def test_modifying_item_changes_timestamp(): #pylint: disable=C0103
+    import dateutil.parser
+    import time
+    itemslist = DataItemsList([create_item("1", "int", "333"), create_item("2", "int", "333"), create_item("3", "int", "333")])
+    original_timestamp = dateutil.parser.parse(itemslist[0].timestamp)
+    time.sleep(0.1)
+    itemslist[0].set(47475)
+    new_timestamp = dateutil.parser.parse(itemslist[0].timestamp)
+    assert new_timestamp > original_timestamp

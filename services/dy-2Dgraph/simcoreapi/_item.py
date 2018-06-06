@@ -2,6 +2,7 @@
 
 import logging
 import collections
+import datetime
 from simcoreapi import exceptions
 from simcoreapi import config
 
@@ -44,6 +45,7 @@ class DataItem(_DataItem):
         new_value = str(value)
         if new_value != data_dct["value"]:
             data_dct["value"] = str(value)
+            data_dct["timestamp"] = datetime.datetime.utcnow().isoformat()
             new_data = DataItem(**data_dct)
             if self.new_data_cb:
                 _LOGGER.debug("calling new data callback")
