@@ -39,7 +39,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
         alignX: "right"
       });
       let titleBox = new qx.ui.container.Composite(box);
-      let settLabel = new qx.ui.basic.Label(this.tr("Settings"));
+      let settLabel = new qx.ui.basic.Label(this.tr("Inputs"));
       settLabel.set({
         alignX: "center",
         alignY: "middle"
