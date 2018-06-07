@@ -82,7 +82,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
 
     // let tableModel = this.__logModel = new qx.ui.table.model.Filtered();
     let tableModel = this.__logModel = new qxapp.components.workbench.logger.RemoteTableModel();
-    tableModel.setColumns(["Origin", "Message", "Msg"], ["whoRich", "whatRich", "msg"]);
+    tableModel.setColumns(["Origin", "Message"], ["whoRich", "whatRich"]);
 
     let custom = {
       tableColumnModel : function(obj) {
@@ -162,15 +162,18 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
 
       const whoRich = this.__addWhoColorTag(who);
       const whatRich = this.__addLevelColorTag(what, logLevel);
-      let msg = {
-        who: who,
-        what: what,
-        logLevel: logLevel
+      let msgLog = {
+        whoRich: whoRich,
+        whatRich: whatRich,
+        msg: {
+          who: who,
+          what: what,
+          logLevel: logLevel
+        }
       };
-      this.__logModel.addRows([[whoRich, whatRich, msg]]);
+      this.__logModel.addRows([msgLog]);
 
       this.__logModel.reloadData();
-      // this.__applyFilters();
     },
 
     __addWhoColorTag: function(who) {
@@ -217,26 +220,6 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       return ("<font color=" + logColor +">" + what + "</font>");
     },
 
-    __filterByString: function(msg) {
-      let searchString = this.__textfield.getValue();
-      if (searchString === null) {
-        return true;
-      }
-      if (searchString && !this.isCaseSensitive()) {
-        searchString = searchString.toUpperCase();
-      }
-      if (!this.isCaseSensitive()) {
-        msg = msg.toUpperCase();
-      }
-      const show = msg.includes(searchString);
-      return show;
-    },
-
-    __filterByLogLevel: function(logLevel) {
-      const show = logLevel >= this.getLogLevel();
-      return show;
-    },
-
     __applyFilters: function() {
       if (this.__logModel === null) {
         return;
@@ -245,27 +228,6 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       this.__logModel.setFilterString(this.__textfield.getValue());
       this.__logModel.setFilterLogLevel(this.getLogLevel());
       this.__logModel.reloadData();
-
-      // this.__logModel.resetHiddenRows();
-      // for (let i=0; i<this.__logModel.getRowCount(); i++) {
-      /*
-        let rowData = this.__logModel.getRowData(i)[2];
-        const showStrWho = this.__filterByString(rowData.who);
-        const showStrWhat = this.__filterByString(rowData.what);
-        const showLog = this.__filterByLogLevel(rowData.logLevel);
-      */
-      /*
-        let value = this.__textfield.getValue();
-        this.__logModel.resetHiddenRows();
-        this.__logModel.addNotRegex(value, "login", true);
-        this.__logModel.applyFilters();
-      */
-      /*
-        if (!(showStrWho && showStrWhat && showLog)) {
-          this.__logModel.hideRows(i, 1);
-        }
-      */
-      // }
     },
 
     __createInitMsg: function() {
@@ -275,7 +237,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     },
 
     clearLogger: function() {
-      this.__logModel.removeRows(0, this.__logModel.getRowCount());
+      this.__logModel.clearTable();
     }
   }
 });

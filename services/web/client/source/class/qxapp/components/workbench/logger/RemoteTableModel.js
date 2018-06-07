@@ -44,7 +44,7 @@ qx.Class.define("qxapp.components.workbench.logger.RemoteTableModel", {
       init: -1
     },
     filterString: {
-      nullable: false,
+      nullable: true,
       check : "String",
       init: ""
     },
@@ -57,6 +57,7 @@ qx.Class.define("qxapp.components.workbench.logger.RemoteTableModel", {
 
   members : {
     __rawData: null,
+    __filteredData: null,
 
     addRows: function(newRows) {
       for (let i=0; i<newRows.length; i++) {
@@ -64,10 +65,30 @@ qx.Class.define("qxapp.components.workbench.logger.RemoteTableModel", {
       }
     },
 
+    clearTable: function() {
+      const rawLength = this.__rawData.length;
+      this.__rawData = [];
+      for (let i=rawLength-1; i>=0; i--) {
+        this.removeRow(i);
+      }
+      this.reloadData();
+    },
+
+    getRawRowCount: function() {
+      return this.__rawData.length;
+    },
+
 
     // overloaded - called whenever the table requests the row count
     _loadRowCount : function() {
-      this.__setRowCount(this.__rawData.length);
+      this.__filteredData = [];
+      for (let i=0; i<this.__rawData.length; i++) {
+        const rowData = this.__rawData[i];
+        if (this.__checkFilters(rowData.msg)) {
+          this.__filteredData.push(rowData);
+        }
+      }
+      this.__setRowCount(this.__filteredData.length);
     },
 
     _loadRowData : function(firstRow, lastRow) {
@@ -100,7 +121,7 @@ qx.Class.define("qxapp.components.workbench.logger.RemoteTableModel", {
       const showStrWhat = this.__filterByString(rowData.what);
       const showLog = this.__filterByLogLevel(rowData.logLevel);
 
-      return (showStrWho && showStrWhat && showLog);
+      return ((showStrWho || showStrWhat) && showLog);
     },
 
 
@@ -116,12 +137,7 @@ qx.Class.define("qxapp.components.workbench.logger.RemoteTableModel", {
       var self = this;
       var data = [];
       for (var i=firstRow; i<=lastRow; i++) {
-        if (i < this.__rawData.length) {
-          const rowData = this.__rawData[i];
-          if (this.__checkFilters(rowData[2])) {
-            data.push(rowData);
-          }
-        }
+        data.push(this.__filteredData[i]);
       }
       self._onRowDataLoaded(data);
     }
