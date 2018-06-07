@@ -480,7 +480,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_3",
             "label": "Bool",
             "desc": "Bool",
-            "type": "boolean",
+            "type": "bool",
             "value": null
           }],
           "settings": []
@@ -509,7 +509,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_3",
             "label": "Bool",
             "desc": "Bool",
-            "type": "boolean",
+            "type": "bool",
             "value": null
           }],
           "outputs": [],
@@ -517,13 +517,13 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "sett_1",
             "label": "Bool_1",
             "desc": "Bool_1",
-            "type": "boolean",
+            "type": "bool",
             "value": 0
           }, {
             "key": "sett_2",
             "label": "Bool_2",
             "desc": "Bool_2",
-            "type": "boolean",
+            "type": "bool",
             "value": 0
           }]
         }, {
