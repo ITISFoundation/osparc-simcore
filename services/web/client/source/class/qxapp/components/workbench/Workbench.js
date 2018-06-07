@@ -14,7 +14,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       layout: canvas
     });
 
-    this.__svgWidget = new qxapp.components.workbench.SvgWidget();
+    this.__svgWidget = new qxapp.components.workbench.SvgWidget()
+      .set({
+        zIndex: 4000
+      });
     this.add(this.__svgWidget, {
       left: 0,
       top: 0,
@@ -34,13 +37,19 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
     }, this);
 
-    this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
+    this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager()).set({
+      zIndex: 5000
+    });
     this.add(this.__desktop, {
       left: 0,
       top: 0,
       right: 0,
       bottom: 0
     });
+
+    this.__desktop.addListener("click", function(e) {
+      console.log("Desktop clicked");
+    }, this);
 
     this.__nodes = [];
     this.__links = [];
@@ -282,7 +291,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __createNode: function(node) {
-      let nodeBase = new qxapp.components.workbench.NodeBase();
+      let nodeBase = new qxapp.components.workbench.NodeBase().set({
+        zIndex: 5000
+      });
       nodeBase.setMetadata(node);
 
       if (nodeBase.getNodeImageId() === "modeler") {
@@ -466,8 +477,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__links.push(linkBase);
 
       linkBase.getRepresentation().node.addEventListener("click", function(e) {
-        console.log("Link selected", e.getData(e));
-      });
+        console.log("Link selected", linkBase.getLinkId());
+      }, this);
 
       return linkBase;
     },
@@ -549,10 +560,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       const nodeBounds = node.getCurrentBounds();
       const portIdx = node.getPortIndex(port.portId);
       let x = nodeBounds.left;
-      let y = nodeBounds.top + 4 + 33 + 10 + 16/2 + (16+5)*portIdx;
       if (port.isInput === false) {
         x += nodeBounds.width;
       }
+      let y = nodeBounds.top + 4 + 33 + 10 + 16/2 + (16+5)*portIdx;
       return [x, y];
     },
 
