@@ -761,23 +761,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       node.setProgress(progress);
     },
 
-    settingExposed: function(nodeId, settingId, expose) {
-      let node = this.__getNode(nodeId);
-      if (expose) {
-        node.addInput(node.getSetting(settingId));
-      } else {
-        let connectedLinks = this.__getConnectedLinks(nodeId);
-        for (let i=0; i<connectedLinks.length; i++) {
-          let link = this.__getLink(connectedLinks[i]);
-          if (link.getOutputPortId() === settingId) {
-            this.__removeLink(link);
-          }
-        }
-        node.removeInput(node.getPort(settingId));
-        this.__updateLinks(node);
-      }
-    },
-
     __getProducers: function() {
       const producers = qxapp.data.Fake.getProducers();
       return this.__createMenuFromList(producers);
