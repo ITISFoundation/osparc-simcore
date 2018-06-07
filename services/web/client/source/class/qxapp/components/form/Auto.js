@@ -331,6 +331,26 @@ qx.Class.define("qxapp.components.form.Auto", {
       let sbModel = qx.data.marshal.Json.createModel(cfg.structure);
       ctrl.setModel(sbModel);
     },
+    __setupBooleanField: function(s, control) {
+      if (!s.set) {
+        s.set = {};
+      }
+      if (s.defaultValue) {
+        s.set.value = s.defaultValue;
+      }
+      this.__formCtrl.addBindingOptions(s.key,
+        { // model2target
+          converter : function(data) {
+            return data;
+          }
+        },
+        { // target2model
+          converter : function(data) {
+            return data;
+          }
+        }
+      );
+    },
     __setupFileButton: function(s) {
       this.__formCtrl.addBindingOptions(s.key,
         { // model2target
