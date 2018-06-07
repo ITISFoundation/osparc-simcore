@@ -14,7 +14,7 @@
  *         {
  *           key: 'xyc',             // unique name
  *           label: 'label',
- *           type: string|integer|boolean,
+ *           type: string|integer|bool,
  *           widget: 'text',
  *           cfg: {},                // widget specific configuration
  *           set: {}                 // normal qx porperties to apply
@@ -331,7 +331,7 @@ qx.Class.define("qxapp.components.form.Auto", {
       let sbModel = qx.data.marshal.Json.createModel(cfg.structure);
       ctrl.setModel(sbModel);
     },
-    __setupBooleanField: function(s, control) {
+    __setupBoolField: function(s, control) {
       if (!s.set) {
         s.set = {};
       }
@@ -422,7 +422,7 @@ qx.Class.define("qxapp.components.form.Auto", {
           break;
         case "checkBox":
           control = new qx.ui.form.CheckBox();
-          setup = this.__setupBooleanField;
+          setup = this.__setupBoolField;
           break;
         case "selectBox":
           control = new qx.ui.form.SelectBox();
