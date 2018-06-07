@@ -76,7 +76,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       apply : "__applyMetadata"
     },
 
-    settingsWidget: {
+    propsWidget: {
       check: "qxapp.components.form.renderer.PropForm"
     }
   },
@@ -106,8 +106,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return this.__outputPorts;
     },
 
-    getSetting: function(key) {
-      return this.getSettingsWidget().getData()[key];
+    getProp: function(key) {
+      return this.getPropsWidget().getData()[key];
     },
 
     // override qx.ui.window.Window "move" event listener
@@ -140,7 +140,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
           serviceName: metaData.label,
           nodeImageId: metaData.key
         });
-        this.addSettings(metaData.settings);
+        let props = metaData.inputs.concat(metaData.settings);
+        this.addSettings(props);
         this.addInputs(metaData.inputs);
         this.addOutputs(metaData.outputs);
       }
@@ -152,7 +153,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     addSettings: function(settings) {
       let form = this.__settingsForm = new qxapp.components.form.Auto(settings);
-      this.setSettingsWidget(new qxapp.components.form.renderer.PropForm(form));
+      this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
     },
 
     __addInputPort: function(input) {

@@ -331,6 +331,20 @@ qx.Class.define("qxapp.components.form.Auto", {
       let sbModel = qx.data.marshal.Json.createModel(cfg.structure);
       ctrl.setModel(sbModel);
     },
+    __setupFileButton: function(s) {
+      this.__formCtrl.addBindingOptions(s.key,
+        { // model2target
+          converter : function(data) {
+            return String(data);
+          }
+        },
+        { // target2model
+          converter : function(data) {
+            return data;
+          }
+        }
+      );
+    },
     __addField: function(s) {
       let option = {
         exposable: s.exposable
@@ -354,7 +368,8 @@ qx.Class.define("qxapp.components.form.Auto", {
         s.widget = {
           string: "text",
           integer: "spinner",
-          bool: "checkBox"
+          bool: "checkBox",
+          fileUrl: "fileButton"
         }[s.type];
       }
       let control;
@@ -393,10 +408,13 @@ qx.Class.define("qxapp.components.form.Auto", {
           control = new qx.ui.form.SelectBox();
           setup = this.__setupSelectBox;
           break;
-
         case "comboBox":
           control = new qx.ui.form.ComboBox();
           setup = this.__setupComboBox;
+          break;
+        case "fileButton":
+          control = new qx.ui.form.TextField();
+          setup = this.__setupFileButton;
           break;
         default:
           throw new Error("unknown widget type " + s.widget);
