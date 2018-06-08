@@ -14,10 +14,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       layout: canvas
     });
 
-    this.__svgWidget = new qxapp.components.workbench.SvgWidget()
-      .set({
-        zIndex: 4000
-      });
+    this.__svgWidget = new qxapp.components.workbench.SvgWidget();
     this.add(this.__svgWidget, {
       left: 0,
       top: 0,
@@ -37,10 +34,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
     }, this);
 
-    this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager()).set({
-      zIndex: 5000
-    });
-    this.add(this.__desktop, {
+    this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
+
+    this.__desktop.add(this.__svgWidget, {
       left: 0,
       top: 0,
       right: 0,
@@ -291,9 +287,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __createNode: function(node) {
-      let nodeBase = new qxapp.components.workbench.NodeBase().set({
-        zIndex: 5000
-      });
+      let nodeBase = new qxapp.components.workbench.NodeBase();
       nodeBase.setMetadata(node);
 
       if (nodeBase.getNodeImageId() === "modeler") {
@@ -476,6 +470,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
       this.__links.push(linkBase);
 
+      node2.getPropsWidget().enableProp(port2.portId, false);
+
       linkBase.getRepresentation().node.addEventListener("click", function(e) {
         console.log("Link selected", linkBase.getLinkId());
       }, this);
@@ -626,6 +622,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __removeLink: function(link) {
+      let node2 = this.__getNode(link.getOutputNodeId());
+      node2.getPropsWidget().enableProp(link.outputPortId(), true);
+
       this.__svgWidget.removeCurve(link.getRepresentation());
       let index = this.__links.indexOf(link);
       if (index > -1) {
