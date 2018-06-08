@@ -30,6 +30,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       bottom: 0
     });
 
+    this.__desktop.addListener("changeActiveWindow", function(e) {
+      let winEmitting = e.getData();
+      if (winEmitting && winEmitting.isActive()) {
+        this.__selectedItemChanged(winEmitting.getNodeId());
+      }
+    }, this);
+
     this.__svgWidget.addListener("SvgWidgetReady", function() {
       // Will be called only the first time Svg lib is loaded
       this.__deserializeData();
@@ -102,7 +109,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __tempLinkRepr: null,
     __pointerPosX: null,
     __pointerPosY: null,
-    __selectedLinkId: null,
+    __selectedItemId: null,
 
     __getPlusButton: function() {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
@@ -215,9 +222,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         height: BUTTON_SIZE
       });
       removeButton.addListener("execute", function() {
-        if (this.__selectedLinkId) {
-          this.__removeLink(this.__getLink(this.__selectedLinkId));
-          this.__selectedLinkId = null;
+        if (this.__selectedItemId && this.__isSelectedItemALink(this.__selectedItemId)) {
+          this.__removeLink(this.__getLink(this.__selectedItemId));
+          this.__selectedItemId = null;
         } else {
           this.__removeSelectedNode();
         }
@@ -480,14 +487,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       linkBase.addListener("linkSelected", function(e) {
-        const unselectedColor = qxapp.theme.Color.colors["workbench-link-active"];
-        const selectedColor = qxapp.theme.Color.colors["workbench-link-selected"];
-        if (this.__selectedLinkId) {
-          let unselectedLink = this.__getLink(this.__selectedLinkId);
-          this.__svgWidget.updateColor(unselectedLink.getRepresentation(), unselectedColor);
-        }
-        this.__selectedLinkId = linkBase.getLinkId();
-        this.__svgWidget.updateColor(linkBase.getRepresentation(), selectedColor);
+        this.__selectedItemChanged(linkBase.getLinkId());
       }, this);
 
       return linkBase;
@@ -637,7 +637,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __removeLink: function(link) {
       let node2 = this.__getNode(link.getOutputNodeId());
-      node2.getPropsWidget().enableProp(link.getOutputPortId(), true);
+      if (node2) {
+        node2.getPropsWidget().enableProp(link.getOutputPortId(), true);
+      }
 
       this.__svgWidget.removeCurve(link.getRepresentation());
       let index = this.__links.indexOf(link);
@@ -783,6 +785,32 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     updateProgress: function(nodeId, progress) {
       let node = this.__getNode(nodeId);
       node.setProgress(progress);
+    },
+
+    __selectedItemChanged: function(newID) {
+      if (newID === this.__selectedItemId) {
+        return;
+      }
+
+      let oldId = this.__selectedItemId;
+      if (oldId) {
+        if (this.__isSelectedItemALink(oldId)) {
+          let unselectedLink = this.__getLink(oldId);
+          const unselectedColor = qxapp.theme.Color.colors["workbench-link-active"];
+          this.__svgWidget.updateColor(unselectedLink.getRepresentation(), unselectedColor);
+        }
+      }
+
+      this.__selectedItemId = newID;
+      if (this.__isSelectedItemALink(newID)) {
+        let selectedLink = this.__getLink(newID);
+        const selectedColor = qxapp.theme.Color.colors["workbench-link-selected"];
+        this.__svgWidget.updateColor(selectedLink.getRepresentation(), selectedColor);
+      }
+    },
+
+    __isSelectedItemALink: function() {
+      return Boolean(this.__getLink(this.__selectedItemId));
     },
 
     __getProducers: function() {
