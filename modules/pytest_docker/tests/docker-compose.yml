@@ -1,0 +1,6 @@
+version: '3'
+services:
+  hello:
+    build: "./containers/hello"
+    ports:
+      - "80"
