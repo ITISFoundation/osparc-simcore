@@ -9,6 +9,10 @@ qx.Class.define("qxapp.components.workbench.LinkBase", {
     this.setLinkId(qxapp.utils.Utils.uuidv4());
   },
 
+  events: {
+    "linkSelected": "qx.event.type.Data"
+  },
+
   properties: {
     representation: {
       init: null

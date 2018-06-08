@@ -102,6 +102,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __tempLinkRepr: null,
     __pointerPosX: null,
     __pointerPosY: null,
+    __selectedLinkId: null,
 
     __getPlusButton: function() {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
@@ -214,7 +215,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         height: BUTTON_SIZE
       });
       removeButton.addListener("execute", function() {
-        this.__removeSelectedNode();
+        if (this.__selectedLinkId) {
+          this.__removeLink(this.__getLink(this.__selectedLinkId));
+          this.__selectedLinkId = null;
+        } else {
+          this.__removeSelectedNode();
+        }
       }, this);
       return removeButton;
     },
@@ -469,7 +475,19 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       node2.getPropsWidget().enableProp(port2.portId, false);
 
       linkBase.getRepresentation().node.addEventListener("click", function(e) {
-        console.log("Link selected", linkBase.getLinkId());
+        // this is needed to get out of the context of svg
+        linkBase.fireDataEvent("linkSelected", linkBase.getLinkId());
+      }, this);
+
+      linkBase.addListener("linkSelected", function(e) {
+        const unselectedColor = qxapp.theme.Color.colors["workbench-link-active"];
+        const selectedColor = qxapp.theme.Color.colors["workbench-link-selected"];
+        if (this.__selectedLinkId) {
+          let unselectedLink = this.__getLink(this.__selectedLinkId);
+          this.__svgWidget.updateColor(unselectedLink.getRepresentation(), unselectedColor);
+        }
+        this.__selectedLinkId = linkBase.getLinkId();
+        this.__svgWidget.updateColor(linkBase.getRepresentation(), selectedColor);
       }, this);
 
       return linkBase;

@@ -66,6 +66,10 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
 
     removeCurve: function(curve) {
       this.__svgWrapper.removeCurve(curve);
+    },
+
+    updateColor: function(curve, color) {
+      this.__svgWrapper.updateColor(curve, color);
     }
   }
 });

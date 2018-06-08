@@ -80,6 +80,14 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
       if (curve.type === "path") {
         curve.remove();
       }
+    },
+
+    updateColor: function(curve, color) {
+      if (curve.type === "path") {
+        curve.attr({
+          stroke: color
+        });
+      }
     }
   }
 });
