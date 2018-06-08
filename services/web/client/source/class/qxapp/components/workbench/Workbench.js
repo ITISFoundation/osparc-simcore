@@ -619,7 +619,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __removeLink: function(link) {
       let node2 = this.__getNode(link.getOutputNodeId());
-      node2.getPropsWidget().enableProp(link.outputPortId(), true);
+      node2.getPropsWidget().enableProp(link.getOutputPortId(), true);
 
       this.__svgWidget.removeCurve(link.getRepresentation());
       let index = this.__links.indexOf(link);
