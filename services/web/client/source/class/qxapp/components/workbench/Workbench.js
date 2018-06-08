@@ -14,8 +14,16 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       layout: canvas
     });
 
+    this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
+    this.add(this.__desktop, {
+      left: 0,
+      top: 0,
+      right: 0,
+      bottom: 0
+    });
+
     this.__svgWidget = new qxapp.components.workbench.SvgWidget();
-    this.add(this.__svgWidget, {
+    this.__desktop.add(this.__svgWidget, {
       left: 0,
       top: 0,
       right: 0,
@@ -34,18 +42,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
     }, this);
 
-    this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
-
-    this.__desktop.add(this.__svgWidget, {
-      left: 0,
-      top: 0,
-      right: 0,
-      bottom: 0
-    });
-
-    this.__desktop.addListener("click", function(e) {
-      console.log("Desktop clicked");
-    }, this);
 
     this.__nodes = [];
     this.__links = [];
