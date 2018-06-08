@@ -2,6 +2,9 @@
 
 const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
+const DESKTOP_Z_INDEX = 6000;
+const NODE_Z_INDEX = 5000;
+const SVG_Z_INDEX = 4000;
 
 qx.Class.define("qxapp.components.workbench.Workbench", {
   extend: qx.ui.container.Composite,
@@ -16,7 +19,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     this.__svgWidget = new qxapp.components.workbench.SvgWidget()
       .set({
-        zIndex: 4000
+        zIndex: SVG_Z_INDEX
       });
     this.add(this.__svgWidget, {
       left: 0,
@@ -38,7 +41,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     }, this);
 
     this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager()).set({
-      zIndex: 5000
+      zIndex: DESKTOP_Z_INDEX
     });
     this.add(this.__desktop, {
       left: 0,
@@ -46,10 +49,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       right: 0,
       bottom: 0
     });
-
-    this.__desktop.addListener("click", function(e) {
-      console.log("Desktop clicked");
-    }, this);
 
     this.__nodes = [];
     this.__links = [];
@@ -68,7 +67,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       buttonContainer.add(widget);
     });
 
-    this.addListener("dblclick", function(pointerEvent) {
+    /*
+    this.__desktop.addListener("click", function(e) {
+      console.log("Desktop clicked", e);
+    }, this);
+    */
+
+    this.__desktop.addListener("dblclick", function(pointerEvent) {
       // FIXME:
       const navBarHeight = 50;
       let x = pointerEvent.getViewportLeft() - this.getBounds().left;
@@ -292,7 +297,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __createNode: function(node) {
       let nodeBase = new qxapp.components.workbench.NodeBase().set({
-        zIndex: 5000
+        zIndex: NODE_Z_INDEX
       });
       nodeBase.setMetadata(node);
 
