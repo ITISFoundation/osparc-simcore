@@ -1,9 +1,11 @@
 qx.Class.define("qxapp.components.workbench.SettingsView", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    this.base();
-
+    this.base(arguments);
+    let grid = new qx.ui.layout.Grid(10, 10);
+    grid.setRowFlex(2, 1);
+    this._setLayout(grid);
     let box = new qx.ui.layout.VBox(10);
     box.set({
       alignX: "center"
@@ -30,36 +32,36 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
     }
   },
   members: {
-    __settingsBox: null,
+    _createChildControlImpl : function(id, hash) {
+      let control;
 
-    __initTitle: function() {
-      let box = new qx.ui.layout.HBox();
-      box.set({
-        spacing: 10,
-        alignX: "right"
-      });
-      let titleBox = new qx.ui.container.Composite(box);
-      let settLabel = new qx.ui.basic.Label(this.tr("Settings"));
-      settLabel.set({
-        alignX: "center",
-        alignY: "middle"
-      });
-      let doneBtn = new qx.ui.form.Button(this.tr("Done"));
-
-      titleBox.add(settLabel, {
-        width: "75%"
-      });
-      titleBox.add(doneBtn);
-      this.add(titleBox);
-
-      doneBtn.addListener("execute", function() {
-        this.fireEvent("SettingsEditionDone");
-      }, this);
-    },
-
-    __initSettings: function() {
-      this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Grow());
-      this.add(this.__settingsBox);
+      switch (id) {
+        case "title":
+          control = new qx.ui.basic.Label(this.getLabel());
+          control.setAnonymous(true);
+          this._add(control, {
+            column: 0,
+            row: 1
+          });
+          break;
+        case "close":
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/times/24").set({
+            alignX: "right",
+            decorator: null
+          });
+          control.addListener("execute", () => {
+            this.fireEvent("SettingsEditionDone");
+          });
+          this._add(control, {
+            column: 0,
+            row: 0
+          });
+          break;
+        case "settings":
+          control = new qx.ui.core.Widget();
+          control._setLayout(new qx.ui.layout.Grow());
+      }
+      return control || this.base(arguments, id);
     },
 
     __applyNode: function(node, oldNode, propertyName) {
