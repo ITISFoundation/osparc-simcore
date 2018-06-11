@@ -327,9 +327,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
-        let event = e.getData()[0];
-        let dragNodeId = e.getData()[1];
-        let dragPortId = e.getData()[2];
+        let event = e.getData()["event"];
+        let dragNodeId = e.getData()["nodeId"];
+        let dragPortId = e.getData()["portId"];
 
         // Register supported actions
         event.addAction("move");
@@ -353,9 +353,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       nodeBase.addListener("LinkDragOver", function(e) {
-        let event = e.getData()[0];
-        let dropNodeId = e.getData()[1];
-        let dropPortId = e.getData()[2];
+        let event = e.getData()["event"];
+        let dropNodeId = e.getData()["nodeId"];
+        let dropPortId = e.getData()["portId"];
 
         let compatible = false;
         if (event.supportsType("osparc-metadata")) {
@@ -372,9 +372,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       nodeBase.addListener("LinkDrop", function(e) {
-        let event = e.getData()[0];
-        let dropNodeId = e.getData()[1];
-        let dropPortId = e.getData()[2];
+        let event = e.getData()["event"];
+        let dropNodeId = e.getData()["nodeId"];
+        let dropPortId = e.getData()["portId"];
 
         if (event.supportsType("osparc-metadata")) {
           let dragNodeId = event.getData("osparc-metadata").dragNodeId;
@@ -395,9 +395,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       nodeBase.addListener("LinkDragEnd", function(e) {
-        // let event = e.getData()[0];
-        let dragNodeId = e.getData()[1];
-        let dragPortId = e.getData()[2];
+        // let event = e.getData()["event"];
+        let dragNodeId = e.getData()["nodeId"];
+        let dragPortId = e.getData()["portId"];
 
         let posX = this.__pointerPosX;
         let posY = this.__pointerPosY;

@@ -243,17 +243,21 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         draggable: true,
         droppable: true
       });
-      label.ui.addListener("dragstart", function(e) {
-        this.fireDataEvent("LinkDragStart", [e, this.getNodeId(), label.portId]);
-      }, this);
-      label.ui.addListener("dragover", function(e) {
-        this.fireDataEvent("LinkDragOver", [e, this.getNodeId(), label.portId]);
-      }, this);
-      label.ui.addListener("drop", function(e) {
-        this.fireDataEvent("LinkDrop", [e, this.getNodeId(), label.portId]);
-      }, this);
-      label.ui.addListener("dragend", function(e) {
-        this.fireDataEvent("LinkDragEnd", [e, this.getNodeId(), label.portId]);
+
+      [
+        ["dragstart", "LinkDragStart"],
+        ["dragover", "LinkDragOver"],
+        ["drop", "LinkDrop"],
+        ["dragend", "LinkDragEnd"]
+      ].forEach(eventPair => {
+        label.ui.addListener(eventPair[0], e => {
+          const eData = {
+            event: e,
+            nodeId: this.getNodeId(),
+            portId: label.portId
+          };
+          this.fireDataEvent(eventPair[1], eData);
+        }, this);
       }, this);
       return label;
     },
