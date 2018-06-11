@@ -30,6 +30,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       bottom: 0
     });
 
+    this.__desktop.addListener("click", function(e) {
+      this.__selectedItemChanged(null);
+    }, this);
+
     this.__desktop.addListener("changeActiveWindow", function(e) {
       let winEmitting = e.getData();
       if (winEmitting && winEmitting.isActive()) {
@@ -484,6 +488,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       linkBase.getRepresentation().node.addEventListener("click", function(e) {
         // this is needed to get out of the context of svg
         linkBase.fireDataEvent("linkSelected", linkBase.getLinkId());
+        e.stopPropagation();
       }, this);
 
       linkBase.addListener("linkSelected", function(e) {
