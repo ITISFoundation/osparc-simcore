@@ -237,9 +237,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __addServiceFromCatalogue: function(e, pos) {
-      let newNode = e.getData()["service"];
-      let nodeAId = e.getData()["contextNodeId"];
-      let portA = e.getData()["contextPort"];
+      let data = e.getData();
+      let newNode = data.service;
+      let nodeAId = data.contextNodeId;
+      let portA = data.contextPort;
 
       let nodeB = this.__createNode(newNode);
       this.__addNodeToWorkbench(nodeB, pos);
@@ -327,9 +328,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
-        let event = e.getData()["event"];
-        let dragNodeId = e.getData()["nodeId"];
-        let dragPortId = e.getData()["portId"];
+        let data = e.getData();
+        let event = data.event;
+        let dragNodeId = data.nodeId;
+        let dragPortId = data.portId;
 
         // Register supported actions
         event.addAction("move");
@@ -353,9 +355,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       nodeBase.addListener("LinkDragOver", function(e) {
-        let event = e.getData()["event"];
-        let dropNodeId = e.getData()["nodeId"];
-        let dropPortId = e.getData()["portId"];
+        let data = e.getData();
+        let event = data.event;
+        let dropNodeId = data.nodeId;
+        let dropPortId = data.portId;
 
         let compatible = false;
         if (event.supportsType("osparc-metadata")) {
@@ -372,9 +375,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       nodeBase.addListener("LinkDrop", function(e) {
-        let event = e.getData()["event"];
-        let dropNodeId = e.getData()["nodeId"];
-        let dropPortId = e.getData()["portId"];
+        let data = e.getData();
+        let event = data.event;
+        let dropNodeId = data.nodeId;
+        let dropPortId = data.portId;
 
         if (event.supportsType("osparc-metadata")) {
           let dragNodeId = event.getData("osparc-metadata").dragNodeId;
@@ -395,9 +399,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       nodeBase.addListener("LinkDragEnd", function(e) {
-        // let event = e.getData()["event"];
-        let dragNodeId = e.getData()["nodeId"];
-        let dragPortId = e.getData()["portId"];
+        let data = e.getData();
+        // let event = data.event"];
+        let dragNodeId = data.nodeId;
+        let dragPortId = data.portId;
 
         let posX = this.__pointerPosX;
         let posY = this.__pointerPosY;
