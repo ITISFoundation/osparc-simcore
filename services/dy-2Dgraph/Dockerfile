@@ -30,13 +30,13 @@ RUN pip install plotly \
     jupyter contrib nbextensions install --user && \
     jupyter dashboards quick-setup --sys-prefix && \    
     jupyter nbextension enable hide_input/main
-COPY --chown=jovyan:users plotly.ipynb .
+COPY --chown=jovyan:users Colleen-Clancy-use-case.ipynb .
 COPY --chown=jovyan:users /simcoreapi ./simcoreapi
-RUN jupyter trust plotly.ipynb
+RUN jupyter trust Colleen-Clancy-use-case.ipynb
 
 # define where the inputs shall be defined
 VOLUME /home/jovyan/data
 VOLUME /home/jovyan/config
 
 # starts notebook without token
-CMD [ "start-notebook.sh", "--NotebookApp.token=''", "--NotebookApp.tornado_settings={\"headers\":{\"Content-Security-Policy\":\"frame-ancestors+'self'+http://osparc01.speag.com:9081;+report-uri/api/security/csp-report\"}}", "--NotebookApp.default_url=/notebooks/plotly.ipynb" ]
+CMD [ "start-notebook.sh", "--NotebookApp.token=''", "--NotebookApp.tornado_settings={\"headers\":{\"Content-Security-Policy\":\"frame-ancestors+'self'+http://osparc01.speag.com:9081;+report-uri/api/security/csp-report\"}}", "--NotebookApp.default_url=/notebooks/Colleen-Clancy-use-case.ipynb" ]

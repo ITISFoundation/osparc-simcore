@@ -6,7 +6,7 @@
             "label": "vm 1Hz",
             "description": "these are computed data out of a pipeline",
             "type": "file-url",
-            "value": "D:\\plotlydemo\\cc-kepler-use-case\\singleCellOutputFolder\\vm_1Hz.txt",
+            "value": "/home/jovyan/data/vm_1Hz.txt",
             "timestamp": "2018-05-23T15:34:53.511Z"
         },
         {
@@ -14,7 +14,7 @@
             "label": "all results 1Hz",
             "description": "computed data out of a pipeline",
             "type": "file-url",
-            "value": "D:\\plotlydemo\\cc-kepler-use-case\\singleCellOutputFolder\\allresult_1Hz.txt",
+            "value": "/home/jovyan/data/allresult_1Hz.txt",
             "timestamp": "2018-05-23T15:34:53.511Z"
         }
     ],
