@@ -237,9 +237,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __addServiceFromCatalogue: function(e, pos) {
-      let newNode = e.getData()[0];
-      let nodeAId = e.getData()[1];
-      let portA = e.getData()[2];
+      let newNode = e.getData()["service"];
+      let nodeAId = e.getData()["contextNodeId"];
+      let portA = e.getData()["contextPort"];
 
       let nodeB = this.__createNode(newNode);
       this.__addNodeToWorkbench(nodeB, pos);
