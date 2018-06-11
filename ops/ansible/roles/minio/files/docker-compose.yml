@@ -1,0 +1,131 @@
+version: '3.4'
+services:
+
+  minio01:
+    image: minio/minio
+    volumes:
+      - minio01-data:/export
+    ports:
+      - "10001:9000"
+    networks:
+      - minio_distributed
+    environment:
+      - MINIO_ACCESS_KEY_FILE=minio_access_key
+      - MINIO_SECRET_KEY_FILE=minio_secret_key
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+      restart_policy:
+        delay: 10s
+        max_attempts: 10
+        window: 60s
+    command: server http://minio01/export http://minio02/export http://minio03/export http://minio04/export
+    secrets:
+      - minio_secret_key
+      - minio_access_key
+
+  minio02:
+    image: minio/minio
+    volumes:
+      - minio02-data:/export
+    ports:
+      - "10002:9000"
+    networks:
+      - minio_distributed
+    environment:
+      - MINIO_ACCESS_KEY_FILE=minio_access_key
+      - MINIO_SECRET_KEY_FILE=minio_secret_key
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+      restart_policy:
+        delay: 10s
+        max_attempts: 10
+        window: 60s
+    command: server http://minio01/export http://minio02/export http://minio03/export http://minio04/export
+    secrets:
+      - minio_secret_key
+      - minio_access_key
+
+  minio03:
+    image: minio/minio
+    volumes:
+      - minio03-data:/export
+    ports:
+      - "10003:9000"
+    networks:
+      - minio_distributed
+    environment:
+      - MINIO_ACCESS_KEY_FILE=minio_access_key
+      - MINIO_SECRET_KEY_FILE=minio_secret_key
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+      restart_policy:
+        delay: 10s
+        max_attempts: 10
+        window: 60s
+    command: server http://minio01/export http://minio02/export http://minio03/export http://minio04/export
+    secrets:
+      - minio_secret_key
+      - minio_access_key
+
+  minio04:
+    image: minio/minio
+    volumes:
+      - minio04-data:/export
+    ports:
+      - "10004:9000"
+    networks:
+      - minio_distributed
+    environment:
+      - MINIO_ACCESS_KEY_FILE=minio_access_key
+      - MINIO_SECRET_KEY_FILE=minio_secret_key
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+      restart_policy:
+        delay: 10s
+        max_attempts: 10
+        window: 60s
+    command: server http://minio01/export http://minio02/export http://minio03/export http://minio04/export
+    secrets:
+      - minio_secret_key
+      - minio_access_key
+
+volumes:
+  minio01-data:
+    driver_opts:
+      type: none
+      device: /data/minio/minio01-export
+      o: bind
+  minio02-data:
+    driver_opts:
+      type: none
+      device: /data/minio/minio02-export
+      o: bind
+  minio03-data:
+    driver_opts:
+      type: none
+      device: /data/minio/minio03-export
+      o: bind
+  minio04-data:
+    driver_opts:
+      type: none
+      device: /data/minio/minio04-export
+      o: bind
+
+networks:
+  minio_distributed:
+    driver: overlay
+
+secrets:
+  minio_secret_key:
+    external: true
+  minio_access_key:
+    external: true
+

@@ -1,0 +1,86 @@
+---
+# file: ops/ansible/ancillary-minio-deploy.yml
+# Setup Minio Roles
+- hosts: managers workers
+  roles:
+    - dockerhost
+    - minio
+
+# Create Swarm (if necessary)
+- import_playbook: roles/dockerhost/tasks/swarm-init.yml
+
+# Deploy minio stack
+# Bring down and destroy any existing minio stack
+- hosts: managers[0]
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: Check for existing minio stack
+    shell: "docker stack ls | grep -E '^minio[[:space:]]+[1-9][0-9]*$' | cat"
+    register: result
+    changed_when: False
+  - name: Remove existing minio stack
+    command: "docker stack rm minio"
+    when: result.stdout != ""
+  - name: Check for existing docker secret minio_access_key
+    shell: "docker secret ls | grep minio_access_key | cat"
+    register: result
+    changed_when: False
+  - name: Remove existing docker secret access_key
+    command: "docker secret rm minio_access_key"
+    when: result.stdout != ""
+  - name: Check for existing docker secret minio_secret_key
+    shell: "docker secret ls | grep minio_secret_key | cat"
+    register: result
+    changed_when: False
+  - name: Remove existing docker secret secret_key
+    command: "docker secret rm minio_secret_key"
+    when: result.stdout != ""
+
+# Deploy Minio docker swarm stack
+- hosts: managers[0]
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: Package pwgen is installed
+    apt:
+      pkg: pwgen
+  - name: Generate new minio_access_key
+    command: "pwgen -sB 20 1"
+    register: minio_access_key
+    changed_when: False
+  - name: Generate new minio_secret_key
+    command: "pwgen -sB 32 1"
+    register: minio_secret_key
+    changed_when: False
+  - name: Create docker secret minio_access_key
+    shell: "echo {{ minio_access_key.stdout }} | docker secret create minio_access_key -"
+    retries: 3
+    delay: 20
+    register: result
+    until: result.rc == 0
+  - name: Create docker secret minio_secret_key
+    shell: "echo {{ minio_secret_key.stdout }} | docker secret create minio_secret_key -"
+    retries: 3
+    delay: 20
+    register: result
+    until: result.rc == 0
+  - name: Create directory for local docker-compose file
+    file:
+      path: "/tmp/osparc-simcore/ops/ansible/roles/minio/files"
+      state: directory
+      group: docker
+      mode: 0775
+  - name: example copying file with owner and permissions
+    copy:
+      src: "./roles/minio/files/docker-compose.yml"
+      dest: "/tmp/osparc-simcore/ops/ansible/roles/minio/files/docker-compose.yml"
+      owner: root
+      group: docker
+      mode: 0644
+  - name: Deploy minio stack
+    command: "docker stack deploy --compose-file=/tmp/osparc-simcore/ops/ansible/roles/minio/files/docker-compose.yml minio"
+  - debug: 
+      msg: "Minio Access Key: {{ minio_access_key.stdout }}"
+  - debug:
+      msg: "Minio Secret Key: {{ minio_secret_key.stdout }}"
