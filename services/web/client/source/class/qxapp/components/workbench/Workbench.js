@@ -472,6 +472,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __addLink: function(node1, port1, node2, port2, linkId) {
+      // swap node-ports to have node1 as input and node2 as output
+      if (port1.isInput) {
+        [node1, port1, node2, port2] = [node2, port2, node1, port1];
+      }
+
       const pointList = this.__getLinkPoints(node1, port1, node2, port2);
       const x1 = pointList[0][0];
       const y1 = pointList[0][1];
@@ -590,13 +595,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __getLinkPoints: function(node1, port1, node2, port2) {
       let p1 = null;
       let p2 = null;
-      if (port2.isInput) {
-        p1 = this.__getLinkPoint(node1, port1);
-        p2 = this.__getLinkPoint(node2, port2);
-      } else {
-        p1 = this.__getLinkPoint(node2, port2);
-        p2 = this.__getLinkPoint(node1, port1);
+      // swap node-ports to have node1 as input and node2 as output
+      if (port1.isInput) {
+        [node1, port1, node2, port2] = [node2, port2, node1, port1];
       }
+      p1 = this.__getLinkPoint(node1, port1);
+      p2 = this.__getLinkPoint(node2, port2);
       return [p1, p2];
     },
 
