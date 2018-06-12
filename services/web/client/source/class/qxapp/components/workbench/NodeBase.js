@@ -265,6 +265,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     setProgress: function(progress) {
       this.__progressLabel.setValue(progress + "%");
       this.__progressBar.setValue(progress);
+    },
+
+    getProgress: function() {
+      return this.__progressBar.getValue();
     }
   }
 });

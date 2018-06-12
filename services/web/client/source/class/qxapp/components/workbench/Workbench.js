@@ -749,7 +749,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       console.debug("phase   : ", req.getPhase());
       console.debug("response: ", req.getResponse());
 
-
       let socket = qxapp.wrappers.WebSocket.getInstance();
 
       // callback for incoming logs
@@ -783,9 +782,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __stopPipeline: function() {
-      for (let i = 0; i < this.__nodes.length; i++) {
-        this.__nodes[i].setProgress(0);
-      }
+      this.__clearProgressData();
 
       this.setCanStart(true);
     },
@@ -797,7 +794,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __clearProgressData: function() {
-      // TODO
+      for (let i = 0; i < this.__nodes.length; i++) {
+        this.__nodes[i].setProgress(0);
+      }
     },
 
     updateProgress: function(nodeId, progress) {
