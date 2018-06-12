@@ -15,7 +15,7 @@ matrix:
         - npm run linter
 
     - language: python
-      
+
       python:
         - "3.6"
       sudo: required
@@ -38,30 +38,30 @@ matrix:
         - pip3 install pylint
         - pip3 install pytest-cov
         - pip3 install coveralls
-        - pip3 install -r modules/pytest_docker/requirements.txt
-        - pip3 install -r modules/s3wrapper/requirements.txt
-        - pip3 install -r modules/simcore_sdk/models/requirements.txt
+        - pip3 install -r packages/pytest_docker/requirements.txt
+        - pip3 install -r packages/s3wrapper/requirements.txt
+        - pip3 install -r packages/simcore_sdk/models/requirements.txt
         - pip3 --version
-      
+
       # Todo MaG: I have to move everything into one docker-compose.yml due to conftest.py issues
       before_script:
         - pylint --version
         # change python path for 2nd party libraries
-        - export PYTHONPATH=${PYTHONPATH}:${TRAVIS_BUILD_DIR}/modules/s3wrapper/src
+        - export PYTHONPATH=${PYTHONPATH}:${TRAVIS_BUILD_DIR}/packages/s3wrapper/src
         # pre-cache docker images to avoid time-outs later on while the tests turn
-        - docker-compose -f modules/pytest_docker/tests/docker-compose.yml pull
-        - docker-compose -f modules/pytest_docker/tests/docker-compose.yml build
-        - docker-compose -f modules/s3wrapper/tests/docker-compose.yml pull
-        - docker-compose -f modules/s3wrapper/tests/docker-compose.yml build
-        - docker-compose -f modules/simcore_sdk/models/tests/docker-compose.yml pull
-        - docker-compose -f modules/simcore_sdk/models/tests/docker-compose.yml build
+        - docker-compose -f packages/pytest_docker/tests/docker-compose.yml pull
+        - docker-compose -f packages/pytest_docker/tests/docker-compose.yml build
+        - docker-compose -f packages/s3wrapper/tests/docker-compose.yml pull
+        - docker-compose -f packages/s3wrapper/tests/docker-compose.yml build
+        - docker-compose -f packages/simcore_sdk/models/tests/docker-compose.yml pull
+        - docker-compose -f packages/simcore_sdk/models/tests/docker-compose.yml build
 
       script:
         - make pylint
         - pytest -v -m enable_travis modules/pytest_docker/
         - pytest -v -m enable_travis modules/s3wrapper/
         - pytest -v -m enable_travis modules/simcore_sdk/models
-        
+
       after_script:
         # leave a clean slate (not sure whether this is needed)
         - docker-compose -f modules/pytest_docker/tests/docker-compose.yml down
@@ -75,5 +75,3 @@ matrix:
         email:
           on_success: never
           on_failure: always
-
-      
