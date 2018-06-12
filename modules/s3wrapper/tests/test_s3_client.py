@@ -81,7 +81,7 @@ def text_files(tmpdir_factory):
 @pytest.mark.enable_travis
 def test_create_remove_bucket(s3_client):
     bucket_name = "simcore-test"
-    s3_client.create_bucket(bucket_name)
+    assert s3_client.create_bucket(bucket_name)
     assert s3_client.exists_bucket(bucket_name)
     s3_client.remove_bucket(bucket_name, delete_contents=True)
     assert not s3_client.exists_bucket(bucket_name)
@@ -89,7 +89,7 @@ def test_create_remove_bucket(s3_client):
 @pytest.mark.enable_travis
 def test_create_remove_bucket_with_contents(s3_client, text_files):
     bucket_name = "simcore-test"
-    s3_client.create_bucket(bucket_name)
+    assert s3_client.create_bucket(bucket_name)
     assert s3_client.exists_bucket(bucket_name)
     object_name = "dummy"
     filepath = text_files(1)[0]    
