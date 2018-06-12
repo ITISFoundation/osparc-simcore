@@ -16,7 +16,7 @@ BASE = declarative_base()
 class User(BASE):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name = Column(String)ls
     data = Column(JSON)
 
 
@@ -25,7 +25,7 @@ def is_responsive(dbname, user, password, host, port):
     try:
         conn = psycopg2.connect(dbname=dbname, user=user, password=password, host=host, port=port)
         conn.close()
-    except psycopg2.OperationalError as ex:
+    except psycopg2.OperationalError as _ex:
         logging.exception("Connection to db failed")
         return False
 
