@@ -40,7 +40,7 @@ matrix:
         - pip3 install coveralls
         - pip3 install -r packages/pytest_docker/requirements.txt
         - pip3 install -r packages/s3wrapper/requirements.txt
-        - pip3 install -r packages/simcore_sdk/models/requirements.txt
+        - pip3 install -r packages/simcore-sdk/requirements.txt
         - pip3 --version
 
       # Todo MaG: I have to move everything into one docker-compose.yml due to conftest.py issues
