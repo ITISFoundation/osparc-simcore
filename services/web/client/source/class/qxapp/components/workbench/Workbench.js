@@ -238,11 +238,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __addServiceFromCatalogue: function(e, pos) {
       let data = e.getData();
-      let newNode = data.service;
+      let nodeMetaData = data.service;
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let nodeB = this.__createNode(newNode);
+      let nodeB = this.__createNode(nodeMetaData);
       this.__addNodeToWorkbench(nodeB, pos);
 
       if (nodeAId !== null && portA !== null) {
@@ -255,11 +255,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __createMenuFromList: function(nodesList) {
       let buttonsListMenu = new qx.ui.menu.Menu();
 
-      nodesList.forEach(node => {
-        let nodeButton = new qx.ui.menu.Button(node.label);
+      nodesList.forEach(nodeMetaData => {
+        let nodeButton = new qx.ui.menu.Button(nodeMetaData.label);
 
         nodeButton.addListener("execute", function() {
-          let nodeItem = this.__createNode(node);
+          let nodeItem = this.__createNode(nodeMetaData);
           this.__addNodeToWorkbench(nodeItem);
         }, this);
 
@@ -292,6 +292,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         this.__updateLinks(node);
       }, this);
 
+      node.addListener("appear", function() {
+        this.__updateLinks(node);
+      }, this);
+
       node.addListener("dblclick", function(e) {
         this.fireDataEvent("NodeDoubleClicked", node);
         e.stopPropagation();
@@ -300,9 +304,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       qx.ui.core.queue.Layout.flush();
     },
 
-    __createNode: function(node) {
+    __createNode: function(nodeMetaData) {
       let nodeBase = new qxapp.components.workbench.NodeBase();
-      nodeBase.setMetadata(node);
+      nodeBase.setMetadata(nodeMetaData);
 
       if (nodeBase.getNodeImageId() === "modeler") {
         const slotName = "startModeler";
@@ -601,6 +605,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
       p1 = this.__getLinkPoint(node1, port1);
       p2 = this.__getLinkPoint(node2, port2);
+      // hack to place the arrow-head properly
+      p2[0] -= 6;
       return [p1, p2];
     },
 
@@ -710,14 +716,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
 
       // add nodes
-      let nodes = this.__myData.nodes;
-      for (let i = 0; i < nodes.length; i++) {
-        let nodeUi = this.__createNode(nodes[i]);
-        nodeUi.setNodeId(nodes[i].uuid);
-        if (Object.prototype.hasOwnProperty.call(nodes[i], "position")) {
-          this.__addNodeToWorkbench(nodeUi, nodes[i].position);
+      let nodesMetaData = this.__myData.nodes;
+      for (let i = 0; i < nodesMetaData.length; i++) {
+        let nodeMetaData = nodesMetaData[i];
+        let node = this.__createNode(nodeMetaData);
+        node.setNodeId(nodeMetaData.uuid);
+        if (Object.prototype.hasOwnProperty.call(nodeMetaData, "position")) {
+          this.__addNodeToWorkbench(node, nodeMetaData.position);
         } else {
-          this.__addNodeToWorkbench(nodeUi);
+          this.__addNodeToWorkbench(node);
         }
       }
 

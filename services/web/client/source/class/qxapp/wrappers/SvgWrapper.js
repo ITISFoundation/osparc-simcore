@@ -3,6 +3,7 @@
  * @ignore(SVG)
  */
 
+/* global document */
 /* global SVG */
 /* eslint new-cap: [2, {capIsNewExceptions: ["SVG", "M", "C"]}] */
 
@@ -54,14 +55,35 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
     },
 
     drawCurve: function(draw, controls) {
-      return draw.path()
+      const linkColor = qxapp.theme.Color.colors["workbench-link-active"];
+
+      let path = draw.path()
         .M(controls[0].x, controls[0].y)
         .C(controls[1], controls[2], controls[3])
         .fill("none")
         .stroke({
           width: 3,
-          color: qxapp.theme.Color.colors["workbench-link-active"]
+          color: linkColor
         });
+
+      const portSphereDiameter = 3;
+      let marker1 = draw.marker(portSphereDiameter, portSphereDiameter, function(add) {
+        add.circle(portSphereDiameter)
+          .fill(linkColor);
+      });
+      path.marker("start", marker1);
+
+      const arrowSize = 5;
+      let marker2 = draw.marker(arrowSize, arrowSize, function(add) {
+        add.path("M 0 0 V 4 L 2 2 Z")
+          .fill(linkColor)
+          .size(arrowSize, arrowSize);
+      });
+      path.marker("end", marker2);
+
+      path.markers = [marker1, marker2];
+
+      return path;
     },
 
     updateCurve: function(curve, controls) {
@@ -87,6 +109,16 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
         curve.attr({
           stroke: color
         });
+        let domId = String(curve.node);
+        domId = domId.replace("path#", "");
+        console.log(domId);
+        let link = document.getElementById(domId);
+        if (link) {
+          let marker1 = link.getAttribute("marker-start");
+          let marker2 = link.getAttribute("marker-end");
+          console.log(marker1);
+          console.log(marker2);
+        }
       }
     }
   }
