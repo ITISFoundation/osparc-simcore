@@ -24,7 +24,6 @@ pylint:
 	/bin/bash -c "pylint --rcfile=.pylintrc $(PY_FILES)"
 
 before_test:
-	export PYTHONPATH=${PWD}/packages/s3wrapper/src
 	docker-compose -f packages/pytest_docker/tests/docker-compose.yml pull
 	docker-compose -f packages/pytest_docker/tests/docker-compose.yml build
 	docker-compose -f packages/s3wrapper/tests/docker-compose.yml pull

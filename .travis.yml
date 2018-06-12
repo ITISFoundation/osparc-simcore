@@ -43,6 +43,11 @@ matrix:
         - pip3 install -r packages/simcore-sdk/requirements.txt
         - pip3 --version
 
+        before_script:
+        - pylint --version
+        # change python path for 2nd party libraries
+        - export PYTHONPATH=${PYTHONPATH}:${TRAVIS_BUILD_DIR}/packages/s3wrapper/src
+
       script:
         - make pylint
         - make test
