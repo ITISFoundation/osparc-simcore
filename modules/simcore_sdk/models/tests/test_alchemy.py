@@ -1,12 +1,13 @@
+import logging
+
 import psycopg2
 import pytest
 # pylint:disable=unused-import
 from pytest_docker import docker_ip, docker_services
-from sqlalchemy import create_engine
+from sqlalchemy import JSON, Column, Integer, String, create_engine
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, JSON
 
 # pylint:disable=redefined-outer-name
 
@@ -25,7 +26,7 @@ def is_responsive(dbname, user, password, host, port):
         conn = psycopg2.connect(dbname=dbname, user=user, password=password, host=host, port=port)
         conn.close()
     except psycopg2.OperationalError as ex:
-        print("Connection failed: {0}".format(ex))
+        logging.exception("Connection to db failed")
         return False
 
     return True
@@ -53,7 +54,6 @@ def engine(docker_ip, docker_services, request):
         pass
 
     assert connection_ok
-    print("CONNECTION state {}".format(connection_ok))
     endpoint = 'postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}'.format(
         user=user, password=password, host=host, port=port, dbname=dbname)
     engine = create_engine(endpoint, client_encoding='utf8')

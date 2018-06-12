@@ -1,7 +1,13 @@
+import logging
+
+import pytest
 import requests
+
 # pylint:disable=unused-import
 from pytest_docker import docker_ip, docker_services
-import pytest
+
+logging.basicConfig(level=logging.DEBUG)
+_LOGGER = logging.getLogger(__name__)
 
 # pylint:disable=redefined-outer-name
 
@@ -36,4 +42,4 @@ def test_integration(docker_ip, docker_services):
     # Contact the service.
     response = requests.get(url)
     response.raise_for_status()
-    print(response.text)
+    _LOGGER.debug(response.text)
