@@ -133,7 +133,8 @@ class S3Client(object):
     def remove_objects(self, bucket_name, objects):
         try:
             for del_err in self.client.remove_objects(bucket_name, objects):
-                _LOGGER.debug("Deletion Error: {}".format(del_err))
+                msg = "Deletion Error: {}".format(del_err)
+                _LOGGER.debug(msg)
         except ResponseError as _err:
             logging.exception("Could remove objects")
             return False
@@ -168,7 +169,8 @@ class S3Client(object):
                         results.append(obj)
 
         for r in results:
-            _LOGGER.debug("Object {} in bucket {} matches query {}".format(r.object_name, r.bucket_name, query))
+            msg = "Object {} in bucket {} matches query {}".format(r.object_name, r.bucket_name, query)
+            _LOGGER.debug(msg)
 
         return results
 
