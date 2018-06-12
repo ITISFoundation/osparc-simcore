@@ -43,30 +43,9 @@ matrix:
         - pip3 install -r packages/simcore-sdk/requirements.txt
         - pip3 --version
 
-      # Todo MaG: I have to move everything into one docker-compose.yml due to conftest.py issues
-      before_script:
-        - pylint --version
-        # change python path for 2nd party libraries
-        - export PYTHONPATH=${PYTHONPATH}:${TRAVIS_BUILD_DIR}/packages/s3wrapper/src
-        # pre-cache docker images to avoid time-outs later on while the tests turn
-        - docker-compose -f packages/pytest_docker/tests/docker-compose.yml pull
-        - docker-compose -f packages/pytest_docker/tests/docker-compose.yml build
-        - docker-compose -f packages/s3wrapper/tests/docker-compose.yml pull
-        - docker-compose -f packages/s3wrapper/tests/docker-compose.yml build
-        - docker-compose -f packages/simcore-sdk/tests/docker-compose.yml pull
-        - docker-compose -f packages/simcore-sdk/tests/docker-compose.yml build
-
       script:
         - make pylint
-        - pytest -v -m enable_travis packages/pytest_docker/
-        - pytest -v -m enable_travis packages/s3wrapper/
-        - pytest -v -m enable_travis packages/simcore-sdk/
-
-      after_script:
-        # leave a clean slate (not sure whether this is needed)
-        - docker-compose -f packages/pytest_docker/tests/docker-compose.yml down
-        - docker-compose -f packages/s3wrapper/tests/docker-compose.yml down
-        - docker-compose -f packages/simcore-sdk/tests/docker-compose.yml down
+        - make test
 
       after_success:
       - coveralls
