@@ -16,7 +16,7 @@ BASE = declarative_base()
 class User(BASE):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    name = Column(String)ls
+    name = Column(String)
     data = Column(JSON)
 
 
