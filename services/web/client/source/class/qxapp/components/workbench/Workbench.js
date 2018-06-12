@@ -168,29 +168,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       });
 
       playButton.addListener("execute", function() {
-        let socket = qxapp.wrappers.WebSocket.getInstance();
-
-        // callback for incoming logs
-        if (!socket.slotExists("logger")) {
-          socket.on("logger", function(data) {
-            var d = JSON.parse(data);
-            var node = d["Node"];
-            var msg = d["Message"];
-            this.__updateLogger(node, msg);
-          });
-        }
-
-        // callback for incoming logs
-        if (!socket.slotExists("progress")) {
-          socket.on("progress", function(data) {
-            console.log("progress", data);
-            var d = JSON.parse(data);
-            var node = d["Node"];
-            var progress = d["Progress"];
-            this.updateProgress(node, progress);
-          });
-        }
-
         if (this.getCanStart()) {
           this.__startPipeline();
         }
@@ -209,7 +186,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       stopButton.addListener("execute", function() {
         this.__stopPipeline();
-        this.setCanStart(true);
       }, this);
       return stopButton;
     },
@@ -764,15 +740,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       });
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.send();
-
-      // FIXME: do we need this?
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-      socket.emit("logger");
-
-      this.setCanStart(false);
     },
 
-    // register for logs
     __onPipelinesubmitted: function(e) {
       var req = e.getTarget();
       console.debug("Everything went fine!!");
@@ -780,17 +749,45 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       console.debug("phase   : ", req.getPhase());
       console.debug("response: ", req.getResponse());
 
+
+      let socket = qxapp.wrappers.WebSocket.getInstance();
+
+      // callback for incoming logs
+      if (!socket.slotExists("logger")) {
+        socket.on("logger", function(data) {
+          var d = JSON.parse(data);
+          var node = d["Node"];
+          var msg = d["Message"];
+          this.__updateLogger(node, msg);
+        });
+      }
+      socket.emit("logger");
+
+      // callback for incoming progress
+      if (!socket.slotExists("progress")) {
+        socket.on("progress", function(data) {
+          console.log("progress", data);
+          var d = JSON.parse(data);
+          var node = d["Node"];
+          var progress = d["Progress"];
+          this.updateProgress(node, progress);
+        });
+      }
+
       // FIXME: do we need this?
       // register for log and progress
-      let socket = qxapp.wrappers.WebSocket.getInstance();
       socket.emit("register_for_log", "123");
       socket.emit("register_for_progress", "123");
+
+      this.setCanStart(false);
     },
 
     __stopPipeline: function() {
       for (let i = 0; i < this.__nodes.length; i++) {
         this.__nodes[i].setProgress(0);
       }
+
+      this.setCanStart(true);
     },
 
     __updateLogger: function(nodeId, msg) {
