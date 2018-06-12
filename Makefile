@@ -23,7 +23,7 @@ pylint:
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 	/bin/bash -c "pylint --rcfile=.pylintrc $(PY_FILES)"
 
-test:
+before_test:
 	export PYTHONPATH=${PWD}/packages/s3wrapper/src
 	docker-compose -f packages/pytest_docker/tests/docker-compose.yml pull
 	docker-compose -f packages/pytest_docker/tests/docker-compose.yml build
@@ -31,6 +31,19 @@ test:
 	docker-compose -f packages/s3wrapper/tests/docker-compose.yml build
 	docker-compose -f packages/simcore-sdk/tests/docker-compose.yml pull
 	docker-compose -f packages/simcore-sdk/tests/docker-compose.yml build
+
+run_test:
 	pytest -v packages/pytest_docker/
 	pytest -v packages/s3wrapper/
 	pytest -v packages/simcore-sdk/
+
+after_test:
+	# leave a clean slate (not sure whether this is needed)
+	docker-compose -f packages/pytest_docker/tests/docker-compose.yml down
+	docker-compose -f packages/s3wrapper/tests/docker-compose.yml down
+	docker-compose -f packages/simcore-sdk/tests/docker-compose.yml down
+
+test:
+	make before_test
+	make run_test
+	make after_test
