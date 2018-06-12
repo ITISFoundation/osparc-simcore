@@ -2,7 +2,7 @@
 
 # TODO: add flavours by combinging docker-compose files. Namely development, test and production.
 
-PY_FILES = $(strip $(shell find services -iname '*.py'))
+PY_FILES = $(strip $(shell find services modules -iname '*.py'))
 
 
 build:
