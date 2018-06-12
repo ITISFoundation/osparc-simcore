@@ -53,20 +53,20 @@ matrix:
         - docker-compose -f packages/pytest_docker/tests/docker-compose.yml build
         - docker-compose -f packages/s3wrapper/tests/docker-compose.yml pull
         - docker-compose -f packages/s3wrapper/tests/docker-compose.yml build
-        - docker-compose -f packages/simcore_sdk/models/tests/docker-compose.yml pull
-        - docker-compose -f packages/simcore_sdk/models/tests/docker-compose.yml build
+        - docker-compose -f packages/simcore-sdk/tests/docker-compose.yml pull
+        - docker-compose -f packages/simcore-sdk/tests/docker-compose.yml build
 
       script:
         - make pylint
-        - pytest -v -m enable_travis modules/pytest_docker/
-        - pytest -v -m enable_travis modules/s3wrapper/
-        - pytest -v -m enable_travis modules/simcore_sdk/models
+        - pytest -v -m enable_travis packages/pytest_docker/
+        - pytest -v -m enable_travis packages/s3wrapper/
+        - pytest -v -m enable_travis packages/simcore-sdk/
 
       after_script:
         # leave a clean slate (not sure whether this is needed)
-        - docker-compose -f modules/pytest_docker/tests/docker-compose.yml down
-        - docker-compose -f modules/s3wrapper/tests/docker-compose.yml down
-        - docker-compose -f modules/simcore_sdk/models/tests/docker-compose.yml down
+        - docker-compose -f packages/pytest_docker/tests/docker-compose.yml down
+        - docker-compose -f packages/s3wrapper/tests/docker-compose.yml down
+        - docker-compose -f packages/simcore-sdk/tests/docker-compose.yml down
 
       after_success:
       - coveralls

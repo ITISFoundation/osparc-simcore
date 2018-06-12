@@ -29,8 +29,8 @@ test:
 	docker-compose -f packages/pytest_docker/tests/docker-compose.yml build
 	docker-compose -f packages/s3wrapper/tests/docker-compose.yml pull
 	docker-compose -f packages/s3wrapper/tests/docker-compose.yml build
-	docker-compose -f packages/simcore_sdk/models/tests/docker-compose.yml pull
-	docker-compose -f packages/simcore_sdk/models/tests/docker-compose.yml build
+	docker-compose -f packages/simcore-sdk/tests/docker-compose.yml pull
+	docker-compose -f packages/simcore-sdk/tests/docker-compose.yml build
 	pytest -v packages/pytest_docker/
 	pytest -v packages/s3wrapper/
-	pytest -v packages/simcore_sdk/models
+	pytest -v packages/simcore-sdk/
