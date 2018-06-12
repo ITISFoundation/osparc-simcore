@@ -37,7 +37,7 @@ run_test:
 	pytest -v packages/simcore-sdk/
 
 after_test:
-	# leave a clean slate (not sure whether this is needed)
+	# leave a clean slate (not sure whether this is actually needed)
 	docker-compose -f packages/pytest_docker/tests/docker-compose.yml down
 	docker-compose -f packages/s3wrapper/tests/docker-compose.yml down
 	docker-compose -f packages/simcore-sdk/tests/docker-compose.yml down
