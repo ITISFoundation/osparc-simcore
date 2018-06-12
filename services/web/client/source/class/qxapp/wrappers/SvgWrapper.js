@@ -66,7 +66,7 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
           color: linkColor
         });
 
-      const portSphereDiameter = 3;
+      const portSphereDiameter = 4;
       let marker1 = draw.marker(portSphereDiameter, portSphereDiameter, function(add) {
         add.circle(portSphereDiameter)
           .fill(linkColor);
