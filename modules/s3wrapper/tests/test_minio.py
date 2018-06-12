@@ -26,7 +26,6 @@ def test_minio(docker_ip, docker_services):
         docker_ip,
         docker_services.port_for('minio', 9000),
     )
-    print(url)
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
         check=lambda: is_responsive(url, 403),
