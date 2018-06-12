@@ -39,12 +39,12 @@ class S3Client(object):
             if not self.exists_bucket(bucket_name):
                 self.client.make_bucket(bucket_name)
             elif delete_contents_if_exists:
-                if self.__remove_objects_recursively(bucket_name):
-                    self.remove_bucket(bucket_name)
+                return self.__remove_objects_recursively(bucket_name)
+                
         except ResponseError as _err:
             logging.exception("Could not create bucket")
             return False
-
+        # it probably already exists and is empty
         return True
 
     def remove_bucket(self, bucket_name, delete_contents=False):
