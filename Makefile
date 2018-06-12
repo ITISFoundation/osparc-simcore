@@ -24,13 +24,13 @@ pylint:
 	/bin/bash -c "pylint --rcfile=.pylintrc $(PY_FILES)"
 
 test:
-	export PYTHONPATH=${PWD}/module/s3wrapper/src
-	docker-compose -f modules/pytest_docker/tests/docker-compose.yml pull
-	docker-compose -f modules/pytest_docker/tests/docker-compose.yml build
-	docker-compose -f modules/s3wrapper/tests/docker-compose.yml pull
-	docker-compose -f modules/s3wrapper/tests/docker-compose.yml build
-	docker-compose -f modules/simcore_sdk/models/tests/docker-compose.yml pull
-	docker-compose -f modules/simcore_sdk/models/tests/docker-compose.yml build	
-	pytest -v modules/pytest_docker/
-	pytest -v modules/s3wrapper/
-	pytest -v modules/simcore_sdk/models
+	export PYTHONPATH=${PWD}/packages/s3wrapper/src
+	docker-compose -f packages/pytest_docker/tests/docker-compose.yml pull
+	docker-compose -f packages/pytest_docker/tests/docker-compose.yml build
+	docker-compose -f packages/s3wrapper/tests/docker-compose.yml pull
+	docker-compose -f packages/s3wrapper/tests/docker-compose.yml build
+	docker-compose -f packages/simcore_sdk/models/tests/docker-compose.yml pull
+	docker-compose -f packages/simcore_sdk/models/tests/docker-compose.yml build
+	pytest -v packages/pytest_docker/
+	pytest -v packages/s3wrapper/
+	pytest -v packages/simcore_sdk/models
