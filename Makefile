@@ -6,6 +6,15 @@ PY_FILES = $(strip $(shell find services packages -iname '*.py'))
 
 export PYTHONPATH=${PWD}/packages/s3wrapper/src
 
+build-debug:
+	docker-compose -f services/docker-compose.yml -f services/docker-compose.debug.yml build
+
+rebuild-debug:
+	docker-compose -f services/docker-compose.yml -f services/docker-compose.debug.yml build --no-cache
+
+up-debug:
+	docker-compose -f services/docker-compose.yml -f services/docker-compose.debug.yml up
+
 build:
 	docker-compose -f services/docker-compose.yml build
 

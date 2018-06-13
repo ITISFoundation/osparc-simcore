@@ -32,3 +32,42 @@ services:
       - DIRECTOR_PORT=8001
       - SIMCORE_WEB_CONFIG=production
     #command: ["python", "server.py"]
+
+  #------------comp. backend-------------------------------------------
+  rabbit:
+    image: rabbitmq:3-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    ports:
+      - "15672:15672"
+  flower:
+    image: ondrejit/flower:latest
+    command: --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbit:5672
+    ports:
+      - 5555:5555
+    depends_on:
+      - rabbit
+  postgres:
+    restart: always
+    image: postgres:10
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 18080:8080
+    depends_on:
+      - postgres
+volumes:
+  input:
+  output:
+  log:
+  postgres:
