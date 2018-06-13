@@ -116,7 +116,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __selectedItemId: null,
 
     __getPlusButton: function() {
-      const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
+      const icon = "@FontAwesome5Solid/plus/32"; // qxapp.dev.Placeholders.getIcon("fa-plus", 32);
       let plusButton = new qx.ui.form.Button(null, icon);
       plusButton.set({
         width: BUTTON_SIZE,
@@ -134,7 +134,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __getPlusMenuButton: function() {
-      const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
+      const icon = "@FontAwesome5Solid/plus/32"; // qxapp.dev.Placeholders.getIcon("fa-plus", 32);
       let plusButton = new qx.ui.form.MenuButton(null, icon, this.__getServicesMenu());
       plusButton.set({
         width: BUTTON_SIZE,

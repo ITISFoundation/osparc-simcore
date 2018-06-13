@@ -1,7 +1,7 @@
 /* eslint new-cap: [2, {capIsNewExceptions: ["B", "D", "J", "K", "L", "MD5"]}] */
 /* eslint operator-assignment: ["off"] */
 
-qx.Class.define("qxapp.utils.Placeholders", {
+qx.Class.define("qxapp.dev.Placeholders", {
   type: "static",
 
   statics: {
