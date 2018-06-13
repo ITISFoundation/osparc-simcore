@@ -19,13 +19,16 @@ cd path/to/web/client
 # build images 'client_qx:dev'
 docker-compose build
 
-# installs theme and fires qx serve. Open http://localhost:8080/
+# installs theme and fires qx serve. Open http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true
 docker-compose up
 
 # open a new console, and type this to stop
 cd path/to/web/client
 docker-compose down
 ```
+
+For a fake backend, open http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true otherwise http://localhost:8080/
+
 
 ## docker
 
@@ -57,10 +60,10 @@ Development version of image doesn't work on a windows host. Modified files in t
 
 - TODO: implement helper script for this?
 
-#### Workaround: 
+#### Workaround:
 
  http://blog.subjectify.us/miscellaneous/2017/04/24/docker-for-windows-watch-bindings.html
-    
+
 Open terminal in windows host and type:
 
 ```bash

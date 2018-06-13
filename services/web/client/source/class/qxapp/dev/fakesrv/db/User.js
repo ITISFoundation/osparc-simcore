@@ -11,7 +11,7 @@ qx.Class.define("qxapp.dev.fakesrv.db.User", {
         username: uname,
         fullname: qx.lang.String.capitalize(uname),
         email: uname + "@itis.ethz.ch",
-        avatarUrl: qxapp.dev.Utils.getGravatar(uname + "@itis.ethz.ch", 200),
+        avatarUrl: qxapp.dev.Placeholders.getGravatar(uname + "@itis.ethz.ch", 200),
         projects: []
       };
 
