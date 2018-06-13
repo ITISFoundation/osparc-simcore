@@ -36,3 +36,12 @@ services:
     working_dir: /home/node/src
     entrypoint: /bin/bash
     command: -c "qx contrib update && qx contrib list && qx contrib install ITISFoundation/qx-osparc-theme && qx compile --watch"
+
+  #------------comp. backend-------------------------------------------
+  sidecar:
+    image: services_sidecar:dev
+    build:
+      target: development
+    volumes:
+      - ./sidecar/src/sidecar:/work/sidecar
+      - ../packages:/work/packages
