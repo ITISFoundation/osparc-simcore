@@ -104,7 +104,7 @@ def test_file_upload_download(s3_client, bucket, text_files):
     filepath = text_files(1)[0]
     object_name = "1"
     assert s3_client.upload_file(bucket, object_name, filepath)
-    filepath2 = filepath + "."
+    filepath2 = filepath + ".rec"
     assert s3_client.download_file(bucket, object_name, filepath2)
     assert filecmp.cmp(filepath2, filepath)
 
@@ -173,7 +173,7 @@ def test_presigned_put(s3_client, bucket, text_files):
         with urllib.request.urlopen(req) as _f:
             pass
 
-    filepath2 = filepath + "."
+    filepath2 = filepath + ".rec"
     assert s3_client.download_file(bucket, object_name, filepath2)
     assert filecmp.cmp(filepath2, filepath)
 
