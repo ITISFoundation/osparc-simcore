@@ -95,28 +95,28 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "settings": []
@@ -133,28 +133,28 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "settings": []
@@ -171,28 +171,28 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "settings": []
@@ -209,28 +209,28 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "settings": []
@@ -247,28 +247,28 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "settings": []
@@ -285,28 +285,28 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "settings": []
@@ -323,28 +323,28 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "settings": []
@@ -361,28 +361,28 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
             "desc": "File-url",
-            "type": "file-url",
+            "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "settings": []
@@ -468,7 +468,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": ""
           }, {
             "key": "out_2",
@@ -480,7 +480,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_3",
             "label": "Bool",
             "desc": "Bool",
-            "type": "boolean",
+            "type": "bool",
             "value": null
           }],
           "settings": []
@@ -497,7 +497,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }, {
             "key": "in_2",
@@ -509,7 +509,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_3",
             "label": "Bool",
             "desc": "Bool",
-            "type": "boolean",
+            "type": "bool",
             "value": null
           }],
           "outputs": [],
@@ -517,13 +517,13 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "sett_1",
             "label": "Bool_1",
             "desc": "Bool_1",
-            "type": "boolean",
+            "type": "bool",
             "value": 0
           }, {
             "key": "sett_2",
             "label": "Bool_2",
             "desc": "Bool_2",
-            "type": "boolean",
+            "type": "bool",
             "value": 0
           }]
         }, {
@@ -545,7 +545,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_2",
             "label": "Number",
             "desc": "Number",
-            "type": "number",
+            "type": "integer",
             "value": null
           }],
           "outputs": [],
@@ -569,16 +569,8 @@ qx.Class.define("qxapp.data.Fake", {
         "key": "modeler",
         "label": "Modeler",
         "desc": "Modeler",
-        "inputs": [],
-        "outputs": [{
-          "key": "out_1",
-          "label": "Scene",
-          "desc": "Scene",
-          "type": "scene",
-          "value": null
-        }],
-        "settings": [{
-          "key": "sett_1",
+        "inputs": [{
+          "key": "in_1",
           "label": "ViPModel",
           "desc": "Select ViP Model",
           "type": "string",
@@ -597,6 +589,14 @@ qx.Class.define("qxapp.data.Fake", {
             ]
           }
         }],
+        "outputs": [{
+          "key": "out_1",
+          "label": "Scene",
+          "desc": "Scene",
+          "type": "scene",
+          "defaultValue": null
+        }],
+        "settings": [],
         "viewer": {
           "ip": "http://" + window.location.hostname,
           "port": null
@@ -605,50 +605,52 @@ qx.Class.define("qxapp.data.Fake", {
         "key": "FileReader",
         "label": "File Reader",
         "desc": "File Reader",
-        "inputs": [],
+        "inputs": [{
+          "key": "in_1",
+          "label": "File",
+          "desc": "File",
+          "type": "string",
+          "defaultValue": null
+        }, {
+          "key": "in_2",
+          "label": "File type",
+          "desc": "File type",
+          "type": "string",
+          "defaultValue": ""
+        }],
         "outputs": [{
           "key": "out_1",
           "label": "File-url",
           "desc": "File-url",
-          "type": "file-url",
-          "value": null
+          "type": "fileUrl",
+          "defaultValue": null
         }],
-        "settings": [{
-          "key": "sett_1",
-          "label": "File",
-          "desc": "File",
-          "type": "string"
-        }, {
-          "key": "sett_2",
-          "label": "File type",
-          "desc": "File type",
-          "type": "string"
-        }]
+        "settings": []
       }, {
         "key": "RandomNumberGeneratorID",
         "label": "Random Number Generator",
         "desc": "Random Number Generator",
-        "inputs": [],
-        "outputs": [{
-          "key": "out_1",
-          "label": "Number",
-          "desc": "Number",
-          "type": "number",
-          "value": null
-        }],
-        "settings": [{
-          "key": "sett_1",
+        "inputs": [{
+          "key": "in_1",
           "label": "Number Min",
           "desc": "Number Min",
           "type": "integer",
           "defaultValue": 0
         }, {
-          "key": "sett_2",
+          "key": "in_2",
           "label": "Number Max",
           "desc": "Number Max",
           "type": "integer",
           "defaultValue": 10
-        }]
+        }],
+        "outputs": [{
+          "key": "out_1",
+          "label": "Number",
+          "desc": "Number",
+          "type": "integer",
+          "defaultValue": null
+        }],
+        "settings": []
       }];
       return producers;
     },
@@ -662,72 +664,87 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "in_1",
           "label": "File-url",
           "desc": "File-url",
-          "type": "upload",
-          "value": null
+          "type": "fileUrl",
+          "defaultValue": null
         }, {
           "key": "in_2",
           "label": "File-url",
           "desc": "File-url",
-          "type": "upload",
-          "value": null
+          "type": "fileUrl",
+          "defaultValue": null
+        }, {
+          "key": "in_3",
+          "label": "NaValue",
+          "desc": "Na blocker drug concentration",
+          "type": "integer",
+          "defaultValue": 10
+        }, {
+          "key": "in_4",
+          "label": "KrValue",
+          "desc": "Kr blocker drug concentration",
+          "type": "integer",
+          "defaultValue": 10
+        }, {
+          "key": "in_5",
+          "label": "BCLValue",
+          "desc": "Basic cycle length (BCL)",
+          "type": "integer",
+          "defaultValue": 10
+        }, {
+          "key": "in_6",
+          "label": "beatsValue",
+          "desc": "Number of beats",
+          "type": "integer",
+          "defaultValue": 10
+        }, {
+          "key": "in_7",
+          "label": "LigandValue",
+          "desc": "Ligand concentration",
+          "type": "integer",
+          "defaultValue": 10
+        }, {
+          "key": "in_8",
+          "label": "cAMKIIValue",
+          "desc": "Adjust cAMKII activity level",
+          "type": "string",
+          "widget": "selectBox",
+          "cfg": {
+            structure:
+              ["A", "B", "C", "D"].map(
+                k => ({
+                  key: k.toLowerCase(),
+                  label: k
+                })
+              )
+
+          },
+          "defaultValue": "c"
+        }, {
+          "key": "in_9",
+          "label": "solverMode",
+          "desc": "Solver Mode",
+          "type": "string",
+          "widget": "selectBox",
+          "cfg": {
+            structure:
+              ["0D", "1D", "2D"].map(
+                k => ({
+                  key: k.toLowerCase(),
+                  label: k
+                })
+              )
+
+          },
+          "defaultValue": "0d"
         }],
         "outputs": [{
           "key": "out_1",
           "label": "csv-url",
           "desc": "csv-url",
           "type": "csv-url",
-          "value": null
+          "defaultValue": null
         }],
-        "settings": [
-          {
-            "key": "sett_1",
-            "label": "NaValue",
-            "desc": "Na blocker drug concentration",
-            "type": "integer",
-            "defaultValue": 10
-          }, {
-            "key": "sett_2",
-            "label": "KrValue",
-            "desc": "Kr blocker drug concentration",
-            "type": "integer",
-            "defaultValue": 10
-          }, {
-            "key": "sett_3",
-            "label": "BCLValue",
-            "desc": "Basic cycle length (BCL)",
-            "type": "integer",
-            "defaultValue": 10
-          }, {
-            "key": "sett_4",
-            "label": "beatsValue",
-            "desc": "Number of beats",
-            "type": "integer",
-            "defaultValue": 10
-          }, {
-            "key": "sett_5",
-            "label": "LigandValue",
-            "desc": "Ligand concentration",
-            "type": "integer",
-            "defaultValue": 10
-          }, {
-            "key": "sett_6",
-            "label": "cAMKIIValue",
-            "desc": "Adjust cAMKII activity level",
-            "type": "string",
-            "widget": "selectBox",
-            "cfg": {
-              structure:
-                ["A", "B", "C", "D"].map(
-                  k => ({
-                    key: k.toLowerCase(),
-                    label: k
-                  })
-                )
-
-            },
-            "defaultValue": "c"
-          }
-        ]
+        "settings": []
       }, {
         "key": "Computational2",
         "label": "Computational 2",
@@ -737,14 +754,14 @@ qx.Class.define("qxapp.data.Fake", {
           "label": "Scene",
           "desc": "Scene",
           "type": "scene",
-          "value": null
+          "defaultValue": null
         }],
         "outputs": [{
           "key": "out_1",
           "label": "Numbers",
           "desc": "Other numbers",
-          "type": "number",
-          "value": null
+          "type": "integer",
+          "defaultValue": null
         }],
         "settings": []
       }, {
@@ -755,35 +772,35 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "in_1",
           "label": "File-url",
           "desc": "File-url",
-          "type": "file-url",
-          "value": null
+          "type": "fileUrl",
+          "defaultValue": null
         }, {
           "key": "in_2",
           "label": "Number",
           "desc": "Number",
-          "type": "number",
-          "value": 0
+          "type": "integer",
+          "defaultValue": 0
+        }, {
+          "key": "in_3",
+          "label": "Number",
+          "desc": "Sleep extra sec",
+          "type": "integer",
+          "defaultValue": 0
         }],
         "outputs": [{
           "key": "out_1",
           "label": "File-url",
           "desc": "File-url",
-          "type": "file-url",
-          "value": null
+          "type": "fileUrl",
+          "defaultValue": null
         }, {
           "key": "out_2",
           "label": "Number",
           "desc": "Number",
-          "type": "number",
-          "value": 0
-        }],
-        "settings": [{
-          "key": "sett_1",
-          "label": "Number",
-          "desc": "Sleep extra sec",
           "type": "integer",
           "defaultValue": 0
-        }]
+        }],
+        "settings": []
       }];
       return computationals;
     },
@@ -797,8 +814,8 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "in_1",
           "label": "Number",
           "desc": "Number",
-          "type": "number",
-          "value": null
+          "type": "integer",
+          "defaultValue": null
         }],
         "outputs": [],
         "settings": [],
@@ -814,8 +831,8 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "in_1",
           "label": "Number",
           "desc": "Number",
-          "type": "number",
-          "value": null
+          "type": "integer",
+          "defaultValue": null
         }],
         "outputs": [],
         "settings": []
@@ -828,7 +845,7 @@ qx.Class.define("qxapp.data.Fake", {
           "label": "csv-url",
           "desc": "csv-url",
           "type": "csv-url",
-          "value": null
+          "defaultValue": null
         }],
         "outputs": [],
         "settings": [],

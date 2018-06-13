@@ -14,7 +14,7 @@
  *         {
  *           key: 'xyc',             // unique name
  *           label: 'label',
- *           type: string|integer|boolean,
+ *           type: string|integer|bool,
  *           widget: 'text',
  *           cfg: {},                // widget specific configuration
  *           set: {}                 // normal qx porperties to apply
@@ -331,6 +331,40 @@ qx.Class.define("qxapp.components.form.Auto", {
       let sbModel = qx.data.marshal.Json.createModel(cfg.structure);
       ctrl.setModel(sbModel);
     },
+    __setupBoolField: function(s, control) {
+      if (!s.set) {
+        s.set = {};
+      }
+      if (s.defaultValue) {
+        s.set.value = s.defaultValue;
+      }
+      this.__formCtrl.addBindingOptions(s.key,
+        { // model2target
+          converter : function(data) {
+            return data;
+          }
+        },
+        { // target2model
+          converter : function(data) {
+            return data;
+          }
+        }
+      );
+    },
+    __setupFileButton: function(s) {
+      this.__formCtrl.addBindingOptions(s.key,
+        { // model2target
+          converter : function(data) {
+            return String(data);
+          }
+        },
+        { // target2model
+          converter : function(data) {
+            return data;
+          }
+        }
+      );
+    },
     __addField: function(s) {
       let option = {
         exposable: s.exposable
@@ -354,7 +388,8 @@ qx.Class.define("qxapp.components.form.Auto", {
         s.widget = {
           string: "text",
           integer: "spinner",
-          bool: "checkBox"
+          bool: "checkBox",
+          fileUrl: "fileButton"
         }[s.type];
       }
       let control;
@@ -387,16 +422,19 @@ qx.Class.define("qxapp.components.form.Auto", {
           break;
         case "checkBox":
           control = new qx.ui.form.CheckBox();
-          setup = this.__setupBooleanField;
+          setup = this.__setupBoolField;
           break;
         case "selectBox":
           control = new qx.ui.form.SelectBox();
           setup = this.__setupSelectBox;
           break;
-
         case "comboBox":
           control = new qx.ui.form.ComboBox();
           setup = this.__setupComboBox;
+          break;
+        case "fileButton":
+          control = new qx.ui.form.TextField();
+          setup = this.__setupFileButton;
           break;
         default:
           throw new Error("unknown widget type " + s.widget);

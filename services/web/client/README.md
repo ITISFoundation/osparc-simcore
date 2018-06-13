@@ -5,6 +5,12 @@
 To ease development of the client, we have encapsulated the [qx]-compiler and all setup needed to run the client in a container. This way, we can develop the
 client without connecting to the final server but instead emulating it.
 
+When working in a Windows environment, in order to enable the watcher inside the container, so that qx recompiles the source code everytime there is a change, a workaround is needed. The (docker-windows-volume-watcher)[https://github.com/merofeev/docker-windows-volume-watcher] tool will notify Docker containers about changes in mounts on Windows:
+```bash
+pip install docker-windows-volume-watcher
+docker-volume-watcher
+```
+
 The docker-compose files in this directory help running ``qxapp`` stand-alone using a dev server in [qx]. This is a common workflow:
 
 ```bash

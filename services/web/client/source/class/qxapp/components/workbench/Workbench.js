@@ -14,13 +14,32 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       layout: canvas
     });
 
-    this.__svgWidget = new qxapp.components.workbench.SvgWidget();
-    this.add(this.__svgWidget, {
+    this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
+    this.add(this.__desktop, {
       left: 0,
       top: 0,
       right: 0,
       bottom: 0
     });
+
+    this.__svgWidget = new qxapp.components.workbench.SvgWidget();
+    this.__desktop.add(this.__svgWidget, {
+      left: 0,
+      top: 0,
+      right: 0,
+      bottom: 0
+    });
+
+    this.__desktop.addListener("click", function(e) {
+      this.__selectedItemChanged(null);
+    }, this);
+
+    this.__desktop.addListener("changeActiveWindow", function(e) {
+      let winEmitting = e.getData();
+      if (winEmitting && winEmitting.isActive()) {
+        this.__selectedItemChanged(winEmitting.getNodeId());
+      }
+    }, this);
 
     this.__svgWidget.addListener("SvgWidgetReady", function() {
       // Will be called only the first time Svg lib is loaded
@@ -34,13 +53,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
     }, this);
 
-    this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
-    this.add(this.__desktop, {
-      left: 0,
-      top: 0,
-      right: 0,
-      bottom: 0
-    });
 
     this.__nodes = [];
     this.__links = [];
@@ -101,6 +113,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __tempLinkRepr: null,
     __pointerPosX: null,
     __pointerPosY: null,
+    __selectedItemId: null,
 
     __getPlusButton: function() {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
@@ -213,15 +226,21 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         height: BUTTON_SIZE
       });
       removeButton.addListener("execute", function() {
-        this.__removeSelectedNode();
+        if (this.__selectedItemId && this.__isSelectedItemALink(this.__selectedItemId)) {
+          this.__removeLink(this.__getLink(this.__selectedItemId));
+          this.__selectedItemId = null;
+        } else {
+          this.__removeSelectedNode();
+        }
       }, this);
       return removeButton;
     },
 
     __addServiceFromCatalogue: function(e, pos) {
-      let newNode = e.getData()[0];
-      let nodeAId = e.getData()[1];
-      let portA = e.getData()[2];
+      let data = e.getData();
+      let newNode = data.service;
+      let nodeAId = data.contextNodeId;
+      let portA = data.contextPort;
 
       let nodeB = this.__createNode(newNode);
       this.__addNodeToWorkbench(nodeB, pos);
@@ -309,9 +328,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
-        let event = e.getData()[0];
-        let dragNodeId = e.getData()[1];
-        let dragPortId = e.getData()[2];
+        let data = e.getData();
+        let event = data.event;
+        let dragNodeId = data.nodeId;
+        let dragPortId = data.portId;
 
         // Register supported actions
         event.addAction("move");
@@ -335,9 +355,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       nodeBase.addListener("LinkDragOver", function(e) {
-        let event = e.getData()[0];
-        let dropNodeId = e.getData()[1];
-        let dropPortId = e.getData()[2];
+        let data = e.getData();
+        let event = data.event;
+        let dropNodeId = data.nodeId;
+        let dropPortId = data.portId;
 
         let compatible = false;
         if (event.supportsType("osparc-metadata")) {
@@ -354,9 +375,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       nodeBase.addListener("LinkDrop", function(e) {
-        let event = e.getData()[0];
-        let dropNodeId = e.getData()[1];
-        let dropPortId = e.getData()[2];
+        let data = e.getData();
+        let event = data.event;
+        let dropNodeId = data.nodeId;
+        let dropPortId = data.portId;
 
         if (event.supportsType("osparc-metadata")) {
           let dragNodeId = event.getData("osparc-metadata").dragNodeId;
@@ -377,9 +399,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       nodeBase.addListener("LinkDragEnd", function(e) {
-        // let event = e.getData()[0];
-        let dragNodeId = e.getData()[1];
-        let dragPortId = e.getData()[2];
+        let data = e.getData();
+        // let event = data.event"];
+        let dragNodeId = data.nodeId;
+        let dragPortId = data.portId;
 
         let posX = this.__pointerPosX;
         let posY = this.__pointerPosY;
@@ -449,6 +472,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __addLink: function(node1, port1, node2, port2, linkId) {
+      // swap node-ports to have node1 as input and node2 as output
+      if (port1.isInput) {
+        [node1, port1, node2, port2] = [node2, port2, node1, port1];
+      }
+
       const pointList = this.__getLinkPoints(node1, port1, node2, port2);
       const x1 = pointList[0][0];
       const y1 = pointList[0][1];
@@ -465,9 +493,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
       this.__links.push(linkBase);
 
+      node2.getPropsWidget().enableProp(port2.portId, false);
+
       linkBase.getRepresentation().node.addEventListener("click", function(e) {
-        console.log("Link selected", e.getData(e));
-      });
+        // this is needed to get out of the context of svg
+        linkBase.fireDataEvent("linkSelected", linkBase.getLinkId());
+        e.stopPropagation();
+      }, this);
+
+      linkBase.addListener("linkSelected", function(e) {
+        this.__selectedItemChanged(linkBase.getLinkId());
+      }, this);
 
       return linkBase;
     },
@@ -549,23 +585,22 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       const nodeBounds = node.getCurrentBounds();
       const portIdx = node.getPortIndex(port.portId);
       let x = nodeBounds.left;
-      let y = nodeBounds.top + 4 + 33 + 10 + 16/2 + (16+5)*portIdx;
       if (port.isInput === false) {
         x += nodeBounds.width;
       }
+      let y = nodeBounds.top + 4 + 33 + 10 + 16/2 + (16+5)*portIdx;
       return [x, y];
     },
 
     __getLinkPoints: function(node1, port1, node2, port2) {
       let p1 = null;
       let p2 = null;
-      if (port2.isInput) {
-        p1 = this.__getLinkPoint(node1, port1);
-        p2 = this.__getLinkPoint(node2, port2);
-      } else {
-        p1 = this.__getLinkPoint(node2, port2);
-        p2 = this.__getLinkPoint(node1, port1);
+      // swap node-ports to have node1 as input and node2 as output
+      if (port1.isInput) {
+        [node1, port1, node2, port2] = [node2, port2, node1, port1];
       }
+      p1 = this.__getLinkPoint(node1, port1);
+      p2 = this.__getLinkPoint(node2, port2);
       return [p1, p2];
     },
 
@@ -615,6 +650,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __removeLink: function(link) {
+      let node2 = this.__getNode(link.getOutputNodeId());
+      if (node2) {
+        node2.getPropsWidget().enableProp(link.getOutputPortId(), true);
+      }
+
       this.__svgWidget.removeCurve(link.getRepresentation());
       let index = this.__links.indexOf(link);
       if (index > -1) {
@@ -761,21 +801,30 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       node.setProgress(progress);
     },
 
-    settingExposed: function(nodeId, settingId, expose) {
-      let node = this.__getNode(nodeId);
-      if (expose) {
-        node.addInput(node.getSetting(settingId));
-      } else {
-        let connectedLinks = this.__getConnectedLinks(nodeId);
-        for (let i=0; i<connectedLinks.length; i++) {
-          let link = this.__getLink(connectedLinks[i]);
-          if (link.getOutputPortId() === settingId) {
-            this.__removeLink(link);
-          }
-        }
-        node.removeInput(node.getPort(settingId));
-        this.__updateLinks(node);
+    __selectedItemChanged: function(newID) {
+      if (newID === this.__selectedItemId) {
+        return;
       }
+
+      let oldId = this.__selectedItemId;
+      if (oldId) {
+        if (this.__isSelectedItemALink(oldId)) {
+          let unselectedLink = this.__getLink(oldId);
+          const unselectedColor = qxapp.theme.Color.colors["workbench-link-active"];
+          this.__svgWidget.updateColor(unselectedLink.getRepresentation(), unselectedColor);
+        }
+      }
+
+      this.__selectedItemId = newID;
+      if (this.__isSelectedItemALink(newID)) {
+        let selectedLink = this.__getLink(newID);
+        const selectedColor = qxapp.theme.Color.colors["workbench-link-selected"];
+        this.__svgWidget.updateColor(selectedLink.getRepresentation(), selectedColor);
+      }
+    },
+
+    __isSelectedItemALink: function() {
+      return Boolean(this.__getLink(this.__selectedItemId));
     },
 
     __getProducers: function() {
