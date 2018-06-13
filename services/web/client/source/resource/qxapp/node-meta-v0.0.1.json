@@ -39,7 +39,7 @@
             "examples": [
                 "Fast Counter"
             ]
-        }
+        },
         "description": {
             "type": "string",
             "description": "human readable description of the purpose of the node",
