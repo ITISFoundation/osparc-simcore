@@ -6,7 +6,7 @@
 
 /* global window */
 
-qx.Class.define("qxapp.data.Fake", {
+qx.Class.define("qxapp.dev.Fake", {
   type: "static",
 
   statics: {
@@ -558,9 +558,9 @@ qx.Class.define("qxapp.data.Fake", {
 
     getServices: function() {
       let availableServices = [];
-      Array.prototype.push.apply(availableServices, qxapp.data.Fake.getProducers());
-      Array.prototype.push.apply(availableServices, qxapp.data.Fake.getComputationals());
-      Array.prototype.push.apply(availableServices, qxapp.data.Fake.getAnalyses());
+      Array.prototype.push.apply(availableServices, qxapp.dev.Fake.getProducers());
+      Array.prototype.push.apply(availableServices, qxapp.dev.Fake.getComputationals());
+      Array.prototype.push.apply(availableServices, qxapp.dev.Fake.getAnalyses());
       return availableServices;
     },
 

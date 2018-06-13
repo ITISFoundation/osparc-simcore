@@ -30,7 +30,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     });
     this.add(searchLayout);
 
-    this.__allServices = qxapp.data.Fake.getServices();
+    this.__allServices = qxapp.dev.Fake.getServices();
     // TODO: OM & PC replace this with delegates
     let rawData2 = [];
     for (let i = 0; i < this.__allServices.length; i++) {

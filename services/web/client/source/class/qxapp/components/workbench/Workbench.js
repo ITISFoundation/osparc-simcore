@@ -828,17 +828,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __getProducers: function() {
-      const producers = qxapp.data.Fake.getProducers();
+      const producers = qxapp.dev.Fake.getProducers();
       return this.__createMenuFromList(producers);
     },
 
     __getComputationals: function() {
-      const computationals = qxapp.data.Fake.getComputationals();
+      const computationals = qxapp.dev.Fake.getComputationals();
       return this.__createMenuFromList(computationals);
     },
 
     __getAnalyses: function() {
-      const analyses = qxapp.data.Fake.getAnalyses();
+      const analyses = qxapp.dev.Fake.getAnalyses();
       return this.__createMenuFromList(analyses);
     }
   }
