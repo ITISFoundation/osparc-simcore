@@ -108,15 +108,12 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
         curve.attr({
           stroke: color
         });
-        if ("markers" in curve) {
-          for (let i=0; i<curve.markers.length; i++) {
-            let markerDiv = curve.markers[i];
-            let childNodes = markerDiv.node.childNodes;
-            for (let j=0; j<childNodes.length; j++) {
-              let childNode = childNodes[j];
-              childNode.setAttribute("fill", color);
-            }
-          }
+        if (curve.markers) {
+          curve.markers.forEach(markerDiv => {
+            markerDiv.node.childNodes.forEach(node => {
+              node.setAttribute("fill", color);
+            });
+          });
         }
       }
     }
