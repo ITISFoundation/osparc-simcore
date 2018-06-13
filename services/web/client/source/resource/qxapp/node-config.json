@@ -1,0 +1,43 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "simcore node",
+    "description": "Description of a simcore node input and output",
+    "type": "object",
+    "properties": {
+        "key": {
+            "type": "string",
+            "description": "unique key for this item"
+        },
+        "label": {
+            "type": "string",
+            "description": "label representing the item"
+        },
+        "commonSettings": {
+            "type": "object",
+            "allOf": [
+                { "$ref": "#/definitions/key" },
+                { "$ref": "#/definitions/label" }
+            ]
+        },
+        "input": { 
+            "type": "object",
+            "allOf": [
+                { "$ref": "#/definitions/commonSettings" },
+                { "properties": {
+                    "widget": {
+                        "enum": ["text","selectBox","spinner"]
+                    }
+                }}
+            ]
+            
+        },
+        "output": { 
+            "type": "object"
+        }
+    },
+    "additionalProperties": false,
+    "anyOf": [
+        { "$ref": "#/definitions/input" },
+        { "$ref": "#/definitions/output"}	
+    ]
+}
