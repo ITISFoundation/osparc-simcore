@@ -1,43 +1,271 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "simcore node",
-    "description": "Description of a simcore node input and output",
+    "description": "Description of a simcore node 'class' with input and output",
     "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "name",
+        "tag",
+        "description",
+        "authors",
+        "contact",
+        "input",
+        "output"
+    ],
     "properties": {
-        "key": {
+        "name": {
             "type": "string",
-            "description": "unique key for this item"
+            "description": "distinctive name for the node based on the docker registry path",
+            "pattern": "^(service)/(computational|dynamic)/([^\\s/])$",
+            "examples": [
+                "service/computational/sleeper",
+                "service/dynamic/3dviewer"
+            ]
+        },
+        "tag": {
+            "type": "string",
+            "description": "semantic version number",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "examples": [
+                "1.0.0",
+                "0.0.1"
+            ]
+        },
+        "description": {
+            "type": "string",
+            "description": "human readable description of the purpose of the node",
+            "examples": [
+                "Our best node type",
+                "The mother of all nodes, makes your numbers shine!"
+            ]
+        },
+        "authors": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["name", "email"],
+                "additionalProperties": false,
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the author",
+                        "examples": [
+                            "Sun Bak",
+                            "Delenn"
+                        ]
+                    },
+                    "email": {
+                        "description": "Email address",
+                        "type": "string",
+                        "pattern": "^[^\\s@]+@[^\\s@.]+(\\.[^\\s@]+)+$",
+                        "examples": [
+                            "sun@sense.eight",
+                            "deleen@minbar.bab"
+                        ]
+                    },
+                    "affiliation": {
+                        "description": "Affiliaton of the author",
+                        "type": "string",
+                        "examples": [
+                            "Sense8",
+                            "Babylon 5"
+                        ]
+                    }
+                }
+            }
+        },
+        "contact": {
+            "type": "string",
+            "description": "email to corespond to the authors about the node",
+            "examples": [
+                "lab@net.flix"
+            ]
         },
         "label": {
             "type": "string",
-            "description": "label representing the item"
+            "description": "how to represent the node in a list of nodes for example"
         },
-        "commonSettings": {
-            "type": "object",
-            "allOf": [
-                { "$ref": "#/definitions/key" },
-                { "$ref": "#/definitions/label" }
-            ]
-        },
-        "input": { 
-            "type": "object",
-            "allOf": [
-                { "$ref": "#/definitions/commonSettings" },
-                { "properties": {
+        "input": {
+            "type": "array",
+            "description": "definition of the inputs of this node",
+            "items": {
+                "type": "object",
+                "description": "all the input configurable for this service",
+                "additionalProperties": false,
+                "required": [
+                    "key",
+                    "label",
+                    "description",
+                    "type",
+                    "defaultValue"
+                ],
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "pattern": "^[_a-z0-9]+",
+                        "description": "unique identifier for this input property",
+                        "examples": [
+                            "age"
+                        ]
+                    },
+                    "label": {
+                        "type": "string",
+                        "description": "short name for the property",
+                        "examples": [
+                            "Age"
+                        ]
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "description of the property",
+                        "examples": [
+                            "Age in seconds since 1970"
+                        ]
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "number",
+                            "file-url",
+                            "boolean",
+                            "string",
+                            "scene"
+                        ],
+                        "description": "data type expected on this input",
+                        "examples": [
+                            "number",
+                            "boolean"
+                        ]
+                    },
+                    "defaultValue": {
+                        "description": "initial value for this input",
+                        "type": ["string","number","integer","boolean"],
+                        "examples": [
+                            "Dog",
+                            true
+                        ]
+                    },
                     "widget": {
-                        "enum": ["text","selectBox","spinner"]
+                        "description": "custom widget to use instead of the default one determined from the data-type",
+                        "anyOf": [
+                            {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "type"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "description": "type of the property",
+                                        "enum": ["TextArea"]
+                                    },
+                                    "minHeight": {
+                                        "description": "minimum Height of the textarea",
+                                        "type": "integer",
+                                        "minimum": 1
+                                    }
+                                }
+                            },
+                            {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "type",
+                                    "structure"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "description": "type of the property",
+                                        "enum": ["SelectBox"]
+                                    },
+                                    "structure": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "items": {
+                                            "type":"object",
+                                            "additionalProperties": false,
+                                            "required": [
+                                                "key",
+                                                "label"
+                                            ],
+                                            "properties": {
+                                                "key": {
+                                                    "type": ["string","boolean","number"]
+                                                },
+                                                "label": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "examples": [
+                                                [
+                                                    { "key": "rat", "label": "The Rat"},
+                                                    { "key": "dog", "label": "Bello the Dog"}
+                                                ]
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        ]
                     }
-                }}
-            ]
-            
+                }
+            }
         },
-        "output": { 
-            "type": "object"
+        "output": {
+            "type": "array",
+            "description": "definition of the outputs of this node",
+            "items": {
+                "type": "object",
+                "description": "all the ouptut produced by this node",
+                "additionalProperties": false,
+                "required": [
+                    "key",
+                    "label",
+                    "description",
+                    "type",
+                    "defaultValue"
+                ],
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "pattern": "^[_a-z0-9]+",
+                        "description": "unique identifier for this output property",
+                        "examples": [
+                            "age"
+                        ]
+                    },
+                    "label": {
+                        "type": "string",
+                        "description": "short name for the property",
+                        "examples": [
+                            "Age"
+                        ]
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "description of the property",
+                        "examples": [
+                            "Age in seconds since 1970"
+                        ]
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "number",
+                            "file-url",
+                            "boolean",
+                            "string",
+                            "scene"
+                        ],
+                        "description": "data type expected on this output",
+                        "examples": [
+                            "number",
+                            "boolean"
+                        ]
+                    }
+                }
+            }
         }
-    },
-    "additionalProperties": false,
-    "anyOf": [
-        { "$ref": "#/definitions/input" },
-        { "$ref": "#/definitions/output"}	
-    ]
+    }
 }
