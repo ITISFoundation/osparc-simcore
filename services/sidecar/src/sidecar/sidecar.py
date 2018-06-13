@@ -12,8 +12,9 @@ from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
 from sqlalchemy.orm.attributes import flag_modified
 
-from sidecar_utils import (DbSettings, DockerSettings, RabbitSettings,
-                           S3Settings, ExecutorSettings, delete_contents, find_entry_point)
+from sidecar_utils import (DbSettings, DockerSettings, ExecutorSettings,
+                           RabbitSettings, S3Settings, delete_contents,
+                           find_entry_point)
 from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
@@ -80,7 +81,7 @@ class Sidecar(object):
                     input_ports[port_name] = None
             else:
                 _LOGGER.debug('Fetch DB %s', port_value)
-                other_node_id = port_value.split(".")[1] 
+                other_node_id = port_value.split(".")[1]
                 other_output_port_id = port_value.split(".")[2]
                 other_task = self._db.session.query(ComputationalTask).filter(and_(ComputationalTask.node_id==other_node_id,
                                         ComputationalTask.pipeline_id==self._task.pipeline_id)).one()
@@ -118,7 +119,7 @@ class Sidecar(object):
     def _pull_image(self):
         self._docker.client.login(registry=self._docker.registry,
             username=self._docker.registry_user, password=self._docker.registry_pwd)
-        
+
         self._docker.client.images.pull(self._docker.image_name, tag=self._docker.image_tag)
 
     def _bg_job(self, task, log_file):
@@ -154,7 +155,7 @@ class Sidecar(object):
 
     def _process_task_output(self):
         """ There will be some files in the /output
-        
+
                 - Maybe a output.json (should contain key value for simple things)
                 - other files: should be named by the key in the output port
 
@@ -173,7 +174,7 @@ class Sidecar(object):
                     if name == 'output.json':
                         _LOGGER.debug("POSTRO FOUND output.json")
                         # parse and compare/update with the tasks output ports from db
-                        output_ports = dict()                        
+                        output_ports = dict()
                         with open(filepath) as f:
                             output_ports = json.load(f)
                             task_outputs = self._task.output
@@ -198,7 +199,7 @@ class Sidecar(object):
 
     def _process_task_log(self):
         """ There will be some files in the /log
-                
+
                 - put them all into S3 /log
         """
         directory = self._executor.log_dir
@@ -228,7 +229,7 @@ class Sidecar(object):
         self._create_shared_folders()
         self._process_task_inputs()
         self._pull_image()
-       
+
     def process(self):
         _LOGGER.debug('Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
 
@@ -241,10 +242,10 @@ class Sidecar(object):
         fut = self._executor.pool.submit(self._bg_job, self._task, log_file)
 
         try:
-            docker_image = self._docker.image_name + ":" + self._docker.image_tag 
-            self._docker.client.containers.run(docker_image, "run", 
+            docker_image = self._docker.image_name + ":" + self._docker.image_tag
+            self._docker.client.containers.run(docker_image, "run",
                  detach=False, remove=True,
-                 volumes = {'services_input'  : {'bind' : '/input'}, 
+                 volumes = {'services_input'  : {'bind' : '/input'},
                             'services_output' : {'bind' : '/output'},
                             'services_log'    : {'bind'  : '/log'}},
                  environment=self._docker.env)
@@ -270,7 +271,7 @@ class Sidecar(object):
 
     def postprocess(self):
         _LOGGER.debug('Post-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
-        
+
         self._process_task_output()
         self._process_task_log()
 
@@ -279,7 +280,7 @@ class Sidecar(object):
         self._db.session.commit()
 
         _LOGGER.debug('DONE Post-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
-        
+
 
     def _is_node_ready(self, task, graph):
         tasks = self._db.session.query(ComputationalTask).filter(and_(
@@ -313,13 +314,13 @@ class Sidecar(object):
             try:
                 task = query.one()
             except exc.SQLAlchemyError as err:
-                _LOGGER.error(err)  
+                _LOGGER.error(err)
                 # no result found, just return
                 return next_task_nodes
 
             if task == None:
                 return next_task_nodes
-    
+
             # already done or running and happy
             if task.job_id and (task.state == SUCCESS or task.state == RUNNING):
                 _LOGGER.debug("TASK %s ALREADY DONE OR RUNNING", task.internal_id)
@@ -330,7 +331,7 @@ class Sidecar(object):
                 _LOGGER.debug("TASK %s NOT YET READY", task.internal_id)
                 do_process = False
 
-            if do_process:           
+            if do_process:
                 task.job_id = celery_task.request.id
                 self._db.session.add(task)
                 self._db.session.commit()
@@ -354,7 +355,7 @@ class Sidecar(object):
             next_task_nodes = find_entry_point(graph)
 
         celery_task.update_state(state=CSUCCESS)
-        
+
         return next_task_nodes
 
 SIDECAR = Sidecar()

@@ -45,6 +45,8 @@ ENV FLASK_DEBUG=1
 
 VOLUME /home/app/source
 
+USER root
+
 CMD ["/bin/sh", "./boot.sh"]
 
 # --------------------------Production stage -------------------

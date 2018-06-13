@@ -48,6 +48,8 @@ FROM python:3.6-alpine as common-py-stage
 
 ARG server_dir=web/server
 
+RUN apk add --no-cache postgresql-dev gcc libc-dev
+
 WORKDIR /usr/src/source
 
 ENV SIMCORE_WEB_OUTDIR=$PWD/client

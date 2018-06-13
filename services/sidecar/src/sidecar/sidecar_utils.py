@@ -1,19 +1,17 @@
 import logging
 import os
 import shutil
+from concurrent.futures import ThreadPoolExecutor
+
 import docker
-
-from simcore_sdk.config.docker import Config as docker_config
-from simcore_sdk.config.s3 import Config as s3_config
-from simcore_sdk.config.db import Config as db_config
-
-from s3wrapper.s3_client import S3Client
-from simcore_sdk.config.rabbit import Config as rabbit_config
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from concurrent.futures import ThreadPoolExecutor
+from s3wrapper.s3_client import S3Client
+from simcore_sdk.config.db import Config as db_config
+from simcore_sdk.config.docker import Config as docker_config
+from simcore_sdk.config.rabbit import Config as rabbit_config
+from simcore_sdk.config.s3 import Config as s3_config
 
 
 def delete_contents(folder):
@@ -22,7 +20,7 @@ def delete_contents(folder):
         try:
             if os.path.isfile(file_path):
                 os.unlink(file_path)
-            elif os.path.isdir(file_path): 
+            elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
         except (OSError, IOError):
             logging.exception("Could not delete files")

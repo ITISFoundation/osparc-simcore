@@ -31,6 +31,7 @@ services:
       - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8001
       - SIMCORE_WEB_CONFIG=production
+      - PYTHONPATH=/usr/src/packages/simcore-sdk/src
     #command: ["python", "server.py"]
 
   #------------comp. backend-------------------------------------------
@@ -41,13 +42,13 @@ services:
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
     ports:
       - "15672:15672"
-  flower:
-    image: ondrejit/flower:latest
-    command: --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbit:5672
-    ports:
-      - 5555:5555
-    depends_on:
-      - rabbit
+#  flower:
+#    image: ondrejit/flower:latest
+#    command: --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbit:5672
+#    ports:
+#      - 5555:5555
+#    depends_on:
+#      - rabbit
   postgres:
     image: postgres:10
     environment:
