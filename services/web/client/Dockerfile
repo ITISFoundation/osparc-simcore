@@ -42,7 +42,7 @@ FROM base-stage as development
 # within container does not work well because links remain in host
 VOLUME /home/node/client
 
-ENTRYPOINT ./scripts/entrypoint.sh
+ENTRYPOINT ./scripts/entrypoint.sh --set qx.allowUrlSettings=true
 
 
 # ------------------------------------------------------------------------------------------
@@ -63,4 +63,4 @@ RUN qx compile --target=build
 VOLUME /home/node/client
 EXPOSE 8080
 
-CMD ["qx", "serve"]
+CMD ["qx", "serve", "--set", "qx.allowUrlSettings=true"]

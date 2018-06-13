@@ -20,4 +20,3 @@ services:
     ports:
       - '8080:8080'
     working_dir: /home/node/client
-    entrypoint: ./scripts/entrypoint.sh --set qx.allowUrlSettings=true
