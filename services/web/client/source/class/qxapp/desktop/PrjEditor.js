@@ -57,10 +57,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
 
 
-    this.__showSettings(false);
+    this.showSettings(false);
 
     this.__settingsView.addListener("SettingsEditionDone", function() {
-      this.__showSettings(false);
+      this.showSettings(false);
     }, this);
 
     this.__settingsView.addListener("ShowViewer", function(e) {
@@ -75,17 +75,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__workbench.updateProgress(nodeId, progress);
     }, this);
 
-    this.__settingsView.addListener("SettingExposed", function(e) {
-      const nodeId = e.getData()[0];
-      const settingId = e.getData()[1];
-      const expose = e.getData()[2];
-      this.__workbench.settingExposed(nodeId, settingId, expose);
-    }, this);
-
     this.__workbench.addListener("NodeDoubleClicked", function(e) {
       let node = e.getData();
       this.__settingsView.setNode(node);
-      this.__showSettings(true);
+      this.showSettings(true);
     }, this);
 
     this.__transDeco = new qx.ui.decoration.Decorator().set({
@@ -104,7 +97,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __transDeco: null,
     __splitter: null,
 
-    __showSettings: function(showSettings) {
+    showSettings: function(showSettings) {
       if (showSettings) {
         this.__settingsBox.show();
       }
