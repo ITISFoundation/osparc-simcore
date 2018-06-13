@@ -26,7 +26,7 @@ def is_responsive(url, code=200):
     except requests.exceptions.RequestException as _e:
         pass
     return False
-   
+
 @pytest.fixture(scope="module")
 def s3_client(docker_ip, docker_services):
     """wait for minio to be up"""
@@ -55,7 +55,7 @@ def s3_client(docker_ip, docker_services):
     s3_client = S3Client(endpoint, access_key, secret_key, secure)
     return s3_client
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def bucket(s3_client, request):
     bucket_name = "simcore-test"
     s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
@@ -92,10 +92,10 @@ def test_create_remove_bucket_with_contents(s3_client, text_files):
     assert s3_client.create_bucket(bucket_name)
     assert s3_client.exists_bucket(bucket_name)
     object_name = "dummy"
-    filepath = text_files(1)[0]    
+    filepath = text_files(1)[0]
     assert s3_client.upload_file(bucket_name, object_name, filepath)
     assert s3_client.remove_bucket(bucket_name, delete_contents=False)
-    assert s3_client.exists_bucket(bucket_name)    
+    assert s3_client.exists_bucket(bucket_name)
     s3_client.remove_bucket(bucket_name, delete_contents=True)
     assert not s3_client.exists_bucket(bucket_name)
 
