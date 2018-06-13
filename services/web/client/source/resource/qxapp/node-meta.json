@@ -5,6 +5,7 @@
     "type": "object",
     "additionalProperties": false,
     "required": [
+        "key",
         "name",
         "tag",
         "description",
@@ -14,7 +15,7 @@
         "output"
     ],
     "properties": {
-        "name": {
+        "key": {
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path",
             "pattern": "^(service)/(computational|dynamic)/([^\\s/])$",
@@ -32,6 +33,13 @@
                 "0.0.1"
             ]
         },
+        "name": {
+            "type": "string",
+            "description": "short, humean readable name for the node",
+            "examples": [
+                "Fast Counter"
+            ]
+        }
         "description": {
             "type": "string",
             "description": "human readable description of the purpose of the node",
@@ -58,7 +66,7 @@
                     "email": {
                         "description": "Email address",
                         "type": "string",
-                        "pattern": "^[^\\s@]+@[^\\s@.]+(\\.[^\\s@]+)+$",
+                        "format": "email",
                         "examples": [
                             "sun@sense.eight",
                             "deleen@minbar.bab"
@@ -77,6 +85,7 @@
         },
         "contact": {
             "type": "string",
+            "format": "email",
             "description": "email to corespond to the authors about the node",
             "examples": [
                 "lab@net.flix"
