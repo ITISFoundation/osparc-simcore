@@ -3,10 +3,10 @@
     "inputs": [
         {
             "key": "in_1",
-            "label": "vm 1Hz",
+            "label": "ECGs",
             "description": "these are computed data out of a pipeline",
             "type": "file-url",
-            "value": "D:\\plotlydemo\\data\\vm_1Hz.txt",
+            "value": "D:\\plotlydemo\\data\\1D_OUTPUT\\ECGS.txt",
             "timestamp": "2018-05-23T15:34:53.511Z"
         },
         {
@@ -14,7 +14,7 @@
             "label": "all results 1Hz",
             "description": "computed data out of a pipeline",
             "type": "file-url",
-            "value": "D:\\plotlydemo\\data\\allresult_1Hz.txt",
+            "value": "D:\\plotlydemo\\data\\1D_OUTPUT\\ap.txt",
             "timestamp": "2018-05-23T15:34:53.511Z"
         }
     ],
