@@ -118,3 +118,6 @@ services/docker-compose.override.yml
 
 # npm packages (TMP)
 package-lock.json
+
+# wildcards for filenames to ignore
+*ignore*

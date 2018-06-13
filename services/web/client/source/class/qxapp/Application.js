@@ -44,8 +44,6 @@ qx.Class.define("qxapp.Application", {
         // support native logging capabilities, e.g. Firebug for Firefox
         qx.log.appender.Native;
 
-        // Enable qx environment parameter via url parameter: 
-        // http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true
         if (qx.core.Environment.get("dev.enableFakeSrv")) {
           console.debug("Fake server enabled");
           qxapp.dev.fakesrv.restapi.User;
