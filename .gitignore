@@ -115,3 +115,6 @@ services/docker-compose.override.yml
 
 # mac
 .DS_Store
+
+# npm packages (TMP)
+package-lock.json

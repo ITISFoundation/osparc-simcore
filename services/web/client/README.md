@@ -51,6 +51,23 @@ docker-compose -f docker-compose.yml -f docker-compose.production.yml up
 cd path/to/web/client
 docker-compose down
 ```
+### Issues with the Windows host
+
+Development version of image doesn't work on a windows host. Modified files in the mounted volume don't trigger container operating  system notifications, so watchers don't react to changes. This is a known limitation of docker on windows.
+
+- TODO: implement helper script for this?
+
+#### Workaround: 
+
+ http://blog.subjectify.us/miscellaneous/2017/04/24/docker-for-windows-watch-bindings.html
+    
+Open terminal in windows host and type:
+
+```bash
+pip install docker-windows-volume-watcher
+docker-volume-watcher
+```
+
 
 TODO: update doc below
 
