@@ -78,7 +78,7 @@ qx.Class.define("qxapp.Preferences", {
       page.add(email);
 
       let img = new qx.ui.basic.Image().set({
-        source: qxapp.dev.Placeholders.getGravatar(email.getValue() || "bizzy@itis.ethz.ch", 200)
+        source: qxapp.utils.Avatar.getUrl(email.getValue() || "bizzy@itis.ethz.ch", 200)
       });
       page.add(img);
 
