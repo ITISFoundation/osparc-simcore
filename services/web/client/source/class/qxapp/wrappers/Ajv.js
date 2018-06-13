@@ -1,44 +1,39 @@
 /* ************************************************************************
    Copyright: 2018 ITIS Foundation
    License:   MIT
-   Authors:   Tobi Oetiker <tobi@oetiker.ch>
+   Authors:   Tobi Oetiker <oetiker@itis.ethz.ch>
    Utf8Check: äöü
 ************************************************************************ */
 /**
- * A qooxdoo wrapper for Ajv
+ * A qooxdoo wrapper for Ajv (https://github.com/epoberezkin/ajv)
  */
-qx.Class.define("qxapp.wrappers.Avj", {
+
+/* global Ajv */
+/* eslint new-cap: [2, {capIsNewExceptions: ["Ajv"]}] */
+
+qx.Class.define("qxapp.wrappers.Ajv", {
   extend: qx.core.Object,
-  construct: function(cfg) {
+  construct: function(schema,opts) {
     this.base(arguments);
-    this.__avj = new Ajv(cfg);
+    this.__ajv = new Ajv(opts);
+    this.__validator = this.__ajv.compile(schema);
   },
   members: {
-    __avj: null,
-    addSchema: function(schema) {
-      this.__avj.addSchema(schema);
-      return this;
-    },
-    addFormat: function(format, def) {
-      this.__avj.addFormat(format, def);
-      return this;
-    },
-    addKeyword: function(keyword, def) {
-      this.__avj.addKeyword(keyword, def);
-      return this;
-    },
-    compile: function(schema) {
-      return this.__avj.compile(schema);
-    },
-    validate: function(schema, data) {
-      return this.__avj.validate(schema, data);
-    },
-    errors: function() {
-      return this.__avj.errors;
+    __ajv: null,
+    __validator: null,
+    validate: function(data) {
+      if (this.__validator(data)) {
+        return true;
+      }
+      else {
+        return this.__validator.errors;
+      }
     }
   }
 });
 
+
+/* eslint-disable */
 
 // https://raw.githubusercontent.com/epoberezkin/ajv-dist/master/dist/ajv.bundle.js
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Ajv = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){

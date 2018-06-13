@@ -1,5 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+
     "title": "simcore node",
     "description": "Description of a simcore node 'class' with input and output",
     "type": "object",
@@ -11,14 +12,14 @@
         "description",
         "authors",
         "contact",
-        "input",
-        "output"
+        "inputs",
+        "outputs"
     ],
     "properties": {
         "key": {
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path",
-            "pattern": "^(service)/(computational|dynamic)/([^\\s/])$",
+            "pattern": "^(service)/(computational|dynamic)/([^\\s/]+)$",
             "examples": [
                 "service/computational/sleeper",
                 "service/dynamic/3dviewer"
@@ -50,6 +51,7 @@
         },
         "authors": {
             "type": "array",
+            "minItems": 1,
             "items": {
                 "type": "object",
                 "required": ["name", "email"],
@@ -91,11 +93,7 @@
                 "lab@net.flix"
             ]
         },
-        "label": {
-            "type": "string",
-            "description": "how to represent the node in a list of nodes for example"
-        },
-        "input": {
+        "inputs": {
             "type": "array",
             "description": "definition of the inputs of this node",
             "items": {
@@ -223,7 +221,7 @@
                 }
             }
         },
-        "output": {
+        "outputs": {
             "type": "array",
             "description": "definition of the outputs of this node",
             "items": {
