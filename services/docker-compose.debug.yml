@@ -20,7 +20,7 @@ services:
       - DIRECTOR_PORT=8001
       - SIMCORE_WEB_CONFIG=development
     volumes:
-      - './web/server/source:/usr/src/source'
+      - './web/server/src:/usr/src/source'
       - './web/client/source-output:/usr/src/source/client'
       - './web/server/test:/usr/src/test'
       - ../packages:/usr/src/packages
