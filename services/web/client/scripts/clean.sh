@@ -20,5 +20,5 @@ rm ${FONTS_DIR}/material 2> /dev/null
 
 # Runs 'qx clean'
 pushd ${CLIENT_DIR};
-docker run -itd -v $(pwd):/home/node/client  --entrypoint qx client_qx:latest clean
+docker run -itd -v $(pwd):/home/node/client  --entrypoint qx client_qx:dev clean
 popd;
