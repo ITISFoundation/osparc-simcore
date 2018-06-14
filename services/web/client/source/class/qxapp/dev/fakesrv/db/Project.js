@@ -9,8 +9,9 @@ qx.Class.define("qxapp.dev.fakesrv.db.Project", {
       let project = {
         id: projectId,
         name: name,
+        description: "Short description of project " + name,
         thumbnail: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round",
-        createDate: Date.now(),
+        createdDate: Date.now(),
         modifiedDate: Date.now()
       };
       return project;
