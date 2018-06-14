@@ -67,7 +67,10 @@ services:
       - postgres
   sidecar:
     build:
-      context: ./sidecar
+      # the context for the build is the git repo root directory, this allows to copy
+      # the packages directory into any docker image
+      context: ../
+      dockerfile: services/sidecar/Dockerfile
       target: production
     volumes:
       - input:/input
@@ -87,7 +90,6 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
     depends_on:
       - rabbit
-
 volumes:
   input:
   output:

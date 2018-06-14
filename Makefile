@@ -22,10 +22,13 @@ rebuild:
 	docker-compose -f services/docker-compose.yml build --no-cache
 
 up:
+	docker-compose -f services/docker-compose.yml up
+
+up-swarm:
 	docker swarm init
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml up
 
-down:
+down-swarm:
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml down
 	docker swarm leave -f
 
