@@ -1,9 +1,12 @@
 import json
+import logging
 
 import aio_pika
 
 from async_sio import SIO
 from simcore_sdk.config.rabbit import Config as rabbit_config
+
+_LOGGER = logging.getLogger(__file__)
 
 # rabbit config
 rabbit_config = rabbit_config()
@@ -14,6 +17,7 @@ rabbit_broker = rabbit_config.broker
 async def on_message(message: aio_pika.IncomingMessage):
     with message.process():
         data = json.loads(message.body)
+        _LOGGER.debug(data)
         if data["Channel"] == "Log":
             await SIO.emit("logger", data = json.dumps(data))
         elif data["Channel"] == "Progress":

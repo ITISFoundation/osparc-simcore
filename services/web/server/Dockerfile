@@ -97,6 +97,7 @@ RUN pip3 install --no-cache-dir -r /usr/src/requirements/prod.txt \
     && pip list --format=columns
 
 COPY $server_dir/src .
+COPY packages /usr/src/packages
 
 ENTRYPOINT ["python", "-m", "aiohttp.web"]
 

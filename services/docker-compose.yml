@@ -19,12 +19,12 @@ services:
   #--------------------------------------------------------------------
   webserver:
     build:
-      context: .
-      dockerfile: web/server/Dockerfile
+      context: ../
+      dockerfile: services/web/server/Dockerfile
       target: production
       args:
-        client_dir: web/client
-        server_dir: web/server
+        client_dir: services/web/client
+        server_dir: services/web/server
     ports:
       - '9081:8080'
     environment:

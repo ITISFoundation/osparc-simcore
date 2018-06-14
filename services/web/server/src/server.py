@@ -11,7 +11,7 @@ from aiohttp_swagger import setup_swagger
 import config
 from async_sio import SIO
 from comp_backend_api import comp_backend_routes
-from comp_backend_setup import subscribe
+from comp_backend_subscribe import subscribe
 from registry_api import registry_routes
 
 CONFIG = config.CONFIG[os.environ.get('SIMCORE_WEB_CONFIG', 'default')]
