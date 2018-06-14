@@ -177,7 +177,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             var node = d["Node"];
             var msg = d["Message"];
             this.__updateLogger(node, msg);
-          });
+          }, this);
         }
 
         // callback for incoming logs
@@ -188,7 +188,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             var node = d["Node"];
             var progress = 100*Number(d["Progress"]);
             this.updateProgress(node, progress);
-          });
+          }, this);
         }
 
         if (this.getCanStart()) {
