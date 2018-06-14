@@ -1,0 +1,10 @@
+version: '3'
+services:
+  minio:
+    image: minio/minio
+    environment:
+      - MINIO_ACCESS_KEY=12345678
+      - MINIO_SECRET_KEY=12345678
+    ports:
+      - "9001:9000"
+    command: server /data

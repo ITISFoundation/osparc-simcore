@@ -43,12 +43,12 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
 
       // add the items
       for (let i = 0; i < items.length; i++) {
-        let label = this._createLabel(names[i], items[i]);
+        let item = items[i];
+        let label = this._createLabel(names[i], item);
         this._add(label, {
           row: this._row,
           column: 0
         });
-        let item = items[i];
         label.setBuddy(item);
         this._add(item, {
           row: this._row,
@@ -77,6 +77,12 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
             item: items[i]
           });
         }
+      }
+    },
+
+    enableProp: function(key, enable) {
+      if (this._form && this._form.getControl(key)) {
+        this._form.getControl(key).setEnabled(enable);
       }
     }
   }

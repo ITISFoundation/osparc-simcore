@@ -4,6 +4,14 @@ services:
     #image: itisfoundation/qooxdoo-compiler:latest
     image: client_qx:dev
     build:
+      # ToDo: development version doesn't work in Windows.
+      #  Modified files in the mounted volume don't trigger container operating 
+      # system notifications, so watchers don't react to changes.
+      # Workaround: 
+      # http://blog.subjectify.us/miscellaneous/2017/04/24/docker-for-windows-watch-bindings.html
+      # On Windows side:
+      # pip install docker-windows-volume-watcher
+      # docker-volume-watcher
       context: .
       dockerfile: Dockerfile
       target: development

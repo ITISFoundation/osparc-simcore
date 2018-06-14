@@ -26,6 +26,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     this.__prjBrowser.addListener("StartPrj", function(e) {
       this.__prjStack.setSelection([this.__PrjEditor]);
       this.__navBar.setCurrentStatus(e.getData().getName());
+      // this.__PrjEditor.showSettings(false);
       this.__PrjEditor.setData(qxapp.data.Fake.getPrjData(e.getData().getPrjId()));
     }, this);
   },

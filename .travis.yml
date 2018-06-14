@@ -15,11 +15,47 @@ matrix:
         - npm run linter
 
     - language: python
+
       python:
         - "3.6"
+      sudo: required
+
+      services:
+        - docker
+
+      before_install:
+        - python --version
+        - uname -a
+        - lsb_release -a
+        - docker --version
+        - docker-compose --version
+        # shutdown postgres because sometimes is is alrady up ???
+        - sudo service postgresql stop
+        # wait for postgresql to shutdown
+        - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
+
       install:
         - pip3 install pylint
+        - pip3 install pytest-cov
+        - pip3 install coveralls
+        - pip3 install -r packages/pytest_docker/requirements.txt
+        - pip3 install -r packages/s3wrapper/requirements.txt
+        - pip3 install -r packages/simcore-sdk/requirements.txt
+        - pip3 --version
+
       before_script:
         - pylint --version
+        # change python path for 2nd party libraries
+        - export PYTHONPATH=${PYTHONPATH}:${TRAVIS_BUILD_DIR}/packages/s3wrapper/src
+
       script:
         - make pylint
+        - make test
+
+      after_success:
+      - coveralls
+
+      notifications:
+        email:
+          on_success: never
+          on_failure: always
