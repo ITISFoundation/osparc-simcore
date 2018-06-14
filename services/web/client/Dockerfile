@@ -1,66 +1,79 @@
 FROM node:8.9.2 as base-stage
 
+# Used to qx compile and/or serve (dev) client-side code
+#
+#
+# + /home/scu/              $HOME
+#    + client/              $PWD, WORKDIR, VOLUME
+#       + source
+#       + source-output     $CLIENT_OUTDIR
+#    + node_modules
+#       +.bin/
+#            - qx           qx compiler
+#    + qooxdoo-sdk/         $QOOXDOO_PATH
+#       + framework         contains qx library
+#       + tool/
+#           + bin/          contains generator.py
+#
+#  * = in $PATH
+#
 LABEL maintainer=pcrespov
 
-# TODO:  set as host user, otherwise outdir is set as root in the host
+# non-root user
+RUN groupmod --new-name scu node && \
+    usermod --login scu --move-home --home /home/scu node
+USER scu
 
+
+ENV HOME /home/scu
 ENV NPM_CONFIG_LOGLEVEL warn
-ENV PATH="/home/node/qooxdoo-sdk/tool/bin:/home/node/node_modules/.bin/:${PATH}"
+ENV NPM_CONFIG_PREFIX $HOME/.npm-global
+ENV QOOXDOO_PATH $HOME/qooxdoo-sdk
+ENV PATH="${QOOXDOO_PATH}/tool/bin:${HOME}/node_modules/.bin/:${NPM_CONFIG_PREFIX}/bin:${PATH}"
 
-#
-# + /home/node/            $HOME
-#    + client/             $WORKDIR
-#       - compile.json
-#       + contrib/
-#       - contrib.json
-#    + node_modules/
-#    - package-lock.json
-#    - package.json
-#    + qooxdoo-sdk
-#
 
-# (1) Installs qooxdoo compiler and shallow clone SDK in #HOME. see https://www.npmjs.com/package/qxcompiler
-WORKDIR /home/node
+WORKDIR /home/scu
 
-COPY package*.json ./
+# 1. qooxdoo-sdk from source repository. Provides framework and generator.py tools to overcome limits of qx-compiler
+RUN git clone --depth 1 https://github.com/qooxdoo/qooxdoo.git ${QOOXDOO_PATH}
 
-# FIXME: npm WARN node description, ...
-# FIXME: npm WARN notice [SECURITY] tunnel-agen
-# FIXME: npm WARN notice [SECURITY] hoek
-RUN npm i npm@latest && \
-    npm install && \
-    git clone --depth 1 https://github.com/qooxdoo/qooxdoo.git qooxdoo-sdk
+# 2. installs qx-compiler (see specs in package.json)
+COPY --chown=scu:scu package*.json ./
 
-WORKDIR /home/node/client
-COPY scripts scripts
-RUN chmod +x scripts/*.sh
+RUN npm install npm@latest && \
+    npm install
+
+# owned by scu now
+RUN mkdir /home/scu/client
+WORKDIR /home/scu/client
+
+EXPOSE 8080
 
 # ------------------------------------------------------------------------------------------
 FROM base-stage as development
 
 # NOTE: cannot expose contrib and source-output volumes (to keep them inside)
 # within container does not work well because links remain in host
+
 VOLUME /home/node/client
 
 ENTRYPOINT ./scripts/entrypoint.sh
 
-
 # ------------------------------------------------------------------------------------------
 FROM base-stage as production
 
-# (2) Installs qooxdoo contributions in $WORKDIR/contrib/ within container
-COPY compile.json compile.json
 
+# 3. prepares scripts
+COPY --chown=scu:scu scripts scripts
+RUN chmod +x scripts/*.sh
+
+# 4. Installs qooxdoo contributions in $WORKDIR/contrib/ within container
+COPY --chown=scu:scu compile.json compile.json
 RUN ./scripts/install-contrib.sh
 
-# (3) compiles source
-COPY source source
-COPY Manifest.json Manifest.json
-
+# 5. compiles source
+COPY --chown=scu:scu source source
+COPY --chown=scu:scu Manifest.json Manifest.json
 RUN qx compile --target=build
-
-# production exec
-VOLUME /home/node/client
-EXPOSE 8080
 
 CMD ["qx", "serve"]

@@ -1,22 +1,32 @@
-#FIXME: FROM itisfoundation/qooxdoo-compiler:latest as qx-stage
+#FIXME: MUST use the same as web/client/Dockerfile
 FROM node:8.9.2 as qx-stage
+#
+# + /home/scu/
+#    + /client           =$SIMCORE_WEB_OUTDIR
+#    + /server
+#       + /requirements
+#       + /tests
+#       + /src           =$PWD
+
+
+# client_dir = path to client dir from context
 ARG client_dir=web/client
+
+# user defined in base image
+USER node
 
 # workdir
 WORKDIR /home/node
 
 RUN chown -R node:node /home/node
 
-# user defined in base image
-USER node
 
 # npm variables
 ENV PATH=/home/node/node_modules/.bin:$PATH
 
 COPY --chown=node:node $client_dir/package*.json .
-
-RUN npm install ; \
-    git clone --depth=1 https://github.com/qooxdoo/qooxdoo.git qooxdoo-sdk ; \
+RUN npm install && \
+    git clone --depth=1 https://github.com/qooxdoo/qooxdoo.git qooxdoo-sdk && \
     mkdir src
 
 # workdir
@@ -36,23 +46,27 @@ RUN ls -l ; ./scripts/install-contrib.sh ; \
 
 # -------------------------common-py-stage------------------------------------
 FROM python:3.6-alpine as common-py-stage
-
 #
-# + /usr/src
-#    + /requirements
-#    + /test
-#    + /source        <-- web/server/source (pwd)
-#        + /client    <-- web/client/source-output
+# + /home/scu/
+#    + /client           =$SIMCORE_WEB_OUTDIR
+#    + /server
+#       + /requirements
+#       + /tests
+#       + /src           =$PWD
+
 
 # TODO: create non-root user
 
 ARG server_dir=web/server
 
-RUN apk add --no-cache postgresql-dev gcc libc-dev
+RUN apk add --no-cache \
+  postgresql-dev \
+  gcc \
+  libc-dev
 
 WORKDIR /usr/src/source
 
-ENV SIMCORE_WEB_OUTDIR=$PWD/client
+ENV SIMCORE_WEB_OUTDIR=/usr/src/client
 ENV DIRECTOR_HOST='director'
 ENV DIRECTOR_PORT=8001
 
@@ -60,8 +74,8 @@ ENV DIRECTOR_PORT=8001
 COPY --from=qx-stage /home/node/src/source-output ${SIMCORE_WEB_OUTDIR}
 
 # packages
-COPY $server_dir/requirements/common.txt /usr/src/requirements/common.txt
-RUN pip3 install --no-cache-dir -r /usr/src/requirements/common.txt
+#COPY $server_dir/requirements/common.txt /usr/src/requirements/common.txt
+#RUN pip3 install --no-cache-dir -r /usr/src/requirements/common.txt
 
 EXPOSE 8080
 
