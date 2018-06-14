@@ -45,8 +45,8 @@ before_test:
 	docker-compose -f packages/simcore-sdk/tests/docker-compose.yml build
 
 run_test:
-	pytest -v packages/pytest_docker/
-	pytest -v packages/s3wrapper/
+	pytest --cov=pytest_docker -v packages/pytest_docker/
+	pytest --cov=s3wrapper -v packages/s3wrapper/
 	pytest -v packages/simcore-sdk/
 
 after_test:
