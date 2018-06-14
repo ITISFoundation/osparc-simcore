@@ -256,7 +256,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let buttonsListMenu = new qx.ui.menu.Menu();
 
       nodesList.forEach(node => {
-        let nodeButton = new qx.ui.menu.Button(node.label);
+        let nodeButton = new qx.ui.menu.Button(node.name);
 
         nodeButton.addListener("execute", function() {
           let nodeItem = this.__createNode(node);
@@ -681,7 +681,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       for (let i = 0; i < this.__nodes.length; i++) {
         let node = {};
         node["uuid"] = this.__nodes[i].getNodeId();
-        node["serviceId"] = this.__nodes[i].getMetadata().key;
+        node["key"] = this.__nodes[i].getMetadata().key;
+        node["tag"] = this.__nodes[i].getMetadata().tag;
+        node["name"] = this.__nodes[i].getMetadata().name;
         node["inputs"] = this.__nodes[i].getMetadata().inputs;
         node["outputs"] = this.__nodes[i].getMetadata().outputs;
         node["settings"] = this.__nodes[i].getMetadata().settings;
