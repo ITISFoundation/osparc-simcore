@@ -2,9 +2,9 @@
     data going to following nodes.
 """
 import logging
-from simcoreapi import exceptions
-from simcoreapi import serialization
-from simcoreapi._itemslist import DataItemsList
+from simcore_sdk.nodeports import exceptions
+from simcore_sdk.nodeports import serialization
+from simcore_sdk.nodeports._itemslist import DataItemsList
 
 
 _LOGGER = logging.getLogger(__name__)

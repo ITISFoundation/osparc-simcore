@@ -3,8 +3,8 @@
 # pylint: disable=too-many-ancestors
 import logging
 from collections.abc import MutableSequence
-from simcoreapi import exceptions
-from simcoreapi._item import DataItem
+from simcore_sdk.nodeports import exceptions
+from simcore_sdk.nodeports._item import DataItem
 
 _LOGGER = logging.getLogger(__name__)
 

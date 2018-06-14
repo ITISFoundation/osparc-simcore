@@ -11,7 +11,7 @@ from enum import Enum
 DATA_ITEM_KEYS = ["key", "label", "description", "type", "value", "timestamp"]
 TYPE_TO_PYTHON_TYPE_MAP = {"int":int, "float":float, "file-url":str, "bool":bool, "string":str, "folder":str}
 
-# simcoreapi is a library for accessing data linked to the node
+# nodeports is a library for accessing data linked to the node
 # in that sense it should not log stuff unless the application code wants it to be so.
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 _LOGGER = logging.getLogger(__name__)

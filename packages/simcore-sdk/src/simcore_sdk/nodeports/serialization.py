@@ -1,12 +1,12 @@
-"""this module is responsible for JSON encoding/decoding of simcoreapi objects."""
+"""this module is responsible for JSON encoding/decoding of nodeports objects."""
 import json
 import logging
 
-from simcoreapi import simcore #pylint: disable=cyclic-import
-from simcoreapi._itemslist import DataItemsList
-from simcoreapi._item import DataItem
-from simcoreapi import exceptions
-from simcoreapi import config
+from simcore_sdk.nodeports import simcore #pylint: disable=cyclic-import
+from simcore_sdk.nodeports._itemslist import DataItemsList
+from simcore_sdk.nodeports._item import DataItem
+from simcore_sdk.nodeports import exceptions
+from simcore_sdk.nodeports import config
 
 _LOGGER = logging.getLogger(__name__)
 

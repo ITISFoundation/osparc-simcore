@@ -1,6 +1,6 @@
-"""Defines the different exceptions that may arise in the simcoreapi package"""
+"""Defines the different exceptions that may arise in the nodeports package"""
 class SimcoreException(Exception):
-    """Basic exception for errors raised in simcoreapi"""
+    """Basic exception for errors raised in nodeports"""
     def __init__(self, msg=None):
         if msg is None:
             msg = "An error occured in simcore"

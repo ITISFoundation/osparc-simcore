@@ -3,8 +3,8 @@
 import logging
 import collections
 import datetime
-from simcoreapi import exceptions
-from simcoreapi import config
+from simcore_sdk.nodeports import exceptions
+from simcore_sdk.nodeports import config
 
 _LOGGER = logging.getLogger(__name__)
 

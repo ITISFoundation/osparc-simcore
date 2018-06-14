@@ -4,14 +4,14 @@
 import pytest
 
 def test_access_with_key(default_simcore_configuration): # pylint: disable=W0613, W0621
-    from simcoreapi import PORTS
+    from simcore_sdk.nodeports import PORTS
 
     assert PORTS.inputs["in_1"] == PORTS.inputs[0]
     assert PORTS.inputs["in_5"] == PORTS.inputs[1]
     assert PORTS.outputs["out_1"] == PORTS.outputs[0]
 
 def test_port_value_getters(default_simcore_configuration): # pylint: disable=W0613, W0621
-    from simcoreapi import PORTS
+    from simcore_sdk.nodeports import PORTS
 
     assert PORTS.inputs["in_1"].get() == "/home/jovyan/data/outputControllerOut.dat"
     assert PORTS.inputs["in_5"].get() == 666
@@ -29,7 +29,7 @@ def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0
         "timestamp": "2018-05-22T19:34:53.511Z"
     })
     special_simcore_configuration(special_config)
-    from simcoreapi import PORTS
+    from simcore_sdk.nodeports import PORTS
 
     assert PORTS.outputs["out_15"].get() is None
 
@@ -41,7 +41,7 @@ def test_adding_new_ports(special_simcore_configuration):
     import helpers
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
     config_file = special_simcore_configuration(special_configuration)
-    from simcoreapi import PORTS
+    from simcore_sdk.nodeports import PORTS
     # check empty configuration
     assert not PORTS.inputs
     assert not PORTS.outputs
@@ -131,7 +131,7 @@ def test_removing_ports(special_simcore_configuration):
     })
 
     config_file = special_simcore_configuration(special_configuration)
-    from simcoreapi import PORTS
+    from simcore_sdk.nodeports import PORTS
     assert len(PORTS.inputs) == 2
     assert len(PORTS.outputs) == 2
     # let's remove the first input
@@ -161,16 +161,16 @@ def test_removing_ports(special_simcore_configuration):
     assert PORTS.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
 def test_changing_inputs_error(default_simcore_configuration): # pylint: disable=W0613
-    from simcoreapi import PORTS
-    from simcoreapi.simcore import DataItemsList
-    from simcoreapi import exceptions
+    from simcore_sdk.nodeports import PORTS
+    from simcore_sdk.nodeports.simcore import DataItemsList
+    from simcore_sdk.nodeports import exceptions
 
     with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
         PORTS.inputs = DataItemsList()
     assert "Trying to modify read-only object" in str(excinfo.value)
 
 
-    from simcoreapi._item import DataItem
+    from simcore_sdk.nodeports._item import DataItem
     new_input = DataItem(key="dummy_1", 
                          label="new label", 
                          description="new description", 
@@ -182,16 +182,16 @@ def test_changing_inputs_error(default_simcore_configuration): # pylint: disable
     assert "Trying to modify read-only object" in str(excinfo.value)
 
 def test_changing_outputs_error(default_simcore_configuration): # pylint: disable=W0613
-    from simcoreapi import PORTS
-    from simcoreapi.simcore import DataItemsList
-    from simcoreapi import exceptions
+    from simcore_sdk.nodeports import PORTS
+    from simcore_sdk.nodeports.simcore import DataItemsList
+    from simcore_sdk.nodeports import exceptions
 
     with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
         PORTS.outputs = DataItemsList()
     assert "Trying to modify read-only object" in str(excinfo.value)
 
 
-    from simcoreapi._item import DataItem
+    from simcore_sdk.nodeports._item import DataItem
     new_output = DataItem(key="dummy_1", 
                           label="new label", 
                           description="new description", 
