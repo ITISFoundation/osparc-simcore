@@ -186,7 +186,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             console.log("progress", data);
             var d = JSON.parse(data);
             var node = d["Node"];
-            var progress = d["Progress"];
+            var progress = 100*Number(d["Progress"]);
             this.updateProgress(node, progress);
           });
         }
