@@ -80,8 +80,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - PYTHONPATH=/work/packages
-    environment:
+      - PYTHONPATH=/work/packages/simcore-sdk/src:/work/packages/s3wrapper/src
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
       - S3_ENDPOINT=${S3_ENDPOINT}
