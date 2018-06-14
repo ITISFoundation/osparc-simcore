@@ -42,6 +42,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     this.add(this.__list, {
       flex: 1
     });
+    this.__list.setSelectionMode("one");
 
     // create the controller
     this.__controller = new qx.data.controller.List(this.__rawData, this.__list);
@@ -76,6 +77,13 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     buttonsLayout.add(cancelBtn);
 
     this.add(buttonsLayout);
+
+    // Listen to "Enter" key
+    this.addListener("keypress", function(keyEvent) {
+      if (keyEvent.getKeyIdentifier() === "Enter") {
+        this.__onAddService();
+      }
+    }, this);
   },
 
   events: {
@@ -123,10 +131,21 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
       this.__controller.setModel(filteredData);
     },
 
+    __keyEvent: function(keyEvent) {
+      if (keyEvent.getKeyIdentifier() === "Enter") {
+        this.__onAddService();
+      }
+    },
+
     __onAddService: function() {
-      let selection = this.__list.getSelection()[0].getLabel();
+      if (this.__list.isSelectionEmpty()) {
+        return;
+      }
+
+      let selection = this.__list.getSelection();
+      let selectedLabel = selection[0].getLabel();
       for (let i = 0; i < this.__allServices.length; i++) {
-        if (selection === this.__allServices[i].label) {
+        if (selectedLabel === this.__allServices[i].label) {
           const eData = {
             service: this.__allServices[i],
             contextNodeId: this.__contextNodeId,
