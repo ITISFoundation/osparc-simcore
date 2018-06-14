@@ -84,6 +84,11 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
         this.__onAddService();
       }
     }, this);
+
+    // Listen to "Double Click" key
+    this.__list.addListener("dblclick", function(mouseEvent) {
+      this.__onAddService();
+    }, this);
   },
 
   events: {
