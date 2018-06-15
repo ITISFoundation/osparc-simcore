@@ -793,6 +793,14 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       });
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.send();
+
+      // FIXME: do we need this?
+      let socket = qxapp.wrappers.WebSocket.getInstance();
+      socket.emit("logger");
+
+      this.setCanStart(false);
+
+      this.__logger.info("Workbench", "Starting pipeline");
     },
 
     __onPipelinesubmitted: function(e) {
@@ -807,10 +815,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let socket = qxapp.wrappers.WebSocket.getInstance();
       socket.emit("register_for_log", "123");
       socket.emit("register_for_progress", "123");
-
-      this.__logger.info("Workbench", "Starting pipeline");
-
-      this.setCanStart(false);
     },
 
     __stopPipeline: function() {
