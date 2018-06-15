@@ -43,7 +43,14 @@ COPY --chown=jovyan:users ${NOTEBOOK_NAME} .
 RUN jupyter trust ${NOTEBOOK_NAME}
 
 # download the simcore_sdk pacakge
-RUN git clone https://github.com/sanderegg/osparc-simcore.git --branch analysis_2d_graph  ./packages
+RUN mkdir packages && \
+    cd packages && \
+    git init && \
+    git remote add origin -f https://github.com/sanderegg/osparc-simcore.git && \
+    git config core.sparsecheckout true && \
+    echo "packages/simcore-sdk/src/simcore_sdk/*" >> .git/info/sparse-checkout && \
+    git pull --depth=1 origin analysis_2d_graph
+
 ENV PYTHONPATH=./packages/packages/simcore-sdk/src
 
 # define where the inputs shall be defined
@@ -57,8 +64,3 @@ RUN chmod +x boot.sh
 ENV NOTEBOOK_URL=${NOTEBOOK_NAME}
 
 CMD [ "/bin/sh", "boot.sh" ]
-#CMD echo ${NOTEBOOK_URL}
-#CMD [ "start-notebook.sh", \
-#    "--NotebookApp.token=''", \ 
-#    "--NotebookApp.tornado_settings={\"headers\":{\"Content-Security-Policy\":\"frame-ancestors+'self'+http://osparc01.speag.com:9081;+report-uri/api/security/csp-report\"}}", \
-#    "--NotebookApp.default_url=/notebooks/${NOTEBOOK_URL}"]
