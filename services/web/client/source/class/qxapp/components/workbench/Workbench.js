@@ -36,7 +36,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     this.__desktop.addListener("changeActiveWindow", function(e) {
       let winEmitting = e.getData();
-      if (winEmitting && winEmitting.isActive() && winEmitting.includes("workbench.Node")) {
+      if (winEmitting && winEmitting.isActive() && winEmitting.classname.includes("workbench.Node")) {
         this.__selectedItemChanged(winEmitting.getNodeId());
       } else {
         this.__selectedItemChanged(null);
