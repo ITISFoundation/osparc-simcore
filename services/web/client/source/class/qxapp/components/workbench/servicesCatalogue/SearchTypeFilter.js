@@ -17,9 +17,6 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.SearchTypeFilter",
       }
       return data.search(searchString) != -1;
     }, this);
-
-    // storage for the timer id
-    this.__timerId = null;
   },
 
   properties: {
@@ -31,26 +28,12 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.SearchTypeFilter",
   },
 
   members: {
-    __timerId: null,
     __controller: null,
+    filter: null,
 
     __applySearchString : function(value, old) {
-      // get the timer instance
-      var timer = qx.util.TimerManager.getInstance();
-      // check for the old listener
-      if (this.__timerId !== null) {
-        // stop the old one
-        timer.stop(this.__timerId);
-        this.__timerId = null;
-      }
-      // start a new listener to update the controller
-      this.__timerId = timer.start(function() {
-        this.__controller.update();
-        this.__timerId = null;
-      }, 0, this, null, 200);
-    },
-
-    filter: null
+      this.__controller.update();
+    }
   },
 
   /*

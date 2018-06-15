@@ -36,8 +36,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     this.__desktop.addListener("changeActiveWindow", function(e) {
       let winEmitting = e.getData();
-      if (winEmitting && winEmitting.isActive()) {
+      if (winEmitting && winEmitting.isActive() && winEmitting.classname.includes("workbench.Node")) {
         this.__selectedItemChanged(winEmitting.getNodeId());
+      } else {
+        this.__selectedItemChanged(null);
       }
     }, this);
 
@@ -54,8 +56,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     }, this);
 
 
+    this.__logger = new qxapp.components.workbench.logger.LoggerView();
+    this.__desktop.add(this.__logger);
+
     this.__nodes = [];
     this.__links = [];
+
+    let loggerButton = this.__getShowLoggerButton();
+    this.add(loggerButton, {
+      left: 20,
+      bottom: 20
+    });
 
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
     this.add(buttonContainer, {
@@ -108,12 +119,32 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __links: null,
     __desktop: null,
     __svgWidget: null,
+    __logger: null,
     __tempLinkNodeId: null,
     __tempLinkPortId: null,
     __tempLinkRepr: null,
     __pointerPosX: null,
     __pointerPosY: null,
     __selectedItemId: null,
+
+    __getShowLoggerButton: function() {
+      const icon = "@FontAwesome5Solid/list-alt/32";
+      let loggerButton = new qx.ui.form.Button(null, icon);
+      loggerButton.set({
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE
+      });
+      loggerButton.addListener("execute", function() {
+        const bounds = loggerButton.getBounds();
+        loggerButton.hide();
+        this.__logger.moveTo(bounds.left, bounds.top+bounds.height - this.__logger.getHeight());
+        this.__logger.open();
+        this.__logger.addListenerOnce("close", function() {
+          loggerButton.show();
+        }, this);
+      }, this);
+      return loggerButton;
+    },
 
     __getPlusButton: function() {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
@@ -771,6 +802,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       socket.emit("logger");
 
       this.setCanStart(false);
+
+      this.__logger.info("Workbench", "Starting pipeline");
     },
 
     // register for logs
@@ -792,12 +825,14 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       for (let i = 0; i < this.__nodes.length; i++) {
         this.__nodes[i].setProgress(0);
       }
+      this.__logger.warn("Workbench", "Stopping pipeline");
     },
 
     __updateLogger: function(nodeId, msg) {
-      // TODO
-      let newLogText = nodeId + " reports: " + msg + "\n";
-      console.log("Logger", newLogText);
+      let node = this.__getNode(nodeId);
+      if (node) {
+        this.__logger.info(node.getCaption(), msg);
+      }
     },
 
     __clearProgressData: function() {
