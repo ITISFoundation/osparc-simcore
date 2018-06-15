@@ -13,7 +13,7 @@
 
 qx.Class.define("qxapp.wrappers.Ajv", {
   extend: qx.core.Object,
-  construct: function(schema,opts) {
+  construct: function(schema, opts) {
     this.base(arguments);
     this.__ajv = new Ajv(opts);
     this.__validator = this.__ajv.compile(schema);
@@ -25,9 +25,7 @@ qx.Class.define("qxapp.wrappers.Ajv", {
       if (this.__validator(data)) {
         return true;
       }
-      else {
-        return this.__validator.errors;
-      }
+      return this.__validator.errors;
     }
   }
 });
