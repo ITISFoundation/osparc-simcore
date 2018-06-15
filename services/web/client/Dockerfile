@@ -27,7 +27,8 @@ COPY package*.json ./
 # FIXME: npm WARN node description, ...
 # FIXME: npm WARN notice [SECURITY] tunnel-agen
 # FIXME: npm WARN notice [SECURITY] hoek
-RUN npm i npm@latest && \
+RUN npm cache verify && \
+    npm i npm@latest && \
     npm install && \
     git clone --depth 1 https://github.com/qooxdoo/qooxdoo.git qooxdoo-sdk
 

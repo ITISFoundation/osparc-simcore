@@ -13,7 +13,6 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
         if (ready) {
           let svgPlaceholder = qx.dom.Element.create("div");
           qx.bom.element.Attribute.set(svgPlaceholder, "id", LINKS_LAYER_ID);
-          // qx.bom.element.Style.set(svgPlaceholder, "z-index", 12);
           qx.bom.element.Style.set(svgPlaceholder, "width", "100%");
           qx.bom.element.Style.set(svgPlaceholder, "height", "100%");
           this.getContentElement().getDomElement()
