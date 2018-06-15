@@ -41,17 +41,13 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
 
     let logLevelButtons = new qx.ui.toolbar.Part();
     let logLevelBtns = [];
-    [
-      ["Debug", LOG_LEVEL.debug],
-      ["Info", LOG_LEVEL.info],
-      ["Warning", LOG_LEVEL.warning],
-      ["Error", LOG_LEVEL.error]
-    ].forEach(logPair => {
-      let filterButton = new qx.ui.form.ToggleButton(logPair[0]);
-      filterButton.logLevel = logPair[1];
+    for (var key in LOG_LEVEL) {
+      let text = String(key)[0].toUpperCase() + String(key).slice(1);
+      let filterButton = new qx.ui.form.ToggleButton(text);
+      filterButton.logLevel = LOG_LEVEL[key];
       logLevelButtons.add(filterButton);
       logLevelBtns.push(filterButton);
-    });
+    }
 
     filterLayout.add(logLevelButtons);
 
