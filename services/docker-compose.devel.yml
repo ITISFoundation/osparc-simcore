@@ -1,4 +1,4 @@
-# USAGE:  docker-compose -f docker-compose.yml -f docker-compose.debug.yml ...
+# USAGE:  docker-compose -f docker-compose.yml -f docker-compose.devel.yml ...
 version: '3.4'
 services:
   director:
@@ -8,25 +8,26 @@ services:
     volumes:
       - './director/source:/home/app/source'
   #--------------------------------------------------------------------
+  webclient:
+    image: client_qx:development
+    build:
+      context: ./web/client/
+      dockerfile: Dockerfile
+      target: development
+    volumes:
+      - './web/client:/home/scu/client'
+    command: compile --watch
   webserver:
     image: services_webserver:dev
     build:
-      #target: development
-      target: common-py-stage
-    ports:
-      - '9081:8080'
-    environment:
-      - DIRECTOR_HOST=director
-      - DIRECTOR_PORT=8001
-      - SIMCORE_WEB_CONFIG=development
+      context: ../
+      dockerfile: services/web/Dockerfile.dev
     volumes:
-      # FIXME: For the moment, client's source is copied also in dev
-      # - './web/client/source-output:/usr/src/source/client'
-      - './web/server/src:/usr/src/source'
-      - './web/server/tests:/usr/src/tests'
-      # TODO: consider pip install git:
-      - ../packages:/usr/src/packages
-  #------------comp. backend-------------------------------------------
+      - './web/server:/home/scu/server'
+      - ../packages:/home/scu/packages
+    depends_on:
+      - webclient
+  #--------------------------------------------------------------------
   sidecar:
     image: services_sidecar:dev
     build:

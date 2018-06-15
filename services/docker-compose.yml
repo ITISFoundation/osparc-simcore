@@ -17,7 +17,7 @@ services:
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
   #--------------------------------------------------------------------
-  build_client:
+  webclient:
     image: client_qx:build
     build:
       context: ./web/client/
@@ -34,7 +34,7 @@ services:
       - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8001
     depends_on:
-      - build_client
+      - webclient
   #--------------------------------------------------------------------
   rabbit:
     image: rabbitmq:3-management
