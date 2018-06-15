@@ -25,10 +25,12 @@ LABEL org.label-schema.docker.cmd="docker run -it --rm -p 8888:8888 cc-1d-graphs
 # service runtime settings
 LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
 
-# install git
+# install git, ffmpeg
 USER root
 RUN apt-get update && \
-    apt-get install -y git
+    apt-get install -y \
+    git \
+    ffmpeg
 USER $NB_USER
 
 # install the plotly, pandas, the jupyter extensions

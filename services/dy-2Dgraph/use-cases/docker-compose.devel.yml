@@ -1,0 +1,18 @@
+version: '3.4'
+services:
+  cc-0d:
+    volumes: 
+      - ./data:/home/jovyan/data
+      - ./config:/home/jovyan/config
+  #--------------------------------------------------------------------
+  cc-1d:
+    volumes: 
+      - ./data:/home/jovyan/data
+      - ./config:/home/jovyan/config
+  #--------------------------------------------------------------------
+  cc-2d:
+    volumes: 
+      - ./data:/home/jovyan/data
+      - ./config:/home/jovyan/config
+  #--------------------------------------------------------------------
+  

@@ -1,6 +1,6 @@
 version: '3.4'
 services:
-  cc-single-cell-0d:
+  cc-0d:
     build:
       context: cc
       args: 
