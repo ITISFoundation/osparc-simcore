@@ -35,7 +35,7 @@ def test_default_json_encoding(default_nodeports_configuration):
 
     json_data = json.dumps(PORTS, cls=_NodeportsEncoder)
     default_config_path = os.path.join(os.path.dirname(
-        os.path.realpath(__file__)), r"../src/simcore_sdk/config/connection_config.json")
+        os.path.realpath(__file__)), r"../../src/simcore_sdk/config/connection_config.json")
     with open(default_config_path) as file:
         original_json_data = file.read()
     assert json.loads(json_data) == json.loads(original_json_data)
