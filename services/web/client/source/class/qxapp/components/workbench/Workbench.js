@@ -199,6 +199,30 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       });
 
       playButton.addListener("execute", function() {
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+
+        // callback for incoming logs
+        if (!socket.slotExists("logger")) {
+          socket.on("logger", function(data) {
+            var d = JSON.parse(data);
+            var node = d["Node"];
+            var msg = d["Message"];
+            this.__updateLogger(node, msg);
+          });
+        }
+        socket.emit("logger");
+
+        // callback for incoming progress
+        if (!socket.slotExists("progress")) {
+          socket.on("progress", function(data) {
+            console.log("progress", data);
+            var d = JSON.parse(data);
+            var node = d["Node"];
+            var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
+            this.updateProgress(node, progress);
+          });
+        }
+
         if (this.getCanStart()) {
           this.__startPipeline();
         }
@@ -778,32 +802,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       console.debug("phase   : ", req.getPhase());
       console.debug("response: ", req.getResponse());
 
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-
-      // callback for incoming logs
-      if (!socket.slotExists("logger")) {
-        socket.on("logger", function(data) {
-          var d = JSON.parse(data);
-          var node = d["Node"];
-          var msg = d["Message"];
-          this.__updateLogger(node, msg);
-        });
-      }
-      socket.emit("logger");
-
-      // callback for incoming progress
-      if (!socket.slotExists("progress")) {
-        socket.on("progress", function(data) {
-          console.log("progress", data);
-          var d = JSON.parse(data);
-          var node = d["Node"];
-          var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
-          this.updateProgress(node, progress);
-        });
-      }
-
       // FIXME: do we need this?
       // register for log and progress
+      let socket = qxapp.wrappers.WebSocket.getInstance();
       socket.emit("register_for_log", "123");
       socket.emit("register_for_progress", "123");
 
