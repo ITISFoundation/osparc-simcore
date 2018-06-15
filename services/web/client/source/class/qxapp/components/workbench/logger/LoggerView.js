@@ -39,27 +39,21 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       flex: 1
     });
 
-    var logLevelButtons = new qx.ui.toolbar.Part();
-
-    let showDebugButton = new qx.ui.form.ToggleButton("Debug");
-    showDebugButton.logLevel = LOG_LEVEL.debug;
-    logLevelButtons.add(showDebugButton);
-
-    let showInfoButton = new qx.ui.form.ToggleButton("Info");
-    showInfoButton.logLevel = LOG_LEVEL.info;
-    logLevelButtons.add(showInfoButton);
-
-    let showWarnButton = new qx.ui.form.ToggleButton("Warning");
-    showWarnButton.logLevel = LOG_LEVEL.warning;
-    logLevelButtons.add(showWarnButton);
-
-    let showErrorButton = new qx.ui.form.ToggleButton("Error");
-    showErrorButton.logLevel = LOG_LEVEL.error;
-    logLevelButtons.add(showErrorButton);
+    let logLevelButtons = new qx.ui.toolbar.Part();
+    let logLevelBtns = [];
+    [
+      ["Debug", LOG_LEVEL.debug],
+      ["Info", LOG_LEVEL.info],
+      ["Warning", LOG_LEVEL.warning],
+      ["Error", LOG_LEVEL.error]
+    ].forEach(logPair => {
+      let filterButton = new qx.ui.form.ToggleButton(logPair[0]);
+      filterButton.logLevel = logPair[1];
+      logLevelButtons.add(filterButton);
+      logLevelBtns.push(filterButton);
+    });
 
     filterLayout.add(logLevelButtons);
-
-    let logLevelBtns = [showDebugButton, showInfoButton, showWarnButton, showErrorButton];
 
     let group = new qx.ui.form.RadioGroup();
     let defSelected = [];
