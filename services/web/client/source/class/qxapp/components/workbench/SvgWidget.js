@@ -37,7 +37,7 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
     __linksCanvas: null,
 
     __getControls: function(x1, y1, x2, y2) {
-      const offset = 50;
+      const offset = 60;
       return [{
         x: x1,
         y: y1
