@@ -66,7 +66,7 @@ FROM base-stage as development
 
 VOLUME /home/scu/client
 
-# 3. installs contribs and qx serve
+# 3. installs contribs and qx serve -> source-output/
 ENTRYPOINT ./scripts/entrypoint.sh
 
 # ------------------------------------------------------------------------------------------
@@ -81,7 +81,7 @@ RUN chmod +x scripts/*.sh
 COPY --chown=scu:scu compile.json compile.json
 RUN ./scripts/install-contrib.sh
 
-# 5. compiles source
+# 5. compiles source -> build-output/
 COPY --chown=scu:scu source source
 COPY --chown=scu:scu Manifest.json Manifest.json
 RUN qx compile --target=build

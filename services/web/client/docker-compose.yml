@@ -13,7 +13,7 @@ services:
       #   pip install docker-windows-volume-watcher
       #   docker-volume-watcher
       context: .
-      dockerfile: Dockerfile.build
+      dockerfile: Dockerfile
       target: ${BUILD_TARGET:-development}
     volumes:
       - '.:/home/scu/client'
