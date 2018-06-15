@@ -11,8 +11,13 @@ echo "- fonts dir : " ${FONTS_DIR}
 # Installs thems and iconfonts
 pushd ${CLIENT_DIR};
 
+echo "Updating contributions ..."
 qx contrib update
+
+echo "Listing contributions ..."
 qx contrib list
+
+echo "Installing contributions ..."
 qx contrib install ITISFoundation/qx-osparc-theme
 qx contrib install ITISFoundation/qx-iconfont-material
 qx contrib install ITISFoundation/qx-iconfont-fontawesome5
