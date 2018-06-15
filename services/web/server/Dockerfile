@@ -74,8 +74,8 @@ ENV DIRECTOR_PORT=8001
 COPY --from=qx-stage /home/node/src/source-output ${SIMCORE_WEB_OUTDIR}
 
 # packages
-#COPY $server_dir/requirements/common.txt /usr/src/requirements/common.txt
-#RUN pip3 install --no-cache-dir -r /usr/src/requirements/common.txt
+COPY $server_dir/requirements/common.txt /usr/src/requirements/common.txt
+RUN pip3 install --no-cache-dir -r /usr/src/requirements/common.txt
 
 EXPOSE 8080
 
@@ -88,12 +88,12 @@ ARG server_dir=web/server
 ENV SIMCORE_WEB_CONFIG=development
 
 COPY $server_dir/requirements/dev.txt /usr/src/requirements/dev.txt
-RUN pip3 install --no-cache-dir -r /usr/src/requirements/dev.txt \
-  && python --version \
-  && pip list --format=columns \
-  && echo \
-  && ls -l $PWD
+RUN pip3 install --no-cache-dir -r /usr/src/requirements/dev.txt
+RUN python --version && \
+    pip list --format=columns && \
+    echo; ls -l $PWD
 
+# TODO: web should re-serve upon changes on code (both client)
 CMD ["python", "-m", "aiohttp.web", "-H", "0.0.0.0", "-P", "8080", "server:create_app"]
 
 

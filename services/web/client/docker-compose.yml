@@ -1,7 +1,7 @@
 version: '3.4'
 services:
   qx:
-    # BUILD_TARGET in [development, production]
+    # BUILD_TARGET in [development, build]
     image: client_qx:${BUILD_TARGET:-development}
     build:
       # TODO: development version doesn't work in Windows.
@@ -13,7 +13,7 @@ services:
       #   pip install docker-windows-volume-watcher
       #   docker-volume-watcher
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.build
       target: ${BUILD_TARGET:-development}
     volumes:
       - '.:/home/scu/client'
