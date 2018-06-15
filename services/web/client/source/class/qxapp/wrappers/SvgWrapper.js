@@ -3,7 +3,6 @@
  * @ignore(SVG)
  */
 
-/* global document */
 /* global SVG */
 /* eslint new-cap: [2, {capIsNewExceptions: ["SVG", "M", "C"]}] */
 
@@ -109,26 +108,11 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
         curve.attr({
           stroke: color
         });
-        const curveEleId = curve.node.id;
-        let link = document.getElementById(curveEleId);
-        if (link) {
-          [
-            "marker-start",
-            "marker-end"
-          ].forEach(markerAttr => {
-            let markerId = link.getAttribute(markerAttr);
-            if (markerId) {
-              markerId = markerId.replace("url(#", "");
-              markerId = markerId.replace(")", "");
-              let marker = document.getElementById(markerId);
-              if (marker) {
-                let childNodes = marker.childNodes;
-                for (let i=0; i<childNodes.length; i++) {
-                  let childNode = childNodes[i];
-                  childNode.setAttribute("fill", color);
-                }
-              }
-            }
+        if (curve.markers) {
+          curve.markers.forEach(markerDiv => {
+            markerDiv.node.childNodes.forEach(node => {
+              node.setAttribute("fill", color);
+            });
           });
         }
       }

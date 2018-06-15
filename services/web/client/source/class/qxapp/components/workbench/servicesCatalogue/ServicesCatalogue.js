@@ -34,7 +34,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     // TODO: OM & PC replace this with delegates
     let rawData2 = [];
     for (let i = 0; i < this.__allServices.length; i++) {
-      rawData2.push(this.__allServices[i].label);
+      rawData2.push(this.__allServices[i].name);
     }
     this.__rawData = new qx.data.Array(rawData2);
 
@@ -115,14 +115,14 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
         if (this.__contextPort.isInput === true) {
           for (let j = 0; j < this.__allServices[i].outputs.length; j++) {
             if (this.__allServices[i].outputs[j].type === this.__contextPort.portType) {
-              newData.push(this.__allServices[i].label);
+              newData.push(this.__allServices[i].name);
               break;
             }
           }
         } else {
           for (let j = 0; j < this.__allServices[i].inputs.length; j++) {
             if (this.__allServices[i].inputs[j].type === this.__contextPort.portType) {
-              newData.push(this.__allServices[i].label);
+              newData.push(this.__allServices[i].name);
               break;
             }
           }
@@ -150,7 +150,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
       let selection = this.__list.getSelection();
       let selectedLabel = selection[0].getLabel();
       for (let i = 0; i < this.__allServices.length; i++) {
-        if (selectedLabel === this.__allServices[i].label) {
+        if (selectedLabel === this.__allServices[i].name) {
           const eData = {
             service: this.__allServices[i],
             contextNodeId: this.__contextNodeId,

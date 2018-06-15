@@ -36,8 +36,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     this.__desktop.addListener("changeActiveWindow", function(e) {
       let winEmitting = e.getData();
-      if (winEmitting && winEmitting.isActive()) {
+      if (winEmitting && winEmitting.isActive() && winEmitting.classname.includes("workbench.Node")) {
         this.__selectedItemChanged(winEmitting.getNodeId());
+      } else {
+        this.__selectedItemChanged(null);
       }
     }, this);
 
@@ -54,8 +56,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     }, this);
 
 
+    this.__logger = new qxapp.components.workbench.logger.LoggerView();
+    this.__desktop.add(this.__logger);
+
     this.__nodes = [];
     this.__links = [];
+
+    let loggerButton = this.__getShowLoggerButton();
+    this.add(loggerButton, {
+      left: 20,
+      bottom: 20
+    });
 
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
     this.add(buttonContainer, {
@@ -108,12 +119,32 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __links: null,
     __desktop: null,
     __svgWidget: null,
+    __logger: null,
     __tempLinkNodeId: null,
     __tempLinkPortId: null,
     __tempLinkRepr: null,
     __pointerPosX: null,
     __pointerPosY: null,
     __selectedItemId: null,
+
+    __getShowLoggerButton: function() {
+      const icon = "@FontAwesome5Solid/list-alt/32";
+      let loggerButton = new qx.ui.form.Button(null, icon);
+      loggerButton.set({
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE
+      });
+      loggerButton.addListener("execute", function() {
+        const bounds = loggerButton.getBounds();
+        loggerButton.hide();
+        this.__logger.moveTo(bounds.left, bounds.top+bounds.height - this.__logger.getHeight());
+        this.__logger.open();
+        this.__logger.addListenerOnce("close", function() {
+          loggerButton.show();
+        }, this);
+      }, this);
+      return loggerButton;
+    },
 
     __getPlusButton: function() {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.utils.Placeholders.getIcon("fa-plus", 32);
@@ -233,7 +264,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       nodesList.forEach(nodeMetaData => {
         let nodeButton = new qx.ui.menu.Button(nodeMetaData.label);
-
         nodeButton.addListener("execute", function() {
           let nodeItem = this.__createNode(nodeMetaData);
           this.__addNodeToWorkbench(nodeItem);
@@ -663,7 +693,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       for (let i = 0; i < this.__nodes.length; i++) {
         let node = {};
         node["uuid"] = this.__nodes[i].getNodeId();
-        node["serviceId"] = this.__nodes[i].getMetadata().key;
+        node["key"] = this.__nodes[i].getMetadata().key;
+        node["tag"] = this.__nodes[i].getMetadata().tag;
+        node["name"] = this.__nodes[i].getMetadata().name;
         node["inputs"] = this.__nodes[i].getMetadata().inputs;
         node["outputs"] = this.__nodes[i].getMetadata().outputs;
         node["settings"] = this.__nodes[i].getMetadata().settings;
@@ -723,9 +755,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __startPipeline: function() {
       // ui start pipeline
       this.__clearProgressData();
-      for (let i = 0; i < this.__nodes.length; i++) {
-        this.__nodes[i].setProgress(1);
-      }
 
       // post pipeline
       let currentPipeline = this.__serializeData();
@@ -768,7 +797,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           console.log("progress", data);
           var d = JSON.parse(data);
           var node = d["Node"];
-          var progress = d["Progress"];
+          var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
           this.updateProgress(node, progress);
         });
       }
@@ -778,6 +807,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       socket.emit("register_for_log", "123");
       socket.emit("register_for_progress", "123");
 
+      this.__logger.info("Workbench", "Starting pipeline");
+
       this.setCanStart(false);
     },
 
@@ -785,12 +816,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__clearProgressData();
 
       this.setCanStart(true);
+
+      this.__logger.warn("Workbench", "Stopping pipeline");
     },
 
     __updateLogger: function(nodeId, msg) {
-      // TODO
-      let newLogText = nodeId + " reports: " + msg + "\n";
-      console.log("Logger", newLogText);
+      let node = this.__getNode(nodeId);
+      if (node) {
+        this.__logger.info(node.getCaption(), msg);
+      }
     },
 
     __clearProgressData: function() {
