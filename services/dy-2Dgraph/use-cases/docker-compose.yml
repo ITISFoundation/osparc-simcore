@@ -1,0 +1,30 @@
+version: '3.4'
+services:
+  cc-single-cell-0d:
+    build:
+      context: cc
+      args: 
+        NOTEBOOK_NAME: cc_single_cell.ipynb
+        NOTEBOOK_FOLDER_NAME: cc-single-cell
+    ports:
+      - '1234:8888'
+  #--------------------------------------------------------------------
+  cc-1d:
+    build:
+      context: cc
+      args: 
+        NOTEBOOK_NAME: cc_oned.ipynb
+        NOTEBOOK_FOLDER_NAME: cc-oned
+    ports:
+      - '1235:8888'
+  #--------------------------------------------------------------------
+  cc-2d:
+    build:
+      context: cc
+      args: 
+        NOTEBOOK_NAME: cc_2d.ipynb
+        NOTEBOOK_FOLDER_NAME: cc-twod
+    ports:
+      - '1236:8888'
+  #--------------------------------------------------------------------
+  

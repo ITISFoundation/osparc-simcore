@@ -2,6 +2,9 @@ FROM simcore/services/jupyter-base-notebook:latest
 
 LABEL maintainer="sanderegg"
 
+ARG NOTEBOOK_NAME=cc_oned.ipynb
+ARG NOTEBOOK_FOLDER_NAME=cc-oned
+
 # call date -u +”%Y-%m-%dT%H:%M:%SZ” in a bash
 ARG VCS_REF
 ARG BUILD_DATE
@@ -30,6 +33,8 @@ USER $NB_USER
 
 # install the plotly, pandas, the jupyter extensions
 RUN pip install plotly \
+    matplotlib \
+    tqdm \
     pandas \
     jupyter_contrib_nbextensions \
     jupyter_dashboards && \
@@ -38,8 +43,8 @@ RUN pip install plotly \
     jupyter nbextension enable hide_input/main && \
     jupyter nbextension enable init_cell/main
 
-ARG NOTEBOOK_NAME=cc_oned.ipynb
-COPY --chown=jovyan:users ${NOTEBOOK_NAME} .
+# copy the notebook in
+COPY --chown=jovyan:users ${NOTEBOOK_FOLDER_NAME}/${NOTEBOOK_NAME} .
 RUN jupyter trust ${NOTEBOOK_NAME}
 
 # download the simcore_sdk pacakge
