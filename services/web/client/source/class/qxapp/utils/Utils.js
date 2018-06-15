@@ -30,6 +30,10 @@ qx.Class.define("qxapp.utils.Utils", {
         return true;
       }
       return false;
+    },
+
+    getKeyByValue(object, value) {
+      return Object.keys(object).find(key => object[key] === value);
     }
   }
 });

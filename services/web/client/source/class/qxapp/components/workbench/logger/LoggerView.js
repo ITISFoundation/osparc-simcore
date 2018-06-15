@@ -189,24 +189,8 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     },
 
     __addLevelColorTag: function(what, logLevel) {
-      let logColor = null;
-      switch (logLevel) {
-        case LOG_LEVEL.debug:
-          logColor = qxapp.theme.Color.colors["logger-debug-message"];
-          break;
-        case LOG_LEVEL.info:
-          logColor = qxapp.theme.Color.colors["logger-info-message"];
-          break;
-        case LOG_LEVEL.warning:
-          logColor = qxapp.theme.Color.colors["logger-warning-message"];
-          break;
-        case LOG_LEVEL.error:
-          logColor = qxapp.theme.Color.colors["logger-error-message"];
-          break;
-        default:
-          logColor = qxapp.theme.Color.colors["logger-info-message"];
-          break;
-      }
+      const keyStr = String(qxapp.utils.Utils.getKeyByValue(LOG_LEVEL, logLevel));
+      const logColor = qxapp.theme.Color.colors["logger-"+keyStr+"-message"];
       return ("<font color=" + logColor +">" + what + "</font>");
     },
 
