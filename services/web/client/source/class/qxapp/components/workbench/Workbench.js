@@ -177,7 +177,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             var node = d["Node"];
             var msg = d["Message"];
             this.__updateLogger(node, msg);
-          });
+          }, this);
         }
 
         // callback for incoming logs
@@ -186,9 +186,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             console.log("progress", data);
             var d = JSON.parse(data);
             var node = d["Node"];
-            var progress = d["Progress"];
+            var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
             this.updateProgress(node, progress);
-          });
+          }, this);
         }
 
         if (this.getCanStart()) {
@@ -257,7 +257,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       nodesList.forEach(nodeMetaData => {
         let nodeButton = new qx.ui.menu.Button(nodeMetaData.label);
-
         nodeButton.addListener("execute", function() {
           let nodeItem = this.__createNode(nodeMetaData);
           this.__addNodeToWorkbench(nodeItem);
@@ -687,7 +686,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       for (let i = 0; i < this.__nodes.length; i++) {
         let node = {};
         node["uuid"] = this.__nodes[i].getNodeId();
-        node["serviceId"] = this.__nodes[i].getMetadata().key;
+        node["key"] = this.__nodes[i].getMetadata().key;
+        node["tag"] = this.__nodes[i].getMetadata().tag;
+        node["name"] = this.__nodes[i].getMetadata().name;
         node["inputs"] = this.__nodes[i].getMetadata().inputs;
         node["outputs"] = this.__nodes[i].getMetadata().outputs;
         node["settings"] = this.__nodes[i].getMetadata().settings;
