@@ -34,6 +34,7 @@
 
   "libraries": [
     "../qooxdoo-sdk/framework",
+    "./UploadMgr",
     "."
   ],
 

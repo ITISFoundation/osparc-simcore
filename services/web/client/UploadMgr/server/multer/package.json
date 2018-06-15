@@ -1,0 +1,19 @@
+{
+  "name": "uploadmgr-multer-demo",
+  "version": "1.0.0",
+  "description": "Demo of using UploadMgr with multer  : https://github.com/johnspackman/UploadMgr",
+  "author": "John Spackman <john.spackman@zenesis.com",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/johnspackman/UploadMgr"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.7.1",
+    "express": "^4.13.4",
+    "multer": "^1.1.0"
+  }
+}
