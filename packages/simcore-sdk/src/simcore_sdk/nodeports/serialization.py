@@ -26,7 +26,7 @@ def create_from_json(json_reader_cb, json_writer_cb=None, auto_update=False):
 
     _LOGGER.debug("Creating Nodeports object with json reader: %s, json writer: %s", json_reader_cb, json_writer_cb)
     if json_reader_cb is None:
-        raise exceptions.SimcoreException("json reader callback is empty, this is not allowed")
+        raise exceptions.NodeportsException("json reader callback is empty, this is not allowed")
     nodeports_obj = json.loads(json_reader_cb(), object_hook=nodeports_decoder)
     nodeports_obj.json_reader = json_reader_cb
     nodeports_obj.json_writer = json_writer_cb

@@ -14,7 +14,7 @@ class Nodeports(object):
     """This class allow the client to access the inputs and outputs assigned to the node."""
     _version = "0.1"
     def __init__(self, version, inputs=None, outputs=None):
-        _LOGGER.debug("Initialising Simcore object with version %s, inputs %s and outputs %s", version, inputs, outputs)
+        _LOGGER.debug("Initialising Nodeports object with version %s, inputs %s and outputs %s", version, inputs, outputs)
         if self._version != version:
             raise exceptions.WrongProtocolVersionError(self._version, version)
         
@@ -35,7 +35,7 @@ class Nodeports(object):
         self.__json_reader = None
         self.__json_writer = None
         self.autoupdate = False
-        _LOGGER.debug("Initialised Simcore object with version %s, inputs %s and outputs %s", version, inputs, outputs)
+        _LOGGER.debug("Initialised Nodeports object with version %s, inputs %s and outputs %s", version, inputs, outputs)
         
     @property
     def inputs(self):
@@ -88,12 +88,12 @@ class Nodeports(object):
     def update_from_json(self):
         _LOGGER.debug("Updating json configuration")
         change_notifier = self.__outputs.change_notifier
-        updated_simcore = serialization.create_from_json(self.json_reader)        
-        self.__inputs = updated_simcore.inputs
-        self.__outputs = updated_simcore.outputs
+        updated_nodeports = serialization.create_from_json(self.json_reader)        
+        self.__inputs = updated_nodeports.inputs
+        self.__outputs = updated_nodeports.outputs
         self.__outputs.change_notifier = change_notifier
         _LOGGER.debug("Updated json configuration")
     
     def save_to_json(self):
-        _LOGGER.info("Saving Simcore object to json")
+        _LOGGER.info("Saving Nodeports object to json")
         serialization.save_to_json(self)

@@ -1,7 +1,7 @@
 # pylint: disable=W0613, W0621, C0111
 import pytest
 
-def test_default_json_decoding(default_simcore_configuration):
+def test_default_json_decoding(default_nodeports_configuration):
     from simcore_sdk.nodeports import PORTS
 
     assert len(PORTS.inputs) == 2
@@ -27,7 +27,7 @@ def test_default_json_decoding(default_simcore_configuration):
     assert PORTS.outputs[0].value == "null"
     assert PORTS.outputs[0].timestamp == "2018-05-23T15:34:53.511Z"
 
-def test_default_json_encoding(default_simcore_configuration): 
+def test_default_json_encoding(default_nodeports_configuration): 
     from simcore_sdk.nodeports import PORTS
     from simcore_sdk.nodeports.serialization import _NodeportsEncoder
     import json
@@ -40,12 +40,12 @@ def test_default_json_encoding(default_simcore_configuration):
         original_json_data = file.read()
     assert json.loads(json_data) == json.loads(original_json_data)
 
-def test_wrong_version(special_simcore_configuration):
+def test_wrong_version(special_nodeports_configuration):
     import helpers
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
     #change version to a different one
     special_configuration["version"] = "0.0"
-    special_simcore_configuration(special_configuration)
+    special_nodeports_configuration(special_configuration)
 
     from simcore_sdk.nodeports import exceptions    
     with pytest.raises(exceptions.WrongProtocolVersionError, message="Expecting WrongProtocolVersionError") as excinfo:
@@ -53,9 +53,9 @@ def test_wrong_version(special_simcore_configuration):
         print(PORTS.inputs)
     assert "Expecting version 0.1, found version 0.0" in str(excinfo.value)
 
-def test_invalid_configuration(special_simcore_configuration):
+def test_invalid_configuration(special_nodeports_configuration):
     special_configuration = {"whatever":"stuff"}
-    special_simcore_configuration(special_configuration)
+    special_nodeports_configuration(special_configuration)
 
     from simcore_sdk.nodeports import exceptions
     with pytest.raises(exceptions.InvalidProtocolError, message="Expecting WrongProtocol") as excinfo:
@@ -63,11 +63,11 @@ def test_invalid_configuration(special_simcore_configuration):
         print(PORTS.inputs)
     assert "Invalid protocol used in" in str(excinfo.value)
 
-def test_noinputsoutputs(special_simcore_configuration):
+def test_noinputsoutputs(special_nodeports_configuration):
     # create empty configuration
     import helpers
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
-    special_simcore_configuration(special_configuration)
+    special_nodeports_configuration(special_configuration)
 
     from simcore_sdk.nodeports import PORTS
     from simcore_sdk.nodeports import exceptions

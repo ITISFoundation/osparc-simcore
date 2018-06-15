@@ -12,16 +12,16 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "helpers"))
 
 
 @pytest.fixture()
-def default_simcore_configuration():
-    """initialise simcore with default configuration file
+def default_nodeports_configuration():
+    """initialise nodeports with default configuration file
     """
     default_config_path = os.path.join(os.path.dirname(
         os.path.realpath(__file__)), r"../src/simcore_sdk/config/connection_config.json")
     os.environ["SIMCORE_CONFIG_PATH"] = default_config_path    
 
 @pytest.fixture()
-def special_simcore_configuration(request):
-    """allows for initialisation of simcore with custom configuration file.
+def special_nodeports_configuration(request):
+    """allows for initialisation of nodeports with custom configuration file.
     
     Arguments:
         request {internal pytest object} -- internal
@@ -31,7 +31,7 @@ def special_simcore_configuration(request):
     """
 
     def create_special_config(configuration):
-        """sets the special configuration to be used by simcore
+        """sets the special configuration to be used by nodeports
         
         Arguments:
             configuration {dict} -- json configuration to be set
@@ -61,7 +61,7 @@ def special_simcore_configuration(request):
         with open(temp_file.name, "w") as file_pointer:
             json.dump(config, file_pointer)
         assert os.path.exists(temp_file.name)
-        # set the environment variable such that simcore will use the special file
+        # set the environment variable such that nodeports will use the special file
         os.environ["SIMCORE_CONFIG_PATH"] = temp_file.name
         return temp_file.name
     return create_special_config

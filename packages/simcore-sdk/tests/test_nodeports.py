@@ -3,21 +3,21 @@
 #pylint: disable=C0111
 import pytest
 
-def test_access_with_key(default_simcore_configuration): # pylint: disable=W0613, W0621
+def test_access_with_key(default_nodeports_configuration): # pylint: disable=W0613, W0621
     from simcore_sdk.nodeports import PORTS
 
     assert PORTS.inputs["in_1"] == PORTS.inputs[0]
     assert PORTS.inputs["in_5"] == PORTS.inputs[1]
     assert PORTS.outputs["out_1"] == PORTS.outputs[0]
 
-def test_port_value_getters(default_simcore_configuration): # pylint: disable=W0613, W0621
+def test_port_value_getters(default_nodeports_configuration): # pylint: disable=W0613, W0621
     from simcore_sdk.nodeports import PORTS
 
     assert PORTS.inputs["in_1"].get() == "/home/jovyan/data/outputControllerOut.dat"
     assert PORTS.inputs["in_5"].get() == 666
     assert PORTS.outputs["out_1"].get() is None
 
-def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0613, W0621
+def test_port_value_setters(special_nodeports_configuration): # pylint: disable=W0613, W0621
     import helpers
     special_config = helpers.get_empty_config() #pylint: disable=E1101
     special_config["outputs"].append({
@@ -28,7 +28,7 @@ def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0
         "value": "null",
         "timestamp": "2018-05-22T19:34:53.511Z"
     })
-    special_simcore_configuration(special_config)
+    special_nodeports_configuration(special_config)
     from simcore_sdk.nodeports import PORTS
 
     assert PORTS.outputs["out_15"].get() is None
@@ -37,10 +37,10 @@ def test_port_value_setters(special_simcore_configuration): # pylint: disable=W0
     assert PORTS.outputs["out_15"].get() == 26
 
 
-def test_adding_new_ports(special_simcore_configuration):
+def test_adding_new_ports(special_nodeports_configuration):
     import helpers
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
-    config_file = special_simcore_configuration(special_configuration)
+    config_file = special_nodeports_configuration(special_configuration)
     from simcore_sdk.nodeports import PORTS
     # check empty configuration
     assert not PORTS.inputs
@@ -93,7 +93,7 @@ def test_adding_new_ports(special_simcore_configuration):
     assert PORTS.outputs[0].value == "null"
     assert PORTS.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
-def test_removing_ports(special_simcore_configuration):
+def test_removing_ports(special_nodeports_configuration):
     import helpers    
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
     # add inputs
@@ -130,7 +130,7 @@ def test_removing_ports(special_simcore_configuration):
         "timestamp": "2018-05-22T19:34:53.511Z"
     })
 
-    config_file = special_simcore_configuration(special_configuration)
+    config_file = special_nodeports_configuration(special_configuration)
     from simcore_sdk.nodeports import PORTS
     assert len(PORTS.inputs) == 2
     assert len(PORTS.outputs) == 2
@@ -160,7 +160,7 @@ def test_removing_ports(special_simcore_configuration):
     assert PORTS.outputs[0].value == "15"
     assert PORTS.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
-def test_changing_inputs_error(default_simcore_configuration): # pylint: disable=W0613
+def test_changing_inputs_error(default_nodeports_configuration): # pylint: disable=W0613
     from simcore_sdk.nodeports import PORTS
     from simcore_sdk.nodeports.nodeports import DataItemsList
     from simcore_sdk.nodeports import exceptions
@@ -181,7 +181,7 @@ def test_changing_inputs_error(default_simcore_configuration): # pylint: disable
         PORTS.inputs[1] = new_input
     assert "Trying to modify read-only object" in str(excinfo.value)
 
-def test_changing_outputs_error(default_simcore_configuration): # pylint: disable=W0613
+def test_changing_outputs_error(default_nodeports_configuration): # pylint: disable=W0613
     from simcore_sdk.nodeports import PORTS
     from simcore_sdk.nodeports.nodeports import DataItemsList
     from simcore_sdk.nodeports import exceptions
