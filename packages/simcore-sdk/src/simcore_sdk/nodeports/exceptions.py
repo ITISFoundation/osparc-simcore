@@ -1,19 +1,19 @@
 """Defines the different exceptions that may arise in the nodeports package"""
-class SimcoreException(Exception):
+class NodeportsException(Exception):
     """Basic exception for errors raised in nodeports"""
     def __init__(self, msg=None):
         if msg is None:
             msg = "An error occured in simcore"
-        super(SimcoreException, self).__init__(msg)
+        super(NodeportsException, self).__init__(msg)
 
-class ReadOnlyError(SimcoreException):
+class ReadOnlyError(NodeportsException):
     """Trying to modify read-only object"""
     def __init__(self, obj):
         msg = "Trying to modify read-only object %s" % (obj)
         super(ReadOnlyError, self).__init__(msg)
         self.obj = obj
 
-class WrongProtocolVersionError(SimcoreException):
+class WrongProtocolVersionError(NodeportsException):
     """Using wrong protocol version"""
     def __init__(self, expected_version, found_version):
         msg = "Expecting version %s, found version %s" % (expected_version, found_version)
@@ -21,21 +21,21 @@ class WrongProtocolVersionError(SimcoreException):
         self.expected_version = expected_version
         self.found_version = found_version
 
-class UnboundPortError(SimcoreException, IndexError):
+class UnboundPortError(NodeportsException, IndexError):
     """Accessed port is not configured"""
     def __init__(self, port_index, msg=None):
         msg = "No port bound at index %s" % (port_index)
         super(UnboundPortError, self).__init__(msg)
         self.port_index = port_index
 
-class InvalidKeyError(SimcoreException):
+class InvalidKeyError(NodeportsException):
     """Accessed key does not exist"""
     def __init__(self, item_key, msg=None):
         msg = "No port bound with key %s" % (item_key)
         super(InvalidKeyError, self).__init__(msg)
         self.item_key = item_key
 
-class InvalidProtocolError(SimcoreException):
+class InvalidProtocolError(NodeportsException):
     """Invalid protocol used"""
     def __init__(self, dct):
         msg = "Invalid protocol used in %s" % (dct)

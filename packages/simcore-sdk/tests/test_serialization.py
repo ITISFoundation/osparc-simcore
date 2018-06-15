@@ -29,11 +29,11 @@ def test_default_json_decoding(default_simcore_configuration):
 
 def test_default_json_encoding(default_simcore_configuration): 
     from simcore_sdk.nodeports import PORTS
-    from simcore_sdk.nodeports.serialization import _SimcoreEncoder
+    from simcore_sdk.nodeports.serialization import _NodeportsEncoder
     import json
     import os
 
-    json_data = json.dumps(PORTS, cls=_SimcoreEncoder)
+    json_data = json.dumps(PORTS, cls=_NodeportsEncoder)
     default_config_path = os.path.join(os.path.dirname(
         os.path.realpath(__file__)), r"../src/simcore_sdk/config/connection_config.json")
     with open(default_config_path) as file:

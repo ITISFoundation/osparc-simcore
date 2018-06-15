@@ -162,7 +162,7 @@ def test_removing_ports(special_simcore_configuration):
 
 def test_changing_inputs_error(default_simcore_configuration): # pylint: disable=W0613
     from simcore_sdk.nodeports import PORTS
-    from simcore_sdk.nodeports.simcore import DataItemsList
+    from simcore_sdk.nodeports.nodeports import DataItemsList
     from simcore_sdk.nodeports import exceptions
 
     with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
@@ -183,7 +183,7 @@ def test_changing_inputs_error(default_simcore_configuration): # pylint: disable
 
 def test_changing_outputs_error(default_simcore_configuration): # pylint: disable=W0613
     from simcore_sdk.nodeports import PORTS
-    from simcore_sdk.nodeports.simcore import DataItemsList
+    from simcore_sdk.nodeports.nodeports import DataItemsList
     from simcore_sdk.nodeports import exceptions
 
     with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
