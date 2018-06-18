@@ -21,7 +21,7 @@ services:
       target: development
     volumes:
       - ./web/server:/home/scu/server
-      - ./web/client:/home/scu/client
+      - ./web/client/source-output:/home/scu/client
       - ../packages/simcore-sdk/src:/home/scu/packages
     depends_on:
       - webclient
