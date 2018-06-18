@@ -1,0 +1,79 @@
+#: qxapp/Preferences.js:7
+msgid "Account Settings"
+msgstr ""
+
+#: qxapp/components/workbench/SettingsView.js:42
+msgid "Inputs"
+msgstr ""
+
+#: qxapp/components/workbench/SettingsView.js:47
+msgid "Done"
+msgstr ""
+
+#: qx/ui/form/validation/Manager.js:37
+msgid "This field is required"
+msgstr ""
+
+#: qx/ui/table/columnmodel/Resize.js:197
+msgid "Reset column widths"
+msgstr ""
+
+#: qx/ui/table/Table.js:1974
+msgid "one row"
+msgid_plural "%1 rows"
+msgstr[0] ""
+msgstr[1] ""
+
+#: qx/ui/table/Table.js:1976
+msgid "one of one row"
+msgid_plural "%1 of %2 rows"
+msgstr[0] ""
+msgstr[1] ""
+
+#: qx/util/Validate.js:90
+msgid "%1 is not a number."
+msgstr ""
+
+#: qx/util/Validate.js:129
+msgid "'%1' is not an email address."
+msgstr ""
+
+#: qx/util/Validate.js:166
+msgid "%1 is not a string."
+msgstr ""
+
+#: qx/util/Validate.js:202
+msgid "%1 is not an url."
+msgstr ""
+
+#: qx/util/Validate.js:243
+msgid "%1 is not a color! %2"
+msgstr ""
+
+#: qx/util/Validate.js:267
+msgid "%1 is not in the range from [%2, %3]."
+msgstr ""
+
+#: qx/util/Validate.js:290
+msgid "%1 is not in %2"
+msgstr ""
+
+#: qx/util/Validate.js:314
+msgid "%1 does not fit %2."
+msgstr ""
+
+#: qx/ui/control/DateChooser.js:258
+msgid "Last year"
+msgstr ""
+
+#: qx/ui/control/DateChooser.js:270
+msgid "Last month"
+msgstr ""
+
+#: qx/ui/control/DateChooser.js:282
+msgid "Next month"
+msgstr ""
+
+#: qx/ui/control/DateChooser.js:294
+msgid "Next year"
+msgstr ""

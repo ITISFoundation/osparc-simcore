@@ -1,3 +1,4 @@
+/* eslint no-warning-comments: "off" */
 qx.Class.define("qxapp.dev.fakesrv.restapi.User", {
   type: "static",
 
@@ -16,6 +17,7 @@ qx.Class.define("qxapp.dev.fakesrv.restapi.User", {
         let data = qxapp.dev.fakesrv.db.User.createMock(userId);
         let body = qx.lang.Json.stringify(data);
         request.respond(status, headers, body);
+        // FIXME: unite api/v1/uisers
       }
     }, {
       method: "GET",

@@ -1,4 +1,4 @@
-
+/* eslint no-warning-comments: "off" */
 qx.Class.define("qxapp.dev.fakesrv.restapi.Authentication", {
   type: "static",
 
@@ -14,7 +14,7 @@ qx.Class.define("qxapp.dev.fakesrv.restapi.Authentication", {
         let body = null;
 
         const login = qx.lang.Json.parse(request.requestBody);
-        //TODO: validate json!
+        // TODO: validate json!
 
         // if login.user exists:
         //  if verified:
@@ -22,11 +22,16 @@ qx.Class.define("qxapp.dev.fakesrv.restapi.Authentication", {
         //      if suceeds:
         //        return token
 
-        if (login.username=="bizzy" && login.password=="z43") {
+        const DUMMY_EMAIL = "bizzy@itis.ethz.ch";
+        const DUMMY_PASS = "z43";
+        const DUMMY_USERID = 1;
+        const DUMMY_USERTOKEN = "eeeaee5e-9b6e-475b-abeb-66a000be8d03";
+
+        if (login.username == DUMMY_EMAIL && login.password == DUMMY_PASS) {
           status = 200;
           body = qx.lang.Json.stringify({
-            userId: 0,
-            token: "1234"
+            userId: DUMMY_USERID,
+            token: DUMMY_USERTOKEN
           });
         }
 

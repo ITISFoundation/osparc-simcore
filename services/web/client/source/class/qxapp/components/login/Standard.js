@@ -41,6 +41,7 @@ qx.Class.define("qxapp.components.login.Standard", {
    */
   members: {
     __form: null,
+    __userId: null,
     __token: null,
     __info: null,
 
@@ -143,31 +144,26 @@ qx.Class.define("qxapp.components.login.Standard", {
     },
 
     __onLoginSucceed: function(e) {
-      let req = e.getTarget();
-      console.debug("Everything went fine!!");
-      console.debug("status  :", req.getStatus());
-      console.debug("phase   :", req.getPhase());
-      console.debug("response: ", req.getResponse());
+      const req = e.getTarget();
+      console.debug("Login suceeded:", "status  :", req.getStatus(), "phase   :", req.getPhase(), "response: ", req.getResponse());
 
       this.__info = req.getResponse();
-      this.__token = req.getResponse().userToken;
+      this.__userId = req.getResponse().userId;
+      this.__userToken = req.getResponse().token;
 
-      // TODO: implement token-based authentication: we can request token and from that moment on,
-      // just use that...
-
-      // TODO: fire success logged in and store token??
       this.fireDataEvent("login", true);
     },
 
     __onLoginFailed: function(e) {
-      // Display error page!
-      let req = e.getTarget();
-      console.debug("Something went wrong!!");
-      console.debug("status  :", req.getStatus());
-      console.debug("phase   :", req.getPhase());
-      console.debug("response: ", req.getResponse());
+      const req = e.getTarget();
+      console.debug("Login failed:", "status  :", req.getStatus(), "phase   :", req.getPhase(), "response: ", req.getResponse());
 
-      // TODO: invalidate form view and flash error!
+      let msg = null;
+      if (req.getStatus() != 401) {
+        msg = "Unable to login. Server returned " + String(req.getStatus());
+      }
+      this.__form.flashInvalidLogin(msg);
+
       this.fireDataEvent("login", false);
     }
 
