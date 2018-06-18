@@ -6,8 +6,6 @@
 
 /* global window */
 /* global io */
-/* eslint valid-jsdoc: "error" */
-/* eslint-env es6 */
 
 qx.Class.define("qxapp.wrappers.WebSocket", {
   extend: qx.core.Object,
