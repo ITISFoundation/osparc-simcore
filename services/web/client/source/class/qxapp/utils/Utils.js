@@ -10,11 +10,30 @@ qx.Class.define("qxapp.utils.Utils", {
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     },
 
+    getRandomColor: function() {
+      let letters = "0123456789ABCDEF";
+      let color = "#";
+      for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    },
+
+    getColorLuminance: function(hexColor) {
+      const rgb = qx.util.ColorUtil.hexStringToRgb(hexColor);
+      const luminance = 0.2126*(rgb[0]/255) + 0.7152*(rgb[1]/255) + 0.0722*(rgb[2]/255);
+      return luminance;
+    },
+
     inHouse: function(password) {
       if (password === "itis") {
         return true;
       }
       return false;
+    },
+
+    getKeyByValue(object, value) {
+      return Object.keys(object).find(key => object[key] === value);
     }
   }
 });

@@ -34,7 +34,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     // TODO: OM & PC replace this with delegates
     let rawData2 = [];
     for (let i = 0; i < this.__allServices.length; i++) {
-      rawData2.push(this.__allServices[i].label);
+      rawData2.push(this.__allServices[i].name);
     }
     this.__rawData = new qx.data.Array(rawData2);
 
@@ -42,6 +42,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     this.add(this.__list, {
       flex: 1
     });
+    this.__list.setSelectionMode("one");
 
     // create the controller
     this.__controller = new qx.data.controller.List(this.__rawData, this.__list);
@@ -76,6 +77,18 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     buttonsLayout.add(cancelBtn);
 
     this.add(buttonsLayout);
+
+    // Listen to "Enter" key
+    this.addListener("keypress", function(keyEvent) {
+      if (keyEvent.getKeyIdentifier() === "Enter") {
+        this.__onAddService();
+      }
+    }, this);
+
+    // Listen to "Double Click" key
+    this.__list.addListener("dblclick", function(mouseEvent) {
+      this.__onAddService();
+    }, this);
   },
 
   events: {
@@ -102,14 +115,14 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
         if (this.__contextPort.isInput === true) {
           for (let j = 0; j < this.__allServices[i].outputs.length; j++) {
             if (this.__allServices[i].outputs[j].type === this.__contextPort.portType) {
-              newData.push(this.__allServices[i].label);
+              newData.push(this.__allServices[i].name);
               break;
             }
           }
         } else {
           for (let j = 0; j < this.__allServices[i].inputs.length; j++) {
             if (this.__allServices[i].inputs[j].type === this.__contextPort.portType) {
-              newData.push(this.__allServices[i].label);
+              newData.push(this.__allServices[i].name);
               break;
             }
           }
@@ -123,10 +136,21 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
       this.__controller.setModel(filteredData);
     },
 
+    __keyEvent: function(keyEvent) {
+      if (keyEvent.getKeyIdentifier() === "Enter") {
+        this.__onAddService();
+      }
+    },
+
     __onAddService: function() {
-      let selection = this.__list.getSelection()[0].getLabel();
+      if (this.__list.isSelectionEmpty()) {
+        return;
+      }
+
+      let selection = this.__list.getSelection();
+      let selectedLabel = selection[0].getLabel();
       for (let i = 0; i < this.__allServices.length; i++) {
-        if (selection === this.__allServices[i].label) {
+        if (selectedLabel === this.__allServices[i].name) {
           const eData = {
             service: this.__allServices[i],
             contextNodeId: this.__contextNodeId,

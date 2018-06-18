@@ -36,8 +36,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     this.__desktop.addListener("changeActiveWindow", function(e) {
       let winEmitting = e.getData();
-      if (winEmitting && winEmitting.isActive()) {
+      if (winEmitting && winEmitting.isActive() && winEmitting.classname.includes("workbench.Node")) {
         this.__selectedItemChanged(winEmitting.getNodeId());
+      } else {
+        this.__selectedItemChanged(null);
       }
     }, this);
 
@@ -54,8 +56,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     }, this);
 
 
+    this.__logger = new qxapp.components.workbench.logger.LoggerView();
+    this.__desktop.add(this.__logger);
+
     this.__nodes = [];
     this.__links = [];
+
+    let loggerButton = this.__getShowLoggerButton();
+    this.add(loggerButton, {
+      left: 20,
+      bottom: 20
+    });
 
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
     this.add(buttonContainer, {
@@ -108,12 +119,32 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __links: null,
     __desktop: null,
     __svgWidget: null,
+    __logger: null,
     __tempLinkNodeId: null,
     __tempLinkPortId: null,
     __tempLinkRepr: null,
     __pointerPosX: null,
     __pointerPosY: null,
     __selectedItemId: null,
+
+    __getShowLoggerButton: function() {
+      const icon = "@FontAwesome5Solid/list-alt/32";
+      let loggerButton = new qx.ui.form.Button(null, icon);
+      loggerButton.set({
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE
+      });
+      loggerButton.addListener("execute", function() {
+        const bounds = loggerButton.getBounds();
+        loggerButton.hide();
+        this.__logger.moveTo(bounds.left, bounds.top+bounds.height - this.__logger.getHeight());
+        this.__logger.open();
+        this.__logger.addListenerOnce("close", function() {
+          loggerButton.show();
+        }, this);
+      }, this);
+      return loggerButton;
+    },
 
     __getPlusButton: function() {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.dev.Placeholders.getIcon("fa-plus", 32);
@@ -179,14 +210,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             this.__updateLogger(node, msg);
           });
         }
+        socket.emit("logger");
 
-        // callback for incoming logs
+        // callback for incoming progress
         if (!socket.slotExists("progress")) {
           socket.on("progress", function(data) {
             console.log("progress", data);
             var d = JSON.parse(data);
             var node = d["Node"];
-            var progress = d["Progress"];
+            var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
             this.updateProgress(node, progress);
           });
         }
@@ -209,7 +241,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       stopButton.addListener("execute", function() {
         this.__stopPipeline();
-        this.setCanStart(true);
       }, this);
       return stopButton;
     },
@@ -238,11 +269,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __addServiceFromCatalogue: function(e, pos) {
       let data = e.getData();
-      let newNode = data.service;
+      let nodeMetaData = data.service;
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let nodeB = this.__createNode(newNode);
+      let nodeB = this.__createNode(nodeMetaData);
       this.__addNodeToWorkbench(nodeB, pos);
 
       if (nodeAId !== null && portA !== null) {
@@ -255,11 +286,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __createMenuFromList: function(nodesList) {
       let buttonsListMenu = new qx.ui.menu.Menu();
 
-      nodesList.forEach(node => {
-        let nodeButton = new qx.ui.menu.Button(node.label);
-
+      nodesList.forEach(nodeMetaData => {
+        let nodeButton = new qx.ui.menu.Button(nodeMetaData.label);
         nodeButton.addListener("execute", function() {
-          let nodeItem = this.__createNode(node);
+          let nodeItem = this.__createNode(nodeMetaData);
           this.__addNodeToWorkbench(nodeItem);
         }, this);
 
@@ -292,6 +322,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         this.__updateLinks(node);
       }, this);
 
+      node.addListener("appear", function() {
+        this.__updateLinks(node);
+      }, this);
+
       node.addListener("dblclick", function(e) {
         this.fireDataEvent("NodeDoubleClicked", node);
         e.stopPropagation();
@@ -300,9 +334,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       qx.ui.core.queue.Layout.flush();
     },
 
-    __createNode: function(node) {
+    __createNode: function(nodeMetaData) {
       let nodeBase = new qxapp.components.workbench.NodeBase();
-      nodeBase.setMetadata(node);
+      nodeBase.setMetadata(nodeMetaData);
 
       if (nodeBase.getNodeImageId() === "modeler") {
         const slotName = "startModeler";
@@ -601,6 +635,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
       p1 = this.__getLinkPoint(node1, port1);
       p2 = this.__getLinkPoint(node2, port2);
+      // hack to place the arrow-head properly
+      p2[0] -= 6;
       return [p1, p2];
     },
 
@@ -681,7 +717,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       for (let i = 0; i < this.__nodes.length; i++) {
         let node = {};
         node["uuid"] = this.__nodes[i].getNodeId();
-        node["serviceId"] = this.__nodes[i].getMetadata().key;
+        node["key"] = this.__nodes[i].getMetadata().key;
+        node["tag"] = this.__nodes[i].getMetadata().tag;
+        node["name"] = this.__nodes[i].getMetadata().name;
         node["inputs"] = this.__nodes[i].getMetadata().inputs;
         node["outputs"] = this.__nodes[i].getMetadata().outputs;
         node["settings"] = this.__nodes[i].getMetadata().settings;
@@ -710,14 +748,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
 
       // add nodes
-      let nodes = this.__myData.nodes;
-      for (let i = 0; i < nodes.length; i++) {
-        let nodeUi = this.__createNode(nodes[i]);
-        nodeUi.setNodeId(nodes[i].uuid);
-        if (Object.prototype.hasOwnProperty.call(nodes[i], "position")) {
-          this.__addNodeToWorkbench(nodeUi, nodes[i].position);
+      let nodesMetaData = this.__myData.nodes;
+      for (let i = 0; i < nodesMetaData.length; i++) {
+        let nodeMetaData = nodesMetaData[i];
+        let node = this.__createNode(nodeMetaData);
+        node.setNodeId(nodeMetaData.uuid);
+        if (Object.prototype.hasOwnProperty.call(nodeMetaData, "position")) {
+          this.__addNodeToWorkbench(node, nodeMetaData.position);
         } else {
-          this.__addNodeToWorkbench(nodeUi);
+          this.__addNodeToWorkbench(node);
         }
       }
 
@@ -740,9 +779,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __startPipeline: function() {
       // ui start pipeline
       this.__clearProgressData();
-      for (let i = 0; i < this.__nodes.length; i++) {
-        this.__nodes[i].setProgress(1);
-      }
 
       // post pipeline
       let currentPipeline = this.__serializeData();
@@ -763,9 +799,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       socket.emit("logger");
 
       this.setCanStart(false);
+
+      this.__logger.info("Workbench", "Starting pipeline");
     },
 
-    // register for logs
     __onPipelinesubmitted: function(e) {
       var req = e.getTarget();
       console.debug("Everything went fine!!");
@@ -781,19 +818,24 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __stopPipeline: function() {
-      for (let i = 0; i < this.__nodes.length; i++) {
-        this.__nodes[i].setProgress(0);
-      }
+      this.__clearProgressData();
+
+      this.setCanStart(true);
+
+      this.__logger.warn("Workbench", "Stopping pipeline");
     },
 
     __updateLogger: function(nodeId, msg) {
-      // TODO
-      let newLogText = nodeId + " reports: " + msg + "\n";
-      console.log("Logger", newLogText);
+      let node = this.__getNode(nodeId);
+      if (node) {
+        this.__logger.info(node.getCaption(), msg);
+      }
     },
 
     __clearProgressData: function() {
-      // TODO
+      for (let i = 0; i < this.__nodes.length; i++) {
+        this.__nodes[i].setProgress(0);
+      }
     },
 
     updateProgress: function(nodeId, progress) {

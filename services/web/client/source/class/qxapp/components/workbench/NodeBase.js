@@ -137,7 +137,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     __applyMetadata: function(metaData, old) {
       if (metaData != undefined) {
         this.set({
-          serviceName: metaData.label,
+          serviceName: metaData.name,
           nodeImageId: metaData.key
         });
         let props = metaData.inputs.concat(metaData.settings);
@@ -265,6 +265,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     setProgress: function(progress) {
       this.__progressLabel.setValue(progress + "%");
       this.__progressBar.setValue(progress);
+    },
+
+    getProgress: function() {
+      return this.__progressBar.getValue();
     }
   }
 });
