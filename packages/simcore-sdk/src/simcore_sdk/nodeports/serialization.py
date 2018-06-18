@@ -7,6 +7,7 @@ from simcore_sdk.nodeports._itemslist import DataItemsList
 from simcore_sdk.nodeports._item import DataItem
 from simcore_sdk.nodeports import exceptions
 from simcore_sdk.nodeports import config
+from simcore_sdk.models.pipeline_models import Node as NodeModel
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -91,5 +92,35 @@ def nodeports_decoder(dct):
     for key in config.DATA_ITEM_KEYS:
         if key not in dct:
             raise exceptions.InvalidProtocolError(dct)
-    _LOGGER.debug("Decoding Data time json: %s", dct)
+    _LOGGER.debug("Decoding Data items json: %s", dct)
     return DataItem(**dct)
+
+def save_node_to_json(node):
+    node_json_config = json.dumps(node, cls=_NodeModelEncoder)
+    return node_json_config
+
+def create_node_from_json(json_config):
+    node = json.loads(json_config, object_hook=nodemodel_decoder)
+    return node
+
+class _NodeModelEncoder(json.JSONEncoder):
+    def default(self, o): # pylint: disable=E0202
+        _LOGGER.debug("Encoding object: %s", o)
+        if isinstance(o, NodeModel):
+            _LOGGER.debug("Encoding Node object")
+            return {"version": o.tag, 
+                    "inputs": o.inputs, 
+                    "outputs": o.outputs
+                    }
+        _LOGGER.debug("Encoding object using defaults")
+        return json.JSONEncoder.default(self, o)
+
+def nodemodel_decoder(dct):
+    if "version" in dct and "inputs" in dct and "outputs" in dct:
+        _LOGGER.debug("Decoding Nodeports json: %s", dct)
+        return NodeModel(tag=dct["version"], inputs=dct["inputs"], outputs=dct["outputs"])
+    for key in config.DATA_ITEM_KEYS:
+        if key not in dct:
+            raise exceptions.InvalidProtocolError(dct)
+    _LOGGER.debug("Decoding Data items json: %s", dct)
+    return dct
