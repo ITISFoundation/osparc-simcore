@@ -9,10 +9,8 @@ services:
       - './director/source:/home/app/source'
   #--------------------------------------------------------------------
   webclient:
-    image: client_qx:development
+    image: services_webclient:dev
     build:
-      context: ./web/client/
-      dockerfile: Dockerfile
       target: development
     volumes:
       - './web/client:/home/scu/client'
@@ -20,11 +18,11 @@ services:
   webserver:
     image: services_webserver:dev
     build:
-      context: ../
-      dockerfile: services/web/Dockerfile.dev
+      dockerfile: services/web/Dockerfile.devel
     volumes:
-      - './web/server:/home/scu/server'
-      - ../packages:/home/scu/packages
+      - ./web/server:/home/scu/server
+      - ./web/client:/home/scu/client
+      - ../packages/simcore-sdk/src:/home/scu/packages
     depends_on:
       - webclient
   #--------------------------------------------------------------------

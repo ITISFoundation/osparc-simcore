@@ -1,7 +1,5 @@
 FROM python:3.6-alpine
 
-LABEL maintainer=pcrespov
-
 #  USAGE:
 #     docker build -f Dockerfile.ci -t web:ci ../../
 #     docker run web:ci
@@ -41,8 +39,8 @@ RUN apk add --no-cache \
 
 ENV HOME /home/scu
 
-ENV SIMCORE_WEB_OUTDIR $HOME/client
-ENV SIMCORE_WEB_CONFIG production
+ENV SIMCORE_WEB_OUTDIR $HOME/client/source-output
+ENV SIMCORE_WEB_CONFIG development
 
 ENV PYTHONPATH "$HOME/server/src:$HOME/packages"
 
@@ -50,22 +48,20 @@ WORKDIR /home/scu
 
 # 1. install 3rd party packages
 COPY --chown=scu:scu services/web/server/requirements requirements
-RUN pip3 install --no-cache-dir -r requirements/prod.txt &&\
+RUN pip3 install --no-cache-dir -r requirements/devel.txt &&\
     rm -rf requirements
-
-# 2. install 2nd party packages
-COPY --chown=scu:scu packages/simcore-sdk/src packages
-
-# 3. install client
-COPY --from=services_webclient:build --chown=scu:scu /home/scu/client/build-output client
-
-# 4. install server
-COPY --chown=scu:scu services/web/server/src   server/src
-COPY --chown=scu:scu services/web/server/tests server/tests
 
 USER scu
 
+# 2. creates mounted volumes
+RUN mkdir $HOME/client && \
+    mkdir $HOME/packages
+
 WORKDIR $HOME/server/src
+
+VOLUME $HOME/server/
+VOLUME $HOME/client/
+VOLUME $HOME/packages
 
 ENTRYPOINT ["python", \
   "-m", "aiohttp.web"]

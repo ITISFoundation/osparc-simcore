@@ -18,12 +18,12 @@ services:
       - '/var/run/docker.sock:/var/run/docker.sock'
   #--------------------------------------------------------------------
   webclient:
-    image: client_qx:build
+    image: services_webclient:build
     build:
       context: ./web/client/
       dockerfile: Dockerfile
       target: build
-    command: /bin/bash -c "cat build-output/version.txt"
+    command: /bin/bash -c "Echo "built with qx" && cat build-output/version.txt"
   webserver:
     build:
       context: ../
