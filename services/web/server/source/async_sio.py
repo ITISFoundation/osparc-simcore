@@ -13,6 +13,9 @@ import logging
 import socketio
 import interactive_services_manager
 
+from minio import Minio
+from minio.error import ResponseError
+
 _LOGGER = logging.getLogger(__file__)
 
 SIO = socketio.AsyncServer(async_mode='aiohttp')
@@ -69,6 +72,26 @@ async def stop_jupyter_handler(sid, data):
     _LOGGER.debug("client %s requests stop jupyter %s", sid, data)
     result = interactive_services_manager.stop_service(sid, data)
     await SIO.emit('stopJupyter', data=result, room=sid)
+
+
+@SIO.on('presignedUrl')
+async def retrieveURLForFile(sid, data):
+    _LOGGER.debug("client %s requests S3 url for %s", sid, data)
+    try:
+        public_url = 'play.minio.io:9000'
+        public_access_key = 'Q3AM3UQ867SPQQA43P2F'
+        public_secret_key ='zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
+        minioClient = Minio(
+            public_url, 
+            access_key=public_access_key,
+            secret_key=public_secret_key)
+        bucketName = 'maiz'
+        result = minioClient.presigned_put_object(bucketName, data)
+        # Response error is still possible since internally presigned does get
+        # bucket location.
+        await SIO.emit('presignedUrl', data=result, room=sid)
+    except ResponseError as err:
+        print(err)
 
 
 @SIO.on('disconnect')

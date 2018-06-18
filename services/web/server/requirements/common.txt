@@ -1,3 +1,4 @@
 aiohttp
 python-socketio
 requests
+minio
