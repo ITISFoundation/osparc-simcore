@@ -37,7 +37,7 @@ class InvalidKeyError(NodeportsException):
 
 class InvalidProtocolError(NodeportsException):
     """Invalid protocol used"""
-    def __init__(self, dct):
-        msg = "Invalid protocol used in %s" % (dct)
+    def __init__(self, dct, msg=None):
+        msg = "Invalid protocol used: %s\n%s" % (dct, msg)
         super(InvalidProtocolError, self).__init__(msg)
         self.dct = dct
