@@ -327,7 +327,30 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       node.addListener("dblclick", function(e) {
-        this.fireDataEvent("NodeDoubleClicked", node);
+        if (node.getMetadata().key === "FileManager") {
+          let win = new qx.ui.window.Window(node.getMetadata().name).set({
+            width: 900,
+            height: 800,
+            minWidth: 500,
+            minHeight: 500,
+            modal: true,
+            layout: new qx.ui.layout.Canvas()
+          });
+          win.setShowMinimize(false);
+          win.moveTo(50, 50);
+
+          let fileManager = new qxapp.components.workbench.widgets.FileManager();
+          win.add(fileManager, {
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0
+          });
+
+          this.addWindowToDesktop(win);
+        } else {
+          this.fireDataEvent("NodeDoubleClicked", node);
+        }
         e.stopPropagation();
       }, this);
 
