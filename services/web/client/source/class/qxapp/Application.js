@@ -47,6 +47,7 @@ qx.Class.define("qxapp.Application", {
         if (qx.core.Environment.get("dev.enableFakeSrv")) {
           console.debug("Fake server enabled");
           qxapp.dev.fakesrv.restapi.User;
+          qxapp.dev.fakesrv.restapi.Authentication;
         }
       }
 
@@ -62,19 +63,26 @@ qx.Class.define("qxapp.Application", {
 
       let login = new qxapp.components.login.Login();
       login.addListener("login", function(e) {
-        // FIXME: For the moment, password is not checked
-        // if (e.getData() === true) {
-        this.__layoutManager = new qxapp.desktop.LayoutManager();
-        doc.remove(login);
-        doc.add(this.__layoutManager, {
-          left: "0%",
-          top: "0%",
-          height: "100%",
-          width: "100%"
-        });
-        // }
+        if (e.getData() === true) {
+          // TODO: need to init user-id and token in data layer
+
+          this.__layoutManager = new qxapp.desktop.LayoutManager();
+          doc.remove(login);
+          doc.add(this.__layoutManager, {
+            left: "0%",
+            top: "0%",
+            height: "100%",
+            width: "100%"
+          });
+        } else {
+          // TODO: some kind of notification as in
+          //  http://www.qooxdoo.org/5.0.1/pages/website/tutorial_web_developers.html
+          // flash("Invalid user name or password");
+          console.log("Invalid user or password.");
+        }
       }, this);
 
+      // TOOD: center in document
       doc.add(login, {
         left: "10%",
         top: "10%",

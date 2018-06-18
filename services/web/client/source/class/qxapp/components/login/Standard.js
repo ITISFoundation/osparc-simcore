@@ -132,7 +132,7 @@ qx.Class.define("qxapp.components.login.Standard", {
         // qx.io.request.authentication sets headers.
         // Can send user+passorwd or user=token w/o password!?
         authentication: auth,
-        url: "/login",
+        url: "api/v1/login",
         method: "POST",
         requestData: qx.util.Serializer.toJson(loginData)
       });
