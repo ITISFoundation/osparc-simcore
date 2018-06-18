@@ -29,6 +29,17 @@ docker-compose down
 
 For a fake backend, open http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true otherwise http://localhost:8080/
 
+## URL environmet variables
+
+client's development container ``qx serve --set qx.allowUrlSettings=true`` and the following develompent settings are defined:
+
+ - ``dev.enableFakeSrv: true/[false]`` : enables/disables fake server. Used exclusively for development.
+ - ``dev.disableLogin:  true/[false]``  : enables/disables login page. Used exclusively for development.
+
+ Examples:
+  - http://localhost:8080/
+  - http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true
+  - http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true&qxenv:dev.disableLogin:true
 
 ## docker
 
