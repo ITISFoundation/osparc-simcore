@@ -10,8 +10,6 @@ from simcore_sdk.nodeports import serialization
 from simcore_sdk.nodeports.config import Location
 
 
-PIPELINE_ID = "6"
-NODE_ID = "5df77702-29d5-4513-b3f8-f2a40ed317fe"
 _LOGGER = logging.getLogger(__name__)
 
 class DbSettings(object):
@@ -36,8 +34,8 @@ class IO(object):
             return simcore_config.read()
 
     def __get_node_from_db(self):
-        node_id = NODE_ID
-        pipeline_id = PIPELINE_ID
+        node_id = os.environ.get('SIMCORE_NODE_UUID')
+        pipeline_id = os.environ.get('PIPELINE_NODE_ID')
         _LOGGER.debug("Reading from database for pipeline id %s and node id %s", pipeline_id, node_id)
         try:
             return self._db.session.query(NodeModel).filter(NodeModel.pipeline_id==pipeline_id, NodeModel.node_id==node_id).one()                
