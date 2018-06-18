@@ -72,9 +72,9 @@ RUN mkdir $HOME/client && \
 
 WORKDIR $HOME/server/src
 
-VOLUME $HOME/server/
-VOLUME $HOME/client/
-VOLUME $HOME/packages
+VOLUME /home/scu/server/
+VOLUME /home/scu/client/
+VOLUME /home/scu/packages
 
 CMD ["-H", "0.0.0.0", \
      "-P", "8080", \
