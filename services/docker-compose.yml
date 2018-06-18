@@ -27,7 +27,8 @@ services:
   webserver:
     build:
       context: ../
-      dockerfile: services/web/Dockerfile.ci
+      dockerfile: services/web/Dockerfile
+      target: ci
     ports:
       - '9081:8080'
     environment:

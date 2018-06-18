@@ -1,9 +1,9 @@
-FROM python:3.6-alpine
+FROM python:3.6-alpine as base-stage
 
 LABEL maintainer=pcrespov
 
 #  USAGE:
-#     docker build -f Dockerfile.ci -t web:ci ../../
+#     docker build -f Dockerfile -t web:ci --target ci ../../
 #     docker run web:ci
 #
 #  REQUIRED: context expected at $(this-file-dir)/../../
@@ -40,17 +40,54 @@ RUN apk add --no-cache \
 
 
 ENV HOME /home/scu
-
 ENV SIMCORE_WEB_OUTDIR $HOME/client
-ENV SIMCORE_WEB_CONFIG production
-
 ENV PYTHONPATH "$HOME/server/src:$HOME/packages"
+
 
 WORKDIR /home/scu
 
-# 1. install 3rd party packages
+# 1. install common 3rd party packages
 COPY --chown=scu:scu services/web/server/requirements requirements
-RUN pip3 install --no-cache-dir -r requirements/prod.txt &&\
+RUN pip3 install --no-cache-dir -r requirements/common.txt
+
+EXPOSE 8080
+
+ENTRYPOINT ["python", \
+  "-m", "aiohttp.web"]
+
+# ------------------------------------------------------------------------------------------
+FROM base-stage as development
+
+ENV SIMCORE_WEB_CONFIG development
+
+# 1.1 install devel 3rd party packages
+RUN pip3 install --no-cache-dir -r requirements/devel.txt && \
+    rm -rf requirements
+
+USER scu
+
+# 2. creates mounted volumes
+RUN mkdir $HOME/client && \
+    mkdir $HOME/packages
+
+WORKDIR $HOME/server/src
+
+VOLUME $HOME/server/
+VOLUME $HOME/client/
+VOLUME $HOME/packages
+
+CMD ["-H", "0.0.0.0", \
+     "-P", "8080", \
+     "server:create_app"]
+
+
+# ------------------------------------------------------------------------------------------
+FROM base-stage as ci
+
+ENV SIMCORE_WEB_CONFIG production
+
+# 1.1 install devel 3rd party packages
+RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
     rm -rf requirements
 
 # 2. install 2nd party packages
@@ -67,9 +104,13 @@ USER scu
 
 WORKDIR $HOME/server/src
 
-ENTRYPOINT ["python", \
-  "-m", "aiohttp.web"]
 
 CMD ["-H", "0.0.0.0", \
      "-P", "8080", \
      "server:create_app"]
+
+
+# ------------------------------------------------------------------------------------------
+FROM ci as production
+
+RUN rm -rf server/tests

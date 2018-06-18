@@ -18,7 +18,7 @@ services:
   webserver:
     image: services_webserver:dev
     build:
-      dockerfile: services/web/Dockerfile.devel
+      target: development
     volumes:
       - ./web/server:/home/scu/server
       - ./web/client:/home/scu/client
