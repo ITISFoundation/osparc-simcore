@@ -1,7 +1,10 @@
-/* global qxapp */
-
+/* global qxapp
+*/
 /* eslint no-warning-comments: "off" */
 
+/*
+  TODO: Create common interface for all types of login. e.g. openID or NIH or standard
+*/
 qx.Class.define("qxapp.components.login.Login", {
   extend: qx.ui.container.Composite,
 
@@ -9,7 +12,7 @@ qx.Class.define("qxapp.components.login.Login", {
     this.base(arguments, new qx.ui.layout.HBox(30));
 
     // standard login. i.e. using app database
-    let platformLogin = new qxapp.components.login.Standard();
+    let platformLogin = new qxapp.components.login.BasicView();
     this.add(platformLogin, {
       width: "60%"
     });

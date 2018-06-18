@@ -19,11 +19,13 @@ qx.Class.define("qxapp.components.login.Form", {
     username.setRequired(true);
     username.setPlaceholder("Your email address");
     this.add(username, "", qx.util.Validate.email(), "user", null);
+    username.setTabIndex(1);
 
     let password = new qx.ui.form.PasswordField();
     password.setRequired(true);
     password.setPlaceholder("Your password");
     this.add(password, "", null, "password", null);
+    password.setTabIndex(username.getTabIndex()+1);
 
     // TODO:
     // let remember = new qx.ui.form.CheckBox();
@@ -32,6 +34,7 @@ qx.Class.define("qxapp.components.login.Form", {
     // Buttons
     let submit = new qx.ui.form.Button("Sign in");
     this.addButton(submit);
+    submit.setTabIndex(password.getTabIndex()+1);
 
     // data binding
     this.__controller = new qx.data.controller.Form(null, this);

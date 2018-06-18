@@ -4,12 +4,12 @@
  *  Features:
  *    - Login form
  *    - Some decoration
- *
+ *    - HTTP requests
  */
 
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.components.login.Standard", {
+qx.Class.define("qxapp.components.login.BasicView", {
 
   extend: qx.ui.container.Composite,
 
