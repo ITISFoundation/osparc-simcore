@@ -39,18 +39,18 @@ class DataItem(_DataItem):
             link = self.value.split(".")
             if len(link) != 3:
                 raise exceptions.InvalidProtocolError(self.value, "Invalid link definition: " + str(self.value))
+            other_node_uuid = link[1]
+            other_port_key = link[2]
+
             if self.type in config.TYPE_TO_S3_LIST:
                 # try to fetch from S3
                 _LOGGER.debug("Fetch value from S3 %s", self.value)
-                s3_link = link[1:]
-                return filemanager.download_from_S3_if_newer(s3_link, self.timestamp, self.key)
+                return filemanager.download_from_S3(node_uuid=other_node_uuid, 
+                                                    node_key=other_port_key, 
+                                                    file_name=self.key)
             else:
                 # try to fetch link from database node
                 _LOGGER.debug("Fetch value from other node %s", self.value)
-                
-                other_node_uuid = link[1]
-                other_port_key = link[2]
-
                 if not self.get_node_from_uuid_cb:
                     raise exceptions.NodeportsException("callback to get other node information is not set")
 
