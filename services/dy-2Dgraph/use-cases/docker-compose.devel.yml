@@ -6,6 +6,8 @@ services:
     volumes: 
       - ./data:/home/jovyan/data
       - ./config:/home/jovyan/config
+    depends_on:
+      - postgres
   #--------------------------------------------------------------------
   cc-1d:
     build:
@@ -13,6 +15,8 @@ services:
     volumes: 
       - ./data:/home/jovyan/data
       - ./config:/home/jovyan/config
+    depends_on:
+      - postgres
   #--------------------------------------------------------------------
   cc-2d:
     build:
@@ -20,6 +24,8 @@ services:
     volumes: 
       - ./data:/home/jovyan/data
       - ./config:/home/jovyan/config
+    depends_on:
+      - postgres
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10
