@@ -208,10 +208,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             var node = d["Node"];
             var msg = d["Message"];
             this.__updateLogger(node, msg);
-          }, this);
+          });
         }
+        socket.emit("logger");
 
-        // callback for incoming logs
+        // callback for incoming progress
         if (!socket.slotExists("progress")) {
           socket.on("progress", function(data) {
             console.log("progress", data);
@@ -219,7 +220,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             var node = d["Node"];
             var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
             this.updateProgress(node, progress);
-          }, this);
+          });
         }
 
         if (this.getCanStart()) {
@@ -240,7 +241,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       stopButton.addListener("execute", function() {
         this.__stopPipeline();
-        this.setCanStart(true);
       }, this);
       return stopButton;
     },
@@ -779,9 +779,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __startPipeline: function() {
       // ui start pipeline
       this.__clearProgressData();
-      for (let i = 0; i < this.__nodes.length; i++) {
-        this.__nodes[i].setProgress(1);
-      }
 
       // post pipeline
       let currentPipeline = this.__serializeData();
@@ -806,7 +803,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__logger.info("Workbench", "Starting pipeline");
     },
 
-    // register for logs
     __onPipelinesubmitted: function(e) {
       var req = e.getTarget();
       console.debug("Everything went fine!!");
@@ -822,9 +818,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __stopPipeline: function() {
-      for (let i = 0; i < this.__nodes.length; i++) {
-        this.__nodes[i].setProgress(0);
-      }
+      this.__clearProgressData();
+
+      this.setCanStart(true);
+
       this.__logger.warn("Workbench", "Stopping pipeline");
     },
 
@@ -836,7 +833,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __clearProgressData: function() {
-      // TODO
+      for (let i = 0; i < this.__nodes.length; i++) {
+        this.__nodes[i].setProgress(0);
+      }
     },
 
     updateProgress: function(nodeId, progress) {
