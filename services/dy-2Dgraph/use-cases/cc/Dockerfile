@@ -69,6 +69,7 @@ RUN chmod +x boot.sh
 
 FROM common AS development
 ENV CREATE_DUMMY_TABLE=1
+COPY --chown=jovyan:users develdbs3init.py .
 CMD [ "/bin/sh", "boot.sh" ]
 
 FROM common AS production

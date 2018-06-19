@@ -1,9 +1,9 @@
 #!/bin/sh
 
-if [[ ${CREATE_DUMMY_TABLE} == "1" ]]
+if test "${CREATE_DUMMY_TABLE}" = "1"
 then
     echo "Creating dummy tables ..."
-    exec python ./packages/packages/simcore-sdk/src/simcore_sdk/nodeports/__dbdevel.py
+    python develdbs3init.py
 fi
 
 start-notebook.sh \

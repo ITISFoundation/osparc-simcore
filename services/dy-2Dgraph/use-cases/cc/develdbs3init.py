@@ -81,4 +81,4 @@ def create_dummy():
     s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
     Path(temp_file.name).unlink()
 
-#create_dummy()
+create_dummy()
