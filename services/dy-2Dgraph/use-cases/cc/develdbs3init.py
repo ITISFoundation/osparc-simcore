@@ -1,5 +1,7 @@
 import os
+import sys
 import tempfile
+import json
 from pathlib import Path
 
 from sqlalchemy import create_engine
@@ -27,35 +29,11 @@ class S3Settings(object):
         self.bucket = self._config.bucket_name
         self.client.create_bucket(self.bucket)
 
-def create_dummy():
-    inputs = [
-        dict(
-            key="in_1",
-            label="computational data",
-            description="these are computed data out of a pipeline",
-            type="file-url",
-            value="/home/jovyan/data/outputControllerOut.dat",
-            timestamp="2018-05-23T15:34:53.511Z"
-        ),
-        dict(
-            key="in_5",
-            label="some number",
-            description="numbering things",
-            type="int",
-            value="666",
-            timestamp="2018-05-23T15:34:53.511Z"
-        )
-        ]
-    outputs = [
-        dict(
-            key="out_1",
-            label="some output",
-            description="this is a special dummy output",
-            type="itn",
-            value="null",
-            timestamp="2018-05-23T15:34:53.511Z"
-        )
-    ]
+def create_dummy(json_configuration_file_path):
+    with open(Path("/home/jovyan", json_configuration_file_path)) as file_pointer:
+        configuration = json.load(file_pointer)
+    
+    
     # initialise db
     db = DbSettings()
     Base.metadata.create_all(db.db)
@@ -63,7 +41,8 @@ def create_dummy():
     new_Pipeline = ComputationalPipeline()
     db.session.add(new_Pipeline)
     db.session.commit()
-    new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, input=inputs, output=outputs)
+    os.environ["SIMCORE_PIPELINE_ID"] = str(new_Pipeline.pipeline_id) # set the env variable in the docker
+    new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, input=configuration["inputs"], output=configuration["outputs"])
     
     db.session.add(new_Node)
     db.session.commit()
@@ -74,11 +53,14 @@ def create_dummy():
     with open(temp_file.name, "w") as file_pointer:
         file_pointer.write("This is a nice dummy data here")
     
-    s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, inputs[0]["key"])
-
     # initialise s3
     s3 = S3Settings()
-    s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
+    for input_item in configuration["inputs"]:
+        s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"])
+        s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
     Path(temp_file.name).unlink()
 
-create_dummy()
+    print(new_Pipeline.pipeline_id)
+
+if __name__ == "__main__":    
+    create_dummy(sys.argv[1])

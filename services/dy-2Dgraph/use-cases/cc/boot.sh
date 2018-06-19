@@ -2,8 +2,10 @@
 
 if test "${CREATE_DUMMY_TABLE}" = "1"
 then
-    echo "Creating dummy tables ..."
-    python develdbs3init.py
+    echo "Creating dummy tables ... using ${USE_CASE_CONFIG_FILE}"
+    result="$(python develdbs3init.py ${USE_CASE_CONFIG_FILE})"
+    echo "Received result pipeline of $result"
+    export SIMCORE_PIPELINE_ID="$result"
 fi
 
 start-notebook.sh \

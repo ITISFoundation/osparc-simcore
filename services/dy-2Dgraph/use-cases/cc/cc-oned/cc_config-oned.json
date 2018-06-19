@@ -4,7 +4,7 @@
         {
             "key": "in_1",
             "label": "ECGs",
-            "description": "these are computed data out of a pipeline",
+            "desc": "these are computed data out of a pipeline",
             "type": "file-url",
             "value": "D:\\plotlydemo\\data\\1D_OUTPUT\\ECGS.txt",
             "timestamp": "2018-05-23T15:34:53.511Z"
@@ -12,7 +12,7 @@
         {
             "key": "in_2",
             "label": "all results 1Hz",
-            "description": "computed data out of a pipeline",
+            "desc": "computed data out of a pipeline",
             "type": "file-url",
             "value": "D:\\plotlydemo\\data\\1D_OUTPUT\\ap.txt",
             "timestamp": "2018-05-23T15:34:53.511Z"

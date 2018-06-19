@@ -2,8 +2,6 @@ FROM simcore/services/jupyter-base-notebook:latest AS common
 
 LABEL maintainer="sanderegg"
 
-ARG NOTEBOOK_NAME=cc_oned.ipynb
-ARG NOTEBOOK_FOLDER_NAME=cc-oned
 ENV SIMCORE_PIPELINE_ID="-1"
 ENV SIMCORE_NODE_UUID="-1"
 
@@ -41,14 +39,12 @@ USER $NB_USER
 COPY --chown=jovyan:users requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
+    #pip install jupyterthemes && \
+    #jt -t oceans16 && \
     jupyter contrib nbextensions install --user && \
     jupyter dashboards quick-setup --sys-prefix && \    
     jupyter nbextension enable hide_input/main && \
     jupyter nbextension enable init_cell/main
-
-# copy the notebook in
-COPY --chown=jovyan:users ${NOTEBOOK_FOLDER_NAME}/${NOTEBOOK_NAME} .
-RUN jupyter trust ${NOTEBOOK_NAME}
 
 # download the simcore_sdk package
 RUN mkdir packages && \
@@ -60,21 +56,35 @@ RUN mkdir packages && \
     echo "packages/s3wrapper/src/s3wrapper/*" >> .git/info/sparse-checkout && \
     git pull --depth=1 origin analysis_2d_graph
 
+ENV PYTHONPATH="./packages/packages/simcore-sdk/src:./packages/packages/s3wrapper/src"
+
 # define where the inputs shall be defined
 VOLUME /home/jovyan/data
 VOLUME /home/jovyan/config
 
-# starts notebook without token
-ENV NOTEBOOK_URL=${NOTEBOOK_NAME}
-ENV PYTHONPATH="./packages/packages/simcore-sdk/src:./packages/packages/s3wrapper/src"
-
 COPY --chown=jovyan:users boot.sh boot.sh
 RUN chmod +x boot.sh
 
-FROM common AS development
+FROM common AS specialised
+
+# set of arguments
+ARG NOTEBOOK_NAME=cc_oned.ipynb
+ARG NOTEBOOK_FOLDER_NAME=cc-oned
+ARG JSON_CONFIGURATION=cc_config-oned.json
+ENV USE_CASE_CONFIG_FILE=${JSON_CONFIGURATION}
+# copy the notebook in
+COPY --chown=jovyan:users ${NOTEBOOK_FOLDER_NAME}/${NOTEBOOK_NAME} .
+RUN jupyter trust ${NOTEBOOK_NAME}
+# starts notebook without token
+ENV NOTEBOOK_URL=${NOTEBOOK_NAME}
+# copy special configuration for development
+COPY --chown=jovyan:users ${NOTEBOOK_FOLDER_NAME}/${JSON_CONFIGURATION} .
+
+FROM specialised AS development
+# copy the json configuration in
 ENV CREATE_DUMMY_TABLE=1
 COPY --chown=jovyan:users develdbs3init.py .
 CMD [ "/bin/sh", "boot.sh" ]
 
-FROM common AS production
+FROM specialised AS production
 ENTRYPOINT [ "/bin/sh", "boot.sh" ]
