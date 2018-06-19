@@ -22,6 +22,14 @@ qx.Class.define("qxapp.data.Fake", {
       prjId: null
     }),
 
+    getUsername: function() {
+      return "bizzy";
+    },
+
+    getS3PublicBucketName: function() {
+      return "simcore";
+    },
+
     /**
      * Returns a qx array with projects associated to a user
      */

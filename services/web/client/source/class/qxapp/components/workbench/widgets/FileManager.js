@@ -72,7 +72,8 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       tree2.setOpen(true);
       root.add(tree2);
 
-      this.__getObjLists("maiz");
+      const username = qxapp.utils.Utils.getUsername();
+      this.__getObjLists(username);
     },
 
     __getObjLists: function(bucketName) {
@@ -81,13 +82,15 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       socket.removeSlot("listObjectsPub");
       socket.on("listObjectsPub", function(data) {
         let treeItem = this.__addTreeItem(this.__publicTree, data);
-        treeItem.path = "simcore/" + data.name;
+        const publicBucket = qxapp.utils.Utils.getS3PublicBucketName();
+        treeItem.path = publicBucket + "/" + data.name;
       }, this);
 
       socket.removeSlot("listObjectsUser");
       socket.on("listObjectsUser", function(data) {
         let treeItem = this.__addTreeItem(this.__userTree, data);
-        treeItem.path = "maiz/" + data.name;
+        const username = qxapp.utils.Utils.getUsername();
+        treeItem.path = username + "/" + data.name;
       }, this);
 
       socket.emit("listObjects", bucketName);
