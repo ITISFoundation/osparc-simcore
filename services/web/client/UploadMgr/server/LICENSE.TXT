@@ -1,3 +1,0 @@
-The examples perl.cgi and php.php are licensed under GNU GPL 2 or later and 
-GNU LGPL 2 or later and are © 2010 Andrew Valums (http://valums.com/ajax-upload)
-
