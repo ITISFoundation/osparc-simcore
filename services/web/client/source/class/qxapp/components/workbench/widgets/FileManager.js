@@ -37,23 +37,22 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       flex: 1
     });
 
-    let root = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Available Files", null, false);
+    let root = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Available Files");
     root.setOpen(true);
     tree.setRoot(root);
-    // tree.setHideRoot(true);
 
-    let tree1 = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Public Files");
+    let tree1 = this.__publicTree = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Public Files");
     root.add(tree1);
-    this.__getFilesTree(tree1);
 
-    let tree2 = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "User Files");
+    let tree2 = this.__userTree = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "User Files");
     root.add(tree2);
-    this.__getFilesTree(tree2);
+
+    this.__reloadTree();
   },
 
   members: {
-    __minio: null,
-    __minioPubClient: null,
+    __publicTree: null,
+    __userTree: null,
 
     // Request to the server an upload URL.
     __retrieveURLAndUpload: function(file) {
@@ -88,29 +87,41 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       };
     },
 
-    __getFilesTree: function(treeRoot) {
-      let tree11 = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Files");
-      let tree12 = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Workspace");
-      let tree13 = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Network");
-      let tree14 = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Trash");
-      treeRoot.add(tree11, tree12, tree13, tree14);
+    __reloadTree: function() {
+      this.__publicTree.removeAll();
+      this.__userTree.removeAll();
 
-      // One icon specified, and used for both selected unselected states
-      let tree121 = this.__configureTreeItem(new qx.ui.tree.TreeFile(), "Windows (C:)", "icon/16/devices/drive-harddisk.png");
-      let tree122 = this.__configureTreeItem(new qx.ui.tree.TreeFile(), "Documents (D:)", "icon/16/devices/drive-harddisk.png");
-      tree12.add(tree121, tree122);
+      this.__getObjLists("maiz");
     },
 
-    __configureTreeItem: function(treeItem, vLabel, vIcon, extraInfo = true) {
-      // A left-justified icon
-      /*
-      if (Math.floor(Math.random() * 4) == 0) {
-        let img = new qx.ui.basic.Image("icon/16/status/dialog-information.png");
-        treeItem.addWidget(img);
-      } else {
-        treeItem.addWidget(new qx.ui.core.Spacer(16, 16));
+    __getObjLists: function(bucketName) {
+      let socket = qxapp.wrappers.WebSocket.getInstance();
+      if (!socket.slotExists("listObjectsPub")) {
+        socket.on("listObjectsPub", function(data) {
+          console.log("listObjectsPub", data);
+          this.__addTreeItem(data);
+        }, this);
       }
-      */
+      if (!socket.slotExists("listObjectsUser")) {
+        socket.on("listObjectsUser", function(data) {
+          console.log("listObjectsUser", data);
+          this.__addTreeItem(data);
+        }, this);
+      }
+      socket.emit("listObjects", bucketName);
+    },
+
+    __addTreeItem: function(data) {
+      let treeItem = this.__configureTreeItem(new qx.ui.tree.TreeFile(), data.data.name, data.data);
+      if (data.owner === "user") {
+        this.__userTree.add(treeItem);
+      } else if (data.owner === "public") {
+        this.__publicTree.add(treeItem);
+      }
+    },
+
+    __configureTreeItem: function(treeItem, label, extraInfo) {
+      // A left-justified icon
       treeItem.addWidget(new qx.ui.core.Spacer(16, 16));
 
       // Here's our indentation and tree-lines
@@ -122,31 +133,28 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
 
       // The standard tree icon follows
       treeItem.addIcon();
-      treeItem.setIcon(arguments.length >= 3 ? vIcon : "icon/16/places/user-desktop.png");
 
       // The label
-      treeItem.addLabel(vLabel);
+      treeItem.addLabel(label);
 
       // All else should be right justified
       treeItem.addWidget(new qx.ui.core.Spacer(), {
         flex: 1
       });
 
-      if (extraInfo) {
-        let text;
-        if (treeItem instanceof qx.ui.tree.TreeFile) {
-          // Add a file size, date and mode
-          text = new qx.ui.basic.Label(Math.round(Math.random() * 100) + "kb");
-          text.setWidth(50);
-          treeItem.addWidget(text);
-        }
+      if (treeItem instanceof qx.ui.tree.TreeFile) {
+        // Add a file size, date and mode
+        const formattedSize = qxapp.utils.Utils.formatBytes(extraInfo.size);
+        let text = new qx.ui.basic.Label(formattedSize);
+        text.setWidth(80);
+        treeItem.addWidget(text);
 
-        text = new qx.ui.basic.Label("May " + Math.round(Math.random() * 30 + 1) + " 2005");
-        text.setWidth(150);
+        text = new qx.ui.basic.Label(extraInfo.lastModified);
+        text.setWidth(200);
         treeItem.addWidget(text);
 
         text = new qx.ui.basic.Label("-rw-r--r--");
-        text.setWidth(80);
+        text.setWidth(100);
         treeItem.addWidget(text);
       }
 
