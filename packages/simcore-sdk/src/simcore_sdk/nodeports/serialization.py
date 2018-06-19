@@ -11,48 +11,58 @@ from simcore_sdk.models.pipeline_models import ComputationalTask as NodeModel
 
 _LOGGER = logging.getLogger(__name__)
 
-def create_from_json(json_reader_cb, json_writer_cb=None, auto_update=False):
+def create_from_json(io_obj, auto_read=False, auto_write=False):
     """creates a Nodeports object provided a json configuration in form of a callback function.
     
     Arguments:
-        json_reader_cb {callback function} -- upon call shall return the json configuration to create the Nodeports object
-        json_writer_cb {callback function} -- upcon call shall take a Nodeports json configuration to write
+        io_obj {object} -- interface object to connect to nodeports description.
+    
+    Keyword Arguments:
+        auto_read {bool} -- the nodeports object shall automatically update itself when set to True (default: {False})
+        auto_write {bool} -- the nodeports object shall automatically write the new outputs when set to True (default: {False})
     
     Raises:
-        exceptions.NodeportsException -- raised when json_reader_cb is empty
+        exceptions.NodeportsException -- raised in case of io object is empty
     
     Returns:
-        Nodeports -- the Nodeports object
+        object -- the Nodeports object
     """
 
-    _LOGGER.debug("Creating Nodeports object with json reader: %s, json writer: %s", json_reader_cb, json_writer_cb)
-    if json_reader_cb is None:
-        raise exceptions.NodeportsException("json reader callback is empty, this is not allowed")
-    nodeports_obj = json.loads(json_reader_cb(), object_hook=nodeports_decoder)
-    nodeports_obj.json_reader = json_reader_cb
-    nodeports_obj.json_writer = json_writer_cb
-    nodeports_obj.autoupdate = auto_update
+    _LOGGER.debug("Creating Nodeports object with io object: %s, auto read %s and auto write %s", io_obj, auto_read, auto_write)
+    if not io_obj:
+        raise exceptions.NodeportsException("io object empty, this is not allowed")
+    nodeports_obj = json.loads(io_obj.get_ports_configuration(), object_hook=nodeports_decoder)
+    nodeports_obj.io_obj = io_obj
+    nodeports_obj.auto_read = auto_read
     _LOGGER.debug("Created Nodeports object")
     return nodeports_obj
 
-def save_to_json(obj):
+def create_nodeports_from_uuid(io_obj, node_uuid):
+    _LOGGER.debug("Creating Nodeports object from node uuid: %s", node_uuid)
+    if not io_obj:
+        raise exceptions.NodeportsException("Invalid call to create nodeports from uuid")
+    nodeports_obj = json.loads(io_obj.get_ports_configuration_from_node_uuid(node_uuid), object_hook=nodeports_decoder)
+    _LOGGER.debug("Created Nodeports object")
+    return nodeports_obj
+
+def save_to_json(nodeports_obj):
     """encodes a Nodeports object to json and calls a linked writer if available.
     
     Arguments:
-        obj {Nodeports} -- the object to encode
+        nodeports_obj {Nodeports} -- the object to encode
     """
 
-    auto_update_state = obj.autoupdate
+    auto_update_state = nodeports_obj.autoread
     try:
         # dumping triggers a load of unwanted auto-updates
         # which do not make sense for saving purpose.
-        obj.autoupdate = False
-        nodeports_json = json.dumps(obj, cls=_NodeportsEncoder)
+        nodeports_obj.autoread = False
+        nodeports_json = json.dumps(nodeports_obj, cls=_NodeportsEncoder)
     finally:
-        obj.autoupdate = auto_update_state
+        nodeports_obj.autoread = auto_update_state
     
-    if callable(obj.json_writer):
-        obj.json_writer(nodeports_json) #pylint: disable=E1102
+    if nodeports_obj.autowrite:
+        nodeports_obj.io_obj.write_ports_configuration(nodeports_json)
     _LOGGER.info("Saved Nodeports object to json: %s", nodeports_json)
 
 class _NodeportsEncoder(json.JSONEncoder):

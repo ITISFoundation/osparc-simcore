@@ -6,8 +6,21 @@ import logging
 from enum import Enum
 
 
-DATA_ITEM_KEYS = ["key", "label", "desc", "type", "value", "timestamp"]
-TYPE_TO_PYTHON_TYPE_MAP = {"int":int, "integer":int, "float":float, "fileUrl":str, "bool":bool, "string":str, "folder":str}
+# defined by JSON schema
+DATA_ITEM_KEYS = ["key", 
+                "label", 
+                "desc", 
+                "type", 
+                "value", 
+                "timestamp"]
+# allowed types
+TYPE_TO_PYTHON_TYPE_MAP = {"int":int, 
+                            "integer":int, 
+                            "float":float, 
+                            "fileUrl":str, 
+                            "bool":bool, 
+                            "string":str, 
+                            "folder":str}
 
 # nodeports is a library for accessing data linked to the node
 # in that sense it should not log stuff unless the application code wants it to be so.

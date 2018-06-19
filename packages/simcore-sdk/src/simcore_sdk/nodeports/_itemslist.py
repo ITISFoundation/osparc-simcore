@@ -11,7 +11,7 @@ _LOGGER = logging.getLogger(__name__)
 class DataItemsList(MutableSequence): 
     """This class contains a list of Data Items."""
 
-    def __init__(self, data=None, read_only=False, change_cb=None):
+    def __init__(self, data=None, read_only=False, change_cb=None, get_node_from_node_uuid_cb=None):
         _LOGGER.debug("Creating DataItemsList with %s", data)
         if data is None:
             data = []
@@ -26,8 +26,10 @@ class DataItemsList(MutableSequence):
             raise exceptions.InvalidProtocolError(data)
         self.__lst = data
         self.read_only = read_only
+
         self.__change_notifier = change_cb
-        self.__assign_change_notifier_to_data()
+        self.__get_node_from_node_uuid_cb = get_node_from_node_uuid_cb
+        self.__assign_change_notifier_to_data()        
     
     @property
     def change_notifier(self):
@@ -38,6 +40,15 @@ class DataItemsList(MutableSequence):
     @change_notifier.setter
     def change_notifier(self, value):
         self.__change_notifier = value
+        self.__assign_change_notifier_to_data()
+
+    @property
+    def get_node_from_node_uuid_cb(self):
+        return self.__get_node_from_node_uuid_cb
+
+    @get_node_from_node_uuid_cb.setter
+    def get_node_from_node_uuid_cb(self, value):
+        self.__get_node_from_node_uuid_cb = value
         self.__assign_change_notifier_to_data()
 
     def __setitem__(self, index, value):
@@ -107,6 +118,7 @@ class DataItemsList(MutableSequence):
     def __assign_change_notifier_to_data(self):
         for data in self.__lst:
             data.new_data_cb = self.__item_value_updated_cb
+            data.get_node_from_uuid_cb = self.get_node_from_node_uuid_cb
 
     def __item_value_updated_cb(self, new_data_item):
         # a new item shall replace the current one

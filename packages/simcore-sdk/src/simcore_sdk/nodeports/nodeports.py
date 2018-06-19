@@ -23,6 +23,7 @@ class Nodeports(object):
             inputs = DataItemsList()
         self.__inputs = inputs
         self.__inputs.read_only = True
+        self.__inputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
 
         # outputs are currently read-only as we do not allow dynamic change of
         # number of outputs or changing their type or so for now.
@@ -31,16 +32,18 @@ class Nodeports(object):
         self.__outputs = outputs
         self.__outputs.read_only = True
         self.__outputs.change_notifier = self.save_to_json
+        self.__outputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
 
-        self.__json_reader = None
-        self.__json_writer = None
-        self.autoupdate = False
+        self.io_obj = None
+        self.autoread = False
+        self.autowrite = False
+        
         _LOGGER.debug("Initialised Nodeports object with version %s, inputs %s and outputs %s", version, inputs, outputs)
         
     @property
     def inputs(self):
-        _LOGGER.debug("Getting inputs with autoupdate: %s", self.autoupdate)
-        if self.autoupdate:                        
+        _LOGGER.debug("Getting inputs with autoread: %s", self.autoread)
+        if self.autoread:                        
             self.update_from_json()
         return self.__inputs
 
@@ -53,8 +56,8 @@ class Nodeports(object):
         
     @property
     def outputs(self):
-        _LOGGER.debug("Getting outputs with autoupdate: %s", self.autoupdate)
-        if self.autoupdate:
+        _LOGGER.debug("Getting outputs with autoread: %s", self.autoread)
+        if self.autoread:
             self.update_from_json()
         return self.__outputs
 
@@ -65,35 +68,32 @@ class Nodeports(object):
         raise exceptions.ReadOnlyError(self.__outputs)
         #self.__outputs = value
 
-    @property
-    def json_reader(self):
-        _LOGGER.debug("Getting json configuration")
-        return self.__json_reader
+    def get(self, item_key):
+        try:
+            return self.inputs[item_key].get()
+        except exceptions.UnboundPortError:
+            # not available try outputs
+            pass
+        # if this fails it will raise an exception
+        return self.outputs[item_key].get()
 
-    @json_reader.setter
-    def json_reader(self, value):
-        _LOGGER.debug("Setting json configuration with %s", value)
-        self.__json_reader = value
-    
-    @property
-    def json_writer(self):
-        _LOGGER.debug("Getting json writer")
-        return self.__json_writer
-
-    @json_writer.setter
-    def json_writer(self, value):
-        _LOGGER.debug("Setting json writer with %s", value)
-        self.__json_writer = value
 
     def update_from_json(self):
         _LOGGER.debug("Updating json configuration")
+        if not self.io_obj:
+            raise exceptions.NodeportsException("io object is not initialised")
         change_notifier = self.__outputs.change_notifier
-        updated_nodeports = serialization.create_from_json(self.json_reader)        
+        updated_nodeports = serialization.create_from_json(self.io_obj)        
         self.__inputs = updated_nodeports.inputs
         self.__outputs = updated_nodeports.outputs
-        self.__outputs.change_notifier = change_notifier
+        self.__outputs.change_notifier = change_notifier        
         _LOGGER.debug("Updated json configuration")
     
     def save_to_json(self):
         _LOGGER.info("Saving Nodeports object to json")
         serialization.save_to_json(self)
+
+    def get_node_from_node_uuid(self, node_uuid):
+        if not self.io_obj:
+            raise exceptions.NodeportsException("io object is not initialised")
+        return serialization.create_nodeports_from_uuid(self.io_obj, node_uuid)

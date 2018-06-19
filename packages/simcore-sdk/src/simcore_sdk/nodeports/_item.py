@@ -16,6 +16,7 @@ class DataItem(_DataItem):
         _LOGGER.debug("Creating new data item with %s", kwargs)
         self = super(DataItem, cls).__new__(cls, **kwargs)
         self.new_data_cb = None
+        self.get_node_from_uuid_cb = None
         return self
 
     def get(self):
@@ -31,6 +32,23 @@ class DataItem(_DataItem):
         if self.value == "null":
             return None
         _LOGGER.debug("Got data item with value %s", self.value)
+
+        if isinstance(self.value, str) and self.value.startswith("link."):
+            # try to fetch link from database node
+            _LOGGER.debug("Fetch DB %s", self.value)
+            other_node = self.value.split(".")
+            if len(other_node) != 3:
+                raise exceptions.InvalidProtocolError(self.value, "Invalid link definition: " + str(self.value))
+            other_node_uuid = other_node[1]
+            other_port_key = other_node[2]
+
+            if not self.get_node_from_uuid_cb:
+                raise exceptions.NodeportsException("callback to get other node information is not set")
+
+            other_nodeports = self.get_node_from_uuid_cb(other_node_uuid) #pylint: disable=not-callable
+            return other_nodeports.get(other_port_key)
+
+
         return config.TYPE_TO_PYTHON_TYPE_MAP[self.type](self.value)
 
     def set(self, value):
