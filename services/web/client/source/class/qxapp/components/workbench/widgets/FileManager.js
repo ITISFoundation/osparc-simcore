@@ -72,7 +72,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       tree2.setOpen(true);
       root.add(tree2);
 
-      const username = qxapp.utils.Utils.getUsername();
+      const username = qxapp.data.Fake.getUsername();
       this.__getObjLists(username);
     },
 
@@ -82,14 +82,14 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       socket.removeSlot("listObjectsPub");
       socket.on("listObjectsPub", function(data) {
         let treeItem = this.__addTreeItem(this.__publicTree, data);
-        const publicBucket = qxapp.utils.Utils.getS3PublicBucketName();
+        const publicBucket = qxapp.data.Fake.getS3PublicBucketName();
         treeItem.path = publicBucket + "/" + data.name;
       }, this);
 
       socket.removeSlot("listObjectsUser");
       socket.on("listObjectsUser", function(data) {
         let treeItem = this.__addTreeItem(this.__userTree, data);
-        const username = qxapp.utils.Utils.getUsername();
+        const username = qxapp.data.Fake.getUsername();
         treeItem.path = username + "/" + data.name;
       }, this);
 
@@ -106,7 +106,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
         this.__uploadFile(file, url);
       }, this);
       const data = {
-        bucketName: qxapp.utils.Utils.getUsername(),
+        bucketName: qxapp.data.Fake.getUsername(),
         fileName: file.name
       };
       socket.emit("presignedUrl", data);
