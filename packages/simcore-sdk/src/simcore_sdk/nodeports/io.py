@@ -35,7 +35,7 @@ class IO(object):
             return simcore_config.read()
 
     def __get_node_from_db(self, node_uuid):        
-        pipeline_id = os.environ.get('PIPELINE_NODE_ID')
+        pipeline_id = os.environ.get('SIMCORE_PIPELINE_ID')
         _LOGGER.debug("Reading from database for pipeline id %s and node id %s", pipeline_id, node_uuid)
         try:
             return self._db.session.query(NodeModel).filter(NodeModel.pipeline_id==pipeline_id, NodeModel.node_id==node_uuid).one()                
@@ -50,31 +50,6 @@ class IO(object):
         node_json_config = serialization.save_node_to_json(node)
         _LOGGER.debug("Found and converted to json")
         return node_json_config
-
-    def get_ports_configuration(self):
-        """returns the json configuration of the node ports where this code is running. 
-        
-        Returns:
-            string -- a json containing the ports configuration                
-        """
-        _LOGGER.debug("Getting ports configuration using %s", self.config.LOCATION)
-        if self.config.LOCATION == Location.FILE:
-            return self.__get_configuration_from_file()
-        return self.__get_configuration_from_db(node_uuid=os.environ.get('SIMCORE_NODE_UUID'))
-
-    def get_ports_configuration_from_node_uuid(self, node_uuid):
-        """returns the json configuration of a node with a specific node uuid in the same pipeline
-        
-        Arguments:
-            node_uuid {string} -- node uuid
-        
-        Returns:
-            string -- a json containing the ports configuration
-        """
-        _LOGGER.debug("Getting ports configuration of node %s using %s", node_uuid, self.config.LOCATION)
-        if self.config.LOCATION == Location.FILE:
-            raise NotImplementedError
-        return self.__get_configuration_from_db(node_uuid=node_uuid)
 
     def __write_configuration_to_file(self, json_configuration):
         file_location = os.environ.get('SIMCORE_CONFIG_PATH', self.config.DEFAULT_FILE_LOCATION)
@@ -108,3 +83,28 @@ class IO(object):
             self.__write_configuration_to_file(json_configuration)
         else:
             self.__write_configuration_to_db(json_configuration)
+
+    def get_ports_configuration(self):
+        """returns the json configuration of the node ports where this code is running. 
+        
+        Returns:
+            string -- a json containing the ports configuration                
+        """
+        _LOGGER.debug("Getting ports configuration using %s", self.config.LOCATION)
+        if self.config.LOCATION == Location.FILE:
+            return self.__get_configuration_from_file()
+        return self.__get_configuration_from_db(node_uuid=os.environ.get('SIMCORE_NODE_UUID'))
+
+    def get_ports_configuration_from_node_uuid(self, node_uuid):
+        """returns the json configuration of a node with a specific node uuid in the same pipeline
+        
+        Arguments:
+            node_uuid {string} -- node uuid
+        
+        Returns:
+            string -- a json containing the ports configuration
+        """
+        _LOGGER.debug("Getting ports configuration of node %s using %s", node_uuid, self.config.LOCATION)
+        if self.config.LOCATION == Location.FILE:
+            raise NotImplementedError
+        return self.__get_configuration_from_db(node_uuid=node_uuid)

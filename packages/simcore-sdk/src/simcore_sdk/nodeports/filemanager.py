@@ -27,7 +27,7 @@ def __download_fromS3(s3_client, s3_bucket, s3_object_name, file_path):
     _LOGGER.debug('Downloaded from bucket %s, object %s to %s successfully', s3_bucket, s3_object_name, file_path)
 
 def download_from_S3(node_uuid, node_key, file_name):
-    s3_object_url =  Path(os.environ.get('PIPELINE_NODE_ID'), node_uuid, node_key).as_posix()
+    s3_object_url =  Path(os.environ.get('SIMCORE_PIPELINE_ID'), node_uuid, node_key).as_posix()
     # here we add an extension to circumvent an error when downloading the file under Windows OS
     file_path = Path(_INTERNAL_DIR, file_name, file_name + ".simcore")
     if file_path.exists():
