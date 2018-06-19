@@ -1,4 +1,5 @@
 import os
+from pathlib import Path, PurePosixPath
 import logging
 import tempfile
 import tenacity
@@ -29,10 +30,11 @@ def download_from_S3_if_newer(s3_object_name, object_timestamp, file_name):
     _LOGGER.debug("Initialise S3 connection")
     _s3 = S3Settings()
     _LOGGER.debug("Initialised S3 connection")
-    s3_object_name = os.path.join(os.environ.get('PIPELINE_NODE_ID'), *s3_object_name)
-    s3_object_name = s3_object_name.replace("\\", "/")
-    file_path = os.path.join(_INTERNAL_DIR, file_name, object_timestamp, file_name +".simcore")
-    _LOGGER.debug('Downloading from  S3 %s/%s to %s', _s3.bucket, s3_object_name, file_path)    
-    __download_fromS3(_s3.client, _s3.bucket, s3_object_name, file_path)    
+    s3_object_url =  Path(os.environ.get('PIPELINE_NODE_ID'), *s3_object_name).as_posix()
+    #s3_object_name = s3_object_name.replace("\\", "/")
+    file_path = Path(_INTERNAL_DIR + "/" + file_name + "/" + file_name + ".simcore")    
+    #file_path = os.path.join(_INTERNAL_DIR, file_name, file_name +".simcore")
+    _LOGGER.debug('Downloading from  S3 %s/%s to %s', _s3.bucket, s3_object_url, file_path)    
+    __download_fromS3(_s3.client, _s3.bucket, s3_object_url, str(file_path))    
     return file_path
     
