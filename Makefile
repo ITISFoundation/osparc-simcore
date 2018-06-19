@@ -28,6 +28,10 @@ up-swarm:
 	docker swarm init
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml up
 
+down:
+	docker-compose -f services/docker-compose.yml down
+	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml down
+
 down-swarm:
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml down
 	docker swarm leave -f

@@ -17,24 +17,26 @@ services:
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
   #--------------------------------------------------------------------
+  webclient:
+    image: services_webclient:build
+    build:
+      context: ./web/client/
+      dockerfile: Dockerfile
+      target: build
+    command: /bin/bash -c "Echo "built with qx" && cat build-output/version.txt"
   webserver:
     build:
       context: ../
-      dockerfile: services/web/server/Dockerfile
-      target: production
-      args:
-        client_dir: services/web/client
-        server_dir: services/web/server
+      dockerfile: services/web/Dockerfile
+      target: ci
     ports:
       - '9081:8080'
     environment:
       - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8001
-      - SIMCORE_WEB_CONFIG=production
-      - PYTHONPATH=/usr/src/packages/simcore-sdk/src
-    #command: ["python", "server.py"]
-
-  #------------comp. backend-------------------------------------------
+    depends_on:
+      - webclient
+  #--------------------------------------------------------------------
   rabbit:
     image: rabbitmq:3-management
     environment:
@@ -42,6 +44,7 @@ services:
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
     ports:
       - "15672:15672"
+  #--------------------------------------------------------------------
 #  flower:
 #    image: ondrejit/flower:latest
 #    command: --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbit:5672
@@ -49,6 +52,7 @@ services:
 #      - 5555:5555
 #    depends_on:
 #      - rabbit
+  #--------------------------------------------------------------------
   postgres:
     image: postgres:10
     environment:
@@ -59,12 +63,14 @@ services:
       - postgres:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+  #--------------------------------------------------------------------
   adminer:
     image: adminer
     ports:
       - 18080:8080
     depends_on:
       - postgres
+  #--------------------------------------------------------------------
   sidecar:
     build:
       # the context for the build is the git repo root directory, this allows to copy
@@ -89,6 +95,7 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
     depends_on:
       - rabbit
+  #--------------------------------------------------------------------
   minio:
     image: minio/minio
     environment:
@@ -97,6 +104,7 @@ services:
     ports:
       - "9001:9000"
     command: server /data
+  #--------------------------------------------------------------------
 volumes:
   input:
   output:
