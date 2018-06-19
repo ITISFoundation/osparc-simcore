@@ -75,7 +75,7 @@ async def stop_jupyter_handler(sid, data):
 
 
 @SIO.on('presignedUrl')
-async def retrieveURLForFile(sid, data):
+async def retrieve_url_for_file(sid, data):
     _LOGGER.debug("client %s requests S3 url for %s", sid, data)
     try:
         public_url = 'play.minio.io:9000'
@@ -83,19 +83,20 @@ async def retrieveURLForFile(sid, data):
         public_secret_key ='zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
         minioClient = Minio(
             public_url, 
-            access_key=public_access_key,
+            access_key=public_access_key, 
             secret_key=public_secret_key)
-        bucketName = 'maiz'
-        result = minioClient.presigned_put_object(bucketName, data)
+        result = minioClient.presigned_put_object(data["bucketName"], data["fileName"])
         # Response error is still possible since internally presigned does get
         # bucket location.
-        await SIO.emit('presignedUrl', data=result, room=sid)
+        dataOut = {}
+        dataOut["url"] = result
+        await SIO.emit('presignedUrl', data=dataOut, room=sid)
     except ResponseError as err:
         print(err)
 
 
 @SIO.on('listObjects')
-async def listS3Objects(sid, data):
+async def list_S3_objects(sid, data):
     _LOGGER.debug("client %s requests S3 data in %s", sid, data)
     try:
         public_url = 'play.minio.io:9000'
@@ -103,18 +104,17 @@ async def listS3Objects(sid, data):
         public_secret_key ='zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
         minioClient = Minio(
             public_url, 
-            access_key=public_access_key,
+            access_key=public_access_key, 
             secret_key=public_secret_key)
-
         s3_public_bucket_name = 'simcore'
         objects = minioClient.list_objects_v2(s3_public_bucket_name)
         for obj in objects:
             print(obj.bucket_name, obj.object_name.encode('utf-8'), obj.last_modified,
                 obj.etag, obj.size, obj.content_type)
-            obj.name = obj.object_name.encode('utf-8')
-            obj.lastModified = obj.last_modified
+            obj["name"] = obj.object_name.encode('utf-8')
+            obj["lastModified"] = obj.last_modified
             await SIO.emit('listObjectsPub', data=obj, room=sid)
-        
+
         objects = minioClient.list_objects_v2(data)
         for obj in objects:
             print(obj.bucket_name, obj.object_name.encode('utf-8'), obj.last_modified,
