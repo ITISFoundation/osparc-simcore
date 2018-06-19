@@ -4,6 +4,10 @@ LABEL maintainer="sanderegg"
 
 ARG NOTEBOOK_NAME=cc_oned.ipynb
 ARG NOTEBOOK_FOLDER_NAME=cc-oned
+ENV SIMCORE_PIPELINE_ID="-1"
+ENV SIMCORE_NODE_UUID="-1"
+
+EXPOSE 8888
 
 # call date -u +”%Y-%m-%dT%H:%M:%SZ” in a bash
 ARG VCS_REF
