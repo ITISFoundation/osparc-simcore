@@ -346,6 +346,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             right: 0,
             bottom: 0
           });
+          fileManager.addListener("FileSelected", function(data) {
+            node.getMetadata().outputs[0].value = data.getData().filePath;
+            node.setProgress(100);
+            win.close();
+          }, this);
 
           this.addWindowToDesktop(win);
         } else {

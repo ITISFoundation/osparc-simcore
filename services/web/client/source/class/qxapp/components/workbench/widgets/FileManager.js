@@ -35,13 +35,27 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
     this.add(tree, {
       flex: 1
     });
+    tree.addListener("changeSelection", this.__selectionChanged, this);
+
+    this.__selectFileBtn = new qx.ui.form.Button("Select File");
+    this.__selectFileBtn.setEnabled(false);
+    this.add(this.__selectFileBtn);
+    this.__selectFileBtn.addListener("execute", function() {
+      this.__fileSelected();
+    }, this);
+
     this.__reloadTree();
+  },
+
+  events: {
+    "FileSelected": "qx.event.type.Data"
   },
 
   members: {
     __mainTree: null,
     __publicTree: null,
     __userTree: null,
+    __selectFileBtn: null,
 
     __reloadTree: function() {
       this.__mainTree.resetRoot();
@@ -66,12 +80,14 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
 
       socket.removeSlot("listObjectsPub");
       socket.on("listObjectsPub", function(data) {
-        this.__addTreeItem(this.__publicTree, data);
+        let treeItem = this.__addTreeItem(this.__publicTree, data);
+        treeItem.path = "simcore/" + data.name;
       }, this);
 
       socket.removeSlot("listObjectsUser");
       socket.on("listObjectsUser", function(data) {
-        this.__addTreeItem(this.__userTree, data);
+        let treeItem = this.__addTreeItem(this.__userTree, data);
+        treeItem.path = "maiz/" + data.name;
       }, this);
 
       socket.emit("listObjects", bucketName);
@@ -83,7 +99,6 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
 
       socket.removeSlot("presignedUrl");
       socket.on("presignedUrl", function(data) {
-        console.log("presignedUrl", data);
         const url = data["url"];
         this.__uploadFile(file, url);
       }, this);
@@ -111,9 +126,28 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       };
     },
 
+    __selectionChanged: function() {
+      let selectedItem = this.__mainTree.getSelection();
+      this.__selectFileBtn.setEnabled("path" in selectedItem[0]);
+    },
+
+    __fileSelected: function() {
+      let selectedItem = this.__mainTree.getSelection();
+      if ("path" in selectedItem[0]) {
+        const data = {
+          filePath: selectedItem[0].path
+        };
+        this.fireDataEvent("FileSelected", data);
+
+        console.log();
+      }
+    },
+
     __addTreeItem: function(tree, data) {
       let treeItem = this.__configureTreeItem(new qx.ui.tree.TreeFile(), data.name, data);
       tree.add(treeItem);
+
+      return treeItem;
     },
 
     __configureTreeItem: function(treeItem, label, extraInfo) {
