@@ -1,18 +1,51 @@
 version: '3.4'
 services:
   cc-0d:
+    build:
+      target: development
     volumes: 
       - ./data:/home/jovyan/data
       - ./config:/home/jovyan/config
   #--------------------------------------------------------------------
   cc-1d:
+    build:
+      target: development
     volumes: 
       - ./data:/home/jovyan/data
       - ./config:/home/jovyan/config
   #--------------------------------------------------------------------
   cc-2d:
+    build:
+      target: development
     volumes: 
       - ./data:/home/jovyan/data
       - ./config:/home/jovyan/config
   #--------------------------------------------------------------------
-  
+  postgres:
+    image: postgres:10
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  #--------------------------------------------------------------------
+  adminer:
+    image: adminer
+    ports:
+      - 18080:8080
+    depends_on:
+      - postgres
+  #--------------------------------------------------------------------
+  minio:
+    image: minio/minio
+    environment:
+      - MINIO_ACCESS_KEY=${S3_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${S3_SECRET_KEY}
+    ports:
+      - "9001:9000"
+    command: server /data
+volumes:
+  postgres:

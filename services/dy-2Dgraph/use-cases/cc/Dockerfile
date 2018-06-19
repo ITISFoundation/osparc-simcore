@@ -1,4 +1,4 @@
-FROM simcore/services/jupyter-base-notebook:latest
+FROM simcore/services/jupyter-base-notebook:latest AS common
 
 LABEL maintainer="sanderegg"
 
@@ -33,13 +33,10 @@ RUN apt-get update && \
     ffmpeg
 USER $NB_USER
 
-# install the plotly, pandas, the jupyter extensions
-RUN pip install plotly \
-    matplotlib \
-    tqdm \
-    pandas \
-    jupyter_contrib_nbextensions \
-    jupyter_dashboards && \
+# install requirements, install jupyter notebook extensions and enable necessary ones
+COPY --chown=jovyan:users requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
     jupyter contrib nbextensions install --user && \
     jupyter dashboards quick-setup --sys-prefix && \    
     jupyter nbextension enable hide_input/main && \
@@ -49,25 +46,30 @@ RUN pip install plotly \
 COPY --chown=jovyan:users ${NOTEBOOK_FOLDER_NAME}/${NOTEBOOK_NAME} .
 RUN jupyter trust ${NOTEBOOK_NAME}
 
-# download the simcore_sdk pacakge
+# download the simcore_sdk package
 RUN mkdir packages && \
     cd packages && \
     git init && \
     git remote add origin -f https://github.com/sanderegg/osparc-simcore.git && \
     git config core.sparsecheckout true && \
     echo "packages/simcore-sdk/src/simcore_sdk/*" >> .git/info/sparse-checkout && \
+    echo "packages/s3wrapper/src/s3wrapper/*" >> .git/info/sparse-checkout && \
     git pull --depth=1 origin analysis_2d_graph
-
-ENV PYTHONPATH=./packages/packages/simcore-sdk/src
 
 # define where the inputs shall be defined
 VOLUME /home/jovyan/data
 VOLUME /home/jovyan/config
 
+# starts notebook without token
+ENV NOTEBOOK_URL=${NOTEBOOK_NAME}
+ENV PYTHONPATH="./packages/packages/simcore-sdk/src:./packages/packages/s3wrapper/src"
+
 COPY --chown=jovyan:users boot.sh boot.sh
 RUN chmod +x boot.sh
 
-# starts notebook without token
-ENV NOTEBOOK_URL=${NOTEBOOK_NAME}
-
+FROM common AS development
+ENV CREATE_DUMMY_TABLE=1
 CMD [ "/bin/sh", "boot.sh" ]
+
+FROM common AS production
+ENTRYPOINT [ "/bin/sh", "boot.sh" ]

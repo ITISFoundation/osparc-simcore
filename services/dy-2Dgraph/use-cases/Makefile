@@ -10,14 +10,14 @@ up:
 down:
 	docker-compose -f docker-compose.yml down
 
-devel-build:
+build-devel:
 	docker-compose -f docker-compose.yml -f docker-compose.devel.yml build
 
-devel-rebuild:
+rebuild-devel:
 	docker-compose -f docker-compose.yml -f docker-compose.devel.yml build --no-cache
 
-devel-up:
-	docker-compose -f docker-compose.yml -f docker-compose.devel.yml up -d
+up-devel:
+	docker-compose -f docker-compose.yml -f docker-compose.devel.yml up
 
-devel-down:
+down-devel:
 	docker-compose -f docker-compose.yml -f docker-compose.devel.yml down

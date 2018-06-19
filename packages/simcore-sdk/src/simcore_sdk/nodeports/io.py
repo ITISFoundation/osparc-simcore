@@ -108,31 +108,3 @@ class IO(object):
             self.__write_configuration_to_file(json_configuration)
         else:
             self.__write_configuration_to_db(json_configuration)
-
-
-
-# def create_dummy():
-#     inputs = [
-#         dict(
-#             key="in_1",
-#             label="computational data",
-#             description="these are computed data out of a pipeline",
-#             type="file-url",
-#             value="/home/jovyan/data/outputControllerOut.dat",
-#             timestamp="2018-05-23T15:34:53.511Z"
-#         ),
-#         dict(
-#             key="in_5",
-#             label="some number",
-#             description="numbering things",
-#             type="int",
-#             value="666",
-#             timestamp="2018-05-23T15:34:53.511Z"
-#         )
-#         ]
-#     outputs = []
-#     new_Node = NodeModel(pipeline_id=pipeline_id node_id=node_id, tag="0.1", inputs=inputs, outputs=outputs)
-#     self._db.session.add(new_Node)
-#     self._db.session.commit()
-#create_dummy()
-#return
