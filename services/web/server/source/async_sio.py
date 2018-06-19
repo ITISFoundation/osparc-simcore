@@ -94,6 +94,38 @@ async def retrieveURLForFile(sid, data):
         print(err)
 
 
+@SIO.on('listObjects')
+async def listS3Objects(sid, data):
+    _LOGGER.debug("client %s requests S3 data in %s", sid, data)
+    try:
+        public_url = 'play.minio.io:9000'
+        public_access_key = 'Q3AM3UQ867SPQQA43P2F'
+        public_secret_key ='zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
+        minioClient = Minio(
+            public_url, 
+            access_key=public_access_key,
+            secret_key=public_secret_key)
+        
+        objects = minioClient.list_objects_v2('simcore')
+        for obj in objects:
+            print(obj.bucket_name, obj.object_name.encode('utf-8'), obj.last_modified,
+                obj.etag, obj.size, obj.content_type)
+            obj.objectName = obj.object_name.encode('utf-8')
+            obj.lastModified = obj.last_modified
+            await SIO.emit('listObjectsPub', data=obj, room=sid)
+        
+        objects = minioClient.list_objects_v2(data)
+        for obj in objects:
+            print(obj.bucket_name, obj.object_name.encode('utf-8'), obj.last_modified,
+                obj.etag, obj.size, obj.content_type)
+            obj.objectName = obj.object_name.encode('utf-8')
+            obj.lastModified = obj.last_modified
+            await SIO.emit('listObjectsUser', data=obj, room=sid)
+
+    except ResponseError as err:
+        print(err)
+
+
 @SIO.on('disconnect')
 def disconnect(sid):
     _LOGGER.debug("client %s disconnected", sid)

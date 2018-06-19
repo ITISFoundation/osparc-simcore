@@ -16,7 +16,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
 
     this.getContentElement().add(input);
 
-    let pick = new qx.ui.form.Button("Upload");
+    let pick = new qx.ui.form.Button("Add file");
     this.add(pick);
 
     // Add an event listener
@@ -31,39 +31,62 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       }
     }, this);
 
-
-    let tree = new qx.ui.tree.Tree();
+    let tree = this.__mainTree = new qx.ui.tree.Tree();
     this.add(tree, {
       flex: 1
     });
-
-    let root = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Available Files");
-    root.setOpen(true);
-    tree.setRoot(root);
-
-    let tree1 = this.__publicTree = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Public Files");
-    root.add(tree1);
-
-    let tree2 = this.__userTree = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "User Files");
-    root.add(tree2);
-
     this.__reloadTree();
   },
 
   members: {
+    __mainTree: null,
     __publicTree: null,
     __userTree: null,
+
+    __reloadTree: function() {
+      this.__mainTree.resetRoot();
+
+      let root = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Available Files");
+      root.setOpen(true);
+      this.__mainTree.setRoot(root);
+
+      let tree1 = this.__publicTree = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Public Files");
+      tree1.setOpen(true);
+      root.add(tree1);
+
+      let tree2 = this.__userTree = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "User Files");
+      tree2.setOpen(true);
+      root.add(tree2);
+
+      this.__getObjLists("maiz");
+    },
+
+    __getObjLists: function(bucketName) {
+      let socket = qxapp.wrappers.WebSocket.getInstance();
+
+      socket.removeSlot("listObjectsPub");
+      socket.on("listObjectsPub", function(data) {
+        this.__addTreeItem(this.__publicTree, data);
+      }, this);
+
+      socket.removeSlot("listObjectsUser");
+      socket.on("listObjectsUser", function(data) {
+        this.__addTreeItem(this.__userTree, data);
+      }, this);
+
+      socket.emit("listObjects", bucketName);
+    },
 
     // Request to the server an upload URL.
     __retrieveURLAndUpload: function(file) {
       let socket = qxapp.wrappers.WebSocket.getInstance();
-      if (!socket.slotExists("presignedUrl")) {
-        socket.on("presignedUrl", function(data) {
-          console.log("presignedUrl", data);
-          const url = data["url"];
-          this.__uploadFile(file, url);
-        }, this);
-      }
+
+      socket.removeSlot("presignedUrl");
+      socket.on("presignedUrl", function(data) {
+        console.log("presignedUrl", data);
+        const url = data["url"];
+        this.__uploadFile(file, url);
+      }, this);
       socket.emit("presignedUrl", file.name);
     },
 
@@ -83,41 +106,14 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       xhr.onload = () => {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
+          this.__reloadTree();
         }
       };
     },
 
-    __reloadTree: function() {
-      this.__publicTree.removeAll();
-      this.__userTree.removeAll();
-
-      this.__getObjLists("maiz");
-    },
-
-    __getObjLists: function(bucketName) {
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-      if (!socket.slotExists("listObjectsPub")) {
-        socket.on("listObjectsPub", function(data) {
-          console.log("listObjectsPub", data);
-          this.__addTreeItem(data);
-        }, this);
-      }
-      if (!socket.slotExists("listObjectsUser")) {
-        socket.on("listObjectsUser", function(data) {
-          console.log("listObjectsUser", data);
-          this.__addTreeItem(data);
-        }, this);
-      }
-      socket.emit("listObjects", bucketName);
-    },
-
-    __addTreeItem: function(data) {
-      let treeItem = this.__configureTreeItem(new qx.ui.tree.TreeFile(), data.data.name, data.data);
-      if (data.owner === "user") {
-        this.__userTree.add(treeItem);
-      } else if (data.owner === "public") {
-        this.__publicTree.add(treeItem);
-      }
+    __addTreeItem: function(tree, data) {
+      let treeItem = this.__configureTreeItem(new qx.ui.tree.TreeFile(), data.name, data);
+      tree.add(treeItem);
     },
 
     __configureTreeItem: function(treeItem, label, extraInfo) {
@@ -149,12 +145,8 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
         text.setWidth(80);
         treeItem.addWidget(text);
 
-        text = new qx.ui.basic.Label(extraInfo.lastModified);
+        text = new qx.ui.basic.Label((new Date(extraInfo.lastModified)).toUTCString());
         text.setWidth(200);
-        treeItem.addWidget(text);
-
-        text = new qx.ui.basic.Label("-rw-r--r--");
-        text.setWidth(100);
         treeItem.addWidget(text);
       }
 
