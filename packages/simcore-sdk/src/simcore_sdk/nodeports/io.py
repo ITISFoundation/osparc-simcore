@@ -5,11 +5,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import exc
 from sqlalchemy.orm.attributes import flag_modified
+
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.models.pipeline_models import ComputationalTask as NodeModel
 from simcore_sdk.nodeports import serialization
 from simcore_sdk.nodeports.config import Location
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class DbSettings(object):
 class IO(object):
     def __init__(self, config):
         if config.LOCATION == Location.DATABASE:            
-            self._db = DbSettings()
+            self._db = DbSettings()            
 
         self.config = config
 

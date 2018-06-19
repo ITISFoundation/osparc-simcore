@@ -5,6 +5,7 @@ import collections
 import datetime
 from simcore_sdk.nodeports import exceptions
 from simcore_sdk.nodeports import config
+from simcore_sdk.nodeports import filemanager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,23 +31,32 @@ class DataItem(_DataItem):
         if self.type not in config.TYPE_TO_PYTHON_TYPE_MAP:
             raise exceptions.InvalidProtocolError(self.type)
         if self.value == "null":
+            _LOGGER.debug("Got empty data item")
             return None
         _LOGGER.debug("Got data item with value %s", self.value)
 
         if isinstance(self.value, str) and self.value.startswith("link."):
-            # try to fetch link from database node
-            _LOGGER.debug("Fetch DB %s", self.value)
-            other_node = self.value.split(".")
-            if len(other_node) != 3:
+            link = self.value.split(".")
+            if len(link) != 3:
                 raise exceptions.InvalidProtocolError(self.value, "Invalid link definition: " + str(self.value))
-            other_node_uuid = other_node[1]
-            other_port_key = other_node[2]
+            if self.type in config.TYPE_TO_S3_LIST:
+                # try to fetch from S3
+                _LOGGER.debug("Fetch value from S3 %s", self.value)
+                s3_link = link[1:]
+                return filemanager.download_from_S3_if_newer(s3_link, self.timestamp, self.key)
+            else:
+                # try to fetch link from database node
+                _LOGGER.debug("Fetch value from other node %s", self.value)
+                
+                other_node_uuid = link[1]
+                other_port_key = link[2]
 
-            if not self.get_node_from_uuid_cb:
-                raise exceptions.NodeportsException("callback to get other node information is not set")
+                if not self.get_node_from_uuid_cb:
+                    raise exceptions.NodeportsException("callback to get other node information is not set")
 
-            other_nodeports = self.get_node_from_uuid_cb(other_node_uuid) #pylint: disable=not-callable
-            return other_nodeports.get(other_port_key)
+                other_nodeports = self.get_node_from_uuid_cb(other_node_uuid) #pylint: disable=not-callable
+                _LOGGER.debug("Received node from DB %s, now returning value", other_nodeports)
+                return other_nodeports.get(other_port_key)
 
 
         return config.TYPE_TO_PYTHON_TYPE_MAP[self.type](self.value)

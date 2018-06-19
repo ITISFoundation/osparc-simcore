@@ -33,7 +33,8 @@ def create_from_json(io_obj, auto_read=False, auto_write=False):
         raise exceptions.NodeportsException("io object empty, this is not allowed")
     nodeports_obj = json.loads(io_obj.get_ports_configuration(), object_hook=nodeports_decoder)
     nodeports_obj.io_obj = io_obj
-    nodeports_obj.auto_read = auto_read
+    nodeports_obj.autoread = auto_read
+    nodeports_obj.autowrite = auto_write
     _LOGGER.debug("Created Nodeports object")
     return nodeports_obj
 

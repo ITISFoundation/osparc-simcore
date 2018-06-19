@@ -21,6 +21,8 @@ TYPE_TO_PYTHON_TYPE_MAP = {"int":int,
                             "bool":bool, 
                             "string":str, 
                             "folder":str}
+# S3 stored information
+TYPE_TO_S3_LIST = ["fileUrl", "folderUrl"]
 
 # nodeports is a library for accessing data linked to the node
 # in that sense it should not log stuff unless the application code wants it to be so.
