@@ -15,6 +15,7 @@ import interactive_services_manager
 
 from minio import Minio
 from minio.error import ResponseError
+import json
 
 _LOGGER = logging.getLogger(__file__)
 
@@ -97,7 +98,7 @@ async def retrieve_url_for_file(sid, data):
 
 @SIO.on('listObjects')
 async def list_S3_objects(sid, data):
-    _LOGGER.debug("client %s requests S3 data in %s", sid, data)
+    _LOGGER.debug("client %s requests S3 objects in %s", sid, data)
     try:
         public_url = 'play.minio.io:9000'
         public_access_key = 'Q3AM3UQ867SPQQA43P2F'
@@ -106,22 +107,23 @@ async def list_S3_objects(sid, data):
             public_url, 
             access_key=public_access_key, 
             secret_key=public_secret_key)
+
         s3_public_bucket_name = 'simcore'
         objects = minioClient.list_objects_v2(s3_public_bucket_name)
         for obj in objects:
-            print(obj.bucket_name, obj.object_name.encode('utf-8'), obj.last_modified,
-                obj.etag, obj.size, obj.content_type)
-            obj["name"] = obj.object_name.encode('utf-8')
-            obj["lastModified"] = obj.last_modified
-            await SIO.emit('listObjectsPub', data=obj, room=sid)
+            dataOut = {}
+            dataOut['name'] = obj.object_name
+            dataOut['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
+            dataOut['size'] = obj.size
+            await SIO.emit('listObjectsPub', data=dataOut, room=sid)
 
         objects = minioClient.list_objects_v2(data)
         for obj in objects:
-            print(obj.bucket_name, obj.object_name.encode('utf-8'), obj.last_modified,
-                obj.etag, obj.size, obj.content_type)
-            obj.name = obj.object_name.encode('utf-8')
-            obj.lastModified = obj.last_modified
-            await SIO.emit('listObjectsUser', data=obj, room=sid)
+            dataOut = {}
+            dataOut['name'] = obj.object_name
+            dataOut['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
+            dataOut['size'] = obj.size
+            await SIO.emit('listObjectsUser', data=dataOut, room=sid)
 
     except ResponseError as err:
         print(err)
