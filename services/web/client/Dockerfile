@@ -46,17 +46,8 @@ WORKDIR /home/scu
 #  - This is a temporary solution
 RUN git clone --depth 1 https://github.com/qooxdoo/qooxdoo.git ${QOOXDOO_PATH}
 
-<<<<<<< HEAD
 # 2. installs qx-compiler (see specs in package.json)
 COPY --chown=scu:scu package*.json ./
-=======
-# FIXME: npm WARN node description, ...
-# FIXME: npm WARN notice [SECURITY] tunnel-agen
-# FIXME: npm WARN notice [SECURITY] hoek
-RUN npm i npm@latest && \
-    npm install && \
-    git clone --depth 1 https://github.com/qooxdoo/qooxdoo.git qooxdoo-sdk
->>>>>>> comp_backend
 
 RUN npm install npm@latest && \
     npm install
