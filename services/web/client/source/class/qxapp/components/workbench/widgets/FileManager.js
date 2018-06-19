@@ -16,7 +16,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
 
     this.getContentElement().add(input);
 
-    let pick = new qx.ui.form.Button("Add file");
+    let pick = new qx.ui.form.Button(this.tr("Add file"));
     this.add(pick);
 
     // Add an event listener
@@ -37,7 +37,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
     });
     tree.addListener("changeSelection", this.__selectionChanged, this);
 
-    this.__selectFileBtn = new qx.ui.form.Button("Select File");
+    this.__selectFileBtn = new qx.ui.form.Button(this.tr("Select File"));
     this.__selectFileBtn.setEnabled(false);
     this.add(this.__selectFileBtn);
     this.__selectFileBtn.addListener("execute", function() {
@@ -60,15 +60,15 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
     __reloadTree: function() {
       this.__mainTree.resetRoot();
 
-      let root = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Available Files");
+      let root = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), this.tr("Available Files"));
       root.setOpen(true);
       this.__mainTree.setRoot(root);
 
-      let tree1 = this.__publicTree = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "Public Files");
+      let tree1 = this.__publicTree = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), this.tr("Public Files"));
       tree1.setOpen(true);
       root.add(tree1);
 
-      let tree2 = this.__userTree = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), "User Files");
+      let tree2 = this.__userTree = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), this.tr("User Files"));
       tree2.setOpen(true);
       root.add(tree2);
 
@@ -145,8 +145,6 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
           filePath: selectedItem[0].path
         };
         this.fireDataEvent("FileSelected", data);
-
-        console.log();
       }
     },
 

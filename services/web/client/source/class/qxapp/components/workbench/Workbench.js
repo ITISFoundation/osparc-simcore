@@ -334,9 +334,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             minWidth: 500,
             minHeight: 500,
             modal: true,
+            showMinimize: false,
             layout: new qx.ui.layout.Canvas()
           });
-          win.setShowMinimize(false);
           win.moveTo(50, 50);
 
           let fileManager = new qxapp.components.workbench.widgets.FileManager();
