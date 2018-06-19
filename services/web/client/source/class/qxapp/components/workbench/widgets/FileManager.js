@@ -105,7 +105,11 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
         const url = data["url"];
         this.__uploadFile(file, url);
       }, this);
-      socket.emit("presignedUrl", file.name);
+      const data = {
+        bucketName: qxapp.utils.Utils.getUsername(),
+        fileName: file.name
+      };
+      socket.emit("presignedUrl", data);
     },
 
     // Use XMLHttpRequest to upload the file to S3.
