@@ -26,11 +26,6 @@ The simcore-sdk package takes care of reading/writing out the configuration of t
 Through its _get()_ method an input/output is automatically converted to a fitting python type. If the pointed data is located on S3 storage it will be automatically downloaded to the local storage and its file path will be returned.
 Using the _set()_ method with an output will automatically convert it to a string and update the port configuration in the database.
 
-### missing features
-
-- push data to S3 when an output is modified
-- only pull data from S3 if the local data is outdated
-
 ### basic demo usage
 
 1. rename _services/dy-2Dgraph/use-cases/.env-devel_ to _.env_
@@ -42,6 +37,8 @@ Using the _set()_ method with an output will automatically convert it to a strin
 3. open url [localhost:1234](localhost:1234) to see 0d use case graphs
 4. open url [localhost:1235](localhost:1235) to see 1d use case graphs
 5. open url [localhost:1236](localhost:1236) to see 2d use case graphs
+6. open url [localhost:9001](localhost:9001) to see the s3 file manager UI
+7. open url [localhost:18080](localhost:18080) to see the adminer (db visualiser)
 
 
 ### basic usage of simcore-sdk/nodeports package
@@ -52,6 +49,8 @@ from simcore-sdk.nodeports import PORTS
 input0 = PORTS.inputs[0]
 print(input0.key)
 print(input0.value)
+# if the key is known one can also do
+input0 = PORTS.inputs["key"]
 
 # access input1 and a file path as defined in the workbench
 data_path = PORTS.inputs[1].get()
