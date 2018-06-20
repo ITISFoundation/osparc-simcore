@@ -2,6 +2,8 @@ import os
 import sys
 import tempfile
 import json
+import pandas as pd
+import numpy as np
 from pathlib import Path
 
 from sqlalchemy import create_engine
@@ -30,28 +32,41 @@ class S3Settings(object):
         self.client.create_bucket(self.bucket)
 
 def create_dummy(json_configuration_file_path):
-    with open(Path("/home/jovyan", json_configuration_file_path)) as file_pointer:
-        configuration = json.load(file_pointer)
+    with open(json_configuration_file_path) as file_pointer:
+        json_configuration = file_pointer.read()
     
     
     # initialise db
     db = DbSettings()
-    Base.metadata.create_all(db.db)
-    node_uuid = os.environ.get('SIMCORE_NODE_UUID')
+    Base.metadata.create_all(db.db)    
     new_Pipeline = ComputationalPipeline()
     db.session.add(new_Pipeline)
     db.session.commit()
+
+    
+    node_uuid = os.environ.get("SIMCORE_NODE_UUID")
+    # correct configuration with node uuid
+    json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", node_uuid)
+    configuration = json.loads(json_configuration)
+    # now create the node in the db with links to S3
     os.environ["SIMCORE_PIPELINE_ID"] = str(new_Pipeline.pipeline_id) # set the env variable in the docker
     new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, input=configuration["inputs"], output=configuration["outputs"])
-    
     db.session.add(new_Node)
     db.session.commit()
 
-    # create a dummy file
+    # create a dummy file filled with dummy data
     temp_file = tempfile.NamedTemporaryFile()
     temp_file.close()
+
+    # create a dummy table
+    time = np.arange(20).reshape(20,1)
+    matrix = np.random.randn(20, 20)
+    fullmatrix = np.hstack((time, matrix))
+    df = pd.DataFrame(fullmatrix)
+
+    # serialize to the file
     with open(temp_file.name, "w") as file_pointer:
-        file_pointer.write("This is a nice dummy data here")
+        df.to_csv(path_or_buf=file_pointer, sep="\t", header=False, index=False)        
     
     # initialise s3
     s3 = S3Settings()
