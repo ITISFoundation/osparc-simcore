@@ -1,31 +1,64 @@
 version: '3.4'
 services:
   cc-0d:
+    image: services-cc-0d-dev:latest
     build:
       target: development
       args:
         JSON_CONFIGURATION: cc_single_cell.json
         JSON_CONFIGURATION_FOLDER: cc-single-cell
+    environment: 
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - SIMCORE_NODE_UUID=${SIMCORE_NODE_UUID}
     depends_on:
       - postgres
       - minio
   #--------------------------------------------------------------------
   cc-1d:
+    image: services-cc-1d-dev:latest
     build:
       target: development
       args:
         JSON_CONFIGURATION: cc_config-oned.json
         JSON_CONFIGURATION_FOLDER: cc-oned
+    environment: 
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - SIMCORE_NODE_UUID=${SIMCORE_NODE_UUID}
     depends_on:
       - postgres
       - minio
   #--------------------------------------------------------------------
   cc-2d:
+    image: services-cc-2d-dev:latest
     build:
       target: development
       args:
         JSON_CONFIGURATION: cc_config-twod.json
         JSON_CONFIGURATION_FOLDER: cc-twod
+    environment: 
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - SIMCORE_NODE_UUID=${SIMCORE_NODE_UUID}
     depends_on:
       - postgres
       - minio
