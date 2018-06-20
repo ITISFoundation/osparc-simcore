@@ -6,6 +6,15 @@ PY_FILES = $(strip $(shell find services packages -iname '*.py'))
 
 export PYTHONPATH=${PWD}/packages/s3wrapper/src
 
+build-devel:
+	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml build
+
+rebuild-devel:
+	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
+
+up-devel:
+	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml up
+
 build:
 	docker-compose -f services/docker-compose.yml build
 
@@ -13,10 +22,17 @@ rebuild:
 	docker-compose -f services/docker-compose.yml build --no-cache
 
 up:
+	docker-compose -f services/docker-compose.yml up
+
+up-swarm:
 	docker swarm init
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml up
 
 down:
+	docker-compose -f services/docker-compose.yml down
+	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml down
+
+down-swarm:
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml down
 	docker swarm leave -f
 
@@ -33,8 +49,8 @@ before_test:
 	docker-compose -f packages/simcore-sdk/tests/docker-compose.yml build
 
 run_test:
-	pytest -v packages/pytest_docker/
-	pytest -v packages/s3wrapper/
+	pytest --cov=pytest_docker -v packages/pytest_docker/
+	pytest --cov=s3wrapper -v packages/s3wrapper/
 	pytest -v packages/simcore-sdk/
 
 after_test:

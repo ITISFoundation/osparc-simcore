@@ -5,9 +5,10 @@ TODO create create_environment_file(.) to build a template env file with default
 # pylint: disable=C0111
 # pylint: disable=cyclic-import
 
+import logging
 import os
 import sys
-import logging
+
 import utils
 
 _CDIR = os.path.dirname(sys.argv[0] if __name__ == '__main__' else __file__)

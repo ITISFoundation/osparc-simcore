@@ -115,3 +115,8 @@ services/docker-compose.override.yml
 
 # mac
 .DS_Store
+
+
+# key-words in filename to ignore them
+*secret*
+*ignore*
