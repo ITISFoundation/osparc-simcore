@@ -5,8 +5,6 @@
 import json
 import os
 
-from pprint import pprint
-
 from requests import RequestException, Session
 
 INTERACTIVE_SERVICES_PREFIX = 'simcore/services/'
@@ -96,27 +94,31 @@ def get_repo_details():
     repositories = {}
     repo_list = []
     for repo in repos:
-        current_repo = {}
-        current_repo['name'] = repo
-        req_images = registry_request(repo + '/tags/list')
-        im_data = req_images.json()
-        tags = im_data['tags']
+        if "/comp/" in repo:
+            current_repo = {}
+            current_repo['name'] = repo
+            req_images = registry_request(repo + '/tags/list')
+            im_data = req_images.json()
+            tags = im_data['tags']
 
-        image_tags = {}
-        for tag in tags:
-            label_request = registry_request(repo + '/manifests/' + tag)
-            label_data = label_request.json()
-            labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
-            image_tags['tag'] = tag
-            image_tags['labels'] = labels
+            image_tags = {}
+            for tag in tags:
+                label_request = registry_request(repo + '/manifests/' + tag)
+                label_data = label_request.json()
+                labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
+                if labels:
+                    for key in labels.keys():
+                        if key.startswith("io.simcore."):
+                            label_data = json.loads(labels[key])
+                            for label_key in label_data.keys():
+                                image_tags[label_key] = label_data[label_key]
+            if image_tags:
+                current_repo['tags'] = image_tags
 
-        current_repo['tags'] = image_tags
 
-
-        repo_list.append(current_repo)
+            repo_list.append(current_repo)
 
     repositories['repositories'] = repo_list
-    #result_json = request_result.json()['repositories']
     result_json = json.dumps(repositories)
 
 

@@ -584,21 +584,10 @@ qx.Class.define("qxapp.data.Fake", {
 
     __onListOfRepositories: function(e) {
       let req = e.getTarget();
-      console.debug("ListOfRepositories went fine!!");
-      console.debug("status  : ", req.getStatus());
-      console.debug("phase   : ", req.getPhase());
-      console.debug("response: ", req.getResponse());
-
-      let availableServices = [];
-      const listOfRepos = req.getResponse();
-      for (let i=0; i<listOfRepos.length; i++) {
-        const listOfVersions = listOfRepos[i];
-        for (let j=0; j<listOfVersions.length; j++) {
-          const service = listOfVersions[j];
-          console.log(service);
-          availableServices.push(service);
-        }
-      }
+      console.log("ListOfRepositories went fine!!");
+      console.log("status  : ", req.getStatus());
+      console.log("phase   : ", req.getPhase());
+      console.log("response: ", req.getResponse());
     },
 
 

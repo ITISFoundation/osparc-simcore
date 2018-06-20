@@ -104,11 +104,6 @@ def stop_service():
 
 @APP.route('/list_repositories', methods=['GET'])
 def list_repositories():
-    """[summary]
-
-    Returns:
-        [type] -- [description]
-    """
     repos = registry_proxy.get_repo_details()
 
     return json.dumps(repos)

@@ -6,8 +6,6 @@
 from aiohttp import web
 import async_timeout
 
-from pprint import pprint
-
 import director_proxy
 
 registry_routes = web.RouteTableDef()
@@ -40,7 +38,6 @@ async def services(request):
     """
     _a = request
 
-    a = director_proxy.retrieve_repositories()
-    pprint(a)
+    repo_list = director_proxy.retrieve_repositories()
 
-    return web.Response(text="This will be a list of comp. services")
+    return web.json_response(repo_list)
