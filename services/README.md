@@ -85,3 +85,6 @@ To deploy the application in a single-node swarm
   docker swarm init
   docker-compose -f docker-compose.yml -f docker-compose.deploy.yml up
 ```
+## Credentials
+
+Rename `.env-devel` to `.env` in order to get the stack up and running.

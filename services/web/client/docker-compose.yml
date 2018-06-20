@@ -1,22 +1,22 @@
 version: '3.4'
 services:
   qx:
-    #image: itisfoundation/qooxdoo-compiler:latest
-    image: client_qx:dev
+    # BUILD_TARGET in [development, build]
+    image: client_qx:${BUILD_TARGET:-development}
     build:
-      # ToDo: development version doesn't work in Windows.
-      #  Modified files in the mounted volume don't trigger container operating 
-      # system notifications, so watchers don't react to changes.
-      # Workaround: 
-      # http://blog.subjectify.us/miscellaneous/2017/04/24/docker-for-windows-watch-bindings.html
+      # TODO: development version doesn't work in Windows.
+      #  Modified files in the mounted volume don't trigger container operating
+      #  system notifications, so watchers don't react to changes.
+      # Workaround:
+      #   http://blog.subjectify.us/miscellaneous/2017/04/24/docker-for-windows-watch-bindings.html
       # On Windows side:
-      # pip install docker-windows-volume-watcher
-      # docker-volume-watcher
+      #   pip install docker-windows-volume-watcher
+      #   docker-volume-watcher
       context: .
       dockerfile: Dockerfile
-      target: development
+      target: ${BUILD_TARGET:-development}
     volumes:
-      - '.:/home/node/client'
+      - '.:/home/scu/client'
     ports:
       - '8080:8080'
-    working_dir: /home/node/client
+    working_dir: /home/scu/client

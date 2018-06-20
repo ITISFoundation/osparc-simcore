@@ -11,5 +11,5 @@ echo "- fonts dir : " ${FONTS_DIR}
 # TODO: add argument to avoid installing contributions
 ${SCRIPT_DIR}/install-contrib.sh
 
-# TODO: add argument to control qx command at entry point
-qx serve
+echo Running \'qx "$@"\' ...
+qx "$@"
