@@ -84,8 +84,9 @@ qx.Class.define("qxapp.data.Fake", {
       let temp1Data = {
         "nodes": [{
           "uuid": "dd329e10-a906-42da-a7b3-4c4fec4a786f",
-          "key": "sleeper",
-          "label": "Node 1",
+          "key": "masu.speag.com/simcore/services/comp/sleeper",
+          "tag": "1.0",
+          "name": "Node 1",
           "desc": "Node 1",
           "position": {
             "x": 50,
@@ -122,8 +123,9 @@ qx.Class.define("qxapp.data.Fake", {
           "settings": []
         }, {
           "uuid": "3fad99a2-31b3-48a2-9066-1a66fc21aa52",
-          "key": "sleeper",
-          "label": "Node 2",
+          "key": "masu.speag.com/simcore/services/comp/sleeper",
+          "tag": "1.0",
+          "name": "Node 2",
           "desc": "Node 2",
           "position": {
             "x": 50,
@@ -160,8 +162,9 @@ qx.Class.define("qxapp.data.Fake", {
           "settings": []
         }, {
           "uuid": "3a97f542-93c4-419c-b5c9-bcf9ff3ada7e",
-          "key": "sleeper",
-          "label": "Node 3",
+          "key": "masu.speag.com/simcore/services/comp/sleeper",
+          "tag": "1.0",
+          "name": "Node 3",
           "desc": "Node 3",
           "position": {
             "x": 300,
@@ -198,8 +201,9 @@ qx.Class.define("qxapp.data.Fake", {
           "settings": []
         }, {
           "uuid":"9c35ecbc-8219-4538-ba2e-bad8b6e64cda",
-          "key": "sleeper",
-          "label": "Node 4",
+          "key": "masu.speag.com/simcore/services/comp/sleeper",
+          "tag": "1.0",
+          "name": "Node 4",
           "desc": "Node 4",
           "position": {
             "x": 300,
@@ -236,8 +240,9 @@ qx.Class.define("qxapp.data.Fake", {
           "settings": []
         }, {
           "uuid":"51ad1bc0-615e-406a-9886-e3639f51208c",
-          "key": "sleeper",
-          "label": "Node 5",
+          "key": "masu.speag.com/simcore/services/comp/sleeper",
+          "tag": "1.0",
+          "name": "Node 5",
           "desc": "Node 5",
           "position": {
             "x": 550,
@@ -274,8 +279,9 @@ qx.Class.define("qxapp.data.Fake", {
           "settings": []
         }, {
           "uuid":"5df77702-29d5-4513-b3f8-f2a40ed317fe",
-          "key": "sleeper",
-          "label": "Node 6",
+          "key": "masu.speag.com/simcore/services/comp/sleeper",
+          "tag": "1.0",
+          "name": "Node 6",
           "desc": "Node 6",
           "position": {
             "x": 800,
@@ -312,8 +318,9 @@ qx.Class.define("qxapp.data.Fake", {
           "settings": []
         }, {
           "uuid": "de2c84ed-a3bc-47c2-b54d-84a5c048236b",
-          "key": "sleeper",
-          "label": "Node 7",
+          "key": "masu.speag.com/simcore/services/comp/sleeper",
+          "tag": "1.0",
+          "name": "Node 7",
           "desc": "Node 7",
           "position": {
             "x": 800,
@@ -350,8 +357,9 @@ qx.Class.define("qxapp.data.Fake", {
           "settings": []
         }, {
           "uuid": "ba22104c-99e1-45c9-a09d-228400a6f9fb",
-          "key": "sleeper",
-          "label": "Node 8",
+          "key": "masu.speag.com/simcore/services/comp/sleeper",
+          "tag": "1.0",
+          "name": "Node 8",
           "desc": "Node 8",
           "position": {
             "x": 1050,
@@ -457,7 +465,8 @@ qx.Class.define("qxapp.data.Fake", {
         "nodes": [{
           "uuid": "cd90ad2c-8dac-49b5-8552-dd9fbf785273",
           "key": "node1",
-          "label": "Node 1",
+          "tag": "1.0",
+          "name": "Node 1",
           "desc": "Node 1",
           "position": {
             "x": 50,
@@ -487,7 +496,8 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid": "ad45ba4e-2dac-43bb-afad-86c9d50a2ec9",
           "key": "node2",
-          "label": "Node 2",
+          "tag": "1.0",
+          "name": "Node 2",
           "desc": "Node 2",
           "position": {
             "x": 400,
@@ -529,7 +539,8 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid": "13e1915f-b463-47c5-bb94-fe25effe30da",
           "key": "node3",
-          "label": "Node 3",
+          "tag": "1.0",
+          "name": "Node 3",
           "desc": "Node 3",
           "position": {
             "x": 400,
@@ -567,7 +578,8 @@ qx.Class.define("qxapp.data.Fake", {
     getProducers: function() {
       const producers = [{
         "key": "modeler",
-        "label": "Modeler",
+        "tag": "1.0",
+        "name": "Modeler",
         "desc": "Modeler",
         "inputs": [{
           "key": "in_1",
@@ -603,7 +615,8 @@ qx.Class.define("qxapp.data.Fake", {
         }
       }, {
         "key": "FileReader",
-        "label": "File Reader",
+        "tag": "1.0",
+        "name": "File Reader",
         "desc": "File Reader",
         "inputs": [{
           "key": "in_1",
@@ -628,7 +641,8 @@ qx.Class.define("qxapp.data.Fake", {
         "settings": []
       }, {
         "key": "RandomNumberGeneratorID",
-        "label": "Random Number Generator",
+        "tag": "1.0",
+        "name": "Random Number Generator",
         "desc": "Random Number Generator",
         "inputs": [{
           "key": "in_1",
@@ -658,7 +672,8 @@ qx.Class.define("qxapp.data.Fake", {
     getComputationals: function() {
       const computationals = [{
         "key": "ColleenClancy",
-        "label": "Colleen Clancy - dummy",
+        "tag": "1.0",
+        "name": "Colleen Clancy - dummy",
         "desc": "Colleen Clancy - dummy",
         "inputs": [{
           "key": "in_1",
@@ -747,7 +762,8 @@ qx.Class.define("qxapp.data.Fake", {
         "settings": []
       }, {
         "key": "Computational2",
-        "label": "Computational 2",
+        "tag": "1.0",
+        "name": "Computational 2",
         "desc": "Computational 2",
         "inputs": [{
           "key": "in_1",
@@ -765,8 +781,9 @@ qx.Class.define("qxapp.data.Fake", {
         }],
         "settings": []
       }, {
-        "key": "Sleeper",
-        "label": "Sleeper",
+        "key": "masu.speag.com/simcore/services/comp/sleeper",
+        "tag": "1.0",
+        "name": "Sleeper",
         "desc": "Sleeper",
         "inputs": [{
           "key": "in_1",
@@ -808,7 +825,8 @@ qx.Class.define("qxapp.data.Fake", {
     getAnalyses: function() {
       const analyses = [{
         "key": "jupyter-base-notebook",
-        "label": "Jupyter",
+        "tag": "1.0",
+        "name": "Jupyter",
         "desc": "Jupyter",
         "inputs": [{
           "key": "in_1",
@@ -825,7 +843,8 @@ qx.Class.define("qxapp.data.Fake", {
         }
       }, {
         "key": "Analysis2",
-        "label": "Analysis 2",
+        "tag": "1.0",
+        "name": "Analysis 2",
         "desc": "Analysis 2",
         "inputs": [{
           "key": "in_1",
@@ -838,7 +857,8 @@ qx.Class.define("qxapp.data.Fake", {
         "settings": []
       }, {
         "key": "csv-table-graph",
-        "label": "CSV Viewer",
+        "tag": "1.0",
+        "name": "CSV Viewer",
         "desc": "CSV Viewer",
         "inputs": [{
           "key": "in_1",
