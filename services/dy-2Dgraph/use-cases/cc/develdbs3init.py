@@ -32,13 +32,13 @@ class S3Settings(object):
         self.bucket = self._config.bucket_name
         self.client.create_bucket(self.bucket)
 
-@tenacity.retry(stop=tenacity.stop_after_attempt(5) | tenacity.stop_after_delay(10))
+@tenacity.retry(wait=tenacity.wait_fixed(2), stop=tenacity.stop_after_attempt(5) | tenacity.stop_after_delay(20))
 def init_db():
     db = DbSettings()    
     Base.metadata.create_all(db.db)
     return db
 
-@tenacity.retry(stop=tenacity.stop_after_attempt(5) | tenacity.stop_after_delay(10))
+@tenacity.retry(wait=tenacity.wait_fixed(2), stop=tenacity.stop_after_attempt(5) | tenacity.stop_after_delay(20))
 def init_s3():
     s3 = S3Settings()
     return s3
@@ -89,7 +89,7 @@ def create_dummy(json_configuration_file_path):
             
             s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"])
             s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
-        elif input_item["type"] == "folder":
+        elif input_item["type"] == "folderUrl":
             for i in range(number_of_files):
                 df = create_dummy_table(number_of_rows, number_of_columns)
                 # serialize to the file
@@ -98,7 +98,7 @@ def create_dummy(json_configuration_file_path):
                 
                 s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"], str(i) + ".dat")
                 s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
-                
+
     Path(temp_file.name).unlink()
 
     # print the pipeline id out such that SIMCORE_PIPELINE_ID can be set

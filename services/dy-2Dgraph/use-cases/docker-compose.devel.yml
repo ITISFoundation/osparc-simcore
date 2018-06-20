@@ -8,6 +8,7 @@ services:
         JSON_CONFIGURATION_FOLDER: cc-single-cell
     depends_on:
       - postgres
+      - minio
   #--------------------------------------------------------------------
   cc-1d:
     build:
@@ -17,6 +18,7 @@ services:
         JSON_CONFIGURATION_FOLDER: cc-oned
     depends_on:
       - postgres
+      - minio
   #--------------------------------------------------------------------
   cc-2d:
     build:
@@ -26,6 +28,7 @@ services:
         JSON_CONFIGURATION_FOLDER: cc-twod
     depends_on:
       - postgres
+      - minio
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10
