@@ -568,12 +568,39 @@ qx.Class.define("qxapp.data.Fake", {
     },
 
     getServices: function() {
-      let availableServices = [];
-      Array.prototype.push.apply(availableServices, qxapp.data.Fake.getProducers());
-      Array.prototype.push.apply(availableServices, qxapp.data.Fake.getComputationals());
-      Array.prototype.push.apply(availableServices, qxapp.data.Fake.getAnalyses());
-      return availableServices;
+      let req = new qx.io.request.Xhr();
+      req.set({
+        url: "/repositories",
+        method: "GET"
+      });
+      req.addListener("success", this.__onListOfRepositories, this);
+      req.send();
+      let fakeServices = [];
+      Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getProducers());
+      Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getComputationals());
+      Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getAnalyses());
+      return fakeServices;
     },
+
+    __onListOfRepositories: function(e) {
+      let req = e.getTarget();
+      console.debug("ListOfRepositories went fine!!");
+      console.debug("status  : ", req.getStatus());
+      console.debug("phase   : ", req.getPhase());
+      console.debug("response: ", req.getResponse());
+
+      let availableServices = [];
+      const listOfRepos = req.getResponse();
+      for (let i=0; i<listOfRepos.length; i++) {
+        const listOfVersions = listOfRepos[i];
+        for (let j=0; j<listOfVersions.length; j++) {
+          const service = listOfVersions[j];
+          console.log(service);
+          availableServices.push(service);
+        }
+      }
+    },
+
 
     getProducers: function() {
       const producers = [{
