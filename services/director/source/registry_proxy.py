@@ -91,7 +91,6 @@ def _get_repo_details(repo):
     #pylint: disable=too-many-nested-blocks
     current_repo = []
     if "/comp/" in repo:
-        #current_repo['name'] = repo
         req_images = registry_request(repo + '/tags/list')
         im_data = req_images.json()
         tags = im_data['tags']
@@ -116,17 +115,11 @@ def get_repo_details():
 
     repos = request_result.json()['repositories']
     repositories = {}
-    #repo_list = []
     for repo in repos:
         details = _get_repo_details(repo)
         if details:
-            #details_dict = {}
-            #details_dict[repo] = details
             repositories[repo] = details
-            #repo_list.append(details_dict)
 
-
-    #repositories['repositories'] = repo_list
     result_json = json.dumps(repositories)
 
 
