@@ -593,10 +593,49 @@ qx.Class.define("qxapp.data.Fake", {
 
     __onListOfRepositories: function(e) {
       let req = e.getTarget();
-      console.log("ListOfRepositories went fine!!");
-      console.log("status  : ", req.getStatus());
-      console.log("phase   : ", req.getPhase());
-      console.log("response: ", req.getResponse());
+      const listOfRepositories = JSON.parse(req.getResponse());
+      console.log(listOfRepositories);
+      let services = [];
+      if ("repositories" in listOfRepositories) {
+        const repos = listOfRepositories.repositories;
+        const nRepos = repos.length;
+        console.log("Number of repos: ", nRepos);
+        for (let i=0; i<nRepos; i++) {
+          console.log(i, repos[i]);
+          if ("tags" in repos[i]) {
+            const repoTags = repos[i].tags;
+            const nRepoTags = repoTags.length;
+            console.log("Number of tags in repo: ", nRepoTags);
+            for (let j=0; j<nRepoTags; j++) {
+              console.log(j, repoTags, nRepoTags[j]);
+              let newMetadata = this.__createMetadata(nRepoTags[j]);
+              services.push(newMetadata);
+            }
+          }
+        }
+      }
+      console.log(services);
+    },
+
+    __createMetadata: function(data) {
+      let metadata = {};
+      [
+        "key",
+        "name",
+        "tag",
+        "description",
+        "authors",
+        "contact",
+        "inputs",
+        "outputs",
+        "settings"
+      ].forEach(field => {
+        metadata.field = null;
+        if (field in data) {
+          metadata.field = data.field
+        }
+      });
+      return metadata;
     },
 
     getProducers: function() {
