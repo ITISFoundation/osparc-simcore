@@ -1,0 +1,167 @@
+openapi: 3.0.1
+servers: []
+
+info:
+  description: OSparc Server API
+  version: "1.0.0"
+  title: OSparc Server API
+  contact:
+    email: oetiker@itis.ethz.ch
+  license:
+    name: MIT
+    url: 'https://opensource.org/licenses/MIT'
+
+tags:
+  - name: upload
+    description: Upload Data to OSparc Data Repo
+
+components:
+  schemas:
+    fileMetaData:
+      type: object
+      description: the properties of the File Object
+      required:
+        - name
+        - size
+        - lastModified
+      properties:
+        name:
+          type: string
+          description: file name
+        size:
+          type: integer
+          format: int64
+          description: file size in bytes
+        lastModified:
+          type: integer
+          format: in64
+          description: last file modification in milliseconds since 1970-01-01
+    uploadInfo:
+      type: object
+      description: |
+        Meta information about the upload. If a pending upload has matched
+        the information given in the fileMetaData the response will contain
+        information about the already uploaded chunks of data.
+      required:
+        - uploadId
+      properties:
+        uploadId:
+          type: string
+        partsPresent:
+          type: array
+          items:
+            type: object
+            properties:
+              partNumber:
+                type: integer
+                format: int64
+              size:
+                type: integer
+                format: int64
+              eTag:
+                type: string
+            required:
+              - partNumber
+              - size
+              - eTag
+    partInfo:
+      type: object
+      description: confirmation for the successful part upload
+      required:
+        - eTag
+      properties:
+        eTag:
+          description: eTag of the part just uploaded
+          type: string
+  parameters:
+    uploadId:
+      name: X-Upload-Id
+      in: header
+      required: true
+      description: which upload does this belong to
+      schema:
+        type: string
+    uploadPartNumber:
+      name: X-Upload-Part-Number
+      in: header
+      required: true
+      description: which part of the upload is this ?
+      schema:
+        type: integer
+        format: int64
+        
+  requestBodies:
+    fileMetaData:
+      description: meta data of the file to be uploaded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/fileMetaData'
+    filePart:
+      description: part of a file
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary
+  responses:
+    uploadMeta:
+      description: Upload Info
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/uploadInfo'
+    partInfo:
+      description: information about the Part just uploaded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/partInfo'
+    invalidInput:
+      description: Request was not formed as expected
+paths:
+  /upload/start:
+    post:
+      tags:
+        - upload
+      summary: start an upload
+      operationId: uploadStart
+      description: Start or resume an upload 
+      requestBody:
+        $ref: '#/components/requestBodies/fileMetaData'
+      responses:
+        '200':
+          $ref: '#/components/responses/uploadMeta' 
+        '405':
+          $ref: '#/components/responses/invalidInput'
+  /upload/part:
+    post:
+      tags:
+        - upload
+      summary: upload a data block
+      operationId: uploadPart
+      description: Upload a chunk of data
+      parameters:
+        - $ref: '#/components/parameters/uploadId'
+        - $ref: '#/components/parameters/uploadPartNumber'
+      requestBody:
+        $ref: '#/components/requestBodies/filePart'
+      responses:
+        '200':
+          $ref: '#/components/responses/partInfo'
+        '405':
+          $ref: '#/components/responses/invalidInput'
+  /upload/finalize:
+    post:
+      tags:
+        - upload
+      summary: complete upload process
+      operationId: uploadFinalize
+      description: Complete upload process
+      responses:
+        '200':
+          description: upload finalized
+          content:
+            application/json:
+              schema:
+                type: object
