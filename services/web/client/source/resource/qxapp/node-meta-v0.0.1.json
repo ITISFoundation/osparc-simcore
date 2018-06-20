@@ -292,23 +292,20 @@
                         ]
                     },
                     "fileToKeyMap": {
-                        "type": "array",
                         "description": "Place the data stored in the named files and store it in the locations pointed to by the respective output key.",
-                        "items": {
-                            "type": "object",
-                            "patternProperties": {
-                                ".+": {
-                                    "type": "string"
-                                }
-                            },
-                            "examples": [
-                                {
-                                    "dir/input1.txt": "key_1",
-                                    "dir33/input2.txt": "key2"
-                                }
-                            ]
-                        }
-                    },
+                        "type": "object",
+                        "patternProperties": {
+                            ".+": {
+                                "type": "string"
+                            }
+                        },
+                        "examples": [
+                            {
+                                "dir/input1.txt": "key_1",
+                                "dir33/input2.txt": "key2"
+                            }
+                        ]
+                    }
                 }
             }
         }
