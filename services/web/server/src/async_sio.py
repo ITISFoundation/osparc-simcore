@@ -95,7 +95,7 @@ async def retrieve_url_for_file(sid, data):
         dataOut["url"] = result
         await SIO.emit('presignedUrl', data=dataOut, room=sid)
     except ResponseError as err:
-        print(err)
+        _LOGGER.exception("Failed client %s requests S3 url for %s: %s", sid, data, err)
 
 
 @SIO.on('listObjects')
@@ -128,7 +128,7 @@ async def list_S3_objects(sid, data):
             await SIO.emit('listObjectsUser', data=dataOut, room=sid)
 
     except ResponseError as err:
-        print(err)
+        _LOGGER.exception("Failed client %s requests S3 objects for %s: %s", sid, data, err)
 
 
 @SIO.on('disconnect')
