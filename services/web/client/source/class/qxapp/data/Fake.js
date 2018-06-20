@@ -95,7 +95,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "masu.speag.com/simcore/services/comp/sleeper",
           "tag": "1.0",
           "name": "Node 1",
-          "desc": "Node 1",
+          "description": "Node 1",
           "position": {
             "x": 50,
             "y": 100
@@ -103,28 +103,28 @@ qx.Class.define("qxapp.data.Fake", {
           "inputs": [{
             "key": "in_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
@@ -134,7 +134,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "masu.speag.com/simcore/services/comp/sleeper",
           "tag": "1.0",
           "name": "Node 2",
-          "desc": "Node 2",
+          "description": "Node 2",
           "position": {
             "x": 50,
             "y": 300
@@ -142,28 +142,28 @@ qx.Class.define("qxapp.data.Fake", {
           "inputs": [{
             "key": "in_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
@@ -173,7 +173,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "masu.speag.com/simcore/services/comp/sleeper",
           "tag": "1.0",
           "name": "Node 3",
-          "desc": "Node 3",
+          "description": "Node 3",
           "position": {
             "x": 300,
             "y": 100
@@ -181,28 +181,28 @@ qx.Class.define("qxapp.data.Fake", {
           "inputs": [{
             "key": "in_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
@@ -212,7 +212,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "masu.speag.com/simcore/services/comp/sleeper",
           "tag": "1.0",
           "name": "Node 4",
-          "desc": "Node 4",
+          "description": "Node 4",
           "position": {
             "x": 300,
             "y": 300
@@ -220,28 +220,28 @@ qx.Class.define("qxapp.data.Fake", {
           "inputs": [{
             "key": "in_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
@@ -251,7 +251,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "masu.speag.com/simcore/services/comp/sleeper",
           "tag": "1.0",
           "name": "Node 5",
-          "desc": "Node 5",
+          "description": "Node 5",
           "position": {
             "x": 550,
             "y": 200
@@ -259,28 +259,28 @@ qx.Class.define("qxapp.data.Fake", {
           "inputs": [{
             "key": "in_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
@@ -290,7 +290,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "masu.speag.com/simcore/services/comp/sleeper",
           "tag": "1.0",
           "name": "Node 6",
-          "desc": "Node 6",
+          "description": "Node 6",
           "position": {
             "x": 800,
             "y": 100
@@ -298,28 +298,28 @@ qx.Class.define("qxapp.data.Fake", {
           "inputs": [{
             "key": "in_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
@@ -329,7 +329,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "masu.speag.com/simcore/services/comp/sleeper",
           "tag": "1.0",
           "name": "Node 7",
-          "desc": "Node 7",
+          "description": "Node 7",
           "position": {
             "x": 800,
             "y": 300
@@ -337,28 +337,28 @@ qx.Class.define("qxapp.data.Fake", {
           "inputs": [{
             "key": "in_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
@@ -368,7 +368,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "masu.speag.com/simcore/services/comp/sleeper",
           "tag": "1.0",
           "name": "Node 8",
-          "desc": "Node 8",
+          "description": "Node 8",
           "position": {
             "x": 1050,
             "y": 200
@@ -376,28 +376,28 @@ qx.Class.define("qxapp.data.Fake", {
           "inputs": [{
             "key": "in_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "in_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
           "outputs": [{
             "key": "out_1",
             "label": "File-url",
-            "desc": "File-url",
+            "description": "File-url",
             "type": "fileUrl",
             "value": null
           },
           {
             "key": "out_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
@@ -475,7 +475,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "node1",
           "tag": "1.0",
           "name": "Node 1",
-          "desc": "Node 1",
+          "description": "Node 1",
           "position": {
             "x": 50,
             "y": 100
@@ -484,19 +484,19 @@ qx.Class.define("qxapp.data.Fake", {
           "outputs": [{
             "key": "out_1",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": ""
           }, {
             "key": "out_2",
             "label": "String",
-            "desc": "String",
+            "description": "String",
             "type": "string",
             "value": ""
           }, {
             "key": "out_3",
             "label": "Bool",
-            "desc": "Bool",
+            "description": "Bool",
             "type": "bool",
             "value": null
           }],
@@ -506,7 +506,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "node2",
           "tag": "1.0",
           "name": "Node 2",
-          "desc": "Node 2",
+          "description": "Node 2",
           "position": {
             "x": 400,
             "y": 100
@@ -514,19 +514,19 @@ qx.Class.define("qxapp.data.Fake", {
           "inputs": [{
             "key": "in_1",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }, {
             "key": "in_2",
             "label": "String",
-            "desc": "String",
+            "description": "String",
             "type": "string",
             "value": null
           }, {
             "key": "in_3",
             "label": "Bool",
-            "desc": "Bool",
+            "description": "Bool",
             "type": "bool",
             "value": null
           }],
@@ -534,13 +534,13 @@ qx.Class.define("qxapp.data.Fake", {
           "settings": [{
             "key": "sett_1",
             "label": "Bool_1",
-            "desc": "Bool_1",
+            "description": "Bool_1",
             "type": "bool",
             "value": 0
           }, {
             "key": "sett_2",
             "label": "Bool_2",
-            "desc": "Bool_2",
+            "description": "Bool_2",
             "type": "bool",
             "value": 0
           }]
@@ -549,7 +549,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "node3",
           "tag": "1.0",
           "name": "Node 3",
-          "desc": "Node 3",
+          "description": "Node 3",
           "position": {
             "x": 400,
             "y": 300
@@ -557,13 +557,13 @@ qx.Class.define("qxapp.data.Fake", {
           "inputs": [{
             "key": "in_1",
             "label": "String",
-            "desc": "String",
+            "description": "String",
             "type": "string",
             "value": null
           }, {
             "key": "in_2",
             "label": "Number",
-            "desc": "Number",
+            "description": "Number",
             "type": "integer",
             "value": null
           }],
@@ -583,6 +583,7 @@ qx.Class.define("qxapp.data.Fake", {
       });
       req.addListener("success", this.__onListOfRepositories, this);
       req.send();
+
       let fakeServices = [];
       Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getProducers());
       Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getComputationals());
@@ -598,17 +599,16 @@ qx.Class.define("qxapp.data.Fake", {
       console.log("response: ", req.getResponse());
     },
 
-
     getProducers: function() {
       const producers = [{
         "key": "modeler",
         "tag": "1.0",
         "name": "Modeler",
-        "desc": "Modeler",
+        "description": "Modeler",
         "inputs": [{
           "key": "in_1",
           "label": "ViPModel",
-          "desc": "Select ViP Model",
+          "description": "Select ViP Model",
           "type": "string",
           "defaultValue": "rat",
           "widget": "selectBox",
@@ -628,7 +628,7 @@ qx.Class.define("qxapp.data.Fake", {
         "outputs": [{
           "key": "out_1",
           "label": "Scene",
-          "desc": "Scene",
+          "description": "Scene",
           "type": "scene",
           "defaultValue": null
         }],
@@ -641,12 +641,12 @@ qx.Class.define("qxapp.data.Fake", {
         "key": "FileManager",
         "tag": "1.0",
         "name": "File Manager",
-        "desc": "File Manager",
+        "description": "File Manager",
         "inputs": [],
         "outputs": [{
           "key": "out_1",
           "label": "File-url",
-          "desc": "File-url",
+          "description": "File-url",
           "type": "fileUrl",
           "defaultValue": null
         }],
@@ -655,24 +655,24 @@ qx.Class.define("qxapp.data.Fake", {
         "key": "RandomNumberGeneratorID",
         "tag": "1.0",
         "name": "Random Number Generator",
-        "desc": "Random Number Generator",
+        "description": "Random Number Generator",
         "inputs": [{
           "key": "in_1",
           "label": "Number Min",
-          "desc": "Number Min",
+          "description": "Number Min",
           "type": "integer",
           "defaultValue": 0
         }, {
           "key": "in_2",
           "label": "Number Max",
-          "desc": "Number Max",
+          "description": "Number Max",
           "type": "integer",
           "defaultValue": 10
         }],
         "outputs": [{
           "key": "out_1",
           "label": "Number",
-          "desc": "Number",
+          "description": "Number",
           "type": "integer",
           "defaultValue": null
         }],
@@ -686,53 +686,53 @@ qx.Class.define("qxapp.data.Fake", {
         "key": "ColleenClancy",
         "tag": "1.0",
         "name": "Colleen Clancy - dummy",
-        "desc": "Colleen Clancy - dummy",
+        "description": "Colleen Clancy - dummy",
         "inputs": [{
           "key": "in_1",
           "label": "File-url",
-          "desc": "File-url",
+          "description": "File-url",
           "type": "fileUrl",
           "defaultValue": null
         }, {
           "key": "in_2",
           "label": "File-url",
-          "desc": "File-url",
+          "description": "File-url",
           "type": "fileUrl",
           "defaultValue": null
         }, {
           "key": "in_3",
           "label": "NaValue",
-          "desc": "Na blocker drug concentration",
+          "description": "Na blocker drug concentration",
           "type": "integer",
           "defaultValue": 10
         }, {
           "key": "in_4",
           "label": "KrValue",
-          "desc": "Kr blocker drug concentration",
+          "description": "Kr blocker drug concentration",
           "type": "integer",
           "defaultValue": 10
         }, {
           "key": "in_5",
           "label": "BCLValue",
-          "desc": "Basic cycle length (BCL)",
+          "description": "Basic cycle length (BCL)",
           "type": "integer",
           "defaultValue": 10
         }, {
           "key": "in_6",
           "label": "beatsValue",
-          "desc": "Number of beats",
+          "description": "Number of beats",
           "type": "integer",
           "defaultValue": 10
         }, {
           "key": "in_7",
           "label": "LigandValue",
-          "desc": "Ligand concentration",
+          "description": "Ligand concentration",
           "type": "integer",
           "defaultValue": 10
         }, {
           "key": "in_8",
           "label": "cAMKIIValue",
-          "desc": "Adjust cAMKII activity level",
+          "description": "Adjust cAMKII activity level",
           "type": "string",
           "widget": "selectBox",
           "cfg": {
@@ -749,7 +749,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "key": "in_9",
           "label": "solverMode",
-          "desc": "Solver Mode",
+          "description": "Solver Mode",
           "type": "string",
           "widget": "selectBox",
           "cfg": {
@@ -767,7 +767,7 @@ qx.Class.define("qxapp.data.Fake", {
         "outputs": [{
           "key": "out_1",
           "label": "csv-url",
-          "desc": "csv-url",
+          "description": "csv-url",
           "type": "csv-url",
           "defaultValue": null
         }],
@@ -776,18 +776,18 @@ qx.Class.define("qxapp.data.Fake", {
         "key": "Computational2",
         "tag": "1.0",
         "name": "Computational 2",
-        "desc": "Computational 2",
+        "description": "Computational 2",
         "inputs": [{
           "key": "in_1",
           "label": "Scene",
-          "desc": "Scene",
+          "description": "Scene",
           "type": "scene",
           "defaultValue": null
         }],
         "outputs": [{
           "key": "out_1",
           "label": "Numbers",
-          "desc": "Other numbers",
+          "description": "Other numbers",
           "type": "integer",
           "defaultValue": null
         }],
@@ -796,36 +796,36 @@ qx.Class.define("qxapp.data.Fake", {
         "key": "masu.speag.com/simcore/services/comp/sleeper",
         "tag": "1.0",
         "name": "Sleeper",
-        "desc": "Sleeper",
+        "description": "Sleeper",
         "inputs": [{
           "key": "in_1",
           "label": "File-url",
-          "desc": "File-url",
+          "description": "File-url",
           "type": "fileUrl",
           "defaultValue": null
         }, {
           "key": "in_2",
           "label": "Number",
-          "desc": "Number",
+          "description": "Number",
           "type": "integer",
           "defaultValue": 0
         }, {
           "key": "in_3",
           "label": "Number",
-          "desc": "Sleep extra sec",
+          "description": "Sleep extra sec",
           "type": "integer",
           "defaultValue": 0
         }],
         "outputs": [{
           "key": "out_1",
           "label": "File-url",
-          "desc": "File-url",
+          "description": "File-url",
           "type": "fileUrl",
           "defaultValue": null
         }, {
           "key": "out_2",
           "label": "Number",
-          "desc": "Number",
+          "description": "Number",
           "type": "integer",
           "defaultValue": 0
         }],
@@ -839,11 +839,11 @@ qx.Class.define("qxapp.data.Fake", {
         "key": "jupyter-base-notebook",
         "tag": "1.0",
         "name": "Jupyter",
-        "desc": "Jupyter",
+        "description": "Jupyter",
         "inputs": [{
           "key": "in_1",
           "label": "Number",
-          "desc": "Number",
+          "description": "Number",
           "type": "integer",
           "defaultValue": null
         }],
@@ -857,11 +857,11 @@ qx.Class.define("qxapp.data.Fake", {
         "key": "Analysis2",
         "tag": "1.0",
         "name": "Analysis 2",
-        "desc": "Analysis 2",
+        "description": "Analysis 2",
         "inputs": [{
           "key": "in_1",
           "label": "Number",
-          "desc": "Number",
+          "description": "Number",
           "type": "integer",
           "defaultValue": null
         }],
@@ -871,11 +871,11 @@ qx.Class.define("qxapp.data.Fake", {
         "key": "csv-table-graph",
         "tag": "1.0",
         "name": "CSV Viewer",
-        "desc": "CSV Viewer",
+        "description": "CSV Viewer",
         "inputs": [{
           "key": "in_1",
           "label": "csv-url",
-          "desc": "csv-url",
+          "description": "csv-url",
           "type": "csv-url",
           "defaultValue": null
         }],
