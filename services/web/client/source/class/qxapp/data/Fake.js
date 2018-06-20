@@ -576,12 +576,28 @@ qx.Class.define("qxapp.data.Fake", {
     },
 
     getServices: function() {
-      let availableServices = [];
-      Array.prototype.push.apply(availableServices, qxapp.data.Fake.getProducers());
-      Array.prototype.push.apply(availableServices, qxapp.data.Fake.getComputationals());
-      Array.prototype.push.apply(availableServices, qxapp.data.Fake.getAnalyses());
-      return availableServices;
+      let req = new qx.io.request.Xhr();
+      req.set({
+        url: "/repositories",
+        method: "GET"
+      });
+      req.addListener("success", this.__onListOfRepositories, this);
+      req.send();
+      let fakeServices = [];
+      Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getProducers());
+      Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getComputationals());
+      Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getAnalyses());
+      return fakeServices;
     },
+
+    __onListOfRepositories: function(e) {
+      let req = e.getTarget();
+      console.log("ListOfRepositories went fine!!");
+      console.log("status  : ", req.getStatus());
+      console.log("phase   : ", req.getPhase());
+      console.log("response: ", req.getResponse());
+    },
+
 
     getProducers: function() {
       const producers = [{

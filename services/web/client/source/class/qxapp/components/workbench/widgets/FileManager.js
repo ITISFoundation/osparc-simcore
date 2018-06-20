@@ -16,7 +16,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
 
     this.getContentElement().add(input);
 
-    let pick = new qx.ui.form.Button(this.tr("Add file"));
+    let pick = new qx.ui.form.Button(this.tr("Add file(s)"));
     this.add(pick);
 
     // Add an event listener
