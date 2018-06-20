@@ -630,9 +630,9 @@ qx.Class.define("qxapp.data.Fake", {
         "outputs",
         "settings"
       ].forEach(field => {
-        metadata.field = null;
-        if (field in data) {
-          metadata.field = data.field
+        metadata[field] = null;
+        if (data.hasOwnProperty(field)) {
+          metadata[field] = data[field]
         }
       });
       return metadata;
