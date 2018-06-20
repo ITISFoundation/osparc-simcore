@@ -26,14 +26,14 @@ up:
 
 up-swarm:
 	docker swarm init
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml up
+	docker stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml workbench
 
 down:
 	docker-compose -f services/docker-compose.yml down
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml down
 
 down-swarm:
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml down
+	docker stack rm workbench
 	docker swarm leave -f
 
 pylint:
