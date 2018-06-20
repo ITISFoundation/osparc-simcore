@@ -42,12 +42,18 @@ class DataItem(_DataItem):
             other_node_uuid = link[1]
             other_port_key = link[2]
 
-            if self.type in config.TYPE_TO_S3_LIST:
-                # try to fetch from S3
-                _LOGGER.debug("Fetch value from S3 %s", self.value)
-                return filemanager.download_from_S3(node_uuid=other_node_uuid, 
-                                                    node_key=other_port_key, 
-                                                    file_name=self.key)
+            if self.type in config.TYPE_TO_S3_FILE_LIST:
+                # try to fetch from S3 as a file
+                _LOGGER.debug("Fetch file from S3 %s", self.value)
+                return filemanager.download_file_from_S3(node_uuid=other_node_uuid, 
+                                                        node_key=other_port_key, 
+                                                        file_name=self.key)
+            elif self.type in config.TYPE_TO_S3_FOLDER_LIST:
+                # try to fetch from S3 as a folder
+                _LOGGER.debug("Fetch folder from S3 %s", self.value)
+                return filemanager.download_folder_from_s3(node_uuid=other_node_uuid, 
+                                                            node_key=other_port_key, 
+                                                            folder_name=self.key)
             else:
                 # try to fetch link from database node
                 _LOGGER.debug("Fetch value from other node %s", self.value)
