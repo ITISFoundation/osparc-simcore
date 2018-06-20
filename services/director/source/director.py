@@ -68,14 +68,13 @@ def start_service():
 
     # get required parameters
     service_name = request.json['service_name']
-    uuid = request.json['service_uuid']
-
+    uuid = request.json['service_uuid']    
     # get optional tag parameter
     if 'tag' in request.json:
         service_tag = request.json['tag']
     else:
         service_tag = 'latest'
-
+    _LOGGER.debug("Asked to start service %s with uuid %s and tag %s", service_name, uuid, service_tag)
     try:
         return producer.start_service(service_name, service_tag, uuid), 201
     except:
@@ -95,6 +94,7 @@ def stop_service():
     if not request.json or not 'service_uuid' in request.json:
         abort(400)
     service_uuid = request.json['service_uuid']
+    _LOGGER.debug("Asked to stop service with uuid %s", service_uuid)
     try:
         producer.stop_service(service_uuid)
         return json.dumps('service stopped'), 201
