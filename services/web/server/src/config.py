@@ -45,6 +45,10 @@ class CommonConfig:
     THRIFT_USE_MULTIPLEXED_SERVER = os.environ.get(
         'THRIFT_USE_MULTIPLEXED_SERVER', True)
 
+    PUBLIC_S3_URL = os.environ.get('PUBLIC_S3_URL', 'play.minio.io:9000')
+    PUBLIC_S3_ACCESS_KEY = os.environ.get('PUBLIC_S3_ACCESS_KEY', 'Q3AM3UQ867SPQQA43P2F')
+    PUBLIC_S3_SECRET_KEY = os.environ.get('PUBLIC_S3_SECRET_KEY', 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG')
+
     @staticmethod
     def init_app(app):
         pass
