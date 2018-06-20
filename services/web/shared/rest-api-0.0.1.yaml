@@ -3,17 +3,21 @@ servers: []
 
 info:
   description: OSparc Server API
-  version: "1.0.0"
-  title: OSparc Server API
+  version: "0.0.1"
+  title: OSparc Server REST API
   contact:
+    name: Tobias Oetiker
     email: oetiker@itis.ethz.ch
   license:
     name: MIT
     url: 'https://opensource.org/licenses/MIT'
 
 tags:
-  - name: upload
-    description: Upload Data to OSparc S3 Cloud Storage
+  - name: multi-part upload
+    description: |
+      The REST API is modeled after the S3 multi part upload service
+      which makes this very simple to implement on the server side
+      especially if you have an S3 like [minio.io](https://www.minio.io/).
 
 paths:
   /upload/start:
