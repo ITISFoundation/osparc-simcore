@@ -94,215 +94,219 @@
             ]
         },
         "inputs": {
-            "type": "array",
+            "type": "object",
             "description": "definition of the inputs of this node",
-            "items": {
-                "type": "object",
-                "description": "all the input configurable for this service",
-                "additionalProperties": false,
-                "required": [
-                    "key",
-                    "label",
-                    "description",
-                    "type",
-                    "defaultValue"
-                ],
-                "properties": {
-                    "key": {
-                        "type": "string",
-                        "pattern": "^[_a-z0-9]+",
-                        "description": "unique identifier for this input property",
-                        "examples": [
-                            "age"
-                        ]
-                    },
-                    "label": {
-                        "type": "string",
-                        "description": "short name for the property",
-                        "examples": [
-                            "Age"
-                        ]
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "description of the property",
-                        "examples": [
-                            "Age in seconds since 1970"
-                        ]
-                    },
-                    "type": {
-                        "type": "string",
-                        "enum": [
-                            "number",
-                            "file-url",
-                            "boolean",
-                            "string",
-                            "scene"
-                        ],
-                        "description": "data type expected on this input",
-                        "examples": [
-                            "number",
-                            "boolean"
-                        ]
-                    },
-                    "fileToKeyMap": {
-                        "description": "Place the data associated with the named keys in files",
-
-                        "type": "object",
-                        "patternProperties": {
-                            ".+": {
-                                "type": "string"
-                            }
+            "patternProperties": {
+                "^[_a-z0-9]+$": {
+                    "type": "object",
+                    "description": "all the input configurable for this service",
+                    "additionalProperties": false,
+                    "required": [
+                        "displayOrder",
+                        "label",
+                        "description",
+                        "type",
+                        "defaultValue"
+                    ],
+                    "properties": {
+                        "displayOrder": {
+                            "type": "string",
+                            "description": "use this to alphabetically sort the properties for display",
+                            "examples": [
+                                "001.001",
+                                "001.002.001"
+                            ]
                         },
-                        "examples": [
-                            {
-                                "dir/input1.txt": "key_1",
-                                "dir33/input2.txt": "key2"
-                            }
-                        ]
-                    },
-                    "defaultValue": {
-                        "description": "initial value for this input",
-                        "type": ["string","number","integer","boolean"],
-                        "examples": [
-                            "Dog",
-                            true
-                        ]
-                    },
-                    "widget": {
-                        "description": "custom widget to use instead of the default one determined from the data-type",
-                        "anyOf": [
-                            {
-                                "type": "object",
-                                "additionalProperties": false,
-                                "required": [
-                                    "type"
-                                ],
-                                "properties": {
-                                    "type": {
-                                        "description": "type of the property",
-                                        "type": "string",
-                                        "enum": ["TextArea"]
-                                    },
-                                    "minHeight": {
-                                        "description": "minimum Height of the textarea",
-                                        "type": "integer",
-                                        "minimum": 1
-                                    }
+                        "label": {
+                            "type": "string",
+                            "description": "short name for the property",
+                            "examples": [
+                                "Age"
+                            ]
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": "description of the property",
+                            "examples": [
+                                "Age in seconds since 1970"
+                            ]
+                        },
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "number",
+                                "file-url",
+                                "boolean",
+                                "string",
+                                "scene"
+                            ],
+                            "description": "data type expected on this input",
+                            "examples": [
+                                "number",
+                                "boolean"
+                            ]
+                        },
+                        "fileToKeyMap": {
+                            "description": "Place the data associated with the named keys in files",
+
+                            "type": "object",
+                            "patternProperties": {
+                                ".+": {
+                                    "type": "string"
                                 }
                             },
-                            {
-                                "type": "object",
-                                "additionalProperties": false,
-                                "required": [
-                                    "type",
-                                    "structure"
-                                ],
-                                "properties": {
-                                    "type": {
-                                        "description": "type of the property",
-                                        "type": "string",
-                                        "enum": ["SelectBox"]
-                                    },
-                                    "structure": {
-                                        "type": "array",
-                                        "minItems": 1,
-                                        "items": {
-                                            "type":"object",
-                                            "additionalProperties": false,
-                                            "required": [
-                                                "key",
-                                                "label"
-                                            ],
-                                            "properties": {
-                                                "key": {
-                                                    "type": ["string","boolean","number"]
+                            "examples": [
+                                {
+                                    "dir/input1.txt": "key_1",
+                                    "dir33/input2.txt": "key2"
+                                }
+                            ]
+                        },
+                        "defaultValue": {
+                            "description": "initial value for this input",
+                            "type": ["string","number","integer","boolean"],
+                            "examples": [
+                                "Dog",
+                                true
+                            ]
+                        },
+                        "widget": {
+                            "description": "custom widget to use instead of the default one determined from the data-type",
+                            "anyOf": [
+                                {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "type"
+                                    ],
+                                    "properties": {
+                                        "type": {
+                                            "description": "type of the property",
+                                            "type": "string",
+                                            "enum": ["TextArea"]
+                                        },
+                                        "minHeight": {
+                                            "description": "minimum Height of the textarea",
+                                            "type": "integer",
+                                            "minimum": 1
+                                        }
+                                    }
+                                },
+                                {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "type",
+                                        "structure"
+                                    ],
+                                    "properties": {
+                                        "type": {
+                                            "description": "type of the property",
+                                            "type": "string",
+                                            "enum": ["SelectBox"]
+                                        },
+                                        "structure": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "items": {
+                                                "type":"object",
+                                                "additionalProperties": false,
+                                                "required": [
+                                                    "key",
+                                                    "label"
+                                                ],
+                                                "properties": {
+                                                    "key": {
+                                                        "type": ["string","boolean","number"]
+                                                    },
+                                                    "label": {
+                                                        "type": "string"
+                                                    }
                                                 },
-                                                "label": {
-                                                    "type": "string"
-                                                }
-                                            },
-                                            "examples": [
-                                                [
-                                                    { "key": "rat", "label": "The Rat"},
-                                                    { "key": "dog", "label": "Bello the Dog"}
+                                                "examples": [
+                                                    [
+                                                        { "key": "rat", "label": "The Rat"},
+                                                        { "key": "dog", "label": "Bello the Dog"}
+                                                    ]
                                                 ]
-                                            ]
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        ]
+                            ]
+                        }
                     }
                 }
             }
         },
         "outputs": {
-            "type": "array",
+            "type": "object",
             "description": "definition of the outputs of this node",
-            "items": {
-                "type": "object",
-                "description": "all the output produced by this node",
-                "additionalProperties": false,
-                "required": [
-                    "key",
-                    "label",
-                    "description",
-                    "type",
-                    "defaultValue"
-                ],
-                "properties": {
-                    "key": {
-                        "type": "string",
-                        "pattern": "^[_a-z0-9]+",
-                        "description": "unique identifier for this output property",
-                        "examples": [
-                            "age"
-                        ]
-                    },
-                    "label": {
-                        "type": "string",
-                        "description": "short name for the property",
-                        "examples": [
-                            "Age"
-                        ]
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "description of the property",
-                        "examples": [
-                            "Age in seconds since 1970"
-                        ]
-                    },
-                    "type": {
-                        "type": "string",
-                        "enum": [
-                            "number",
-                            "file-url",
-                            "boolean",
-                            "string",
-                            "scene"
-                        ],
-                        "description": "data type expected on this output",
-                        "examples": [
-                            "number",
-                            "boolean"
-                        ]
-                    },
-                    "fileToKeyMap": {
-                        "description": "Place the data stored in the named files and store it in the locations pointed to by the respective output key.",
-                        "type": "object",
-                        "patternProperties": {
-                            ".+": {
-                                "type": "string"
-                            }
+            "patternProperties": {
+                "^[_a-z0-9]+$": {
+                    "type": "object",
+                    "description": "all the output produced by this node",
+                    "additionalProperties": false,
+                    "required": [
+                        "displayOrder",
+                        "label",
+                        "description",
+                        "type",
+                        "defaultValue"
+                    ],
+                    "properties": {
+                        "displayOrder": {
+                            "type": "string",
+                            "description": "use this to alphabetically sort the properties for display",
+                            "examples": [
+                                "001.001",
+                                "001.002.001"
+                            ]
                         },
-                        "examples": [
-                            {
-                                "dir/input1.txt": "key_1",
-                                "dir33/input2.txt": "key2"
-                            }
-                        ]
+                        "label": {
+                            "type": "string",
+                            "description": "short name for the property",
+                            "examples": [
+                                "Age"
+                            ]
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": "description of the property",
+                            "examples": [
+                                "Age in seconds since 1970"
+                            ]
+                        },
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "number",
+                                "file-url",
+                                "boolean",
+                                "string",
+                                "scene"
+                            ],
+                            "description": "data type expected on this output",
+                            "examples": [
+                                "number",
+                                "boolean"
+                            ]
+                        },
+                        "fileToKeyMap": {
+                            "description": "Place the data stored in the named files and store it in the locations pointed to by the respective output key.",
+                            "type": "object",
+                            "patternProperties": {
+                                ".+": {
+                                    "type": "string"
+                                }
+                            },
+                            "examples": [
+                                {
+                                    "dir/input1.txt": "key_1",
+                                    "dir33/input2.txt": "key2"
+                                }
+                            ]
+                        }
                     }
                 }
             }
