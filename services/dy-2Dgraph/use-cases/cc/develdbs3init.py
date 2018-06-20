@@ -43,6 +43,13 @@ def init_s3():
     s3 = S3Settings()
     return s3
 
+def create_dummy_table(number_of_rows, number_of_columns):
+    time = np.arange(number_of_rows).reshape(number_of_rows,1)
+    matrix = np.random.randn(number_of_rows, number_of_columns)
+    fullmatrix = np.hstack((time, matrix))
+    df = pd.DataFrame(fullmatrix)
+    return df
+
 def create_dummy(json_configuration_file_path):
     with open(json_configuration_file_path) as file_pointer:
         json_configuration = file_pointer.read()
@@ -70,20 +77,28 @@ def create_dummy(json_configuration_file_path):
     # create a dummy table
     number_of_rows = 5000
     number_of_columns = 200
-    time = np.arange(number_of_rows).reshape(number_of_rows,1)
-    matrix = np.random.randn(number_of_rows, number_of_columns)
-    fullmatrix = np.hstack((time, matrix))
-    df = pd.DataFrame(fullmatrix)
-
-    # serialize to the file
-    with open(temp_file.name, "w") as file_pointer:
-        df.to_csv(path_or_buf=file_pointer, sep="\t", header=False, index=False)        
-    
+    number_of_files = 20
     s3 = init_s3()
     # push the file to the S3 for each input item
     for input_item in configuration["inputs"]:
-        s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"])
-        s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
+        if input_item["type"] == "fileUrl":
+            df = create_dummy_table(number_of_rows, number_of_columns)
+            # serialize to the file
+            with open(temp_file.name, "w") as file_pointer:
+                df.to_csv(path_or_buf=file_pointer, sep="\t", header=False, index=False)        
+            
+            s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"])
+            s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
+        elif input_item["type"] == "folder":
+            for i in range(number_of_files):
+                df = create_dummy_table(number_of_rows, number_of_columns)
+                # serialize to the file
+                with open(temp_file.name, "w") as file_pointer:
+                    df.to_csv(path_or_buf=file_pointer, sep="\t", header=False, index=False)        
+                
+                s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"], str(i) + ".dat")
+                s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
+                
     Path(temp_file.name).unlink()
 
     # print the pipeline id out such that SIMCORE_PIPELINE_ID can be set
