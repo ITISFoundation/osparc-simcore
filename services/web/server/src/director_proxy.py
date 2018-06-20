@@ -2,10 +2,10 @@
 This module is responsible for communicating with the director entity
 """
 
+import logging
 # pylint: disable=C0111
 import os
 import re
-import logging
 
 from requests import RequestException, Session
 

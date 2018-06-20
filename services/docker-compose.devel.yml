@@ -1,0 +1,35 @@
+# USAGE:  docker-compose -f docker-compose.yml -f docker-compose.devel.yml ...
+version: '3.4'
+services:
+  director:
+    image: services_director:dev
+    build:
+      target: development
+    volumes:
+      - './director/source:/home/app/source'
+  #--------------------------------------------------------------------
+  webclient:
+    image: services_webclient:dev
+    build:
+      target: development
+    volumes:
+      - './web/client:/home/scu/client'
+    command: compile --watch
+  webserver:
+    image: services_webserver:dev
+    build:
+      target: development
+    volumes:
+      - ./web/server:/home/scu/server
+      - ./web/client/source-output:/home/scu/client
+      - ../packages/simcore-sdk/src:/home/scu/packages
+    depends_on:
+      - webclient
+  #--------------------------------------------------------------------
+  sidecar:
+    image: services_sidecar:dev
+    build:
+      target: development
+    volumes:
+      - ./sidecar/src/sidecar:/work/sidecar
+      - ../packages:/work/packages

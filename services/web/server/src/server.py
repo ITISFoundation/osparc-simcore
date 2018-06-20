@@ -1,17 +1,22 @@
 """
     Uses socketio and aiohtttp framework
 """
-import os
+import asyncio
 import logging
+import os
 
 from aiohttp import web
+from aiohttp_swagger import setup_swagger
 
-from async_sio import SIO
 import config
+from async_sio import SIO
+from comp_backend_api import comp_backend_routes
+from comp_backend_subscribe import subscribe
+from registry_api import registry_routes
 
 CONFIG = config.CONFIG[os.environ.get('SIMCORE_WEB_CONFIG', 'default')]
 
-LOGGER = logging.getLogger(__file__)
+_LOGGER = logging.getLogger(__file__)
 
 # TODO: add logging level via command line (e.g. increase logger level in production for diagonstics)
 logging.basicConfig(
@@ -24,7 +29,11 @@ def create_app(args=()):
 
     """
     #pylint: disable=W0613
-    LOGGER.debug("Starting as %s ...", CONFIG)
+    _LOGGER.debug("Starting as %s ...", CONFIG)
+
+    # subscribe to rabbit
+    loop = asyncio.get_event_loop()
+    loop.create_task(subscribe())
 
     client_dir = CONFIG.SIMCORE_CLIENT_OUTDIR
 
@@ -34,7 +43,7 @@ def create_app(args=()):
     # http requests handlers
     async def _index(request):
         """Serve the client-side application."""
-        LOGGER.debug("index.request:\n %s", request)
+        _LOGGER.debug("index.request:\n %s", request)
 
         index_path = os.path.join(client_dir, 'index.html')
         with open(index_path) as fhnd:
@@ -46,6 +55,11 @@ def create_app(args=()):
         '/transpiled', os.path.join(client_dir, 'transpiled'))
     app.router.add_static('/resource', os.path.join(client_dir, 'resource'))
     app.router.add_get('/', _index)
+
+    app.router.add_routes(registry_routes)
+    app.router.add_routes(comp_backend_routes)
+
+    setup_swagger(app)
 
     return app
 

@@ -72,7 +72,7 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
       });
       path.marker("start", marker1);
 
-      const arrowSize = 5;
+      const arrowSize = 4;
       let marker2 = draw.marker(arrowSize, arrowSize, function(add) {
         add.path("M 0 0 V 4 L 2 2 Z")
           .fill(linkColor)

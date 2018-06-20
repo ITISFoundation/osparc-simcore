@@ -5,9 +5,10 @@ TODO create create_environment_file(.) to build a template env file with default
 # pylint: disable=C0111
 # pylint: disable=cyclic-import
 
+import logging
 import os
 import sys
-import logging
+
 import utils
 
 _CDIR = os.path.dirname(sys.argv[0] if __name__ == '__main__' else __file__)
@@ -43,6 +44,10 @@ class CommonConfig:
     THRIFT_GEN_OUTDIR = THRIFT_GEN_OUTDIR
     THRIFT_USE_MULTIPLEXED_SERVER = os.environ.get(
         'THRIFT_USE_MULTIPLEXED_SERVER', True)
+
+    PUBLIC_S3_URL = os.environ.get('PUBLIC_S3_URL', 'play.minio.io:9000')
+    PUBLIC_S3_ACCESS_KEY = os.environ.get('PUBLIC_S3_ACCESS_KEY', 'Q3AM3UQ867SPQQA43P2F')
+    PUBLIC_S3_SECRET_KEY = os.environ.get('PUBLIC_S3_SECRET_KEY', 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG')
 
     @staticmethod
     def init_app(app):
