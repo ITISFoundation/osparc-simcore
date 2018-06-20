@@ -64,27 +64,28 @@ VOLUME /home/jovyan/config
 
 COPY --chown=jovyan:users boot.sh boot.sh
 RUN chmod +x boot.sh
-
+# -----------------------------------------------------------------------------
 FROM common AS specialised
-
-# set of arguments
+# set of arguments to copy the right notebook
 ARG NOTEBOOK_NAME=cc_oned.ipynb
 ARG NOTEBOOK_FOLDER_NAME=cc-oned
+# copy the notebook in the image
+COPY --chown=jovyan:users ${NOTEBOOK_FOLDER_NAME}/${NOTEBOOK_NAME} .
+# set jupyter to trust the notebook
+RUN jupyter trust ${NOTEBOOK_NAME}
+# env to automatically open the notebook
+ENV NOTEBOOK_URL=${NOTEBOOK_NAME}
+# -----------------------------------------------------------------------------
+FROM specialised AS development
+ARG JSON_CONFIGURATION_FOLDER=cc-oned
 ARG JSON_CONFIGURATION=cc_config-oned.json
 ENV USE_CASE_CONFIG_FILE=${JSON_CONFIGURATION}
-# copy the notebook in
-COPY --chown=jovyan:users ${NOTEBOOK_FOLDER_NAME}/${NOTEBOOK_NAME} .
-RUN jupyter trust ${NOTEBOOK_NAME}
-# starts notebook without token
-ENV NOTEBOOK_URL=${NOTEBOOK_NAME}
 # copy special configuration for development
-COPY --chown=jovyan:users ${NOTEBOOK_FOLDER_NAME}/${JSON_CONFIGURATION} .
-
-FROM specialised AS development
-# copy the json configuration in
+COPY --chown=jovyan:users ${JSON_CONFIGURATION_FOLDER}/${JSON_CONFIGURATION} .
+# create dummy tables and dummy S3 data
 ENV CREATE_DUMMY_TABLE=1
 COPY --chown=jovyan:users develdbs3init.py .
 CMD [ "/bin/sh", "boot.sh" ]
-
+# -----------------------------------------------------------------------------
 FROM specialised AS production
 ENTRYPOINT [ "/bin/sh", "boot.sh" ]

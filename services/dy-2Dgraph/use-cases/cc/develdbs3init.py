@@ -4,6 +4,7 @@ import tempfile
 import json
 import pandas as pd
 import numpy as np
+import tenacity
 from pathlib import Path
 
 from sqlalchemy import create_engine
@@ -31,14 +32,22 @@ class S3Settings(object):
         self.bucket = self._config.bucket_name
         self.client.create_bucket(self.bucket)
 
+@tenacity.retry(stop=tenacity.stop_after_attempt(5) | tenacity.stop_after_delay(10))
+def init_db():
+    db = DbSettings()    
+    Base.metadata.create_all(db.db)
+    return db
+
+@tenacity.retry(stop=tenacity.stop_after_attempt(5) | tenacity.stop_after_delay(10))
+def init_s3():
+    s3 = S3Settings()
+    return s3
+
 def create_dummy(json_configuration_file_path):
     with open(json_configuration_file_path) as file_pointer:
         json_configuration = file_pointer.read()
     
-    
-    # initialise db
-    db = DbSettings()
-    Base.metadata.create_all(db.db)    
+    db = init_db()
     new_Pipeline = ComputationalPipeline()
     db.session.add(new_Pipeline)
     db.session.commit()
@@ -70,13 +79,14 @@ def create_dummy(json_configuration_file_path):
     with open(temp_file.name, "w") as file_pointer:
         df.to_csv(path_or_buf=file_pointer, sep="\t", header=False, index=False)        
     
-    # initialise s3
-    s3 = S3Settings()
+    s3 = init_s3()
+    # push the file to the S3 for each input item
     for input_item in configuration["inputs"]:
         s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"])
         s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
     Path(temp_file.name).unlink()
 
+    # print the pipeline id out such that SIMCORE_PIPELINE_ID can be set
     print(new_Pipeline.pipeline_id)
 
 if __name__ == "__main__":    
