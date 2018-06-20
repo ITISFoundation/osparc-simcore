@@ -40,7 +40,6 @@ Using the _set()_ method with an output will automatically convert it to a strin
 6. open url [localhost:9001](localhost:9001) to see the s3 file manager UI
 7. open url [localhost:18080](localhost:18080) to see the adminer (db visualiser)
 
-
 ### basic usage of simcore-sdk/nodeports package
 
 ```python
