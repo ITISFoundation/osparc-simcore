@@ -121,9 +121,9 @@ class S3Client(object):
 
         return {}
 
-    def list_objects(self, bucket_name, recursive=False):
+    def list_objects(self, bucket_name, prefix=None, recursive=False):
         try:
-            return self.client.list_objects(bucket_name, recursive=recursive)
+            return self.client.list_objects(bucket_name, prefix=prefix, recursive=recursive)
         except ResponseError as _err:
             logging.exception("Could not list objects")
 
