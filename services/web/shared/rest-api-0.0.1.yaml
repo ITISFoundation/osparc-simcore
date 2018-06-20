@@ -203,11 +203,13 @@ paths:
       requestBody:
         description: cancel a pending upload
         content:
-          application/octet-stream:
+          application/json:
             schema:
               type: object
               example:
                 uploadId: EXAMPLEJZ6e0YupT2h66iePQCc9IEbYbD
+              required:
+                - uploadId
               properties:
                 uploadId:
                   type: string
