@@ -39,8 +39,8 @@ USER $NB_USER
 COPY --chown=jovyan:users requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
-    #pip install jupyterthemes && \
-    #jt -t oceans16 && \
+    pip install jupyterthemes && \
+    jt -t oceans16 && \
     jupyter contrib nbextensions install --user && \
     jupyter dashboards quick-setup --sys-prefix && \    
     jupyter nbextension enable hide_input/main && \
