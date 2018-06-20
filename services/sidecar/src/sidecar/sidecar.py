@@ -23,7 +23,7 @@ from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
 rabbit_config = rabbit_config()
 celery= Celery(rabbit_config.name, broker=rabbit_config.broker, backend=rabbit_config.backend)
 
-
+# TODO: configure via command line or config file
 logging.basicConfig(level=logging.DEBUG)
 #_LOGGER = logging.getLogger(__name__)
 _LOGGER = get_task_logger(__name__)
