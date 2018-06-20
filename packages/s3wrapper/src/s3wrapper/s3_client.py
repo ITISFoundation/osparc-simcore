@@ -6,7 +6,6 @@ from datetime import timedelta
 from minio import Minio
 from minio.error import ResponseError
 
-logging.basicConfig(level=logging.DEBUG)
 _LOGGER = logging.getLogger(__name__)
 
 
