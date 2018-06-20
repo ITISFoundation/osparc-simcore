@@ -89,14 +89,14 @@ def get_service_sub_name(repository_name):
 
 def _get_repo_details(repo):
     #pylint: disable=too-many-nested-blocks
-    current_repo = {}
+    current_repo = []
     if "/comp/" in repo:
-        current_repo['name'] = repo
+        #current_repo['name'] = repo
         req_images = registry_request(repo + '/tags/list')
         im_data = req_images.json()
         tags = im_data['tags']
-        image_tags = {}
         for tag in tags:
+            image_tags = {}
             label_request = registry_request(repo + '/manifests/' + tag)
             label_data = label_request.json()
             labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
@@ -106,8 +106,8 @@ def _get_repo_details(repo):
                         label_data = json.loads(labels[key])
                         for label_key in label_data.keys():
                             image_tags[label_key] = label_data[label_key]
-        if image_tags:
-            current_repo['tags'] = image_tags
+            if image_tags:
+                current_repo.append(image_tags)
 
     return current_repo
 
@@ -116,13 +116,17 @@ def get_repo_details():
 
     repos = request_result.json()['repositories']
     repositories = {}
-    repo_list = []
+    #repo_list = []
     for repo in repos:
         details = _get_repo_details(repo)
         if details:
-            repo_list.append(details)
+            #details_dict = {}
+            #details_dict[repo] = details
+            repositories[repo] = details
+            #repo_list.append(details_dict)
 
-    repositories['repositories'] = repo_list
+
+    #repositories['repositories'] = repo_list
     result_json = json.dumps(repositories)
 
 
