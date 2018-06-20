@@ -87,6 +87,30 @@ def get_service_sub_name(repository_name):
         raise Exception('Invalid service name: ' + repository_name)
     return list_of_suffixes[last_suffix_index]
 
+def _get_repo_details(repo):
+    #pylint: disable=too-many-nested-blocks
+    current_repo = {}
+    if "/comp/" in repo:
+        current_repo['name'] = repo
+        req_images = registry_request(repo + '/tags/list')
+        im_data = req_images.json()
+        tags = im_data['tags']
+        image_tags = {}
+        for tag in tags:
+            label_request = registry_request(repo + '/manifests/' + tag)
+            label_data = label_request.json()
+            labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
+            if labels:
+                for key in labels.keys():
+                    if key.startswith("io.simcore."):
+                        label_data = json.loads(labels[key])
+                        for label_key in label_data.keys():
+                            image_tags[label_key] = label_data[label_key]
+        if image_tags:
+            current_repo['tags'] = image_tags
+
+    return current_repo
+
 def get_repo_details():
     request_result = registry_request('_catalog')
 
@@ -94,29 +118,9 @@ def get_repo_details():
     repositories = {}
     repo_list = []
     for repo in repos:
-        if "/comp/" in repo:
-            current_repo = {}
-            current_repo['name'] = repo
-            req_images = registry_request(repo + '/tags/list')
-            im_data = req_images.json()
-            tags = im_data['tags']
-
-            image_tags = {}
-            for tag in tags:
-                label_request = registry_request(repo + '/manifests/' + tag)
-                label_data = label_request.json()
-                labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
-                if labels:
-                    for key in labels.keys():
-                        if key.startswith("io.simcore."):
-                            label_data = json.loads(labels[key])
-                            for label_key in label_data.keys():
-                                image_tags[label_key] = label_data[label_key]
-            if image_tags:
-                current_repo['tags'] = image_tags
-
-
-            repo_list.append(current_repo)
+        details = _get_repo_details(repo)
+        if details:
+            repo_list.append(details)
 
     repositories['repositories'] = repo_list
     result_json = json.dumps(repositories)
