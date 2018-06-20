@@ -185,7 +185,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
         this.__messengerColors.add([who, whoColor]);
       }
 
-      return ("<font color=" + whoColor +">" + who + ": </font>");
+      return ("<font color=" + whoColor +">" + who + "</font>");
     },
 
     __addLevelColorTag: function(what, logLevel) {
