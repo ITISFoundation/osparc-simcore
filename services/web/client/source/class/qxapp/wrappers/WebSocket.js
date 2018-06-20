@@ -6,8 +6,6 @@
 
 /* global window */
 /* global io */
-/* eslint valid-jsdoc: "error" */
-/* eslint-env es6 */
 
 qx.Class.define("qxapp.wrappers.WebSocket", {
   extend: qx.core.Object,
@@ -212,6 +210,14 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
         }
       }
       return false;
+    },
+
+    removeSlot: function(name) {
+      var index = this.__name.indexOf(name);
+      if (index > -1) {
+        this.getSocket().removeAllListeners(this.__name[index]);
+        this.__name.splice(index, 1);
+      }
     }
   },
 

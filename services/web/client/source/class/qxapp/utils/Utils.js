@@ -34,6 +34,18 @@ qx.Class.define("qxapp.utils.Utils", {
 
     getKeyByValue(object, value) {
       return Object.keys(object).find(key => object[key] === value);
+    },
+
+    formatBytes: function(bytes) {
+      const precision = 2;
+      if (bytes < 1024) {
+        return bytes + " B";
+      } else if (bytes < (1024*1024)) {
+        return (bytes / 1024).toFixed(precision) + " KB";
+      } else if (bytes < (1024*1024*1024)) {
+        return (bytes / (1024*1024)).toFixed(precision) + " MB";
+      }
+      return (bytes / (1024*1024*1024)).toFixed(precision) + " GB";
     }
   }
 });
