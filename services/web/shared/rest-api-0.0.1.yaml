@@ -34,7 +34,7 @@ components:
           description: file size in bytes
         lastModified:
           type: integer
-          format: in64
+          format: int64
           description: last file modification in milliseconds since 1970-01-01
     uploadInfo:
       type: object
@@ -69,10 +69,14 @@ components:
       description: confirmation for the successful part upload
       required:
         - eTag
+        - size
       properties:
         eTag:
           description: eTag of the part just uploaded
           type: string
+        size:
+          type: integer
+          format: int64
   parameters:
     uploadId:
       name: X-Upload-Id
@@ -89,7 +93,7 @@ components:
       schema:
         type: integer
         format: int64
-        
+
   requestBodies:
     fileMetaData:
       description: meta data of the file to be uploaded
@@ -126,12 +130,12 @@ paths:
         - upload
       summary: start an upload
       operationId: uploadStart
-      description: Start or resume an upload 
+      description: Start or resume an upload
       requestBody:
         $ref: '#/components/requestBodies/fileMetaData'
       responses:
         '200':
-          $ref: '#/components/responses/uploadMeta' 
+          $ref: '#/components/responses/uploadMeta'
         '405':
           $ref: '#/components/responses/invalidInput'
   /upload/part:
@@ -165,4 +169,15 @@ paths:
             application/json:
               schema:
                 type: object
-                
+  /upload/cancel:
+    post:
+      tags:
+        - upload
+      summary: abort the pending upload
+      operationId: uploadCancel
+      description: Abort a pending muti part upload
+      responses:
+        '201':
+          description: upload cancled
+        '404':
+          description: upload does not exist
