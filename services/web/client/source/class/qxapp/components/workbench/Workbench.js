@@ -329,10 +329,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       node.addListener("dblclick", function(e) {
         if (node.getMetadata().key === "FileManager") {
           let win = new qx.ui.window.Window(node.getMetadata().name).set({
-            width: 900,
-            height: 800,
-            minWidth: 500,
-            minHeight: 500,
+            width: 800,
+            height: 600,
+            minWidth: 400,
+            minHeight: 400,
             modal: true,
             showMinimize: false,
             layout: new qx.ui.layout.Canvas()

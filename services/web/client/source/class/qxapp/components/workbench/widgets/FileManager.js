@@ -114,20 +114,31 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
 
     // Use XMLHttpRequest to upload the file to S3.
     __uploadFile: function(file, url) {
+      let hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      let label = new qx.ui.basic.Label(file.name);
+      let progressBar = new qx.ui.indicator.ProgressBar();
+      hBox.add(label, {
+        width: "15%"
+      });
+      hBox.add(progressBar, {
+        width: "85%"
+      });
+      this.addAt(hBox, 1);
       let xhr = new XMLHttpRequest();
-      xhr.addEventListener("progress", function(oEvent) {
-        if (oEvent.lengthComputable) {
-          const percentComplete = oEvent.loaded / oEvent.total * 100;
-          console.log(percentComplete);
+      xhr.upload.addEventListener("progress", function(e) {
+        if (e.lengthComputable) {
+          const percentComplete = e.loaded / e.total * 100;
+          progressBar.setValue(percentComplete);
         } else {
           console.log("Unable to compute progress information since the total size is unknown");
         }
-      });
+      }, false);
       xhr.open("PUT", url, true);
       xhr.send(file);
       xhr.onload = () => {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
+          this.remove(hBox);
           this.__reloadTree();
         }
       };
