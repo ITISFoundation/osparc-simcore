@@ -59,8 +59,10 @@ def create_dummy(json_configuration_file_path):
     temp_file.close()
 
     # create a dummy table
-    time = np.arange(20).reshape(20,1)
-    matrix = np.random.randn(20, 20)
+    number_of_rows = 1000
+    number_of_columns = 20
+    time = np.arange(number_of_rows).reshape(number_of_rows,1)
+    matrix = np.random.randn(number_of_rows, number_of_columns)
     fullmatrix = np.hstack((time, matrix))
     df = pd.DataFrame(fullmatrix)
 
