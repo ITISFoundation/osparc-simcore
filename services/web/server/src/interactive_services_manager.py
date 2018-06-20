@@ -4,6 +4,7 @@
 # pylint: disable=W0703
 # pylint: disable=C0111
 import logging
+
 import director_proxy
 
 _LOGGER = logging.getLogger(__file__)
