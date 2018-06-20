@@ -31,7 +31,20 @@ Using the _set()_ method with an output will automatically convert it to a strin
 - push data to S3 when an output is modified
 - only pull data from S3 if the local data is outdated
 
-### basic usage
+### basic demo usage
+
+1. rename _services/dy-2Dgraph/use-cases/.env-devel_ to _.env_
+2. open terminal and do
+    ```bash
+    make build-devel
+    make up-devel
+    ```
+3. open url [localhost:1234](localhost:1234) to see 0d use case graphs
+4. open url [localhost:1235](localhost:1235) to see 1d use case graphs
+5. open url [localhost:1236](localhost:1236) to see 2d use case graphs
+
+
+### basic usage of simcore-sdk/nodeports package
 
 ```python
 from simcore-sdk.nodeports import PORTS
