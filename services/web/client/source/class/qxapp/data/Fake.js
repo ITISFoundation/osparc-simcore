@@ -22,6 +22,14 @@ qx.Class.define("qxapp.data.Fake", {
       prjId: null
     }),
 
+    getUsername: function() {
+      return "bizzy";
+    },
+
+    getS3PublicBucketName: function() {
+      return "simcore";
+    },
+
     /**
      * Returns a qx array with projects associated to a user
      */
@@ -614,23 +622,11 @@ qx.Class.define("qxapp.data.Fake", {
           "port": null
         }
       }, {
-        "key": "FileReader",
+        "key": "FileManager",
         "tag": "1.0",
-        "name": "File Reader",
-        "desc": "File Reader",
-        "inputs": [{
-          "key": "in_1",
-          "label": "File",
-          "desc": "File",
-          "type": "string",
-          "defaultValue": null
-        }, {
-          "key": "in_2",
-          "label": "File type",
-          "desc": "File type",
-          "type": "string",
-          "defaultValue": ""
-        }],
+        "name": "File Manager",
+        "desc": "File Manager",
+        "inputs": [],
         "outputs": [{
           "key": "out_1",
           "label": "File-url",
