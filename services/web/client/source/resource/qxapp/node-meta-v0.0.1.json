@@ -36,7 +36,7 @@
         },
         "name": {
             "type": "string",
-            "description": "short, humean readable name for the node",
+            "description": "short, human readable name for the node",
             "examples": [
                 "Fast Counter"
             ]
@@ -75,7 +75,7 @@
                         ]
                     },
                     "affiliation": {
-                        "description": "Affiliaton of the author",
+                        "description": "Affiliation of the author",
                         "type": "string",
                         "examples": [
                             "Sense8",
@@ -88,7 +88,7 @@
         "contact": {
             "type": "string",
             "format": "email",
-            "description": "email to corespond to the authors about the node",
+            "description": "email to correspond to the authors about the node",
             "examples": [
                 "lab@net.flix"
             ]
@@ -146,22 +146,20 @@
                         ]
                     },
                     "fileToKeyMap": {
-                        "type": "array",
                         "description": "Place the data associated with the named keys in files",
-                        "items": {
-                            "type": "object",
-                            "patternProperties": {
-                                ".+": {
-                                    "type": "string"
-                                }
-                            },
-                            "examples": [
-                                {
-                                    "dir/input1.txt": "key_1",
-                                    "dir33/input2.txt": "key2"
-                                }
-                            ]
-                        }
+
+                        "type": "object",
+                        "patternProperties": {
+                            ".+": {
+                                "type": "string"
+                            }
+                        },
+                        "examples": [
+                            {
+                                "dir/input1.txt": "key_1",
+                                "dir33/input2.txt": "key2"
+                            }
+                        ]
                     },
                     "defaultValue": {
                         "description": "initial value for this input",
@@ -244,7 +242,7 @@
             "description": "definition of the outputs of this node",
             "items": {
                 "type": "object",
-                "description": "all the ouptut produced by this node",
+                "description": "all the output produced by this node",
                 "additionalProperties": false,
                 "required": [
                     "key",
