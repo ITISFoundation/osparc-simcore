@@ -143,7 +143,7 @@ class S3Client(object):
         ''' This seems to be pretty heavy, should be used with care
         '''
         try:
-            objects = self.list_objects(bucket_name, recursive)
+            objects = self.list_objects(bucket_name, recursive=recursive)
             for obj in objects:
                 if obj.object_name == object_name:
                     return True
