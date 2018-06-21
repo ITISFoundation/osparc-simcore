@@ -1,5 +1,13 @@
 import pytest
 import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "helpers"))
+
+@pytest.fixture(scope='session')
+def docker_compose_file(pytestconfig): # pylint:disable=unused-argument
+    my_path = os.path.join(os.path.dirname(__file__), 'docker-compose.yml')
+    return my_path
 
 @pytest.fixture()
 def default_nodeports_configuration():
