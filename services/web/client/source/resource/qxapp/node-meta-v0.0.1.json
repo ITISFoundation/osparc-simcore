@@ -135,6 +135,7 @@
                             "type": "string",
                             "enum": [
                                 "number",
+                                "integer",
                                 "file-url",
                                 "boolean",
                                 "string",
