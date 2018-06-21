@@ -29,10 +29,10 @@ def test_item():
     item_type = "bool"
     item_value = "true"
     timestamp = datetime.datetime.now().isoformat()
-    item = DataItem(key=key, label=label, description=description, type=item_type, value=item_value, timestamp=timestamp)
+    item = DataItem(key=key, label=label, desc=description, type=item_type, value=item_value, timestamp=timestamp)
     assert item.key == key
     assert item.label == label
-    assert item.description == description
+    assert item.desc == description
     assert item.type == item_type
     assert item.value == item_value
     assert item.timestamp == timestamp

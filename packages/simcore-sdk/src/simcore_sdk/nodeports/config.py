@@ -48,7 +48,6 @@ class TestingConfig(CommonConfig):
 
 class ProductionConfig(CommonConfig):
     LOG_LEVEL = logging.WARNING
-    LOCATION = Location.DATABASE
 
 CONFIG = {
     "development": DevelopmentConfig,
