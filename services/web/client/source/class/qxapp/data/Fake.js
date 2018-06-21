@@ -581,7 +581,21 @@ qx.Class.define("qxapp.data.Fake", {
         url: "/repositories",
         method: "GET"
       });
-      req.addListener("success", this.__onListOfRepositories, this);
+      req.addListener("success", function(e) {
+        let requ = e.getTarget();
+        const listOfRepositories = JSON.parse(requ.getResponse());
+        let services = [];
+        for (const key of Object.keys(listOfRepositories)) {
+          const repo = listOfRepositories[key];
+          const nTags = repo.length;
+          for (let i=0; i<nTags; i++) {
+            console.log(i, repo[i]);
+            let newMetadata = this.__createMetadata(repo[i]);
+            services.push(newMetadata);
+          }
+        }
+        console.log(services);
+      }, this);
       req.send();
 
       let fakeServices = [];
@@ -589,32 +603,6 @@ qx.Class.define("qxapp.data.Fake", {
       Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getComputationals());
       Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getAnalyses());
       return fakeServices;
-    },
-
-    __onListOfRepositories: function(e) {
-      let req = e.getTarget();
-      const listOfRepositories = JSON.parse(req.getResponse());
-      console.log(listOfRepositories);
-      let services = [];
-      if ("repositories" in listOfRepositories) {
-        const repos = listOfRepositories.repositories;
-        const nRepos = repos.length;
-        console.log("Number of repos: ", nRepos);
-        for (let i=0; i<nRepos; i++) {
-          console.log(i, repos[i]);
-          if ("tags" in repos[i]) {
-            const repoTags = repos[i].tags;
-            const nRepoTags = repoTags.length;
-            console.log("Number of tags in repo: ", nRepoTags);
-            for (let j=0; j<nRepoTags; j++) {
-              console.log(j, repoTags, nRepoTags[j]);
-              let newMetadata = this.__createMetadata(nRepoTags[j]);
-              services.push(newMetadata);
-            }
-          }
-        }
-      }
-      console.log(services);
     },
 
     __createMetadata: function(data) {
