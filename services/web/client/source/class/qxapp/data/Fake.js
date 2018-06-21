@@ -575,55 +575,12 @@ qx.Class.define("qxapp.data.Fake", {
       return temp2Data;
     },
 
-    getServices: function() {
-      let req = new qx.io.request.Xhr();
-      req.set({
-        url: "/repositories",
-        method: "GET"
-      });
-      req.addListener("success", function(e) {
-        let requ = e.getTarget();
-        const listOfRepositories = JSON.parse(requ.getResponse());
-        let services = [];
-        for (const key of Object.keys(listOfRepositories)) {
-          const repo = listOfRepositories[key];
-          const nTags = repo.length;
-          for (let i=0; i<nTags; i++) {
-            console.log(i, repo[i]);
-            let newMetadata = this.__createMetadata(repo[i]);
-            services.push(newMetadata);
-          }
-        }
-        console.log(services);
-      }, this);
-      req.send();
-
+    getFakeServices: function() {
       let fakeServices = [];
       Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getProducers());
       Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getComputationals());
       Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getAnalyses());
       return fakeServices;
-    },
-
-    __createMetadata: function(data) {
-      let metadata = {};
-      [
-        "key",
-        "name",
-        "tag",
-        "description",
-        "authors",
-        "contact",
-        "inputs",
-        "outputs",
-        "settings"
-      ].forEach(field => {
-        metadata[field] = null;
-        if (Object.prototype.hasOwnProperty.call(data, field)) {
-          metadata[field] = data[field];
-        }
-      });
-      return metadata;
     },
 
     getProducers: function() {

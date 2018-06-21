@@ -30,7 +30,13 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     });
     this.add(searchLayout);
 
-    this.__allServices = qxapp.data.Fake.getServices();
+    this.__allServices = qxapp.data.Fake.getFakeServices();
+    let store = qxapp.data.Store.getInstance();
+    store.addListener("servicesRegistered", function(e) {
+      console.log("servicesRegistered", e.getData());
+      this.__addNewData(e.getData());
+    }, this);
+    store.getServices();
     // TODO: OM & PC replace this with delegates
     let names = [];
     for (let i = 0; i < this.__allServices.length; i++) {
@@ -134,6 +140,17 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     __setNewData: function(newData) {
       let filteredData = new qx.data.Array(newData);
       this.__controller.setModel(filteredData);
+    },
+
+    __addNewData: function(newData) {
+      console.log(this.__controller.getModel());
+      let names = [];
+      this.__allServices = this.__allServices.concat(newData);
+      for (let i = 0; i < this.__allServices.length; i++) {
+        names.push(this.__allServices[i].name);
+      }
+      let rawData = new qx.data.Array(names);
+      this.__controller.setModel(rawData);
     },
 
     __keyEvent: function(keyEvent) {
