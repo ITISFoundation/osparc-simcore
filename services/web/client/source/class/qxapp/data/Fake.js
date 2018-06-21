@@ -93,7 +93,7 @@ qx.Class.define("qxapp.data.Fake", {
         "nodes": [{
           "uuid": "dd329e10-a906-42da-a7b3-4c4fec4a786f",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 1",
           "description": "Node 1",
           "position": {
@@ -132,7 +132,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid": "3fad99a2-31b3-48a2-9066-1a66fc21aa52",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 2",
           "description": "Node 2",
           "position": {
@@ -171,7 +171,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid": "3a97f542-93c4-419c-b5c9-bcf9ff3ada7e",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 3",
           "description": "Node 3",
           "position": {
@@ -210,7 +210,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid":"9c35ecbc-8219-4538-ba2e-bad8b6e64cda",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 4",
           "description": "Node 4",
           "position": {
@@ -249,7 +249,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid":"51ad1bc0-615e-406a-9886-e3639f51208c",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 5",
           "description": "Node 5",
           "position": {
@@ -288,7 +288,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid":"5df77702-29d5-4513-b3f8-f2a40ed317fe",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 6",
           "description": "Node 6",
           "position": {
@@ -327,7 +327,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid": "de2c84ed-a3bc-47c2-b54d-84a5c048236b",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 7",
           "description": "Node 7",
           "position": {
@@ -366,7 +366,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid": "ba22104c-99e1-45c9-a09d-228400a6f9fb",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 8",
           "description": "Node 8",
           "position": {
@@ -833,7 +833,7 @@ qx.Class.define("qxapp.data.Fake", {
         "settings": []
       }, {
         "key": "masu.speag.com/simcore/services/comp/sleeper",
-        "tag": "1.0",
+        "tag": "0.0.1",
         "name": "Sleeper",
         "description": "Sleeper",
         "inputs": [{
