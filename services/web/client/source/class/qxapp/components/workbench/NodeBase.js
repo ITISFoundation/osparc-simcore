@@ -11,7 +11,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       showStatusbar: false,
       resizable: false,
       allowMaximize: false,
-      minWidth: 180
+      minWidth: 220
     });
 
     let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
@@ -38,10 +38,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
 
     let progressBox = new qx.ui.container.Composite(new qx.ui.layout.Basic());
-    progressBox.setMinWidth(160);
+    progressBox.setMinWidth(200);
 
     this.__progressBar = new qx.ui.indicator.ProgressBar();
-    this.__progressBar.setWidth(160);
+    this.__progressBar.setWidth(200);
     progressBox.add(this.__progressBar, {
       top: 0,
       left: 0
