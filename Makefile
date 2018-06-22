@@ -4,7 +4,7 @@
 
 PY_FILES = $(strip $(shell find services packages -iname '*.py'))
 
-export PYTHONPATH=${PWD}/packages/s3wrapper/src
+export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
 build-devel:
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml build
@@ -26,19 +26,18 @@ up:
 
 up-swarm:
 	docker swarm init
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml up
+	docker stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml workbench
 
 down:
 	docker-compose -f services/docker-compose.yml down
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml down
 
 down-swarm:
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml down
+	docker stack rm workbench
 	docker swarm leave -f
 
 stack-up:
 	docker swarm init
-	POSTGRES_USER=simcore POSTGRES_PASSWORD=simcore POSTGRES_DB=simcoredb RABBITMQ_USER=simcore RABBITMQ_PASSWORD=simcore RABBITMQ_PROGRESS_CHANNEL=comp.backend.channels.progress RABBITMQ_LOG_CHANNEL=comp.backend.channels.log S3_ENDPOINT=minio:9000 S3_ACCESS_KEY=12345678  S3_SECRET_KEY=12345678 S3_BUCKET_NAME=simcore docker stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml osparc
 
 stack-down:
 	docker stack rm osparc

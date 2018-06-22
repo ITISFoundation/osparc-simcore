@@ -3,7 +3,7 @@
 """
 from os import environ as env
 
-POSTGRES_URL = "postgres:5432"
+POSTGRES_URL = env.get("POSTGRES_ENDPOINT", "postgres:5432")
 POSTGRES_USER = env.get("POSTGRES_USER", "simcore")
 POSTGRES_PW = env.get("POSTGRES_PASSWORD", "simcore")
 POSTGRES_DB = env.get("POSTGRES_DB", "simcoredb")
