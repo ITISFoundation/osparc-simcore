@@ -9,6 +9,7 @@ def update_configuration(session, pipeline_id, node_uuid, new_configuration):
     flag_modified(task, "input")
     task.output = new_configuration["outputs"]
     flag_modified(task, "output")
+    session.add(task)
     session.commit()
     
 
