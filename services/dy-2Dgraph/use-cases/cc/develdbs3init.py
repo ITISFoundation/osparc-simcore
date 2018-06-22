@@ -81,7 +81,7 @@ def create_dummy(json_configuration_file_path):
     s3 = init_s3()
     # push the file to the S3 for each input item
     for input_item in configuration["inputs"]:
-        if input_item["type"] == "fileUrl":
+        if input_item["type"] == "file-url":
             df = create_dummy_table(number_of_rows, number_of_columns)
             # serialize to the file
             with open(temp_file.name, "w") as file_pointer:
@@ -89,7 +89,7 @@ def create_dummy(json_configuration_file_path):
             
             s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"])
             s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
-        elif input_item["type"] == "folderUrl":
+        elif input_item["type"] == "folder-url":
             for i in range(number_of_files):
                 df = create_dummy_table(number_of_rows, number_of_columns)
                 # serialize to the file
