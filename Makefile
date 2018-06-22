@@ -38,7 +38,6 @@ down-swarm:
 
 stack-up:
 	docker swarm init
-	POSTGRES_USER=simcore POSTGRES_PASSWORD=simcore POSTGRES_DB=simcoredb RABBITMQ_USER=simcore RABBITMQ_PASSWORD=simcore RABBITMQ_PROGRESS_CHANNEL=comp.backend.channels.progress RABBITMQ_LOG_CHANNEL=comp.backend.channels.log S3_ENDPOINT=minio:9000 S3_ACCESS_KEY=12345678  S3_SECRET_KEY=12345678 S3_BUCKET_NAME=simcore docker stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml osparc
 
 stack-down:
 	docker stack rm osparc

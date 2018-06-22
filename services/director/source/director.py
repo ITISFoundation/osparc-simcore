@@ -34,25 +34,17 @@ def hello_world():
 
 @APP.route('/list_interactive_services', methods=['GET'])
 def list_interactive_services():
-    """[summary]
+    """returns the list of interactive services
 
     Returns:
-        [type] -- [description]
+        json -- {service_name: {repos: [/simcore/service/], details: []}}
     """
     _LOGGER.debug("received call to list of interactive services")
     # get the services repos
     list_of_interactive_repos = registry_proxy.retrieve_list_of_repos_with_interactive_services()
-    # some services may have several parts, fuse these
-    # the syntax of services are simcore/services/%SERVICENAME%/...
-    list_of_interactive_services = []
-    for repo in list_of_interactive_repos:
-        service_name = registry_proxy.get_service_name(repo)
-        if service_name not in list_of_interactive_services:
-            list_of_interactive_services.append(service_name)
-
     #list_of_interactive_services = [registry_proxy.retrieve_list_of_images_in_repo(repo) for repo in list_of_interactive_repos]
-
-    return json.dumps(list_of_interactive_services)
+    _LOGGER.debug("retrieved list of interactive services %s", list_of_interactive_repos)
+    return json.dumps(list_of_interactive_repos)
 
 
 @APP.route('/start_service', methods=['POST'])
