@@ -1,6 +1,3 @@
-import logging
-
-import psycopg2
 import pytest
 # pylint:disable=unused-import
 from pytest_docker import docker_ip, docker_services

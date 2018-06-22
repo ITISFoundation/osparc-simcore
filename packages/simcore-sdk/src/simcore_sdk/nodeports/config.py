@@ -17,10 +17,10 @@ DATA_ITEM_KEYS = ["key",
 TYPE_TO_PYTHON_TYPE_MAP = {"int":int, 
                             "integer":int, 
                             "float":float, 
-                            "fileUrl":str, 
+                            "file-url":str, 
                             "bool":bool, 
                             "string":str, 
-                            "folderUrl":str}
+                            "folder-url":str}
 # S3 stored information
 TYPE_TO_S3_FILE_LIST = ["fileUrl"]
 TYPE_TO_S3_FOLDER_LIST = ["folderUrl"]
