@@ -71,8 +71,8 @@ async def start_pipeline(request):
     with open('mock/SleepersPipeline.json') as f:
         mockup = json.load(f)
 
-    nodes = mockup['nodes']
-    links = mockup['links']
+    nodes = request_data['nodes']
+    links = request_data['links']
 
     dag_adjacency_list = dict()
     tasks = dict()
@@ -112,7 +112,7 @@ async def start_pipeline(request):
     db_session.flush()
 
     pipeline_id = pipeline.pipeline_id
-    pipeline_name = "mockup"
+    pipeline_name = "request_data"
     internal_id = 1
 
     for node_id in tasks:
