@@ -34,19 +34,15 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getInteractiveServices: function() {
-      var socket = qxapp.wrappers.WebSocket.getInstance();
+      let socket = qxapp.wrappers.WebSocket.getInstance();
       socket.removeSlot("getInteractiveServices");
       socket.on("getInteractiveServices", function(e) {
         let listOfIntercativeServices = e;
         let services = [];
         for (const key of Object.keys(listOfIntercativeServices)) {
           const repo = listOfIntercativeServices[key];
-          const nTags = repo.length;
-          for (let i=0; i<nTags; i++) {
-            console.log(i, repo[i]);
-            let newMetadata = qxapp.data.Converters.registryToMetadata(repo[i]);
-            services.push(newMetadata);
-          }
+          let newMetadata = qxapp.data.Converters.registryToMetadata(repo);
+          services.push(newMetadata);
         }
         this.fireDataEvent("interactiveServicesRegistered", services);
       }, this);
