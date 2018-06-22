@@ -41,8 +41,14 @@ qx.Class.define("qxapp.data.Store", {
         let services = [];
         for (const key of Object.keys(listOfIntercativeServices)) {
           const repo = listOfIntercativeServices[key];
-          let newMetadata = qxapp.data.Converters.registryToMetadata(repo);
-          services.push(newMetadata);
+          if (repo["details"].length>0 && repo["details"][0].length>0) {
+            const repoData = repo["details"][0][0];
+            let newMetadata = qxapp.data.Converters.registryToMetadata(repoData);
+            if ("viewer" in repoData) {
+              newMetadata = repoData["viewer"];
+            }
+            services.push(newMetadata);
+          }
         }
         this.fireDataEvent("interactiveServicesRegistered", services);
       }, this);
