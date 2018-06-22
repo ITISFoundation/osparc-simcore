@@ -45,6 +45,8 @@
  *
  */
 
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.components.form.Auto", {
   extend : qx.ui.form.Form,
   include : [qx.locale.MTranslation],
@@ -366,6 +368,10 @@ qx.Class.define("qxapp.components.form.Auto", {
       );
     },
     __addField: function(s) {
+      // FIXME: OM why null?
+      if (s === null) {
+        return;
+      }
       let option = {
         exposable: s.exposable
       }; // for passing info into the form renderer
@@ -388,7 +394,10 @@ qx.Class.define("qxapp.components.form.Auto", {
         s.widget = {
           string: "text",
           integer: "spinner",
+          number: "spinner",
           bool: "checkBox",
+          "file-url": "fileButton",
+          "folder-url": "fileButton",
           fileUrl: "fileButton"
         }[s.type];
       }
