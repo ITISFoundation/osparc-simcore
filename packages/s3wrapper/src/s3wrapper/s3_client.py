@@ -130,6 +130,14 @@ class S3Client(object):
 
         return []
 
+    def list_objects_v2(self, bucket_name, recursive=False):
+        try:
+            return self.client.list_objects_v2(bucket_name, recursive=recursive)
+        except ResponseError as _err:
+            logging.exception("Could not list objects")
+
+        return []
+
     def remove_objects(self, bucket_name, objects):
         try:
             for del_err in self.client.remove_objects(bucket_name, objects):

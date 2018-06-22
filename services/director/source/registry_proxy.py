@@ -86,3 +86,41 @@ def get_service_sub_name(repository_name):
     if last_suffix_index < 0:
         raise Exception('Invalid service name: ' + repository_name)
     return list_of_suffixes[last_suffix_index]
+
+def _get_repo_details(repo):
+    #pylint: disable=too-many-nested-blocks
+    current_repo = []
+    if "/comp/" in repo:
+        req_images = registry_request(repo + '/tags/list')
+        im_data = req_images.json()
+        tags = im_data['tags']
+        for tag in tags:
+            image_tags = {}
+            label_request = registry_request(repo + '/manifests/' + tag)
+            label_data = label_request.json()
+            labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
+            if labels:
+                for key in labels.keys():
+                    if key.startswith("io.simcore."):
+                        label_data = json.loads(labels[key])
+                        for label_key in label_data.keys():
+                            image_tags[label_key] = label_data[label_key]
+            if image_tags:
+                current_repo.append(image_tags)
+
+    return current_repo
+
+def get_repo_details():
+    request_result = registry_request('_catalog')
+
+    repos = request_result.json()['repositories']
+    repositories = {}
+    for repo in repos:
+        details = _get_repo_details(repo)
+        if details:
+            repositories[repo] = details
+
+    result_json = json.dumps(repositories)
+
+
+    return result_json

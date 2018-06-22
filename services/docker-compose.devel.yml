@@ -22,7 +22,7 @@ services:
     volumes:
       - ./web/server:/home/scu/server
       - ./web/client/source-output:/home/scu/client
-      - ../packages/simcore-sdk/src:/home/scu/packages
+      - ../packages:/home/scu/packages
     depends_on:
       - webclient
   #--------------------------------------------------------------------

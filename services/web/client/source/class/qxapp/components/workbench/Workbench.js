@@ -208,7 +208,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             var node = d["Node"];
             var msg = d["Message"];
             this.__updateLogger(node, msg);
-          });
+          }, this);
         }
         socket.emit("logger");
 
@@ -220,7 +220,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             var node = d["Node"];
             var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
             this.updateProgress(node, progress);
-          });
+          }, this);
         }
 
         if (this.getCanStart()) {
@@ -811,9 +811,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       // post pipeline
       let currentPipeline = this.__serializeData();
       console.log(currentPipeline);
-      var req = new qx.io.request.Xhr();
-      var data = {};
-      data["pipeline_mockup_id"] = currentPipeline;
+      let req = new qx.io.request.Xhr();
+      let data = {};
+      data = currentPipeline;
+      data["pipeline_mockup_id"] = qxapp.utils.Utils.uuidv4();
       req.set({
         url: "/start_pipeline",
         method: "POST",
@@ -832,7 +833,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __onPipelinesubmitted: function(e) {
-      var req = e.getTarget();
+      let req = e.getTarget();
       console.debug("Everything went fine!!");
       console.debug("status  : ", req.getStatus());
       console.debug("phase   : ", req.getPhase());

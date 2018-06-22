@@ -38,6 +38,7 @@ class DockerSettings(object):
         self._config = docker_config()
         self.client = docker.from_env(version='auto')
         self.registry = self._config.registry
+        self.registry_name = self._config.registry_name
         self.registry_user = self._config.user
         self.registry_pwd = self._config.pwd
         self.image_name = ""

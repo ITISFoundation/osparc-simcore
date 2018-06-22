@@ -4,10 +4,24 @@
 # pylint: disable=C0103
 
 from aiohttp import web
+import async_timeout
+
+import director_proxy
 
 registry_routes = web.RouteTableDef()
 
-@registry_routes.get('/services')
+async def async_request(method, session, url, data=None, timeout=10):
+    async with async_timeout.timeout(timeout):
+        if method == "GET":
+            async with session.get(url) as response:
+                return await response.json()
+        elif method == "POST":
+            async with session.post(url, json=data) as response:
+                return await response.json()
+
+
+
+@registry_routes.get('/repositories')
 async def services(request):
     """
     ---
@@ -23,4 +37,7 @@ async def services(request):
             description: invalid HTTP Method
     """
     _a = request
-    return web.Response(text="This will be a list of comp. services")
+
+    repo_list = director_proxy.retrieve_repositories()
+
+    return web.json_response(repo_list)

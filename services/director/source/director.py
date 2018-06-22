@@ -102,6 +102,11 @@ def stop_service():
         _LOGGER.exception("Failed to stop service")
         abort(500)
 
+@APP.route('/list_repositories', methods=['GET'])
+def list_repositories():
+    repos = registry_proxy.get_repo_details()
+
+    return json.dumps(repos)
 
 if __name__ == "__main__":
     APP.run(host='0.0.0.0', debug=False, port=8001, threaded=True)

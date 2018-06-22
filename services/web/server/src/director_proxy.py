@@ -53,6 +53,11 @@ def retrieve_interactive_services():
     return request.json()
 
 
+def retrieve_repositories():
+    request = director_request('list_repositories')
+    return request.json()
+
+
 def start_service(service_name, service_uuid):
     request = director_request('start_service', method='POST', data={
                                'service_name': service_name, 'service_uuid': str(service_uuid)})

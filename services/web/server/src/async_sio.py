@@ -9,17 +9,16 @@
 # pylint: disable=C0111
 
 
+import json
 import logging
 import os
 
 import socketio
 
-import interactive_services_manager
-
 import config
-from minio import Minio
-from minio.error import ResponseError
-import json
+import interactive_services_manager
+from s3wrapper.s3_client import S3Client
+from simcore_sdk.config.s3 import Config as s3_config
 
 _LOGGER = logging.getLogger(__file__)
 
@@ -84,49 +83,40 @@ async def stop_jupyter_handler(sid, data):
 @SIO.on('presignedUrl')
 async def retrieve_url_for_file(sid, data):
     _LOGGER.debug("client %s requests S3 url for %s", sid, data)
-    try:
-        minioClient = Minio(
-            CONFIG.PUBLIC_S3_URL, 
-            access_key=CONFIG.PUBLIC_S3_ACCESS_KEY, 
-            secret_key=CONFIG.PUBLIC_S3_SECRET_KEY)
-        result = minioClient.presigned_put_object(data["bucketName"], data["fileName"])
-        # Response error is still possible since internally presigned does get
-        # bucket location.
-        dataOut = {}
-        dataOut["url"] = result
-        await SIO.emit('presignedUrl', data=dataOut, room=sid)
-    except ResponseError:
-        _LOGGER.exception("Failed client %s requests S3 url for %s", sid, data)
+    _config = s3_config()
+    s3_client = S3Client(endpoint=_config.endpoint,
+        access_key=_config.access_key, secret_key=_config.secret_key)
+    url = s3_client.create_presigned_put_url(_config.bucket_name, data["fileName"])
+    #result = minioClient.presigned_put_object(data["bucketName"], data["fileName"])
+    # Response error is still possible since internally presigned does get
+    # bucket location.
+    dataOut = {}
+    dataOut["url"] = url
+    await SIO.emit('presignedUrl', data=dataOut, room=sid)
 
 
 @SIO.on('listObjects')
 async def list_S3_objects(sid, data):
     _LOGGER.debug("client %s requests S3 objects in %s", sid, data)
-    try:
-        minioClient = Minio(
-            CONFIG.PUBLIC_S3_URL, 
-            access_key=CONFIG.PUBLIC_S3_ACCESS_KEY, 
-            secret_key=CONFIG.PUBLIC_S3_SECRET_KEY)
+    _config = s3_config()
+    s3_client = S3Client(endpoint=_config.endpoint,
+        access_key=_config.access_key, secret_key=_config.secret_key)
 
-        s3_public_bucket_name = 'simcore'
-        objects = minioClient.list_objects_v2(s3_public_bucket_name)
-        for obj in objects:
-            dataOut = {}
-            dataOut['name'] = obj.object_name
-            dataOut['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
-            dataOut['size'] = obj.size
-            await SIO.emit('listObjectsPub', data=dataOut, room=sid)
+    objects = s3_client.list_objects_v2(_config.bucket_name)
+    for obj in objects:
+        dataOut = {}
+        dataOut['name'] = obj.object_name
+        dataOut['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
+        dataOut['size'] = obj.size
+        await SIO.emit('listObjectsPub', data=dataOut, room=sid)
 
-        objects = minioClient.list_objects_v2(data)
-        for obj in objects:
-            dataOut = {}
-            dataOut['name'] = obj.object_name
-            dataOut['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
-            dataOut['size'] = obj.size
-            await SIO.emit('listObjectsUser', data=dataOut, room=sid)
-
-    except ResponseError:
-        _LOGGER.exception("Failed client %s requests S3 objects for %s", sid, data)
+    #objects = s3_client.list_objects_v2(data)
+    #for obj in objects:
+    #    dataOut = {}
+    #    dataOut['name'] = obj.object_name
+    #    dataOut['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
+    #    dataOut['size'] = obj.size
+    #    await SIO.emit('listObjectsUser', data=dataOut, room=sid)
 
 
 @SIO.on('disconnect')
