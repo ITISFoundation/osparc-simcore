@@ -104,7 +104,7 @@ def test_file_upload_download(s3_client, bucket, text_files):
     filepath = text_files(1)[0]
     object_name = "1"
     assert s3_client.upload_file(bucket, object_name, filepath)
-    filepath2 = filepath + "."
+    filepath2 = filepath + ".rec"
     assert s3_client.download_file(bucket, object_name, filepath2)
     assert filecmp.cmp(filepath2, filepath)
 
@@ -173,7 +173,7 @@ def test_presigned_put(s3_client, bucket, text_files):
         with urllib.request.urlopen(req) as _f:
             pass
 
-    filepath2 = filepath + "."
+    filepath2 = filepath + ".rec"
     assert s3_client.download_file(bucket, object_name, filepath2)
     assert filecmp.cmp(filepath2, filepath)
 
@@ -233,3 +233,28 @@ def test_object_exists(s3_client, bucket, text_files):
     assert s3_client.upload_file(bucket, object_name, file2)
     assert not s3_client.exists_object(bucket, object_name, False)
     assert s3_client.exists_object(bucket, object_name, True)
+
+def test_list_objects(s3_client, bucket, text_files):
+    files = text_files(2)
+    file1 = files[0]
+    file2 = files[1]
+    object_name = "level1/level2/1"
+    assert s3_client.upload_file(bucket, object_name, file1)
+    object_name = "level2/level2/2"
+    assert s3_client.upload_file(bucket, object_name, file2)
+    
+    listed_objects = s3_client.list_objects(bucket)    
+    for s3_obj in listed_objects:
+        assert s3_obj.object_name == "level1/" or s3_obj.object_name == "level2/"
+    
+    listed_objects = s3_client.list_objects(bucket, prefix="level1")
+    for s3_obj in listed_objects:
+        assert s3_obj.object_name == "level1/"
+
+    listed_objects = s3_client.list_objects(bucket, prefix="level1", recursive=True)
+    for s3_obj in listed_objects:
+        assert s3_obj.object_name == "level1/level2/1"
+    
+    listed_objects = s3_client.list_objects(bucket, recursive=True)
+    for s3_obj in listed_objects:
+        assert s3_obj.object_name == "level1/level2/1" or s3_obj.object_name == "level2/level2/2"

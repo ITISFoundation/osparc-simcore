@@ -1,0 +1,36 @@
+version: '3.4'
+services:
+  cc-0d:
+    image: masu.speag.com/simcore/services/dynamic/cc-0d-viewer:1.0
+    build:
+      context: cc
+      target: production
+      args: 
+        NOTEBOOK_NAME: cc_single_cell.ipynb
+        NOTEBOOK_FOLDER_NAME: cc-single-cell            
+    ports:
+      - '1234:8888'
+  #--------------------------------------------------------------------
+  cc-1d:
+    image: masu.speag.com/simcore/services/dynamic/cc-1d-viewer:1.0
+    build:
+      context: cc
+      target: production
+      args: 
+        NOTEBOOK_NAME: cc_oned.ipynb
+        NOTEBOOK_FOLDER_NAME: cc-oned        
+    ports:
+      - '1235:8888'
+  #--------------------------------------------------------------------
+  cc-2d:
+    image: masu.speag.com/simcore/services/dynamic/cc-2d-viewer:1.0
+    build:
+      context: cc
+      target: production
+      args: 
+        NOTEBOOK_NAME: cc_2d.ipynb
+        NOTEBOOK_FOLDER_NAME: cc-twod        
+    ports:
+      - '1236:8888'
+  #--------------------------------------------------------------------
+  
