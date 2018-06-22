@@ -1,9 +1,9 @@
 """this module allows to get the data to import from the connected previous nodes and to set the
     data going to following nodes.
 """
+import os
 import logging
-from simcore_sdk.nodeports import exceptions
-from simcore_sdk.nodeports import serialization
+from simcore_sdk.nodeports import exceptions, io, config, serialization
 from simcore_sdk.nodeports._itemslist import DataItemsList
 
 
@@ -97,3 +97,9 @@ class Nodeports(object):
         if not self.io_obj:
             raise exceptions.NodeportsException("io object is not initialised")
         return serialization.create_nodeports_from_uuid(self.io_obj, node_uuid)
+
+
+_CONFIG = config.CONFIG[os.environ.get("simcoreapi_CONFIG", "default")]
+_IO = io.IO(config=_CONFIG)
+# create initial Simcore object
+PORTS = serialization.create_from_json(_IO, auto_read=True, auto_write=True)
