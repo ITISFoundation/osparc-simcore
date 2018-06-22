@@ -1,0 +1,31 @@
+{
+    "version":"0.1",
+    "inputs": [
+        {
+            "key": "in_1",
+            "label": "computational data",
+            "desc": "these are computed data out of a pipeline",
+            "type": "file-url",
+            "value": "/home/jovyan/data/outputControllerOut.dat",
+            "timestamp": "2018-05-23T15:34:53.511Z"
+        },
+        {
+            "key": "in_5",
+            "label": "some number",
+            "desc": "numbering things",
+            "type": "int",
+            "value": "666",
+            "timestamp": "2018-05-23T15:34:53.511Z"
+        }
+    ],
+    "outputs": [
+        {
+            "key": "out_1",
+            "label": "some boolean output",
+            "desc": "could be true or false...",
+            "type": "bool",
+            "value": "null",
+            "timestamp": "2018-05-23T15:34:53.511Z"
+        }
+    ]
+}

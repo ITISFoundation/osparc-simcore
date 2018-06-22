@@ -6,7 +6,6 @@ from datetime import timedelta
 from minio import Minio
 from minio.error import ResponseError
 
-logging.basicConfig(level=logging.DEBUG)
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -122,9 +121,9 @@ class S3Client(object):
 
         return {}
 
-    def list_objects(self, bucket_name, recursive=False):
+    def list_objects(self, bucket_name, prefix=None, recursive=False):
         try:
-            return self.client.list_objects(bucket_name, recursive=recursive)
+            return self.client.list_objects(bucket_name, prefix=prefix, recursive=recursive)
         except ResponseError as _err:
             logging.exception("Could not list objects")
 
@@ -152,7 +151,7 @@ class S3Client(object):
         ''' This seems to be pretty heavy, should be used with care
         '''
         try:
-            objects = self.list_objects(bucket_name, recursive)
+            objects = self.list_objects(bucket_name, recursive=recursive)
             for obj in objects:
                 if obj.object_name == object_name:
                     return True

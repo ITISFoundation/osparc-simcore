@@ -1,0 +1,23 @@
+{
+    "version":"0.1",
+    "inputs": [
+        {
+            "key": "in_1",
+            "label": "vm 1Hz",
+            "desc": "these are computed data out of a pipeline",
+            "type": "file-url",
+            "value": "link.SIMCORE_NODE_UUID.in_1",
+            "timestamp": "2018-05-23T15:34:53.511Z"
+        },
+        {
+            "key": "in_2",
+            "label": "all results 1Hz",
+            "desc": "computed data out of a pipeline",
+            "type": "file-url",
+            "value": "link.SIMCORE_NODE_UUID.in_2",
+            "timestamp": "2018-05-23T15:34:53.511Z"
+        }
+    ],
+    "outputs": [        
+    ]
+}

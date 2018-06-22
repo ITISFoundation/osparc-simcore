@@ -88,6 +88,22 @@ def add_network_to_service_runtime_params(docker_service_runtime_parameters, doc
     else:
         docker_service_runtime_parameters["networks"] = [docker_network.id]
 
+def add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, service_uuid):
+    variables = [
+        "POSTGRES_ENDPOINT=172.16.9.89:5432",# + os.environ.get("POSTGRES_ENDPOINT"),
+        "POSTGRES_USER=" + os.environ.get("POSTGRES_USER"),
+        "POSTGRES_PASSWORD=" + os.environ.get("POSTGRES_PASSWORD"),
+        "POSTGRES_DB=" + os.environ.get("POSTGRES_DB"),
+        "S3_ENDPOINT=172.16.9.89:9001",# + os.environ.get("S3_ENDPOINT"),
+        "S3_ACCESS_KEY=" + os.environ.get("S3_ACCESS_KEY"),
+        "S3_SECRET_KEY=" + os.environ.get("S3_SECRET_KEY"),
+        "S3_BUCKET_NAME=" + os.environ.get("S3_BUCKET_NAME"),
+        "SIMCORE_NODE_UUID=" + service_uuid
+    ]    
+    if "env" in docker_service_runtime_parameters:
+        docker_service_runtime_parameters["env"].append(variables)
+    else:
+        docker_service_runtime_parameters["env"] = variables
 
 def set_service_name(docker_service_runtime_parameters, service_name, service_uuid):
     # pylint: disable=C0103
@@ -174,15 +190,17 @@ def start_service(service_name, service_tag, service_uuid):
     for repo in list_repos_for_service:
         list_of_images[repo] = registry_proxy.retrieve_list_of_images_in_repo(repo)
 
+    _LOGGER.debug("Found list of images %s for service %s", list_of_images, service_name)
     # initialise docker client and check the uuid is available
     docker_client = docker.from_env()
     check_service_uuid_available(docker_client, service_uuid)
     login_docker_registry(docker_client)
-
+    _LOGGER.debug("Logged in docker registry")
     if len(list_of_images) > 1:
         # create a new network to connect the differnt containers
         docker_network = create_overlay_network_in_swarm(
             docker_client, service_name, service_uuid)
+        _LOGGER.debug("Created docker network in swarm for service %s", service_name)
 
     # create services
     containers_meta_data = list()
@@ -203,7 +221,7 @@ def start_service(service_name, service_tag, service_uuid):
         add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
         if len(list_of_images) > 1:
             add_network_to_service_runtime_params(docker_service_runtime_parameters, docker_network)
-
+        add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
         set_service_name(docker_service_runtime_parameters,
             registry_proxy.get_service_sub_name(docker_image_path),
             service_uuid)
@@ -212,8 +230,9 @@ def start_service(service_name, service_tag, service_uuid):
         try:
             _LOGGER.debug("Starting service with parameters %s", docker_service_runtime_parameters)
             service = docker_client.services.create(docker_image_full_path, **docker_service_runtime_parameters)
-            wait_until_service_running_or_failed(service.id)
+            wait_until_service_running_or_failed(service.id)            
             published_ports = get_docker_image_published_ports(service.id)
+            _LOGGER.debug("Service with parameters %s successfully started, published ports are %s", docker_service_runtime_parameters, published_ports)
             container_meta_data = {
                 "container_id": service.id,
                 "published_ports": published_ports
