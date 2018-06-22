@@ -238,7 +238,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       label.isInput = isInput;
       label.portType = portData.type;
 
-      label.ui = new qx.ui.basic.Label(portData.label).set({
+      label.ui = new qx.ui.basic.Label(portData.key).set({
         height: 16,
         draggable: true,
         droppable: true

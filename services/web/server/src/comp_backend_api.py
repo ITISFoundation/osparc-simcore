@@ -4,7 +4,8 @@
 # pylint: disable=C0103
 
 import datetime
-import json
+import pprint
+import time
 
 import async_timeout
 from aiohttp import web
@@ -16,15 +17,24 @@ from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 
-import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 # db config
 db_config = db_config()
-db = create_engine(db_config.endpoint, client_encoding='utf8')
+db = create_engine(db_config.endpoint, client_encoding='utf8', connect_args={'connect_timeout': 30})
+
+# TODO the db tables are created here, this only works when postgres is up and running.
+# For now lets just try a couple of times
 Session = sessionmaker(db)
 db_session = Session()
-Base.metadata.create_all(db)
+for i in range(20):
+    try:
+        Base.metadata.create_all(db)
+    # pylint: disable=bare-except
+    except:
+        time.sleep(2)
+        print("oops")
+
 
 comp_backend_routes = web.RouteTableDef()
 
@@ -55,15 +65,11 @@ async def start_pipeline(request):
 
     request_data = await request.json()
 
-    pp.pprint(request_data)
+    # with open('mock/SleepersPipeline.json') as f:
+    #     mockup = json.load(f)
 
-    _id = request_data['pipeline_mockup_id']
-
-    with open('mock/SleepersPipeline.json') as f:
-        mockup = json.load(f)
-
-    nodes = mockup['nodes']
-    links = mockup['links']
+    nodes = request_data['nodes']
+    links = request_data['links']
 
     dag_adjacency_list = dict()
     tasks = dict()
@@ -103,7 +109,7 @@ async def start_pipeline(request):
     db_session.flush()
 
     pipeline_id = pipeline.pipeline_id
-    pipeline_name = "mockup"
+    pipeline_name = "request_data"
     internal_id = 1
 
     for node_id in tasks:

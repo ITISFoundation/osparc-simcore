@@ -23,20 +23,26 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     let searchLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
     let searchLabel = new qx.ui.basic.Label("Search");
     searchLayout.add(searchLabel);
-    let textfield = new qx.ui.form.TextField();
+    let textfield = this.__textfield = new qx.ui.form.TextField();
     textfield.setLiveUpdate(true);
     searchLayout.add(textfield, {
       flex: 1
     });
     this.add(searchLayout);
 
-    this.__allServices = qxapp.data.Fake.getServices();
+    this.__allServices = qxapp.data.Fake.getFakeServices();
+    let store = qxapp.data.Store.getInstance();
+    store.addListener("servicesRegistered", function(e) {
+      console.log("servicesRegistered", e.getData());
+      this.__addNewData(e.getData());
+    }, this);
+    store.getServices();
     // TODO: OM & PC replace this with delegates
-    let rawData2 = [];
+    let names = [];
     for (let i = 0; i < this.__allServices.length; i++) {
-      rawData2.push(this.__allServices[i].name);
+      names.push(this.__allServices[i].name);
     }
-    this.__rawData = new qx.data.Array(rawData2);
+    let rawData = new qx.data.Array(names);
 
     this.__list = new qx.ui.form.List();
     this.add(this.__list, {
@@ -45,7 +51,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     this.__list.setSelectionMode("one");
 
     // create the controller
-    this.__controller = new qx.data.controller.List(this.__rawData, this.__list);
+    this.__controller = new qx.data.controller.List(rawData, this.__list);
     // controller.setLabelPath("name");
 
     // create the filter
@@ -97,7 +103,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
 
   members: {
     __allServices: null,
-    __rawData: null,
+    __textfield: null,
     __list: null,
     __controller: null,
     __contextNodeId: null,
@@ -134,6 +140,17 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     __setNewData: function(newData) {
       let filteredData = new qx.data.Array(newData);
       this.__controller.setModel(filteredData);
+    },
+
+    __addNewData: function(newData) {
+      console.log(this.__controller.getModel());
+      let names = [];
+      this.__allServices = this.__allServices.concat(newData);
+      for (let i = 0; i < this.__allServices.length; i++) {
+        names.push(this.__allServices[i].name);
+      }
+      let rawData = new qx.data.Array(names);
+      this.__controller.setModel(rawData);
     },
 
     __keyEvent: function(keyEvent) {
