@@ -93,7 +93,7 @@ qx.Class.define("qxapp.data.Fake", {
         "nodes": [{
           "uuid": "dd329e10-a906-42da-a7b3-4c4fec4a786f",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 1",
           "description": "Node 1",
           "position": {
@@ -104,7 +104,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -118,7 +118,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -132,7 +132,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid": "3fad99a2-31b3-48a2-9066-1a66fc21aa52",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 2",
           "description": "Node 2",
           "position": {
@@ -143,7 +143,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -157,7 +157,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -171,7 +171,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid": "3a97f542-93c4-419c-b5c9-bcf9ff3ada7e",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 3",
           "description": "Node 3",
           "position": {
@@ -182,7 +182,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -196,7 +196,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -210,7 +210,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid":"9c35ecbc-8219-4538-ba2e-bad8b6e64cda",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 4",
           "description": "Node 4",
           "position": {
@@ -221,7 +221,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -235,7 +235,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -249,7 +249,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid":"51ad1bc0-615e-406a-9886-e3639f51208c",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 5",
           "description": "Node 5",
           "position": {
@@ -260,7 +260,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -274,7 +274,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -288,7 +288,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid":"5df77702-29d5-4513-b3f8-f2a40ed317fe",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 6",
           "description": "Node 6",
           "position": {
@@ -299,7 +299,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -313,7 +313,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -327,7 +327,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid": "de2c84ed-a3bc-47c2-b54d-84a5c048236b",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 7",
           "description": "Node 7",
           "position": {
@@ -338,7 +338,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -352,7 +352,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -366,7 +366,7 @@ qx.Class.define("qxapp.data.Fake", {
         }, {
           "uuid": "ba22104c-99e1-45c9-a09d-228400a6f9fb",
           "key": "masu.speag.com/simcore/services/comp/sleeper",
-          "tag": "1.0",
+          "tag": "0.0.1",
           "name": "Node 8",
           "description": "Node 8",
           "position": {
@@ -377,7 +377,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -391,7 +391,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -575,67 +575,12 @@ qx.Class.define("qxapp.data.Fake", {
       return temp2Data;
     },
 
-    getServices: function() {
-      let req = new qx.io.request.Xhr();
-      req.set({
-        url: "/repositories",
-        method: "GET"
-      });
-      req.addListener("success", this.__onListOfRepositories, this);
-      req.send();
-
+    getFakeServices: function() {
       let fakeServices = [];
       Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getProducers());
       Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getComputationals());
       Array.prototype.push.apply(fakeServices, qxapp.data.Fake.getAnalyses());
       return fakeServices;
-    },
-
-    __onListOfRepositories: function(e) {
-      let req = e.getTarget();
-      const listOfRepositories = JSON.parse(req.getResponse());
-      console.log(listOfRepositories);
-      let services = [];
-      if ("repositories" in listOfRepositories) {
-        const repos = listOfRepositories.repositories;
-        const nRepos = repos.length;
-        console.log("Number of repos: ", nRepos);
-        for (let i=0; i<nRepos; i++) {
-          console.log(i, repos[i]);
-          if ("tags" in repos[i]) {
-            const repoTags = repos[i].tags;
-            const nRepoTags = repoTags.length;
-            console.log("Number of tags in repo: ", nRepoTags);
-            for (let j=0; j<nRepoTags; j++) {
-              console.log(j, repoTags, nRepoTags[j]);
-              let newMetadata = this.__createMetadata(nRepoTags[j]);
-              services.push(newMetadata);
-            }
-          }
-        }
-      }
-      console.log(services);
-    },
-
-    __createMetadata: function(data) {
-      let metadata = {};
-      [
-        "key",
-        "name",
-        "tag",
-        "description",
-        "authors",
-        "contact",
-        "inputs",
-        "outputs",
-        "settings"
-      ].forEach(field => {
-        metadata[field] = null;
-        if (data.hasOwnProperty(field)) {
-          metadata[field] = data[field]
-        }
-      });
-      return metadata;
     },
 
     getProducers: function() {
@@ -686,7 +631,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "out_1",
           "label": "File-url",
           "description": "File-url",
-          "type": "fileUrl",
+          "type": "file-url",
           "defaultValue": null
         }],
         "settings": []
@@ -730,13 +675,13 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "in_1",
           "label": "File-url",
           "description": "File-url",
-          "type": "fileUrl",
+          "type": "file-url",
           "defaultValue": null
         }, {
           "key": "in_2",
           "label": "File-url",
           "description": "File-url",
-          "type": "fileUrl",
+          "type": "file-url",
           "defaultValue": null
         }, {
           "key": "in_3",
@@ -833,14 +778,14 @@ qx.Class.define("qxapp.data.Fake", {
         "settings": []
       }, {
         "key": "masu.speag.com/simcore/services/comp/sleeper",
-        "tag": "1.0",
+        "tag": "0.0.1",
         "name": "Sleeper",
         "description": "Sleeper",
         "inputs": [{
           "key": "in_1",
           "label": "File-url",
           "description": "File-url",
-          "type": "fileUrl",
+          "type": "file-url",
           "defaultValue": null
         }, {
           "key": "in_2",
@@ -859,7 +804,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "out_1",
           "label": "File-url",
           "description": "File-url",
-          "type": "fileUrl",
+          "type": "file-url",
           "defaultValue": null
         }, {
           "key": "out_2",

@@ -59,6 +59,7 @@ class Sidecar(object):
     def _process_task_input(self, port, input_ports):
         port_name = port['key']
         port_value = port['value']
+        _LOGGER.debug("PROCESSING %s %s", port_name, port_value)
         _LOGGER.debug(type(port_value))
         if isinstance(port_value, str) and port_value.startswith("link."):
             if port['type'] == 'file-url':
@@ -91,6 +92,9 @@ class Sidecar(object):
                     for oport in other_task.output:
                         if oport['key'] == other_output_port_id:
                             input_ports[port_name] = oport['value']
+        else:
+            _LOGGER.debug('Non link data %s : %s', port_name, port_value)
+            input_ports[port_name] = port_value
 
     def _process_task_inputs(self):
         """ Writes input key-value pairs into a dictionary
@@ -110,15 +114,24 @@ class Sidecar(object):
             _LOGGER.debug(port)
             self._process_task_input(port, input_ports)
 
+        _LOGGER.debug('DUMPING json')
         #dump json file
         if input_ports:
             file_name = os.path.join(self._executor.in_dir, 'input.json')
             with open(file_name, 'w') as f:
                 json.dump(input_ports, f)
 
+        _LOGGER.debug('DUMPING DONE')
+
     def _pull_image(self):
+        _LOGGER.debug('PULLING IMAGE')
+        _LOGGER.debug('reg %s user %s pwd %s', self._docker.registry, self._docker.registry_user,self._docker.registry_pwd )
+
+
         self._docker.client.login(registry=self._docker.registry,
             username=self._docker.registry_user, password=self._docker.registry_pwd)
+
+        _LOGGER.debug('img %s tag %s', self._docker.image_name, self._docker.image_tag)
 
         self._docker.client.images.pull(self._docker.image_name, tag=self._docker.image_tag)
 
@@ -213,7 +226,7 @@ class Sidecar(object):
 
     def initialize(self, task):
         self._task = task
-        self._docker.image_name = task.image['name']
+        self._docker.image_name = self._docker.registry_name + "/" + task.image['name']
         self._docker.image_tag = task.image['tag']
         self._executor.in_dir = os.path.join("/", "input", task.job_id)
         self._executor.out_dir = os.path.join("/", "output", task.job_id)
