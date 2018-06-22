@@ -397,8 +397,7 @@ qx.Class.define("qxapp.components.form.Auto", {
           number: "spinner",
           bool: "checkBox",
           "file-url": "fileButton",
-          "folder-url": "fileButton",
-          fileUrl: "fileButton"
+          "folder-url": "fileButton"
         }[s.type];
       }
       let control;
