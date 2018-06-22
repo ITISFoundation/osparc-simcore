@@ -45,6 +45,8 @@
  *
  */
 
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.components.form.Auto", {
   extend : qx.ui.form.Form,
   include : [qx.locale.MTranslation],
