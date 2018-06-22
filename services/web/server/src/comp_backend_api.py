@@ -15,22 +15,25 @@ from comp_backend_worker import celery
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
-
+import time
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 # db config
 db_config = db_config()
-for i in range(10):
-    try:
-        db = create_engine(db_config.endpoint, client_encoding='utf8', connect_args={'connect_timeout': 30})
-    except:
-        time.sleep(1)
-        print("waiting for postgres")
+db = create_engine(db_config.endpoint, client_encoding='utf8', connect_args={'connect_timeout': 30})
 
+# TODO the db tables are created here, this only works when postgres is up and running.
+# For now lets just try a couple of times
 Session = sessionmaker(db)
 db_session = Session()
-Base.metadata.create_all(db)
+for i in range(20):
+    try:
+        Base.metadata.create_all(db)
+    except:
+        time.sleep(2)
+        print("oops")
+
 
 comp_backend_routes = web.RouteTableDef()
 
