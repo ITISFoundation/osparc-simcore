@@ -4,12 +4,8 @@ from sqlalchemy.orm.attributes import flag_modified
 from simcore_sdk.models.pipeline_models import ComputationalTask
 
 def update_configuration(session, pipeline_id, node_uuid, new_configuration):
-    task = session.query(ComputationalTask).filter(ComputationalTask.pipeline_id==str(pipeline_id), ComputationalTask.node_id==str(node_uuid)).one()
-    task.input = new_configuration["inputs"]
-    flag_modified(task, "input")
-    task.output = new_configuration["outputs"]
-    flag_modified(task, "output")
-    session.add(task)
+    task = session.query(ComputationalTask).filter(ComputationalTask.pipeline_id==str(pipeline_id), ComputationalTask.node_id==str(node_uuid))
+    task.update(dict(input=new_configuration["inputs"], output=new_configuration["outputs"]))
     session.commit()
     
 
