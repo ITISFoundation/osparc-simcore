@@ -390,6 +390,13 @@ qx.Class.define("qxapp.components.form.Auto", {
         }
         s.set.value = s.defaultValue;
       }
+      // FIXME: This should go away
+      if (s.value) {
+        if (!s.set) {
+          s.set = {};
+        }
+        s.set.value = s.value;
+      }
       if (!s.widget) {
         s.widget = {
           string: "text",
@@ -397,8 +404,7 @@ qx.Class.define("qxapp.components.form.Auto", {
           number: "spinner",
           bool: "checkBox",
           "file-url": "fileButton",
-          "folder-url": "fileButton",
-          fileUrl: "fileButton"
+          "folder-url": "fileButton"
         }[s.type];
       }
       let control;
@@ -414,6 +420,10 @@ qx.Class.define("qxapp.components.form.Auto", {
           break;
         case "spinner":
           control = new qx.ui.form.Spinner();
+          control.set({
+            maximum: 10000,
+            minimum: -10000
+          });
           setup = this.__setupSpinner;
           break;
         case "password":

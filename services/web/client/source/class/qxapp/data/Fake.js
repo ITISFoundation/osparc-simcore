@@ -104,7 +104,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -118,7 +118,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -143,7 +143,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -157,7 +157,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -182,7 +182,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -196,7 +196,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -221,7 +221,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -235,7 +235,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -260,7 +260,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -274,7 +274,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -299,7 +299,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -313,7 +313,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -338,7 +338,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -352,7 +352,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -377,7 +377,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "in_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -391,7 +391,7 @@ qx.Class.define("qxapp.data.Fake", {
             "key": "out_1",
             "label": "File-url",
             "description": "File-url",
-            "type": "fileUrl",
+            "type": "file-url",
             "value": null
           },
           {
@@ -631,7 +631,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "out_1",
           "label": "File-url",
           "description": "File-url",
-          "type": "fileUrl",
+          "type": "file-url",
           "defaultValue": null
         }],
         "settings": []
@@ -675,13 +675,13 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "in_1",
           "label": "File-url",
           "description": "File-url",
-          "type": "fileUrl",
+          "type": "file-url",
           "defaultValue": null
         }, {
           "key": "in_2",
           "label": "File-url",
           "description": "File-url",
-          "type": "fileUrl",
+          "type": "file-url",
           "defaultValue": null
         }, {
           "key": "in_3",
@@ -785,7 +785,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "in_1",
           "label": "File-url",
           "description": "File-url",
-          "type": "fileUrl",
+          "type": "file-url",
           "defaultValue": null
         }, {
           "key": "in_2",
@@ -804,7 +804,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "out_1",
           "label": "File-url",
           "description": "File-url",
-          "type": "fileUrl",
+          "type": "file-url",
           "defaultValue": null
         }, {
           "key": "out_2",
