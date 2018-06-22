@@ -1,4 +1,5 @@
 /* eslint no-warning-comments: "off" */
+/* global window */
 
 const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
@@ -374,6 +375,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           if (val["service_uuid"] === nodeBase.getNodeId()) {
             let portNumber = val["containers"][0]["published_ports"];
             nodeBase.getMetadata().viewer.port = portNumber;
+            nodeBase.getMetadata().viewer.ip = "http://" + window.location.hostname;
           }
         }, this);
         // const serviceName = imageId.substring(imageId.lastIndexOf("/") + 1, imageId.length);
@@ -383,6 +385,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         };
         socket.emit(slotName, data);
       } else if (nodeBase.getNodeImageId() === "modeler") {
+        console.log("ERRORR");
         const slotName = "startModeler";
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
@@ -393,6 +396,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         }, this);
         socket.emit(slotName, nodeBase.getNodeId());
       } else if (nodeBase.getNodeImageId() === "jupyter-base-notebook") {
+        console.log("ERRORR");
         const slotName = "startJupyter";
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
