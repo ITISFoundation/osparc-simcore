@@ -23,3 +23,5 @@ services:
         constraints:
           - node.platform.os == linux
           - node.role == manager
+  sidecar:
+    image: services_sidecar:latest

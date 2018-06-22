@@ -21,7 +21,13 @@ pp = pprint.PrettyPrinter(indent=4)
 
 # db config
 db_config = db_config()
-db = create_engine(db_config.endpoint, client_encoding='utf8')
+for i in range(10):
+    try:
+        db = create_engine(db_config.endpoint, client_encoding='utf8', connect_args={'connect_timeout': 30})
+    except:
+        time.sleep(1)
+        print("waiting for postgres")
+
 Session = sessionmaker(db)
 db_session = Session()
 Base.metadata.create_all(db)
