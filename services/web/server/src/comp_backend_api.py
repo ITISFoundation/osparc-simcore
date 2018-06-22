@@ -4,7 +4,8 @@
 # pylint: disable=C0103
 
 import datetime
-import json
+import pprint
+import time
 
 import async_timeout
 from aiohttp import web
@@ -15,8 +16,7 @@ from comp_backend_worker import celery
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
-import time
-import pprint
+
 pp = pprint.PrettyPrinter(indent=4)
 
 # db config
@@ -30,6 +30,7 @@ db_session = Session()
 for i in range(20):
     try:
         Base.metadata.create_all(db)
+    # pylint: disable=bare-except
     except:
         time.sleep(2)
         print("oops")
@@ -64,12 +65,8 @@ async def start_pipeline(request):
 
     request_data = await request.json()
 
-    pp.pprint(request_data)
-
-    _id = request_data['pipeline_mockup_id']
-
-    with open('mock/SleepersPipeline.json') as f:
-        mockup = json.load(f)
+    # with open('mock/SleepersPipeline.json') as f:
+    #     mockup = json.load(f)
 
     nodes = request_data['nodes']
     links = request_data['links']

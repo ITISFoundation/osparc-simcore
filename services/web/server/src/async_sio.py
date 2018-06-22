@@ -83,10 +83,10 @@ async def stop_jupyter_handler(sid, data):
 @SIO.on('presignedUrl')
 async def retrieve_url_for_file(sid, data):
     _LOGGER.debug("client %s requests S3 url for %s", sid, data)
-    config = s3_config()
-    s3_client = S3Client(endpoint=config._endpoint,
-        access_key=config._access_key, secret_key=config._secret_key)
-    url = s3_client.create_presigned_put_url(config._bucket_name, data["fileName"])
+    _config = s3_config()
+    s3_client = S3Client(endpoint=_config.endpoint,
+        access_key=_config.access_key, secret_key=_config.secret_key)
+    url = s3_client.create_presigned_put_url(_config.bucket_name, data["fileName"])
     #result = minioClient.presigned_put_object(data["bucketName"], data["fileName"])
     # Response error is still possible since internally presigned does get
     # bucket location.
@@ -98,11 +98,11 @@ async def retrieve_url_for_file(sid, data):
 @SIO.on('listObjects')
 async def list_S3_objects(sid, data):
     _LOGGER.debug("client %s requests S3 objects in %s", sid, data)
-    config = s3_config()
-    s3_client = S3Client(endpoint=config._endpoint,
-        access_key=config._access_key, secret_key=config._secret_key)
+    _config = s3_config()
+    s3_client = S3Client(endpoint=_config.endpoint,
+        access_key=_config.access_key, secret_key=_config.secret_key)
 
-    objects = s3_client.list_objects_v2(config._bucket_name)
+    objects = s3_client.list_objects_v2(_config.bucket_name)
     for obj in objects:
         dataOut = {}
         dataOut['name'] = obj.object_name
