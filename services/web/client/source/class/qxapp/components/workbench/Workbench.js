@@ -208,7 +208,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             var node = d["Node"];
             var msg = d["Message"];
             this.__updateLogger(node, msg);
-          });
+          }, this);
         }
         socket.emit("logger");
 
@@ -220,7 +220,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             var node = d["Node"];
             var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
             this.updateProgress(node, progress);
-          });
+          }, this);
         }
 
         if (this.getCanStart()) {
