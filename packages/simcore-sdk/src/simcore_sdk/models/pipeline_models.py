@@ -54,19 +54,3 @@ class ComputationalTask(Base):
     submit = Column(DateTime)
     start = Column(DateTime)
     end = Column(DateTime)
-
-class Node(Base):
-    __tablename__ = "nodes"
-    id = Column(Integer, primary_key=True)
-
-    key = Column(String)
-    name = Column(String)
-    tag = Column(String)
-    description = Column(String)
-    authors = Column(String)
-    contact = Column(String)   
-    
-    inputs = Column(JSON)
-    outputs = Column(JSON)
-
-    node_id = Column(String)
