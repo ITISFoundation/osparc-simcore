@@ -37,6 +37,11 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
       this.__addNewData(e.getData());
     }, this);
     store.getServices();
+    store.addListener("interactiveServicesRegistered", function(e) {
+      console.log("interactiveServicesRegistered", e.getData());
+      this.__addNewData(e.getData());
+    }, this);
+    store.getInteractiveServices();
     // TODO: OM & PC replace this with delegates
     let names = [];
     for (let i = 0; i < this.__allServices.length; i++) {

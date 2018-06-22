@@ -366,7 +366,23 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let nodeBase = new qxapp.components.workbench.NodeBase();
       nodeBase.setMetadata(nodeMetaData);
 
-      if (nodeBase.getNodeImageId() === "modeler") {
+      const imageId = nodeBase.getNodeImageId();
+      if (imageId.includes("dynamic")) {
+        const slotName = "startDynamic";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        socket.on(slotName, function(val) {
+          if (val["service_uuid"] === nodeBase.getNodeId()) {
+            let portNumber = val["containers"][0]["published_ports"];
+            nodeBase.getMetadata().viewer.port = portNumber;
+          }
+        }, this);
+        // const serviceName = imageId.substring(imageId.lastIndexOf("/") + 1, imageId.length);
+        let data = {
+          serviceName: imageId,
+          nodeId: nodeBase.getNodeId()
+        };
+        socket.emit(slotName, data);
+      } else if (nodeBase.getNodeImageId() === "modeler") {
         const slotName = "startModeler";
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
