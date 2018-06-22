@@ -90,7 +90,7 @@ RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
     rm -rf requirements
 
 # 2. install 2nd party packages
-COPY --chown=scu:scu packages/simcore-sdk/src packages
+COPY --chown=scu:scu packages packages
 
 # 3. install client
 COPY --from=services_webclient:build --chown=scu:scu /home/scu/client/build-output client

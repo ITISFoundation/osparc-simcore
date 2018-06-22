@@ -59,6 +59,7 @@ class Sidecar(object):
     def _process_task_input(self, port, input_ports):
         port_name = port['key']
         port_value = port['value']
+        _LOGGER.debug("PROCESSING %s %s", port_name, port_value)
         _LOGGER.debug(type(port_value))
         if isinstance(port_value, str) and port_value.startswith("link."):
             if port['type'] == 'file-url':
