@@ -4,7 +4,7 @@
 
 PY_FILES = $(strip $(shell find services packages -iname '*.py'))
 
-export PYTHONPATH=${PWD}/packages/s3wrapper/src
+export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
 build-devel:
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml build
@@ -26,14 +26,21 @@ up:
 
 up-swarm:
 	docker swarm init
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml up
+	docker stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml workbench
 
 down:
 	docker-compose -f services/docker-compose.yml down
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml down
 
 down-swarm:
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml down
+	docker stack rm workbench
+	docker swarm leave -f
+
+stack-up:
+	docker swarm init
+
+stack-down:
+	docker stack rm osparc
 	docker swarm leave -f
 
 pylint:
