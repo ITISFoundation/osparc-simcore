@@ -3,13 +3,14 @@
 """
 # pylint: disable=C0111
 import json
+import logging
 import os
 
 from requests import RequestException, Session
 
 INTERACTIVE_SERVICES_PREFIX = 'simcore/services/'
 _SESSION = Session()
-
+_LOGGER = logging.getLogger(__name__)
 
 def setup_registry_connection():
     # get authentication state or set default value

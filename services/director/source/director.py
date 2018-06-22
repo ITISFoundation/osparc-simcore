@@ -28,6 +28,7 @@ def hello_world():
     Returns:
         [type] -- [description]
     """
+    _LOGGER.debug("received hello to the people")
     return "<h1>Hoi zaeme! Salut les d'jeunz!</h1><h3>This is {} responding!</h2>".format(__name__)
 
 
@@ -38,7 +39,7 @@ def list_interactive_services():
     Returns:
         [type] -- [description]
     """
-
+    _LOGGER.debug("received call to list of interactive services")
     # get the services repos
     list_of_interactive_repos = registry_proxy.retrieve_list_of_repos_with_interactive_services()
     # some services may have several parts, fuse these
@@ -61,6 +62,7 @@ def start_service():
     Returns:
         [type] -- [description]
     """
+    _LOGGER.debug("received call to start service with %s", request.json)
     # check syntax
     if not request.json or not 'service_name' in request.json or not 'service_uuid' in request.json:
         _LOGGER.debug("Rejected start_service request: %s", request.json)
@@ -89,7 +91,7 @@ def stop_service():
     Returns:
         [type] -- [description]
     """
-
+    _LOGGER.debug("received call to stop service with %s", request.json)
     # check syntax
     if not request.json or not 'service_uuid' in request.json:
         abort(400)
