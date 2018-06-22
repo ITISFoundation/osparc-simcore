@@ -9,7 +9,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.SearchTypeFilter",
     // apply the filter funtion on creation time because the 'this' context
     // needs to be bound to the function
     this.filter = qx.lang.Function.bind(function(data) {
-      if (data === null) {
+      if (data === undefined || data === null) {
         console.log("Service with no data");
         return false;
       }
