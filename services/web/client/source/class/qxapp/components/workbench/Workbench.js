@@ -378,9 +378,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             nodeBase.getMetadata().viewer.ip = "http://" + window.location.hostname;
           }
         }, this);
-        // const serviceName = imageId.substring(imageId.lastIndexOf("/") + 1, imageId.length);
         let data = {
-          serviceName: imageId,
+          serviceName: nodeBase.getMetadata().name,
           nodeId: nodeBase.getNodeId()
         };
         socket.emit(slotName, data);
