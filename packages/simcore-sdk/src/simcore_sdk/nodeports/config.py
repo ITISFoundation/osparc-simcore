@@ -1,9 +1,6 @@
 """Takes care of the configurations.
-
-    The configuration may be located in a file or in a database.
 """
 import logging
-from enum import Enum
 
 
 # defined by JSON schema
@@ -31,15 +28,8 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 _LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=C0111
-
-class Location(Enum):
-    FILE = "file"
-    DATABASE = "database"
-
 class CommonConfig(object):
-    DEFAULT_FILE_LOCATION = r"../config/connection_config.json"
-    LOCATION = Location.DATABASE
-
+    pass
 class DevelopmentConfig(CommonConfig):
     LOG_LEVEL = logging.DEBUG
 

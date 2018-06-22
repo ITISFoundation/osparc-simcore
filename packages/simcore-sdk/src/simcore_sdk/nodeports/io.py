@@ -9,7 +9,6 @@ from sqlalchemy.orm.attributes import flag_modified
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.models.pipeline_models import ComputationalTask as NodeModel
 from simcore_sdk.nodeports import serialization
-from simcore_sdk.nodeports.config import Location
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,17 +21,8 @@ class DbSettings(object):
 
 class IO(object):
     def __init__(self, config):
-        if config.LOCATION == Location.DATABASE:            
-            self._db = DbSettings()            
-
+        self._db = DbSettings()            
         self.config = config
-
-    def __get_configuration_from_file(self):
-        file_location = os.environ.get('SIMCORE_CONFIG_PATH', self.config.DEFAULT_FILE_LOCATION)
-        config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), file_location)
-        _LOGGER.debug("Reading ports configuration from %s", config_file)
-        with open(config_file) as simcore_config:
-            return simcore_config.read()
 
     def __get_node_from_db(self, node_uuid):        
         pipeline_id = os.environ.get('SIMCORE_PIPELINE_ID')
@@ -50,13 +40,6 @@ class IO(object):
         node_json_config = serialization.save_node_to_json(node)
         _LOGGER.debug("Found and converted to json")
         return node_json_config
-
-    def __write_configuration_to_file(self, json_configuration):
-        file_location = os.environ.get('SIMCORE_CONFIG_PATH', self.config.DEFAULT_FILE_LOCATION)
-        config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), file_location)
-        _LOGGER.debug("Writing ports configuration to %s", config_file)
-        with open(config_file, "w") as simcore_file:
-            simcore_file.write(json_configuration)
 
     def __write_configuration_to_db(self, json_configuration):
         _LOGGER.debug("Writing to database")
@@ -78,11 +61,8 @@ class IO(object):
     def write_ports_configuration(self, json_configuration):
         """writes the json configuration of the node ports.
         """
-        _LOGGER.debug("Writing ports configuration to %s", self.config.LOCATION)
-        if self.config.LOCATION == Location.FILE:
-            self.__write_configuration_to_file(json_configuration)
-        else:
-            self.__write_configuration_to_db(json_configuration)
+        _LOGGER.debug("Writing ports configuration")
+        self.__write_configuration_to_db(json_configuration)
 
     def get_ports_configuration(self):
         """returns the json configuration of the node ports where this code is running. 
@@ -90,9 +70,7 @@ class IO(object):
         Returns:
             string -- a json containing the ports configuration                
         """
-        _LOGGER.debug("Getting ports configuration using %s", self.config.LOCATION)
-        if self.config.LOCATION == Location.FILE:
-            return self.__get_configuration_from_file()
+        _LOGGER.debug("Getting ports configuration")
         return self.__get_configuration_from_db(node_uuid=os.environ.get('SIMCORE_NODE_UUID'))
 
     def get_ports_configuration_from_node_uuid(self, node_uuid):
@@ -104,7 +82,5 @@ class IO(object):
         Returns:
             string -- a json containing the ports configuration
         """
-        _LOGGER.debug("Getting ports configuration of node %s using %s", node_uuid, self.config.LOCATION)
-        if self.config.LOCATION == Location.FILE:
-            raise NotImplementedError
+        _LOGGER.debug("Getting ports configuration of node %s", node_uuid)
         return self.__get_configuration_from_db(node_uuid=node_uuid)
