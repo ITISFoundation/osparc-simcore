@@ -12,7 +12,7 @@ def create_item(item_type, item_value, timestamp=None):
         timestamp = datetime.datetime.utcnow().isoformat()
     return DataItem(key="a key", 
                     label="a label", 
-                    description="a description", 
+                    desc="a description", 
                     type=item_type, 
                     value=item_value, 
                     timestamp=timestamp)
@@ -50,7 +50,7 @@ def test_invalid_type():
     item = create_item("some wrong type", "null")
     with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError") as excinfo:
         item.get()
-    assert "Invalid protocol used in" in str(excinfo.value)
+    assert "Invalid protocol used" in str(excinfo.value)
 
 def test_invalid_value_type():
     item = create_item("int", "not an integer")
