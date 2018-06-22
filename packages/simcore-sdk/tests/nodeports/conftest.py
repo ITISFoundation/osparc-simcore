@@ -1,65 +1,58 @@
-import pytest
+import json
 import os
 import sys
+import uuid
+
+import pytest
+
+from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
+                                                ComputationalTask)
+
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "helpers"))
 
-@pytest.fixture(scope='session')
-def docker_compose_file(pytestconfig): # pylint:disable=unused-argument
-    my_path = os.path.join(os.path.dirname(__file__), 'docker-compose.yml')
-    return my_path
+pytest_plugins = ["tests.fixtures.postgres"]
+
+def set_configuration(engine, session, json_configuration):
+    node_uuid = uuid.uuid4()
+    json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", str(node_uuid))
+    configuration = json.loads(json_configuration)
+
+    # prepare database with default configuration
+    Base.metadata.create_all(engine)
+    new_Pipeline = ComputationalPipeline()
+    session.add(new_Pipeline)
+    session.commit()
+
+    new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, input=configuration["inputs"], output=configuration["outputs"])
+    session.add(new_Node)
+    session.commit()    
+
+    # set up access to database
+    os.environ["SIMCORE_NODE_UUID"]=str(node_uuid)
+    os.environ["SIMCORE_PIPELINE_ID"]=str(new_Pipeline.pipeline_id)
+
+    os.environ["POSTGRES_ENDPOINT"]="localhost:5432"
+    os.environ["POSTGRES_USER"]="user"
+    os.environ["POSTGRES_PASSWORD"]="pwd"
+    os.environ["POSTGRES_DB"]="test"
+
+    return engine, session, new_Pipeline.pipeline_id, node_uuid
 
 @pytest.fixture()
-def default_nodeports_configuration():
+def default_nodeports_configuration(engine, session):
     """initialise nodeports with default configuration file
     """
-    default_config_path = os.path.join(os.path.dirname(
-        os.path.realpath(__file__)), r"../../src/simcore_sdk/config/connection_config.json")
-    os.environ["SIMCORE_CONFIG_PATH"] = default_config_path    
+    # prepare database with default configuration
+    default_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), r"../../src/simcore_sdk/config/connection_config.json")
+    with open(default_config_path) as config_file:
+        json_configuration = config_file.read()
+    
+    return set_configuration(engine, session, json_configuration)
 
 @pytest.fixture()
-def special_nodeports_configuration(request):
-    """allows for initialisation of nodeports with custom configuration file.
-    
-    Arguments:
-        request {internal pytest object} -- internal
-    
-    Returns:
-        function -- function to call to set the alternative configuration as a dictionary
-    """
-
+def special_nodeports_configuration(engine, session):
     def create_special_config(configuration):
-        """sets the special configuration to be used by nodeports
+        return set_configuration(engine, session, json.dumps(configuration))
         
-        Arguments:
-            configuration {dict} -- json configuration to be set
-        
-        Returns:
-            string -- path to the temporary config file used. 
-                        The file is automatically deleted.
-        """
-
-        import json
-        import tempfile
-        # create temporary json file
-        temp_file = tempfile.NamedTemporaryFile()
-        temp_file.close()
-        # ensure the file is removed at the end whatever happens
-
-        def fin():
-            """ensures configuration file is deleted at the end of the test"""
-            if os.path.exists(temp_file.name):
-                os.unlink(temp_file.name)
-            assert not os.path.exists(temp_file.name)
-        request.addfinalizer(fin)
-        # get the configuration to set up
-        config = configuration
-        assert config
-        # create the special configuration file
-        with open(temp_file.name, "w") as file_pointer:
-            json.dump(config, file_pointer)
-        assert os.path.exists(temp_file.name)
-        # set the environment variable such that nodeports will use the special file
-        os.environ["SIMCORE_CONFIG_PATH"] = temp_file.name
-        return temp_file.name
     return create_special_config
