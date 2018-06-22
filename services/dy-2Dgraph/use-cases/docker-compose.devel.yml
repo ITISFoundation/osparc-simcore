@@ -1,7 +1,7 @@
 version: '3.4'
 services:
   cc-0d:
-    image: services-cc-0d-dev:latest
+    image: services_cc-0d-viewer-dev
     build:
       target: development
       args:
@@ -22,7 +22,7 @@ services:
       - minio
   #--------------------------------------------------------------------
   cc-1d:
-    image: services-cc-1d-dev:latest
+    image: services_cc-1d-viewer-dev
     build:
       target: development
       args:
@@ -43,7 +43,7 @@ services:
       - minio
   #--------------------------------------------------------------------
   cc-2d:
-    image: services-cc-2d-dev:latest
+    image: services_cc-2d-viewer-dev
     build:
       target: development
       args:
