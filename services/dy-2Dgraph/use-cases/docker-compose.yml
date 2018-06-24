@@ -7,7 +7,9 @@ services:
       target: production
       args: 
         NOTEBOOK_NAME: cc_single_cell.ipynb
-        NOTEBOOK_FOLDER_NAME: cc-single-cell            
+        NOTEBOOK_FOLDER_NAME: cc-single-cell 
+        VCS_REF: 
+        BUILD_DATE:
       labels: 
         io.simcore.key: '{"key": "simcore/services/dynamic/cc-0d-viewer"}'
         io.simcore.outputs: '{"outputs": []}'
@@ -29,6 +31,8 @@ services:
       args: 
         NOTEBOOK_NAME: cc_oned.ipynb
         NOTEBOOK_FOLDER_NAME: cc-oned        
+        VCS_REF: 
+        BUILD_DATE:
       labels:
         io.simcore.key: '{"key": "simcore/services/dynamic/cc-1d-viewer"}'
         io.simcore.outputs: '{"outputs": []}'
@@ -50,6 +54,8 @@ services:
       args: 
         NOTEBOOK_NAME: cc_2d.ipynb
         NOTEBOOK_FOLDER_NAME: cc-twod   
+        VCS_REF: 
+        BUILD_DATE:
       labels:
         io.simcore.key: '{"key": "simcore/services/dynamic/cc-2d-viewer"}'
         io.simcore.outputs: '{"outputs": []}'
