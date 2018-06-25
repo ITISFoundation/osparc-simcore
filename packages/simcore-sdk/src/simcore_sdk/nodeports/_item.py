@@ -15,6 +15,8 @@ class DataItem(_DataItem):
     """This class encapsulate a Data Item and provide accessors functions"""
     def __new__(cls, **kwargs):        
         _LOGGER.debug("Creating new data item with %s", kwargs)
+        if not "timestamp" in kwargs:
+            kwargs["timestamp"]=datetime.datetime.now().isoformat()
         self = super(DataItem, cls).__new__(cls, **kwargs)
         self.new_data_cb = None
         self.get_node_from_uuid_cb = None

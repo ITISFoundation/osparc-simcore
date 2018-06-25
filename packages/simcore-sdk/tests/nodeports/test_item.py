@@ -22,6 +22,23 @@ def test_default_item():
     with pytest.raises(TypeError, message="Expecting TypeError") as excinfo:
         item = DataItem() 
 
+def test_item_with_optional_timestamp():
+    key = "my key"
+    label = "my label"
+    description = "my description"
+    item_type = "bool"
+    item_value = "true"
+    item = DataItem(key=key, label=label, desc=description, type=item_type, value=item_value)
+    assert item.key == key
+    assert item.label == label
+    assert item.desc == description
+    assert item.type == item_type
+    assert item.value == item_value
+
+    assert item.new_data_cb is None
+
+    assert item.get()
+
 def test_item():
     key = "my key"
     label = "my label"
