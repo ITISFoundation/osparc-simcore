@@ -16,7 +16,9 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
-      - SIMCORE_NODE_UUID=${SIMCORE_NODE_UUID}
+    volumes: 
+      - ../../../packages/simcore-sdk/src:/home/jovyan/packages/packages/simcore-sdk/src
+      - ../../../packages/s3wrapper/src:/home/jovyan/packages/packages/s3wrapper/src
     depends_on:
       - postgres
       - minio
@@ -37,10 +39,12 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
-      - SIMCORE_NODE_UUID=${SIMCORE_NODE_UUID}
     depends_on:
       - postgres
       - minio
+    volumes: 
+      - ../../../packages/simcore-sdk/src:/home/jovyan/packages/packages/simcore-sdk/src
+      - ../../../packages/s3wrapper/src:/home/jovyan/packages/packages/s3wrapper/src
   #--------------------------------------------------------------------
   cc-2d:
     image: services_cc-2d-viewer-dev
@@ -58,10 +62,12 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
-      - SIMCORE_NODE_UUID=${SIMCORE_NODE_UUID}
     depends_on:
       - postgres
       - minio
+    volumes: 
+      - ../../../packages/simcore-sdk/src:/home/jovyan/packages/packages/simcore-sdk/src
+      - ../../../packages/s3wrapper/src:/home/jovyan/packages/packages/s3wrapper/src
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10

@@ -20,23 +20,23 @@ class DbSettings(object):
         self.session = self.Session()
 
 class IO(object):
-    def __init__(self, config):
+    def __init__(self):
         self._db = DbSettings()            
-        self.config = config
 
     def __get_node_from_db(self, node_uuid):        
-        pipeline_id = os.environ.get('SIMCORE_PIPELINE_ID')
-        _LOGGER.debug("Reading from database for pipeline id %s and node id %s", pipeline_id, node_uuid)
+        _LOGGER.debug("Reading from database for node uuid %s", node_uuid)
         try:
-            return self._db.session.query(NodeModel).filter(NodeModel.pipeline_id==pipeline_id, NodeModel.node_id==node_uuid).one()                
+            return self._db.session.query(NodeModel).filter(NodeModel.node_id==node_uuid).one()                
         except exc.NoResultFound:
             _LOGGER.exception("the node id %s was not found", node_uuid)
         except exc.MultipleResultsFound:
             _LOGGER.exception("the node id %s is not unique", node_uuid)
 
-    def __get_configuration_from_db(self, node_uuid=None):        
+    def __get_configuration_from_db(self, node_uuid=None, set_pipeline_id=False):        
         _LOGGER.debug("Reading from database")        
         node = self.__get_node_from_db(node_uuid)
+        if set_pipeline_id:
+            os.environ["SIMCORE_PIPELINE_ID"]=str(node.pipeline_id)
         node_json_config = serialization.save_node_to_json(node)
         _LOGGER.debug("Found and converted to json")
         return node_json_config
@@ -71,7 +71,7 @@ class IO(object):
             string -- a json containing the ports configuration                
         """
         _LOGGER.debug("Getting ports configuration")
-        return self.__get_configuration_from_db(node_uuid=os.environ.get('SIMCORE_NODE_UUID'))
+        return self.__get_configuration_from_db(node_uuid=os.environ.get('SIMCORE_NODE_UUID'), set_pipeline_id=True)
 
     def get_ports_configuration_from_node_uuid(self, node_uuid):
         """returns the json configuration of a node with a specific node uuid in the same pipeline
