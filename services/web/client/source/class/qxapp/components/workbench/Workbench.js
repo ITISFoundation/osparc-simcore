@@ -373,7 +373,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
           if (val["service_uuid"] === nodeBase.getNodeId()) {
-            let portNumber = val["containers"][0]["published_ports"];
+            let portNumber = val["containers"][0]["published_ports"][0];
             nodeBase.getMetadata().viewer.port = portNumber;
             nodeBase.getMetadata().viewer.ip = "http://" + window.location.hostname;
           }
