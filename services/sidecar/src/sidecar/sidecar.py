@@ -203,6 +203,11 @@ class Sidecar(object):
                                     flag_modified(self._task, "output")
                                     self._db.session.commit()
                     else:
+                        # we want to keep the folder structure
+                        if not root == directory:
+                            rel_name = os.path.relpath(root, directory)
+                            name = rel_name + "/" + name
+
                         object_name = str(self._task.pipeline_id) + "/" + self._task.node_id + "/" + name
                         success = False
                         ntry = 3
