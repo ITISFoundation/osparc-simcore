@@ -104,7 +104,7 @@ def nodeports_decoder(dct):
     # check for dataitem
     #TODO: SAN this is not good. decoding objects going bottom/up seems strange
     for key in config.DATA_ITEM_KEYS:
-        if key is "timestamp": # optional
+        if key == "timestamp": # optional
             continue
         if key not in dct:
             return dct

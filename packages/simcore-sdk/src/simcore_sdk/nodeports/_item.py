@@ -19,7 +19,7 @@ class DataItem(_DataItem):
         new_kargs['timestamp'] = datetime.datetime.now().isoformat()
         for key in config.DATA_ITEM_KEYS:
             if key not in kwargs:
-                if key is not "timestamp":
+                if key != "timestamp":
                     raise exceptions.InvalidProtocolError(kwargs, "key \"%s\" is missing" % (str(key)))
             else:
                 new_kargs[key] = kwargs[key]
