@@ -106,11 +106,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 1",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 50,
@@ -149,11 +149,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 2",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 50,
@@ -192,11 +192,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 3",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 300,
@@ -235,11 +235,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 4",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 300,
@@ -278,11 +278,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 5",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 550,
@@ -321,11 +321,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 6",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 800,
@@ -364,11 +364,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 7",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 800,
@@ -407,11 +407,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 8",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 1050,
@@ -525,11 +525,11 @@ qx.Class.define("qxapp.data.Fake", {
           "tag": "0.0.1",
           "description": "File Manager",
           "authors": [{
-            "name": "Odei Maiz",
-            "email": "maiz@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "maiz@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "position": {
             "x": 50,
             "y": 100
@@ -635,11 +635,11 @@ qx.Class.define("qxapp.data.Fake", {
           "tag": "0.0.1",
           "description": "Graph viewer for data generated by cc-0d solver",
           "authors": [{
-            "name": "Sylvain Anderegg",
-            "email": "anderegg@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "anderegg@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "position": {
             "x": 700,
             "y": 100
