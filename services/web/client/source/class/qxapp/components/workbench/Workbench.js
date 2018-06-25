@@ -871,6 +871,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         requestData: qx.util.Serializer.toJson(data)
       });
       req.addListener("success", this.__onPipelineStopped, this);
+      req.addListener("error", function(e) {
+        this.setCanStart(false);
+        this.__logger.error("Workbench", "Error stopping pipeline");
+      }, this);
+      req.addListener("fail", function(e) {
+        this.setCanStart(false);
+        this.__logger.error("Workbench", "Failed stopping pipeline");
+      }, this);
+      req.send();
 
       this.__logger.info("Workbench", "Stopping pipeline. Not yet implemented");
     },
