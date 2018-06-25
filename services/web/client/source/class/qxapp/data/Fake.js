@@ -56,7 +56,7 @@ qx.Class.define("qxapp.data.Fake", {
       let rawData = [];
 
       let item1 = qx.data.marshal.Json.createModel({
-        name: "Template #1",
+        name: "Sleepers",
         description: "Sample used for the unidirectional pipelining",
         thumbnail: null,
         created: null,
@@ -65,7 +65,7 @@ qx.Class.define("qxapp.data.Fake", {
       rawData.push(item1);
 
       let item2 = qx.data.marshal.Json.createModel({
-        name: "Template #2",
+        name: "Single Cell",
         description: "Colleen Clancy use case",
         thumbnail: null,
         created: null,
@@ -106,11 +106,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 1",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 50,
@@ -149,11 +149,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 2",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 50,
@@ -192,11 +192,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 3",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 300,
@@ -235,11 +235,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 4",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 300,
@@ -278,11 +278,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 5",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 550,
@@ -321,11 +321,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 6",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 800,
@@ -364,11 +364,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 7",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 800,
@@ -407,11 +407,11 @@ qx.Class.define("qxapp.data.Fake", {
           "name": "Sleeper 8",
           "tag": "0.0.1",
           "authors": [{
-            "name": "Manuel Guidon",
-            "email": "guidon@itis.ethz.ch",
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
             "affiliation": "ITIS Foundation"
           }],
-          "contact": "guidon@itis.ethz.ch",
+          "contact": "somebody@itis.ethz.ch",
           "description": "Solver that sleeps for a random amount of seconds",
           "position": {
             "x": 1050,
@@ -511,13 +511,25 @@ qx.Class.define("qxapp.data.Fake", {
     },
 
     getTemp2Data: function() {
+      const nNodes = 3;
+      let nodeIds = [];
+      for (let i=0; i<nNodes; i++) {
+        nodeIds.push(qxapp.utils.Utils.uuidv4());
+      }
+
       let temp2Data = {
         "nodes": [{
-          "uuid": "cd90ad2c-8dac-49b5-8552-dd9fbf785273",
-          "key": "node1",
-          "tag": "1.0",
-          "name": "Node 1",
-          "description": "Node 1",
+          "uuid": nodeIds[0],
+          "key": "FileManager",
+          "name": "File Manager",
+          "tag": "0.0.1",
+          "description": "File Manager",
+          "authors": [{
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
+            "affiliation": "ITIS Foundation"
+          }],
+          "contact": "somebody@itis.ethz.ch",
           "position": {
             "x": 50,
             "y": 100
@@ -525,94 +537,148 @@ qx.Class.define("qxapp.data.Fake", {
           "inputs": [],
           "outputs": [{
             "key": "out_1",
-            "label": "Number",
-            "description": "Number",
+            "label": "File-url",
+            "description": "File-url",
+            "type": "file-url",
+            "defaultValue": null
+          }],
+          "settings": []
+        }, {
+          "uuid": nodeIds[1],
+          "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
+          "name": "DBP-Clancy-Rabbit-Single-Cell solver v 0.0.2",
+          "tag": "0.0.1",
+          "description": "Single cell solver for DBP-Clancy-Rabbit model",
+          "authors": [{
+            "name": "John Doe",
+            "email": "j.doe@ua.com",
+            "affiliation": "University of Anywhere, Department of something"
+          }],
+          "contact": "j.doe@ua.com",
+          "position": {
+            "x": 350,
+            "y": 100
+          },
+          "inputs": [{
+            "key": "Na",
+            "label": "Na blocker drug concentration",
+            "desc": "Set Na blocker drug concentration",
+            "type": "number",
+            "value": 0.0
+          }, {
+            "key": "Kr",
+            "label": "Kr blocker drug concentration",
+            "desc": "Set Kr blocker drug concentration",
+            "type": "number",
+            "value": 0.0
+          }, {
+            "key": "BCL",
+            "label": "Basic Cycle Length (BCL)",
+            "desc": "Set Basic Cycle Length (BCL)",
             "type": "integer",
-            "value": ""
+            "value": 200
           }, {
-            "key": "out_2",
-            "label": "String",
-            "description": "String",
+            "key": "NBeats",
+            "label": "Number of beats",
+            "desc": "Set Number of beats",
+            "type": "integer",
+            "value": 5
+          }, {
+            "key": "Ligand",
+            "label": "Ligand concentration",
+            "desc": "Set Ligand concentration ",
+            "type": "number",
+            "value": 0.0
+          }, {
+            "key": "cAMKII",
+            "label": "Adjust cAMKII activity levels",
+            "desc": "Adjust cAMKII activity levels (expression = WT, OE, or KO)",
             "type": "string",
-            "value": ""
+            "value": "WT"
           }, {
-            "key": "out_3",
-            "label": "Bool",
-            "description": "Bool",
-            "type": "bool",
+            "key": "initial_WTstates.txt",
+            "label": "Intitial variables file ",
+            "desc": "Initial variables file corresponding to SS_rabbit_varNames.txt",
+            "type": "file-url",
+            "value": null
+          }],
+          "outputs": [{
+            "key": "Allresult_1Hz.txt",
+            "label": "All results",
+            "desc": "All results",
+            "type": "file-url",
+            "value": null
+          }, {
+            "key": "apds_1Hz.txt",
+            "label": "apds",
+            "desc": "apds",
+            "type": "file-url",
+            "value": null
+          }, {
+            "key": "finalStates.txt",
+            "label": "finalStates",
+            "desc": "finalStates",
+            "type": "file-url",
+            "value": null
+          }, {
+            "key": "vm_1Hz.txt",
+            "label": "vm",
+            "desc": "vm",
+            "type": "file-url",
             "value": null
           }],
           "settings": []
         }, {
-          "uuid": "ad45ba4e-2dac-43bb-afad-86c9d50a2ec9",
-          "key": "node2",
-          "tag": "1.0",
-          "name": "Node 2",
-          "description": "Node 2",
+          "uuid": nodeIds[2],
+          "key": "simcore/services/dynamic/cc-0d-viewer",
+          "name": "cc-0d-viewer",
+          "tag": "0.0.1",
+          "description": "Graph viewer for data generated by cc-0d solver",
+          "authors": [{
+            "name": "Somebody",
+            "email": "somebody@itis.ethz.ch",
+            "affiliation": "ITIS Foundation"
+          }],
+          "contact": "somebody@itis.ethz.ch",
           "position": {
-            "x": 400,
+            "x": 700,
             "y": 100
           },
           "inputs": [{
             "key": "in_1",
-            "label": "Number",
-            "description": "Number",
-            "type": "integer",
-            "value": null
+            "label": "vm 1Hz",
+            "desc": "Computed values from the solver",
+            "type": "file-url",
+            "value": "null"
           }, {
             "key": "in_2",
-            "label": "String",
-            "description": "String",
-            "type": "string",
-            "value": null
-          }, {
-            "key": "in_3",
-            "label": "Bool",
-            "description": "Bool",
-            "type": "bool",
-            "value": null
-          }],
-          "outputs": [],
-          "settings": [{
-            "key": "sett_1",
-            "label": "Bool_1",
-            "description": "Bool_1",
-            "type": "bool",
-            "value": 0
-          }, {
-            "key": "sett_2",
-            "label": "Bool_2",
-            "description": "Bool_2",
-            "type": "bool",
-            "value": 0
-          }]
-        }, {
-          "uuid": "13e1915f-b463-47c5-bb94-fe25effe30da",
-          "key": "node3",
-          "tag": "1.0",
-          "name": "Node 3",
-          "description": "Node 3",
-          "position": {
-            "x": 400,
-            "y": 300
-          },
-          "inputs": [{
-            "key": "in_1",
-            "label": "String",
-            "description": "String",
-            "type": "string",
-            "value": null
-          }, {
-            "key": "in_2",
-            "label": "Number",
-            "description": "Number",
-            "type": "integer",
-            "value": null
+            "label": "all results 1Hz",
+            "desc": "Computed values from the solver",
+            "type": "file-url",
+            "value": "null"
           }],
           "outputs": [],
           "settings": []
         }],
-        "links": []
+        "links": [{
+          "uuid": qxapp.utils.Utils.uuidv4(),
+          "node1Id": nodeIds[0],
+          "port1Id": "out_1",
+          "node2Id": nodeIds[1],
+          "port2Id": "initial_WTstates.txt"
+        }, {
+          "uuid": qxapp.utils.Utils.uuidv4(),
+          "node1Id": nodeIds[1],
+          "port1Id": "vm_1Hz.txt",
+          "node2Id": nodeIds[2],
+          "port2Id": "in_1"
+        }, {
+          "uuid": qxapp.utils.Utils.uuidv4(),
+          "node1Id": nodeIds[1],
+          "port1Id": "Allresult_1Hz.txt",
+          "node2Id": nodeIds[2],
+          "port2Id": "in_2"
+        }]
       };
       return temp2Data;
     },
