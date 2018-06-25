@@ -73,7 +73,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
         button.addListener("execute", function(e) {
           this.fireDataEvent("ShowViewer", node.getMetadata());
         }, this);
-        this.__settingsBox.add(button);
+        this.add(button);
       }
     }
   }
