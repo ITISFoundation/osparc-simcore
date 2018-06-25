@@ -241,6 +241,10 @@ class Sidecar(object):
                            "OUTPUT_FOLDER=" + self._executor.out_dir,
                            "LOG_FOLDER=" + self._executor.log_dir]
 
+        # self._docker.env = ["INPUT_FOLDER=/input",
+        #                    "OUTPUT_FOLDER=/output",
+        #                    "LOG_FOLDER=/log"]
+
 
     def preprocess(self):
         _LOGGER.debug('Pre-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
