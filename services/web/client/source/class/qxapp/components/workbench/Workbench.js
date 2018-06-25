@@ -821,6 +821,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
 
       // post pipeline
+      this.__pipelineId = null;
       let currentPipeline = this.__serializeData();
       console.log(currentPipeline);
       let req = new qx.io.request.Xhr();
@@ -855,15 +856,29 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       this.setCanStart(false);
 
+      this.__pipelineId = req.getResponse().pipeline_id;
+      this.__logger.debug("Workbench", "Pipeline ID" + this.__pipelineId);
       this.__logger.info("Workbench", "Pipeline started");
     },
 
     __stopPipeline: function() {
+      let req = new qx.io.request.Xhr();
+      let data = {};
+      data["pipiline_id"] = this.__pipelineId;
+      req.set({
+        url: "/stop_pipeline",
+        method: "POST",
+        requestData: qx.util.Serializer.toJson(data)
+      });
+      req.addListener("success", this.__onPipelineStopped, this);
+
+      this.__logger.info("Workbench", "Stopping pipeline. Not yet implemented");
+    },
+
+    __onPipelineStopped: function(e) {
       this.__clearProgressData();
 
       this.setCanStart(true);
-
-      this.__logger.info("Workbench", "Stopping pipeline. Not yet implemented");
     },
 
     __updateLogger: function(nodeId, msg) {
