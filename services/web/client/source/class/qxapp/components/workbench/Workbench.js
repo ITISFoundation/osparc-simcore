@@ -229,8 +229,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __applyCanStart: function(value, old) {
-      this.__playButton.setEnabled(value);
-      this.__stopButton.setEnabled(!value);
+      if (value) {
+        this.__playButton.setVisibility("visible");
+        this.__stopButton.setVisibility("excluded");
+      } else {
+        this.__playButton.setVisibility("excluded");
+        this.__stopButton.setVisibility("visible");
+      }
     },
 
     __getRemoveButton: function() {
