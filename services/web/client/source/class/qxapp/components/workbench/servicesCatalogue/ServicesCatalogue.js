@@ -33,12 +33,10 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     this.__allServices = qxapp.data.Fake.getFakeServices();
     let store = qxapp.data.Store.getInstance();
     store.addListener("servicesRegistered", function(e) {
-      console.log("servicesRegistered", e.getData());
       this.__addNewData(e.getData());
     }, this);
     store.getServices();
     store.addListener("interactiveServicesRegistered", function(e) {
-      console.log("interactiveServicesRegistered", e.getData());
       this.__addNewData(e.getData());
     }, this);
     store.getInteractiveServices();
@@ -148,7 +146,6 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     },
 
     __addNewData: function(newData) {
-      console.log(this.__controller.getModel());
       let names = [];
       this.__allServices = this.__allServices.concat(newData);
       for (let i = 0; i < this.__allServices.length; i++) {
