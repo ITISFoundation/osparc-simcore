@@ -2,8 +2,7 @@ FROM masu.speag.com/simcore/services/jupyter-base-notebook:1.2 AS common
 
 LABEL maintainer="sanderegg"
 
-ENV SIMCORE_PIPELINE_ID="-1" \
-    SIMCORE_NODE_UUID="-1" \
+ENV SIMCORE_NODE_UUID="-1" \
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
     S3_SECRET_KEY="-1" \
@@ -89,5 +88,5 @@ RUN mkdir packages && \
     echo "packages/simcore-sdk/src/simcore_sdk/*" >> .git/info/sparse-checkout && \
     echo "packages/s3wrapper/src/s3wrapper/*" >> .git/info/sparse-checkout && \
     git pull --depth=1 origin master
-    
+
 ENTRYPOINT [ "/bin/sh", "boot.sh" ]
