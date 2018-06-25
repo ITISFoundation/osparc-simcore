@@ -1,4 +1,5 @@
 /* eslint no-warning-comments: "off" */
+/* global window */
 
 const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
@@ -366,26 +367,25 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let nodeBase = new qxapp.components.workbench.NodeBase();
       nodeBase.setMetadata(nodeMetaData);
 
-      if (nodeBase.getNodeImageId() === "modeler") {
-        const slotName = "startModeler";
+      const imageId = nodeBase.getNodeImageId();
+      if (imageId.includes("dynamic")) {
+        const slotName = "startDynamic";
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
           if (val["service_uuid"] === nodeBase.getNodeId()) {
-            let portNumber = val["containers"][0]["published_ports"];
+            let portNumber = val["containers"][0].published_ports[0];
             nodeBase.getMetadata().viewer.port = portNumber;
+            nodeBase.getMetadata().viewer.ip = "http://" + window.location.hostname;
+            const servUrl = nodeBase.getMetadata().viewer.ip +":"+ nodeBase.getMetadata().viewer.port;
+            this.__logger.debug(nodeBase.getMetadata().name, "Service ready on " + servUrl);
+            this.__logger.info(nodeBase.getMetadata().name, "Service ready");
           }
         }, this);
-        socket.emit(slotName, nodeBase.getNodeId());
-      } else if (nodeBase.getNodeImageId() === "jupyter-base-notebook") {
-        const slotName = "startJupyter";
-        let socket = qxapp.wrappers.WebSocket.getInstance();
-        socket.on(slotName, function(val) {
-          if (val["service_uuid"] === nodeBase.getNodeId()) {
-            let portNumber = val["containers"][0]["published_ports"];
-            nodeBase.getMetadata().viewer.port = portNumber;
-          }
-        }, this);
-        socket.emit(slotName, nodeBase.getNodeId());
+        let data = {
+          serviceName: nodeBase.getMetadata().name,
+          nodeId: nodeBase.getNodeId()
+        };
+        socket.emit(slotName, data);
       }
 
       const evType = "pointermove";
@@ -781,7 +781,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let nodeMetaData = nodesMetaData[i];
         let node = this.__createNode(nodeMetaData);
         node.setNodeId(nodeMetaData.uuid);
-        if (Object.prototype.hasOwnProperty.call(nodeMetaData, "position")) {
+        if (nodeMetaData.position) {
           this.__addNodeToWorkbench(node, nodeMetaData.position);
         } else {
           this.__addNodeToWorkbench(node);

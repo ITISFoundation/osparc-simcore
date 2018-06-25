@@ -65,6 +65,16 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
     __applyNode: function(node, oldNode, propertyName) {
       this.__settingsBox.removeAll();
       this.__settingsBox.add(node.getPropsWidget());
+
+      // Show viewer
+      if (node.getMetadata().viewer) {
+        let button = new qx.ui.form.Button("Open Viewer");
+        button.setEnabled(node.getMetadata().viewer.port !== null);
+        button.addListener("execute", function(e) {
+          this.fireDataEvent("ShowViewer", node.getMetadata());
+        }, this);
+        this.add(button);
+      }
     }
   }
 });
