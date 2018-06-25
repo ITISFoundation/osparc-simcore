@@ -78,6 +78,10 @@ qx.Class.define("qxapp.components.workbench.logger.RemoteTableModel", {
       return this.__rawData.length;
     },
 
+    getFilteredRowCount: function() {
+      return this.__filteredData.length;
+    },
+
 
     // overloaded - called whenever the table requests the row count
     _loadRowCount : function() {
