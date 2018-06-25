@@ -9,10 +9,10 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   members: {
-    getServices: function() {
+    getComputationalServices: function() {
       let req = new qx.io.request.Xhr();
       req.set({
-        url: "/repositories",
+        url: "/get_computational_services",
         method: "GET"
       });
       req.addListener("success", function(e) {

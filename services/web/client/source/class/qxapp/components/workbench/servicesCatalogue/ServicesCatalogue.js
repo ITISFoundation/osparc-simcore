@@ -35,7 +35,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     store.addListener("servicesRegistered", function(e) {
       this.__addNewData(e.getData());
     }, this);
-    store.getServices();
+    store.getComputationalServices();
     store.addListener("interactiveServicesRegistered", function(e) {
       this.__addNewData(e.getData());
     }, this);
