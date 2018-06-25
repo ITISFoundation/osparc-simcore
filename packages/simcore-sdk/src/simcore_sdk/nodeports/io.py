@@ -20,9 +20,8 @@ class DbSettings(object):
         self.session = self.Session()
 
 class IO(object):
-    def __init__(self, config):
+    def __init__(self):
         self._db = DbSettings()            
-        self.config = config
 
     def __get_node_from_db(self, node_uuid):        
         pipeline_id = os.environ.get('SIMCORE_PIPELINE_ID')
