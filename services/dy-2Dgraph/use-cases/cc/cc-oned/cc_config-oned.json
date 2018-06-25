@@ -6,7 +6,11 @@
             "label": "ECGs",
             "desc": "these are computed data out of a pipeline",
             "type": "file-url",
-            "value": "link.SIMCORE_NODE_UUID.in_1"
+            "value": "link.SIMCORE_NODE_UUID.in_1",
+            "settings": {
+                "value":"null"
+            },
+            "widget":"stuff"
         },
         {
             "key": "in_2",
