@@ -1,9 +1,8 @@
-FROM simcore/services/jupyter-base-notebook:latest AS common
+FROM masu.speag.com/simcore/services/jupyter-base-notebook:1.2 AS common
 
 LABEL maintainer="sanderegg"
 
-ENV SIMCORE_PIPELINE_ID="-1" \
-    SIMCORE_NODE_UUID="-1" \
+ENV SIMCORE_NODE_UUID="-1" \
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
     S3_SECRET_KEY="-1" \
@@ -33,16 +32,6 @@ RUN pip install --upgrade pip && \
     jupyter dashboards quick-setup --sys-prefix && \    
     jupyter nbextension enable hide_input/main && \
     jupyter nbextension enable init_cell/main
-
-# download the simcore_sdk package
-RUN mkdir packages && \
-    cd packages && \
-    git init && \
-    git remote add origin -f https://github.com/ITISFoundation/osparc-simcore.git && \
-    git config core.sparsecheckout true && \
-    echo "packages/simcore-sdk/src/simcore_sdk/*" >> .git/info/sparse-checkout && \
-    echo "packages/s3wrapper/src/s3wrapper/*" >> .git/info/sparse-checkout && \
-    git pull --depth=1 origin master
 
 ENV PYTHONPATH="./packages/packages/simcore-sdk/src:./packages/packages/s3wrapper/src"
 
@@ -75,6 +64,10 @@ RUN jupyter trust ${NOTEBOOK_NAME}
 ENV NOTEBOOK_URL=${NOTEBOOK_NAME}
 # -----------------------------------------------------------------------------
 FROM specialised AS development
+# one can mount the packages
+VOLUME /home/jovyan/packages/packages/simcore-sdk/src \
+    /home/jovyan/packages/packages/s3wrapper/src
+
 ARG JSON_CONFIGURATION_FOLDER=cc-oned
 ARG JSON_CONFIGURATION=cc_config-oned.json
 ENV USE_CASE_CONFIG_FILE=${JSON_CONFIGURATION}
@@ -86,4 +79,14 @@ COPY --chown=jovyan:users develdbs3init.py .
 CMD [ "/bin/sh", "boot.sh" ]
 # -----------------------------------------------------------------------------
 FROM specialised AS production
+# download the simcore_sdk package
+RUN mkdir packages && \
+    cd packages && \
+    git init && \
+    git remote add origin -f https://github.com/ITISFoundation/osparc-simcore.git && \
+    git config core.sparsecheckout true && \
+    echo "packages/simcore-sdk/src/simcore_sdk/*" >> .git/info/sparse-checkout && \
+    echo "packages/s3wrapper/src/s3wrapper/*" >> .git/info/sparse-checkout && \
+    git pull --depth=1 origin master
+
 ENTRYPOINT [ "/bin/sh", "boot.sh" ]
