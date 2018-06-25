@@ -38,6 +38,6 @@ async def services(request):
     """
     _a = request
 
-    repo_list = director_proxy.retrieve_repositories()
+    repo_list = director_proxy.retrieve_computational_services()
 
     return web.json_response(repo_list)
