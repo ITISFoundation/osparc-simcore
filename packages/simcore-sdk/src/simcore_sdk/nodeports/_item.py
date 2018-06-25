@@ -20,7 +20,7 @@ class DataItem(_DataItem):
         for key in config.DATA_ITEM_KEYS:
             if key not in kwargs:
                 if key is not "timestamp":
-                    raise exceptions.InvalidProtocolError(dct, "key \"%s\" is missing" % (str(key)))
+                    raise exceptions.InvalidProtocolError(kwargs, "key \"%s\" is missing" % (str(key)))
             else:
                 new_kargs[key] = kwargs[key]
 
