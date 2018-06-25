@@ -20,10 +20,10 @@ down:
 	${docker-compose} -f docker-compose.yml down
 
 build-devel:
-	${docker-compose} -f docker-compose.yml -f docker-compose.devel.yml build --build-arg VCS_REF=`git rev-parse --short HEAD` BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
+	${docker-compose} -f docker-compose.yml -f docker-compose.devel.yml build --build-arg VCS_REF=`git rev-parse --short HEAD` --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
 
 rebuild-devel:
-	${docker-compose} -f docker-compose.yml -f docker-compose.devel.yml build --no-cache --build-arg VCS_REF=`git rev-parse --short HEAD` BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
+	${docker-compose} -f docker-compose.yml -f docker-compose.devel.yml build --no-cache --build-arg VCS_REF=`git rev-parse --short HEAD` --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
 
 up-devel:
 	${docker-compose} -f docker-compose.yml -f docker-compose.devel.yml up
