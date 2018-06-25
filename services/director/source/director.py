@@ -28,30 +28,23 @@ def hello_world():
     Returns:
         [type] -- [description]
     """
+    _LOGGER.debug("received hello to the people")
     return "<h1>Hoi zaeme! Salut les d'jeunz!</h1><h3>This is {} responding!</h2>".format(__name__)
 
 
 @APP.route('/list_interactive_services', methods=['GET'])
 def list_interactive_services():
-    """[summary]
+    """returns the list of interactive services
 
     Returns:
-        [type] -- [description]
+        json -- {service_name: {repos: [/simcore/service/], details: []}}
     """
-
+    _LOGGER.debug("received call to list of interactive services")
     # get the services repos
     list_of_interactive_repos = registry_proxy.retrieve_list_of_repos_with_interactive_services()
-    # some services may have several parts, fuse these
-    # the syntax of services are simcore/services/%SERVICENAME%/...
-    list_of_interactive_services = []
-    for repo in list_of_interactive_repos:
-        service_name = registry_proxy.get_service_name(repo)
-        if service_name not in list_of_interactive_services:
-            list_of_interactive_services.append(service_name)
-
     #list_of_interactive_services = [registry_proxy.retrieve_list_of_images_in_repo(repo) for repo in list_of_interactive_repos]
-
-    return json.dumps(list_of_interactive_services)
+    _LOGGER.debug("retrieved list of interactive services %s", list_of_interactive_repos)
+    return json.dumps(list_of_interactive_repos)
 
 
 @APP.route('/start_service', methods=['POST'])
@@ -61,6 +54,7 @@ def start_service():
     Returns:
         [type] -- [description]
     """
+    _LOGGER.debug("received call to start service with %s", request.json)
     # check syntax
     if not request.json or not 'service_name' in request.json or not 'service_uuid' in request.json:
         _LOGGER.debug("Rejected start_service request: %s", request.json)
@@ -68,14 +62,13 @@ def start_service():
 
     # get required parameters
     service_name = request.json['service_name']
-    uuid = request.json['service_uuid']
-
+    uuid = request.json['service_uuid']    
     # get optional tag parameter
     if 'tag' in request.json:
         service_tag = request.json['tag']
     else:
         service_tag = 'latest'
-
+    _LOGGER.debug("Asked to start service %s with uuid %s and tag %s", service_name, uuid, service_tag)
     try:
         return producer.start_service(service_name, service_tag, uuid), 201
     except:
@@ -90,11 +83,12 @@ def stop_service():
     Returns:
         [type] -- [description]
     """
-
+    _LOGGER.debug("received call to stop service with %s", request.json)
     # check syntax
     if not request.json or not 'service_uuid' in request.json:
         abort(400)
     service_uuid = request.json['service_uuid']
+    _LOGGER.debug("Asked to stop service with uuid %s", service_uuid)
     try:
         producer.stop_service(service_uuid)
         return json.dumps('service stopped'), 201
