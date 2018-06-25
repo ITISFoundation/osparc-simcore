@@ -5,3 +5,4 @@ networkx==2.1
 pika==0.11.2
 psycopg2==2.7.4
 sqlalchemy==1.2.8
+tenacity==4.12.0
