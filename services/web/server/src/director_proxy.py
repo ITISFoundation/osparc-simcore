@@ -53,8 +53,8 @@ def retrieve_interactive_services():
     return request.json()
 
 
-def retrieve_repositories():
-    request = director_request('list_repositories')
+def retrieve_computational_services():
+    request = director_request('list_computational_services')
     return request.json()
 
 

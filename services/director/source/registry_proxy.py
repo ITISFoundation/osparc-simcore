@@ -9,6 +9,7 @@ import os
 from requests import RequestException, Session
 
 INTERACTIVE_SERVICES_PREFIX = 'simcore/services/dynamic/'
+COMPUTATIONAL_SERVICES_PREFIX = 'simcore/services/comp/'
 _SESSION = Session()
 _LOGGER = logging.getLogger(__name__)
 
@@ -134,12 +135,14 @@ def _get_repo_details(repo):
 
     return current_repo
 
-def get_repo_details():
-    request_result = registry_request('_catalog')
-
-    repos = request_result.json()['repositories']
+def list_computational_services():
+    _LOGGER.info("getting list of computational services")
+    list_all_repos = retrieve_list_of_repositories()
+    # get the services repos
+    list_of_comp_repos = [repo for repo in list_all_repos if str(repo).startswith(COMPUTATIONAL_SERVICES_PREFIX)]
+    _LOGGER.info("retrieved list of computational repos : %s", list_of_comp_repos)
     repositories = {}
-    for repo in repos:
+    for repo in list_of_comp_repos:
         details = _get_repo_details(repo)
         if details:
             repositories[repo] = details
