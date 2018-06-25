@@ -9,6 +9,25 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   members: {
+    getBuiltInServices: function() {
+      let builtInServices = [{
+        "key": "FileManager",
+        "tag": "1.0",
+        "name": "File Manager",
+        "description": "File Manager",
+        "inputs": [],
+        "outputs": [{
+          "key": "out_1",
+          "label": "File-url",
+          "description": "File-url",
+          "type": "file-url",
+          "defaultValue": null
+        }],
+        "settings": []
+      }];
+      return builtInServices;
+    },
+
     getComputationalServices: function() {
       let req = new qx.io.request.Xhr();
       req.set({
