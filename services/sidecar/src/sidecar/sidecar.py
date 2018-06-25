@@ -156,10 +156,12 @@ class Sidecar(object):
                     if clean_line.lower().startswith("[progress]"):
                         progress = clean_line.lower().lstrip("[progress]").rstrip("%").strip()
                         prog_data = {"Channel" : "Progress", "Node": task.node_id, "Progress" : progress}
+                        _LOGGER.debug('PROGRESS %s', progress)
                         prog_body = json.dumps(prog_data)
                         channel.basic_publish(exchange=self._pika.progress_channel, routing_key='', body=prog_body)
                     else:
                         log_data = {"Channel" : "Log", "Node": task.node_id, "Message" : clean_line}
+                        _LOGGER.debug('LOG %s', clean_line)
                         log_body = json.dumps(log_data)
                         channel.basic_publish(exchange=self._pika.log_channel, routing_key='', body=log_body)
 
