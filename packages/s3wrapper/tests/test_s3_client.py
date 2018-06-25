@@ -233,3 +233,14 @@ def test_object_exists(s3_client, bucket, text_files):
     assert s3_client.upload_file(bucket, object_name, file2)
     assert not s3_client.exists_object(bucket, object_name, False)
     assert s3_client.exists_object(bucket, object_name, True)
+
+@pytest.mark.enable_travis
+def test_copy_object(s3_client, bucket, text_files):
+    files = text_files(1)
+    file = files[0]
+    object_name = "original"
+    assert s3_client.upload_file(bucket, object_name, file)
+    assert s3_client.exists_object(bucket, object_name, False)
+    copied_object = "copy"
+    assert s3_client.copy_object(bucket, copied_object, bucket + "/" + object_name)
+    assert s3_client.exists_object(bucket, copied_object, False)

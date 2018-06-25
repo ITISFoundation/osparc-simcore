@@ -13,7 +13,6 @@ from simcore_sdk.config.docker import Config as docker_config
 from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.config.s3 import Config as s3_config
 
-
 def delete_contents(folder):
     for _fname in os.listdir(folder):
         file_path = os.path.join(folder, _fname)

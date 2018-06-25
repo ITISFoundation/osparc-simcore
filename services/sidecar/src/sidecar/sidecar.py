@@ -278,6 +278,7 @@ class Sidecar(object):
         _LOGGER.debug('DONE Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
 
     def run(self):
+        _LOGGER.debug("ENTERING run")
         self.preprocess()
         self.process()
         self.postprocess()
@@ -314,6 +315,8 @@ class Sidecar(object):
         return True
 
     def inspect(self, celery_task, pipeline_id, node_id):
+        _LOGGER.debug("ENTERING inspect pipeline:node %s: %s", pipeline_id, node_id)
+
         _pipeline = self._db.session.query(ComputationalPipeline).filter_by(pipeline_id=pipeline_id).one()
         graph = _pipeline.execution_graph
         next_task_nodes = []
@@ -365,7 +368,11 @@ class Sidecar(object):
 
             next_task_nodes = list(graph.successors(node_id))
         else:
+            _LOGGER.debug("NODE id was zero")
+            _LOGGER.debug("graph looks like this %s", graph)
+
             next_task_nodes = find_entry_point(graph)
+            _LOGGER.debug("Next task nodes %s", next_task_nodes)
 
         celery_task.update_state(state=CSUCCESS)
 
@@ -374,6 +381,7 @@ class Sidecar(object):
 SIDECAR = Sidecar()
 @celery.task(name='comp.task', bind=True)
 def pipeline(self, pipeline_id, node_id=None):
+    _LOGGER.debug("ENTERING run")
     next_task_nodes = SIDECAR.inspect(self, pipeline_id, node_id)
     for _node_id in next_task_nodes:
         _task = celery.send_task('comp.task', args=(pipeline_id, _node_id), kwargs={})
