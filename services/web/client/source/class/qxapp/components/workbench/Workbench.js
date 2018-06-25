@@ -864,7 +864,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __stopPipeline: function() {
       let req = new qx.io.request.Xhr();
       let data = {};
-      data["pipiline_id"] = this.__pipelineId;
+      data["pipeline_id"] = this.__pipelineId;
       req.set({
         url: "/stop_pipeline",
         method: "POST",
