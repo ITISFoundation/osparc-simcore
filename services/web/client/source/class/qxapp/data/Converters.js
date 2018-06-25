@@ -22,7 +22,7 @@ qx.Class.define("qxapp.data.Converters", {
         }
       });
       // for dynamic services
-      if (Object.prototype.hasOwnProperty.call(data, "viewer")) {
+      if (data.viewer)) {
         metadata["viewer"] = data["viewer"];
       }
       return metadata;

@@ -67,7 +67,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       this.__settingsBox.add(node.getPropsWidget());
 
       // Show viewer
-      if (Object.prototype.hasOwnProperty.call(node.getMetadata(), "viewer")) {
+      if (node.getMetadata().viewer) {
         let button = new qx.ui.form.Button("Open Viewer");
         button.setEnabled(node.getMetadata().viewer.port !== null);
         button.addListener("execute", function(e) {

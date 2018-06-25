@@ -781,7 +781,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let nodeMetaData = nodesMetaData[i];
         let node = this.__createNode(nodeMetaData);
         node.setNodeId(nodeMetaData.uuid);
-        if (Object.prototype.hasOwnProperty.call(nodeMetaData, "position")) {
+        if (nodeMetaData.position) {
           this.__addNodeToWorkbench(node, nodeMetaData.position);
         } else {
           this.__addNodeToWorkbench(node);
