@@ -386,28 +386,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           nodeId: nodeBase.getNodeId()
         };
         socket.emit(slotName, data);
-      } else if (nodeBase.getNodeImageId() === "modeler") {
-        console.log("ERRORR");
-        const slotName = "startModeler";
-        let socket = qxapp.wrappers.WebSocket.getInstance();
-        socket.on(slotName, function(val) {
-          if (val["service_uuid"] === nodeBase.getNodeId()) {
-            let portNumber = val["containers"][0]["published_ports"];
-            nodeBase.getMetadata().viewer.port = portNumber;
-          }
-        }, this);
-        socket.emit(slotName, nodeBase.getNodeId());
-      } else if (nodeBase.getNodeImageId() === "jupyter-base-notebook") {
-        console.log("ERRORR");
-        const slotName = "startJupyter";
-        let socket = qxapp.wrappers.WebSocket.getInstance();
-        socket.on(slotName, function(val) {
-          if (val["service_uuid"] === nodeBase.getNodeId()) {
-            let portNumber = val["containers"][0]["published_ports"];
-            nodeBase.getMetadata().viewer.port = portNumber;
-          }
-        }, this);
-        socket.emit(slotName, nodeBase.getNodeId());
       }
 
       const evType = "pointermove";
