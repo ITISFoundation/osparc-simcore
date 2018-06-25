@@ -51,6 +51,7 @@ async def async_request(method, session, url, data=None, timeout=10):
             async with session.post(url, json=data) as response:
                 return await response.json()
 
+# pylint:disable=too-many-branches, too-many-statements
 @comp_backend_routes.post('/start_pipeline')
 async def start_pipeline(request):
     """
@@ -80,7 +81,6 @@ async def start_pipeline(request):
 
     io_files = []
     for node in nodes:
-
         _LOGGER.debug("NODE %s ", node)
 
         node_id = node['uuid']
@@ -93,8 +93,7 @@ async def start_pipeline(request):
 
         task["input"] = node["inputs"]
         task["output"] = node["outputs"]
-        task["image"] = { "name" : node['key'],
-                            "tag"  : node['tag']}
+        task["image"] = {"name" : node['key'], "tag"  : node['tag']}
 
         if is_io_node:
             for ofile in node["outputs"]:
