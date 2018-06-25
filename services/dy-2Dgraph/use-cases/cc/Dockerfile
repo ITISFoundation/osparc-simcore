@@ -75,6 +75,10 @@ RUN jupyter trust ${NOTEBOOK_NAME}
 ENV NOTEBOOK_URL=${NOTEBOOK_NAME}
 # -----------------------------------------------------------------------------
 FROM specialised AS development
+# one can mount the packages
+VOLUME /home/jovyan/packages/packages/simcore-sdk/src \
+    /home/jovyan/packages/packages/s3wrapper/src
+
 ARG JSON_CONFIGURATION_FOLDER=cc-oned
 ARG JSON_CONFIGURATION=cc_config-oned.json
 ENV USE_CASE_CONFIG_FILE=${JSON_CONFIGURATION}
