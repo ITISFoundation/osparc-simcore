@@ -21,6 +21,10 @@ qx.Class.define("qxapp.data.Converters", {
           metadata[field] = data[field];
         }
       });
+      // for dynamic services
+      if (data.viewer) {
+        metadata["viewer"] = data["viewer"];
+      }
       return metadata;
     }
   }

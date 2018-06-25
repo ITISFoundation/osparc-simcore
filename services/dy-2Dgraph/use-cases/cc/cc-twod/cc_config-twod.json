@@ -6,8 +6,7 @@
             "label": "ap",
             "desc": "these are computed data out of a pipeline",
             "type": "folder-url",
-            "value": "link.SIMCORE_NODE_UUID.in_1",
-            "timestamp": "2018-05-23T15:34:53.511Z"
+            "value": "link.SIMCORE_NODE_UUID.in_1"
         }
     ],
     "outputs": [        
