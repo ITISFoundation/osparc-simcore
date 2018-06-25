@@ -34,16 +34,6 @@ RUN pip install --upgrade pip && \
     jupyter nbextension enable hide_input/main && \
     jupyter nbextension enable init_cell/main
 
-# download the simcore_sdk package
-RUN mkdir packages && \
-    cd packages && \
-    git init && \
-    git remote add origin -f https://github.com/ITISFoundation/osparc-simcore.git && \
-    git config core.sparsecheckout true && \
-    echo "packages/simcore-sdk/src/simcore_sdk/*" >> .git/info/sparse-checkout && \
-    echo "packages/s3wrapper/src/s3wrapper/*" >> .git/info/sparse-checkout && \
-    git pull --depth=1 origin master
-
 ENV PYTHONPATH="./packages/packages/simcore-sdk/src:./packages/packages/s3wrapper/src"
 
 COPY --chown=jovyan:users boot.sh boot.sh
@@ -90,4 +80,14 @@ COPY --chown=jovyan:users develdbs3init.py .
 CMD [ "/bin/sh", "boot.sh" ]
 # -----------------------------------------------------------------------------
 FROM specialised AS production
+# download the simcore_sdk package
+RUN mkdir packages && \
+    cd packages && \
+    git init && \
+    git remote add origin -f https://github.com/ITISFoundation/osparc-simcore.git && \
+    git config core.sparsecheckout true && \
+    echo "packages/simcore-sdk/src/simcore_sdk/*" >> .git/info/sparse-checkout && \
+    echo "packages/s3wrapper/src/s3wrapper/*" >> .git/info/sparse-checkout && \
+    git pull --depth=1 origin master
+    
 ENTRYPOINT [ "/bin/sh", "boot.sh" ]
