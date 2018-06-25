@@ -1,4 +1,4 @@
-FROM simcore/services/jupyter-base-notebook:latest AS common
+FROM masu.speag.com/simcore/services/jupyter-base-notebook:1.2 AS common
 
 LABEL maintainer="sanderegg"
 
