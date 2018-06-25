@@ -21,8 +21,8 @@ async def async_request(method, session, url, data=None, timeout=10):
 
 
 
-@registry_routes.get('/repositories')
-async def services(request):
+@registry_routes.get('/get_computational_services')
+async def get_computational_services(request):
     """
     ---
     description: This end-point returns a list of computational services.
@@ -38,6 +38,6 @@ async def services(request):
     """
     _a = request
 
-    repo_list = director_proxy.retrieve_repositories()
+    repo_list = director_proxy.retrieve_computational_services()
 
     return web.json_response(repo_list)

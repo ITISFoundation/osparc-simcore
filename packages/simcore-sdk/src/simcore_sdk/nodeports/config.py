@@ -27,22 +27,3 @@ TYPE_TO_S3_FOLDER_LIST = ["folder-url"]
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 _LOGGER = logging.getLogger(__name__)
 
-# pylint: disable=C0111
-class CommonConfig(object):
-    pass
-class DevelopmentConfig(CommonConfig):
-    LOG_LEVEL = logging.DEBUG
-
-class TestingConfig(CommonConfig):
-    LOG_LEVEL = logging.DEBUG
-
-class ProductionConfig(CommonConfig):
-    LOG_LEVEL = logging.WARNING
-
-CONFIG = {
-    "development": DevelopmentConfig,
-    "testing": TestingConfig,
-    "production": ProductionConfig,
-
-    "default": DevelopmentConfig
-}

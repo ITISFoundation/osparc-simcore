@@ -164,6 +164,9 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
       this.__logModel.addRows([msgLog]);
 
       this.__logModel.reloadData();
+
+      const nFilteredRows = this.__logModel.getFilteredRowCount();
+      this.__logView.scrollCellVisible(0, nFilteredRows);
     },
 
     __addWhoColorTag: function(who) {
