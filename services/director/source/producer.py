@@ -80,7 +80,6 @@ def add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, 
     else:
         docker_service_runtime_parameters["labels"] = {"uuid": service_uuid}
 
-
 def add_network_to_service_runtime_params(docker_service_runtime_parameters, docker_network):
     # pylint: disable=C0103
     if "networks" in docker_service_runtime_parameters:
@@ -90,11 +89,11 @@ def add_network_to_service_runtime_params(docker_service_runtime_parameters, doc
 
 def add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, service_uuid):
     variables = [
-        "POSTGRES_ENDPOINT=172.16.9.89:5432",# + os.environ.get("POSTGRES_ENDPOINT"),
+        "POSTGRES_ENDPOINT=" + os.environ.get("POSTGRES_ENDPOINT"),
         "POSTGRES_USER=" + os.environ.get("POSTGRES_USER"),
         "POSTGRES_PASSWORD=" + os.environ.get("POSTGRES_PASSWORD"),
         "POSTGRES_DB=" + os.environ.get("POSTGRES_DB"),
-        "S3_ENDPOINT=172.16.9.89:9001",# + os.environ.get("S3_ENDPOINT"),
+        "S3_ENDPOINT=" + os.environ.get("S3_ENDPOINT"),
         "S3_ACCESS_KEY=" + os.environ.get("S3_ACCESS_KEY"),
         "S3_SECRET_KEY=" + os.environ.get("S3_SECRET_KEY"),
         "S3_BUCKET_NAME=" + os.environ.get("S3_BUCKET_NAME"),
@@ -225,6 +224,11 @@ def start_service(service_name, service_tag, service_uuid):
         set_service_name(docker_service_runtime_parameters,
             registry_proxy.get_service_sub_name(docker_image_path),
             service_uuid)
+
+        # TODO: SAN this is a brain killer... change services to something better...
+        list_of_networks =  docker_client.networks.list(names=["services_default"])
+        for network in list_of_networks:
+            add_network_to_service_runtime_params(docker_service_runtime_parameters, network)
 
         # let-s start the service
         try:
