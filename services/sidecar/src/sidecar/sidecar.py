@@ -64,7 +64,10 @@ class Sidecar(object):
         if isinstance(port_value, str) and port_value.startswith("link."):
             if port['type'] == 'file-url':
                 _LOGGER.debug('Fetch S3 %s', port_value)
-                object_name = os.path.join(str(self._task.pipeline_id),*port_value.split(".")[1:])
+                #parse the link assuming it is link.id.file.ending
+                _parts = port_value.split(".")
+                object_name = os.path.join(str(self._task.pipeline_id), _parts[1], ".".join(_parts[2:]))
+                #object_name = os.path.join(str(self._task.pipeline_id),*port_value.split(".")[1:])
                 input_file = os.path.join(self._executor.in_dir, port_name)
                 _LOGGER.debug('Downloading from  S3 %s/%s', self._s3.bucket, object_name)
                 success = False
