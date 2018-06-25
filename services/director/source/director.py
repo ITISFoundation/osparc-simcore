@@ -96,9 +96,9 @@ def stop_service():
         _LOGGER.exception("Failed to stop service")
         abort(500)
 
-@APP.route('/list_repositories', methods=['GET'])
-def list_repositories():
-    repos = registry_proxy.get_repo_details()
+@APP.route('/list_computational_services', methods=['GET'])
+def list_computational_services():
+    repos = registry_proxy.list_computational_services()
 
     return json.dumps(repos)
 
