@@ -18,12 +18,12 @@ qx.Class.define("qxapp.data.Store", {
       req.addListener("success", function(e) {
         let requ = e.getTarget();
         const listOfRepositories = JSON.parse(requ.getResponse());
+        console.log("listOfServices", listOfRepositories);
         let services = [];
         for (const key of Object.keys(listOfRepositories)) {
           const repo = listOfRepositories[key];
           const nTags = repo.length;
           for (let i=0; i<nTags; i++) {
-            console.log(i, repo[i]);
             let newMetadata = qxapp.data.Converters.registryToMetadata(repo[i]);
             services.push(newMetadata);
           }
@@ -38,15 +38,13 @@ qx.Class.define("qxapp.data.Store", {
       socket.removeSlot("getInteractiveServices");
       socket.on("getInteractiveServices", function(e) {
         let listOfIntercativeServices = e;
+        console.log("listOfIntercativeServices", listOfIntercativeServices);
         let services = [];
         for (const key of Object.keys(listOfIntercativeServices)) {
           const repo = listOfIntercativeServices[key];
           if (repo["details"].length>0 && repo["details"][0].length>0) {
             const repoData = repo["details"][0][0];
             let newMetadata = qxapp.data.Converters.registryToMetadata(repoData);
-            if ("viewer" in repoData) {
-              newMetadata = repoData["viewer"];
-            }
             services.push(newMetadata);
           }
         }
