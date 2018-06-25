@@ -12,9 +12,15 @@ qx.Class.define("qxapp.data.Store", {
     getBuiltInServices: function() {
       let builtInServices = [{
         "key": "FileManager",
-        "tag": "1.0",
         "name": "File Manager",
+        "tag": "0.0.1",
         "description": "File Manager",
+        "authors": [{
+          "name": "Odei Maiz",
+          "email": "maiz@itis.ethz.ch",
+          "affiliation": "ITIS Foundation"
+        }],
+        "contact": "maiz@itis.ethz.ch",
         "inputs": [],
         "outputs": [{
           "key": "out_1",
