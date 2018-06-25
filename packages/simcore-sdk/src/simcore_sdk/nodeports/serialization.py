@@ -96,13 +96,19 @@ def nodeports_decoder(dct):
     Returns:
         Nodeports,DataItemsList,DataItem -- objects necessary for a complete JSON decoding
     """
-
+    _LOGGER.debug(dct)
     if "version" in dct and "inputs" in dct and "outputs" in dct:
         _LOGGER.debug("Decoding Nodeports json: %s", dct)
         return nodeports.Nodeports(dct["version"], DataItemsList(dct["inputs"]), DataItemsList(dct["outputs"]))
+    
+    # check for dataitem
+    #TODO: SAN this is not good. decoding objects going bottom/up seems strange
     for key in config.DATA_ITEM_KEYS:
+        if key == "timestamp": # optional
+            continue
         if key not in dct:
-            raise exceptions.InvalidProtocolError(dct, "key \"%s\" is missing" % (str(key)))
+            return dct
+            #raise exceptions.InvalidProtocolError(dct, "key \"%s\" is missing" % (str(key)))
     _LOGGER.debug("Decoding Data items json: %s", dct)
     return DataItem(**dct)
 
@@ -119,7 +125,7 @@ class _NodeModelEncoder(json.JSONEncoder):
         _LOGGER.debug("Encoding object: %s", o)
         if isinstance(o, NodeModel):
             _LOGGER.debug("Encoding Node object")
-            return {"version": "0.1", 
+            return {"version": "0.1", #TODO: SAN this will need to be correctly read
                     "inputs": o.input, 
                     "outputs": o.output
                     }
