@@ -39,10 +39,10 @@ class DataItem(_DataItem):
 
         if isinstance(self.value, str) and self.value.startswith("link."):
             link = self.value.split(".")
-            if len(link) != 3:
+            if len(link) < 3:
                 raise exceptions.InvalidProtocolError(self.value, "Invalid link definition: " + str(self.value))
             other_node_uuid = link[1]
-            other_port_key = link[2]
+            other_port_key = "".join(link[2:])
 
             if self.type in config.TYPE_TO_S3_FILE_LIST:
                 # try to fetch from S3 as a file
