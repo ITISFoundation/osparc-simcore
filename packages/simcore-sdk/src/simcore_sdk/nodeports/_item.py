@@ -13,11 +13,19 @@ _DataItem = collections.namedtuple("_DataItem", config.DATA_ITEM_KEYS)
 
 class DataItem(_DataItem):
     """This class encapsulate a Data Item and provide accessors functions"""
-    def __new__(cls, **kwargs):        
-        _LOGGER.debug("Creating new data item with %s", kwargs)
-        if not "timestamp" in kwargs:
-            kwargs["timestamp"]=datetime.datetime.now().isoformat()
-        self = super(DataItem, cls).__new__(cls, **kwargs)
+    def __new__(cls, **kwargs):
+
+        new_kargs = dict.fromkeys(config.DATA_ITEM_KEYS)
+        new_kargs['timestamp'] = datetime.datetime.now().isoformat()
+        for key in config.DATA_ITEM_KEYS:
+            if key not in kwargs:
+                if key != "timestamp":
+                    raise exceptions.InvalidProtocolError(kwargs, "key \"%s\" is missing" % (str(key)))
+            else:
+                new_kargs[key] = kwargs[key]
+
+        _LOGGER.debug("Creating new data item with %s", new_kargs)
+        self = super(DataItem, cls).__new__(cls, **new_kargs)
         self.new_data_cb = None
         self.get_node_from_uuid_cb = None
         return self
@@ -39,10 +47,10 @@ class DataItem(_DataItem):
 
         if isinstance(self.value, str) and self.value.startswith("link."):
             link = self.value.split(".")
-            if len(link) != 3:
+            if len(link) < 3:
                 raise exceptions.InvalidProtocolError(self.value, "Invalid link definition: " + str(self.value))
             other_node_uuid = link[1]
-            other_port_key = link[2]
+            other_port_key = ".".join(link[2:])
 
             if self.type in config.TYPE_TO_S3_FILE_LIST:
                 # try to fetch from S3 as a file

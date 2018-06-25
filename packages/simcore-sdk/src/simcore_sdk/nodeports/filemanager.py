@@ -28,6 +28,7 @@ def __download_fromS3(s3_client, s3_bucket, s3_object_name, file_path):
     _LOGGER.debug('Downloaded from bucket %s, object %s to %s successfully', s3_bucket, s3_object_name, file_path)
 
 def download_folder_from_s3(node_uuid, node_key, folder_name):
+    _LOGGER.debug("Trying to download from S3: node uuid %s, key %s, file name %s", node_uuid, node_key, folder_name)
     s3_object_url =  Path(os.environ.get('SIMCORE_PIPELINE_ID'), node_uuid, node_key).as_posix()
     _LOGGER.debug("Initialise S3 connection")
     s3 = S3Settings()
@@ -49,6 +50,7 @@ def download_folder_from_s3(node_uuid, node_key, folder_name):
 
 
 def download_file_from_S3(node_uuid, node_key, file_name):
+    _LOGGER.debug("Trying to download from S3: node uuid %s, key %s, file name %s", node_uuid, node_key, file_name)
     s3_object_url =  Path(os.environ.get('SIMCORE_PIPELINE_ID'), node_uuid, node_key).as_posix()
     _LOGGER.debug("Initialise S3 connection")
     s3 = S3Settings()

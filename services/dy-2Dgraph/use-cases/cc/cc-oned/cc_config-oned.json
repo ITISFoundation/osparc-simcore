@@ -7,15 +7,17 @@
             "desc": "these are computed data out of a pipeline",
             "type": "file-url",
             "value": "link.SIMCORE_NODE_UUID.in_1",
-            "timestamp": "2018-05-23T15:34:53.511Z"
+            "settings": {
+                "value":"null"
+            },
+            "widget":"stuff"
         },
         {
             "key": "in_2",
             "label": "all results 1Hz",
             "desc": "computed data out of a pipeline",
             "type": "file-url",
-            "value": "link.SIMCORE_NODE_UUID.in_2",
-            "timestamp": "2018-05-23T15:34:53.511Z"
+            "value": "link.SIMCORE_NODE_UUID.in_2"
         }
     ],
     "outputs": [        
