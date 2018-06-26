@@ -658,7 +658,11 @@ qx.Class.define("qxapp.data.Fake", {
             "value": "null"
           }],
           "outputs": [],
-          "settings": []
+          "settings": [],
+          "viewer": {
+            "ip":null,
+            "port":null
+          }
         }],
         "links": [{
           "uuid": qxapp.utils.Utils.uuidv4(),

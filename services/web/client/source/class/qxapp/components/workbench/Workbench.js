@@ -352,7 +352,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __createNode: function(nodeMetaData) {
-      let nodeBase = new qxapp.components.workbench.NodeBase();
+      let nodeBase = new qxapp.components.workbench.NodeBase(nodeMetaData.uuid);
       nodeBase.setMetadata(nodeMetaData);
 
       const imageId = nodeBase.getNodeImageId();
@@ -688,6 +688,16 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __removeNode: function(node) {
+      const imageId = node.getNodeImageId();
+      if (imageId.includes("dynamic")) {
+        const slotName = "stopDynamic";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        let data = {
+          nodeId: node.getNodeId()
+        };
+        socket.emit(slotName, data);
+      }
+
       this.__desktop.remove(node);
       let index = this.__nodes.indexOf(node);
       if (index > -1) {
@@ -879,7 +889,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         this.setCanStart(false);
         this.__logger.error("Workbench", "Failed stopping pipeline");
       }, this);
-      req.send();
+      // req.send();
 
       this.__logger.info("Workbench", "Stopping pipeline. Not yet implemented");
     },
