@@ -79,7 +79,18 @@ test:
 	make run_test
 	make after_test
 
-setup-check: .env .vscode/settings.json
+PLATFORM_VERSION=3.1
+
+push_platform_images:
+	docker login masu.speag.com
+	docker tag services_webserver:latest masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
+	docker push masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
+	docker tag services_sidecar:latest masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
+	docker push masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
+	docker tag services_director:latest masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
+	docker push masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
+  
+  setup-check: .env .vscode/settings.json
 
 .env: .env-devel
 	$(info #####  $< is newer than $@ ####)
@@ -90,3 +101,4 @@ setup-check: .env .vscode/settings.json
 	$(info #####  $< is newer than $@ ####)
 	@diff -uN $@ $<
 	@false
+
