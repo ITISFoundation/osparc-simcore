@@ -83,6 +83,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       buttonContainer.add(widget);
     });
 
+    this.setCanStart(true);
+
     this.addListener("dblclick", function(pointerEvent) {
       // FIXME:
       const navBarHeight = 50;
@@ -127,6 +129,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __pointerPosX: null,
     __pointerPosY: null,
     __selectedItemId: null,
+    __playButton: null,
+    __stopButton: null,
 
     __getShowLoggerButton: function() {
       const icon = "@FontAwesome5Solid/list-alt/32";
@@ -193,39 +197,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __getPlayButton: function() {
       const icon = "@FontAwesome5Solid/play/32";
-      let playButton = new qx.ui.form.Button(null, icon);
+      let playButton = this.__playButton = new qx.ui.form.Button(null, icon);
       playButton.set({
         width: BUTTON_SIZE,
         height: BUTTON_SIZE
       });
 
       playButton.addListener("execute", function() {
-        let socket = qxapp.wrappers.WebSocket.getInstance();
-
-        // callback for incoming logs
-        if (!socket.slotExists("logger")) {
-          socket.on("logger", function(data) {
-            var d = JSON.parse(data);
-            var node = d["Node"];
-            var msg = d["Message"];
-            this.__updateLogger(node, msg);
-          }, this);
-        }
-        socket.emit("logger");
-
-        // callback for incoming progress
-        if (!socket.slotExists("progress")) {
-          socket.on("progress", function(data) {
-            console.log("progress", data);
-            var d = JSON.parse(data);
-            var node = d["Node"];
-            var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
-            this.updateProgress(node, progress);
-          }, this);
-        }
-
         if (this.getCanStart()) {
           this.__startPipeline();
+        } else {
+          this.__logger.info("Can not start pipeline");
         }
       }, this);
 
@@ -234,7 +216,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __getStopButton: function() {
       const icon = "@FontAwesome5Solid/stop-circle/32";
-      let stopButton = new qx.ui.form.Button(null, icon);
+      let stopButton = this.__stopButton = new qx.ui.form.Button(null, icon);
       stopButton.set({
         width: BUTTON_SIZE,
         height: BUTTON_SIZE
@@ -247,7 +229,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __applyCanStart: function(value, old) {
-      console.log("CanStart", value);
+      if (value) {
+        this.__playButton.setVisibility("visible");
+        this.__stopButton.setVisibility("excluded");
+      } else {
+        this.__playButton.setVisibility("excluded");
+        this.__stopButton.setVisibility("visible");
+      }
     },
 
     __getRemoveButton: function() {
@@ -806,9 +794,34 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __startPipeline: function() {
       // ui start pipeline
-      this.__clearProgressData();
+      // this.__clearProgressData();
+
+      let socket = qxapp.wrappers.WebSocket.getInstance();
+
+      // callback for incoming logs
+      if (!socket.slotExists("logger")) {
+        socket.on("logger", function(data) {
+          var d = JSON.parse(data);
+          var node = d["Node"];
+          var msg = d["Message"];
+          this.__updateLogger(node, msg);
+        }, this);
+      }
+      socket.emit("logger");
+
+      // callback for incoming progress
+      if (!socket.slotExists("progress")) {
+        socket.on("progress", function(data) {
+          console.log("progress", data);
+          var d = JSON.parse(data);
+          var node = d["Node"];
+          var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
+          this.updateProgress(node, progress);
+        }, this);
+      }
 
       // post pipeline
+      this.__pipelineId = null;
       let currentPipeline = this.__serializeData();
       console.log(currentPipeline);
       let req = new qx.io.request.Xhr();
@@ -821,13 +834,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         requestData: qx.util.Serializer.toJson(data)
       });
       req.addListener("success", this.__onPipelinesubmitted, this);
+      req.addListener("error", function(e) {
+        this.setCanStart(true);
+        this.__logger.error("Workbench", "Error submitting pipeline");
+      }, this);
+      req.addListener("fail", function(e) {
+        this.setCanStart(true);
+        this.__logger.error("Workbench", "Failed submitting pipeline");
+      }, this);
       req.send();
-
-      // FIXME: do we need this?
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-      socket.emit("logger");
-
-      this.setCanStart(false);
 
       this.__logger.info("Workbench", "Starting pipeline");
     },
@@ -839,19 +854,40 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       console.debug("phase   : ", req.getPhase());
       console.debug("response: ", req.getResponse());
 
-      // FIXME: do we need this?
-      // register for log and progress
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-      socket.emit("register_for_log", "123");
-      socket.emit("register_for_progress", "123");
+      this.setCanStart(false);
+
+      this.__pipelineId = req.getResponse().pipeline_id;
+      this.__logger.debug("Workbench", "Pipeline ID" + this.__pipelineId);
+      this.__logger.info("Workbench", "Pipeline started");
     },
 
     __stopPipeline: function() {
+      let req = new qx.io.request.Xhr();
+      let data = {};
+      data["pipeline_id"] = this.__pipelineId;
+      req.set({
+        url: "/stop_pipeline",
+        method: "POST",
+        requestData: qx.util.Serializer.toJson(data)
+      });
+      req.addListener("success", this.__onPipelineStopped, this);
+      req.addListener("error", function(e) {
+        this.setCanStart(false);
+        this.__logger.error("Workbench", "Error stopping pipeline");
+      }, this);
+      req.addListener("fail", function(e) {
+        this.setCanStart(false);
+        this.__logger.error("Workbench", "Failed stopping pipeline");
+      }, this);
+      req.send();
+
+      this.__logger.info("Workbench", "Stopping pipeline. Not yet implemented");
+    },
+
+    __onPipelineStopped: function(e) {
       this.__clearProgressData();
 
       this.setCanStart(true);
-
-      this.__logger.warn("Workbench", "Stopping pipeline");
     },
 
     __updateLogger: function(nodeId, msg) {
