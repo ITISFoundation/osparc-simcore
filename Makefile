@@ -43,6 +43,9 @@ stack-down:
 	docker stack rm osparc
 	docker swarm leave -f
 
+deploy:
+	docker stack deploy -c services/docker-compose.swarm.yml services --with-registry-auth
+
 pylint:
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 	/bin/bash -c "pylint --rcfile=.pylintrc $(PY_FILES)"
@@ -70,3 +73,14 @@ test:
 	make before_test
 	make run_test
 	make after_test
+
+PLATFORM_VERSION=3.1
+
+push_platform_images:
+	docker login masu.speag.com
+	docker tag services_webserver:latest masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
+	docker push masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
+	docker tag services_sidecar:latest masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
+	docker push masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
+	docker tag services_director:latest masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
+	docker push masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
