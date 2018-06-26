@@ -43,6 +43,9 @@ stack-down:
 	docker stack rm osparc
 	docker swarm leave -f
 
+deploy:
+	docker stack deploy -c services/docker-compose.swarm.yml services --with-registry-auth
+
 pylint:
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 	/bin/bash -c "pylint --rcfile=.pylintrc $(PY_FILES)"
