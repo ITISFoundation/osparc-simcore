@@ -29,6 +29,8 @@ logging.basicConfig(level=logging.DEBUG)
 _LOGGER = get_task_logger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 
+
+# pylint:disable=too-many-instance-attributes
 class Sidecar(object):
     def __init__(self):
         # publish subscribe config

@@ -1,7 +1,6 @@
 """
     Uses socketio and aiohtttp framework
 """
-import asyncio
 import logging
 import os
 
