@@ -638,7 +638,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (port.isInput === false) {
         x += nodeBounds.width;
       }
-      let y = nodeBounds.top + 4 + 33 + 10 + 16/2 + (16+5)*portIdx;
+      let y = nodeBounds.top + 33 + 10 + 16/2 + (16+5)*portIdx;
       return [x, y];
     },
 
@@ -890,6 +890,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         this.__logger.error("Workbench", "Failed stopping pipeline");
       }, this);
       // req.send();
+
+      // temporary solution
+      this.setCanStart(true);
 
       this.__logger.info("Workbench", "Stopping pipeline. Not yet implemented");
     },
