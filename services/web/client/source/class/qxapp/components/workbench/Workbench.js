@@ -889,7 +889,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         this.setCanStart(false);
         this.__logger.error("Workbench", "Failed stopping pipeline");
       }, this);
-      req.send();
+      // req.send();
 
       this.__logger.info("Workbench", "Stopping pipeline. Not yet implemented");
     },
