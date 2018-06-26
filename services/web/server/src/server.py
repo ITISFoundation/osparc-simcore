@@ -1,7 +1,6 @@
 """
     Uses socketio and aiohtttp framework
 """
-import asyncio
 import logging
 import os
 
@@ -25,8 +24,8 @@ logging.basicConfig(
     )
 
 # subscribe to rabbit
-loop = asyncio.get_event_loop()
-loop.create_task(subscribe())
+#loop = asyncio.get_event_loop()
+#loop.create_task(subscribe())
 
 
 def create_app(args=()):
@@ -41,6 +40,9 @@ def create_app(args=()):
 
     app = web.Application()
     SIO.attach(app)
+
+    # subscribe to rabbit
+    app.on_startup.append(subscribe)
 
     # http requests handlers
     async def _index(request):

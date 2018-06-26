@@ -23,7 +23,7 @@ async def on_message(message: aio_pika.IncomingMessage):
         elif data["Channel"] == "Progress":
             await SIO.emit("progress", data = json.dumps(data))
 
-async def subscribe():
+async def subscribe(_app=None):
     connection = await aio_pika.connect(rabbit_broker, connection_attempts=100)
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=1)
