@@ -690,7 +690,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __removeNode: function(node) {
       const imageId = node.getNodeImageId();
       if (imageId.includes("dynamic")) {
-        const slotName = "startDynamic";
+        const slotName = "stopDynamic";
         let socket = qxapp.wrappers.WebSocket.getInstance();
         let data = {
           nodeId: node.getNodeId()
