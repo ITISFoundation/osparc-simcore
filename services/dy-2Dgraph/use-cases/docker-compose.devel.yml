@@ -17,6 +17,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
     volumes: 
+      - ./cc/cc-single-cell/cc_single_cell.ipynb:/home/jovyan/cc_single_cell.ipynb
       - ../../../packages/simcore-sdk/src:/home/jovyan/packages/packages/simcore-sdk/src
       - ../../../packages/s3wrapper/src:/home/jovyan/packages/packages/s3wrapper/src
     depends_on:
@@ -43,6 +44,7 @@ services:
       - postgres
       - minio
     volumes: 
+      - ./cc/cc-oned/cc_oned.ipynb:/home/jovyan/cc_oned.ipynb
       - ../../../packages/simcore-sdk/src:/home/jovyan/packages/packages/simcore-sdk/src
       - ../../../packages/s3wrapper/src:/home/jovyan/packages/packages/s3wrapper/src
   #--------------------------------------------------------------------
@@ -66,6 +68,7 @@ services:
       - postgres
       - minio
     volumes: 
+      - ./cc/cc-twod/cc_2d.ipynb:/home/jovyan/cc_2d.ipynb
       - ../../../packages/simcore-sdk/src:/home/jovyan/packages/packages/simcore-sdk/src
       - ../../../packages/s3wrapper/src:/home/jovyan/packages/packages/s3wrapper/src
   #--------------------------------------------------------------------
