@@ -7,6 +7,7 @@ import docker
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+import tenacity
 from s3wrapper.s3_client import S3Client
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.config.docker import Config as docker_config
@@ -38,6 +39,7 @@ class DockerSettings(object):
         self._config = docker_config()
         self.client = docker.from_env(version='auto')
         self.registry = self._config.registry
+        self.registry_name = self._config.registry_name
         self.registry_user = self._config.user
         self.registry_pwd = self._config.pwd
         self.image_name = ""
@@ -51,6 +53,11 @@ class S3Settings(object):
         self.client = S3Client(endpoint=self._config.endpoint,
             access_key=self._config.access_key, secret_key=self._config.secret_key)
         self.bucket = self._config.bucket_name
+
+        self.__create_bucket()
+
+    @tenacity.retry(wait=tenacity.wait_fixed(2), stop=tenacity.stop_after_attempt(15))
+    def __create_bucket(self):
         self.client.create_bucket(self.bucket)
 
 

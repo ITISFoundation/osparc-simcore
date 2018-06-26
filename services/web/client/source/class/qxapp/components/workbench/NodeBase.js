@@ -4,6 +4,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
   construct: function() {
     this.base();
 
+    const nodeWidth = 200;
     this.set({
       showMinimize: false,
       showMaximize: false,
@@ -11,7 +12,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       showStatusbar: false,
       resizable: false,
       allowMaximize: false,
-      minWidth: 180
+      minWidth: nodeWidth
     });
 
     let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
@@ -38,10 +39,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
 
     let progressBox = new qx.ui.container.Composite(new qx.ui.layout.Basic());
-    progressBox.setMinWidth(160);
+    progressBox.setMinWidth(nodeWidth-20);
 
     this.__progressBar = new qx.ui.indicator.ProgressBar();
-    this.__progressBar.setWidth(160);
+    this.__progressBar.setWidth(nodeWidth-20);
     progressBox.add(this.__progressBar, {
       top: 0,
       left: 0
@@ -238,7 +239,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       label.isInput = isInput;
       label.portType = portData.type;
 
-      label.ui = new qx.ui.basic.Label(portData.label).set({
+      label.ui = new qx.ui.basic.Label(portData.key).set({
         height: 16,
         draggable: true,
         droppable: true
