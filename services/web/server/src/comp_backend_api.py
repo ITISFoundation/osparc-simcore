@@ -4,7 +4,9 @@
 # pylint: disable=C0103
 
 import datetime
-import json
+import logging
+import pprint
+import time
 
 import async_timeout
 from aiohttp import web
@@ -12,19 +14,31 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from comp_backend_worker import celery
+from s3wrapper.s3_client import S3Client
 from simcore_sdk.config.db import Config as db_config
+from simcore_sdk.config.s3 import Config as s3_config
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 
-import pprint
 pp = pprint.PrettyPrinter(indent=4)
+_LOGGER = logging.getLogger(__file__)
 
 # db config
 db_config = db_config()
-db = create_engine(db_config.endpoint, client_encoding='utf8')
+db = create_engine(db_config.endpoint, client_encoding='utf8', connect_args={'connect_timeout': 30})
+
+# TODO the db tables are created here, this only works when postgres is up and running.
+# For now lets just try a couple of times
 Session = sessionmaker(db)
 db_session = Session()
-Base.metadata.create_all(db)
+for i in range(20):
+    try:
+        Base.metadata.create_all(db)
+    # pylint: disable=bare-except
+    except:
+        time.sleep(2)
+        print("oops")
+
 
 comp_backend_routes = web.RouteTableDef()
 
@@ -37,6 +51,7 @@ async def async_request(method, session, url, data=None, timeout=10):
             async with session.post(url, json=data) as response:
                 return await response.json()
 
+# pylint:disable=too-many-branches, too-many-statements
 @comp_backend_routes.post('/start_pipeline')
 async def start_pipeline(request):
     """
@@ -55,32 +70,42 @@ async def start_pipeline(request):
 
     request_data = await request.json()
 
-    pp.pprint(request_data)
+    # with open('mock/SleepersPipeline.json') as f:
+    #     mockup = json.load(f)
 
-    _id = request_data['pipeline_mockup_id']
-
-    with open('mock/SleepersPipeline.json') as f:
-        mockup = json.load(f)
-
-    nodes = mockup['nodes']
-    links = mockup['links']
+    nodes = request_data['nodes']
+    links = request_data['links']
 
     dag_adjacency_list = dict()
     tasks = dict()
+
+    io_files = []
     for node in nodes:
+        _LOGGER.debug("NODE %s ", node)
+
         node_id = node['uuid']
         # find connections
         successor_nodes = []
         task = {}
+        is_io_node = False
+        if node['key'] == 'FileManager':
+            is_io_node = True
+
         task["input"] = node["inputs"]
         task["output"] = node["outputs"]
-        task["image"] = { "name" : node['key'],
-                        "tag"  : node['tag']}
+        task["image"] = {"name" : node['key'], "tag"  : node['tag']}
+
+        if is_io_node:
+            for ofile in node["outputs"]:
+                current_filename_on_s3 = ofile['value']
+                new_filename = node_id +"/" + ofile['key'] # out_1
+                # copy the file
+                io_files.append({ 'from' : current_filename_on_s3, 'to' : new_filename })
 
         for link in links:
             if link['node1Id'] == node_id:
                 successor_node_id = link['node2Id']
-                if successor_node_id not in successor_nodes:
+                if successor_node_id not in successor_nodes and not is_io_node:
                     successor_nodes.append(successor_node_id)
             if link['node2Id'] == node_id:
                 # there might be something coming in
@@ -92,10 +117,11 @@ async def start_pipeline(request):
                     if t['key'] == input_port:
                         t['value'] = 'link.' + predecessor_node_id + "." + output_port
 
-
-        if len(successor_nodes):
+        if not is_io_node:
+            # a node can have an empty successor
+            #if len(successor_nodes):
             dag_adjacency_list[node_id] = successor_nodes
-        tasks[node_id] = task
+            tasks[node_id] = task
 
     pipeline = ComputationalPipeline(dag_adjacency_list=dag_adjacency_list, state=0)
 
@@ -103,7 +129,21 @@ async def start_pipeline(request):
     db_session.flush()
 
     pipeline_id = pipeline.pipeline_id
-    pipeline_name = "mockup"
+
+    # now we know the id, lets copy over data
+    if io_files:
+        _config = s3_config()
+        s3_client = S3Client(endpoint=_config.endpoint,
+            access_key=_config.access_key, secret_key=_config.secret_key)
+        for io_file in io_files:
+            _from = io_file['from']
+            _to = str(pipeline_id) + "/" + io_file['to']
+            _LOGGER.debug("COPYING from %s to %s", _from, _to )
+
+            s3_client.copy_object(_config.bucket_name, _to, _from)
+
+
+    pipeline_name = "request_data"
     internal_id = 1
 
     for node_id in tasks:

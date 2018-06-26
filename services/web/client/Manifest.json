@@ -17,7 +17,7 @@
 ],
 
     "version" : "1.0.0",
-    "qooxdoo-range": "6.0.0-alpha"
+    "qooxdoo-range": "^6.0.0"
   },
 
   "provides" :

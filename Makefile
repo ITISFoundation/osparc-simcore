@@ -4,7 +4,7 @@
 
 PY_FILES = $(strip $(shell find services packages -iname '*.py'))
 
-export PYTHONPATH=${PWD}/packages/s3wrapper/src
+export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
 build-devel:
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml build
@@ -26,15 +26,25 @@ up:
 
 up-swarm:
 	docker swarm init
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml up
+	docker stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml services
 
 down:
 	docker-compose -f services/docker-compose.yml down
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml down
 
 down-swarm:
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.deploy.yml down
+	docker stack rm services
 	docker swarm leave -f
+
+stack-up:
+	docker swarm init
+
+stack-down:
+	docker stack rm osparc
+	docker swarm leave -f
+
+deploy:
+	docker stack deploy -c services/docker-compose.swarm.yml services --with-registry-auth
 
 pylint:
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
@@ -63,3 +73,14 @@ test:
 	make before_test
 	make run_test
 	make after_test
+
+PLATFORM_VERSION=3.1
+
+push_platform_images:
+	docker login masu.speag.com
+	docker tag services_webserver:latest masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
+	docker push masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
+	docker tag services_sidecar:latest masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
+	docker push masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
+	docker tag services_director:latest masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
+	docker push masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
