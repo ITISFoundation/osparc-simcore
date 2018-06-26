@@ -19,7 +19,7 @@ def create_item(item_type, item_value, timestamp=None):
 
 def test_default_item():
     #pylint: disable=W0612
-    with pytest.raises(TypeError, message="Expecting TypeError") as excinfo:
+    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError") as excinfo:
         item = DataItem() 
 
 def test_item_with_optional_timestamp():
