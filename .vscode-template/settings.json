@@ -22,6 +22,6 @@
       "editor.tabSize" : 4
     },
     "[makefile]": {
-      "editor.insertSpaces": false,
+      "editor.insertSpaces": false
     }
 }
