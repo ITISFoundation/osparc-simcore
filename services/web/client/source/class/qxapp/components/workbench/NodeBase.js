@@ -1,7 +1,7 @@
 qx.Class.define("qxapp.components.workbench.NodeBase", {
   extend: qx.ui.window.Window,
 
-  construct: function() {
+  construct: function(uuid) {
     this.base();
 
     const nodeWidth = 200;
@@ -59,7 +59,11 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     this.__inputPorts = [];
     this.__outputPorts = [];
-    this.setNodeId(qxapp.utils.Utils.uuidv4());
+    if (uuid === undefined) {
+      this.setNodeId(qxapp.utils.Utils.uuidv4());
+    } else {
+      this.setNodeId(uuid);
+    }
   },
 
   properties: {

@@ -352,7 +352,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __createNode: function(nodeMetaData) {
-      let nodeBase = new qxapp.components.workbench.NodeBase();
+      let nodeBase = new qxapp.components.workbench.NodeBase(nodeMetaData.uuid);
       nodeBase.setMetadata(nodeMetaData);
 
       const imageId = nodeBase.getNodeImageId();
