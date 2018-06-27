@@ -317,31 +317,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       node.addListener("dblclick", function(e) {
         if (node.getMetadata().key === "FileManager") {
-          let win = new qx.ui.window.Window(node.getMetadata().name).set({
-            width: 800,
-            height: 600,
-            minWidth: 400,
-            minHeight: 400,
-            modal: true,
-            showMinimize: false,
-            layout: new qx.ui.layout.Canvas()
-          });
-          win.moveTo(50, 50);
-
           let fileManager = new qxapp.components.workbench.widgets.FileManager();
-          win.add(fileManager, {
-            left: 0,
-            top: 0,
-            right: 0,
-            bottom: 0
-          });
           fileManager.addListener("FileSelected", function(data) {
             node.getMetadata().outputs[0].value = data.getData().filePath;
             node.setProgress(100);
-            win.close();
+            fileManager.close();
           }, this);
 
-          this.addWindowToDesktop(win);
+          fileManager.moveTo(100, 100);
+          fileManager.open();
         } else {
           this.fireDataEvent("NodeDoubleClicked", node);
         }
