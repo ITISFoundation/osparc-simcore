@@ -74,7 +74,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.1
+PLATFORM_VERSION=3.2
 
 push_platform_images:
 	docker login masu.speag.com
