@@ -120,21 +120,27 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
 
     __updateCompatibleList: function() {
       let newData = [];
-      for (let i = 0; i < this.__allServices.length; i++) {
-        if (this.__contextPort.isInput === true) {
-          for (let j = 0; j < this.__allServices[i].outputs.length; j++) {
-            if (this.__allServices[i].outputs[j].type === this.__contextPort.portType) {
-              newData.push(this.__allServices[i].name);
-              break;
+      if (this.__contextNodeId !== null && this.__contextPort !== null) {
+        for (let i = 0; i < this.__allServices.length; i++) {
+          if (this.__contextPort.isInput === true) {
+            for (let j = 0; j < this.__allServices[i].outputs.length; j++) {
+              if (this.__allServices[i].outputs[j].type === this.__contextPort.portType) {
+                newData.push(this.__allServices[i].name);
+                break;
+              }
+            }
+          } else {
+            for (let j = 0; j < this.__allServices[i].inputs.length; j++) {
+              if (this.__allServices[i].inputs[j].type === this.__contextPort.portType) {
+                newData.push(this.__allServices[i].name);
+                break;
+              }
             }
           }
-        } else {
-          for (let j = 0; j < this.__allServices[i].inputs.length; j++) {
-            if (this.__allServices[i].inputs[j].type === this.__contextPort.portType) {
-              newData.push(this.__allServices[i].name);
-              break;
-            }
-          }
+        }
+      } else {
+        for (let i = 0; i < this.__allServices.length; i++) {
+          newData.push(this.__allServices[i].name);
         }
       }
       this.__setNewData(newData);
@@ -146,19 +152,8 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     },
 
     __addNewData: function(newData) {
-      let names = [];
       this.__allServices = this.__allServices.concat(newData);
-      for (let i = 0; i < this.__allServices.length; i++) {
-        names.push(this.__allServices[i].name);
-      }
-      let rawData = new qx.data.Array(names);
-      this.__controller.setModel(rawData);
-    },
-
-    __keyEvent: function(keyEvent) {
-      if (keyEvent.getKeyIdentifier() === "Enter") {
-        this.__onAddService();
-      }
+      this.__updateCompatibleList();
     },
 
     __onAddService: function() {

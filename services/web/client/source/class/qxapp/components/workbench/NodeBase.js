@@ -158,6 +158,25 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     addSettings: function(settings) {
       let form = this.__settingsForm = new qxapp.components.form.Auto(settings);
+      this.__settingsForm.addListener("changeData", function(e) {
+        let settingsForm = e.getData();
+        for (var settingKey in settingsForm) {
+          if (this.getMetadata().inputs) {
+            for (let i=0; i<this.getMetadata().inputs.length; i++) {
+              if (settingKey === this.getMetadata().inputs[i].key) {
+                this.getMetadata().inputs[i].value = settingsForm[settingKey];
+              }
+            }
+          }
+          if (this.getMetadata().settings) {
+            for (let i=0; i<this.getMetadata().settings.length; i++) {
+              if (settingKey === this.getMetadata().settings[i].key) {
+                this.getMetadata().settings[i].value = settingsForm[settingKey];
+              }
+            }
+          }
+        }
+      }, this);
       this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
     },
 
