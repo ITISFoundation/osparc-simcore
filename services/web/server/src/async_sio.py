@@ -47,16 +47,23 @@ async def get_interactive_services_handler(sid, data):
 
 @SIO.on('startDynamic')
 async def start_dynamic_service(sid, data):
-    serviceName = data['serviceName']
-    nodeId = data['nodeId']
-    _LOGGER.debug("client %s requests start %s", sid, serviceName)
-    result = interactive_services_manager.start_service(sid, serviceName, nodeId)
+    service_name = data['serviceName']
+    node_id = data['nodeId']
+    _LOGGER.debug("client %s requests start %s", sid, service_name)
+    result = interactive_services_manager.start_service(sid, service_name, node_id)
     # TODO: Connection failure raises exception that is not treated, which stops the webserver
     # Add mechanism to handle these situations (retry, abandon...)
     try:
         await SIO.emit('startDynamic', data=result, room=sid)
     except IOError as err:
         _LOGGER.exception(err)
+
+
+@SIO.on('stopDynamic')
+def stop_dynamic_service(sid, data):
+    node_id = data['nodeId']
+    _LOGGER.debug("client %s requests stop %s", sid, node_id)
+    interactive_services_manager.stop_service(sid, node_id)
 
 
 @SIO.on('startModeler')

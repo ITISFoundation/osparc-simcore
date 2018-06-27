@@ -160,6 +160,14 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
     },
 
     __addTreeItem: function(tree, data) {
+      for (let i=0; i<tree.getChildren().length; i++) {
+        let treeExsItem = tree.getChildren()[i];
+        if (treeExsItem.getLabel() === data.name) {
+          console.log("returning existing tree item");
+          return treeExsItem;
+        }
+      }
+
       let treeItem = this.__configureTreeItem(new qx.ui.tree.TreeFile(), data.name, data);
       tree.add(treeItem);
 

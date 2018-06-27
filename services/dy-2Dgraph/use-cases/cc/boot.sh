@@ -7,7 +7,7 @@ then
     echo "Received result node uuid of $result"
     export SIMCORE_NODE_UUID="$result"
 fi
-
+jupyter trust ${NOTEBOOK_URL}
 start-notebook.sh \
     --NotebookApp.token='' \
     --NotebookApp.tornado_settings="{\"headers\":{\"Content-Security-Policy\":\"frame-ancestors+'self'+http://osparc01.speag.com:9081;+report-uri/api/security/csp-report\"}}" \
