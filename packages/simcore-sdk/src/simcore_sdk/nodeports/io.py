@@ -26,7 +26,8 @@ class IO(object):
     def __get_node_from_db(self, node_uuid):        
         _LOGGER.debug("Reading from database for node uuid %s", node_uuid)
         try:
-            return self._db.session.query(NodeModel).filter(NodeModel.node_id==node_uuid).one()                
+            #TODO: SAN the call to first must be replaced by one() as soon as the pipeline ID issue is resolved
+            return self._db.session.query(NodeModel).filter(NodeModel.node_id==node_uuid).first()                
         except exc.NoResultFound:
             _LOGGER.exception("the node id %s was not found", node_uuid)
         except exc.MultipleResultsFound:
