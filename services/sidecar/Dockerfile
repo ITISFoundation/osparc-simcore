@@ -30,4 +30,4 @@ COPY packages /work/packages
 
 # NO clue why this does not work without explicitly specifying
 ENV PYTHONPATH="/work/packages/simcore-sdk/src:/work/packages/s3wrapper/src"
-ENTRYPOINT celery -A sidecar worker -c 2 --loglevel=info
+ENTRYPOINT celery -A sidecar worker -c 8 --loglevel=info

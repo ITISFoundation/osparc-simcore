@@ -29,8 +29,6 @@ logging.basicConfig(level=logging.DEBUG)
 _LOGGER = get_task_logger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 
-
-# pylint:disable=too-many-instance-attributes
 class Sidecar(object):
     def __init__(self):
         # publish subscribe config
@@ -50,12 +48,6 @@ class Sidecar(object):
 
         # executor options
         self._executor = ExecutorSettings()
-
-        self.connection = pika.BlockingConnection(self._pika.parameters)
-
-        self.channel = self.connection.channel()
-        self.channel.exchange_declare(exchange=self._pika.log_channel, exchange_type='fanout')
-        self.channel.exchange_declare(exchange=self._pika.progress_channel, exchange_type='fanout')
 
     def _create_shared_folders(self):
         for folder in [self._executor.in_dir, self._executor.log_dir, self._executor.out_dir]:
@@ -147,7 +139,11 @@ class Sidecar(object):
         self._docker.client.images.pull(self._docker.image_name, tag=self._docker.image_tag)
 
     def _bg_job(self, task, log_file):
+        connection = pika.BlockingConnection(self._pika.parameters)
 
+        channel = connection.channel()
+        channel.exchange_declare(exchange=self._pika.log_channel, exchange_type='fanout', auto_delete=True)
+        channel.exchange_declare(exchange=self._pika.progress_channel, exchange_type='fanout', auto_delete=True)
 
         with open(log_file) as file_:
             # Go to the end of file
@@ -165,15 +161,15 @@ class Sidecar(object):
                         prog_data = {"Channel" : "Progress", "Node": task.node_id, "Progress" : progress}
                         _LOGGER.debug('PROGRESS %s', progress)
                         prog_body = json.dumps(prog_data)
-                        self.channel.basic_publish(exchange=self._pika.progress_channel, routing_key='', body=prog_body)
+                        channel.basic_publish(exchange=self._pika.progress_channel, routing_key='', body=prog_body)
                     else:
                         log_data = {"Channel" : "Log", "Node": task.node_id, "Message" : clean_line}
                         _LOGGER.debug('LOG %s', clean_line)
                         log_body = json.dumps(log_data)
-                        self.channel.basic_publish(exchange=self._pika.log_channel, routing_key='', body=log_body)
+                        channel.basic_publish(exchange=self._pika.log_channel, routing_key='', body=log_body)
 
 
-        #connection.close()
+        connection.close()
 
     def _process_task_output(self):
         """ There will be some files in the /output
@@ -217,7 +213,7 @@ class Sidecar(object):
                         ntry = 3
                         trial = 0
                         while not success and trial < ntry:
-                            _LOGGER.debug("POSTRO pushes to S3 %s try %s from %s", object_name, ntry, trial)
+                            _LOGGER.debug("POSTRO pushes to S3 %s try %s from %s", object_name, trial, ntry)
                             success = self._s3.client.upload_file(self._s3.bucket, object_name, filepath)
                             trial = trial + 1
 
