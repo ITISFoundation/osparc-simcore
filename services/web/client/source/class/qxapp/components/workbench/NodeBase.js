@@ -83,6 +83,11 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     propsWidget: {
       check: "qxapp.components.form.renderer.PropForm"
+    },
+
+    viewerButton: {
+      init: null,
+      check: "qx.ui.form.Button"
     }
   },
 
@@ -147,6 +152,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         });
         let props = metaData.inputs.concat(metaData.settings);
         this.addSettings(props);
+        this.addViewerButton(metaData);
         this.addInputs(metaData.inputs);
         this.addOutputs(metaData.outputs);
       }
@@ -178,6 +184,14 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         }
       }, this);
       this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
+    },
+
+    addViewerButton: function(metadata) {
+      if (metadata.viewer) {
+        let button = new qx.ui.form.Button("Open Viewer");
+        button.setEnabled(metadata.viewer.port !== null);
+        this.setViewerButton(button);
+      }
     },
 
     __addInputPort: function(input) {
