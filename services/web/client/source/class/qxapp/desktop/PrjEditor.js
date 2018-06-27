@@ -123,9 +123,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       win.setShowMinimize(false);
       win.setLayout(new qx.ui.layout.VBox(5));
       let iframe = new qx.ui.embed.Iframe().set({
-        width: 900,
+        width: 1050,
         height: 700,
-        minWidth: 500,
+        minWidth: 600,
         minHeight: 500,
         source: url,
         decorator : null
