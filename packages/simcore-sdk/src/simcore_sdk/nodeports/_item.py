@@ -14,7 +14,6 @@ _DataItem = collections.namedtuple("_DataItem", config.DATA_ITEM_KEYS)
 class DataItem(_DataItem):
     """This class encapsulate a Data Item and provide accessors functions"""
     def __new__(cls, **kwargs):
-
         new_kargs = dict.fromkeys(config.DATA_ITEM_KEYS)
         new_kargs['timestamp'] = datetime.datetime.now().isoformat()
         for key in config.DATA_ITEM_KEYS:
@@ -45,36 +44,9 @@ class DataItem(_DataItem):
             return None
         _LOGGER.debug("Got data item with value %s", self.value)
 
-        if isinstance(self.value, str) and self.value.startswith("link."):
-            link = self.value.split(".")
-            if len(link) < 3:
-                raise exceptions.InvalidProtocolError(self.value, "Invalid link definition: " + str(self.value))
-            other_node_uuid = link[1]
-            other_port_key = ".".join(link[2:])
-
-            if self.type in config.TYPE_TO_S3_FILE_LIST:
-                # try to fetch from S3 as a file
-                _LOGGER.debug("Fetch file from S3 %s", self.value)
-                return filemanager.download_file_from_S3(node_uuid=other_node_uuid, 
-                                                        node_key=other_port_key, 
-                                                        file_name=self.key)
-            elif self.type in config.TYPE_TO_S3_FOLDER_LIST:
-                # try to fetch from S3 as a folder
-                _LOGGER.debug("Fetch folder from S3 %s", self.value)
-                return filemanager.download_folder_from_s3(node_uuid=other_node_uuid, 
-                                                            node_key=other_port_key, 
-                                                            folder_name=self.key)
-            else:
-                # try to fetch link from database node
-                _LOGGER.debug("Fetch value from other node %s", self.value)
-                if not self.get_node_from_uuid_cb:
-                    raise exceptions.NodeportsException("callback to get other node information is not set")
-
-                other_nodeports = self.get_node_from_uuid_cb(other_node_uuid) #pylint: disable=not-callable
-                _LOGGER.debug("Received node from DB %s, now returning value", other_nodeports)
-                return other_nodeports.get(other_port_key)
-
-
+        if self.__is_value_link(self.value):
+            return self.__get_value_from_link()
+        # the value is not a link, let's directly convert it to the right type
         return config.TYPE_TO_PYTHON_TYPE_MAP[self.type](self.value)
 
     def set(self, value):
@@ -94,3 +66,41 @@ class DataItem(_DataItem):
             if self.new_data_cb:
                 _LOGGER.debug("calling new data callback")
                 self.new_data_cb(new_data) #pylint: disable=not-callable
+
+    def __is_value_link(self, value):
+        return isinstance(value, str) and value.startswith(config.LINK_PREFIX)
+    
+    def __get_value_from_link(self):
+        other_node_uuid, other_port_key = self.__decode_link(self.value)
+            
+        if self.type in config.TYPE_TO_S3_FILE_LIST:
+            # try to fetch from S3 as a file
+            _LOGGER.debug("Fetch file from S3 %s", self.value)
+            return filemanager.download_file_from_S3(node_uuid=other_node_uuid, 
+                                                    node_key=other_port_key, 
+                                                    file_name=self.key)
+        elif self.type in config.TYPE_TO_S3_FOLDER_LIST:
+            # try to fetch from S3 as a folder
+            _LOGGER.debug("Fetch folder from S3 %s", self.value)
+            return filemanager.download_folder_from_s3(node_uuid=other_node_uuid, 
+                                                        node_key=other_port_key, 
+                                                        folder_name=self.key)
+        else:
+            # try to fetch link from database node
+            _LOGGER.debug("Fetch value from other node %s", self.value)
+            if not self.get_node_from_uuid_cb:
+                raise exceptions.NodeportsException("callback to get other node information is not set")
+
+            other_nodeports = self.get_node_from_uuid_cb(other_node_uuid) #pylint: disable=not-callable
+            _LOGGER.debug("Received node from DB %s, now returning value", other_nodeports)
+            return other_nodeports.get(other_port_key)
+
+    def __decode_link(self, encoded_link):
+        link = encoded_link.split(".")
+        if len(link) < 3:
+            raise exceptions.InvalidProtocolError(encoded_link, "Invalid link definition: " + str(encoded_link))
+        other_node_uuid = link[1]
+        other_port_key = ".".join(link[2:])
+        return other_node_uuid, other_port_key
+
+    
