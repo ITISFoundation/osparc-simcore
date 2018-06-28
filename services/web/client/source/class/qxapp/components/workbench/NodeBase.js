@@ -262,10 +262,25 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       label.isInput = isInput;
       label.portType = portData.type;
 
-      label.ui = new qx.ui.basic.Label(portData.key).set({
+      let icon = null;
+      switch (portData.type) {
+        case "file-url":
+          icon = "@FontAwesome5Solid/file/16";
+          break;
+        case "folder-url":
+          icon = "@FontAwesome5Solid/folder/16";
+          break;
+        default:
+          icon = "@FontAwesome5Solid/edit/16";
+          break;
+      }
+      const alignX = (isInput) ? "left" : "right";
+      label.ui = new qx.ui.basic.Atom(portData.key, icon).set({
         height: 16,
         draggable: true,
-        droppable: true
+        droppable: true,
+        iconPosition: alignX,
+        alignX: alignX
       });
 
       var tooltip = new qx.ui.tooltip.ToolTip(portData.key, icon);
