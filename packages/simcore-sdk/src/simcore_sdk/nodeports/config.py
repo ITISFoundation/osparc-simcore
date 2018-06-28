@@ -11,9 +11,8 @@ DATA_ITEM_KEYS = ["key",
                 "value", 
                 "timestamp"]
 # allowed types
-TYPE_TO_PYTHON_TYPE_MAP = {"int":int, 
-                            "integer":int, 
-                            "float":float, 
+TYPE_TO_PYTHON_TYPE_MAP = {"integer":int, 
+                            "number":float, 
                             "file-url":str, 
                             "bool":bool, 
                             "string":str, 
