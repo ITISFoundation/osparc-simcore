@@ -26,14 +26,12 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     });
 
     let inputsBox = new qx.ui.layout.VBox(5);
-    inputsBox.setAlignX("left");
     this.__inputPortsUI = new qx.ui.container.Composite(inputsBox);
     inputsOutputsLayout.add(this.__inputPortsUI, {
       width: "50%"
     });
 
     let outputsBox = new qx.ui.layout.VBox(5);
-    outputsBox.setAlignX("right");
     this.__outputPortsUI = new qx.ui.container.Composite(outputsBox);
     inputsOutputsLayout.add(this.__outputPortsUI, {
       width: "50%"
@@ -53,7 +51,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     this.__progressLabel = new qx.ui.basic.Label("0%");
     progressBox.add(this.__progressLabel, {
       top: 3,
-      left: nodeWidth/2 - 10
+      left: nodeWidth/2 - 20
     });
 
     this.add(progressBox);
@@ -267,13 +265,13 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       let icon = null;
       switch (portData.type) {
         case "file-url":
-          icon = "@FontAwesome5Solid/file/16";
+          icon = "@FontAwesome5Solid/file/14";
           break;
         case "folder-url":
-          icon = "@FontAwesome5Solid/folder/16";
+          icon = "@FontAwesome5Solid/folder/14";
           break;
         default:
-          icon = "@FontAwesome5Solid/edit/16";
+          icon = "@FontAwesome5Solid/edit/14";
           break;
       }
       const alignX = (isInput) ? "left" : "right";
@@ -282,7 +280,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         draggable: true,
         droppable: true,
         iconPosition: alignX,
-        alignX: alignX
+        alignX: alignX,
+        allowGrowX: false
       });
 
       var tooltip = new qx.ui.tooltip.ToolTip(portData.key, icon);
