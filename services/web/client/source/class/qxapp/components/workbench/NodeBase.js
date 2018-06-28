@@ -4,15 +4,17 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
   construct: function(uuid) {
     this.base();
 
-    const nodeWidth = 200;
+    const nodeWidth = 240;
     this.set({
+      // appearance: "window-small-cap",
       showMinimize: false,
       showMaximize: false,
       showClose: false,
       showStatusbar: false,
       resizable: false,
       allowMaximize: false,
-      minWidth: nodeWidth
+      minWidth: nodeWidth,
+      maxWidth: nodeWidth
     });
 
     let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
@@ -51,7 +53,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     this.__progressLabel = new qx.ui.basic.Label("0%");
     progressBox.add(this.__progressLabel, {
       top: 3,
-      left: 70
+      left: nodeWidth/2 - 10
     });
 
     this.add(progressBox);
