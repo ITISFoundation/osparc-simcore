@@ -268,6 +268,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         droppable: true
       });
 
+      var tooltip = new qx.ui.tooltip.ToolTip(portData.key, icon);
+      tooltip.setShowTimeout(50);
+      label.ui.setToolTip(tooltip);
+
       [
         ["dragstart", "LinkDragStart"],
         ["dragover", "LinkDragOver"],
