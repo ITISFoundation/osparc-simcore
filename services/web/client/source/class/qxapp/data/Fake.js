@@ -958,7 +958,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "in_1",
           "label": "csv-url",
           "description": "csv-url",
-          "type": "csv-url",
+          "type": "file-url",
           "defaultValue": null
         }],
         "outputs": [],
