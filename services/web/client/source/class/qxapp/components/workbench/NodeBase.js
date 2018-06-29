@@ -6,7 +6,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     const nodeWidth = 240;
     this.set({
-      // appearance: "window-small-cap",
+      appearance: "window-small-cap",
       showMinimize: false,
       showMaximize: false,
       showClose: false,
