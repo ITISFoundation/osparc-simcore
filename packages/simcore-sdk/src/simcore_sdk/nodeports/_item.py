@@ -12,6 +12,20 @@ _LOGGER = logging.getLogger(__name__)
 
 _DataItem = collections.namedtuple("_DataItem", config.DATA_ITEM_KEYS)
 
+def __is_value_link(value):
+    return isinstance(value, str) and value.startswith(config.LINK_PREFIX)
+
+def __decode_link(encoded_link):
+    link = encoded_link.split(".")
+    if len(link) < 3:
+        raise exceptions.InvalidProtocolError(encoded_link, "Invalid link definition: " + str(encoded_link))
+    other_node_uuid = link[1]
+    other_port_key = ".".join(link[2:])
+    return other_node_uuid, other_port_key
+
+def __encode_link(node_uuid, port_key):
+    return config.LINK_PREFIX + str(node_uuid) + "." + port_key
+
 class DataItem(_DataItem):
     """This class encapsulate a Data Item and provide accessors functions"""
     def __new__(cls, **kwargs):
@@ -45,7 +59,7 @@ class DataItem(_DataItem):
             return None
         _LOGGER.debug("Got data item with value %s", self.value)
 
-        if self.__is_value_link(self.value):
+        if __is_value_link(self.value):
             return self.__get_value_from_link()
         # the value is not a link, let's directly convert it to the right type
         return config.TYPE_TO_PYTHON_TYPE_MAP[self.type](self.value)
@@ -76,7 +90,7 @@ class DataItem(_DataItem):
             _LOGGER.debug("file path %s will be uploaded to s3", value)
             filemanager.upload_file_to_s3(node_uuid=node_uuid, node_key=self.key, file_path=file_path)
             _LOGGER.debug("file path %s uploaded to s3 from node %s and key %s", value, node_uuid, self.key)
-            new_value = self.__encode_link(node_uuid=node_uuid, port_key=self.key)
+            new_value = __encode_link(node_uuid=node_uuid, port_key=self.key)
         
         elif self.type in config.TYPE_TO_S3_FOLDER_LIST:
             folder_path = Path(new_value)
@@ -86,7 +100,7 @@ class DataItem(_DataItem):
             _LOGGER.debug("folder %s will be uploaded to s3", value)
             filemanager.upload_folder_to_s3(node_uuid=node_uuid, node_key=self.key, folder_path=folder_path)
             _LOGGER.debug("folder %s uploaded to s3 from node %s and key %s", value, node_uuid, self.key)
-            new_value = self.__encode_link(node_uuid=node_uuid, port_key=self.key)
+            new_value = __encode_link(node_uuid=node_uuid, port_key=self.key)
 
         data_dct["value"] = new_value
         data_dct["timestamp"] = datetime.datetime.utcnow().isoformat()
@@ -96,11 +110,10 @@ class DataItem(_DataItem):
             self.new_data_cb(new_data) #pylint: disable=not-callable
             _LOGGER.debug("database updated")
 
-    def __is_value_link(self, value):
-        return isinstance(value, str) and value.startswith(config.LINK_PREFIX)
+    
     
     def __get_value_from_link(self):
-        node_uuid, port_key = self.__decode_link(self.value)
+        node_uuid, port_key = __decode_link(self.value)
             
         if self.type in config.TYPE_TO_S3_FILE_LIST:
             # try to fetch from S3 as a file
@@ -124,13 +137,4 @@ class DataItem(_DataItem):
             _LOGGER.debug("Received node from DB %s, now returning value", other_nodeports)
             return other_nodeports.get(port_key)
 
-    def __decode_link(self, encoded_link):
-        link = encoded_link.split(".")
-        if len(link) < 3:
-            raise exceptions.InvalidProtocolError(encoded_link, "Invalid link definition: " + str(encoded_link))
-        other_node_uuid = link[1]
-        other_port_key = ".".join(link[2:])
-        return other_node_uuid, other_port_key
-
-    def __encode_link(self, node_uuid, port_key):
-        return config.LINK_PREFIX + str(node_uuid) + "." + port_key
+    
