@@ -6,13 +6,18 @@ PY_FILES = $(strip $(shell find services packages -iname '*.py'))
 
 export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
+all:
+	@echo 'run `make build-devel` to build your dev environment'
+	@echo 'run `make up-devel` to start your dev environment.'
+	@echo 'see Makefile for further targets'
+
 build-devel:
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml build
 
 rebuild-devel:
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
 
-up-devel:
+up-devel: setup-check
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml up
 
 build:
@@ -84,3 +89,16 @@ push_platform_images:
 	docker push masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
 	docker tag services_director:latest masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
 	docker push masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
+  
+  setup-check: .env .vscode/settings.json
+
+.env: .env-devel
+	$(info #####  $< is newer than $@ ####)
+	@diff -uN $@ $<
+	@false
+
+.vscode/settings.json: .vscode-template/settings.json
+	$(info #####  $< is newer than $@ ####)
+	@diff -uN $@ $<
+	@false
+
