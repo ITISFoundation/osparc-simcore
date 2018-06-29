@@ -579,7 +579,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let y1;
       let x2;
       let y2;
-      const portPos = this.__getLinkPoint(node, port);
+      const portPos = node.getLinkPoint(port);
       // FIXME:
       const navBarHeight = 50;
       this.__pointerPosX = pointerEvent.getViewportLeft() - this.getBounds().left;
@@ -615,17 +615,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__pointerPosY = null;
     },
 
-    __getLinkPoint: function(node, port) {
-      const nodeBounds = node.getCurrentBounds();
-      const portIdx = node.getPortIndex(port.portId);
-      let x = nodeBounds.left;
-      if (port.isInput === false) {
-        x += nodeBounds.width;
-      }
-      let y = nodeBounds.top + 33 + 10 + 16/2 + (16+5)*portIdx;
-      return [x, y];
-    },
-
     __getLinkPoints: function(node1, port1, node2, port2) {
       let p1 = null;
       let p2 = null;
@@ -633,8 +622,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (port1.isInput) {
         [node1, port1, node2, port2] = [node2, port2, node1, port1];
       }
-      p1 = this.__getLinkPoint(node1, port1);
-      p2 = this.__getLinkPoint(node2, port2);
+      p1 = node1.getLinkPoint(port1);
+      p2 = node2.getLinkPoint(port2);
       // hack to place the arrow-head properly
       p2[0] -= 6;
       return [p1, p2];

@@ -32,6 +32,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
 
     let store = qxapp.data.Store.getInstance();
     this.__allServices = store.getBuiltInServices();
+    // this.__allServices = this.__allServices.concat(qxapp.data.Fake.getFakeServices());
     store.addListener("servicesRegistered", e => {
       this.__addNewData(e.getData());
     }, this);

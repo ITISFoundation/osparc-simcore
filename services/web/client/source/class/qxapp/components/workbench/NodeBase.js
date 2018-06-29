@@ -1,37 +1,39 @@
+const nodeWidth = 240;
+const portHeight = 16;
+
 qx.Class.define("qxapp.components.workbench.NodeBase", {
   extend: qx.ui.window.Window,
 
   construct: function(uuid) {
     this.base();
 
-    const nodeWidth = 200;
     this.set({
+      appearance: "window-small-cap",
       showMinimize: false,
       showMaximize: false,
       showClose: false,
       showStatusbar: false,
       resizable: false,
       allowMaximize: false,
-      minWidth: nodeWidth
+      minWidth: nodeWidth,
+      maxWidth: nodeWidth
     });
 
     let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
     this.setLayout(nodeLayout);
 
-    let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
+    let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
     this.add(inputsOutputsLayout, {
       flex: 1
     });
 
     let inputsBox = new qx.ui.layout.VBox(5);
-    inputsBox.setAlignX("left");
     this.__inputPortsUI = new qx.ui.container.Composite(inputsBox);
     inputsOutputsLayout.add(this.__inputPortsUI, {
       width: "50%"
     });
 
     let outputsBox = new qx.ui.layout.VBox(5);
-    outputsBox.setAlignX("right");
     this.__outputPortsUI = new qx.ui.container.Composite(outputsBox);
     inputsOutputsLayout.add(this.__outputPortsUI, {
       width: "50%"
@@ -51,7 +53,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     this.__progressLabel = new qx.ui.basic.Label("0%");
     progressBox.add(this.__progressLabel, {
       top: 3,
-      left: 70
+      left: nodeWidth/2 - 20
     });
 
     this.add(progressBox);
@@ -123,7 +125,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       }
     },
 
-    getCurrentBounds: function() {
+    __getCurrentBounds: function() {
       let bounds = this.getBounds();
       let cel = this.getContentElement();
       if (cel) {
@@ -214,22 +216,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return null;
     },
 
-    getPortIndex: function(portId) {
-      const nInPorts = this.getInputPorts().length;
-      for (let i = 0; i < nInPorts; i++) {
-        if (this.getInputPorts()[i].portId === portId) {
-          return i;
-        }
-      }
-      const nOutPorts = this.getOutputPorts().length;
-      for (let i = 0; i < nOutPorts; i++) {
-        if (this.getOutputPorts()[i].portId === portId) {
-          return i;
-        }
-      }
-      return 0;
-    },
-
     addInput: function(inputData) {
       let label = this.__createPort(true, inputData);
       this.__addInputPort(label);
@@ -262,11 +248,31 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       label.isInput = isInput;
       label.portType = portData.type;
 
-      label.ui = new qx.ui.basic.Label(portData.key).set({
-        height: 16,
+      let icon = null;
+      switch (portData.type) {
+        case "file-url":
+          icon = "@FontAwesome5Solid/file/" + (portHeight-2).toString();
+          break;
+        case "folder-url":
+          icon = "@FontAwesome5Solid/folder/" + (portHeight-2).toString();
+          break;
+        default:
+          icon = "@FontAwesome5Solid/edit/" + (portHeight-2).toString();
+          break;
+      }
+      const alignX = (isInput) ? "left" : "right";
+      label.ui = new qx.ui.basic.Atom(portData.key, icon).set({
+        height: portHeight,
         draggable: true,
-        droppable: true
+        droppable: true,
+        iconPosition: alignX,
+        alignX: alignX,
+        allowGrowX: false
       });
+
+      var tooltip = new qx.ui.tooltip.ToolTip(portData.key, icon);
+      tooltip.setShowTimeout(50);
+      label.ui.setToolTip(tooltip);
 
       [
         ["dragstart", "LinkDragStart"],
@@ -284,6 +290,28 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         }, this);
       }, this);
       return label;
+    },
+
+    getLinkPoint: function(port) {
+      const nodeBounds = this.__getCurrentBounds();
+      let x = nodeBounds.left;
+      if (port.isInput === false) {
+        x += nodeBounds.width;
+      }
+      const captionHeight = this.__childControls.captionbar.getBounds().height;
+      const inputOutputs = this.getChildren()[0];
+      const inputPorts = inputOutputs.getChildren()[0].getChildren();
+      const outputPorts = inputOutputs.getChildren()[1].getChildren();
+      const ports = inputPorts.concat(outputPorts);
+      let portBounds;
+      for (let i=0; i<ports.length; i++) {
+        if (port.portId === ports[i].getLabel()) {
+          portBounds = ports[i].getBounds();
+          break;
+        }
+      }
+      let y = nodeBounds.top + captionHeight + 10 + portBounds.top + portBounds.height/2;
+      return [x, y];
     },
 
     setProgress: function(progress) {
