@@ -88,12 +88,6 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
     },
 
     __getObjLists: function() {
-      /*
-      const objects = qxapp.data.Fake.getObjectList();
-      for (let i=0; i<objects.length; i++) {
-        this.__addTreeItem(objects[i]);
-      }
-      */
       let socket = qxapp.wrappers.WebSocket.getInstance();
       socket.removeSlot("listObjects");
       socket.on("listObjects", function(data) {
