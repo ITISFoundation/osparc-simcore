@@ -121,7 +121,7 @@ async def retrieve_url_for_file(sid, data):
 
 @SIO.on('listObjects')
 async def list_S3_objects(sid, data):
-    _LOGGER.debug("client %s requests S3 objects in %s", sid, data)
+    _LOGGER.debug("client %s requests objects in storage. Extra argument %s", sid, data)
     _config = s3_config()
 
     s3_client = S3Client(endpoint=_config.endpoint,
@@ -130,18 +130,10 @@ async def list_S3_objects(sid, data):
     objects = s3_client.list_objects_v2(_config.bucket_name)
     for obj in objects:
         dataOut = {}
-        dataOut['name'] = obj.object_name
+        dataOut['path'] = obj.bucket_name + '/' + obj.object_name
         dataOut['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
         dataOut['size'] = obj.size
-        await SIO.emit('listObjectsPub', data=dataOut, room=sid)
-
-    #objects = s3_client.list_objects_v2(data)
-    #for obj in objects:
-    #    dataOut = {}
-    #    dataOut['name'] = obj.object_name
-    #    dataOut['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
-    #    dataOut['size'] = obj.size
-    #    await SIO.emit('listObjectsUser', data=dataOut, room=sid)
+        await SIO.emit('listObjects', data=dataOut, room=sid)
 
 
 @SIO.on('disconnect')
