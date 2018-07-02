@@ -76,7 +76,6 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
   members: {
     __mainTree: null,
     __selectBtn: null,
-    __selectFolderBtn: null,
 
     __reloadTree: function() {
       this.__mainTree.resetRoot();
