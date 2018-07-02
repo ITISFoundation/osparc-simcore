@@ -243,7 +243,6 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
 
     __selectionChanged: function() {
       let selectedItem = this.__mainTree.getSelection();
-      console.log(selectedItem[0].path);
       this.__selectBtn.setEnabled("path" in selectedItem[0]);
     },
 
