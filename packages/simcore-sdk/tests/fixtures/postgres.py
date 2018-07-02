@@ -1,4 +1,5 @@
 import logging
+import os
 
 import psycopg2
 import pytest
@@ -45,6 +46,11 @@ def engine(docker_ip, docker_services, request):
     endpoint = 'postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}'.format(
         user=user, password=password, host=host, port=port, dbname=dbname)
     engine = create_engine(endpoint, client_encoding='utf8')
+
+    os.environ["POSTGRES_ENDPOINT"]="{host}:{port}".format(host=host, port=port)
+    os.environ["POSTGRES_USER"]="user"
+    os.environ["POSTGRES_PASSWORD"]="pwd"
+    os.environ["POSTGRES_DB"]="test"
 
     def fin():
         engine.dispose()

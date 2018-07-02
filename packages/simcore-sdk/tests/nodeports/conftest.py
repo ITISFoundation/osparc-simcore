@@ -19,7 +19,7 @@ def docker_compose_file(pytestconfig): # pylint:disable=unused-argument
     return my_path
 
 
-def set_configuration(docker_ip, engine, session, json_configuration):
+def set_configuration(engine, session, json_configuration):
     node_uuid = uuid.uuid4()
     json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", str(node_uuid))
     configuration = json.loads(json_configuration)
@@ -36,17 +36,12 @@ def set_configuration(docker_ip, engine, session, json_configuration):
 
     # set up access to database
     os.environ["SIMCORE_NODE_UUID"]=str(node_uuid)
-    os.environ["SIMCORE_PIPELINE_ID"]=str(new_Pipeline.pipeline_id)
-
-    os.environ["POSTGRES_ENDPOINT"]=docker_ip+":5432"
-    os.environ["POSTGRES_USER"]="user"
-    os.environ["POSTGRES_PASSWORD"]="pwd"
-    os.environ["POSTGRES_DB"]="test"
+    os.environ["SIMCORE_PIPELINE_ID"]=str(new_Pipeline.pipeline_id)    
 
     return engine, session, new_Pipeline.pipeline_id, node_uuid
 
 @pytest.fixture()
-def default_nodeports_configuration(docker_ip, engine, session):
+def default_nodeports_configuration(engine, session):
     """initialise nodeports with default configuration file
     """
     # prepare database with default configuration
@@ -54,11 +49,11 @@ def default_nodeports_configuration(docker_ip, engine, session):
     with open(default_config_path) as config_file:
         json_configuration = config_file.read()
     
-    return set_configuration(docker_ip, engine, session, json_configuration)
+    return set_configuration(engine, session, json_configuration)
 
 @pytest.fixture()
-def special_nodeports_configuration(docker_ip, engine, session):
+def special_nodeports_configuration(engine, session):
     def create_special_config(configuration):
-        return set_configuration(docker_ip, engine, session, json.dumps(configuration))
+        return set_configuration(engine, session, json.dumps(configuration))
         
     return create_special_config
