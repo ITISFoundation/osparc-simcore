@@ -202,7 +202,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
         this.__uploadFile(file, url);
       }, this);
       const data = {
-        bucketName: qxapp.data.Fake.getUsername(),
+        bucketName: qxapp.data.Fake.getS3PublicBucketName(),
         fileName: file.name
       };
       socket.emit("presignedUrl", data);
