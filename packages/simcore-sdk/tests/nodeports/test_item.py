@@ -78,7 +78,7 @@ def test_invalid_value_type():
 def test_set_new_value():
     import mock
     mock_method = mock.Mock()
-    item = create_item("int", "null")
+    item = create_item("integer", "null")
     item.new_data_cb = mock_method
     assert item.get() is None
     item.set(26)
