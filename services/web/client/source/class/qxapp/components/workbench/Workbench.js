@@ -75,7 +75,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       right: 20
     });
     [
-      this.__getPlusMenuButton(),
+      this.__getPlusButton(),
       this.__getRemoveButton(),
       this.__getPlayButton(),
       this.__getStopButton()
