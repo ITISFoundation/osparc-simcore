@@ -38,7 +38,7 @@ class InvalidKeyError(NodeportsException):
 class InvalidItemTypeError(NodeportsException):
     """Item type incorrect"""
     def __init__(self, item_type, item_value):
-        msg = "Invalid item type, value of %s should be a %s type" % (item_value, item_type)
+        msg = "Invalid item type, %s is set as being a %s type" % (item_value, item_type)
         super(InvalidItemTypeError, self).__init__(msg)
         self.item_type = item_type
         self.item_value = item_value
