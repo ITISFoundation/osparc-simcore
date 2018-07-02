@@ -24,19 +24,9 @@ def save_node_to_json(node):
     return node_json_config
 
 def create_node_from_json(json_config):
-    node = json.loads(json_config, object_hook=__nodemodel_decoder)
+    node_configuration = json.loads(json_config)
+    node = NodeModel(input=node_configuration["inputs"], output=node_configuration["outputs"])
     return node
-
-def __nodemodel_decoder(dct):
-    if "version" in dct and "inputs" in dct and "outputs" in dct:
-        _LOGGER.debug("Decoding Nodeports json: %s", dct)
-        return NodeModel(input=dct["inputs"], output=dct["outputs"])
-        #return NodeModel(tag=dct["version"], inputs=dct["inputs"], outputs=dct["outputs"])
-    # for key in config.DATA_ITEM_KEYS:
-    #     if key not in dct:
-    #         raise exceptions.InvalidProtocolError(dct)
-    # _LOGGER.debug("Decoding Data items json: %s", dct)
-    return dct
 
 class _NodeModelEncoder(json.JSONEncoder):
     def default(self, o): # pylint: disable=E0202

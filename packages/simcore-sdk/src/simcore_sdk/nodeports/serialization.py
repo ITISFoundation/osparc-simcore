@@ -7,7 +7,6 @@ from simcore_sdk.nodeports._itemslist import DataItemsList
 from simcore_sdk.nodeports._item import DataItem
 from simcore_sdk.nodeports import exceptions
 from simcore_sdk.nodeports import config
-from simcore_sdk.models.pipeline_models import ComputationalTask as NodeModel
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,6 +30,7 @@ def create_from_json(io_obj, auto_read=False, auto_write=False):
     _LOGGER.debug("Creating Nodeports object with io object: %s, auto read %s and auto write %s", io_obj, auto_read, auto_write)
     if not io_obj:
         raise exceptions.NodeportsException("io object empty, this is not allowed")
+    
     nodeports_obj = json.loads(io_obj.get_ports_configuration(), object_hook=nodeports_decoder)
     nodeports_obj.io_obj = io_obj
     nodeports_obj.autoread = auto_read
