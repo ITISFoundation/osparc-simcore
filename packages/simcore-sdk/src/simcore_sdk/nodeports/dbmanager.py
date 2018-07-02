@@ -44,7 +44,7 @@ class _NodeModelEncoder(json.JSONEncoder):
         _LOGGER.debug("Encoding object using defaults")
         return json.JSONEncoder.default(self, o)
 
-class IO(object):
+class DBManager(object):
     def __init__(self):
         self._db = DbSettings()            
 
