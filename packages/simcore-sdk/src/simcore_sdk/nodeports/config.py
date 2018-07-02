@@ -1,7 +1,7 @@
 """Takes care of the configurations.
 """
 import logging
-from distutils.util import strtobool
+from distutils.util import strtobool # pylint: disable=no-name-in-module
 
 # defined by JSON schema
 DATA_ITEM_KEYS = ["key", 
