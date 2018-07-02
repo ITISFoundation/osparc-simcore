@@ -128,12 +128,14 @@ async def list_S3_objects(sid, data):
         access_key=_config.access_key, secret_key=_config.secret_key)
 
     objects = s3_client.list_objects_v2(_config.bucket_name)
+    dataOut = []
     for obj in objects:
-        dataOut = {}
-        dataOut['path'] = obj.bucket_name + '/' + obj.object_name
-        dataOut['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
-        dataOut['size'] = obj.size
-        await SIO.emit('listObjects', data=dataOut, room=sid)
+        objInfo = {}
+        objInfo['path'] = obj.bucket_name + '/' + obj.object_name
+        objInfo['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
+        objInfo['size'] = obj.size
+        dataOut.append(objInfo)
+    await SIO.emit('listObjects', data=dataOut, room=sid)
 
 
 @SIO.on('disconnect')
