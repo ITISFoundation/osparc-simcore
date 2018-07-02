@@ -60,9 +60,9 @@ class DataItem(_DataItem):
         _LOGGER.debug("Got data item with value %s", self.value)
 
         if is_value_link(self.value):
-            return self.__get_value_from_link()
+            return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["type"](self.__get_value_from_link())
         # the value is not a link, let's directly convert it to the right type
-        return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value)
+        return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["type"](config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value))
 
     def set(self, value):
         """sets the data to the underlying port
