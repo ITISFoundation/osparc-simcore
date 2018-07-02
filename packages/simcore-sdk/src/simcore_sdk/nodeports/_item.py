@@ -86,7 +86,7 @@ class DataItem(_DataItem):
             file_path = Path(new_value)
             if not file_path.exists() or not file_path.is_file():
                 raise exceptions.InvalidItemTypeError(self.type, value)
-            node_uuid = os.environ.get('SIMCORE_NODE_UUID')
+            node_uuid = os.environ.get('SIMCORE_NODE_UUID', default="undefined")
             _LOGGER.debug("file path %s will be uploaded to s3", value)
             filemanager.upload_file_to_s3(node_uuid=node_uuid, node_key=self.key, file_path=file_path)
             _LOGGER.debug("file path %s uploaded to s3 from node %s and key %s", value, node_uuid, self.key)
@@ -96,7 +96,7 @@ class DataItem(_DataItem):
             folder_path = Path(new_value)
             if not folder_path.exists() or not folder_path.is_dir():
                 raise exceptions.InvalidItemTypeError(self.type, value)
-            node_uuid = os.environ.get('SIMCORE_NODE_UUID')
+            node_uuid = os.environ.get('SIMCORE_NODE_UUID', default="undefined")
             _LOGGER.debug("folder %s will be uploaded to s3", value)
             filemanager.upload_folder_to_s3(node_uuid=node_uuid, node_key=self.key, folder_path=folder_path)
             _LOGGER.debug("folder %s uploaded to s3 from node %s and key %s", value, node_uuid, self.key)
