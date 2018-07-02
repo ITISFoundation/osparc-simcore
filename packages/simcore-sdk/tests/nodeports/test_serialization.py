@@ -15,7 +15,7 @@ def test_default_json_decoding(default_nodeports_configuration):
     assert PORTS.inputs[1].key == "in_5"
     assert PORTS.inputs[1].label == "some number"
     assert PORTS.inputs[1].desc == "numbering things"
-    assert PORTS.inputs[1].type == "int"
+    assert PORTS.inputs[1].type == "integer"
     assert PORTS.inputs[1].value == "666"
     assert PORTS.inputs[1].timestamp == "2018-05-23T15:34:53.511Z"
 
