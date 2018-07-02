@@ -24,7 +24,7 @@ def test_port_value_setters(special_nodeports_configuration): # pylint: disable=
         "key": "out_15",
         "label": "additional data",
         "desc": "here some additional data",
-        "type": "int",
+        "type": "integer",
         "value": "null",
         "timestamp": "2018-05-22T19:34:53.511Z"
     })
@@ -36,7 +36,7 @@ def test_port_value_setters(special_nodeports_configuration): # pylint: disable=
     PORTS.outputs["out_15"].set(26)
     assert PORTS.outputs["out_15"].get() == 26
 
-@pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
+#@pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
 def test_adding_new_ports(special_nodeports_configuration):
     import helpers
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
@@ -51,7 +51,7 @@ def test_adding_new_ports(special_nodeports_configuration):
         "key": "in_15",
         "label": "additional data",
         "desc": "here some additional data",
-        "type": "int",
+        "type": "integer",
         "value": "15",
         "timestamp": "2018-05-22T19:34:53.511Z"
     })
@@ -61,7 +61,7 @@ def test_adding_new_ports(special_nodeports_configuration):
     assert PORTS.inputs[0].key == "in_15"
     assert PORTS.inputs[0].label == "additional data"
     assert PORTS.inputs[0].desc == "here some additional data"
-    assert PORTS.inputs[0].type == "int"
+    assert PORTS.inputs[0].type == "integer"
     assert PORTS.inputs[0].value == "15"
     assert PORTS.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
@@ -81,7 +81,7 @@ def test_adding_new_ports(special_nodeports_configuration):
     assert PORTS.inputs[0].key == "in_15"
     assert PORTS.inputs[0].label == "additional data"
     assert PORTS.inputs[0].desc == "here some additional data"
-    assert PORTS.inputs[0].type == "int"
+    assert PORTS.inputs[0].type == "integer"
     assert PORTS.inputs[0].value == "15"
     assert PORTS.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
     # # new output
@@ -93,7 +93,7 @@ def test_adding_new_ports(special_nodeports_configuration):
     assert PORTS.outputs[0].value == "null"
     assert PORTS.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
-@pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
+#@pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
 def test_removing_ports(special_nodeports_configuration):
     import helpers    
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
@@ -102,7 +102,7 @@ def test_removing_ports(special_nodeports_configuration):
         "key": "in_15",
         "label": "additional data",
         "desc": "here some additional data",
-        "type": "int",
+        "type": "integer",
         "value": "15",
         "timestamp": "2018-05-22T19:34:53.511Z"
     })
@@ -110,7 +110,7 @@ def test_removing_ports(special_nodeports_configuration):
         "key": "in_17",
         "label": "additional data",
         "desc": "here some additional data",
-        "type": "int",
+        "type": "integer",
         "value": "15",
         "timestamp": "2018-05-22T19:34:53.511Z"
     })
@@ -118,7 +118,7 @@ def test_removing_ports(special_nodeports_configuration):
         "key": "out_15",
         "label": "additional data",
         "desc": "here some additional data",
-        "type": "int",
+        "type": "integer",
         "value": "15",
         "timestamp": "2018-05-22T19:34:53.511Z"
     })
@@ -126,7 +126,7 @@ def test_removing_ports(special_nodeports_configuration):
         "key": "out_17",
         "label": "additional data",
         "desc": "here some additional data",
-        "type": "int",
+        "type": "integer",
         "value": "15",
         "timestamp": "2018-05-22T19:34:53.511Z"
     })
@@ -144,7 +144,7 @@ def test_removing_ports(special_nodeports_configuration):
     assert PORTS.inputs[0].key == "in_17"
     assert PORTS.inputs[0].label == "additional data"
     assert PORTS.inputs[0].desc == "here some additional data"
-    assert PORTS.inputs[0].type == "int"
+    assert PORTS.inputs[0].type == "integer"
     assert PORTS.inputs[0].value == "15"
     assert PORTS.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
@@ -157,7 +157,7 @@ def test_removing_ports(special_nodeports_configuration):
     assert PORTS.outputs[0].key == "out_15"
     assert PORTS.outputs[0].label == "additional data"
     assert PORTS.outputs[0].desc == "here some additional data"
-    assert PORTS.outputs[0].type == "int"
+    assert PORTS.outputs[0].type == "integer"
     assert PORTS.outputs[0].value == "15"
     assert PORTS.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
@@ -175,7 +175,7 @@ def test_changing_inputs_error(default_nodeports_configuration): # pylint: disab
     new_input = DataItem(key="dummy_1", 
                          label="new label", 
                          desc="new description", 
-                         type="int", 
+                         type="integer", 
                          value="233", 
                          timestamp="2018-06-04T09:46:43:343")
     with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
@@ -196,7 +196,7 @@ def test_changing_outputs_error(default_nodeports_configuration): # pylint: disa
     new_output = DataItem(key="dummy_1", 
                           label="new label", 
                           desc="new description", 
-                          type="int", 
+                          type="integer", 
                           value="233", 
                           timestamp="2018-06-04T09:46:43:343")
      

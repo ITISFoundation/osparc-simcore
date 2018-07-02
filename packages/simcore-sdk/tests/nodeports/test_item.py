@@ -70,7 +70,7 @@ def test_invalid_type():
     assert "Invalid protocol used" in str(excinfo.value)
 
 def test_invalid_value_type():
-    item = create_item("int", "not an integer")
+    item = create_item("integer", "not an integer")
     #pylint: disable=W0612
     with pytest.raises(ValueError, message="Expecting InvalidProtocolError") as excinfo:
         item.get()
@@ -83,4 +83,4 @@ def test_set_new_value():
     assert item.get() is None
     item.set(26)
     
-    mock_method.assert_called_with(create_item("int", "26", mock.ANY))
+    mock_method.assert_called_with(create_item("integer", "26", mock.ANY))
