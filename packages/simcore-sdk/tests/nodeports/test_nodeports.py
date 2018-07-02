@@ -2,6 +2,7 @@
 #pylint: disable=W0212
 #pylint: disable=C0111
 import pytest
+from pathlib import Path
 
 def test_access_with_key(default_nodeports_configuration): # pylint: disable=W0613, W0621
     from simcore_sdk.nodeports.nodeports import PORTS
@@ -17,14 +18,28 @@ def test_port_value_getters(default_nodeports_configuration): # pylint: disable=
     assert PORTS.inputs["in_5"].get() == 666
     assert PORTS.outputs["out_1"].get() is None
 
-def test_port_value_setters(special_nodeports_configuration): # pylint: disable=W0613, W0621
+@pytest.mark.parametrize("item_type, item_value", [
+    ("integer", 26),
+    ("integer", 0),
+    ("integer", -52),
+    ("number", -746.4748),
+    ("number", 0.0),
+    ("number", 4566.11235),
+    #("file-url", __file__, "link.undefined.a key"),
+    ("bool", False),    
+    ("bool", True),
+    ("string", "test-string"),
+    ("string", ""),
+    #("folder-url", str(Path(__file__).parent), "link.undefined.a key")
+])
+def test_port_value_setters(special_nodeports_configuration, item_type, item_value): # pylint: disable=W0613, W0621
     import helpers
     special_config = helpers.get_empty_config() #pylint: disable=E1101
     special_config["outputs"].append({
         "key": "out_15",
         "label": "additional data",
         "desc": "here some additional data",
-        "type": "integer",
+        "type": item_type,
         "value": "null",
         "timestamp": "2018-05-22T19:34:53.511Z"
     })
@@ -33,8 +48,9 @@ def test_port_value_setters(special_nodeports_configuration): # pylint: disable=
 
     assert PORTS.outputs["out_15"].get() is None
 
-    PORTS.outputs["out_15"].set(26)
-    assert PORTS.outputs["out_15"].get() == 26
+    PORTS.outputs["out_15"].set(item_value)
+    assert PORTS.outputs["out_15"].value == str(item_value)
+    assert PORTS.outputs["out_15"].get() == item_value
 
 #@pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
 def test_adding_new_ports(special_nodeports_configuration):

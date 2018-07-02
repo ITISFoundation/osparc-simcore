@@ -1,7 +1,7 @@
 """Takes care of the configurations.
 """
 import logging
-
+from distutils.util import strtobool
 
 # defined by JSON schema
 DATA_ITEM_KEYS = ["key", 
@@ -11,12 +11,13 @@ DATA_ITEM_KEYS = ["key",
                 "value", 
                 "timestamp"]
 # allowed types
-TYPE_TO_PYTHON_TYPE_MAP = {"integer":int, 
-                            "number":float, 
-                            "file-url":str, 
-                            "bool":bool, 
-                            "string":str, 
-                            "folder-url":str}
+TYPE_TO_PYTHON_TYPE_MAP = {"integer":{"type":int, "converter":int}, 
+                            "number":{"type":float, "converter":float}, 
+                            "file-url":{"type":str, "converter":str}, 
+                            "bool":{"type":bool, "converter":strtobool}, 
+                            "string":{"type":str, "converter":str}, 
+                            "folder-url":{"type":str, "converter":str}
+                            }
 # S3 stored information
 TYPE_TO_S3_FILE_LIST = ["file-url"]
 TYPE_TO_S3_FOLDER_LIST = ["folder-url"]
