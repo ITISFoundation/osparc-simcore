@@ -38,13 +38,12 @@ def s3_client(docker_ip, docker_services): # pylint:disable=redefined-outer-name
     response = requests.get(url)
     assert response.status_code == 403
     
-    os.environ["S3_ENDPOINT"] = "localhost:9000"
-    os.environ["S3_ACCESS_KEY"] = "s3access"
-    os.environ["S3_SECRET_KEY"] = "s3secret"
-    
     endpoint = '{ip}:{port}'.format(ip=docker_ip, port=docker_services.port_for('minio', 9000))
     access_key = "s3access"
     secret_key = "s3secret"
+    os.environ["S3_ENDPOINT"] = endpoint
+    os.environ["S3_ACCESS_KEY"] = "s3access"
+    os.environ["S3_SECRET_KEY"] = "s3secret"
     secure = False
     return S3Client(endpoint, access_key, secret_key, secure)
 
