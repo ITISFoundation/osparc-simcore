@@ -62,7 +62,7 @@ class DataItem(_DataItem):
         if is_value_link(self.value):
             return self.__get_value_from_link()
         # the value is not a link, let's directly convert it to the right type
-        return config.TYPE_TO_PYTHON_TYPE_MAP[self.type](self.value)
+        return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value)
 
     def set(self, value):
         """sets the data to the underlying port
@@ -74,7 +74,7 @@ class DataItem(_DataItem):
         # let's create a new data if necessary
         data_dct = self._asdict()
         # try to guess the type and check the type set fits this (there can be more than one possibility, e.g. string)
-        possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type)]
+        possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
         _LOGGER.debug("possible types are for value %s are %s", value, possible_types)
         if not self.type in possible_types:
             raise exceptions.InvalidItemTypeError(self.type, value)
