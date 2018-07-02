@@ -114,9 +114,9 @@ async def retrieve_url_for_file(sid, data):
     #result = minioClient.presigned_put_object(data["bucketName"], data["fileName"])
     # Response error is still possible since internally presigned does get
     # bucket location.
-    dataOut = {}
-    dataOut["url"] = url
-    await SIO.emit('presignedUrl', data=dataOut, room=sid)
+    data_out = {}
+    data_out["url"] = url
+    await SIO.emit('presignedUrl', data=data_out, room=sid)
 
 
 @SIO.on('listObjects')
@@ -128,14 +128,14 @@ async def list_S3_objects(sid, data):
         access_key=_config.access_key, secret_key=_config.secret_key)
 
     objects = s3_client.list_objects_v2(_config.bucket_name)
-    dataOut = []
+    data_out = []
     for obj in objects:
-        objInfo = {}
-        objInfo['path'] = obj.bucket_name + '/' + obj.object_name
-        objInfo['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
-        objInfo['size'] = obj.size
-        dataOut.append(objInfo)
-    await SIO.emit('listObjects', data=dataOut, room=sid)
+        obj_info = {}
+        obj_info['path'] = obj.bucket_name + '/' + obj.object_name
+        obj_info['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
+        obj_info['size'] = obj.size
+        data_out.append(obj_info)
+    await SIO.emit('listObjects', data=data_out, room=sid)
 
 
 @SIO.on('disconnect')
