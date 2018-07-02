@@ -134,7 +134,7 @@ def test_folder_integrity(special_nodeports_configuration, bucket): # pylint: di
         assert filecmp.cmp(original_files[i], downloaded_files[i])
     
 
-#@pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
+@pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
 def test_adding_new_ports(special_nodeports_configuration):
     import helpers
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
@@ -191,7 +191,7 @@ def test_adding_new_ports(special_nodeports_configuration):
     assert PORTS.outputs[0].value == "null"
     assert PORTS.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
 
-#@pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
+@pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
 def test_removing_ports(special_nodeports_configuration):
     import helpers    
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
