@@ -93,4 +93,4 @@ def upload_folder_to_s3(node_uuid, node_key, folder_path):
     return s3_object_base_url
 
 def __encode_s3_url(node_uuid, node_key):
-    return Path(os.environ.get('SIMCORE_PIPELINE_ID'), node_uuid, node_key).as_posix()
+    return Path(os.environ.get('SIMCORE_PIPELINE_ID', default="undefined"), node_uuid, node_key).as_posix()
