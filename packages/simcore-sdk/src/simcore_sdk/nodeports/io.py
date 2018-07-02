@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 
 from sqlalchemy import create_engine
@@ -8,7 +9,6 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.models.pipeline_models import ComputationalTask as NodeModel
-from simcore_sdk.nodeports import serialization
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,6 +18,41 @@ class DbSettings(object):
         self.db = create_engine(self._db_config.endpoint, client_encoding='utf8')
         self.Session = sessionmaker(self.db)
         self.session = self.Session()
+
+def save_node_to_json(node):
+    node_json_config = json.dumps(node, cls=_NodeModelEncoder)
+    return node_json_config
+
+def create_node_from_json(json_config):
+    node = json.loads(json_config, object_hook=__nodemodel_decoder)
+    return node
+
+def __nodemodel_decoder(dct):
+    if "version" in dct and "inputs" in dct and "outputs" in dct:
+        _LOGGER.debug("Decoding Nodeports json: %s", dct)
+        return NodeModel(input=dct["inputs"], output=dct["outputs"])
+        #return NodeModel(tag=dct["version"], inputs=dct["inputs"], outputs=dct["outputs"])
+    # for key in config.DATA_ITEM_KEYS:
+    #     if key not in dct:
+    #         raise exceptions.InvalidProtocolError(dct)
+    # _LOGGER.debug("Decoding Data items json: %s", dct)
+    return dct
+
+class _NodeModelEncoder(json.JSONEncoder):
+    def default(self, o): # pylint: disable=E0202
+        _LOGGER.debug("Encoding object: %s", o)
+        if isinstance(o, NodeModel):
+            _LOGGER.debug("Encoding Node object")
+            return {"version": "0.1", #TODO: SAN this will need to be correctly read
+                    "inputs": o.input, 
+                    "outputs": o.output
+                    }
+            # return {"version": o.tag, 
+            #         "inputs": o.inputs, 
+            #         "outputs": o.outputs
+            #         }
+        _LOGGER.debug("Encoding object using defaults")
+        return json.JSONEncoder.default(self, o)
 
 class IO(object):
     def __init__(self):
@@ -38,14 +73,14 @@ class IO(object):
         node = self.__get_node_from_db(node_uuid)
         if set_pipeline_id:
             os.environ["SIMCORE_PIPELINE_ID"]=str(node.pipeline_id)
-        node_json_config = serialization.save_node_to_json(node)
+        node_json_config = save_node_to_json(node)
         _LOGGER.debug("Found and converted to json")
         return node_json_config
 
     def __write_configuration_to_db(self, json_configuration):
         _LOGGER.debug("Writing to database")
 
-        updated_node = serialization.create_node_from_json(json_configuration)
+        updated_node = create_node_from_json(json_configuration)
         node = self.__get_node_from_db(node_uuid=os.environ.get('SIMCORE_NODE_UUID'))        
         
         if node.input != updated_node.input:

@@ -50,7 +50,7 @@ def default_nodeports_configuration(engine, session):
     """initialise nodeports with default configuration file
     """
     # prepare database with default configuration
-    default_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), r"../../src/simcore_sdk/config/connection_config.json")
+    default_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), r"connection_config.json")
     with open(default_config_path) as config_file:
         json_configuration = config_file.read()
     
