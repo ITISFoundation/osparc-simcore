@@ -1,5 +1,4 @@
 import logging
-import os
 
 import psycopg2
 import pytest
@@ -7,11 +6,6 @@ from pytest_docker import docker_ip, docker_services  # pylint:disable=W0611
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-
-@pytest.fixture(scope='session')
-def docker_compose_file(pytestconfig): # pylint:disable=unused-argument
-    my_path = os.path.join(os.path.dirname(__file__), 'docker-compose.yml')
-    return my_path
 
 def is_responsive(dbname, user, password, host, port):
     """Check if there is a db"""

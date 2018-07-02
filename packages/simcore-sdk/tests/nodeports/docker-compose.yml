@@ -10,10 +10,11 @@ services:
     ports:
       - "5432:5432"
   minio:
+    restart: always
     image: minio/minio
     environment:
       - MINIO_ACCESS_KEY=s3access
       - MINIO_SECRET_KEY=s3secret
     ports:
-      - "9001:9000"
+      - "9000:9000"
     command: server /data
