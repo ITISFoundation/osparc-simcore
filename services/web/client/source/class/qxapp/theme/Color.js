@@ -17,6 +17,7 @@ qx.Theme.define("qxapp.theme.Color", {
     "logger-debug-message": "#FFF",
     "logger-info-message": "#FFF",
     "logger-warning-message": "#FF0",
-    "logger-error-message": "#F00"
+    "logger-error-message": "#F00",
+    "three-background": "#252525"
   }
 });

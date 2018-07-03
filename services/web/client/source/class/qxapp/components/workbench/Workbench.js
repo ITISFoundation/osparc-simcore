@@ -333,6 +333,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
           fileManager.moveTo(100, 100);
           fileManager.open();
+        } else if (node.getMetadata().key === "ThreeDViewer") {
+          let threeDView = new qxapp.components.workbench.widgets.ThreeDView();
+          threeDView.moveTo(100, 100);
+          threeDView.open();
         } else {
           this.fireDataEvent("NodeDoubleClicked", node);
         }

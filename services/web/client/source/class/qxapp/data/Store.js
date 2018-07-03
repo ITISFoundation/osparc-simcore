@@ -34,7 +34,32 @@ qx.Class.define("qxapp.data.Store", {
           "description": "Folder-url",
           "type": "folder-url",
           "defaultValue": null
+        }]
+      }, {
+        "key": "ThreeDViewer",
+        "name": "3D Visualizer",
+        "tag": "0.0.1",
+        "description": "3D Visualizer",
+        "authors": [{
+          "name": "Odei Maiz",
+          "email": "maiz@itis.ethz.ch",
+          "affiliation": "ITIS Foundation"
         }],
+        "contact": "maiz@itis.ethz.ch",
+        "inputs": [{
+          "key": "in_1",
+          "label": "File-url",
+          "description": "File-url",
+          "type": "file-url",
+          "defaultValue": null
+        }, {
+          "key": "in_2",
+          "label": "File-url",
+          "description": "File-url",
+          "type": "file-url",
+          "defaultValue": null
+        }],
+        "outputs": [],
         "settings": []
       }];
       return builtInServices;
