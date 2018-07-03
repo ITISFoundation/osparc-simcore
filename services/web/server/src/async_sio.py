@@ -9,7 +9,6 @@
 # pylint: disable=C0111
 
 
-import json
 import logging
 import os
 
@@ -132,7 +131,7 @@ async def list_S3_objects(sid, data):
     for obj in objects:
         obj_info = {}
         obj_info['path'] = obj.bucket_name + '/' + obj.object_name
-        obj_info['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
+        obj_info['lastModified'] = obj.last_modified.isoformat()
         obj_info['size'] = obj.size
         data_out.append(obj_info)
     await SIO.emit('listObjects', data=data_out, room=sid)
