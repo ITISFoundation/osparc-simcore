@@ -30,6 +30,45 @@ qx.Class.define("qxapp.data.Fake", {
       return "simcore";
     },
 
+    getObjectList: function() {
+      const objects = [
+        {
+          "path": "simcore0/file0",
+          "lastModified": "blah",
+          "size": 10
+        }, {
+          "path": "simcore0/bat/two/three/four/file1",
+          "lastModified": "blah",
+          "size": 11
+        }, {
+          "path": "simcore/file2",
+          "lastModified": "blah",
+          "size": 12
+        }, {
+          "path": "simcore/file3",
+          "lastModified": "blah",
+          "size": 13
+        }, {
+          "path": "simcore2/file4",
+          "lastModified": "blah2",
+          "size": 14
+        }, {
+          "path": "simcore2/file5",
+          "lastModified": "blah2",
+          "size": 15
+        }, {
+          "path": "simcore0/one/file6",
+          "lastModified": "blah",
+          "size": 16
+        }, {
+          "path": "simcore0/one/two/three/four/file7",
+          "lastModified": "blah",
+          "size": 17
+        }
+      ];
+      return objects;
+    },
+
     /**
      * Returns a qx array with projects associated to a user
      */
@@ -658,7 +697,11 @@ qx.Class.define("qxapp.data.Fake", {
             "value": "null"
           }],
           "outputs": [],
-          "settings": []
+          "settings": [],
+          "viewer": {
+            "ip":null,
+            "port":null
+          }
         }],
         "links": [{
           "uuid": qxapp.utils.Utils.uuidv4(),
@@ -954,7 +997,7 @@ qx.Class.define("qxapp.data.Fake", {
           "key": "in_1",
           "label": "csv-url",
           "description": "csv-url",
-          "type": "csv-url",
+          "type": "file-url",
           "defaultValue": null
         }],
         "outputs": [],

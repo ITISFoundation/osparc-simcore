@@ -75,7 +75,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       right: 20
     });
     [
-      this.__getPlusMenuButton(),
+      this.__getPlusButton(),
       this.__getRemoveButton(),
       this.__getPlayButton(),
       this.__getStopButton()
@@ -317,31 +317,22 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       node.addListener("dblclick", function(e) {
         if (node.getMetadata().key === "FileManager") {
-          let win = new qx.ui.window.Window(node.getMetadata().name).set({
-            width: 800,
-            height: 600,
-            minWidth: 400,
-            minHeight: 400,
-            modal: true,
-            showMinimize: false,
-            layout: new qx.ui.layout.Canvas()
-          });
-          win.moveTo(50, 50);
-
           let fileManager = new qxapp.components.workbench.widgets.FileManager();
-          win.add(fileManager, {
-            left: 0,
-            top: 0,
-            right: 0,
-            bottom: 0
-          });
           fileManager.addListener("FileSelected", function(data) {
             node.getMetadata().outputs[0].value = data.getData().filePath;
+            node.getMetadata().outputs[1].value = null;
             node.setProgress(100);
-            win.close();
+            fileManager.close();
+          }, this);
+          fileManager.addListener("FolderSelected", function(data) {
+            node.getMetadata().outputs[0].value = null;
+            node.getMetadata().outputs[1].value = data.getData().filePath;
+            node.setProgress(100);
+            fileManager.close();
           }, this);
 
-          this.addWindowToDesktop(win);
+          fileManager.moveTo(100, 100);
+          fileManager.open();
         } else {
           this.fireDataEvent("NodeDoubleClicked", node);
         }
@@ -352,7 +343,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __createNode: function(nodeMetaData) {
-      let nodeBase = new qxapp.components.workbench.NodeBase();
+      let nodeBase = new qxapp.components.workbench.NodeBase(nodeMetaData.uuid);
       nodeBase.setMetadata(nodeMetaData);
 
       const imageId = nodeBase.getNodeImageId();
@@ -595,7 +586,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let y1;
       let x2;
       let y2;
-      const portPos = this.__getLinkPoint(node, port);
+      const portPos = node.getLinkPoint(port);
       // FIXME:
       const navBarHeight = 50;
       this.__pointerPosX = pointerEvent.getViewportLeft() - this.getBounds().left;
@@ -631,17 +622,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__pointerPosY = null;
     },
 
-    __getLinkPoint: function(node, port) {
-      const nodeBounds = node.getCurrentBounds();
-      const portIdx = node.getPortIndex(port.portId);
-      let x = nodeBounds.left;
-      if (port.isInput === false) {
-        x += nodeBounds.width;
-      }
-      let y = nodeBounds.top + 4 + 33 + 10 + 16/2 + (16+5)*portIdx;
-      return [x, y];
-    },
-
     __getLinkPoints: function(node1, port1, node2, port2) {
       let p1 = null;
       let p2 = null;
@@ -649,8 +629,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (port1.isInput) {
         [node1, port1, node2, port2] = [node2, port2, node1, port1];
       }
-      p1 = this.__getLinkPoint(node1, port1);
-      p2 = this.__getLinkPoint(node2, port2);
+      p1 = node1.getLinkPoint(port1);
+      p2 = node2.getLinkPoint(port2);
       // hack to place the arrow-head properly
       p2[0] -= 6;
       return [p1, p2];
@@ -688,6 +668,16 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __removeNode: function(node) {
+      const imageId = node.getNodeImageId();
+      if (imageId.includes("dynamic")) {
+        const slotName = "stopDynamic";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        let data = {
+          nodeId: node.getNodeId()
+        };
+        socket.emit(slotName, data);
+      }
+
       this.__desktop.remove(node);
       let index = this.__nodes.indexOf(node);
       if (index > -1) {
@@ -879,7 +869,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         this.setCanStart(false);
         this.__logger.error("Workbench", "Failed stopping pipeline");
       }, this);
-      req.send();
+      // req.send();
+
+      // temporary solution
+      this.setCanStart(true);
 
       this.__logger.info("Workbench", "Stopping pipeline. Not yet implemented");
     },
