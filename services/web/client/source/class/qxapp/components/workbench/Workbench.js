@@ -355,6 +355,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             let portNumber = val["containers"][0].published_ports[0];
             nodeBase.getMetadata().viewer.port = portNumber;
             nodeBase.getMetadata().viewer.ip = "http://" + window.location.hostname;
+            nodeBase.getViewerButton().setEnabled(portNumber !== null);
             const servUrl = nodeBase.getMetadata().viewer.ip +":"+ nodeBase.getMetadata().viewer.port;
             this.__logger.debug(nodeBase.getMetadata().name, "Service ready on " + servUrl);
             this.__logger.info(nodeBase.getMetadata().name, "Service ready");
