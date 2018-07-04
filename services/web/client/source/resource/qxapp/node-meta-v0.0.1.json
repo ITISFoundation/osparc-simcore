@@ -287,10 +287,10 @@
                             "examples": [
                                 "number",
                                 "boolean",
-                                "data:appliaction/json",
+                                "data:application/json",
                                 "data:application/vnd.ms-excel ",
                                 "data:text/plain",
-                                "data:appliaction/hdf5"
+                                "data:application/hdf5"
                             ]
                         },
                         "fileToKeyMap": {
