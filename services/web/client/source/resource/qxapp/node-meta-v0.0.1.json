@@ -19,10 +19,10 @@
         "key": {
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path",
-            "pattern": "^(service)/(computational|dynamic)/([^\\s/]+)$",
+            "pattern": "^(service)/(computational|dynamic)(/[^\\s/]+)+$",
             "examples": [
-                "service/computational/sleeper",
-                "service/dynamic/3dviewer"
+                "service/computational/itis/sleeper",
+                "service/dynamic/itis/3dviewer"
             ]
         },
         "tag": {
