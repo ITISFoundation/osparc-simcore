@@ -1,5 +1,5 @@
 /**
- * @asset(three/*.js)
+ * @asset(three/*)
  * @ignore(THREE)
  */
 
