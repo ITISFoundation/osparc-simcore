@@ -2,7 +2,7 @@
 import datetime
 
 import pytest
-
+from pathlib import Path
 from simcore_sdk.nodeports import config, exceptions
 from simcore_sdk.nodeports._item import DataItem
 
@@ -70,17 +70,42 @@ def test_invalid_type():
     assert "Invalid protocol used" in str(excinfo.value)
 
 def test_invalid_value_type():
-    item = create_item("int", "not an integer")
+    item = create_item("integer", "not an integer")
     #pylint: disable=W0612
     with pytest.raises(ValueError, message="Expecting InvalidProtocolError") as excinfo:
         item.get()
-    
-def test_set_new_value():
+
+@pytest.mark.parametrize("item_type, item_value_to_set, expected_value", [
+    ("integer", 26, "26"),
+    ("number", -746.4748, "-746.4748"),
+    ("file-url", __file__, "link.undefined.a key"),
+    ("bool", False, "False"),    
+    ("string", "test-string", "test-string"),
+    ("folder-url", str(Path(__file__).parent), "link.undefined.a key")
+])
+def test_set_new_value(bucket, item_type, item_value_to_set, expected_value): # pylint: disable=W0613
     import mock
     mock_method = mock.Mock()
-    item = create_item("int", "null")
+    item = create_item(item_type, "null")
     item.new_data_cb = mock_method
     assert item.get() is None
-    item.set(26)
+    item.set(item_value_to_set)
     
-    mock_method.assert_called_with(create_item("int", "26", mock.ANY))
+    mock_method.assert_called_with(create_item(item_type, expected_value, mock.ANY))
+
+@pytest.mark.parametrize("item_type, item_value_to_set", [
+    ("integer", -746.4748),
+    ("number", "a string"),
+    ("file-url", str(Path(__file__).parent)),
+    ("bool", 123),
+    ("string", True),
+    ("folder-url", __file__)
+])
+def test_set_new_invalid_value(bucket, item_type, item_value_to_set): # pylint: disable=W0613
+    item = create_item(item_type, "null")
+    assert item.get() is None
+    with pytest.raises(exceptions.InvalidItemTypeError, message="Expecting InvalidItemTypeError") as excinfo:
+        item.set(item_value_to_set)
+    assert "Invalid item type" in str(excinfo.value)
+    
+    

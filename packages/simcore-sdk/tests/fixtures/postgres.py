@@ -8,11 +8,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 
-@pytest.fixture(scope='session')
-def docker_compose_file(pytestconfig): # pylint:disable=unused-argument
-    my_path = os.path.join(os.path.dirname(__file__), 'docker-compose.yml')
-    return my_path
-
 def is_responsive(dbname, user, password, host, port):
     """Check if there is a db"""
     try:
@@ -51,6 +46,11 @@ def engine(docker_ip, docker_services, request):
     endpoint = 'postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}'.format(
         user=user, password=password, host=host, port=port, dbname=dbname)
     engine = create_engine(endpoint, client_encoding='utf8')
+
+    os.environ["POSTGRES_ENDPOINT"]="{host}:{port}".format(host=host, port=port)
+    os.environ["POSTGRES_USER"]="user"
+    os.environ["POSTGRES_PASSWORD"]="pwd"
+    os.environ["POSTGRES_DB"]="test"
 
     def fin():
         engine.dispose()

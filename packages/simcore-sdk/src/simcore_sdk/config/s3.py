@@ -2,14 +2,18 @@
 
 """
 from os import environ as env
+import logging
 
-S3_ENDPOINT = env.get("S3_ENDPOINT", "minio:9000")
-S3_ACCESS_KEY = env.get("S3_ACCESS_KEY", "12345678")
-S3_SECRET_KEY = env.get("S3_SECRET_KEY", "12345678")
-S3_BUCKET_NAME = env.get("S3_BUCKET_NAME", "simcore")
+
+_LOGGER = logging.getLogger(__name__)
 
 class Config():
     def __init__(self):
+        S3_ENDPOINT = env.get("S3_ENDPOINT", "minio:9000")
+        S3_ACCESS_KEY = env.get("S3_ACCESS_KEY", "12345678")
+        S3_SECRET_KEY = env.get("S3_SECRET_KEY", "12345678")
+        S3_BUCKET_NAME = env.get("S3_BUCKET_NAME", "simcore")
+
         self._endpoint = S3_ENDPOINT
         self._access_key = S3_ACCESS_KEY
         self._secret_key = S3_SECRET_KEY
