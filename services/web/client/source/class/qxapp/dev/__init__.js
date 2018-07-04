@@ -1,3 +1,3 @@
 /**
- * Development and debugging tools.
+ * Development, testing and debugging tools.
  */

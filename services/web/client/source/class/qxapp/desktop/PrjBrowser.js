@@ -111,14 +111,14 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
      * Mockup data
      */
     getFakeUserModel: function() {
-      let data = qxapp.dev.Fake.getUserProjects(3, "bizzy");
-      data.insertAt(0, qxapp.dev.Fake.NEW_PROJECT_DESCRIPTOR);
+      let data = qxapp.dev.fake.Data.getUserProjects(3, "bizzy");
+      data.insertAt(0, qxapp.dev.fake.Data.NEW_PROJECT_DESCRIPTOR);
       return data;
     },
 
     getFakeTempModel: function() {
-      let data = qxapp.dev.Fake.getTemplateProjects();
-      data.insertAt(0, qxapp.dev.Fake.NEW_PROJECT_DESCRIPTOR);
+      let data = qxapp.dev.fake.Data.getTemplateProjects();
+      data.insertAt(0, qxapp.dev.fake.Data.NEW_PROJECT_DESCRIPTOR);
       return data;
     }
 

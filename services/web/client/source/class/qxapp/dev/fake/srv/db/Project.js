@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.dev.fakesrv.db.Project", {
+qx.Class.define("qxapp.dev.fake.srv.db.Project", {
   type: "static",
 
   statics: {
@@ -8,7 +8,7 @@ qx.Class.define("qxapp.dev.fakesrv.db.Project", {
      * Creates a json object for a given project id
     */
     getObject: function(projectId) {
-      const name = qxapp.dev.fakesrv.db.Project.DUMMYNAMES[projectId];
+      const name = qxapp.dev.fake.srv.db.Project.DUMMYNAMES[projectId];
       let project = {
         id: projectId,
         name: name,

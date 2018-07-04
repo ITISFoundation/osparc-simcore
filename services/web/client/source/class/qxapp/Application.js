@@ -39,8 +39,8 @@ qx.Class.define("qxapp.Application", {
 
         if (qx.core.Environment.get("dev.enableFakeSrv")) {
           console.debug("Fake server enabled");
-          qxapp.dev.fakesrv.restapi.User;
-          qxapp.dev.fakesrv.restapi.Authentication;
+          qxapp.dev.fake.srv.restapi.User;
+          qxapp.dev.fake.srv.restapi.Authentication;
         }
       }
 

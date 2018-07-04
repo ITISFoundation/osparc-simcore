@@ -1,5 +1,5 @@
 /* eslint no-warning-comments: "off" */
-qx.Class.define("qxapp.dev.fakesrv.restapi.Authentication", {
+qx.Class.define("qxapp.dev.fake.srv.restapi.Authentication", {
   type: "static",
 
   statics: {
@@ -21,11 +21,11 @@ qx.Class.define("qxapp.dev.fakesrv.restapi.Authentication", {
         const login = qx.lang.Json.parse(request.requestBody);
         // TODO: validate json!
 
-        const userId = qxapp.dev.fakesrv.restapi.Authentication.checkCredentials(login);
+        const userId = qxapp.dev.fake.srv.restapi.Authentication.checkCredentials(login);
         if (userId !== null) {
           status = 200;
           body = {
-            token: qxapp.dev.fakesrv.restapi.Authentication.createToken(userId)
+            token: qxapp.dev.fake.srv.restapi.Authentication.createToken(userId)
           };
         }
 
@@ -46,8 +46,8 @@ qx.Class.define("qxapp.dev.fakesrv.restapi.Authentication", {
     },
 
     checkCredentials: function(login) {
-      var userId = qxapp.dev.fakesrv.db.User.DUMMYNAMES.findIndex(function(userName, userIndex) {
-        const validEmail = qxapp.dev.fakesrv.db.User.getEmail(userIndex);
+      var userId = qxapp.dev.fake.srv.db.User.DUMMYNAMES.findIndex(function(userName, userIndex) {
+        const validEmail = qxapp.dev.fake.srv.db.User.getEmail(userIndex);
         return validEmail == login.email && login.password == "z43";
       });
       return userId>=0? userId: null;

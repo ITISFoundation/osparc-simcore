@@ -929,17 +929,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __getProducers: function() {
-      const producers = qxapp.dev.Fake.getProducers();
+      const producers = qxapp.dev.fake.Data.getProducers();
       return this.__createMenuFromList(producers);
     },
 
     __getComputationals: function() {
-      const computationals = qxapp.dev.Fake.getComputationals();
+      const computationals = qxapp.dev.fake.Data.getComputationals();
       return this.__createMenuFromList(computationals);
     },
 
     __getAnalyses: function() {
-      const analyses = qxapp.dev.Fake.getAnalyses();
+      const analyses = qxapp.dev.fake.Data.getAnalyses();
       return this.__createMenuFromList(analyses);
     }
   }
