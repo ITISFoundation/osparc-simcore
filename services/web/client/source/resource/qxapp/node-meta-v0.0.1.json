@@ -140,7 +140,7 @@
                                 "boolean",
                                 "data:*/*",
                                 "data:text/*",
-                                "data:[image/jpeg,image/png],
+                                "data:[image/jpeg,image/png]",
                                 "data:application/json",
                                 "data:application/json;schema=https://my-schema/not/really/schema.json",
                                 "data:application/vnd.ms-excel",
