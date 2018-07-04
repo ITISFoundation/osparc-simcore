@@ -43,7 +43,7 @@
         "uri" : "resource/socketio/socket.io.js"
       },
       {
-        "uri" : "resource/three/*.js"
+        "uri" : "resource/three/*"
       },
       {
         "uri" : "resource/workbench/svg*.js"
