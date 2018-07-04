@@ -133,17 +133,19 @@
                         },
                         "type": {
                             "type": "string",
-                            "pattern": "^(number|integer|boolean|string|data:([^/\\s]+/[^/\\s]+)$",
+                            "pattern": "^(number|integer|boolean|string|data:(([^/\\s,]+/[^/\\s,]+)|\\[([^/\\s,]+/[^/\\s,]+)(,([^/\\s]+/[^/,\\s]+)*\\])$",
                             "description": "data type expected on this input glob matching for data type is allowed",
                             "examples": [
                                 "number",
                                 "boolean",
                                 "data:*/*",
                                 "data:text/*",
-                                "data:appliaction/json",
-                                "data:application/vnd.ms-excel ",
+                                "data:[image/jpeg,image/png],
+                                "data:application/json",
+                                "data:application/json;schema=https://my-schema/not/really/schema.json",
+                                "data:application/vnd.ms-excel",
                                 "data:text/plain",
-                                "data:appliaction/hdf5",
+                                "data:application/hdf5",
                                 "data:application/edu.ucdavis@ceclancy.xyz"
                             ]
                         },
@@ -280,7 +282,7 @@
                         },
                         "type": {
                             "type": "string",
-                            "pattern": "^(number|integer|boolean|string|data:([^/\\s\\*]+/[^/\\s\\*]+)$",
+                            "pattern": "^(number|integer|boolean|string|data:([^/\\s\\*,]+/[^/\\s\\*,]+)$",
                             "description": "data type expected on this output",
                             "examples": [
                                 "number",
