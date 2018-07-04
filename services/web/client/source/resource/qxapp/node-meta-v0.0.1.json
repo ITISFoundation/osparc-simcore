@@ -106,7 +106,6 @@
                         "label",
                         "description",
                         "type",
-                        "defaultValue"
                     ],
                     "properties": {
                         "displayOrder": {
@@ -134,18 +133,15 @@
                         },
                         "type": {
                             "type": "string",
-                            "enum": [
-                                "number",
-                                "integer",
-                                "file-url",
-                                "boolean",
-                                "string",
-                                "scene"
-                            ],
+                            "pattern": "^(number|integer|boolean|string|data:([^/\\s]+/[^/\\s]+)$",
                             "description": "data type expected on this input",
                             "examples": [
                                 "number",
-                                "boolean"
+                                "boolean",
+                                "data:appliaction/json",
+                                "data:application/vnd.ms-excel ",
+                                "data:text/plain",
+                                "data:appliaction/hdf5"
                             ]
                         },
                         "fileToKeyMap": {
@@ -253,8 +249,7 @@
                         "displayOrder",
                         "label",
                         "description",
-                        "type",
-                        "defaultValue"
+                        "type"
                     ],
                     "properties": {
                         "displayOrder": {
@@ -282,17 +277,15 @@
                         },
                         "type": {
                             "type": "string",
-                            "enum": [
-                                "number",
-                                "file-url",
-                                "boolean",
-                                "string",
-                                "scene"
-                            ],
+                            "pattern": "^(number|integer|boolean|string|data:([^/\\s]+/[^/\\s]+)$",
                             "description": "data type expected on this output",
                             "examples": [
                                 "number",
-                                "boolean"
+                                "boolean",
+                                "data:appliaction/json",
+                                "data:application/vnd.ms-excel ",
+                                "data:text/plain",
+                                "data:appliaction/hdf5"
                             ]
                         },
                         "fileToKeyMap": {
