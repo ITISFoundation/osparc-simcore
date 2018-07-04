@@ -75,7 +75,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       right: 20
     });
     [
-      this.__getPlusMenuButton(),
+      this.__getPlusButton(),
       this.__getRemoveButton(),
       this.__getPlayButton(),
       this.__getStopButton()
@@ -320,6 +320,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           let fileManager = new qxapp.components.workbench.widgets.FileManager();
           fileManager.addListener("FileSelected", function(data) {
             node.getMetadata().outputs[0].value = data.getData().filePath;
+            node.getMetadata().outputs[1].value = null;
+            node.setProgress(100);
+            fileManager.close();
+          }, this);
+          fileManager.addListener("FolderSelected", function(data) {
+            node.getMetadata().outputs[0].value = null;
+            node.getMetadata().outputs[1].value = data.getData().filePath;
             node.setProgress(100);
             fileManager.close();
           }, this);
