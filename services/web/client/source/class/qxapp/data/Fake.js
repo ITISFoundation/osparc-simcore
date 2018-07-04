@@ -134,6 +134,65 @@ qx.Class.define("qxapp.data.Fake", {
         }
       };
     },
+    projectList: function() {
+      return [
+        {
+          name: "Sample Project",
+          description: "A little fake project without actual backend",
+          notes: "# title\nThere be dragons inside",
+          owner: "UUID-OF-TOBI",
+          collaborators: {
+            "UUID-OF-PEDRO": [
+              "read",
+              "write"
+            ]
+          },
+          creationDate: "2018-07-02T16:01:00Z",
+          lastChangeDate: "2018-07-02T16:02:22Z",
+          workbench: {
+            "UUID1": {
+              type: "service/dynamic/itis/file-picker",
+              version: "0.0.0",
+              output: {
+                out_1: "s3://itis-minion/bucket1/file1"
+              },
+              position: {
+                x: 10,
+                y: 10
+              }
+            },
+            "UUID2": {
+              type: "service/computational/itis/sleeper",
+              version: "0.0.1-alpha",
+              input: {
+                in_number: "num:3.5",
+                in_integer: "int:4",
+                in_image: "link://UUID1/out_1"
+              },
+              position: {
+                x: 120,
+                y: 10
+              }
+            },
+            "UUID3": {
+              type: "service/computational/itis/sleeper",
+              version: "0.0.1-alpha",
+              input: {
+                in_number: "link://UUID2/out_number",
+                in_string: "str:Hello,blablabla",
+                in_bool: "bool:true",
+                in_image: "link://UUID2/out_png",
+                in_file: "s3://itis-minion/bucket2/file12"
+              },
+              position: {
+                x: 260,
+                y: 10
+              }
+            }
+          }
+        }
+      ];
+    },
     getUsername: function() {
       return "bizzy";
     },
@@ -243,63 +302,7 @@ qx.Class.define("qxapp.data.Fake", {
       return null;
     },
 
-    getProject1: function() {
-      return {
-        name: "Sample Project",
-        description: "A little fake project without actual backend",
-        notes: "# title\nThere be dragons inside",
-        owner: "UUID-OF-TOBI",
-        collaborators: {
-          "UUID-OF-PEDRO": [
-            "read",
-            "write"
-          ]
-        },
-        creationDate: "2018-07-02T16:01:00Z",
-        lastChangeDate: "2018-07-02T16:02:22Z",
-        workbench: {
-          "UUID1": {
-            type: "service/dynamic/itis/file-picker",
-            version: "0.0.0",
-            output: {
-              out_1: "s3://itis-minion/bucket1/file1"
-            },
-            position: {
-              x: 10,
-              y: 10
-            }
-          },
-          "UUID2": {
-            type: "service/computational/itis/sleeper",
-            version: "0.0.1-alpha",
-            input: {
-              in_number: "num:3.5",
-              in_integer: "int:4",
-              in_image: "link://UUID1/out_1"
-            },
-            position: {
-              x: 120,
-              y: 10
-            }
-          },
-          "UUID3": {
-            type: "service/computational/itis/sleeper",
-            version: "0.0.1-alpha",
-            input: {
-              in_number: "link://UUID2/out_number",
-              in_string: "str:Hello,blablabla",
-              in_bool: "bool:true",
-              in_image: "link://UUID2/out_png",
-              in_file: "s3://itis-minion/bucket2/file12"
-            },
-            position: {
-              x: 260,
-              y: 10
-            }
-          }
-        }
-      }
-    },
+
 
     getTemp1Data: function(){
       const nNodes = 8;
