@@ -286,7 +286,9 @@
                             "description": "data type expected on this output",
                             "examples": [
                                 "number",
+                                "integer",
                                 "boolean",
+                                "string",
                                 "data:application/json",
                                 "data:application/vnd.ms-excel ",
                                 "data:text/plain",
