@@ -155,7 +155,8 @@
                             "type": "object",
                             "patternProperties": {
                                 ".+": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "pattern": "^[_a-z0-9]+$"
                                 }
                             },
                             "examples": [
@@ -300,7 +301,8 @@
                             "type": "object",
                             "patternProperties": {
                                 ".+": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "pattern": "^[_a-z0-9]+$"
                                 }
                             },
                             "examples": [
