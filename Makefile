@@ -1,6 +1,15 @@
 # author: Sylvain Anderegg
 
 # TODO: add flavours by combinging docker-compose files. Namely development, test and production.
+VERSION := $(shell cat /proc/version)
+# SAN this is a hack so that docker-compose works in the linux virtual environment under Windows
+ifneq (,$(findstring Microsoft,$(VERSION)))
+export DOCKER_COMPOSE=docker-compose.exe
+export DOCKER=docker.exe
+else
+export DOCKER_COMPOSE=docker-compose
+export DOCKER=docker
+endif
 
 PY_FILES = $(strip $(shell find services packages -iname '*.py'))
 
@@ -12,56 +21,56 @@ all:
 	@echo 'see Makefile for further targets'
 
 build-devel:
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml build
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build
 
 rebuild-devel:
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
 
-up-devel: setup-check
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml up
+up-devel:
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml up
 
 build:
-	docker-compose -f services/docker-compose.yml build
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build
 
 rebuild:
-	docker-compose -f services/docker-compose.yml build --no-cache
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
 
 up:
-	docker-compose -f services/docker-compose.yml up
+	${DOCKER_COMPOSE} -f services/docker-compose.yml up
 
 up-swarm:
-	docker swarm init
-	docker stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml services
+	${DOCKER} swarm init
+	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml services
 
 down:
-	docker-compose -f services/docker-compose.yml down
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.devel.yml down
+	${DOCKER_COMPOSE} -f services/docker-compose.yml down
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml down
 
 down-swarm:
-	docker stack rm services
-	docker swarm leave -f
+	${DOCKER} stack rm services
+	${DOCKER} swarm leave -f
 
 stack-up:
-	docker swarm init
+	${DOCKER} swarm init
 
 stack-down:
-	docker stack rm osparc
-	docker swarm leave -f
+	${DOCKER} stack rm osparc
+	${DOCKER} swarm leave -f
 
 deploy:
-	docker stack deploy -c services/docker-compose.swarm.yml services --with-registry-auth
+	${DOCKER} stack deploy -c services/docker-compose.swarm.yml services --with-registry-auth
 
 pylint:
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 	/bin/bash -c "pylint --rcfile=.pylintrc $(PY_FILES)"
 
 before_test:
-	docker-compose -f packages/pytest_docker/tests/docker-compose.yml pull
-	docker-compose -f packages/pytest_docker/tests/docker-compose.yml build
-	docker-compose -f packages/s3wrapper/tests/docker-compose.yml pull
-	docker-compose -f packages/s3wrapper/tests/docker-compose.yml build
-	docker-compose -f packages/simcore-sdk/tests/docker-compose.yml pull
-	docker-compose -f packages/simcore-sdk/tests/docker-compose.yml build
+	${DOCKER_COMPOSE} -f packages/pytest_docker/tests/docker-compose.yml pull
+	${DOCKER_COMPOSE} -f packages/pytest_docker/tests/docker-compose.yml build
+	${DOCKER_COMPOSE} -f packages/s3wrapper/tests/docker-compose.yml pull
+	${DOCKER_COMPOSE} -f packages/s3wrapper/tests/docker-compose.yml build
+	${DOCKER_COMPOSE} -f packages/simcore-sdk/tests/docker-compose.yml pull
+	${DOCKER_COMPOSE} -f packages/simcore-sdk/tests/docker-compose.yml build
 
 run_test:
 	pytest --cov=pytest_docker -v packages/pytest_docker/
@@ -70,9 +79,9 @@ run_test:
 
 after_test:
 	# leave a clean slate (not sure whether this is actually needed)
-	docker-compose -f packages/pytest_docker/tests/docker-compose.yml down
-	docker-compose -f packages/s3wrapper/tests/docker-compose.yml down
-	docker-compose -f packages/simcore-sdk/tests/docker-compose.yml down
+	${DOCKER_COMPOSE} -f packages/pytest_docker/tests/docker-compose.yml down
+	${DOCKER_COMPOSE} -f packages/s3wrapper/tests/docker-compose.yml down
+	${DOCKER_COMPOSE} -f packages/simcore-sdk/tests/docker-compose.yml down
 
 test:
 	make before_test
@@ -82,16 +91,16 @@ test:
 PLATFORM_VERSION=3.2
 
 push_platform_images:
-	docker login masu.speag.com
-	docker tag services_webserver:latest masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
-	docker push masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
-	docker tag services_sidecar:latest masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
-	docker push masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
-	docker tag services_director:latest masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
-	docker push masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
-  
-  setup-check: .env .vscode/settings.json
+	${DOCKER} login masu.speag.com
+	${DOCKER} tag services_webserver:latest masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
+	${DOCKER} push masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
+	${DOCKER} tag services_sidecar:latest masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
+	${DOCKER} push masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
+	${DOCKER} tag services_director:latest masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
+	${DOCKER} push masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
 
+  setup-check: .env .vscode/settings.json
+  
 .env: .env-devel
 	$(info #####  $< is newer than $@ ####)
 	@diff -uN $@ $<
@@ -101,4 +110,3 @@ push_platform_images:
 	$(info #####  $< is newer than $@ ####)
 	@diff -uN $@ $<
 	@false
-
