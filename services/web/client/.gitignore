@@ -8,3 +8,7 @@ contrib*
 node_modules/*
 source/resource/iconfont/fontawesome5
 source/resource/iconfont/material
+
+# generator outputs
+/api/
+/test/
