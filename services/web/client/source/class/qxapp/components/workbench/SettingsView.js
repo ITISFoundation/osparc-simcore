@@ -71,13 +71,12 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       this.__settingsBox.add(node.getPropsWidget());
 
       this.__dynamicViewer.removeAll();
-      if (node.getMetadata().viewer) {
-        let button = new qx.ui.form.Button("Open Viewer");
-        button.setEnabled(node.getMetadata().viewer.port !== null);
-        button.addListener("execute", function(e) {
+      let viewerButton = node.getViewerButton();
+      if (viewerButton) {
+        viewerButton.addListener("execute", function(e) {
           this.fireDataEvent("ShowViewer", node.getMetadata());
         }, this);
-        this.__dynamicViewer.add(button);
+        this.__dynamicViewer.add(viewerButton);
       }
     }
   }
