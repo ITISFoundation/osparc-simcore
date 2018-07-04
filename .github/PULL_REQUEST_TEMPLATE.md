@@ -11,12 +11,12 @@ A clear and consice reference to the issue/s covered by this PR or its relation 
 
 Use in some of the keywords recognized by [waffle.io] to automate the workflow.
 
-**A description of the changes proposed in the pull request**
+**A description of outstanding changes proposed in the pull request**
 Short checkable (specially if WIP) list of changes in the PR
 
-- [X] feature A
+- [X] New feature A
 - [ ] fix B
-- [ ] change D
+- [ ] changed the API in D
 
 **@mentions of the person or team responsible for reviewing proposed changes**
 Complement ``.github/CODEOWNERS``
