@@ -3,7 +3,10 @@
  * @ignore(THREE)
  */
 
+/* global window */
+/* global document */
 /* global THREE */
+/* global Blob */
 /* eslint new-cap: [2, {capIsNewExceptions: ["THREE", "Blob"]}] */
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true, "allow": ["__downloadBinJSON", "__downloadJSON"] }] */
 
@@ -119,6 +122,76 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
         onLoad,
         onError
       );
+    },
+
+    createSceneWithMeshes : function(meshIds) {
+      let options = {
+        binary: false
+      };
+
+      let myMeshes = [];
+      for (let i = 0; i < this._scene.children.length; i++) {
+        if (meshIds.includes(this._scene.children[i].uuid)) {
+          myMeshes.push(this._scene.children[i]);
+        }
+      }
+
+      let scope = this;
+
+      function onCompleted(gltf) {
+        scope.fireDataEvent("sceneWithMeshesToBeExported", gltf);
+      }
+
+      let glTFExporter = new THREE.GLTFExporter();
+      glTFExporter.parse(myMeshes,
+        onCompleted,
+        options);
+    },
+
+    exportScene : function(downloadScene = false, exportSceneAsBinary = false) {
+      let options = {
+        binary: exportSceneAsBinary
+      };
+
+      let scope = this;
+
+      function onCompleted(gltf) {
+        if (downloadScene) {
+          if (options.binary) {
+            scope.__downloadBinJSON(gltf, "myScene.glb");
+          } else {
+            scope.__downloadJSON(gltf, "myScene.gltf");
+          }
+        } else {
+          scope.fireDataEvent("SceneToBeExported", gltf);
+        }
+      }
+
+      let glTFExporter = new THREE.GLTFExporter();
+      glTFExporter.parse(this._scene,
+        onCompleted,
+        options);
+    },
+
+    __downloadBinJSON: function(exportObj, fileName) {
+      let blob = new Blob([exportObj], {
+        type: "application/octet-stream"
+      });
+      let url = window.URL.createObjectURL(blob);
+      let downloadAnchorNode = document.createElement("a");
+      downloadAnchorNode.setAttribute("href", url);
+      downloadAnchorNode.setAttribute("download", fileName);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+    },
+
+    __downloadJSON: function(exportObj, fileName) {
+      let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
+      let downloadAnchorNode = document.createElement("a");
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", fileName);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
     },
 
     removeEntityFromScene: function(objFromScene) {

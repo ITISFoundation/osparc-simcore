@@ -334,9 +334,30 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           fileManager.moveTo(100, 100);
           fileManager.open();
         } else if (node.getMetadata().key === "ThreeDViewer") {
-          let threeDView = new qxapp.components.workbench.widgets.ThreeDView();
-          threeDView.moveTo(100, 100);
-          threeDView.open();
+          let threeDWindow = new qx.ui.window.Window();
+          threeDWindow.set({
+            showMinimize: false,
+            showStatusbar: false,
+            width: 800,
+            height: 600,
+            minWidth: 400,
+            minHeight: 400,
+            modal: true,
+            caption: "3D Viewer",
+            layout: new qx.ui.layout.Canvas()
+          });
+
+          const backgroundColor = qxapp.theme.Color.colors["three-background"];
+          let threeDView = new qxapp.components.widgets.ThreeDView(800, 600, backgroundColor);
+          threeDWindow.add(threeDView, {
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0
+          });
+
+          threeDWindow.moveTo(100, 100);
+          threeDWindow.open();
         } else {
           this.fireDataEvent("NodeDoubleClicked", node);
         }
