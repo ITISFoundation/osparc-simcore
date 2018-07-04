@@ -49,13 +49,14 @@ qx.Class.define("qxapp.Application", {
 
       if (qx.core.Environment.get("dev.disableLogin")) {
         console.debug("Login was disabled");
-        this.__startDesktop();
+        this.startDesktop();
       } else {
-        this.__startLogin();
+        let page = new qxapp.auth.LoginPage();
+        page.show();
       }
     },
 
-    __startDesktop: function() {
+    startDesktop: function() {
       this.__layoutManager = new qxapp.desktop.LayoutManager();
       this.getRoot().add(this.__layoutManager, {
         left: "0%",
