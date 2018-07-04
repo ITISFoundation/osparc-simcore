@@ -112,6 +112,7 @@
                         "displayOrder": {
                             "type": "string",
                             "description": "use this to alphabetically sort the properties for display",
+                            "pattern": "^\\d{3}(\\.\\d{3})*",
                             "examples": [
                                 "001.001",
                                 "001.002.001"
@@ -259,6 +260,7 @@
                         "displayOrder": {
                             "type": "string",
                             "description": "use this to alphabetically sort the properties for display",
+                            "pattern": "^\\d{3}(\\.\\d{3})*",
                             "examples": [
                                 "001.001",
                                 "001.002.001"
