@@ -1,9 +1,23 @@
 /* global XMLHttpRequest */
 qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.window.Window,
 
   construct: function() {
-    this.base(arguments, new qx.ui.layout.VBox(10));
+    this.base();
+
+    this.set({
+      showMinimize: false,
+      showStatusbar: false,
+      width: 800,
+      height: 600,
+      minWidth: 400,
+      minHeight: 400,
+      modal: true,
+      caption: "File Manager"
+    });
+
+    let fileManagerLayout = new qx.ui.layout.VBox(10);
+    this.setLayout(fileManagerLayout);
 
 
     // Create a button
@@ -42,6 +56,13 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
     this.add(this.__selectFileBtn);
     this.__selectFileBtn.addListener("execute", function() {
       this.__fileSelected();
+    }, this);
+
+    // Listen to "Enter" key
+    this.addListener("keypress", function(keyEvent) {
+      if (keyEvent.getKeyIdentifier() === "Enter") {
+        this.__fileSelected();
+      }
     }, this);
 
     this.__reloadTree();
@@ -206,6 +227,11 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
         text = new qx.ui.basic.Label((new Date(extraInfo.lastModified)).toUTCString());
         text.setWidth(200);
         treeItem.addWidget(text);
+
+        // Listen to "Double Click" key
+        treeItem.addListener("dblclick", function(mouseEvent) {
+          this.__fileSelected();
+        }, this);
       }
 
       return treeItem;

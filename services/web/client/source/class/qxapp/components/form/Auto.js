@@ -78,7 +78,7 @@ qx.Class.define("qxapp.components.form.Auto", {
      * fire when the form changes content and
      * and provide access to the data
      */
-    changeData : "qx.event.type.Data"
+    "changeData" : "qx.event.type.Data"
   },
 
   members : {

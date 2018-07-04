@@ -29,11 +29,13 @@ async def subscribe(_app=None):
     await channel.set_qos(prefetch_count=1)
 
     logs_exchange = await channel.declare_exchange(
-        pika_log_channel, aio_pika.ExchangeType.FANOUT
+        pika_log_channel, aio_pika.ExchangeType.FANOUT,
+        auto_delete=True
     )
 
     progress_exchange = await channel.declare_exchange(
-        pika_progress_channel, aio_pika.ExchangeType.FANOUT
+        pika_progress_channel, aio_pika.ExchangeType.FANOUT,
+        auto_delete=True
     )
 
     # Declaring queue
