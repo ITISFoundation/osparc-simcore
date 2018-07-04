@@ -94,9 +94,11 @@
                             "patternProperties": {
                                 "^[_a-z0-9]+$": {
                                     "type": "string",
-                                    "pattern": "^(data,.*|link://[^/\\s]+/\\S+|s3://[^/\\s]+/[^/\\s]+/.+$",
+                                    "pattern": "^(bool:(true|false)|int:-?\\d+,num:^([-+]?\\d*\\.?\\d+)([eE][-+]?\\d+)?|str:.+|link://[^/\\s]+/\\S+|s3://[^/\\s]+/[^/\\s]+/.+$",
                                     "examples": [
-                                        "data,3",
+                                        "int:3",
+                                        "bool:true"
+                                        "str:Hello World",
                                         "s3://system/bucket/file",
                                         "link://UUID1/out_2"
                                     ]
@@ -108,9 +110,9 @@
                             "patternProperties": {
                                 "^[_a-z0-9]+$": {
                                     "type": "string",
-                                    "pattern": "^(data,.*|link://[^/\\s]+/\\S+|s3://[^/\\s]+/[^/\\s]+/.+$",
+                                    "pattern": "^(bool:(true|false)|int:-?\\d+,num:^([-+]?\\d*\\.?\\d+)([eE][-+]?\\d+)?|str:.+|link://[^/\\s]+/\\S+|s3://[^/\\s]+/[^/\\s]+/.+$",
                                     "examples": [
-                                        "data,false",
+                                        "bool:false",
                                         "s3://system/bucket/file",
                                         "link://UUID1/out_2"
                                     ]
