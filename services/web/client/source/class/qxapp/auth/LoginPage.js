@@ -42,7 +42,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
 
       var top = 0;
       var atm = new qx.ui.basic.Atom().set({
-        icon: "auth/itis.png",
+        icon: "qxapp/itis-white.png",
         iconPosition: "top"
       });
       atm.setWidth(this.getWidth() - 20);
