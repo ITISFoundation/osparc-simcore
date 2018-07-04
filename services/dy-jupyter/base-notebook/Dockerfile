@@ -23,7 +23,7 @@ LABEL org.label-schema.docker.cmd="docker run -it --rm -p 8888:8888 jupyter/base
 # service runtime settings
 LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
 
-COPY osparc-demo.ipynb .
+COPY --chown=jovyan:users osparc-demo.ipynb .
 
 # Create a Python 2.x environment using conda including at least the ipython kernel
 # and the kernda utility. Add any additional packages you want available for use

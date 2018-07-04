@@ -1,2 +1,4 @@
 psycopg2==2.7.4
 sqlalchemy==1.2.5
+networkx==2.1
+tenacity==4.12.0

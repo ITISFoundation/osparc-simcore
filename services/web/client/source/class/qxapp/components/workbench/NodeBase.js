@@ -1,36 +1,39 @@
+const nodeWidth = 240;
+const portHeight = 16;
+
 qx.Class.define("qxapp.components.workbench.NodeBase", {
   extend: qx.ui.window.Window,
 
-  construct: function() {
+  construct: function(uuid) {
     this.base();
 
     this.set({
+      appearance: "window-small-cap",
       showMinimize: false,
       showMaximize: false,
       showClose: false,
       showStatusbar: false,
       resizable: false,
       allowMaximize: false,
-      minWidth: 180
+      minWidth: nodeWidth,
+      maxWidth: nodeWidth
     });
 
     let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
     this.setLayout(nodeLayout);
 
-    let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
+    let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
     this.add(inputsOutputsLayout, {
       flex: 1
     });
 
     let inputsBox = new qx.ui.layout.VBox(5);
-    inputsBox.setAlignX("left");
     this.__inputPortsUI = new qx.ui.container.Composite(inputsBox);
     inputsOutputsLayout.add(this.__inputPortsUI, {
       width: "50%"
     });
 
     let outputsBox = new qx.ui.layout.VBox(5);
-    outputsBox.setAlignX("right");
     this.__outputPortsUI = new qx.ui.container.Composite(outputsBox);
     inputsOutputsLayout.add(this.__outputPortsUI, {
       width: "50%"
@@ -38,10 +41,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
 
     let progressBox = new qx.ui.container.Composite(new qx.ui.layout.Basic());
-    progressBox.setMinWidth(160);
+    progressBox.setMinWidth(nodeWidth-20);
 
     this.__progressBar = new qx.ui.indicator.ProgressBar();
-    this.__progressBar.setWidth(160);
+    this.__progressBar.setWidth(nodeWidth-20);
     progressBox.add(this.__progressBar, {
       top: 0,
       left: 0
@@ -50,7 +53,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     this.__progressLabel = new qx.ui.basic.Label("0%");
     progressBox.add(this.__progressLabel, {
       top: 3,
-      left: 70
+      left: nodeWidth/2 - 20
     });
 
     this.add(progressBox);
@@ -58,7 +61,11 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     this.__inputPorts = [];
     this.__outputPorts = [];
-    this.setNodeId(qxapp.utils.Utils.uuidv4());
+    if (uuid === undefined) {
+      this.setNodeId(qxapp.utils.Utils.uuidv4());
+    } else {
+      this.setNodeId(uuid);
+    }
   },
 
   properties: {
@@ -78,6 +85,11 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     propsWidget: {
       check: "qxapp.components.form.renderer.PropForm"
+    },
+
+    viewerButton: {
+      init: null,
+      check: "qx.ui.form.Button"
     }
   },
 
@@ -118,7 +130,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       }
     },
 
-    getCurrentBounds: function() {
+    __getCurrentBounds: function() {
       let bounds = this.getBounds();
       let cel = this.getContentElement();
       if (cel) {
@@ -141,9 +153,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
           nodeImageId: metaData.key
         });
         let props = metaData.inputs.concat(metaData.settings);
-        this.addSettings(props);
-        this.addInputs(metaData.inputs);
-        this.addOutputs(metaData.outputs);
+        this.__addSettings(props);
+        this.__addViewerButton(metaData);
+        this.__addInputPorts(metaData.inputs);
+        this.__addOutputPorts(metaData.outputs);
       }
     },
 
@@ -151,27 +164,48 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.setCaption(name);
     },
 
-    addSettings: function(settings) {
+    __addSettings: function(settings) {
       let form = this.__settingsForm = new qxapp.components.form.Auto(settings);
+      this.__settingsForm.addListener("changeData", function(e) {
+        let settingsForm = e.getData();
+        for (var settingKey in settingsForm) {
+          if (this.getMetadata().inputs) {
+            for (let i=0; i<this.getMetadata().inputs.length; i++) {
+              if (settingKey === this.getMetadata().inputs[i].key) {
+                this.getMetadata().inputs[i].value = settingsForm[settingKey];
+              }
+            }
+          }
+          if (this.getMetadata().settings) {
+            for (let i=0; i<this.getMetadata().settings.length; i++) {
+              if (settingKey === this.getMetadata().settings[i].key) {
+                this.getMetadata().settings[i].value = settingsForm[settingKey];
+              }
+            }
+          }
+        }
+      }, this);
       this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
     },
 
-    __addInputPort: function(input) {
-      this.getInputPorts().push(input);
-      this.__inputPortsUI.add(input.ui);
-    },
-
-    __removeInputPort: function(port) {
-      var index = this.getInputPorts().indexOf(port);
-      if (index > -1) {
-        this.__inputPortsUI.remove(port.ui);
-        this.getInputPorts().splice(index, 1);
+    __addViewerButton: function(metadata) {
+      if (metadata.viewer) {
+        let button = new qx.ui.form.Button("Open Viewer");
+        button.setEnabled(metadata.viewer.port !== null);
+        this.setViewerButton(button);
       }
     },
 
-    __addOutputPort: function(input) {
-      this.getOutputPorts().push(input);
-      this.__outputPortsUI.add(input.ui);
+    __addInputPort: function(inputData) {
+      let label = this.__createPort(true, inputData);
+      this.getInputPorts().push(label);
+      this.__inputPortsUI.add(label.ui);
+    },
+
+    __addOutputPort: function(outputData) {
+      let label = this.__createPort(false, outputData);
+      this.getOutputPorts().push(label);
+      this.__outputPortsUI.add(label.ui);
     },
 
     getPort: function(portId) {
@@ -190,45 +224,15 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return null;
     },
 
-    getPortIndex: function(portId) {
-      const nInPorts = this.getInputPorts().length;
-      for (let i = 0; i < nInPorts; i++) {
-        if (this.getInputPorts()[i].portId === portId) {
-          return i;
-        }
-      }
-      const nOutPorts = this.getOutputPorts().length;
-      for (let i = 0; i < nOutPorts; i++) {
-        if (this.getOutputPorts()[i].portId === portId) {
-          return i;
-        }
-      }
-      return 0;
-    },
-
-    addInput: function(inputData) {
-      let label = this.__createPort(true, inputData);
-      this.__addInputPort(label);
-    },
-
-    addInputs: function(inputs) {
+    __addInputPorts: function(inputs) {
       for (let inputData of inputs) {
-        this.addInput(inputData);
+        this.__addInputPort(inputData);
       }
     },
 
-    removeInput: function(port) {
-      this.__removeInputPort(port);
-    },
-
-    addOutput: function(outputData) {
-      let label = this.__createPort(false, outputData);
-      this.__addOutputPort(label);
-    },
-
-    addOutputs: function(outputs) {
+    __addOutputPorts: function(outputs) {
       for (let outputData of outputs) {
-        this.addOutput(outputData);
+        this.__addOutputPort(outputData);
       }
     },
 
@@ -238,11 +242,31 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       label.isInput = isInput;
       label.portType = portData.type;
 
-      label.ui = new qx.ui.basic.Label(portData.label).set({
-        height: 16,
+      let icon = null;
+      switch (portData.type) {
+        case "file-url":
+          icon = "@FontAwesome5Solid/file/" + (portHeight-2).toString();
+          break;
+        case "folder-url":
+          icon = "@FontAwesome5Solid/folder/" + (portHeight-2).toString();
+          break;
+        default:
+          icon = "@FontAwesome5Solid/edit/" + (portHeight-2).toString();
+          break;
+      }
+      const alignX = (isInput) ? "left" : "right";
+      label.ui = new qx.ui.basic.Atom(portData.key, icon).set({
+        height: portHeight,
         draggable: true,
-        droppable: true
+        droppable: true,
+        iconPosition: alignX,
+        alignX: alignX,
+        allowGrowX: false
       });
+
+      var tooltip = new qx.ui.tooltip.ToolTip(portData.key, icon);
+      tooltip.setShowTimeout(50);
+      label.ui.setToolTip(tooltip);
 
       [
         ["dragstart", "LinkDragStart"],
@@ -260,6 +284,28 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         }, this);
       }, this);
       return label;
+    },
+
+    getLinkPoint: function(port) {
+      const nodeBounds = this.__getCurrentBounds();
+      let x = nodeBounds.left;
+      if (port.isInput === false) {
+        x += nodeBounds.width;
+      }
+      const captionHeight = this.__childControls.captionbar.getBounds().height;
+      const inputOutputs = this.getChildren()[0];
+      const inputPorts = inputOutputs.getChildren()[0].getChildren();
+      const outputPorts = inputOutputs.getChildren()[1].getChildren();
+      const ports = inputPorts.concat(outputPorts);
+      let portBounds;
+      for (let i=0; i<ports.length; i++) {
+        if (port.portId === ports[i].getLabel()) {
+          portBounds = ports[i].getBounds();
+          break;
+        }
+      }
+      let y = nodeBounds.top + captionHeight + 10 + portBounds.top + portBounds.height/2;
+      return [x, y];
     },
 
     setProgress: function(progress) {

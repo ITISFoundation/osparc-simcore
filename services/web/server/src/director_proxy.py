@@ -53,6 +53,11 @@ def retrieve_interactive_services():
     return request.json()
 
 
+def retrieve_computational_services():
+    request = director_request('list_computational_services')
+    return request.json()
+
+
 def start_service(service_name, service_uuid):
     request = director_request('start_service', method='POST', data={
                                'service_name': service_name, 'service_uuid': str(service_uuid)})

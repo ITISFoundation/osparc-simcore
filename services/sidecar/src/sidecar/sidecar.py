@@ -59,11 +59,15 @@ class Sidecar(object):
     def _process_task_input(self, port, input_ports):
         port_name = port['key']
         port_value = port['value']
+        _LOGGER.debug("PROCESSING %s %s", port_name, port_value)
         _LOGGER.debug(type(port_value))
         if isinstance(port_value, str) and port_value.startswith("link."):
             if port['type'] == 'file-url':
                 _LOGGER.debug('Fetch S3 %s', port_value)
-                object_name = os.path.join(str(self._task.pipeline_id),*port_value.split(".")[1:])
+                #parse the link assuming it is link.id.file.ending
+                _parts = port_value.split(".")
+                object_name = os.path.join(str(self._task.pipeline_id), _parts[1], ".".join(_parts[2:]))
+                #object_name = os.path.join(str(self._task.pipeline_id),*port_value.split(".")[1:])
                 input_file = os.path.join(self._executor.in_dir, port_name)
                 _LOGGER.debug('Downloading from  S3 %s/%s', self._s3.bucket, object_name)
                 success = False
@@ -91,6 +95,9 @@ class Sidecar(object):
                     for oport in other_task.output:
                         if oport['key'] == other_output_port_id:
                             input_ports[port_name] = oport['value']
+        else:
+            _LOGGER.debug('Non link data %s : %s', port_name, port_value)
+            input_ports[port_name] = port_value
 
     def _process_task_inputs(self):
         """ Writes input key-value pairs into a dictionary
@@ -110,15 +117,24 @@ class Sidecar(object):
             _LOGGER.debug(port)
             self._process_task_input(port, input_ports)
 
+        _LOGGER.debug('DUMPING json')
         #dump json file
         if input_ports:
             file_name = os.path.join(self._executor.in_dir, 'input.json')
             with open(file_name, 'w') as f:
                 json.dump(input_ports, f)
 
+        _LOGGER.debug('DUMPING DONE')
+
     def _pull_image(self):
+        _LOGGER.debug('PULLING IMAGE')
+        _LOGGER.debug('reg %s user %s pwd %s', self._docker.registry, self._docker.registry_user,self._docker.registry_pwd )
+
+
         self._docker.client.login(registry=self._docker.registry,
             username=self._docker.registry_user, password=self._docker.registry_pwd)
+
+        _LOGGER.debug('img %s tag %s', self._docker.image_name, self._docker.image_tag)
 
         self._docker.client.images.pull(self._docker.image_name, tag=self._docker.image_tag)
 
@@ -126,8 +142,8 @@ class Sidecar(object):
         connection = pika.BlockingConnection(self._pika.parameters)
 
         channel = connection.channel()
-        channel.exchange_declare(exchange=self._pika.log_channel, exchange_type='fanout')
-        channel.exchange_declare(exchange=self._pika.progress_channel, exchange_type='fanout')
+        channel.exchange_declare(exchange=self._pika.log_channel, exchange_type='fanout', auto_delete=True)
+        channel.exchange_declare(exchange=self._pika.progress_channel, exchange_type='fanout', auto_delete=True)
 
         with open(log_file) as file_:
             # Go to the end of file
@@ -143,10 +159,12 @@ class Sidecar(object):
                     if clean_line.lower().startswith("[progress]"):
                         progress = clean_line.lower().lstrip("[progress]").rstrip("%").strip()
                         prog_data = {"Channel" : "Progress", "Node": task.node_id, "Progress" : progress}
+                        _LOGGER.debug('PROGRESS %s', progress)
                         prog_body = json.dumps(prog_data)
                         channel.basic_publish(exchange=self._pika.progress_channel, routing_key='', body=prog_body)
                     else:
                         log_data = {"Channel" : "Log", "Node": task.node_id, "Message" : clean_line}
+                        _LOGGER.debug('LOG %s', clean_line)
                         log_body = json.dumps(log_data)
                         channel.basic_publish(exchange=self._pika.log_channel, routing_key='', body=log_body)
 
@@ -185,12 +203,17 @@ class Sidecar(object):
                                     flag_modified(self._task, "output")
                                     self._db.session.commit()
                     else:
+                        # we want to keep the folder structure
+                        if not root == directory:
+                            rel_name = os.path.relpath(root, directory)
+                            name = rel_name + "/" + name
+
                         object_name = str(self._task.pipeline_id) + "/" + self._task.node_id + "/" + name
                         success = False
                         ntry = 3
                         trial = 0
                         while not success and trial < ntry:
-                            _LOGGER.debug("POSTRO pushes to S3 %s try %s from %s", object_name, ntry, trial)
+                            _LOGGER.debug("POSTRO pushes to S3 %s try %s from %s", object_name, trial, ntry)
                             success = self._s3.client.upload_file(self._s3.bucket, object_name, filepath)
                             trial = trial + 1
 
@@ -213,7 +236,7 @@ class Sidecar(object):
 
     def initialize(self, task):
         self._task = task
-        self._docker.image_name = task.image['name']
+        self._docker.image_name = self._docker.registry_name + "/" + task.image['name']
         self._docker.image_tag = task.image['tag']
         self._executor.in_dir = os.path.join("/", "input", task.job_id)
         self._executor.out_dir = os.path.join("/", "output", task.job_id)
@@ -222,6 +245,10 @@ class Sidecar(object):
         self._docker.env = ["INPUT_FOLDER=" + self._executor.in_dir,
                            "OUTPUT_FOLDER=" + self._executor.out_dir,
                            "LOG_FOLDER=" + self._executor.log_dir]
+
+        # self._docker.env = ["INPUT_FOLDER=/input",
+        #                    "OUTPUT_FOLDER=/output",
+        #                    "LOG_FOLDER=/log"]
 
 
     def preprocess(self):
@@ -265,6 +292,7 @@ class Sidecar(object):
         _LOGGER.debug('DONE Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
 
     def run(self):
+        _LOGGER.debug("ENTERING run")
         self.preprocess()
         self.process()
         self.postprocess()
@@ -301,6 +329,8 @@ class Sidecar(object):
         return True
 
     def inspect(self, celery_task, pipeline_id, node_id):
+        _LOGGER.debug("ENTERING inspect pipeline:node %s: %s", pipeline_id, node_id)
+
         _pipeline = self._db.session.query(ComputationalPipeline).filter_by(pipeline_id=pipeline_id).one()
         graph = _pipeline.execution_graph
         next_task_nodes = []
@@ -352,7 +382,11 @@ class Sidecar(object):
 
             next_task_nodes = list(graph.successors(node_id))
         else:
+            _LOGGER.debug("NODE id was zero")
+            _LOGGER.debug("graph looks like this %s", graph)
+
             next_task_nodes = find_entry_point(graph)
+            _LOGGER.debug("Next task nodes %s", next_task_nodes)
 
         celery_task.update_state(state=CSUCCESS)
 
@@ -361,6 +395,7 @@ class Sidecar(object):
 SIDECAR = Sidecar()
 @celery.task(name='comp.task', bind=True)
 def pipeline(self, pipeline_id, node_id=None):
+    _LOGGER.debug("ENTERING run")
     next_task_nodes = SIDECAR.inspect(self, pipeline_id, node_id)
     for _node_id in next_task_nodes:
         _task = celery.send_task('comp.task', args=(pipeline_id, _node_id), kwargs={})

@@ -1,0 +1,15 @@
+{
+    "version":"0.1",
+    "inputs": [
+        {
+            "key": "in_1",
+            "label": "computational data",
+            "description": "these are computed data out of a pipeline",
+            "type": "file-url",
+            "value": "/home/jovyan/data/outputControllerOut.dat",
+            "timestamp": "2018-05-23T15:34:53.511Z"
+        }
+    ],
+    "outputs": [        
+    ]
+}

@@ -1,7 +1,6 @@
 """
     Uses socketio and aiohtttp framework
 """
-import asyncio
 import logging
 import os
 
@@ -24,6 +23,11 @@ logging.basicConfig(
     format='%(levelname)s:%(name)s-%(lineno)d: %(message)s'
     )
 
+# subscribe to rabbit
+#loop = asyncio.get_event_loop()
+#loop.create_task(subscribe())
+
+
 def create_app(args=()):
     """ Creates main application
 
@@ -31,14 +35,14 @@ def create_app(args=()):
     #pylint: disable=W0613
     _LOGGER.debug("Starting as %s ...", CONFIG)
 
-    # subscribe to rabbit
-    loop = asyncio.get_event_loop()
-    loop.create_task(subscribe())
 
     client_dir = CONFIG.SIMCORE_CLIENT_OUTDIR
 
     app = web.Application()
     SIO.attach(app)
+
+    # subscribe to rabbit
+    app.on_startup.append(subscribe)
 
     # http requests handlers
     async def _index(request):

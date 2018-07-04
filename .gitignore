@@ -113,6 +113,9 @@ node_modules/
 # Manual overrides
 services/docker-compose.override.yml
 
+# swarm files
+services/docker-compose.swarm.yml
+
 # mac
 .DS_Store
 

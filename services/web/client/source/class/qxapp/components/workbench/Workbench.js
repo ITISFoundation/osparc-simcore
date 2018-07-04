@@ -1,4 +1,5 @@
 /* eslint no-warning-comments: "off" */
+/* global window */
 
 const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
@@ -74,13 +75,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       right: 20
     });
     [
-      this.__getPlusMenuButton(),
+      this.__getPlusButton(),
       this.__getRemoveButton(),
       this.__getPlayButton(),
       this.__getStopButton()
     ].forEach(widget => {
       buttonContainer.add(widget);
     });
+
+    this.setCanStart(true);
 
     this.addListener("dblclick", function(pointerEvent) {
       // FIXME:
@@ -126,6 +129,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __pointerPosX: null,
     __pointerPosY: null,
     __selectedItemId: null,
+    __playButton: null,
+    __stopButton: null,
 
     __getShowLoggerButton: function() {
       const icon = "@FontAwesome5Solid/list-alt/32";
@@ -192,39 +197,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __getPlayButton: function() {
       const icon = "@FontAwesome5Solid/play/32";
-      let playButton = new qx.ui.form.Button(null, icon);
+      let playButton = this.__playButton = new qx.ui.form.Button(null, icon);
       playButton.set({
         width: BUTTON_SIZE,
         height: BUTTON_SIZE
       });
 
       playButton.addListener("execute", function() {
-        let socket = qxapp.wrappers.WebSocket.getInstance();
-
-        // callback for incoming logs
-        if (!socket.slotExists("logger")) {
-          socket.on("logger", function(data) {
-            var d = JSON.parse(data);
-            var node = d["Node"];
-            var msg = d["Message"];
-            this.__updateLogger(node, msg);
-          });
-        }
-        socket.emit("logger");
-
-        // callback for incoming progress
-        if (!socket.slotExists("progress")) {
-          socket.on("progress", function(data) {
-            console.log("progress", data);
-            var d = JSON.parse(data);
-            var node = d["Node"];
-            var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
-            this.updateProgress(node, progress);
-          });
-        }
-
         if (this.getCanStart()) {
           this.__startPipeline();
+        } else {
+          this.__logger.info("Can not start pipeline");
         }
       }, this);
 
@@ -233,7 +216,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __getStopButton: function() {
       const icon = "@FontAwesome5Solid/stop-circle/32";
-      let stopButton = new qx.ui.form.Button(null, icon);
+      let stopButton = this.__stopButton = new qx.ui.form.Button(null, icon);
       stopButton.set({
         width: BUTTON_SIZE,
         height: BUTTON_SIZE
@@ -246,7 +229,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __applyCanStart: function(value, old) {
-      console.log("CanStart", value);
+      if (value) {
+        this.__playButton.setVisibility("visible");
+        this.__stopButton.setVisibility("excluded");
+      } else {
+        this.__playButton.setVisibility("excluded");
+        this.__stopButton.setVisibility("visible");
+      }
     },
 
     __getRemoveButton: function() {
@@ -328,31 +317,22 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       node.addListener("dblclick", function(e) {
         if (node.getMetadata().key === "FileManager") {
-          let win = new qx.ui.window.Window(node.getMetadata().name).set({
-            width: 800,
-            height: 600,
-            minWidth: 400,
-            minHeight: 400,
-            modal: true,
-            showMinimize: false,
-            layout: new qx.ui.layout.Canvas()
-          });
-          win.moveTo(50, 50);
-
           let fileManager = new qxapp.components.workbench.widgets.FileManager();
-          win.add(fileManager, {
-            left: 0,
-            top: 0,
-            right: 0,
-            bottom: 0
-          });
           fileManager.addListener("FileSelected", function(data) {
             node.getMetadata().outputs[0].value = data.getData().filePath;
+            node.getMetadata().outputs[1].value = null;
             node.setProgress(100);
-            win.close();
+            fileManager.close();
+          }, this);
+          fileManager.addListener("FolderSelected", function(data) {
+            node.getMetadata().outputs[0].value = null;
+            node.getMetadata().outputs[1].value = data.getData().filePath;
+            node.setProgress(100);
+            fileManager.close();
           }, this);
 
-          this.addWindowToDesktop(win);
+          fileManager.moveTo(100, 100);
+          fileManager.open();
         } else {
           this.fireDataEvent("NodeDoubleClicked", node);
         }
@@ -363,29 +343,29 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __createNode: function(nodeMetaData) {
-      let nodeBase = new qxapp.components.workbench.NodeBase();
+      let nodeBase = new qxapp.components.workbench.NodeBase(nodeMetaData.uuid);
       nodeBase.setMetadata(nodeMetaData);
 
-      if (nodeBase.getNodeImageId() === "modeler") {
-        const slotName = "startModeler";
+      const imageId = nodeBase.getNodeImageId();
+      if (imageId.includes("dynamic")) {
+        const slotName = "startDynamic";
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
           if (val["service_uuid"] === nodeBase.getNodeId()) {
-            let portNumber = val["containers"][0]["published_ports"];
+            let portNumber = val["containers"][0].published_ports[0];
             nodeBase.getMetadata().viewer.port = portNumber;
+            nodeBase.getMetadata().viewer.ip = "http://" + window.location.hostname;
+            nodeBase.getViewerButton().setEnabled(portNumber !== null);
+            const servUrl = nodeBase.getMetadata().viewer.ip +":"+ nodeBase.getMetadata().viewer.port;
+            this.__logger.debug(nodeBase.getMetadata().name, "Service ready on " + servUrl);
+            this.__logger.info(nodeBase.getMetadata().name, "Service ready");
           }
         }, this);
-        socket.emit(slotName, nodeBase.getNodeId());
-      } else if (nodeBase.getNodeImageId() === "jupyter-base-notebook") {
-        const slotName = "startJupyter";
-        let socket = qxapp.wrappers.WebSocket.getInstance();
-        socket.on(slotName, function(val) {
-          if (val["service_uuid"] === nodeBase.getNodeId()) {
-            let portNumber = val["containers"][0]["published_ports"];
-            nodeBase.getMetadata().viewer.port = portNumber;
-          }
-        }, this);
-        socket.emit(slotName, nodeBase.getNodeId());
+        let data = {
+          serviceName: nodeBase.getMetadata().name,
+          nodeId: nodeBase.getNodeId()
+        };
+        socket.emit(slotName, data);
       }
 
       const evType = "pointermove";
@@ -607,7 +587,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let y1;
       let x2;
       let y2;
-      const portPos = this.__getLinkPoint(node, port);
+      const portPos = node.getLinkPoint(port);
       // FIXME:
       const navBarHeight = 50;
       this.__pointerPosX = pointerEvent.getViewportLeft() - this.getBounds().left;
@@ -643,17 +623,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__pointerPosY = null;
     },
 
-    __getLinkPoint: function(node, port) {
-      const nodeBounds = node.getCurrentBounds();
-      const portIdx = node.getPortIndex(port.portId);
-      let x = nodeBounds.left;
-      if (port.isInput === false) {
-        x += nodeBounds.width;
-      }
-      let y = nodeBounds.top + 4 + 33 + 10 + 16/2 + (16+5)*portIdx;
-      return [x, y];
-    },
-
     __getLinkPoints: function(node1, port1, node2, port2) {
       let p1 = null;
       let p2 = null;
@@ -661,8 +630,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (port1.isInput) {
         [node1, port1, node2, port2] = [node2, port2, node1, port1];
       }
-      p1 = this.__getLinkPoint(node1, port1);
-      p2 = this.__getLinkPoint(node2, port2);
+      p1 = node1.getLinkPoint(port1);
+      p2 = node2.getLinkPoint(port2);
       // hack to place the arrow-head properly
       p2[0] -= 6;
       return [p1, p2];
@@ -700,6 +669,16 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __removeNode: function(node) {
+      const imageId = node.getNodeImageId();
+      if (imageId.includes("dynamic")) {
+        const slotName = "stopDynamic";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        let data = {
+          nodeId: node.getNodeId()
+        };
+        socket.emit(slotName, data);
+      }
+
       this.__desktop.remove(node);
       let index = this.__nodes.indexOf(node);
       if (index > -1) {
@@ -781,7 +760,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let nodeMetaData = nodesMetaData[i];
         let node = this.__createNode(nodeMetaData);
         node.setNodeId(nodeMetaData.uuid);
-        if (Object.prototype.hasOwnProperty.call(nodeMetaData, "position")) {
+        if (nodeMetaData.position) {
           this.__addNodeToWorkbench(node, nodeMetaData.position);
         } else {
           this.__addNodeToWorkbench(node);
@@ -806,51 +785,103 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __startPipeline: function() {
       // ui start pipeline
-      this.__clearProgressData();
+      // this.__clearProgressData();
+
+      let socket = qxapp.wrappers.WebSocket.getInstance();
+
+      // callback for incoming logs
+      if (!socket.slotExists("logger")) {
+        socket.on("logger", function(data) {
+          var d = JSON.parse(data);
+          var node = d["Node"];
+          var msg = d["Message"];
+          this.__updateLogger(node, msg);
+        }, this);
+      }
+      socket.emit("logger");
+
+      // callback for incoming progress
+      if (!socket.slotExists("progress")) {
+        socket.on("progress", function(data) {
+          console.log("progress", data);
+          var d = JSON.parse(data);
+          var node = d["Node"];
+          var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
+          this.updateProgress(node, progress);
+        }, this);
+      }
 
       // post pipeline
+      this.__pipelineId = null;
       let currentPipeline = this.__serializeData();
       console.log(currentPipeline);
-      var req = new qx.io.request.Xhr();
-      var data = {};
-      data["pipeline_mockup_id"] = currentPipeline;
+      let req = new qx.io.request.Xhr();
+      let data = {};
+      data = currentPipeline;
+      data["pipeline_mockup_id"] = qxapp.utils.Utils.uuidv4();
       req.set({
         url: "/start_pipeline",
         method: "POST",
         requestData: qx.util.Serializer.toJson(data)
       });
       req.addListener("success", this.__onPipelinesubmitted, this);
+      req.addListener("error", function(e) {
+        this.setCanStart(true);
+        this.__logger.error("Workbench", "Error submitting pipeline");
+      }, this);
+      req.addListener("fail", function(e) {
+        this.setCanStart(true);
+        this.__logger.error("Workbench", "Failed submitting pipeline");
+      }, this);
       req.send();
-
-      // FIXME: do we need this?
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-      socket.emit("logger");
-
-      this.setCanStart(false);
 
       this.__logger.info("Workbench", "Starting pipeline");
     },
 
     __onPipelinesubmitted: function(e) {
-      var req = e.getTarget();
+      let req = e.getTarget();
       console.debug("Everything went fine!!");
       console.debug("status  : ", req.getStatus());
       console.debug("phase   : ", req.getPhase());
       console.debug("response: ", req.getResponse());
 
-      // FIXME: do we need this?
-      // register for log and progress
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-      socket.emit("register_for_log", "123");
-      socket.emit("register_for_progress", "123");
+      this.setCanStart(false);
+
+      this.__pipelineId = req.getResponse().pipeline_id;
+      this.__logger.debug("Workbench", "Pipeline ID" + this.__pipelineId);
+      this.__logger.info("Workbench", "Pipeline started");
     },
 
     __stopPipeline: function() {
+      let req = new qx.io.request.Xhr();
+      let data = {};
+      data["pipeline_id"] = this.__pipelineId;
+      req.set({
+        url: "/stop_pipeline",
+        method: "POST",
+        requestData: qx.util.Serializer.toJson(data)
+      });
+      req.addListener("success", this.__onPipelineStopped, this);
+      req.addListener("error", function(e) {
+        this.setCanStart(false);
+        this.__logger.error("Workbench", "Error stopping pipeline");
+      }, this);
+      req.addListener("fail", function(e) {
+        this.setCanStart(false);
+        this.__logger.error("Workbench", "Failed stopping pipeline");
+      }, this);
+      // req.send();
+
+      // temporary solution
+      this.setCanStart(true);
+
+      this.__logger.info("Workbench", "Stopping pipeline. Not yet implemented");
+    },
+
+    __onPipelineStopped: function(e) {
       this.__clearProgressData();
 
       this.setCanStart(true);
-
-      this.__logger.warn("Workbench", "Stopping pipeline");
     },
 
     __updateLogger: function(nodeId, msg) {

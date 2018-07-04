@@ -31,6 +31,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
   },
   members: {
     __settingsBox: null,
+    __dynamicViewer: null,
 
     __initTitle: function() {
       let box = new qx.ui.layout.HBox();
@@ -60,11 +61,23 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
     __initSettings: function() {
       this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Grow());
       this.add(this.__settingsBox);
+
+      this.__dynamicViewer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      this.add(this.__dynamicViewer);
     },
 
     __applyNode: function(node, oldNode, propertyName) {
       this.__settingsBox.removeAll();
       this.__settingsBox.add(node.getPropsWidget());
+
+      this.__dynamicViewer.removeAll();
+      let viewerButton = node.getViewerButton();
+      if (viewerButton) {
+        viewerButton.addListener("execute", function(e) {
+          this.fireDataEvent("ShowViewer", node.getMetadata());
+        }, this);
+        this.__dynamicViewer.add(viewerButton);
+      }
     }
   }
 });
