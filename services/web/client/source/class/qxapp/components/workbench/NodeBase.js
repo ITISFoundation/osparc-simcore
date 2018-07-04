@@ -85,6 +85,11 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     propsWidget: {
       check: "qxapp.components.form.renderer.PropForm"
+    },
+
+    viewerButton: {
+      init: null,
+      check: "qx.ui.form.Button"
     }
   },
 
@@ -148,9 +153,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
           nodeImageId: metaData.key
         });
         let props = metaData.inputs.concat(metaData.settings);
-        this.addSettings(props);
-        this.addInputs(metaData.inputs);
-        this.addOutputs(metaData.outputs);
+        this.__addSettings(props);
+        this.__addViewerButton(metaData);
+        this.__addInputPorts(metaData.inputs);
+        this.__addOutputPorts(metaData.outputs);
       }
     },
 
@@ -158,7 +164,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.setCaption(name);
     },
 
-    addSettings: function(settings) {
+    __addSettings: function(settings) {
       let form = this.__settingsForm = new qxapp.components.form.Auto(settings);
       this.__settingsForm.addListener("changeData", function(e) {
         let settingsForm = e.getData();
@@ -182,22 +188,24 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
     },
 
-    __addInputPort: function(input) {
-      this.getInputPorts().push(input);
-      this.__inputPortsUI.add(input.ui);
-    },
-
-    __removeInputPort: function(port) {
-      var index = this.getInputPorts().indexOf(port);
-      if (index > -1) {
-        this.__inputPortsUI.remove(port.ui);
-        this.getInputPorts().splice(index, 1);
+    __addViewerButton: function(metadata) {
+      if (metadata.viewer) {
+        let button = new qx.ui.form.Button("Open Viewer");
+        button.setEnabled(metadata.viewer.port !== null);
+        this.setViewerButton(button);
       }
     },
 
-    __addOutputPort: function(input) {
-      this.getOutputPorts().push(input);
-      this.__outputPortsUI.add(input.ui);
+    __addInputPort: function(inputData) {
+      let label = this.__createPort(true, inputData);
+      this.getInputPorts().push(label);
+      this.__inputPortsUI.add(label.ui);
+    },
+
+    __addOutputPort: function(outputData) {
+      let label = this.__createPort(false, outputData);
+      this.getOutputPorts().push(label);
+      this.__outputPortsUI.add(label.ui);
     },
 
     getPort: function(portId) {
@@ -216,29 +224,15 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return null;
     },
 
-    addInput: function(inputData) {
-      let label = this.__createPort(true, inputData);
-      this.__addInputPort(label);
-    },
-
-    addInputs: function(inputs) {
+    __addInputPorts: function(inputs) {
       for (let inputData of inputs) {
-        this.addInput(inputData);
+        this.__addInputPort(inputData);
       }
     },
 
-    removeInput: function(port) {
-      this.__removeInputPort(port);
-    },
-
-    addOutput: function(outputData) {
-      let label = this.__createPort(false, outputData);
-      this.__addOutputPort(label);
-    },
-
-    addOutputs: function(outputs) {
+    __addOutputPorts: function(outputs) {
       for (let outputData of outputs) {
-        this.addOutput(outputData);
+        this.__addOutputPort(outputData);
       }
     },
 
