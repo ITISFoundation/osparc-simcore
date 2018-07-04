@@ -97,7 +97,7 @@ qx.Class.define("qxapp.Application", {
           .getBackground(), this._appModel.getColors().getToolBar()
           .getFont());
 
-      this.__threeView = new qxapp.components.ThreeView(
+      this.__threeView = new qxapp.components.widgets.ThreeDView(
         docWidth, docHeight,
         this._appModel.getColors().get3DView()
           .getBackground());
@@ -110,7 +110,12 @@ qx.Class.define("qxapp.Application", {
 
 
       // components to document
-      doc.add(this.__threeView);
+      doc.add(this.__threeView, {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0
+      });
 
       let toolBarcontainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(1)).set({
         backgroundColor: "white",
