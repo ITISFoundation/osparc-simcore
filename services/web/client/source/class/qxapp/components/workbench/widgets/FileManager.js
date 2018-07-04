@@ -51,17 +51,17 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
     });
     tree.addListener("changeSelection", this.__selectionChanged, this);
 
-    this.__selectFileBtn = new qx.ui.form.Button(this.tr("Select File"));
-    this.__selectFileBtn.setEnabled(false);
-    this.add(this.__selectFileBtn);
-    this.__selectFileBtn.addListener("execute", function() {
-      this.__fileSelected();
+    this.__selectBtn = new qx.ui.form.Button(this.tr("Select"));
+    this.__selectBtn.setEnabled(false);
+    this.add(this.__selectBtn);
+    this.__selectBtn.addListener("execute", function() {
+      this.__itemSelected();
     }, this);
 
     // Listen to "Enter" key
     this.addListener("keypress", function(keyEvent) {
       if (keyEvent.getKeyIdentifier() === "Enter") {
-        this.__fileSelected();
+        this.__itemSelected();
       }
     }, this);
 
@@ -69,14 +69,13 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
   },
 
   events: {
-    "FileSelected": "qx.event.type.Data"
+    "FileSelected": "qx.event.type.Data",
+    "FolderSelected": "qx.event.type.Data"
   },
 
   members: {
     __mainTree: null,
-    __publicTree: null,
-    __userTree: null,
-    __selectFileBtn: null,
+    __selectBtn: null,
 
     __reloadTree: function() {
       this.__mainTree.resetRoot();
@@ -85,36 +84,106 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       root.setOpen(true);
       this.__mainTree.setRoot(root);
 
-      let tree1 = this.__publicTree = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), this.tr("Public Files"));
-      tree1.setOpen(true);
-      root.add(tree1);
-
-      let tree2 = this.__userTree = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), this.tr("User Files"));
-      tree2.setOpen(true);
-      root.add(tree2);
-
-      const username = qxapp.data.Fake.getUsername();
-      this.__getObjLists(username);
+      this.__getObjLists();
     },
 
-    __getObjLists: function(bucketName) {
+    __getObjLists: function() {
       let socket = qxapp.wrappers.WebSocket.getInstance();
-
-      socket.removeSlot("listObjectsPub");
-      socket.on("listObjectsPub", function(data) {
-        let treeItem = this.__addTreeItem(this.__publicTree, data);
-        const publicBucket = qxapp.data.Fake.getS3PublicBucketName();
-        treeItem.path = publicBucket + "/" + data.name;
+      socket.removeSlot("listObjects");
+      socket.on("listObjects", function(data) {
+        console.log("listObjects", data);
+        for (let i=0; i<data.length; i++) {
+          this.__addTreeItem(data[i]);
+        }
       }, this);
+      socket.emit("listObjects");
+    },
 
-      socket.removeSlot("listObjectsUser");
-      socket.on("listObjectsUser", function(data) {
-        let treeItem = this.__addTreeItem(this.__userTree, data);
-        const username = qxapp.data.Fake.getUsername();
-        treeItem.path = username + "/" + data.name;
-      }, this);
+    __alreadyExists: function(parentTree, itemName) {
+      for (let i=0; i<parentTree.getChildren().length; i++) {
+        let treeExsItem = parentTree.getChildren()[i];
+        if (treeExsItem.getLabel() === itemName) {
+          return treeExsItem;
+        }
+      }
+      return null;
+    },
 
-      socket.emit("listObjects", bucketName);
+    __addTreeItem: function(data) {
+      let splitted = data.path.split("/");
+      let parentFolder = this.__mainTree.getRoot();
+      for (let i=0; i<splitted.length-1; i++) {
+        let parentPath = splitted.slice(0, i);
+        const folderName = splitted[i];
+        let folderPath = {
+          path: parentPath.concat(folderName).join("/")
+        };
+        if (this.__alreadyExists(parentFolder, folderName)) {
+          parentFolder = this.__alreadyExists(parentFolder, folderName);
+        } else {
+          let newFolder = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), folderName, folderPath);
+          parentFolder.add(newFolder);
+          parentFolder = newFolder;
+        }
+      }
+
+      const fileName = splitted[splitted.length-1];
+      if (!this.__alreadyExists(parentFolder, fileName)) {
+        let treeItem = this.__configureTreeItem(new qx.ui.tree.TreeFile(), fileName, data);
+        parentFolder.add(treeItem);
+      }
+    },
+
+    __configureTreeItem: function(treeItem, label, extraInfo) {
+      // A left-justified icon
+      treeItem.addWidget(new qx.ui.core.Spacer(16, 16));
+
+      // Here's our indentation and tree-lines
+      treeItem.addSpacer();
+
+      if (treeItem instanceof qx.ui.tree.TreeFolder) {
+        treeItem.addOpenButton();
+      }
+
+      // The standard tree icon follows
+      treeItem.addIcon();
+
+      // The label
+      treeItem.addLabel(label);
+
+      // All else should be right justified
+      treeItem.addWidget(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      if (treeItem instanceof qx.ui.tree.TreeFile) {
+        // Add a file size, date and mode
+        const formattedSize = qxapp.utils.Utils.formatBytes(extraInfo.size);
+        let text = new qx.ui.basic.Label(formattedSize);
+        text.setWidth(80);
+        treeItem.addWidget(text);
+
+        text = new qx.ui.basic.Label((new Date(extraInfo.lastModified)).toUTCString());
+        text.setWidth(200);
+        treeItem.addWidget(text);
+
+        // Listen to "Double Click" key
+        treeItem.addListener("dblclick", function(mouseEvent) {
+          this.__itemSelected();
+        }, this);
+      }
+
+      if (extraInfo) {
+        treeItem.path = extraInfo.path;
+      }
+
+      if (treeItem instanceof qx.ui.tree.TreeFile) {
+        treeItem.isDir = false;
+      } else if (treeItem instanceof qx.ui.tree.TreeFolder) {
+        treeItem.isDir = true;
+      }
+
+      return treeItem;
     },
 
     // Request to the server an upload URL.
@@ -127,7 +196,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
         this.__uploadFile(file, url);
       }, this);
       const data = {
-        bucketName: qxapp.data.Fake.getUsername(),
+        bucketName: qxapp.data.Fake.getS3PublicBucketName(),
         fileName: file.name
       };
       socket.emit("presignedUrl", data);
@@ -167,74 +236,21 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
 
     __selectionChanged: function() {
       let selectedItem = this.__mainTree.getSelection();
-      this.__selectFileBtn.setEnabled("path" in selectedItem[0]);
+      this.__selectBtn.setEnabled("path" in selectedItem[0]);
     },
 
-    __fileSelected: function() {
+    __itemSelected: function() {
       let selectedItem = this.__mainTree.getSelection();
       if ("path" in selectedItem[0]) {
         const data = {
           filePath: selectedItem[0].path
         };
-        this.fireDataEvent("FileSelected", data);
-      }
-    },
-
-    __addTreeItem: function(tree, data) {
-      for (let i=0; i<tree.getChildren().length; i++) {
-        let treeExsItem = tree.getChildren()[i];
-        if (treeExsItem.getLabel() === data.name) {
-          console.log("returning existing tree item");
-          return treeExsItem;
+        if (selectedItem[0].isDir) {
+          this.fireDataEvent("FolderSelected", data);
+        } else {
+          this.fireDataEvent("FileSelected", data);
         }
       }
-
-      let treeItem = this.__configureTreeItem(new qx.ui.tree.TreeFile(), data.name, data);
-      tree.add(treeItem);
-
-      return treeItem;
-    },
-
-    __configureTreeItem: function(treeItem, label, extraInfo) {
-      // A left-justified icon
-      treeItem.addWidget(new qx.ui.core.Spacer(16, 16));
-
-      // Here's our indentation and tree-lines
-      treeItem.addSpacer();
-
-      if (treeItem instanceof qx.ui.tree.TreeFolder) {
-        treeItem.addOpenButton();
-      }
-
-      // The standard tree icon follows
-      treeItem.addIcon();
-
-      // The label
-      treeItem.addLabel(label);
-
-      // All else should be right justified
-      treeItem.addWidget(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      if (treeItem instanceof qx.ui.tree.TreeFile) {
-        // Add a file size, date and mode
-        const formattedSize = qxapp.utils.Utils.formatBytes(extraInfo.size);
-        let text = new qx.ui.basic.Label(formattedSize);
-        text.setWidth(80);
-        treeItem.addWidget(text);
-
-        text = new qx.ui.basic.Label((new Date(extraInfo.lastModified)).toUTCString());
-        text.setWidth(200);
-        treeItem.addWidget(text);
-
-        // Listen to "Double Click" key
-        treeItem.addListener("dblclick", function(mouseEvent) {
-          this.__fileSelected();
-        }, this);
-      }
-
-      return treeItem;
     }
   }
 });

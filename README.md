@@ -1,6 +1,7 @@
 # osparc-simcore platform
 
 [![Build Status](https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master)](https://travis-ci.org/ITISFoundation/osparc-simcore)
+[![Waffle.io - Columns and their card count](https://badge.waffle.io/ITISFoundation/osparc-simcore.svg?columns=all)](https://waffle.io/ITISFoundation/osparc-simcore) 
 
 ## Overview
 

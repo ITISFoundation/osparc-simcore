@@ -28,6 +28,12 @@ qx.Class.define("qxapp.data.Store", {
           "description": "File-url",
           "type": "file-url",
           "defaultValue": null
+        }, {
+          "key": "out_2",
+          "label": "Folder-url",
+          "description": "Folder-url",
+          "type": "folder-url",
+          "defaultValue": null
         }],
         "settings": []
       }];
