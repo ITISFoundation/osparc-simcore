@@ -3,11 +3,16 @@ qx.Class.define("qxapp.dev.fakesrv.restapi.Authentication", {
   type: "static",
 
   statics: {
+    REMEMBER: false,
+
     mockData: [{
-      method: "POST",
-      url: "api/v1/login",
+      method: "GET",
+      url: "api/v1.0/token",
       response: function(request) {
-        let status = 401; // Unauthorized
+        console.log("Received request:", request);
+
+        // Defaults unauthorized
+        let status = 401;
         let headers = {
           "Content-Type": "application/json"
         };
@@ -16,28 +21,77 @@ qx.Class.define("qxapp.dev.fakesrv.restapi.Authentication", {
         const login = qx.lang.Json.parse(request.requestBody);
         // TODO: validate json!
 
-        // if login.user exists:
-        //  if verified:
-        //    if valid login.password:
-        //      if suceeds:
-        //        return token
-
-        const DUMMY_EMAIL = "bizzy@itis.ethz.ch";
-        const DUMMY_PASS = "z43";
-        const DUMMY_USERID = 1;
-        const DUMMY_USERTOKEN = "eeeaee5e-9b6e-475b-abeb-66a000be8d03";
-
-        if (login.username == DUMMY_EMAIL && login.password == DUMMY_PASS) {
+        const userId = qxapp.dev.fakesrv.restapi.Authentication.checkCredentials(login);
+        if (userId !== null) {
           status = 200;
-          body = qx.lang.Json.stringify({
-            userId: DUMMY_USERID,
-            token: DUMMY_USERTOKEN
-          });
+          body = {
+            token: qxapp.dev.fakesrv.restapi.Authentication.createToken(userId)
+          };
         }
 
-        request.respond(status, headers, body);
+        request.respond(status, headers, qx.lang.Json.stringify(body));
       }
-    }]
+    }],
+
+    createToken: function(userId, expiration=24) {
+      return "this-is-a-dummy-token-that-expires-in-" + String(expiration) + "hours-for-" + String(userId);
+    },
+
+    getUserIdFromToken: function(token) {
+      if (token.startsWith("this-is-a-dummy-token-that-expires-in-")) {
+        var parts = token.split("-");
+        return parts.pop();
+      }
+      return null;
+    },
+
+    checkCredentials: function(login) {
+      var userId = qxapp.dev.fakesrv.db.User.DUMMYNAMES.findIndex(function(userName, userIndex) {
+        const validEmail = qxapp.dev.fakesrv.db.User.getEmail(userIndex);
+        return validEmail == login.email && login.password == "z43";
+      });
+      return userId>=0? userId: null;
+    },
+
+    /**
+     * Gets {email, password} from header
+     * produced by qx.io.request.authentication.Basic
+    */
+    decodeAuthHeader: function(requestHeaders) {
+      var res = {
+        email: null,
+        password: null
+      };
+      var header = requestHeaders["Authorization"];
+
+      // Remove 'Basic $value'
+      var value = header.split(" ")[1];
+      // parse '$username : $password'
+      var pair = qx.util.Base64.decode(value).split(":");
+      res["email"] = pair[0];
+      res["password"] = pair[1];
+
+      return res;
+    },
+
+    /**
+     * Parse {email:, password:} object extracting
+     * parameters from body
+     *
+    */
+    parseLoginParameters: function(requestBody) {
+      var res = {
+        email: null,
+        password: null
+      };
+
+      var vars = requestBody.split("&");
+      for (var i = 0; i < vars.length; ++i) {
+        var pair = vars[i].split("=");
+        res[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
+      }
+      return res;
+    }
   },
 
   defer: function(mystatics) {

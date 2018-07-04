@@ -5,7 +5,7 @@ qx.Class.define("qxapp.dev.fakesrv.restapi.User", {
   statics: {
     mockData: [{
       method: "GET",
-      url: "api/v1/user/{id}",
+      url: "api/v1.0/user/{id}",
       response: function(request) {
         let status = 200; // OK
         let headers = {
@@ -21,7 +21,7 @@ qx.Class.define("qxapp.dev.fakesrv.restapi.User", {
       }
     }, {
       method: "GET",
-      url: "api/v1/users/",
+      url: "api/v1.0/users/",
       response: function(request) {
         let users = qxapp.dev.fakesrv.db.User.DUMMYNAMES;
 
