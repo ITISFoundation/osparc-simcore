@@ -68,7 +68,7 @@ ENV USE_CASE_CONFIG_FILE=${JSON_CONFIGURATION}
 COPY --chown=jovyan:users ${JSON_CONFIGURATION} .
 # create dummy tables and dummy S3 data
 ENV CREATE_DUMMY_TABLE=1
-#COPY --chown=jovyan:users develdbs3init.py .
+COPY --chown=jovyan:users develdbs3init.py .
 CMD [ "/bin/sh", "boot.sh" ]
 # -----------------------------------------------------------------------------
 FROM specialised AS production

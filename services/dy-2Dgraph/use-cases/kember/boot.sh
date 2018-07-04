@@ -1,12 +1,12 @@
 #!/bin/sh
 
-# if test "${CREATE_DUMMY_TABLE}" = "1"
-# then
-#     echo "Creating dummy tables ... using ${USE_CASE_CONFIG_FILE}"
-#     result="$(python develdbs3init.py ${USE_CASE_CONFIG_FILE})"
-#     echo "Received result node uuid of $result"
-#     export SIMCORE_NODE_UUID="$result"
-# fi
+if test "${CREATE_DUMMY_TABLE}" = "1"
+then
+    echo "Creating dummy tables ... using ${USE_CASE_CONFIG_FILE}"
+    result="$(python develdbs3init.py ${USE_CASE_CONFIG_FILE})"
+    echo "Received result node uuid of $result"
+    export SIMCORE_NODE_UUID="$result"
+fi
 jupyter trust ${NOTEBOOK_URL}
 start-notebook.sh \
     --NotebookApp.token='' \
