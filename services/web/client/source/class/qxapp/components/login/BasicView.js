@@ -41,8 +41,6 @@ qx.Class.define("qxapp.components.login.BasicView", {
    */
   members: {
     __form: null,
-    __userId: null,
-    __token: null,
     __info: null,
 
     __createHeader: function() {
@@ -109,33 +107,15 @@ qx.Class.define("qxapp.components.login.BasicView", {
     },
 
     __onSubmitLogin: function(e) {
-      // this is user's input
       var loginData = e.getData();
 
-      let auth = new qx.io.request.authentication.Basic(
-        loginData.user,
-        loginData.password);
-
-      // TODO: encapsulate entire request in separate class
-      // let req = new qxapp.io.request.Login(loginData());
-
-      // let serializer = function (object) {
-      //  if (object instanceof qx.ui.form.ListItem) {
-      //    return object.getLabel();
-      //  }
-      // };
-      // console.debug("You are sending: " +
-      //  qx.util.Serializer.toUriParameter(model, serializer));
-
-      // Requests authentication to server
       let req = new qx.io.request.Xhr();
       req.set({
-        // qx.io.request.authentication sets headers.
-        // Can send user+passorwd or user=token w/o password!?
-        authentication: auth,
-        url: "api/v1/login",
-        method: "POST",
-        requestData: qx.util.Serializer.toJson(loginData)
+        authentication: new qx.io.request.authentication.Basic(
+          loginData.username,
+          loginData.password),
+        url: "api/v1.0/token",
+        method: "GET"
       });
 
       req.addListener("success", this.__onLoginSucceed, this);
@@ -147,10 +127,7 @@ qx.Class.define("qxapp.components.login.BasicView", {
       const req = e.getTarget();
       console.debug("Login suceeded:", "status  :", req.getStatus(), "phase   :", req.getPhase(), "response: ", req.getResponse());
 
-      this.__info = req.getResponse();
-      this.__userId = req.getResponse().userId;
-      this.__userToken = req.getResponse().token;
-
+      qxapp.io.rest.Resource.setAutheticationHeader(req.getResponse().token, null);
       this.fireDataEvent("login", true);
     },
 

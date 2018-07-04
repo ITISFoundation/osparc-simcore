@@ -3,10 +3,12 @@ msgid "Account Settings"
 msgstr ""
 
 #: qxapp/components/workbench/SettingsView.js:42
+#: qxapp/components/workbench/SettingsView.js:43
 msgid "Inputs"
 msgstr ""
 
 #: qxapp/components/workbench/SettingsView.js:47
+#: qxapp/components/workbench/SettingsView.js:48
 msgid "Done"
 msgstr ""
 
@@ -76,4 +78,16 @@ msgstr ""
 
 #: qx/ui/control/DateChooser.js:294
 msgid "Next year"
+msgstr ""
+
+#: qxapp/components/workbench/widgets/FileManager.js:33
+msgid "Add file(s)"
+msgstr ""
+
+#: qxapp/components/workbench/widgets/FileManager.js:54
+msgid "Select"
+msgstr ""
+
+#: qxapp/components/workbench/widgets/FileManager.js:83
+msgid "Available Files"
 msgstr ""

@@ -18,7 +18,7 @@ qx.Class.define("qxapp.components.login.Form", {
     let username = new qx.ui.form.TextField();
     username.setRequired(true);
     username.setPlaceholder("Your email address");
-    this.add(username, "", qx.util.Validate.email(), "user", null);
+    this.add(username, "", qx.util.Validate.email(), "username", null);
     username.setTabIndex(1);
 
     let password = new qx.ui.form.PasswordField();
@@ -79,7 +79,7 @@ qx.Class.define("qxapp.components.login.Form", {
       // const data = qx.util.Serializer.toJson(this.__model, serializer);
 
       const data = {
-        username: this.__model.getUser(),
+        username: this.__model.getUsername(),
         password: this.__model.getPassword()
       };
       return data;

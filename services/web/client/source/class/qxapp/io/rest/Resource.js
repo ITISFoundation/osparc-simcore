@@ -4,6 +4,14 @@
 qx.Class.define("qxapp.io.rest.Resource", {
   extend: qx.io.rest.Resource,
 
+  statics: {
+    AUTHENTICATION: null,
+
+    setAutheticationHeader: function(usernameOrToken, password=null) {
+      qxapp.io.rest.Resource.AUTHENTICATION = new qx.io.request.authentication.Basic(usernameOrToken, password);
+    }
+  },
+
   construct: function(description) {
     this.base(arguments, description);
 
@@ -13,22 +21,13 @@ qx.Class.define("qxapp.io.rest.Resource", {
         value: "application/json"
       }];
 
-      if (this.__authentication !== null) {
-        headers.concat(this.__authentication.getAuthHeaders());
+      if (this.AUTHENTICATION !== null) {
+        headers.concat(this.AUTHENTICATION.getAuthHeaders());
       }
 
       headers.forEach(function(item, index, array) {
         request.setRequestHeader(item.key, item.value);
       });
     });
-  },
-
-  statics: {
-    __authentication: null,
-
-    setAutheticationHeader: function(usernameOrToken, password=null) {
-      this.__authentication = new qx.io.request.authentication.Basic(usernameOrToken, password);
-    }
   }
-
 });
