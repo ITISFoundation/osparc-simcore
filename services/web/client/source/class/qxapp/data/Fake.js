@@ -22,6 +22,118 @@ qx.Class.define("qxapp.data.Fake", {
       prjId: null
     }),
 
+    nodeMap: function() {
+      return {
+        "service/computational/itis/tutti:0.0.0-alpha": {
+          key: "service/computational/itis/tutti",
+          tag: "0.0.0-alpha",
+          name: "a little test node",
+          description: "just the bare minimum",
+          authors: [
+            {
+              name: "Tobias Oetiker",
+              email: "oetiker@itis.ethz.ch"
+            }
+          ],
+          contact: "oetiker@itis.ethz.ch",
+          inputs: {
+            in_nummber: {
+              displayOrder: "001",
+              label: "Number Test",
+              description: "Test Input for Number",
+              type: "number",
+              defaultValue: 5.3
+            },
+            in_int: {
+              displayOrder: "002",
+              label: "Integer Test",
+              description: "Test Input for Integer",
+              type: "number",
+              defaultValue: 2
+            },
+            in_bool: {
+              displayOrder: "003",
+              label: "Boolean Test",
+              description: "Test Input for Boolean",
+              defaultValue: true
+            },
+            in_str: {
+              displayOrder: "004",
+              label: "String Test",
+              description: "Test Input for String",
+              defaultValue: "Gugus"
+            },
+            in_area: {
+              displayOrder: "005",
+              label: "Widget TextArea Test",
+              description: "Test Input for String",
+              defaultValue: "Gugus\nDu\nDa",
+              widget: {
+                type: "TextArea",
+                minHeight: 50
+              }
+            },
+            in_sb: {
+              displayOrder: "006",
+              label: "Widget SelectBox Test",
+              description: "Test Input for SelectBox",
+              defaultValue: "dog",
+              widget: {
+                type: "SelectBox",
+                structure: [
+                  {
+                    key: "dog",
+                    label: "A Dog"
+                  },
+                  {
+                    key: "cat",
+                    label: "A Cat"
+                  }
+                ]
+              }
+            },
+            in_file: {
+              displayOrder: "007",
+              label: "FileInput Test",
+              description: "Test Input File",
+              type: "data:*/*"
+            },
+            in_image: {
+              displayOrder: "007",
+              label: "FileInput Test",
+              description: "Test Input File",
+              type: "data:[image/jpeg,image/png]"
+            }
+          },
+          outputs: {
+            out_number: {
+              label: "Number Test",
+              description: "Test Output for Number",
+              displayOrder: "001",
+              type: "number"
+            },
+            out_integer: {
+              label: "Integer Test",
+              description: "Test Output for Integer",
+              displayOrder: "002",
+              type: "integer"
+            },
+            out_bool: {
+              label: "Boolean Test",
+              description: "Test Output for Boolean",
+              displayOrder: "003",
+              type: "boolean"
+            },
+            out_png: {
+              label: "Png Test",
+              description: "Test Output for PNG Image",
+              displayOrder: "004",
+              type: "data:image/png"
+            }
+          }
+        }
+      };
+    },
     getUsername: function() {
       return "bizzy";
     },
@@ -92,12 +204,57 @@ qx.Class.define("qxapp.data.Fake", {
       return null;
     },
 
-    getTemp1Data: function() {
+    getProject1: function() {
+      return {
+        "UUID1": {
+          type: "service/dynamic/itis/file-picker",
+          version: "0.0.0",
+          output: {
+            out_1: "s3://itis-minion/bucket1/file1"
+          },
+          position: {
+            x: 10,
+            y: 10
+          }
+        },
+        "UUID2": {
+          type: "service/computational/itis/sleeper",
+          version "0.0.1-alpha",
+          input: {
+            in_number: "data,3.5",
+            in_integer: "data,4",
+            in_image: "link://UUID1/out_1"
+          },
+          position: {
+            x: 120,
+            y: 10
+          }
+        },
+        "UUID3": {
+          type: "service/computational/itis/sleeper",
+          version: "0.0.1-alpha",
+          input: {
+            in_number: "link://UUID2/out_number",
+            in_string: "data,Hello,blablabla",
+            in_bool: "data,true",
+            in_image: "link://UUID2/out_png",
+            in_file: "s3://itis-minion/bucket2/file12"
+          },
+          position: {
+            x: 260,
+            y: 10
+          }
+        }
+      }
+    },
+
+    getTemp1Data: function(){
       const nNodes = 8;
       let nodeIds = [];
       for (let i=0; i<nNodes; i++) {
         nodeIds.push(qxapp.utils.Utils.uuidv4());
       }
+
 
       let temp1Data = {
         "nodes": [{
@@ -116,34 +273,9 @@ qx.Class.define("qxapp.data.Fake", {
             "x": 50,
             "y": 100
           },
-          "inputs": [{
-            "key": "in_1",
-            "label": "Number of seconds to sleep",
-            "desc": "Number of seconds to sleep",
-            "type": "file-url",
-            "value": null
-          }, {
-            "key": "in_2",
-            "label": "Number of seconds to sleep",
-            "desc": "Number of seconds to sleep",
-            "type": "integer",
-            "value": 2
-          }],
-          "outputs": [{
-            "key": "out_1",
-            "label": "Number of seconds to sleep",
-            "desc": "Number of seconds to sleep",
-            "type": "file-url",
-            "value": null
-          }, {
-            "key": "out_2",
-            "label": "Number of seconds to sleep",
-            "desc": "Number of seconds to sleep",
-            "type": "integer",
-            "value": null
-          }],
-          "settings": []
-        }, {
+          "inputs": {
+          },
+          {
           "uuid": nodeIds[1],
           "key": "simcore/services/comp/itis/sleeper",
           "name": "Sleeper 2",
@@ -159,32 +291,8 @@ qx.Class.define("qxapp.data.Fake", {
             "x": 50,
             "y": 300
           },
-          "inputs": [{
-            "key": "in_1",
-            "label": "Number of seconds to sleep",
-            "desc": "Number of seconds to sleep",
-            "type": "file-url",
-            "value": null
-          }, {
-            "key": "in_2",
-            "label": "Number of seconds to sleep",
-            "desc": "Number of seconds to sleep",
-            "type": "integer",
-            "value": 2
-          }],
-          "outputs": [{
-            "key": "out_1",
-            "label": "Number of seconds to sleep",
-            "desc": "Number of seconds to sleep",
-            "type": "file-url",
-            "value": null
-          }, {
-            "key": "out_2",
-            "label": "Number of seconds to sleep",
-            "desc": "Number of seconds to sleep",
-            "type": "integer",
-            "value": null
-          }],
+          "inputs": {
+          },
           "settings": []
         }, {
           "uuid": nodeIds[2],
@@ -202,19 +310,7 @@ qx.Class.define("qxapp.data.Fake", {
             "x": 300,
             "y": 100
           },
-          "inputs": [{
-            "key": "in_1",
-            "label": "Number of seconds to sleep",
-            "desc": "Number of seconds to sleep",
-            "type": "file-url",
-            "value": null
-          }, {
-            "key": "in_2",
-            "label": "Number of seconds to sleep",
-            "desc": "Number of seconds to sleep",
-            "type": "integer",
-            "value": 2
-          }],
+          "inputs": {},
           "outputs": [{
             "key": "out_1",
             "label": "Number of seconds to sleep",
@@ -228,7 +324,6 @@ qx.Class.define("qxapp.data.Fake", {
             "type": "integer",
             "value": null
           }],
-          "settings": []
         }, {
           "uuid": nodeIds[3],
           "key": "simcore/services/comp/itis/sleeper",
