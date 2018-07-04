@@ -16,16 +16,21 @@ qx.Class.define("qxapp.components.login.Form", {
     // FIXME: WARNING add [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq)
 
     let username = new qx.ui.form.TextField();
-    username.setRequired(true);
-    username.setPlaceholder("Your email address");
+    username.set({
+      required: true,
+      placeholder: "Your email address",
+      tabIndex: 1
+    });
     this.add(username, "", qx.util.Validate.email(), "username", null);
-    username.setTabIndex(1);
 
     let password = new qx.ui.form.PasswordField();
-    password.setRequired(true);
-    password.setPlaceholder("Your password");
+    password.set({
+      required: true,
+      placeholder: "Your password",
+      tabIndex: username.getTabIndex()+1
+    });
+    password.setPlaceholder();
     this.add(password, "", null, "password", null);
-    password.setTabIndex(username.getTabIndex()+1);
 
     // TODO:
     // let remember = new qx.ui.form.CheckBox();

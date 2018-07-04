@@ -49,13 +49,13 @@ qx.Class.define("qxapp.Application", {
 
       if (qx.core.Environment.get("dev.disableLogin")) {
         console.debug("Login was disabled");
-        this.startDesktop();
+        this.__startDesktop();
       } else {
-        this.startLogin();
+        this.__startLogin();
       }
     },
 
-    startDesktop: function() {
+    __startDesktop: function() {
       this.__layoutManager = new qxapp.desktop.LayoutManager();
       this.getRoot().add(this.__layoutManager, {
         left: "0%",
@@ -65,14 +65,14 @@ qx.Class.define("qxapp.Application", {
       });
     },
 
-    startLogin: function() {
+    __startLogin: function() {
       let login = new qxapp.components.login.Login();
 
       login.addListener("login", function(e) {
         // TODO: need to init user-id and token in data layer
         if (e.getData() === true) {
           this.getRoot().remove(login);
-          this.startDesktop();
+          this.__startDesktop();
         } else {
           console.log("Invalid user or password.");
           // TODO: some kind of notification as in
@@ -88,6 +88,5 @@ qx.Class.define("qxapp.Application", {
         height: "30%"
       });
     }
-
   }
 });
