@@ -92,8 +92,8 @@ qx.Class.define("qxapp.Application", {
             }
           ],
           contact: "oetiker@itis.ethz.ch",
-          inputs: [],
-          outputs: []
+          inputs: {},
+          outputs: {}
         });
         console.log("validation result good", good);
         let bad = ajv.validate({
@@ -104,8 +104,8 @@ qx.Class.define("qxapp.Application", {
           authors: [
           ],
           contact: "oetiker@itis.ethz.ch",
-          inputs: [],
-          outputs: []
+          inputs: {},
+          outputs: {}
         });
         console.log("validation result bad", bad);
       });
