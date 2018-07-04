@@ -212,5 +212,5 @@ tags:
       The REST API is modeled after the S3 multi part upload service
       which makes this very simple to implement on the server side
       especially if you have an S3 like [minio.io](https://www.minio.io/).
-    name: multi-part upload
+    name: upload
 
