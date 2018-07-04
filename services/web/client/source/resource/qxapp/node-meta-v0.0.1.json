@@ -141,7 +141,8 @@
                                 "data:appliaction/json",
                                 "data:application/vnd.ms-excel ",
                                 "data:text/plain",
-                                "data:appliaction/hdf5"
+                                "data:appliaction/hdf5",
+                                "data:application/edu.ucdavis@ceclancy.xyz",
                             ]
                         },
                         "fileToKeyMap": {
