@@ -1,4 +1,3 @@
-PLATFORM := $(shell uname)
 VERSION := $(shell cat /proc/version)
 # SAN this is a hack so that docker-compose works in the linux virtual environment under Windows
 ifneq (,$(findstring Microsoft,$(VERSION)))
