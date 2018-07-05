@@ -2,27 +2,20 @@
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true, "allow": ["__widgetChildren"] }] */
 
 qx.Class.define("qxapp.components.EntityList", {
-  extend: qx.ui.window.Window,
+  extend: qx.ui.core.Widget,
 
   include: [qx.locale.MTranslation],
 
-  construct: function(width, height, backgroundColor, fontColor) {
-    this.base(arguments, this.tr("Entity List"));
+  construct: function(backgroundColor, fontColor) {
+    this.base(arguments);
 
-    this.set({
-      contentPadding: 0,
-      width: width,
-      height: height,
-      allowClose: false,
-      allowMinimize: false,
-      layout: new qx.ui.layout.VBox(),
-      backgroundColor: backgroundColor,
-      textColor: fontColor
-    });
+    let entityListLayout = new qx.ui.layout.VBox();
+    this._setLayout(entityListLayout);
 
     let scroller = new qx.ui.container.Scroll();
-    this.add(scroller);
-    this.setHeight(height-30);
+    this._add(scroller, {
+      flex: 1
+    });
 
     // create and add the tree
     this.__tree = new qx.ui.tree.Tree();
@@ -31,8 +24,6 @@ qx.Class.define("qxapp.components.EntityList", {
       textColor: fontColor
     });
     this.__tree.setSelectionMode("multi");
-    this.__tree.setWidth(width);
-    this.__tree.setHeight(height);
 
     let root = new qx.ui.tree.TreeFolder("Model");
     root.setOpen(true);
@@ -49,7 +40,7 @@ qx.Class.define("qxapp.components.EntityList", {
     removeBtn.addListener("execute", this.__removeEntityPressed.bind(this));
 
     scroller.add(this.__tree);
-    this.add(removeBtn);
+    this._add(removeBtn);
   },
 
   events: {
