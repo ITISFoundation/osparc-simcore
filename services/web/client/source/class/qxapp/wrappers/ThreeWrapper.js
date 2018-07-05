@@ -88,6 +88,28 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
     _orbitControls: null,
     _mouse: null,
 
+    importVTKObject : function(path) {
+      let loader = new THREE.VTKLoader();
+      console.log("trying", path);
+      let that = this;
+      loader.load(path, function(geometry) {
+        console.log("PATH", path);
+        geometry.computeVertexNormals();
+        let mat = new THREE.MeshLambertMaterial({
+          color: 0xaaffaa
+        });
+        let mesh = new THREE.Mesh(geometry, mat);
+        mesh.scale.set(20, 20, 20);
+        that.addEntityToScene(mesh);
+      },
+      function(xhr) {
+        console.log((xhr.loaded / xhr.total * 100) + "% loaded");
+      },
+      function(xhr) {
+        console.log("An error happened");
+      }, this);
+    },
+
     getDomElement: function() {
       return this._renderer.domElement;
     },
