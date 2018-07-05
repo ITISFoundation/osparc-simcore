@@ -127,7 +127,7 @@ qx.Class.define("qxapp.components.login.BasicView", {
       const req = e.getTarget();
       console.debug("Login suceeded:", "status  :", req.getStatus(), "phase   :", req.getPhase(), "response: ", req.getResponse());
 
-      qxapp.io.rest.Resource.setAutheticationHeader(req.getResponse().token, null);
+      qxapp.io.rest.AbstractResource.setAutheticationHeader(req.getResponse().token, null);
       this.fireDataEvent("login", true);
     },
 
