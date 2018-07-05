@@ -7,7 +7,7 @@
 qx.Class.define("qxapp.wrappers.VTKWrapper", {
   extend: qx.core.Object,
 
-  construct: function() {
+  construct: function(rootContainer) {
     // initialize the script loading
     const vtkPath = "vtk/vtk.min.js";
     let dynLoader = new qx.util.DynamicScriptLoader([
@@ -18,7 +18,9 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
       console.log(vtkPath + " loaded");
       this.setLibReady(true);
 
-      let fullScreenRenderer = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance();
+      let fullScreenRenderer = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
+        rootContainer: rootContainer
+      });
       let actor = vtk.Rendering.Core.vtkActor.newInstance();
       let mapper = vtk.Rendering.Core.vtkMapper.newInstance();
       let cone = vtk.Filters.Sources.vtkConeSource.newInstance();

@@ -11,17 +11,19 @@ qx.Class.define("qxapp.components.widgets.VTKView", {
     this.__entities = [];
 
     this.addListenerOnce("appear", function() {
-      this.__vtkWrapper = new qxapp.wrappers.VTKWrapper();
+      let vtkPlaceholder = qx.dom.Element.create("div");
+      qx.bom.element.Attribute.set(vtkPlaceholder, "id", "vtkPlaceholder");
+      qx.bom.element.Style.set(vtkPlaceholder, "width", "100%");
+      qx.bom.element.Style.set(vtkPlaceholder, "height", "100%");
+
+      this.__vtkWrapper = new qxapp.wrappers.VTKWrapper(vtkPlaceholder);
       this.__vtkWrapper.addListener(("VtkLibReady"), function(e) {
         let ready = e.getData();
         if (ready) {
           console.log(this.__vtkWrapper);
 
-          let currentView = this.__vtkWrapper.getDomElement();
-          if (currentView) {
-            this.getContentElement().getDomElement()
-              .appendChild(currentView);
-          }
+          this.getContentElement().getDomElement()
+            .appendChild(vtkPlaceholder);
 
           this.addListener("resize", function(eResize) {
             let width = eResize.getData().width;
