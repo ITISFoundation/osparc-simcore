@@ -363,7 +363,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           fileManagerWindow.open();
         } else if (node.getMetadata().key === "ThreeDViewer") {
           const backgroundColor = qxapp.theme.Color.colors["three-background"];
-          let threeDView = new qxapp.components.widgets.ThreeDView(800, 600, backgroundColor);
+          let threeDView = new qxapp.components.widgets.ThreeDApp(800, 600, backgroundColor);
           let threeDWindow = this.__createWindowForBuiltInService(threeDView, "3D Viewer");
           threeDWindow.open();
         } else {
