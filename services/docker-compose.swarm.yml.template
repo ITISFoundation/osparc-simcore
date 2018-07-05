@@ -111,12 +111,9 @@ services:
       - "8000:8000"
   flower:
     image: ondrejit/flower:latest
-    command: --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbit:5672
+    command: --broker=amqp://simcore:simcore@rabbit:5672
     ports:
       - 5555:5555
-    environment:
-      - RABBITMQ_USER=simcore
-      - RABBITMQ_PASSWORD=simcore
     depends_on:
       - rabbit
 volumes:
