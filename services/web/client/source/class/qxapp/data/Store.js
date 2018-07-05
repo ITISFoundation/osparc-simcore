@@ -37,9 +37,35 @@ qx.Class.define("qxapp.data.Store", {
         }]
       }, {
         "key": "ThreeDViewer",
-        "name": "3D Visualizer",
+        "name": "3D Visualizer (three.js)",
         "tag": "0.0.1",
-        "description": "3D Visualizer",
+        "description": "3D Visualizer (three.js)",
+        "authors": [{
+          "name": "Odei Maiz",
+          "email": "maiz@itis.ethz.ch",
+          "affiliation": "ITIS Foundation"
+        }],
+        "contact": "maiz@itis.ethz.ch",
+        "inputs": [{
+          "key": "in_1",
+          "label": "File-url",
+          "description": "File-url",
+          "type": "file-url",
+          "defaultValue": null
+        }, {
+          "key": "in_2",
+          "label": "File-url",
+          "description": "File-url",
+          "type": "file-url",
+          "defaultValue": null
+        }],
+        "outputs": [],
+        "settings": []
+      }, {
+        "key": "vtkViewer",
+        "name": "3D Visualizer (vtk.js)",
+        "tag": "0.0.1",
+        "description": "3D Visualizer (vtk.js)",
         "authors": [{
           "name": "Odei Maiz",
           "email": "maiz@itis.ethz.ch",
