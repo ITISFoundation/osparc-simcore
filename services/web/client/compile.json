@@ -33,7 +33,7 @@
   ],
 
   "libraries": [
-    "../qooxdoo-sdk/framework",
+    "C:/Users/maiz/AppData/Roaming/npm/node_modules/qxcompiler/node_modules/qooxdoo-sdk/framework",
     "."
   ],
 
@@ -47,6 +47,9 @@
       },
       {
         "uri" : "resource/workbench/svg*.js"
+      },
+      {
+        "uri" : "resource/models/*.vtk"
       }
     ]
   },
