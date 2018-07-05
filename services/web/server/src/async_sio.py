@@ -9,7 +9,6 @@
 # pylint: disable=C0111
 
 
-import json
 import logging
 import os
 
@@ -114,34 +113,28 @@ async def retrieve_url_for_file(sid, data):
     #result = minioClient.presigned_put_object(data["bucketName"], data["fileName"])
     # Response error is still possible since internally presigned does get
     # bucket location.
-    dataOut = {}
-    dataOut["url"] = url
-    await SIO.emit('presignedUrl', data=dataOut, room=sid)
+    data_out = {}
+    data_out["url"] = url
+    await SIO.emit('presignedUrl', data=data_out, room=sid)
 
 
 @SIO.on('listObjects')
 async def list_S3_objects(sid, data):
-    _LOGGER.debug("client %s requests S3 objects in %s", sid, data)
+    _LOGGER.debug("client %s requests objects in storage. Extra argument %s", sid, data)
     _config = s3_config()
 
     s3_client = S3Client(endpoint=_config.endpoint,
         access_key=_config.access_key, secret_key=_config.secret_key)
 
     objects = s3_client.list_objects_v2(_config.bucket_name)
+    data_out = []
     for obj in objects:
-        dataOut = {}
-        dataOut['name'] = obj.object_name
-        dataOut['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
-        dataOut['size'] = obj.size
-        await SIO.emit('listObjectsPub', data=dataOut, room=sid)
-
-    #objects = s3_client.list_objects_v2(data)
-    #for obj in objects:
-    #    dataOut = {}
-    #    dataOut['name'] = obj.object_name
-    #    dataOut['lastModified'] = json.dumps(obj.last_modified, indent=4, sort_keys=True, default=str)
-    #    dataOut['size'] = obj.size
-    #    await SIO.emit('listObjectsUser', data=dataOut, room=sid)
+        obj_info = {}
+        obj_info['path'] = obj.bucket_name + '/' + obj.object_name
+        obj_info['lastModified'] = obj.last_modified.isoformat()
+        obj_info['size'] = obj.size
+        data_out.append(obj_info)
+    await SIO.emit('listObjects', data=data_out, room=sid)
 
 
 @SIO.on('disconnect')
