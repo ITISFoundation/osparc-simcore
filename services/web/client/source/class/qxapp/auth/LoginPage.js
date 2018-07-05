@@ -125,7 +125,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
     },
 
     register: function() {
-      var register = new qxapp.auth.RegisterPage();
+      var register = new qxapp.auth.RegistrationPage();
       register.show();
       this.destroy();
     }

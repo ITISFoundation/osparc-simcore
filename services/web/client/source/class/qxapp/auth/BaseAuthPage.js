@@ -1,5 +1,13 @@
+/*
+
+  TODO: add alternative logins
+*/
+
 /**
  * This is a basic Auth-Page with common functionality
+ *
+ *  - Fixed-size widget with header (title/logo), body and footer (buttons)
+ *  - Positioned at the upper center of the root document's window
  */
 qx.Class.define("qxapp.auth.BaseAuthPage", {
   extend: qx.ui.container.Composite,
@@ -55,6 +63,9 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
       console.error("This should be overriden");
     },
 
+    /**
+     * Creates and adds an underlined title at the header
+     */
     _addTitleHeader: function(txt) {
       var font = new qx.bom.Font(24, ["Arial"]);
       font.setBold(true);
