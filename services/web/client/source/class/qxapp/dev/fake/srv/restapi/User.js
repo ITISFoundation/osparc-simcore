@@ -38,12 +38,24 @@ qx.Class.define("qxapp.dev.fake.srv.restapi.User", {
           },
           qx.lang.Json.stringify(data));
       }
+    }, {
+      method: "POST",
+      url: "api/v1.0/users/",
+      response: function(request) {
+        const users = qxapp.dev.fake.srv.db.User.DUMMYNAMES;
+
+        request.respond(200,
+          {
+            "Content-Type": "application/json"
+          },
+          qx.lang.Json.stringify({message: "A confirmation email has been sent"}));
+      }
     }]
   },
 
   defer: function(mystatics) {
     if (qx.core.Environment.get("dev.enableFakeSrv")) {
-      console.debug("REST API enabled");
+      console.debug("REST API enabled", this.classname);
       qx.dev.FakeServer.getInstance().configure(mystatics.mockData);
     }
   }

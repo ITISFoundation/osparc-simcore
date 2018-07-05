@@ -46,7 +46,7 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
 
     // layout values
     this._widthBtn = parseInt((this.getWidth() - 30) / 2, 10);
-    this._marginFooter = 3*spacing;
+    this._marginFooter = this._marginHeader = 3*spacing;
 
     this._buildPage();
     qxapp.auth.BaseAuthPage.addPageToRoot(this);
@@ -59,8 +59,9 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
 
   members: {
     _widthBtn: 20,
-    _gapTitle: 20,
-    _gapBtns: 20,
+    _marginHeader: 20,
+    _marginFooter: 20,
+
     // override
     _buildPage: function() {
       console.error("This should be overriden");
@@ -81,15 +82,20 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
       });
       this.add(lbl);
 
-
-      const spacing = this.getLayout().getSpacing();
       var line = new qx.ui.core.Widget();
       line.set({
         height: 1,
         backgroundColor: "white",
-        marginBottom: 3*spacing
+        marginBottom: this._marginHeader
       });
       this.add(line);
+    },
+
+    _newButton: function(txt) {
+      let btn = new qx.ui.form.Button(txt);
+      btn.setWidth(this._widthBtn);
+      return btn;
     }
+
   }
 });

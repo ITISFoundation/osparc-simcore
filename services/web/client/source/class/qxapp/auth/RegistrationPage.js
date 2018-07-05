@@ -1,8 +1,13 @@
 
+/**
+ *
+ *  TODO: add a check to prevent bots to register users
+*/
 qx.Class.define("qxapp.auth.RegistrationPage", {
   extend: qxapp.auth.BaseAuthPage,
 
   construct: function() {
+    this.__manager = new qx.ui.form.validation.Manager();
     this.base(arguments);
   },
   destruct: function() {
@@ -10,65 +15,120 @@ qx.Class.define("qxapp.auth.RegistrationPage", {
   },
 
   members: {
+    __manager: null,
+
     // overrides base
     _buildPage: function() {
       this._addTitleHeader(this.tr("Register"));
 
-      var name = new qx.ui.form.TextField();
-      name.setPlaceholder("Introduce your email");
-      this.add(name);
+      let email = new qx.ui.form.TextField();
+      email.setRequired(true);
+      email.setPlaceholder(this.tr("Introduce your email"));
+      this.add(email);
+      this.__email = email;
 
-      var pass = new qx.ui.form.PasswordField();
-      pass.setPlaceholder("Introduce a password");
-      this.add(pass);
+      let pass1 = new qx.ui.form.PasswordField();
+      pass1.setRequired(true);
+      pass1.setPlaceholder(this.tr("Introduce a password"));
+      this.add(pass1);
+      this.__pass1 = pass1;
 
-      var pass2 = new qx.ui.form.PasswordField();
-      pass2.setPlaceholder("Retype your password");
+      let pass2 = new qx.ui.form.PasswordField();
+      pass2.setRequired(true);
+      pass2.setPlaceholder(this.tr("Retype your password"));
       this.add(pass2);
+
+      // Validation
+      this.__manager.add(email, qx.util.Validate.email());
+      this.__manager.add(pass1, function(value, itemForm) {
+        const isValid = value !== null && value.length > 2;
+        if (!isValid) {
+          itemForm.setInvalidMessage("Please enter a password at with least 3 characters.");
+        }
+        return isValid;
+      });
+
+      this.__manager.setValidator(function(itemForms) {
+        const isValid = pass1.getValue() == pass2.getValue();
+        if (!isValid) {
+          const msg = "Passwords do not match.";
+          pass1.setInvalidMessage(msg);
+          pass2.setInvalidMessage(msg);
+          pass1.setValid(isValid);
+          pass2.setValid(isValid);
+        }
+        return isValid;
+      });
 
 
       // buttons
-      var grp = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      let grp = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
       grp.set({
         marginTop: this._marginFooter
       });
 
-      var btn = new qx.ui.form.Button(this.tr("Submit"));
-      btn.setWidth(this._widthBtn);
-      grp.add(btn, {
+      let submitBtn = this._newButton(this.tr("Submit"));
+      grp.add(submitBtn, {
         left: 0
       });
 
-      btn.addListener("execute", function(e) {
-        this.__register();
+      submitBtn.addListener("execute", function(e) {
+        const valid = this.__manager.validate();
+        if (valid) {
+          this.__register({
+            email: email.getValue(),
+            pass: pass1.getValue()
+          });
+        }
       }, this);
 
-      btn = new qx.ui.form.Button(this.tr("Cancel"));
-      btn.setWidth(this._widthBtn);
-      grp.add(btn, {
+      let cancelBtn = this._newButton(this.tr("Cancel"));
+      grp.add(cancelBtn, {
         right: 0
       });
 
-      btn.addListener("execute", function(e) {
+      cancelBtn.addListener("execute", function(e) {
         this.__cancel();
       }, this);
 
       this.add(grp);
     },
 
-    __register: function() {
-      this.debug("Registering new user");
-      // fail if user exists, etc
-      // back to login
-      var login = new qxapp.auth.LoginPage();
-      login.show();
-      this.destroy();
+    __register: function(data) {
+      console.debug("Registering new user");
+
+      let user = new qxapp.io.rest.User();
+
+      user.addListener("success", function(e) {
+        console.debug("Resource Event", e.toString(), e.getAction());
+
+        // TODO: Flash: a confirmation email has been sent (message by )
+
+        let login = new qxapp.auth.LoginPage();
+        login.show();
+        this.destroy();
+      });
+
+
+      user.addListener("error", function(e) {
+        console.debug("Resource Event", e.toString(), e.getAction());
+        // fail if user exists, etc
+        // back to login
+
+        // TODO: Flash error
+        alert(e.getData());
+
+
+        this.__manager.resetValidator();
+      }, this);
+
+      user.post(data);
     },
 
     __cancel: function() {
       this.debug("Cancel registration");
       // back to login
-      var login = new qxapp.auth.LoginPage();
+      let login = new qxapp.auth.LoginPage();
       login.show();
       this.destroy();
     }

@@ -29,7 +29,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
         icon: "qxapp/itis-white.png",
         iconPosition: "top",
         width: this.getWidth(),
-        marginBottom: this._gapTitle
+        marginBottom: this._marginHeader
       });
       this.add(atm);
 
@@ -98,9 +98,10 @@ qx.Class.define("qxapp.auth.LoginPage", {
       const auth = new qx.io.request.authentication.Basic(email.getValue(), pass.getValue());
 
       let request = new qx.io.request.Xhr();
+      const prefix = qxapp.io.rest.AbstractResource.API;
       request.set({
         authentication: auth,
-        url: "api/v1.0/token",
+        url: prefix + "/token",
         method: "GET"
       });
 

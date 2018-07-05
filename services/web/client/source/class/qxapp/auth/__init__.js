@@ -3,4 +3,7 @@
  * TODO: separate classes into ui/core namespaces
  * TODO: add external authentication
  *
+ *
+ * TODO: validation
+ * TODO: pages from application
  */

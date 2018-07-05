@@ -1,3 +1,4 @@
+
 qx.Class.define("qxapp.auth.Store", {
   type: "static",
   statics:
