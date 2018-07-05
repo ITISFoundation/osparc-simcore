@@ -364,7 +364,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         } else if (node.getMetadata().key === "ThreeDViewer") {
           const backgroundColor = qxapp.theme.Color.colors["three-background"];
           let threeDView = new qxapp.components.widgets.ThreeDApp(800, 600, backgroundColor);
-          let threeDWindow = this.__createWindowForBuiltInService(threeDView, "3D Viewer");
+          let threeDWindow = this.__createWindowForBuiltInService(threeDView, "3D Viewer (three.js)");
+          threeDWindow.open();
+        } else if (node.getMetadata().key === "vtkViewer") {
+          const backgroundColor = qxapp.theme.Color.colors["three-background"];
+          let threeDView = new qxapp.components.widgets.VTKApp(800, 600, backgroundColor);
+          let threeDWindow = this.__createWindowForBuiltInService(threeDView, "3D Viewer (vtk.js)");
           threeDWindow.open();
         } else {
           this.fireDataEvent("NodeDoubleClicked", node);
