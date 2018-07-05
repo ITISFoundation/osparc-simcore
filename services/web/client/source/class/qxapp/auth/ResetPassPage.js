@@ -1,31 +1,28 @@
-
-qx.Class.define("qxapp.auth.RegisterPage", {
+/** Page to reset reset user's password
+ *
+ */
+qx.Class.define("qxapp.auth.ResetPassPage", {
   extend: qxapp.auth.BaseAuthPage,
 
   construct: function() {
     this.base(arguments);
   },
   destruct: function() {
-    console.debug("destroying RegisterPage");
+    this.base(arguments);
+    console.debug("destroying ResetPassPage");
   },
 
   members: {
+    __email: null,
+
     // overrides base
     _buildPage: function() {
-      this._addTitleHeader(this.tr("Register"));
+      this._addTitleHeader(this.tr("Reset Password"));
 
-      var name = new qx.ui.form.TextField();
-      name.setPlaceholder("Introduce your email");
-      this.add(name);
-
-      var pass = new qx.ui.form.PasswordField();
-      pass.setPlaceholder("Introduce a password");
-      this.add(pass);
-
-      var pass2 = new qx.ui.form.PasswordField();
-      pass2.setPlaceholder("Retype your password");
-      this.add(pass2);
-
+      var email = new qx.ui.form.TextField();
+      email.setPlaceholder(this.tr("Introduce your email to reset your passoword"));
+      this.__email = email;
+      this.add(email);
 
       // buttons
       var grp = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
@@ -40,7 +37,7 @@ qx.Class.define("qxapp.auth.RegisterPage", {
       });
 
       btn.addListener("execute", function(e) {
-        this.__register();
+        this.__submit();
       }, this);
 
       btn = new qx.ui.form.Button(this.tr("Cancel"));
@@ -56,21 +53,22 @@ qx.Class.define("qxapp.auth.RegisterPage", {
       this.add(grp);
     },
 
-    __register: function() {
-      this.debug("Registering new user");
-      // fail if user exists, etc
-      // back to login
+    __cancel: function() {
       var login = new qxapp.auth.LoginPage();
       login.show();
       this.destroy();
     },
 
-    __cancel: function() {
-      this.debug("Cancel registration");
+    __submit: function() {
+      console.debug("sends email to reset password to ", this.__email);
+      // TODO: flash ...  "email sent..."
+      // TODO: query server to send reset email. to user?
+      // TODO: if user not in registry, flash "unknown email"?
       // back to login
       var login = new qxapp.auth.LoginPage();
       login.show();
       this.destroy();
     }
+
   }
 });

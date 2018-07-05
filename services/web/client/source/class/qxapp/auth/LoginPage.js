@@ -8,114 +8,93 @@
  */
 
 qx.Class.define("qxapp.auth.LoginPage", {
-  extend: qx.ui.container.Composite,
-  include: qxapp.auth.MAuthPage,
+  extend: qxapp.auth.BaseAuthPage,
 
   construct: function() {
     this.base(arguments);
-    // Setup children's layout and widget dims
-    this.setLayout(new qx.ui.layout.Canvas());
-    this.set({
-      width: 300,
-      height: 250
-    });
-
-    this.__buildPage();
-    // Place this in document's center. TODO: should be automatically reposition of document size changed!?
-    var top = parseInt((qx.bom.Document.getHeight() - this.getHeight()) / 2, 10);
-    var left = parseInt((qx.bom.Document.getWidth() - this.getWidth()) / 2, 10);
-    var app = qx.core.Init.getApplication();
-    app.getRoot().add(this, {
-      top: top,
-      left: left
-    });
   },
 
   destruct: function() {
+    this.base(arguments);
     console.debug("destroying LoginPage");
   },
   members: {
-    _form: null,
+    __form: null,
 
-    __buildPage: function() {
-      this._form = new qx.ui.form.Form();
+    // overrides base
+    _buildPage: function() {
+      this.__form = new qx.ui.form.Form();
 
-      var top = 0;
       var atm = new qx.ui.basic.Atom().set({
         icon: "qxapp/itis-white.png",
-        iconPosition: "top"
+        iconPosition: "top",
+        width: this.getWidth(),
+        marginBottom: this._gapTitle
       });
-      atm.setWidth(this.getWidth() - 20);
-      this.add(atm, {
-        top: top,
-        left: 10
-      });
+      this.add(atm);
 
-      top += 65;
       var email = new qx.ui.form.TextField();
       email.setPlaceholder("Your email address");
       email.setRequired(true);
-      this.add(email, {
-        top: top,
-        left: 10,
-        right: 10
-      });
-      this._form.add(email, "", qx.util.Validate.email(), "email", null);
+      this.add(email);
+      this.__form.add(email, "", qx.util.Validate.email(), "email", null);
 
-      top += 40;
       var pass = new qx.ui.form.PasswordField();
       pass.setPlaceholder("Your password");
       pass.setRequired(true);
-      this.add(pass, {
-        top: top,
-        left: 10,
-        right: 10
-      });
-      this._form.add(pass, "", null, "password", null);
+      this.add(pass);
+      this.__form.add(pass, "", null, "password", null);
 
-      top += 35;
-      var chk = new qx.ui.form.CheckBox("<b style='color: #FFFFFF'>" + this.tr("Remember me?") + "</b>");
+      // (gap) Remember  ForgotPassword (gap)
+      let grpLinks = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+
+      var chk = new qx.ui.form.CheckBox("<i style='color: #FFFFFF'>" + this.tr("Remember me") + "</i>");
       var lbl = chk.getChildControl("label");
       lbl.setRich(true);
-      this.add(chk, {
-        top: top,
-        left: 10
+      grpLinks.add(chk, {
+        left: "5%"
       });
-      this._form.add(chk, "", null, "remember", null);
+      this.__form.add(chk, "", null, "remember", null);
 
-      var btnForgot = this.createLinkButton(this.tr("Forgot Password?"), function() {
+      var lnk = this.createLinkButton(this.tr("Forgot Password?"), function() {
         this.forgot();
       }, this);
-      this.add(btnForgot, {
-        top: top,
-        right: 10
+      grpLinks.add(lnk, {
+        right: "5%"
       });
 
-      var width = parseInt((this.getWidth() - 30) / 2, 10);
-      var btnLogin = this.createButton(this.tr("Log In"), width, function() {
-        if (this._form.validate()) {
+      this.add(grpLinks);
+
+      // |Log In --~-- Register|
+      let grpBtns = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      grpBtns.set({
+        marginTop: this._marginFooter
+      });
+
+      var btnLogin = this.createButton(this.tr("Log In"), this._widthBtn, function() {
+        if (this.__form.validate()) {
           this.login();
         }
       }, this);
-      this.add(btnLogin, {
-        bottom: 30,
-        left: 10
+      grpBtns.add(btnLogin, {
+        left: 0
       });
 
-      var btnRegister = this.createButton(this.tr("Register"), width, function() {
+      var btnRegister = this.createButton(this.tr("Register"), this._widthBtn, function() {
         this.register();
       }, this);
-      this.add(btnRegister, {
-        bottom: 30,
-        right: 10
+      grpBtns.add(btnRegister, {
+        right: 0
       });
+
+      this.add(grpBtns);
     },
 
     login: function() {
       // Data
-      var email = this._form.getItems().email;
-      var pass = this._form.getItems().password;
-      var remember = this._form.getItems().remember;
+      var email = this.__form.getItems().email;
+      var pass = this.__form.getItems().password;
+      var remember = this.__form.getItems().remember;
 
       var str = "type=login";
       str += "&username=" + email.getValue();
@@ -140,7 +119,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
     },
 
     forgot: function() {
-      var forgot = new qxapp.auth.ForgotPage();
+      var forgot = new qxapp.auth.ResetPassPage();
       forgot.show();
       this.destroy();
     },

@@ -1,6 +1,12 @@
-qx.Mixin.define("qxapp.auth.MAuthPage", {
+/**
+ * Helpers to build Auth Pages (temporary)
+*/
+qx.Mixin.define("qxapp.auth.MAuth", {
 
   members:{
+
+
+
     /**
      * Create link button
      * TODO: create its own widget under qxapp.core.ui
@@ -51,5 +57,6 @@ qx.Mixin.define("qxapp.auth.MAuthPage", {
 
       return btn;
     }
+
   }
 });
