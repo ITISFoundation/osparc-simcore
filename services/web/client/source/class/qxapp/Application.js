@@ -47,17 +47,45 @@ qx.Class.define("qxapp.Application", {
       // openning web socket
       qxapp.wrappers.WebSocket.getInstance().connect();
 
+      this.start();
+    },
+
+    /**
+     * This is controlled entry-point to start the application
+    */
+    start: function() {
+      let isLogged = qxapp.auth.Store.isLoggedIn();
+
       if (qx.core.Environment.get("dev.disableLogin")) {
-        console.debug("Login was disabled");
-        this.startDesktop();
+        console.warn("Login page was disabled", "Starting main application ...");
+        isLogged = true;
+      }
+
+      if (isLogged) {
+        this.__startDesktop();
       } else {
+        if (this.__layoutManager !== null) {
+          this.__layoutManager.destroy();
+        }
         let page = new qxapp.auth.LoginPage();
         page.show();
       }
     },
 
-    startDesktop: function() {
+    logout: function() {
+      qxapp.auth.Store.resetToken();
+      if (this.__layoutManager !== null) {
+        this.__layoutManager.destroy();
+      }
+      this.start();
+    },
+
+    /**
+     * Desktop correspond to the main application's pages
+    */
+    __startDesktop: function() {
       this.__layoutManager = new qxapp.desktop.LayoutManager();
+
       this.getRoot().add(this.__layoutManager, {
         left: "0%",
         top: "0%",
@@ -66,6 +94,9 @@ qx.Class.define("qxapp.Application", {
       });
     },
 
+    /**
+     * DEPRECATED!!
+    */
     __startLogin: function() {
       let login = new qxapp.components.login.Login();
 
@@ -73,7 +104,7 @@ qx.Class.define("qxapp.Application", {
         // TODO: need to init user-id and token in data layer
         if (e.getData() === true) {
           this.getRoot().remove(login);
-          this.__startDesktop();
+          this.____startDesktop();
         } else {
           console.log("Invalid user or password.");
           // TODO: some kind of notification as in

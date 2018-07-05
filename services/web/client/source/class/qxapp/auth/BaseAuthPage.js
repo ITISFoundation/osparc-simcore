@@ -20,8 +20,10 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
 
     addPageToRoot: function(page) {
       // TODO: should be automatically reposition of document size changed!?
+
       let top = parseInt((qx.bom.Document.getHeight() - page.getHeight()) / 4, 10);
       let left = parseInt((qx.bom.Document.getWidth() - page.getWidth()) / 2, 10);
+
       let app = qx.core.Init.getApplication();
       app.getRoot().add(page, {
         top: top,

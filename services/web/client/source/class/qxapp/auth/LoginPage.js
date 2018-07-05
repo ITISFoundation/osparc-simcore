@@ -48,13 +48,14 @@ qx.Class.define("qxapp.auth.LoginPage", {
       // (gap) Remember  ForgotPassword (gap)
       let grpLinks = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
 
+      // TODO: Tmp disabled. Remember me implies keep status in server
       var chk = new qx.ui.form.CheckBox("<i style='color: #FFFFFF'>" + this.tr("Remember me") + "</i>");
       var lbl = chk.getChildControl("label");
       lbl.setRich(true);
-      grpLinks.add(chk, {
-        left: "5%"
-      });
-      this.__form.add(chk, "", null, "remember", null);
+      // grpLinks.add(chk, {
+      //  left: "5%"
+      // });
+      // this.__form.add(chk, "", null, "remember", null);
 
       var lnk = this.createLinkButton(this.tr("Forgot Password?"), function() {
         this.forgot();
@@ -114,7 +115,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
 
         // Switches to main
         let app = qx.core.Init.getApplication();
-        app.startDesktop();
+        app.start();
         this.destroy();
       }, this);
 
