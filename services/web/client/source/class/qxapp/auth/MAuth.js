@@ -5,8 +5,6 @@ qx.Mixin.define("qxapp.auth.MAuth", {
 
   members:{
 
-
-
     /**
      * Create link button
      * TODO: create its own widget under qxapp.core.ui
@@ -35,6 +33,8 @@ qx.Mixin.define("qxapp.auth.MAuth", {
 
     /**
      * Custom button creation
+     *
+     * TODO: move this somewhere else! its own widget?
      */
     createButton: function(txt, width, cbk, ctx) {
       var btn = new qx.ui.form.Button(txt);

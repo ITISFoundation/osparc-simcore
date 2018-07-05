@@ -92,30 +92,47 @@ qx.Class.define("qxapp.auth.LoginPage", {
 
     login: function() {
       // Data
-      var email = this.__form.getItems().email;
-      var pass = this.__form.getItems().password;
-      var remember = this.__form.getItems().remember;
+      const email = this.__form.getItems().email;
+      const pass = this.__form.getItems().password;
+      const auth = new qx.io.request.authentication.Basic(email.getValue(), pass.getValue());
 
-      var str = "type=login";
-      str += "&username=" + email.getValue();
-      str += "&password=" + pass.getValue();
-      str += "&remember=" + remember.getValue();
+      let request = new qx.io.request.Xhr();
+      request.set({
+        authentication: auth,
+        url: "api/v1.0/token",
+        method: "GET"
+      });
 
-      let app = qx.core.Init.getApplication();
-      app.request(str, function(success) {
-        if (success) {
-          app.startDesktop();
-          this.destroy();
-        } else {
-          // Flash message
-          var message = this.tr("Invalid email or password");
-          email.setInvalidMessage(message);
-          pass.setInvalidMessage(message);
-          email.setValid(false);
-          pass.setValid(false);
-          //alert(this.tr("Could not log in."));
-        }
+      request.addListener("success", function(e) {
+        // Completes without error and *transport status indicates success*
+        let req = e.getTarget();
+        console.debug("Login suceeded:", "status  :", req.getStatus(), "phase   :", req.getPhase(), "response: ", req.getResponse());
+        this.assert(req == request);
+
+        // saves token for future requests
+        qxapp.auth.Store.setToken(req.getResponse().token);
+
+        // Switches to main
+        let app = qx.core.Init.getApplication();
+        app.startDesktop();
+        this.destroy();
       }, this);
+
+      request.addListener("fail", function(e) {
+        // TODO: implement in flash message.
+        // TODO: why if failed? Add server resposne message
+
+        const msg = this.tr("Invalid email or password");
+        email.setInvalidMessage(msg);
+        email.setValid(false);
+
+        pass.setInvalidMessage(msg);
+        pass.setValid(false);
+
+        this.show();
+      }, this);
+
+      request.send();
     },
 
     forgot: function() {
