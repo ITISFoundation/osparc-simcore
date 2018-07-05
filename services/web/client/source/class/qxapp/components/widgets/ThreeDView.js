@@ -32,6 +32,32 @@ qx.Class.define("qxapp.components.widgets.ThreeDView", {
           document.addEventListener("mousedown", this._onMouseDown.bind(this), false);
           document.addEventListener("mousemove", this._onMouseHover.bind(this), false);
 
+
+          const loadLocalBunny = false;
+          const loadRemoteBunny = false;
+          if (loadLocalBunny) {
+            this.__threeWrapper.importVTKObject("../resource/models/bunny.vtk");
+          }
+          if (loadRemoteBunny) {
+            const path = "/file/bunny.vtk";
+            let req = new qx.io.request.Xhr();
+            req.set({
+              url: path,
+              method: "GET"
+            });
+            req.addListener("success", function(res) {
+              console.log("success", res);
+              let files = res.target.files;
+              console.log("files", files);
+              let file = files[0];
+              this.__threeWrapper.importVTKObject(file);
+            }, this);
+            req.addListener("fail", function(res) {
+              console.log("fail", res);
+            }, this);
+            req.send();
+          }
+
           this.addListener("resize", function(eResize) {
             let width = eResize.getData().width;
             let height = eResize.getData().height;
