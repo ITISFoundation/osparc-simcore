@@ -102,10 +102,11 @@ qx.Class.define("qxapp.Application", {
         this._appModel.getColors().get3DView()
           .getBackground());
 
-      this.__entityList = new qxapp.components.widgets.EntityList(
-        this._appModel.getColors().getSettingsView()
-          .getBackground(), this._appModel.getColors().getSettingsView()
-          .getFont());
+      this.__entityList = new qxapp.components.widgets.EntityList();
+      this.__entityList.setBackgroudColor(this._appModel.getColors().getSettingsView()
+        .getBackground());
+      this.__entityList.setTextColor(this._appModel.getColors().getSettingsView()
+        .getFont());
 
 
       // components to document

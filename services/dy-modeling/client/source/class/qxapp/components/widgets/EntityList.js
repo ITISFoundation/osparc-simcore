@@ -19,10 +19,6 @@ qx.Class.define("qxapp.components.widgets.EntityList", {
 
     // create and add the tree
     this.__tree = new qx.ui.tree.Tree();
-    this.__tree.set({
-      backgroundColor: backgroundColor,
-      textColor: fontColor
-    });
     this.__tree.setSelectionMode("multi");
 
     let root = new qx.ui.tree.TreeFolder("Model");
@@ -32,11 +28,6 @@ qx.Class.define("qxapp.components.widgets.EntityList", {
     this.__tree.addListener("changeSelection", this.__onSelectionChanged.bind(this));
 
     let removeBtn = new qx.ui.form.Button(this.tr("Remove entity"));
-    removeBtn.set({
-      width: 100,
-      height: 30,
-      textColor: "black"
-    });
     removeBtn.addListener("execute", this.__removeEntityPressed.bind(this));
 
     scroller.add(this.__tree);
@@ -51,6 +42,14 @@ qx.Class.define("qxapp.components.widgets.EntityList", {
 
   members: {
     __tree: null,
+
+    setBackgroudColor: function(color) {
+      this.__tree.setBackgroundColor(color);
+    },
+
+    setTextColor: function(color) {
+      this.__tree.setTextColor(color);
+    },
 
     __onSelectionChanged: function(e) {
       let selectedIds = [];
