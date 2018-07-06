@@ -18,7 +18,7 @@ qx.Class.define("qxapp.components.login.Form", {
     let username = new qx.ui.form.TextField();
     username.set({
       required: true,
-      placeholder: "Your email address",
+      placeholder: this.tr("Your email address"),
       tabIndex: 1
     });
     this.add(username, "", qx.util.Validate.email(), "username", null);
@@ -26,7 +26,7 @@ qx.Class.define("qxapp.components.login.Form", {
     let password = new qx.ui.form.PasswordField();
     password.set({
       required: true,
-      placeholder: "Your password",
+      placeholder: this.tr("Your password"),
       tabIndex: username.getTabIndex()+1
     });
     password.setPlaceholder();
@@ -37,7 +37,7 @@ qx.Class.define("qxapp.components.login.Form", {
     // this.add(remember, "Remember Me", null, "remember");
 
     // Buttons
-    let submit = new qx.ui.form.Button("Sign in");
+    let submit = new qx.ui.form.Button(this.tr("Sign in"));
     this.addButton(submit);
     submit.setTabIndex(password.getTabIndex()+1);
 
@@ -68,11 +68,12 @@ qx.Class.define("qxapp.components.login.Form", {
       let username = this.getItems().user;
       let password = this.getItems().password;
 
-      const message = msg === null ? "Invalid user or password" : msg;
-      username.setInvalidMessage(message);
-      password.setInvalidMessage(message);
-      username.setValid(false);
-      password.setValid(false);
+      [username, password].forEach(w => {
+        w.set({
+          invalidMessage: msg === null ? this.tr("Invalid user or password") : msg,
+          valid: false
+        });
+      });
     },
 
     getData: function() {
