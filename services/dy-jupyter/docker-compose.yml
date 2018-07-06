@@ -1,0 +1,22 @@
+version: '3.4'
+services:
+  jupyter-base-notebook:
+    build:
+      context: base-notebook
+      args: 
+        VCS_REF: 
+        BUILD_DATE:
+      labels: 
+        io.simcore.key: '{"key": "simcore/services/jupyter-base-notebook"}'
+        io.simcore.outputs: '{"outputs": []}'
+        io.simcore.tag: '{"tag": "1.2.1"}'
+        io.simcore.name: '{"name": "jupyter-base-notebook"}'
+        io.simcore.description: '{"description": "Jupyter notebook using base docker image"}'
+        io.simcore.contact: '{"contact": "anderegg@itis.ethz.ch"}'
+        io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email": "anderegg@itis.ethz.ch", "affiliation": "ITIS Foundation"}]}'
+        io.simcore.inputs: '{"inputs": []}'
+        io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
+    ports:
+      - '8888:8888'
+  #--------------------------------------------------------------------
+  
