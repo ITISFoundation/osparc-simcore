@@ -36,12 +36,12 @@ qx.Class.define("qxapp.Application", {
       if (qx.core.Environment.get("qx.debug")) {
         // support native logging capabilities, e.g. Firebug for Firefox
         qx.log.appender.Native;
+      }
 
-        if (qx.core.Environment.get("dev.enableFakeSrv")) {
-          console.debug("Fake server enabled");
-          qxapp.dev.fake.srv.restapi.User;
-          qxapp.dev.fake.srv.restapi.Authentication;
-        }
+      if (qx.core.Environment.get("dev.enableFakeSrv")) {
+        console.debug("Fake server enabled");
+        qxapp.dev.fake.srv.restapi.User;
+        qxapp.dev.fake.srv.restapi.Authentication;
       }
 
       // openning web socket

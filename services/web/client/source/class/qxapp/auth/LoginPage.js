@@ -94,6 +94,17 @@ qx.Class.define("qxapp.auth.LoginPage", {
     },
 
     login: function() {
+      // TODO: temporarily will allow any user until issue #162 is resolved and/or
+      // python server has active API
+      if (!qx.core.Environment.get("dev.enableFakeSrv")) {
+        // Switches to main
+        qxapp.auth.Store.setToken("fake-token");
+        let app = qx.core.Init.getApplication();
+        app.start();
+        this.destroy();
+        return;
+      }
+
       // Data
       const email = this.__form.getItems().email;
       const pass = this.__form.getItems().password;
