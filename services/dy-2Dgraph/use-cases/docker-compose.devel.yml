@@ -72,6 +72,29 @@ services:
       - ../../../packages/simcore-sdk/src:/home/jovyan/packages/packages/simcore-sdk/src
       - ../../../packages/s3wrapper/src:/home/jovyan/packages/packages/s3wrapper/src
   #--------------------------------------------------------------------
+  kember:
+    image: services_kember-viewer-dev
+    build:
+      target: development
+      args:
+        JSON_CONFIGURATION: kember_config.json        
+    environment: 
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    depends_on:
+      - postgres
+      - minio
+    volumes: 
+      - ./kember/kember.ipynb:/home/jovyan/kember.ipynb
+      - ../../../packages/simcore-sdk/src:/home/jovyan/packages/packages/simcore-sdk/src
+      - ../../../packages/s3wrapper/src:/home/jovyan/packages/packages/s3wrapper/src
+  #--------------------------------------------------------------------
   postgres:
     image: postgres:10
     environment:
