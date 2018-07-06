@@ -21,7 +21,7 @@ qx.Class.define("qxapp.dev.fake.srv.restapi.User", {
       }
     }, {
       method: "GET",
-      url: "api/v1.0/users/",
+      url: "api/v1.0/users",
       response: function(request) {
         let users = qxapp.dev.fake.srv.db.User.DUMMYNAMES;
 
@@ -37,19 +37,6 @@ qx.Class.define("qxapp.dev.fake.srv.restapi.User", {
             "Content-Type": "application/json"
           },
           qx.lang.Json.stringify(data));
-      }
-    }, {
-      // FIXME: this is unfinished!!!!
-      method: "POST",
-      url: "api/v1.0/users/",
-      response: function(request) {
-        const users = qxapp.dev.fake.srv.db.User.DUMMYNAMES;
-
-        request.respond(200,
-          {
-            "Content-Type": "application/json"
-          },
-          qx.lang.Json.stringify({message: "A confirmation email has been sent"}));
       }
     }]
   },
