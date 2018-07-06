@@ -43,7 +43,7 @@ WORKDIR /home/scu
 
 # 1. qooxdoo-sdk from source repository.
 #  - Provides framework and generator.py tools to overcome limits of qx-compiler
-#  - This is a temporary solution
+#  - TODO: This is a temporary solution
 RUN git clone --depth 1 https://github.com/qooxdoo/qooxdoo.git ${QOOXDOO_PATH} && \
     sed 's/6.0.0-alpha[^"]*/'$(date +"6.0.0-alpha-%Y%m%d")'/' ${QOOXDOO_PATH}/framework/Manifest.json > ${QOOXDOO_PATH}/framework/Manifest.json.$$ && \
     mv ${QOOXDOO_PATH}/framework/Manifest.json.$$ ${QOOXDOO_PATH}/framework/Manifest.json
@@ -72,7 +72,7 @@ VOLUME /home/scu/client
 ENTRYPOINT ["./scripts/entrypoint.sh"]
 
 # 4. serves
-CMD ["serve"]
+CMD ["serve", "--set", "qx.allowUrlSettings=true"]
 
 # ------------------------------------------------------------------------------------------
 FROM base-stage as build
@@ -93,4 +93,4 @@ RUN qx compile --target=build
 
 ENTRYPOINT []
 
-CMD ["qx"]
+CMD ["qx", "serve", "--set", "qx.allowUrlSettings=true"]

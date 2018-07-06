@@ -5,7 +5,7 @@
    License: MIT license
 
    Authors: undefined
-
+TODO: change name of app: osparc instead of qxapp
 ************************************************************************ */
 
 /**
@@ -18,14 +18,7 @@
 
 qx.Class.define("qxapp.Application", {
   extend: qx.application.Standalone,
-
   include: [qx.locale.MTranslation],
-
-  /*
-  *****************************************************************************
-     MEMBERS
-  *****************************************************************************
-  */
 
   members:
   {
@@ -43,34 +36,53 @@ qx.Class.define("qxapp.Application", {
       if (qx.core.Environment.get("qx.debug")) {
         // support native logging capabilities, e.g. Firebug for Firefox
         qx.log.appender.Native;
+
+        if (qx.core.Environment.get("dev.enableFakeSrv")) {
+          console.debug("Fake server enabled");
+          qxapp.dev.fake.srv.restapi.User;
+          qxapp.dev.fake.srv.restapi.Authentication;
+        }
       }
-
-      /*
-      TODO: change name of app: osparc instead of qxapp
-
-      */
-      // Document is the application root
-      let doc = this.getRoot();
 
       // openning web socket
       qxapp.wrappers.WebSocket.getInstance().connect();
 
+      if (qx.core.Environment.get("dev.disableLogin")) {
+        console.debug("Login was disabled");
+        this.__startDesktop();
+      } else {
+        this.__startLogin();
+      }
+    },
+
+    __startDesktop: function() {
+      this.__layoutManager = new qxapp.desktop.LayoutManager();
+      this.getRoot().add(this.__layoutManager, {
+        left: "0%",
+        top: "0%",
+        height: "100%",
+        width: "100%"
+      });
+    },
+
+    __startLogin: function() {
       let login = new qxapp.components.login.Login();
+
       login.addListener("login", function(e) {
-        // FIXME: For the moment, password is not checked
-        // if (e.getData() === true) {
-        this.__layoutManager = new qxapp.desktop.LayoutManager();
-        doc.remove(login);
-        doc.add(this.__layoutManager, {
-          left: "0%",
-          top: "0%",
-          height: "100%",
-          width: "100%"
-        });
-        // }
+        // TODO: need to init user-id and token in data layer
+        if (e.getData() === true) {
+          this.getRoot().remove(login);
+          this.__startDesktop();
+        } else {
+          console.log("Invalid user or password.");
+          // TODO: some kind of notification as in
+          //  http://www.qooxdoo.org/5.0.1/pages/website/tutorial_web_developers.html
+          // flash("Invalid user name or password");
+        }
       }, this);
 
-      doc.add(login, {
+      // TODO: center in document qx.ui.layout.Canvas
+      this.getRoot().add(login, {
         left: "10%",
         top: "10%",
         height: "30%"
