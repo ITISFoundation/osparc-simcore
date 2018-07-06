@@ -8,6 +8,7 @@
 
 qx.Class.define("qxapp.components.login.Form", {
   extend: qx.ui.form.Form,
+  include: [qx.locale.MTranslation],
 
   construct: function() {
     this.base(arguments);
@@ -29,7 +30,6 @@ qx.Class.define("qxapp.components.login.Form", {
       placeholder: this.tr("Your password"),
       tabIndex: username.getTabIndex()+1
     });
-    password.setPlaceholder();
     this.add(password, "", null, "password", null);
 
     // TODO:
