@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 
 from sqlalchemy import create_engine
@@ -8,7 +9,6 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.models.pipeline_models import ComputationalTask as NodeModel
-from simcore_sdk.nodeports import serialization
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,7 +19,32 @@ class DbSettings(object):
         self.Session = sessionmaker(self.db)
         self.session = self.Session()
 
-class IO(object):
+def save_node_to_json(node):
+    node_json_config = json.dumps(node, cls=_NodeModelEncoder)
+    return node_json_config
+
+def create_node_from_json(json_config):
+    node_configuration = json.loads(json_config)
+    node = NodeModel(input=node_configuration["inputs"], output=node_configuration["outputs"])
+    return node
+
+class _NodeModelEncoder(json.JSONEncoder):
+    def default(self, o): # pylint: disable=E0202
+        _LOGGER.debug("Encoding object: %s", o)
+        if isinstance(o, NodeModel):
+            _LOGGER.debug("Encoding Node object")
+            return {"version": "0.1", #TODO: SAN this will need to be correctly read
+                    "inputs": o.input, 
+                    "outputs": o.output
+                    }
+            # return {"version": o.tag, 
+            #         "inputs": o.inputs, 
+            #         "outputs": o.outputs
+            #         }
+        _LOGGER.debug("Encoding object using defaults")
+        return json.JSONEncoder.default(self, o)
+
+class DBManager(object):
     def __init__(self):
         self._db = DbSettings()            
 
@@ -38,14 +63,14 @@ class IO(object):
         node = self.__get_node_from_db(node_uuid)
         if set_pipeline_id:
             os.environ["SIMCORE_PIPELINE_ID"]=str(node.pipeline_id)
-        node_json_config = serialization.save_node_to_json(node)
+        node_json_config = save_node_to_json(node)
         _LOGGER.debug("Found and converted to json")
         return node_json_config
 
     def __write_configuration_to_db(self, json_configuration):
         _LOGGER.debug("Writing to database")
 
-        updated_node = serialization.create_node_from_json(json_configuration)
+        updated_node = create_node_from_json(json_configuration)
         node = self.__get_node_from_db(node_uuid=os.environ.get('SIMCORE_NODE_UUID'))        
         
         if node.input != updated_node.input:

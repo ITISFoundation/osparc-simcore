@@ -32,6 +32,7 @@ docker-compose run --rm qx api
 docker-compose run --rm qx test-source
 
 # 5) serves app, tests and doc in 8080, 8081 and 8082 resp.
+# installs theme and fires qx serve. Open http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true
 docker-compose up
 
 ```
@@ -43,6 +44,20 @@ Open then:
 
 Finally, ``docker-compose down``. Once 1), 3) and 4) are performed once. The typical workflow would only consist of ``docker-compose down`` / ``down``
 
+
+For a fake backend, open http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true otherwise http://localhost:8080/
+
+## URL environmet variables
+
+client's development container ``qx serve --set qx.allowUrlSettings=true`` and the following develompent settings are defined:
+
+ - ``dev.enableFakeSrv: true/[false]`` : enables/disables fake server. Used exclusively for development.
+ - ``dev.disableLogin:  true/[false]``  : enables/disables login page. Used exclusively for development.
+
+ Examples:
+  - http://localhost:8080/
+  - http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true
+  - http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true&qxenv:dev.disableLogin:true
 
 ## docker
 
@@ -56,5 +71,25 @@ and *production*, respectively. In this context, a *development* container mount
 In order to build/run each target image, we override ``docker-compose`` configuration files: ``docker-compose.yml`` and ``docker-compose.production.yml``
 
 
+# open a new console, and type this to stop
+cd path/to/web/client
+docker-compose down
+```
+### Issues with the Windows host
+
+Development version of image doesn't work on a windows host. Modified files in the mounted volume don't trigger container operating  system notifications, so watchers don't react to changes. This is a known limitation of docker on windows.
+
+- TODO: implement helper script for this?
+
+#### Workaround:
+
+ http://blog.subjectify.us/miscellaneous/2017/04/24/docker-for-windows-watch-bindings.html
+
+Open terminal in windows host and type:
+
+```bash
+pip install docker-windows-volume-watcher
+docker-volume-watcher
+```
 
 [qx]:http://www.qooxdoo.org/

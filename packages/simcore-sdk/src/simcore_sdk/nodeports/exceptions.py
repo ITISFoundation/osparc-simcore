@@ -35,9 +35,24 @@ class InvalidKeyError(NodeportsException):
         super(InvalidKeyError, self).__init__(msg)
         self.item_key = item_key
 
+class InvalidItemTypeError(NodeportsException):
+    """Item type incorrect"""
+    def __init__(self, item_type, item_value):
+        msg = "Invalid item type, %s is set as being a %s type" % (item_value, item_type)
+        super(InvalidItemTypeError, self).__init__(msg)
+        self.item_type = item_type
+        self.item_value = item_value
+
 class InvalidProtocolError(NodeportsException):
     """Invalid protocol used"""
     def __init__(self, dct, msg=None):
         msg = "Invalid protocol used: %s\n%s" % (dct, msg)
         super(InvalidProtocolError, self).__init__(msg)
         self.dct = dct
+
+class S3TransferError(NodeportsException):
+    """S3 transfer error"""
+    def __init__(self, msg=None):
+        if not msg:
+            msg = "Error while transferring to/from S3 storage"
+        super(S3TransferError, self).__init__(msg)
