@@ -2,7 +2,6 @@ import json
 import sys
 import tempfile
 import uuid
-import os
 from pathlib import Path
 
 import tenacity
