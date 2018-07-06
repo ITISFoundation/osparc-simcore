@@ -728,9 +728,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
 
     getServices: function() {
       let fakeServices = [];
-      Array.prototype.push.apply(fakeServices, qxapp.qxapp.dev.fake.Data.getProducers());
-      Array.prototype.push.apply(fakeServices, qxapp.qxapp.dev.fake.Data.getComputationals());
-      Array.prototype.push.apply(fakeServices, qxapp.qxapp.dev.fake.Data.getAnalyses());
+      Array.prototype.push.apply(fakeServices, qxapp.dev.fake.Data.getProducers());
+      Array.prototype.push.apply(fakeServices, qxapp.dev.fake.Data.getComputationals());
+      Array.prototype.push.apply(fakeServices, qxapp.dev.fake.Data.getAnalyses());
       return fakeServices;
     },
 
