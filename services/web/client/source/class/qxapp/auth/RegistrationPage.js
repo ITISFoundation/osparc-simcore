@@ -7,7 +7,6 @@ qx.Class.define("qxapp.auth.RegistrationPage", {
   extend: qxapp.auth.BaseAuthPage,
 
   construct: function() {
-    this.__manager = new qx.ui.form.validation.Manager();
     this.base(arguments);
   },
   destruct: function() {
@@ -15,10 +14,10 @@ qx.Class.define("qxapp.auth.RegistrationPage", {
   },
 
   members: {
-    __manager: null,
 
     // overrides base
     _buildPage: function() {
+      let manager = new qx.ui.form.validation.Manager();
       this._addTitleHeader(this.tr("Register"));
 
       let email = new qx.ui.form.TextField();
@@ -39,8 +38,8 @@ qx.Class.define("qxapp.auth.RegistrationPage", {
       this.add(pass2);
 
       // Validation
-      this.__manager.add(email, qx.util.Validate.email());
-      this.__manager.add(pass1, function(value, itemForm) {
+      manager.add(email, qx.util.Validate.email());
+      manager.add(pass1, function(value, itemForm) {
         const isValid = value !== null && value.length > 2;
         if (!isValid) {
           itemForm.setInvalidMessage("Please enter a password at with least 3 characters.");
@@ -48,7 +47,7 @@ qx.Class.define("qxapp.auth.RegistrationPage", {
         return isValid;
       });
 
-      this.__manager.setValidator(function(itemForms) {
+      manager.setValidator(function(itemForms) {
         const isValid = pass1.getValue() == pass2.getValue();
         if (!isValid) {
           const msg = "Passwords do not match.";
@@ -73,7 +72,7 @@ qx.Class.define("qxapp.auth.RegistrationPage", {
       });
 
       submitBtn.addListener("execute", function(e) {
-        const valid = this.__manager.validate();
+        const valid = manager.validate();
         if (valid) {
           this.__register({
             email: email.getValue(),
@@ -116,10 +115,7 @@ qx.Class.define("qxapp.auth.RegistrationPage", {
         // back to login
 
         // TODO: Flash error
-        alert(e.getData());
-
-
-        this.__manager.resetValidator();
+        console.error("", e.getData());
       }, this);
 
       user.post(data);

@@ -13,31 +13,37 @@ qx.Class.define("qxapp.auth.ResetPassPage", {
   },
 
   members: {
-    __email: null,
 
     // overrides base
     _buildPage: function() {
+      let manager = new qx.ui.form.validation.Manager();
+
       this._addTitleHeader(this.tr("Reset Password"));
 
-      var email = new qx.ui.form.TextField();
+      let email = new qx.ui.form.TextField();
+      email.setRequired(true);
       email.setPlaceholder(this.tr("Introduce your email to reset your passoword"));
-      this.__email = email;
       this.add(email);
 
+      manager.add(email, qx.util.Validate.email());
+
       // buttons
-      var grp = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      let grp = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
       grp.set({
         marginTop: this._marginFooter
       });
 
-      var btn = new qx.ui.form.Button(this.tr("Submit"));
+      let btn = new qx.ui.form.Button(this.tr("Submit"));
       btn.setWidth(this._widthBtn);
       grp.add(btn, {
         left: 0
       });
 
       btn.addListener("execute", function(e) {
-        this.__submit();
+        const valid = manager.validate();
+        if (valid) {
+          this.__submit(email.getValue());
+        }
       }, this);
 
       btn = new qx.ui.form.Button(this.tr("Cancel"));
@@ -54,18 +60,18 @@ qx.Class.define("qxapp.auth.ResetPassPage", {
     },
 
     __cancel: function() {
-      var login = new qxapp.auth.LoginPage();
+      let login = new qxapp.auth.LoginPage();
       login.show();
       this.destroy();
     },
 
-    __submit: function() {
-      console.debug("sends email to reset password to ", this.__email);
+    __submit: function(email) {
+      console.debug("sends email to reset password to ", email);
       // TODO: flash ...  "email sent..."
       // TODO: query server to send reset email. to user?
       // TODO: if user not in registry, flash "unknown email"?
       // back to login
-      var login = new qxapp.auth.LoginPage();
+      let login = new qxapp.auth.LoginPage();
       login.show();
       this.destroy();
     }

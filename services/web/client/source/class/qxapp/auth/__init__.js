@@ -4,6 +4,5 @@
  * TODO: add external authentication
  *
  *
- * TODO: validation
  * TODO: pages from application
  */
