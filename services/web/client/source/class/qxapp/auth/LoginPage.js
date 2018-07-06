@@ -45,28 +45,8 @@ qx.Class.define("qxapp.auth.LoginPage", {
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
-      // (gap) Remember  ForgotPassword (gap)
-      let grpLinks = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
 
-      // TODO: Tmp disabled. Remember me implies keep status in server
-      var chk = new qx.ui.form.CheckBox("<i style='color: #FFFFFF'>" + this.tr("Remember me") + "</i>");
-      var lbl = chk.getChildControl("label");
-      lbl.setRich(true);
-      // grpLinks.add(chk, {
-      //  left: "5%"
-      // });
-      // this.__form.add(chk, "", null, "remember", null);
-
-      var lnk = this.createLinkButton(this.tr("Forgot Password?"), function() {
-        this.forgot();
-      }, this);
-      grpLinks.add(lnk, {
-        right: "5%"
-      });
-
-      this.add(grpLinks);
-
-      // |Log In --~-- Register|
+      // |        Login-|
       let grpBtns = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
       grpBtns.set({
         marginTop: this._marginFooter
@@ -78,17 +58,46 @@ qx.Class.define("qxapp.auth.LoginPage", {
         }
       }, this);
       grpBtns.add(btnLogin, {
-        left: 0
-      });
-
-      var btnRegister = this.createButton(this.tr("Register"), this._widthBtn, function() {
-        this.register();
-      }, this);
-      grpBtns.add(btnRegister, {
         right: 0
       });
 
       this.add(grpBtns);
+
+
+      // |~ Remember -|- ForgotPassword ~|
+      let grpLinks = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      grpLinks.set({
+        marginTop: 2*this._marginFooter,
+        width: this.getWidth()
+      });
+
+      // TODO: Temporary disabled. 'Remember me' implies keeping login status in server
+      // var chk = new qx.ui.form.CheckBox("<i style='color: #FFFFFF'>" + this.tr("Remember me") + "</i>");
+      // var lbl = chk.getChildControl("label");
+      // lbl.setRich(true);
+      // grpLinks.add(chk, {
+      //  left: "5%"
+      // });
+      // this.__form.add(chk, "", null, "remember", null);
+      const mid = parseInt(this.getWidth() / 2);
+      var registerLnk = this.createLinkButton(this.tr("Create Account"), function() {
+        this.register();
+      }, this);
+      grpLinks.add(registerLnk, {
+        right: mid + 20
+      });
+
+      grpLinks.add(new qx.ui.basic.Atom("|"), {
+        right: mid
+      });
+
+      var forgotLink = this.createLinkButton(this.tr("Forgot Password?"), function() {
+        this.forgot();
+      }, this);
+      grpLinks.add(forgotLink, {
+        left: mid + 15
+      });
+      this.add(grpLinks);
     },
 
     login: function() {

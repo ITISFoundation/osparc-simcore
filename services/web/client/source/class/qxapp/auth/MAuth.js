@@ -10,7 +10,7 @@ qx.Mixin.define("qxapp.auth.MAuth", {
      * TODO: create its own widget under qxapp.core.ui
      */
     createLinkButton: function(txt, cbk, ctx) {
-      var strForgot = "<center><i style='color: white'>" + txt + "</i></center>";
+      var strForgot = "<center><i style='color: gray'>" + txt + "</i></center>";
       var atm = new qx.ui.basic.Atom(strForgot);
       atm.set({
         cursor: "pointer"
@@ -19,7 +19,7 @@ qx.Mixin.define("qxapp.auth.MAuth", {
       lbl.setRich(true);
       lbl.setAllowGrowY(true);
       atm.addListener("mouseover", function() {
-        atm.setLabel("<u style='color: white'>" + strForgot + "</u>");
+        atm.setLabel("<u style='color: gray'>" + strForgot + "</u>");
       }, this);
       atm.addListener("mouseout", function() {
         atm.setLabel(strForgot);
