@@ -147,7 +147,7 @@ class Sidecar(object):
         prog_body = json.dumps(prog_data)
         channel.basic_publish(exchange=self._pika.progress_channel, routing_key='', body=prog_body)
 
-    def _bg_job(self, task, log_file):
+    def _bg_job(self, log_file):
         connection = pika.BlockingConnection(self._pika.parameters)
 
         channel = connection.channel()
@@ -270,7 +270,7 @@ class Sidecar(object):
         log_file = os.path.join(self._executor.log_dir, "log.dat")
 
         Path(log_file).touch()
-        fut = self._executor.pool.submit(self._bg_job, self._task, log_file)
+        fut = self._executor.pool.submit(self._bg_job, log_file)
 
         try:
             docker_image = self._docker.image_name + ":" + self._docker.image_tag
