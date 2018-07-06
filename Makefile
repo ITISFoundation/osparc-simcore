@@ -88,7 +88,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.2
+PLATFORM_VERSION=3.4
 
 push_platform_images:
 	${DOCKER} login masu.speag.com
@@ -100,7 +100,7 @@ push_platform_images:
 	${DOCKER} push masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
 
   setup-check: .env .vscode/settings.json
-  
+
 .env: .env-devel
 	$(info #####  $< is newer than $@ ####)
 	@diff -uN $@ $<
