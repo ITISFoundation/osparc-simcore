@@ -74,8 +74,8 @@ def create_dummy(json_configuration_file_path):
     temp_file.close()
 
     # create a dummy table
-    number_of_rows = 500
-    number_of_columns = 2000
+    number_of_rows = 100
+    number_of_columns = 6000
     number_of_files = 20
     s3 = init_s3()
     # push the file to the S3 for each input item
@@ -85,7 +85,7 @@ def create_dummy(json_configuration_file_path):
             df = create_dummy_table(number_of_rows, number_of_columns)
             # serialize to the file
             with open(temp_file.name, "w") as file_pointer:
-                df.to_csv(path_or_buf=file_pointer, sep=",", header=False, index=False)        
+                df.to_csv(path_or_buf=file_pointer, sep=" ", header=False, index=False)        
             
             s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"])
             s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
@@ -94,7 +94,7 @@ def create_dummy(json_configuration_file_path):
                 df = create_dummy_table(number_of_rows, number_of_columns)
                 # serialize to the file
                 with open(temp_file.name, "w") as file_pointer:
-                    df.to_csv(path_or_buf=file_pointer, sep="\t", header=False, index=False)        
+                    df.to_csv(path_or_buf=file_pointer, sep=" ", header=False, index=False)        
                 
                 s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"], str(i) + ".dat")
                 s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
