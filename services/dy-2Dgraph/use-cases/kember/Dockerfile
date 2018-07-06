@@ -18,8 +18,7 @@ EXPOSE 8888
 USER root
 RUN apt-get update && \
     apt-get install -y \
-    git \
-    ffmpeg
+    git
 USER $NB_USER
 
 # install requirements, install jupyter notebook extensions and enable necessary ones
@@ -55,7 +54,6 @@ LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 8888}
 FROM common AS specialised
 # set of arguments to copy the right notebook
 ARG NOTEBOOK_NAME
-ARG NOTEBOOK_FOLDER_NAME
 
 # env to automatically open the notebook
 ENV NOTEBOOK_URL=${NOTEBOOK_NAME}
@@ -64,11 +62,10 @@ FROM specialised AS development
 # one can mount the packages
 VOLUME /home/jovyan/packages/packages/simcore-sdk/src \
     /home/jovyan/packages/packages/s3wrapper/src
-ARG JSON_CONFIGURATION_FOLDER
 ARG JSON_CONFIGURATION
 ENV USE_CASE_CONFIG_FILE=${JSON_CONFIGURATION}
 # copy special configuration for development
-COPY --chown=jovyan:users ${JSON_CONFIGURATION_FOLDER}/${JSON_CONFIGURATION} .
+COPY --chown=jovyan:users ${JSON_CONFIGURATION} .
 # create dummy tables and dummy S3 data
 ENV CREATE_DUMMY_TABLE=1
 COPY --chown=jovyan:users develdbs3init.py .
@@ -77,9 +74,8 @@ CMD [ "/bin/sh", "boot.sh" ]
 FROM specialised AS production
 # set of arguments to copy the right notebook
 ARG NOTEBOOK_NAME
-ARG NOTEBOOK_FOLDER_NAME
 # copy the notebook in the image
-COPY --chown=jovyan:users ${NOTEBOOK_FOLDER_NAME}/${NOTEBOOK_NAME} .
+COPY --chown=jovyan:users ${NOTEBOOK_NAME} .
 # download the simcore_sdk package
 RUN mkdir packages && \
     cd packages && \
