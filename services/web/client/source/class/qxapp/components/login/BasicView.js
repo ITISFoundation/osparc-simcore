@@ -4,12 +4,12 @@
  *  Features:
  *    - Login form
  *    - Some decoration
- *
+ *    - HTTP requests
  */
 
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.components.login.Standard", {
+qx.Class.define("qxapp.components.login.BasicView", {
 
   extend: qx.ui.container.Composite,
 
@@ -41,7 +41,6 @@ qx.Class.define("qxapp.components.login.Standard", {
    */
   members: {
     __form: null,
-    __token: null,
     __info: null,
 
     __createHeader: function() {
@@ -108,33 +107,15 @@ qx.Class.define("qxapp.components.login.Standard", {
     },
 
     __onSubmitLogin: function(e) {
-      // this is user's input
       var loginData = e.getData();
 
-      let auth = new qx.io.request.authentication.Basic(
-        loginData.user,
-        loginData.password);
-
-      // TODO: encapsulate entire request in separate class
-      // let req = new qxapp.io.request.Login(loginData());
-
-      // let serializer = function (object) {
-      //  if (object instanceof qx.ui.form.ListItem) {
-      //    return object.getLabel();
-      //  }
-      // };
-      // console.debug("You are sending: " +
-      //  qx.util.Serializer.toUriParameter(model, serializer));
-
-      // Requests authentication to server
       let req = new qx.io.request.Xhr();
       req.set({
-        // qx.io.request.authentication sets headers.
-        // Can send user+passorwd or user=token w/o password!?
-        authentication: auth,
-        url: "/login",
-        method: "POST",
-        requestData: qx.util.Serializer.toJson(loginData)
+        authentication: new qx.io.request.authentication.Basic(
+          loginData.username,
+          loginData.password),
+        url: "api/v1.0/token",
+        method: "GET"
       });
 
       req.addListener("success", this.__onLoginSucceed, this);
@@ -143,31 +124,23 @@ qx.Class.define("qxapp.components.login.Standard", {
     },
 
     __onLoginSucceed: function(e) {
-      let req = e.getTarget();
-      console.debug("Everything went fine!!");
-      console.debug("status  :", req.getStatus());
-      console.debug("phase   :", req.getPhase());
-      console.debug("response: ", req.getResponse());
+      const req = e.getTarget();
+      console.debug("Login suceeded:", "status  :", req.getStatus(), "phase   :", req.getPhase(), "response: ", req.getResponse());
 
-      this.__info = req.getResponse();
-      this.__token = req.getResponse().userToken;
-
-      // TODO: implement token-based authentication: we can request token and from that moment on,
-      // just use that...
-
-      // TODO: fire success logged in and store token??
+      qxapp.io.rest.Resource.setAutheticationHeader(req.getResponse().token, null);
       this.fireDataEvent("login", true);
     },
 
     __onLoginFailed: function(e) {
-      // Display error page!
-      let req = e.getTarget();
-      console.debug("Something went wrong!!");
-      console.debug("status  :", req.getStatus());
-      console.debug("phase   :", req.getPhase());
-      console.debug("response: ", req.getResponse());
+      const req = e.getTarget();
+      console.debug("Login failed:", "status  :", req.getStatus(), "phase   :", req.getPhase(), "response: ", req.getResponse());
 
-      // TODO: invalidate form view and flash error!
+      let msg = null;
+      if (req.getStatus() != 401) {
+        msg = "Unable to login. Server returned " + String(req.getStatus());
+      }
+      this.__form.flashInvalidLogin(msg);
+
       this.fireDataEvent("login", false);
     }
 

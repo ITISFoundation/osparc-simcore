@@ -44,7 +44,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     let userBtn = this.__createUserBtn();
     userBtn.set(commonBtnSettings);
-    userBtn.setIcon(qxapp.utils.Placeholders.getGravatar(dummyUser + "@itis.ethz.ch", 32));
+    userBtn.setIcon(qxapp.utils.Avatar.getUrl(dummyUser + "@itis.ethz.ch", 32));
     this.add(userBtn);
 
 
