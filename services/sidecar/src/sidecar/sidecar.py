@@ -247,12 +247,8 @@ class Sidecar(object):
         self._executor.log_dir = os.path.join("/", "log", task.job_id)
 
         self._docker.env = ["INPUT_FOLDER=" + self._executor.in_dir,
-                           "OUTPUT_FOLDER=" + self._executor.out_dir,
-                           "LOG_FOLDER=" + self._executor.log_dir]
-
-        # self._docker.env = ["INPUT_FOLDER=/input",
-        #                    "OUTPUT_FOLDER=/output",
-        #                    "LOG_FOLDER=/log"]
+                            "OUTPUT_FOLDER=" + self._executor.out_dir,
+                            "LOG_FOLDER=" + self._executor.log_dir]
 
 
     def preprocess(self):
