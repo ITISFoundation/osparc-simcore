@@ -49,12 +49,12 @@ qx.Class.define("qxapp.Application", {
 
       this.__startDesktop();
       // FIXME: PC check how to enable url parameters when served with python server
-      //if (qx.core.Environment.get("dev.disableLogin")) {
-      //  console.debug("Login was disabled");
-      //  this.__startDesktop();
-      //} else {
-      //  this.__startLogin();
-      //}
+      // if (qx.core.Environment.get("dev.disableLogin")) {
+      //   console.debug("Login was disabled");
+      //   this.__startDesktop();
+      // } else {
+      //   this.__startLogin();
+      // }
     },
 
     __startDesktop: function() {
