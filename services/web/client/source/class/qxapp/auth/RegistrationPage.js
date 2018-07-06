@@ -6,13 +6,6 @@
 qx.Class.define("qxapp.auth.RegistrationPage", {
   extend: qxapp.auth.BaseAuthPage,
 
-  construct: function() {
-    this.base(arguments);
-  },
-  destruct: function() {
-    console.debug("destroying RegistrationPage");
-  },
-
   members: {
 
     // overrides base

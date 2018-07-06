@@ -4,14 +4,6 @@
 qx.Class.define("qxapp.auth.ResetPassPage", {
   extend: qxapp.auth.BaseAuthPage,
 
-  construct: function() {
-    this.base(arguments);
-  },
-  destruct: function() {
-    this.base(arguments);
-    console.debug("destroying ResetPassPage");
-  },
-
   members: {
 
     // overrides base

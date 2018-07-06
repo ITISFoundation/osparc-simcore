@@ -10,14 +10,6 @@
 qx.Class.define("qxapp.auth.LoginPage", {
   extend: qxapp.auth.BaseAuthPage,
 
-  construct: function() {
-    this.base(arguments);
-  },
-
-  destruct: function() {
-    this.base(arguments);
-    console.debug("destroying LoginPage");
-  },
   members: {
     __form: null,
 
@@ -34,13 +26,13 @@ qx.Class.define("qxapp.auth.LoginPage", {
       this.add(atm);
 
       var email = new qx.ui.form.TextField();
-      email.setPlaceholder("Your email address");
+      email.setPlaceholder(this.tr("Your email address"));
       email.setRequired(true);
       this.add(email);
       this.__form.add(email, "", qx.util.Validate.email(), "email", null);
 
       var pass = new qx.ui.form.PasswordField();
-      pass.setPlaceholder("Your password");
+      pass.setPlaceholder(this.tr("Your password"));
       pass.setRequired(true);
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
@@ -64,7 +56,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
       this.add(grpBtns);
 
 
-      // |~ Remember -|- ForgotPassword ~|
+      // |~ Sign Up -|- ForgotPassword ~|
       let grpLinks = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
       grpLinks.set({
         marginTop: 2*this._marginFooter,
@@ -79,6 +71,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
       //  left: "5%"
       // });
       // this.__form.add(chk, "", null, "remember", null);
+
       const mid = parseInt(this.getWidth() / 2);
       var registerLnk = this.createLinkButton(this.tr("Create Account"), function() {
         this.register();

@@ -25,6 +25,7 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
       let left = parseInt((qx.bom.Document.getWidth() - page.getWidth()) / 2, 10);
 
       let app = qx.core.Init.getApplication();
+      app.getRoot().removeAll();
       app.getRoot().add(page, {
         top: top,
         left: left
@@ -53,8 +54,7 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
   },
 
   destruct: function() {
-    // TODO: check order of destruction
-    console.debug("destroying AuthBasePage");
+    console.debug("destroying ", this.__proto__.classname);
   },
 
   members: {
