@@ -67,7 +67,6 @@ class Sidecar(object):
                 #parse the link assuming it is link.id.file.ending
                 _parts = port_value.split(".")
                 object_name = os.path.join(str(self._task.pipeline_id), _parts[1], ".".join(_parts[2:]))
-                #object_name = os.path.join(str(self._task.pipeline_id),*port_value.split(".")[1:])
                 input_file = os.path.join(self._executor.in_dir, port_name)
                 _LOGGER.debug('Downloading from  S3 %s/%s', self._s3.bucket, object_name)
                 success = False
@@ -138,7 +137,17 @@ class Sidecar(object):
 
         self._docker.client.images.pull(self._docker.image_name, tag=self._docker.image_tag)
 
-    def _bg_job(self, task, log_file):
+    def _log(self, channel, msg):
+        log_data = {"Channel" : "Log", "Node": self._task.node_id, "Message" : msg}
+        log_body = json.dumps(log_data)
+        channel.basic_publish(exchange=self._pika.log_channel, routing_key='', body=log_body)
+
+    def _progress(self, channel, progress):
+        prog_data = {"Channel" : "Progress", "Node": self._task.node_id, "Progress" : progress}
+        prog_body = json.dumps(prog_data)
+        channel.basic_publish(exchange=self._pika.progress_channel, routing_key='', body=prog_body)
+
+    def _bg_job(self, log_file):
         connection = pika.BlockingConnection(self._pika.parameters)
 
         channel = connection.channel()
@@ -158,16 +167,11 @@ class Sidecar(object):
                     clean_line = line.strip()
                     if clean_line.lower().startswith("[progress]"):
                         progress = clean_line.lower().lstrip("[progress]").rstrip("%").strip()
-                        prog_data = {"Channel" : "Progress", "Node": task.node_id, "Progress" : progress}
+                        self._progress(channel, progress)
                         _LOGGER.debug('PROGRESS %s', progress)
-                        prog_body = json.dumps(prog_data)
-                        channel.basic_publish(exchange=self._pika.progress_channel, routing_key='', body=prog_body)
                     else:
-                        log_data = {"Channel" : "Log", "Node": task.node_id, "Message" : clean_line}
+                        self._log(channel, clean_line)
                         _LOGGER.debug('LOG %s', clean_line)
-                        log_body = json.dumps(log_data)
-                        channel.basic_publish(exchange=self._pika.log_channel, routing_key='', body=log_body)
-
 
         connection.close()
 
@@ -266,7 +270,7 @@ class Sidecar(object):
         log_file = os.path.join(self._executor.log_dir, "log.dat")
 
         Path(log_file).touch()
-        fut = self._executor.pool.submit(self._bg_job, self._task, log_file)
+        fut = self._executor.pool.submit(self._bg_job, log_file)
 
         try:
             docker_image = self._docker.image_name + ":" + self._docker.image_tag
@@ -292,10 +296,30 @@ class Sidecar(object):
         _LOGGER.debug('DONE Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
 
     def run(self):
-        _LOGGER.debug("ENTERING run")
+        connection = pika.BlockingConnection(self._pika.parameters)
+
+        channel = connection.channel()
+        channel.exchange_declare(exchange=self._pika.log_channel, exchange_type='fanout', auto_delete=True)
+
+        msg = "Preprocessing start..."
+        self._log(channel, msg)
         self.preprocess()
+        msg = "...preprocessing end"
+        self._log(channel, msg)
+
+        msg = "Processing start..."
+        self._log(channel, msg)
         self.process()
+        msg = "...processing end"
+        self._log(channel, msg)
+
+        msg = "Postprocessing start..."
+        self._log(channel, msg)
         self.postprocess()
+        msg = "...postprocessing end"
+        self._log(channel, msg)
+        connection.close()
+
 
     def postprocess(self):
         _LOGGER.debug('Post-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)

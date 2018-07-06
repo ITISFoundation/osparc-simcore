@@ -21,7 +21,7 @@ from simcore_sdk.config.s3 import Config as s3_config
 
 _LOGGER = logging.getLogger(__file__)
 
-SIO = socketio.AsyncServer(async_mode='aiohttp')
+SIO = socketio.AsyncServer(async_mode='aiohttp', logging=_LOGGER)
 
 CONFIG = config.CONFIG[os.environ.get('SIMCORE_WEB_CONFIG', 'default')]
 
