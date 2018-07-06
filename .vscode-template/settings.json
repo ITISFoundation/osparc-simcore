@@ -1,6 +1,8 @@
 {
-    "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "eslint.alwaysShowStatus": true,
     "files.associations": {
         ".*rc": "ini",
         ".env*": "ini",
@@ -10,13 +12,11 @@
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
     "files.trimTrailingWhitespace": true,
-    "editor.tabSize": 2,
-    "editor.insertSpaces": true,
-    "editor.detectIndentation": false,
-    "eslint.alwaysShowStatus": true,
     "python.formatting.autopep8Args": [
         "-max-line-length", "140"
     ],
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
     "[python]":{
       "editor.detectIndentation" : false,
       "editor.tabSize" : 4

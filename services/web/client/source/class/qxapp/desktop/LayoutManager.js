@@ -27,7 +27,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjStack.setSelection([this.__PrjEditor]);
       this.__navBar.setCurrentStatus(e.getData().getName());
       // this.__PrjEditor.showSettings(false);
-      this.__PrjEditor.setData(qxapp.data.Fake.getPrjData(e.getData().getPrjId()));
+      this.__PrjEditor.setData(qxapp.dev.fake.Data.getPrjData(e.getData().getPrjId()));
     }, this);
   },
 
