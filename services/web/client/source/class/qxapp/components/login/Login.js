@@ -46,14 +46,14 @@ qx.Class.define("qxapp.components.login.Login", {
       let loginGroup = new qx.ui.container.Composite(layout);
 
       let loginOpenId = new qx.ui.form.Button().set({
-        label: "Continue with openID"
+        label: this.tr("Continue with openID")
         // FIXME: icon size
         // icon: "https://upload.wikimedia.org/wikipedia/commons/8/88/Openid.svg",
       });
       loginGroup.add(loginOpenId);
 
       let loginNIH = new qx.ui.form.Button().set({
-        label: "Continue with NIH"
+        label: this.tr("Continue with NIH")
         // FIXME: icon size
         // icon: "qxapp/nih-419.png",
       });

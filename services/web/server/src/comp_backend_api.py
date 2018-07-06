@@ -98,9 +98,10 @@ async def start_pipeline(request):
         if is_io_node:
             for ofile in node["outputs"]:
                 current_filename_on_s3 = ofile['value']
-                new_filename = node_id +"/" + ofile['key'] # out_1
-                # copy the file
-                io_files.append({ 'from' : current_filename_on_s3, 'to' : new_filename })
+                if current_filename_on_s3:
+                    new_filename = node_id +"/" + ofile['key'] # out_1
+                    # copy the file
+                    io_files.append({ 'from' : current_filename_on_s3, 'to' : new_filename })
 
         for link in links:
             if link['node1Id'] == node_id:

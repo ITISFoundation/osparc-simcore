@@ -68,8 +68,8 @@ qx.Class.define("qxapp.dev.fake.srv.restapi.Authentication", {
       var value = header.split(" ")[1];
       // parse '$username : $password'
       var pair = qx.util.Base64.decode(value).split(":");
-      res["email"] = pair[0];
-      res["password"] = pair[1];
+      res.email = pair[0];
+      res.password = pair[1];
 
       return res;
     },

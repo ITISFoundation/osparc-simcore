@@ -35,7 +35,7 @@ qx.Class.define("qxapp.data.model.Project",
 
       toString: function() {
         // return qx.dev.Debug.debugProperties(this, 3, false, 2);
-        let newLine = "\r\n";
+        let newLine = "\n";
         let indent = 4;
         let html = false;
         const maxLevel = 5;
