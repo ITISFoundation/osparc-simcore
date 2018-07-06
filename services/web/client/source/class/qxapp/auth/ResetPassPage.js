@@ -8,7 +8,6 @@ qx.Class.define("qxapp.auth.ResetPassPage", {
 
     // overrides base
     _buildPage: function() {
-
       let manager = new qx.ui.form.validation.Manager();
 
       this._addTitleHeader(this.tr("Reset Password"));

@@ -1,8 +1,3 @@
-/*
-
-  TODO: add alternative logins
-*/
-
 /**
  * This is a basic Auth-Page with common functionality
  *
@@ -54,7 +49,7 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
   },
 
   destruct: function() {
-    console.debug("destroying ", this.__proto__.classname);
+    console.debug("Destroying ", Object.getPrototypeOf(this).classname);
   },
 
   members: {
@@ -64,7 +59,7 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
 
     // override
     _buildPage: function() {
-      console.error("This should be overriden");
+      console.error("Override this method in subclass");
     },
 
     /**
