@@ -154,9 +154,6 @@ class Sidecar(object):
         channel.exchange_declare(exchange=self._pika.log_channel, exchange_type='fanout', auto_delete=True)
         channel.exchange_declare(exchange=self._pika.progress_channel, exchange_type='fanout', auto_delete=True)
 
-        msg = "Starting Calculation".center(80,"-")
-        self._log(channel, msg)
-
         with open(log_file) as file_:
             # Go to the end of file
             file_.seek(0,2)
@@ -171,19 +168,10 @@ class Sidecar(object):
                     if clean_line.lower().startswith("[progress]"):
                         progress = clean_line.lower().lstrip("[progress]").rstrip("%").strip()
                         self._progress(channel, progress)
-                        #prog_data = {"Channel" : "Progress", "Node": task.node_id, "Progress" : progress}
                         _LOGGER.debug('PROGRESS %s', progress)
-                        #prog_body = json.dumps(prog_data)
-                        #channel.basic_publish(exchange=self._pika.progress_channel, routing_key='', body=prog_body)
                     else:
                         self._log(channel, clean_line)
-                        #log_data = {"Channel" : "Log", "Node": task.node_id, "Message" : clean_line}
                         _LOGGER.debug('LOG %s', clean_line)
-                        #log_body = json.dumps(log_data)
-                        #channel.basic_publish(exchange=self._pika.log_channel, routing_key='', body=log_body)
-
-        msg = "Calculation Done".center(80,"-")
-        self._log(channel, msg)
 
         connection.close()
 
@@ -308,10 +296,30 @@ class Sidecar(object):
         _LOGGER.debug('DONE Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
 
     def run(self):
-        _LOGGER.debug("ENTERING run")
+        connection = pika.BlockingConnection(self._pika.parameters)
+
+        channel = connection.channel()
+        channel.exchange_declare(exchange=self._pika.log_channel, exchange_type='fanout', auto_delete=True)
+
+        msg = "Preprocessing start..."
+        self._log(channel, msg)
         self.preprocess()
+        msg = "...preprocessing end"
+        self._log(channel, msg)
+
+        msg = "Processing start..."
+        self._log(channel, msg)
         self.process()
+        msg = "...processing end"
+        self._log(channel, msg)
+
+        msg = "Postprocessing start..."
+        self._log(channel, msg)
         self.postprocess()
+        msg = "...postprocessing end"
+        self._log(channel, msg)
+        connection.close()
+
 
     def postprocess(self):
         _LOGGER.debug('Post-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
