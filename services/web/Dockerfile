@@ -42,7 +42,10 @@ RUN apk add --no-cache \
 
 ENV HOME /home/scu
 ENV SIMCORE_WEB_OUTDIR $HOME/client
+#ENV SIMCORE_WEB_OUTDIR $HOME/src/static
+ENV IS_CONTAINER_CONTEXT Yes
 ENV PYTHONPATH "$HOME/server/src:$HOME/packages/simcore-sdk/src:$HOME/packages/s3wrapper/src"
+
 
 WORKDIR /home/scu
 

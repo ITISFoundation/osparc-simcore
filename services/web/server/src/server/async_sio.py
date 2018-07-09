@@ -14,7 +14,6 @@ import os
 
 import socketio
 
-import config
 import interactive_services_manager
 from s3wrapper.s3_client import S3Client
 from simcore_sdk.config.s3 import Config as s3_config
@@ -22,8 +21,6 @@ from simcore_sdk.config.s3 import Config as s3_config
 _LOGGER = logging.getLogger(__file__)
 
 SIO = socketio.AsyncServer(async_mode='aiohttp', logging=_LOGGER)
-
-CONFIG = config.CONFIG[os.environ.get('SIMCORE_WEB_CONFIG', 'default')]
 
 
 @SIO.on('connect')
@@ -131,7 +128,7 @@ async def list_S3_objects(sid, data):
     for obj in objects:
         obj_info = {}
         obj_info['path'] = obj.bucket_name + '/' + obj.object_name
-        # @maiz: this does not work, please review
+        # FIXME: @maiz: this does not work, please review
         #obj_info['lastModified'] = obj.last_modified.isoformat()
         obj_info['size'] = obj.size
         data_out.append(obj_info)
@@ -142,3 +139,7 @@ async def list_S3_objects(sid, data):
 def disconnect(sid):
     _LOGGER.debug("client %s disconnected", sid)
     interactive_services_manager.session_disconnected(sid)
+
+
+def setup_sio(app):
+    SIO.attach(app)

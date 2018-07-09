@@ -1,5 +1,7 @@
 """
     Uses socketio and aiohtttp framework
+
+    TODO: move all apis to a submodule and rename as api
 """
 # pylint: disable=C0103
 
