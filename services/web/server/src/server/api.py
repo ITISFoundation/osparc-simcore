@@ -1,4 +1,4 @@
-""" server's rest API
+""" server"s rest API
 
 
 
@@ -30,26 +30,26 @@ __version__ = "1.0"
 
 async def login(request):
     form = await request.post()
-    email = form.get('email')
-    password = form.get('password')
+    email = form.get("email")
+    password = form.get("password")
 
-    # TODO: ensure right key in application's config?
-    db_engine = request.app['db_engine']
+    # TODO: ensure right key in application"s config?
+    db_engine = request.app["db_engine"]
     if await check_credentials(db_engine, email, password):
         # FIXME: build proper token and send back!
         response = web.json_response({
-            'token': "eeeaee5e-9b6e-475b-abeb-66a000be8d03";, #g.current_user.generate_auth_token(expiration=3600),
-            'expiration': 3600})
+            "token": "eeeaee5e-9b6e-475b-abeb-66a000be8d03", #g.current_user.generate_auth_token(expiration=3600),
+            "expiration": 3600})
         await remember(request, response, email)
         return response
 
     return web.HTTPUnauthorized(
-        body=b'Invalid email/password combination')
+        body=b"Invalid email/password combination")
 
 
 @login_required
 async def logout(request):
-    response = web.Response(body=b'You have been logged out')
+    response = web.Response(body=b"You have been logged out")
     await forget(request, response)
     return response
 
@@ -71,7 +71,7 @@ async def ping(request):
           "401":
               Unauthorized: need to login first
           "403":
-              Forbidden: permission denied given the user's privilege
+              Forbidden: permission denied given the user"s privilege
     """
     return web.Response(text="pong")
 
@@ -82,9 +82,9 @@ def setup_api(app):
     router = app.router
     prefix = "/api/v{}".format(__version__)
 
-    router.add_post(prefix+'/login', login, name='login')
-    router.add_get(prefix+'/logout', logout, name='logout')
-    router.add_get(prefix+'/ping', ping, name='ping')
+    router.add_post(prefix+"/login", login, name="login")
+    router.add_get(prefix+"/logout", logout, name="logout")
+    router.add_get(prefix+"/ping", ping, name="ping")
 
     # TODO: add authorization on there routes
     app.router.add_routes(registry_routes)

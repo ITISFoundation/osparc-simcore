@@ -25,7 +25,7 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
         """Retrieve authorized user id.
 
         Return the user_id of the user identified by the identity
-        or 'None' if no user exists related to the identity.
+        or "None" if no user exists related to the identity.
         """
         async with self.dbengine.acquire() as conn:
             where = sa.and_(users.c.login == identity,
@@ -90,6 +90,6 @@ def setup_auth(app):
     # WARNING: expected aiosession already initialized!
     identity_policy = SessionIdentityPolicy()
 
-    # FIXME: cannot guarantee correct config key for db's engine!
-    authorization_policy = DBAuthorizationPolicy(app, 'db_engine')
+    # FIXME: cannot guarantee correct config key for db"s engine!
+    authorization_policy = DBAuthorizationPolicy(app, "db_engine")
     setup_security(app, identity_policy, authorization_policy)

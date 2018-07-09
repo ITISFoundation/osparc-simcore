@@ -15,26 +15,28 @@ from trafaret_config import commandline
 from .utils import get_thrift_api_folders
 
 # paths
-_CDIR = os.path.dirname(sys.argv[0] if __name__ == '__main__' else __file__)
+_CDIR = os.path.dirname(sys.argv[0] if __name__ == "__main__" else __file__)
 SRC_DIR = pathlib.Path(__file__).parent.parent
-DEFAULT_CONFIG_PATH = SRC_DIR / 'config' / 'server.yaml'
-TEST_CONFIG_PATH = SRC_DIR / 'config' / 'server-test.yaml'
+CONFIG_DIR = SRC_DIR / ".config"
+
+DEFAULT_CONFIG_PATH =  CONFIG_DIR / "server.yaml"
+TEST_CONFIG_PATH = CONFIG_DIR / "server-test.yaml"
 
 _LOGGER = logging.getLogger(__name__)
 
 T_SCHEMA = T.Dict({
-    T.Key('postgres'):
+    T.Key("postgres"):
     T.Dict({
-        'database': T.String(),
-        'user': T.String(),
-        'password': T.String(),
-        'host': T.String(),
-        'port': T.Int(),
-        'minsize': T.Int(),
-        'maxsize': T.Int(),
+        "database": T.String(),
+        "user": T.String(),
+        "password": T.String(),
+        "host": T.String(),
+        "port": T.Int(),
+        "minsize": T.Int(),
+        "maxsize": T.Int(),
     }),
-    T.Key('host'): T.IP,
-    T.Key('port'): T.Int(),
+    T.Key("host"): T.IP,
+    T.Key("port"): T.Int(),
 })
 
 
@@ -44,34 +46,34 @@ def default_client_dir():
 
 
 def default_thrift_dirs():
-    basedir = os.path.normpath(os.path.join(_CDIR, "..", '..', 'services-rpc-api'))
+    basedir = os.path.normpath(os.path.join(_CDIR, "..", "..", "services-rpc-api"))
     return get_thrift_api_folders(basedir)
 
 
 THRIFT_GEN_OUTDIR = os.environ.get(
-    'THRIFT_GEN_OUTDIR') or default_thrift_dirs()
+    "THRIFT_GEN_OUTDIR") or default_thrift_dirs()
 
 
 class CommonConfig:
 
     # Web service
-    SIMCORE_WEB_HOSTNAME = os.environ.get('SIMCORE_WEB_HOSTNAME', '0.0.0.0')
-    SIMCORE_WEB_PORT = os.environ.get('SIMCORE_WEB_PORT', 8080)
+    SIMCORE_WEB_HOSTNAME = os.environ.get("SIMCORE_WEB_HOSTNAME", "0.0.0.0")
+    SIMCORE_WEB_PORT = os.environ.get("SIMCORE_WEB_PORT", 8080)
     SIMCORE_CLIENT_OUTDIR = os.environ.get(
-        'SIMCORE_WEB_OUTDIR') or default_client_dir()
+        "SIMCORE_WEB_OUTDIR") or default_client_dir()
 
     # S4L computational service (rpc-thrift)
-    CS_S4L_HOSTNAME = os.environ.get('CS_S4L_HOSTNAME', '172.16.9.89')
-    CS_S4L_PORT_APP = os.environ.get('CS_S4L_PORT_APP', 9095)
-    CS_S4L_PORT_MOD = os.environ.get('CS_S4L_PORT_MOD', 9096)
+    CS_S4L_HOSTNAME = os.environ.get("CS_S4L_HOSTNAME", "172.16.9.89")
+    CS_S4L_PORT_APP = os.environ.get("CS_S4L_PORT_APP", 9095)
+    CS_S4L_PORT_MOD = os.environ.get("CS_S4L_PORT_MOD", 9096)
 
     THRIFT_GEN_OUTDIR = THRIFT_GEN_OUTDIR
     THRIFT_USE_MULTIPLEXED_SERVER = os.environ.get(
-        'THRIFT_USE_MULTIPLEXED_SERVER', True)
+        "THRIFT_USE_MULTIPLEXED_SERVER", True)
 
-    PUBLIC_S3_URL = os.environ.get('PUBLIC_S3_URL', 'play.minio.io:9000')
-    PUBLIC_S3_ACCESS_KEY = os.environ.get('PUBLIC_S3_ACCESS_KEY', 'Q3AM3UQ867SPQQA43P2F')
-    PUBLIC_S3_SECRET_KEY = os.environ.get('PUBLIC_S3_SECRET_KEY', 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG')
+    PUBLIC_S3_URL = os.environ.get("PUBLIC_S3_URL", "play.minio.io:9000")
+    PUBLIC_S3_ACCESS_KEY = os.environ.get("PUBLIC_S3_ACCESS_KEY", "Q3AM3UQ867SPQQA43P2F")
+    PUBLIC_S3_SECRET_KEY = os.environ.get("PUBLIC_S3_SECRET_KEY", "zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG")
 
 
 
@@ -108,15 +110,17 @@ def get_config(argv=None) -> dict:
 
     config = commandline.config_from_options(options, T_SCHEMA)
     if "IS_CONTAINER_CONTEXT" in os.environ.keys():
-        config['host'] = '0.0.0.0'
-        config['postgres']['host'] = 'db'
+        config["host"] = "0.0.0.0"
+        config["postgres"]["host"] = "db"
 
 
     # extend
-    if 'test' in options.config:
-        config.extend(vars(TestingConfig))
+    if "test" in options.config:
+        _LOGGER.debug("Loading testing configuration ...")
+        config.update(vars(TestingConfig))
     else:
-        config.extend(vars(ProductionConfig))
+        _LOGGER.debug("Loading production configuration ...")
+        config.update(vars(ProductionConfig))
 
     pprint.pprint(config)
 

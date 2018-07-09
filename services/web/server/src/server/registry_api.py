@@ -23,7 +23,7 @@ async def async_request(method, session, url, data=None, timeout=10):
 
 
 
-@registry_routes.get('/get_computational_services')
+@registry_routes.get("/get_computational_services")
 async def get_computational_services(request):
     """
     ---
