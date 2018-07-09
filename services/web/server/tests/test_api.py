@@ -13,6 +13,7 @@ def cli(loop, aiohttp_client, postgres_service):
         - starts a client that connects to the server
         - returns client
     """
+    _LOGGER.debug()
     app = init_app(['-c', TEST_CONFIG_PATH.as_posix()])
     return loop.run_until_complete(aiohttp_client(app))
 

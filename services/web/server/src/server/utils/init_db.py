@@ -8,19 +8,27 @@ References:
 [1]:https://github.com/aio-libs/aiohttp-demos/blob/master/docs/preparations.rst#environment
 """
 import logging
-import os
 
 from passlib.hash import sha256_crypt
-from sqlalchemy import (MetaData,
-                        create_engine)
-from tenacity import (retry,
-                      stop_after_attempt,
-                      wait_fixed)
+from sqlalchemy import (
+    MetaData,
+    create_engine
+)
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_fixed
+)
 
-from server.config import (SRC_DIR,
-                           get_config)
-from server.model import (permissions,
-                          users)
+
+from server.config import (
+    CONFIG_DIR,
+    get_config
+)
+from server.model import (
+    permissions,
+    users
+)
 
 logging.basicConfig(level=logging.DEBUG)
 _LOGGER = logging.getLogger(__name__)
@@ -29,12 +37,12 @@ _LOGGER = logging.getLogger(__name__)
 DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
 
-USER_CONFIG_PATH = SRC_DIR / 'config' / 'server.yaml'
+USER_CONFIG_PATH = CONFIG_DIR / 'server.yaml'
 USER_CONFIG = get_config(['-c', USER_CONFIG_PATH.as_posix()])
 USER_DB_URL = DSN.format(**USER_CONFIG['postgres'])
 user_engine = create_engine(USER_DB_URL)
 
-TEST_CONFIG_PATH = SRC_DIR / 'config' / 'server-test.yaml'
+TEST_CONFIG_PATH = CONFIG_DIR / 'server-test.yaml'
 TEST_CONFIG = get_config(['-c', TEST_CONFIG_PATH.as_posix()])
 TEST_DB_URL = DSN.format(**TEST_CONFIG['postgres'])
 test_engine = create_engine(TEST_DB_URL)
@@ -69,7 +77,6 @@ def setup_db(config):
 
 
 def teardown_db(config):
-
     db_name = config['database']
     db_user = config['user']
 
@@ -95,7 +102,6 @@ def drop_tables(engine=test_engine):
 
 
 def sample_data(engine=test_engine):
-
     generate_password_hash = sha256_crypt.hash
 
     #TODO: use fake

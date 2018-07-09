@@ -6,3 +6,9 @@ services:
     #  - '.:/home/scu/client'
     ports:
       - '5432:5432'
+  adminer:
+    image: adminer
+    ports:
+      - 18080:8080
+    depends_on:
+      - db
