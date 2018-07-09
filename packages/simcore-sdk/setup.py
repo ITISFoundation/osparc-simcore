@@ -15,5 +15,7 @@ setup(
     package_dir={"": "src"},
     packages=find_packages("src"),
     # requirements
-    install_requires=load_requirements()
+    install_requires=load_requirements("requirements/production.txt"),
+    tests_require=load_requirements("requirements/testing.txt"),
+    setup_requires=["pytest-runner"]
 )
