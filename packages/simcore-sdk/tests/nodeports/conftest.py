@@ -11,7 +11,13 @@ from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "helpers"))
 
-pytest_plugins = ["tests.fixtures.postgres"]
+pytest_plugins = ["tests.fixtures.postgres", "tests.fixtures.minio-fix"]
+
+@pytest.fixture(scope='session')
+def docker_compose_file(pytestconfig): # pylint:disable=unused-argument
+    my_path = os.path.join(os.path.dirname(__file__), 'docker-compose.yml')
+    return my_path
+
 
 def set_configuration(engine, session, json_configuration):
     node_uuid = uuid.uuid4()
@@ -30,12 +36,7 @@ def set_configuration(engine, session, json_configuration):
 
     # set up access to database
     os.environ["SIMCORE_NODE_UUID"]=str(node_uuid)
-    os.environ["SIMCORE_PIPELINE_ID"]=str(new_Pipeline.pipeline_id)
-
-    os.environ["POSTGRES_ENDPOINT"]="localhost:5432"
-    os.environ["POSTGRES_USER"]="user"
-    os.environ["POSTGRES_PASSWORD"]="pwd"
-    os.environ["POSTGRES_DB"]="test"
+    os.environ["SIMCORE_PIPELINE_ID"]=str(new_Pipeline.pipeline_id)    
 
     return engine, session, new_Pipeline.pipeline_id, node_uuid
 
@@ -44,7 +45,7 @@ def default_nodeports_configuration(engine, session):
     """initialise nodeports with default configuration file
     """
     # prepare database with default configuration
-    default_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), r"../../src/simcore_sdk/config/connection_config.json")
+    default_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), r"connection_config.json")
     with open(default_config_path) as config_file:
         json_configuration = config_file.read()
     
