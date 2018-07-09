@@ -85,6 +85,29 @@ CMD ["-H", "0.0.0.0", \
 
 
 # ------------------------------------------------------------------------------------------
+FROM base-stage as production
+
+ENV SIMCORE_WEB_CONFIG production
+
+# 2. install 2nd party packages
+COPY --chown=scu:scu packages packages
+
+# 3. install client
+COPY --from=services_webclient:build --chown=scu:scu /home/scu/client/build-output client
+
+# 4. install server
+COPY --chown=scu:scu services/web/server/src server/src
+
+USER scu
+
+WORKDIR $HOME/server/src
+
+CMD ["-H", "0.0.0.0", \
+     "-P", "8080", \
+     "server:create_app"]
+
+
+# ------------------------------------------------------------------------------------------
 FROM base-stage as ci
 
 ENV SIMCORE_WEB_CONFIG production
@@ -96,20 +119,19 @@ COPY --chown=scu:scu packages packages
 COPY --from=services_webclient:build --chown=scu:scu /home/scu/client/build-output client
 
 # 4. install server
-COPY --chown=scu:scu services/web/server/src   server/src
+COPY --chown=scu:scu services/web/server/src server/src
+
+# 5. install test modules
+RUN pip3 install --no-cache-dir -r /home/scu/requirements/testing.txt
+
+# 6. copy tests
 COPY --chown=scu:scu services/web/server/tests server/tests
+
 
 USER scu
 
 WORKDIR $HOME/server/src
 
-
 CMD ["-H", "0.0.0.0", \
      "-P", "8080", \
      "server:create_app"]
-
-
-# ------------------------------------------------------------------------------------------
-FROM ci as production
-
-RUN rm -rf server/tests

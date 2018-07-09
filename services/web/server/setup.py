@@ -25,7 +25,7 @@ if __name__ == "__main__":
           package_dir={"": "src"},
           packages=find_packages("src"),
           package_data={
-              "": ["static/*.*", ".config/*.*", "mock/*.*"]
+              "": ["static/*.*", ".config/*.*"]
           },
           include_package_data=True,
           # requirements
