@@ -18,21 +18,22 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
       console.log(vtkPath + " loaded");
       this.setLibReady(true);
 
-      let fullScreenRenderer = this.__fullScreenRenderer = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
-        rootContainer: rootContainer
-      });
-      let actor = vtk.Rendering.Core.vtkActor.newInstance();
-      let mapper = vtk.Rendering.Core.vtkMapper.newInstance();
-      let cone = vtk.Filters.Sources.vtkConeSource.newInstance();
+      let renderWindow = this.__renderWindow = vtk.Rendering.Core.vtkRenderWindow.newInstance();
+      let renderer = this.__renderer = vtk.Rendering.Core.vtkRenderer.newInstance();
+      renderWindow.addRenderer(renderer);
 
-      actor.setMapper(mapper);
-      mapper.setInputConnection(cone.getOutputPort());
+      let actor = this.__getCone();
+      renderer.addActor(actor);
 
-      this.__renderer = fullScreenRenderer.getRenderer();
-      this.__renderer.addActor(actor);
-      this.__renderer.resetCamera();
+      let openglRenderWindow = this.__openglRenderWindow = vtk.Rendering.OpenGL.vtkRenderWindow.newInstance();
+      renderWindow.addView(openglRenderWindow);
 
-      this.__renderWindow = fullScreenRenderer.getRenderWindow();
+      openglRenderWindow.setContainer(rootContainer);
+
+      const interactor = vtk.Rendering.Core.vtkRenderWindowInteractor.newInstance();
+      interactor.setView(openglRenderWindow);
+      interactor.initialize();
+      interactor.bindEvents(rootContainer);
 
       this.fireDataEvent("VtkLibReady", true);
     }, this);
@@ -61,26 +62,32 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
   members: {
     __renderer: null,
     __renderWindow: null,
-    __fullScreenRenderer: null,
-
-    getDomElement: function() {
-      console.log(this.__renderWindow);
-      return this.__renderer.domElement;
-    },
+    __openglRenderWindow: null,
 
     render: function() {
       this.__renderWindow.render();
     },
 
     setSize: function(width, height) {
-      console.log("setSize", width, height);
+      this.__openglRenderWindow.setSize(width, height);
       this.render();
     },
 
     setBackgroundColor: function(color) {
       const rgb = qxapp.utils.Utils.hexToRgb(color);
-      this.__fullScreenRenderer.setBackground([rgb.r/256.0, rgb.g/256.0, rgb.b/256.0]);
+      this.__renderer.setBackground([rgb.r/256.0, rgb.g/256.0, rgb.b/256.0]);
       this.render();
+    },
+
+    __getCone: function() {
+      let actor = vtk.Rendering.Core.vtkActor.newInstance();
+      let mapper = vtk.Rendering.Core.vtkMapper.newInstance();
+      let cone = vtk.Filters.Sources.vtkConeSource.newInstance();
+
+      actor.setMapper(mapper);
+      mapper.setInputConnection(cone.getOutputPort());
+
+      return actor;
     }
   }
 });

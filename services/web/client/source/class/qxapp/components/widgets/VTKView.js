@@ -25,9 +25,15 @@ qx.Class.define("qxapp.components.widgets.VTKView", {
           this.getContentElement().getDomElement()
             .appendChild(vtkPlaceholder);
 
+          vtkPlaceholder.setAttribute("width", initWidth);
+          vtkPlaceholder.setAttribute("height", initHeight);
+          this.__vtkWrapper.setSize(initWidth, initHeight);
+
           this.addListener("resize", function(eResize) {
             let width = eResize.getData().width;
             let height = eResize.getData().height;
+            vtkPlaceholder.setAttribute("width", width);
+            vtkPlaceholder.setAttribute("height", height);
             this.__vtkWrapper.setSize(width, height);
           }, this);
 
