@@ -22,6 +22,14 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
       let renderer = this.__renderer = vtk.Rendering.Core.vtkRenderer.newInstance();
       renderWindow.addRenderer(renderer);
 
+      let grid = this.__getGrid();
+      renderer.addActor(grid);
+
+      let sliceActors = this.__getSliceViewers();
+      for (let actorName in sliceActors) {
+        renderer.addActor(sliceActors[actorName]);
+      }
+
       let openglRenderWindow = this.__openglRenderWindow = vtk.Rendering.OpenGL.vtkRenderWindow.newInstance();
       renderWindow.addView(openglRenderWindow);
 
@@ -110,6 +118,66 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
       mapper.setInputConnection(cone.getOutputPort());
 
       return actor;
+    },
+
+    __getGrid: function() {
+      // example code to show a grid
+      const planeSource = vtk.Filters.Sources.vtkPlaneSource.newInstance();
+      const mapper = vtk.Rendering.Core.vtkMapper.newInstance();
+      const actor = vtk.Rendering.Core.vtkActor.newInstance();
+      actor.getProperty().setRepresentationToWireframe();
+      mapper.setInputConnection(planeSource.getOutputPort());
+      actor.setMapper(mapper);
+      return actor;
+    },
+
+    __getSliceViewers: function() {
+      // initialise slicers
+      const imageActorI = vtk.Rendering.Core.vtkImageSlice.newInstance();
+      const imageActorJ = vtk.Rendering.Core.vtkImageSlice.newInstance();
+      const imageActorK = vtk.Rendering.Core.vtkImageSlice.newInstance();
+
+      const filename = "../resource/models/headsq.vti";
+      console.log("Hello my friend, we set a filename: " + filename);
+      const reader = vtk.IO.Core.vtkHttpDataSetReader.newInstance({
+        fetchGzip: true
+      });
+      reader.setUrl(filename, {
+        loadData: true
+      })
+        .then(() => {
+          console.log("Hey we read stuff from " + reader.getUrl());
+          const data = reader.getOutputData(0);
+          // const dataRange = data.getPointData()
+          //   .getScalars()
+          //   .getRange();
+          // const extent = data.getExtent();
+
+          const imageMapperK = vtk.Rendering.Core.vtkImageMapper.newInstance();
+          imageMapperK.setInputData(data);
+          imageMapperK.setKSlice(30);
+          imageActorK.setMapper(imageMapperK);
+
+          const imageMapperJ = vtk.Rendering.Core.vtkImageMapper.newInstance();
+          imageMapperJ.setInputData(data);
+          imageMapperJ.setJSlice(30);
+          imageActorJ.setMapper(imageMapperJ);
+
+          const imageMapperI = vtk.Rendering.Core.vtkImageMapper.newInstance();
+          imageMapperI.setInputData(data);
+          imageMapperI.setISlice(30);
+          imageActorI.setMapper(imageMapperI);
+
+          this.__renderer.resetCamera();
+          this.__renderer.resetCameraClippingRange();
+          this.__renderWindow.render();
+        });
+
+      return {
+        imageActorI:imageActorI,
+        imageActorJ:imageActorJ,
+        imageActorK:imageActorK
+      };
     }
   }
 });
