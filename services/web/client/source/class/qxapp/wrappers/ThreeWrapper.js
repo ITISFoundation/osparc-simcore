@@ -96,11 +96,16 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
         console.log("PATH", path);
         geometry.computeVertexNormals();
         let mat = new THREE.MeshLambertMaterial({
-          color: 0xaaffaa
+          color: 0xffffff
         });
         let mesh = new THREE.Mesh(geometry, mat);
         mesh.scale.set(20, 20, 20);
-        that.addEntityToScene(mesh);
+
+        let pieces = path.split("/");
+        let name = pieces[pieces.length-1];
+        mesh.name = name;
+        mesh.uuid = qxapp.utils.Utils.uuidv4();
+        that.fireDataEvent("EntityToBeAdded", mesh);
       },
       function(xhr) {
         console.log((xhr.loaded / xhr.total * 100) + "% loaded");
@@ -118,8 +123,8 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       this._renderer.render(this._scene, this._camera);
     },
 
-    addEntityToScene : function(objToScene) {
-      this._scene.add(objToScene);
+    addEntityToScene: function(entity) {
+      this._scene.add(entity);
       this.render();
     },
 

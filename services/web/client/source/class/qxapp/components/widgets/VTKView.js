@@ -42,7 +42,19 @@ qx.Class.define("qxapp.components.widgets.VTKView", {
           console.log("Vtk.js was not loaded");
         }
       }, this);
+
+      this.__vtkWrapper.addListener(("EntityToBeAdded"), function(e) {
+        let newEntity = e.getData();
+        if (newEntity) {
+          this.addEntityToScene(newEntity);
+        }
+      }, this);
     }, this);
+  },
+
+  events : {
+    "entityAdded": "qx.event.type.Data",
+    "entityRemoved": "qx.event.type.Data"
   },
 
   members: {
@@ -50,6 +62,10 @@ qx.Class.define("qxapp.components.widgets.VTKView", {
     __entities: null,
     __selectionMode: NO_TOOL,
     __activeTool: null,
+
+    importVTKObject : function(path) {
+      this.__vtkWrapper.importVTKObject(path);
+    },
 
     getVtkWrapper: function() {
       return this.__vtkWrapper;
@@ -62,7 +78,33 @@ qx.Class.define("qxapp.components.widgets.VTKView", {
     addEntityToScene: function(entity) {
       this.__vtkWrapper.addEntityToScene(entity);
       this.__entities.push(entity);
-      this.fireDataEvent("entityAdded", [entity.uuid, entity.name]);
+      this.fireDataEvent("entityAdded", [qxapp.utils.Utils.uuidv4(), "bunny.vtk"]);
+    },
+
+    removeEntity: function(entity) {
+      let uuid = null;
+      for (let i = 0; i < this.__entities.length; i++) {
+        if (this.__entities[i] === entity) {
+          uuid = this.__entities[i].uuid;
+          this.__entities.splice(i, 1);
+          break;
+        }
+      }
+
+      if (uuid) {
+        this.__vtkWrapper.removeEntityFromSceneById(uuid);
+        this.fireDataEvent("entityRemoved", uuid);
+        this._render();
+      }
+    },
+
+    removeEntityByID: function(uuid) {
+      for (let i = 0; i < this.__entities.length; i++) {
+        if (this.__entities[i].uuid === uuid) {
+          this.removeEntity(this.__entities[i]);
+          return;
+        }
+      }
     },
 
     startTool: function(myTool) {
@@ -86,35 +128,43 @@ qx.Class.define("qxapp.components.widgets.VTKView", {
     },
 
     highlightAll: function() {
+      /*
       for (let i = 0; i < this.__entities.length; i++) {
         this.__entities[i].material.opacity = 0.9;
       }
+      */
       this.__render();
     },
 
     unhighlightAll: function() {
+      /*
       for (let i = 0; i < this.__entities.length; i++) {
         this.__entities[i].material.opacity = 0.6;
       }
+      */
       this.__render();
     },
 
     highlightEntities: function(ids) {
+      /*
       for (let i = 0; i < this.__entities.length; i++) {
         if (ids.indexOf(this.__entities[i].uuid) >= 0) {
           this.__entities[i].material.opacity = 0.9;
         }
       }
+      */
       this.__render();
     },
 
     showHideEntity: function(id, show) {
+      /*
       for (let i = 0; i < this.__entities.length; i++) {
         if (this.__entities[i].uuid === id) {
           this.__entities[i].visible = show;
           break;
         }
       }
+      */
       this.__render();
     }
   }

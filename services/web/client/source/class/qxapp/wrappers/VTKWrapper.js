@@ -22,9 +22,6 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
       let renderer = this.__renderer = vtk.Rendering.Core.vtkRenderer.newInstance();
       renderWindow.addRenderer(renderer);
 
-      let actor = this.__getCone();
-      renderer.addActor(actor);
-
       let openglRenderWindow = this.__openglRenderWindow = vtk.Rendering.OpenGL.vtkRenderWindow.newInstance();
       renderWindow.addView(openglRenderWindow);
 
@@ -56,13 +53,38 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
   },
 
   events: {
-    "VtkLibReady": "qx.event.type.Data"
+    "VtkLibReady": "qx.event.type.Data",
+    "EntityToBeAdded": "qx.event.type.Data"
   },
 
   members: {
     __renderer: null,
     __renderWindow: null,
     __openglRenderWindow: null,
+
+    importVTKObject: function(path) {
+      let reader = vtk.IO.Legacy.vtkPolyDataReader.newInstance();
+      reader.setUrl(path).then(() => {
+        let polydata = reader.getOutputData(0);
+        let mapper = vtk.Rendering.Core.vtkMapper.newInstance();
+        let actor = vtk.Rendering.Core.vtkActor.newInstance();
+
+        actor.setMapper(mapper);
+        mapper.setInputData(polydata);
+
+        // let pieces = path.split("/");
+        // let name = pieces[pieces.length-1];
+        // actor.name = name;
+        // actor.uuid = qxapp.utils.Utils.uuidv4();
+
+        this.fireDataEvent("EntityToBeAdded", actor);
+      }, this);
+    },
+
+    addEntityToScene: function(entity) {
+      this.__renderer.addActor(entity);
+      this.render();
+    },
 
     render: function() {
       this.__renderWindow.render();

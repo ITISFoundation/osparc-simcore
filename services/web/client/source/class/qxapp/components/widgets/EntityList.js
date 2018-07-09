@@ -27,17 +27,24 @@ qx.Class.define("qxapp.components.widgets.EntityList", {
 
     this.__tree.addListener("changeSelection", this.__onSelectionChanged.bind(this));
 
+    let addBunnyBtn = new qx.ui.form.Button(this.tr("Add Bunny"));
+    addBunnyBtn.addListener("execute", function() {
+      this.fireEvent("addBunny");
+    }, this);
+
     let removeBtn = new qx.ui.form.Button(this.tr("Remove entity"));
     removeBtn.addListener("execute", this.__removeEntityPressed.bind(this));
 
     scroller.add(this.__tree);
+    this._add(addBunnyBtn);
     this._add(removeBtn);
   },
 
   events: {
     "removeEntityRequested": "qx.event.type.Data",
     "selectionChanged": "qx.event.type.Data",
-    "visibilityChanged": "qx.event.type.Data"
+    "visibilityChanged": "qx.event.type.Data",
+    "addBunny": "qx.event.type.Event"
   },
 
   members: {
