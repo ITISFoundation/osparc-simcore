@@ -33,7 +33,7 @@
   ],
 
   "libraries": [
-    "C:/Users/maiz/AppData/Roaming/npm/node_modules/qxcompiler/node_modules/qooxdoo-sdk/framework",
+    "../qooxdoo-sdk/framework",
     "."
   ],
 
@@ -43,13 +43,13 @@
         "uri" : "resource/socketio/socket.io.js"
       },
       {
-        "uri" : "resource/three/*"
+        "uri" : "resource/three/*.js"
+      },
+      {
+        "uri" : "resource/vtk/*.js"
       },
       {
         "uri" : "resource/workbench/svg*.js"
-      },
-      {
-        "uri" : "resource/models/*.vtk"
       }
     ]
   },
