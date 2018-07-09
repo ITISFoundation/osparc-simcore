@@ -64,19 +64,21 @@ qx.Class.define("qxapp.Application", {
       if (isLogged) {
         this.__startDesktop();
       } else {
-        if (this.__layoutManager !== null) {
-          this.__layoutManager.destroy();
-        }
+        this.__layoutManager = null;
         let page = new qxapp.auth.LoginPage();
         page.show();
       }
     },
 
+    /**
+     * Resets session and restarts
+    */
     logout: function() {
       qxapp.auth.Store.resetToken();
-      if (this.__layoutManager !== null) {
-        this.__layoutManager.destroy();
-      }
+      this.getRoot().removeAll();
+      //if (this.__layoutManager !== null) {
+      //  this.__layoutManager.destroy();
+      //}
       this.start();
     },
 
@@ -92,33 +94,7 @@ qx.Class.define("qxapp.Application", {
         height: "100%",
         width: "100%"
       });
-    },
-
-    /**
-     * DEPRECATED!!
-    */
-    __startLogin: function() {
-      let login = new qxapp.components.login.Login();
-
-      login.addListener("login", function(e) {
-        // TODO: need to init user-id and token in data layer
-        if (e.getData() === true) {
-          this.getRoot().remove(login);
-          this.____startDesktop();
-        } else {
-          console.log("Invalid user or password.");
-          // TODO: some kind of notification as in
-          //  http://www.qooxdoo.org/5.0.1/pages/website/tutorial_web_developers.html
-          // flash("Invalid user name or password");
-        }
-      }, this);
-
-      // TODO: center in document qx.ui.layout.Canvas
-      this.getRoot().add(login, {
-        left: "10%",
-        top: "10%",
-        height: "30%"
-      });
     }
+
   }
 });
