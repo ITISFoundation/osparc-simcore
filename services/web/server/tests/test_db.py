@@ -24,6 +24,8 @@ async def test_basic_db_workflow(postgres_service):
         check against expected
         disconnect
     """
+    # pylint:disable=E1120
+
     output = io.StringIO()
     pprint.pprint(postgres_service, stream=output)
     _LOGGER.info(output)

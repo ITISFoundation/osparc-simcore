@@ -104,7 +104,8 @@ def drop_tables(engine=test_engine):
 def sample_data(engine=test_engine):
     generate_password_hash = sha256_crypt.hash
 
-    #TODO: use fake
+    #TODO: use fake to populate database
+    # pylint:disable=E1120
     conn = engine.connect()
     conn.execute(users.insert(), [
         {"login": "bizzy@itis.ethz.ch",

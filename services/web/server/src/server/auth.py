@@ -27,6 +27,7 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
+        # pylint:disable=E1120
         async with self.dbengine.acquire() as conn:
             where = sa.and_(users.c.login == identity,
                             sa.not_(users.c.disabled))
