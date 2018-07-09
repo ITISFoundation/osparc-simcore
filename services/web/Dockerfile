@@ -36,7 +36,8 @@ RUN adduser -D -u 8004 scu
 RUN apk add --no-cache \
   postgresql-dev \
   gcc \
-  libc-dev
+  libc-dev \
+  libffi-dev
 
 
 ENV HOME /home/scu
@@ -47,12 +48,11 @@ WORKDIR /home/scu
 
 # 1. install common 3rd party packages
 COPY --chown=scu:scu services/web/server/requirements requirements
-RUN pip3 install --no-cache-dir -r requirements/common.txt
+RUN pip3 install --no-cache-dir -r requirements/production.txt
 
 EXPOSE 8080
 
-ENTRYPOINT ["python", \
-  "-m", "aiohttp.web"]
+ENTRYPOINT ["python3", "-m", "aiohttp.web"]
 
 # ------------------------------------------------------------------------------------------
 FROM base-stage as development
@@ -60,7 +60,7 @@ FROM base-stage as development
 ENV SIMCORE_WEB_CONFIG development
 
 # 1.1 install devel 3rd party packages
-RUN pip3 install --no-cache-dir -r requirements/devel.txt && \
+RUN pip3 install --no-cache-dir -r requirements/testing.txt && \
     rm -rf requirements
 
 USER scu
@@ -75,6 +75,7 @@ VOLUME /home/scu/server/
 VOLUME /home/scu/client/
 VOLUME /home/scu/packages
 
+# TODO: add watch functionality in dev mode
 CMD ["-H", "0.0.0.0", \
      "-P", "8080", \
      "server:create_app"]
@@ -84,10 +85,6 @@ CMD ["-H", "0.0.0.0", \
 FROM base-stage as ci
 
 ENV SIMCORE_WEB_CONFIG production
-
-# 1.1 install devel 3rd party packages
-RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
-    rm -rf requirements
 
 # 2. install 2nd party packages
 COPY --chown=scu:scu packages packages

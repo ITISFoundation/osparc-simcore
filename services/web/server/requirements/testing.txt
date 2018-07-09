@@ -1,0 +1,6 @@
+# testing
+passlib
+pytest
+pytest-aiohttp
+pytest-docker
+psycopg2
