@@ -4,11 +4,14 @@
     TODO: move all apis to a submodule and rename as api
 """
 # pylint: disable=C0103
+import logging
 
 from aiohttp import web
 import async_timeout
 
-import director_proxy
+from . import director_proxy
+
+_LOGGER = logging.getLogger(__file__)
 
 registry_routes = web.RouteTableDef()
 
@@ -38,7 +41,7 @@ async def get_computational_services(request):
         "405":
             description: invalid HTTP Method
     """
-    _a = request
+    _LOGGER.debug(request)
 
     repo_list = director_proxy.retrieve_computational_services()
 

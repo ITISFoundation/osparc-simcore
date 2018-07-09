@@ -20,18 +20,18 @@ __version__ = "0.0.1"
 
 def init_app(argv=None):
     """
-    NOTICE it is async!
+    NOTICE it is sync!
     """
     app = web.Application()
-    app['config'] = get_config(argv)
+    app["config"] = get_config(argv)
 
-    setup_sio(app)
     setup_db(app)
     setup_session(app)
     setup_auth(app)
-    setup_api(app)
-    setup_statics(app)
     setup_computational_backend(app)
+    setup_statics(app)
+    setup_sio(app)
+    setup_api(app)
 
     return app
 
@@ -45,5 +45,5 @@ def main(argv):
     app = init_app(argv)
     config = get_config(argv)
     web.run_app(app,
-                host=config['host'],
-                port=config['port'])
+                host=config["host"],
+                port=config["port"])

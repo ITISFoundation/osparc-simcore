@@ -15,7 +15,6 @@ from aiohttp_security import (
 from .auth import (
     check_credentials
 )
-
 from .comp_backend_api import (
     comp_backend_routes
 )

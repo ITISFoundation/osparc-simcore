@@ -10,13 +10,13 @@
 
 
 import logging
-import os
 
 import socketio
 
-import interactive_services_manager
 from s3wrapper.s3_client import S3Client
 from simcore_sdk.config.s3 import Config as s3_config
+
+from . import interactive_services_manager
 
 _LOGGER = logging.getLogger(__file__)
 

@@ -3,8 +3,9 @@ import logging
 
 import aio_pika
 
-from async_sio import SIO
 from simcore_sdk.config.rabbit import Config as rabbit_config
+
+from .async_sio import SIO
 
 _LOGGER = logging.getLogger(__file__)
 

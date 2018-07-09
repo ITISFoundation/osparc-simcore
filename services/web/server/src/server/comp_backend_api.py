@@ -15,12 +15,16 @@ from aiohttp import web
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from comp_backend_worker import celery
 from s3wrapper.s3_client import S3Client
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.config.s3 import Config as s3_config
-from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
-                                                ComputationalTask)
+from simcore_sdk.models.pipeline_models import (
+    Base,
+    ComputationalPipeline,
+    ComputationalTask
+)
+
+from .comp_backend_worker import celery
 
 pp = pprint.PrettyPrinter(indent=4)
 _LOGGER = logging.getLogger(__file__)
