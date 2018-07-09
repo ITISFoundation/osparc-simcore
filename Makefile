@@ -76,7 +76,7 @@ run_test:
 	pytest --cov=pytest_docker -v packages/pytest_docker/tests
 	pytest --cov=s3wrapper -v packages/s3wrapper/tests
 	pytest -v packages/simcore-sdk/tests
-	pytest -v web/server/tests/
+	pytest -v services/web/server/tests/
 
 
 after_test:
