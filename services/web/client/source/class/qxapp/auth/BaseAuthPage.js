@@ -57,10 +57,8 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
     _marginHeader: 20,
     _marginFooter: 20,
 
-    // override
-    _buildPage: function() {
-      console.error("Override this method in subclass");
-    },
+    // override this method in subclass
+    _buildPage: function() {},
 
     /**
      * Creates and adds an underlined title at the header
