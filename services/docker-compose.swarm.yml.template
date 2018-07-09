@@ -4,7 +4,7 @@
 version: '3.4'
 services:
   director:
-    image: masu.speag.com/simcore/workbench/director:3.2
+    image: masu.speag.com/simcore/workbench/director:3.4
     #image: services_director:latest
     dns:
       - 172.16.8.15
@@ -37,7 +37,7 @@ services:
       - '/var/run/docker.sock:/var/run/docker.sock'
 
   webserver:
-    image: masu.speag.com/simcore/workbench/webserver:3.2
+    image: masu.speag.com/simcore/workbench/webserver:3.4
     #image: services_webserver:latest
     dns:
       - 172.16.8.15
@@ -87,7 +87,7 @@ services:
     ports:
       - 18080:8080
   sidecar:
-    image: masu.speag.com/simcore/workbench/sidecar:3.2
+    image: masu.speag.com/simcore/workbench/sidecar:3.4
     #image: services_sidecar:latest
     environment:
       - POSTGRES_ENDPOINT=postgres
@@ -109,6 +109,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8000:8000"
+  flower:
+    image: ondrejit/flower:latest
+    command: --broker=amqp://simcore:simcore@rabbit:5672
+    ports:
+      - 5555:5555
+    depends_on:
+      - rabbit
 volumes:
   input:
   output:

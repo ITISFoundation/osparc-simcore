@@ -2,7 +2,7 @@
     data going to following nodes.
 """
 import logging
-from simcore_sdk.nodeports import exceptions, io, serialization
+from simcore_sdk.nodeports import exceptions, dbmanager, serialization
 from simcore_sdk.nodeports._itemslist import DataItemsList
 
 
@@ -33,7 +33,7 @@ class Nodeports(object):
         self.__outputs.change_notifier = self.save_to_json
         self.__outputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
 
-        self.io_obj = None
+        self.db_mgr = None
         self.autoread = False
         self.autowrite = False
         
@@ -79,10 +79,10 @@ class Nodeports(object):
 
     def update_from_json(self):
         _LOGGER.debug("Updating json configuration")
-        if not self.io_obj:
-            raise exceptions.NodeportsException("io object is not initialised")
+        if not self.db_mgr:
+            raise exceptions.NodeportsException("db manager is not initialised")
         change_notifier = self.__outputs.change_notifier
-        updated_nodeports = serialization.create_from_json(self.io_obj)        
+        updated_nodeports = serialization.create_from_json(self.db_mgr)        
         self.__inputs = updated_nodeports.inputs
         self.__outputs = updated_nodeports.outputs
         self.__outputs.change_notifier = change_notifier        
@@ -93,11 +93,11 @@ class Nodeports(object):
         serialization.save_to_json(self)
 
     def get_node_from_node_uuid(self, node_uuid):
-        if not self.io_obj:
-            raise exceptions.NodeportsException("io object is not initialised")
-        return serialization.create_nodeports_from_uuid(self.io_obj, node_uuid)
+        if not self.db_mgr:
+            raise exceptions.NodeportsException("db manager is not initialised")
+        return serialization.create_nodeports_from_uuid(self.db_mgr, node_uuid)
 
 
-_IO = io.IO()
+_db_manager = dbmanager.DBManager()
 # create initial Simcore object
-PORTS = serialization.create_from_json(_IO, auto_read=True, auto_write=True)
+PORTS = serialization.create_from_json(_db_manager, auto_read=True, auto_write=True)
