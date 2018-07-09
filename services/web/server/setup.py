@@ -18,7 +18,7 @@ def load_requirements(fpath='requirements.txt'):
 
 if __name__ == "__main__":
 
-    setup(name="web-server",
+    setup(name="simcore-web-server",
           version="0.0.0",
           description="simcore web-server",
           platforms=["POSIX"],  # TODO:check
