@@ -8,12 +8,11 @@ logging.basicConfig(level=logging.INFO)
 _LOGGER = logging.getLogger(__name__)
 
 
-def _parse_lines(requirement_filepath):
+def load_requirements(fpath='requirements.txt'):
     requires = []
-    with open(requirement_filepath, "r") as fh:
+    with open(fpath, "r") as fh:
         requires = [line.strip() for line in fh.readlines() if "#" not in line]
-    _LOGGER.info("Found %d packages in %s", len(
-        requires), requirement_filepath)
+    _LOGGER.info("Found %d packages in %s", len(requires), fpath)
     return requires
 
 
@@ -30,8 +29,8 @@ if __name__ == "__main__":
           },
           include_package_data=True,
           # requirements
-          install_requires=_parse_lines("requirements/production.txt"),
+          install_requires=load_requirements("requirements/production.txt"),
           setup_requires=["pytest-runner"],
-          tests_require=_parse_lines("requirements/testing.txt"),
+          tests_require=load_requirements("requirements/testing.txt"),
           zip_safe=False  # TODO:check
           )

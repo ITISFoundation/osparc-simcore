@@ -2,6 +2,11 @@
 # `setup.py` already contains instructions to install dependencies,
 -e .
 
+# packages
+-e ../../../packages/s3wrapper/
+-e ../../../packages/simcore-sdk/
+
+
 # testing
 -r requirements/testing.txt
 
