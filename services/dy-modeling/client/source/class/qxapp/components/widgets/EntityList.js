@@ -6,7 +6,7 @@ qx.Class.define("qxapp.components.widgets.EntityList", {
 
   include: [qx.locale.MTranslation],
 
-  construct: function(backgroundColor, fontColor) {
+  construct: function() {
     this.base(arguments);
 
     let entityListLayout = new qx.ui.layout.VBox();
