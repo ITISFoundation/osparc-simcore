@@ -1,0 +1,15 @@
+version: '3.4'
+services:
+  postgres:
+    image: postgres:10
+    environment:
+      - POSTGRES_USER=scu
+      - POSTGRES_PASSWORD=z43
+      - POSTGRES_DB=simcoredb
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres:
