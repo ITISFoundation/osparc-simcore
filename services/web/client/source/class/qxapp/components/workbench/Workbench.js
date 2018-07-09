@@ -288,13 +288,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return buttonsListMenu;
     },
 
-    __createWindowForBuiltInService: function(widget, caption) {
+    __createWindowForBuiltInService: function(widget, width, height, caption) {
       let serviceWindow = new qx.ui.window.Window();
       serviceWindow.set({
         showMinimize: false,
         showStatusbar: false,
-        width: 800,
-        height: 600,
+        width: width,
+        height: height,
         minWidth: 400,
         minHeight: 400,
         modal: true,
@@ -362,12 +362,16 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           fileManagerWindow.moveTo(100, 100);
           fileManagerWindow.open();
         } else if (node.getMetadata().key === "ThreeDViewer") {
-          let threeDView = new qxapp.components.widgets.Generic3DApp(1000, 800, "threejs");
-          let threeDWindow = this.__createWindowForBuiltInService(threeDView, "3D Viewer (three.js)");
+          const width = 1000;
+          const height = 800;
+          let threeDView = new qxapp.components.widgets.Generic3DApp(width, height, "threejs");
+          let threeDWindow = this.__createWindowForBuiltInService(threeDView, width, height, "3D Viewer (three.js)");
           threeDWindow.open();
         } else if (node.getMetadata().key === "vtkViewer") {
-          let threeDView = new qxapp.components.widgets.Generic3DApp(1000, 800, "vtkjs");
-          let threeDWindow = this.__createWindowForBuiltInService(threeDView, "3D Viewer (vtk.js)");
+          const width = 1000;
+          const height = 800;
+          let threeDView = new qxapp.components.widgets.Generic3DApp(width, height, "vtkjs");
+          let threeDWindow = this.__createWindowForBuiltInService(threeDView, width, height, "3D Viewer (vtk.js)");
           threeDWindow.open();
         } else {
           this.fireDataEvent("NodeDoubleClicked", node);
