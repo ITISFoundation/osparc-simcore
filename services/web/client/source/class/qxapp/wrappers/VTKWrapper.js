@@ -18,7 +18,7 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
       console.log(vtkPath + " loaded");
       this.setLibReady(true);
 
-      let fullScreenRenderer = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
+      let fullScreenRenderer = this.__fullScreenRenderer = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
         rootContainer: rootContainer
       });
       let actor = vtk.Rendering.Core.vtkActor.newInstance();
@@ -61,6 +61,7 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
   members: {
     __renderer: null,
     __renderWindow: null,
+    __fullScreenRenderer: null,
 
     getDomElement: function() {
       console.log(this.__renderWindow);
@@ -73,6 +74,13 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
 
     setSize: function(width, height) {
       console.log("setSize", width, height);
+      this.render();
+    },
+
+    setBackgroundColor: function(color) {
+      const rgb = qxapp.utils.Utils.hexToRgb(color);
+      this.__fullScreenRenderer.setBackground([rgb.r/256.0, rgb.g/256.0, rgb.b/256.0]);
+      this.render();
     }
   }
 });

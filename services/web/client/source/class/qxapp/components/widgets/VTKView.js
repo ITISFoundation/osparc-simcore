@@ -20,7 +20,7 @@ qx.Class.define("qxapp.components.widgets.VTKView", {
       this.__vtkWrapper.addListener(("VtkLibReady"), function(e) {
         let ready = e.getData();
         if (ready) {
-          console.log(this.__vtkWrapper);
+          this.__vtkWrapper.setBackgroundColor(backgroundColor);
 
           this.getContentElement().getDomElement()
             .appendChild(vtkPlaceholder);
