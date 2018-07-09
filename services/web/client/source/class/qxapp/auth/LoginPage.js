@@ -94,6 +94,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
     },
 
     login: function() {
+    //---------------------------------------------------------------------------
       // TODO: temporarily will allow any user until issue #162 is resolved and/or
       // python server has active API
       if (!qx.core.Environment.get("dev.enableFakeSrv")) {
@@ -104,6 +105,7 @@ qx.Class.define("qxapp.auth.LoginPage", {
         this.destroy();
         return;
       }
+      //---------------------------------------------------------------------------
 
       // Data
       const email = this.__form.getItems().email;
@@ -137,13 +139,12 @@ qx.Class.define("qxapp.auth.LoginPage", {
         // TODO: implement in flash message.
         // TODO: why if failed? Add server resposne message
 
-        const msg = this.tr("Invalid email or password");
-        email.setInvalidMessage(msg);
-        email.setValid(false);
-
-        pass.setInvalidMessage(msg);
-        pass.setValid(false);
-
+        [email, pass].forEach(item => {
+          item.set({
+            invalidMessage: this.tr("Invalid email or password"),
+            valid: false
+          });
+        });
         this.show();
       }, this);
 

@@ -69,7 +69,7 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
       var font = new qx.bom.Font(24, ["Arial"]);
       font.setBold(true);
 
-      var lbl = new qx.ui.basic.Label("<center><b style='color: #FFFFFF'>" + txt + "</b></center>");
+      var lbl = new qx.ui.basic.Label("<center>" + txt + "</center>");
       lbl.set({
         font: font,
         rich: true,
@@ -80,7 +80,7 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
       var line = new qx.ui.core.Widget();
       line.set({
         height: 1,
-        backgroundColor: "white",
+        backgroundColor: "light-background",
         marginBottom: this._marginHeader
       });
       this.add(line);

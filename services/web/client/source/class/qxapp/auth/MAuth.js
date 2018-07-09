@@ -42,15 +42,6 @@ qx.Mixin.define("qxapp.auth.MAuth", {
         width: width,
         cursor: "pointer"
       });
-      btn.addListenerOnce("appear", function() {
-        // TODO: set color
-      });
-      btn.addListener("hover", function() {
-        // change button's color
-      }, this);
-      btn.addListener("mouseout", function() {
-        // set original color
-      }, this);
       btn.addListener("execute", function(e) {
         cbk.call(this); // <= this.call() in ctx
       }, ctx);
