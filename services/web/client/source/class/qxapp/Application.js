@@ -76,9 +76,6 @@ qx.Class.define("qxapp.Application", {
     logout: function() {
       qxapp.auth.Store.resetToken();
       this.getRoot().removeAll();
-      //if (this.__layoutManager !== null) {
-      //  this.__layoutManager.destroy();
-      //}
       this.start();
     },
 
