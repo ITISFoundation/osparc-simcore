@@ -4,11 +4,13 @@
 
 TODO: extend api using swagger!
 """
+import logging
+
 from aiohttp import web
 from aiohttp_swagger import setup_swagger
 
 from aiohttp_security import (
-    remember, forget, authorized_userid,
+    remember, forget,
     has_permission, login_required
 )
 
@@ -22,6 +24,7 @@ from .registry_api import (
     registry_routes
 )
 
+_LOGGER = logging.getLogger(__file__)
 
 # API version
 __version__ = "1.0"
@@ -72,6 +75,7 @@ async def ping(request):
           "403":
               Forbidden: permission denied given the user"s privilege
     """
+    _LOGGER.debug("ping with request %s", request)
     return web.Response(text="pong")
 
 

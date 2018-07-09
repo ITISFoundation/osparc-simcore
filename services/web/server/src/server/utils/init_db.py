@@ -69,8 +69,8 @@ def setup_db(config):
     conn = admin_engine.connect()
     conn.execute("DROP DATABASE IF EXISTS %s" % db_name)
     conn.execute("DROP ROLE IF EXISTS %s" % db_user)
-    conn.execute("CREATE USER %s WITH PASSWORD "%s"" % (db_user, db_pass))
-    conn.execute("CREATE DATABASE %s ENCODING "UTF8"" % db_name)
+    conn.execute("CREATE USER %s WITH PASSWORD '%s'" % (db_user, db_pass))
+    conn.execute("CREATE DATABASE %s ENCODING 'UTF8'" % db_name)
     conn.execute("GRANT ALL PRIVILEGES ON DATABASE %s TO %s" %
                  (db_name, db_user))
     conn.close()
@@ -84,7 +84,7 @@ def teardown_db(config):
     conn.execute("""
       SELECT pg_terminate_backend(pg_stat_activity.pid)
       FROM pg_stat_activity
-      WHERE pg_stat_activity.datname = "%s"
+      WHERE pg_stat_activity.datname = '%s'
         AND pid <> pg_backend_pid();""" % db_name)
     conn.execute("DROP DATABASE IF EXISTS %s" % db_name)
     conn.execute("DROP ROLE IF EXISTS %s" % db_user)

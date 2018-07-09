@@ -34,8 +34,7 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
             ret = await conn.scalar(query)
             if ret:
                 return identity
-            else:
-                return None
+            return None
 
     async def permits(self, identity, permission, context=None):
         """Check user permissions.
