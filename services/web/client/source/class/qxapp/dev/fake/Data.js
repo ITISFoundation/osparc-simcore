@@ -187,6 +187,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 x: 260,
                 y: 10
               }
+            },
+            "UUID4": {
+
             }
           }
         }
