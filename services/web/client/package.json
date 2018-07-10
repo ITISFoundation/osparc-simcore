@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "qxcompiler": "^0.2.13"
+  },
+  "scripts": {
+    "preinstall": "npm i -g http-server"
   }
 }
