@@ -98,7 +98,12 @@ qx.Class.define("qxapp.components.widgets.Generic3DApp", {
       }, this);
 
       this.__entityList.addListener("addBunny", function() {
-        this.__threeDView.importVTKObject("../resource/models/bunny.vtk");
+        this.__threeDView.importVTKObject("../resource/models/diskout.vtp");
+      }, this);
+
+      this.__entityList.addListener("addFile", function(e) {
+        let file = e.getData()[0]
+        this.__threeDView.importVTKObject(file);
       }, this);
     }
   }

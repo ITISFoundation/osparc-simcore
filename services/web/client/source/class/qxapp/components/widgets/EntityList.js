@@ -35,16 +35,37 @@ qx.Class.define("qxapp.components.widgets.EntityList", {
     let removeBtn = new qx.ui.form.Button(this.tr("Remove entity"));
     removeBtn.addListener("execute", this.__removeEntityPressed.bind(this));
 
+    let input = new qx.html.Input("file", {
+      display: "none"
+    }, {
+      multiple: false,
+      accept: ".vtp"
+    });
+    this.getContentElement().add(input);
+    let pickFile = new qx.ui.form.Button(this.tr("Add file(s)"));
+
+    // Add an event listener
+    pickFile.addListener("execute", function(e) {
+      input.getDomElement().click();
+    });
+
+    input.addListener("change", function(e) {
+      let files = input.getDomElement().files;
+      this.fireDataEvent("addFile", files);
+    }, this);
+
     scroller.add(this.__tree);
     this._add(addBunnyBtn);
     this._add(removeBtn);
+    this._add(pickFile);
   },
 
   events: {
     "removeEntityRequested": "qx.event.type.Data",
     "selectionChanged": "qx.event.type.Data",
     "visibilityChanged": "qx.event.type.Data",
-    "addBunny": "qx.event.type.Event"
+    "addBunny": "qx.event.type.Event",
+    "addFile": "qx.event.type.Data"
   },
 
   members: {

@@ -25,10 +25,13 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
       let grid = this.__getGrid();
       renderer.addActor(grid);
 
-      let sliceActors = this.__getSliceViewers();
-      for (let actorName in sliceActors) {
-        renderer.addActor(sliceActors[actorName]);
-      }
+      // let sliceActors = this.__getSliceViewers();
+      // for (let actorName in sliceActors) {
+      //   renderer.addActor(sliceActors[actorName]);
+      // }
+
+      
+      //this.__loadFile();
 
       let openglRenderWindow = this.__openglRenderWindow = vtk.Rendering.OpenGL.vtkRenderWindow.newInstance();
       renderWindow.addView(openglRenderWindow);
@@ -71,7 +74,8 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
     __openglRenderWindow: null,
 
     importVTKObject: function(path) {
-      let reader = vtk.IO.Legacy.vtkPolyDataReader.newInstance();
+      let reader = vtk.IO.XML.vtkXMLPolyDataReader.newInstance();
+      //let reader = vtk.IO.Legacy.vtkPolyDataReader.newInstance();
       reader.setUrl(path).then(() => {
         let polydata = reader.getOutputData(0);
         let mapper = vtk.Rendering.Core.vtkMapper.newInstance();
@@ -178,6 +182,105 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
         imageActorJ:imageActorJ,
         imageActorK:imageActorK
       };
+    },
+
+    __loadFile: function() {
+      const filename = "../resource/models/diskout.vtp";
+      // const reader = new FileReader();
+      // reader.onloadend = function onLoad(e) {
+      //   this.__createPipeline(reader.result);
+      // };
+      // reader.readAsArrayBuffer(filename);
+      this.__createPipeline(filename);
+    },
+
+    __createPipeline: function(fileContents) {
+      let vtpReader = vtk.IO.XML.vtkXMLPolyDataReader.newInstance();
+      // vtpReader.parseAsArrayBuffer(fileContents);
+      vtpReader.setUrl(fileContents).then(() => {
+        const lookupTable = vtk.Rendering.Core.vtkColorTransferFunction.newInstance();
+      const source = vtpReader.getOutputData(0);
+      const mapper = vtk.Rendering.Core.vtkMapper.newInstance({
+        interpolateScalarsBeforeMapping: false,
+        useLookupTableScalarRange: true,
+        lookupTable,
+        scalarVisibility: false,
+      });
+      const actor = vtk.Rendering.Core.vtkActor.newInstance();
+      const scalars = source.getPointData().getScalars();
+      const dataRange = [].concat(scalars ? scalars.getRange() : [0, 1]);
+
+      // --------------------------------------------------------------------
+      // Color handling
+      // --------------------------------------------------------------------
+
+      // function applyPreset() {
+      //   const preset = vtk.Rendering.Core.vtkColorMaps.getPresetByName(presetSelector.value);
+      //   lookupTable.applyColorMap(preset);
+      //   lookupTable.setMappingRange(dataRange[0], dataRange[1]);
+      //   lookupTable.updateRange();
+      // }
+      // applyPreset();
+      // presetSelector.addEventListener('change', applyPreset);
+
+      // --------------------------------------------------------------------
+      // Opacity handling
+      // --------------------------------------------------------------------
+
+      function updateOpacity(event) {
+        const opacity = Number(event.target.value) / 100;
+        actor.getProperty().setOpacity(opacity);
+        this.__renderWindow.render();
+      }
+
+      // opacitySelector.addEventListener('input', updateOpacity);
+
+      // --------------------------------------------------------------------
+      // ColorBy handling
+      // --------------------------------------------------------------------
+
+      // const colorByOptions = [{ value: ':', label: 'Solid color' }].concat(
+      //   source
+      //     .getPointData()
+      //     .getArrays()
+      //     .map((a) => ({
+      //       label: `(p) ${a.getName()}`,
+      //       value: `PointData:${a.getName()}`,
+      //     })),
+      //   source
+      //     .getCellData()
+      //     .getArrays()
+      //     .map((a) => ({
+      //       label: `(c) ${a.getName()}`,
+      //       value: `CellData:${a.getName()}`,
+      //     }))
+      // );
+      // colorBySelector.innerHTML = colorByOptions
+      // .map(
+      //   ({ label, value }) =>
+      //     `<option value="${value}" ${
+      //       field === value ? 'selected="selected"' : ''
+      //     }>${label}</option>`
+      // )
+      // .join('');
+
+      // --------------------------------------------------------------------
+      // Pipeline handling
+      // --------------------------------------------------------------------
+
+      actor.setMapper(mapper);
+      mapper.setInputData(source);
+      this.__renderer.addActor(actor);
+      this.__renderer.resetCamera();
+      this.__renderWindow.render();
+
+      // Manage update when lookupTable change
+      lookupTable.onModified(() => {
+        this.__renderWindow.render();
+      });
+      });
+
+      
     }
   }
 });
