@@ -21,7 +21,7 @@ from simcore_sdk.config.s3 import Config as s3_config
 
 _LOGGER = logging.getLogger(__file__)
 
-SIO = socketio.AsyncServer(async_mode='aiohttp')
+SIO = socketio.AsyncServer(async_mode='aiohttp', logging=_LOGGER)
 
 CONFIG = config.CONFIG[os.environ.get('SIMCORE_WEB_CONFIG', 'default')]
 
@@ -131,7 +131,8 @@ async def list_S3_objects(sid, data):
     for obj in objects:
         obj_info = {}
         obj_info['path'] = obj.bucket_name + '/' + obj.object_name
-        obj_info['lastModified'] = obj.last_modified.isoformat()
+        # @maiz: this does not work, please review
+        #obj_info['lastModified'] = obj.last_modified.isoformat()
         obj_info['size'] = obj.size
         data_out.append(obj_info)
     await SIO.emit('listObjects', data=data_out, room=sid)

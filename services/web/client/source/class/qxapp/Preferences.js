@@ -56,7 +56,7 @@ qx.Class.define("qxapp.Preferences", {
     },
 
     __getGeneral: function() {
-      const iconUrl = qxapp.utils.Placeholders.getIcon("ion-ios-settings", 32);
+      const iconUrl = qxapp.dev.Placeholders.getIcon("ion-ios-settings", 32);
       let page = this.__createPage("General", iconUrl);
 
       // content
@@ -78,7 +78,7 @@ qx.Class.define("qxapp.Preferences", {
       page.add(email);
 
       let img = new qx.ui.basic.Image().set({
-        source: qxapp.utils.Placeholders.getGravatar(email.getValue() || "bizzy@itis.ethz.ch", 200)
+        source: qxapp.utils.Avatar.getUrl(email.getValue() || "bizzy@itis.ethz.ch", 200)
       });
       page.add(img);
 
@@ -86,7 +86,7 @@ qx.Class.define("qxapp.Preferences", {
     },
 
     __getSecurity: function() {
-      const iconUrl = qxapp.utils.Placeholders.getIcon("fa-lock", 32);
+      const iconUrl = qxapp.dev.Placeholders.getIcon("fa-lock", 32);
       let page = this.__createPage("Security", iconUrl);
 
       // content
@@ -112,7 +112,7 @@ qx.Class.define("qxapp.Preferences", {
     },
 
     __getDisplay: function() {
-      const iconUrl = qxapp.utils.Placeholders.getIcon("fa-eye", 32);
+      const iconUrl = qxapp.dev.Placeholders.getIcon("fa-eye", 32);
       let page = this.__createPage("Display", iconUrl);
       let themes = qx.Theme.getAll();
 
@@ -146,7 +146,7 @@ qx.Class.define("qxapp.Preferences", {
     },
 
     __getAdvanced: function() {
-      const iconUrl = qxapp.utils.Placeholders.getIcon("fa-rebel", 32);
+      const iconUrl = qxapp.dev.Placeholders.getIcon("fa-rebel", 32);
       let page = this.__createPage("Advanced", iconUrl);
 
       return page;
