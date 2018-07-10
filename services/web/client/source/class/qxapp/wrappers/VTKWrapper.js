@@ -9,7 +9,7 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
 
   construct: function(rootContainer) {
     // initialize the script loading
-    const vtkPath = "vtk/vtk.min.js";
+    const vtkPath = "vtk/vtk.custom.7.3.2.js";
     let dynLoader = new qx.util.DynamicScriptLoader([
       vtkPath
     ]);
