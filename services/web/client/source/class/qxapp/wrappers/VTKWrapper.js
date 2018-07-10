@@ -193,7 +193,6 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
         this_instance.__createPipeline(reader.result);
       };
       reader.readAsArrayBuffer(file);
-      // this.__createPipeline(filename);
     },
 
     __createPipeline: function(fileContents) {
@@ -211,59 +210,11 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
       const scalars = source.getPointData().getScalars();
       const dataRange = [].concat(scalars ? scalars.getRange() : [0, 1]);
 
-      // --------------------------------------------------------------------
-      // Color handling
-      // --------------------------------------------------------------------
-
-      // function applyPreset() {
-      //   const preset = vtk.Rendering.Core.vtkColorMaps.getPresetByName(presetSelector.value);
-      //   lookupTable.applyColorMap(preset);
-      //   lookupTable.setMappingRange(dataRange[0], dataRange[1]);
-      //   lookupTable.updateRange();
-      // }
-      // applyPreset();
-      // presetSelector.addEventListener('change', applyPreset);
-
-      // --------------------------------------------------------------------
-      // Opacity handling
-      // --------------------------------------------------------------------
-
-      function updateOpacity(event) {
-        const opacity = Number(event.target.value) / 100;
-        actor.getProperty().setOpacity(opacity);
-        this.__renderWindow.render();
-      }
-
-      // opacitySelector.addEventListener('input', updateOpacity);
-
-      // --------------------------------------------------------------------
-      // ColorBy handling
-      // --------------------------------------------------------------------
-
-      // const colorByOptions = [{ value: ':', label: 'Solid color' }].concat(
-      //   source
-      //     .getPointData()
-      //     .getArrays()
-      //     .map((a) => ({
-      //       label: `(p) ${a.getName()}`,
-      //       value: `PointData:${a.getName()}`,
-      //     })),
-      //   source
-      //     .getCellData()
-      //     .getArrays()
-      //     .map((a) => ({
-      //       label: `(c) ${a.getName()}`,
-      //       value: `CellData:${a.getName()}`,
-      //     }))
-      // );
-      // colorBySelector.innerHTML = colorByOptions
-      // .map(
-      //   ({ label, value }) =>
-      //     `<option value="${value}" ${
-      //       field === value ? 'selected="selected"' : ''
-      //     }>${label}</option>`
+      // TODO: this is where the mapper should be set to use the real part like in https://kitware.github.io/vtk-js/examples/GeometryViewer.html
+      
+      // mapper.set(
+      //   "Re"
       // )
-      // .join('');
 
       // --------------------------------------------------------------------
       // Pipeline handling
