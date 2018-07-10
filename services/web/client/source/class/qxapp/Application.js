@@ -66,6 +66,7 @@ qx.Class.define("qxapp.Application", {
       } else {
         this.__layoutManager = null;
         let page = new qxapp.auth.LoginPage();
+        // event : successfully logged it ... then application decides
         page.show();
       }
     },

@@ -17,84 +17,76 @@ qx.Class.define("qxapp.auth.LoginPage", {
     _buildPage: function() {
       this.__form = new qx.ui.form.Form();
 
-      var atm = new qx.ui.basic.Atom().set({
+      let atm = new qx.ui.basic.Atom().set({
         icon: "qxapp/itis-white.png",
-        iconPosition: "top",
-        width: this.getWidth(),
-        marginBottom: this._marginHeader
+        iconPosition: "top"
       });
       this.add(atm);
 
-      var email = new qx.ui.form.TextField();
+      let email = new qx.ui.form.TextField();
       email.setPlaceholder(this.tr("Your email address"));
       email.setRequired(true);
       this.add(email);
       this.__form.add(email, "", qx.util.Validate.email(), "email", null);
 
-      var pass = new qx.ui.form.PasswordField();
+      let pass = new qx.ui.form.PasswordField();
       pass.setPlaceholder(this.tr("Your password"));
       pass.setRequired(true);
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
+      // |               Login-|
+      // TODO: Temporary disabled. 'Remember me' implies keeping login status in server
+      // let chk = new qx.ui.form.CheckBox(this.tr("Remember me"));
+      // this.__form.add(chk, "", null, "remember", null);
 
-      // |        Login-|
-      let grpBtns = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      grpBtns.set({
-        marginTop: this._marginFooter
-      });
-
-      var btnLogin = this.createButton(this.tr("Log In"), this._widthBtn, function() {
+      let loginBtn = new qx.ui.form.Button(this.tr("Log In"));
+      loginBtn.addListener("execute", function() {
         if (this.__form.validate()) {
           this.login();
         }
       }, this);
-      grpBtns.add(btnLogin, {
-        right: 0
-      });
-
-      this.add(grpBtns);
+      this.add(loginBtn);
 
 
-      // |~ Sign Up -|- ForgotPassword ~|
-      let grpLinks = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      grpLinks.set({
-        marginTop: 2*this._marginFooter,
-        width: this.getWidth()
-      });
+      //  create account | forgot password?
+      let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        separator: "main"
+      }));
 
-      // TODO: Temporary disabled. 'Remember me' implies keeping login status in server
-      // var chk = new qx.ui.form.CheckBox("<i style='color: #FFFFFF'>" + this.tr("Remember me") + "</i>");
-      // var lbl = chk.getChildControl("label");
-      // lbl.setRich(true);
-      // grpLinks.add(chk, {
-      //  left: "5%"
-      // });
-      // this.__form.add(chk, "", null, "remember", null);
-
-      const mid = parseInt(this.getWidth() / 2);
-      var registerLnk = this.createLinkButton(this.tr("Create Account"), function() {
+      let registerBtn = this.createLinkButton(this.tr("Create Account"), function() {
         this.register();
       }, this);
-      grpLinks.add(registerLnk, {
-        right: mid + 20
-      });
 
-      grpLinks.add(new qx.ui.basic.Atom("|"), {
-        right: mid
-      });
-
-      var forgotLink = this.createLinkButton(this.tr("Forgot Password?"), function() {
+      let forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), function() {
         this.forgot();
       }, this);
-      grpLinks.add(forgotLink, {
-        left: mid + 15
+
+      [registerBtn, forgotBtn].forEach(btn => {
+        grp.add(btn.set({
+          center: true
+        }), {
+          flex:1
+        });
       });
-      this.add(grpLinks);
+
+      this.add(grp);
+
+      // TODO: add here loging with NIH and openID
+      // let grp2 = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      // ["Login with NIH", "Login with OpenID"].forEach(txt => {
+      //   let btn = this.createLinkButton(this.tr(txt), function(){}, this);
+      //   grp2.add(btn.set({
+      //     center: true
+      //   }), {
+      //     flex:1
+      //   });
+      // }, this);
+      // this.add(grp2);
     },
 
     login: function() {
-    //---------------------------------------------------------------------------
+      //---------------------------------------------------------------------------
       // TODO: temporarily will allow any user until issue #162 is resolved and/or
       // python server has active API
       if (!qx.core.Environment.get("dev.enableFakeSrv")) {
@@ -152,13 +144,13 @@ qx.Class.define("qxapp.auth.LoginPage", {
     },
 
     forgot: function() {
-      var forgot = new qxapp.auth.ResetPassPage();
+      let forgot = new qxapp.auth.ResetPassPage();
       forgot.show();
       this.destroy();
     },
 
     register: function() {
-      var register = new qxapp.auth.RegistrationPage();
+      let register = new qxapp.auth.RegistrationPage();
       register.show();
       this.destroy();
     }

@@ -15,37 +15,33 @@ qx.Class.define("qxapp.auth.ResetPassPage", {
       // email
       let email = new qx.ui.form.TextField();
       email.setRequired(true);
-      email.setPlaceholder(this.tr("Introduce your email to reset your passoword"));
+      email.setPlaceholder(this.tr("Introduce your registration email"));
       this.add(email);
 
       manager.add(email, qx.util.Validate.email());
 
       // submit and cancel buttons
-      let grp = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      grp.set({
-        marginTop: this._marginFooter
+      let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+      let submitBtn = new qx.ui.form.Button(this.tr("Submit"));
+      grp.add(submitBtn, {
+        flex:1
       });
 
-      let btn = new qx.ui.form.Button(this.tr("Submit"));
-      btn.setWidth(this._widthBtn);
-      grp.add(btn, {
-        left: 0
+      let cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
+      grp.add(cancelBtn, {
+        flex:1
       });
 
-      btn.addListener("execute", function(e) {
+      // interaction
+      submitBtn.addListener("execute", function(e) {
         const valid = manager.validate();
         if (valid) {
           this.submit(email.getValue());
         }
       }, this);
 
-      btn = new qx.ui.form.Button(this.tr("Cancel"));
-      btn.setWidth(this._widthBtn);
-      grp.add(btn, {
-        right: 0
-      });
-
-      btn.addListener("execute", function(e) {
+      cancelBtn.addListener("execute", function(e) {
         this.cancel();
       }, this);
 

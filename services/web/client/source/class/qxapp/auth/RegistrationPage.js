@@ -12,25 +12,37 @@ qx.Class.define("qxapp.auth.RegistrationPage", {
     _buildPage: function() {
       let manager = new qx.ui.form.validation.Manager();
 
-      this._addTitleHeader(this.tr("Register"));
+      this._addTitleHeader(this.tr("Registration"));
 
       // email, pass1 == pass2
       let email = new qx.ui.form.TextField();
       email.setRequired(true);
       email.setPlaceholder(this.tr("Introduce your email"));
       this.add(email);
-      this.__email = email;
+
+      let uname = new qx.ui.form.TextField();
+      uname.setRequired(true);
+      uname.setPlaceholder(this.tr("Introduce a user name"));
+      this.add(uname);
 
       let pass1 = new qx.ui.form.PasswordField();
       pass1.setRequired(true);
       pass1.setPlaceholder(this.tr("Introduce a password"));
       this.add(pass1);
-      this.__pass1 = pass1;
 
       let pass2 = new qx.ui.form.PasswordField();
       pass2.setRequired(true);
-      pass2.setPlaceholder(this.tr("Retype your password"));
+      pass2.setPlaceholder(this.tr("Retype the password"));
       this.add(pass2);
+
+      // interaction
+      email.addListener("changeValue", function(e) {
+        // Auto-guess
+        if (uname.getValue()=== null) {
+          let data = e.getData().split("@")[0];
+          uname.setValue(qx.lang.String.capitalize(qx.lang.String.clean(data)));
+        }
+      }, this);
 
       // validation
       manager.add(email, qx.util.Validate.email());
@@ -41,44 +53,42 @@ qx.Class.define("qxapp.auth.RegistrationPage", {
         }
         return isValid;
       });
-      manager.setValidator(function(itemForms) {
+      manager.setValidator(function(_itemForms) {
         const isValid = pass1.getValue() == pass2.getValue();
         if (!isValid) {
-          const msg = "Passwords do not match.";
-          pass1.setInvalidMessage(msg);
-          pass2.setInvalidMessage(msg);
-          pass1.setValid(isValid);
-          pass2.setValid(isValid);
+          [pass1, pass2].forEach(pass => {
+            pass.setInvalidMessage("Passwords do not match.");
+            pass.setValid(isValid);
+          });
         }
         return isValid;
       });
 
 
       // submit & cancel buttons
-      let grp = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      grp.set({
-        marginTop: this._marginFooter
-      });
+      let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      let submitBtn = this._newButton(this.tr("Submit"));
+      let submitBtn = new qx.ui.form.Button(this.tr("Submit"));
       grp.add(submitBtn, {
-        left: 0
+        flex:1
       });
 
+      let cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
+      grp.add(cancelBtn, {
+        flex:1
+      });
+
+      // interaction
       submitBtn.addListener("execute", function(e) {
         const valid = manager.validate();
         if (valid) {
           this.register({
             email: email.getValue(),
+            username: uname.getValue(),
             pass: pass1.getValue()
           });
         }
       }, this);
-
-      let cancelBtn = this._newButton(this.tr("Cancel"));
-      grp.add(cancelBtn, {
-        right: 0
-      });
 
       cancelBtn.addListener("execute", function(e) {
         this.cancel();
@@ -100,7 +110,7 @@ qx.Class.define("qxapp.auth.RegistrationPage", {
     },
 
     cancel: function() {
-      this.debug("Cancel registration");
+      this.debug("Canceling registration");
       // back to login
       let login = new qxapp.auth.LoginPage();
       login.show();
