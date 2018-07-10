@@ -1,0 +1,283 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "simcore project",
+    "description": "Description of a simcore project",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+    ],
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "project name",
+            "examples": [
+                "Temporal Distortion Simulator"
+            ]
+        },
+        "description": {
+            "type": "string",
+            "description": "longer one-line description about the project",
+            "examples": [
+                "Dabbling in temporal transitions ..."
+            ]
+        },
+        "notes": {
+            "type": "string",
+            "description": "longer project description. using common mark",
+            "examples": [
+                "# title\nSome Text `with` common mark markup"
+            ]
+        },
+        "owner": {
+            "type": "string",
+            "description": "user uuid"
+        },
+        "collaborators": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "description": "UUIDs of the users/groups who should get access to this",
+                "patternProperties": {
+                  "^\\S+$": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "read",
+                          "write"
+                        ]
+                      }
+                  }
+              }
+            }
+        },
+        "creationDate": {
+            "type": "string",
+            "description": "project creation date",
+            "pattern": "\\d{4}-(12|11|10|[1-9])-(31|30|[12]\\d|[1-9])T(2[0-4]|1\\d|[1-9])(:(\\d|[0-5]\\d)){2}Z",
+            "examples": [
+                "2018-07-01T11:13:43Z"
+            ]
+        },
+        "lastChangeDate": {
+             "type": "string",
+            "description": "last save date",
+            "pattern": "\\d{4}-(12|`11|10|[1-9])-(31|30|[12]\\d|[1-9])T(2[0-4]|1\\d|[1-9])(:(\\d|[0-5]\\d)){2}Z",
+        },
+        "workbench": {
+            "type": "object",
+            "patternProperties": {
+                "^\\S+$": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "description": "distinctive name for the node based on the docker registry path",
+                            "pattern": "^(service)/(computational|dynamic)/([^\\s/]+)$",
+                            "examples": [
+                                "service/computational/sleeper",
+                                "service/dynamic/3dviewer"
+                            ]
+                        },
+                        "version": {
+                            "type": "string",
+                            "description": "semantic version number of the node",
+                            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+                            "examples": [
+                                "1.0.0",
+                                "0.0.1"
+                            ]
+                        },
+                        "input": {
+                            "type": "object",
+                            "description": "values of input properties",
+                            "patternProperties": {
+                                "^[_a-z0-9]+$": {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [ "integer" ]
+                                          },
+                                          "value": {
+                                            "type": "integer"
+                                         }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [ "number" ]
+                                          },
+                                          "value": {
+                                            "type": "number"
+                                         }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [ "boolean" ]
+                                          },
+                                          "value": {
+                                            "type": "boolean"
+                                         }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [ "string" ]
+                                          },
+                                          "value": {
+                                            "type": "string"
+                                         }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [ "link" ]
+                                          },
+                                          "value": {
+                                            "type": "object",
+                                            "properties": {
+                                              "nodeUuid": {
+                                                "type": "string"
+                                              },
+                                              "property": {
+                                                "type": "string"
+                                              }
+                                            }
+                                         }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [ "data" ]
+                                          },
+                                          "value": {
+                                            "type": "object",
+                                            "properties": {
+                                              "store": {
+                                                "type": "string"
+                                              },
+                                              "path": {
+                                                "type": "string"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                            }
+                        },
+                        "output": {
+                            "type": "object",
+                            "patternProperties": {
+                                "^[_a-z0-9]+$": {
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [ "integer" ]
+                                        },
+                                        "value": {
+                                          "type": "integer"
+                                       }
+                                      }
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [ "number" ]
+                                        },
+                                        "value": {
+                                          "type": "number"
+                                       }
+                                      }
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [ "boolean" ]
+                                        },
+                                        "value": {
+                                          "type": "boolean"
+                                       }
+                                      }
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [ "string" ]
+                                        },
+                                        "value": {
+                                          "type": "string"
+                                       }
+                                      }
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [ "data" ]
+                                        },
+                                        "value": {
+                                          "type": "object",
+                                          "properties": {
+                                            "store": {
+                                              "type": "string"
+                                            },
+                                            "path": {
+                                              "type": "string"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                            }
+                        },
+                        "position": {
+                            "type": "object",
+                            "properties": {
+                                "x": {
+                                    "type": "integer"
+                                },
+                                "y": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
