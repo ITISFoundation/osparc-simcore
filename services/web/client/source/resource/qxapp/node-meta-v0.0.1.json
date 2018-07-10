@@ -132,7 +132,7 @@
                         },
                         "type": {
                             "type": "string",
-                            "pattern": "^(number|integer|boolean|string|data:(([^/\\s,]+/[^/\\s,]+)|\\[([^/\\s,]+/[^/\\s,]+)(,([^/\\s]+/[^/,\\s]+)*\\])$",
+                            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
                             "description": "data type expected on this input glob matching for data type is allowed",
                             "examples": [
                                 "number",
@@ -281,7 +281,7 @@
                         },
                         "type": {
                             "type": "string",
-                            "pattern": "^(number|integer|boolean|string|data:([^/\\s\\*,]+/[^/\\s\\*,]+)$",
+                            "pattern": "^(number|integer|boolean|string|data:[^/\\s\\*,]+/[^/\\s\\*,]+)$",
                             "description": "data type expected on this output",
                             "examples": [
                                 "number",

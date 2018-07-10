@@ -21,7 +21,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
       created: null,
       prjId: null
     }),
-    nodeMap: function() {
+    getNodeMap: function() {
       return {
         "service/computational/itis/tutti:0.0.0-alpha": {
           key: "service/computational/itis/tutti",
@@ -47,23 +47,26 @@ qx.Class.define("qxapp.dev.fake.Data", {
               displayOrder: 1,
               label: "Integer Test",
               description: "Test Input for Integer",
-              type: "number",
+              type: "integer",
               defaultValue: 2
             },
             inBool: {
               displayOrder: 2,
               label: "Boolean Test",
+              type: "boolean",
               description: "Test Input for Boolean",
               defaultValue: true
             },
             inStr: {
               displayOrder: 3,
+              type: "string",
               label: "String Test",
               description: "Test Input for String",
               defaultValue: "Gugus"
             },
             inArea: {
               displayOrder: 4,
+              type: "string",
               label: "Widget TextArea Test",
               description: "Test Input for String",
               defaultValue: "Gugus\nDu\nDa",
@@ -77,6 +80,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               label: "Widget SelectBox Test",
               description: "Test Input for SelectBox",
               defaultValue: "dog",
+              type: "string",
               widget: {
                 type: "SelectBox",
                 structure: [
@@ -133,7 +137,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         }
       };
     },
-    projectList: function() {
+    getProjectList: function() {
       return [
         {
           name: "Sample Project",
@@ -152,7 +156,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "UUID1": {
               type: "service/dynamic/itis/file-picker",
               version: "0.0.0",
-              output: {
+              outputs: {
                 out1: {
                   store: "s3-z43",
                   path: "/bucket1/file1"
@@ -166,7 +170,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "UUID2": {
               type: "service/computational/itis/sleeper",
               version: "0.0.1-alpha",
-              input: {
+              inputs: {
                 inNumber: 3.5,
                 inInteger: 4,
                 inImage: {
@@ -182,7 +186,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "UUID3": {
               type: "service/computational/itis/sleeper",
               version: "0.0.1-alpha",
-              input: {
+              inputs: {
                 inNumber: {
                   nodeUuid: "UUID2",
                   property: "out_number"
@@ -206,7 +210,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "UUID4": {
               type: "service/computational/itis/tutti",
               version: "0.0.0-alpha",
-              input: {
+              inputs: {
                 inNumber: 3.3,
                 inInt: 372,
                 inBool: true,
@@ -221,6 +225,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   store: "s3-z43",
                   path: "bucket32/file.png"
                 }
+              },
+              position: {
+                x: 400,
+                y: 10
               }
             }
           }
