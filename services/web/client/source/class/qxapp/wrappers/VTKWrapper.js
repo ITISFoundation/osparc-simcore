@@ -74,23 +74,24 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
     __openglRenderWindow: null,
 
     importVTKObject: function(path) {
-      let reader = vtk.IO.XML.vtkXMLPolyDataReader.newInstance();
-      //let reader = vtk.IO.Legacy.vtkPolyDataReader.newInstance();
-      reader.setUrl(path).then(() => {
-        let polydata = reader.getOutputData(0);
-        let mapper = vtk.Rendering.Core.vtkMapper.newInstance();
-        let actor = vtk.Rendering.Core.vtkActor.newInstance();
+      this.__loadFile(path);
+      // let reader = vtk.IO.XML.vtkXMLPolyDataReader.newInstance();
+      // //let reader = vtk.IO.Legacy.vtkPolyDataReader.newInstance();
+      // reader.parseArrayBuffer(path).then(() => {
+      //   let polydata = reader.getOutputData(0);
+      //   let mapper = vtk.Rendering.Core.vtkMapper.newInstance();
+      //   let actor = vtk.Rendering.Core.vtkActor.newInstance();
 
-        actor.setMapper(mapper);
-        mapper.setInputData(polydata);
+      //   actor.setMapper(mapper);
+      //   mapper.setInputData(polydata);
 
-        // let pieces = path.split("/");
-        // let name = pieces[pieces.length-1];
-        // actor.name = name;
-        // actor.uuid = qxapp.utils.Utils.uuidv4();
+      //   // let pieces = path.split("/");
+      //   // let name = pieces[pieces.length-1];
+      //   // actor.name = name;
+      //   // actor.uuid = qxapp.utils.Utils.uuidv4();
 
-        this.fireDataEvent("EntityToBeAdded", actor);
-      }, this);
+      //   this.fireDataEvent("EntityToBeAdded", actor);
+      // }, this);
     },
 
     addEntityToScene: function(entity) {
@@ -184,21 +185,21 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
       };
     },
 
-    __loadFile: function() {
+    __loadFile: function(file) {
       const filename = "../resource/models/diskout.vtp";
-      // const reader = new FileReader();
-      // reader.onloadend = function onLoad(e) {
-      //   this.__createPipeline(reader.result);
-      // };
-      // reader.readAsArrayBuffer(filename);
-      this.__createPipeline(filename);
+      const reader = new FileReader();
+      let this_instance = this;
+      reader.onload = function onLoad(e) {
+        this_instance.__createPipeline(reader.result);
+      };
+      reader.readAsArrayBuffer(file);
+      // this.__createPipeline(filename);
     },
 
     __createPipeline: function(fileContents) {
       let vtpReader = vtk.IO.XML.vtkXMLPolyDataReader.newInstance();
-      // vtpReader.parseAsArrayBuffer(fileContents);
-      vtpReader.setUrl(fileContents).then(() => {
-        const lookupTable = vtk.Rendering.Core.vtkColorTransferFunction.newInstance();
+      vtpReader.parseAsArrayBuffer(fileContents);
+      const lookupTable = vtk.Rendering.Core.vtkColorTransferFunction.newInstance();
       const source = vtpReader.getOutputData(0);
       const mapper = vtk.Rendering.Core.vtkMapper.newInstance({
         interpolateScalarsBeforeMapping: false,
@@ -277,7 +278,6 @@ qx.Class.define("qxapp.wrappers.VTKWrapper", {
       // Manage update when lookupTable change
       lookupTable.onModified(() => {
         this.__renderWindow.render();
-      });
       });
 
       
