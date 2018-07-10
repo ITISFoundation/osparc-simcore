@@ -97,7 +97,7 @@
             "type": "object",
             "description": "definition of the inputs of this node",
             "patternProperties": {
-                "^[_a-z0-9]+$": {
+                "^[-_a-zA-Z0-9]+$": {
                     "type": "object",
                     "description": "all the input configurable for this service",
                     "additionalProperties": false,
@@ -105,7 +105,7 @@
                         "displayOrder",
                         "label",
                         "description",
-                        "type",
+                        "type"
                     ],
                     "properties": {
                         "displayOrder": {
@@ -247,7 +247,7 @@
             "type": "object",
             "description": "definition of the outputs of this node",
             "patternProperties": {
-                "^[_a-z0-9]+$": {
+                "^[-_a-zA-Z0-9]+$": {
                     "type": "object",
                     "description": "all the output produced by this node",
                     "additionalProperties": false,

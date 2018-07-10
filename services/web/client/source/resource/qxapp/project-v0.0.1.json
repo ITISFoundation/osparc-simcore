@@ -69,6 +69,13 @@
             "patternProperties": {
                 "^\\S+$": {
                     "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "type",
+                      "version",
+                      "inputs",
+                      "position"
+                    ],
                     "properties": {
                         "type": {
                             "type": "string",
@@ -88,97 +95,44 @@
                                 "0.0.1"
                             ]
                         },
-                        "input": {
+                        "inputs": {
                             "type": "object",
                             "description": "values of input properties",
                             "patternProperties": {
-                                "^[_a-z0-9]+$": {
+                                "^[-_a-zA-Z0-9]+$": {
                                     "oneOf": [
                                       {
-                                        "type": "object",
-                                        "properties": {
-                                          "type": {
-                                            "type": "string",
-                                            "enum": [ "integer" ]
-                                          },
-                                          "value": {
-                                            "type": "integer"
-                                         }
-                                        }
+                                        "type": ["integer","boolean","string","number"]
                                       },
                                       {
                                         "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                          "nodeUuid",
+                                          "property"
+                                        ],
                                         "properties": {
-                                          "type": {
-                                            "type": "string",
-                                            "enum": [ "number" ]
-                                          },
-                                          "value": {
-                                            "type": "number"
-                                         }
-                                        }
-                                      },
-                                      {
-                                        "type": "object",
-                                        "properties": {
-                                          "type": {
-                                            "type": "string",
-                                            "enum": [ "boolean" ]
-                                          },
-                                          "value": {
-                                            "type": "boolean"
-                                         }
-                                        }
-                                      },
-                                      {
-                                        "type": "object",
-                                        "properties": {
-                                          "type": {
-                                            "type": "string",
-                                            "enum": [ "string" ]
-                                          },
-                                          "value": {
+                                          "nodeUuid": {
                                             "type": "string"
-                                         }
+                                          },
+                                          "property": {
+                                            "type": "string"
+                                          }
                                         }
                                       },
                                       {
                                         "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                          "store",
+                                          "path"
+                                        ],
                                         "properties": {
-                                          "type": {
-                                            "type": "string",
-                                            "enum": [ "link" ]
+                                          "store": {
+                                            "type": "string"
                                           },
-                                          "value": {
-                                            "type": "object",
-                                            "properties": {
-                                              "nodeUuid": {
-                                                "type": "string"
-                                              },
-                                              "property": {
-                                                "type": "string"
-                                              }
-                                            }
-                                         }
-                                        }
-                                      },
-                                      {
-                                        "type": "object",
-                                        "properties": {
-                                          "type": {
-                                            "type": "string",
-                                            "enum": [ "data" ]
-                                          },
-                                          "value": {
-                                            "type": "object",
-                                            "properties": {
-                                              "store": {
-                                                "type": "string"
-                                              },
-                                              "path": {
-                                                "type": "string"
-                                              }
-                                            }
+                                          "path": {
+                                            "type": "string"
                                           }
                                         }
                                       }
@@ -187,76 +141,27 @@
                                 }
                             }
                         },
-                        "output": {
+                        "outputs": {
                             "type": "object",
                             "patternProperties": {
-                                "^[_a-z0-9]+$": {
-                                  "oneOf": [
+                                "^[-_a-zA-Z0-9]+$": {
+                                  "oneOf": "oneOf": [
                                     {
-                                      "type": "object",
-                                      "properties": {
-                                        "type": {
-                                          "type": "string",
-                                          "enum": [ "integer" ]
-                                        },
-                                        "value": {
-                                          "type": "integer"
-                                       }
-                                      }
+                                      "type": ["integer","boolean","string","number"]
                                     },
                                     {
                                       "type": "object",
+                                      "additionalProperties": false,
+                                      "required": [
+                                        "store",
+                                        "path"
+                                      ],
                                       "properties": {
-                                        "type": {
-                                          "type": "string",
-                                          "enum": [ "number" ]
-                                        },
-                                        "value": {
-                                          "type": "number"
-                                       }
-                                      }
-                                    },
-                                    {
-                                      "type": "object",
-                                      "properties": {
-                                        "type": {
-                                          "type": "string",
-                                          "enum": [ "boolean" ]
-                                        },
-                                        "value": {
-                                          "type": "boolean"
-                                       }
-                                      }
-                                    },
-                                    {
-                                      "type": "object",
-                                      "properties": {
-                                        "type": {
-                                          "type": "string",
-                                          "enum": [ "string" ]
-                                        },
-                                        "value": {
+                                        "store": {
                                           "type": "string"
-                                       }
-                                      }
-                                    },
-                                    {
-                                      "type": "object",
-                                      "properties": {
-                                        "type": {
-                                          "type": "string",
-                                          "enum": [ "data" ]
                                         },
-                                        "value": {
-                                          "type": "object",
-                                          "properties": {
-                                            "store": {
-                                              "type": "string"
-                                            },
-                                            "path": {
-                                              "type": "string"
-                                            }
-                                          }
+                                        "path": {
+                                          "type": "string"
                                         }
                                       }
                                     }

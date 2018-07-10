@@ -36,7 +36,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           ],
           contact: "oetiker@itis.ethz.ch",
           inputs: {
-            in_nummber: {
+            in_number: {
               displayOrder: "001",
               label: "Number Test",
               description: "Test Input for Number",
@@ -153,7 +153,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
               type: "service/dynamic/itis/file-picker",
               version: "0.0.0",
               output: {
-                out_1: "s3://itis-minion/bucket1/file1"
+                out_1: {
+                  store: "s3-z43",
+                  path: "/bucket1/file1"
+                }
               },
               position: {
                 x: 10,
@@ -164,9 +167,12 @@ qx.Class.define("qxapp.dev.fake.Data", {
               type: "service/computational/itis/sleeper",
               version: "0.0.1-alpha",
               input: {
-                in_number: "num:3.5",
-                in_integer: "int:4",
-                in_image: "link://UUID1/out_1"
+                in_number: 3.5
+                in_integer: 4
+                in_image: {
+                  nodeUuid: "UUID1",
+                  property: "out_1"
+                }
               },
               position: {
                 x: 120,
@@ -177,11 +183,20 @@ qx.Class.define("qxapp.dev.fake.Data", {
               type: "service/computational/itis/sleeper",
               version: "0.0.1-alpha",
               input: {
-                in_number: "link://UUID2/out_number",
-                in_string: "str:Hello,blablabla",
-                in_bool: "bool:true",
-                in_image: "link://UUID2/out_png",
-                in_file: "s3://itis-minion/bucket2/file12"
+                in_number: {
+                  nodeUuid: "UUID2",
+                  property: "out_number"
+                },
+                in_string: "Hello,blablabla",
+                in_bool: true,
+                in_image: {
+                  nodeUuid: "UUID2",
+                  property: "out_png"
+                }
+                in_file: {
+                  store: "s3-z43",
+                  path: "/bucket2/file12"
+                }
               },
               position: {
                 x: 260,
@@ -189,8 +204,25 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "UUID4": {
-
-            }
+              type: "service/computational/itis/tutti",
+              version: "0.0.0-alpha",
+              input: {
+                in_number: 3.3,
+                in_int: 372,
+                in_bool: true,
+                in_str: "Ooops, Again",
+                in_area: "some\nmore",
+                in_sb: "cat",
+                in_file: {
+                  store: "s3-z43",
+                  path: "bucket33/file.data"
+                },
+                in_image: {
+                  store: "s3-z43",
+                  path: "bucket32/file.png"
+                }
+              }
+           }
           }
         }
       ];
