@@ -22,6 +22,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
       prjId: null
     }),
 
+
     nodeMap: function() {
       return {
         "service/computational/itis/tutti:0.0.0-alpha": {
@@ -193,6 +194,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         }
       ];
     },
+
     getUsername: function() {
       return "bizzy";
     },
@@ -303,14 +305,13 @@ qx.Class.define("qxapp.dev.fake.Data", {
     },
 
 
+    getTemp1Data: function() {
 
-    getTemp1Data: function(){
       const nNodes = 8;
       let nodeIds = [];
       for (let i=0; i<nNodes; i++) {
         nodeIds.push(qxapp.utils.Utils.uuidv4());
       }
-
 
       let temp1Data = {
         "nodes": [{
@@ -329,9 +330,35 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "x": 50,
             "y": 100
           },
-          "inputs": {
-          },
-          {
+          "inputs": [{
+            "key": "in_1",
+            "label": "Number of seconds to sleep",
+            "desc": "Number of seconds to sleep",
+            "type": "file-url",
+            "value": null
+          }, {
+            "key": "in_2",
+            "label": "Number of seconds to sleep",
+            "desc": "Number of seconds to sleep",
+            "type": "integer",
+            "value": 2
+          }],
+          "outputs": [{
+            "key": "out_1",
+            "label": "Number of seconds to sleep",
+            "desc": "Number of seconds to sleep",
+            "type": "file-url",
+            "value": null
+          }, {
+            "key": "out_2",
+            "label": "Number of seconds to sleep",
+            "desc": "Number of seconds to sleep",
+            "type": "integer",
+            "value": null
+          }],
+          "settings": []
+        }, {
+
           "uuid": nodeIds[1],
           "key": "simcore/services/comp/itis/sleeper",
           "name": "Sleeper 2",
@@ -347,8 +374,33 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "x": 50,
             "y": 300
           },
-          "inputs": {
-          },
+          "inputs": [{
+            "key": "in_1",
+            "label": "Number of seconds to sleep",
+            "desc": "Number of seconds to sleep",
+            "type": "file-url",
+            "value": null
+          }, {
+            "key": "in_2",
+            "label": "Number of seconds to sleep",
+            "desc": "Number of seconds to sleep",
+            "type": "integer",
+            "value": 2
+          }],
+          "outputs": [{
+            "key": "out_1",
+            "label": "Number of seconds to sleep",
+            "desc": "Number of seconds to sleep",
+            "type": "file-url",
+            "value": null
+          }, {
+            "key": "out_2",
+            "label": "Number of seconds to sleep",
+            "desc": "Number of seconds to sleep",
+            "type": "integer",
+            "value": null
+          }],
+
           "settings": []
         }, {
           "uuid": nodeIds[2],
@@ -366,7 +418,21 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "x": 300,
             "y": 100
           },
-          "inputs": {},
+
+          "inputs": [{
+            "key": "in_1",
+            "label": "Number of seconds to sleep",
+            "desc": "Number of seconds to sleep",
+            "type": "file-url",
+            "value": null
+          }, {
+            "key": "in_2",
+            "label": "Number of seconds to sleep",
+            "desc": "Number of seconds to sleep",
+            "type": "integer",
+            "value": 2
+          }],
+
           "outputs": [{
             "key": "out_1",
             "label": "Number of seconds to sleep",
@@ -380,6 +446,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "type": "integer",
             "value": null
           }],
+
         }, {
           "uuid": nodeIds[3],
           "key": "simcore/services/comp/itis/sleeper",
