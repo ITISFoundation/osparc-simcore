@@ -15,7 +15,7 @@ def test_default_json_decoding(default_nodeports_configuration):
     assert PORTS.inputs[1].key == "in_5"
     assert PORTS.inputs[1].label == "some number"
     assert PORTS.inputs[1].desc == "numbering things"
-    assert PORTS.inputs[1].type == "int"
+    assert PORTS.inputs[1].type == "integer"
     assert PORTS.inputs[1].value == "666"
     assert PORTS.inputs[1].timestamp == "2018-05-23T15:34:53.511Z"
 
@@ -35,7 +35,7 @@ def test_default_json_encoding(default_nodeports_configuration):
 
     json_data = json.dumps(PORTS, cls=_NodeportsEncoder)
     default_config_path = os.path.join(os.path.dirname(
-        os.path.realpath(__file__)), r"../../src/simcore_sdk/config/connection_config.json")
+        os.path.realpath(__file__)), r"connection_config.json")
     with open(default_config_path) as file_ptr:
         original_json_data = file_ptr.read()
     assert json.loads(json_data) == json.loads(original_json_data)
