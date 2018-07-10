@@ -1,0 +1,39 @@
+{
+  "name"    : "qxapp",
+
+  "include" :
+  [
+    {
+      "path" : "${QOOXDOO_PATH}/tool/data/config/application.json"
+    }
+  ],
+
+  "export" :
+  [
+    "api",
+    "build",
+    "clean",
+    "distclean",
+    "fix",
+    "info",
+    "lint",
+    "migration",
+    "pretty",
+    "profiling",
+    "source",
+    "source-all",
+    "test",
+    "test-source",
+    "translation"
+  ],
+
+  "let" :
+  {
+    "APPLICATION"  : "qxapp",
+    "QOOXDOO_PATH" : "../qooxdoo-sdk/",
+    "QXTHEME"      : "qx.theme.Modern",
+    "API_EXCLUDE"  : ["qx.*", "${APPLICATION}.theme.*", "${APPLICATION}.test.*"],
+    "LOCALES"      : [ "en" ],
+    "ROOT"         : "."
+  }
+}

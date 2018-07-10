@@ -1,52 +1,109 @@
-/* ************************************************************************
-
-   Copyright: 2018 undefined
-
-   License: MIT license
-
-   Authors: undefined
-
-************************************************************************ */
 
 /**
- * This class demonstrates how to define unit tests for your application.
+ * To setup test
  *
- * Execute <code>qx test</code> to generate a testrunner application
- * and open it from <tt>test/index.html</tt>
  *
- * The methods that contain the tests are instance methods with a
- * <code>test</code> prefix. You can create an arbitrary number of test
- * classes like this one. They can be organized in a regular class hierarchy,
- * i.e. using deeper namespaces and a corresponding file structure within the
- * <tt>test</tt> folder.
+ *
  */
-qx.Class.define("qxapp.test.DemoTest", {
-  extend: qx.dev.unit.TestCase,
-
-  members:
+qx.Class.define("qxapp.test.DemoTest",
   {
-    /*
-    ---------------------------------------------------------------------------
-      TESTS
-    ---------------------------------------------------------------------------
-    */
+    extend: qx.dev.unit.TestCase,
+    include: [qx.dev.unit.MRequirements, qx.dev.unit.MMock],
 
-    /**
-     * Here are some simple tests
-     */
-    testSimple: function() {
-      this.assertEquals(4, 3+1, "This should never fail!");
-      this.assertFalse(false, "Can false be true?!");
-    },
+    members:
+    {
+      setUp: function() {
+        console.debug("Setting up .. ");
+        this.debug("Setting up ...");
+      },
 
-    /**
-     * Here are some more advanced tests
-     */
-    testAdvanced: function() {
-      let a = 3;
-      let b = a;
-      this.assertIdentical(a, b, "A rose by any other name is still a rose");
-      this.assertInRange(3, 1, 10, "You must be kidding, 3 can never be outside [1,10]!");
+      tearDown: function() {
+        console.debug("Tear down .. ");
+        this.debug("Tear down ...");
+        this.getSandbox().restore();
+      },
+
+      /*
+      ---------------------- -----------------------------------------------------
+        TESTS  qx.dev.unit.TestCase assert functions
+      ---------------------------------------------------------------------------
+      */
+
+      testAdvanced: function() {
+        var a = 3;
+        var b = a;
+        this.assertIdentical(a, b, "A rose by any other name is still a rose");
+        this.assertInRange(3, 1, 10, "You must be kidding, 3 can never be outside [1,10]!");
+      },
+
+      testFail: function() {
+        var ab = 3;
+        this.assertEquals(3, ab);
+      },
+
+      /*
+      ---------------------- -----------------------------------------------------
+        TESTS  with fakes. See qx.dev.unit.MMock
+      ---------------------------------------------------------------------------
+      */
+
+      "test: spy this function": function() {
+        var obj = {
+          mymethod: function() { }
+        };
+        this.spy(obj, "mymethod");
+
+        // run function to be tested
+        // foo(spy);
+        // spy();
+        obj.mymethod();
+
+        this.assertCalled(obj.mymethod);
+      },
+
+
+      /*
+      ---------------------- -----------------------------------------------------
+        TESTS  with requirements. See qqx.dev.unit.MRequirements
+      ---------------------------------------------------------------------------
+      */
+
+      testWithRequirements: function() {
+        this.require(["qx.debug"]);
+        // test code goes here
+        this.debug("This is running in debug");
+        qx.log.Logger.debug("This is running");
+      },
+
+      testWithUI: function() {
+        console.debug("Requirement helpers:", this.hasChrome(), this.hasGuiApp());
+
+        this.require(["chrome", "guiApp"]);
+        this.debug("this is running");
+      },
+
+      /*
+      ---------------------- -----------------------------------------------------
+        TESTS async
+      ---------------------------------------------------------------------------
+      */
+      testAjaxRequest: function() {
+        var req = new qx.io.request.Xhr("api/auth", "GET");
+        req.addListener("success", function(e) {
+          //
+          this.resume(function() {
+            var status = req.getStatus();
+            this.assertEquals(200, status);
+
+            var body = (req.getBody()=="true");
+            this.assertEquals(body, true);
+          }, this);
+        }, this);
+        req.send();
+
+        //
+        this.wait(10000);
+      }
+
     }
-  }
-});
+  });
