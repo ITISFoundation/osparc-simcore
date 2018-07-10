@@ -1,3 +1,4 @@
+# NOTE: Windows users. See limitations in README.md
 version: '3.4'
 services:
   qx:

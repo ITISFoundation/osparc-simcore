@@ -5,11 +5,8 @@
 To ease development of the client, we have encapsulated the [qx]-compiler and all setup needed to run the client in a container. This way, we can develop the
 client without connecting to the final server but instead emulating it.
 
-When working in a Windows environment, in order to enable the watcher inside the container, so that qx recompiles the source code everytime there is a change, a workaround is needed. The (docker-windows-volume-watcher)[https://github.com/merofeev/docker-windows-volume-watcher] tool will notify Docker containers about changes in mounts on Windows:
-```bash
-pip install docker-windows-volume-watcher
-docker-volume-watcher
-```
+Due to **limitations of docker on a Windows** host, a workaround is needed to enabling watching [qx] source code. The [docker-windows-volume-watcher](https://github.com/merofeev/docker-windows-volume-watcher) tool will notify Docker containers about changes in mounts on Windows. For convenience we provide a script in ``osparc-simcore/scripts/win-watcher.bat``.
+
 
 The docker-compose files in this directory help running ``qxapp`` stand-alone using a dev server in [qx].
 ```bash
@@ -59,7 +56,7 @@ client's development container ``qx serve --set qx.allowUrlSettings=true`` and t
   - http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true
   - http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true&qxenv:dev.disableLogin:true
 
-## docker
+## Build/Run Services
 
 This project uses a multi-stage ``Dockerfile`` that targets images for *development*
 and *production*, respectively. In this context, a *development* container mounts
@@ -70,26 +67,24 @@ and *production*, respectively. In this context, a *development* container mount
 
 In order to build/run each target image, we override ``docker-compose`` configuration files: ``docker-compose.yml`` and ``docker-compose.production.yml``
 
-
-# open a new console, and type this to stop
+open a new console, and type this to stop
+``` bash
 cd path/to/web/client
 docker-compose down
 ```
-### Issues with the Windows host
+### Limitiations running in a Windows host
 
-Development version of image doesn't work on a windows host. Modified files in the mounted volume don't trigger container operating  system notifications, so watchers don't react to changes. This is a known limitation of docker on windows.
-
-- TODO: implement helper script for this?
-
-#### Workaround:
-
- http://blog.subjectify.us/miscellaneous/2017/04/24/docker-for-windows-watch-bindings.html
-
-Open terminal in windows host and type:
+**Development version of image doesn't work on a windows host**. Modified files in the mounted volume don't trigger container operating  system notifications, so watchers don't react to changes. This is a known limitation of docker on windows. A [workaround](http://blog.subjectify.us/miscellaneous/2017/04/24/docker-for-windows-watch-bindings.html) is possible. Open terminal in windows host and type:
 
 ```bash
 pip install docker-windows-volume-watcher
 docker-volume-watcher
 ```
+
+**NOTE** Use scripts in ``osparc-simcore/scripts/win-watcher.bat``
+
+
+
+
 
 [qx]:http://www.qooxdoo.org/
