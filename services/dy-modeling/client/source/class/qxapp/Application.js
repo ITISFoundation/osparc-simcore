@@ -97,20 +97,25 @@ qx.Class.define("qxapp.Application", {
           .getBackground(), this._appModel.getColors().getToolBar()
           .getFont());
 
-      this.__threeView = new qxapp.components.ThreeView(
+      this.__threeView = new qxapp.components.widgets.ThreeDView(
         docWidth, docHeight,
         this._appModel.getColors().get3DView()
           .getBackground());
 
-      this.__entityList = new qxapp.components.EntityList(
-        250, 300,
-        this._appModel.getColors().getSettingsView()
-          .getBackground(), this._appModel.getColors().getSettingsView()
-          .getFont());
+      this.__entityList = new qxapp.components.widgets.EntityList();
+      this.__entityList.setBackgroudColor(this._appModel.getColors().getSettingsView()
+        .getBackground());
+      this.__entityList.setTextColor(this._appModel.getColors().getSettingsView()
+        .getFont());
 
 
       // components to document
-      doc.add(this.__threeView);
+      doc.add(this.__threeView, {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0
+      });
 
       let toolBarcontainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(1)).set({
         backgroundColor: "white",
@@ -125,8 +130,24 @@ qx.Class.define("qxapp.Application", {
         right: 30
       });
 
-      this.__entityList.moveTo(10, menuBarHeight + avaiBarHeight + 10);
-      this.__entityList.open();
+      let enlityListWindow = new qx.ui.window.Window();
+      enlityListWindow.set({
+        contentPadding: 0,
+        width: 250,
+        height: 300,
+        allowClose: false,
+        allowMinimize: false,
+        caption: "Entity List",
+        layout: new qx.ui.layout.Canvas()
+      });
+      enlityListWindow.add(this.__entityList, {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0
+      });
+      enlityListWindow.moveTo(10, menuBarHeight + avaiBarHeight + 10);
+      enlityListWindow.open();
 
       this._initSignals();
     },

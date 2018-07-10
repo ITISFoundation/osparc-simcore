@@ -288,6 +288,32 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return buttonsListMenu;
     },
 
+    __createWindowForBuiltInService: function(widget, width, height, caption) {
+      let serviceWindow = new qx.ui.window.Window();
+      serviceWindow.set({
+        showMinimize: false,
+        showStatusbar: false,
+        width: width,
+        height: height,
+        minWidth: 400,
+        minHeight: 400,
+        modal: true,
+        caption: caption,
+        layout: new qx.ui.layout.Canvas()
+      });
+
+      serviceWindow.add(widget, {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0
+      });
+
+      serviceWindow.moveTo(100, 100);
+
+      return serviceWindow;
+    },
+
     __addNodeToWorkbench: function(node, position) {
       if (position === undefined || position === null) {
         let farthestRight = 0;
@@ -317,22 +343,36 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       node.addListener("dblclick", function(e) {
         if (node.getMetadata().key === "FileManager") {
-          let fileManager = new qxapp.components.workbench.widgets.FileManager();
+          let fileManager = new qxapp.components.widgets.FileManager();
+          let fileManagerWindow = this.__createWindowForBuiltInService(fileManager, "File Manager");
+
           fileManager.addListener("FileSelected", function(data) {
             node.getMetadata().outputs[0].value = data.getData().filePath;
             node.getMetadata().outputs[1].value = null;
             node.setProgress(100);
-            fileManager.close();
+            fileManagerWindow.close();
           }, this);
           fileManager.addListener("FolderSelected", function(data) {
             node.getMetadata().outputs[0].value = null;
             node.getMetadata().outputs[1].value = data.getData().filePath;
             node.setProgress(100);
-            fileManager.close();
+            fileManagerWindow.close();
           }, this);
 
-          fileManager.moveTo(100, 100);
-          fileManager.open();
+          fileManagerWindow.moveTo(100, 100);
+          fileManagerWindow.open();
+        } else if (node.getMetadata().key === "ThreeDViewer") {
+          const width = 1000;
+          const height = 800;
+          let threeDView = new qxapp.components.widgets.Generic3DApp(width, height, "threejs");
+          let threeDWindow = this.__createWindowForBuiltInService(threeDView, width, height, "3D Viewer (three.js)");
+          threeDWindow.open();
+        } else if (node.getMetadata().key === "vtkViewer") {
+          const width = 1000;
+          const height = 800;
+          let threeDView = new qxapp.components.widgets.Generic3DApp(width, height, "vtkjs");
+          let threeDWindow = this.__createWindowForBuiltInService(threeDView, width, height, "3D Viewer (vtk.js)");
+          threeDWindow.open();
         } else {
           this.fireDataEvent("NodeDoubleClicked", node);
         }

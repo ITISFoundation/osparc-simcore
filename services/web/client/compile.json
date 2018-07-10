@@ -46,6 +46,9 @@
         "uri" : "resource/three/*.js"
       },
       {
+        "uri" : "resource/vtk/*.js"
+      },
+      {
         "uri" : "resource/workbench/svg*.js"
       }
     ]

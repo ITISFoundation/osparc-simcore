@@ -1,38 +1,25 @@
 /* eslint no-warning-comments: "off" */
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true, "allow": ["__widgetChildren"] }] */
 
-qx.Class.define("qxapp.components.EntityList", {
-  extend: qx.ui.window.Window,
+qx.Class.define("qxapp.components.widgets.EntityList", {
+  extend: qx.ui.core.Widget,
 
   include: [qx.locale.MTranslation],
 
-  construct: function(width, height, backgroundColor, fontColor) {
-    this.base(arguments, this.tr("Entity List"));
+  construct: function() {
+    this.base(arguments);
 
-    this.set({
-      contentPadding: 0,
-      width: width,
-      height: height,
-      allowClose: false,
-      allowMinimize: false,
-      layout: new qx.ui.layout.VBox(),
-      backgroundColor: backgroundColor,
-      textColor: fontColor
-    });
+    let entityListLayout = new qx.ui.layout.VBox();
+    this._setLayout(entityListLayout);
 
     let scroller = new qx.ui.container.Scroll();
-    this.add(scroller);
-    this.setHeight(height-30);
+    this._add(scroller, {
+      flex: 1
+    });
 
     // create and add the tree
     this.__tree = new qx.ui.tree.Tree();
-    this.__tree.set({
-      backgroundColor: backgroundColor,
-      textColor: fontColor
-    });
     this.__tree.setSelectionMode("multi");
-    this.__tree.setWidth(width);
-    this.__tree.setHeight(height);
 
     let root = new qx.ui.tree.TreeFolder("Model");
     root.setOpen(true);
@@ -41,15 +28,10 @@ qx.Class.define("qxapp.components.EntityList", {
     this.__tree.addListener("changeSelection", this.__onSelectionChanged.bind(this));
 
     let removeBtn = new qx.ui.form.Button(this.tr("Remove entity"));
-    removeBtn.set({
-      width: 100,
-      height: 30,
-      textColor: "black"
-    });
     removeBtn.addListener("execute", this.__removeEntityPressed.bind(this));
 
     scroller.add(this.__tree);
-    this.add(removeBtn);
+    this._add(removeBtn);
   },
 
   events: {
@@ -60,6 +42,14 @@ qx.Class.define("qxapp.components.EntityList", {
 
   members: {
     __tree: null,
+
+    setBackgroudColor: function(color) {
+      this.__tree.setBackgroundColor(color);
+    },
+
+    setTextColor: function(color) {
+      this.__tree.setTextColor(color);
+    },
 
     __onSelectionChanged: function(e) {
       let selectedIds = [];

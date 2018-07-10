@@ -1,24 +1,12 @@
 /* global XMLHttpRequest */
-qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
-  extend: qx.ui.window.Window,
+qx.Class.define("qxapp.components.widgets.FileManager", {
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    this.base();
-
-    this.set({
-      showMinimize: false,
-      showStatusbar: false,
-      width: 800,
-      height: 600,
-      minWidth: 400,
-      minHeight: 400,
-      modal: true,
-      caption: "File Manager"
-    });
+    this.base(arguments);
 
     let fileManagerLayout = new qx.ui.layout.VBox(10);
-    this.setLayout(fileManagerLayout);
-
+    this._setLayout(fileManagerLayout);
 
     // Create a button
     let input = new qx.html.Input("file", {
@@ -31,7 +19,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
     this.getContentElement().add(input);
 
     let pick = new qx.ui.form.Button(this.tr("Add file(s)"));
-    this.add(pick);
+    this._add(pick);
 
     // Add an event listener
     pick.addListener("execute", function(e) {
@@ -46,14 +34,14 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
     }, this);
 
     let tree = this.__mainTree = new qx.ui.tree.Tree();
-    this.add(tree, {
+    this._add(tree, {
       flex: 1
     });
     tree.addListener("changeSelection", this.__selectionChanged, this);
 
     this.__selectBtn = new qx.ui.form.Button(this.tr("Select"));
     this.__selectBtn.setEnabled(false);
-    this.add(this.__selectBtn);
+    this._add(this.__selectBtn);
     this.__selectBtn.addListener("execute", function() {
       this.__itemSelected();
     }, this);
@@ -196,7 +184,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
         this.__uploadFile(file, url);
       }, this);
       const data = {
-        bucketName: qxapp.qxapp.dev.fake.Data.getS3PublicBucketName(),
+        bucketName: qxapp.dev.fake.Data.getS3PublicBucketName(),
         fileName: file.name
       };
       socket.emit("presignedUrl", data);
