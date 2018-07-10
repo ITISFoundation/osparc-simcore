@@ -93,15 +93,97 @@
                             "description": "values of input properties",
                             "patternProperties": {
                                 "^[_a-z0-9]+$": {
-                                    "type": "string",
-                                    "pattern": "^(bool:(true|false)|int:-?\\d+,num:^([-+]?\\d*\\.?\\d+)([eE][-+]?\\d+)?|str:.+|link://[^/\\s]+/\\S+|s3://[^/\\s]+/[^/\\s]+/.+$",
-                                    "examples": [
-                                        "int:3",
-                                        "bool:true"
-                                        "str:Hello World",
-                                        "s3://system/bucket/file",
-                                        "link://UUID1/out_2"
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [ "integer" ]
+                                          },
+                                          "value": {
+                                            "type": "integer"
+                                         }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [ "number" ]
+                                          },
+                                          "value": {
+                                            "type": "number"
+                                         }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [ "boolean" ]
+                                          },
+                                          "value": {
+                                            "type": "boolean"
+                                         }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [ "string" ]
+                                          },
+                                          "value": {
+                                            "type": "string"
+                                         }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [ "link" ]
+                                          },
+                                          "value": {
+                                            "type": "object",
+                                            "properties": {
+                                              "nodeUuid": {
+                                                "type": "string"
+                                              },
+                                              "property": {
+                                                "type": "string"
+                                              }
+                                            }
+                                         }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [ "data" ]
+                                          },
+                                          "value": {
+                                            "type": "object",
+                                            "properties": {
+                                              "store": {
+                                                "type": "string"
+                                              },
+                                              "path": {
+                                                "type": "string"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
                                     ]
+                                  }
                                 }
                             }
                         },
@@ -109,13 +191,76 @@
                             "type": "object",
                             "patternProperties": {
                                 "^[_a-z0-9]+$": {
-                                    "type": "string",
-                                    "pattern": "^(bool:(true|false)|int:-?\\d+,num:^([-+]?\\d*\\.?\\d+)([eE][-+]?\\d+)?|str:.+|link://[^/\\s]+/\\S+|s3://[^/\\s]+/[^/\\s]+/.+$",
-                                    "examples": [
-                                        "bool:false",
-                                        "s3://system/bucket/file",
-                                        "link://UUID1/out_2"
-                                    ]
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [ "integer" ]
+                                        },
+                                        "value": {
+                                          "type": "integer"
+                                       }
+                                      }
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [ "number" ]
+                                        },
+                                        "value": {
+                                          "type": "number"
+                                       }
+                                      }
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [ "boolean" ]
+                                        },
+                                        "value": {
+                                          "type": "boolean"
+                                       }
+                                      }
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [ "string" ]
+                                        },
+                                        "value": {
+                                          "type": "string"
+                                       }
+                                      }
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [ "data" ]
+                                        },
+                                        "value": {
+                                          "type": "object",
+                                          "properties": {
+                                            "store": {
+                                              "type": "string"
+                                            },
+                                            "path": {
+                                              "type": "string"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
                                 }
                             }
                         },
