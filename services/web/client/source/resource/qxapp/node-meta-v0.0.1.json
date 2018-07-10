@@ -109,12 +109,11 @@
                     ],
                     "properties": {
                         "displayOrder": {
-                            "type": "string",
-                            "description": "use this to alphabetically sort the properties for display",
-                            "pattern": "^\\d{3}(\\.\\d{3})*",
+                            "type": "number",
+                            "description": "use this to numerically sort the properties for display",
                             "examples": [
-                                "001.001",
-                                "001.002.001"
+                                1,
+                                -0.2
                             ]
                         },
                         "label": {
@@ -259,13 +258,12 @@
                     ],
                     "properties": {
                         "displayOrder": {
-                            "type": "string",
-                            "description": "use this to alphabetically sort the properties for display",
-                            "pattern": "^\\d{3}(\\.\\d{3})*",
-                            "examples": [
-                                "001.001",
-                                "001.002.001"
-                            ]
+                          "type": "number",
+                          "description": "use this to numerically sort the properties for display",
+                          "examples": [
+                              1,
+                              -0.2
+                          ]
                         },
                         "label": {
                             "type": "string",

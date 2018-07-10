@@ -36,34 +36,34 @@ qx.Class.define("qxapp.dev.fake.Data", {
           ],
           contact: "oetiker@itis.ethz.ch",
           inputs: {
-            in_number: {
-              displayOrder: "001",
+            inNumber: {
+              displayOrder: 0,
               label: "Number Test",
               description: "Test Input for Number",
               type: "number",
               defaultValue: 5.3
             },
-            in_int: {
-              displayOrder: "002",
+            inInt: {
+              displayOrder: 1,
               label: "Integer Test",
               description: "Test Input for Integer",
               type: "number",
               defaultValue: 2
             },
-            in_bool: {
-              displayOrder: "003",
+            inBool: {
+              displayOrder: 2,
               label: "Boolean Test",
               description: "Test Input for Boolean",
               defaultValue: true
             },
-            in_str: {
-              displayOrder: "004",
+            inStr: {
+              displayOrder: 3,
               label: "String Test",
               description: "Test Input for String",
               defaultValue: "Gugus"
             },
-            in_area: {
-              displayOrder: "005",
+            inArea: {
+              displayOrder: 4,
               label: "Widget TextArea Test",
               description: "Test Input for String",
               defaultValue: "Gugus\nDu\nDa",
@@ -72,8 +72,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 minHeight: 50
               }
             },
-            in_sb: {
-              displayOrder: "006",
+            inSb: {
+              displayOrder: 5,
               label: "Widget SelectBox Test",
               description: "Test Input for SelectBox",
               defaultValue: "dog",
@@ -91,42 +91,42 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 ]
               }
             },
-            in_file: {
-              displayOrder: "007",
+            inFile: {
+              displayOrder: 6,
               label: "FileInput Test",
               description: "Test Input File",
               type: "data:*/*"
             },
-            in_image: {
-              displayOrder: "007",
+            inImage: {
+              displayOrder: 7,
               label: "FileInput Test",
               description: "Test Input File",
               type: "data:[image/jpeg,image/png]"
             }
           },
           outputs: {
-            out_number: {
+            outNumber: {
               label: "Number Test",
               description: "Test Output for Number",
-              displayOrder: "001",
+              displayOrder: 0,
               type: "number"
             },
-            out_integer: {
+            outInteger: {
               label: "Integer Test",
               description: "Test Output for Integer",
-              displayOrder: "002",
+              displayOrder: 1,
               type: "integer"
             },
-            out_bool: {
+            outBool: {
               label: "Boolean Test",
               description: "Test Output for Boolean",
-              displayOrder: "003",
+              displayOrder: 2,
               type: "boolean"
             },
-            out_png: {
+            outPng: {
               label: "Png Test",
               description: "Test Output for PNG Image",
-              displayOrder: "004",
+              displayOrder: 3,
               type: "data:image/png"
             }
           }
@@ -153,7 +153,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               type: "service/dynamic/itis/file-picker",
               version: "0.0.0",
               output: {
-                out_1: {
+                out1: {
                   store: "s3-z43",
                   path: "/bucket1/file1"
                 }
@@ -167,9 +167,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
               type: "service/computational/itis/sleeper",
               version: "0.0.1-alpha",
               input: {
-                in_number: 3.5
-                in_integer: 4
-                in_image: {
+                inNumber: 3.5,
+                inInteger: 4,
+                inImage: {
                   nodeUuid: "UUID1",
                   property: "out_1"
                 }
@@ -183,17 +183,17 @@ qx.Class.define("qxapp.dev.fake.Data", {
               type: "service/computational/itis/sleeper",
               version: "0.0.1-alpha",
               input: {
-                in_number: {
+                inNumber: {
                   nodeUuid: "UUID2",
                   property: "out_number"
                 },
-                in_string: "Hello,blablabla",
-                in_bool: true,
-                in_image: {
+                inString: "Hello,blablabla",
+                inBool: true,
+                inImage: {
                   nodeUuid: "UUID2",
                   property: "out_png"
-                }
-                in_file: {
+                },
+                inFile: {
                   store: "s3-z43",
                   path: "/bucket2/file12"
                 }
@@ -207,22 +207,22 @@ qx.Class.define("qxapp.dev.fake.Data", {
               type: "service/computational/itis/tutti",
               version: "0.0.0-alpha",
               input: {
-                in_number: 3.3,
-                in_int: 372,
-                in_bool: true,
-                in_str: "Ooops, Again",
-                in_area: "some\nmore",
-                in_sb: "cat",
-                in_file: {
+                inNumber: 3.3,
+                inInt: 372,
+                inBool: true,
+                inStr: "Ooops, Again",
+                inArea: "some\nmore",
+                inSb: "cat",
+                inFile: {
                   store: "s3-z43",
                   path: "bucket33/file.data"
                 },
-                in_image: {
+                inImage: {
                   store: "s3-z43",
                   path: "bucket32/file.png"
                 }
               }
-           }
+            }
           }
         }
       ];
