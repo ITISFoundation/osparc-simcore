@@ -3,7 +3,9 @@
  */
 qx.Class.define("qxapp.auth.ResetPassPage", {
   extend: qxapp.auth.BaseAuthPage,
-
+  events: {
+    "done": "qx.event.type.Data"
+  },
   members: {
 
     // overrides base
@@ -37,32 +39,35 @@ qx.Class.define("qxapp.auth.ResetPassPage", {
       submitBtn.addListener("execute", function(e) {
         const valid = manager.validate();
         if (valid) {
-          this.submit(email.getValue());
+          this.__submit(email);
         }
       }, this);
 
       cancelBtn.addListener("execute", function(e) {
-        this.cancel();
+        this.fireDataEvent("done", null);
       }, this);
 
       this.add(grp);
     },
 
-    cancel: function() {
-      let login = new qxapp.auth.LoginPage();
-      login.show();
-      this.destroy();
-    },
-
-    submit: function(email) {
+    __submit: function(email) {
       console.debug("sends email to reset password to ", email);
-      // TODO: flash ...  "email sent..."
-      // TODO: query server to send reset email. to user?
-      // TODO: if user not in registry, flash "unknown email"?
-      // back to login
-      let login = new qxapp.auth.LoginPage();
-      login.show();
-      this.destroy();
+
+      let manager = qxapp.auth.Manager.getInstance();
+      manager.resetPassword(email.getValue(), function(success, msg) {
+        if (success) {
+          // TODO: flash msg to parent??
+          this.fireDataEvent("done", msg);
+        } else {
+          if (msg===null) {
+            msg = this.tr("Failed to reset password");
+          }
+          email.set({
+            invalidMessage: msg,
+            valid: false
+          });
+        }
+      }, this);
     }
 
   }

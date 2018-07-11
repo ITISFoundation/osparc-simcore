@@ -5,7 +5,9 @@
 */
 qx.Class.define("qxapp.auth.RegistrationPage", {
   extend: qxapp.auth.BaseAuthPage,
-
+  events:{
+    "done": "qx.event.type.Data"
+  },
   members: {
 
     // overrides base
@@ -82,7 +84,7 @@ qx.Class.define("qxapp.auth.RegistrationPage", {
       submitBtn.addListener("execute", function(e) {
         const valid = manager.validate();
         if (valid) {
-          this.register({
+          this.__submit({
             email: email.getValue(),
             username: uname.getValue(),
             pass: pass1.getValue()
@@ -91,30 +93,22 @@ qx.Class.define("qxapp.auth.RegistrationPage", {
       }, this);
 
       cancelBtn.addListener("execute", function(e) {
-        this.cancel();
+        this.fireDataEvent("done", null);
       }, this);
 
       this.add(grp);
     },
 
-    register: function(data) {
+    __submit: function(userData) {
       console.debug("Registering new user");
 
-      // TODO: request server for new user
-      // TODO: if fails, flash reason (e.g. username already exists)
-      // TODO: if succeeds, switch to login page and flash server message: e.g. "confirmation email has been sent"
-
-      let login = new qxapp.auth.LoginPage();
-      login.show();
-      this.destroy();
-    },
-
-    cancel: function() {
-      this.debug("Canceling registration");
-      // back to login
-      let login = new qxapp.auth.LoginPage();
-      login.show();
-      this.destroy();
+      let manager = qxapp.auth.Manager.getInstance();
+      manager.register(userData, function(success, msg) {
+        if (success) {
+          this.fireDataEvent("done", msg);
+        }
+        // TODO: if fails, flash reason (e.g. username already exists)
+      }, this);
     }
   }
 });

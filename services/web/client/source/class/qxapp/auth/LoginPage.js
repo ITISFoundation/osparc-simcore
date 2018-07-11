@@ -10,7 +10,7 @@
 qx.Class.define("qxapp.auth.LoginPage", {
   extend: qxapp.auth.BaseAuthPage,
   events: {
-    "login": "qx.event.type.Data",
+    "done": "qx.event.type.Data",
     "toRegister": "qx.event.type.Event",
     "toReset": "qx.event.type.Event"
   },
@@ -94,21 +94,23 @@ qx.Class.define("qxapp.auth.LoginPage", {
 
       let manager = qxapp.auth.Manager.getInstance();
 
-      manager.addListener("login", function(success) {
+      manager.login(email.getValue(), pass.getValue(), function(success, msg) {
         // TODO: implement in flash message.
         // TODO: should get more specific error message produced by server. eg. invalid or unregistered user, ...
-        if (!success) {
+        if (success) {
+          this.fireDataEvent("done", msg);
+        } else {
+          if (msg===null) {
+            msg = this.tr("Invalid email or password");
+          }
           [email, pass].forEach(item => {
             item.set({
-              invalidMessage: this.tr("Invalid email or password"),
+              invalidMessage: msg,
               valid: false
             });
           });
         }
-        this.fireDataEvent("login", success);
       }, this);
-
-      manager.login(email, pass);
     }
   }
 });

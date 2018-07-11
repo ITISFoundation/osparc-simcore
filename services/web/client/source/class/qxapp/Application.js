@@ -54,7 +54,7 @@ qx.Class.define("qxapp.Application", {
      * This is controlled entry-point to start the application
     */
     start: function() {
-      let isLogged = qxapp.auth.Store.isLoggedIn();
+      let isLogged = qxapp.auth.Manager.getInstance().isLoggedIn();
 
       if (qx.core.Environment.get("dev.disableLogin")) {
         console.warn("Login page was disabled", "Starting main application ...");
@@ -62,12 +62,32 @@ qx.Class.define("qxapp.Application", {
       }
 
       if (isLogged) {
-        this.__startDesktop();
+        this.__startDesktopView();
       } else {
-        this.__layoutManager = null;
-        let page = new qxapp.auth.LoginPage();
-        // event : successfully logged it ... then application decides
-        page.show();
+        let login = new qxapp.auth.LoginPage();
+
+        login.addListener("done", function(msg) {
+          // if msg, flash it
+          this.start();
+        }, this);
+
+        login.addListener("toReset", function(e) {
+          let page = new qxapp.auth.ResetPassPage();
+          page.addListener("done", function(msg) {
+            this.start();
+          }, this);
+          this.__startAuthView(page);
+        }, this);
+
+        login.addListener("toRegister", function(e) {
+          let page = new qxapp.auth.RegistrationPage();
+          page.addListener("done", function(msg) {
+            this.start();
+          }, this);
+          this.__startAuthView(page);
+        }, this);
+
+        this.__startAuthView(login);
       }
     },
 
@@ -75,16 +95,16 @@ qx.Class.define("qxapp.Application", {
      * Resets session and restarts
     */
     logout: function() {
-      qxapp.auth.Store.resetToken();
-      this.getRoot().removeAll();
+      qxapp.auth.Manager.getInstance().logout();
       this.start();
     },
 
     /**
      * Desktop correspond to the main application's pages
     */
-    __startDesktop: function() {
+    __startDesktopView: function() {
       this.__layoutManager = new qxapp.desktop.LayoutManager();
+      this.__current = this.__layoutManager;
 
       this.getRoot().add(this.__layoutManager, {
         left: "0%",
@@ -92,7 +112,38 @@ qx.Class.define("qxapp.Application", {
         height: "100%",
         width: "100%"
       });
+    },
+
+    __startAuthView: function(page) {
+      // creates a page container
+      let layout = new qx.ui.layout.Grid();
+      layout.setRowFlex(0, 1);
+      layout.setColumnFlex(0, 1);
+
+      let container = new qx.ui.container.Composite(layout);
+      container.add(page, {
+        row:0,
+        column:0
+      });
+
+      // removes current page
+      let doc = this.getRoot();
+      if (doc.hasChildren() && this.__current) {
+        doc.remove(this.__current);
+        this.__current.destroy();
+      }
+
+      // adds new page
+      doc.add(container, {
+        top: "10%",
+        bottom: 0,
+        left: 0,
+        right: 0
+      });
+      this.__current = container;
     }
+
+
 
   }
 });

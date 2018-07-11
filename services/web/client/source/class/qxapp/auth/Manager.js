@@ -7,9 +7,6 @@
 qx.Class.define("qxapp.auth.Manager", {
   extend: qx.core.Object,
   type: "singleton",
-  events:{
-    "login": "qx.event.type.Data"
-  },
   members:
   {
     __auth: null,
@@ -31,16 +28,15 @@ qx.Class.define("qxapp.auth.Manager", {
       return this.__auth !== null && this.__auth instanceof qx.io.request.authentication.Basic;
     },
 
-    login: function(email, pass) {
+    login: function(email, pass, callback, context) {
       //---------------------------------------------------------------------------
       // TODO: temporarily will allow any user until issue #162 is resolved and/or python server has active API
       if (!qx.core.Environment.get("dev.enableFakeSrv")) {
         this.setToken("fake-token");
-        this.fireDataEvent("login", true);
+        callback.call(context, true);
         return;
       }
       //---------------------------------------------------------------------------
-
 
       let request = new qx.io.request.Xhr();
       const prefix = qxapp.io.rest.AbstractResource.API;
@@ -57,12 +53,12 @@ qx.Class.define("qxapp.auth.Manager", {
         this.assert(req == request);
 
         this.setToken(req.getResponse().token);
-        this.fireDataEvent("login", true);
+        callback.call(context, true, null);
       }, this);
 
       request.addListener("fail", function(e) {
-        // TODO: why if failed? Add server resposne message
-        this.fireDataEvent("login", false);
+        // TODO: why if failed? Add server response message
+        callback.call(context, false, "Authentication failed");
       }, this);
 
       request.send();
@@ -70,7 +66,24 @@ qx.Class.define("qxapp.auth.Manager", {
 
     logout: function() {
       this.resetToken();
-    }
+    },
 
+    resetPassword: function(email, callback, context) {
+      console.debug("Resetting password ...");
+
+      // TODO: request server
+      let success = true;
+      let msg = "An email has been sent to you.";
+      callback.call(context, success, msg);
+    },
+
+    register: function(userData, callback, context) {
+      console.debug("Registering user ...");
+
+      // TODO: request server
+      let success = true;
+      let msg = "User has been registered. A confirmation email has been sent to you.";
+      callback.call(context, success, msg);
+    }
   }
 });

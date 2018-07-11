@@ -38,11 +38,14 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
     this.setLayout(new qx.ui.layout.VBox(spacing));
     this.set({
       width: 300,
-      height: 250
+      height: 250,
+      allowGrowX: false,
+      allowGrowY: false,
+      alignX: "center"
     });
 
     this._buildPage();
-    qxapp.auth.BaseAuthPage.addPageToRoot(this);
+    // qxapp.auth.BaseAuthPage.addPageToRoot(this);
   },
 
   destruct: function() {
