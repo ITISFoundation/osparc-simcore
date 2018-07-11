@@ -1,15 +1,19 @@
-/**
- *  TODO: layout should be adaptable
+/** Login page
  *
- *
- * Based on
- * http://www.softwaresamurai.org/2018/01/06/login-form-with-php-and-qooxdoo/
- *
+ * - Form with fields necessary to login
+ * - Form validation and interactivity features
+ * - Adds links to register and reset pages. Transitions are fired as events.
+ * - To execute login, it delegates on the auth.manager
+ * - Minimal layout and apperance is delegated to the selected theme
  */
 
 qx.Class.define("qxapp.auth.LoginPage", {
   extend: qxapp.auth.BaseAuthPage,
-
+  events: {
+    "login": "qx.event.type.Data",
+    "toRegister": "qx.event.type.Event",
+    "toReset": "qx.event.type.Event"
+  },
   members: {
     __form: null,
 
@@ -35,7 +39,6 @@ qx.Class.define("qxapp.auth.LoginPage", {
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
-      // |               Login-|
       // TODO: Temporary disabled. 'Remember me' implies keeping login status in server
       // let chk = new qx.ui.form.CheckBox(this.tr("Remember me"));
       // this.__form.add(chk, "", null, "remember", null);
@@ -43,30 +46,30 @@ qx.Class.define("qxapp.auth.LoginPage", {
       let loginBtn = new qx.ui.form.Button(this.tr("Log In"));
       loginBtn.addListener("execute", function() {
         if (this.__form.validate()) {
-          this.login();
+          this.__login();
         }
       }, this);
       this.add(loginBtn);
 
 
-      //  create account | forgot password?
+      //  create account | forgot password? links
       let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         separator: "main"
       }));
 
       let registerBtn = this.createLinkButton(this.tr("Create Account"), function() {
-        this.register();
+        this.fireEvent("toRegister");
       }, this);
 
       let forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), function() {
-        this.forgot();
+        this.fireEvent("toReset");
       }, this);
 
       [registerBtn, forgotBtn].forEach(btn => {
         grp.add(btn.set({
           center: true
         }), {
-          flex:1
+          flex: 1
         });
       });
 
@@ -85,74 +88,27 @@ qx.Class.define("qxapp.auth.LoginPage", {
       // this.add(grp2);
     },
 
-    login: function() {
-      //---------------------------------------------------------------------------
-      // TODO: temporarily will allow any user until issue #162 is resolved and/or
-      // python server has active API
-      if (!qx.core.Environment.get("dev.enableFakeSrv")) {
-        // Switches to main
-        qxapp.auth.Store.setToken("fake-token");
-        let app = qx.core.Init.getApplication();
-        app.start();
-        this.destroy();
-        return;
-      }
-      //---------------------------------------------------------------------------
-
-      // Data
+    __login: function() {
       const email = this.__form.getItems().email;
       const pass = this.__form.getItems().password;
-      const auth = new qx.io.request.authentication.Basic(email.getValue(), pass.getValue());
 
-      let request = new qx.io.request.Xhr();
-      const prefix = qxapp.io.rest.AbstractResource.API;
-      request.set({
-        authentication: auth,
-        url: prefix + "/token",
-        method: "GET"
-      });
+      let manager = qxapp.auth.Manager.getInstance();
 
-      request.addListener("success", function(e) {
-        // Completes without error and *transport status indicates success*
-        let req = e.getTarget();
-        console.debug("Login suceeded:", "status  :", req.getStatus(), "phase   :", req.getPhase(), "response: ", req.getResponse());
-        this.assert(req == request);
-
-        // saves token for future requests
-        qxapp.auth.Store.setToken(req.getResponse().token);
-
-        // Switches to main
-        let app = qx.core.Init.getApplication();
-        app.start();
-        this.destroy();
-      }, this);
-
-      request.addListener("fail", function(e) {
+      manager.addListener("login", function(success) {
         // TODO: implement in flash message.
-        // TODO: why if failed? Add server resposne message
-
-        [email, pass].forEach(item => {
-          item.set({
-            invalidMessage: this.tr("Invalid email or password"),
-            valid: false
+        // TODO: should get more specific error message produced by server. eg. invalid or unregistered user, ...
+        if (!success) {
+          [email, pass].forEach(item => {
+            item.set({
+              invalidMessage: this.tr("Invalid email or password"),
+              valid: false
+            });
           });
-        });
-        this.show();
+        }
+        this.fireDataEvent("login", success);
       }, this);
 
-      request.send();
-    },
-
-    forgot: function() {
-      let forgot = new qxapp.auth.ResetPassPage();
-      forgot.show();
-      this.destroy();
-    },
-
-    register: function() {
-      let register = new qxapp.auth.RegistrationPage();
-      register.show();
-      this.destroy();
+      manager.login(email, pass);
     }
   }
 });
