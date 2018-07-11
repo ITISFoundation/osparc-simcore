@@ -115,5 +115,6 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
         // TODO: if fails, flash reason (e.g. username already exists)
       }, this);
     }
+
   }
 });

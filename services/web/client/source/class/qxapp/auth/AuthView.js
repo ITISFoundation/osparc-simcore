@@ -42,20 +42,24 @@ qx.Class.define("qxapp.auth.AuthView", {
     // Connections
     login.addListener("done", function(msg) {
       // if msg, flash it
+      login.resetValues();
       this.fireDataEvent("done", msg);
     }, this);
 
     login.addListener("toReset", function(e) {
       pages.setSelection([reset]);
+      login.resetValues();
     }, this);
 
     login.addListener("toRegister", function(e) {
       pages.setSelection([register]);
+      login.resetValues();
     }, this);
 
-    [register, reset].forEach(page => {
-      page.addListener("done", function(msg) {
+    [register, reset].forEach(srcPage => {
+      srcPage.addListener("done", function(msg) {
         pages.setSelection([login]);
+        srcPage.resetValues();
       }, this);
     });
   },

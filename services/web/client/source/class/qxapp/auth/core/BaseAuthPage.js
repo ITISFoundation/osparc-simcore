@@ -54,6 +54,19 @@ qx.Class.define("qxapp.auth.core.BaseAuthPage", {
     _buildPage: null,
 
     /**
+     * This method needs to be implemented in subclass
+     * and should reset all field values
+    */
+    resetValues: function() {
+      this.getChildren().forEach(item => {
+        // FIXME: should check issubclass of AbstractField
+        if (qx.Class.implementsInterface(item, qx.ui.form.IForm) && qx.Class.implementsInterface(item, qx.ui.form.IField)) {
+          item.resetValue();
+        }
+      });
+    },
+
+    /**
      * Creates and adds an underlined title at the header
      */
     _addTitleHeader: function(txt) {

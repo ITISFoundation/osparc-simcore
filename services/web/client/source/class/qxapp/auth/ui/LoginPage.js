@@ -137,7 +137,15 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
           });
         }
       }, this);
-    }
+    },
 
+    resetValues: function() {
+      let fieldItems = this.__form.getItems();
+      for (var key in fieldItems) {
+        if (fieldItems.hasOwnProperty(key)) {
+          fieldItems[key].resetValue();
+        }
+      }
+    }
   }
 });
