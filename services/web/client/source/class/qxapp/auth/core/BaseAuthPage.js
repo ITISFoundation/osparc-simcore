@@ -6,11 +6,7 @@
  */
 qx.Class.define("qxapp.auth.core.BaseAuthPage", {
   extend: qx.ui.container.Composite,
-  include: [
-    qxapp.auth.core.MAuth
-  ],
   type: "abstract",
-
 
   /*
   *****************************************************************************
@@ -29,6 +25,16 @@ qx.Class.define("qxapp.auth.core.BaseAuthPage", {
     });
 
     this._buildPage();
+  },
+
+  /*
+  *****************************************************************************
+     EVENTS
+  *****************************************************************************
+  */
+
+  events:{
+    "done": "qx.event.type.Data"
   },
 
   /*

@@ -1,7 +1,7 @@
 /** Login page
  *
  * - Form with fields necessary to login
- * - Form validation and interactivity features
+ * - Form data validation
  * - Adds links to register and reset pages. Transitions are fired as events.
  * - To execute login, it delegates on the auth.manager
  * - Minimal layout and apperance is delegated to the selected theme
@@ -9,6 +9,9 @@
 
 qx.Class.define("qxapp.auth.ui.LoginPage", {
   extend: qxapp.auth.core.BaseAuthPage,
+  include: [
+    qxapp.auth.core.MAuth
+  ],
 
   /*
   *****************************************************************************
@@ -17,7 +20,6 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
   */
 
   events: {
-    "done": "qx.event.type.Data",
     "toRegister": "qx.event.type.Event",
     "toReset": "qx.event.type.Event"
   },
@@ -90,16 +92,26 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
       this.add(grp);
 
       // TODO: add here loging with NIH and openID
-      // let grp2 = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      // ["Login with NIH", "Login with OpenID"].forEach(txt => {
-      //   let btn = this.createLinkButton(this.tr(txt), function(){}, this);
-      //   grp2.add(btn.set({
-      //     center: true
-      //   }), {
-      //     flex:1
-      //   });
-      // }, this);
-      // this.add(grp2);
+      // this.add(this.__buildExternals());
+    },
+
+    __buildExternals: function() {
+      let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+
+      ["Login with NIH", "Login with OpenID"].forEach(txt => {
+        let btn = this.createLinkButton(this.tr(txt), function() {
+          // TODO add here callback
+          console.error("Login with external services are still not implemented");
+        }, this);
+
+        grp.add(btn.set({
+          center: true
+        }), {
+          flex:1
+        });
+      });
+
+      return grp;
     },
 
     __login: function() {
