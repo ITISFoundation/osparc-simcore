@@ -10,7 +10,7 @@ import time
 
 import async_timeout
 from aiohttp import web
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, exc
 from sqlalchemy.orm import sessionmaker
 
 from comp_backend_worker import celery
@@ -78,6 +78,10 @@ async def start_pipeline(request):
     dag_adjacency_list = dict()
     tasks = dict()
 
+    pipeline_id = -1
+    pipeline_name = "New pipeline"
+    _LOGGER.debug("Start Pipeline")
+
     #pylint:disable=too-many-nested-blocks
     try:
         io_files = []
@@ -130,6 +134,8 @@ async def start_pipeline(request):
         db_session.add(pipeline)
         db_session.flush()
 
+        _LOGGER.debug("Pipeline flushed")
+
         pipeline_id = pipeline.pipeline_id
 
         # now we know the id, lets copy over data
@@ -157,13 +163,18 @@ async def start_pipeline(request):
 
         db_session.commit()
 
+        _LOGGER.debug("Task commited")
+
+
         task = celery.send_task('comp.task', args=(pipeline_id,), kwargs={})
 
-        response['pipeline_name'] = pipeline_name
-        response['pipeline_id'] = str(pipeline_id)
+
     #pylint:disable=broad-except
-    except Exception as _e:
-        _LOGGER.info(_e)
+    except exc.SQLAlchemyError as _e:
+        _LOGGER.debug(_e)
+        db_session.rollback()
+        pipeline_id = -1
 
-
+    response['pipeline_name'] = pipeline_name
+    response['pipeline_id'] = str(pipeline_id)
     return web.json_response(response)

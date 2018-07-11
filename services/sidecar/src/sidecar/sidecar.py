@@ -205,7 +205,11 @@ class Sidecar(object):
                                     to['value'] = output_ports[to['key']]
                                     _LOGGER.debug("POSTRPO to['value]' becomes %s", output_ports[to['key']])
                                     flag_modified(self._task, "output")
-                                    self._db.session.commit()
+                                    try:
+                                        self._db.session.commit()
+                                    except exc.SQLAlchemyError as e:
+                                        _LOGGER.debug(e)
+                                        self._db.session.rollback()
                     else:
                         # we want to keep the folder structure
                         if not root == directory:
@@ -324,8 +328,12 @@ class Sidecar(object):
         self._process_task_log()
 
         self._task.state = SUCCESS
-        self._db.session.add(self._task)
-        self._db.session.commit()
+        try:
+            self._db.session.add(self._task)
+            self._db.session.commit()
+        except exc.SQLAlchemyError as err:
+            _LOGGER.error(err)
+            self._db.session.rollback()
 
         _LOGGER.debug('DONE Post-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
 
@@ -383,8 +391,12 @@ class Sidecar(object):
 
             if do_process:
                 task.job_id = celery_task.request.id
-                self._db.session.add(task)
-                self._db.session.commit()
+                try:
+                    self._db.session.add(task)
+                    self._db.session.commit()
+                except exc.SQLAlchemyError as e:
+                    _LOGGER.debug(e)
+                    self._db.session.rollback()
             else:
                 return next_task_nodes
 
@@ -395,8 +407,14 @@ class Sidecar(object):
                 return next_task_nodes
 
             task.state = RUNNING
-            self._db.session.add(task)
-            self._db.session.commit()
+            try:
+                self._db.session.add(task)
+                self._db.session.commit()
+            except exc.SQLAlchemyError as e:
+                _LOGGER.debug(e)
+                self._db.session.rollback()
+                return next_task_nodes
+
             self.initialize(task)
             self.run()
 

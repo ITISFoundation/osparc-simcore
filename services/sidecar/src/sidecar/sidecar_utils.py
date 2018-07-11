@@ -71,7 +71,7 @@ class RabbitSettings(object):
 class DbSettings(object):
     def __init__(self):
         self._db_config = db_config()
-        self.db = create_engine(self._db_config.endpoint, client_encoding='utf8')
+        self.db = create_engine(self._db_config.endpoint, client_encoding='utf8', pool_pre_ping=True)
         self.Session = sessionmaker(self.db)
         self.session = self.Session()
 
