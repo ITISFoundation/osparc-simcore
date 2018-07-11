@@ -7,8 +7,8 @@
  * - Minimal layout and apperance is delegated to the selected theme
  */
 
-qx.Class.define("qxapp.auth.LoginPage", {
-  extend: qxapp.auth.BaseAuthPage,
+qx.Class.define("qxapp.auth.ui.LoginPage", {
+  extend: qxapp.auth.core.BaseAuthPage,
   events: {
     "done": "qx.event.type.Data",
     "toRegister": "qx.event.type.Event",

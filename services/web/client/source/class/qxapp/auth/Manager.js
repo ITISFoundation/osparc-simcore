@@ -2,13 +2,18 @@
 /** Authentication Manager
  *
  *  - Entrypoint to perform authentication requests with backend
- *  - Keeps authentication token
+ *  - Keeps state of current application
+ *  - Keeps authentication header for future requests to the backend
 */
 qx.Class.define("qxapp.auth.Manager", {
   extend: qx.core.Object,
   type: "singleton",
-  members:
-  {
+
+  events: {
+    "logout" : "qx.event.type.Event"
+  },
+
+  members:{
     __auth: null,
 
     setToken: function(token) {
@@ -66,6 +71,7 @@ qx.Class.define("qxapp.auth.Manager", {
 
     logout: function() {
       this.resetToken();
+      this.fireEvent("logout");
     },
 
     resetPassword: function(email, callback, context) {

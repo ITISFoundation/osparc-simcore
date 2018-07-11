@@ -18,11 +18,13 @@ TODO: change name of app: osparc instead of qxapp
 
 qx.Class.define("qxapp.Application", {
   extend: qx.application.Standalone,
-  include: [qx.locale.MTranslation],
+  include: [
+    qx.locale.MTranslation
+  ],
 
   members:
   {
-    __layoutManager: null,
+    __current: null,
 
     /**
      * This method contains the initial application code and gets called
@@ -47,13 +49,15 @@ qx.Class.define("qxapp.Application", {
       // openning web socket
       qxapp.wrappers.WebSocket.getInstance().connect();
 
-      this.start();
+      // Setting up auth manager
+      qxapp.auth.Manager.getInstance().addListener("logout", function() {
+        this.__restart();
+      }, this);
+
+      this.__restart();
     },
 
-    /**
-     * This is controlled entry-point to start the application
-    */
-    start: function() {
+    __restart: function() {
       let isLogged = qxapp.auth.Manager.getInstance().isLoggedIn();
 
       if (qx.core.Environment.get("dev.disableLogin")) {
@@ -61,34 +65,42 @@ qx.Class.define("qxapp.Application", {
         isLogged = true;
       }
 
+      let view = null;
+      let options = null;
+
       if (isLogged) {
-        this.__startDesktopView();
+        view = new qxapp.desktop.LayoutManager();
+
+        options = {
+          left: 0,
+          top: 0,
+          height: "100%",
+          width: "100%"
+        };
       } else {
-        let login = new qxapp.auth.LoginPage();
-
-        login.addListener("done", function(msg) {
-          // if msg, flash it
-          this.start();
+        view = new qxapp.auth.AuthView();
+        view.addListener("done", function(msg) {
+          this.__restart();
         }, this);
 
-        login.addListener("toReset", function(e) {
-          let page = new qxapp.auth.ResetPassPage();
-          page.addListener("done", function(msg) {
-            this.start();
-          }, this);
-          this.__startAuthView(page);
-        }, this);
-
-        login.addListener("toRegister", function(e) {
-          let page = new qxapp.auth.RegistrationPage();
-          page.addListener("done", function(msg) {
-            this.start();
-          }, this);
-          this.__startAuthView(page);
-        }, this);
-
-        this.__startAuthView(login);
+        options ={
+          top: "10%",
+          bottom: 0,
+          left: 0,
+          right: 0
+        };
       }
+
+      this.assert(view!==null);
+
+      // Update root document and currentness
+      let doc = this.getRoot();
+      if (doc.hasChildren() && this.__current) {
+        doc.remove(this.__current);
+        // this.__current.destroy();
+      }
+      doc.add(view, options);
+      this.__current = view;
     },
 
     /**
@@ -96,54 +108,8 @@ qx.Class.define("qxapp.Application", {
     */
     logout: function() {
       qxapp.auth.Manager.getInstance().logout();
-      this.start();
-    },
-
-    /**
-     * Desktop correspond to the main application's pages
-    */
-    __startDesktopView: function() {
-      this.__layoutManager = new qxapp.desktop.LayoutManager();
-      this.__current = this.__layoutManager;
-
-      this.getRoot().add(this.__layoutManager, {
-        left: "0%",
-        top: "0%",
-        height: "100%",
-        width: "100%"
-      });
-    },
-
-    __startAuthView: function(page) {
-      // creates a page container
-      let layout = new qx.ui.layout.Grid();
-      layout.setRowFlex(0, 1);
-      layout.setColumnFlex(0, 1);
-
-      let container = new qx.ui.container.Composite(layout);
-      container.add(page, {
-        row:0,
-        column:0
-      });
-
-      // removes current page
-      let doc = this.getRoot();
-      if (doc.hasChildren() && this.__current) {
-        doc.remove(this.__current);
-        this.__current.destroy();
-      }
-
-      // adds new page
-      doc.add(container, {
-        top: "10%",
-        bottom: 0,
-        left: 0,
-        right: 0
-      });
-      this.__current = container;
+      this.__restart();
     }
-
-
 
   }
 });

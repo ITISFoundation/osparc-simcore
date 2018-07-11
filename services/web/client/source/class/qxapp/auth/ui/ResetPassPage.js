@@ -1,8 +1,8 @@
 /** Page to reset reset user's password
  *
  */
-qx.Class.define("qxapp.auth.ResetPassPage", {
-  extend: qxapp.auth.BaseAuthPage,
+qx.Class.define("qxapp.auth.ui.ResetPassPage", {
+  extend: qxapp.auth.core.BaseAuthPage,
   events: {
     "done": "qx.event.type.Data"
   },

@@ -1,7 +1,7 @@
 /**
  * Helpers to build Auth Pages (temporary)
 */
-qx.Mixin.define("qxapp.auth.MAuth", {
+qx.Mixin.define("qxapp.auth.core.MAuth", {
 
   members:{
 

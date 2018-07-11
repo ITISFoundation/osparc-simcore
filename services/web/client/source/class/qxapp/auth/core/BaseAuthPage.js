@@ -4,10 +4,10 @@
  *  - Fixed-size widget with header (title/logo), body and footer (buttons)
  *  - Positioned at the upper center of the root document's window
  */
-qx.Class.define("qxapp.auth.BaseAuthPage", {
+qx.Class.define("qxapp.auth.core.BaseAuthPage", {
   extend: qx.ui.container.Composite,
   include: [
-    qxapp.auth.MAuth
+    qxapp.auth.core.MAuth
   ],
   type: "abstract",
 
@@ -45,7 +45,7 @@ qx.Class.define("qxapp.auth.BaseAuthPage", {
     });
 
     this._buildPage();
-    // qxapp.auth.BaseAuthPage.addPageToRoot(this);
+    // qxapp.auth.core.BaseAuthPage.addPageToRoot(this);
   },
 
   destruct: function() {
