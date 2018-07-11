@@ -9,11 +9,25 @@
 
 qx.Class.define("qxapp.auth.ui.LoginPage", {
   extend: qxapp.auth.core.BaseAuthPage,
+
+  /*
+  *****************************************************************************
+     EVENTS
+  *****************************************************************************
+  */
+
   events: {
     "done": "qx.event.type.Data",
     "toRegister": "qx.event.type.Event",
     "toReset": "qx.event.type.Event"
   },
+
+  /*
+  *****************************************************************************
+     MEMBERS
+  *****************************************************************************
+  */
+
   members: {
     __form: null,
 
@@ -112,5 +126,6 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
         }
       }, this);
     }
+
   }
 });

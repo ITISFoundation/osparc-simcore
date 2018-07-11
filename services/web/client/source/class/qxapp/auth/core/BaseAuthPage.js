@@ -11,50 +11,41 @@ qx.Class.define("qxapp.auth.core.BaseAuthPage", {
   ],
   type: "abstract",
 
-  statics: {
 
-    addPageToRoot: function(page) {
-      // TODO: should be automatically reposition of document size changed!?
-
-      let top = parseInt((qx.bom.Document.getHeight() - page.getHeight()) / 4, 10);
-      let left = parseInt((qx.bom.Document.getWidth() - page.getWidth()) / 2, 10);
-
-      let app = qx.core.Init.getApplication();
-      app.getRoot().removeAll();
-      app.getRoot().add(page, {
-        top: top,
-        left: left
-      });
-    }
-  },
-
+  /*
+  *****************************************************************************
+     CONSTRUCTOR
+  *****************************************************************************
+  */
 
   construct: function() {
     this.base(arguments);
 
-    // Setup children's layout and the auth page widget dimensions
     // TODO: remove fix dimensions for the outer container?
-    const spacing = 20;
-    this.setLayout(new qx.ui.layout.VBox(spacing));
+    this.setLayout(new qx.ui.layout.VBox(20));
     this.set({
       width: 300,
-      height: 250,
-      allowGrowX: false,
-      allowGrowY: false,
-      alignX: "center"
+      height: 250
     });
 
     this._buildPage();
-    // qxapp.auth.core.BaseAuthPage.addPageToRoot(this);
   },
 
-  destruct: function() {
-    console.debug("Destroying ", Object.getPrototypeOf(this).classname);
-  },
+  /*
+  *****************************************************************************
+     MEMBERS
+  *****************************************************************************
+  */
 
   members: {
-    // override this method in subclass
-    _buildPage: function() {},
+
+    /**
+     * This method gets called upon construction and
+     * must be overriden in a subclass
+     *
+     * @signature function()
+     */
+    _buildPage: null,
 
     /**
      * Creates and adds an underlined title at the header
