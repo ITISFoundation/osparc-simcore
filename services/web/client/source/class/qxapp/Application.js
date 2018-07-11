@@ -56,7 +56,6 @@ qx.Class.define("qxapp.Application", {
       // } else {
       //   this.__startLogin();
       // }
-
     },
 
     __startDesktop: function() {
