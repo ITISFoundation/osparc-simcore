@@ -41,20 +41,20 @@
       "description": "user uuid"
     },
     "collaborators": {
-        "type": "object",
-        "description": "UUIDs of the users/groups who should get access to this",
-        "patternProperties": {
-          "^\\S+$": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": [
-                "read",
-                "write"
-              ]
-            }
+      "type": "object",
+      "description": "UUIDs of the users/groups who should get access to this",
+      "patternProperties": {
+        "^\\S+$": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write"
+            ]
           }
         }
+      }
     },
     "creationDate": {
       "type": "string",
