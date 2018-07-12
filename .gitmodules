@@ -1,0 +1,3 @@
+[submodule "services/dy-3dvis/paraviewweb"]
+	path = services/dy-3dvis/paraviewweb
+	url = git@github.com:BMCV/docker-paraviewweb.git
