@@ -70,7 +70,7 @@ qx.Class.define("qxapp.auth.core.BaseAuthPage", {
      * Creates and adds an underlined title at the header
      */
     _addTitleHeader: function(txt) {
-      var lbl = new qx.ui.basic.Label(txt).set({
+      let lbl = new qx.ui.basic.Label(txt).set({
         font: "headline",
         alignX: "center"
       });

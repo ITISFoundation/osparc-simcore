@@ -39,14 +39,14 @@ qx.Class.define("qxapp.dev.fake.srv.restapi.Authentication", {
 
     getUserIdFromToken: function(token) {
       if (token.startsWith("this-is-a-dummy-token-that-expires-in-")) {
-        var parts = token.split("-");
+        let parts = token.split("-");
         return parts.pop();
       }
       return null;
     },
 
     checkCredentials: function(login) {
-      var userId = qxapp.dev.fake.srv.db.User.DUMMYNAMES.findIndex(function(userName, userIndex) {
+      let userId = qxapp.dev.fake.srv.db.User.DUMMYNAMES.findIndex(function(userName, userIndex) {
         const user = qxapp.dev.fake.srv.db.User.getObject(userIndex);
         return (login.email == user.email || login.email == user.username) && login.password == user.passwordHash;
       });
@@ -58,16 +58,16 @@ qx.Class.define("qxapp.dev.fake.srv.restapi.Authentication", {
      * produced by qx.io.request.authentication.Basic
     */
     decodeAuthHeader: function(requestHeaders) {
-      var res = {
+      let res = {
         email: null,
         password: null
       };
-      var header = requestHeaders["Authorization"];
+      let header = requestHeaders["Authorization"];
 
       // Remove 'Basic $value'
-      var value = header.split(" ")[1];
+      let value = header.split(" ")[1];
       // parse '$username : $password'
-      var pair = qx.util.Base64.decode(value).split(":");
+      let pair = qx.util.Base64.decode(value).split(":");
       res.email = pair[0];
       res.password = pair[1];
 
@@ -80,14 +80,14 @@ qx.Class.define("qxapp.dev.fake.srv.restapi.Authentication", {
      *
     */
     parseLoginParameters: function(requestBody) {
-      var res = {
+      let res = {
         email: null,
         password: null
       };
 
-      var vars = requestBody.split("&");
-      for (var i = 0; i < vars.length; ++i) {
-        var pair = vars[i].split("=");
+      let vars = requestBody.split("&");
+      for (let i = 0; i < vars.length; ++i) {
+        let pair = vars[i].split("=");
         res[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
       }
       return res;

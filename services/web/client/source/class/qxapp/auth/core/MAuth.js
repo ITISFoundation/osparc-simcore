@@ -11,8 +11,8 @@ qx.Mixin.define("qxapp.auth.core.MAuth", {
      */
     createLinkButton: function(txt, cbk, ctx) {
       txt = "<center><i style='color: gray'>" + txt + "</i></center>";
-      var atm = new qx.ui.basic.Atom(txt);
-      var lbl = atm.getChildControl("label");
+      let atm = new qx.ui.basic.Atom(txt);
+      let lbl = atm.getChildControl("label");
       lbl.setRich(true);
       lbl.setAllowGrowY(true);
       atm.addListener("mouseover", function() {
