@@ -18,8 +18,8 @@ qx.Class.define("qxapp.auth.core.BaseAuthPage", {
     this.base(arguments);
 
     // TODO: remove fix dimensions for the outer container?
-    this.setLayout(new qx.ui.layout.VBox(20));
     this.set({
+      layout: new qx.ui.layout.VBox(20),
       width: 300,
       height: 250
     });

@@ -98,8 +98,8 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
     __buildExternals: function() {
       let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
-      ["Login with NIH", "Login with OpenID"].forEach(txt => {
-        let btn = this.createLinkButton(this.tr(txt), function() {
+      [this.tr("Login with NIH"), this.tr("Login with OpenID")].forEach(txt => {
+        let btn = this.createLinkButton(txt, function() {
           // TODO add here callback
           console.error("Login with external services are still not implemented");
         }, this);
