@@ -274,6 +274,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         alignX: alignX,
         allowGrowX: false
       });
+      label.ui.portId = portData.key;
 
       var tooltip = new qx.ui.tooltip.ToolTip(portData.key, icon);
       tooltip.setShowTimeout(50);
@@ -310,7 +311,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       const ports = inputPorts.concat(outputPorts);
       let portBounds;
       for (let i=0; i<ports.length; i++) {
-        if (port.portId === ports[i].getLabel()) {
+        if (port.portId === ports[i].portId) {
           portBounds = ports[i].getBounds();
           break;
         }
