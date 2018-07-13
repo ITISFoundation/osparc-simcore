@@ -28,6 +28,11 @@ LABEL maintainer=pcrespov
 # TODO: create instead uid=5000.
 RUN groupmod --new-name scu node && \
     usermod --login scu --move-home --home /home/scu node
+
+RUN apt-get update && apt-get install -y \
+        inotify-tools \
+    && rm -rf /var/lib/apt/lists/*
+
 USER scu
 
 
