@@ -12,6 +12,8 @@ source/resource/iconfont/material
 # generator outputs
 /api/
 /test/
+/cache/
+/class-es5/
 
 # translations for the moment ignored
 *.po
