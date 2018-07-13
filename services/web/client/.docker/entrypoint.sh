@@ -47,9 +47,11 @@ run_babel_w_watch()
 {
   echo "Watching source/class"
   inotifywait -qrm --event modify --format '%w%f' source/class |
-  while read filepath; do
-    echo "Changes in ${filepath}"
-    run_babel
+  while read file; do
+    if [[ "$file" =~ .*js$ ]]; then
+      echo "Changes in ${file}"
+      run_babel
+    fi
   done
 }
 
