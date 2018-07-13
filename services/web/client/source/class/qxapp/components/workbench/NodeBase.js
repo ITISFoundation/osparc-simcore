@@ -224,6 +224,17 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return null;
     },
 
+    getPortByIndex: function(isInput, portIdx) {
+      const nInPorts = this.getInputPorts().length;
+      const nOutPorts = this.getOutputPorts().length;
+      if (isInput && portIdx < nInPorts) {
+        return this.getInputPorts()[portIdx];
+      } else if (!isInput && portIdx < nOutPorts) {
+        return this.getOutputPorts()[portIdx];
+      }
+      return null;
+    },
+
     __addInputPorts: function(inputs) {
       for (let inputData of inputs) {
         this.__addInputPort(inputData);
