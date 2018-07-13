@@ -325,7 +325,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             node.getMetadata().outputs[0].value = filePath;
             node.getMetadata().outputs[1].value = null;
             node.getPortByIndex(false, 0).ui.setLabel(fileName);
+            node.getPortByIndex(false, 0).ui.getToolTip().setLabel(fileName);
             node.getPortByIndex(false, 1).ui.setLabel("");
+            node.getPortByIndex(false, 1).ui.getToolTip().setLabel("");
             node.setProgress(100);
             fileManager.close();
           }, this);
@@ -336,7 +338,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             node.getMetadata().outputs[0].value = null;
             node.getMetadata().outputs[1].value = folderPath;
             node.getPortByIndex(false, 0).ui.setLabel("");
+            node.getPortByIndex(false, 0).ui.getToolTip().setLabel("");
             node.getPortByIndex(false, 1).ui.setLabel(folderName);
+            node.getPortByIndex(false, 1).ui.getToolTip().setLabel(folderName);
             node.setProgress(100);
             fileManager.close();
           }, this);
