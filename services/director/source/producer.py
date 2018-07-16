@@ -198,7 +198,7 @@ def __wait_until_service_running_or_failed(service_id):
             _LOGGER.debug("%s %s", service_id, task_state)
             if task_state == "running":
                 break
-            elif task_state == 'failed' or task_state == "rejected":
+            elif task_state in ("failed", "rejected"):
                 raise Exception("the service could not be started")
         # TODO: all these functions should be async and here one could use await sleep which
         # would allow dealing with other events instead of wasting time here

@@ -128,10 +128,3 @@ class DataItemsList(MutableSequence):
     def __replace_item(self, new_data_item):
         item_index = self.__find_index_from_key(new_data_item.key)
         self.__lst[item_index] = new_data_item
-
-    @classmethod
-    def __check_uniqueness(cls, dataitems):
-        data_keys = set([item.key for item in dataitems])
-        if len(dataitems) != len(data_keys):
-            raise exceptions.InvalidProtocolError(dataitems)
-            

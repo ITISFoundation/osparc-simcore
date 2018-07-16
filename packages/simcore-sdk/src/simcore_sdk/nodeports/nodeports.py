@@ -9,7 +9,7 @@ from simcore_sdk.nodeports._itemslist import DataItemsList
 _LOGGER = logging.getLogger(__name__)
 
 #pylint: disable=C0111
-class Nodeports(object):
+class Nodeports:
     """This class allow the client to access the inputs and outputs assigned to the node."""
     _version = "0.1"
     def __init__(self, version, inputs=None, outputs=None):
