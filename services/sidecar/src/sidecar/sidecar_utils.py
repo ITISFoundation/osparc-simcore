@@ -33,7 +33,7 @@ def find_entry_point(g):
             result.append(node)
     return result
 
-class DockerSettings(object):
+class DockerSettings:
     # pylint: disable=too-many-instance-attributes
     def __init__(self):
         self._config = docker_config()
@@ -47,7 +47,7 @@ class DockerSettings(object):
         self.env = []
 
 
-class S3Settings(object):
+class S3Settings:
     def __init__(self):
         self._config = s3_config()
         self.client = S3Client(endpoint=self._config.endpoint,
@@ -61,21 +61,21 @@ class S3Settings(object):
         self.client.create_bucket(self.bucket)
 
 
-class RabbitSettings(object):
+class RabbitSettings:
     def __init__(self):
         self._pika = rabbit_config()
         self.parameters = self._pika.parameters
         self.log_channel = self._pika.log_channel
         self.progress_channel = self._pika.progress_channel
 
-class DbSettings(object):
+class DbSettings:
     def __init__(self):
         self._db_config = db_config()
         self.db = create_engine(self._db_config.endpoint, client_encoding='utf8')
         self.Session = sessionmaker(self.db)
         self.session = self.Session()
 
-class ExecutorSettings(object):
+class ExecutorSettings:
     def __init__(self):
         # Pool
         self.pool = ThreadPoolExecutor(1)
