@@ -80,7 +80,7 @@ def __convert_labels_to_docker_runtime_parameters(service_runtime_parameters_lab
 
 def __add_to_swarm_network_if_ports_published(docker_client, docker_service_runtime_parameters):
     # TODO: SAN this is a brain killer... change services to something better...
-    if docker_service_runtime_parameters["endpoint_spec"]:
+    if "endpoint_spec" in docker_service_runtime_parameters:
         network_id = "services_default"
         _LOGGER.debug("Adding swarm network with id: %s to docker runtime parameters", network_id)
         list_of_networks =  docker_client.networks.list(names=[network_id])
@@ -100,7 +100,7 @@ def __add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters
 def __add_network_to_service_runtime_params(docker_service_runtime_parameters, docker_network):
     # pylint: disable=C0103
     if "networks" in docker_service_runtime_parameters:
-        docker_service_runtime_parameters["networks"].extend(docker_network.id)
+        docker_service_runtime_parameters["networks"].append(docker_network.id)
     else:
         docker_service_runtime_parameters["networks"] = [docker_network.id]
     _LOGGER.debug("Added network parameter to docker runtime parameters: %s", docker_service_runtime_parameters["networks"])
