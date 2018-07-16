@@ -77,7 +77,7 @@ class _NodeportsEncoder(json.JSONEncoder):
                 "inputs": o.inputs, # pylint: disable=W0212
                 "outputs": o.outputs # pylint: disable=W0212
             }
-        elif isinstance(o, DataItemsList):
+        if isinstance(o, DataItemsList):
             _LOGGER.debug("Encoding DataItemsList object")
             items = [data_item._asdict() for data_item in o]
             return items
@@ -111,6 +111,3 @@ def nodeports_decoder(dct):
             #raise exceptions.InvalidProtocolError(dct, "key \"%s\" is missing" % (str(key)))
     _LOGGER.debug("Decoding Data items json: %s", dct)
     return DataItem(**dct)
-
-
-

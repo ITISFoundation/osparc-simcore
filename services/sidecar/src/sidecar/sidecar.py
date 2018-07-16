@@ -29,7 +29,7 @@ logging.basicConfig(level=logging.DEBUG)
 _LOGGER = get_task_logger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 
-class Sidecar(object):
+class Sidecar:
     def __init__(self):
         # publish subscribe config
         self._pika = RabbitSettings()
@@ -340,10 +340,9 @@ class Sidecar(object):
             job_id = dep_task.job_id
             if not job_id:
                 return False
-            else:
-                _LOGGER.debug("TASK %s DEPENDS ON %s with stat %s", task.internal_id, dep_task.internal_id,dep_task.state)
-                if not dep_task.state == SUCCESS:
-                    return False
+            _LOGGER.debug("TASK %s DEPENDS ON %s with stat %s", task.internal_id, dep_task.internal_id,dep_task.state)
+            if not dep_task.state == SUCCESS:
+                return False
         _LOGGER.debug("TASK %s is ready", task.internal_id)
 
         return True

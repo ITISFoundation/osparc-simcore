@@ -108,4 +108,3 @@ def test_set_new_invalid_value(bucket, item_type, item_value_to_set): # pylint: 
         item.set(item_value_to_set)
     assert "Invalid item type" in str(excinfo.value)
     
-    
