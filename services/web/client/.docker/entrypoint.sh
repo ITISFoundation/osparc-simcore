@@ -40,6 +40,7 @@ run_gtor()
 
 run_babel()
 {
+  echo "Pre-converting to es5 -> ${BABEL_OUTDIR} ..."
   npx babel source/class --no-babelrc --presets es2015 --out-dir $BABEL_OUTDIR
 }
 
@@ -57,25 +58,24 @@ run_babel_w_watch()
 
 run_gtor_es5()
 {
-  echo Pre-converting to es5 ...
-
   # Converts code into es5
   run_babel
 
   # Change temporarily manifest
   # cp --backup Manifest.json Manifest.json.bak
-  sed -i 's/source\/class/$BABEL_OUTDIR/g' Manifest.json
+  sed -i 's/source\/class/class-es5/g' Manifest.json
 
   run_gtor $@
 
-  sed -i 's/$BABEL_OUTDIR/source\/class/g' Manifest.json
+  sed -i 's/class-es5/source\/class/g' Manifest.json
   # cp Manifest.json.bak Manifest.json
   # rm Manifest.json.bak
 }
 
 run_srv()
 {
-  run_babel_w_watch &
+  # FIXME: doc and tests are based on BABEL_OUTDIR, therefore it needs to be updated upon change!?
+  # run_babel_w_watch &
 
   # Mainly to serve api and test applicaitons.
   # test-source needs of qooxdoo-sdk and for that reason it is
