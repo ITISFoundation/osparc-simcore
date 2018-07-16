@@ -2,12 +2,11 @@
 /**
  *
  */
-qx.Class.define("qxapp.test.Utils",
-  {
-    extend: qx.dev.unit.TestCase,
+qx.Class.define("qxapp.test.Utils", {
+  extend: qx.dev.unit.TestCase,
 
 
-    members:
+  members:
     {
       /*
       ---------------------- -----------------------------------------------------
@@ -30,4 +29,4 @@ qx.Class.define("qxapp.test.Utils",
       }
 
     }
-  });
+});
