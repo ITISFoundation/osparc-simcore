@@ -9,7 +9,7 @@ from minio.error import ResponseError
 _LOGGER = logging.getLogger(__name__)
 
 
-class S3Client(object):
+class S3Client:
     """ Wrapper around minio
     """
 

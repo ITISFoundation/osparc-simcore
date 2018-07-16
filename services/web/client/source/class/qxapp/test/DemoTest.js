@@ -87,23 +87,34 @@ qx.Class.define("qxapp.test.DemoTest",
         TESTS async
       ---------------------------------------------------------------------------
       */
-      testAjaxRequest: function() {
+      "test: GET api/auth async": function() {
+        this.useFakeXMLHttpRequest();
+
         var req = new qx.io.request.Xhr("api/auth", "GET");
+        var fakeReq = this.getRequests()[0];
+
         req.addListener("success", function(e) {
-          //
           this.resume(function() {
-            var status = req.getStatus();
-            this.assertEquals(200, status);
+            // checks after async------------------------
+            this.assertEquals(200, req.status);
 
             var body = (req.getBody()=="true");
             this.assertEquals(body, true);
+
+            this.assertCalled(req.onreadystatechange);
+            this.assertEquals("Response", req.responseText);
+            //-------------------------------------------
           }, this);
         }, this);
+
+        this.assertEventFired(req, "statusError", function() {
+          // The function which will be invoked and which fires the event.
+          fakeReq.respond(200, {}, "true");
+        });
         req.send();
 
-        //
+        this.assertEquals(fakeReq, req.getTransport().getRequest());
         this.wait(10000);
       }
-
     }
   });

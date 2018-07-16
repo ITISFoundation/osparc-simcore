@@ -42,12 +42,15 @@ up-swarm:
 	${DOCKER} swarm init
 	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml services
 
+up-swarm-devel:
+	${DOCKER} swarm init
+	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.devel.yml -c services/docker-compose.deploy.devel.yml services
+
 down:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml down
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml down
 
 down-swarm:
-	${DOCKER} stack rm services
 	${DOCKER} swarm leave -f
 
 stack-up:
@@ -88,7 +91,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.5
+PLATFORM_VERSION=3.7
 
 push_platform_images:
 	${DOCKER} login masu.speag.com
