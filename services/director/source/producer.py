@@ -78,6 +78,15 @@ def __convert_labels_to_docker_runtime_parameters(service_runtime_parameters_lab
     _LOGGER.debug("Converted labels to docker runtime parameters: %s", runtime_params)
     return runtime_params
 
+def __add_to_swarm_network_if_ports_published(docker_client, docker_service_runtime_parameters):
+    # TODO: SAN this is a brain killer... change services to something better...
+    if docker_service_runtime_parameters["endpoint_spec"]:
+        network_id = "services_default"
+        _LOGGER.debug("Adding swarm network with id: %s to docker runtime parameters", network_id)
+        list_of_networks =  docker_client.networks.list(names=[network_id])
+        for network in list_of_networks:
+            __add_network_to_service_runtime_params(docker_service_runtime_parameters, network)
+        _LOGGER.debug("Added swarm network %s to docker runtime parameters", network_id)
 
 def __add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid):
     # pylint: disable=C0103
@@ -235,18 +244,14 @@ def start_service(service_name, service_tag, service_uuid):
         # prepare runtime parameters
         service_runtime_parameters_labels = __get_service_runtime_parameters_labels(docker_image_path, tag)
         docker_service_runtime_parameters = __convert_labels_to_docker_runtime_parameters(service_runtime_parameters_labels, service_uuid)
+        __add_to_swarm_network_if_ports_published(docker_client, docker_service_runtime_parameters)
         __add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
         if len(list_of_images) > 1:
             __add_network_to_service_runtime_params(docker_service_runtime_parameters, docker_network)
         __add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
         __set_service_name(docker_service_runtime_parameters,
             registry_proxy.get_service_sub_name(docker_image_path),
-            service_uuid)
-
-        # TODO: SAN this is a brain killer... change services to something better...
-        list_of_networks =  docker_client.networks.list(names=["services_default"])
-        for network in list_of_networks:
-            __add_network_to_service_runtime_params(docker_service_runtime_parameters, network)
+            service_uuid)       
 
         #let-s start the service
         try:
