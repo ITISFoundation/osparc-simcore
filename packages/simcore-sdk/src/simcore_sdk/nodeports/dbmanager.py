@@ -12,7 +12,7 @@ from simcore_sdk.models.pipeline_models import ComputationalTask as NodeModel
 
 _LOGGER = logging.getLogger(__name__)
 
-class DbSettings(object):
+class DbSettings:
     def __init__(self):
         self._db_config = db_config()
         self.db = create_engine(self._db_config.endpoint, client_encoding='utf8')
@@ -44,7 +44,7 @@ class _NodeModelEncoder(json.JSONEncoder):
         _LOGGER.debug("Encoding object using defaults")
         return json.JSONEncoder.default(self, o)
 
-class DBManager(object):
+class DBManager:
     def __init__(self):
         self._db = DbSettings()            
 

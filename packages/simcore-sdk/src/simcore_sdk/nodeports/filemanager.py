@@ -11,7 +11,7 @@ from s3wrapper.s3_client import S3Client
 _LOGGER = logging.getLogger(__name__)
 _INTERNAL_DIR = os.path.join(tempfile.gettempdir(), "simcorefiles")
 
-class S3Settings(object):
+class S3Settings:
     def __init__(self):
         _LOGGER.debug("Initialise S3 connection")
         self._config = s3_config()
