@@ -91,7 +91,7 @@ def __add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters
 def __add_network_to_service_runtime_params(docker_service_runtime_parameters, docker_network):
     # pylint: disable=C0103
     if "networks" in docker_service_runtime_parameters:
-        docker_service_runtime_parameters["networks"].append(docker_network.id)
+        docker_service_runtime_parameters["networks"].extend(docker_network.id)
     else:
         docker_service_runtime_parameters["networks"] = [docker_network.id]
     _LOGGER.debug("Added network parameter to docker runtime parameters: %s", docker_service_runtime_parameters["networks"])
