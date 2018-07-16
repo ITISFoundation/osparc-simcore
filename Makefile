@@ -78,9 +78,7 @@ before_test:
 run_test:
 	pytest --cov=pytest_docker -v packages/pytest_docker/tests
 	pytest --cov=s3wrapper -v packages/s3wrapper/tests
-	pytest -v packages/simcore-sdk/tests
-	pytest -v services/web/server/tests/
-
+	pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
 
 after_test:
 	# leave a clean slate (not sure whether this is actually needed)

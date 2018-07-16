@@ -36,17 +36,13 @@ matrix:
 
       install:
         - pip3 install --upgrade pip && pip3 --version
-        - pip3 install pylint
-        - pip3 install pytest-cov
-        - pip3 install coveralls
-        - pip3 install -r packages/pytest_docker/requirements.txt
-        - pip3 install packages/s3wrapper/
-        - pip3 install packages/simcore-sdk/
-        - pip3 install services/web/server/
-        - pip3 list
+        - pip install wheel
+        - pip3 install packages/s3wrapper
+        - pip3 install packages/simcore-sdk[test]
 
       before_script:
         - pylint --version
+        - pip3 list
 
       script:
         - make pylint
