@@ -28,4 +28,3 @@ LINK_PREFIX = "link."
 # in that sense it should not log stuff unless the application code wants it to be so.
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 _LOGGER = logging.getLogger(__name__)
-
