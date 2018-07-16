@@ -2,6 +2,7 @@
 #
 #
 GENERATOR=${QOOXDOO_PATH}/tool/bin/generator.py
+BABEL_OUTDIR=class-es5
 
 version()
 {
@@ -28,19 +29,54 @@ run_qx()
   # TODO: if create, then copy config.json in the output as well
 }
 
-
 run_gtor()
 {
   # Option 1: chdir project folder and execute  $GENERATOR <--
+  # Option 2: copy stub in project folder, chdir project folder and execute stub there
+
   echo Running \'python $GENERATOR "$@"\' ...
   python $GENERATOR "$@"
-
-  # Option 2: copy stup in project folder, chdir project folder and execute stub there
 }
 
+run_babel()
+{
+  echo "Pre-converting to es5 -> ${BABEL_OUTDIR} ..."
+  npx babel source/class --no-babelrc --presets es2015 --out-dir $BABEL_OUTDIR
+}
+
+run_babel_w_watch()
+{
+  echo "Watching source/class"
+  inotifywait -qrm --event modify --format '%w%f' source/class |
+  while read file; do
+    if [[ "$file" =~ .*js$ ]]; then
+      echo "Changes in ${file}"
+      run_babel
+    fi
+  done
+}
+
+run_gtor_es5()
+{
+  # Converts code into es5
+  run_babel
+
+  # Change temporarily manifest
+  # cp --backup Manifest.json Manifest.json.bak
+  sed -i 's/source\/class/class-es5/g' Manifest.json
+
+  run_gtor $@
+
+  sed -i 's/class-es5/source\/class/g' Manifest.json
+  # cp Manifest.json.bak Manifest.json
+  # rm Manifest.json.bak
+}
 
 run_srv()
 {
+  # FIXME: doc and tests are based on BABEL_OUTDIR, therefore it needs to be updated upon change!?
+  # run_babel_w_watch &
+
   # Mainly to serve api and test applicaitons.
   # test-source needs of qooxdoo-sdk and for that reason it is
   # convenient to use the qx-devel image since it already contains
@@ -54,8 +90,8 @@ case $1 in
   --version )
       version
       ;;
-  test | test-source| api )
-      run_gtor $@
+  api | test | test-source )
+      run_gtor_es5 $@
       ;;
   gtor )
       run_gtor ${@:2}

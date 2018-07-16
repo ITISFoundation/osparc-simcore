@@ -202,6 +202,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       socket.emit("presignedUrl", data);
     },
 
+
     // Use XMLHttpRequest to upload the file to S3.
     __uploadFile: function(file, url) {
       let hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox());
