@@ -1,15 +1,15 @@
 
 /**
- * To setup test
- *
- *
- *
+ * This is just a demo of testing features
  */
 qx.Class.define("qxapp.test.DemoTest", {
   extend: qx.dev.unit.TestCase,
-  include: [qx.dev.unit.MRequirements, qx.dev.unit.MMock],
+  include: [
+    qx.dev.unit.MRequirements,
+    qx.dev.unit.MMock
+  ],
 
-  members:{
+  members: {
     setUp: function() {
       console.debug("Setting up .. ");
       this.debug("Setting up ...");
@@ -85,35 +85,34 @@ qx.Class.define("qxapp.test.DemoTest", {
         TESTS async
       ---------------------------------------------------------------------------
       */
-      "test: GET api/auth async": function() {
-        this.useFakeXMLHttpRequest();
+    "test: GET api/auth async": function() {
+      this.useFakeXMLHttpRequest();
 
-        var req = new qx.io.request.Xhr("api/auth", "GET");
-        var fakeReq = this.getRequests()[0];
+      var req = new qx.io.request.Xhr("api/auth", "GET");
+      var fakeReq = this.getRequests()[0];
 
-        req.addListener("success", function(e) {
-          this.resume(function() {
-            // checks after async------------------------
-            this.assertEquals(200, req.status);
+      req.addListener("success", function(e) {
+        this.resume(function() {
+          // checks after async------------------------
+          this.assertEquals(200, req.status);
 
-            var body = (req.getBody()=="true");
-            this.assertEquals(body, true);
+          var body = (req.getBody() == "true");
+          this.assertEquals(body, true);
 
-            this.assertCalled(req.onreadystatechange);
-            this.assertEquals("Response", req.responseText);
-            //-------------------------------------------
-          }, this);
+          this.assertCalled(req.onreadystatechange);
+          this.assertEquals("Response", req.responseText);
+          //-------------------------------------------
         }, this);
+      }, this);
 
-        this.assertEventFired(req, "statusError", function() {
-          // The function which will be invoked and which fires the event.
-          fakeReq.respond(200, {}, "true");
-        });
-        req.send();
+      this.assertEventFired(req, "statusError", function() {
+        // The function which will be invoked and which fires the event.
+        fakeReq.respond(200, {}, "true");
+      });
+      req.send();
 
-        this.assertEquals(fakeReq, req.getTransport().getRequest());
-        this.wait(10000);
-      }
+      this.assertEquals(fakeReq, req.getTransport().getRequest());
+      this.wait(10000);
     }
 
   }

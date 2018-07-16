@@ -2,7 +2,7 @@
 /**
  *
  */
-qx.Class.define("qxapp.test.Utils", {
+qx.Class.define("qxapp.test.TestUtils", {
   extend: qx.dev.unit.TestCase,
 
 
