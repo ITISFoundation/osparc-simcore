@@ -1,8 +1,3 @@
-/** <h3> Authorization and Authentication  </h3>
+/** <h3> Authentication  </h3>
  *
- * TODO: separate classes into ui/core namespaces
- * TODO: add external authentication
- *
- *
- * TODO: pages from application
  */

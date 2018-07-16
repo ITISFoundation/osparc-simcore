@@ -18,11 +18,13 @@ TODO: change name of app: osparc instead of qxapp
 
 qx.Class.define("qxapp.Application", {
   extend: qx.application.Standalone,
-  include: [qx.locale.MTranslation],
+  include: [
+    qx.locale.MTranslation
+  ],
 
   members:
   {
-    __layoutManager: null,
+    __current: null,
 
     /**
      * This method contains the initial application code and gets called
