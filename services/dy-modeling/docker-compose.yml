@@ -1,21 +1,36 @@
 version: '3.4'
 services:
   client:
-    build:
+    build:      
       context: client
       target: production
-    image: client-prod
+      args: 
+        VCS_REF: 
+        BUILD_DATE:
+#-------------------------------------------------------------------- 
   server:
     build:
-      context: server      
+      context: server
+      target: production
       args:
         web_app_port: 9090
         s4l_ip: "172.16.9.89"
         s4l_port_app: 9095
         s4l_port_mod: 9096
-      target: production
-    image: server-prod
+        VCS_REF: 
+        BUILD_DATE:
+      labels: 
+        io.simcore.key: '{"key": "simcore/services/dynamic/modeler"}'
+        io.simcore.outputs: '{"outputs": []}'
+        io.simcore.tag: '{"tag": "0.0.1"}'
+        io.simcore.name: '{"name": "modeler"}'
+        io.simcore.description: '{"description": "Modeler viewer"}'
+        io.simcore.contact: '{"contact": "anderegg@itis.ethz.ch"}'
+        io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email": "anderegg@itis.ethz.ch", "affiliation": "ITIS Foundation"}]}'
+        io.simcore.inputs: '{"inputs": []}'
+        io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
     ports:
       - '8080:9090'
     depends_on:
       - client
+#--------------------------------------------------------------------

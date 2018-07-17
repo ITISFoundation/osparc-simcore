@@ -21,7 +21,7 @@ qx.Class.define("qxapp.dev.fake.srv.restapi.User", {
       }
     }, {
       method: "GET",
-      url: "api/v1.0/users/",
+      url: "api/v1.0/users",
       response: function(request) {
         let users = qxapp.dev.fake.srv.db.User.DUMMYNAMES;
 
@@ -43,7 +43,7 @@ qx.Class.define("qxapp.dev.fake.srv.restapi.User", {
 
   defer: function(mystatics) {
     if (qx.core.Environment.get("dev.enableFakeSrv")) {
-      console.debug("REST API enabled");
+      console.debug("REST API enabled", this.classname);
       qx.dev.FakeServer.getInstance().configure(mystatics.mockData);
     }
   }

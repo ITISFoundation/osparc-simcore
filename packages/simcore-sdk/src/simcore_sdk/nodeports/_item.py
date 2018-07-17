@@ -121,20 +121,18 @@ class DataItem(_DataItem):
             return filemanager.download_file_from_S3(node_uuid=node_uuid, 
                                                     node_key=port_key, 
                                                     file_name=self.key)
-        elif self.type in config.TYPE_TO_S3_FOLDER_LIST:
+        if self.type in config.TYPE_TO_S3_FOLDER_LIST:
             # try to fetch from S3 as a folder
             _LOGGER.debug("Fetch folder from S3 %s", self.value)
             return filemanager.download_folder_from_s3(node_uuid=node_uuid, 
                                                         node_key=port_key, 
                                                         folder_name=self.key)
-        else:
-            # try to fetch link from database node
-            _LOGGER.debug("Fetch value from other node %s", self.value)
-            if not self.get_node_from_uuid_cb:
-                raise exceptions.NodeportsException("callback to get other node information is not set")
 
-            other_nodeports = self.get_node_from_uuid_cb(node_uuid) #pylint: disable=not-callable
-            _LOGGER.debug("Received node from DB %s, now returning value", other_nodeports)
-            return other_nodeports.get(port_key)
+        # try to fetch link from database node
+        _LOGGER.debug("Fetch value from other node %s", self.value)
+        if not self.get_node_from_uuid_cb:
+            raise exceptions.NodeportsException("callback to get other node information is not set")
 
-    
+        other_nodeports = self.get_node_from_uuid_cb(node_uuid) #pylint: disable=not-callable
+        _LOGGER.debug("Received node from DB %s, now returning value", other_nodeports)
+        return other_nodeports.get(port_key)
