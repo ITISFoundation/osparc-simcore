@@ -56,6 +56,8 @@ client's development container ``qx serve --set qx.allowUrlSettings=true`` and t
   - http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true
   - http://localhost:8080/index.html?qxenv:dev.enableFakeSrv:true&qxenv:dev.disableLogin:true
 
+For demo purposes, the user/pass to login when the fake server is active is ```bizzy@itis.ethz.ch``` and ```z43```, respectively.
+
 ## Build/Run Services
 
 This project uses a multi-stage ``Dockerfile`` that targets images for *development*

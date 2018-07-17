@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 def setup_registry_connection():
     # get authentication state or set default value
     registry_auth = os.environ.get('REGISTRY_AUTH', False)
-    if registry_auth == "True" or registry_auth == "true":
+    if registry_auth in ("True","true"):
         _SESSION.auth = (os.environ['REGISTRY_USER'], os.environ['REGISTRY_PW'])
 
 

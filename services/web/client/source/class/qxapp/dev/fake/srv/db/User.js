@@ -21,7 +21,7 @@ qx.Class.define("qxapp.dev.fake.srv.db.User", {
       };
 
       const pnames = qxapp.dev.fake.srv.db.Project.DUMMYNAMES;
-      for (var i = 0; i < uname.length; i++) {
+      for (let i = 0; i < uname.length; i++) {
         const pid = i % pnames.length;
         user.projects.push(qxapp.dev.fake.srv.db.Project.getObject(pid));
       }

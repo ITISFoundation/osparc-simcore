@@ -17,14 +17,14 @@ from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 
 
-class DbSettings(object):
+class DbSettings:
     def __init__(self):
         self._db_config = db_config()
         self.db = create_engine(self._db_config.endpoint, client_encoding='utf8')
         self.Session = sessionmaker(self.db)
         self.session = self.Session()
 
-class S3Settings(object):
+class S3Settings:
     def __init__(self):
         self._config = s3_config()
         self.client = S3Client(endpoint=self._config.endpoint,

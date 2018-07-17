@@ -319,14 +319,28 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         if (node.getMetadata().key === "FileManager") {
           let fileManager = new qxapp.components.workbench.widgets.FileManager();
           fileManager.addListener("FileSelected", function(data) {
-            node.getMetadata().outputs[0].value = data.getData().filePath;
+            const filePath = data.getData().filePath;
+            const splitted = filePath.split("/");
+            const fileName = splitted[splitted.length-1];
+            node.getMetadata().outputs[0].value = filePath;
             node.getMetadata().outputs[1].value = null;
+            node.getPortByIndex(false, 0).ui.setLabel(fileName);
+            node.getPortByIndex(false, 0).ui.getToolTip().setLabel(fileName);
+            node.getPortByIndex(false, 1).ui.setLabel("");
+            node.getPortByIndex(false, 1).ui.getToolTip().setLabel("");
             node.setProgress(100);
             fileManager.close();
           }, this);
           fileManager.addListener("FolderSelected", function(data) {
+            const folderPath = data.getData().filePath;
+            const splitted = folderPath.split("/");
+            const folderName = splitted[splitted.length-1];
             node.getMetadata().outputs[0].value = null;
-            node.getMetadata().outputs[1].value = data.getData().filePath;
+            node.getMetadata().outputs[1].value = folderPath;
+            node.getPortByIndex(false, 0).ui.setLabel("");
+            node.getPortByIndex(false, 0).ui.getToolTip().setLabel("");
+            node.getPortByIndex(false, 1).ui.setLabel(folderName);
+            node.getPortByIndex(false, 1).ui.getToolTip().setLabel(folderName);
             node.setProgress(100);
             fileManager.close();
           }, this);
