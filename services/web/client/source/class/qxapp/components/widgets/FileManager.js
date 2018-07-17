@@ -201,7 +201,7 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
       hBox.add(progressBar, {
         width: "85%"
       });
-      this.addAt(hBox, 1);
+      this._addAt(hBox, 1);
       let xhr = new XMLHttpRequest();
       xhr.upload.addEventListener("progress", function(e) {
         if (e.lengthComputable) {
