@@ -288,6 +288,32 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return buttonsListMenu;
     },
 
+    __createWindowForBuiltInService: function(widget, width, height, caption) {
+      let serviceWindow = new qx.ui.window.Window();
+      serviceWindow.set({
+        showMinimize: false,
+        showStatusbar: false,
+        width: width,
+        height: height,
+        minWidth: 400,
+        minHeight: 400,
+        modal: true,
+        caption: caption,
+        layout: new qx.ui.layout.Canvas()
+      });
+
+      serviceWindow.add(widget, {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0
+      });
+
+      serviceWindow.moveTo(100, 100);
+
+      return serviceWindow;
+    },
+
     __addNodeToWorkbench: function(node, position) {
       if (position === undefined || position === null) {
         let farthestRight = 0;
@@ -317,7 +343,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       node.addListener("dblclick", function(e) {
         if (node.getMetadata().key === "FileManager") {
-          let fileManager = new qxapp.components.workbench.widgets.FileManager();
+          const width = 800;
+          const height = 600;
+          let fileManager = new qxapp.components.widgets.FileManager();
+          let fileManagerWindow = this.__createWindowForBuiltInService(fileManager, width, height, "File Manager");
           fileManager.addListener("FileSelected", function(data) {
             const filePath = data.getData().filePath;
             const splitted = filePath.split("/");
@@ -329,7 +358,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             node.getPortByIndex(false, 1).ui.setLabel("");
             node.getPortByIndex(false, 1).ui.getToolTip().setLabel("");
             node.setProgress(100);
-            fileManager.close();
+            fileManagerWindow.close();
           }, this);
           fileManager.addListener("FolderSelected", function(data) {
             const folderPath = data.getData().filePath;
@@ -342,11 +371,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             node.getPortByIndex(false, 1).ui.setLabel(folderName);
             node.getPortByIndex(false, 1).ui.getToolTip().setLabel(folderName);
             node.setProgress(100);
-            fileManager.close();
+            fileManagerWindow.close();
           }, this);
 
-          fileManager.moveTo(100, 100);
-          fileManager.open();
+          fileManagerWindow.moveTo(100, 100);
+          fileManagerWindow.open();
         } else {
           this.fireDataEvent("NodeDoubleClicked", node);
         }
