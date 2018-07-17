@@ -2,7 +2,7 @@
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function() {
+  construct: function(projectId) {
     this.base(arguments, "horizontal");
 
     let splitter = this.__splitter = this.getChildControl("splitter");
@@ -33,9 +33,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
     });
 
-
-
-    let workbench = this.__workbench = new qxapp.components.workbench.Workbench();
+    let workbenchData = {};
+    if (projectId !== null) {
+      workbenchData = qxapp.dev.fake.Data.getProjectList()[projectId].workbench;
+    }
+    let workbench = this.__workbench = new qxapp.components.workbench.Workbench(workbenchData);
     this.add(workbench, 1);
 
     workbench.addListenerOnce("appear", () => {
@@ -137,10 +139,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       win.moveTo(150, 150);
 
       return win;
-    },
-
-    setData: function(newData) {
-      this.__workbench.setData(newData);
     }
   }
 });
