@@ -18,9 +18,7 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
 
     this.getContentElement().add(input);
 
-    let pick = new qx.ui.form.Button(this.tr("Add file(s)"));
-    this._add(pick);
-
+    let pick = this._createChildControlImpl("addButton");
     // Add an event listener
     pick.addListener("execute", function(e) {
       input.getDomElement().click();
@@ -33,16 +31,12 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
       }
     }, this);
 
-    let tree = this.__mainTree = new qx.ui.tree.Tree();
-    this._add(tree, {
-      flex: 1
-    });
+    let tree = this.__mainTree = this._createChildControlImpl("treeMenu");
     tree.addListener("changeSelection", this.__selectionChanged, this);
 
-    this.__selectBtn = new qx.ui.form.Button(this.tr("Select"));
-    this.__selectBtn.setEnabled(false);
-    this._add(this.__selectBtn);
-    this.__selectBtn.addListener("execute", function() {
+    let selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
+    selectBtn.setEnabled(false);
+    selectBtn.addListener("execute", function() {
       this.__itemSelected();
     }, this);
 
@@ -64,6 +58,32 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
   members: {
     __mainTree: null,
     __selectBtn: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "addButton":
+          control = new qx.ui.form.Button(this.tr("Add file(s)"));
+          this._add(control);
+          break;
+        case "treeMenu":
+          control = new qx.ui.tree.Tree();
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "selectButton":
+          control = new qx.ui.form.Button(this.tr("Select"));
+          this._add(control);
+          break;
+        case "progressBox":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+          this._addAt(control, 1);
+          break;
+      }
+
+      return control || this.base(arguments, id);
+    },
 
     __reloadTree: function() {
       this.__mainTree.resetRoot();
@@ -192,7 +212,7 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
 
     // Use XMLHttpRequest to upload the file to S3.
     __uploadFile: function(file, url) {
-      let hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      let hBox = this._createChildControlImpl("progressBox");
       let label = new qx.ui.basic.Label(file.name);
       let progressBar = new qx.ui.indicator.ProgressBar();
       hBox.add(label, {
@@ -201,7 +221,6 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
       hBox.add(progressBar, {
         width: "85%"
       });
-      this._addAt(hBox, 1);
       let xhr = new XMLHttpRequest();
       xhr.upload.addEventListener("progress", function(e) {
         if (e.lengthComputable) {
@@ -216,7 +235,7 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
       xhr.onload = () => {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
-          this._remove(hBox);
+          hBox.destroy();
           this.__reloadTree();
         }
       };
