@@ -55,10 +55,7 @@ def create_dummy(json_configuration_file_path):
     # correct configuration with node uuid
     json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", node_uuid)
     configuration = json.loads(json_configuration)
-    # now create the node in the db with links to S3
-    new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, input=configuration["inputs"], output=configuration["outputs"])
-    db.session.add(new_Node)
-    db.session.commit()
+    
 
     # init s3
     s3 = init_s3()
@@ -71,14 +68,24 @@ def create_dummy(json_configuration_file_path):
             # it could be correct so just stop here
             break
         if input_item["type"] == "file-url":
-            s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"])
+            filename = available_files[0].name
+            s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, str(filename))
             s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), str(available_files[0]))
+            input_item["key"] = str(filename)  
+            input_item["value"] = ".".join(["link", node_uuid, str(filename)])  
             uploaded_files.append(available_files[0])
         elif input_item["type"] == "folder-url":
             for f in available_files:
-                i = available_files.index(f)
-                s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"], str(i))
+                #i = available_files.index(f)
+                s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"], str(filename))
+                #configuration["inputs"]["key"] = input_item["key"]
                 s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), f)
+
+
+    # now create the node in the db with links to S3
+    new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, input=configuration["inputs"], output=configuration["outputs"])
+    db.session.add(new_Node)
+    db.session.commit()
 
     # print the node uuid so that it can be set as env variable from outside
     print(node_uuid)
