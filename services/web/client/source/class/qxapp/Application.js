@@ -49,66 +49,50 @@ qx.Class.define("qxapp.Application", {
       // openning web socket
       qxapp.wrappers.WebSocket.getInstance().connect();
 
-      // Setting up auth manager
-      qxapp.auth.Manager.getInstance().addListener("logout", function() {
-        this.__restart();
-      }, this);
-
-      this.__restart();
+      this.start();
     },
 
-    __restart: function() {
-      let isLogged = qxapp.auth.Manager.getInstance().isLoggedIn();
+    /**
+     * This is controlled entry-point to start the application
+    */
+    start: function() {
+      let isLogged = qxapp.auth.Store.isLoggedIn();
 
       if (qx.core.Environment.get("dev.disableLogin")) {
         console.warn("Login page was disabled", "Starting main application ...");
         isLogged = true;
       }
 
-      let view = null;
-      let options = null;
-
       if (isLogged) {
-        view = new qxapp.desktop.LayoutManager();
-
-        options = {
-          left: 0,
-          top: 0,
-          height: "100%",
-          width: "100%"
-        };
+        this.__startDesktop();
       } else {
-        view = new qxapp.auth.AuthView();
-        view.addListener("done", function(msg) {
-          this.__restart();
-        }, this);
-
-        options ={
-          top: "10%",
-          bottom: 0,
-          left: 0,
-          right: 0
-        };
+        this.__layoutManager = null;
+        let page = new qxapp.auth.LoginPage();
+        page.show();
       }
-
-      this.assert(view!==null);
-
-      // Update root document and currentness
-      let doc = this.getRoot();
-      if (doc.hasChildren() && this.__current) {
-        doc.remove(this.__current);
-        // this.__current.destroy();
-      }
-      doc.add(view, options);
-      this.__current = view;
     },
 
     /**
      * Resets session and restarts
     */
     logout: function() {
-      qxapp.auth.Manager.getInstance().logout();
-      this.__restart();
+      qxapp.auth.Store.resetToken();
+      this.getRoot().removeAll();
+      this.start();
+    },
+
+    /**
+     * Desktop correspond to the main application's pages
+    */
+    __startDesktop: function() {
+      this.__layoutManager = new qxapp.desktop.LayoutManager();
+
+      this.getRoot().add(this.__layoutManager, {
+        left: "0%",
+        top: "0%",
+        height: "100%",
+        width: "100%"
+      });
     }
 
   }

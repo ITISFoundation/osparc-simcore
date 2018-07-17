@@ -49,5 +49,5 @@ def import_thrift_api_module(module_name):
 
         If all retrials fail, it raises ImportError
     """
-    from config import THRIFT_GEN_OUTDIR
+    from ..config import THRIFT_GEN_OUTDIR
     return import_with_retry(module_name, *list(THRIFT_GEN_OUTDIR))
