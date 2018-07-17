@@ -1,0 +1,32 @@
+version: '3.4'
+services:
+  simcore-paraviewweb:
+    build:
+      target: development
+    depends_on:
+      - postgres
+      - minio
+  postgres:
+    image: postgres:10
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+  #--------------------------------------------------------------------
+  adminer:
+    image: adminer
+    ports:
+      - 18080:8080
+    depends_on:
+      - postgres
+  #--------------------------------------------------------------------
+  minio:
+    image: minio/minio
+    environment:
+      - MINIO_ACCESS_KEY=${S3_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${S3_SECRET_KEY}
+    ports:
+      - "9001:9000"
+    command: server /data
