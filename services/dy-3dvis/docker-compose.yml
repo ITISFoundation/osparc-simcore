@@ -26,4 +26,6 @@ services:
         io.simcore.inputs: '{"inputs": [{"key": "in1", "label": "some 3D dataset", "desc": "A mesh, volume data", "type": "file-url", "value": "null"}, {"key": "in2", "label": "some 3D dataset", "desc": "A mesh, volume data", "type": "file-url", "value": "null"}]}'
         io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
     ports:
-      - '8776:8777'
+      - '8777:8777'
+    depends_on: 
+      - paraviewweb
