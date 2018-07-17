@@ -5,27 +5,16 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
 
   construct: function() {
     this.base();
-
-    this.addListenerOnce("appear", function() {
+    this.addListenerOnce("appear", () => {
+      let el = this.getContentElement().getDomElement();
+      qx.bom.element.Attribute.set(el, "id", LINKS_LAYER_ID);
       this.__svgWrapper = new qxapp.wrappers.SvgWrapper();
-      this.__svgWrapper.addListener(("SvgLibReady"), function(e) {
-        let ready = e.getData();
-        if (ready) {
-          let svgPlaceholder = qx.dom.Element.create("div");
-          qx.bom.element.Attribute.set(svgPlaceholder, "id", LINKS_LAYER_ID);
-          qx.bom.element.Style.set(svgPlaceholder, "width", "100%");
-          qx.bom.element.Style.set(svgPlaceholder, "height", "100%");
-          this.getContentElement().getDomElement()
-            .appendChild(svgPlaceholder);
-          this.__linksCanvas = this.__svgWrapper.createEmptyCanvas(LINKS_LAYER_ID);
-          this.fireDataEvent("SvgWidgetReady", true);
-        } else {
-          console.log("svg.js was not loaded");
-        }
-      }, this);
-
+      this.__svgWrapper.addListener(("SvgLibReady"), () => {
+        this.__linksCanvas = this.__svgWrapper.createEmptyCanvas(LINKS_LAYER_ID);
+        this.fireDataEvent("SvgWidgetReady", true);
+      });
       this.__svgWrapper.init();
-    }, this);
+    });
   },
 
   events: {
