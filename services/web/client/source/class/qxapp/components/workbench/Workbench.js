@@ -7,7 +7,7 @@ const BUTTON_SPACING = 10;
 qx.Class.define("qxapp.components.workbench.Workbench", {
   extend: qx.ui.container.Composite,
 
-  construct: function() {
+  construct: function(workbenchData) {
     this.base();
 
     let canvas = new qx.ui.layout.Canvas();
@@ -24,6 +24,14 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     });
 
     this.__svgWidget = new qxapp.components.workbench.SvgWidget();
+    // this gets fired once the widget has appeared and the library has been loaded
+    // due to the qx rendering, this will always happen after setup, so we are
+    // sure to catch this event
+    this.__svgWidget.addListenerOnce("SvgWidgetReady", function() {
+      // Will be called only the first time Svg lib is loaded
+      this.__loadProject(workbenchData);
+    }, this);
+
     this.__desktop.add(this.__svgWidget, {
       left: 0,
       top: 0,
@@ -43,20 +51,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         this.__selectedItemChanged(null);
       }
     }, this);
-
-    this.__svgWidget.addListener("SvgWidgetReady", function() {
-      // Will be called only the first time Svg lib is loaded
-      this.__deserializeData();
-    }, this);
-
-    this.__svgWidget.addListener("SvgWidgetReady", function() {
-      this.__svgWidget.addListener("appear", function() {
-        // Will be called once Svg lib is loaded and appears
-        this.__deserializeData();
-      }, this);
-    }, this);
-
-
     this.__logger = new qxapp.components.workbench.logger.LoggerView();
     this.__desktop.add(this.__logger);
 
@@ -758,8 +752,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return pipeline;
     },
 
-    setData: function(pipeData) {
-      this.__myData = pipeData;
+    setProjectData: function(data) {
+      this.__myData = data;
     },
 
     __deserializeData: function() {
