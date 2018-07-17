@@ -1,3 +1,6 @@
+# pylint: disable=unused-argument
+# pylint: disable=bare-except
+
 import logging
 import os
 import psycopg2

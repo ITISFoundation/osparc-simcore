@@ -6,6 +6,7 @@ from server.config import TEST_CONFIG_PATH
 
 _LOGGER = logging.getLogger(__file__)
 
+# pylint: disable=redefined-outer-name
 @pytest.fixture
 def cli(loop, aiohttp_client, postgres_service):
     """

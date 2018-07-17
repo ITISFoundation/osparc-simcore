@@ -1,3 +1,8 @@
+""" Authentication and authorization
+
+"""
+# pylint: disable=assignment-from-no-return
+import logging
 import sqlalchemy as sa
 
 from aiohttp_security import (
@@ -9,6 +14,8 @@ from passlib.hash import sha256_crypt
 
 
 from .model import users, permissions
+
+_LOGGER = logging.getLogger(__file__)
 
 
 class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
@@ -27,7 +34,7 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        # pylint:disable=E1120
+        # pylint: disable=E1120
         async with self.dbengine.acquire() as conn:
             where = sa.and_(users.c.login == identity,
                             sa.not_(users.c.disabled))
@@ -43,6 +50,7 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
         Return True if the identity is allowed the permission in the
         current context, else return False.
         """
+        _LOGGER.debug("context: %s", context)
         if identity is None:
             return False
 
