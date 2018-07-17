@@ -51,8 +51,7 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
   },
 
   events: {
-    "FileSelected": "qx.event.type.Data",
-    "FolderSelected": "qx.event.type.Data"
+    "ItemSelected": "qx.event.type.Data"
   },
 
   members: {
@@ -250,13 +249,10 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
       let selectedItem = this.__mainTree.getSelection();
       if ("path" in selectedItem[0]) {
         const data = {
-          filePath: selectedItem[0].path
+          itemPath: selectedItem[0].path,
+          isDirectory: selectedItem[0].isDir
         };
-        if (selectedItem[0].isDir) {
-          this.fireDataEvent("FolderSelected", data);
-        } else {
-          this.fireDataEvent("FileSelected", data);
-        }
+        this.fireDataEvent("ItemSelected", data);
       }
     }
   }

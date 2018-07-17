@@ -347,29 +347,21 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           const height = 600;
           let fileManager = new qxapp.components.widgets.FileManager();
           let fileManagerWindow = this.__createWindowForBuiltInService(fileManager, width, height, "File Manager");
-          fileManager.addListener("FileSelected", function(data) {
-            const filePath = data.getData().filePath;
-            const splitted = filePath.split("/");
-            const fileName = splitted[splitted.length-1];
-            node.getMetadata().outputs[0].value = filePath;
-            node.getMetadata().outputs[1].value = null;
-            node.getPortByIndex(false, 0).ui.setLabel(fileName);
-            node.getPortByIndex(false, 0).ui.getToolTip().setLabel(fileName);
-            node.getPortByIndex(false, 1).ui.setLabel("");
-            node.getPortByIndex(false, 1).ui.getToolTip().setLabel("");
-            node.setProgress(100);
-            fileManagerWindow.close();
-          }, this);
-          fileManager.addListener("FolderSelected", function(data) {
-            const folderPath = data.getData().filePath;
-            const splitted = folderPath.split("/");
-            const folderName = splitted[splitted.length-1];
-            node.getMetadata().outputs[0].value = null;
-            node.getMetadata().outputs[1].value = folderPath;
-            node.getPortByIndex(false, 0).ui.setLabel("");
-            node.getPortByIndex(false, 0).ui.getToolTip().setLabel("");
-            node.getPortByIndex(false, 1).ui.setLabel(folderName);
-            node.getPortByIndex(false, 1).ui.getToolTip().setLabel(folderName);
+          fileManager.addListener("ItemSelected", function(data) {
+            const filePortIndex = 0;
+            const dirPortIndex = 1;
+            const itemPath = data.getData().itemPath;
+            const splitted = itemPath.split("/");
+            const itemName = splitted[splitted.length-1];
+            const isDirectory = data.getData().isDirectory;
+            const activeIndex = isDirectory ? dirPortIndex : filePortIndex;
+            const inactiveIndex = isDirectory ? filePortIndex : dirPortIndex;
+            node.getMetadata().outputs[activeIndex] = itemPath;
+            node.getMetadata().outputs[inactiveIndex].value = null;
+            node.getPortByIndex(false, activeIndex).ui.setLabel(itemName);
+            node.getPortByIndex(false, activeIndex).ui.getToolTip().setLabel(itemName);
+            node.getPortByIndex(false, inactiveIndex).ui.setLabel("");
+            node.getPortByIndex(false, inactiveIndex).ui.getToolTip().setLabel("");
             node.setProgress(100);
             fileManagerWindow.close();
           }, this);
