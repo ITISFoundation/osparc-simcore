@@ -19,7 +19,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
       description: "Empty",
       thumbnail: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round",
       created: null,
-      prjId: null
+      projectId: null
     }),
     getNodeMap: function() {
       return {
@@ -232,6 +232,21 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             }
           }
+        },
+        {
+          name: "Sample Project II",
+          description: "An empty project",
+          notes: "# title\nThere be dragons inside",
+          owner: "UUID-OF-TOBI",
+          collaborators: {
+            "UUID-OF-PEDRO": [
+              "read",
+              "write"
+            ]
+          },
+          creationDate: "2018-07-08T16:01:00Z",
+          lastChangeDate: "2018-07-09T16:02:22Z",
+          workbench: {}
         }
       ];
     },
@@ -294,7 +309,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           description: "This is a short description by " + username,
           thumbnail: null,
           created: null,
-          prjId: null
+          projectId: null
         });
         rawData.push(item);
       }
@@ -312,7 +327,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         description: "Sample used for the unidirectional pipelining",
         thumbnail: null,
         created: null,
-        prjId: "temp1"
+        projectId: "temp1"
       });
       rawData.push(item1);
 
@@ -321,7 +336,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         description: "Colleen Clancy use case",
         thumbnail: null,
         created: null,
-        prjId: "temp2"
+        projectId: "temp2"
       });
       rawData.push(item2);
 
@@ -330,8 +345,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
       return data;
     },
 
-    getPrjData: function(prjId) {
-      switch (prjId) {
+    getPrjData: function(projectId) {
+      switch (projectId) {
         case "temp1": {
           let tempData = this.getTemp1Data();
           return tempData;
