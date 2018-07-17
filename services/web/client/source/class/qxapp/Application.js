@@ -93,7 +93,7 @@ qx.Class.define("qxapp.Application", {
       }
 
       this.assert(view!==null);
-  // Update root document and currentness
+      // Update root document and currentness
       let doc = this.getRoot();
       if (doc.hasChildren() && this.__current) {
         doc.remove(this.__current);
