@@ -216,7 +216,7 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
       xhr.onload = () => {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
-          this.remove(hBox);
+          this._remove(hBox);
           this.__reloadTree();
         }
       };
