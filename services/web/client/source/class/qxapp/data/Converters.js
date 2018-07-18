@@ -3,8 +3,8 @@ qx.Class.define("qxapp.data.Converters", {
   type: "static",
 
   statics: {
-    registryToMetadata: function(data) {
-      let metadata = {};
+    registryToMetaData: function(data) {
+      let metaData = {};
       [
         "key",
         "name",
@@ -16,16 +16,16 @@ qx.Class.define("qxapp.data.Converters", {
         "outputs",
         "settings"
       ].forEach(field => {
-        metadata[field] = null;
+        metaData[field] = null;
         if (Object.prototype.hasOwnProperty.call(data, field)) {
-          metadata[field] = data[field];
+          metaData[field] = data[field];
         }
       });
       // for dynamic services
       if (data.viewer) {
-        metadata["viewer"] = data["viewer"];
+        metaData["viewer"] = data["viewer"];
       }
-      return metadata;
+      return metaData;
     }
   }
 });

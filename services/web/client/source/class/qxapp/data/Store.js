@@ -55,8 +55,8 @@ qx.Class.define("qxapp.data.Store", {
           const repo = listOfRepositories[key];
           const nTags = repo.length;
           for (let i=0; i<nTags; i++) {
-            let newMetadata = qxapp.data.Converters.registryToMetadata(repo[i]);
-            services.push(newMetadata);
+            let newMetaData = qxapp.data.Converters.registryToMetaData(repo[i]);
+            services.push(newMetaData);
           }
         }
         this.fireDataEvent("servicesRegistered", services);
@@ -75,8 +75,8 @@ qx.Class.define("qxapp.data.Store", {
           const repo = listOfIntercativeServices[key];
           if (repo["details"].length>0 && repo["details"][0].length>0) {
             const repoData = repo["details"][0][0];
-            let newMetadata = qxapp.data.Converters.registryToMetadata(repoData);
-            services.push(newMetadata);
+            let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
+            services.push(newMetaData);
           }
         }
         this.fireDataEvent("interactiveServicesRegistered", services);
