@@ -25,7 +25,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
       return {
         "service/computational/itis/tutti:0.0.0-alpha": {
           key: "service/computational/itis/tutti",
-          tag: "0.0.0-alpha",
+          version: "0.0.0-alpha",
+          type: "computational",
           name: "a little test node",
           description: "just the bare minimum",
           authors: [
@@ -154,7 +155,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           lastChangeDate: "2018-07-02T16:02:22Z",
           workbench: {
             "UUID1": {
-              type: "service/dynamic/itis/file-picker",
+              key: "service/dynamic/itis/file-picker",
               version: "0.0.0",
               outputs: {
                 out1: {
@@ -168,7 +169,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "UUID2": {
-              type: "service/computational/itis/sleeper",
+              key: "service/computational/itis/sleeper",
               version: "0.0.1-alpha",
               inputs: {
                 inNumber: 3.5,
@@ -184,7 +185,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "UUID3": {
-              type: "service/computational/itis/sleeper",
+              key: "service/computational/itis/sleeper",
               version: "0.0.1-alpha",
               inputs: {
                 inNumber: {
@@ -208,13 +209,13 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "UUID4": {
-              type: "service/computational/itis/tutti",
+              key: "service/computational/itis/tutti",
               version: "0.0.0-alpha",
               inputs: {
                 inNumber: 3.3,
                 inInt: 372,
                 inBool: true,
-                inStr: "Ooops, Again",
+                inStr: "Ooops, Agnodain",
                 inArea: "some\nmore",
                 inSb: "cat",
                 inFile: {

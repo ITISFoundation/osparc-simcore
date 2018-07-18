@@ -79,12 +79,12 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "type",
-            "version",
+            "key",
+            "tag",
             "position"
           ],
           "properties": {
-            "type": {
+            "key": {
               "type": "string",
               "description": "distinctive name for the node based on the docker registry path",
               "pattern": "^(service)/(computational|dynamic)(/[^\\s/]+)+$",
@@ -93,7 +93,7 @@
                 "service/dynamic/3dviewer"
               ]
             },
-            "version": {
+            "tag": {
               "type": "string",
               "description": "semantic version number of the node",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",

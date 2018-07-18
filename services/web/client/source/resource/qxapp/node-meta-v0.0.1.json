@@ -7,8 +7,9 @@
     "additionalProperties": false,
     "required": [
         "key",
+        "version",
+        "type",
         "name",
-        "tag",
         "description",
         "authors",
         "contact",
@@ -25,7 +26,7 @@
                 "service/dynamic/itis/3dviewer"
             ]
         },
-        "tag": {
+        "version": {
             "type": "string",
             "description": "semantic version number",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
@@ -33,6 +34,14 @@
                 "1.0.0",
                 "0.0.1"
             ]
+        },
+        "type": {
+          "type": "string",
+          "description": "service type",
+          "enum": ["computational","dynamic"],
+          "examples": [
+              "computational"
+          ]
         },
         "name": {
             "type": "string",
