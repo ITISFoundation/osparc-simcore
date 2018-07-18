@@ -4,7 +4,7 @@ const portHeight = 16;
 qx.Class.define("qxapp.components.workbench.NodeBase", {
   extend: qx.ui.window.Window,
 
-  construct: function(uuid) {
+  construct: function(nodeImageId, uuid, nodeData) {
     this.base();
 
     this.set({
@@ -16,8 +16,12 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       resizable: false,
       allowMaximize: false,
       minWidth: nodeWidth,
-      maxWidth: nodeWidth
+      maxWidth: nodeWidth,
+      // custom
+      nodeImageId: nodeImageId,
+      nodeId: uuid || qxapp.utils.Utils.uuidv4()
     });
+
 
     let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
     this.setLayout(nodeLayout);
@@ -58,14 +62,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     this.add(progressBox);
 
-
-    this.__inputPorts = [];
-    this.__outputPorts = [];
-    if (uuid === undefined) {
-      this.setNodeId(qxapp.utils.Utils.uuidv4());
-    } else {
-      this.setNodeId(uuid);
-    }
+    this.__populateNode(qxapp.dev.fake.Data.getNodeMap()[nodeType]);
   },
 
   properties: {
@@ -77,10 +74,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     nodeImageId: {
       check: "String",
       nullable: false
-    },
-
-    metadata: {
-      apply : "__applyMetadata"
     },
 
     propsWidget: {
@@ -109,6 +102,11 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     __progressLabel: null,
     __settingsForm: null,
     __progressBar: null,
+    __metaData: null,
+
+    getMetaData: function() {
+      return this.__metaData;
+    },
 
     getInputPorts: function() {
       return this.__inputPorts;
@@ -146,40 +144,30 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return bounds;
     },
 
-    __applyMetadata: function(metaData, old) {
-      if (metaData != undefined) {
-        this.set({
-          serviceName: metaData.name,
-          nodeImageId: metaData.key
-        });
-        let props = metaData.inputs.concat(metaData.settings);
-        this.__addSettings(props);
-        this.__addViewerButton(metaData);
-        this.__addInputPorts(metaData.inputs);
-        this.__addOutputPorts(metaData.outputs);
-      }
+    __populateNode: function(metaData) {
+      this.__inputPorts = [];
+      this.__outputPorts = [];
+      this.__metaData = metaData;
+      // let props = metaData.inputs.concat(metaData.settings);
+      this.__addSettings(metaData.inputs);
+      this.__addViewerButton();
+      this.__addInputPorts(metaData.inputs);
+      this.__addOutputPorts(metaData.outputs);
     },
 
     setServiceName: function(name) {
       this.setCaption(name);
     },
 
-    __addSettings: function(settings) {
-      let form = this.__settingsForm = new qxapp.components.form.Auto(settings);
+    __addSettings: function(inputs) {
+      let form = this.__settingsForm = new qxapp.components.form.Auto(inputs);
       this.__settingsForm.addListener("changeData", function(e) {
         let settingsForm = e.getData();
         for (var settingKey in settingsForm) {
-          if (this.getMetadata().inputs) {
-            for (let i=0; i<this.getMetadata().inputs.length; i++) {
-              if (settingKey === this.getMetadata().inputs[i].key) {
-                this.getMetadata().inputs[i].value = settingsForm[settingKey];
-              }
-            }
-          }
-          if (this.getMetadata().settings) {
-            for (let i=0; i<this.getMetadata().settings.length; i++) {
-              if (settingKey === this.getMetadata().settings[i].key) {
-                this.getMetadata().settings[i].value = settingsForm[settingKey];
+          if (this.__metaData.inputs) {
+            for (let i=0; i<this.__metaData.inputs.length; i++) {
+              if (settingKey === this.__metaData.inputs[i].key) {
+                this.__metaData.inputs[i].value = settingsForm[settingKey];
               }
             }
           }
@@ -188,11 +176,37 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
     },
 
-    __addViewerButton: function(metadata) {
-      if (metadata.viewer) {
-        let button = new qx.ui.form.Button("Open Viewer");
-        button.setEnabled(metadata.viewer.port !== null);
-        this.setViewerButton(button);
+    __addViewerButton: function() {
+      let metaData = this.__metaData;
+      if (metaData.type == "dynamic") {
+        const slotName = "startDynamic";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        socket.on(slotName, function(val) {
+          // FIXME this is not unique as multiple instances of this
+          // service could be starting up at the same time
+          if (val["service_uuid"] === this.getNodeId()) {
+            let portNumber = val["containers"][0].published_ports[0];
+            if (portNumber !== null) {
+              let button = new qx.ui.form.Button("Open Viewer");
+              const srvUrl = "http://" + window.location.hostname + ":" + portNumber;
+              this.set({
+                viewerButton: button
+              });
+              button.addListener("execute", function(e) {
+                this.getPropsWidget().fireDataEvent("ShowViewer", {
+                  url: srvUrl,
+                  name: metaData.name
+                });
+              }, this);
+              console.debug(metaData.name, "Service ready on " + srvUrl);
+            }
+          }
+        }, this);
+        let data = {
+          serviceName: metaData.name,
+          nodeId: this.getNodeId()
+        };
+        socket.emit(slotName, data);
       }
     },
 

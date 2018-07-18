@@ -66,8 +66,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     }, this);
 
     this.__settingsView.addListener("ShowViewer", function(e) {
-      let url = "http://" + window.location.hostname + ":" + e.getData().viewer.port;
-      let viewerWin = this.__createBrowserWindow(url, e.getData().name);
+      let data = e.getData();
+      let viewerWin = this.__createBrowserWindow(data.url, data.name);
       this.__workbench.addWindowToDesktop(viewerWin);
     }, this);
 

@@ -27,10 +27,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
     // sure to catch this event
-    this.__svgWidget.addListenerOnce("SvgWidgetReady", function() {
-      // Will be called only the first time Svg lib is loaded
-      this.__loadProject(workbenchData);
-    }, this);
+    if (workbenchData) {
+      this.__svgWidget.addListenerOnce("SvgWidgetReady", () => {
+        // Will be called only the first time Svg lib is loaded
+        this.__loadProject(workbenchData);
+      });
+    }
 
     this.__desktop.add(this.__svgWidget, {
       left: 0,
@@ -51,6 +53,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         this.__selectedItemChanged(null);
       }
     }, this);
+    // TODO how about making the LoggerView a singleton then it could be accessed from everywhere
     this.__logger = new qxapp.components.workbench.logger.LoggerView();
     this.__desktop.add(this.__logger);
 
@@ -310,14 +313,14 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       node.addListener("dblclick", function(e) {
-        if (node.getMetadata().key === "FileManager") {
+        if (node.getMetaData().key === "FileManager") {
           let fileManager = new qxapp.components.workbench.widgets.FileManager();
           fileManager.addListener("FileSelected", function(data) {
             const filePath = data.getData().filePath;
             const splitted = filePath.split("/");
             const fileName = splitted[splitted.length-1];
-            node.getMetadata().outputs[0].value = filePath;
-            node.getMetadata().outputs[1].value = null;
+            node.getMetaData().outputs[0].value = filePath;
+            node.getMetaData().outputs[1].value = null;
             node.getPortByIndex(false, 0).ui.setLabel(fileName);
             node.getPortByIndex(false, 0).ui.getToolTip().setLabel(fileName);
             node.getPortByIndex(false, 1).ui.setLabel("");
@@ -329,8 +332,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             const folderPath = data.getData().filePath;
             const splitted = folderPath.split("/");
             const folderName = splitted[splitted.length-1];
-            node.getMetadata().outputs[0].value = null;
-            node.getMetadata().outputs[1].value = folderPath;
+            node.getMetaData().outputs[0].value = null;
+            node.getMetaData().outputs[1].value = folderPath;
             node.getPortByIndex(false, 0).ui.setLabel("");
             node.getPortByIndex(false, 0).ui.getToolTip().setLabel("");
             node.getPortByIndex(false, 1).ui.setLabel(folderName);
@@ -350,31 +353,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       qx.ui.core.queue.Layout.flush();
     },
 
-    __createNode: function(nodeMetaData) {
-      let nodeBase = new qxapp.components.workbench.NodeBase(nodeMetaData.uuid);
-      nodeBase.setMetadata(nodeMetaData);
+    __createNode: function(nodeImageId, uuid, nodeData) {
+      let nodeBase = new qxapp.components.workbench.NodeBase(nodeImageId, uuid, nodeData);
 
-      const imageId = nodeBase.getNodeImageId();
-      if (imageId.includes("dynamic")) {
-        const slotName = "startDynamic";
-        let socket = qxapp.wrappers.WebSocket.getInstance();
-        socket.on(slotName, function(val) {
-          if (val["service_uuid"] === nodeBase.getNodeId()) {
-            let portNumber = val["containers"][0].published_ports[0];
-            nodeBase.getMetadata().viewer.port = portNumber;
-            nodeBase.getMetadata().viewer.ip = "http://" + window.location.hostname;
-            nodeBase.getViewerButton().setEnabled(portNumber !== null);
-            const servUrl = nodeBase.getMetadata().viewer.ip +":"+ nodeBase.getMetadata().viewer.port;
-            this.__logger.debug(nodeBase.getMetadata().name, "Service ready on " + servUrl);
-            this.__logger.info(nodeBase.getMetadata().name, "Service ready");
-          }
-        }, this);
-        let data = {
-          serviceName: nodeBase.getMetadata().name,
-          nodeId: nodeBase.getNodeId()
-        };
-        socket.emit(slotName, data);
-      }
+
 
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
@@ -387,12 +369,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         event.addAction("move");
 
         // Register supported types
-        event.addType("osparc-metadata");
+        event.addType("osparc-metaData");
         let dragData = {
           dragNodeId: dragNodeId,
           dragPortId: dragPortId
         };
-        event.addData("osparc-metadata", dragData);
+        event.addData("osparc-metaData", dragData);
 
         this.__tempLinkNodeId = dragData.dragNodeId;
         this.__tempLinkPortId = dragData.dragPortId;
@@ -411,9 +393,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let dropPortId = data.portId;
 
         let compatible = false;
-        if (event.supportsType("osparc-metadata")) {
-          const dragNodeId = event.getData("osparc-metadata").dragNodeId;
-          const dragPortId = event.getData("osparc-metadata").dragPortId;
+        if (event.supportsType("osparc-metaData")) {
+          const dragNodeId = event.getData("osparc-metaData").dragNodeId;
+          const dragPortId = event.getData("osparc-metaData").dragPortId;
           const dragTarget = this.__getNode(dragNodeId).getPort(dragPortId);
           const dropTarget = this.__getNode(dropNodeId).getPort(dropPortId);
           compatible = this.__arePortsCompatible(dragTarget, dropTarget);
@@ -430,9 +412,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let dropNodeId = data.nodeId;
         let dropPortId = data.portId;
 
-        if (event.supportsType("osparc-metadata")) {
-          let dragNodeId = event.getData("osparc-metadata").dragNodeId;
-          let dragPortId = event.getData("osparc-metadata").dragPortId;
+        if (event.supportsType("osparc-metaData")) {
+          let dragNodeId = event.getData("osparc-metaData").dragNodeId;
+          let dragPortId = event.getData("osparc-metaData").dragPortId;
           let nodeA = this.__getNode(dragNodeId);
           let portA = nodeA.getPort(dragPortId);
           let nodeB = this.__getNode(dropNodeId);
@@ -732,12 +714,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       for (let i = 0; i < this.__nodes.length; i++) {
         let node = {};
         node["uuid"] = this.__nodes[i].getNodeId();
-        node["key"] = this.__nodes[i].getMetadata().key;
-        node["tag"] = this.__nodes[i].getMetadata().tag;
-        node["name"] = this.__nodes[i].getMetadata().name;
-        node["inputs"] = this.__nodes[i].getMetadata().inputs;
-        node["outputs"] = this.__nodes[i].getMetadata().outputs;
-        node["settings"] = this.__nodes[i].getMetadata().settings;
+        node["key"] = this.__nodes[i].getMetaData().key;
+        node["tag"] = this.__nodes[i].getMetaData().tag;
+        node["name"] = this.__nodes[i].getMetaData().name;
+        node["inputs"] = this.__nodes[i].getMetaData().inputs;
+        node["outputs"] = this.__nodes[i].getMetaData().outputs;
+        node["settings"] = this.__nodes[i].getMetaData().settings;
         pipeline["nodes"].push(node);
       }
       for (let i = 0; i < this.__links.length; i++) {
@@ -752,37 +734,33 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return pipeline;
     },
 
-    setProjectData: function(data) {
-      this.__myData = data;
-    },
-
-    __deserializeData: function() {
-      this.removeAll();
-      if (this.__myData === null) {
-        return;
-      }
-
-      // add nodes
-      let nodesMetaData = this.__myData.nodes;
-      for (let i = 0; i < nodesMetaData.length; i++) {
-        let nodeMetaData = nodesMetaData[i];
-        let node = this.__createNode(nodeMetaData);
-        node.setNodeId(nodeMetaData.uuid);
-        if (nodeMetaData.position) {
-          this.__addNodeToWorkbench(node, nodeMetaData.position);
+    __loadProject: function(workbenchData) {
+      for (let nodeUuid in workbenchData) {
+        let nodeData = workbenchData[nodeUuid];
+        let node = this.__createNode(nodeData.key + "-" + nodeData.version, nodeUuid, nodeData);
+        if (nodeData.position) {
+          this.__addNodeToWorkbench(node, nodeData.position);
         } else {
           this.__addNodeToWorkbench(node);
         }
       }
-
-      // add links
-      let links = this.__myData.links;
-      for (let i = 0; i < links.length; i++) {
-        let node1 = this.__getNode(links[i].node1Id);
-        let port1 = node1.getPort(links[i].port1Id);
-        let node2 = this.__getNode(links[i].node2Id);
-        let port2 = node2.getPort(links[i].port2Id);
-        this.__addLink(node1, port1, node2, port2, links[i].uuid);
+      if (workbenchData.inputs) {
+        for (let nodeUuid in workbenchData) {
+          let nodeData = workbenchData[nodeUuid];
+          let node1 = this.__getNode(nodeUuid);
+          let inputs = nodeData.inputs;
+          if (inputs) {
+            for (let port1Id in inputs) {
+              let node2Uuid = inputs[port1Key].nodeUuid;
+              if (node2Uuid) {
+                let port1 = node1.getPort(port1Id);
+                let node2 = this.__getNode(nodeUuid);
+                let port2 = node2.getPort(inputs[port1].property);
+                this.__addLink(node1, port1, node2, port2);
+              }
+            }
+          }
+        }
       }
     },
 
