@@ -61,7 +61,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     this.showSettings(false);
 
-    this.__settingsView.addListener("SettingsEditionDone", function() {
+    this.__settingsView.addListener("SettingsEdited", function() {
       this.showSettings(false);
     }, this);
 
