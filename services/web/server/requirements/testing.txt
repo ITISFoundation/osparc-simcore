@@ -1,7 +1,0 @@
-passlib
-pytest
-pytest-aiohttp
-pytest-docker
-pylint>=2
-pytest-cov
-coveralls
