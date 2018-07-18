@@ -1,24 +1,12 @@
 /* global XMLHttpRequest */
-qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
-  extend: qx.ui.window.Window,
+qx.Class.define("qxapp.components.widgets.FileManager", {
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    this.base();
-
-    this.set({
-      showMinimize: false,
-      showStatusbar: false,
-      width: 800,
-      height: 600,
-      minWidth: 400,
-      minHeight: 400,
-      modal: true,
-      caption: "File Manager"
-    });
+    this.base(arguments);
 
     let fileManagerLayout = new qx.ui.layout.VBox(10);
-    this.setLayout(fileManagerLayout);
-
+    this._setLayout(fileManagerLayout);
 
     // Create a button
     let input = new qx.html.Input("file", {
@@ -30,9 +18,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
 
     this.getContentElement().add(input);
 
-    let pick = new qx.ui.form.Button(this.tr("Add file(s)"));
-    this.add(pick);
-
+    let pick = this._createChildControlImpl("addButton");
     // Add an event listener
     pick.addListener("execute", function(e) {
       input.getDomElement().click();
@@ -45,16 +31,12 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       }
     }, this);
 
-    let tree = this.__mainTree = new qx.ui.tree.Tree();
-    this.add(tree, {
-      flex: 1
-    });
+    let tree = this.__mainTree = this._createChildControlImpl("treeMenu");
     tree.addListener("changeSelection", this.__selectionChanged, this);
 
-    this.__selectBtn = new qx.ui.form.Button(this.tr("Select"));
-    this.__selectBtn.setEnabled(false);
-    this.add(this.__selectBtn);
-    this.__selectBtn.addListener("execute", function() {
+    let selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
+    selectBtn.setEnabled(false);
+    selectBtn.addListener("execute", function() {
       this.__itemSelected();
     }, this);
 
@@ -69,13 +51,38 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
   },
 
   events: {
-    "FileSelected": "qx.event.type.Data",
-    "FolderSelected": "qx.event.type.Data"
+    "ItemSelected": "qx.event.type.Data"
   },
 
   members: {
     __mainTree: null,
     __selectBtn: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "addButton":
+          control = new qx.ui.form.Button(this.tr("Add file(s)"));
+          this._add(control);
+          break;
+        case "treeMenu":
+          control = new qx.ui.tree.Tree();
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "selectButton":
+          control = new qx.ui.form.Button(this.tr("Select"));
+          this._add(control);
+          break;
+        case "progressBox":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+          this._addAt(control, 1);
+          break;
+      }
+
+      return control || this.base(arguments, id);
+    },
 
     __reloadTree: function() {
       this.__mainTree.resetRoot();
@@ -204,7 +211,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
 
     // Use XMLHttpRequest to upload the file to S3.
     __uploadFile: function(file, url) {
-      let hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      let hBox = this._createChildControlImpl("progressBox");
       let label = new qx.ui.basic.Label(file.name);
       let progressBar = new qx.ui.indicator.ProgressBar();
       hBox.add(label, {
@@ -213,7 +220,6 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       hBox.add(progressBar, {
         width: "85%"
       });
-      this.addAt(hBox, 1);
       let xhr = new XMLHttpRequest();
       xhr.upload.addEventListener("progress", function(e) {
         if (e.lengthComputable) {
@@ -228,7 +234,7 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       xhr.onload = () => {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
-          this.remove(hBox);
+          hBox.destroy();
           this.__reloadTree();
         }
       };
@@ -243,13 +249,10 @@ qx.Class.define("qxapp.components.workbench.widgets.FileManager", {
       let selectedItem = this.__mainTree.getSelection();
       if ("path" in selectedItem[0]) {
         const data = {
-          filePath: selectedItem[0].path
+          itemPath: selectedItem[0].path,
+          isDirectory: selectedItem[0].isDir
         };
-        if (selectedItem[0].isDir) {
-          this.fireDataEvent("FolderSelected", data);
-        } else {
-          this.fireDataEvent("FileSelected", data);
-        }
+        this.fireDataEvent("ItemSelected", data);
       }
     }
   }

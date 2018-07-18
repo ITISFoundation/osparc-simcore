@@ -58,6 +58,13 @@ async def start_dynamic_service(sid, data):
         _LOGGER.exception(err)
 
 
+@SIO.on('openDynamic')
+async def open_dynamic_service(sid, data):
+    service_name = data['serviceName']
+    node_id = data['nodeId']
+    _LOGGER.debug("client %s opens %s %s", sid, service_name, node_id)
+
+
 @SIO.on('stopDynamic')
 def stop_dynamic_service(sid, data):
     node_id = data['nodeId']
