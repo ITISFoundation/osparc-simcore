@@ -1,0 +1,31 @@
+version: '3.4'
+services:
+  paraviewweb:
+    build:
+      context: paraviewweb
+    ports:
+      - '8777:8777'
+    command: 
+      echo "completed base paraview build"
+  #--------------------------------------------------------------------
+  simcore-paraviewweb:
+    build:
+      context: simcoreparaviewweb
+      target: production
+      args: 
+        VCS_REF: 
+        BUILD_DATE:
+      labels: 
+        io.simcore.key: '{"key": "simcore/services/dynamic/paraviewweb"}'
+        io.simcore.outputs: '{"outputs": []}'
+        io.simcore.tag: '{"tag": "0.0.1"}'
+        io.simcore.name: '{"name": "paraviewweb"}'
+        io.simcore.description: '{"description": "Paraview Web Visualizer"}'
+        io.simcore.contact: '{"contact": "anderegg@itis.ethz.ch"}'
+        io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email": "anderegg@itis.ethz.ch", "affiliation": "ITIS Foundation"}]}'
+        io.simcore.inputs: '{"inputs": [{"key": "in1", "label": "some 3D dataset", "desc": "A mesh, volume data", "type": "file-url", "value": "null"}, {"key": "in2", "label": "some 3D dataset", "desc": "A mesh, volume data", "type": "file-url", "value": "null"}]}'
+        io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
+    ports:
+      - '8777:8777'
+    depends_on: 
+      - paraviewweb
