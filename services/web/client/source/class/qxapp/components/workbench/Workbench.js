@@ -288,6 +288,32 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return buttonsListMenu;
     },
 
+    __createWindowForBuiltInService: function(widget, width, height, caption) {
+      let serviceWindow = new qx.ui.window.Window();
+      serviceWindow.set({
+        showMinimize: false,
+        showStatusbar: false,
+        width: width,
+        height: height,
+        minWidth: 400,
+        minHeight: 400,
+        modal: true,
+        caption: caption,
+        layout: new qx.ui.layout.Canvas()
+      });
+
+      serviceWindow.add(widget, {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0
+      });
+
+      serviceWindow.moveTo(100, 100);
+
+      return serviceWindow;
+    },
+
     __addNodeToWorkbench: function(node, position) {
       if (position === undefined || position === null) {
         let farthestRight = 0;
@@ -317,36 +343,31 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       node.addListener("dblclick", function(e) {
         if (node.getMetadata().key === "FileManager") {
-          let fileManager = new qxapp.components.workbench.widgets.FileManager();
-          fileManager.addListener("FileSelected", function(data) {
-            const filePath = data.getData().filePath;
-            const splitted = filePath.split("/");
-            const fileName = splitted[splitted.length-1];
-            node.getMetadata().outputs[0].value = filePath;
-            node.getMetadata().outputs[1].value = null;
-            node.getPortByIndex(false, 0).ui.setLabel(fileName);
-            node.getPortByIndex(false, 0).ui.getToolTip().setLabel(fileName);
-            node.getPortByIndex(false, 1).ui.setLabel("");
-            node.getPortByIndex(false, 1).ui.getToolTip().setLabel("");
+          const width = 800;
+          const height = 600;
+          let fileManager = new qxapp.components.widgets.FileManager();
+          let fileManagerWindow = this.__createWindowForBuiltInService(fileManager, width, height, "File Manager");
+          fileManager.addListener("ItemSelected", function(data) {
+            const filePortIndex = 0;
+            const dirPortIndex = 1;
+            const itemPath = data.getData().itemPath;
+            const splitted = itemPath.split("/");
+            const itemName = splitted[splitted.length-1];
+            const isDirectory = data.getData().isDirectory;
+            const activeIndex = isDirectory ? dirPortIndex : filePortIndex;
+            const inactiveIndex = isDirectory ? filePortIndex : dirPortIndex;
+            node.getMetadata().outputs[activeIndex] = itemPath;
+            node.getMetadata().outputs[inactiveIndex].value = null;
+            node.getPortByIndex(false, activeIndex).ui.setLabel(itemName);
+            node.getPortByIndex(false, activeIndex).ui.getToolTip().setLabel(itemName);
+            node.getPortByIndex(false, inactiveIndex).ui.setLabel("");
+            node.getPortByIndex(false, inactiveIndex).ui.getToolTip().setLabel("");
             node.setProgress(100);
-            fileManager.close();
-          }, this);
-          fileManager.addListener("FolderSelected", function(data) {
-            const folderPath = data.getData().filePath;
-            const splitted = folderPath.split("/");
-            const folderName = splitted[splitted.length-1];
-            node.getMetadata().outputs[0].value = null;
-            node.getMetadata().outputs[1].value = folderPath;
-            node.getPortByIndex(false, 0).ui.setLabel("");
-            node.getPortByIndex(false, 0).ui.getToolTip().setLabel("");
-            node.getPortByIndex(false, 1).ui.setLabel(folderName);
-            node.getPortByIndex(false, 1).ui.getToolTip().setLabel(folderName);
-            node.setProgress(100);
-            fileManager.close();
+            fileManagerWindow.close();
           }, this);
 
-          fileManager.moveTo(100, 100);
-          fileManager.open();
+          fileManagerWindow.moveTo(100, 100);
+          fileManagerWindow.open();
         } else {
           this.fireDataEvent("NodeDoubleClicked", node);
         }
