@@ -1,9 +1,4 @@
-# installs project in editable mode from current directory
-# `setup.py` already contains instructions to install dependencies,
--e .
+# develop mode
+-e . ".[test]"
 
-# testing
--r requirements/testing.txt
-
-# linting
 autopep8>=1.3.5
