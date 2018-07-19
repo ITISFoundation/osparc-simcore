@@ -14,15 +14,16 @@ from trafaret_config import commandline
 
 from .utils import get_thrift_api_folders
 
-# paths
-_CDIR = os.path.dirname(sys.argv[0] if __name__ == "__main__" else __file__)
-SRC_DIR = pathlib.Path(__file__).parent.parent
-CONFIG_DIR = SRC_DIR.parent / "config"
+_LOGGER = logging.getLogger(__name__)
 
+# TODO: all paths should be handled with pathlib?
+_CDIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent
+SRC_DIR = _CDIR.parent
+
+# Config files
+CONFIG_DIR = SRC_DIR.parent / "config"
 DEFAULT_CONFIG_PATH =  CONFIG_DIR / "server.yaml"
 TEST_CONFIG_PATH = CONFIG_DIR / "server-test.yaml"
-
-_LOGGER = logging.getLogger(__name__)
 
 T_SCHEMA = T.Dict({
     T.Key("postgres"):
@@ -42,11 +43,11 @@ T_SCHEMA = T.Dict({
 
 def default_client_dir():
     """ Location of qx ourdir when docker-compose is run in debug mode"""
-    return os.path.normpath(os.path.join(_CDIR, "..", "..", "..", "client", "source-output"))
+    return os.path.normpath(os.path.join(str(_CDIR), "..", "..", "..", "client", "source-output"))
 
 
 def default_thrift_dirs():
-    basedir = os.path.normpath(os.path.join(_CDIR, "..", "..", "services-rpc-api"))
+    basedir = os.path.normpath(os.path.join(str(_CDIR), "..", "..", "services-rpc-api"))
     return get_thrift_api_folders(basedir)
 
 
@@ -55,7 +56,6 @@ THRIFT_GEN_OUTDIR = os.environ.get(
 
 
 class CommonConfig:
-
     # Web service
     SIMCORE_WEB_HOSTNAME = os.environ.get("SIMCORE_WEB_HOSTNAME", "0.0.0.0")
     SIMCORE_WEB_PORT = os.environ.get("SIMCORE_WEB_PORT", 8080)
@@ -91,6 +91,8 @@ class ProductionConfig(CommonConfig):
     LOG_LEVEL = logging.WARNING
 
 
+def dict_from_class(cls):
+    return dict( (key, getattr(cls, key)) for key in dir(cls)  if not key.startswith("_")  )
 
 def get_config(argv=None) -> dict:
     """
@@ -102,29 +104,28 @@ def get_config(argv=None) -> dict:
     # TODO: pass configuration to init db via command line
     commandline.standard_argparse_options(
         ap,
-        default_config=DEFAULT_CONFIG_PATH
+        default_config=str(DEFAULT_CONFIG_PATH)
     )
 
     # ignore unknown options
     options, _ = ap.parse_known_args(argv)
 
-    config = commandline.config_from_options(options, T_SCHEMA)
-    if "IS_CONTAINER_CONTEXT" in os.environ.keys():
-        config["host"] = "0.0.0.0"
-        config["postgres"]["host"] = "db"
-
-
-    # extend
-    if "test" in options.config:
-        _LOGGER.debug("Loading testing configuration ...")
-        config.update(vars(TestingConfig))
+    config = dict()
+    if "test" in pathlib.Path(options.config).name:
+        config.update(dict_from_class(TestingConfig))
     else:
-        _LOGGER.debug("Loading production configuration ...")
-        config.update(vars(ProductionConfig))
+        config.update(dict_from_class(ProductionConfig))
 
-    pprint.pprint(config)
+    logging.basicConfig(level=config["LOG_LEVEL"])
 
-    _LOGGER.debug("Loading config %s \n\t %s", argv, config)
+    config_ext = commandline.config_from_options(options, T_SCHEMA)
+    if "IS_CONTAINER_CONTEXT" in os.environ.keys():
+        config_ext["host"] = "0.0.0.0"
+        config_ext["postgres"]["host"] = "db"
+
+    config.update(config_ext)
+
+    _LOGGER.debug("Loading config %s \n\t %s", argv, pprint.pformat(config))
 
     return config
 
