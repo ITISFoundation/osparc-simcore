@@ -1,4 +1,4 @@
-""" Basic configuration file for postgres
+""" Basic configuration file for postgres service
 
 """
 from os import environ as env
@@ -6,7 +6,9 @@ from os import environ as env
 
 
 class Config():
+
     def __init__(self):
+        # TODO: uniform config classes . see server.config file
         POSTGRES_URL = env.get("POSTGRES_ENDPOINT", "postgres:5432")
         POSTGRES_USER = env.get("POSTGRES_USER", "simcore")
         POSTGRES_PW = env.get("POSTGRES_PASSWORD", "simcore")
@@ -18,7 +20,7 @@ class Config():
         self._db = POSTGRES_DB
         self._endpoint = 'postgresql+psycopg2://{user}:{pw}@{url}/{db}'.format(
             user=self._user, pw=self._pwd, url=self._url, db=self._db)
-            
+
     @property
     def endpoint(self):
         return self._endpoint

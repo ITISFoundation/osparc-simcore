@@ -9,6 +9,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class Config():
     def __init__(self):
+        # TODO: uniform config classes . see server.config file
         S3_ENDPOINT = env.get("S3_ENDPOINT", "minio:9000")
         S3_ACCESS_KEY = env.get("S3_ACCESS_KEY", "12345678")
         S3_SECRET_KEY = env.get("S3_SECRET_KEY", "12345678")

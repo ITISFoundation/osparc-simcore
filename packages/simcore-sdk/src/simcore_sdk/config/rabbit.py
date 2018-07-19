@@ -6,6 +6,7 @@ from os import environ as env
 
 import pika
 
+# TODO: uniform config classes . see server.config file
 RABBITMQ_USER = env.get('RABBITMQ_USER','simcore')
 RABBITMQ_PASSWORD = env.get('RABBITMQ_PASSWORD','simcore')
 RABBITMQ_HOST="rabbit"
@@ -27,7 +28,7 @@ class Config():
 
         # pika
         self._pika_credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
-        self._pika_parameters = pika.ConnectionParameters(host=RABBITMQ_HOST, 
+        self._pika_parameters = pika.ConnectionParameters(host=RABBITMQ_HOST,
             port=RABBITMQ_PORT, credentials=self._pika_credentials, connection_attempts=100)
 
         self._log_channel = RABBITMQ_LOG_CHANNEL
@@ -44,7 +45,7 @@ class Config():
     @property
     def progress_channel(self):
         return self._progress_channel
-    
+
     @property
     def broker(self):
         return self._broker_url

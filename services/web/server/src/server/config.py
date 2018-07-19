@@ -1,5 +1,8 @@
 """
     Configurations magic
+
+
+    TODO: merge configs of all services used by the server here
 """
 import os
 import sys
@@ -11,6 +14,11 @@ import pprint
 # validates and transforms foreign data
 import trafaret as T
 from trafaret_config import commandline
+
+from simcore_sdk.config.db import Config as DbConfig
+# from simcore_sdk.config.s3 import Config as S3Config
+# from simcore_sdk.config.docker import Config as S3Docker
+# from simcore_sdk.config.rabbit import Config as S3Rabbit
 
 from .utils import get_thrift_api_folders
 
@@ -109,22 +117,35 @@ def get_config(argv=None) -> dict:
 
     # ignore unknown options
     options, _ = ap.parse_known_args(argv)
-
     config = dict()
+
+    # FIXME: merge properly all sources of options!
+    config_from_envs = dict()
     if "test" in pathlib.Path(options.config).name:
-        config.update(dict_from_class(TestingConfig))
+        config_from_envs = dict_from_class(TestingConfig)
     else:
-        config.update(dict_from_class(ProductionConfig))
+        config_from_envs = dict_from_class(ProductionConfig)
+
+    config_from_file = commandline.config_from_options(options, T_SCHEMA)
+    if "IS_CONTAINER_CONTEXT" in os.environ.keys():
+        config_from_file["host"] = "0.0.0.0"
+        config_from_file["postgres"]["host"] = "db"
+
+    if "POSTGRES_ENDPOINT" in os.environ.keys():
+        # config passed to simcore_sdk.config.db via environ in a docker
+        #pylint: disable=W0212
+        pg_config = DbConfig()
+        config_from_file["postgres"]["database"] = pg_config._db
+        config_from_file["postgres"]["user"] = pg_config._user
+        config_from_file["postgres"]["password"] = pg_config._pwd
+        _host, _port = pg_config._url.split(":")
+        config_from_file["postgres"]["host"] = _host
+        config_from_file["postgres"]["port"] = _port
+
+    config.update( config_from_envs )
+    config.update( config_from_file)
 
     logging.basicConfig(level=config["LOG_LEVEL"])
-
-    config_ext = commandline.config_from_options(options, T_SCHEMA)
-    if "IS_CONTAINER_CONTEXT" in os.environ.keys():
-        config_ext["host"] = "0.0.0.0"
-        config_ext["postgres"]["host"] = "db"
-
-    config.update(config_ext)
-
     _LOGGER.debug("Loading config %s \n\t %s", argv, pprint.pformat(config))
 
     return config

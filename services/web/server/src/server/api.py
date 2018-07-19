@@ -1,7 +1,5 @@
 """ server"s rest API
 
-
-
 TODO: extend api using swagger!
 """
 import logging
@@ -80,6 +78,8 @@ async def ping(request):
 
 
 def setup_api(app):
+    _LOGGER.debug("Setting up %s ...", __name__)
+
     # routing
     # TODO: version ALL interface
     router = app.router

@@ -3,6 +3,7 @@
 """
 
 class Config():
+    # TODO: uniform config classes . see server.config file
     def __init__(self):
         self._registry = "masu.speag.com"
         self._user = "z43"
