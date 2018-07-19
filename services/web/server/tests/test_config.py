@@ -1,6 +1,7 @@
 import inspect
 import pathlib
 import logging
+import os
 
 import pytest
 
@@ -36,3 +37,26 @@ def test_config_data():
     assert isinstance(config, dict)
 
     assert 'SIMCORE_CLIENT_OUTDIR' in config.keys()
+
+
+@pytest.fixture(scope="module")
+def _environ():
+    pg_config = scm.DbConfig()
+
+    prev = None
+    #pylint: disable=W0212
+    if "POSTGRES_ENDPOINT" in os.environ:
+        prev = os.environ["POSTGRES_ENDPOINT"]
+    os.environ.putenv("POSTGRES_ENDPOINT", pg_config._url)
+    yield os.environ
+
+    if prev:
+        os.environ["POSTGRES_ENDPOINT"] = prev
+    else:
+        del os.environ["POSTGRES_ENDPOINT"]
+
+def test_env_config(_environ):
+    pg_config = scm.DbConfig()
+    config = scm.get_config()
+    #pylint: disable=W0212
+    assert config["postgres"]["user"] == pg_config._user

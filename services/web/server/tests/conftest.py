@@ -11,7 +11,9 @@ import pytest
 #from sqlalchemy import create_engine
 #from sqlalchemy.orm import sessionmaker
 
-import server.utils.init_db as init_db
+# FIXME:
+# import server.utils.init_db as init_db
+import init_db
 
 _LOGGER = logging.getLogger(__name__)
 
