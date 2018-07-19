@@ -16,8 +16,8 @@ def list_requirements_in(filename):
 #####################################################################################
 # NOTE see https://packaging.python.org/discussions/install-requires-vs-requirements/
 
-INSTALL_REQUIRES = list_requirements_in("docker-base.txt")
-TESTS_REQUIRE = list_requirements_in("docker-dev.txt")
+INSTALL_REQUIRES = list_requirements_in("base.txt")
+TESTS_REQUIRE = list_requirements_in("tests.txt")
 
 setup(
     name='simcore-web-server',

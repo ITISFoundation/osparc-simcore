@@ -49,9 +49,9 @@ ENV PYTHONPATH "$HOME/server/src:$HOME/packages/simcore-sdk/src:$HOME/packages/s
 
 WORKDIR /home/scu
 
-# 1. install common 3rd party packages
+# 1. install base 3rd party packages
 COPY --chown=scu:scu services/web/server/requirements requirements
-RUN pip3 install --no-cache-dir -r requirements/docker-base.txt
+RUN pip3 install --no-cache-dir -r requirements/base.txt
 
 EXPOSE 8080
 
@@ -62,8 +62,8 @@ FROM base-stage as development
 
 ENV SIMCORE_WEB_CONFIG development
 
-# 1.1 install devel 3rd party packages
-RUN pip3 install --no-cache-dir -r requirements/docker-dev.txt && \
+# 1.1 install packages needed for testing
+RUN pip3 install --no-cache-dir -r requirements/tests.txt && \
     rm -rf requirements
 
 USER scu
@@ -81,7 +81,7 @@ VOLUME /home/scu/packages
 # TODO: add watch functionality in dev mode
 CMD ["-H", "0.0.0.0", \
      "-P", "8080", \
-     "server:create_app"]
+     "server.main:init_app"]
 
 
 # ------------------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ WORKDIR $HOME/server/src
 
 CMD ["-H", "0.0.0.0", \
      "-P", "8080", \
-     "server:create_app"]
+     "server.main:init_app"]
 
 
 # ------------------------------------------------------------------------------------------
@@ -132,4 +132,4 @@ WORKDIR $HOME/server/src
 
 CMD ["-H", "0.0.0.0", \
      "-P", "8080", \
-     "server:create_app"]
+     "server.main:init_app"]
