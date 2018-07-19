@@ -20,6 +20,7 @@ from . import interactive_services_manager
 
 _LOGGER = logging.getLogger(__file__)
 
+# TODO: separate API from server application!
 SIO = socketio.AsyncServer(async_mode="aiohttp", logging=_LOGGER)
 
 
@@ -142,4 +143,6 @@ def disconnect(sid):
 
 
 def setup_sio(app):
+    _LOGGER.debug("Setting up %s ...", __name__)
+
     SIO.attach(app)

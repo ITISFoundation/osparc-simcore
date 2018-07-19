@@ -11,7 +11,7 @@ _LOGGER = logging.getLogger(__file__)
 
 
 def setup_session(app):
-    _LOGGER.debug("Setting up ... ")
+    _LOGGER.debug("Setting up %s ...", __name__)
 
     secret_key = app["config"].get("SECRET_KEY")
     if secret_key is None:

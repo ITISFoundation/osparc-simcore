@@ -7,17 +7,18 @@
 
 import datetime
 import logging
-import pprint
 import time
 
 import async_timeout
 from aiohttp import web
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import sqlalchemy.exc
 
 from s3wrapper.s3_client import S3Client
-from simcore_sdk.config.db import Config as db_config
-from simcore_sdk.config.s3 import Config as s3_config
+# TODO: this should be coordinated with postgres options from config/server.yaml
+from simcore_sdk.config.db import Config as DbConfig
+from simcore_sdk.config.s3 import Config as S3Config
 from simcore_sdk.models.pipeline_models import (
     Base,
     ComputationalPipeline,
@@ -26,27 +27,37 @@ from simcore_sdk.models.pipeline_models import (
 
 from .comp_backend_worker import celery
 
-pp = pprint.PrettyPrinter(indent=4)
 _LOGGER = logging.getLogger(__file__)
 
-# db config
-db_config = db_config()
-db = create_engine(db_config.endpoint, client_encoding="utf8", connect_args={"connect_timeout": 30})
 
-# TODO the db tables are created here, this only works when postgres is up and running.
-# For now lets just try a couple of times
-Session = sessionmaker(db)
-db_session = Session()
-for i in range(20):
-    try:
-        Base.metadata.create_all(db)
-    # pylint: disable=bare-except
-    except:
-        time.sleep(2)
-        print("oops")
-
-
+db_session = None
 comp_backend_routes = web.RouteTableDef()
+
+def init_database():
+    global db_session
+
+    # db config
+    db_config = DbConfig()
+    db_engine = create_engine(db_config.endpoint, client_encoding="utf8", connect_args={"connect_timeout": 30})
+
+    # FIXME: the db tables are created here, this only works when postgres is up and running.
+    # For now lets just try a couple of times.
+    # This should NOT be executed upon importing the module but as a separate function that is called async
+    # upon initialization of the web app (e.g. like subscriber)
+    # The system should not stop because session is not connect. it should report error when a db operation
+    # is required but not stop the entire application.
+    Session = sessionmaker(db_engine)
+    db_session = Session()
+    for i in range(20):
+        try:
+            Base.metadata.create_all(db_engine)
+        except sqlalchemy.exc.SQLAlchemyError:
+            time.sleep(2)
+            _LOGGER.warning("Retrying to create database ...")
+            print("oops")
+
+    return db_session
+
 
 async def async_request(method, session, url, data=None, timeout=10):
     async with async_timeout.timeout(timeout):
@@ -56,6 +67,7 @@ async def async_request(method, session, url, data=None, timeout=10):
         elif method == "POST":
             async with session.post(url, json=data) as response:
                 return await response.json()
+        # TODO: else raise ValueError method not implemented?
 
 # pylint:disable=too-many-branches, too-many-statements
 @comp_backend_routes.post("/start_pipeline")
@@ -73,6 +85,9 @@ async def start_pipeline(request):
         "405":
             description: invalid HTTP Method
     """
+    # FIXME: this should be implemented generaly using async lazy initialization of db_session??
+    if db_session is None:
+        init_database()
 
     request_data = await request.json()
 
@@ -140,7 +155,7 @@ async def start_pipeline(request):
 
         # now we know the id, lets copy over data
         if io_files:
-            _config = s3_config()
+            _config = S3Config()
             s3_client = S3Client(endpoint=_config.endpoint,
                 access_key=_config.access_key, secret_key=_config.secret_key)
             for io_file in io_files:

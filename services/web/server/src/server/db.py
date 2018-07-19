@@ -12,6 +12,11 @@ class RecordNotFound(Exception):
 async def create_aiopg(app):
     _LOGGER.debug("creating db engine ... ")
 
+    # FIXME: psycopg2.OperationalError: could not connect to server: Connection refused if db service is not up!
+    # FIXME: psycopg2.OperationalError: FATAL:  role "test_aiohttpdemo_user" does not exist
+    # TODO: define connection policy for services. What happes if cannot connect to a service? do not have access to its services but
+    # what do we do with the server? Retry? stop and exit?
+
     conf = app["config"]["postgres"]
     engine = await aiopg.sa.create_engine(
         database=conf["database"],
@@ -23,9 +28,7 @@ async def create_aiopg(app):
         maxsize=conf["maxsize"],
     )
 
-    _LOGGER.debug("db engine created")
     app["db_engine"] = engine
-
     _LOGGER.debug("db engine created")
 
 
@@ -39,6 +42,8 @@ async def dispose_aiopg(app):
 
 
 def setup_db(app):
+    _LOGGER.debug("Setting up %s ...", __name__)
+
     # appends def fun(app) -> coroutines
     app.on_startup.append(create_aiopg)
     app.on_cleanup.append(dispose_aiopg)

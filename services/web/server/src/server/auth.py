@@ -95,6 +95,8 @@ generate_password_hash = sha256_crypt.hash
 
 
 def setup_auth(app):
+    _LOGGER.debug("Setting up %s ...", __name__)
+
     # WARNING: expected aiosession already initialized!
     identity_policy = SessionIdentityPolicy()
 

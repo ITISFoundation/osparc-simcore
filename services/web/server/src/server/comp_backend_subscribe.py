@@ -25,6 +25,9 @@ async def on_message(message: aio_pika.IncomingMessage):
             await SIO.emit("progress", data = json.dumps(data))
 
 async def subscribe(_app=None):
+    # TODO: catch and deal with missing connections:
+    # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
+    # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
     connection = await aio_pika.connect(rabbit_broker, connection_attempts=100)
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=1)

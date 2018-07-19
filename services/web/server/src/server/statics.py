@@ -22,14 +22,14 @@ async def index(client_dir, request):
 
 
 def setup_statics(app):
-    _LOGGER.debug("Setting up ... ")
+    _LOGGER.debug("Setting up %s ...", __name__)
 
-    client_dir = app["config"]["SIMCORE_CLIENT_OUTDIR"]
+    outdir = app["config"]["SIMCORE_CLIENT_OUTDIR"]
 
     # RIA qx-application
-    app.router.add_get("/", partial(index, client_dir=client_dir))
+    app.router.add_get("/", partial(index, client_dir=outdir))
 
     # TODO: check whether this can be done at once
-    app.router.add_static("/qxapp", os.path.join(client_dir, "qxapp"))
-    app.router.add_static("/transpiled", os.path.join(client_dir, "transpiled"))
-    app.router.add_static("/resource", os.path.join(client_dir, "resource"))
+    app.router.add_static("/qxapp", os.path.join(outdir, "qxapp"))
+    app.router.add_static("/transpiled", os.path.join(outdir, "transpiled"))
+    app.router.add_static("/resource", os.path.join(outdir, "resource"))

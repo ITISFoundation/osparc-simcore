@@ -4,6 +4,15 @@ FIXME: this place does not fill right... see how this script is called
 FIXME: check https://github.com/aio-libs/aiohttp_admin/blob/master/demos/blog/aiohttpdemo_blog/generate_data.py
 FIXME: rename as server.dev.generate_data.py and set dev as an optional sub-package as server[dev]
 
+
+Example of usage
+
+    cd services/web/server/tests/mock
+    docker-compose up
+
+    cd ../../config
+    python init_db.py
+
 References:
 [1]:https://github.com/aio-libs/aiohttp-demos/blob/master/docs/preparations.rst#environment
 """
@@ -148,8 +157,8 @@ def main():
     _LOGGER.info("Adding sample data ...")
     sample_data(engine=engine)
 
-    # drop_tables()
-    # teardown_db(config)
+    drop_tables()
+    teardown_db(config)
 
 
 if __name__ == "__main__":
