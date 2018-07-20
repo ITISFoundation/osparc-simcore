@@ -40,7 +40,9 @@ async def init_database(_app):
     # db config
     # FIXME: use app to get config
     db_config = DbConfig()
-    db_engine = create_engine(db_config.endpoint, client_encoding="utf8", connect_args={"connect_timeout": 30})
+    db_engine = create_engine(db_config.endpoint,
+        client_encoding="utf8",
+        connect_args={"connect_timeout": 30})
 
     # FIXME: the db tables are created here, this only works when postgres is up and running.
     # For now lets just try a couple of times.

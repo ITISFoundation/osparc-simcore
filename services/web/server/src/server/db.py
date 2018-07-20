@@ -47,6 +47,7 @@ async def dispose_aiopg(app):
 def setup_db(app):
     _LOGGER.debug("Setting up %s ...", __name__)
 
+    # FIXME: this create an engine to connect to simcoredb with comp_pipeline and comp_tasks
     app.on_startup.append(_init_db)
 
     # appends def fun(app) -> coroutines
