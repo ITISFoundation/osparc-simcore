@@ -42,8 +42,8 @@ class DataItem(_DataItem):
         self = super(DataItem, cls).__new__(cls, **new_kargs)
         return self
 
-    def __init__(self, *args, **kargs):
-        super(DataItem, self).__init__(*args, **kargs)
+    def __init__(self):
+        super(DataItem, self).__init__()
         self.new_data_cb = None
         self.get_node_from_uuid_cb = None
 
