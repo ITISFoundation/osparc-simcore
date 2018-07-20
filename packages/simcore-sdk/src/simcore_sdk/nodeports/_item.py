@@ -40,9 +40,12 @@ class DataItem(_DataItem):
 
         _LOGGER.debug("Creating new data item with %s", new_kargs)
         self = super(DataItem, cls).__new__(cls, **new_kargs)
+        return self
+
+    def __init__(self, **_kwargs):
+        super(DataItem, self).__init__()
         self.new_data_cb = None
         self.get_node_from_uuid_cb = None
-        return self
 
     def get(self):
         """returns the data converted to the underlying type.
@@ -66,7 +69,7 @@ class DataItem(_DataItem):
 
     def set(self, value):
         """sets the data to the underlying port
-        
+
         Arguments:
             value {any type} -- must be convertible to a string, or an exception will be thrown.
         """
@@ -78,7 +81,7 @@ class DataItem(_DataItem):
         _LOGGER.debug("possible types are for value %s are %s", value, possible_types)
         if not self.type in possible_types:
             raise exceptions.InvalidItemTypeError(self.type, value)
-        
+
         # convert to string now
         new_value = str(value)
 
@@ -91,7 +94,7 @@ class DataItem(_DataItem):
             filemanager.upload_file_to_s3(node_uuid=node_uuid, node_key=self.key, file_path=file_path)
             _LOGGER.debug("file path %s uploaded to s3 from node %s and key %s", value, node_uuid, self.key)
             new_value = encode_link(node_uuid=node_uuid, port_key=self.key)
-        
+
         elif self.type in config.TYPE_TO_S3_FOLDER_LIST:
             folder_path = Path(new_value)
             if not folder_path.exists() or not folder_path.is_dir():
@@ -110,22 +113,22 @@ class DataItem(_DataItem):
             self.new_data_cb(new_data) #pylint: disable=not-callable
             _LOGGER.debug("database updated")
 
-    
-    
+
+
     def __get_value_from_link(self):
         node_uuid, port_key = decode_link(self.value)
-            
+
         if self.type in config.TYPE_TO_S3_FILE_LIST:
             # try to fetch from S3 as a file
             _LOGGER.debug("Fetch file from S3 %s", self.value)
-            return filemanager.download_file_from_S3(node_uuid=node_uuid, 
-                                                    node_key=port_key, 
+            return filemanager.download_file_from_S3(node_uuid=node_uuid,
+                                                    node_key=port_key,
                                                     file_name=self.key)
         if self.type in config.TYPE_TO_S3_FOLDER_LIST:
             # try to fetch from S3 as a folder
             _LOGGER.debug("Fetch folder from S3 %s", self.value)
-            return filemanager.download_folder_from_s3(node_uuid=node_uuid, 
-                                                        node_key=port_key, 
+            return filemanager.download_folder_from_s3(node_uuid=node_uuid,
+                                                        node_key=port_key,
                                                         folder_name=self.key)
 
         # try to fetch link from database node
