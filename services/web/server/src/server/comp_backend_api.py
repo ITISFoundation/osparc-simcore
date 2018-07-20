@@ -7,7 +7,7 @@
 
 import datetime
 import logging
-import time
+import asyncio
 
 import async_timeout
 from aiohttp import web
@@ -33,10 +33,12 @@ _LOGGER = logging.getLogger(__file__)
 db_session = None
 comp_backend_routes = web.RouteTableDef()
 
-def init_database():
+async def init_database(_app):
+    #pylint: disable=W0603
     global db_session
 
     # db config
+    # FIXME: use app to get config
     db_config = DbConfig()
     db_engine = create_engine(db_config.endpoint, client_encoding="utf8", connect_args={"connect_timeout": 30})
 
@@ -52,11 +54,9 @@ def init_database():
         try:
             Base.metadata.create_all(db_engine)
         except sqlalchemy.exc.SQLAlchemyError:
-            time.sleep(2)
+            await asyncio.sleep(2)
             _LOGGER.warning("Retrying to create database ...")
             print("oops")
-
-    return db_session
 
 
 async def async_request(method, session, url, data=None, timeout=10):
@@ -87,7 +87,7 @@ async def start_pipeline(request):
     """
     # FIXME: this should be implemented generaly using async lazy initialization of db_session??
     if db_session is None:
-        init_database()
+        await init_database(request.app)
 
     request_data = await request.json()
 

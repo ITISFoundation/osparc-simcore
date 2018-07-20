@@ -4,6 +4,9 @@ import logging
 
 import aiopg.sa
 
+# FIXME: this is temporary here so database gets properly initialized
+from .comp_backend_api import init_database as _init_db
+
 _LOGGER = logging.getLogger(__name__)
 
 class RecordNotFound(Exception):
@@ -43,6 +46,8 @@ async def dispose_aiopg(app):
 
 def setup_db(app):
     _LOGGER.debug("Setting up %s ...", __name__)
+
+    app.on_startup.append(_init_db)
 
     # appends def fun(app) -> coroutines
     app.on_startup.append(create_aiopg)
