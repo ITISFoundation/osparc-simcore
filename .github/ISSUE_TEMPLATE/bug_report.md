@@ -1,35 +1,28 @@
----
-name: Bug report
-about: Create a report to help us improve simcore
+## Long story short
 
----
+<!-- Please describe your problem and why the fix is important. -->
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## Expected behaviour
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+<!-- What is the behaviour you expect? -->
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## Actual behaviour
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+<!-- What's actually happening? -->
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+## Steps to reproduce
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+<!-- Please describe steps to reproduce the issue.
+     If you have a script that does that please include it here within
+     markdown code markup -->
 
-**Additional context**
-Add any other context about the problem here.
+## Your environment
+
+<!-- Describe the environment you have that lead to your issue.
+     This includes aiohttp version, OS, proxy server and other bits that
+     are related to your case.
+
+     IMPORTANT: aiohttp is both server framework and client library.
+     For getting rid of confusing please put 'server', 'client' or 'both'
+     word here.
+     -->
