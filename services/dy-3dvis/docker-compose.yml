@@ -6,7 +6,7 @@ services:
     ports:
       - '8777:8777'
     command: 
-      echo "completed base paraview build"
+      echo "completed base paraview build"  
   #--------------------------------------------------------------------
   simcore-paraviewweb:
     build:
@@ -29,3 +29,10 @@ services:
       - '8777:8777'
     depends_on: 
       - paraviewweb
+  #--------------------------------------------------------------------
+  paraviewweb-official:
+    image: kitware/paraviewweb:pvw-visualizer-osmesa-5.5.0
+    ports:
+      - '8081:80'
+    command: 
+      ws://localhost:8081 --mesa-llvm
