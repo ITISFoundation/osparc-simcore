@@ -2,6 +2,8 @@ FROM kitware/paraviewweb:pvw-visualizer-osmesa-5.5.0 AS common
 
 LABEL maintainer="sanderegg"
 
+ENV PARAVIEW_INPUT_PATH="/data"
+
 # install git
 RUN apt-get update && \
     apt-get install -y \
@@ -59,6 +61,7 @@ VOLUME /home/scu/packages/packages/simcore-sdk/src \
     /home/scu/packages/packages/s3wrapper/src
 ENV CREATE_DUMMY_TABLE 1
 ENV USE_CASE_CONFIG_FILE="devel-dbconfiguration.json"
+ENV TEST_DATA_PATH="/test-data"
 COPY devel-dbconfiguration.json .
 COPY devel-initconfiguration.py .
 # Need to use entrypoint as base image's entrypoint must be overriden
