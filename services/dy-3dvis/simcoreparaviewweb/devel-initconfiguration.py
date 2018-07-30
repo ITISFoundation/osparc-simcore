@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import uuid
 from pathlib import Path
@@ -13,8 +14,7 @@ from simcore_sdk.config.s3 import Config as s3_config
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 
-#TODO: use env variable here
-TEST_DATA_PATH = Path(r"/home/root/test-data")
+TEST_DATA_PATH = Path(os.environ.get("TEST_DATA_PATH"))
 
 class DbSettings:
     def __init__(self):

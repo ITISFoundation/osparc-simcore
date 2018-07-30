@@ -1,12 +1,13 @@
-from simcore_sdk.nodeports.nodeports import PORTS
-from pathlib import Path
-import shutil
 import logging
+import os
+import shutil
+from pathlib import Path
+
+from simcore_sdk.nodeports.nodeports import PORTS
 
 _LOGGER = logging.getLogger(__name__)
 
-# TODO: use env variable here
-INPUT_PATH = Path("/data")
+INPUT_PATH = Path(os.environ.get("PARAVIEW_INPUT_PATH"))
 if not INPUT_PATH.exists():    
     INPUT_PATH.mkdir()
     _LOGGER.debug("Created input folder at %s", INPUT_PATH)
