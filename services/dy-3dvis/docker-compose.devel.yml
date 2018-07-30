@@ -16,10 +16,10 @@ services:
       - postgres
       - minio
     volumes: 
-      - ./simcoreparaviewweb/input-retriever.py:/home/scu/input-retriever.py
-      - ../../packages/simcore-sdk/src:/home/scu/packages/packages/simcore-sdk/src
-      - ../../packages/s3wrapper/src:/home/scu/packages/packages/s3wrapper/src
-      - ./test-data:/home/scu/test-data
+      - ./simcoreparaviewweb/input-retriever.py:/home/root/input-retriever.py
+      - ../../packages/simcore-sdk/src:/home/root/packages/packages/simcore-sdk/src
+      - ../../packages/s3wrapper/src:/home/root/packages/packages/s3wrapper/src
+      - ./test-data:/home/root/test-data
   postgres:
     image: postgres:10
     environment:

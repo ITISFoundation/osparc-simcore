@@ -11,14 +11,5 @@ fi
 
 echo "retrieving data from S3..."
 python3 "input-retriever.py";
-#./startup.sh;
-echo "starting nginx..."
-service nginx start
-
-echo "setting LD_LIBRARY_PATH..."
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/paraview-$PV_VERSION_MAJOR/:/usr/local/lib/
-echo "starting Visualizer... with version $PV_VERSION_MAJOR"
-Visualizer --paraview /usr/local/lib/paraview-$PV_VERSION_MAJOR/ \
-        --data /home/scu/input \
-        --port 9777 \
-        --server-only
+echo "starting paraview using websocket port $SERVER_PORT..."
+/opt/paraviewweb/scripts/start.sh "ws://localhost:$SERVER_PORT" --mesa-llvm

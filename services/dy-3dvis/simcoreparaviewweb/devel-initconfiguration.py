@@ -13,8 +13,8 @@ from simcore_sdk.config.s3 import Config as s3_config
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 
-
-TEST_DATA_PATH = Path(r"/home/scu/test-data")
+#TODO: use env variable here
+TEST_DATA_PATH = Path(r"/home/root/test-data")
 
 class DbSettings:
     def __init__(self):
