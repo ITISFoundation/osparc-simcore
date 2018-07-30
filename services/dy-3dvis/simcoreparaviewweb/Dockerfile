@@ -48,7 +48,7 @@ LABEL org.label-schema.schema-version="1.0" \
 LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 8777}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
 
 # copy start script
-ARG PORT
+ARG PORT=8777
 ENV SERVER_PORT=$PORT
 COPY boot.sh boot.sh
 RUN chmod +x boot.sh
