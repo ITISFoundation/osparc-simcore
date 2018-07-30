@@ -5,7 +5,8 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
-INPUT_PATH = Path("/home/scu/input")
+# TODO: use env variable here
+INPUT_PATH = Path("/data")
 if not INPUT_PATH.exists():    
     INPUT_PATH.mkdir()
     _LOGGER.debug("Created input folder at %s", INPUT_PATH)

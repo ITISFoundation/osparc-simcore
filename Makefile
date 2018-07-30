@@ -11,7 +11,7 @@ export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
 
-PY_FILES = $(strip $(shell find services packages -iname '*.py'))
+PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*"))
 
 export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
@@ -113,3 +113,8 @@ push_platform_images:
 	$(info #####  $< is newer than $@ ####)
 	@diff -uN $@ $<
 	@false
+
+venv:
+	python3 -m venv .venv
+	.venv/bin/pip3 install --upgrade pip wheel setuptools
+	echo "To activate the venv, execute 'source .venv/bin/activate'"

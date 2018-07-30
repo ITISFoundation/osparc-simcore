@@ -1,3 +1,0 @@
-[submodule "services/dy-3dvis/paraviewweb"]
-	path = services/dy-3dvis/paraviewweb
-	url = https://github.com/sanderegg/docker-paraviewweb.git
