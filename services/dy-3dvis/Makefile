@@ -38,11 +38,12 @@ down-devel:
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml down
 
 SERVICES_VERSION=1.0
+SERVICE_NAME=masu.speag.com/simcore/services/dynamic/3d-viewer
 
 push_service_images:
 	${DOCKER} login masu.speag.com
-	${DOCKER} tag use-cases_cc-0d:latest masu.speag.com/simcore/services/dynamic/cc-0d-viewer:${SERVICES_VERSION}
-	${DOCKER} push masu.speag.com/simcore/services/dynamic/cc-0d-viewer:${SERVICES_VERSION}
+	${DOCKER} tag dy-3dvis_simcore-paraviewweb:latest ${SERVICE_NAME}:${SERVICES_VERSION}
+	${DOCKER} push ${SERVICE_NAME}:${SERVICES_VERSION}
 
 .env: .env-devel
 	$(info #####  $< is newer than $@ ####)
