@@ -129,13 +129,15 @@ class Sidecar(object):
         _LOGGER.debug('PULLING IMAGE')
         _LOGGER.debug('reg %s user %s pwd %s', self._docker.registry, self._docker.registry_user,self._docker.registry_pwd )
 
+        try:
+            self._docker.client.login(registry=self._docker.registry,
+                username=self._docker.registry_user, password=self._docker.registry_pwd)
+            _LOGGER.debug('img %s tag %s', self._docker.image_name, self._docker.image_tag)
+            self._docker.client.images.pull(self._docker.image_name, tag=self._docker.image_tag)
+        except docker.errors.APIError:
+            _LOGGER.exception("Pulling image failed")
+            raise docker.errors.APIError
 
-        self._docker.client.login(registry=self._docker.registry,
-            username=self._docker.registry_user, password=self._docker.registry_pwd)
-
-        _LOGGER.debug('img %s tag %s', self._docker.image_name, self._docker.image_tag)
-
-        self._docker.client.images.pull(self._docker.image_name, tag=self._docker.image_tag)
 
     def _log(self, channel, msg):
         log_data = {"Channel" : "Log", "Node": self._task.node_id, "Message" : msg}
@@ -358,10 +360,17 @@ class Sidecar(object):
 
     def inspect(self, celery_task, pipeline_id, node_id):
         _LOGGER.debug("ENTERING inspect pipeline:node %s: %s", pipeline_id, node_id)
-
-        _pipeline = self._db.session.query(ComputationalPipeline).filter_by(pipeline_id=pipeline_id).one()
-        graph = _pipeline.execution_graph
         next_task_nodes = []
+
+        try:
+            _pipeline = self._db.session.query(ComputationalPipeline).filter_by(pipeline_id=pipeline_id).one()
+        except exc.SQLAlchemyError as err:
+            _LOGGER.error(err)
+            self._db.session.rollback()
+            # no result found, just return
+            return next_task_nodes
+
+        graph = _pipeline.execution_graph
         if node_id:
             do_process = True
             # find the for the current node_id, skip if there is already a job_id around
@@ -373,6 +382,7 @@ class Sidecar(object):
                 task = query.one()
             except exc.SQLAlchemyError as err:
                 _LOGGER.error(err)
+                self._db.session.rollback()
                 # no result found, just return
                 return next_task_nodes
 
@@ -397,6 +407,7 @@ class Sidecar(object):
                 except exc.SQLAlchemyError as e:
                     _LOGGER.debug(e)
                     self._db.session.rollback()
+                    return next_task_nodes
             else:
                 return next_task_nodes
 
@@ -416,9 +427,13 @@ class Sidecar(object):
                 return next_task_nodes
 
             self.initialize(task)
-            self.run()
+            # try to run the task return empyt list of next nodes if anything goes wrong
+            try:
+                self.run()
+                next_task_nodes = list(graph.successors(node_id))
+            except:
+                pass
 
-            next_task_nodes = list(graph.successors(node_id))
         else:
             _LOGGER.debug("NODE id was zero")
             _LOGGER.debug("graph looks like this %s", graph)
@@ -434,6 +449,12 @@ SIDECAR = Sidecar()
 @celery.task(name='comp.task', bind=True)
 def pipeline(self, pipeline_id, node_id=None):
     _LOGGER.debug("ENTERING run")
-    next_task_nodes = SIDECAR.inspect(self, pipeline_id, node_id)
+    next_task_nodes = []
+    try:
+        next_task_nodes = SIDECAR.inspect(self, pipeline_id, node_id)
+    except:
+        _LOGGER.exception("Uncaught exception")
+
+
     for _node_id in next_task_nodes:
         _task = celery.send_task('comp.task', args=(pipeline_id, _node_id), kwargs={})
