@@ -72,8 +72,8 @@ class DbSettings(object):
     def __init__(self):
         self._db_config = db_config()
         self.db = create_engine(self._db_config.endpoint, client_encoding='utf8', pool_pre_ping=True)
-        self.Session = sessionmaker(self.db)
-        self.session = self.Session()
+        self.Session = sessionmaker(self.db, expire_on_commit=False)
+        #self.session = self.Session()
 
 class ExecutorSettings(object):
     def __init__(self):

@@ -27,19 +27,18 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 # db config
 db_config = db_config()
 db = create_engine(db_config.endpoint, client_encoding='utf8', connect_args={'connect_timeout': 30},  pool_pre_ping=True)
-
-#db = create_engine(db_config.endpoint, client_encoding='utf8', connect_args={'connect_timeout': 30},  pool_pre_ping=True)
+Session = sessionmaker(db)
 
 # TODO the db tables are created here, this only works when postgres is up and running.
 # For now lets just try a couple of times
-#Session = sessionmaker(db)
-#for i in range(20):
-#    try:
-#        Base.metadata.create_all(db)
-#    # pylint: disable=bare-except
-#    except:
-#        time.sleep(2)
-#        print("oops")
+Session = sessionmaker(db)
+for i in range(20):
+    try:
+        Base.metadata.create_all(db)
+    # pylint: disable=bare-except
+    except:
+        time.sleep(2)
+        print("oops")
 
 
 comp_backend_routes = web.RouteTableDef()
@@ -86,7 +85,7 @@ async def start_pipeline(request):
 
     #pylint:disable=too-many-nested-blocks
 
-    Session = sessionmaker(db)
+
     db_session = Session()
 
     try:
