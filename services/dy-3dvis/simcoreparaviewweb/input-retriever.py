@@ -1,11 +1,20 @@
+#!/usr/bin/python3
+
+import cgitb
+cgitb.enable()
+
 import logging
 import os
 import shutil
+import sys
 from pathlib import Path
 
-from simcore_sdk.nodeports.nodeports import PORTS
-
 _LOGGER = logging.getLogger(__name__)
+
+print("Content-Type: text/html;charset=utf-8")
+print()
+
+from simcore_sdk.nodeports.nodeports import PORTS
 
 INPUT_PATH = Path(os.environ.get("PARAVIEW_INPUT_PATH"))
 if not INPUT_PATH.exists():    
@@ -20,5 +29,8 @@ for node_input in PORTS.inputs:
         if local_path.exists():
             file_name = local_path.name
             _LOGGER.debug("Start moving %s to input path %s", local_path, INPUT_PATH)
+            print("-----------------")
+            print("Start moving {} to input path {}/{}".format(local_path, INPUT_PATH, file_name))
             shutil.move(str(local_path), str(INPUT_PATH / file_name))
             _LOGGER.debug("Move completed")
+            print("Move completed")
