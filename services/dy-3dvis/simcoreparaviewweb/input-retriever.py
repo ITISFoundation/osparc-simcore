@@ -1,11 +1,21 @@
+#!/usr/bin/python3
+
+import cgitb
+cgitb.enable()
+
 import logging
 import os
 import shutil
 from pathlib import Path
 
-from simcore_sdk.nodeports.nodeports import PORTS
-
 _LOGGER = logging.getLogger(__name__)
+
+print("Content-Type: text/html;charset=utf-8")
+print()
+
+print(os.environ)
+
+from simcore_sdk.nodeports.nodeports import PORTS
 
 INPUT_PATH = Path(os.environ.get("PARAVIEW_INPUT_PATH"))
 if not INPUT_PATH.exists():    
