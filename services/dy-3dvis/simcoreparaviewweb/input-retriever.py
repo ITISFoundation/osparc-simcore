@@ -6,7 +6,6 @@ cgitb.enable()
 import logging
 import os
 import shutil
-import sys
 from pathlib import Path
 
 _LOGGER = logging.getLogger(__name__)
