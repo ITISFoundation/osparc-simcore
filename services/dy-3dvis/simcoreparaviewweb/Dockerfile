@@ -1,4 +1,4 @@
-FROM kitware/paraviewweb:pvw-visualizer-osmesa-5.5.0 AS common
+FROM kitware/paraviewweb:pvw-visualizer-osmesa-master  AS common
 
 LABEL maintainer="sanderegg"
 
