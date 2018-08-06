@@ -46,7 +46,7 @@ LABEL org.label-schema.schema-version="1.0" \
     org.label-schema.vcs-ref=${VCS_REF} \
     org.label-schema.vendor="IT'IS foundation"
 # service runtime settings
-LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 80}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 80}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "mounts", "type": "string", "value": ["/var/run/docker.sock:/var/run/docker.sock:ro"]}]'
 LABEL simcore.service.bootsettings='[{"name": "entry_point", "type": "string", "value": "visualizer"}]'
 
 # copy start script
@@ -83,4 +83,5 @@ RUN mkdir packages && \
     git pull --depth=1 origin master
 # copy script to get the inputs inside the local file system
 COPY input-retriever.py input-retriever.py
+COPY external-port-retriever.py external-port-retriever.py
 ENTRYPOINT [ "/bin/bash", "boot.sh" ]
