@@ -27,7 +27,6 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 # db config
 db_config = db_config()
 db = create_engine(db_config.endpoint, client_encoding='utf8', connect_args={'connect_timeout': 30},  pool_pre_ping=True)
-Session = sessionmaker(db)
 
 # TODO the db tables are created here, this only works when postgres is up and running.
 # For now lets just try a couple of times
@@ -55,6 +54,8 @@ async def async_request(method, session, url, data=None, timeout=10):
 # pylint:disable=too-many-branches, too-many-statements
 @comp_backend_routes.post('/start_pipeline')
 async def start_pipeline(request):
+    #pylint:disable=broad-except
+
     """
     ---
     description: This end-point starts a computational pipeline.
@@ -84,8 +85,6 @@ async def start_pipeline(request):
     _LOGGER.debug("Start Pipeline")
 
     #pylint:disable=too-many-nested-blocks
-
-
     db_session = Session()
 
     try:
@@ -141,16 +140,10 @@ async def start_pipeline(request):
         _LOGGER.debug("Pipeline object created")
 
 
-        try:
-            db_session.add(pipeline)
-            _LOGGER.debug("Pipeline object added")
-
-            db_session.commit()
-
-            _LOGGER.debug("Pipeline flushed")
-        except:
-            _LOGGER.debug("seesion flush/add went banana")
-
+        db_session.add(pipeline)
+        _LOGGER.debug("Pipeline object added")
+        db_session.flush()
+        _LOGGER.debug("Pipeline flushed")
 
         pipeline_id = pipeline.pipeline_id
 
@@ -183,18 +176,13 @@ async def start_pipeline(request):
 
 
         task = celery.send_task('comp.task', args=(pipeline_id,), kwargs={})
-
-
-    #pylint:disable=broad-except
     except exc.SQLAlchemyError:
         _LOGGER.exception("Alchemy error")
         db_session.rollback()
         pipeline_id = -1
-        pass
-    except:
+    except Exception:
         _LOGGER.exception("Uncaught exception")
         pipeline_id = -1
-        pass
     finally:
         _LOGGER.debug("Close session")
         db_session.close()

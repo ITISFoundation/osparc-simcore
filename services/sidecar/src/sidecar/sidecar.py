@@ -3,7 +3,6 @@ import logging
 import os
 import time
 from pathlib import Path
-import copy
 
 import docker
 import pika
@@ -15,7 +14,7 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from sidecar_utils import (DbSettings, DockerSettings, ExecutorSettings,
                            RabbitSettings, S3Settings, delete_contents,
-                           find_entry_point)
+                           find_entry_point, is_node_ready)
 from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
@@ -59,6 +58,8 @@ class Sidecar(object):
                 delete_contents(folder)
 
     def _process_task_input(self, port, input_ports):
+        # pylint: disable=too-many-branches
+
         port_name = port['key']
         port_value = port['value']
         _LOGGER.debug("PROCESSING %s %s", port_name, port_value)
@@ -189,6 +190,8 @@ class Sidecar(object):
         connection.close()
 
     def _process_task_output(self):
+        # pylint: disable=too-many-branches
+
         """ There will be some files in the /output
 
                 - Maybe a output.json (should contain key value for simple things)
@@ -357,25 +360,6 @@ class Sidecar(object):
         finally:
             _session.close()
 
-
-
-    def _is_node_ready(self, task, graph, _session):
-        tasks = _session.query(ComputationalTask).filter(and_(
-            ComputationalTask.node_id.in_(list(graph.predecessors(task.node_id))),
-            ComputationalTask.pipeline_id==task.pipeline_id)).all()
-
-        _LOGGER.debug("TASK %s ready? Checking ..", task.internal_id)
-        for dep_task in tasks:
-            job_id = dep_task.job_id
-            if not job_id:
-                return False
-            _LOGGER.debug("TASK %s DEPENDS ON %s with stat %s", task.internal_id, dep_task.internal_id,dep_task.state)
-            if not dep_task.state == SUCCESS:
-                return False
-        _LOGGER.debug("TASK %s is ready", task.internal_id)
-
-        return True
-
     def inspect(self, celery_task, pipeline_id, node_id):
         _LOGGER.debug("ENTERING inspect pipeline:node %s: %s", pipeline_id, node_id)
 
@@ -405,7 +389,7 @@ class Sidecar(object):
                     do_process = False
 
                 # Check if node's dependecies are there
-                if not self._is_node_ready(task, graph, _session):
+                if not is_node_ready(task, graph, _session, _LOGGER):
                     _LOGGER.debug("TASK %s NOT YET READY", task.internal_id)
                     do_process = False
 
@@ -460,7 +444,8 @@ def pipeline(self, pipeline_id, node_id=None):
     next_task_nodes = []
     try:
         next_task_nodes = SIDECAR.inspect(self, pipeline_id, node_id)
-    except:
+    #pylint:disable=broad-except
+    except Exception:
         _LOGGER.exception("Uncaught exception")
 
     for _node_id in next_task_nodes:
