@@ -880,11 +880,18 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       console.debug("phase   : ", req.getPhase());
       console.debug("response: ", req.getResponse());
 
-      this.setCanStart(false);
-
-      this.__pipelineId = req.getResponse().pipeline_id;
-      this.__logger.debug("Workbench", "Pipeline ID" + this.__pipelineId);
-      this.__logger.info("Workbench", "Pipeline started");
+      const pipelineId = req.getResponse().pipeline_id;
+      this.__logger.debug("Workbench", "Pipeline ID " + pipelineId);
+      const notGood = [null, undefined, -1];
+      if (notGood.includes(pipelineId)) {
+        this.setCanStart(true);
+        this.__pipelineId = null;
+        this.__logger.error("Workbench", "Submition failed");
+      } else {
+        this.setCanStart(false);
+        this.__pipelineId = pipelineId;
+        this.__logger.info("Workbench", "Pipeline started");
+      }
     },
 
     __stopPipeline: function() {

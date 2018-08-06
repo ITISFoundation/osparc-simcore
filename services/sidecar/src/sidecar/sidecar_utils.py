@@ -4,15 +4,16 @@ import shutil
 from concurrent.futures import ThreadPoolExecutor
 
 import docker
-from sqlalchemy import create_engine
+import tenacity
+from sqlalchemy import and_, create_engine
 from sqlalchemy.orm import sessionmaker
 
-import tenacity
 from s3wrapper.s3_client import S3Client
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.config.docker import Config as docker_config
 from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.config.s3 import Config as s3_config
+from simcore_sdk.models.pipeline_models import SUCCESS, ComputationalTask
 
 
 def delete_contents(folder):
@@ -32,6 +33,21 @@ def find_entry_point(g):
         if len(list(g.predecessors(node))) == 0:
             result.append(node)
     return result
+
+def is_node_ready(task, graph, _session, _logger):
+    tasks = _session.query(ComputationalTask).filter(and_(
+        ComputationalTask.node_id.in_(list(graph.predecessors(task.node_id))),
+        ComputationalTask.pipeline_id==task.pipeline_id)).all()
+    _logger.debug("TASK %s ready? Checking ..", task.internal_id)
+    for dep_task in tasks:
+        job_id = dep_task.job_id
+        if not job_id:
+            return False
+        _logger.debug("TASK %s DEPENDS ON %s with stat %s", task.internal_id, dep_task.internal_id,dep_task.state)
+        if not dep_task.state == SUCCESS:
+            return False
+    _logger.debug("TASK %s is ready", task.internal_id)
+    return True
 
 class DockerSettings:
     # pylint: disable=too-many-instance-attributes
@@ -71,9 +87,9 @@ class RabbitSettings:
 class DbSettings:
     def __init__(self):
         self._db_config = db_config()
-        self.db = create_engine(self._db_config.endpoint, client_encoding='utf8')
-        self.Session = sessionmaker(self.db)
-        self.session = self.Session()
+        self.db = create_engine(self._db_config.endpoint, client_encoding='utf8', pool_pre_ping=True)
+        self.Session = sessionmaker(self.db, expire_on_commit=False)
+        #self.session = self.Session()
 
 class ExecutorSettings:
     def __init__(self):
