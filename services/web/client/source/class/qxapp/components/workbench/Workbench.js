@@ -388,10 +388,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         socket.on(slotName, function(val) {
           if (val["service_uuid"] === nodeBase.getNodeId()) {
             let portNumber = val["containers"][0].published_ports[0];
-            nodeBase.getMetadata().viewer.port = portNumber;
+            let entryPoint = "";
+            if ("entry_point" in val["containers"][0]) {
+              entryPoint = val["containers"][0].entry_point;
+            }
             nodeBase.getMetadata().viewer.ip = "http://" + window.location.hostname;
+            nodeBase.getMetadata().viewer.port = portNumber;
+            nodeBase.getMetadata().viewer.entryPoint = entryPoint;
             nodeBase.getViewerButton().setEnabled(portNumber !== null);
-            const servUrl = nodeBase.getMetadata().viewer.ip +":"+ nodeBase.getMetadata().viewer.port;
+            const servUrl = nodeBase.getMetadata().viewer.ip +":"+ nodeBase.getMetadata().viewer.port +"/"+ nodeBase.getMetadata().viewer.entryPoint;
             this.__logger.debug(nodeBase.getMetadata().name, "Service ready on " + servUrl);
             this.__logger.info(nodeBase.getMetadata().name, "Service ready");
           }
