@@ -390,7 +390,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             let portNumber = val["containers"][0].published_ports[0];
             let entryPoint = "";
             if ("entry_point" in val["containers"][0]) {
-              entryPoint = val["containers"][0].entry_point;
+              entryPoint = val["containers"][0].entry_point[0];
             }
             nodeBase.getMetadata().viewer.ip = "http://" + window.location.hostname;
             nodeBase.getMetadata().viewer.port = portNumber;
