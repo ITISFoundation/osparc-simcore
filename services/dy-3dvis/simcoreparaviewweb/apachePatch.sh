@@ -38,10 +38,10 @@ echo "export POSTGRES_DB=${POSTGRES_DB}" >> /etc/environment
 sed -i '5 i\SetEnv POSTGRES_DB ${POSTGRES_DB}' /etc/apache2/sites-available/001-pvw.conf
 
 echo ${PARAVIEW_INPUT_PATH}
-echo "export PARAVIEW_INPUT_PATH='/data'" >> /etc/environment
+echo "export PARAVIEW_INPUT_PATH=${PARAVIEW_INPUT_PATH}" >> /etc/environment
 sed -i '5 i\SetEnv PARAVIEW_INPUT_PATH ${PARAVIEW_INPUT_PATH}' /etc/apache2/sites-available/001-pvw.conf
 
 a2enmod cgid
 mkdir /data
 chmod 777 /data/
-chmod 777 /tmp/simcorefiles/
+

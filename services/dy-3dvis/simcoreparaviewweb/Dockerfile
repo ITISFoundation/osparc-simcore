@@ -56,9 +56,6 @@ COPY boot.sh boot.sh
 RUN chmod +x boot.sh
 COPY apachePatch.sh apachePatch.sh
 RUN chmod +x apachePatch.sh
-COPY input-retriever.py input-retriever.py
-RUN chmod a+x input-retriever.py
-
 
 #------------------------------------------
 FROM common as development
@@ -84,5 +81,5 @@ RUN mkdir packages && \
     echo "packages/s3wrapper/src/s3wrapper/*" >> .git/info/sparse-checkout && \
     git pull --depth=1 origin master
 # copy script to get the inputs inside the local file system
-# COPY input-retriever.py input-retriever.py
+COPY input-retriever.py input-retriever.py
 ENTRYPOINT [ "/bin/bash", "boot.sh" ]
