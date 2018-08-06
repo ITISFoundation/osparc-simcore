@@ -13,7 +13,7 @@ fi
 echo "modifying apache configuration..."
 sed -i '34 i\Options +ExecCGI' /etc/apache2/sites-available/001-pvw.conf
 sed -i '35 i\AddHandler cgi-script .py' /etc/apache2/sites-available/001-pvw.conf
-a2enmod cgi
+a2enmod cgid
 mkdir /data
 chmod 777 /data
 
