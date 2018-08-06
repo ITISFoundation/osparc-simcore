@@ -9,12 +9,14 @@ then
     export SIMCORE_NODE_UUID="$result";
 fi
 
-/opt/paraviewweb/scripts/addEndpoints.sh "retrieve" "/home/root"
+#TODO: set a shell script to call the script
+echo "setting additional endpoints..."
+/opt/paraviewweb/scripts/addEndpoints.sh "setport" "/home/root/setport.py"
+/opt/paraviewweb/scripts/addEndpoints.sh "retrieve" "/home/root/input-retriever.py"
 echo "modifying apache configuration..."
 . ./apachePatch.sh
 
-#echo "retrieving data from S3..."
-#python3 "input-retriever.py";
+echo "Waiting for server port to be defined"
 server_port="$(python3 external-port-retriever.py)";
 echo "starting paraview using websocket port $server_port..."
 /opt/paraviewweb/scripts/start.sh "ws://localhost:$server_port"
