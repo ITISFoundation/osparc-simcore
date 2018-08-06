@@ -16,5 +16,4 @@ echo "modifying apache configuration..."
 echo "retrieving data from S3..."
 python3 "input-retriever.py";
 echo "starting paraview using websocket port $SERVER_PORT..."
-=======
 /opt/paraviewweb/scripts/start.sh "ws://localhost:$SERVER_PORT"
