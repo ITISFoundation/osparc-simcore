@@ -11,11 +11,7 @@ fi
 
 /opt/paraviewweb/scripts/addEndpoints.sh "retrieve" "/home/root"
 echo "modifying apache configuration..."
-sed -i '34 i\Options +ExecCGI' /etc/apache2/sites-available/001-pvw.conf
-sed -i '35 i\AddHandler cgi-script .py' /etc/apache2/sites-available/001-pvw.conf
-a2enmod cgid
-mkdir /data
-chmod 777 /data
+. ./apachePatch.sh
 
 #echo "retrieving data from S3..."
 #python3 "input-retriever.py";

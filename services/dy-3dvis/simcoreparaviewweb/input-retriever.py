@@ -13,8 +13,6 @@ _LOGGER = logging.getLogger(__name__)
 print("Content-Type: text/html;charset=utf-8")
 print()
 
-print(os.environ)
-
 from simcore_sdk.nodeports.nodeports import PORTS
 
 _INPUT_PATH = Path(os.environ.get("PARAVIEW_INPUT_PATH"))
@@ -32,3 +30,4 @@ for node_input in PORTS.inputs:
             _LOGGER.debug("Start moving %s to input path %s", local_path, _INPUT_PATH)
             shutil.move(str(local_path), str(_INPUT_PATH / file_name))
             _LOGGER.debug("Move completed")
+            print("Move completed")
