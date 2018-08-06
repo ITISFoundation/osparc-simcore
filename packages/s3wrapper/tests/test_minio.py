@@ -36,5 +36,3 @@ def test_minio(docker_ip, docker_services):
     # Contact the service.
     response = requests.get(url)
     assert response.status_code == 403
-
-    

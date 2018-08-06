@@ -81,6 +81,12 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       let preferences = new qx.ui.menu.Button("Account Settings");
       preferences.addListener("execute", this.__onOpenAccountSettings, this);
 
+      let logout = new qx.ui.menu.Button("Logout");
+      logout.addListener("execute", function(e) {
+        let app = qx.core.Init.getApplication();
+        app.logout();
+      });
+
       menu.add(preferences);
       menu.addSeparator();
       menu.add(new qx.ui.menu.Button("Groups"));
@@ -89,10 +95,10 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       menu.add(new qx.ui.menu.Button("Report a Problem"));
       menu.add(new qx.ui.menu.Button("About"));
       menu.addSeparator();
-      menu.add(new qx.ui.menu.Button("Logout"));
+      menu.add(logout);
 
-      var button = new qx.ui.form.MenuButton(null, null, menu);
-      return button;
+      let btn = new qx.ui.form.MenuButton(null, null, menu);
+      return btn;
     },
 
     __onOpenAccountSettings: function() {

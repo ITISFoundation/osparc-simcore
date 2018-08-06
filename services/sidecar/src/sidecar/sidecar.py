@@ -369,10 +369,9 @@ class Sidecar(object):
             job_id = dep_task.job_id
             if not job_id:
                 return False
-            else:
-                _LOGGER.debug("TASK %s DEPENDS ON %s with stat %s", task.internal_id, dep_task.internal_id,dep_task.state)
-                if not dep_task.state == SUCCESS:
-                    return False
+            _LOGGER.debug("TASK %s DEPENDS ON %s with stat %s", task.internal_id, dep_task.internal_id,dep_task.state)
+            if not dep_task.state == SUCCESS:
+                return False
         _LOGGER.debug("TASK %s is ready", task.internal_id)
 
         return True
