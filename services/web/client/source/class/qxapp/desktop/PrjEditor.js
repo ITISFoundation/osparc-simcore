@@ -70,6 +70,17 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let viewerWin = this.__createBrowserWindow(url, metadata.name);
       this.__workbench.addWindowToDesktop(viewerWin);
 
+      // Workaround for updating inputs
+      if (metadata.name === "3d-viewer") {
+        let urlUpdate = "http://" + window.location.hostname + ":" + metadata.viewer.port + "/retrieve";
+        let req = new qx.io.request.Xhr();
+        req.set({
+          url: urlUpdate,
+          method: "POST"
+        });
+        req.send();
+      }
+
       const slotName = "openDynamic";
       let socket = qxapp.wrappers.WebSocket.getInstance();
       let data = {
