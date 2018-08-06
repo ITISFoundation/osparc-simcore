@@ -34,8 +34,7 @@ COPY requirements.txt .
 RUN pip3 install --upgrade pip
 RUN pip3 install --no-cache-dir -r requirements.txt
 # set python path
-
-ENV PYTHONPATH="./packages/packages/simcore-sdk/src:./packages/packages/s3wrapper/src"
+ENV PYTHONPATH="/home/root/packages/packages/simcore-sdk/src:/home/root/packages/packages/s3wrapper/src"
 
 # Labels.
 ARG VCS_REF
