@@ -30,7 +30,7 @@ _LOGGER = get_task_logger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 
 
-class Sidecar(object):
+class Sidecar:
     def __init__(self):
         # publish subscribe config
         self._pika = RabbitSettings()
