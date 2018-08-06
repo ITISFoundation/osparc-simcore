@@ -177,7 +177,7 @@ def __pass_port_to_service(service, port, service_boot_parameters_labels):
         if param['name'] == 'published_port':
             route = param['value']
             _LOGGER.debug("Service needs to get published port %s using route %s", port, route)
-            service_url = "http://" + service.name + "/" + route
+            service_url = "http://" + service.name + ":" + str(port) + "/" + route
             query_string = {"port":str(port)}
             _LOGGER.debug("creating request %s and query %s", service_url, query_string)
             response = requests.request("POST", service_url, params=query_string)
