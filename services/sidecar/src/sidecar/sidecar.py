@@ -14,7 +14,7 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from sidecar_utils import (DbSettings, DockerSettings, ExecutorSettings,
                            RabbitSettings, S3Settings, delete_contents,
-                           find_entry_point)
+                           find_entry_point, is_node_ready)
 from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
@@ -28,6 +28,7 @@ logging.basicConfig(level=logging.DEBUG)
 #_LOGGER = logging.getLogger(__name__)
 _LOGGER = get_task_logger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
+
 
 class Sidecar:
     def __init__(self):
@@ -57,6 +58,8 @@ class Sidecar:
                 delete_contents(folder)
 
     def _process_task_input(self, port, input_ports):
+        # pylint: disable=too-many-branches
+
         port_name = port['key']
         port_value = port['value']
         _LOGGER.debug("PROCESSING %s %s", port_name, port_value)
@@ -86,8 +89,17 @@ class Sidecar:
                 _LOGGER.debug('Fetch DB %s', port_value)
                 other_node_id = port_value.split(".")[1]
                 other_output_port_id = port_value.split(".")[2]
-                other_task = self._db.session.query(ComputationalTask).filter(and_(ComputationalTask.node_id==other_node_id,
-                                        ComputationalTask.pipeline_id==self._task.pipeline_id)).one()
+                other_task = None
+                _session = self._db.Session()
+                try:
+                    other_task =_session.query(ComputationalTask).filter(and_(ComputationalTask.node_id==other_node_id,
+                                    ComputationalTask.pipeline_id==self._task.pipeline_id)).one()
+                except exc.SQLAlchemyError:
+                    _LOGGER.exception("Could not find other task")
+                    _session.rollback()
+                finally:
+                    _session.close()
+
                 if other_task is None:
                     _LOGGER.debug("ERROR, input port %s not found in db", port_value)
                 else:
@@ -129,13 +141,15 @@ class Sidecar:
         _LOGGER.debug('PULLING IMAGE')
         _LOGGER.debug('reg %s user %s pwd %s', self._docker.registry, self._docker.registry_user,self._docker.registry_pwd )
 
+        try:
+            self._docker.client.login(registry=self._docker.registry,
+                username=self._docker.registry_user, password=self._docker.registry_pwd)
+            _LOGGER.debug('img %s tag %s', self._docker.image_name, self._docker.image_tag)
+            self._docker.client.images.pull(self._docker.image_name, tag=self._docker.image_tag)
+        except docker.errors.APIError:
+            _LOGGER.exception("Pulling image failed")
+            raise docker.errors.APIError
 
-        self._docker.client.login(registry=self._docker.registry,
-            username=self._docker.registry_user, password=self._docker.registry_pwd)
-
-        _LOGGER.debug('img %s tag %s', self._docker.image_name, self._docker.image_tag)
-
-        self._docker.client.images.pull(self._docker.image_name, tag=self._docker.image_tag)
 
     def _log(self, channel, msg):
         log_data = {"Channel" : "Log", "Node": self._task.node_id, "Message" : msg}
@@ -176,6 +190,8 @@ class Sidecar:
         connection.close()
 
     def _process_task_output(self):
+        # pylint: disable=too-many-branches
+
         """ There will be some files in the /output
 
                 - Maybe a output.json (should contain key value for simple things)
@@ -205,7 +221,14 @@ class Sidecar:
                                     to['value'] = output_ports[to['key']]
                                     _LOGGER.debug("POSTRPO to['value]' becomes %s", output_ports[to['key']])
                                     flag_modified(self._task, "output")
-                                    self._db.session.commit()
+                                    _session = self._db.Session()
+                                    try:
+                                        _session.commit()
+                                    except exc.SQLAlchemyError as e:
+                                        _LOGGER.debug(e)
+                                        _session.rollback()
+                                    finally:
+                                        _session.close()
                     else:
                         # we want to keep the folder structure
                         if not root == directory:
@@ -240,6 +263,7 @@ class Sidecar:
 
     def initialize(self, task):
         self._task = task
+
         self._docker.image_name = self._docker.registry_name + "/" + task.image['name']
         self._docker.image_tag = task.image['tag']
         self._executor.in_dir = os.path.join("/", "input", task.job_id)
@@ -318,96 +342,98 @@ class Sidecar:
 
 
     def postprocess(self):
-        _LOGGER.debug('Post-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
+        #_LOGGER.debug('Post-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
 
         self._process_task_output()
         self._process_task_log()
 
         self._task.state = SUCCESS
-        self._db.session.add(self._task)
-        self._db.session.commit()
+        _session = self._db.Session()
+        try:
+            _session.add(self._task)
+            _session.commit()
+           # _LOGGER.debug('DONE Post-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
 
-        _LOGGER.debug('DONE Post-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
-
-
-    def _is_node_ready(self, task, graph):
-        tasks = self._db.session.query(ComputationalTask).filter(and_(
-            ComputationalTask.node_id.in_(list(graph.predecessors(task.node_id))),
-            ComputationalTask.pipeline_id==task.pipeline_id)).all()
-
-        _LOGGER.debug("TASK %s ready? Checking ..", task.internal_id)
-        for dep_task in tasks:
-            job_id = dep_task.job_id
-            if not job_id:
-                return False
-            _LOGGER.debug("TASK %s DEPENDS ON %s with stat %s", task.internal_id, dep_task.internal_id,dep_task.state)
-            if not dep_task.state == SUCCESS:
-                return False
-        _LOGGER.debug("TASK %s is ready", task.internal_id)
-
-        return True
+        except exc.SQLAlchemyError:
+            _LOGGER.exception("Could not update job from postprocessing")
+            _session.rollback()
+        finally:
+            _session.close()
 
     def inspect(self, celery_task, pipeline_id, node_id):
         _LOGGER.debug("ENTERING inspect pipeline:node %s: %s", pipeline_id, node_id)
 
-        _pipeline = self._db.session.query(ComputationalPipeline).filter_by(pipeline_id=pipeline_id).one()
-        graph = _pipeline.execution_graph
         next_task_nodes = []
-        if node_id:
-            do_process = True
-            # find the for the current node_id, skip if there is already a job_id around
-            query = self._db.session.query(ComputationalTask).filter(and_(ComputationalTask.node_id==node_id,
-                ComputationalTask.pipeline_id==pipeline_id, ComputationalTask.job_id==None))
-            # Use SELECT FOR UPDATE TO lock the row
-            query.with_for_update()
-            try:
+        do_run = False
+
+        try:
+            _session = self._db.Session()
+            _pipeline =_session.query(ComputationalPipeline).filter_by(pipeline_id=pipeline_id).one()
+
+            graph = _pipeline.execution_graph
+            if node_id:
+                do_process = True
+                # find the for the current node_id, skip if there is already a job_id around
+                query =_session.query(ComputationalTask).filter(and_(ComputationalTask.node_id==node_id,
+                    ComputationalTask.pipeline_id==pipeline_id, ComputationalTask.job_id==None))
+                # Use SELECT FOR UPDATE TO lock the row
+                query.with_for_update()
                 task = query.one()
-            except exc.SQLAlchemyError as err:
-                _LOGGER.error(err)
-                # no result found, just return
-                return next_task_nodes
 
-            if task == None:
-                return next_task_nodes
+                if task == None:
+                    return next_task_nodes
 
-            # already done or running and happy
-            if task.job_id and (task.state == SUCCESS or task.state == RUNNING):
-                _LOGGER.debug("TASK %s ALREADY DONE OR RUNNING", task.internal_id)
-                do_process = False
+                # already done or running and happy
+                if task.job_id and (task.state == SUCCESS or task.state == RUNNING):
+                    _LOGGER.debug("TASK %s ALREADY DONE OR RUNNING", task.internal_id)
+                    do_process = False
 
-            # Check if node's dependecies are there
-            if not self._is_node_ready(task, graph):
-                _LOGGER.debug("TASK %s NOT YET READY", task.internal_id)
-                do_process = False
+                # Check if node's dependecies are there
+                if not is_node_ready(task, graph, _session, _LOGGER):
+                    _LOGGER.debug("TASK %s NOT YET READY", task.internal_id)
+                    do_process = False
 
-            if do_process:
-                task.job_id = celery_task.request.id
-                self._db.session.add(task)
-                self._db.session.commit()
+                if do_process:
+                    task.job_id = celery_task.request.id
+                    _session.add(task)
+                    _session.commit()
+
+                    task =_session.query(ComputationalTask).filter(
+                        and_(ComputationalTask.node_id==node_id,ComputationalTask.pipeline_id==pipeline_id)).one()
+
+                    if task.job_id != celery_task.request.id:
+                        # somebody else was faster
+                        # return next_task_nodes
+                        pass
+                    else:
+                        task.state = RUNNING
+                        _session.add(task)
+                        _session.commit()
+
+                        self.initialize(task)
+
+                        do_run = True
             else:
-                return next_task_nodes
+                _LOGGER.debug("NODE id was zero")
+                _LOGGER.debug("graph looks like this %s", graph)
 
-            task = self._db.session.query(ComputationalTask).filter(
-                and_(ComputationalTask.node_id==node_id,ComputationalTask.pipeline_id==pipeline_id)).one()
-            if task.job_id != celery_task.request.id:
-                # somebody else was faster
-                return next_task_nodes
+                next_task_nodes = find_entry_point(graph)
+                _LOGGER.debug("Next task nodes %s", next_task_nodes)
 
-            task.state = RUNNING
-            self._db.session.add(task)
-            self._db.session.commit()
-            self.initialize(task)
+            celery_task.update_state(state=CSUCCESS)
+
+        except exc.SQLAlchemyError:
+            _LOGGER.exception("DB error")
+            _session.rollback()
+
+        finally:
+            _session.close()
+
+        # now proceed actually running the task (we do that after the db session has been closed)
+        if do_run:
+            # try to run the task, return empyt list of next nodes if anything goes wrong
             self.run()
-
             next_task_nodes = list(graph.successors(node_id))
-        else:
-            _LOGGER.debug("NODE id was zero")
-            _LOGGER.debug("graph looks like this %s", graph)
-
-            next_task_nodes = find_entry_point(graph)
-            _LOGGER.debug("Next task nodes %s", next_task_nodes)
-
-        celery_task.update_state(state=CSUCCESS)
 
         return next_task_nodes
 
@@ -415,6 +441,12 @@ SIDECAR = Sidecar()
 @celery.task(name='comp.task', bind=True)
 def pipeline(self, pipeline_id, node_id=None):
     _LOGGER.debug("ENTERING run")
-    next_task_nodes = SIDECAR.inspect(self, pipeline_id, node_id)
+    next_task_nodes = []
+    try:
+        next_task_nodes = SIDECAR.inspect(self, pipeline_id, node_id)
+    #pylint:disable=broad-except
+    except Exception:
+        _LOGGER.exception("Uncaught exception")
+
     for _node_id in next_task_nodes:
         _task = celery.send_task('comp.task', args=(pipeline_id, _node_id), kwargs={})
