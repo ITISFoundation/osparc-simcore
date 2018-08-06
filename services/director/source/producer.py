@@ -12,6 +12,7 @@ import docker
 import registry_proxy
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
+SERVICE_RUNTIME_BOOTSETTINGS = 'simcore.service.bootsettings'
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,6 +54,15 @@ def __get_service_runtime_parameters_labels(image, tag):
     _LOGGER.debug("Retrieved service runtime settings: %s", runtime_parameters)
     return runtime_parameters
 
+def __get_service_boot_parameters_labels(image, tag):
+    # pylint: disable=C0103
+    image_labels = registry_proxy.retrieve_labels_of_image(image, tag)
+    boot_params = dict()
+    if SERVICE_RUNTIME_BOOTSETTINGS in image_labels:
+        boot_params = json.loads(image_labels[SERVICE_RUNTIME_BOOTSETTINGS])
+    _LOGGER.debug("Retrieved service boot settings: %s", boot_params)
+    return boot_params
+
 
 def __convert_labels_to_docker_runtime_parameters(service_runtime_parameters_labels, service_uuid):
     # pylint: disable=C0103
@@ -73,20 +83,18 @@ def __convert_labels_to_docker_runtime_parameters(service_runtime_parameters_lab
             # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
             enpoint_spec = docker.types.EndpointSpec(ports={0: int(param['value'])})
             runtime_params["endpoint_spec"] = enpoint_spec
-        elif param['name'] == 'entry_point':
-            # special handling, this is not a docker parameter so skip it
-            pass
         else:
             runtime_params[param['name']] = param['value']
     _LOGGER.debug("Converted labels to docker runtime parameters: %s", runtime_params)
     return runtime_params
 
-def __get_service_entrypoint(service_runtime_parameters_labels):
+def __get_service_entrypoint(service_boot_parameters_labels):
     _LOGGER.debug("Getting service entrypoint")
-    for param in service_runtime_parameters_labels:
+    for param in service_boot_parameters_labels:
         if 'name' not in param or 'type' not in param or 'value' not in param:
             pass
         if param['name'] == 'entry_point':
+            _LOGGER.debug("Service entrypoint is %s", param['value'])
             return param['value']
     return ''
 
@@ -256,7 +264,10 @@ def start_service(service_name, service_tag, service_uuid):
         # prepare runtime parameters
         service_runtime_parameters_labels = __get_service_runtime_parameters_labels(docker_image_path, tag)
         docker_service_runtime_parameters = __convert_labels_to_docker_runtime_parameters(service_runtime_parameters_labels, service_uuid)
-        service_entrypoint = __get_service_entrypoint(service_runtime_parameters_labels)
+
+        service_boot_parameters_labels = __get_service_boot_parameters_labels(docker_image_path, tag)
+        service_entrypoint = __get_service_entrypoint(service_boot_parameters_labels)
+
         __add_to_swarm_network_if_ports_published(docker_client, docker_service_runtime_parameters)
         __add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
         if len(list_of_images) > 1:
