@@ -17,7 +17,7 @@ a2enmod cgid
 mkdir /data
 chmod 777 /data
 
-echo "retrieving data from S3..."
-python3 "input-retriever.py";
+#echo "retrieving data from S3..."
+#python3 "input-retriever.py";
 echo "starting paraview using websocket port $SERVER_PORT..."
 /opt/paraviewweb/scripts/start.sh "ws://localhost:$SERVER_PORT"
