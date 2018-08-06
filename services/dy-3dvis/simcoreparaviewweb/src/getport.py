@@ -3,7 +3,7 @@ from pathlib import Path
 import time
 
 _LOGGER = logging.getLogger(__name__)
-_INPUT_FILE = Path(r"/home/root/server_port")
+_INPUT_FILE = Path(r"/home/root/trigger/server_port")
 
 _LOGGER.debug("looking for file %s", _INPUT_FILE)
 # wait till the file exists

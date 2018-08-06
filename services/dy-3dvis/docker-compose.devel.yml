@@ -17,9 +17,7 @@ services:
       - postgres
       - minio
     volumes: 
-      - ./simcoreparaviewweb/input-retriever.py:/home/root/input-retriever.py
-      - ./simcoreparaviewweb/external-port-retriever.py:/home/root/external-port-retriever.py
-      - ./simcoreparaviewweb/setport.py:/home/root/setport.py
+      - ./simcoreparaviewweb/src:/home/root/src
       - ../../packages/simcore-sdk/src:/home/root/packages/packages/simcore-sdk/src
       - ../../packages/s3wrapper/src:/home/root/packages/packages/s3wrapper/src
       - ./test-data:/home/root/test-data
