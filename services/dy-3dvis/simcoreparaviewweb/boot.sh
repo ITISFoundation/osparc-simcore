@@ -9,9 +9,12 @@ then
     export SIMCORE_NODE_UUID="$result";
 fi
 
+/opt/paraviewweb/scripts/addEndpoints.sh "retrieve" "/home/root"
+echo "modifying apache configuration..."
+. ./apachePatch.sh
+
 echo "retrieving data from S3..."
 python3 "input-retriever.py";
 echo "starting paraview using websocket port $SERVER_PORT..."
-/opt/paraviewweb/scripts/addEndpoints.sh "retrieve" "/home/root"
-. ./apachePatch.sh
-/opt/paraviewweb/scripts/start.sh "ws://localhost:$SERVER_PORT" --mesa-llvm
+=======
+/opt/paraviewweb/scripts/start.sh "ws://localhost:$SERVER_PORT"
