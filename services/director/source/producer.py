@@ -73,6 +73,9 @@ def __convert_labels_to_docker_runtime_parameters(service_runtime_parameters_lab
             # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
             enpoint_spec = docker.types.EndpointSpec(ports={0: int(param['value'])})
             runtime_params["endpoint_spec"] = enpoint_spec
+        elif param['name'] == 'entry_point':
+            # special handling, this is not a docker parameter so skip it
+            pass
         else:
             runtime_params[param['name']] = param['value']
     _LOGGER.debug("Converted labels to docker runtime parameters: %s", runtime_params)
@@ -270,11 +273,11 @@ def start_service(service_name, service_tag, service_uuid):
             _LOGGER.debug("Service started now waiting for it to run")
             __wait_until_service_running_or_failed(service.id)
             published_ports = __get_docker_image_published_ports(service.id)
-            _LOGGER.debug("Service with parameters %s successfully started, published ports are %s", docker_service_runtime_parameters, published_ports)
+            _LOGGER.debug("Service with parameters %s successfully started, published ports are %s, entry_point is %s", docker_service_runtime_parameters, published_ports, service_entrypoint)
             container_meta_data = {
                 "container_id": service.id,
                 "published_ports": published_ports,
-                "entry_points": service_entrypoint
+                "entry_point": service_entrypoint
                 }
             containers_meta_data.append(container_meta_data)
         except docker.errors.ImageNotFound as err:

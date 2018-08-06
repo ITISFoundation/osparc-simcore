@@ -46,7 +46,7 @@ LABEL org.label-schema.schema-version="1.0" \
     org.label-schema.vcs-ref=${VCS_REF} \
     org.label-schema.vendor="IT'IS foundation"
 # service runtime settings
-LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 80}, {"name": "entry_point", "type": "string", "value": "/visualizer"}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 80}, {"name": "entry_point", "type": "string", "value": "visualizer"}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
 
 # copy start script
 ARG PORT
