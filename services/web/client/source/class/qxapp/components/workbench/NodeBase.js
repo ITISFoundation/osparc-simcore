@@ -148,7 +148,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return bounds;
     },
 
-    __populateNode: function(metaData,nodeData) {
+    __populateNode: function(metaData, nodeData) {
       this.__metaData = metaData;
       // this.__creteSettings(metaData.inputs);
       this.setCaption(metaData.name + " " + metaData.version);
