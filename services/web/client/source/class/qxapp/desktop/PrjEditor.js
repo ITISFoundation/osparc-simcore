@@ -157,8 +157,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       win.add(iframe, {
         flex: 1
       });
-      // win.setModal(true);
       win.moveTo(150, 150);
+
+      win.addListener("dblclick", function(e) {
+        e.stopPropagation();
+      });
 
       return win;
     },
