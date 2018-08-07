@@ -8,6 +8,7 @@ import time
 import json
 import logging
 import requests
+import tenacity
 
 import docker
 import registry_proxy
@@ -170,17 +171,19 @@ def __get_docker_image_published_ports(service_id):
     _LOGGER.debug("Service %s publishes: %s ports", service_id, published_ports)
     return published_ports
 
+@tenacity.retry(wait=tenacity.wait_fixed(2), stop=tenacity.stop_after_attempt(3) or tenacity.stop_after_delay(10))
 def __pass_port_to_service(service, port, service_boot_parameters_labels):
     for param in service_boot_parameters_labels:
         if 'name' not in param or 'type' not in param or 'value' not in param:
             pass
         if param['name'] == 'published_port':
+            # time.sleep(5)
             route = param['value']
             _LOGGER.debug("Service needs to get published port %s using route %s", port, route)
-            service_url = "http://" + service.name + ":" + str(port) + "/" + route
+            service_url = "http://" + str(service.name) + "/" + route
             query_string = {"port":str(port)}
             _LOGGER.debug("creating request %s and query %s", service_url, query_string)
-            response = requests.request("POST", service_url, params=query_string)
+            response = requests.post(service_url, data=query_string)
             _LOGGER.debug("query response: %s", response)
             return
     _LOGGER.debug("no port published for service %s", service.name)

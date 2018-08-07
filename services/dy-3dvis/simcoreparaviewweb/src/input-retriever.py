@@ -30,6 +30,6 @@ for node_input in PORTS.inputs:
         if local_path.exists():
             file_name = local_path.name
             _LOGGER.debug("Start moving %s to input path %s", local_path, _INPUT_PATH)
-            shutil.move(str(local_path), str(_INPUT_PATH / file_name))
+            shutil.move(str(local_path), str(_INPUT_PATH / file_name) + ".vtk")
             _LOGGER.debug("Move completed")
             print("Move completed")

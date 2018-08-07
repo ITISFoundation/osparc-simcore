@@ -356,7 +356,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             const isDirectory = data.getData().isDirectory;
             const activeIndex = isDirectory ? dirPortIndex : filePortIndex;
             const inactiveIndex = isDirectory ? filePortIndex : dirPortIndex;
-            node.getMetadata().outputs[activeIndex] = itemPath;
+            node.getMetadata().outputs[activeIndex].value = itemPath;
             node.getMetadata().outputs[inactiveIndex].value = null;
             node.getPortByIndex(false, activeIndex).ui.setLabel(itemName);
             node.getPortByIndex(false, activeIndex).ui.getToolTip().setLabel(itemName);
