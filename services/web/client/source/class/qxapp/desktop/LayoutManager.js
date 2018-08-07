@@ -24,13 +24,14 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__navBar.setCurrentStatus("Browser");
     }, this);
 
-    this.__prjBrowser.addListener("StartPrj", function(e) {
+    this.__prjBrowser.addListener("StartProject", function(e) {
       let project = e.getData();
       if (this.__prjEditor) {
         this.__prjStack.remove(this.__prjEditor);
       }
       this.__prjEditor = new qxapp.desktop.PrjEditor(project.getProjectId());
-      this.__prjStack.setSelection([this.__PrjEditor]);
+      this.__prjStack.add(this.__prjEditor);
+      this.__prjStack.setSelection([this.__prjEditor]);
       this.__navBar.setCurrentStatus(project.getName());
       // this.__PrjEditor.showSettings(false);
     }, this);

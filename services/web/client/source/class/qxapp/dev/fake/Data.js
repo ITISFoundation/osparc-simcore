@@ -23,7 +23,60 @@ qx.Class.define("qxapp.dev.fake.Data", {
     }),
     getNodeMap: function() {
       return {
-        "service/computational/itis/tutti:0.0.0-alpha": {
+        "service/dynamic/itis/file-picker-0.0.0":{
+          key: "service/dynamic/itis/file-picker",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "filepicker service",
+          description: "dummy file picker",
+          authors: [
+            {
+              name: "Odei Maiz",
+              email: "maiz@itis.ethz.ch"
+            }
+          ],
+          contact: "maiz@itis.ethz.ch",
+          outputs: {
+            outFile: {
+              displayOrder: 0,
+              label: "File",
+              description: "Chosen File",
+              type: "string"
+            }
+          },
+          inputs: {}
+        },
+        "service/computational/itis/sleeper-0.0.0":{
+          key: "service/computational/itis/sleeper",
+          version: "0.0.0",
+          type: "computational",
+          name: "sleeper service",
+          description: "dummy sleepr service",
+          authors: [
+            {
+              name: "Odei Maiz",
+              email: "maiz@itis.ethz.ch"
+            }
+          ],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            inNumber: {
+              displayOrder: 0,
+              label: "In",
+              description: "Chosen Number",
+              type: "number"
+            }
+          },
+          outputs: {
+            outNumber: {
+              displayOrder: 0,
+              label: "Out",
+              description: "Chosen Number",
+              type: "number"
+            }
+          }
+        },
+        "service/computational/itis/tutti-0.0.0-alpha": {
           key: "service/computational/itis/tutti",
           version: "0.0.0-alpha",
           type: "computational",
@@ -98,14 +151,14 @@ qx.Class.define("qxapp.dev.fake.Data", {
             },
             inFile: {
               displayOrder: 6,
-              label: "FileInput Test",
+              label: "File",
               description: "Test Input File",
               type: "data:*/*"
             },
             inImage: {
               displayOrder: 7,
-              label: "FileInput Test",
-              description: "Test Input File",
+              label: "Image",
+              description: "Test Input Image",
               type: "data:[image/jpeg,image/png]"
             }
           },
@@ -158,7 +211,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/dynamic/itis/file-picker",
               version: "0.0.0",
               outputs: {
-                out1: {
+                outFile: {
                   store: "s3-z43",
                   path: "/bucket1/file1"
                 }
@@ -170,14 +223,12 @@ qx.Class.define("qxapp.dev.fake.Data", {
             },
             "UUID2": {
               key: "service/computational/itis/sleeper",
-              version: "0.0.1-alpha",
+              version: "0.0.0",
               inputs: {
-                inNumber: 3.5,
-                inInteger: 4,
-                inImage: {
-                  nodeUuid: "UUID1",
-                  property: "out_1"
-                }
+                inNumber: 3.5
+              },
+              outputs: {
+                outNumber: 33
               },
               position: {
                 x: 120,
@@ -186,22 +237,12 @@ qx.Class.define("qxapp.dev.fake.Data", {
             },
             "UUID3": {
               key: "service/computational/itis/sleeper",
-              version: "0.0.1-alpha",
+              version: "0.0.0",
               inputs: {
-                inNumber: {
-                  nodeUuid: "UUID2",
-                  property: "out_number"
-                },
-                inString: "Hello,blablabla",
-                inBool: true,
-                inImage: {
-                  nodeUuid: "UUID2",
-                  property: "out_png"
-                },
-                inFile: {
-                  store: "s3-z43",
-                  path: "/bucket2/file12"
-                }
+                inNumber: 3.5
+              },
+              outputs: {
+                outNumber: 33
               },
               position: {
                 x: 260,

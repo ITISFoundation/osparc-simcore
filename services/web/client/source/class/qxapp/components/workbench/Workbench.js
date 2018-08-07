@@ -53,7 +53,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         this.__selectedItemChanged(null);
       }
     }, this);
-    // TODO how about making the LoggerView a singleton then it could be accessed from everywhere
+    // TODO how about making the LoggerView a singleton then it could be accessed from anywhere
     this.__logger = new qxapp.components.workbench.logger.LoggerView();
     this.__desktop.add(this.__logger);
 
