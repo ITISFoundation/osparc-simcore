@@ -78,11 +78,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       const slotName = "openDynamic";
       let socket = qxapp.wrappers.WebSocket.getInstance();
-      let data = {
-        serviceName: metadata.name,
-        nodeId: nodeId
+      let args = {
+        serviceName: data.name,
+        nodeId: data.nodeId
       };
-      socket.emit(slotName, data);
+      socket.emit(slotName, args);
     }, this);
 
     // this.__settingsView.addListener("NodeProgress", function(e) {

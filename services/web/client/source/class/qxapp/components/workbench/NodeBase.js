@@ -198,7 +198,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
               button.addListener("execute", function(e) {
                 this.getPropsWidget().fireDataEvent("ShowViewer", {
                   url: srvUrl,
-                  name: metaData.name
+                  name: metaData.name,
+                  nodeId: this.getNodeId()
                 });
               }, this);
               console.debug(metaData.name, "Service ready on " + srvUrl);
@@ -241,6 +242,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       }
       return null;
     },
+
     __createPorts: function(type, ports) {
       if (!ports) {
         return;
@@ -269,13 +271,13 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     },
     __addInputPort: function(portId, inputData) {
       let label = this.__createPort(true, portId, inputData);
-      this.getInputPorts().push(label);
+      this.getInputPorts()[portId] = label;
       this.__inputPortsUI.add(label.ui);
     },
 
     __addOutputPort: function(portId, outputData) {
       let label = this.__createPort(false, portId, outputData);
-      this.getOutputPorts().push(label);
+      this.getOutputPorts()[portId]=label;
       this.__outputPortsUI.add(label.ui);
     },
     __createPort: function(isInput, portId, portData) {
