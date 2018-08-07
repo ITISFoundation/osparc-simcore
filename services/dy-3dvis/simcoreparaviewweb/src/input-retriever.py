@@ -13,6 +13,8 @@ _LOGGER = logging.getLogger(__name__)
 print("Content-Type: text/html;charset=utf-8")
 print()
 
+print(os.environ)
+
 from simcore_sdk.nodeports.nodeports import PORTS
 
 _INPUT_PATH = Path(os.environ.get("PARAVIEW_INPUT_PATH"))

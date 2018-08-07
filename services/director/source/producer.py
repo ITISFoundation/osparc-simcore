@@ -7,6 +7,7 @@ import os
 import time
 import json
 import logging
+import requests
 
 import docker
 import registry_proxy
@@ -169,6 +170,20 @@ def __get_docker_image_published_ports(service_id):
     _LOGGER.debug("Service %s publishes: %s ports", service_id, published_ports)
     return published_ports
 
+def __pass_port_to_service(service, port, service_boot_parameters_labels):
+    for param in service_boot_parameters_labels:
+        if 'name' not in param or 'type' not in param or 'value' not in param:
+            pass
+        if param['name'] == 'published_port':
+            route = param['value']
+            _LOGGER.debug("Service needs to get published port %s using route %s", port, route)
+            service_url = "http://" + service.name + ":" + str(port) + "/" + route
+            query_string = {"port":str(port)}
+            _LOGGER.debug("creating request %s and query %s", service_url, query_string)
+            response = requests.request("POST", service_url, params=query_string)
+            _LOGGER.debug("query response: %s", response)
+            return
+    _LOGGER.debug("no port published for service %s", service.name)
 
 def __create_network_name(service_name, service_uuid):
     return service_name + '_' + service_uuid
@@ -264,10 +279,6 @@ def start_service(service_name, service_tag, service_uuid):
         # prepare runtime parameters
         service_runtime_parameters_labels = __get_service_runtime_parameters_labels(docker_image_path, tag)
         docker_service_runtime_parameters = __convert_labels_to_docker_runtime_parameters(service_runtime_parameters_labels, service_uuid)
-
-        service_boot_parameters_labels = __get_service_boot_parameters_labels(docker_image_path, tag)
-        service_entrypoint = __get_service_entrypoint(service_boot_parameters_labels)
-
         __add_to_swarm_network_if_ports_published(docker_client, docker_service_runtime_parameters)
         __add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
         if len(list_of_images) > 1:
@@ -276,6 +287,11 @@ def start_service(service_name, service_tag, service_uuid):
         __set_service_name(docker_service_runtime_parameters,
             registry_proxy.get_service_sub_name(docker_image_path),
             service_uuid)       
+
+        # prepare boot parameters
+        service_boot_parameters_labels = __get_service_boot_parameters_labels(docker_image_path, tag)
+        service_entrypoint = __get_service_entrypoint(service_boot_parameters_labels)
+
 
         #let-s start the service
         try:
@@ -291,6 +307,10 @@ def start_service(service_name, service_tag, service_uuid):
                 "entry_point": service_entrypoint
                 }
             containers_meta_data.append(container_meta_data)
+
+            if published_ports:
+                __pass_port_to_service(service, published_ports[0], service_boot_parameters_labels)
+            
         except docker.errors.ImageNotFound as err:
             # first cleanup
             # TODO: check exceptions policy
