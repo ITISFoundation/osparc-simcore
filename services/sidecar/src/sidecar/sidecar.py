@@ -179,14 +179,28 @@ class Sidecar:
                     time.sleep(1)
                 else:
                     clean_line = line.strip()
+                    # TODO: This should be 'settings', a regex for every service
                     if clean_line.lower().startswith("[progress]"):
                         progress = clean_line.lower().lstrip("[progress]").rstrip("%").strip()
                         self._progress(channel, progress)
                         _LOGGER.debug('PROGRESS %s', progress)
+                    elif "percent done" in clean_line.lower():
+                        progress = clean_line.lower().rstrip("percent done")
+                        try:
+                            float_progress = float(progress) / 100.0
+                            progress = str(float_progress)
+                            self._progress(channel, progress)
+                            _LOGGER.debug('PROGRESS %s', progress)
+                        except ValueError:
+                            _LOGGER.exception("Could not extract progress from solver")
+                            self._log(channel, clean_line)
                     else:
                         self._log(channel, clean_line)
                         _LOGGER.debug('LOG %s', clean_line)
 
+        # set progress to 1.0 at the end, ignore failures
+        progress = "1.0"
+        self._progress(channel, progress)
         connection.close()
 
     def _process_task_output(self):
