@@ -46,6 +46,9 @@ def __check_service_uuid_available(docker_client, service_uuid):
             'A service with the same uuid is already running: ' + service_uuid)
     _LOGGER.debug("UUID %s is free")
 
+def __check_setting_correctness(setting):
+    if 'name' not in setting or 'type' not in setting or 'value' not in setting:
+        raise Exception("Invalid setting in %s" % setting)
 
 def __get_service_runtime_parameters_labels(image, tag):
     # pylint: disable=C0103
@@ -71,8 +74,7 @@ def __convert_labels_to_docker_runtime_parameters(service_runtime_parameters_lab
     _LOGGER.debug("Converting labels to docker runtime parameters")
     runtime_params = dict()
     for param in service_runtime_parameters_labels:
-        if 'name' not in param or 'type' not in param or 'value' not in param:
-            pass
+        __check_setting_correctness(param)
         # index = str(param['value']).find("%service_uuid%")
         if str(param['value']).find("%service_uuid%") != -1:
             dummy_string = json.dumps(param['value'])
@@ -93,8 +95,7 @@ def __convert_labels_to_docker_runtime_parameters(service_runtime_parameters_lab
 def __get_service_entrypoint(service_boot_parameters_labels):
     _LOGGER.debug("Getting service entrypoint")
     for param in service_boot_parameters_labels:
-        if 'name' not in param or 'type' not in param or 'value' not in param:
-            pass
+        __check_setting_correctness(param)
         if param['name'] == 'entry_point':
             _LOGGER.debug("Service entrypoint is %s", param['value'])
             return param['value']
@@ -173,8 +174,7 @@ def __get_docker_image_published_ports(service_id):
 @tenacity.retry(wait=tenacity.wait_fixed(2), stop=tenacity.stop_after_attempt(3) or tenacity.stop_after_delay(10))
 def __pass_port_to_service(service, port, service_boot_parameters_labels):
     for param in service_boot_parameters_labels:
-        if 'name' not in param or 'type' not in param or 'value' not in param:
-            pass
+        __check_setting_correctness(param)
         if param['name'] == 'published_port':
             # time.sleep(5)
             route = param['value']
