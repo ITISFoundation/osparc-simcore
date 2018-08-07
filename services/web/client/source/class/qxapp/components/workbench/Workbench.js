@@ -258,8 +258,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let nodeMetaData = data.service;
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
-
-      let nodeB = this.__createNode(nodeMetaData);
+      // FIXME
+      let nodeB = this.__createNode("fix-my-name", null, nodeMetaData);
       this.__addNodeToWorkbench(nodeB, pos);
 
       if (nodeAId !== null && portA !== null) {
@@ -275,7 +275,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       nodesList.forEach(nodeMetaData => {
         let nodeButton = new qx.ui.menu.Button(nodeMetaData.label);
         nodeButton.addListener("execute", function() {
-          let nodeItem = this.__createNode(nodeMetaData);
+          let nodeItem = this.__createNode("fix-my-name", null, nodeMetaData);
           this.__addNodeToWorkbench(nodeItem);
         }, this);
 
@@ -339,7 +339,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       node.addListener("dblclick", function(e) {
-        if (node.getMetadata().key === "FileManager") {
+        if (node.getMetaData().key === "FileManager") {
           const width = 800;
           const height = 600;
           let fileManager = new qxapp.components.widgets.FileManager();
@@ -353,8 +353,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             const isDirectory = data.getData().isDirectory;
             const activeIndex = isDirectory ? dirPortIndex : filePortIndex;
             const inactiveIndex = isDirectory ? filePortIndex : dirPortIndex;
-            node.getMetadata().outputs[activeIndex].value = itemPath;
-            node.getMetadata().outputs[inactiveIndex].value = null;
+            node.getMetaData().outputs[activeIndex].value = itemPath;
+            node.getMetaData().outputs[inactiveIndex].value = null;
             node.getPortByIndex(false, activeIndex).ui.setLabel(itemName);
             node.getPortByIndex(false, activeIndex).ui.getToolTip().setLabel(itemName);
             node.getPortByIndex(false, inactiveIndex).ui.setLabel("");
@@ -772,7 +772,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           let inputs = nodeData.inputs;
           if (inputs) {
             for (let port1Id in inputs) {
-              let node2Uuid = inputs[port1Key].nodeUuid;
+              let node2Uuid = inputs[port1Id].nodeUuid;
               if (node2Uuid) {
                 let port1 = node1.getPort(port1Id);
                 let node2 = this.__getNode(nodeUuid);

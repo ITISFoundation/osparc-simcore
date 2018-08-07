@@ -157,6 +157,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.__inputPorts = {};
       this.__createPorts("Input", metaData.inputs);
       this.__createPorts("Output", metaData.outputs);
+      this.__addSettings(metaData.inputs);
     },
 
     __addSettings: function(inputs) {
@@ -164,18 +165,19 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         return;
       }
       let form = this.__settingsForm = new qxapp.components.form.Auto(inputs);
-      this.__settingsForm.addListener("changeData", function(e) {
-        let settingsForm = e.getData();
-        for (var settingKey in settingsForm) {
-          if (this.__metaData.inputs) {
-            for (let i=0; i<this.__metaData.inputs.length; i++) {
-              if (settingKey === this.__metaData.inputs[i].key) {
-                this.__metaData.inputs[i].value = settingsForm[settingKey];
-              }
-            }
-          }
-        }
-      }, this);
+      // FIXME
+      // this.__settingsForm.addListener("changeData", function(e) {
+      //  let settingsForm = e.getData();
+      //  for (var settingKey in settingsForm) {
+      //    if (this.__metaData.inputs) {
+      //      for (let i=0; i<this.__metaData.inputs.length; i++) {
+      //        if (settingKey === this.__metaData.inputs[i].key) {
+      //          this.__metaData.inputs[i].value = settingsForm[settingKey];
+      //        }
+      //      }
+      //    }
+      //  }
+      // }, this);
       this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
     },
 

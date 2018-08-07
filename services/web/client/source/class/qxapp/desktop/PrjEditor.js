@@ -66,14 +66,14 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     }, this);
 
     this.__settingsView.addListener("ShowViewer", function(e) {
-
       let data = e.getData();
       let viewerWin = this.__createBrowserWindow(data.url, data.name);
 
-    //  const metadata = e.getData().metadata;
-    //  const nodeId = e.getData().nodeId;
-    //  let url = "http://" + window.location.hostname + ":" + metadata.viewer.port;
-    //  let viewerWin = this.__createBrowserWindow(url, metadata.name);
+      //  const metadata = e.getData().metadata;
+      //  const nodeId = e.getData().nodeId;
+      //  let url = "http://" + window.location.hostname + ":" + metadata.viewer.port;
+      //  let viewerWin = this.__createBrowserWindow(url, metadata.name);
+
       this.__workbench.addWindowToDesktop(viewerWin);
 
       const slotName = "openDynamic";
