@@ -298,10 +298,10 @@ qx.Class.define("qxapp.components.form.Auto", {
       this.__formCtrl.addBindingOptions(key,
         { // model2target
           converter : function(data) {
-            if (qx.lang.Type.isNumber(d)) {
-              return String(d);
+            if (qx.lang.Type.isNumber(data)) {
+              return String(data);
             }
-            return d;
+            return data;
           }
         },
         { // target2model

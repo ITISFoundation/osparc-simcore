@@ -63,7 +63,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     this.add(progressBox);
     let metaData = qxapp.dev.fake.Data.getNodeMap()[nodeImageId];
     if (metaData) {
-      this.__populateNode(metaData);
+      this.__populateNode(metaData, nodeData);
     } else {
       console.error("Invalid ImageID - Not populating "+nodeImageId);
     }
@@ -148,7 +148,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return bounds;
     },
 
-    __populateNode: function(metaData) {
+    __populateNode: function(metaData,nodeData) {
       this.__metaData = metaData;
       // this.__creteSettings(metaData.inputs);
       this.setCaption(metaData.name + " " + metaData.version);
@@ -158,6 +158,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.__createPorts("Input", metaData.inputs);
       this.__createPorts("Output", metaData.outputs);
       this.__addSettings(metaData.inputs);
+      this.__settingsForm.setData(nodeData.inputs);
     },
 
     __addSettings: function(inputs) {
