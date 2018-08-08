@@ -52,14 +52,18 @@ LABEL simcore.service.bootsettings='[{"name": "entry_point", "type": "string", "
 # copy start script
 ARG PORT
 ENV SERVER_PORT=$PORT
-
 COPY scripts/boot.sh scripts/boot.sh
 RUN chmod +x scripts/boot.sh
+# copy apache config changer script
 COPY config/apache.conf config/apache.conf
 COPY scripts/apachePatch.sh scripts/apachePatch.sh
 RUN chmod +x scripts/apachePatch.sh
 RUN mkdir /home/root/trigger && \
     chmod 777 /home/root/trigger
+# copy paraview launcher modifier script
+COPY scripts/visualizer_launcher_patch.sh scripts/visualizer_launcher_patch.sh
+RUN chmod +x scripts/visualizer_launcher_patch.sh
+COPY config/visualizer_config.json config/visualizer_config.json
 #------------------------------------------
 FROM common as development
 ENV CREATE_DUMMY_TABLE 1

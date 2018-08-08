@@ -10,7 +10,7 @@ It brings the paraview visualizer application as an example of how easy one can 
 2. execute `make build-devel`, this will build the service as "development" code together with a local minio S3 storage and a postgres DB
 3. execute `make up-devel`, this will run the service locally
 4. open a terminal (preferably bash)
-5. execute `curl -i -X POST localhost:8777/setport -d "port=8777"` in the terminal (this will start the paraviewweb visualizer app)
+5. Not necessary in dev mode anymore: execute `curl -i -X POST localhost:8777/setport -d "port=8777"` in the terminal (this will start the paraviewweb visualizer app)
 6. execute `curl -i -X POST localhost:8777/retrieve` in the terminal (this will make the simcore paraviewweb download the data from the local S3 storage)
 7. open browser at [localhost:8777/visualizer](localhost:8777/visualizer)
 
