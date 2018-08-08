@@ -3,7 +3,7 @@ echo "current directory is ${PWD}"
 
 if [[ -v CREATE_DUMMY_TABLE ]];
 then
-    # in dev mode, data located in mounted volume /test-data are uploaded to the S3 server	
+    # in dev mode, data located in mounted volume /test-data are uploaded to the S3 server
     # also a fake configuration is set in the DB to simulate the osparc platform
     echo "development mode, creating dummy tables..."
     result="$(python3 devel/devel-initconfiguration.py ${USE_CASE_CONFIG_FILE})";
