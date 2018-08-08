@@ -1,0 +1,23 @@
+version: '3.4'
+services:
+  simcore-paraviewweb:
+    build:
+      context: simcoreparaviewweb
+      target: production
+      args: 
+        VCS_REF: 
+        BUILD_DATE:
+        PORT: 8777
+      labels: 
+        io.simcore.key: '{"key": "simcore/services/dynamic/3d-viewer"}'
+        io.simcore.outputs: '{"outputs": []}'
+        io.simcore.tag: '{"tag": "0.0.1"}'
+        io.simcore.name: '{"name": "3d-viewer"}'
+        io.simcore.description: '{"description": "Paraview Web-based Visualizer"}'
+        io.simcore.contact: '{"contact": "anderegg@itis.ethz.ch"}'
+        io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email": "anderegg@itis.ethz.ch", "affiliation": "ITIS Foundation"}]}'
+        io.simcore.inputs: '{"inputs": [{"key": "A", "label": "some 3D dataset", "desc": "A mesh, volume data", "type": "file-url", "value": "null"}, {"key": "B", "label": "some 3D dataset", "desc": "A mesh, volume data", "type": "file-url", "value": "null"}]}'
+        io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
+    ports:
+      - '8777:80'        
+  #--------------------------------------------------------------------
