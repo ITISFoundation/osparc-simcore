@@ -356,7 +356,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             const isDirectory = data.getData().isDirectory;
             const activeIndex = isDirectory ? dirPortIndex : filePortIndex;
             const inactiveIndex = isDirectory ? filePortIndex : dirPortIndex;
-            node.getMetadata().outputs[activeIndex] = itemPath;
+            node.getMetadata().outputs[activeIndex].value = itemPath;
             node.getMetadata().outputs[inactiveIndex].value = null;
             node.getPortByIndex(false, activeIndex).ui.setLabel(itemName);
             node.getPortByIndex(false, activeIndex).ui.getToolTip().setLabel(itemName);
@@ -388,10 +388,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         socket.on(slotName, function(val) {
           if (val["service_uuid"] === nodeBase.getNodeId()) {
             let portNumber = val["containers"][0].published_ports[0];
-            nodeBase.getMetadata().viewer.port = portNumber;
+            let entryPoint = "";
+            if ("entry_point" in val["containers"][0]) {
+              entryPoint = val["containers"][0].entry_point;
+            }
             nodeBase.getMetadata().viewer.ip = "http://" + window.location.hostname;
+            nodeBase.getMetadata().viewer.port = portNumber;
+            nodeBase.getMetadata().viewer.entryPoint = entryPoint;
             nodeBase.getViewerButton().setEnabled(portNumber !== null);
-            const servUrl = nodeBase.getMetadata().viewer.ip +":"+ nodeBase.getMetadata().viewer.port;
+            const servUrl = nodeBase.getMetadata().viewer.ip +":"+ nodeBase.getMetadata().viewer.port +"/"+ nodeBase.getMetadata().viewer.entryPoint;
             this.__logger.debug(nodeBase.getMetadata().name, "Service ready on " + servUrl);
             this.__logger.info(nodeBase.getMetadata().name, "Service ready");
           }
@@ -880,11 +885,18 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       console.debug("phase   : ", req.getPhase());
       console.debug("response: ", req.getResponse());
 
-      this.setCanStart(false);
-
-      this.__pipelineId = req.getResponse().pipeline_id;
-      this.__logger.debug("Workbench", "Pipeline ID" + this.__pipelineId);
-      this.__logger.info("Workbench", "Pipeline started");
+      const pipelineId = req.getResponse().pipeline_id;
+      this.__logger.debug("Workbench", "Pipeline ID " + pipelineId);
+      const notGood = [null, undefined, -1];
+      if (notGood.includes(pipelineId)) {
+        this.setCanStart(true);
+        this.__pipelineId = null;
+        this.__logger.error("Workbench", "Submition failed");
+      } else {
+        this.setCanStart(false);
+        this.__pipelineId = pipelineId;
+        this.__logger.info("Workbench", "Pipeline started");
+      }
     },
 
     __stopPipeline: function() {

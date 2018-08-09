@@ -11,7 +11,7 @@ export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
 
-PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*"))
+PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*"))
 
 export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
@@ -92,7 +92,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.7
+PLATFORM_VERSION=3.11
 
 push_platform_images:
 	${DOCKER} login masu.speag.com
@@ -114,3 +114,8 @@ push_platform_images:
 	$(info #####  $< is newer than $@ ####)
 	@diff -uN $@ $<
 	@false
+
+venv:
+	python3 -m venv .venv
+	.venv/bin/pip3 install --upgrade pip wheel setuptools
+	echo "To activate the venv, execute 'source .venv/bin/activate'"

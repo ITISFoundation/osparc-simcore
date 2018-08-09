@@ -56,7 +56,9 @@ def download_file_from_S3(node_uuid, node_key, file_name):
     s3 = S3Settings()
 
     # here we add an extension to circumvent an error when downloading the file under Windows OS
-    file_path = Path(_INTERNAL_DIR, file_name, file_name + ".simcore")
+    file_path = Path(_INTERNAL_DIR, file_name, file_name)
+    if file_path.suffix == "":
+        file_path = file_path.with_suffix(".simcore")
     if file_path.exists():
         # remove the file
         file_path.unlink()

@@ -32,9 +32,9 @@ def registry_request(path, method="GET"):
                 'Return Code was 401, Authentication required / not successful!')
         else:
             return request_result
-    except RequestException as err:
-        raise RequestException("Problem during docker registry connection: {}".format(err))
-
+    except RequestException:
+        _LOGGER.exception("Error while connecting to docker registry")
+        raise
 
 def retrieve_list_of_repositories():
     request_result = registry_request('_catalog')
