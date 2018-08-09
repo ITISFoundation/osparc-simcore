@@ -10,7 +10,7 @@ import time
 
 import async_timeout
 from aiohttp import web
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, exc
 from sqlalchemy.orm import sessionmaker
 
 from comp_backend_worker import celery
@@ -22,15 +22,15 @@ from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
 
 pp = pprint.PrettyPrinter(indent=4)
 _LOGGER = logging.getLogger(__file__)
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 # db config
 db_config = db_config()
-db = create_engine(db_config.endpoint, client_encoding='utf8', connect_args={'connect_timeout': 30})
+db = create_engine(db_config.endpoint, client_encoding='utf8', connect_args={'connect_timeout': 30},  pool_pre_ping=True)
 
 # TODO the db tables are created here, this only works when postgres is up and running.
 # For now lets just try a couple of times
 Session = sessionmaker(db)
-db_session = Session()
 for i in range(20):
     try:
         Base.metadata.create_all(db)
@@ -54,6 +54,8 @@ async def async_request(method, session, url, data=None, timeout=10):
 # pylint:disable=too-many-branches, too-many-statements
 @comp_backend_routes.post('/start_pipeline')
 async def start_pipeline(request):
+    #pylint:disable=broad-except
+
     """
     ---
     description: This end-point starts a computational pipeline.
@@ -78,7 +80,13 @@ async def start_pipeline(request):
     dag_adjacency_list = dict()
     tasks = dict()
 
+    pipeline_id = -1
+    pipeline_name = "New pipeline"
+    _LOGGER.debug("Start Pipeline")
+
     #pylint:disable=too-many-nested-blocks
+    db_session = Session()
+
     try:
         io_files = []
         for node in nodes:
@@ -125,10 +133,17 @@ async def start_pipeline(request):
                 dag_adjacency_list[node_id] = successor_nodes
                 tasks[node_id] = task
 
+        _LOGGER.debug("Pipeline parsed")
+
         pipeline = ComputationalPipeline(dag_adjacency_list=dag_adjacency_list, state=0)
 
+        _LOGGER.debug("Pipeline object created")
+
+
         db_session.add(pipeline)
+        _LOGGER.debug("Pipeline object added")
         db_session.flush()
+        _LOGGER.debug("Pipeline flushed")
 
         pipeline_id = pipeline.pipeline_id
 
@@ -157,13 +172,24 @@ async def start_pipeline(request):
 
         db_session.commit()
 
+        _LOGGER.debug("Task commited")
+
+
         task = celery.send_task('comp.task', args=(pipeline_id,), kwargs={})
+    except exc.SQLAlchemyError:
+        _LOGGER.exception("Alchemy error")
+        db_session.rollback()
+        pipeline_id = -1
+    except Exception:
+        _LOGGER.exception("Uncaught exception")
+        pipeline_id = -1
+    finally:
+        _LOGGER.debug("Close session")
+        db_session.close()
 
-        response['pipeline_name'] = pipeline_name
-        response['pipeline_id'] = str(pipeline_id)
-    #pylint:disable=broad-except
-    except Exception as _e:
-        _LOGGER.info(_e)
-
+    _LOGGER.debug("END OF ROUTINE")
+    response['pipeline_name'] = pipeline_name
+    response['pipeline_id'] = str(pipeline_id)
+    _LOGGER.debug(response)
 
     return web.json_response(response)

@@ -38,7 +38,7 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
       this.__form = new qx.ui.form.Form();
 
       let atm = new qx.ui.basic.Atom().set({
-        icon: "qxapp/itis-white.png",
+        icon: "qxapp/osparc-white-small.png",
         iconPosition: "top"
       });
       this.add(atm);
