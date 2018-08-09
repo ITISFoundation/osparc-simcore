@@ -377,8 +377,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __createNode: function(nodeImageId, uuid, nodeData) {
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeImageId, uuid, nodeData);
 
-
-
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
         let data = e.getData();

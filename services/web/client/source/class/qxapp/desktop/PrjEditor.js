@@ -76,6 +76,17 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       this.__workbench.addWindowToDesktop(viewerWin);
 
+      // Workaround for updating inputs
+      if (metadata.name === "3d-viewer") {
+        let urlUpdate = "http://" + window.location.hostname + ":" + metadata.viewer.port + "/retrieve";
+        let req = new qx.io.request.Xhr();
+        req.set({
+          url: urlUpdate,
+          method: "POST"
+        });
+        req.send();
+      }
+
       const slotName = "openDynamic";
       let socket = qxapp.wrappers.WebSocket.getInstance();
       let args = {
@@ -149,8 +160,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       win.add(iframe, {
         flex: 1
       });
-      // win.setModal(true);
       win.moveTo(150, 150);
+
+      win.addListener("dblclick", function(e) {
+        e.stopPropagation();
+      });
 
       return win;
     }
