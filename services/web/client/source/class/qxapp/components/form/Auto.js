@@ -189,6 +189,11 @@ qx.Class.define("qxapp.components.form.Auto", {
       this.__settingData = true;
 
       for (let key in data) {
+        if (typeof data[key] == "object" && data[key].nodeUuid) {
+          this.getControl(key).setEnabled(false);
+          continue;
+        }
+        this.getControl(key).setEnabled(true);
         let upkey = qx.lang.String.firstUp(key);
         let setter = "set" + upkey;
         let value = data[key];

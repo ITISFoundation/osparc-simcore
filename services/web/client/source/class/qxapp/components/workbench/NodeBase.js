@@ -288,7 +288,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       label.portId = portId;
       label.isInput = isInput;
       label.portType = portData.type;
-      let iconSize = (portHeight-2).toString();
+      let iconSize = (portHeight-4).toString();
       let icon = "@FontAwesome5Solid/edit/" + iconSize;
       if (portData.type.match(/^data:/)) {
         icon = "@FontAwesome5Solid/file/" + (portHeight-2).toString();

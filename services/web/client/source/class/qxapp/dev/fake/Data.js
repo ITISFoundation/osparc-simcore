@@ -253,7 +253,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/computational/itis/tutti",
               version: "0.0.0-alpha",
               inputs: {
-                inNumber: 3.3,
+                inNumber: {
+                  nodeUuid: "UUID3",
+                  output: "outNumber"
+                },
                 inInt: 372,
                 inBool: true,
                 inStr: "Ooops, Agnodain",

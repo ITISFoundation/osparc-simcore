@@ -58,6 +58,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     this.__desktop.add(this.__logger);
 
     this.__nodes = [];
+    this.__nodeMap = {};
     this.__links = [];
 
     let loggerButton = this.__getShowLoggerButton();
@@ -116,6 +117,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
   members: {
     __nodes: null,
+    __nodeMap: null,
     __links: null,
     __desktop: null,
     __svgWidget: null,
@@ -521,7 +523,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
       return null;
     },
+    __addLinkNew: function(from, to) {
 
+    },
     __addLink: function(node1, port1, node2, port2, linkId) {
       // swap node-ports to have node1 as input and node2 as output
       if (port1.isInput) {
@@ -756,27 +760,20 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __loadProject: function(workbenchData) {
       for (let nodeUuid in workbenchData) {
         let nodeData = workbenchData[nodeUuid];
-        let node = this.__createNode(nodeData.key + "-" + nodeData.version, nodeUuid, nodeData);
-        if (nodeData.position) {
-          this.__addNodeToWorkbench(node, nodeData.position);
-        } else {
-          this.__addNodeToWorkbench(node);
-        }
+        let node = this.__nodeMap[nodeUuid] =
+          this.__createNode(nodeData.key + "-" + nodeData.version, nodeUuid, nodeData);
+        this.__addNodeToWorkbench(node, nodeData.position);
       }
-      if (workbenchData.inputs) {
-        for (let nodeUuid in workbenchData) {
-          let nodeData = workbenchData[nodeUuid];
-          let node1 = this.__getNode(nodeUuid);
-          let inputs = nodeData.inputs;
-          if (inputs) {
-            for (let port1Id in inputs) {
-              let node2Uuid = inputs[port1Id].nodeUuid;
-              if (node2Uuid) {
-                let port1 = node1.getPort(port1Id);
-                let node2 = this.__getNode(nodeUuid);
-                let port2 = node2.getPort(inputs[port1].property);
-                this.__addLink(node1, port1, node2, port2);
-              }
+      for (let nodeUuid in workbenchData) {
+        let nodeData = workbenchData[nodeUuid];
+        if (nodeData.inputs) {
+          for (let prop in nodeData.inputs) {
+            let link = nodeData.inputs[prop];
+            if (typeof link == "object" && link.nodeUuid) {
+              this.__addLinkNew(link, {
+                nodeUuid: nodeUuid,
+                input: prop
+              });
             }
           }
         }

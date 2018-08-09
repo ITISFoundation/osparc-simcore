@@ -127,7 +127,7 @@
                         "nodeUuid": {
                           "type": "string"
                         },
-                        "property": {
+                        "output": {
                           "type": "string"
                         }
                       }
