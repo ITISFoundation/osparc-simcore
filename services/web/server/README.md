@@ -1,20 +1,21 @@
 # web/server
 
-Corresponds to the ```webserver``` service
+Corresponds to the ```webserver``` service (see all services in ``services/docker-compose.yml``)
 
 ## Development
 
 
 ### Manual test on (linux) host
 
-Environment and first run check
+This is how to setup a virtual environment for python, install in *edit mode* the server package
+in it and do a test run via the cli
 ```bash
 # create virtual environment
 cd path/to/osparc-simcore
 python3 -m venv .venv
 source .venv/bin/activate
 
-# install in dev-mode
+# installs all dependencies as well as web/server package in edit-mode
 cd services/web/server
 pip3 install -r requirements-dev.txt
 

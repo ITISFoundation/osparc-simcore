@@ -11,7 +11,7 @@ import asyncio
 
 import async_timeout
 from aiohttp import web
-from sqlalchemy import create_engine, exc
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import sqlalchemy.exc
 
@@ -38,6 +38,10 @@ async def init_database(_app):
     #pylint: disable=W0603
     global db_session
 
+    # TODO: use here persist module to keep everything homogeneous
+    RETRY_WAIT_SECS = 2
+    RETRY_COUNT = 20
+
     # db config
     # FIXME: use app to get config
     db_config = DbConfig()
@@ -54,13 +58,14 @@ async def init_database(_app):
     # is required but not stop the entire application.
     Session = sessionmaker(db_engine)
     db_session = Session()
-    for i in range(20):
+    for i in range(RETRY_COUNT):
         try:
             Base.metadata.create_all(db_engine)
-        except sqlalchemy.exc.SQLAlchemyError:
-            await asyncio.sleep(2)
-            _LOGGER.warning("Retrying to create database ...")
-            print("oops")
+        except sqlalchemy.exc.SQLAlchemyError as err:
+            await asyncio.sleep(RETRY_WAIT_SECS)
+            msg = "Retrying to create database %d/%d ..." % (i+1, RETRY_COUNT)
+            _LOGGER.warning("%s: %s", str(err), msg)
+            print("oops " + msg)
 
 
 async def async_request(method, session, url, data=None, timeout=10):
@@ -92,6 +97,8 @@ async def start_pipeline(request):
             description: invalid HTTP Method
     """
     # FIXME: this should be implemented generaly using async lazy initialization of db_session??
+    #pylint: disable=W0603
+    global db_session
     if db_session is None:
         await init_database(request.app)
 
@@ -108,9 +115,6 @@ async def start_pipeline(request):
     pipeline_id = -1
     pipeline_name = "New pipeline"
     _LOGGER.debug("Start Pipeline")
-
-    #pylint:disable=too-many-nested-blocks
-    db_session = Session()
 
     try:
         io_files = []
@@ -161,12 +165,11 @@ async def start_pipeline(request):
         _LOGGER.debug("Pipeline parsed")
 
         pipeline = ComputationalPipeline(dag_adjacency_list=dag_adjacency_list, state=0)
-
         _LOGGER.debug("Pipeline object created")
-
 
         db_session.add(pipeline)
         _LOGGER.debug("Pipeline object added")
+
         db_session.flush()
         _LOGGER.debug("Pipeline flushed")
 
@@ -197,34 +200,24 @@ async def start_pipeline(request):
 
         db_session.commit()
 
-<<<<<<< HEAD:services/web/server/src/server/comp_backend_api.py
         task = celery.send_task("comp.task", args=(pipeline_id,), kwargs={})
-
-        response["pipeline_name"] = pipeline_name
-        response["pipeline_id"] = str(pipeline_id)
-    #pylint:disable=broad-except
-    except Exception as _e:
-        _LOGGER.info(_e)
-=======
         _LOGGER.debug("Task commited")
 
->>>>>>> master:services/web/server/src/comp_backend_api.py
-
-        task = celery.send_task('comp.task', args=(pipeline_id,), kwargs={})
-    except exc.SQLAlchemyError:
-        _LOGGER.exception("Alchemy error")
+    except sqlalchemy.exc.SQLAlchemyError:
+        _LOGGER.exception("Alchemy error. Rolling backe and returning pipeline_id=-1")
         db_session.rollback()
         pipeline_id = -1
+
     except Exception:
-        _LOGGER.exception("Uncaught exception")
+        _LOGGER.exception("Unexpected Exception. Returning pipeline_id=-1")
         pipeline_id = -1
+
     finally:
         _LOGGER.debug("Close session")
         db_session.close()
 
-    _LOGGER.debug("END OF ROUTINE")
+    _LOGGER.debug("END OF ROUTINE. Response %s", response)
     response['pipeline_name'] = pipeline_name
     response['pipeline_id'] = str(pipeline_id)
-    _LOGGER.debug(response)
 
     return web.json_response(response)
