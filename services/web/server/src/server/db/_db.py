@@ -1,11 +1,17 @@
-""" Postgress db
+""" Interface to manage initialization and operation of a database
+
+    - Exposes async functionality to init and operate a postgress database
+    - Database is deployed on a separate service
+
+TODO: async (e.g. in aiopg.sa) or sync(e.g. in comp_backend_api) access? MaG recommends second.
 """
 import logging
 
 import aiopg.sa
 
 # FIXME: this is temporary here so database gets properly initialized
-from .comp_backend_api import init_database as _init_db
+# FIXME:
+from ..comp_backend_api import init_database as _init_db
 
 _LOGGER = logging.getLogger(__name__)
 

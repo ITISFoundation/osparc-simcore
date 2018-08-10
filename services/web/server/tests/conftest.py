@@ -16,6 +16,7 @@ import pytest
 import init_db
 
 _LOGGER = logging.getLogger(__name__)
+_CDIR = os.path.dirname(__file__)
 
 @pytest.fixture(scope='session')
 def docker_compose_file(pytestconfig):
@@ -25,8 +26,7 @@ def docker_compose_file(pytestconfig):
       - fixture defined in pytest-docker
     """
     return os.path.join(
-        str(pytestconfig.rootdir),
-        'tests',
+        _CDIR,
         'mock',
         'docker-compose.yml')
 

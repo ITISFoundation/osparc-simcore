@@ -1,5 +1,9 @@
-""" Database agnostic model
+""" Database agnostic model for users, projects, roles, etc
 
+
+NOTE: THIS IS A MOCKUP model
+TODO: move to simcore_sdk.models ??
+TODO: use classes instead of instances? pros/cons
 """
 import sqlalchemy as sa
 

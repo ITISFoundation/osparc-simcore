@@ -1,4 +1,8 @@
-""" Authentication and authorization
+""" User's authentication and authorization
+
+    - authentication: Identity gets ide
+
+    - based in aiohttp_security library : https://aiohttp-security.readthedocs.io/en/latest/
 
 """
 # pylint: disable=assignment-from-no-return
@@ -13,7 +17,7 @@ from aiohttp_security.abc import AbstractAuthorizationPolicy
 from passlib.hash import sha256_crypt
 
 
-from .model import users, permissions
+from .db import model
 
 _LOGGER = logging.getLogger(__file__)
 
@@ -36,16 +40,16 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
         """
         # pylint: disable=E1120
         async with self.dbengine.acquire() as conn:
-            where = sa.and_(users.c.login == identity,
-                            sa.not_(users.c.disabled))
-            query = users.count().where(where)
+            where = sa.and_(model.users.c.login == identity,
+                            sa.not_(model.users.c.disabled))
+            query = model.users.count().where(where)
             ret = await conn.scalar(query)
             if ret:
                 return identity
             return None
 
     async def permits(self, identity, permission, context=None):
-        """Check user permissions.
+        """Check user model.permissions.
 
         Return True if the identity is allowed the permission in the
         current context, else return False.
@@ -55,9 +59,9 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
             return False
 
         async with self.dbengine.acquire() as conn:
-            where = sa.and_(users.c.login == identity,
-                            sa.not_(users.c.disabled))
-            query = users.select().where(where)
+            where = sa.and_(model.users.c.login == identity,
+                            sa.not_(model.users.c.disabled))
+            query = model.users.select().where(where)
             ret = await conn.execute(query)
             user = await ret.fetchone()
             if user is not None:
@@ -66,8 +70,8 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
                 if is_superuser:
                     return True
 
-                where = permissions.c.user_id == user_id
-                query = permissions.select().where(where)
+                where = model.permissions.c.user_id == user_id
+                query = model.permissions.select().where(where)
                 ret = await conn.execute(query)
                 result = await ret.fetchall()
                 if ret is not None:
@@ -80,9 +84,9 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
 
 async def check_credentials(db_engine, username, password):
     async with db_engine.acquire() as conn:
-        where = sa.and_(users.c.login == username,
-                        sa.not_(users.c.disabled))
-        query = users.select().where(where)
+        where = sa.and_(model.users.c.login == username,
+                        sa.not_(model.users.c.disabled))
+        query = model.users.select().where(where)
         ret = await conn.execute(query)
         user = await ret.fetchone()
         if user is not None:

@@ -34,7 +34,7 @@ from server.config import (
     CONFIG_DIR,
     get_config
 )
-from server.model import (
+from server.db.model import (
     permissions,
     users
 )

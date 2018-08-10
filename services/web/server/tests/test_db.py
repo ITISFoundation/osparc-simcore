@@ -6,11 +6,11 @@ import pytest
 import sqlalchemy as sa
 
 from server.config import get_config, SRC_DIR
-from server.db import (
+from server.db._db import (
     create_aiopg,
     dispose_aiopg
 )
-from server.model import (
+from server.db.model import (
     users
 )
 
