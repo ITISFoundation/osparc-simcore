@@ -56,8 +56,8 @@ async def init_database(_app):
     # upon initialization of the web app (e.g. like subscriber)
     # The system should not stop because session is not connect. it should report error when a db operation
     # is required but not stop the entire application.
-    Session = sessionmaker(db_engine)
-    db_session = Session()
+    DatabaseSession = sessionmaker(db_engine)
+    db_session = DatabaseSession()
     for i in range(RETRY_COUNT):
         try:
             Base.metadata.create_all(db_engine)

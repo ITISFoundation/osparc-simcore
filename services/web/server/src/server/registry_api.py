@@ -1,5 +1,4 @@
-"""
-    Uses socketio and aiohtttp framework
+""" API to the computational services registry
 
     TODO: move all apis to a submodule and rename as api
 """

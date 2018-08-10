@@ -1,5 +1,10 @@
-"""
+""" Serves client's code
 
+    - The client-side runs a RIA (Rich Interface Application) so the server does not
+    need to render pages upon request but only serve once the code to the client.
+    - The client application then interacts with the server via a http and/or socket API
+    - The client application is under ``services/web/client`` and the ``webclient`` service
+    is used to build it.
 """
 import os
 import logging
@@ -11,7 +16,7 @@ _LOGGER = logging.getLogger(__file__)
 
 async def index(request):
     """
-        Serves boot application
+        Serves boot application under index
     """
     _LOGGER.debug("index.request:\n %s", request)
 
@@ -30,7 +35,7 @@ def setup_statics(app):
     app.router.add_get("/", index)
 
     # TODO: check whether this can be done at once
-    # NOTE: source-output and build-output have both same subfolders
+    # NOTE: source-output and build-output have both the same subfolder structure
     app.router.add_static("/qxapp", os.path.join(outdir, "qxapp"))
     app.router.add_static("/transpiled", os.path.join(outdir, "transpiled"))
     app.router.add_static("/resource", os.path.join(outdir, "resource"))
