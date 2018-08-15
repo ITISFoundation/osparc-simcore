@@ -231,7 +231,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 outNumber: 33
               },
               position: {
-                x: 120,
+                x: 300,
                 y: 10
               }
             },
@@ -245,8 +245,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 outNumber: 33
               },
               position: {
-                x: 260,
-                y: 10
+                x: 10,
+                y: 210
               }
             },
             "UUID4": {
@@ -272,8 +272,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 }
               },
               position: {
-                x: 400,
-                y: 10
+                x: 300,
+                y: 210
               }
             }
           }
