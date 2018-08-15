@@ -33,4 +33,3 @@ a2enmod cgid
 # create a folder accessible by any user inside the docker container where paraview loads its data from (default /data)
 mkdir /data
 chmod 777 /data/
-
