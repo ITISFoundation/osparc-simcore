@@ -222,17 +222,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     },
 
     getPort: function(portId) {
-      for (let inputPortId in this.getInputPorts()) {
-        if (portId === inputPortId) {
-          return this.getInputPorts()[inputPortId];
-        }
-      }
-      for (let outputPortId in this.getOutputPorts()) {
-        if (portId === outputPortId) {
-          return this.getOutputPorts()[outputPortId];
-        }
-      }
-      return null;
+      return (this.getInputPorts()[portId] || this.getOutputPorts()[portId]);
     },
 
     __createPorts: function(type, ports) {
