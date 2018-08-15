@@ -23,7 +23,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       bottom: 0
     });
 
-    this.__svgWidget = new qxapp.components.workbench.SvgWidget();
+    this.__svgWidget = new qxapp.components.workbench.SvgWidget("SvgWidgetLayer");
     this.__desktop.add(this.__svgWidget, {
       left: 0,
       top: 0,
@@ -379,6 +379,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __createNode: function(nodeMetaData) {
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeMetaData.uuid);
+      nodeBase.createNodeLayout();
       nodeBase.setMetadata(nodeMetaData);
 
       const imageId = nodeBase.getNodeImageId();

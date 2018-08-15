@@ -36,6 +36,50 @@ qx.Class.define("qxapp.data.Store", {
           "defaultValue": null
         }],
         "settings": []
+      }, {
+        "key": "Fake",
+        "name": "Fake",
+        "tag": "0.0.1",
+        "description": "Fake",
+        "authors": [{
+          "name": "Odei Maiz",
+          "email": "maiz@itis.ethz.ch",
+          "affiliation": "ITIS Foundation"
+        }],
+        "contact": "maiz@itis.ethz.ch",
+        "inputs": [{
+          "key": "fake",
+          "label": "integer",
+          "description": "Fake",
+          "type": "number",
+          "defaultValue": null
+        }],
+        "outputs": [],
+        "settings": []
+      }, {
+        "key": "dynamicFake",
+        "name": "dynamicFake",
+        "tag": "0.0.1",
+        "description": "Dynamic Fake",
+        "authors": [{
+          "name": "Odei Maiz",
+          "email": "maiz@itis.ethz.ch",
+          "affiliation": "ITIS Foundation"
+        }],
+        "contact": "maiz@itis.ethz.ch",
+        "inputs": [{
+          "key": "fake",
+          "label": "integer",
+          "description": "Fake",
+          "type": "number",
+          "defaultValue": null
+        }],
+        "outputs": [],
+        "settings": [],
+        "viewer": {
+          "ip": "http://masu.speag.com",
+          "port": 5001
+        }
       }];
       return builtInServices;
     },

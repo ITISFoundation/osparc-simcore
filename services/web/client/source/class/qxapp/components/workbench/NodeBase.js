@@ -19,46 +19,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       maxWidth: nodeWidth
     });
 
-    let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
-    this.setLayout(nodeLayout);
-
-    let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-    this.add(inputsOutputsLayout, {
-      flex: 1
-    });
-
-    let inputsBox = new qx.ui.layout.VBox(5);
-    this.__inputPortsUI = new qx.ui.container.Composite(inputsBox);
-    inputsOutputsLayout.add(this.__inputPortsUI, {
-      width: "50%"
-    });
-
-    let outputsBox = new qx.ui.layout.VBox(5);
-    this.__outputPortsUI = new qx.ui.container.Composite(outputsBox);
-    inputsOutputsLayout.add(this.__outputPortsUI, {
-      width: "50%"
-    });
-
-
-    let progressBox = new qx.ui.container.Composite(new qx.ui.layout.Basic());
-    progressBox.setMinWidth(nodeWidth-20);
-
-    this.__progressBar = new qx.ui.indicator.ProgressBar();
-    this.__progressBar.setWidth(nodeWidth-20);
-    progressBox.add(this.__progressBar, {
-      top: 0,
-      left: 0
-    });
-
-    this.__progressLabel = new qx.ui.basic.Label("0%");
-    progressBox.add(this.__progressLabel, {
-      top: 3,
-      left: nodeWidth/2 - 20
-    });
-
-    this.add(progressBox);
-
-
     this.__inputPorts = [];
     this.__outputPorts = [];
     if (uuid === undefined) {
@@ -109,6 +69,47 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     __progressLabel: null,
     __settingsForm: null,
     __progressBar: null,
+
+    createNodeLayout: function() {
+      let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
+      this.setLayout(nodeLayout);
+
+      let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      this.add(inputsOutputsLayout, {
+        flex: 1
+      });
+
+      let inputsBox = new qx.ui.layout.VBox(5);
+      this.__inputPortsUI = new qx.ui.container.Composite(inputsBox);
+      inputsOutputsLayout.add(this.__inputPortsUI, {
+        width: "50%"
+      });
+
+      let outputsBox = new qx.ui.layout.VBox(5);
+      this.__outputPortsUI = new qx.ui.container.Composite(outputsBox);
+      inputsOutputsLayout.add(this.__outputPortsUI, {
+        width: "50%"
+      });
+
+
+      let progressBox = new qx.ui.container.Composite(new qx.ui.layout.Basic());
+      progressBox.setMinWidth(nodeWidth-20);
+
+      this.__progressBar = new qx.ui.indicator.ProgressBar();
+      this.__progressBar.setWidth(nodeWidth-20);
+      progressBox.add(this.__progressBar, {
+        top: 0,
+        left: 0
+      });
+
+      this.__progressLabel = new qx.ui.basic.Label("0%");
+      progressBox.add(this.__progressLabel, {
+        top: 3,
+        left: nodeWidth/2 - 20
+      });
+
+      this.add(progressBox);
+    },
 
     getInputPorts: function() {
       return this.__inputPorts;

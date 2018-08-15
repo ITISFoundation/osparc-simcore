@@ -8,10 +8,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     let splitter = this.__splitter = this.getChildControl("splitter");
 
     const settingsWidth = this.__settingsWidth = 500;
-    let settingsView = this.__settingsView = new qxapp.components.workbench.SettingsView().set({
-      width: Math.round(0.75 * settingsWidth)
-    });
 
+    let workbench = this.__workbench = new qxapp.components.workbench.Workbench();
     let settingsBox = this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
       minWidth: 0,
       visibility: "excluded",
@@ -19,29 +17,49 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       width: Math.round(0.75 * settingsWidth)
     });
 
-    settingsBox.add(settingsView, {
+    let settingsBoxContent = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    settingsBox.add(settingsBoxContent, {
       top: 0,
-      right: 0
+      left: 0,
+      right: 0,
+      bottom: 0
     });
 
-    this.add(settingsBox, 0);
+    let miniWorkbenchView = this.__miniWorkbenchView = new qxapp.components.workbench.WorkbenchMini(workbench);
+    settingsBoxContent.add(miniWorkbenchView, {
+      flex: 1
+    });
+
+    let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
+      backgroundColor: "blue"
+    });
+    settingsBoxContent.add(extraView, {
+      flex: 1
+    });
+
+    let settingsView = this.__settingsView = new qxapp.components.workbench.SettingsView();
+    settingsBoxContent.add(settingsView, {
+      flex: 1
+    });
 
     settingsBox.addListener("changeWidth", e => {
       let width = e.getData();
       if (width != 0) {
+        miniWorkbenchView.setWidth(width);
+        extraView.setWidth(width);
         settingsView.setWidth(width);
       }
     });
 
-
-
-    let workbench = this.__workbench = new qxapp.components.workbench.Workbench();
-    this.add(workbench, 1);
+    this.add(workbench, 0);
+    this.add(settingsBox, 1);
 
     workbench.addListenerOnce("appear", () => {
       workbench.getContentElement().getDomElement()
         .addEventListener("transitionend", () => {
           [
+            miniWorkbenchView,
+            extraView,
             settingsView,
             splitter,
             settingsBox,
@@ -56,8 +74,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     });
 
 
-
-    this.showSettings(false);
+    this.showSettings(true);
 
     this.__settingsView.addListener("SettingsEditionDone", function() {
       this.showSettings(false);
@@ -93,12 +110,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       socket.emit(slotName, data);
     }, this);
 
-    this.__settingsView.addListener("NodeProgress", function(e) {
-      const nodeId = e.getData()[0];
-      const progress = e.getData()[1];
-      this.__workbench.updateProgress(nodeId, progress);
-    }, this);
-
     this.__workbench.addListener("NodeDoubleClicked", function(e) {
       let node = e.getData();
       this.__settingsView.setNode(node);
@@ -110,10 +121,31 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       transitionDuration: "0.3s",
       transitionTimingFunction: "ease"
     });
+
+    this.__settingsBox.set({
+      decorator: this.__transDeco
+    });
+    this.__miniWorkbenchView.set({
+      decorator: this.__transDeco
+    });
+    this.__extraView.set({
+      decorator: this.__transDeco
+    });
+    this.__settingsView.set({
+      decorator: this.__transDeco
+    });
+    this.__workbench.set({
+      decorator: this.__transDeco
+    });
+    this.__splitter.set({
+      decorator: this.__transDeco
+    });
   },
 
   members: {
     __pane: null,
+    __miniWorkbenchView: null,
+    __extraView: null,
     __settingsView: null,
     __settingsBox: null,
     __workbench: null,
@@ -122,22 +154,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __splitter: null,
 
     showSettings: function(showSettings) {
+      console.log("showSettings", showSettings);
       if (showSettings) {
         this.__settingsBox.show();
       }
       qx.ui.core.queue.Manager.flush();
       this.__settingsBox.set({
-        decorator: this.__transDeco,
         width: showSettings ? Math.round(this.__settingsWidth * 0.75) : 0
-      });
-      this.__settingsView.set({
-        decorator: this.__transDeco
-      });
-      this.__workbench.set({
-        decorator: this.__transDeco
-      });
-      this.__splitter.set({
-        decorator: this.__transDeco
       });
     },
 
@@ -168,6 +191,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     setData: function(newData) {
       this.__workbench.setData(newData);
+      this.__miniWorkbenchView.setData(newData);
     }
   }
 });
