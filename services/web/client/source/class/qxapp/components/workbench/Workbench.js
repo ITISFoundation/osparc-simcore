@@ -261,7 +261,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
       // FIXME
-      let nodeB = this.__createNode("fix-my-name", null, nodeMetaData);
+      let nodeB = this.__createNode(nodeMetaData.imageId, null, nodeMetaData);
       this.__addNodeToWorkbench(nodeB, pos);
 
       if (nodeAId !== null && portA !== null) {
@@ -277,7 +277,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       nodesList.forEach(nodeMetaData => {
         let nodeButton = new qx.ui.menu.Button(nodeMetaData.label);
         nodeButton.addListener("execute", function() {
-          let nodeItem = this.__createNode("fix-my-name", null, nodeMetaData);
+          let nodeItem = this.__createNode(nodeMetaData.imageId, null, nodeMetaData);
           this.__addNodeToWorkbench(nodeItem);
         }, this);
 
@@ -341,26 +341,24 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       node.addListener("dblclick", function(e) {
-        if (node.getMetaData().key === "FileManager") {
+        if (node.getMetaData().key.includes("FileManager")) {
           const width = 800;
           const height = 600;
           let fileManager = new qxapp.components.widgets.FileManager();
           let fileManagerWindow = this.__createWindowForBuiltInService(fileManager, width, height, "File Manager");
           fileManager.addListener("ItemSelected", function(data) {
-            const filePortIndex = 0;
-            const dirPortIndex = 1;
             const itemPath = data.getData().itemPath;
             const splitted = itemPath.split("/");
             const itemName = splitted[splitted.length-1];
             const isDirectory = data.getData().isDirectory;
-            const activeIndex = isDirectory ? dirPortIndex : filePortIndex;
-            const inactiveIndex = isDirectory ? filePortIndex : dirPortIndex;
-            node.getMetaData().outputs[activeIndex].value = itemPath;
-            node.getMetaData().outputs[inactiveIndex].value = null;
-            node.getPortByIndex(false, activeIndex).ui.setLabel(itemName);
-            node.getPortByIndex(false, activeIndex).ui.getToolTip().setLabel(itemName);
-            node.getPortByIndex(false, inactiveIndex).ui.setLabel("");
-            node.getPortByIndex(false, inactiveIndex).ui.getToolTip().setLabel("");
+            const activePort = isDirectory ? "outDir" : "outFile";
+            const inactivePort = isDirectory ? "outFile" : "outDir";
+            node.getMetaData().outputs[activePort].value = itemPath;
+            node.getMetaData().outputs[inactivePort].value = null;
+            node.getOutputPorts(activePort).ui.setLabel(itemName);
+            node.getOutputPorts(activePort).ui.getToolTip().setLabel(itemName);
+            node.getOutputPorts(inactivePort).ui.setLabel("");
+            node.getOutputPorts(inactivePort).ui.getToolTip().setLabel("");
             node.setProgress(100);
             fileManagerWindow.close();
           }, this);

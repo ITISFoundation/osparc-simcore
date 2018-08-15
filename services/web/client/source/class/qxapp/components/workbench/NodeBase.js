@@ -62,6 +62,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     this.add(progressBox);
     let metaData = qxapp.dev.fake.Data.getNodeMap()[nodeImageId];
+    if (metaData === undefined) {
+      let store = qxapp.data.Store.getInstance();
+      metaData = store.getBuiltInServices()[nodeImageId];
+    }
     if (metaData) {
       this.__populateNode(metaData, nodeData);
     } else {
