@@ -1,7 +1,7 @@
 # author: Sylvain Anderegg
 
 # TODO: add flavours by combinging docker-compose files. Namely development, test and production.
-VERSION := $(shell cat /proc/version)
+VERSION := $(shell uname -a)
 # SAN this is a hack so that docker-compose works in the linux virtual environment under Windows
 ifneq (,$(findstring Microsoft,$(VERSION)))
 export DOCKER_COMPOSE=docker-compose.exe

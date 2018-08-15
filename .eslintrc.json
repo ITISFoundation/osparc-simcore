@@ -2,7 +2,8 @@
   "extends": "eslint:recommended",
   "parser": "babel-eslint",
   "globals": {
-    "osparc": false
+    "osparc": false,
+    "window": false
   },
   "rules": {
     "max-len": [

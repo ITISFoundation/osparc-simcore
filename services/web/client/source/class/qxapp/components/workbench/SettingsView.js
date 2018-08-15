@@ -19,7 +19,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
   },
 
   events: {
-    "SettingsEditionDone": "qx.event.type.Event",
+    "SettingsEdited": "qx.event.type.Event",
     "ShowViewer": "qx.event.type.Data"
   },
 
@@ -54,7 +54,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       this.add(titleBox);
 
       doneBtn.addListener("execute", function() {
-        this.fireEvent("SettingsEditionDone");
+        this.fireEvent("SettingsEdited");
       }, this);
     },
 

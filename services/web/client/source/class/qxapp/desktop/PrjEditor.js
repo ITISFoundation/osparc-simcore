@@ -2,7 +2,7 @@
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function() {
+  construct: function(projectId) {
     this.base(arguments, "horizontal");
 
     let splitter = this.__splitter = this.getChildControl("splitter");
@@ -33,9 +33,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
     });
 
-
-
-    let workbench = this.__workbench = new qxapp.components.workbench.Workbench();
+    let workbenchData = {};
+    if (projectId !== null) {
+      workbenchData = qxapp.dev.fake.Data.getProjectList()[projectId].workbench;
+    }
+    let workbench = this.__workbench = new qxapp.components.workbench.Workbench(workbenchData);
     this.add(workbench, 1);
 
     workbench.addListenerOnce("appear", () => {
@@ -59,18 +61,19 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     this.showSettings(false);
 
-    this.__settingsView.addListener("SettingsEditionDone", function() {
+    this.__settingsView.addListener("SettingsEdited", function() {
       this.showSettings(false);
     }, this);
 
     this.__settingsView.addListener("ShowViewer", function(e) {
-      const metadata = e.getData().metadata;
-      const nodeId = e.getData().nodeId;
-      let url = "http://" + window.location.hostname + ":" + metadata.viewer.port;
-      if (metadata.viewer.entryPoint) {
-        url = url + "/" + metadata.viewer.entryPoint;
-      }
-      let viewerWin = this.__createBrowserWindow(url, metadata.name);
+      let data = e.getData();
+      let viewerWin = this.__createBrowserWindow(data.url, data.name);
+
+      //  const metadata = e.getData().metadata;
+      //  const nodeId = e.getData().nodeId;
+      //  let url = "http://" + window.location.hostname + ":" + metadata.viewer.port;
+      //  let viewerWin = this.__createBrowserWindow(url, metadata.name);
+
       this.__workbench.addWindowToDesktop(viewerWin);
 
       // Workaround for updating inputs
@@ -86,18 +89,18 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       const slotName = "openDynamic";
       let socket = qxapp.wrappers.WebSocket.getInstance();
-      let data = {
-        serviceName: metadata.name,
-        nodeId: nodeId
+      let args = {
+        serviceName: data.name,
+        nodeId: data.nodeId
       };
-      socket.emit(slotName, data);
+      socket.emit(slotName, args);
     }, this);
 
-    this.__settingsView.addListener("NodeProgress", function(e) {
-      const nodeId = e.getData()[0];
-      const progress = e.getData()[1];
-      this.__workbench.updateProgress(nodeId, progress);
-    }, this);
+    // this.__settingsView.addListener("NodeProgress", function(e) {
+    //  const nodeId = e.getData()[0];
+    //  const progress = e.getData()[1];
+    //  this.__workbench.updateProgress(nodeId, progress);
+    // }, this);
 
     this.__workbench.addListener("NodeDoubleClicked", function(e) {
       let node = e.getData();
@@ -164,10 +167,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       });
 
       return win;
-    },
-
-    setData: function(newData) {
-      this.__workbench.setData(newData);
     }
   }
 });

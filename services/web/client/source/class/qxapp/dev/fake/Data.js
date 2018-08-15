@@ -19,9 +19,282 @@ qx.Class.define("qxapp.dev.fake.Data", {
       description: "Empty",
       thumbnail: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round",
       created: null,
-      prjId: null
+      projectId: null
     }),
-
+    getNodeMap: function() {
+      return {
+        "service/dynamic/itis/file-picker-0.0.0":{
+          key: "service/dynamic/itis/file-picker",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "filepicker service",
+          description: "dummy file picker",
+          authors: [
+            {
+              name: "Odei Maiz",
+              email: "maiz@itis.ethz.ch"
+            }
+          ],
+          contact: "maiz@itis.ethz.ch",
+          outputs: {
+            outFile: {
+              displayOrder: 0,
+              label: "File",
+              description: "Chosen File",
+              type: "string"
+            }
+          },
+          inputs: {}
+        },
+        "service/computational/itis/sleeper-0.0.0":{
+          key: "service/computational/itis/sleeper",
+          version: "0.0.0",
+          type: "computational",
+          name: "sleeper service",
+          description: "dummy sleepr service",
+          authors: [
+            {
+              name: "Odei Maiz",
+              email: "maiz@itis.ethz.ch"
+            }
+          ],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            inNumber: {
+              displayOrder: 0,
+              label: "In",
+              description: "Chosen Number",
+              type: "number"
+            }
+          },
+          outputs: {
+            outNumber: {
+              displayOrder: 0,
+              label: "Out",
+              description: "Chosen Number",
+              type: "number"
+            }
+          }
+        },
+        "service/computational/itis/tutti-0.0.0-alpha": {
+          key: "service/computational/itis/tutti",
+          version: "0.0.0-alpha",
+          type: "computational",
+          name: "a little test node",
+          description: "just the bare minimum",
+          authors: [
+            {
+              name: "Tobias Oetiker",
+              email: "oetiker@itis.ethz.ch"
+            }
+          ],
+          contact: "oetiker@itis.ethz.ch",
+          inputs: {
+            inNumber: {
+              displayOrder: 0,
+              label: "Number Test",
+              description: "Test Input for Number",
+              type: "number",
+              defaultValue: 5.3
+            },
+            inInt: {
+              displayOrder: 1,
+              label: "Integer Test",
+              description: "Test Input for Integer",
+              type: "integer",
+              defaultValue: 2
+            },
+            inBool: {
+              displayOrder: 2,
+              label: "Boolean Test",
+              type: "boolean",
+              description: "Test Input for Boolean",
+              defaultValue: true
+            },
+            inStr: {
+              displayOrder: 3,
+              type: "string",
+              label: "String Test",
+              description: "Test Input for String",
+              defaultValue: "Gugus"
+            },
+            inArea: {
+              displayOrder: 4,
+              type: "string",
+              label: "Widget TextArea Test",
+              description: "Test Input for String",
+              defaultValue: "Gugus\nDu\nDa",
+              widget: {
+                type: "TextArea",
+                minHeight: 50
+              }
+            },
+            inSb: {
+              displayOrder: 5,
+              label: "Widget SelectBox Test",
+              description: "Test Input for SelectBox",
+              defaultValue: "dog",
+              type: "string",
+              widget: {
+                type: "SelectBox",
+                structure: [
+                  {
+                    key: "dog",
+                    label: "A Dog"
+                  },
+                  {
+                    key: "cat",
+                    label: "A Cat"
+                  }
+                ]
+              }
+            },
+            inFile: {
+              displayOrder: 6,
+              label: "File",
+              description: "Test Input File",
+              type: "data:*/*"
+            },
+            inImage: {
+              displayOrder: 7,
+              label: "Image",
+              description: "Test Input Image",
+              type: "data:[image/jpeg,image/png]"
+            }
+          },
+          outputs: {
+            outNumber: {
+              label: "Number Test",
+              description: "Test Output for Number",
+              displayOrder: 0,
+              type: "number"
+            },
+            outInteger: {
+              label: "Integer Test",
+              description: "Test Output for Integer",
+              displayOrder: 1,
+              type: "integer"
+            },
+            outBool: {
+              label: "Boolean Test",
+              description: "Test Output for Boolean",
+              displayOrder: 2,
+              type: "boolean"
+            },
+            outPng: {
+              label: "Png Test",
+              description: "Test Output for PNG Image",
+              displayOrder: 3,
+              type: "data:image/png"
+            }
+          }
+        }
+      };
+    },
+    getProjectList: function() {
+      return [
+        {
+          name: "Sample Project",
+          description: "A little fake project without actual backend",
+          notes: "# title\nThere be dragons inside",
+          owner: "UUID-OF-TOBI",
+          collaborators: {
+            "UUID-OF-PEDRO": [
+              "read",
+              "write"
+            ]
+          },
+          creationDate: "2018-07-02T16:01:00Z",
+          lastChangeDate: "2018-07-02T16:02:22Z",
+          workbench: {
+            "UUID1": {
+              key: "service/dynamic/itis/file-picker",
+              version: "0.0.0",
+              outputs: {
+                outFile: {
+                  store: "s3-z43",
+                  path: "/bucket1/file1"
+                }
+              },
+              position: {
+                x: 10,
+                y: 10
+              }
+            },
+            "UUID2": {
+              key: "service/computational/itis/sleeper",
+              version: "0.0.0",
+              inputs: {
+                inNumber: 3.5
+              },
+              outputs: {
+                outNumber: 33
+              },
+              position: {
+                x: 120,
+                y: 10
+              }
+            },
+            "UUID3": {
+              key: "service/computational/itis/sleeper",
+              version: "0.0.0",
+              inputs: {
+                inNumber: 3.5
+              },
+              outputs: {
+                outNumber: 33
+              },
+              position: {
+                x: 260,
+                y: 10
+              }
+            },
+            "UUID4": {
+              key: "service/computational/itis/tutti",
+              version: "0.0.0-alpha",
+              inputs: {
+                inNumber: {
+                  nodeUuid: "UUID3",
+                  output: "outNumber"
+                },
+                inInt: 372,
+                inBool: true,
+                inStr: "Ooops, Agnodain",
+                inArea: "some\nmore",
+                inSb: "cat",
+                inFile: {
+                  store: "s3-z43",
+                  path: "bucket33/file.data"
+                },
+                inImage: {
+                  store: "s3-z43",
+                  path: "bucket32/file.png"
+                }
+              },
+              position: {
+                x: 400,
+                y: 10
+              }
+            }
+          }
+        },
+        {
+          name: "Sample Project II",
+          description: "An empty project",
+          notes: "# title\nThere be dragons inside",
+          owner: "UUID-OF-TOBI",
+          collaborators: {
+            "UUID-OF-PEDRO": [
+              "read",
+              "write"
+            ]
+          },
+          creationDate: "2018-07-08T16:01:00Z",
+          lastChangeDate: "2018-07-09T16:02:22Z",
+          workbench: {}
+        }
+      ];
+    },
     getUsername: function() {
       return "bizzy";
     },
@@ -81,7 +354,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           description: "This is a short description by " + username,
           thumbnail: null,
           created: null,
-          prjId: null
+          projectId: null
         });
         rawData.push(item);
       }
@@ -99,7 +372,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         description: "Sample used for the unidirectional pipelining",
         thumbnail: null,
         created: null,
-        prjId: "temp1"
+        projectId: "temp1"
       });
       rawData.push(item1);
 
@@ -108,7 +381,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         description: "Colleen Clancy use case",
         thumbnail: null,
         created: null,
-        prjId: "temp2"
+        projectId: "temp2"
       });
       rawData.push(item2);
 
@@ -117,8 +390,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
       return data;
     },
 
-    getPrjData: function(prjId) {
-      switch (prjId) {
+    getPrjData: function(projectId) {
+      switch (projectId) {
         case "temp1": {
           let tempData = this.getTemp1Data();
           return tempData;
@@ -130,6 +403,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
       }
       return null;
     },
+
 
     getTemp1Data: function() {
       const nNodes = 8;
@@ -198,6 +472,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "x": 50,
             "y": 300
           },
+
           "inputs": [{
             "key": "in_1",
             "label": "Number of seconds to sleep",
@@ -241,6 +516,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "x": 300,
             "y": 100
           },
+
           "inputs": [{
             "key": "in_1",
             "label": "Number of seconds to sleep",
@@ -254,6 +530,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "type": "integer",
             "value": 2
           }],
+
           "outputs": [{
             "key": "out_1",
             "label": "Number of seconds to sleep",
@@ -266,8 +543,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "desc": "Number of seconds to sleep",
             "type": "integer",
             "value": null
-          }],
-          "settings": []
+          }]
         }, {
           "uuid": nodeIds[3],
           "key": "simcore/services/comp/itis/sleeper",

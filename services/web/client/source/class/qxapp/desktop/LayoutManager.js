@@ -14,6 +14,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     this.add(this.__navBar);
 
     this.__prjStack = this.__getPrjStack();
+
     this.add(this.__prjStack, {
       flex: 1
     });
@@ -23,11 +24,16 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__navBar.setCurrentStatus("Browser");
     }, this);
 
-    this.__prjBrowser.addListener("StartPrj", function(e) {
-      this.__prjStack.setSelection([this.__PrjEditor]);
-      this.__navBar.setCurrentStatus(e.getData().getName());
+    this.__prjBrowser.addListener("StartProject", function(e) {
+      let project = e.getData();
+      if (this.__prjEditor) {
+        this.__prjStack.remove(this.__prjEditor);
+      }
+      this.__prjEditor = new qxapp.desktop.PrjEditor(project.getProjectId());
+      this.__prjStack.add(this.__prjEditor);
+      this.__prjStack.setSelection([this.__prjEditor]);
+      this.__navBar.setCurrentStatus(project.getName());
       // this.__PrjEditor.showSettings(false);
-      this.__PrjEditor.setData(qxapp.dev.fake.Data.getPrjData(e.getData().getPrjId()));
     }, this);
   },
 
@@ -37,7 +43,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     __navBar: null,
     __prjStack: null,
     __prjBrowser: null,
-    __PrjEditor: null,
+    __prjEditor: null,
 
     __createNavigationBar: function() {
       let navBar = new qxapp.desktop.NavigationBar();
@@ -50,9 +56,6 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
       this.__prjBrowser = new qxapp.desktop.PrjBrowser();
       prjStack.add(this.__prjBrowser);
-
-      this.__PrjEditor = new qxapp.desktop.PrjEditor();
-      prjStack.add(this.__PrjEditor);
 
       return prjStack;
     }
