@@ -524,6 +524,47 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
       return null;
     },
+    __addLinkNew: function(from, to, linkId) {
+      let node1Id = from.nodeUuid;
+      let port1Id = from.output;
+      let node2Id = to.nodeUuid;
+      let port2Id = to.input;
+
+      let node1 = this.__getNode(node1Id);
+      let port1 = node1.getPort(port1Id);
+      let node2 = this.__getNode(node2Id);
+      let port2 = node2.getPort(port2Id);
+
+      const pointList = this.__getLinkPoints(node1, port1, node2, port2);
+      const x1 = pointList[0][0];
+      const y1 = pointList[0][1];
+      const x2 = pointList[1][0];
+      const y2 = pointList[1][1];
+      let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
+      let linkBase = new qxapp.components.workbench.LinkBase(linkRepresentation);
+      linkBase.setInputNodeId(node1.getNodeId());
+      linkBase.setInputPortId(port1.portId);
+      linkBase.setOutputNodeId(node2.getNodeId());
+      linkBase.setOutputPortId(port2.portId);
+      if (linkId !== undefined) {
+        linkBase.setLinkId(linkId);
+      }
+      this.__links.push(linkBase);
+
+      node2.getPropsWidget().enableProp(port2.portId, false);
+
+      linkBase.getRepresentation().node.addEventListener("click", function(e) {
+        // this is needed to get out of the context of svg
+        linkBase.fireDataEvent("linkSelected", linkBase.getLinkId());
+        e.stopPropagation();
+      }, this);
+
+      linkBase.addListener("linkSelected", function(e) {
+        this.__selectedItemChanged(linkBase.getLinkId());
+      }, this);
+
+      return linkBase;
+    },
     __addLink: function(node1, port1, node2, port2, linkId) {
       // swap node-ports to have node1 as input and node2 as output
       if (port1.isInput) {
