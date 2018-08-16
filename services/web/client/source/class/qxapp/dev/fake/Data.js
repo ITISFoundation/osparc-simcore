@@ -41,7 +41,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               displayOrder: 0,
               label: "File",
               description: "Chosen File",
-              type: "string"
+              type: "data:*/*"
             }
           },
           inputs: {}
