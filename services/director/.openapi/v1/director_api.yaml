@@ -69,20 +69,17 @@ paths:
           description: The name of the service to start
           required: true
           type: string
-          example: 3d-viewer
         - in: query
           name: service_uuid
           description: The uuid to assign the service with
           required: true
           type: string
           format: uuid
-          example: ca93503b-02ce-4882-a970-e56511bf419f
         - in: query
           name: service_tag
           description: The tag/version of the service to start
           required: false
           type: string
-          example: 1.4
       responses:
         201:
           description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
@@ -114,8 +111,7 @@ paths:
           description: The uuid of the service to stop
           required: true
           type: string
-          format: uuid
-          example: ca93503b-02ce-4882-a970-e56511bf419f
+          format: uuid          
       responses:
         204:
           description: Succesfully stopped and removed the service from the oSparc platform
@@ -200,7 +196,6 @@ definitions:
     properties:
     # TODO: SAN the version of the service is missing, or is mixed with the tag.
       authors:
-        description: The authors of the service
         $ref: '#/definitions/AuthorDetails'
       contact:
         type: string
@@ -234,7 +229,6 @@ definitions:
         type: string
         example: 1.0.0
       viewer:
-        description: The information about the service viewing location (required for interactive services)
         $ref: '#/definitions/Viewer'
     required:
       - authors
