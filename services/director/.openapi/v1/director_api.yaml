@@ -1,4 +1,4 @@
-swagger: '2.0'
+swagger: "2.0"
 info:
   description: This is the oSparc's director API
   version: 1.0.0
@@ -7,12 +7,17 @@ info:
   contact:
     name: IT'IS Foundation
     email: support@simcore.com
-
   license:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 host: director:8001
-
+basePath: /v1
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
 # tags are used for organizing operations
 tags:
 - name: admins
@@ -29,8 +34,6 @@ paths:
         - users
       summary: Returns a nice greeting
       description: Returns a nice greeting
-      produces:
-      - application/json
       responses:
         200:
           description: Successful response.
@@ -49,8 +52,6 @@ paths:
         - users
       summary: lists available interactive services in the oSparc platform
       description: lists available interactive services in the oSparc platform
-      produces: 
-        - application/json
       responses:
         200:
           description: Returns the list of available interactive services
@@ -68,10 +69,6 @@ paths:
         - users
       summary: Starts an interactive service in the oSparc platform and returns its entrypoint
       description: Starts an interactive service in the oSparc platform and returns its entrypoint
-      consumes: 
-        - application/json
-      produces: 
-        - application/json
       parameters: 
         - in: query
           name: service_name
@@ -82,8 +79,7 @@ paths:
           name: service_uuid
           description: The uuid to assign the service with
           required: true
-          type: string
-          format: uuid
+          type: string          
         - in: query
           name: service_tag
           description: The tag/version of the service to start
@@ -113,17 +109,12 @@ paths:
         - users
       summary: Stops and removes an interactive service from the oSparc platform
       description: Stops and removes an interactive service from the oSparc platform
-      consumes: 
-        - application/json
-      produces: 
-        - application/json
       parameters: 
         - in: query
           name: service_uuid
           description: The uuid of the service to stop
           required: true
           type: string
-          format: uuid          
       responses:
         204:
           description: Succesfully stopped and removed the service from the oSparc platform
@@ -143,8 +134,6 @@ paths:
         - users
       summary: Lists available computational services in the oSparc platform
       description: Lists available computational services in the oSparc platform
-      produces: 
-        - application/json
       responses:
         200:
           description: Returns the list of available computational services
@@ -285,10 +274,19 @@ definitions:
         description: The human readable description of what the port is for
         type: string
         example: this is the description
-      type:
-        description: The type of the port
+      type:        
         type: string
+        enum: [integer, number, bool, string, file-url, folder-url]
+        description: >
+          The type of the port:
+            * integer - An signed integer
+            * number - A floating point number
+            * bool - A boolean, True or False
+            * string - A chain of characters
+            * file-url - A URL pointing to a file
+            * folder-url - A URL pointing to a folder
         example: file-url
+
       value:
         description: The value of the port. May be null if not yet defined.
         type: string
