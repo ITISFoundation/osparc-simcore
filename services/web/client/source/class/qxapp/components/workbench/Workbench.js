@@ -263,14 +263,24 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let nodeMetaData = data.service;
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
-      // FIXME
+
       let nodeB = this.__createNode(nodeMetaData.imageId, null, nodeMetaData);
       this.__addNodeToWorkbench(nodeB, pos);
 
       if (nodeAId !== null && portA !== null) {
-        let nodeA = this.__getNode(nodeAId);
+        let nodeBId = nodeB.getNodeId();
         let portB = this.__findCompatiblePort(nodeB, portA);
-        this.__addLink(nodeA, portA, nodeB, portB);
+        // swap node-ports to have node1 as input and node2 as output
+        if (portA.isInput) {
+          [nodeAId, portA, nodeBId, portB] = [nodeBId, portB, nodeAId, portA];
+        }
+        this.__addLink({
+          nodeUuid: nodeAId,
+          output: portA.portId
+        }, {
+          nodeUuid: nodeBId,
+          input: portB.portId
+        });
       }
     },
 
@@ -385,6 +395,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let data = e.getData();
         let event = data.event;
         let dragNodeId = data.nodeId;
+        let dragIsInput = data.isInput;
         let dragPortId = data.portId;
 
         // Register supported actions
@@ -394,11 +405,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         event.addType("osparc-metaData");
         let dragData = {
           dragNodeId: dragNodeId,
+          dragIsInput: dragIsInput,
           dragPortId: dragPortId
         };
         event.addData("osparc-metaData", dragData);
 
         this.__tempLinkNodeId = dragData.dragNodeId;
+        this.__tempLinkIsInput = dragData.dragIsInput;
         this.__tempLinkPortId = dragData.dragPortId;
         qx.bom.Element.addListener(
           this.__desktop,
@@ -412,15 +425,19 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let data = e.getData();
         let event = data.event;
         let dropNodeId = data.nodeId;
+        let dropIsInput = data.isInput;
         let dropPortId = data.portId;
 
         let compatible = false;
         if (event.supportsType("osparc-metaData")) {
           const dragNodeId = event.getData("osparc-metaData").dragNodeId;
+          const dragIsInput = event.getData("osparc-metaData").dragIsInput;
           const dragPortId = event.getData("osparc-metaData").dragPortId;
-          const dragTarget = this.__getNode(dragNodeId).getPort(dragPortId);
-          const dropTarget = this.__getNode(dropNodeId).getPort(dropPortId);
-          compatible = this.__arePortsCompatible(dragTarget, dropTarget);
+          const dragNode = this.__getNode(dragNodeId);
+          const dropNode = this.__getNode(dropNodeId);
+          const dragPortTarget = dragIsInput ? dragNode.getOutputPort(dragPortId) : dragNode.getInputPort(dragPortId);
+          const dropPortTarget = dropIsInput ? dropNode.getOutputPort(dropPortId) : dropNode.getInputPort(dropPortId);
+          compatible = this.__arePortsCompatible(dragPortTarget, dropPortTarget);
         }
 
         if (!compatible) {
@@ -432,16 +449,26 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let data = e.getData();
         let event = data.event;
         let dropNodeId = data.nodeId;
+        let dropIsInput = data.isInput;
         let dropPortId = data.portId;
 
         if (event.supportsType("osparc-metaData")) {
           let dragNodeId = event.getData("osparc-metaData").dragNodeId;
+          let dragIsInput = event.getData("osparc-metaData").dragIsInput;
           let dragPortId = event.getData("osparc-metaData").dragPortId;
-          let nodeA = this.__getNode(dragNodeId);
-          let portA = nodeA.getPort(dragPortId);
-          let nodeB = this.__getNode(dropNodeId);
-          let portB = nodeB.getPort(dropPortId);
-          this.__addLink(nodeA, portA, nodeB, portB);
+
+          let nodeAId = dropIsInput ? dragNodeId : dropNodeId;
+          let nodeAPortId = dropIsInput ? dragPortId : dropPortId;
+          let nodeBId = dragIsInput ? dragNodeId : dropNodeId;
+          let nodeBPortId = dragIsInput ? dragPortId : dropPortId;
+
+          this.__addLink({
+            nodeUuid: nodeAId,
+            output: nodeAPortId
+          }, {
+            nodeUuid: nodeBId,
+            input: nodeBPortId
+          });
           this.__removeTempLink();
           qx.bom.Element.removeListener(
             this.__desktop,
@@ -462,7 +489,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let posY = this.__pointerPosY;
         if (this.__tempLinkNodeId === dragNodeId && this.__tempLinkPortId === dragPortId) {
           let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
-          srvCat.setContext(dragNodeId, this.__getNode(dragNodeId).getPort(dragPortId));
+          if (this.__tempLinkIsInput === true) {
+            srvCat.setContext(dragNodeId, this.__getNode(dragNodeId).getInputPort(dragPortId));
+          } else {
+            srvCat.setContext(dragNodeId, this.__getNode(dragNodeId).getOutputPort(dragPortId));
+          }
           srvCat.moveTo(posX, posY);
           srvCat.open();
           let pos = {
@@ -524,25 +555,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
       return null;
     },
-    __addLinkNew: function(from, to, linkId) {
+
+    __addLink: function(from, to, linkId) {
       let node1Id = from.nodeUuid;
       let port1Id = from.output;
       let node2Id = to.nodeUuid;
       let port2Id = to.input;
 
       let node1 = this.__getNode(node1Id);
-      let port1 = node1.getPort(port1Id);
+      let port1 = node1.getOutputPort(port1Id);
       let node2 = this.__getNode(node2Id);
-      let port2 = node2.getPort(port2Id);
-
-      return this.__addLink(node1, port1, node2, port2, linkId);
-    },
-
-    __addLink: function(node1, port1, node2, port2, linkId) {
-      // swap node-ports to have node1 as input and node2 as output
-      if (port1.isInput) {
-        [node1, port1, node2, port2] = [node2, port2, node1, port1];
-      }
+      let port2 = node2.getInputPort(port2Id);
 
       const pointList = this.__getLinkPoints(node1, port1, node2, port2);
       const x1 = pointList[0][0];
@@ -582,9 +605,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let link = this.__getLink(linkId);
         if (link) {
           let node1 = this.__getNode(link.getInputNodeId());
-          let port1 = node1.getPort(link.getInputPortId());
+          let port1 = node1.getOutputPort(link.getInputPortId());
           let node2 = this.__getNode(link.getOutputNodeId());
-          let port2 = node2.getPort(link.getOutputPortId());
+          let port2 = node2.getInputPort(link.getOutputPortId());
           const pointList = this.__getLinkPoints(node1, port1, node2, port2);
           const x1 = pointList[0][0];
           const y1 = pointList[0][1];
@@ -603,7 +626,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (node === null) {
         return;
       }
-      let port = node.getPort(this.__tempLinkPortId);
+      let port;
+      if (this.__tempLinkIsInput) {
+        port = node.getInputPort(this.__tempLinkPortId);
+      } else {
+        port = node.getOutputPort(this.__tempLinkPortId);
+      }
       if (port === null) {
         return;
       }
@@ -787,7 +815,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           for (let prop in nodeData.inputs) {
             let link = nodeData.inputs[prop];
             if (typeof link == "object" && link.nodeUuid) {
-              this.__addLinkNew(link, {
+              this.__addLink({
+                nodeUuid: link.nodeUuid,
+                output: link.output
+              }, {
                 nodeUuid: nodeUuid,
                 input: prop
               });
