@@ -129,15 +129,17 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
       if (this.__contextNodeId !== null && this.__contextPort !== null) {
         for (let i = 0; i < this.__allServices.length; i++) {
           if (this.__contextPort.isInput === true) {
-            for (let j = 0; j < this.__allServices[i].outputs.length; j++) {
-              if (this.__allServices[i].outputs[j].type === this.__contextPort.portType) {
+            let outputsMap = this.__allServices[i].outputs;
+            for (let key in outputsMap) {
+              if (outputsMap[key].type === this.__contextPort.portType) {
                 newData.push(this.__allServices[i].name);
                 break;
               }
             }
           } else {
-            for (let j = 0; j < this.__allServices[i].inputs.length; j++) {
-              if (this.__allServices[i].inputs[j].type === this.__contextPort.portType) {
+            let inputsMap = this.__allServices[i].inputs;
+            for (let key in inputsMap) {
+              if (inputsMap[key].type === this.__contextPort.portType) {
                 newData.push(this.__allServices[i].name);
                 break;
               }
