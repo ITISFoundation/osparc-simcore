@@ -119,11 +119,15 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     getInputPorts: function() {
       return this.__inputPorts;
     },
-
+    getInputPort: function(portId) {
+      return this.__inputPorts[portId];
+    },
     getOutputPorts: function() {
       return this.__outputPorts;
     },
-
+    getOutputPort: function(portId) {
+      return this.__outputPorts[portId];
+    },
     getProp: function(key) {
       return this.getPropsWidget().getData()[key];
     },
@@ -222,7 +226,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     },
 
     getPort: function(portId) {
-      return (this.getInputPorts()[portId] || this.getOutputPorts()[portId]);
+      return (this.getInputPort(portId) || this.getOutputPort(portId));
     },
 
     __createPorts: function(type, ports) {
