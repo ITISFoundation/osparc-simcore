@@ -5,11 +5,13 @@ info:
   title: Director API
   # put the contact info for your development or API team
   contact:
+    name: IT'IS Foundation
     email: support@simcore.com
 
   license:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
+host: director:8001
 
 # tags are used for organizing operations
 tags:
@@ -26,6 +28,7 @@ paths:
       tags: 
         - users
       summary: Returns a nice greeting
+      description: Returns a nice greeting
       produces:
       - application/json
       responses:
@@ -37,12 +40,15 @@ paths:
             example: Hello!
         500:
           description: Server error
+        default:
+          description: Unexpected error
 
   /list_interactive_services:
     get:
       tags: 
         - users
       summary: lists available interactive services in the oSparc platform
+      description: lists available interactive services in the oSparc platform
       produces: 
         - application/json
       responses:
@@ -54,11 +60,14 @@ paths:
               $ref: '#/definitions/ServiceDescription'
         500:
           description: server error
+        default:
+          description: Unexpected error
   /start_service:
     post:
       tags: 
         - users
       summary: Starts an interactive service in the oSparc platform and returns its entrypoint
+      description: Starts an interactive service in the oSparc platform and returns its entrypoint
       consumes: 
         - application/json
       produces: 
@@ -95,12 +104,15 @@ paths:
           description: A service with the same uuid already exists
         500:
           description: Server error
+        default:
+          description: Unexpected error
         
   /stop_service:      
     post:
       tags: 
         - users
       summary: Stops and removes an interactive service from the oSparc platform
+      description: Stops and removes an interactive service from the oSparc platform
       consumes: 
         - application/json
       produces: 
@@ -121,6 +133,8 @@ paths:
           description: Service not found
         500:
           description: Server error
+        default:
+          description: Unexpected error
         
     
   /list_computational_services:
@@ -128,6 +142,7 @@ paths:
       tags: 
         - users
       summary: Lists available computational services in the oSparc platform
+      description: Lists available computational services in the oSparc platform
       produces: 
         - application/json
       responses:
@@ -139,6 +154,8 @@ paths:
               $ref: '#/definitions/ServiceDescription'
         500:
           description: server error
+        default:
+          description: Unexpected error
 definitions:
   Service:
     type: object
