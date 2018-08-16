@@ -123,6 +123,12 @@ qx.Class.define("qxapp.Application", {
             let check = ajv.validate(map[key]);
             console.log("validation result " + key + ":", check);
           }
+          let store = qxapp.data.Store.getInstance();
+          map = store.getBuiltInServices();
+          for (let key in map) {
+            let check = ajv.validate(map[key]);
+            console.log("validation result " + key + ":", check);
+          }
         } catch (err) {
           console.error(err);
         }

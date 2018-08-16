@@ -261,7 +261,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
       // FIXME
-      let nodeB = this.__createNode("fix-my-name", null, nodeMetaData);
+      let nodeB = this.__createNode(nodeMetaData.imageId, null, nodeMetaData);
       this.__addNodeToWorkbench(nodeB, pos);
 
       if (nodeAId !== null && portA !== null) {
@@ -277,7 +277,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       nodesList.forEach(nodeMetaData => {
         let nodeButton = new qx.ui.menu.Button(nodeMetaData.label);
         nodeButton.addListener("execute", function() {
-          let nodeItem = this.__createNode("fix-my-name", null, nodeMetaData);
+          let nodeItem = this.__createNode(nodeMetaData.imageId, null, nodeMetaData);
           this.__addNodeToWorkbench(nodeItem);
         }, this);
 
@@ -341,26 +341,24 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       node.addListener("dblclick", function(e) {
-        if (node.getMetaData().key === "FileManager") {
+        if (node.getMetaData().key.includes("FileManager")) {
           const width = 800;
           const height = 600;
           let fileManager = new qxapp.components.widgets.FileManager();
           let fileManagerWindow = this.__createWindowForBuiltInService(fileManager, width, height, "File Manager");
           fileManager.addListener("ItemSelected", function(data) {
-            const filePortIndex = 0;
-            const dirPortIndex = 1;
             const itemPath = data.getData().itemPath;
             const splitted = itemPath.split("/");
             const itemName = splitted[splitted.length-1];
             const isDirectory = data.getData().isDirectory;
-            const activeIndex = isDirectory ? dirPortIndex : filePortIndex;
-            const inactiveIndex = isDirectory ? filePortIndex : dirPortIndex;
-            node.getMetaData().outputs[activeIndex].value = itemPath;
-            node.getMetaData().outputs[inactiveIndex].value = null;
-            node.getPortByIndex(false, activeIndex).ui.setLabel(itemName);
-            node.getPortByIndex(false, activeIndex).ui.getToolTip().setLabel(itemName);
-            node.getPortByIndex(false, inactiveIndex).ui.setLabel("");
-            node.getPortByIndex(false, inactiveIndex).ui.getToolTip().setLabel("");
+            const activePort = isDirectory ? "outDir" : "outFile";
+            const inactivePort = isDirectory ? "outFile" : "outDir";
+            node.getMetaData().outputs[activePort].value = itemPath;
+            node.getMetaData().outputs[inactivePort].value = null;
+            node.getOutputPorts(activePort).ui.setLabel(itemName);
+            node.getOutputPorts(activePort).ui.getToolTip().setLabel(itemName);
+            node.getOutputPorts(inactivePort).ui.setLabel("");
+            node.getOutputPorts(inactivePort).ui.getToolTip().setLabel("");
             node.setProgress(100);
             fileManagerWindow.close();
           }, this);
@@ -507,25 +505,65 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __findCompatiblePort: function(nodeB, portA) {
       if (portA.isInput) {
-        let portsB = nodeB.getOutputPorts();
-        for (let i = 0; i < portsB.length; i++) {
-          if (portA.portType === portsB[i].portType) {
-            return portsB[i];
+        for (let portBId in nodeB.getOutputPorts()) {
+          let portB = nodeB.getOutputPorts()[portBId];
+          if (portA.portType === portB.portType) {
+            return portB;
           }
         }
       } else {
-        let portsB = nodeB.getInputPorts();
-        for (let i = 0; i < portsB.length; i++) {
-          if (portA.portType === portsB[i].portType) {
-            return portsB[i];
+        for (let portBId in nodeB.getInputPorts()) {
+          let portB = nodeB.getInputPorts()[portBId];
+          if (portA.portType === portB.portType) {
+            return portB;
           }
         }
       }
       return null;
     },
-    __addLinkNew: function(from, to) {
 
+    __addLinkNew: function(from, to, linkId) {
+      let node1Id = from.nodeUuid;
+      let port1Id = from.output;
+      let node2Id = to.nodeUuid;
+      let port2Id = to.input;
+
+      let node1 = this.__getNode(node1Id);
+      let port1 = node1.getPort(port1Id);
+      let node2 = this.__getNode(node2Id);
+      let port2 = node2.getPort(port2Id);
+
+      const pointList = this.__getLinkPoints(node1, port1, node2, port2);
+      const x1 = pointList[0][0];
+      const y1 = pointList[0][1];
+      const x2 = pointList[1][0];
+      const y2 = pointList[1][1];
+      let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
+      let linkBase = new qxapp.components.workbench.LinkBase(linkRepresentation);
+      linkBase.setInputNodeId(node1.getNodeId());
+      linkBase.setInputPortId(port1.portId);
+      linkBase.setOutputNodeId(node2.getNodeId());
+      linkBase.setOutputPortId(port2.portId);
+      if (linkId !== undefined) {
+        linkBase.setLinkId(linkId);
+      }
+      this.__links.push(linkBase);
+
+      node2.getPropsWidget().enableProp(port2.portId, false);
+
+      linkBase.getRepresentation().node.addEventListener("click", function(e) {
+        // this is needed to get out of the context of svg
+        linkBase.fireDataEvent("linkSelected", linkBase.getLinkId());
+        e.stopPropagation();
+      }, this);
+
+      linkBase.addListener("linkSelected", function(e) {
+        this.__selectedItemChanged(linkBase.getLinkId());
+      }, this);
+
+      return linkBase;
     },
+
     __addLink: function(node1, port1, node2, port2, linkId) {
       // swap node-ports to have node1 as input and node2 as output
       if (port1.isInput) {
@@ -654,6 +692,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       for (let i = 0; i < this.__nodes.length; i++) {
         if (this.__nodes[i].getNodeId() === id) {
           return this.__nodes[i];
+        }
+      }
+      for (let nodeUuid in this.__nodeMap) {
+        if (id === nodeUuid) {
+          return this.__nodeMap[nodeUuid];
         }
       }
       return null;

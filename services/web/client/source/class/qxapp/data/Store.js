@@ -10,33 +10,35 @@ qx.Class.define("qxapp.data.Store", {
 
   members: {
     getBuiltInServices: function() {
-      let builtInServices = [{
-        "key": "FileManager",
-        "name": "File Manager",
-        "tag": "0.0.1",
-        "description": "File Manager",
-        "authors": [{
-          "name": "Odei Maiz",
-          "email": "maiz@itis.ethz.ch",
-          "affiliation": "ITIS Foundation"
-        }],
-        "contact": "maiz@itis.ethz.ch",
-        "inputs": [],
-        "outputs": [{
-          "key": "out_1",
-          "label": "File-url",
-          "description": "File-url",
-          "type": "file-url",
-          "defaultValue": null
-        }, {
-          "key": "out_2",
-          "label": "Folder-url",
-          "description": "Folder-url",
-          "type": "folder-url",
-          "defaultValue": null
-        }],
-        "settings": []
-      }];
+      let builtInServices = {
+        "service/dynamic/itis/FileManager-0.0.0": {
+          key: "service/dynamic/itis/FileManager",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "File Manager",
+          description: "File Manager",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {},
+          outputs: {
+            outFile: {
+              displayOrder: 0,
+              label: "File",
+              description: "Chosen File",
+              type: "string"
+            },
+            outDir: {
+              displayOrder: 1,
+              label: "Folder",
+              description: "Chosen Folder",
+              type: "string"
+            }
+          }
+        }
+      };
       return builtInServices;
     },
 

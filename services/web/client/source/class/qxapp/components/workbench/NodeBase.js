@@ -62,6 +62,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     this.add(progressBox);
     let metaData = qxapp.dev.fake.Data.getNodeMap()[nodeImageId];
+    if (metaData === undefined) {
+      let store = qxapp.data.Store.getInstance();
+      metaData = store.getBuiltInServices()[nodeImageId];
+    }
     if (metaData) {
       this.__populateNode(metaData, nodeData);
     } else {
@@ -217,33 +221,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       }
     },
 
-
-
     getPort: function(portId) {
-      const nInPorts = this.getInputPorts().length;
-      for (let i = 0; i < nInPorts; i++) {
-        if (this.getInputPorts()[i].portId === portId) {
-          return this.getInputPorts()[i];
-        }
-      }
-      const nOutPorts = this.getOutputPorts().length;
-      for (let i = 0; i < nOutPorts; i++) {
-        if (this.getOutputPorts()[i].portId === portId) {
-          return this.getOutputPorts()[i];
-        }
-      }
-      return null;
-    },
-
-    getPortByIndex: function(isInput, portIdx) {
-      const nInPorts = this.getInputPorts().length;
-      const nOutPorts = this.getOutputPorts().length;
-      if (isInput && portIdx < nInPorts) {
-        return this.getInputPorts()[portIdx];
-      } else if (!isInput && portIdx < nOutPorts) {
-        return this.getOutputPorts()[portIdx];
-      }
-      return null;
+      return (this.getInputPorts()[portId] || this.getOutputPorts()[portId]);
     },
 
     __createPorts: function(type, ports) {
@@ -302,7 +281,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         alignX: alignX,
         allowGrowX: false
       });
-      // label.ui.portId = portId;
+      label.ui.portId = portId;
 
       var tooltip = new qx.ui.tooltip.ToolTip(portData.description, icon);
       tooltip.setShowTimeout(50);

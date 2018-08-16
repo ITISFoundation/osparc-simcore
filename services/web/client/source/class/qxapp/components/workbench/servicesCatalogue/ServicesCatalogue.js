@@ -31,7 +31,12 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     this.add(searchLayout);
 
     let store = qxapp.data.Store.getInstance();
-    this.__allServices = store.getBuiltInServices();
+    this.__allServices = [];
+    for (let imageId in store.getBuiltInServices()) {
+      let service = store.getBuiltInServices()[imageId];
+      service.imageId = imageId;
+      this.__allServices.push(service);
+    }
     // this.__allServices = this.__allServices.concat(qxapp.dev.fake.Data.getServices());
     store.addListener("servicesRegistered", e => {
       this.__addNewData(e.getData());
