@@ -116,6 +116,9 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return this.__metaData;
     },
 
+    getPort: function(portId) {
+      return (this.getInputPort(portId) || this.getOutputPort(portId));
+    },
     getInputPorts: function() {
       return this.__inputPorts;
     },
@@ -223,10 +226,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         };
         socket.emit(slotName, data);
       }
-    },
-
-    getPort: function(portId) {
-      return (this.getInputPort(portId) || this.getOutputPort(portId));
     },
 
     __createPorts: function(type, ports) {

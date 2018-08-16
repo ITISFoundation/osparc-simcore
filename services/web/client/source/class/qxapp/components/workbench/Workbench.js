@@ -535,36 +535,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let node2 = this.__getNode(node2Id);
       let port2 = node2.getPort(port2Id);
 
-      const pointList = this.__getLinkPoints(node1, port1, node2, port2);
-      const x1 = pointList[0][0];
-      const y1 = pointList[0][1];
-      const x2 = pointList[1][0];
-      const y2 = pointList[1][1];
-      let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
-      let linkBase = new qxapp.components.workbench.LinkBase(linkRepresentation);
-      linkBase.setInputNodeId(node1.getNodeId());
-      linkBase.setInputPortId(port1.portId);
-      linkBase.setOutputNodeId(node2.getNodeId());
-      linkBase.setOutputPortId(port2.portId);
-      if (linkId !== undefined) {
-        linkBase.setLinkId(linkId);
-      }
-      this.__links.push(linkBase);
-
-      node2.getPropsWidget().enableProp(port2.portId, false);
-
-      linkBase.getRepresentation().node.addEventListener("click", function(e) {
-        // this is needed to get out of the context of svg
-        linkBase.fireDataEvent("linkSelected", linkBase.getLinkId());
-        e.stopPropagation();
-      }, this);
-
-      linkBase.addListener("linkSelected", function(e) {
-        this.__selectedItemChanged(linkBase.getLinkId());
-      }, this);
-
-      return linkBase;
+      return this.__addLink(node1, port1, node2, port2, linkId);
     },
+
     __addLink: function(node1, port1, node2, port2, linkId) {
       // swap node-ports to have node1 as input and node2 as output
       if (port1.isInput) {
@@ -609,9 +582,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let link = this.__getLink(linkId);
         if (link) {
           let node1 = this.__getNode(link.getInputNodeId());
-          let port1 = node1.getInputPort(link.getInputPortId());
+          let port1 = node1.getPort(link.getInputPortId());
           let node2 = this.__getNode(link.getOutputNodeId());
-          let port2 = node2.getOutputPort(link.getOutputPortId());
+          let port2 = node2.getPort(link.getOutputPortId());
           const pointList = this.__getLinkPoints(node1, port1, node2, port2);
           const x1 = pointList[0][0];
           const y1 = pointList[0][1];
@@ -814,12 +787,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           for (let prop in nodeData.inputs) {
             let link = nodeData.inputs[prop];
             if (typeof link == "object" && link.nodeUuid) {
-              let outNode = this.__getNode(link.nodeUuid);
-              let inNode =this.__getNode(link.nodeUuid);
-              this.__addLink(
-                outNode, outNode.getOutputPort(link.output),
-                inNode, inNode.getInputPort(prop)
-              );
+              this.__addLinkNew(link, {
+                nodeUuid: nodeUuid,
+                input: prop
+              });
             }
           }
         }
