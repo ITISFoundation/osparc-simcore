@@ -28,13 +28,13 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "File",
               description: "Chosen File",
-              type: "string"
+              type: "data:*/*"
             },
             outDir: {
               displayOrder: 1,
               label: "Folder",
               description: "Chosen Folder",
-              type: "string"
+              type: "data:*/*"
             }
           }
         }
