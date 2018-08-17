@@ -359,7 +359,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             const isDirectory = data.getData().isDirectory;
             const activePort = isDirectory ? "outDir" : "outFile";
             const inactivePort = isDirectory ? "outFile" : "outDir";
-            node.getMetaData().outputs[activePort].value = itemPath;
+            node.getMetaData().outputs[activePort].value = {
+              store: "s3-z43",
+              path: itemPath
+            };
             node.getMetaData().outputs[inactivePort].value = null;
             node.getOutputPorts(activePort).ui.setLabel(itemName);
             node.getOutputPorts(activePort).ui.getToolTip().setLabel(itemName);
