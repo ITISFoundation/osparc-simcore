@@ -1,7 +1,10 @@
-from aiohttp import web
-import producer
-import registry_proxy
 import logging
+
+import aiohttp_apiset.middlewares
+from director import producer
+from director import registry_proxy
+
+from .models.service_description import ServiceDescription
 
 _LOGGER = logging.getLogger(__name__)
 registry_proxy.setup_registry_connection()
@@ -14,7 +17,7 @@ async def root_get():  # noqa: E501
 
     :rtype: str
     """
-    greeting = "<h1>Hoi zaeme! Salut les d'jeunz!</h1><h3>This is {} responding!</h2>".format(__name__)    
+    greeting = "<h1>Hoi zaeme! Salut les d'jeunz!</h1><h3>This is {} responding!</h2>".format(__name__)
     return greeting
 
 async def list_interactive_services_get():  # noqa: E501
@@ -26,8 +29,57 @@ async def list_interactive_services_get():  # noqa: E501
     :rtype: List[ServiceDescription]
     """
     # get the services repos
-    list_of_interactive_repos = registry_proxy.retrieve_list_of_repos_with_interactive_services()
-    return list_of_interactive_repos
+    #list_of_interactive_repos = registry_proxy.retrieve_list_of_repos_with_interactive_services()
+
+
+    data = {
+      "name": "3d-viewer",
+      "repos": [
+        "simcore/services/dynamic/3d-viewer"
+      ],
+      "details": [
+        [
+          {
+            "authors": {
+              "name": "Lee Van Cleef",
+              "email": "leevancleef@thebad.com"
+            },
+            "contact": "servicecontact@email.com",
+            "description": "string",
+            "inputs": [
+              {
+                "key": "A",
+                "label": "this is the key A",
+                "desc": "this is the description",
+                "type": "file-url",
+                "value": "null"
+              }
+            ],
+            "outputs": [
+              {
+                "key": "A",
+                "label": "this is the key A",
+                "desc": "this is the description",
+                "type": "file-url",
+                "value": "null"
+              }
+            ],
+            "key": "simcore/services/dynamic/3d-viewer",
+            "name": "3d-viewer",
+            "tag": "1.0.0",
+            "viewer": {
+              "ip": "osparc.itis.swiss",
+              "port": 2213
+            }
+          }
+        ]
+      ]
+    }
+
+
+    return [ ServiceDescription.from_dict(data), ]
+    #return list_of_interactive_repos
+
 
 async def start_service_post(service_name, service_uuid, service_tag=None):  # noqa: E501
     """Starts an interactive service in the oSparc platform and returns its entrypoint
@@ -46,7 +98,7 @@ async def start_service_post(service_name, service_uuid, service_tag=None):  # n
     print(service_name)
     service = producer.start_service(service_name, service_tag, service_uuid)
 
-    return web.json_response(data=service)
+    return service
 
 
 async def stop_service_post(service_uuid):  # noqa: E501
@@ -60,7 +112,7 @@ async def stop_service_post(service_uuid):  # noqa: E501
     :rtype: None
     """
     producer.stop_service(service_uuid)
-    return web.json_response(data="service stopped")
+    return "service stopped"
 
 async def list_computational_services_get():  # noqa: E501
     """Lists available computational services in the oSparc platform
@@ -71,4 +123,4 @@ async def list_computational_services_get():  # noqa: E501
     :rtype: List[ServiceDescription]
     """
     repos = registry_proxy.list_computational_services()
-    return web.json_response(data=repos)
+    return repos
