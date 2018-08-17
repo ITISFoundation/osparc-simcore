@@ -1,26 +1,31 @@
 import logging
+from collections import defaultdict
 
+from aiohttp import web_exceptions
 import aiohttp_apiset.middlewares
-from director import producer
-from director import registry_proxy
+from aiohttp_apiset.exceptions import ValidationError
+
+from director import producer, registry_proxy
 
 from .models.service_description import ServiceDescription
 
 _LOGGER = logging.getLogger(__name__)
 registry_proxy.setup_registry_connection()
 
-async def root_get():  # noqa: E501
+async def root_get(request, errors: defaultdict(set)):  # noqa: E501
     """Returns a nice greeting
 
     Returns a nice greeting # noqa: E501
 
-
     :rtype: str
     """
+    print(request)
+    print(errors)
+
     greeting = "<h1>Hoi zaeme! Salut les d'jeunz!</h1><h3>This is {} responding!</h2>".format(__name__)
     return greeting
 
-async def list_interactive_services_get():  # noqa: E501
+async def list_interactive_services_get(request, errors: defaultdict(set)):  # noqa: E501
     """lists available interactive services in the oSparc platform
 
     lists available interactive services in the oSparc platform # noqa: E501
