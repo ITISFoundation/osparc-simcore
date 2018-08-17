@@ -58,7 +58,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     this.__desktop.add(this.__logger);
 
     this.__nodes = [];
-    this.__nodeMap = {};
     this.__links = [];
 
     let loggerButton = this.__getShowLoggerButton();
@@ -117,7 +116,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
   members: {
     __nodes: null,
-    __nodeMap: null,
     __links: null,
     __desktop: null,
     __svgWidget: null,
@@ -131,9 +129,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __playButton: null,
     __stopButton: null,
 
-    getNode: function(nodeId) {
-      return this.__nodeMap[nodeId];
-    },
     __getShowLoggerButton: function() {
       const icon = "@FontAwesome5Solid/list-alt/32";
       let loggerButton = new qx.ui.form.Button(null, icon);
@@ -711,11 +706,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           return this.__nodes[i];
         }
       }
-      for (let nodeUuid in this.__nodeMap) {
-        if (id === nodeUuid) {
-          return this.__nodeMap[nodeUuid];
-        }
-      }
       return null;
     },
 
@@ -820,7 +810,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __loadProject: function(workbenchData) {
       for (let nodeUuid in workbenchData) {
         let nodeData = workbenchData[nodeUuid];
-        let node = this.__nodeMap[nodeUuid] =
+        let node =
           this.__createNode(nodeData.key + "-" + nodeData.version, nodeUuid, nodeData);
         this.__addNodeToWorkbench(node, nodeData.position);
       }
