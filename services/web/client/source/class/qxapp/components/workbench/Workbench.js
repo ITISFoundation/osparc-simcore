@@ -846,9 +846,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       // callback for incoming logs
       if (!socket.slotExists("logger")) {
         socket.on("logger", function(data) {
-          var d = JSON.parse(data);
-          var node = d["Node"];
-          var msg = d["Message"];
+          let d = JSON.parse(data);
+          let node = d["Node"];
+          let msg = d["Message"];
           this.__updateLogger(node, msg);
         }, this);
       }
@@ -858,9 +858,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (!socket.slotExists("progress")) {
         socket.on("progress", function(data) {
           console.log("progress", data);
-          var d = JSON.parse(data);
-          var node = d["Node"];
-          var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
+          let d = JSON.parse(data);
+          let node = d["Node"];
+          let progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
           this.updateProgress(node, progress);
         }, this);
       }
