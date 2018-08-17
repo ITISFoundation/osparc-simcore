@@ -337,13 +337,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           }
         }
         node.moveTo(50 + farthestRight, 200);
-        this.addWindowToDesktop(node);
-        this.__nodes.push(node);
       } else {
         node.moveTo(position.x, position.y);
-        this.addWindowToDesktop(node);
-        this.__nodes.push(node);
       }
+      this.addWindowToDesktop(node);
+      this.__nodes.push(node);
 
       node.addListener("NodeMoving", function() {
         this.__updateLinks(node);
