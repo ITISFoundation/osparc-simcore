@@ -10,7 +10,7 @@ info:
   license:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
-host: director:8001
+# host: director:8001
 basePath: /v1
 schemes:
   - https
@@ -34,6 +34,7 @@ paths:
         - users
       summary: Returns a nice greeting
       description: Returns a nice greeting
+      operationId: director.api.root_get
       responses:
         200:
           description: Successful response.
@@ -52,6 +53,7 @@ paths:
         - users
       summary: lists available interactive services in the oSparc platform
       description: lists available interactive services in the oSparc platform
+      operationId: director.api.list_interactive_services_get
       responses:
         200:
           description: Returns the list of available interactive services
@@ -69,6 +71,7 @@ paths:
         - users
       summary: Starts an interactive service in the oSparc platform and returns its entrypoint
       description: Starts an interactive service in the oSparc platform and returns its entrypoint
+      operationId: director.api.start_service_post
       parameters: 
         - in: query
           name: service_name
@@ -109,6 +112,7 @@ paths:
         - users
       summary: Stops and removes an interactive service from the oSparc platform
       description: Stops and removes an interactive service from the oSparc platform
+      operationId: director.api.stop_service_post
       parameters: 
         - in: query
           name: service_uuid
@@ -134,6 +138,7 @@ paths:
         - users
       summary: Lists available computational services in the oSparc platform
       description: Lists available computational services in the oSparc platform
+      operationId: director.api.list_computational_services_get
       responses:
         200:
           description: Returns the list of available computational services
@@ -145,7 +150,7 @@ paths:
           description: server error
         default:
           description: Unexpected error
-definitions:
+definitions:  
   Service:
     type: object
     properties:
@@ -170,7 +175,7 @@ definitions:
       - container_id
       - published_ports
       - entry_point
-  ServiceDescription:
+  ServiceDescription:    
     type: object
     properties:
       name:

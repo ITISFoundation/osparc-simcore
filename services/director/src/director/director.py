@@ -6,8 +6,8 @@
 import json
 import logging
 
-import producer
-import registry_proxy
+from . import producer
+from . import registry_proxy
 from flask import Flask, abort, request
 
 _LOGGER = logging.getLogger(__name__)
