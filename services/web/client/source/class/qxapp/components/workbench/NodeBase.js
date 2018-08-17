@@ -132,6 +132,9 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     getProp: function(key) {
       return this.getPropsWidget().getData()[key];
     },
+    getInputValue: function(key) {
+      return this.getPropsWidget().getValue(key);
+    },
 
     // override qx.ui.window.Window "move" event listener
     _onMovePointerMove: function(e) {
