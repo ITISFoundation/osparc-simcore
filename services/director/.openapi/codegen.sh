@@ -32,4 +32,4 @@ echo "----------------------------"
 docker run --rm -v ${PWD}:/local swaggerapi/swagger-codegen-cli generate \
     --input-spec ${OPENAPI_DEFINITION} \
     --lang ${LANGUAGE} \
-    --output /local/codegen-out/${LANGUAGE}
+    --output /local/codegen-output/${LANGUAGE}
