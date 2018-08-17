@@ -34,7 +34,7 @@ paths:
         - users
       summary: Returns a nice greeting
       description: Returns a nice greeting
-      operationId: director.api.root_get
+      operationId: api.root_get
       responses:
         200:
           description: Successful response.
@@ -53,7 +53,7 @@ paths:
         - users
       summary: lists available interactive services in the oSparc platform
       description: lists available interactive services in the oSparc platform
-      operationId: director.api.list_interactive_services_get
+      operationId: list_interactive_services_get
       responses:
         200:
           description: Returns the list of available interactive services

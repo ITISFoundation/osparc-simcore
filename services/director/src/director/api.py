@@ -1,21 +1,12 @@
-import connexion
-import six
-from director.models.service import Service  # noqa: E501
-from director.models.service_description import ServiceDescription  # noqa: E501
-from director import util
-
-from . import producer
-from . import registry_proxy
+from aiohttp import web
+import producer
+import registry_proxy
 import logging
 
 _LOGGER = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(levelname)s:%(name)s-%(lineno)d: %(message)s'
-    )
 registry_proxy.setup_registry_connection()
 
-def root_get():  # noqa: E501
+async def root_get():  # noqa: E501
     """Returns a nice greeting
 
     Returns a nice greeting # noqa: E501
@@ -26,7 +17,7 @@ def root_get():  # noqa: E501
     greeting = "<h1>Hoi zaeme! Salut les d'jeunz!</h1><h3>This is {} responding!</h2>".format(__name__)    
     return greeting
 
-def list_interactive_services_get():  # noqa: E501
+async def list_interactive_services_get():  # noqa: E501
     """lists available interactive services in the oSparc platform
 
     lists available interactive services in the oSparc platform # noqa: E501
@@ -38,7 +29,7 @@ def list_interactive_services_get():  # noqa: E501
     list_of_interactive_repos = registry_proxy.retrieve_list_of_repos_with_interactive_services()
     return list_of_interactive_repos
 
-def start_service_post(service_name, service_uuid, service_tag=None):  # noqa: E501
+async def start_service_post(service_name, service_uuid, service_tag=None):  # noqa: E501
     """Starts an interactive service in the oSparc platform and returns its entrypoint
 
     Starts an interactive service in the oSparc platform and returns its entrypoint # noqa: E501
@@ -55,10 +46,10 @@ def start_service_post(service_name, service_uuid, service_tag=None):  # noqa: E
     print(service_name)
     service = producer.start_service(service_name, service_tag, service_uuid)
 
-    return service
+    return web.json_response(data=service)
 
 
-def stop_service_post(service_uuid):  # noqa: E501
+async def stop_service_post(service_uuid):  # noqa: E501
     """Stops and removes an interactive service from the oSparc platform
 
     Stops and removes an interactive service from the oSparc platform # noqa: E501
@@ -69,9 +60,9 @@ def stop_service_post(service_uuid):  # noqa: E501
     :rtype: None
     """
     producer.stop_service(service_uuid)
-    return "service stopped"
+    return web.json_response(data="service stopped")
 
-def list_computational_services_get():  # noqa: E501
+async def list_computational_services_get():  # noqa: E501
     """Lists available computational services in the oSparc platform
 
     Lists available computational services in the oSparc platform # noqa: E501
@@ -80,4 +71,4 @@ def list_computational_services_get():  # noqa: E501
     :rtype: List[ServiceDescription]
     """
     repos = registry_proxy.list_computational_services()
-    return repos
+    return web.json_response(data=repos)
