@@ -435,8 +435,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           const dragPortId = event.getData("osparc-metaData").dragPortId;
           const dragNode = this.__getNode(dragNodeId);
           const dropNode = this.__getNode(dropNodeId);
-          const dragPortTarget = dragIsInput ? dragNode.getOutputPort(dragPortId) : dragNode.getInputPort(dragPortId);
-          const dropPortTarget = dropIsInput ? dropNode.getOutputPort(dropPortId) : dropNode.getInputPort(dropPortId);
+          const dragPortTarget = dragIsInput ? dragNode.getInputPort(dragPortId) : dragNode.getOutputPort(dragPortId);
+          const dropPortTarget = dropIsInput ? dropNode.getInputPort(dropPortId) : dropNode.getOutputPort(dropPortId);
           compatible = this.__arePortsCompatible(dragPortTarget, dropPortTarget);
         }
 
