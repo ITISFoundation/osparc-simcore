@@ -11,7 +11,7 @@ import requests
 import tenacity
 
 import docker
-from . import registry_proxy
+import registry_proxy
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
 SERVICE_RUNTIME_BOOTSETTINGS = 'simcore.service.bootsettings'
