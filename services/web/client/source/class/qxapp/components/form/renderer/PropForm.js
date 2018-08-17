@@ -80,10 +80,8 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
       }
     },
 
-    getValue: function(key) {
-      // This will not work for SelectBox
-      let ctrl = this._form.getControl(key);
-      return ctrl.getValue();
+    getValues: function() {
+      return this._form.getData();
     },
 
     enableProp: function(key, enable) {

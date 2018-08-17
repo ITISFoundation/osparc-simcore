@@ -794,15 +794,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let cNode = pipeline.workbench[node.getNodeId()] = {
           key: node.getMetaData().key,
           version: node.getMetaData().version,
-          inputs: {},
+          inputs: node.getInputValues(),
           outputs: {}
         };
         for (let key in node.getInputPorts()) {
           const linkPort = this.__getInputPortLinked(node.getNodeId(), key);
           if (linkPort) {
             cNode.inputs[key] = linkPort;
-          } else {
-            cNode.inputs[key] = node.getInputValue(key);
           }
         }
         for (let key in node.getOutputPorts()) {
@@ -920,7 +918,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       // post pipeline
       this.__pipelineId = null;
       let currentPipeline = this.__serializePipeline();
-      console.log(currentPipeline);
+      console.log("pipeline:", currentPipeline);
       let req = new qx.io.request.Xhr();
       let data = {};
       data = currentPipeline;
