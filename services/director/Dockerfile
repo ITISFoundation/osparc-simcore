@@ -12,7 +12,7 @@ ENV REGISTRY_AUTH = ''
 ENV REGISTRY_USER = ''
 ENV REGISTRY_PW = ''
 ENV REGISTRY_URL = ''
-ENV PYTHONPATH=/home/app/source
+ENV PYTHONPATH=/home/app/src
 ENV FLASK_APP=director.py
 ENV FLASK_DEBUG=0
 
@@ -20,7 +20,7 @@ WORKDIR /home/app
 
 # + /home/app/            $HOME, $WORKDIR,
 #    + test/
-#    + source/            $PYTHONPATH
+#    + src/            $PYTHONPATH
 #    + requirements.txt
 #    + boot.sh
 
@@ -43,7 +43,7 @@ FROM common as development
 
 ENV FLASK_DEBUG=1
 
-VOLUME /home/app/source
+VOLUME /home/app/src
 
 USER root
 
@@ -55,7 +55,7 @@ FROM common as production
 RUN venv/bin/pip install gunicorn==19.8.0
 
 # TODO: set non-root id
-COPY --chown=1000:docker source source
+COPY --chown=1000:docker src/director src
 
 # FIXME: this is the only way to get access to docker sockets !?
 USER root

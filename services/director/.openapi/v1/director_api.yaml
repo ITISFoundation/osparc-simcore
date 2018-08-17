@@ -1,0 +1,319 @@
+swagger: "2.0"
+info:
+  description: This is the oSparc's director API
+  version: 1.0.0
+  title: Director API
+  # put the contact info for your development or API team
+  contact:
+    name: IT'IS Foundation
+    email: support@simcore.com
+  license:
+    name: MIT
+    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
+# host: director:8001
+basePath: /v1
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+# tags are used for organizing operations
+tags:
+- name: admins
+  description: Secured Admin-only calls
+- name: developers
+  description: Operations available to regular developers
+- name: users
+  description: Operations available to regular users
+
+paths:
+  /:
+    get:
+      tags: 
+        - users
+      summary: Returns a nice greeting
+      description: Returns a nice greeting
+      operationId: director.api.root_get
+      responses:
+        200:
+          description: Successful response.
+          schema:
+            type: string
+            description: Message greeting
+            example: Hello!
+        500:
+          description: Server error
+        default:
+          description: Unexpected error
+
+  /list_interactive_services:
+    get:
+      tags: 
+        - users
+      summary: lists available interactive services in the oSparc platform
+      description: lists available interactive services in the oSparc platform
+      operationId: director.api.list_interactive_services_get
+      responses:
+        200:
+          description: Returns the list of available interactive services
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ServiceDescription'
+        500:
+          description: server error
+        default:
+          description: Unexpected error
+  /start_service:
+    post:
+      tags: 
+        - users
+      summary: Starts an interactive service in the oSparc platform and returns its entrypoint
+      description: Starts an interactive service in the oSparc platform and returns its entrypoint
+      operationId: director.api.start_service_post
+      parameters: 
+        - in: query
+          name: service_name
+          description: The name of the service to start
+          required: true
+          type: string
+        - in: query
+          name: service_uuid
+          description: The uuid to assign the service with
+          required: true
+          type: string          
+        - in: query
+          name: service_tag
+          description: The tag/version of the service to start
+          required: false
+          type: string
+      responses:
+        201:
+          description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Service'
+        400:
+          description: Malformed function call, missing field
+        404:
+          description: Service not found
+        409:
+          description: A service with the same uuid already exists
+        500:
+          description: Server error
+        default:
+          description: Unexpected error
+        
+  /stop_service:      
+    post:
+      tags: 
+        - users
+      summary: Stops and removes an interactive service from the oSparc platform
+      description: Stops and removes an interactive service from the oSparc platform
+      operationId: director.api.stop_service_post
+      parameters: 
+        - in: query
+          name: service_uuid
+          description: The uuid of the service to stop
+          required: true
+          type: string
+      responses:
+        204:
+          description: Succesfully stopped and removed the service from the oSparc platform
+        400:
+          description: Malformed function call, missing field
+        404:
+          description: Service not found
+        500:
+          description: Server error
+        default:
+          description: Unexpected error
+        
+    
+  /list_computational_services:
+    get:
+      tags: 
+        - users
+      summary: Lists available computational services in the oSparc platform
+      description: Lists available computational services in the oSparc platform
+      operationId: director.api.list_computational_services_get
+      responses:
+        200:
+          description: Returns the list of available computational services
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ServiceDescription'
+        500:
+          description: server error
+        default:
+          description: Unexpected error
+definitions:  
+  Service:
+    type: object
+    properties:
+      container_id:
+        # TODO: SAN remove this. useless.
+        type: string
+        description: The id of the docker container
+        example: 23032hfjdhskdjh21399392
+      published_ports:
+        # TODO: SAN this should be in the entry point part. and there is only one port for one service.
+        description: The ports where the service provides its interface
+        type: array
+        items:
+          type: integer
+          minimum: 1
+          example: 30000
+      entry_point:
+        description: The entry point where the service provides its interface
+        type: string
+        example: /visualizer
+    required: 
+      - container_id
+      - published_ports
+      - entry_point
+  ServiceDescription:    
+    type: object
+    properties:
+      name:
+        description: The name of the service
+        type: string
+        example: 3d-viewer
+      repos:
+        # TODO: SAN useless. Remove.
+        description: The repositorie(s) that the service depends upon
+        type: array
+        items:
+          type: string
+          format: url
+          example: simcore/services/dynamic/3d-viewer
+      details:
+        # TODO: SAN much too complex. It's one service, even if more than 1 docker is used internally. Only 1 array necesary.
+        # TODO: it should be an object with the version/tag:details...
+        description: The details of the service
+        type: array
+        items:
+          type: array
+          items:
+            $ref: '#/definitions/ServiceDetails'
+    required:
+    - name
+    - repos
+    - details
+  ServiceDetails:
+    properties:
+    # TODO: SAN the version of the service is missing, or is mixed with the tag.
+      authors:
+        $ref: '#/definitions/AuthorDetails'
+      contact:
+        type: string
+        format: email
+        description: The email address to go for questions on the service
+        example: servicecontact@email.com
+      description:
+        type: string
+        description: The human readable description of the service
+      inputs:
+        description: The inputs of the service
+        type: array
+        items:
+          $ref: '#/definitions/Port'
+      outputs:
+        description: The outputs of the service
+        type: array
+        items:
+          $ref: '#/definitions/Port'
+      key:
+        description: The location of the service
+        type: string
+        format: url
+        example: simcore/services/dynamic/3d-viewer
+      name:
+        description: The name of the service
+        type: string
+        example: 3d-viewer
+      tag:
+        description: The tag/version of the service
+        type: string
+        example: 1.0.0
+      viewer:
+        $ref: '#/definitions/Viewer'
+    required:
+      - authors
+      - contact
+      - description
+      - inputs
+      - outputs
+      - key
+      - name
+      - tag
+      
+  AuthorDetails:
+    properties:
+      name:
+        description: The name of the author
+        type: string
+        example: Lee Van Cleef
+      email:
+        description: The email address of the author
+        type: string
+        format: email
+        example: leevancleef@thebad.com
+    required: 
+      - name
+      - email
+  Port:
+    properties:
+      key:
+        description: The unique key of the port
+        type: string
+        example: A
+      label:
+        description: The label of the port
+        type: string
+        example: this is the key A
+      desc:
+        description: The human readable description of what the port is for
+        type: string
+        example: this is the description
+      type:        
+        type: string
+        enum: [integer, number, bool, string, file-url, folder-url]
+        description: >
+          The type of the port:
+            * integer - An signed integer
+            * number - A floating point number
+            * bool - A boolean, True or False
+            * string - A chain of characters
+            * file-url - A URL pointing to a file
+            * folder-url - A URL pointing to a folder
+        example: file-url
+
+      value:
+        description: The value of the port. May be null if not yet defined.
+        type: string
+        example: "null"
+    required: 
+      - key
+      - label
+      - desc
+      - type
+      - value
+  Viewer:
+    properties:
+      ip:
+        description: The IP address where the viewer is served
+        type: string
+        format: ip
+        example: osparc.itis.swiss
+      port:
+        description: The port where the viewer is served
+        type: integer
+        minimum: 1
+        example: 2213
+    required: 
+      - ip
+      - port
