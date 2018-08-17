@@ -778,6 +778,55 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__removeAllLinks();
     },
 
+    __serializePipeline: function() {
+      if (this.__projectId === null || this.__projectId === undefined) {
+        this.__projectId = qxapp.utils.Utils.uuidv4();
+      }
+      let pipeline = {
+        projectId: this.__projectId,
+        workbench: {}
+      };
+      for (let i = 0; i < this.__nodes.length; i++) {
+        const node = this.__nodes[i];
+        let cNode = pipeline.workbench[node.getNodeId()] = {
+          key: node.getMetaData().key,
+          version: node.getMetaData().version,
+          inputs: {},
+          outputs: {}
+        };
+        for (let key in node.getInputPorts()) {
+          const linkPort = this.__getInputPortLinked(node.getNodeId(), key);
+          if (linkPort) {
+            cNode.inputs[key] = linkPort;
+          } else {
+            cNode.inputs[key] = node.getInputValue(key);
+          }
+        }
+        for (let key in node.getOutputPorts()) {
+          const outputPort = node.getOutputPort(key);
+          if ("value" in outputPort) {
+            cNode.outputs[key] = outputPort.value;
+          } else {
+            cNode.outputs[key] = null;
+          }
+        }
+      }
+      return pipeline;
+    },
+
+    __getInputPortLinked: function(nodeId, inputPortId) {
+      for (let i = 0; i < this.__links.length; i++) {
+        const link = this.__links[i];
+        if (link.getOutputNodeId() === nodeId && link.getOutputPortId() === inputPortId) {
+          return {
+            nodeUuid: link.getInputNodeId(),
+            output: link.getInputPortId()
+          };
+        }
+      }
+      return null;
+    },
+
     __serializeData: function() {
       let pipeline = {
         "nodes": [],
@@ -867,7 +916,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       // post pipeline
       this.__pipelineId = null;
-      let currentPipeline = this.__serializeData();
+      let currentPipeline = this.__serializePipeline();
       console.log(currentPipeline);
       let req = new qx.io.request.Xhr();
       let data = {};
