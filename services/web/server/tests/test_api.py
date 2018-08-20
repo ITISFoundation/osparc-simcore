@@ -23,7 +23,7 @@ def cli(loop, aiohttp_client, postgres_service):
 async def test_swagger_doc(cli):
     _LOGGER.debug("cli fixture: %s", cli)
 
-    response = await cli.get('/api/v1.0/doc')
+    response = await cli.get('/api/v1/doc')
     assert response.status == 200
     text = await response.text()
     assert "swagger-ui-wrap" in text
@@ -31,14 +31,14 @@ async def test_swagger_doc(cli):
 
 async def test_login(cli):
     _LOGGER.debug("cli fixture: %s", cli)
-    response = await cli.post('api/v1.0/login',
+    response = await cli.post('api/v1/login',
                                  data={
                                      'email': 'bizzy@itis.ethz.ch',
                                      'password': 'z43'
                                  })
     assert response.status == 200
 
-    response = await cli.get('api/v1.0/ping')
+    response = await cli.get('api/v1/ping')
     assert response.status == 200
 
     text = await response.text()

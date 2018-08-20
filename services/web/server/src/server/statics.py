@@ -31,11 +31,19 @@ def setup_statics(app):
 
     outdir = app["config"]["SIMCORE_CLIENT_OUTDIR"]
 
+    if not os.path.exists(outdir):
+        # FIXME: This error is silent to let tests pass
+        _LOGGER.error("Client application is not ready. Invalid path %s", outdir)
+        return
+
     # RIA qx-application
     app.router.add_get("/", index)
 
     # TODO: check whether this can be done at once
     # NOTE: source-output and build-output have both the same subfolder structure
-    app.router.add_static("/qxapp", os.path.join(outdir, "qxapp"))
-    app.router.add_static("/transpiled", os.path.join(outdir, "transpiled"))
-    app.router.add_static("/resource", os.path.join(outdir, "resource"))
+    for name in ("qxapp", "transpiled", "resource"):
+        folderpath = os.path.join(outdir, name)
+        if os.path.exists(folderpath):
+            app.router.add_static('/' + name, folderpath)
+        else:
+            _LOGGER.error("Missing client folder %s", folderpath)

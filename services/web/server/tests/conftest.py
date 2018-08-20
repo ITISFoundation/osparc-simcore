@@ -18,7 +18,8 @@ _CDIR = os.path.dirname(__file__)
 
 def _is_responsive(**kargs):
     try:
-        conn = init_db.admin_engine.connect()
+        admin_engine = init_db.AdminEngine("localhost")
+        conn = admin_engine.connect()
         conn.close()
     except:
         _LOGGER.exception("Connection to db failed")

@@ -24,7 +24,7 @@ from .registry_api import (
 
 _LOGGER = logging.getLogger(__file__)
 
-# API version
+# API version.
 __version__ = "1.0"
 
 
@@ -80,10 +80,9 @@ async def ping(request):
 def setup_api(app):
     _LOGGER.debug("Setting up %s ...", __name__)
 
-    # routing
-    # TODO: version ALL interface
     router = app.router
-    prefix = "/api/v{}".format(__version__)
+    # NOTE: Keep a single digit version in the url
+    prefix = "/api/v{:.0f}".format(float(__version__))
 
     router.add_post(prefix+"/login", login, name="login")
     router.add_get(prefix+"/logout", logout, name="logout")
