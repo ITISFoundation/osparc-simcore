@@ -115,7 +115,10 @@ push_platform_images:
 	@diff -uN $@ $<
 	@false
 
-venv:
+.venv:
 	python3 -m venv .venv
 	.venv/bin/pip3 install --upgrade pip wheel setuptools
 	echo "To activate the venv, execute 'source .venv/bin/activate'"
+
+
+.PHONY: all build-devel rebuild-devel up-devel build up down test after_test push_platform_images

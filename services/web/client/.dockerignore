@@ -1,0 +1,13 @@
+# qx
+*/source-output/*
+*/contrib/*
+contrib*
+
+# node
+*/node_modules/*
+
+# docker
+Dockerfile*
+
+# markdown
+*.md
