@@ -17,6 +17,8 @@ References:
 [1]:https://github.com/aio-libs/aiohttp-demos/blob/master/docs/preparations.rst#environment
 """
 import logging
+import pathlib
+import sys
 
 from passlib.hash import sha256_crypt
 from sqlalchemy import (
@@ -29,15 +31,18 @@ from tenacity import (
     wait_fixed
 )
 
-
-from server.config import (
-    CONFIG_DIR,
-    get_config
-)
-from server.model import (
+from server.db.model import (
     permissions,
     users
 )
+
+from server.settings import (
+    config_from_file
+)
+
+
+CURRENT_DIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.parent
+CONFIG_DIR = CURRENT_DIR.parent / "config"
 
 logging.basicConfig(level=logging.DEBUG)
 _LOGGER = logging.getLogger(__name__)
@@ -47,12 +52,12 @@ DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
 
 USER_CONFIG_PATH = CONFIG_DIR / "server.yaml"
-USER_CONFIG = get_config(["-c", USER_CONFIG_PATH.as_posix()])
+USER_CONFIG = config_from_file(USER_CONFIG_PATH.as_posix())
 USER_DB_URL = DSN.format(**USER_CONFIG["postgres"])
 user_engine = create_engine(USER_DB_URL)
 
 TEST_CONFIG_PATH = CONFIG_DIR / "server-test.yaml"
-TEST_CONFIG = get_config(["-c", TEST_CONFIG_PATH.as_posix()])
+TEST_CONFIG = config_from_file(TEST_CONFIG_PATH.as_posix())
 TEST_DB_URL = DSN.format(**TEST_CONFIG["postgres"])
 test_engine = create_engine(TEST_DB_URL)
 

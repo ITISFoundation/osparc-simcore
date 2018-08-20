@@ -25,7 +25,7 @@ from .utils import get_thrift_api_folders
 _LOGGER = logging.getLogger(__name__)
 
 # TODO: all paths should be handled with pathlib?
-_CDIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent
+_CDIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.parent
 SRC_DIR = _CDIR.parent
 
 # Config files

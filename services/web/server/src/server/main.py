@@ -2,6 +2,7 @@
 
 """
 import logging
+import argparse
 
 from aiohttp import web
 
@@ -13,17 +14,19 @@ from .statics import setup_statics
 from .computational_backend import setup_computational_backend
 from . async_sio import setup_sio
 
-from .config import get_config
+from . import cli
+from . import settings
 
 __version__ = "0.0.1"
 
 
-def init_app(argv=None):
+
+def init_app(config):
     """
     NOTICE it is sync!
     """
     app = web.Application()
-    app["config"] = get_config(argv)
+    app["config"] = config
 
     setup_db(app)
     setup_session(app)
@@ -42,8 +45,11 @@ def main(argv):
     """
     logging.basicConfig(level=logging.DEBUG)
 
-    app = init_app(argv)
-    config = get_config(argv)
+    ap = cli.setup()
+    options = cli.parse_options(argv, ap)
+    config = settings.config_from_options(options)
+
+    app = init_app(config)
     web.run_app(app,
                 host=config["host"],
                 port=config["port"])
