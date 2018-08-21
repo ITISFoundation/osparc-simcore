@@ -1,0 +1,36 @@
+---
+version: "1.0"
+app:
+  host: 127.0.0.1
+  port: 8080
+  client_outdir: ../../../client/source-output
+  log_level: DEBUG
+  testing: True
+director:
+  host: localhost
+  port: 8001
+postgres:
+  database: tes_db
+  user: test_user
+  password: test_pass
+  host: localhost
+  port: 5432
+  endpoint: localhost:5432
+rabbit:
+  channels:
+    log: comp.backend.channels.log
+    progress: comp.backend.channels.progress
+  password: simcore
+  user: simcore
+s3:
+  access_key: '12345678'
+  bucket_name: simcore
+  endpoint: localhost:9000
+  secret_key: '12345678'
+cs_s4l:
+  host: localhost
+  app:
+    port: 9095
+  modeler:
+    port: 9096
+...

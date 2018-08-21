@@ -17,11 +17,11 @@ T_POSTGRES = T.Dict({
     "database": T.String(),
     "user": T.String(),
     "password": T.String(),
-    "host": T.String(),
-    "port": T.Int(),
-    "minsize": T.Int(),
-    "maxsize": T.Int(),
-    "endpoint": T.String()
+    T.Key("minsize", default=1 ,optional=True): T.Int(),
+    T.Key("maxsize", default=4, optional=True): T.Int(),
+    "host": T.Or( T.String, T.Null),
+    "port": T.Or( T.Int, T.Null),
+    "endpoint": T.Or( T.String, T.Null)
 })
 
 T_RABBIT = T.Dict({
@@ -52,14 +52,21 @@ T_CS_S4L = T.Dict({
 })
 
 
-OPTIONS_SCHEMA = T.Dict({
-    "version": T.String(),
-    T.Key("postgres"): T_POSTGRES,
-    T.Key("s3"): T_S3,
-    T.Key("cs_s4l"): T_CS_S4L,
+T_THIS_APP = T.Dict({
     "host": T.IP,
     "port": T.Int(),
     "client_outdir": T.String(),
     "log_level": T.Enum("DEBUG", "WARNING", "INFO", "ERROR", "CRITICAL", "FATAL"),
     "testing": T.Bool()
+})
+
+
+OPTIONS_SCHEMA = T.Dict({
+    "version": T.String(),
+    T.Key("app"): T_THIS_APP,
+    T.Key("director"): T_DIRECTOR,
+    T.Key("postgres"): T_POSTGRES,
+    T.Key("rabbit"): T_RABBIT,
+    T.Key("s3"): T_S3,
+    T.Key("cs_s4l"): T_CS_S4L
 })

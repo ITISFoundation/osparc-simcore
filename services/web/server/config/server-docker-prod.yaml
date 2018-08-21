@@ -1,16 +1,22 @@
+# Runs insides a container
+---
 version: "1.0"
+app:
+  host: 127.0.0.1
+  port: 8080
+  client_outdir: ${SIMCORE_WEB_OUTDIR}
+  log_level: INFO
+  testing: False
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
 postgres:
   database: ${POSTGRES_DB}
+  endpoint: ${POSTGRES_ENDPOINT}
   user: ${POSTGRES_USER}
   password: ${POSTGRES_PASSWORD}
-  host: localhost
-  port: 5432
-  minsize: 1
-  maxsize: 5
-  endpoint: ${POSTGRES_ENDPOINT}
+  host: null
+  port: null
 rabbit:
   user: ${RABBITMQ_USER}
   password: ${RABBITMQ_PASSWORD}
@@ -28,8 +34,4 @@ cs_s4l:
     port: ${CS_S4L_PORT_APP}
   modeler:
     port: ${CS_S4L_PORT_MOD}
-host: 127.0.0.1
-port: 8080
-client_outdir: ${SIMCORE_WEB_OUTDIR}
-log_level: DEBUG
-testing: True
+...
