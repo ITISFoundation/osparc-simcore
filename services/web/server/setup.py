@@ -24,10 +24,12 @@ setup(
     version='0.0.0',
     package_dir={'': 'src'},
     packages=find_packages('src'),
-    package_data={
-        '': ['../config/*.yaml'] #FIXME: this is still not copied!
-    },
     include_package_data=True,
+    package_data={
+        'config': ['../config/*.yaml'] #FIXME: this is still not copied!
+    },
+    entry_points={
+        'console_scripts': ['service-web-server=server.__main__:main']},
     python_requires='>=3.6',
     install_requires=INSTALL_REQUIRES,
     tests_require=TESTS_REQUIRE,

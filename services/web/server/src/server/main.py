@@ -14,15 +14,14 @@ from .statics import setup_statics
 from .computational_backend import setup_computational_backend
 from . async_sio import setup_sio
 
-from . import cli
-from . import settings
 
 __version__ = "0.0.1"
 
 
-
 def init_app(config):
     """
+        Initializes service
+
     NOTICE it is sync!
     """
     app = web.Application()
@@ -38,17 +37,11 @@ def init_app(config):
 
     return app
 
+def run(config):
+    """ Runs service
 
-def main(argv):
-    """
     NOTICE it is sync!
     """
-    logging.basicConfig(level=logging.DEBUG)
-
-    ap = cli.setup()
-    options = cli.parse_options(argv, ap)
-    config = settings.config_from_options(options)
-
     app = init_app(config)
     web.run_app(app,
                 host=config["host"],
