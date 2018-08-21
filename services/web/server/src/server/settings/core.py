@@ -15,7 +15,7 @@ def dict_from_class(cls) -> dict:
 
 def add_cli_options(ap=None):
     """
-        Adds settings group to cli with options::
+        Adds settings group to cli with options:
 
         -c CONFIG, --config CONFIG
                                 Configuration file (default: 'config.yaml')
@@ -31,8 +31,21 @@ def add_cli_options(ap=None):
         default_config='config.yaml')
     return ap
 
+#TODO: add a class as os._Environ that adds extra variables as ${workspaceFolder}
+# currently defalts to vars=os.environ
+# class Vars:
+#     _vars = {"workspaceFolder": lazy_evaluate = "../../"}
+#     def __getitem__(self, key):
+#         if key in os.environ:
+#             return os.environ[key]
+#         else:
+#             return self._vars[key]
+#
+# import os
+# os.environ
 
 config_from_options = functools.partial(_tc_cli.config_from_options, trafaret=OPTIONS_SCHEMA)
+read_and_validate = functools.partial(_tc.read_and_validate, trafaret=OPTIONS_SCHEMA)
 
 def config_from_file(filepath) -> dict:
     """

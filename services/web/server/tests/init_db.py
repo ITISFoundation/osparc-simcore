@@ -31,13 +31,20 @@ from tenacity import (
     wait_fixed
 )
 
+from server.db.utils import (
+    DNS,
+    acquire_engine,
+    acquire_admin_engine
+)
+
 from server.db.model import (
     permissions,
     users
 )
 from server.settings import (
-    config_from_file
+    read_and_validate
 )
+
 
 CURRENT_DIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent
 CONFIG_DIR = CURRENT_DIR.parent / "config"
@@ -46,66 +53,26 @@ logging.basicConfig(level=logging.DEBUG)
 _LOGGER = logging.getLogger(__name__)
 
 
-DNS = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+#--------------------------------------------------
 
 # FIXME: create global access for UserEngine, TestEngine, AdminEngine, etc ... Registry of named engines!
-USER_CONFIG_PATH = CONFIG_DIR / "server.yaml"
-USER_CONFIG = config_from_file(USER_CONFIG_PATH.as_posix())
+USER_CONFIG_PATH = CONFIG_DIR / "server-host-test.yaml"
+USER_CONFIG = read_and_validate(USER_CONFIG_PATH.as_posix())
 USER_DB_URL = DNS.format(**USER_CONFIG["postgres"])
-user_engine = create_engine(USER_DB_URL)
+user_engine = acquire_engine(USER_DB_URL)
 
 TEST_CONFIG_PATH = CONFIG_DIR / "server-test.yaml"
-TEST_CONFIG = config_from_file(TEST_CONFIG_PATH.as_posix())
+TEST_CONFIG = read_and_validate(TEST_CONFIG_PATH.as_posix())
 TEST_DB_URL = DNS.format(**TEST_CONFIG["postgres"])
-test_engine = create_engine(TEST_DB_URL)
+test_engine = acquire_engine(TEST_DB_URL)
 
-
-class AdminEngine:
-    """
-        Singleton admin engine
-    """
-    __instance = None
-    __args = None
-    __kargs = None
-
-    def __new__(cls, *args, **kargs):
-        if cls.__instance is None or args!=cls.__args or kargs!=cls.__kargs:
-            cls.__instance = cls.__create_admin_engine(*args, **kargs)
-            cls.__args, cls.__kargs = args, kargs
-        return cls.__instance
-
-    def __getattr__(self, name):
-        return getattr(self.__instance, name)
-
-    def __setattr__(self, name, value):
-        return setattr(self.__instance, name, value)
-
-    @classmethod
-    def __create_admin_engine(cls, hostname="localhost"):
-        # FIXME: admin user/passwords and in sync with other host/port configs
-        admin_db_url = DNS.format(
-            user="postgres",
-            password="postgres",
-            database="postgres",
-            host=hostname,
-            port=5432
-        )
-        _LOGGER.debug("Creating engine to %s ...", admin_db_url)
-
-        # TODO: what is isolation_level?
-        engine =  create_engine(admin_db_url, isolation_level="AUTOCOMMIT")
-
-        return engine
-
-
-
-def setup_db(config):
-    db_name = config["database"]
-    db_user = config["user"]
-    db_pass = config["password"]
+def setup_db(pg_config):
+    db_name = pg_config["database"]
+    db_user = pg_config["user"]
+    db_pass = pg_config["password"]
 
     # TODO: compose using query semantics. Clarify pros/cons vs string cli?
-    admin_engine = AdminEngine(config["host"])
+    admin_engine = acquire_admin_engine(**pg_config)
     conn = admin_engine.connect()
     conn.execute("DROP DATABASE IF EXISTS %s" % db_name)
     conn.execute("DROP ROLE IF EXISTS %s" % db_user)
@@ -120,7 +87,7 @@ def teardown_db(config):
     db_name = config["database"]
     db_user = config["user"]
 
-    admin_engine = AdminEngine(config["host"])
+    admin_engine = acquire_admin_engine(**config)
     conn = admin_engine.connect()
     conn.execute("""
       SELECT pg_terminate_backend(pg_stat_activity.pid)
