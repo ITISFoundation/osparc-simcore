@@ -42,8 +42,6 @@ paths:
             type: string
             description: Message greeting
             example: Hello!
-        500:
-          description: Server error
         default:
           description: Unexpected error
 

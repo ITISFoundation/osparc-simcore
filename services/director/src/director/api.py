@@ -5,7 +5,7 @@ from aiohttp import web_exceptions
 import aiohttp_apiset.middlewares
 from aiohttp_apiset.exceptions import ValidationError
 
-from director import producer, registry_proxy
+from director import producer, registry_proxy, exceptions
 
 from .models.service_description import ServiceDescription
 
@@ -31,8 +31,12 @@ async def list_interactive_services_get(request, errors: defaultdict(set)):  # n
     :rtype: List[ServiceDescription]
     """
     # get the services repos
-    list_of_interactive_repos = registry_proxy.retrieve_list_of_repos_with_interactive_services()
-    return list_of_interactive_repos
+    try:
+        list_of_interactive_repos = registry_proxy.retrieve_list_of_repos_with_interactive_services()
+        return list_of_interactive_repos
+    except exceptions.DirectorException as err:
+        raise web_exceptions.HTTPInternalServerError(reason=str(err))
+    
 
 
 async def start_service_post(request, service_name, service_uuid, service_tag=None):  # noqa: E501
@@ -49,7 +53,14 @@ async def start_service_post(request, service_name, service_uuid, service_tag=No
 
     :rtype: List[Service]
     """    
-    service = producer.start_service(service_name, service_tag, service_uuid)
+    try:
+      service = producer.start_service(service_name, service_tag, service_uuid)
+    except exceptions.ServiceNotFoundError as err:
+      raise web_exceptions.HTTPNotFound(reason=str(err))
+    except exceptions.ServiceUUIDInUseError as err:
+      raise web_exceptions.HTTPConflict(reason=str(err))
+    except exceptions.DirectorException as err:
+      raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
     return service
 
@@ -64,7 +75,13 @@ async def stop_service_post(service_uuid):  # noqa: E501
 
     :rtype: None
     """
-    producer.stop_service(service_uuid)
+    try:
+      producer.stop_service(service_uuid)
+    except exceptions.ServiceNotFoundError as err:
+      raise web_exceptions.HTTPNotFound(reason=str(err))
+    except exceptions.DirectorException as err:
+      raise web_exceptions.HTTPInternalServerError(reason=str(err))
+    
     return "service stopped"
 
 async def list_computational_services_get():  # noqa: E501
@@ -75,5 +92,8 @@ async def list_computational_services_get():  # noqa: E501
 
     :rtype: List[ServiceDescription]
     """
-    repos = registry_proxy.list_computational_services()
-    return repos
+    try:
+        repos = registry_proxy.list_computational_services()
+        return repos
+    except exceptions.DirectorException as err:
+      raise web_exceptions.HTTPInternalServerError(reason=str(err))
