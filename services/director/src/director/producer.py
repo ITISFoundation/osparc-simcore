@@ -3,15 +3,16 @@
 """
 # pylint: disable=C0111
 
-import os
-import time
 import json
 import logging
+import os
+import time
+
+import docker
 import requests
 import tenacity
 
-import docker
-import registry_proxy
+from director import registry_proxy
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
 SERVICE_RUNTIME_BOOTSETTINGS = 'simcore.service.bootsettings'
@@ -22,7 +23,7 @@ def __get_docker_client():
     _LOGGER.debug("Initiializing docker client")
     return  docker.from_env()
 
-def __login_docker_registry(docker_client):    
+def __login_docker_registry(docker_client):
     try:
         # login
         registry_url = os.environ.get('REGISTRY_URL')
@@ -139,7 +140,7 @@ def __add_env_variables_to_service_runtime_params(docker_service_runtime_paramet
         "S3_SECRET_KEY=" + os.environ.get("S3_SECRET_KEY"),
         "S3_BUCKET_NAME=" + os.environ.get("S3_BUCKET_NAME"),
         "SIMCORE_NODE_UUID=" + service_uuid
-    ]    
+    ]
     if "env" in docker_service_runtime_parameters:
         docker_service_runtime_parameters["env"].extend(variables)
     else:
@@ -190,9 +191,9 @@ def __pass_port_to_service(service, port, service_boot_parameters_labels):
 def __create_network_name(service_name, service_uuid):
     return service_name + '_' + service_uuid
 
-def __create_overlay_network_in_swarm(docker_client, service_name, service_uuid):    
+def __create_overlay_network_in_swarm(docker_client, service_name, service_uuid):
     _LOGGER.debug("Creating overlay network for service %s with uuid %s", service_name, service_uuid)
-    network_name = __create_network_name(service_name, service_uuid)    
+    network_name = __create_network_name(service_name, service_uuid)
     try:
         docker_network = docker_client.networks.create(
             network_name, driver="overlay", scope="swarm", labels={"uuid": service_uuid})
@@ -272,21 +273,21 @@ def __prepare_runtime_parameters(docker_image_path, tag, service_uuid, docker_cl
     __add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
     __set_service_name(docker_service_runtime_parameters,
         registry_proxy.get_service_sub_name(docker_image_path),
-        service_uuid)       
+        service_uuid)
     return docker_service_runtime_parameters
 
 def __create_services(docker_client, list_of_images, service_name, service_tag, service_uuid):
     _LOGGER.debug("Start creating docker services for service %s", service_name)
 
     # if the service uses several docker images, a network needs to be setup to connect them together
-    if len(list_of_images) > 1:        
+    if len(list_of_images) > 1:
         inter_docker_network = __create_overlay_network_in_swarm(docker_client, service_name, service_uuid)
         _LOGGER.debug("Created docker network in swarm for service %s", service_name)
 
     containers_meta_data = list()
     for docker_image_path in list_of_images:
         tag = __find_service_tag(list_of_images, docker_image_path, service_tag)
-        
+
         _LOGGER.debug("Preparing runtime parameters for docker image %s:%s", docker_image_path, tag)
         # prepare runtime parameters
         docker_service_runtime_parameters = __prepare_runtime_parameters(docker_image_path, tag, service_uuid, docker_client)
@@ -316,7 +317,7 @@ def __create_services(docker_client, list_of_images, service_name, service_tag, 
 
             if published_ports:
                 __pass_port_to_service(service, published_ports[0], service_boot_parameters_labels)
-            
+
         except docker.errors.ImageNotFound as err:
             # first cleanup
             stop_service(service_uuid)
@@ -333,11 +334,11 @@ def start_service(service_name, service_tag, service_uuid):
     # pylint: disable=C0103
     _LOGGER.debug("starting service %s with tag %s and uuid %s", service_name, service_tag, service_uuid)
     list_of_images = __get_list_of_images(service_name)
-    
+
     docker_client = __get_docker_client()
     __check_service_uuid_available(docker_client, service_uuid)
 
-    __login_docker_registry(docker_client)    
+    __login_docker_registry(docker_client)
 
     # create services
     containers_meta_data = __create_services(docker_client, list_of_images, service_name, service_tag, service_uuid)
