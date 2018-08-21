@@ -19,9 +19,6 @@ async def root_get(request, errors: defaultdict(set)):  # noqa: E501
 
     :rtype: str
     """
-    print(request)
-    print(errors)
-
     greeting = "<h1>Hoi zaeme! Salut les d'jeunz!</h1><h3>This is {} responding!</h2>".format(__name__)
     return greeting
 
@@ -34,59 +31,11 @@ async def list_interactive_services_get(request, errors: defaultdict(set)):  # n
     :rtype: List[ServiceDescription]
     """
     # get the services repos
-    #list_of_interactive_repos = registry_proxy.retrieve_list_of_repos_with_interactive_services()
+    list_of_interactive_repos = registry_proxy.retrieve_list_of_repos_with_interactive_services()
+    return list_of_interactive_repos
 
 
-    data = {
-      "name": "3d-viewer",
-      "repos": [
-        "simcore/services/dynamic/3d-viewer"
-      ],
-      "details": [
-        [
-          {
-            "authors": {
-              "name": "Lee Van Cleef",
-              "email": "leevancleef@thebad.com"
-            },
-            "contact": "servicecontact@email.com",
-            "description": "string",
-            "inputs": [
-              {
-                "key": "A",
-                "label": "this is the key A",
-                "desc": "this is the description",
-                "type": "file-url",
-                "value": "null"
-              }
-            ],
-            "outputs": [
-              {
-                "key": "A",
-                "label": "this is the key A",
-                "desc": "this is the description",
-                "type": "file-url",
-                "value": "null"
-              }
-            ],
-            "key": "simcore/services/dynamic/3d-viewer",
-            "name": "3d-viewer",
-            "tag": "1.0.0",
-            "viewer": {
-              "ip": "osparc.itis.swiss",
-              "port": 2213
-            }
-          }
-        ]
-      ]
-    }
-
-
-    return [ ServiceDescription.from_dict(data), ]
-    #return list_of_interactive_repos
-
-
-async def start_service_post(service_name, service_uuid, service_tag=None):  # noqa: E501
+async def start_service_post(request, service_name, service_uuid, service_tag=None):  # noqa: E501
     """Starts an interactive service in the oSparc platform and returns its entrypoint
 
     Starts an interactive service in the oSparc platform and returns its entrypoint # noqa: E501
@@ -99,8 +48,7 @@ async def start_service_post(service_name, service_uuid, service_tag=None):  # n
     :type service_tag: str
 
     :rtype: List[Service]
-    """
-    print(service_name)
+    """    
     service = producer.start_service(service_name, service_tag, service_uuid)
 
     return service
