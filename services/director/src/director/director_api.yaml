@@ -34,7 +34,7 @@ paths:
         - users
       summary: Returns a nice greeting
       description: Returns a nice greeting
-      operationId: api.root_get
+      operationId: root_get
       responses:
         200:
           description: Successful response.
@@ -71,7 +71,7 @@ paths:
         - users
       summary: Starts an interactive service in the oSparc platform and returns its entrypoint
       description: Starts an interactive service in the oSparc platform and returns its entrypoint
-      operationId: director.api.start_service_post
+      operationId: start_service_post
       parameters: 
         - in: query
           name: service_name
@@ -112,7 +112,7 @@ paths:
         - users
       summary: Stops and removes an interactive service from the oSparc platform
       description: Stops and removes an interactive service from the oSparc platform
-      operationId: director.api.stop_service_post
+      operationId: stop_service_post
       parameters: 
         - in: query
           name: service_uuid
@@ -138,7 +138,7 @@ paths:
         - users
       summary: Lists available computational services in the oSparc platform
       description: Lists available computational services in the oSparc platform
-      operationId: director.api.list_computational_services_get
+      operationId: list_computational_services_get
       responses:
         200:
           description: Returns the list of available computational services
