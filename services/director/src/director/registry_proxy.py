@@ -8,6 +8,8 @@ import os
 
 from requests import RequestException, Session
 
+from director import exceptions
+
 INTERACTIVE_SERVICES_PREFIX = 'simcore/services/dynamic/'
 COMPUTATIONAL_SERVICES_PREFIX = 'simcore/services/comp/'
 _SESSION = Session()
@@ -28,13 +30,13 @@ def registry_request(path, method="GET"):
         # r = s.get(api_url, verify=False) #getattr(s, method.lower())(api_url)
         request_result = getattr(_SESSION, method.lower())(api_url)
         if request_result.status_code == 401:
-            raise Exception(
+            raise exceptions.RegistryConnectionError(
                 'Return Code was 401, Authentication required / not successful!')
         else:
             return request_result
-    except RequestException:
+    except RequestException as err:
         _LOGGER.exception("Error while connecting to docker registry")
-        raise
+        raise exceptions.DirectorException(str(err)) from err
 
 def retrieve_list_of_repositories():
     request_result = registry_request('_catalog')
@@ -93,7 +95,7 @@ def retrieve_list_of_interactive_services_with_name(service_name):
     if service_name in list_interactive_services_repositories:
         _LOGGER.info("retrieved list of interactive repos with name %s : %s", service_name, list_interactive_services_repositories[service_name]["repos"])
         return list_interactive_services_repositories[service_name]["repos"]
-    raise Exception('Invalid service name: ' + service_name)
+    raise exceptions.ServiceNotFoundError(service_name, None)
 
 
 def get_service_name(repository_name):
@@ -103,12 +105,11 @@ def get_service_name(repository_name):
 
 
 def get_service_sub_name(repository_name):
-    service_name_suffixes = str(repository_name)[
-        len(INTERACTIVE_SERVICES_PREFIX):]
+    service_name_suffixes = str(repository_name)[len(INTERACTIVE_SERVICES_PREFIX):]
     list_of_suffixes = service_name_suffixes.split('/')
     last_suffix_index = len(list_of_suffixes) - 1
     if last_suffix_index < 0:
-        raise Exception('Invalid service name: ' + repository_name)
+        raise exceptions.ServiceNotFoundError(repository_name, None)
     _LOGGER.info("retrieved service sub name from repo %s : %s", repository_name, list_of_suffixes)
     return list_of_suffixes[last_suffix_index]
 

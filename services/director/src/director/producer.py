@@ -13,6 +13,7 @@ import requests
 import tenacity
 
 from director import registry_proxy
+from director import exceptions
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
 SERVICE_RUNTIME_BOOTSETTINGS = 'simcore.service.bootsettings'
@@ -35,21 +36,24 @@ def __login_docker_registry(docker_client):
         _LOGGER.debug("logged into docker registry %s", registry_url)
     except docker.errors.APIError as err:
         _LOGGER.exception("Error while loggin into the registry")
-        raise Exception from err
+        raise exceptions.RegistryConnectionError(err) from err
 
 def __check_service_uuid_available(docker_client, service_uuid):
     _LOGGER.debug("Checked if UUID %s is already in use", service_uuid)
     # check if service with same uuid already exists
-    list_of_running_services_w_uuid = docker_client.services.list(
-        filters={'label': 'uuid=' + service_uuid})
+    try:
+        list_of_running_services_w_uuid = docker_client.services.list(
+            filters={'label': 'uuid=' + service_uuid})
+    except docker.errors.APIError as err:
+        _LOGGER.exception("Error while retrieving services list")
+        raise exceptions.GenericDockerError("Error while retrieving services", err) from err
     if list_of_running_services_w_uuid:
-        raise Exception(
-            'A service with the same uuid is already running: ' + service_uuid)
+        raise exceptions.ServiceUUIDInUseError(service_uuid)
     _LOGGER.debug("UUID %s is free")
 
 def __check_setting_correctness(setting):
     if 'name' not in setting or 'type' not in setting or 'value' not in setting:
-        raise Exception("Invalid setting in %s" % setting)
+        raise exceptions.DirectorException("Invalid setting in %s" % setting)
 
 def __get_service_runtime_parameters_labels(image, tag):
     # pylint: disable=C0103
@@ -201,7 +205,7 @@ def __create_overlay_network_in_swarm(docker_client, service_name, service_uuid)
         return docker_network
     except docker.errors.APIError as err:
         _LOGGER.exception("Error while creating network for service %s", service_name)
-        raise Exception from err
+        raise exceptions.GenericDockerError("Error while creating network", err) from err
 
 def __remove_overlay_network_of_swarm(docker_client, service_uuid):
     _LOGGER.debug("Removing overlay network for service with uuid %s", service_uuid)
@@ -215,9 +219,9 @@ def __remove_overlay_network_of_swarm(docker_client, service_uuid):
         _LOGGER.debug("Removed %s networks with uuid %s", len(networks), service_uuid)
     except docker.errors.APIError as err:
         _LOGGER.exception("Error while removing networks for service with uuid: %s", service_uuid)
-        raise Exception from err
+        raise exceptions.GenericDockerError("Error while removing networks", err) from err
 
-def __wait_until_service_running_or_failed(service_id):
+def __wait_until_service_running_or_failed(service_id, service_name, service_uuid):
     # pylint: disable=C0103
     _LOGGER.debug("Waiting for service %s to start", service_id)
     client = docker.APIClient()
@@ -234,7 +238,7 @@ def __wait_until_service_running_or_failed(service_id):
             if task_state == "running":
                 break
             elif task_state in ("failed", "rejected"):
-                raise Exception("the service could not be started")
+                raise exceptions.ServiceStartTimeoutError(service_name, service_uuid)
         # TODO: all these functions should be async and here one could use await sleep which
         # would allow dealing with other events instead of wasting time here
         time.sleep(0.005)  # 5ms
@@ -251,10 +255,10 @@ def __get_list_of_images(service_name):
 
     return list_of_images
 
-def __find_service_tag(list_of_images, docker_image_path, service_tag):
+def __find_service_tag(list_of_images, docker_image_path, service_name, service_tag):
     available_tags_list = sorted(list_of_images[docker_image_path]['tags'])
     if not available_tags_list:
-        raise Exception('No available image in ' + docker_image_path)
+        raise exceptions.ServiceNotFoundError(service_name, service_tag)
 
     tag = available_tags_list[len(available_tags_list)-1]
     if not service_tag == 'latest' and available_tags_list.count(service_tag) == 1:
@@ -286,7 +290,7 @@ def __create_services(docker_client, list_of_images, service_name, service_tag, 
 
     containers_meta_data = list()
     for docker_image_path in list_of_images:
-        tag = __find_service_tag(list_of_images, docker_image_path, service_tag)
+        tag = __find_service_tag(list_of_images, docker_image_path, service_name, service_tag)
 
         _LOGGER.debug("Preparing runtime parameters for docker image %s:%s", docker_image_path, tag)
         # prepare runtime parameters
@@ -304,7 +308,7 @@ def __create_services(docker_client, list_of_images, service_name, service_tag, 
             _LOGGER.debug("Starting docker service %s using parameters %s", docker_image_full_path, docker_service_runtime_parameters)
             service = docker_client.services.create(docker_image_full_path, **docker_service_runtime_parameters)
             _LOGGER.debug("Service started now waiting for it to run")
-            __wait_until_service_running_or_failed(service.id)
+            __wait_until_service_running_or_failed(service.id, service_name, service_uuid)
             # the docker swarm opened some random port to access the service
             published_ports = __get_docker_image_published_ports(service.id)
             _LOGGER.debug("Service with parameters %s successfully started, published ports are %s, entry_point is %s", docker_service_runtime_parameters, published_ports, service_entrypoint)
@@ -322,12 +326,12 @@ def __create_services(docker_client, list_of_images, service_name, service_tag, 
             # first cleanup
             stop_service(service_uuid)
             _LOGGER.exception("The docker image was not found")
-            raise Exception from err
+            raise exceptions.ServiceNotFoundError(service_name, service_tag) from err
         except docker.errors.APIError as err:
             # first cleanup
             stop_service(service_uuid)
             _LOGGER.exception("Error while accessing the server")
-            raise Exception from err
+            raise exceptions.GenericDockerError("Error while creating service", err) from err
     return containers_meta_data
 
 def start_service(service_name, service_tag, service_uuid):
@@ -357,10 +361,19 @@ def stop_service(service_uuid):
 
     try:
         list_running_services_with_uuid = docker_client.services.list(
-            filters={'label': 'uuid=' + service_uuid})
-        for service in list_running_services_with_uuid:
-            service.remove()
-        __remove_overlay_network_of_swarm(docker_client, service_uuid)
+            filters={'label': 'uuid=' + service_uuid})        
     except docker.errors.APIError as err:
         _LOGGER.exception("Error while stopping container with uuid: %s", service_uuid)
-        raise Exception from err
+        raise exceptions.GenericDockerError("Error while stopping container", err) from err
+    
+    # error if no service with such an id exists
+    if list_running_services_with_uuid is None:
+        raise exceptions.ServiceNotFoundError(service_uuid, None)
+    # remove the services
+    try:
+        for service in list_running_services_with_uuid:
+            service.remove()
+    except docker.errors.APIError as err:
+        raise exceptions.GenericDockerError("Error while removing services", err)
+    # remove network(s)
+    __remove_overlay_network_of_swarm(docker_client, service_uuid)
