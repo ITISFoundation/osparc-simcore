@@ -5,10 +5,13 @@ from pathlib import Path
 
 from aiohttp import hdrs, web
 from aiohttp_apiset import SwaggerRouter
-from aiohttp_apiset.middlewares import jsonify, Jsonify
+from aiohttp_apiset.middlewares import Jsonify, jsonify
 from aiohttp_apiset.swagger.operations import OperationIdMapping
+from aiohttp_apiset.swagger.loader import ExtendedSchemaFile
 
 from director import api
+
+SPEC_FILE = "director_api.yaml"
 
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(
@@ -18,13 +21,23 @@ logging.basicConfig(
 
 BASE = Path(__file__).parent
 
-# operationId-handler association
-opmap = OperationIdMapping(
-    **{"api.root_get": api.root_get,
-    "list_interactive_services_get": api.list_interactive_services_get}
-)
+
+def create_default_operation_mapping(specs_file):
+    operation_mapping = {}
+    yaml_specs = ExtendedSchemaFile(specs_file)
+    paths = yaml_specs['paths']
+    for path in paths.items():
+        for method in path[1].items(): # can be get, post, patch, put, delete...
+            op_str = "operationId"
+            if op_str not in method[1]:
+                raise Exception("The API %s does not contain the operationId tag for route %s %s" % (specs_file, path[0], method[0]))
+            operation_id = method[1][op_str]            
+            operation_mapping[operation_id] = getattr(api, operation_id)
+    return OperationIdMapping(**operation_mapping)
 
 def mainApiSet():
+    opmap = create_default_operation_mapping(Path(BASE / SPEC_FILE))
+
     router = SwaggerRouter(
         swagger_ui='/swagger/',
         search_dirs=[BASE],
