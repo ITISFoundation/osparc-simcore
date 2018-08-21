@@ -19,7 +19,7 @@ async def root_get(request, errors: defaultdict(set)):  # noqa: E501
 
     :rtype: str
     """
-    greeting = "<h1>Hoi zaeme! Salut les d'jeunz!</h1><h3>This is {} responding!</h2>".format(__name__)
+    greeting = "<h1>Hoi zaeme! Salut les d'jeunz!</h1><h3>This is {} responding!</h3>".format(__name__)
     return greeting
 
 async def list_interactive_services_get(request, errors: defaultdict(set)):  # noqa: E501
@@ -82,7 +82,7 @@ async def stop_service_post(service_uuid):  # noqa: E501
     except exceptions.DirectorException as err:
       raise web_exceptions.HTTPInternalServerError(reason=str(err))
     
-    return "service stopped"
+    return {"status":204}
 
 async def list_computational_services_get():  # noqa: E501
     """Lists available computational services in the oSparc platform

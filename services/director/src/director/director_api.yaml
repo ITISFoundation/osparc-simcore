@@ -59,8 +59,6 @@ paths:
             type: array
             items:
               $ref: '#/definitions/ServiceDescription'
-        500:
-          description: server error
         default:
           description: Unexpected error
   /start_service:
@@ -99,8 +97,6 @@ paths:
           description: Service not found
         409:
           description: A service with the same uuid already exists
-        500:
-          description: Server error
         default:
           description: Unexpected error
         
@@ -124,8 +120,6 @@ paths:
           description: Malformed function call, missing field
         404:
           description: Service not found
-        500:
-          description: Server error
         default:
           description: Unexpected error
         
@@ -144,8 +138,6 @@ paths:
             type: array
             items:
               $ref: '#/definitions/ServiceDescription'
-        500:
-          description: server error
         default:
           description: Unexpected error
 definitions:  
