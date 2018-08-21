@@ -58,7 +58,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     this.__desktop.add(this.__logger);
 
     this.__nodes = [];
-    this.__nodeMap = {};
     this.__links = [];
 
     let loggerButton = this.__getShowLoggerButton();
@@ -117,7 +116,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
   members: {
     __nodes: null,
-    __nodeMap: null,
     __links: null,
     __desktop: null,
     __svgWidget: null,
@@ -131,9 +129,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __playButton: null,
     __stopButton: null,
 
-    getNode: function(nodeId) {
-      return this.__nodeMap[nodeId];
-    },
     __getShowLoggerButton: function() {
       const icon = "@FontAwesome5Solid/list-alt/32";
       let loggerButton = new qx.ui.form.Button(null, icon);
@@ -337,13 +332,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           }
         }
         node.moveTo(50 + farthestRight, 200);
-        this.addWindowToDesktop(node);
-        this.__nodes.push(node);
       } else {
         node.moveTo(position.x, position.y);
-        this.addWindowToDesktop(node);
-        this.__nodes.push(node);
       }
+      this.addWindowToDesktop(node);
+      this.__nodes.push(node);
 
       node.addListener("NodeMoving", function() {
         this.__updateLinks(node);
@@ -366,7 +359,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             const isDirectory = data.getData().isDirectory;
             const activePort = isDirectory ? "outDir" : "outFile";
             const inactivePort = isDirectory ? "outFile" : "outDir";
-            node.getMetaData().outputs[activePort].value = itemPath;
+            node.getMetaData().outputs[activePort].value = {
+              store: "s3-z43",
+              path: itemPath
+            };
             node.getMetaData().outputs[inactivePort].value = null;
             node.getOutputPorts(activePort).ui.setLabel(itemName);
             node.getOutputPorts(activePort).ui.getToolTip().setLabel(itemName);
@@ -713,11 +709,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           return this.__nodes[i];
         }
       }
-      for (let nodeUuid in this.__nodeMap) {
-        if (id === nodeUuid) {
-          return this.__nodeMap[nodeUuid];
-        }
-      }
       return null;
     },
 
@@ -744,8 +735,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __removeNode: function(node) {
-      const imageId = node.getNodeImageId();
-      if (imageId.includes("dynamic")) {
+      if (node.getMetaData().type == "dynamic") {
         const slotName = "stopDynamic";
         let socket = qxapp.wrappers.WebSocket.getInstance();
         let data = {
@@ -791,6 +781,53 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__removeAllLinks();
     },
 
+    __serializePipeline: function() {
+      if (this.__projectId === null || this.__projectId === undefined) {
+        this.__projectId = qxapp.utils.Utils.uuidv4();
+      }
+      let pipeline = {
+        projectId: this.__projectId,
+        workbench: {}
+      };
+      for (let i = 0; i < this.__nodes.length; i++) {
+        const node = this.__nodes[i];
+        let cNode = pipeline.workbench[node.getNodeId()] = {
+          key: node.getMetaData().key,
+          version: node.getMetaData().version,
+          inputs: node.getInputValues(),
+          outputs: {}
+        };
+        for (let key in node.getInputPorts()) {
+          const linkPort = this.__getInputPortLinked(node.getNodeId(), key);
+          if (linkPort) {
+            cNode.inputs[key] = linkPort;
+          }
+        }
+        for (let key in node.getOutputPorts()) {
+          const outputPort = node.getOutputPort(key);
+          if ("value" in outputPort) {
+            cNode.outputs[key] = outputPort.value;
+          } else {
+            cNode.outputs[key] = null;
+          }
+        }
+      }
+      return pipeline;
+    },
+
+    __getInputPortLinked: function(nodeId, inputPortId) {
+      for (let i = 0; i < this.__links.length; i++) {
+        const link = this.__links[i];
+        if (link.getOutputNodeId() === nodeId && link.getOutputPortId() === inputPortId) {
+          return {
+            nodeUuid: link.getInputNodeId(),
+            output: link.getInputPortId()
+          };
+        }
+      }
+      return null;
+    },
+
     __serializeData: function() {
       let pipeline = {
         "nodes": [],
@@ -822,7 +859,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __loadProject: function(workbenchData) {
       for (let nodeUuid in workbenchData) {
         let nodeData = workbenchData[nodeUuid];
-        let node = this.__nodeMap[nodeUuid] =
+        let node =
           this.__createNode(nodeData.key + "-" + nodeData.version, nodeUuid, nodeData);
         this.__addNodeToWorkbench(node, nodeData.position);
       }
@@ -859,9 +896,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       // callback for incoming logs
       if (!socket.slotExists("logger")) {
         socket.on("logger", function(data) {
-          var d = JSON.parse(data);
-          var node = d["Node"];
-          var msg = d["Message"];
+          let d = JSON.parse(data);
+          let node = d["Node"];
+          let msg = d["Message"];
           this.__updateLogger(node, msg);
         }, this);
       }
@@ -871,17 +908,17 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (!socket.slotExists("progress")) {
         socket.on("progress", function(data) {
           console.log("progress", data);
-          var d = JSON.parse(data);
-          var node = d["Node"];
-          var progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
+          let d = JSON.parse(data);
+          let node = d["Node"];
+          let progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
           this.updateProgress(node, progress);
         }, this);
       }
 
       // post pipeline
       this.__pipelineId = null;
-      let currentPipeline = this.__serializeData();
-      console.log(currentPipeline);
+      let currentPipeline = this.__serializePipeline();
+      console.log("pipeline:", currentPipeline);
       let req = new qx.io.request.Xhr();
       let data = {};
       data = currentPipeline;

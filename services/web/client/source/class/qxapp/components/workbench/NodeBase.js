@@ -129,8 +129,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return this.__outputPorts[portId];
     },
 
-    getProp: function(key) {
-      return this.getPropsWidget().getData()[key];
+    getInputValues: function() {
+      return this.getPropsWidget().getValues();
     },
 
     // override qx.ui.window.Window "move" event listener
