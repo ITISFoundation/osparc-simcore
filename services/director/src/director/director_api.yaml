@@ -302,7 +302,7 @@ components:
             - bool
             - string
             - file-url
-            - folder-url]
+            - folder-url
           description: |
             The type of the port:
               * integer - An signed integer
