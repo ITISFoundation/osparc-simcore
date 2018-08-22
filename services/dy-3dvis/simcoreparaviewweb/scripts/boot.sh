@@ -1,6 +1,8 @@
 #!/bin/bash
 echo "current directory is ${PWD}"
 
+
+
 if [[ -v CREATE_DUMMY_TABLE ]];
 then
     # in dev mode, data located in mounted volume /test-data are uploaded to the S3 server
@@ -11,9 +13,9 @@ then
     # the fake SIMCORE_NODE_UUID is exported to be available to the service
     export SIMCORE_NODE_UUID="$result";
     # TODO: host name shall be defined dynamically instead of stupidely hard-coded
-    host_name="localhost"
+    host_name="localhost"    
 else
-    host_name="osparc01.speag.com"
+    host_name="osparc01.speag.com"    
 fi
 
 echo "modifying apache configuration..."
@@ -22,12 +24,21 @@ echo "modifying apache configuration..."
 echo "restarting the apache service..."
 service apache2 restart
 
+# echo "modifying wslink launcher configuration"
+. scripts/visualizer_launcher_patch.sh
 
-# the service waits until the calling client transfers the service externally published port
-# this is currently necessary due to some unknown reason with regard to how paraviewweb 
-# visualizer is started (see below)
-echo "Waiting for server port to be defined"
-server_port="$(python3 src/getport.py)";
+if [[ -v CREATE_DUMMY_TABLE ]];
+then
+    # in dev mode we know already what the port is
+    server_port=${SERVER_PORT}
+else
+    # the service waits until the calling client transfers the service externally published port
+    # this is currently necessary due to some unknown reason with regard to how paraviewweb 
+    # visualizer is started (see below)
+    echo "Waiting for server port to be defined"
+    server_port="$(python3 src/getport.py)";
+fi
+
 
 # to start the paraviewweb visualizer it needs as parameter something to do with the way
 # its websockets are setup "ws://HOSTNAME:PORT" hostname and port must be the hostname and port
