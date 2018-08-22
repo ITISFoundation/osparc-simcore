@@ -23,7 +23,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       bottom: 0
     });
 
-    this.__svgWidget = new qxapp.components.workbench.SvgWidget();
+    this.__svgWidget = new qxapp.components.workbench.SvgWidget("SvgWidgetLayer");
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
     // sure to catch this event
