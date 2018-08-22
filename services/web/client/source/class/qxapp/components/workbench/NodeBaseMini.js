@@ -17,7 +17,7 @@ qx.Class.define("qxapp.components.workbench.NodeBaseMini", {
   members: {
     __label: null,
 
-    createNodeLayout: function() {
+    createNodeLayout: function(nodeData) {
       let nodeLayout = new qx.ui.layout.VBox();
       this.setLayout(nodeLayout);
 
@@ -32,7 +32,13 @@ qx.Class.define("qxapp.components.workbench.NodeBaseMini", {
         flex: 1
       });
 
-      this.__label = new qx.ui.basic.Label("S");
+      let miniLabel = "";
+      let store = qxapp.data.Store.getInstance();
+      let metaData = store.getNodeMetaData(this.getNodeImageId());
+      if (metaData) {
+        miniLabel = metaData.name.substring(0, 4);
+      }
+      this.__label = new qx.ui.basic.Label(miniLabel);
       inputsOutputsLayout.add(this.__label);
 
       let outputsBox = new qx.ui.layout.VBox();

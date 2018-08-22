@@ -60,7 +60,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
         let nodeData = workbenchData[nodeUuid];
         const imageId = nodeData.key + "-" + nodeData.version;
         let node = new qxapp.components.workbench.NodeBaseMini(imageId, nodeUuid);
-        node.createNodeLayout();
+        node.createNodeLayout(nodeData);
         if (nodeData.position) {
           this.__addNodeToWorkbench(node, nodeData.position);
         } else {
