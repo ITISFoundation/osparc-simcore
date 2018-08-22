@@ -91,7 +91,8 @@ async def list_computational_services_get():  # noqa: E501
     :rtype: List[ServiceDescription]
     """
     try:
-        repos = registry_proxy.list_computational_services()
-        return repos
+        list_computational_services = registry_proxy.list_computational_services()
+        service_descs = [ServiceDescription.from_dict(x) for x in list_computational_services.values()]
+        return service_descs
     except exceptions.DirectorException as err:
       raise web_exceptions.HTTPInternalServerError(reason=str(err))

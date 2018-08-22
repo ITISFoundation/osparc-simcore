@@ -72,7 +72,7 @@ def retrieve_list_of_repos_with_interactive_services():
     list_of_interactive_services = {}
 
     for repo in list_of_interactive_repos:
-        service_name = get_service_name(repo)        
+        service_name = __get_service_name(repo, INTERACTIVE_SERVICES_PREFIX)        
         # is there already a service with the same name?
         if service_name in list_of_interactive_services:
             list_of_interactive_services[service_name]["repos"].append(repo)
@@ -98,8 +98,8 @@ def retrieve_list_of_interactive_services_with_name(service_name):
     raise exceptions.ServiceNotFoundError(service_name, None)
 
 
-def get_service_name(repository_name):
-    service_name_suffixes = str(repository_name)[len(INTERACTIVE_SERVICES_PREFIX):]
+def __get_service_name(repository_name, service_prefix):
+    service_name_suffixes = str(repository_name)[len(service_prefix):]
     _LOGGER.info("retrieved service name from repo %s : %s", repository_name, service_name_suffixes)
     return service_name_suffixes.split('/')[0]
 
@@ -143,12 +143,14 @@ def list_computational_services():
     list_of_comp_repos = [repo for repo in list_all_repos if str(repo).startswith(COMPUTATIONAL_SERVICES_PREFIX)]
     _LOGGER.info("retrieved list of computational repos : %s", list_of_comp_repos)
     repositories = {}
-    for repo in list_of_comp_repos:
+    for repo in list_of_comp_repos:        
         details = _get_repo_details(repo)
         if details:
-            repositories[repo] = details
+            service_name = details[0]['name']
+            repositories[service_name] = {
+                "name":service_name,
+                "repos":[repo],
+                "details":[details]
+                }
 
-    result_json = json.dumps(repositories)
-
-
-    return result_json
+    return repositories
