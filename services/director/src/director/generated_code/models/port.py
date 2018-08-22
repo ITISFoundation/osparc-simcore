@@ -186,7 +186,7 @@ class Port(Model):
         :param value: The value of this Port.
         :type value: str
         """
-        if value is None:
-            raise ValueError("Invalid value for `value`, must not be `None`")  # noqa: E501
+        # if value is None:
+        #     raise ValueError("Invalid value for `value`, must not be `None`")  # noqa: E501
 
         self._value = value

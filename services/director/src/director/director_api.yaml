@@ -317,6 +317,7 @@ components:
           description: The value of the port. May be null if not yet defined.
           type: string
           example: "null"
+          nullable: true
       required: 
         - key
         - label
