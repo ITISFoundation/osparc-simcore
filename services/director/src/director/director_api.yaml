@@ -108,7 +108,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Service'
+                  $ref: '#/components/schemas/RunningService'
         400:
           description: Malformed function call, missing field
         404:
@@ -163,7 +163,7 @@ paths:
           description: Unexpected error
 components:
   schemas:
-    Service:
+    RunningService:
       type: object
       properties:
         container_id:
