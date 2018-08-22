@@ -72,14 +72,14 @@ def retrieve_list_of_repos_with_interactive_services():
     list_of_interactive_services = {}
 
     for repo in list_of_interactive_repos:
-        service_details = {}
         service_name = get_service_name(repo)        
         # is there already a service with the same name?
         if service_name in list_of_interactive_services:
             list_of_interactive_services[service_name]["repos"].append(repo)
             list_of_interactive_services[service_name]["details"].append(_get_repo_details(repo))
         else:
-            list_of_interactive_services[service_name] = service_details[service_name]={
+            list_of_interactive_services[service_name] = {
+                "name":service_name,
                 "repos":[repo],
                 "details":[
                     _get_repo_details(repo)

@@ -7,7 +7,8 @@ from aiohttp_apiset.exceptions import ValidationError
 
 from director import producer, registry_proxy, exceptions
 
-from .models.service_description import ServiceDescription
+from director.models.service_description import ServiceDescription
+from director.models.service import Service
 
 _LOGGER = logging.getLogger(__name__)
 registry_proxy.setup_registry_connection()
@@ -33,7 +34,8 @@ async def list_interactive_services_get(request, errors: defaultdict(set)):  # n
     # get the services repos
     try:
         list_of_interactive_repos = registry_proxy.retrieve_list_of_repos_with_interactive_services()
-        return list_of_interactive_repos
+        service_descs = [ServiceDescription.from_dict(x) for x in list_of_interactive_repos.values()]
+        return service_descs
     except exceptions.DirectorException as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
     
