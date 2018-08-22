@@ -76,7 +76,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
         if (!viewerButton.hasListener("execute")) {
           viewerButton.addListener("execute", function(e) {
             const data = {
-              metadata: node.getMetadata(),
+              metadata: node.getMetaData(),
               nodeId: node.getNodeId()
             };
             console.log("ShowViewer", data);
