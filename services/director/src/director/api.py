@@ -5,6 +5,7 @@ from aiohttp import web_exceptions
 from director import producer, registry_proxy, exceptions
 
 from director.generated_code.models.service_description import ServiceDescription
+from director.generated_code.models.running_service import RunningService
 
 _LOGGER = logging.getLogger(__name__)
 registry_proxy.setup_registry_connection()
@@ -53,15 +54,14 @@ async def start_service_post(request, service_name, service_uuid, service_tag=No
     """    
     try:
       service = producer.start_service(service_name, service_tag, service_uuid)
+      running_service = RunningService.from_dict(service)
+      return running_service
     except exceptions.ServiceNotFoundError as err:
       raise web_exceptions.HTTPNotFound(reason=str(err))
     except exceptions.ServiceUUIDInUseError as err:
       raise web_exceptions.HTTPConflict(reason=str(err))
     except exceptions.DirectorException as err:
       raise web_exceptions.HTTPInternalServerError(reason=str(err))
-
-    return service
-
 
 async def stop_service_post(service_uuid):  # noqa: E501
     """Stops and removes an interactive service from the oSparc platform
