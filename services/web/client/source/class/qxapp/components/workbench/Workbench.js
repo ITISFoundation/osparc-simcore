@@ -229,11 +229,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __addServiceFromCatalogue: function(e, pos) {
       let data = e.getData();
-      let nodeMetaData = data.service;
+      let metaData = data.service;
+      let nodeData = qxapp.dev.fake.Data.metaDataToNodeData(metaData);
+      const nodeImageId = nodeData.key + "-" + nodeData.version;
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let nodeB = this.__createNode(nodeMetaData.imageId, null, nodeMetaData);
+      let nodeB = this.__createNode(nodeImageId, null, nodeData);
       this.__addNodeToWorkbench(nodeB, pos);
 
       if (nodeAId !== null && portA !== null) {
@@ -251,22 +253,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           input: portB.portId
         });
       }
-    },
-
-    __createMenuFromList: function(nodesList) {
-      let buttonsListMenu = new qx.ui.menu.Menu();
-
-      nodesList.forEach(nodeMetaData => {
-        let nodeButton = new qx.ui.menu.Button(nodeMetaData.label);
-        nodeButton.addListener("execute", function() {
-          let nodeItem = this.__createNode(nodeMetaData.imageId, null, nodeMetaData);
-          this.__addNodeToWorkbench(nodeItem);
-        }, this);
-
-        buttonsListMenu.add(nodeButton);
-      });
-
-      return buttonsListMenu;
     },
 
     __createWindowForBuiltInService: function(widget, width, height, caption) {
@@ -861,9 +847,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __loadProject: function(workbenchData) {
       for (let nodeUuid in workbenchData) {
         let nodeData = workbenchData[nodeUuid];
-        const imageId = nodeData.key + "-" + nodeData.version;
-        let node =
-          this.__createNode(imageId, nodeUuid, nodeData);
+        const nodeImageId = nodeData.key + "-" + nodeData.version;
+        let node = this.__createNode(nodeImageId, nodeUuid, nodeData);
         this.__addNodeToWorkbench(node, nodeData.position);
       }
       for (let nodeUuid in workbenchData) {
