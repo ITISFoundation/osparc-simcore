@@ -172,9 +172,9 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
       linksInvolved.forEach(linkId => {
         let link = this.__getLink(linkId);
         if (link) {
-          let node1 = this.__getNode(link.getInputNodeId());
+          let node1 = this.getNode(link.getInputNodeId());
           let port1 = node1.getPort(link.getInputPortId());
-          let node2 = this.__getNode(link.getOutputNodeId());
+          let node2 = this.getNode(link.getOutputNodeId());
           let port2 = node2.getPort(link.getOutputPortId());
           const pointList = this.__getLinkPoints(node1, port1, node2, port2);
           const x1 = pointList[0][0];
@@ -200,7 +200,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
       return [p1, p2];
     },
 
-    __getNode: function(id) {
+    getNode: function(id) {
       for (let i = 0; i < this.__nodes.length; i++) {
         if (this.__nodes[i].getNodeId() === id) {
           return this.__nodes[i];

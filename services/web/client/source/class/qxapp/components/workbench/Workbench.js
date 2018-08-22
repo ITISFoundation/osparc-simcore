@@ -418,8 +418,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           const dragNodeId = event.getData("osparc-metaData").dragNodeId;
           const dragIsInput = event.getData("osparc-metaData").dragIsInput;
           const dragPortId = event.getData("osparc-metaData").dragPortId;
-          const dragNode = this.__getNode(dragNodeId);
-          const dropNode = this.__getNode(dropNodeId);
+          const dragNode = this.getNode(dragNodeId);
+          const dropNode = this.getNode(dropNodeId);
           const dragPortTarget = dragIsInput ? dragNode.getInputPort(dragPortId) : dragNode.getOutputPort(dragPortId);
           const dropPortTarget = dropIsInput ? dropNode.getInputPort(dropPortId) : dropNode.getOutputPort(dropPortId);
           compatible = this.__arePortsCompatible(dragPortTarget, dropPortTarget);
@@ -475,9 +475,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         if (this.__tempLinkNodeId === dragNodeId && this.__tempLinkPortId === dragPortId) {
           let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
           if (this.__tempLinkIsInput === true) {
-            srvCat.setContext(dragNodeId, this.__getNode(dragNodeId).getInputPort(dragPortId));
+            srvCat.setContext(dragNodeId, this.getNode(dragNodeId).getInputPort(dragPortId));
           } else {
-            srvCat.setContext(dragNodeId, this.__getNode(dragNodeId).getOutputPort(dragPortId));
+            srvCat.setContext(dragNodeId, this.getNode(dragNodeId).getOutputPort(dragPortId));
           }
           srvCat.moveTo(posX, posY);
           srvCat.open();
@@ -564,9 +564,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let node2Id = to.nodeUuid;
       let port2Id = to.input;
 
-      let node1 = this.__getNode(node1Id);
+      let node1 = this.getNode(node1Id);
       let port1 = node1.getOutputPort(port1Id);
-      let node2 = this.__getNode(node2Id);
+      let node2 = this.getNode(node2Id);
       let port2 = node2.getInputPort(port2Id);
 
       const pointList = this.__getLinkPoints(node1, port1, node2, port2);
@@ -606,9 +606,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       linksInvolved.forEach(linkId => {
         let link = this.__getLink(linkId);
         if (link) {
-          let node1 = this.__getNode(link.getInputNodeId());
+          let node1 = this.getNode(link.getInputNodeId());
           let port1 = node1.getOutputPort(link.getInputPortId());
-          let node2 = this.__getNode(link.getOutputNodeId());
+          let node2 = this.getNode(link.getOutputNodeId());
           let port2 = node2.getInputPort(link.getOutputPortId());
           const pointList = this.__getLinkPoints(node1, port1, node2, port2);
           const x1 = pointList[0][0];
@@ -624,7 +624,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (this.__tempLinkNodeId === null || this.__tempLinkPortId === null) {
         return;
       }
-      let node = this.__getNode(this.__tempLinkNodeId);
+      let node = this.getNode(this.__tempLinkNodeId);
       if (node === null) {
         return;
       }
@@ -692,7 +692,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return [p1, p2];
     },
 
-    __getNode: function(id) {
+    getNode: function(id) {
       for (let i = 0; i < this.__nodes.length; i++) {
         if (this.__nodes[i].getNodeId() === id) {
           return this.__nodes[i];
@@ -747,7 +747,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __removeLink: function(link) {
-      let node2 = this.__getNode(link.getOutputNodeId());
+      let node2 = this.getNode(link.getOutputNodeId());
       if (node2) {
         node2.getPropsWidget().enableProp(link.getOutputPortId(), true);
       }
@@ -985,7 +985,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __updateLogger: function(nodeId, msg) {
-      let node = this.__getNode(nodeId);
+      let node = this.getNode(nodeId);
       if (node) {
         this.__logger.info(node.getCaption(), msg);
       }
@@ -998,7 +998,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     updateProgress: function(nodeId, progress) {
-      let node = this.__getNode(nodeId);
+      let node = this.getNode(nodeId);
       node.setProgress(progress);
     },
 

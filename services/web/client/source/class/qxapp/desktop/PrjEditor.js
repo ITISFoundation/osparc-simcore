@@ -122,7 +122,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     ].forEach(wb => {
       wb.addListener("NodeDoubleClicked", function(e) {
         let nodeId = e.getData();
-        let node = this.__workbench.__getNode(nodeId);
+        let node = this.__workbench.getNode(nodeId);
         this.__settingsView.setNode(node);
         this.showSettings(true);
       }, this);
