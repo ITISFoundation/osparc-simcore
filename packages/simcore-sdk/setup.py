@@ -1,13 +1,14 @@
 from setuptools import setup
 
-install_requires = [
+INSTALL_REQUIRES = [
     'networkx==2.1',
     'psycopg2==2.7.4',
     'sqlalchemy==1.2.8',
     'tenacity==4.12.0'
+    'trafaret-config==2.0.1'
 ]
 
-tests_require = [
+TEST_REQUIRE = [
     'coveralls~=1.3',
     'mock~=2.0',
     'pylint~=2.0',
@@ -23,10 +24,10 @@ setup(
     package_dir={'': 'src'},
     packages=['simcore_sdk'],
     python_requires='>=3.6',
-    install_requires=install_requires,
-    tests_require=tests_require,
+    INSTALL_REQUIRES=INSTALL_REQUIRES,
+    TEST_REQUIRE=TEST_REQUIRE,
     extras_require= {
-        'test': tests_require
+        'test': TEST_REQUIRE
     },
     setup_requires=['pytest-runner']
 )

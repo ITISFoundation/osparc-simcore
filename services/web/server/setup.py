@@ -19,6 +19,13 @@ def list_requirements_in(filename):
 INSTALL_REQUIRES = list_requirements_in("base.txt")
 TESTS_REQUIRE = list_requirements_in("tests.txt")
 
+
+# TODO: normalize naming of packages, scripts and modules naming. E.g in this case
+#  package name  : simcore-service-webserver
+#  import name   : simcore_service_webserver
+#  main console script name: simcore-service-webserver
+# TODO: document clear guidelines for versioning and compatibility
+#
 setup(
     name='simcore-web-server',
     version='0.0.0',
@@ -26,7 +33,7 @@ setup(
     packages=find_packages('src'),
     include_package_data=True,
     package_data={
-        'config': ['../config/*.yaml'] #FIXME: this is still not copied!
+        'config': ['../config/*.yaml'] #FIXME: this is still not copied!??
     },
     entry_points={
         'console_scripts': ['service-web-server=server.__main__:main']},
