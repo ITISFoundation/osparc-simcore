@@ -47,7 +47,7 @@ def mainApiSet():
 
     # TODO: clean up TPOS!
     jsonify.singleton = Jsonify(indent=3, ensure_ascii=False)
-    jsonify.singleton.add_converter('director.models.base_model_.Model', lambda o: o.to_dict(), score=0)
+    jsonify.singleton.add_converter('director.generated_code.models.base_model_.Model', lambda o: o.to_dict(), score=0)
 
     app = web.Application(
         router=router,

@@ -5,8 +5,8 @@ from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from director.models.base_model_ import Model
-from director import util
+from director.generated_code.models.base_model_ import Model
+from director.generated_code import util
 
 
 class Viewer(Model):

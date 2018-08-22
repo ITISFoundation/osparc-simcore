@@ -3,7 +3,7 @@ import pprint
 import six
 import typing
 
-from director import util
+from director.generated_code import util
 
 T = typing.TypeVar('T')
 

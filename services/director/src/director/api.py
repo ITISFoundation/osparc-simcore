@@ -2,13 +2,9 @@ import logging
 from collections import defaultdict
 
 from aiohttp import web_exceptions
-import aiohttp_apiset.middlewares
-from aiohttp_apiset.exceptions import ValidationError
-
 from director import producer, registry_proxy, exceptions
 
-from director.models.service_description import ServiceDescription
-from director.models.service import Service
+from director.generated_code.models.service_description import ServiceDescription
 
 _LOGGER = logging.getLogger(__name__)
 registry_proxy.setup_registry_connection()
