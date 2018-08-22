@@ -8,9 +8,9 @@ THIS FILE IS ONLY FOR DEVELOPMENT IN FORK! SHOULD NOT BE INCLUDED IN OFFICIAL RE
 - TODO: how to use sessions considering:
   - Requests for the same user might run in different server services
   - Where do states leave
--TODO: add in service/postgres to tools to diagnose the database/init service etc...
-
-pytest.ini is temporary
+- TODO: add in service/postgres to tools to diagnose the database/init service etc...
+- TODO: pytest.ini is temporary
+- TODO: Remove warning ``` psycopg2/__init__.py:144: UserWarning: The psycopg2 wheel package will be renamed from release 2.8; in order to keep installing from binary please use "pip install psycopg2-binary" instead. For details see: <http://initd.org/psycopg/docs/install.html#binary-install-from-pypi>.```
 
 ##
 
@@ -24,7 +24,6 @@ docker-compose -f docker
  docker-compose restart
 
 ```
-
 
 
 ## database service

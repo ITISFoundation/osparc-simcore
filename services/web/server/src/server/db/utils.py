@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 DNS = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
 
 
-@functools.lru_cache
+@functools.lru_cache(maxsize=10, typed=True)
 def acquire_engine(url):
     _LOGGER.debug("Creating engine to %s ...", url)
     engine = create_engine(url, isolation_level="AUTOCOMMIT")

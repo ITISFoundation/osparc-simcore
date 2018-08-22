@@ -28,7 +28,8 @@ from sqlalchemy import (
 from tenacity import (
     retry,
     stop_after_attempt,
-    wait_fixed
+    wait_fixed,
+    before_sleep_log
 )
 
 from server.db.utils import (
@@ -45,26 +46,16 @@ from server.settings import (
     read_and_validate
 )
 
-
-CURRENT_DIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent
-CONFIG_DIR = CURRENT_DIR.parent / "config"
-
 logging.basicConfig(level=logging.DEBUG)
 _LOGGER = logging.getLogger(__name__)
 
+CURRENT_DIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
 
-#--------------------------------------------------
 
-# FIXME: create global access for UserEngine, TestEngine, AdminEngine, etc ... Registry of named engines!
-USER_CONFIG_PATH = CONFIG_DIR / "server-host-test.yaml"
-USER_CONFIG = read_and_validate(USER_CONFIG_PATH.as_posix())
-USER_DB_URL = DNS.format(**USER_CONFIG["postgres"])
-user_engine = acquire_engine(USER_DB_URL)
-
-TEST_CONFIG_PATH = CONFIG_DIR / "server-test.yaml"
-TEST_CONFIG = read_and_validate(TEST_CONFIG_PATH.as_posix())
-TEST_DB_URL = DNS.format(**TEST_CONFIG["postgres"])
-test_engine = acquire_engine(TEST_DB_URL)
+def load_pgconfig(config_path):
+    config = read_and_validate(config_path.as_posix())
+    pg_config = config["postgres"]
+    return pg_config
 
 def setup_db(pg_config):
     db_name = pg_config["database"]
@@ -99,17 +90,17 @@ def teardown_db(config):
     conn.close()
 
 
-def create_tables(engine=test_engine):
+def create_tables(engine):
     meta = MetaData()
     meta.create_all(bind=engine, tables=[users, permissions])
 
 
-def drop_tables(engine=test_engine):
+def drop_tables(engine):
     meta = MetaData()
     meta.drop_all(bind=engine, tables=[users, permissions])
 
 
-def sample_data(engine=test_engine):
+def sample_data(engine):
     generate_password_hash = sha256_crypt.hash
 
     #TODO: use fake to populate database
@@ -140,25 +131,31 @@ def sample_data(engine=test_engine):
     conn.close()
 
 
-@retry(stop=stop_after_attempt(5), wait=wait_fixed(2))
+@retry(stop=stop_after_attempt(5),
+    wait=wait_fixed(2),
+    before_sleep=before_sleep_log(_LOGGER, logging.DEBUG))
 def main():
+    test_config_path = CURRENT_DIR.parent / "config" / "server-host-test.yaml"
+    config = read_and_validate(test_config_path.as_posix())
+    pg_config = config["postgres"]
 
-    config = USER_CONFIG["postgres"]
-    engine = user_engine
+    test_engine = acquire_engine(DNS.format(**pg_config))
 
     _LOGGER.info("Setting up db ...")
-    setup_db(config)
+    setup_db(pg_config)
     _LOGGER.info("")
 
     _LOGGER.info("Creating tables ...")
-    create_tables(engine=engine)
+    create_tables(engine=test_engine)
 
     _LOGGER.info("Adding sample data ...")
-    sample_data(engine=engine)
+    sample_data(engine=test_engine)
 
-    drop_tables()
-    teardown_db(config)
+    _LOGGER.info("Droping ...")
+    drop_tables(test_engine)
+    teardown_db(pg_config)
 
 
 if __name__ == "__main__":
     main()
+    _LOGGER.info("Main retry stats: %s", main.retry.statistics)

@@ -2,10 +2,8 @@ import pprint
 import io
 import logging
 
-import pytest
 import sqlalchemy as sa
 
-from server.config import get_config, SRC_DIR
 from server.db._db import (
     create_aiopg,
     dispose_aiopg
@@ -16,7 +14,7 @@ from server.db.model import (
 
 _LOGGER = logging.getLogger(__name__)
 
-async def test_basic_db_workflow(postgres_service):
+async def test_basic_db_workflow(postgres_service, app_testconfig):
     """
         create engine
         connect
@@ -30,9 +28,8 @@ async def test_basic_db_workflow(postgres_service):
     pprint.pprint(postgres_service, stream=output)
     _LOGGER.info(output)
 
-    #TEST_CONFIG_PATH = SRC_DIR / ".config" / "server-test.yaml"
-    #app = {"config": get_config(["-c", TEST_CONFIG_PATH.as_posix()])}
-    app = dict(config=postgres_service)
+    assert postgres_service == app_testconfig["postgres"]
+    app = dict(config=app_testconfig)
 
     await create_aiopg(app)
     # creates new engine!
