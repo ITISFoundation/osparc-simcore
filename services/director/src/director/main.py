@@ -39,7 +39,8 @@ def mainApiSet():
     opmap = create_default_operation_mapping(Path(BASE / SPEC_FILE))
 
     router = SwaggerRouter(
-        swagger_ui='/swagger/',
+        swagger_ui='/apidoc/',
+        version_ui=3, # forces the use of version 3 by default
         search_dirs=[BASE],
         default_validate=True,
     )
@@ -65,9 +66,10 @@ def mainApiSet():
         spec='director_api.yaml',
         operationId_mapping=opmap,
         name='v1',  # name to access in swagger-ui,
+        basePath="/v1" # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
     )
 
-    web.run_app(app)
+    web.run_app(app, port=8001)
 
 
 main = mainApiSet
