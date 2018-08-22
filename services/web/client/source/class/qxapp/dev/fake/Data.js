@@ -36,6 +36,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             }
           ],
           contact: "maiz@itis.ethz.ch",
+          inputs: {},
           outputs: {
             outFile: {
               displayOrder: 0,
@@ -43,8 +44,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               description: "Chosen File",
               type: "data:*/*"
             }
-          },
-          inputs: {}
+          }
         },
         "service/computational/itis/sleeper-0.0.0":{
           key: "service/computational/itis/sleeper",
@@ -64,7 +64,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
               displayOrder: 0,
               label: "In",
               description: "Chosen Number",
-              type: "number"
+              type: "number",
+              defaultValue: 42
             }
           },
           outputs: {
@@ -153,12 +154,14 @@ qx.Class.define("qxapp.dev.fake.Data", {
               displayOrder: 6,
               label: "File",
               description: "Test Input File",
+              defaultValue: null,
               type: "data:*/*"
             },
             inImage: {
               displayOrder: 7,
               label: "Image",
               description: "Test Input Image",
+              defaultValue: null,
               type: "data:[image/jpeg,image/png]"
             }
           },
@@ -478,15 +481,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
         }
       };
       return temp2Data;
-    },
-
-    getServices: function() {
-      let fakeServices = [];
-      const nodeMap = this.getNodeMap();
-      for (var node in nodeMap) {
-        fakeServices.push(nodeMap[node]);
-      }
-      return fakeServices;
     }
   } // statics
 

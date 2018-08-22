@@ -37,7 +37,11 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
       service.imageId = imageId;
       this.__allServices.push(service);
     }
-    // this.__allServices = this.__allServices.concat(qxapp.dev.fake.Data.getServices());
+    for (let imageId in qxapp.dev.fake.Data.getNodeMap()) {
+      let service = qxapp.dev.fake.Data.getNodeMap()[imageId];
+      service.imageId = imageId;
+      this.__allServices.push(service);
+    }
     store.addListener("servicesRegistered", e => {
       this.__addNewData(e.getData());
     }, this);
