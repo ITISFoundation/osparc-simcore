@@ -13,7 +13,10 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     this.__navBar.setHeight(100);
     this.add(this.__navBar);
 
-    this.__prjStack = this.__getPrjStack();
+    let prjStack = this.__prjStack = new qx.ui.container.Stack();
+
+    this.__prjBrowser = new qxapp.desktop.PrjBrowser();
+    prjStack.add(this.__prjBrowser);
 
     this.add(this.__prjStack, {
       flex: 1
@@ -49,15 +52,6 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       let navBar = new qxapp.desktop.NavigationBar();
       navBar.setCurrentStatus("Browser");
       return navBar;
-    },
-
-    __getPrjStack: function() {
-      let prjStack = new qx.ui.container.Stack();
-
-      this.__prjBrowser = new qxapp.desktop.PrjBrowser();
-      prjStack.add(this.__prjBrowser);
-
-      return prjStack;
     }
   }
 });
