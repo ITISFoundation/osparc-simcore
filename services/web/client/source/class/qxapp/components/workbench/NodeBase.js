@@ -21,9 +21,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       nodeImageId: nodeImageId,
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
     });
-
-    this.__inputPorts = [];
-    this.__outputPorts = [];
   },
 
   properties: {
