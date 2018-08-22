@@ -126,7 +126,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
       }, this);
 
       node.addListener("dblclick", function(e) {
-        this.fireDataEvent("NodeDoubleClicked", node);
+        this.fireDataEvent("NodeDoubleClicked", node.getNodeId());
         e.stopPropagation();
       }, this);
 

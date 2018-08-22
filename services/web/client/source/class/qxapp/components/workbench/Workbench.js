@@ -335,7 +335,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           fileManagerWindow.moveTo(100, 100);
           fileManagerWindow.open();
         } else {
-          this.fireDataEvent("NodeDoubleClicked", node);
+          this.fireDataEvent("NodeDoubleClicked", node.getNodeId());
         }
         e.stopPropagation();
       }, this);

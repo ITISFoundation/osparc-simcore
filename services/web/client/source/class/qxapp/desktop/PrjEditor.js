@@ -28,11 +28,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       bottom: 0
     });
 
-    let miniWorkbenchView = this.__miniWorkbenchView = new qxapp.components.workbench.WorkbenchMini(workbenchData).set({
+    let miniWorkbench = this.__miniWorkbench = new qxapp.components.workbench.WorkbenchMini(workbenchData).set({
       minHeight: 200,
       maxHeight: 500
     });
-    settingsBoxContent.add(miniWorkbenchView);
+    settingsBoxContent.add(miniWorkbench);
 
     let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
       backgroundColor: "blue",
@@ -50,7 +50,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     settingsBox.addListener("changeWidth", e => {
       let width = e.getData();
       if (width != 0) {
-        miniWorkbenchView.setWidth(width);
+        miniWorkbench.setWidth(width);
         extraView.setWidth(width);
         settingsView.setWidth(width);
       }
@@ -63,7 +63,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       workbench.getContentElement().getDomElement()
         .addEventListener("transitionend", () => {
           [
-            miniWorkbenchView,
+            miniWorkbench,
             extraView,
             settingsView,
             splitter,
@@ -116,11 +116,17 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       socket.emit(slotName, args);
     }, this);
 
-    this.__workbench.addListener("NodeDoubleClicked", function(e) {
-      let node = e.getData();
-      this.__settingsView.setNode(node);
-      this.showSettings(true);
-    }, this);
+    [
+      this.__workbench,
+      this.__miniWorkbench
+    ].forEach(wb => {
+      wb.addListener("NodeDoubleClicked", function(e) {
+        let nodeId = e.getData();
+        let node = this.__workbench.__getNode(nodeId);
+        this.__settingsView.setNode(node);
+        this.showSettings(true);
+      }, this);
+    });
 
     this.__transDeco = new qx.ui.decoration.Decorator().set({
       transitionProperty: ["left", "right", "width"],
@@ -131,7 +137,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     this.__settingsBox.set({
       decorator: this.__transDeco
     });
-    this.__miniWorkbenchView.set({
+    this.__miniWorkbench.set({
       decorator: this.__transDeco
     });
     this.__extraView.set({
@@ -150,7 +156,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
   members: {
     __pane: null,
-    __miniWorkbenchView: null,
+    __miniWorkbench: null,
     __extraView: null,
     __settingsView: null,
     __settingsBox: null,
