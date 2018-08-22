@@ -166,32 +166,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return plusButton;
     },
 
-    __getPlusMenuButton: function() {
-      const icon = "@FontAwesome5Solid/plus/32"; // qxapp.dev.Placeholders.getIcon("fa-plus", 32);
-      let plusButton = new qx.ui.form.MenuButton(null, icon, this.__getServicesMenu());
-      plusButton.set({
-        width: BUTTON_SIZE,
-        height: BUTTON_SIZE
-      });
-      plusButton.addListener("execute", function() {
-        plusButton.setMenu(this.__getServicesMenu());
-      }, this);
-      return plusButton;
-    },
-
-    __getServicesMenu: function() {
-      let menuNodeTypes = new qx.ui.menu.Menu();
-
-      let producersButton = new qx.ui.menu.Button("Producers", null, null, this.__getProducers());
-      menuNodeTypes.add(producersButton);
-      let computationalsButton = new qx.ui.menu.Button("Computationals", null, null, this.__getComputationals());
-      menuNodeTypes.add(computationalsButton);
-      let analysesButton = new qx.ui.menu.Button("Analyses", null, null, this.__getAnalyses());
-      menuNodeTypes.add(analysesButton);
-
-      return menuNodeTypes;
-    },
-
     __getPlayButton: function() {
       const icon = "@FontAwesome5Solid/play/32";
       let playButton = this.__playButton = new qx.ui.form.Button(null, icon);
@@ -1037,21 +1011,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __isSelectedItemALink: function() {
       return Boolean(this.__getLink(this.__selectedItemId));
-    },
-
-    __getProducers: function() {
-      const producers = qxapp.dev.fake.Data.getProducers();
-      return this.__createMenuFromList(producers);
-    },
-
-    __getComputationals: function() {
-      const computationals = qxapp.dev.fake.Data.getComputationals();
-      return this.__createMenuFromList(computationals);
-    },
-
-    __getAnalyses: function() {
-      const analyses = qxapp.dev.fake.Data.getAnalyses();
-      return this.__createMenuFromList(analyses);
     }
   }
 });
