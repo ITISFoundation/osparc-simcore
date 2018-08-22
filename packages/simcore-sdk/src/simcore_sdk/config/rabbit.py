@@ -19,8 +19,12 @@ CONFIG_SCHEMA = T.Dict({
     "channels": T.Dict({
         "progress": T.String(),
         "log": T.String(),
+    T.Key("celery", default=dict(result_backend="rpc://"), optional=True): T.Dict({
+        T.Key("result_backend", default="${CELERY_RESULT_BACKEND}", optional=True): T.String()
+        })
     })
 })
+
 
 CONFIG_EXAMPLES = map(yaml.load,[
 """
@@ -38,7 +42,16 @@ CONFIG_EXAMPLES = map(yaml.load,[
   channels:
     log: comp.backend.channels.log
     progress: comp.backend.channels.progress
-""",])
+""",
+"""
+  user: bar
+  password: secret
+  channels:
+    log: comp.backend.channels.log
+    progress: comp.backend.channels.progress
+  celery:
+    result_backend: 'rpc://'
+"""])
 
 
 def eval_broker(config):
@@ -50,8 +63,7 @@ def eval_broker(config):
     return url
 
 
-
-# TODO: deprecate!
+# TODO: deprecate! -------------
 # TODO: uniform config classes . see server.config file
 RABBITMQ_USER = env.get('RABBITMQ_USER','simcore')
 RABBITMQ_PASSWORD = env.get('RABBITMQ_PASSWORD','simcore')
@@ -64,21 +76,37 @@ AMQ_URL = 'amqp://{user}:{pw}@{url}:{port}'.format(user=RABBITMQ_USER, pw=RABBIT
 
 CELERY_BROKER_URL = AMQ_URL
 CELERY_RESULT_BACKEND=env.get('CELERY_RESULT_BACKEND','rpc://')
+# -------------------------------------
 
-class Config():
-    def __init__(self):
+class Config:
+    def __init__(self, config=None):
+        if config is not None:
+            CONFIG_SCHEMA.check(config) # raise exception
+        else:
+            config = {}
+
+        # FIXME: get variables via config.get('') or
         # rabbit
-        self._broker_url = CELERY_BROKER_URL
-        self._result_backend = CELERY_RESULT_BACKEND
+        try:
+            self._broker_url = eval_broker(config)
+        except:                                     # pylint: disable=W0702
+            self._broker_url = CELERY_BROKER_URL
+
+        self._result_backend = config.get("celery", {}).get("result_backend") or CELERY_RESULT_BACKEND
         self._module_name = "tasks"
 
         # pika
-        self._pika_credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
-        self._pika_parameters = pika.ConnectionParameters(host=RABBITMQ_HOST,
-            port=RABBITMQ_PORT, credentials=self._pika_credentials, connection_attempts=100)
+        self._pika_credentials = pika.PlainCredentials(
+                config.get("user") or RABBITMQ_USER,
+                config.get("password") or RABBITMQ_PASSWORD)
+        self._pika_parameters = pika.ConnectionParameters(
+            host=config.get("host") or RABBITMQ_HOST,
+            port=config.get("port") or RABBITMQ_PORT,
+            credentials=self._pika_credentials,
+            connection_attempts=100)
 
-        self._log_channel = RABBITMQ_LOG_CHANNEL
-        self._progress_channel = RABBITMQ_PROGRESS_CHANNEL
+        self._log_channel = config.get("celery", {}).get("result_backend") or RABBITMQ_LOG_CHANNEL
+        self._progress_channel = config.get("celery", {}).get("result_backend") or RABBITMQ_PROGRESS_CHANNEL
 
     @property
     def parameters(self):

@@ -12,3 +12,10 @@ services:
       - 18080:8080
     depends_on:
       - db
+  rabbit:
+    image: rabbitmq:3-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    ports:
+      - "15672:15672"

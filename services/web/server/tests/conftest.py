@@ -13,6 +13,7 @@ import sys
 import collections
 
 import pytest
+import yaml
 
 import init_db
 from server.db.utils import (
@@ -29,8 +30,7 @@ _LOGGER = logging.getLogger(__name__)
 CURRENT_DIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
 
 
-
-def _is_responsive(**pg_config):
+def _is_db_service_responsive(**pg_config):
     try:
         admin_engine = acquire_admin_engine(**pg_config)
         conn = admin_engine.connect()
@@ -39,6 +39,7 @@ def _is_responsive(**pg_config):
         _LOGGER.exception("Connection to db failed")
         return False
     return True
+
 
 # extends pytest-docker -------------------------------------------------------
 
@@ -60,11 +61,6 @@ def package_paths(pytestconfig):
 
     return collections.namedtuple("PackagePaths", paths.keys())(**paths)
 
-@pytest.fixture(scope="session")
-def app_testconfig(package_paths):
-    path = package_paths.CONFIG_FOLDER / "server-host-test.yaml"
-    config = read_and_validate(path.as_posix())
-    return config
 
 @pytest.fixture(scope='session')
 def docker_compose_file(package_paths):
@@ -73,30 +69,54 @@ def docker_compose_file(package_paths):
 
       - fixture defined in pytest-docker
     """
-    return str(package_paths.MOCK_FOLDER / 'docker-compose.yml')
+    fpath = package_paths.MOCK_FOLDER / 'docker-compose.yml'
+    assert fpath.exists()
+    return str(fpath)
 
 @pytest.fixture(scope="session")
-def postgres_service(docker_ip, docker_services, app_testconfig):
+def server_test_file(package_paths):
+    fpath = package_paths.CONFIG_FOLDER / "server-host-test.yaml"
+    assert fpath.exists()
+    return fpath
+
+# TODO: extend Service object from pytest-docker
+
+@pytest.fixture(scope="session")
+def mock_services(docker_ip, docker_services, docker_compose_file, server_test_file):
     """
-      starts postgress service with sample data
+      services in mock/docker-compose.yml
     """
-    _LOGGER.debug("Started docker at %s:%d", docker_ip, docker_services.port_for('db', 5432))
 
-    pg_config = app_testconfig["postgres"]
+    with open(docker_compose_file) as stream:
+        c = yaml.load(stream)
+        for service_name in c["services"].keys():
+            # pylint: disable=W0212
+            docker_services._services.get(service_name, {})
 
-    test_engine = acquire_engine(DNS.format(**pg_config))
+    # Patches os.environ to influence
+    pre_os_environ = os.environ.copy()
+    os.environ["POSTGRES_PORT"] = str(docker_services.port_for('db', 5432))
 
+    # loads app config
+    app_config = read_and_validate( server_test_file )
+    pg_config = app_config["postgres"]
+
+    # NOTE: this can be eventualy handled by the service under test as well!!
     docker_services.wait_until_responsive(
-        check=lambda: _is_responsive(**pg_config),
-        timeout=30.0,
+        check=lambda: _is_db_service_responsive(**pg_config),
+        timeout=20.0,
         pause=1.0,
     )
 
+    # start db & inject mockup data
+    test_engine = acquire_engine(DNS.format(**pg_config))
     init_db.setup_db(pg_config)
     init_db.create_tables(test_engine)
     init_db.sample_data(test_engine)
 
-    yield pg_config
+    yield docker_services
 
     init_db.drop_tables(test_engine)
     init_db.teardown_db(pg_config)
+
+    os.environ = pre_os_environ

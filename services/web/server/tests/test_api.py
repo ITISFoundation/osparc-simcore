@@ -1,34 +1,37 @@
-import pytest
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+import os
 import logging
 import sys
 import pathlib
-from pprint import pprint
+
+import pytest
 
 from server.main import init_app
-from server.settings import config_from_file
-
+from server.settings import (
+    read_and_validate
+)
 
 CURRENT_DIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.parent
 
-
 _LOGGER = logging.getLogger(__file__)
 
-# pylint: disable=redefined-outer-name
 @pytest.fixture
-def cli(loop, aiohttp_client, postgres_service, app_testconfig):
+def cli(loop, aiohttp_client, mock_services, server_test_file):
     """
         - starts a db service
         - starts an application in test-mode and serves it
         - starts a client that connects to the server
         - returns client
     """
-    _LOGGER.debug("database config: %s", pprint(postgres_service))
-    _LOGGER.debug("config: %s", app_testconfig)
+    config = read_and_validate( server_test_file )
 
-    assert app_testconfig["app"]["testing"] == True
+    assert "POSTGRES_PORT" in os.environ
+    assert config["app"]["testing"] == True
 
-    app = init_app(app_testconfig)
+    app = init_app(config)
     client = loop.run_until_complete(aiohttp_client(app))
+
     return client
 
 
