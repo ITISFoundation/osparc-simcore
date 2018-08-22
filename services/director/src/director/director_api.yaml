@@ -1,4 +1,4 @@
-swagger: "2.0"
+openapi: "3.0.0"
 info:
   description: This is the oSparc's director API
   version: 1.0.0
@@ -10,14 +10,23 @@ info:
   license:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
-# host: director:8001
-basePath: /v1
-schemes:
-  - https
-consumes:
-  - application/json
-produces:
-  - application/json
+
+servers:
+  - url: localhost:{port}/{basePath}
+    description: Development server
+    variables:
+      port: 
+        default: '8080'
+      basePath:
+        default: v1
+  - url: director:{port}/{basePath}
+    description: Production server
+    variables:
+      port: 
+        default: '8001'
+      basePath:
+        default: v1
+
 # tags are used for organizing operations
 tags:
 - name: admins
@@ -37,11 +46,13 @@ paths:
       operationId: root_get
       responses:
         200:
-          description: Successful response.
-          schema:
-            type: string
-            description: Message greeting
-            example: Hello!
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Message greeting
+                example: Hello my friend!
         default:
           description: Unexpected error
 
@@ -55,10 +66,12 @@ paths:
       responses:
         200:
           description: Returns the list of available interactive services
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/ServiceDescription'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceDescription'
         default:
           description: Unexpected error
   /start_service:
@@ -73,24 +86,29 @@ paths:
           name: service_name
           description: The name of the service to start
           required: true
-          type: string
+          schema:
+            type: string
         - in: query
           name: service_uuid
           description: The uuid to assign the service with
           required: true
-          type: string          
+          schema:
+            type: string          
         - in: query
           name: service_tag
           description: The tag/version of the service to start
           required: false
-          type: string
+          schema:
+            type: string
       responses:
         201:
           description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/Service'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
         400:
           description: Malformed function call, missing field
         404:
@@ -112,7 +130,8 @@ paths:
           name: service_uuid
           description: The uuid of the service to stop
           required: true
-          type: string
+          schema:
+            type: string
       responses:
         204:
           description: Succesfully stopped and removed the service from the oSparc platform
@@ -134,176 +153,191 @@ paths:
       responses:
         200:
           description: Returns the list of available computational services
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/ServiceDescription'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceDescription'
         default:
           description: Unexpected error
-definitions:  
-  Service:
-    type: object
-    properties:
-      container_id:
-        # TODO: SAN remove this. useless.
-        type: string
-        description: The id of the docker container
-        example: 23032hfjdhskdjh21399392
-      published_ports:
-        # TODO: SAN this should be in the entry point part. and there is only one port for one service.
-        description: The ports where the service provides its interface
-        type: array
-        items:
-          type: integer
-          minimum: 1
-          example: 30000
-      entry_point:
-        description: The entry point where the service provides its interface
-        type: string
-        example: /visualizer
-    required: 
-      - container_id
-      - published_ports
-      - entry_point
-  ServiceDescription:    
-    type: object
-    properties:
-      name:
-        description: The name of the service
-        type: string
-        example: 3d-viewer
-      repos:
-        # TODO: SAN useless. Remove.
-        description: The repositorie(s) that the service depends upon
-        type: array
-        items:
+components:
+  schemas:
+    Service:
+      type: object
+      properties:
+        container_id:
+          # TODO: SAN remove this. useless.
+          type: string
+          description: The id of the docker container
+          example: 23032hfjdhskdjh21399392
+        published_ports:
+          # TODO: SAN this should be in the entry point part. and there is only one port for one service.
+          description: The ports where the service provides its interface
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            example: 30000
+        entry_point:
+          description: The entry point where the service provides its interface
+          type: string
+          example: /visualizer
+      required: 
+        - container_id
+        - published_ports
+        - entry_point
+    ServiceDescription:    
+      type: object
+      properties:
+        name:
+          description: The name of the service
+          type: string
+          example: 3d-viewer
+        repos:
+          # TODO: SAN useless. Remove.
+          description: The repositorie(s) that the service depends upon
+          type: array
+          items:
+            type: string
+            format: url
+            example: simcore/services/dynamic/3d-viewer
+        details:
+          # TODO: SAN much too complex. It's one service, even if more than 1 docker is used internally. Only 1 array necesary.
+          # TODO: it should be an object with the version/tag:details...
+          description: The details of the service
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/ServiceDetails'
+      required:
+        - name
+        - repos
+        - details
+    ServiceDetails:
+      type: object
+      properties:
+      # TODO: SAN the version of the service is missing, or is mixed with the tag.
+        authors:
+          $ref: '#/components/schemas/AuthorDetails'
+        contact:
+          type: string
+          format: email
+          description: The email address to go for questions on the service
+          example: servicecontact@email.com
+        description:
+          type: string
+          description: The human readable description of the service
+        inputs:
+          description: The inputs of the service
+          type: array
+          items:
+            $ref: '#/components/schemas/Port'
+        outputs:
+          description: The outputs of the service
+          type: array
+          items:
+            $ref: '#/components/schemas/Port'
+        key:
+          description: The location of the service
           type: string
           format: url
           example: simcore/services/dynamic/3d-viewer
-      details:
-        # TODO: SAN much too complex. It's one service, even if more than 1 docker is used internally. Only 1 array necesary.
-        # TODO: it should be an object with the version/tag:details...
-        description: The details of the service
-        type: array
-        items:
-          type: array
-          items:
-            $ref: '#/definitions/ServiceDetails'
-    required:
-    - name
-    - repos
-    - details
-  ServiceDetails:
-    properties:
-    # TODO: SAN the version of the service is missing, or is mixed with the tag.
-      authors:
-        $ref: '#/definitions/AuthorDetails'
-      contact:
-        type: string
-        format: email
-        description: The email address to go for questions on the service
-        example: servicecontact@email.com
-      description:
-        type: string
-        description: The human readable description of the service
-      inputs:
-        description: The inputs of the service
-        type: array
-        items:
-          $ref: '#/definitions/Port'
-      outputs:
-        description: The outputs of the service
-        type: array
-        items:
-          $ref: '#/definitions/Port'
-      key:
-        description: The location of the service
-        type: string
-        format: url
-        example: simcore/services/dynamic/3d-viewer
-      name:
-        description: The name of the service
-        type: string
-        example: 3d-viewer
-      tag:
-        description: The tag/version of the service
-        type: string
-        example: 1.0.0
-      viewer:
-        $ref: '#/definitions/Viewer'
-    required:
-      - authors
-      - contact
-      - description
-      - inputs
-      - outputs
-      - key
-      - name
-      - tag
-      
-  AuthorDetails:
-    properties:
-      name:
-        description: The name of the author
-        type: string
-        example: Lee Van Cleef
-      email:
-        description: The email address of the author
-        type: string
-        format: email
-        example: leevancleef@thebad.com
-    required: 
-      - name
-      - email
-  Port:
-    properties:
-      key:
-        description: The unique key of the port
-        type: string
-        example: A
-      label:
-        description: The label of the port
-        type: string
-        example: this is the key A
-      desc:
-        description: The human readable description of what the port is for
-        type: string
-        example: this is the description
-      type:        
-        type: string
-        enum: [integer, number, bool, string, file-url, folder-url]
-        description: >
-          The type of the port:
-            * integer - An signed integer
-            * number - A floating point number
-            * bool - A boolean, True or False
-            * string - A chain of characters
-            * file-url - A URL pointing to a file
-            * folder-url - A URL pointing to a folder
-        example: file-url
+        name:
+          description: The name of the service
+          type: string
+          example: 3d-viewer
+        tag:
+          description: The tag/version of the service
+          type: string
+          example: 1.0.0
+        viewer:
+          $ref: '#/components/schemas/Viewer'
+      required:
+        - authors
+        - contact
+        - description
+        - inputs
+        - outputs
+        - key
+        - name
+        - tag
+        
+    AuthorDetails:
+      type: object
+      properties:
+        name:
+          description: The name of the author
+          type: string
+          example: Lee Van Cleef
+        email:
+          description: The email address of the author
+          type: string
+          format: email
+          example: leevancleef@thebad.com
+      required: 
+        - name
+        - email
+    Port:
+      type: object
+      properties:
+        key:
+          description: The unique key of the port
+          type: string
+          example: A
+        label:
+          description: The label of the port
+          type: string
+          example: this is the key A
+        desc:
+          description: The human readable description of what the port is for
+          type: string
+          example: this is the description
+        type:        
+          type: string
+          enum: 
+            - integer
+            - number
+            - bool
+            - string
+            - file-url
+            - folder-url]
+          description: |
+            The type of the port:
+              * integer - An signed integer
+              * number - A floating point number
+              * bool - A boolean, True or False
+              * string - A chain of characters
+              * file-url - A URL pointing to a file
+              * folder-url - A URL pointing to a folder
+          example: file-url
 
-      value:
-        description: The value of the port. May be null if not yet defined.
-        type: string
-        example: "null"
-    required: 
-      - key
-      - label
-      - desc
-      - type
-      - value
-  Viewer:
-    properties:
-      ip:
-        description: The IP address where the viewer is served
-        type: string
-        format: ip
-        example: osparc.itis.swiss
-      port:
-        description: The port where the viewer is served
-        type: integer
-        minimum: 1
-        example: 2213
-    required: 
-      - ip
-      - port
+        value:
+          description: The value of the port. May be null if not yet defined.
+          type: string
+          example: "null"
+      required: 
+        - key
+        - label
+        - desc
+        - type
+        - value
+    Viewer:
+      type: object
+      properties:
+        ip:
+          description: The IP address where the viewer is served
+          type: string
+          format: ip
+          example: osparc.itis.swiss
+          nullable: true
+        port:
+          description: The port where the viewer is served
+          type: integer
+          minimum: 1
+          example: 2213
+          nullable: true
+      required: 
+        - ip
+        - port
