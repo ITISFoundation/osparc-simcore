@@ -9,6 +9,15 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   members: {
+    getNodeMetaData: function(nodeImageId) {
+      let metaData = qxapp.dev.fake.Data.getNodeMap()[nodeImageId];
+      if (metaData === undefined) {
+        let store = qxapp.data.Store.getInstance();
+        metaData = store.getBuiltInServices()[nodeImageId];
+      }
+      return metaData;
+    },
+
     metaDataToNodeData: function(metaData) {
       let nodeData = {};
       nodeData.key = metaData.key;
