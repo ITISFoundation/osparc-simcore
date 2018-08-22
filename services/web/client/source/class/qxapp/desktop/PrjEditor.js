@@ -7,7 +7,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     let splitter = this.__splitter = this.getChildControl("splitter");
 
-    const settingsWidth = this.__settingsWidth = 500;
+    const settingsWidth = this.__settingsWidth = 600;
 
     let workbenchData = {};
     if (projectId !== null) {
@@ -17,11 +17,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     let settingsBox = this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
       minWidth: 0,
       visibility: "excluded",
-      maxWidth: settingsWidth,
-      width: Math.round(0.75 * settingsWidth)
+      maxWidth: settingsWidth
     });
 
-    let settingsBoxContent = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    let settingsBoxContent = new qx.ui.container.Composite(new qx.ui.layout.VBox(10, null, "separator-vertical"));
     settingsBox.add(settingsBoxContent, {
       top: 0,
       left: 0,
