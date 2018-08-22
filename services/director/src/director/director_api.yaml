@@ -16,7 +16,7 @@ servers:
     description: Development server
     variables:
       port: 
-        default: '8080'
+        default: '8001'
       basePath:
         default: v1
   - url: director:{port}/{basePath}
