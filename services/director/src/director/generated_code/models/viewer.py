@@ -67,8 +67,8 @@ class Viewer(Model):
         :param ip: The ip of this Viewer.
         :type ip: str
         """
-        if ip is None:
-            raise ValueError("Invalid value for `ip`, must not be `None`")  # noqa: E501
+        # if ip is None:
+        #     raise ValueError("Invalid value for `ip`, must not be `None`")  # noqa: E501
 
         self._ip = ip
 
@@ -92,8 +92,8 @@ class Viewer(Model):
         :param port: The port of this Viewer.
         :type port: int
         """
-        if port is None:
-            raise ValueError("Invalid value for `port`, must not be `None`")  # noqa: E501
+        # if port is None:
+        #     raise ValueError("Invalid value for `port`, must not be `None`")  # noqa: E501
         if port is not None and port < 1:  # noqa: E501
             raise ValueError("Invalid value for `port`, must be a value greater than or equal to `1`")  # noqa: E501
 
