@@ -4,8 +4,8 @@ const nodeWidthMini = parseInt(240/miniFactor);
 qx.Class.define("qxapp.components.workbench.NodeBaseMini", {
   extend: qxapp.components.workbench.NodeBase,
 
-  construct: function(uuid) {
-    this.base(arguments, uuid);
+  construct: function(nodeImageId, uuid) {
+    this.base(arguments, nodeImageId, uuid);
 
     this.set({
       minWidth: nodeWidthMini,

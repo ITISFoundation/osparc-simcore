@@ -5,7 +5,7 @@ const miniFactor = 4;
 qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
   extend: qx.ui.container.Composite,
 
-  construct: function(mainWorkbench) {
+  construct: function(workbenchData) {
     this.base();
 
     let canvas = new qx.ui.layout.Canvas();
@@ -22,22 +22,21 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
     });
 
     this.__svgWidget = new qxapp.components.workbench.SvgWidget("SvgWidgetLayerMini");
+    // this gets fired once the widget has appeared and the library has been loaded
+    // due to the qx rendering, this will always happen after setup, so we are
+    // sure to catch this event
+    if (workbenchData) {
+      this.__svgWidget.addListenerOnce("SvgWidgetReady", () => {
+        // Will be called only the first time Svg lib is loaded
+        this.__loadProject(workbenchData);
+      });
+    }
     this.__desktop.add(this.__svgWidget, {
       left: 0,
       top: 0,
       right: 0,
       bottom: 0
     });
-
-    this.__svgWidget.addListener("SvgWidgetReady", function() {
-      this.__deserializeData();
-    }, this);
-
-    this.__svgWidget.addListener("SvgWidgetReady", function() {
-      this.__svgWidget.addListener("appear", function() {
-        this.__deserializeData();
-      }, this);
-    }, this);
 
     this.__nodes = [];
     this.__links = [];
@@ -53,37 +52,20 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
     __desktop: null,
     __svgWidget: null,
 
-    setData: function(pipeData) {
-      this.__myData = pipeData;
-    },
-
-    __deserializeData: function() {
+    __loadProject: function(workbenchData) {
       this.removeAll();
-      if (this.__myData === null) {
-        return;
-      }
 
       // add nodes
-      let nodesMetaData = this.__myData.nodes;
-      for (let i = 0; i < nodesMetaData.length; i++) {
-        let nodeMetaData = nodesMetaData[i];
-        let node = new qxapp.components.workbench.NodeBaseMini(nodeMetaData.uuid);
+      for (let nodeUuid in workbenchData) {
+        let nodeData = workbenchData[nodeUuid];
+        const imageId = nodeData.key + "-" + nodeData.version;
+        let node = new qxapp.components.workbench.NodeBaseMini(imageId, nodeUuid);
         node.createNodeLayout();
-        if (nodeMetaData.position) {
-          this.__addNodeToWorkbench(node, nodeMetaData.position);
+        if (nodeData.position) {
+          this.__addNodeToWorkbench(node, nodeData.position);
         } else {
           this.__addNodeToWorkbench(node);
         }
-      }
-
-      // add links
-      let links = this.__myData.links;
-      for (let i = 0; i < links.length; i++) {
-        let node1 = this.__getNode(links[i].node1Id);
-        let port1 = node1.getPort(links[i].port1Id);
-        let node2 = this.__getNode(links[i].node2Id);
-        let port2 = node2.getPort(links[i].port2Id);
-        this.__addLink(node1, port1, node2, port2, links[i].uuid);
       }
     },
 

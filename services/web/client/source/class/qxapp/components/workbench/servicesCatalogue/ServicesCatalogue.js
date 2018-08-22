@@ -31,8 +31,17 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     this.add(searchLayout);
 
     let store = qxapp.data.Store.getInstance();
-    this.__allServices = store.getBuiltInServices();
-    // this.__allServices = this.__allServices.concat(qxapp.qxapp.dev.fake.Data.getServices());
+    this.__allServices = [];
+    for (let imageId in store.getBuiltInServices()) {
+      let service = store.getBuiltInServices()[imageId];
+      service.imageId = imageId;
+      this.__allServices.push(service);
+    }
+    for (let imageId in qxapp.dev.fake.Data.getNodeMap()) {
+      let service = qxapp.dev.fake.Data.getNodeMap()[imageId];
+      service.imageId = imageId;
+      this.__allServices.push(service);
+    }
     store.addListener("servicesRegistered", e => {
       this.__addNewData(e.getData());
     }, this);
@@ -124,15 +133,17 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
       if (this.__contextNodeId !== null && this.__contextPort !== null) {
         for (let i = 0; i < this.__allServices.length; i++) {
           if (this.__contextPort.isInput === true) {
-            for (let j = 0; j < this.__allServices[i].outputs.length; j++) {
-              if (this.__allServices[i].outputs[j].type === this.__contextPort.portType) {
+            let outputsMap = this.__allServices[i].outputs;
+            for (let key in outputsMap) {
+              if (outputsMap[key].type === this.__contextPort.portType) {
                 newData.push(this.__allServices[i].name);
                 break;
               }
             }
           } else {
-            for (let j = 0; j < this.__allServices[i].inputs.length; j++) {
-              if (this.__allServices[i].inputs[j].type === this.__contextPort.portType) {
+            let inputsMap = this.__allServices[i].inputs;
+            for (let key in inputsMap) {
+              if (inputsMap[key].type === this.__contextPort.portType) {
                 newData.push(this.__allServices[i].name);
                 break;
               }

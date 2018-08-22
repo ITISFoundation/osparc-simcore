@@ -10,77 +10,35 @@ qx.Class.define("qxapp.data.Store", {
 
   members: {
     getBuiltInServices: function() {
-      let builtInServices = [{
-        "key": "FileManager",
-        "name": "File Manager",
-        "tag": "0.0.1",
-        "description": "File Manager",
-        "authors": [{
-          "name": "Odei Maiz",
-          "email": "maiz@itis.ethz.ch",
-          "affiliation": "ITIS Foundation"
-        }],
-        "contact": "maiz@itis.ethz.ch",
-        "inputs": [],
-        "outputs": [{
-          "key": "out_1",
-          "label": "File-url",
-          "description": "File-url",
-          "type": "file-url",
-          "defaultValue": null
-        }, {
-          "key": "out_2",
-          "label": "Folder-url",
-          "description": "Folder-url",
-          "type": "folder-url",
-          "defaultValue": null
-        }],
-        "settings": []
-      }, {
-        "key": "Fake",
-        "name": "Fake",
-        "tag": "0.0.1",
-        "description": "Fake",
-        "authors": [{
-          "name": "Odei Maiz",
-          "email": "maiz@itis.ethz.ch",
-          "affiliation": "ITIS Foundation"
-        }],
-        "contact": "maiz@itis.ethz.ch",
-        "inputs": [{
-          "key": "fake",
-          "label": "integer",
-          "description": "Fake",
-          "type": "number",
-          "defaultValue": null
-        }],
-        "outputs": [],
-        "settings": []
-      }, {
-        "key": "dynamicFake",
-        "name": "dynamicFake",
-        "tag": "0.0.1",
-        "description": "Dynamic Fake",
-        "authors": [{
-          "name": "Odei Maiz",
-          "email": "maiz@itis.ethz.ch",
-          "affiliation": "ITIS Foundation"
-        }],
-        "contact": "maiz@itis.ethz.ch",
-        "inputs": [{
-          "key": "fake",
-          "label": "integer",
-          "description": "Fake",
-          "type": "number",
-          "defaultValue": null
-        }],
-        "outputs": [],
-        "settings": [],
-        "viewer": {
-          "ip": "http://masu.speag.com",
-          "port": 5001
+      let builtInServices = {
+        "service/dynamic/itis/FileManager-0.0.0": {
+          key: "service/dynamic/itis/FileManager",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "File Manager",
+          description: "File Manager",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {},
+          outputs: {
+            outFile: {
+              displayOrder: 0,
+              label: "File",
+              description: "Chosen File",
+              type: "data:*/*"
+            },
+            outDir: {
+              displayOrder: 1,
+              label: "Folder",
+              description: "Chosen Folder",
+              type: "data:*/*"
+            }
+          }
         }
-      }];
+      };
       return builtInServices;
     },
 
@@ -99,8 +57,8 @@ qx.Class.define("qxapp.data.Store", {
           const repo = listOfRepositories[key];
           const nTags = repo.length;
           for (let i=0; i<nTags; i++) {
-            let newMetadata = qxapp.data.Converters.registryToMetadata(repo[i]);
-            services.push(newMetadata);
+            let newMetaData = qxapp.data.Converters.registryToMetaData(repo[i]);
+            services.push(newMetaData);
           }
         }
         this.fireDataEvent("servicesRegistered", services);
@@ -119,8 +77,8 @@ qx.Class.define("qxapp.data.Store", {
           const repo = listOfIntercativeServices[key];
           if (repo["details"].length>0 && repo["details"][0].length>0) {
             const repoData = repo["details"][0][0];
-            let newMetadata = qxapp.data.Converters.registryToMetadata(repoData);
-            services.push(newMetadata);
+            let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
+            services.push(newMetaData);
           }
         }
         this.fireDataEvent("interactiveServicesRegistered", services);

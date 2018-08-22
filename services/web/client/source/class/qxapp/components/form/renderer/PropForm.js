@@ -80,6 +80,10 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
       }
     },
 
+    getValues: function() {
+      return this._form.getData();
+    },
+
     enableProp: function(key, enable) {
       if (this._form && this._form.getControl(key)) {
         this._form.getControl(key).setEnabled(enable);
