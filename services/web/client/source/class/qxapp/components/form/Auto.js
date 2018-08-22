@@ -196,7 +196,7 @@ qx.Class.define("qxapp.components.form.Auto", {
         this.getControl(key).setEnabled(true);
         let upkey = qx.lang.String.firstUp(key);
         let setter = "set" + upkey;
-        let value = data[key];
+        let value = data[key].defaultValue;
         if (relax && !model[setter]) {
           continue;
         }
