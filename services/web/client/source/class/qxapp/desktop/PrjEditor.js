@@ -28,22 +28,24 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       bottom: 0
     });
 
-    let miniWorkbenchView = this.__miniWorkbenchView = new qxapp.components.workbench.WorkbenchMini(workbenchData);
-    settingsBoxContent.add(miniWorkbenchView, {
-      flex: 1
+    let miniWorkbenchView = this.__miniWorkbenchView = new qxapp.components.workbench.WorkbenchMini(workbenchData).set({
+      minHeight: 200,
+      maxHeight: 500
     });
+    settingsBoxContent.add(miniWorkbenchView);
 
     let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
-      backgroundColor: "blue"
+      backgroundColor: "blue",
+      minHeight: 200,
+      maxHeight: 500
     });
-    settingsBoxContent.add(extraView, {
-      flex: 1
-    });
+    settingsBoxContent.add(extraView);
 
-    let settingsView = this.__settingsView = new qxapp.components.workbench.SettingsView();
-    settingsBoxContent.add(settingsView, {
-      flex: 1
+    let settingsView = this.__settingsView = new qxapp.components.workbench.SettingsView().set({
+      minHeight: 200,
+      maxHeight: 500
     });
+    settingsBoxContent.add(settingsView);
 
     settingsBox.addListener("changeWidth", e => {
       let width = e.getData();
