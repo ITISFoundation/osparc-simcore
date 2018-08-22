@@ -22,21 +22,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
       projectId: null
     }),
 
-    metaDataToNodeData: function(metaData) {
-      let nodeData = {};
-      nodeData.key = metaData.key;
-      nodeData.version = metaData.version;
-      nodeData.inputs = {};
-      nodeData.outputs = {};
-      for (let inputKey in metaData.inputs) {
-        nodeData.inputs[inputKey] = metaData.inputs[inputKey].defaultValue;
-      }
-      for (let outputKey in metaData.outputs) {
-        nodeData.outputs[outputKey] = null;
-      }
-      return nodeData;
-    },
-
     getNodeMap: function() {
       return {
         "service/dynamic/itis/file-picker-0.0.0":{
