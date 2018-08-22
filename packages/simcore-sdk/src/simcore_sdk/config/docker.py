@@ -1,6 +1,15 @@
 """ Basic configuration file for docker registry
 
 """
+import trafaret as T
+
+# TODO: adapt all data below!
+CONFIG_SCHEMA = T.Dict({
+    "user": T.String(),
+    "password": T.String(),
+    "registry": T.String()
+})
+
 
 class Config():
     # TODO: uniform config classes . see server.config file

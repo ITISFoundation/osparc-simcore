@@ -17,8 +17,10 @@ import sqlalchemy.exc
 
 from s3wrapper.s3_client import S3Client
 # TODO: this should be coordinated with postgres options from config/server.yaml
-from simcore_sdk.config.db import Config as DbConfig
-from simcore_sdk.config.s3 import Config as S3Config
+#from simcore_sdk.config.db import Config as DbConfig
+#from simcore_sdk.config.s3 import Config as S3Config
+#-------------------------------------------------------------
+
 from simcore_sdk.models.pipeline_models import (
     Base,
     ComputationalPipeline,
@@ -43,9 +45,10 @@ async def init_database(_app):
     RETRY_COUNT = 20
 
     # db config
-    # FIXME: use app to get config
-    db_config = DbConfig()
-    db_engine = create_engine(db_config.endpoint,
+    db_config = _app["config"]["postgres"]
+    endpoint = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(**db_config)
+
+    db_engine = create_engine(endpoint,
         client_encoding="utf8",
         connect_args={"connect_timeout": 30},
         pool_pre_ping=True)
@@ -104,6 +107,7 @@ async def start_pipeline(request):
 
     request_data = await request.json()
 
+    _app = request.app["config"]
     response = {}
 
     nodes = request_data["nodes"]
@@ -177,15 +181,16 @@ async def start_pipeline(request):
 
         # now we know the id, lets copy over data
         if io_files:
-            _config = S3Config()
-            s3_client = S3Client(endpoint=_config.endpoint,
-                access_key=_config.access_key, secret_key=_config.secret_key)
+            _config = _app["config"]["s3"]
+
+            s3_client = S3Client(endpoint=_config['endpoint'],
+                access_key=_config['access_key'], secret_key=_config['secret_key'])
             for io_file in io_files:
                 _from = io_file["from"]
                 _to = str(pipeline_id) + "/" + io_file["to"]
                 _LOGGER.debug("COPYING from %s to %s", _from, _to )
 
-                s3_client.copy_object(_config.bucket_name, _to, _from)
+                s3_client.copy_object(_config['bucket_name'], _to, _from)
 
 
         pipeline_name = "request_data"

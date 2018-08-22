@@ -4,9 +4,20 @@
 from os import environ as env
 import logging
 
+import trafaret as T
 
 _LOGGER = logging.getLogger(__name__)
 
+
+CONFIG_SCHEMA = T.Dict({
+    "endpoint": T.String(),
+    "access_key": T.String(),
+    "secret_key": T.String(),
+    "bucket_name": T.String(),
+})
+
+
+# TODO: deprecate!
 class Config():
     def __init__(self):
         # TODO: uniform config classes . see server.config file

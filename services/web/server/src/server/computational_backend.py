@@ -16,6 +16,8 @@ def setup_computational_backend(app):
     _LOGGER.debug("Setting up %s ...", __name__)
 
     # subscribe to rabbit upon startup
+    # TODO: REmoved temporarily!
+    # TODO: Define connection policies (e.g. {on-startup}, lazy). Could be defined in config-file
     app.on_startup.append(subscribe)
 
     # TODO: add function to "unsubscribe"

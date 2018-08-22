@@ -12,18 +12,18 @@ THIS FILE IS ONLY FOR DEVELOPMENT IN FORK! SHOULD NOT BE INCLUDED IN OFFICIAL RE
 - TODO: pytest.ini is temporary
 - TODO: Remove warning ``` psycopg2/__init__.py:144: UserWarning: The psycopg2 wheel package will be renamed from release 2.8; in order to keep installing from binary please use "pip install psycopg2-binary" instead. For details see: <http://initd.org/psycopg/docs/install.html#binary-install-from-pypi>.```
 
-##
 
 ```bash
 cd osparc-simcore/services
 docker-compose -f docker
 
-
-
  # if fails change
  docker-compose restart
 
 ```
+
+
+
 
 
 ## database service

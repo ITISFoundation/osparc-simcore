@@ -5,7 +5,53 @@
 from os import environ as env
 
 import pika
+import yaml
+import trafaret as T
 
+
+# TODO: adapt all data below!
+# TODO: can use venv as defaults? e.g. $RABBITMQ_LOG_CHANNEL
+CONFIG_SCHEMA = T.Dict({
+    T.Key("host", default='rabbit', optional=True): T.String(),
+    T.Key("port", default=5672, optional=True): T.Int(),
+    "user": T.String(),
+    "password": T.String(),
+    "channels": T.Dict({
+        "progress": T.String(),
+        "log": T.String(),
+    })
+})
+
+CONFIG_EXAMPLES = map(yaml.load,[
+"""
+  user: simcore
+  password: simcore
+  channels:
+    log: comp.backend.channels.log
+    progress: comp.backend.channels.progress
+""",
+"""
+  host: rabbito
+  port: 1234
+  user: foo
+  password: secret
+  channels:
+    log: comp.backend.channels.log
+    progress: comp.backend.channels.progress
+""",])
+
+
+def eval_broker(config):
+    """
+        Raises trafaret.DataError if config validation fails
+    """
+    CONFIG_SCHEMA.check(config) # raise exception
+    url = 'amqp://{user}:{password}@{host}:{port}'.format(**config)
+    return url
+
+
+
+# TODO: deprecate!
 # TODO: uniform config classes . see server.config file
 RABBITMQ_USER = env.get('RABBITMQ_USER','simcore')
 RABBITMQ_PASSWORD = env.get('RABBITMQ_PASSWORD','simcore')
