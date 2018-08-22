@@ -9,6 +9,21 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   members: {
+    metaDataToNodeData: function(metaData) {
+      let nodeData = {};
+      nodeData.key = metaData.key;
+      nodeData.version = metaData.version;
+      nodeData.inputs = {};
+      nodeData.outputs = {};
+      for (let inputKey in metaData.inputs) {
+        nodeData.inputs[inputKey] = metaData.inputs[inputKey].defaultValue;
+      }
+      for (let outputKey in metaData.outputs) {
+        nodeData.outputs[outputKey] = null;
+      }
+      return nodeData;
+    },
+
     getBuiltInServices: function() {
       let builtInServices = {
         "service/dynamic/itis/FileManager-0.0.0": {
