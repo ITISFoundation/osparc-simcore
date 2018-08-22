@@ -347,6 +347,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeImageId, uuid);
       nodeBase.createNodeLayout(nodeData);
 
+      // DEPRECATED: The new implementation doesn't take the entryPoitn into account
       const imageId = nodeBase.getNodeImageId();
       if (imageId.includes("dynamic")) {
         const slotName = "startDynamic";

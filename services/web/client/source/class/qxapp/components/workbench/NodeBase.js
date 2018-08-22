@@ -214,6 +214,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
                   nodeId: this.getNodeId()
                 });
               }, this);
+              this.__logger.debug(metaData.name, "Service ready on " + srvUrl);
+              this.__logger.info(metaData.name, "Service ready");
               console.debug(metaData.name, "Service ready on " + srvUrl);
             }
           }
