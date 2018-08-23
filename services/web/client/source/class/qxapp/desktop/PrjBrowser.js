@@ -107,9 +107,6 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       projectController.setDelegate(delegate);
     },
 
-    /**
-     * Mockup data
-     */
     __getProjectArray: function() {
       return new qx.data.Array(
         qxapp.data.Store.getInstance().getProjectList()
