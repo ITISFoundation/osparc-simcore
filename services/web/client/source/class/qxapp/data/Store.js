@@ -19,11 +19,12 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     metaDataToNodeData: function(metaData) {
-      let nodeData = {};
-      nodeData.key = metaData.key;
-      nodeData.version = metaData.version;
-      nodeData.inputs = {};
-      nodeData.outputs = {};
+      let nodeData = {
+        key: metaData.key,
+        version: metaData.version,
+        inputs: {},
+        outputs: {}
+      };
       for (let inputKey in metaData.inputs) {
         nodeData.inputs[inputKey] = metaData.inputs[inputKey].defaultValue;
       }

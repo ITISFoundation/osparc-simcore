@@ -346,6 +346,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __createNode: function(nodeImageId, uuid, nodeData) {
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeImageId, uuid);
       nodeBase.createNodeLayout(nodeData);
+<<<<<<< HEAD
 
       // DEPRECATED: The new implementation doesn't take the entryPoitn into account
       const imageId = nodeBase.getNodeImageId();
@@ -374,6 +375,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         };
         socket.emit(slotName, data);
       }
+=======
+>>>>>>> feature/prj_model
 
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
