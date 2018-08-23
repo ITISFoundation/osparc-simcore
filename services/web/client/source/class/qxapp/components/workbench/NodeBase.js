@@ -167,7 +167,9 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.__createPorts("Input", metaData.inputs);
       this.__createPorts("Output", metaData.outputs);
       this.__addSettings(metaData.inputs);
-      this.__settingsForm.setData(nodeData.inputs);
+      if (nodeData) {
+        this.__settingsForm.setData(nodeData.inputs);
+      }
     },
 
     __addSettings: function(inputs) {
