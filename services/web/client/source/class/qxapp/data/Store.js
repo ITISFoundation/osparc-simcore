@@ -8,30 +8,37 @@ qx.Class.define("qxapp.data.Store", {
     "interactiveServicesRegistered": "qx.event.type.Event"
   },
 
+  statics: {
+    /**
+     * Represents an empty project descriptor
+    */
+    NEW_PROJECT_DESCRIPTOR: qx.data.marshal.Json.createModel({
+      name: "New Project",
+      description: "Empty",
+      thumbnail: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round",
+      created: new Date(),
+      projectId: qxapp.utils.Utils.uuidv4()
+    })
+  },
+
   members: {
-    getNodeMetaData: function(nodeImageId) {
-      let metaData = qxapp.dev.fake.Data.getNodeMap()[nodeImageId];
-      if (metaData === undefined) {
-        let store = qxapp.data.Store.getInstance();
-        metaData = store.getBuiltInServices()[nodeImageId];
-      }
-      return metaData;
+    getServices: function() {
+      let services = {};
+      services = Object.assign(services, this.getBuiltInServices());
+      services = Object.assign(services, qxapp.dev.fake.Data.getNodeMap());
+      return services;
     },
 
-    metaDataToNodeData: function(metaData) {
-      let nodeData = {
-        key: metaData.key,
-        version: metaData.version,
-        inputs: {},
-        outputs: {}
-      };
-      for (let inputKey in metaData.inputs) {
-        nodeData.inputs[inputKey] = metaData.inputs[inputKey].defaultValue;
+    getProjectList: function() {
+      return qxapp.dev.fake.Data.getProjectList();
+    },
+
+    getNodeMetaData: function(nodeImageId) {
+      let metaData = this.getServices()[nodeImageId];
+      if (metaData === undefined) {
+        metaData = this.getBuiltInServices()[nodeImageId];
       }
-      for (let outputKey in metaData.outputs) {
-        nodeData.outputs[outputKey] = null;
-      }
-      return nodeData;
+      return metaData;
     },
 
     getBuiltInServices: function() {

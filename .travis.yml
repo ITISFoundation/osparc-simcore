@@ -35,18 +35,14 @@ matrix:
         - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
 
       install:
-        - pip3 install pylint
-        - pip3 install pytest-cov
-        - pip3 install coveralls
-        - pip3 install -r packages/pytest_docker/requirements.txt
-        - pip3 install -r packages/s3wrapper/requirements.txt
-        - pip3 install -r packages/simcore-sdk/requirements.txt
-        - pip3 --version
+        - pip install --upgrade pip wheel setuptools && pip3 --version
+        - pip3 install packages/s3wrapper[test]
+        - pip3 install packages/simcore-sdk[test]
+        - pushd services/web/server; pip3 install -r requirements/ci.txt; popd
 
       before_script:
         - pylint --version
-        # change python path for 2nd party libraries
-        - export PYTHONPATH=${PYTHONPATH}:${TRAVIS_BUILD_DIR}/packages/s3wrapper/src
+        - pip3 list
 
       script:
         - make pylint

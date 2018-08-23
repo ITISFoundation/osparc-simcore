@@ -230,12 +230,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __addServiceFromCatalogue: function(e, pos) {
       let data = e.getData();
       let metaData = data.service;
-      let nodeData = qxapp.data.Store.metaDataToNodeData(metaData);
-      const nodeImageId = nodeData.key + "-" + nodeData.version;
+      console.log("metaData", metaData);
+      const nodeImageId = metaData.key + "-" + metaData.version;
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let nodeB = this.__createNode(nodeImageId, null, nodeData);
+      let nodeB = this.__createNode(nodeImageId, null);
       this.__addNodeToWorkbench(nodeB, pos);
 
       if (nodeAId !== null && portA !== null) {
@@ -742,6 +742,45 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__removeAllLinks();
     },
 
+    __getInputPortLinked: function(nodeId, inputPortId) {
+      for (let i = 0; i < this.__links.length; i++) {
+        const link = this.__links[i];
+        if (link.getOutputNodeId() === nodeId && link.getOutputPortId() === inputPortId) {
+          return {
+            nodeUuid: link.getInputNodeId(),
+            output: link.getInputPortId()
+          };
+        }
+      }
+      return null;
+    },
+
+    __loadProject: function(workbenchData) {
+      for (let nodeUuid in workbenchData) {
+        let nodeData = workbenchData[nodeUuid];
+        const nodeImageId = nodeData.key + "-" + nodeData.version;
+        let node = this.__createNode(nodeImageId, nodeUuid, nodeData);
+        this.__addNodeToWorkbench(node, nodeData.position);
+      }
+      for (let nodeUuid in workbenchData) {
+        let nodeData = workbenchData[nodeUuid];
+        if (nodeData.inputs) {
+          for (let prop in nodeData.inputs) {
+            let link = nodeData.inputs[prop];
+            if (typeof link == "object" && link.nodeUuid) {
+              this.__addLink({
+                nodeUuid: link.nodeUuid,
+                output: link.output
+              }, {
+                nodeUuid: nodeUuid,
+                input: prop
+              });
+            }
+          }
+        }
+      }
+    },
+
     __serializePipeline: function() {
       if (this.__projectId === null || this.__projectId === undefined) {
         this.__projectId = qxapp.utils.Utils.uuidv4();
@@ -774,73 +813,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         }
       }
       return pipeline;
-    },
-
-    __getInputPortLinked: function(nodeId, inputPortId) {
-      for (let i = 0; i < this.__links.length; i++) {
-        const link = this.__links[i];
-        if (link.getOutputNodeId() === nodeId && link.getOutputPortId() === inputPortId) {
-          return {
-            nodeUuid: link.getInputNodeId(),
-            output: link.getInputPortId()
-          };
-        }
-      }
-      return null;
-    },
-
-    __serializeData: function() {
-      let pipeline = {
-        "nodes": [],
-        "links": []
-      };
-      for (let i = 0; i < this.__nodes.length; i++) {
-        let node = {};
-        node["uuid"] = this.__nodes[i].getNodeId();
-        node["key"] = this.__nodes[i].getMetaData().key;
-        node["tag"] = this.__nodes[i].getMetaData().tag;
-        node["name"] = this.__nodes[i].getMetaData().name;
-        node["inputs"] = this.__nodes[i].getMetaData().inputs;
-        node["outputs"] = this.__nodes[i].getMetaData().outputs;
-        node["settings"] = this.__nodes[i].getMetaData().settings;
-        pipeline["nodes"].push(node);
-      }
-      for (let i = 0; i < this.__links.length; i++) {
-        let link = {};
-        link["uuid"] = this.__links[i].getLinkId();
-        link["node1Id"] = this.__links[i].getInputNodeId();
-        link["port1Id"] = this.__links[i].getInputPortId();
-        link["node2Id"] = this.__links[i].getOutputNodeId();
-        link["port2Id"] = this.__links[i].getOutputPortId();
-        pipeline["links"].push(link);
-      }
-      return pipeline;
-    },
-
-    __loadProject: function(workbenchData) {
-      for (let nodeUuid in workbenchData) {
-        let nodeData = workbenchData[nodeUuid];
-        const nodeImageId = nodeData.key + "-" + nodeData.version;
-        let node = this.__createNode(nodeImageId, nodeUuid, nodeData);
-        this.__addNodeToWorkbench(node, nodeData.position);
-      }
-      for (let nodeUuid in workbenchData) {
-        let nodeData = workbenchData[nodeUuid];
-        if (nodeData.inputs) {
-          for (let prop in nodeData.inputs) {
-            let link = nodeData.inputs[prop];
-            if (typeof link == "object" && link.nodeUuid) {
-              this.__addLink({
-                nodeUuid: link.nodeUuid,
-                output: link.output
-              }, {
-                nodeUuid: nodeUuid,
-                input: prop
-              });
-            }
-          }
-        }
-      }
     },
 
     addWindowToDesktop: function(node) {

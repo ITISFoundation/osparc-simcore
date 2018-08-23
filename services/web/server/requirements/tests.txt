@@ -1,0 +1,8 @@
+# List of packages added to setup:tests_require
+#   Outsourced here so can be installed in base-stage of the web/Dockerfile
+coveralls~=1.3
+pylint~=2.0
+pytest-aiohttp
+pytest~=3.6
+pytest-cov~=2.5
+pytest-docker~=0.6

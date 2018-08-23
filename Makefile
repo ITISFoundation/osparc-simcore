@@ -20,6 +20,9 @@ all:
 	@echo 'run `make up-devel` to start your dev environment.'
 	@echo 'see Makefile for further targets'
 
+clean:
+	@git clean -dxf -e .vscode/
+
 build-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build
 
@@ -76,9 +79,10 @@ before_test:
 	${DOCKER_COMPOSE} -f packages/simcore-sdk/tests/docker-compose.yml build
 
 run_test:
-	pytest --cov=pytest_docker -v packages/pytest_docker/
-	pytest --cov=s3wrapper -v packages/s3wrapper/
-	pytest -v packages/simcore-sdk/
+	pytest --cov=pytest_docker -v packages/pytest_docker/tests
+	pytest --cov=s3wrapper -v packages/s3wrapper/tests
+	pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
+	pytest --cov=server -v services/web/server/tests
 
 after_test:
 	# leave a clean slate (not sure whether this is actually needed)
@@ -114,7 +118,10 @@ push_platform_images:
 	@diff -uN $@ $<
 	@false
 
-venv:
+.venv:
 	python3 -m venv .venv
 	.venv/bin/pip3 install --upgrade pip wheel setuptools
-	echo "To activate the venv, execute 'source .venv/bin/activate'"
+	@echo "To activate the venv, execute 'source .venv/bin/activate' or '.venv/bin/activate.bat' (WIN)"
+
+
+.PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images

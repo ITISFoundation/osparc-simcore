@@ -10,18 +10,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
   type: "static",
 
   statics: {
-
-    /**
-     * Represents an empty project descriptor
-    */
-    NEW_PROJECT_DESCRIPTOR: qx.data.marshal.Json.createModel({
-      name: "New Project",
-      description: "Empty",
-      thumbnail: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round",
-      created: null,
-      projectId: null
-    }),
-
     getNodeMap: function() {
       return {
         "service/dynamic/itis/file-picker-0.0.0":{
@@ -155,14 +143,12 @@ qx.Class.define("qxapp.dev.fake.Data", {
               displayOrder: 6,
               label: "File",
               description: "Test Input File",
-              defaultValue: null,
               type: "data:*/*"
             },
             inImage: {
               displayOrder: 7,
               label: "Image",
               description: "Test Input Image",
-              defaultValue: null,
               type: "data:[image/jpeg,image/png]"
             }
           },
@@ -195,6 +181,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         }
       };
     },
+
     getProjectList: function() {
       return [
         {
@@ -299,6 +286,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         }
       ];
     },
+
     getUsername: function() {
       return "bizzy";
     },

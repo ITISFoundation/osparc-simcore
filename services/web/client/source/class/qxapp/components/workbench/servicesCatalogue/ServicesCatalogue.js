@@ -32,13 +32,8 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
 
     let store = qxapp.data.Store.getInstance();
     this.__allServices = [];
-    for (let imageId in store.getBuiltInServices()) {
-      let service = store.getBuiltInServices()[imageId];
-      service.imageId = imageId;
-      this.__allServices.push(service);
-    }
-    for (let imageId in qxapp.dev.fake.Data.getNodeMap()) {
-      let service = qxapp.dev.fake.Data.getNodeMap()[imageId];
+    for (let imageId in store.getServices()) {
+      let service = store.getServices()[imageId];
       service.imageId = imageId;
       this.__allServices.push(service);
     }
