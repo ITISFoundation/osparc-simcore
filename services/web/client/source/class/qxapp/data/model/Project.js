@@ -2,6 +2,21 @@ qx.Class.define("qxapp.data.model.Project",
   {
     extend: qx.core.Object,
 
+    construct: function(prjData) {
+      this.base(arguments);
+
+      this.set({
+        id: prjData.id,
+        name: prjData.name,
+        description: prjData.description,
+        thumbnail: prjData.thumbnail,
+        collaborators: prjData.collaborators,
+        creationDate: prjData.creationDate,
+        lastChangeDate: prjData.lastChangeDate,
+        workbench: prjData.workbench
+      });
+    },
+
     properties: {
       id: {
         check: "String",
@@ -19,16 +34,35 @@ qx.Class.define("qxapp.data.model.Project",
         nullable: true
       },
 
+      notes: {
+        check: "String",
+        nullable: true
+      },
+
       thumbnail: {
         check: "String",
         nullable: true
       },
 
-      createdOn: {
+      collaborators: {
+        check: "Object",
+        nullable: true
+      },
+
+      creationDate: {
         check: "Date",
         nullable: true
-      }
+      },
 
+      lastChangeDate: {
+        check: "Date",
+        nullable: true
+      },
+
+      workbench: {
+        check: "Object",
+        nullable: true
+      }
     },
 
     members: {
