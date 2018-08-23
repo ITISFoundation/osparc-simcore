@@ -33,10 +33,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
     });
 
-    let workbenchData = {};
-    if (projectId !== null) {
-      workbenchData = qxapp.dev.fake.Data.getProjectList()[projectId].workbench;
-    }
+    let workbenchData = this.__getProjectDocument(projectId);
     let workbench = this.__workbench = new qxapp.components.workbench.Workbench(workbenchData);
     this.add(workbench, 1);
 
@@ -123,6 +120,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __settingsWidth: null,
     __transDeco: null,
     __splitter: null,
+    __projectId: null,
 
     showSettings: function(showSettings) {
       if (showSettings) {
@@ -142,6 +140,18 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__splitter.set({
         decorator: this.__transDeco
       });
+    },
+
+    __getProjectDocument: function(projectId) {
+      let workbenchData = {};
+      if (projectId === null || projectId === undefined) {
+        projectId = qxapp.utils.Utils.uuidv4();
+      } else {
+        workbenchData = qxapp.dev.fake.Data.getProjectList()[projectId].workbench;
+      }
+      this.__projectId = projectId;
+
+      return workbenchData;
     },
 
     __createBrowserWindow: function(url, name) {
