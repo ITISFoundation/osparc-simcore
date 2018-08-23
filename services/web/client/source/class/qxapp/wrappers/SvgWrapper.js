@@ -53,7 +53,7 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
       return SVG(id);
     },
 
-    drawCurve: function(draw, controls) {
+    drawCurve: function(draw, controls, linkWidth = 3, portSphereDiameter = 4, arrowSize = 4) {
       const linkColor = qxapp.theme.Color.colors["workbench-link-active"];
 
       let path = draw.path()
@@ -61,18 +61,16 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
         .C(controls[1], controls[2], controls[3])
         .fill("none")
         .stroke({
-          width: 3,
+          width: linkWidth,
           color: linkColor
         });
 
-      const portSphereDiameter = 4;
       let marker1 = draw.marker(portSphereDiameter, portSphereDiameter, function(add) {
         add.circle(portSphereDiameter)
           .fill(linkColor);
       });
       path.marker("start", marker1);
 
-      const arrowSize = 4;
       let marker2 = draw.marker(arrowSize, arrowSize, function(add) {
         add.path("M 0 0 V 4 L 2 2 Z")
           .fill(linkColor)
@@ -83,6 +81,10 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
       path.markers = [marker1, marker2];
 
       return path;
+    },
+
+    drawCurveMini: function(draw, controls) {
+      return this.drawCurve(draw, controls, 1, 2, 2);
     },
 
     updateCurve: function(curve, controls) {

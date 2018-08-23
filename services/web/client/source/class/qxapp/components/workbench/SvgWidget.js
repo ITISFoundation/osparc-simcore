@@ -23,8 +23,7 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
     __svgWrapper: null,
     __linksCanvas: null,
 
-    __getControls: function(x1, y1, x2, y2) {
-      const offset = 60;
+    __getControls: function(x1, y1, x2, y2, offset = 60) {
       return [{
         x: x1,
         y: y1
@@ -43,6 +42,12 @@ qx.Class.define("qxapp.components.workbench.SvgWidget", {
     drawCurve: function(x1, y1, x2, y2) {
       const controls = this.__getControls(x1, y1, x2, y2);
       return this.__svgWrapper.drawCurve(this.__linksCanvas, controls);
+    },
+
+    drawCurveMini: function(x1, y1, x2, y2) {
+      const offset = 20;
+      const controls = this.__getControls(x1, y1, x2, y2, offset);
+      return this.__svgWrapper.drawCurveMini(this.__linksCanvas, controls);
     },
 
     updateCurve: function(curve, x1, y1, x2, y2) {
