@@ -1,5 +1,3 @@
-import pprint
-import io
 import logging
 
 import sqlalchemy as sa

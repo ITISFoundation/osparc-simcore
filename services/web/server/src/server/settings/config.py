@@ -4,7 +4,7 @@ TODO: add more strict checks with re
 """
 import argparse
 import logging
-import functools
+import os
 
 import trafaret_config as _tc
 import trafaret_config.commandline as _tc_cli
@@ -95,9 +95,20 @@ def add_cli_options(ap=None):
 # import os
 # os.environ
 
-config_from_options = functools.partial(_tc_cli.config_from_options, trafaret=CONFIG_SCHEMA)
 
-read_and_validate = functools.partial(_tc.read_and_validate, trafaret=CONFIG_SCHEMA)
+def config_from_options(options, vars=None): # pylint: disable=W0622
+    if vars is None:
+        vars = os.environ
+    return _tc_cli.config_from_options(options, trafaret=CONFIG_SCHEMA, vars=vars)
+
+def read_and_validate(filename, vars=None): # pylint: disable=W0622
+    if vars is None:
+        vars = os.environ
+    # NOTE: vars=os.environ in signature freezes default to os.environ before it gets
+    return _tc.read_and_validate(filename, trafaret=CONFIG_SCHEMA, vars=vars)
+
+#config_from_options = functools.partial(_tc_cli.config_from_options, trafaret=CONFIG_SCHEMA)
+#read_and_validate = functools.partial(_tc.read_and_validate, trafaret=CONFIG_SCHEMA )
 
 def config_from_file(filepath) -> dict:
     """
@@ -106,7 +117,7 @@ def config_from_file(filepath) -> dict:
 
         Raises trafaret_config.ConfigError
     """
-    config = _tc.read_and_validate(filepath, CONFIG_SCHEMA)
+    config = _tc.read_and_validate(filepath, CONFIG_SCHEMA, vars=os.environ)
     return config
 
 

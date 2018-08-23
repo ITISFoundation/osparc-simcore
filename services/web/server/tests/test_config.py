@@ -1,23 +1,15 @@
-import inspect
-import pathlib
 import logging
 import os
-import sys
+import unittest.mock as mock
 
 import pytest
 
 # under test
+from server.settings.config import CONFIG_SCHEMA
 import server.settings
 import server.cli as srv_cli
 
-
-
-# TODO: pass dirs as fixture. See default pytest conf fixture!
-CURRENT_DIR = pathlib.Path( sys.argv[0] if __name__ == "__main__" else __file__).parent
-CONFIG_DIR = CURRENT_DIR.parent / "config"
-
 _LOGGER = logging.getLogger(__name__)
-
 
 def test_config_options_in_cli(capsys):
     with pytest.raises(SystemExit) as einfo:
@@ -35,10 +27,21 @@ def test_config_options_in_cli(capsys):
     assert einfo.value.code == 0
 
 
-def test_validate_available_config_files():
+def test_validate_available_config_files(package_paths):
+    import trafaret_config.simple as _ts
+
     count = 0
-    for configpath in CONFIG_DIR.glob("*.yaml"):
-        # raises ConfigError if fails
-        server.settings.read_and_validate(configpath)
-        count +=1
-    assert count!=0
+    for config_path in package_paths.CONFIG_FOLDER.glob("*.yaml"):
+
+        config_vars = _ts.read_and_get_vars(config_path, CONFIG_SCHEMA, vars=os.environ)
+
+        mock_environ = {}
+        for name in config_vars:
+            fake_value = "1234" if "port" in name.lower() else "foo"
+            mock_environ[name] = fake_value
+
+        with mock.patch('os.environ', mock_environ):
+            server.settings.read_and_validate(config_path)
+            count +=1
+
+        assert count!=0
