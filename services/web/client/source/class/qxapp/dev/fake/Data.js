@@ -250,7 +250,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               },
               position: {
                 x: 10,
-                y: 210
+                y: 300
               }
             },
             "UUID4": {
