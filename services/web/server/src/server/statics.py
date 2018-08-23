@@ -6,7 +6,6 @@
     - The client application is under ``services/web/client`` and the ``webclient`` service
     is used to build it.
 """
-import os
 import logging
 import pathlib
 

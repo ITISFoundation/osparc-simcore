@@ -23,7 +23,6 @@ import pathlib
 from passlib.hash import sha256_crypt
 from sqlalchemy import (
     MetaData,
-    create_engine
 )
 from tenacity import (
     retry,

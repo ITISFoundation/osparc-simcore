@@ -2,7 +2,6 @@
 
 """
 import logging
-import argparse
 
 from aiohttp import web
 
@@ -17,6 +16,7 @@ from . async_sio import setup_sio
 
 __version__ = "0.0.1"
 
+_LOGGER = logging.getLogger(__name__)
 
 def init_app(config):
     """
@@ -24,6 +24,8 @@ def init_app(config):
 
     NOTICE it is sync!
     """
+    _LOGGER.debug("Initializing app ... ")
+
     app = web.Application()
     app["config"] = config
 
@@ -42,6 +44,8 @@ def run(config):
 
     NOTICE it is sync!
     """
+    _LOGGER.debug("Serving app ... ")
+
     app = init_app(config)
     web.run_app(app,
                 host=config["host"],
