@@ -4,6 +4,11 @@ import logging
 
 import sqlalchemy as sa
 
+from server.main import init_app
+from server.settings import (
+    read_and_validate
+)
+
 from server.db._db import (
     create_aiopg,
     dispose_aiopg
@@ -12,9 +17,10 @@ from server.db.model import (
     users
 )
 
+
 _LOGGER = logging.getLogger(__name__)
 
-async def test_basic_db_workflow(postgres_service, app_testconfig):
+async def test_basic_db_workflow(mock_services, server_test_file):
     """
         create engine
         connect
@@ -22,20 +28,19 @@ async def test_basic_db_workflow(postgres_service, app_testconfig):
         check against expected
         disconnect
     """
-    # pylint:disable=E1120
+    _LOGGER.debug("Started %s", mock_services)
 
-    output = io.StringIO()
-    pprint.pprint(postgres_service, stream=output)
-    _LOGGER.info(output)
+    # init app from config file
+    config = read_and_validate( server_test_file )
+    app = init_app(config)
 
-    assert postgres_service == app_testconfig["postgres"]
-    app = dict(config=app_testconfig)
-
+    # emulates app startup (see app.on_startup in setup_db)
     await create_aiopg(app)
-    # creates new engine!
 
     assert "db_engine" in app
     engine = app["db_engine"]
+
+    # pylint: disable=E1111, E1120
     async with engine.acquire() as connection:
         where = sa.and_(users.c.is_superuser, sa.not_(users.c.disabled))
         query = users.count().where(where)
