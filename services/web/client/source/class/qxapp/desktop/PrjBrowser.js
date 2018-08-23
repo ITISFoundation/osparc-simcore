@@ -33,7 +33,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
       // controller
 
-      let prjCtr = this.__controller = new qx.data.controller.List(this.__getFakeProjectModel(), prjLst, "name"
+      let prjCtr = this.__controller = new qx.data.controller.List(this.__getProjectArray(), prjLst, "name"
       );
       this.__setDelegate(prjCtr);
       // FIXME: selection does not work if model is not passed in the constructor!!!!
@@ -59,7 +59,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
       // controller
 
-      let prjCtr = this.__controller2 = new qx.data.controller.List(this.__getFakeTemplateModel(), prjLst, "name");
+      let prjCtr = this.__controller2 = new qx.data.controller.List(this.__getTemplateArray(), prjLst, "name");
       this.__setDelegate(prjCtr);
       // FIXME: selection does not work if model is not passed in the constructor!!!!
       // prjCtr.setModel();
@@ -110,25 +110,22 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     /**
      * Mockup data
      */
-    __getFakeModel: function() {
+    __getProjectArray: function() {
       return new qx.data.Array(
-        qxapp.dev.fake.Data.getProjectList().map(
-          (p, i) => qx.data.marshal.Json.createModel({
-            name: p.name,
-            thumbnail: "https://placeimg.com/171/96/tech/grayscale/?"+i+".jpg",
-            projectId: i,
-            created: p.creationDate
-          })
-        )
+        qxapp.data.Store.getInstance().getProjectList()
+          .map(
+            (p, i) => qx.data.marshal.Json.createModel({
+              name: p.name,
+              thumbnail: "https://placeimg.com/171/96/tech/grayscale/?"+i+".jpg",
+              projectId: i,
+              created: p.creationDate
+            })
+          )
       );
     },
 
-    __getFakeProjectModel: function() {
-      return this.__getFakeModel();
-    },
-
-    __getFakeTemplateModel: function() {
-      let data = this.__getFakeModel();
+    __getTemplateArray: function() {
+      let data = this.__getProjectArray();
       data.insertAt(0, qx.data.marshal.Json.createModel({
         name: this.tr("New Project"),
         thumbnail: "@MaterialIcons/create/40",

@@ -195,6 +195,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         }
       };
     },
+
     getProjectList: function() {
       return [
         {
@@ -299,6 +300,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         }
       ];
     },
+
     getUsername: function() {
       return "bizzy";
     },

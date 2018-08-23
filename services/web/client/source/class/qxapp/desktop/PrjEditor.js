@@ -147,7 +147,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (projectId === null || projectId === undefined) {
         projectId = qxapp.utils.Utils.uuidv4();
       } else {
-        workbenchData = qxapp.dev.fake.Data.getProjectList()[projectId].workbench;
+        workbenchData = qxapp.data.Store.getInstance().getProjectList()[projectId].workbench;
       }
       this.__projectId = projectId;
 
