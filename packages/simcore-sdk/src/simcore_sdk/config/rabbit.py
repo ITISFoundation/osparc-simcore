@@ -63,7 +63,7 @@ def eval_broker(config):
     return url
 
 
-# TODO: deprecate! -------------
+# TODO: deprecate! -----------------------------------------------------------------------------
 # TODO: uniform config classes . see server.config file
 RABBITMQ_USER = env.get('RABBITMQ_USER','simcore')
 RABBITMQ_PASSWORD = env.get('RABBITMQ_PASSWORD','simcore')

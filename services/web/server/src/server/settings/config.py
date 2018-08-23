@@ -17,8 +17,6 @@ from simcore_sdk.config import (
 )
 
 __version__ = "1.0"
-__all__ = ['CONFIG_SCHEMA', 'add_cli_options', 'config_from_options', 'config_from_file']
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -110,3 +108,12 @@ def config_from_file(filepath) -> dict:
     """
     config = _tc.read_and_validate(filepath, CONFIG_SCHEMA)
     return config
+
+
+
+__all__ = (
+    'CONFIG_SCHEMA',
+    'add_cli_options',
+    'config_from_options',
+    'config_from_file'
+)

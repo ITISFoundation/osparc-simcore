@@ -18,6 +18,7 @@ postgres:
   # DEPRECATE OR add postgresql+psycopg2:// otherwise will fail sqlalchemy.exc.ArgumentError: Could not parse rfc1738 URL from string 'localhost:5432'
   endpoint: localhost:5432
 rabbit:
+  host: ${RABBIT_HOST}
   password: simcore
   user: simcore
   channels:

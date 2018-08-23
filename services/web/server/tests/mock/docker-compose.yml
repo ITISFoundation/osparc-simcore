@@ -15,7 +15,10 @@ services:
   rabbit:
     image: rabbitmq:3-management
     environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+      - RABBITMQ_DEFAULT_USER=simcore
+      - RABBITMQ_DEFAULT_PASS=simcore
     ports:
+      # NOTE: these need to added because test server runs in host!
       - "15672:15672"
+      - "5671:5671"
+      - "5672:5672"

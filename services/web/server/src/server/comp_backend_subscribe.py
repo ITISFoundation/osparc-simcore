@@ -1,6 +1,6 @@
 import json
 import logging
-
+import asyncio
 import aio_pika
 
 from simcore_sdk.config.rabbit import eval_broker
@@ -26,10 +26,13 @@ async def subscribe(_app=None):
     rb_config = _app["config"]["rabbit"]
     rabbit_broker = eval_broker(rb_config)
 
-    # FIXME: somehow I do not manage to get this to connect! <<<-------------
+    # FIXME: This tmp resolves ``aio pika 169: IncompatibleProtocolError`` upon apio_pika.connect
+    await asyncio.sleep(5)
+
     # TODO: connection attempts should be configurable??
     # TODO: A contingency plan or connection policy should be defined per service! E.g. critical, lazy, partial (i.e. some parts of the service cannot run now)
     connection = await aio_pika.connect(rabbit_broker, connection_attempts=100)
+
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=1)
 

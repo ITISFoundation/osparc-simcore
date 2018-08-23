@@ -34,6 +34,7 @@ def cli(loop, aiohttp_client, mock_services, server_test_file):
 
     return client
 
+#-----------------------------------------------------------------------
 
 async def test_swagger_doc(cli):
     _LOGGER.debug("cli fixture: %s", cli)

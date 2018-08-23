@@ -96,6 +96,7 @@ def mock_services(docker_ip, docker_services, docker_compose_file, server_test_f
     # Patches os.environ to influence
     pre_os_environ = os.environ.copy()
     os.environ["POSTGRES_PORT"] = str(docker_services.port_for('db', 5432))
+    os.environ["RABBIT_HOST"] = str(docker_ip)
 
     # loads app config
     app_config = read_and_validate( server_test_file )
