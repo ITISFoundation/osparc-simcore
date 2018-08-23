@@ -6,7 +6,7 @@ services:
     build:
       target: development
     volumes:
-      - './director/src/director:/home/app/src'
+      - './director:/home/scu/src'
   #--------------------------------------------------------------------
   webclient:
     image: services_webclient:dev

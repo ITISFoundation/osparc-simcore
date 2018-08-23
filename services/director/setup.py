@@ -6,18 +6,18 @@ INSTALL_REQUIRES = [
 'Flask==1.0.1',
 'tenacity==4.12.0',
 'aiohttp_apiset==0.9.3',
-'requests',
+'requests==2.19.1',
 ]
 
 setup(
     name='director-service',
-    version="0.1",
-    description='Demos API',
+    version="0.1.0",
+    description='oSparc Director service',
     platforms=['POSIX'],
     package_dir={'': 'src'},
     packages=find_packages('src'),
     package_data={
-        '': ['.openapi/swagger.yaml']
+        '': ['director_api.yaml']
     },
     entry_points={
         'console_scripts': ['director-service=director.__main__:main']},
