@@ -4,11 +4,23 @@
 from os import environ as env
 import logging
 
+import trafaret as T
 
 _LOGGER = logging.getLogger(__name__)
 
+
+CONFIG_SCHEMA = T.Dict({
+    "endpoint": T.String(),
+    "access_key": T.String(),
+    "secret_key": T.String(),
+    "bucket_name": T.String(),
+})
+
+
+# TODO: deprecate!
 class Config():
     def __init__(self):
+        # TODO: uniform config classes . see server.config file
         S3_ENDPOINT = env.get("S3_ENDPOINT", "minio:9000")
         S3_ACCESS_KEY = env.get("S3_ACCESS_KEY", "12345678")
         S3_SECRET_KEY = env.get("S3_SECRET_KEY", "12345678")

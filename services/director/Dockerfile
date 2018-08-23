@@ -29,8 +29,8 @@ COPY --chown=app:app requirements.txt requirements.txt
 RUN python -m venv venv \
  && chown -R app:app venv
 
-RUN venv/bin/pip install --upgrade pip \
- && venv/bin/pip install -r requirements.txt
+RUN venv/bin/pip3 install --upgrade pip wheel setuptools\
+ && venv/bin/pip3 install -r requirements.txt
 
 COPY --chown=app:app boot.sh boot.sh
 RUN chmod +x boot.sh

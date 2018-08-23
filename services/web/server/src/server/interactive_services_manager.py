@@ -5,10 +5,11 @@
 # pylint: disable=C0111
 import logging
 
-import director_proxy
+from . import director_proxy
 
 _LOGGER = logging.getLogger(__file__)
 
+# TODO: cannot scale server! Use server.session instead or delegate to a director?
 __RUNNING_SERVICES = dict()
 
 
@@ -53,4 +54,4 @@ def stop_service(session_id, service_uuid):
     except Exception as err:
         # FIXME: shouldn't I return a json??
         _LOGGER.exception("Failed to top %s", service_uuid)
-        return "Failed stopping service " + str(err)
+        return "Failed stopping service :" + str(err)

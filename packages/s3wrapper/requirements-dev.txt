@@ -1,0 +1,4 @@
+# develop mode
+-e . ".[test]"
+
+autopep8>=1.3.5
