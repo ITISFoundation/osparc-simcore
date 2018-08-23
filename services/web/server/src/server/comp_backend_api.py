@@ -120,6 +120,7 @@ async def start_pipeline(request):
     pipeline_name = "New pipeline"
     _LOGGER.debug("Start Pipeline")
 
+    # pylint: disable=too-many-nested-blocks
     try:
         io_files = []
         for node in nodes:
@@ -198,8 +199,15 @@ async def start_pipeline(request):
 
         for node_id in tasks:
             task = tasks[node_id]
-            new_task = ComputationalTask(pipeline_id=pipeline_id, node_id=node_id, internal_id=internal_id, image=task["image"],
-                        input=task["input"], output=task["output"], submit=datetime.datetime.utcnow())
+            new_task = ComputationalTask( \
+                pipeline_id=pipeline_id,
+                node_id=node_id,
+                internal_id=internal_id,
+                image=task["image"],
+                input=task["input"],
+                output=task["output"],
+                submit=datetime.datetime.utcnow()
+                )
             internal_id = internal_id+1
             db_session.add(new_task)
 
