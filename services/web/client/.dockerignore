@@ -6,5 +6,8 @@ contrib*
 # node
 */node_modules/*
 
-# python
-*/__pycache__/*
+# docker
+Dockerfile*
+
+# markdown
+*.md
