@@ -235,7 +235,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 outNumber: 33
               },
               position: {
-                x: 300,
+                x: 400,
                 y: 10
               }
             },
@@ -267,8 +267,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 inArea: "some\nmore",
                 inSb: "cat",
                 inFile: {
-                  store: "s3-z43",
-                  path: "bucket33/file.data"
+                  nodeUuid: "UUID1",
+                  output: "outFile"
                 },
                 inImage: {
                   store: "s3-z43",
@@ -276,8 +276,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 }
               },
               position: {
-                x: 300,
-                y: 210
+                x: 400,
+                y: 400
               }
             }
           }
