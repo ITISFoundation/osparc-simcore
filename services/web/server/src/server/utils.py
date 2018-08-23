@@ -32,6 +32,7 @@ def get_thrift_api_folders(startdir):
     """ Returns all directory paths that match 'startdir/**/gen-py'
 
         This is the folder layout produced by the thrift generator
+        TODO: deprecate this function
     """
     folders = []
     for root, dirs, _ in os.walk(startdir):
@@ -48,6 +49,8 @@ def import_thrift_api_module(module_name):
         in sys.path.
 
         If all retrials fail, it raises ImportError
+
+        TODO: deprecate this function
     """
-    from config import THRIFT_GEN_OUTDIR
+    from .settings.deprecated import THRIFT_GEN_OUTDIR
     return import_with_retry(module_name, *list(THRIFT_GEN_OUTDIR))
