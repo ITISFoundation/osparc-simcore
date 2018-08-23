@@ -121,7 +121,7 @@ qx.Class.define("qxapp.Application", {
           let map = qxapp.data.Store.getInstance().getServices();
           for (let key in map) {
             let check = ajv.validate(map[key]);
-            console.log("validation result " + key + ":", check);
+            console.log("services validation result " + key + ":", check);
           }
         } catch (err) {
           console.error(err);
@@ -136,7 +136,7 @@ qx.Class.define("qxapp.Application", {
           let list = qxapp.data.Store.getInstance().getProjectList();
           list.forEach((project, i) => {
             let check = ajv.validate(project);
-            console.log("validation result " + i + ":", check);
+            console.log("project validation result " + i + ":", check);
           });
         } catch (err) {
           console.error(err);
