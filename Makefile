@@ -20,6 +20,9 @@ all:
 	@echo 'run `make up-devel` to start your dev environment.'
 	@echo 'see Makefile for further targets'
 
+clean:
+	@git clean -dxf -e .vscode/
+
 build-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build
 
@@ -121,4 +124,4 @@ push_platform_images:
 	@echo "To activate the venv, execute 'source .venv/bin/activate' or '.venv/bin/activate.bat' (WIN)"
 
 
-.PHONY: all build-devel rebuild-devel up-devel build up down test after_test push_platform_images
+.PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images
