@@ -1,5 +1,5 @@
 #/bin/bash
-
+cd $(dirname $0)
 usage()
 {
     echo "usage: openapi_python_server_codegen [[[-i input] [-o output directory]] | [-h help]]"
@@ -36,16 +36,23 @@ echo "output directory is ${output_absolute_dir}"
 
 # generate a python-flask server
 temp_folder=${PWD}/tmp
+if [ -d "$temp_folder" ]; then
+  rm -rf $temp_folder
+fi
 mkdir ${temp_folder}
 ./openapi_codegen.sh -i ${input_file} -o ${temp_folder} -g ${generator}
 
+if [ ! -d "$output_directory" ]; then
+  mkdir ${output_directory}
+fi
+
+echo "retrieving util.py..."
+mv ${temp_folder}/${generator}/openapi_server/util.py ${output_directory}/util.py
+echo "retrieving __init__.py..."
+mv ${temp_folder}/${generator}/openapi_server/__init__.py ${output_directory}/__init__.py
 echo "retrieving models..."
 # let-s move the model files
-mv ${temp_folder}/${generator}/openapi_server/models ${output_directory}
-echo "retrieving util.py..."
-mv ${temp_folder}/${generator}/openapi_server/util.py ${output_directory}
-echo "retrieving __init__.py..."
-mv ${temp_folder}/${generator}/openapi_server/__init__.py ${output_directory}
+mv ${temp_folder}/${generator}/openapi_server/models ${output_directory}/models
 
 echo "cleaning up..."
 rm -rf ${temp_folder}
