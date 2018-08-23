@@ -346,37 +346,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __createNode: function(nodeImageId, uuid, nodeData) {
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeImageId, uuid);
       nodeBase.createNodeLayout(nodeData);
-<<<<<<< HEAD
-
-      // DEPRECATED: The new implementation doesn't take the entryPoitn into account
-      const imageId = nodeBase.getNodeImageId();
-      if (imageId.includes("dynamic")) {
-        const slotName = "startDynamic";
-        let socket = qxapp.wrappers.WebSocket.getInstance();
-        socket.on(slotName, function(val) {
-          if (val["service_uuid"] === nodeBase.getNodeId()) {
-            let portNumber = val["containers"][0].published_ports[0];
-            let entryPoint = "";
-            if ("entry_point" in val["containers"][0]) {
-              entryPoint = val["containers"][0].entry_point;
-            }
-            nodeBase.getMetaData().viewer.ip = "http://" + window.location.hostname;
-            nodeBase.getMetaData().viewer.port = portNumber;
-            nodeBase.getMetaData().viewer.entryPoint = entryPoint;
-            nodeBase.getViewerButton().setEnabled(portNumber !== null);
-            const servUrl = nodeBase.getMetaData().viewer.ip +":"+ nodeBase.getMetaData().viewer.port +"/"+ nodeBase.getMetaData().viewer.entryPoint;
-            this.__logger.debug(nodeBase.getMetaData().name, "Service ready on " + servUrl);
-            this.__logger.info(nodeBase.getMetaData().name, "Service ready");
-          }
-        }, this);
-        let data = {
-          serviceName: nodeBase.getMetaData().name,
-          nodeId: nodeBase.getNodeId()
-        };
-        socket.emit(slotName, data);
-      }
-=======
->>>>>>> feature/prj_model
 
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
