@@ -9,11 +9,21 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   members: {
+    getServices: function() {
+      let services = {};
+      services = Object.assign(services, this.getBuiltInServices());
+      services = Object.assign(services, qxapp.dev.fake.Data.getNodeMap());
+      return services;
+    },
+
+    getProjectList: function() {
+      return qxapp.dev.fake.Data.getProjectList();
+    },
+
     getNodeMetaData: function(nodeImageId) {
-      let metaData = qxapp.dev.fake.Data.getNodeMap()[nodeImageId];
+      let metaData = this.getServices()[nodeImageId];
       if (metaData === undefined) {
-        let store = qxapp.data.Store.getInstance();
-        metaData = store.getBuiltInServices()[nodeImageId];
+        metaData = this.getBuiltInServices()[nodeImageId];
       }
       return metaData;
     },
