@@ -84,7 +84,7 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
     },
 
     drawCurveMini: function(draw, controls) {
-      return this.drawCurve(draw, controls, 1, 2, 2);
+      return this.drawCurve(draw, controls, 2);
     },
 
     updateCurve: function(curve, controls) {

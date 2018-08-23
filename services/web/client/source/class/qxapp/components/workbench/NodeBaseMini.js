@@ -32,9 +32,10 @@ qx.Class.define("qxapp.components.workbench.NodeBaseMini", {
         flex: 1
       });
 
+      const nodeImageId = this.getNodeImageId();
       let miniLabel = "";
       let store = qxapp.data.Store.getInstance();
-      let metaData = store.getNodeMetaData(this.getNodeImageId());
+      let metaData = store.getNodeMetaData(nodeImageId);
       if (metaData) {
         miniLabel = metaData.name.substring(0, 4);
       }
@@ -48,6 +49,41 @@ qx.Class.define("qxapp.components.workbench.NodeBaseMini", {
       });
 
       this.add(inputsOutputsLayout);
+
+      this.__inputPorts = {};
+      this.__outputPorts = {};
+      this.__createInputPort();
+      this.__createOutputPort();
+    },
+
+    __createInputPort: function() {
+      const portId = "inPort";
+      let label = {
+        portId: portId,
+        isInput: true
+      };
+      this.getInputPorts()[portId] = label;
+      // this.__inputPortsUI.add(label.ui);
+    },
+
+    __createOutputPort: function() {
+      const portId = "outPort";
+      let label = {
+        portId: portId,
+        isInput: false
+      };
+      this.getOutputPorts()[portId] = label;
+      // this.__outputPortsUI.add(label.ui);
+    },
+
+    getLinkPoint: function(port) {
+      const nodeBounds = this.__getCurrentBounds();
+      let x = nodeBounds.left;
+      if (port.isInput === false) {
+        x += nodeBounds.width;
+      }
+      let y = nodeBounds.top + nodeBounds.height/2;
+      return [x, y];
     }
   }
 });
