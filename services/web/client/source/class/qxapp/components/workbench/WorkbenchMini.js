@@ -58,15 +58,16 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
       // add nodes
       for (let nodeUuid in workbenchData) {
         let nodeData = workbenchData[nodeUuid];
-        const imageId = nodeData.key + "-" + nodeData.version;
-        let node = new qxapp.components.workbench.NodeBaseMini(imageId, nodeUuid);
-        node.createNodeLayout(nodeData);
-        if (nodeData.position) {
-          this.__addNodeToWorkbench(node, nodeData.position);
-        } else {
-          this.__addNodeToWorkbench(node);
-        }
+        const nodeImageId = nodeData.key + "-" + nodeData.version;
+        let node = this.__createNode(nodeImageId, nodeUuid, nodeData);
+        this.__addNodeToWorkbench(node, nodeData.position);
       }
+    },
+
+    __createNode: function(nodeImageId, uuid, nodeData) {
+      let node = new qxapp.components.workbench.NodeBaseMini(nodeImageId, uuid);
+      node.createNodeLayout(nodeData);
+      return node;
     },
 
     __removeNode: function(node) {
