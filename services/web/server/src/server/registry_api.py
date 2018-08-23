@@ -1,12 +1,16 @@
-"""
-    Uses socketio and aiohtttp framework
+""" API to the computational services registry
+
+    TODO: move all apis to a submodule and rename as api
 """
 # pylint: disable=C0103
+import logging
 
 from aiohttp import web
 import async_timeout
 
-import director_proxy
+from . import director_proxy
+
+_LOGGER = logging.getLogger(__file__)
 
 registry_routes = web.RouteTableDef()
 
@@ -21,7 +25,7 @@ async def async_request(method, session, url, data=None, timeout=10):
 
 
 
-@registry_routes.get('/get_computational_services')
+@registry_routes.get("/get_computational_services")
 async def get_computational_services(request):
     """
     ---
@@ -36,7 +40,7 @@ async def get_computational_services(request):
         "405":
             description: invalid HTTP Method
     """
-    _a = request
+    _LOGGER.debug(request)
 
     repo_list = director_proxy.retrieve_computational_services()
 

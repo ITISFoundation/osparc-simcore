@@ -48,6 +48,10 @@ services:
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     depends_on:
       - webclient
   #--------------------------------------------------------------------
