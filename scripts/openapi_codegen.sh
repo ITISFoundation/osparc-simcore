@@ -93,7 +93,7 @@ echo "windows corrected output directory is ${output_absolute_dir}"
 fi
 
 echo "generating code..."
-${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output openapitools/openapi-generator-cli \
+exec ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output openapitools/openapi-generator-cli \
     generate \
     -i /local/${input_filename} \
     -g ${generator} \
