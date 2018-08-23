@@ -47,12 +47,14 @@ if [ ! -d "$output_directory" ]; then
 fi
 
 echo "retrieving util.py..."
-mv ${temp_folder}/${generator}/openapi_server/util.py ${output_directory}/util.py
+mv -uf ${temp_folder}/${generator}/openapi_server/util.py ${output_directory}/util.py
 echo "retrieving __init__.py..."
-mv ${temp_folder}/${generator}/openapi_server/__init__.py ${output_directory}/__init__.py
+mv -uf ${temp_folder}/${generator}/openapi_server/__init__.py ${output_directory}/__init__.py
 echo "retrieving models..."
-# let-s move the model files
-mv ${temp_folder}/${generator}/openapi_server/models ${output_directory}/models
+if [ ! -d "$output_directory/models" ]; then
+  mkdir ${output_directory}/models
+fi
+mv -uf ${temp_folder}/${generator}/openapi_server/models/* ${output_directory}/models
 
 echo "cleaning up..."
 rm -rf ${temp_folder}
