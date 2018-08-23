@@ -17,11 +17,11 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages('src'),
     package_data={
-        '': ['director_api.yaml']
+        '': ['.openapi/v1/*']
     },
     entry_points={
         'console_scripts': ['director-service=director.__main__:main']},
     include_package_data=True,
     install_requires=INSTALL_REQUIRES,
-    zip_safe=False,
+    zip_safe=False,    
 )

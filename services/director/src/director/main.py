@@ -11,7 +11,7 @@ from aiohttp_apiset.swagger.loader import ExtendedSchemaFile
 
 from director import api
 
-SPEC_FILE = "director_api.yaml"
+SPEC_FILE = ".openapi/v1/director_api.yaml"
 
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(
@@ -20,7 +20,6 @@ logging.basicConfig(
     )
 
 BASE = Path(__file__).parent
-
 
 def create_default_operation_mapping(specs_file):
     operation_mapping = {}
@@ -63,7 +62,7 @@ def mainApiSet():
     # Include our specifications in a router,
     # is now available in the swagger-ui to the address http://localhost:8080/swagger/?spec=v1
     router.include(
-        spec='director_api.yaml',
+        spec=Path(BASE / SPEC_FILE),
         operationId_mapping=opmap,
         name='v1',  # name to access in swagger-ui,
         basePath="/v1" # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
