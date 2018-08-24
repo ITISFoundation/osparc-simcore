@@ -141,7 +141,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       }
     },
 
-    __getCurrentBounds: function() {
+    getCurrentBounds: function() {
       let bounds = this.getBounds();
       let cel = this.getContentElement();
       if (cel) {
@@ -313,7 +313,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     },
 
     getLinkPoint: function(port) {
-      const nodeBounds = this.__getCurrentBounds();
+      const nodeBounds = this.getCurrentBounds();
       let x = nodeBounds.left;
       if (port.isInput === false) {
         x += nodeBounds.width;

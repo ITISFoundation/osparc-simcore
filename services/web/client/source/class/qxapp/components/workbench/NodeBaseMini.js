@@ -77,7 +77,7 @@ qx.Class.define("qxapp.components.workbench.NodeBaseMini", {
     },
 
     getLinkPoint: function(port) {
-      const nodeBounds = this.__getCurrentBounds();
+      const nodeBounds = this.getCurrentBounds();
       let x = nodeBounds.left;
       if (port.isInput === false) {
         x += nodeBounds.width;
