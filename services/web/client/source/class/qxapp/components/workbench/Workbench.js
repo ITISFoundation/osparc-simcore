@@ -7,12 +7,13 @@ const BUTTON_SPACING = 10;
 qx.Class.define("qxapp.components.workbench.Workbench", {
   extend: qx.ui.container.Composite,
 
-  construct: function(workbenchData) {
+  construct: function(prjId, workbenchData) {
     this.base();
 
     let canvas = new qx.ui.layout.Canvas();
     this.set({
-      layout: canvas
+      layout: canvas,
+      projectId: prjId
     });
 
     this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
@@ -23,16 +24,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       bottom: 0
     });
 
+    this.__workbenchData = workbenchData;
     this.__svgWidget = new qxapp.components.workbench.SvgWidget("SvgWidgetLayer");
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
     // sure to catch this event
-    if (workbenchData) {
-      this.__svgWidget.addListenerOnce("SvgWidgetReady", () => {
-        // Will be called only the first time Svg lib is loaded
-        this.__loadProject(workbenchData);
-      });
-    }
+    this.__svgWidget.addListenerOnce("SvgWidgetReady", () => {
+      // Will be called only the first time Svg lib is loaded
+      this.__loadProject();
+    });
 
     this.__desktop.add(this.__svgWidget, {
       left: 0,
@@ -106,6 +106,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
   },
 
   properties: {
+    projectId: {
+      check: "String",
+      nullable: false
+    },
+
     canStart: {
       nullable: false,
       init: true,
@@ -299,6 +304,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       node.addListener("NodeMoving", function() {
         this.__updateLinks(node);
+        this.fireDataEvent("NodeMoved", data);
       }, this);
 
       node.addListener("appear", function() {
@@ -754,38 +760,44 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return null;
     },
 
-    __loadProject: function(workbenchData) {
-      for (let nodeUuid in workbenchData) {
-        let nodeData = workbenchData[nodeUuid];
-        const nodeImageId = nodeData.key + "-" + nodeData.version;
-        let node = this.__createNode(nodeImageId, nodeUuid, nodeData);
-        this.__addNodeToWorkbench(node, nodeData.position);
-      }
-      for (let nodeUuid in workbenchData) {
-        let nodeData = workbenchData[nodeUuid];
-        if (nodeData.inputs) {
-          for (let prop in nodeData.inputs) {
-            let link = nodeData.inputs[prop];
-            if (typeof link == "object" && link.nodeUuid) {
-              this.__addLink({
-                nodeUuid: link.nodeUuid,
-                output: link.output
-              }, {
-                nodeUuid: nodeUuid,
-                input: prop
-              });
+    __loadProject: function() {
+      if (this.__workbenchData) {
+        let workbenchData = this.__workbenchData;
+        for (let nodeUuid in workbenchData) {
+          let nodeData = workbenchData[nodeUuid];
+          const nodeImageId = nodeData.key + "-" + nodeData.version;
+          let node = this.__createNode(nodeImageId, nodeUuid, nodeData);
+          this.__addNodeToWorkbench(node, nodeData.position);
+        }
+        for (let nodeUuid in workbenchData) {
+          let nodeData = workbenchData[nodeUuid];
+          if (nodeData.inputs) {
+            for (let prop in nodeData.inputs) {
+              let link = nodeData.inputs[prop];
+              if (typeof link == "object" && link.nodeUuid) {
+                this.__addLink({
+                  nodeUuid: link.nodeUuid,
+                  output: link.output
+                }, {
+                  nodeUuid: nodeUuid,
+                  input: prop
+                });
+              }
             }
           }
         }
       }
     },
 
-    __serializePipeline: function() {
-      if (this.__projectId === null || this.__projectId === undefined) {
-        this.__projectId = qxapp.utils.Utils.uuidv4();
-      }
+    saveProject: function() {
+      const savePosition = true;
+      this.__workbenchData = this.__serializePipeline(savePosition);
+      return (this.__workbenchData);
+    },
+
+    __serializePipeline: function(savePosition = false) {
       let pipeline = {
-        projectId: this.__projectId,
+        projectId: this.getProjectId(),
         workbench: {}
       };
       for (let i = 0; i < this.__nodes.length; i++) {
@@ -796,6 +808,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           inputs: node.getInputValues(),
           outputs: {}
         };
+        if (savePosition) {
+          cNode["position"] = {
+            x: node.getCurrentBounds().left,
+            y: node.getCurrentBounds().top
+          };
+        }
         for (let key in node.getInputPorts()) {
           const linkPort = this.__getInputPortLinked(node.getNodeId(), key);
           if (linkPort) {

@@ -23,6 +23,9 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     });
 
     this.__navBar.addListener("HomePressed", function() {
+      if (this.__prjEditor) {
+        this.__prjEditor.getProjectJsonObject();
+      }
       this.__prjStack.setSelection([this.__prjBrowser]);
       this.__navBar.setCurrentStatus("Browser");
     }, this);

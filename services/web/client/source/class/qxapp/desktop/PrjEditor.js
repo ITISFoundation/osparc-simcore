@@ -10,7 +10,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     const settingsWidth = this.__settingsWidth = 600;
 
     let project = this.__projectDocument = this.__getProjectDocument(projectId);
-    let workbench = this.__workbench = new qxapp.components.workbench.Workbench(project.getWorkbench());
+    let workbench = this.__workbench = new qxapp.components.workbench.Workbench(project.getId(), project.getWorkbench());
     let settingsBox = this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
       minWidth: 0,
       visibility: "excluded",
@@ -205,7 +205,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     getProjectJsonObject: function() {
+      console.log("this.__projectDocument.getJsonObject()");
       console.log(this.__projectDocument.getJsonObject());
+      console.log("this.__workbench.saveProject()");
+      console.log(this.__workbench.saveProject());
     },
 
     serializeProjectDocument: function() {
