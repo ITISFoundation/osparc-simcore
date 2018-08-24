@@ -7,7 +7,7 @@ from typing import List, Dict  # noqa: F401
 
 from director.generated_code.models.base_model_ import Model
 from director.generated_code.models.author_details import AuthorDetails  # noqa: F401,E501
-from director.generated_code.models.port import Port  # noqa: F401,E501
+from director.generated_code.models.port_details import PortDetails  # noqa: F401,E501
 from director.generated_code.models.viewer import Viewer  # noqa: F401,E501
 from director.generated_code import util
 
@@ -18,19 +18,19 @@ class ServiceDetails(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, authors: AuthorDetails=None, contact: str=None, description: str=None, inputs: List[Port]=None, outputs: List[Port]=None, key: str=None, name: str=None, tag: str=None, viewer: Viewer=None):  # noqa: E501
+    def __init__(self, authors: List[AuthorDetails]=None, contact: str=None, description: str=None, inputs: List[PortDetails]=None, outputs: List[PortDetails]=None, key: str=None, name: str=None, tag: str=None, viewer: Viewer=None):  # noqa: E501
         """ServiceDetails - a model defined in OpenAPI
 
         :param authors: The authors of this ServiceDetails.  # noqa: E501
-        :type authors: AuthorDetails
+        :type authors: List[AuthorDetails]
         :param contact: The contact of this ServiceDetails.  # noqa: E501
         :type contact: str
         :param description: The description of this ServiceDetails.  # noqa: E501
         :type description: str
         :param inputs: The inputs of this ServiceDetails.  # noqa: E501
-        :type inputs: List[Port]
+        :type inputs: List[PortDetails]
         :param outputs: The outputs of this ServiceDetails.  # noqa: E501
-        :type outputs: List[Port]
+        :type outputs: List[PortDetails]
         :param key: The key of this ServiceDetails.  # noqa: E501
         :type key: str
         :param name: The name of this ServiceDetails.  # noqa: E501
@@ -41,11 +41,11 @@ class ServiceDetails(Model):
         :type viewer: Viewer
         """
         self.openapi_types = {
-            'authors': AuthorDetails,
+            'authors': List[AuthorDetails],
             'contact': str,
             'description': str,
-            'inputs': List[Port],
-            'outputs': List[Port],
+            'inputs': List[PortDetails],
+            'outputs': List[PortDetails],
             'key': str,
             'name': str,
             'tag': str,
@@ -86,22 +86,24 @@ class ServiceDetails(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def authors(self) -> AuthorDetails:
+    def authors(self) -> List[AuthorDetails]:
         """Gets the authors of this ServiceDetails.
 
+        The authors of this service  # noqa: E501
 
         :return: The authors of this ServiceDetails.
-        :rtype: AuthorDetails
+        :rtype: List[AuthorDetails]
         """
         return self._authors
 
     @authors.setter
-    def authors(self, authors: AuthorDetails):
+    def authors(self, authors: List[AuthorDetails]):
         """Sets the authors of this ServiceDetails.
 
+        The authors of this service  # noqa: E501
 
         :param authors: The authors of this ServiceDetails.
-        :type authors: AuthorDetails
+        :type authors: List[AuthorDetails]
         """
         if authors is None:
             raise ValueError("Invalid value for `authors`, must not be `None`")  # noqa: E501
@@ -159,24 +161,24 @@ class ServiceDetails(Model):
         self._description = description
 
     @property
-    def inputs(self) -> List[Port]:
+    def inputs(self) -> List[PortDetails]:
         """Gets the inputs of this ServiceDetails.
 
         The inputs of the service  # noqa: E501
 
         :return: The inputs of this ServiceDetails.
-        :rtype: List[Port]
+        :rtype: List[PortDetails]
         """
         return self._inputs
 
     @inputs.setter
-    def inputs(self, inputs: List[Port]):
+    def inputs(self, inputs: List[PortDetails]):
         """Sets the inputs of this ServiceDetails.
 
         The inputs of the service  # noqa: E501
 
         :param inputs: The inputs of this ServiceDetails.
-        :type inputs: List[Port]
+        :type inputs: List[PortDetails]
         """
         if inputs is None:
             raise ValueError("Invalid value for `inputs`, must not be `None`")  # noqa: E501
@@ -184,24 +186,24 @@ class ServiceDetails(Model):
         self._inputs = inputs
 
     @property
-    def outputs(self) -> List[Port]:
+    def outputs(self) -> List[PortDetails]:
         """Gets the outputs of this ServiceDetails.
 
         The outputs of the service  # noqa: E501
 
         :return: The outputs of this ServiceDetails.
-        :rtype: List[Port]
+        :rtype: List[PortDetails]
         """
         return self._outputs
 
     @outputs.setter
-    def outputs(self, outputs: List[Port]):
+    def outputs(self, outputs: List[PortDetails]):
         """Sets the outputs of this ServiceDetails.
 
         The outputs of the service  # noqa: E501
 
         :param outputs: The outputs of this ServiceDetails.
-        :type outputs: List[Port]
+        :type outputs: List[PortDetails]
         """
         if outputs is None:
             raise ValueError("Invalid value for `outputs`, must not be `None`")  # noqa: E501

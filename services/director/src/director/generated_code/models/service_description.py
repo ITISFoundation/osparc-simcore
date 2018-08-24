@@ -16,30 +16,25 @@ class ServiceDescription(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, name: str=None, repos: List[str]=None, details: List[List[ServiceDetails]]=None):  # noqa: E501
+    def __init__(self, key: str=None, details: List[ServiceDetails]=None):  # noqa: E501
         """ServiceDescription - a model defined in OpenAPI
 
-        :param name: The name of this ServiceDescription.  # noqa: E501
-        :type name: str
-        :param repos: The repos of this ServiceDescription.  # noqa: E501
-        :type repos: List[str]
+        :param key: The key of this ServiceDescription.  # noqa: E501
+        :type key: str
         :param details: The details of this ServiceDescription.  # noqa: E501
-        :type details: List[List[ServiceDetails]]
+        :type details: List[ServiceDetails]
         """
         self.openapi_types = {
-            'name': str,
-            'repos': List[str],
-            'details': List[List[ServiceDetails]]
+            'key': str,
+            'details': List[ServiceDetails]
         }
 
         self.attribute_map = {
-            'name': 'name',
-            'repos': 'repos',
+            'key': 'key',
             'details': 'details'
         }
 
-        self._name = name
-        self._repos = repos
+        self._key = key
         self._details = details
 
     @classmethod
@@ -54,74 +49,49 @@ class ServiceDescription(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def name(self) -> str:
-        """Gets the name of this ServiceDescription.
+    def key(self) -> str:
+        """Gets the key of this ServiceDescription.
 
-        The name of the service  # noqa: E501
+        The key of the service  # noqa: E501
 
-        :return: The name of this ServiceDescription.
+        :return: The key of this ServiceDescription.
         :rtype: str
         """
-        return self._name
+        return self._key
 
-    @name.setter
-    def name(self, name: str):
-        """Sets the name of this ServiceDescription.
+    @key.setter
+    def key(self, key: str):
+        """Sets the key of this ServiceDescription.
 
-        The name of the service  # noqa: E501
+        The key of the service  # noqa: E501
 
-        :param name: The name of this ServiceDescription.
-        :type name: str
+        :param key: The key of this ServiceDescription.
+        :type key: str
         """
-        if name is None:
-            raise ValueError("Invalid value for `name`, must not be `None`")  # noqa: E501
+        if key is None:
+            raise ValueError("Invalid value for `key`, must not be `None`")  # noqa: E501
 
-        self._name = name
+        self._key = key
 
     @property
-    def repos(self) -> List[str]:
-        """Gets the repos of this ServiceDescription.
-
-        The repositorie(s) that the service depends upon  # noqa: E501
-
-        :return: The repos of this ServiceDescription.
-        :rtype: List[str]
-        """
-        return self._repos
-
-    @repos.setter
-    def repos(self, repos: List[str]):
-        """Sets the repos of this ServiceDescription.
-
-        The repositorie(s) that the service depends upon  # noqa: E501
-
-        :param repos: The repos of this ServiceDescription.
-        :type repos: List[str]
-        """
-        if repos is None:
-            raise ValueError("Invalid value for `repos`, must not be `None`")  # noqa: E501
-
-        self._repos = repos
-
-    @property
-    def details(self) -> List[List[ServiceDetails]]:
+    def details(self) -> List[ServiceDetails]:
         """Gets the details of this ServiceDescription.
 
         The details of the service  # noqa: E501
 
         :return: The details of this ServiceDescription.
-        :rtype: List[List[ServiceDetails]]
+        :rtype: List[ServiceDetails]
         """
         return self._details
 
     @details.setter
-    def details(self, details: List[List[ServiceDetails]]):
+    def details(self, details: List[ServiceDetails]):
         """Sets the details of this ServiceDescription.
 
         The details of the service  # noqa: E501
 
         :param details: The details of this ServiceDescription.
-        :type details: List[List[ServiceDetails]]
+        :type details: List[ServiceDetails]
         """
         if details is None:
             raise ValueError("Invalid value for `details`, must not be `None`")  # noqa: E501

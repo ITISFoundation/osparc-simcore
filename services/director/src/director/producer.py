@@ -49,7 +49,7 @@ def __check_service_uuid_available(docker_client, service_uuid):
         raise exceptions.GenericDockerError("Error while retrieving services", err) from err
     if list_of_running_services_w_uuid:
         raise exceptions.ServiceUUIDInUseError(service_uuid)
-    _LOGGER.debug("UUID %s is free")
+    _LOGGER.debug("UUID %s is free", service_uuid)
 
 def __check_setting_correctness(setting):
     if 'name' not in setting or 'type' not in setting or 'value' not in setting:
@@ -244,14 +244,20 @@ def __wait_until_service_running_or_failed(service_id, service_name, service_uui
         time.sleep(0.005)  # 5ms
     _LOGGER.debug("Waited for service %s to start", service_id)
 
-def __get_list_of_images(service_name):
-    # find the ones containing the service name
-    list_repos_for_service = registry_proxy.retrieve_list_of_interactive_services_with_name(service_name)
-    # get the available image for each service (syntax is image:tag)
-    list_of_images = {}
-    for repo in list_repos_for_service:
+def __get_repos_from_key(service_key):
+    # get the available image for the main service (syntax is image:tag)
+    list_of_images = {
+        service_key:registry_proxy.retrieve_list_of_images_in_repo(service_key)
+    }
+    _LOGGER.info("entries %s", list_of_images)
+    if not list_of_images[service_key]:
+        raise exceptions.ServiceNotFoundError(service_key, None)
+    # look for dependencies
+    dependent_repositories = registry_proxy.list_interactive_service_dependencies(service_key)
+    for repo in dependent_repositories:
         list_of_images[repo] = registry_proxy.retrieve_list_of_images_in_repo(repo)
-    _LOGGER.debug("Service %s has the following list of images available: %s", service_name, list_of_images)
+
+    _LOGGER.debug("Service %s has the following list of images available: %s", service_key, list_of_images)
 
     return list_of_images
 
@@ -276,7 +282,7 @@ def __prepare_runtime_parameters(docker_image_path, tag, service_uuid, docker_cl
     __add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
     __add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
     __set_service_name(docker_service_runtime_parameters,
-        registry_proxy.get_service_sub_name(docker_image_path),
+        registry_proxy.get_interactive_service_sub_name(docker_image_path),
         service_uuid)
     return docker_service_runtime_parameters
 
@@ -311,10 +317,12 @@ def __create_services(docker_client, list_of_images, service_name, service_tag, 
             __wait_until_service_running_or_failed(service.id, service_name, service_uuid)
             # the docker swarm opened some random port to access the service
             published_ports = __get_docker_image_published_ports(service.id)
+            published_port = None
+            if published_ports:
+                published_port = published_ports[0]
             _LOGGER.debug("Service with parameters %s successfully started, published ports are %s, entry_point is %s", docker_service_runtime_parameters, published_ports, service_entrypoint)
             container_meta_data = {
-                "container_id": service.id,
-                "published_ports": published_ports,
+                "published_port": published_port,
                 "entry_point": service_entrypoint
                 }
             containers_meta_data.append(container_meta_data)
@@ -334,24 +342,21 @@ def __create_services(docker_client, list_of_images, service_name, service_tag, 
             raise exceptions.GenericDockerError("Error while creating service", err) from err
     return containers_meta_data
 
-def start_service(service_name, service_tag, service_uuid):
+def start_service(service_key, service_tag, service_uuid):
     # pylint: disable=C0103
-    _LOGGER.debug("starting service %s with tag %s and uuid %s", service_name, service_tag, service_uuid)
-    list_of_images = __get_list_of_images(service_name)
-
+    _LOGGER.debug("starting service %s:%s and uuid %s", service_key, service_tag, service_uuid)
+    # first check the uuid is available
     docker_client = __get_docker_client()
     __check_service_uuid_available(docker_client, service_uuid)
-
-    __login_docker_registry(docker_client)
+    # find the service dependencies
+    list_of_images = __get_repos_from_key(service_key)
 
     # create services
+    __login_docker_registry(docker_client)
+    service_name = registry_proxy.get_service_name(service_key, registry_proxy.INTERACTIVE_SERVICES_PREFIX)
     containers_meta_data = __create_services(docker_client, list_of_images, service_name, service_tag, service_uuid)
-    service_meta_data = {
-        "service_name": service_name,
-        "service_uuid": service_uuid,
-        "containers": containers_meta_data
-        }
-    return json.dumps(service_meta_data)
+    # we return only the info of the main service
+    return containers_meta_data[0]
 
 
 def stop_service(service_uuid):
@@ -367,7 +372,7 @@ def stop_service(service_uuid):
         raise exceptions.GenericDockerError("Error while stopping container", err) from err
     
     # error if no service with such an id exists
-    if list_running_services_with_uuid is None:
+    if not list_running_services_with_uuid:
         raise exceptions.ServiceNotFoundError(service_uuid, None)
     # remove the services
     try:

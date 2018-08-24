@@ -52,7 +52,7 @@ paths:
               schema:
                 type: string
                 description: Message greeting
-                example: Hello my friend!
+                example: "Hello my friend!"
         default:
           description: Unexpected error
           content:
@@ -91,7 +91,7 @@ paths:
       description: Starts an interactive service in the oSparc platform and returns its entrypoint
       operationId: interactive_service_post
       parameters:         
-        - $ref: '#/components/parameters/ServiceName'
+        - $ref: '#/components/parameters/ServiceKey'
         - $ref: '#/components/parameters/ServiceVersion'
         - $ref: '#/components/parameters/ServiceUuid'
       responses:
@@ -176,21 +176,22 @@ components:
         The service type:
           * computational - a computational service
           * interactive - an interactive service
-      required: true
+      required: false
       schema:
         type: string          
         enum: 
           - computational
           - interactive            
         example: computational
-    ServiceName:
+    ServiceKey:
       in: query
-      name: service_name
-      description: The name of the service
+      name: service_key
+      description: The key (url) of the service
       required: true
       schema:
         type: string   
-        example: 3d-viewer     
+        format: url
+        example: simcore/services/dynamic/3d-viewer     
     ServiceVersion:
       in: query
       name: service_tag
@@ -220,13 +221,14 @@ components:
     ServiceDescription:    
       type: object
       required:
-        - name
+        - key
         - details
       properties:
-        name:
-          description: The name of the service
+        key:
+          description: The key of the service
           type: string
-          example: 3d-viewer
+          format: url
+          example: simcore/services/dynamic/3d-viewer
         details:
           description: The details of the service
           type: array
@@ -245,7 +247,10 @@ components:
         - tag
       properties:
         authors:
-          $ref: '#/components/schemas/AuthorDetails'
+          type: array
+          description: The authors of this service
+          items:
+            $ref: '#/components/schemas/AuthorDetails'
         contact:
           type: string
           format: email
@@ -345,6 +350,9 @@ components:
       
     Viewer:
       type: object
+      required: 
+        - ip
+        - port
       properties:
         ip:
           description: The IP address where the viewer is served
@@ -358,12 +366,12 @@ components:
           minimum: 1
           example: 2213
           nullable: true
-      required: 
-        - ip
-        - port
     
     Error:
       type: object
+      required:
+        - code
+        - message
       properties:
         code:
           description: Error code

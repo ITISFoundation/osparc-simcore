@@ -15,30 +15,25 @@ class RunningService(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, container_id: str=None, published_ports: List[int]=None, entry_point: str=None):  # noqa: E501
+    def __init__(self, published_port: int=None, entry_point: str=None):  # noqa: E501
         """RunningService - a model defined in OpenAPI
 
-        :param container_id: The container_id of this RunningService.  # noqa: E501
-        :type container_id: str
-        :param published_ports: The published_ports of this RunningService.  # noqa: E501
-        :type published_ports: List[int]
+        :param published_port: The published_port of this RunningService.  # noqa: E501
+        :type published_port: int
         :param entry_point: The entry_point of this RunningService.  # noqa: E501
         :type entry_point: str
         """
         self.openapi_types = {
-            'container_id': str,
-            'published_ports': List[int],
+            'published_port': int,
             'entry_point': str
         }
 
         self.attribute_map = {
-            'container_id': 'container_id',
-            'published_ports': 'published_ports',
+            'published_port': 'published_port',
             'entry_point': 'entry_point'
         }
 
-        self._container_id = container_id
-        self._published_ports = published_ports
+        self._published_port = published_port
         self._entry_point = entry_point
 
     @classmethod
@@ -53,60 +48,37 @@ class RunningService(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def container_id(self) -> str:
-        """Gets the container_id of this RunningService.
-
-        The id of the docker container  # noqa: E501
-
-        :return: The container_id of this RunningService.
-        :rtype: str
-        """
-        return self._container_id
-
-    @container_id.setter
-    def container_id(self, container_id: str):
-        """Sets the container_id of this RunningService.
-
-        The id of the docker container  # noqa: E501
-
-        :param container_id: The container_id of this RunningService.
-        :type container_id: str
-        """
-        if container_id is None:
-            raise ValueError("Invalid value for `container_id`, must not be `None`")  # noqa: E501
-
-        self._container_id = container_id
-
-    @property
-    def published_ports(self) -> List[int]:
-        """Gets the published_ports of this RunningService.
+    def published_port(self) -> int:
+        """Gets the published_port of this RunningService.
 
         The ports where the service provides its interface  # noqa: E501
 
-        :return: The published_ports of this RunningService.
-        :rtype: List[int]
+        :return: The published_port of this RunningService.
+        :rtype: int
         """
-        return self._published_ports
+        return self._published_port
 
-    @published_ports.setter
-    def published_ports(self, published_ports: List[int]):
-        """Sets the published_ports of this RunningService.
+    @published_port.setter
+    def published_port(self, published_port: int):
+        """Sets the published_port of this RunningService.
 
         The ports where the service provides its interface  # noqa: E501
 
-        :param published_ports: The published_ports of this RunningService.
-        :type published_ports: List[int]
+        :param published_port: The published_port of this RunningService.
+        :type published_port: int
         """
-        if published_ports is None:
-            raise ValueError("Invalid value for `published_ports`, must not be `None`")  # noqa: E501
+        if published_port is None:
+            raise ValueError("Invalid value for `published_port`, must not be `None`")  # noqa: E501
+        if published_port is not None and published_port < 1:  # noqa: E501
+            raise ValueError("Invalid value for `published_port`, must be a value greater than or equal to `1`")  # noqa: E501
 
-        self._published_ports = published_ports
+        self._published_port = published_port
 
     @property
     def entry_point(self) -> str:
         """Gets the entry_point of this RunningService.
 
-        The entry point where the service provides its interface  # noqa: E501
+        The entry point where the service provides its interface if specified  # noqa: E501
 
         :return: The entry_point of this RunningService.
         :rtype: str
@@ -117,12 +89,10 @@ class RunningService(Model):
     def entry_point(self, entry_point: str):
         """Sets the entry_point of this RunningService.
 
-        The entry point where the service provides its interface  # noqa: E501
+        The entry point where the service provides its interface if specified  # noqa: E501
 
         :param entry_point: The entry_point of this RunningService.
         :type entry_point: str
         """
-        if entry_point is None:
-            raise ValueError("Invalid value for `entry_point`, must not be `None`")  # noqa: E501
 
         self._entry_point = entry_point
