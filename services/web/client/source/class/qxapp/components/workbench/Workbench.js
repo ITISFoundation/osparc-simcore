@@ -230,7 +230,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __addServiceFromCatalogue: function(e, pos) {
       let data = e.getData();
       let metaData = data.service;
-      console.log("metaData", metaData);
       const nodeImageId = metaData.key + "-" + metaData.version;
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
