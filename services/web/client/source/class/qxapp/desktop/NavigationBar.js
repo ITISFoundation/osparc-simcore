@@ -27,10 +27,15 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     homeBtn.setIcon("@FontAwesome5Solid/home/32");
     this.add(homeBtn);
 
-    this._currentState = new qx.ui.basic.Label().set({
+    let saveBtn = this.__saveButton = new qx.ui.form.Button();
+    saveBtn.set(commonBtnSettings);
+    saveBtn.setIcon("@FontAwesome5Solid/save/32");
+    this.add(saveBtn);
+
+    this.__currentState = new qx.ui.basic.Label().set({
       minWidth: 20
     });
-    this.add(this._currentState);
+    this.add(this.__currentState);
 
     this.add(new qx.ui.core.Spacer(5), {
       flex: 1
@@ -52,16 +57,31 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     homeBtn.addListener("execute", function() {
       this.fireEvent("HomePressed");
     }, this);
+
+    saveBtn.addListener("execute", function() {
+      this.fireEvent("SavePressed");
+    }, this);
   },
 
   events: {
-    "HomePressed": "qx.event.type.Event"
+    "HomePressed": "qx.event.type.Event",
+    "SavePressed": "qx.event.type.Event"
   },
 
   members: {
+    __currentState: null,
+    __saveButton: null,
 
     setCurrentStatus: function(newLabel) {
-      this._currentState.setValue("Showing: " + newLabel);
+      this.__currentState.setValue(newLabel);
+    },
+
+    showSaveButton: function(show) {
+      if (show) {
+        this.__saveButton.setVisibility("visible");
+      } else {
+        this.__saveButton.setVisibility("excluded");
+      }
     },
 
     __createUserBtn: function() {
