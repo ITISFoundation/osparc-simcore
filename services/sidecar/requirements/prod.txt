@@ -1,0 +1,3 @@
+.
+../../packages/s3wrapper/
+../../packages/simcore-sdk/

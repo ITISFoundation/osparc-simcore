@@ -12,13 +12,14 @@ from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
 from sqlalchemy.orm.attributes import flag_modified
 
-from sidecar_utils import (DbSettings, DockerSettings, ExecutorSettings,
-                           RabbitSettings, S3Settings, delete_contents,
-                           find_entry_point, is_node_ready)
 from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
+
+from .utils import (DbSettings, DockerSettings, ExecutorSettings,
+                    RabbitSettings, S3Settings, delete_contents,
+                    find_entry_point, is_node_ready)
 
 rabbit_config = rabbit_config()
 celery= Celery(rabbit_config.name, broker=rabbit_config.broker, backend=rabbit_config.backend)

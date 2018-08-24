@@ -29,14 +29,18 @@ TESTS_REQUIRE = list_requirements_in("tests.txt")
 setup(
     name='simcore-web-server',
     version='0.0.0',
-    package_dir={'': 'src'},
-    packages=find_packages('src'),
+    packages=find_packages(where='src'),
+    package_dir={
+        '': 'src',
+    },
     include_package_data=True,
     package_data={
         'config': ['../config/*.yaml'] #FIXME: this is still not copied!??
     },
     entry_points={
-        'console_scripts': ['service-web-server=server.__main__:main']},
+        'console_scripts': [
+            'service-web-server=server.__main__:main', ]
+        },
     python_requires='>=3.6',
     install_requires=INSTALL_REQUIRES,
     tests_require=TESTS_REQUIRE,
