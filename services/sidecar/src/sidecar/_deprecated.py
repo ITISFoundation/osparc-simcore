@@ -6,11 +6,13 @@ from pathlib import Path
 
 import docker
 import pika
+from celery import Celery
 from celery.states import SUCCESS as CSUCCESS
 from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
 from sqlalchemy.orm.attributes import flag_modified
 
+from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
@@ -19,6 +21,12 @@ from .utils import (DbSettings, DockerSettings, ExecutorSettings,
                     RabbitSettings, S3Settings, delete_contents,
                     find_entry_point, is_node_ready)
 
+rabbit_config = rabbit_config()
+celery= Celery(rabbit_config.name, broker=rabbit_config.broker, backend=rabbit_config.backend)
+
+# TODO: configure via command line or config file
+logging.basicConfig(level=logging.DEBUG)
+#_LOGGER = logging.getLogger(__name__)
 _LOGGER = get_task_logger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 
@@ -445,7 +453,17 @@ class Sidecar:
         return next_task_nodes
 
 
-
-
-# TODO: if a singleton, then use
+# FIXME: this should be moved into tasks.py and need a main.py as well!
 SIDECAR = Sidecar()
+@celery.task(name='comp.task', bind=True)
+def pipeline(self, pipeline_id, node_id=None):
+    _LOGGER.debug("ENTERING run")
+    next_task_nodes = []
+    try:
+        next_task_nodes = SIDECAR.inspect(self, pipeline_id, node_id)
+    #pylint:disable=broad-except
+    except Exception:
+        _LOGGER.exception("Uncaught exception")
+
+    for _node_id in next_task_nodes:
+        _task = celery.send_task('comp.task', args=(pipeline_id, _node_id), kwargs={})

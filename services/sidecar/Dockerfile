@@ -31,10 +31,11 @@ FROM common as development
 
 VOLUME /work/packages
 VOLUME /work/services/sidecar
-WORKDIR /work/services/sidecar
 
-CMD pip install -r requirements/dev.txt &&\
-    celery -A sidecar worker -c 2 --loglevel=info
+ENV DEBUG 1
+WORKDIR /work/services/sidecar
+CMD ./boot.sh
+# FIXME: executing this as root will create folders (e.g. eggs) in the mapped
 
 
 # --------------------------Production stage -------------------
@@ -46,10 +47,12 @@ COPY services/sidecar /work/services/sidecar
 
 WORKDIR /work/services/sidecar
 
-RUN pip install -r requirements/prod.txt && pip list;\
+RUN pip install -r requirements/prod.txt ;\
+    pip list &&\
+    mv boot.sh /work &&\
     rm -rf /work/packages &&\
     rm -rf /work/services/sidecar
 
+ENV DEBUG 0
 WORKDIR /work
-
-ENTRYPOINT celery -A sidecar worker -c 2 --loglevel=info
+ENTRYPOINT ./boot.sh

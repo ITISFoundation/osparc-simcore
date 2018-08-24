@@ -31,5 +31,5 @@ services:
     build:
       target: development
     volumes:
-      - ./sidecar/src/sidecar:/work/sidecar
+      - ./sidecar:/work/services/sidecar
       - ../packages:/work/packages
