@@ -9,8 +9,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     const settingsWidth = this.__settingsWidth = 600;
 
-    let workbenchData = this.__getProjectDocument(projectId);
-    let workbench = this.__workbench = new qxapp.components.workbench.Workbench(workbenchData);
+    let project = this.__projectDocument = this.__getProjectDocument(projectId);
+    let workbench = this.__workbench = new qxapp.components.workbench.Workbench(project.getWorkbench());
     let settingsBox = this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
       minWidth: 0,
       visibility: "excluded",
@@ -25,7 +25,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       bottom: 0
     });
 
-    let miniWorkbench = this.__miniWorkbench = new qxapp.components.workbench.WorkbenchMini(workbenchData).set({
+    let miniWorkbench = this.__miniWorkbench = new qxapp.components.workbench.WorkbenchMini(project.getWorkbench()).set({
       minHeight: 200,
       maxHeight: 500
     });
@@ -153,7 +153,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __settingsWidth: null,
     __transDeco: null,
     __splitter: null,
-    __projectId: null,
+    __projectDocument: null,
 
     showSettings: function(showSettings) {
       console.log("showSettings", showSettings);
@@ -167,15 +167,16 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __getProjectDocument: function(projectId) {
-      let workbenchData = {};
+      let project = null;
       if (projectId === null || projectId === undefined) {
-        projectId = qxapp.utils.Utils.uuidv4();
+        project = new qxapp.data.model.Project();
       } else {
-        workbenchData = qxapp.data.Store.getInstance().getProjectList()[projectId].workbench;
+        let projectData = qxapp.data.Store.getInstance().getProjectList()[projectId];
+        projectData.id = String(projectId);
+        project = new qxapp.data.model.Project(projectData);
       }
-      this.__projectId = projectId;
 
-      return workbenchData;
+      return project;
     },
 
     __createBrowserWindow: function(url, name) {
@@ -201,6 +202,14 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       });
 
       return win;
+    },
+
+    getProjectJsonObject: function() {
+      console.log(this.__projectDocument.getJsonObject());
+    },
+
+    serializeProjectDocument: function() {
+      console.log(JSON.stringify(this.__projectDocument.getJsonObject()));
     }
   }
 });
