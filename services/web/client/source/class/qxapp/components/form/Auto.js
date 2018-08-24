@@ -500,7 +500,6 @@ qx.Class.define("qxapp.components.form.Auto", {
         if (s.set.label) {
           s.set.label = this["tr"](s.set.label);
         }
-        console.log(s.set);
         control.set(s.set);
       }
       this.__ctrlMap[key] = control;
