@@ -73,6 +73,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
             settingsBox.exclude();
           }
         });
+
+      workbench.addListener("NodeMoved", function(e) {
+        miniWorkbench.nodeMoved(e);
+      }, this);
     });
 
 

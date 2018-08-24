@@ -178,6 +178,15 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
       qx.ui.core.queue.Layout.flush();
     },
 
+    nodeMoved: function(e) {
+      const data = e.getData();
+      let node = this.getNode(data.nodeId);
+      if (node) {
+        node.moveTo(parseInt(data.posX/miniFactor), parseInt(data.posY/miniFactor));
+        this.__updateLinks(node);
+      }
+    },
+
     __updateLinks: function(node) {
       let linksInvolved = this.__getConnectedLinks(node.getNodeId());
 
