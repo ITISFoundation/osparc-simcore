@@ -12,14 +12,14 @@ info:
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 
 servers:
-  - url: localhost:{port}/{basePath}
+  - url: http://localhost:{port}/{basePath}
     description: Development server
     variables:
       port: 
         default: '8001'
       basePath:
         default: v1
-  - url: director:{port}/{basePath}
+  - url: https://director:{port}/{basePath}
     description: Production server
     variables:
       port: 
@@ -55,17 +55,22 @@ paths:
                 example: Hello my friend!
         default:
           description: Unexpected error
-
-  /list_interactive_services:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /services:
     get:
       tags: 
         - users
-      summary: lists available interactive services in the oSparc platform
-      description: lists available interactive services in the oSparc platform
-      operationId: list_interactive_services_get
+      summary: Lists available services in the oSparc platform
+      description: Lists available services in the oSparc platform
+      operationId: services_get
+      parameters:
+        - $ref: '#/components/parameters/ServiceType'
       responses:
         200:
-          description: Returns the list of available interactive services
+          description: Success, returns the list of available services
           content:
             application/json:
               schema:
@@ -74,32 +79,21 @@ paths:
                   $ref: '#/components/schemas/ServiceDescription'
         default:
           description: Unexpected error
-  /start_service:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /interactive_service:
     post:
       tags: 
         - users
       summary: Starts an interactive service in the oSparc platform and returns its entrypoint
       description: Starts an interactive service in the oSparc platform and returns its entrypoint
-      operationId: start_service_post
-      parameters: 
-        - in: query
-          name: service_name
-          description: The name of the service to start
-          required: true
-          schema:
-            type: string
-        - in: query
-          name: service_uuid
-          description: The uuid to assign the service with
-          required: true
-          schema:
-            type: string          
-        - in: query
-          name: service_tag
-          description: The tag/version of the service to start
-          required: false
-          schema:
-            type: string
+      operationId: interactive_service_post
+      parameters:         
+        - $ref: '#/components/parameters/ServiceName'
+        - $ref: '#/components/parameters/ServiceVersion'
+        - $ref: '#/components/parameters/ServiceUuid'
       responses:
         201:
           description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
@@ -111,114 +105,145 @@ paths:
                   $ref: '#/components/schemas/RunningService'
         400:
           description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         404:
           description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         409:
           description: A service with the same uuid already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         default:
           description: Unexpected error
-        
-  /stop_service:      
-    post:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
       tags: 
         - users
       summary: Stops and removes an interactive service from the oSparc platform
       description: Stops and removes an interactive service from the oSparc platform
-      operationId: stop_service_post
+      operationId: interactive_service_delete
       parameters: 
-        - in: query
-          name: service_uuid
-          description: The uuid of the service to stop
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ServiceUuid'
       responses:
         204:
           description: Succesfully stopped and removed the service from the oSparc platform
         400:
           description: Malformed function call, missing field
-        404:
-          description: Service not found
-        default:
-          description: Unexpected error
-        
-    
-  /list_computational_services:
-    get:
-      tags: 
-        - users
-      summary: Lists available computational services in the oSparc platform
-      description: Lists available computational services in the oSparc platform
-      operationId: list_computational_services_get
-      responses:
-        200:
-          description: Returns the list of available computational services
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ServiceDescription'
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         default:
           description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
+  parameters:
+    ServiceUuid:
+      in: query
+      name: service_uuid
+      description: The uuid of the service
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
+    ServiceType:
+      in: query
+      name: service_type
+      description: |
+        The service type:
+          * computational - a computational service
+          * interactive - an interactive service
+      required: true
+      schema:
+        type: string          
+        enum: 
+          - computational
+          - interactive            
+        example: computational
+    ServiceName:
+      in: query
+      name: service_name
+      description: The name of the service
+      required: true
+      schema:
+        type: string   
+        example: 3d-viewer     
+    ServiceVersion:
+      in: query
+      name: service_tag
+      description: The tag/version of the service
+      required: false
+      schema:
+        type: string
+        example: "1.4"
+  
   schemas:
     RunningService:
       type: object
+      required:
+        - published_port
       properties:
-        container_id:
-          # TODO: SAN remove this. useless.
-          type: string
-          description: The id of the docker container
-          example: 23032hfjdhskdjh21399392
-        published_ports:
-          # TODO: SAN this should be in the entry point part. and there is only one port for one service.
+        published_port:
           description: The ports where the service provides its interface
-          type: array
-          items:
-            type: integer
-            minimum: 1
-            example: 30000
+          type: integer
+          format: int32
+          minimum: 1
+          example: 30000
         entry_point:
-          description: The entry point where the service provides its interface
+          description: The entry point where the service provides its interface if specified
           type: string
-          example: /visualizer
-      required: 
-        - container_id
-        - published_ports
-        - entry_point
+          example: /the/entry/point/is/here
+
     ServiceDescription:    
       type: object
+      required:
+        - name
+        - details
       properties:
         name:
           description: The name of the service
           type: string
           example: 3d-viewer
-        repos:
-          # TODO: SAN useless. Remove.
-          description: The repositorie(s) that the service depends upon
-          type: array
-          items:
-            type: string
-            format: url
-            example: simcore/services/dynamic/3d-viewer
         details:
-          # TODO: SAN much too complex. It's one service, even if more than 1 docker is used internally. Only 1 array necesary.
-          # TODO: it should be an object with the version/tag:details...
           description: The details of the service
           type: array
           items:
-            type: array
-            items:
-              $ref: '#/components/schemas/ServiceDetails'
-      required:
-        - name
-        - repos
-        - details
+            $ref: '#/components/schemas/ServiceDetails'
     ServiceDetails:
       type: object
+      required:
+        - authors
+        - contact
+        - description
+        - inputs
+        - outputs
+        - key
+        - name
+        - tag
       properties:
-      # TODO: SAN the version of the service is missing, or is mixed with the tag.
         authors:
           $ref: '#/components/schemas/AuthorDetails'
         contact:
@@ -229,16 +254,17 @@ components:
         description:
           type: string
           description: The human readable description of the service
+          example: This service provides a 3d-viewer
         inputs:
           description: The inputs of the service
           type: array
           items:
-            $ref: '#/components/schemas/Port'
+            $ref: '#/components/schemas/PortDetails'
         outputs:
           description: The outputs of the service
           type: array
           items:
-            $ref: '#/components/schemas/Port'
+            $ref: '#/components/schemas/PortDetails'
         key:
           description: The location of the service
           type: string
@@ -253,19 +279,13 @@ components:
           type: string
           example: 1.0.0
         viewer:
-          $ref: '#/components/schemas/Viewer'
-      required:
-        - authors
-        - contact
-        - description
-        - inputs
-        - outputs
-        - key
-        - name
-        - tag
+          $ref: '#/components/schemas/Viewer'      
         
     AuthorDetails:
       type: object
+      required: 
+        - name
+        - email
       properties:
         name:
           description: The name of the author
@@ -276,24 +296,28 @@ components:
           type: string
           format: email
           example: leevancleef@thebad.com
-      required: 
-        - name
-        - email
-    Port:
+      
+    PortDetails:
       type: object
+      required: 
+        - key
+        - label
+        - desc
+        - type
+        - value
       properties:
         key:
           description: The unique key of the port
           type: string
-          example: A
+          example: in1
         label:
           description: The label of the port
           type: string
-          example: this is the key A
+          example: in1 is representing some important value here
         desc:
           description: The human readable description of what the port is for
           type: string
-          example: this is the description
+          example: this is the description of in1
         type:        
           type: string
           enum: 
@@ -316,14 +340,9 @@ components:
         value:
           description: The value of the port. May be null if not yet defined.
           type: string
-          example: "null"
+          example: my value is great
           nullable: true
-      required: 
-        - key
-        - label
-        - desc
-        - type
-        - value
+      
     Viewer:
       type: object
       properties:
@@ -342,3 +361,15 @@ components:
       required: 
         - ip
         - port
+    
+    Error:
+      type: object
+      properties:
+        code:
+          description: Error code
+          type: integer
+          example: 404
+        message:
+          description: Error message
+          type: string
+          example: Unexpected error
