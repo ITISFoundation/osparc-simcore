@@ -7,16 +7,6 @@
 # https://github.com/OpenAPITools/openapi-generator/releases/tag/v3.0.0
 # https://angular.schule/blog/2018-06-swagger-codegen-is-now-openapi-generator
 
-#docker run --rm -v ${PWD}:/local openapitools/openapi-generator-cli generate \
-#    -i https://raw.githubusercontent.com/openapitools/openapi-generator/master/modules/openapi-generator/src/test/resources/2_0/petstore.yaml \
-#    -g html2 \
-#    -o /local/out/html2
-
-#docker run --rm -v ${PWD}:/local openapitools/openapi-generator-cli generate \
-#    -i swagger.yaml
-#    --generator-name html2 \
-#    -o /local/out/python
-
 usage()
 {
     echo "usage: openapi_codegen [[[-i input] [-o output directory] [-g generator]] | [-h help]]"
@@ -48,9 +38,9 @@ while [ "$1" != "" ]; do
     shift
 done
 
+# SAN this allows to know whether we are running in the Windows linux environment or under linux/mac
 VERSION=$(uname -a);
 MICROSOFT_STRING="Microsoft"
-# SAN this is a hack so that docker works in the linux virtual environment under Windows
 if echo "$VERSION" | grep -q "$MICROSOFT_STRING"; then
 export DOCKER_COMPOSE=docker-compose.exe
 export DOCKER=docker.exe
@@ -60,6 +50,7 @@ export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 fi
 
+# check arguments
 if [ -z "$input_file" ]; then
     echo "no specification file defined..."
     usage
@@ -84,12 +75,12 @@ output_absolute_dir="$(realpath ${output_directory})"
 echo "output directory is ${output_absolute_dir}"
 
 if echo "$VERSION" | grep -q "$MICROSOFT_STRING"; then
-# if windows WSL we need to correct the mounted path to be understandable for docker
-# /mnt/k/folder/subfolder/... -> k:/folder/subfolder/...
-input_parent_dir=$(echo $input_parent_dir | sed -e 's,/mnt/\(.\)/,\1:/,')
-echo "windows corrected input directory is ${input_parent_dir}"
-output_absolute_dir=$(echo $output_absolute_dir | sed -e 's,/mnt/\(.\)/,\1:/,')
-echo "windows corrected output directory is ${output_absolute_dir}"
+    # if windows WSL we need to correct the mounted path to be understandable for docker
+    # /mnt/k/folder/subfolder/... -> k:/folder/subfolder/...
+    input_parent_dir=$(echo $input_parent_dir | sed -e 's,/mnt/\(.\)/,\1:/,')
+    echo "windows corrected input directory is ${input_parent_dir}"
+    output_absolute_dir=$(echo $output_absolute_dir | sed -e 's,/mnt/\(.\)/,\1:/,')
+    echo "windows corrected output directory is ${output_absolute_dir}"
 fi
 
 echo "generating code..."
