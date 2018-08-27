@@ -7,13 +7,12 @@ const BUTTON_SPACING = 10;
 qx.Class.define("qxapp.components.workbench.Workbench", {
   extend: qx.ui.container.Composite,
 
-  construct: function(prjId, workbenchData) {
+  construct: function(workbenchData) {
     this.base();
 
     let canvas = new qx.ui.layout.Canvas();
     this.set({
-      layout: canvas,
-      projectId: prjId
+      layout: canvas
     });
 
     this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
@@ -107,11 +106,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
   },
 
   properties: {
-    projectId: {
-      check: "String",
-      nullable: false
-    },
-
     canStart: {
       nullable: false,
       init: true,
@@ -802,7 +796,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     saveProject: function() {
       const savePosition = true;
-      this.__workbenchData = this.__serializePipeline(savePosition).workbench;
+      this.__workbenchData = this.__serializePipeline(savePosition);
     },
 
     getWorkbenchData: function() {
@@ -810,13 +804,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __serializePipeline: function(savePosition = false) {
-      let pipeline = {
-        projectId: this.getProjectId(),
-        workbench: {}
-      };
+      let workbench = {};
       for (let i = 0; i < this.__nodes.length; i++) {
         const node = this.__nodes[i];
-        let cNode = pipeline.workbench[node.getNodeId()] = {
+        let cNode = workbench[node.getNodeId()] = {
           key: node.getMetaData().key,
           version: node.getMetaData().version,
           inputs: node.getInputValues(),
@@ -843,7 +834,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           }
         }
       }
-      return pipeline;
+      return workbench;
     },
 
     addWindowToDesktop: function(node) {
@@ -871,7 +862,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       // callback for incoming progress
       if (!socket.slotExists("progress")) {
         socket.on("progress", function(data) {
-          console.log("progress", data);
           let d = JSON.parse(data);
           let node = d["Node"];
           let progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
@@ -882,7 +872,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       // post pipeline
       this.__pipelineId = null;
       let currentPipeline = this.__serializePipeline();
-      console.log("pipeline:", currentPipeline);
+      console.log(currentPipeline)
       let req = new qx.io.request.Xhr();
       let data = {};
       data = currentPipeline;
@@ -908,10 +898,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __onPipelinesubmitted: function(e) {
       let req = e.getTarget();
-      console.debug("Everything went fine!!");
-      console.debug("status  : ", req.getStatus());
-      console.debug("phase   : ", req.getPhase());
-      console.debug("response: ", req.getResponse());
 
       const pipelineId = req.getResponse().pipeline_id;
       this.__logger.debug("Workbench", "Pipeline ID " + pipelineId);
