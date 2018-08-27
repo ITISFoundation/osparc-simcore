@@ -28,7 +28,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
     if (workbenchData) {
       this.__svgWidget.addListenerOnce("SvgWidgetReady", () => {
         // Will be called only the first time Svg lib is loaded
-        this.__loadProject(workbenchData);
+        this.loadProject(workbenchData);
       });
     }
     this.__desktop.add(this.__svgWidget, {
@@ -52,7 +52,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
     __desktop: null,
     __svgWidget: null,
 
-    __loadProject: function(workbenchData) {
+    loadProject: function(workbenchData) {
       this.removeAll();
 
       for (let nodeUuid in workbenchData) {

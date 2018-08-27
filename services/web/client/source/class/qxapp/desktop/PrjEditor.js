@@ -59,7 +59,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     project.addListener("changeWorkbench", function(e) {
       console.log("changeWorkbench", e.getData());
       let newWorkbenchData = e.getData();
-      this.__miniWorkbench.__loadProject(newWorkbenchData);
+      this.__miniWorkbench.loadProject(newWorkbenchData);
     }, this);
 
     workbench.addListenerOnce("appear", () => {

@@ -872,7 +872,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       // post pipeline
       this.__pipelineId = null;
       let currentPipeline = this.__serializePipeline();
-      console.log(currentPipeline)
+      console.log(currentPipeline);
       let req = new qx.io.request.Xhr();
       let data = {};
       data = currentPipeline;
