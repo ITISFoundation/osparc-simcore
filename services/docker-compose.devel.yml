@@ -29,7 +29,9 @@ services:
   sidecar:
     image: services_sidecar:dev
     build:
+      args:
+        - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
       target: development
     volumes:
-      - ./sidecar:/work/services/sidecar
-      - ../packages:/work/packages
+      - ./sidecar:/home/scu/services/sidecar
+      - ../packages:/home/scu/packages

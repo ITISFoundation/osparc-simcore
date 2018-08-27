@@ -95,16 +95,17 @@ services:
       # the packages directory into any docker image
       context: ../
       dockerfile: services/sidecar/Dockerfile
+      args:
+        - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
     volumes:
-      - input:/input
-      - output:/output
-      - log:/log
+      - input:/home/scu/input
+      - output:/home/scu/output
+      - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8000:8000"
     environment:
-      - PYTHONPATH=/work/packages/simcore-sdk/src:/work/packages/s3wrapper/src
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}

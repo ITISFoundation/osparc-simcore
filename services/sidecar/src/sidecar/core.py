@@ -20,7 +20,7 @@ from .utils import (DbSettings, DockerSettings, ExecutorSettings,
                     find_entry_point, is_node_ready)
 
 _LOGGER = get_task_logger(__name__)
-_LOGGER.setLevel(logging.DEBUG)
+_LOGGER.setLevel(logging.DEBUG) # FIXME: set level via config
 
 
 class Sidecar:
@@ -271,11 +271,12 @@ class Sidecar:
     def initialize(self, task):
         self._task = task
 
+        HOMEDIR = os.environ["HOME"]
         self._docker.image_name = self._docker.registry_name + "/" + task.image['name']
         self._docker.image_tag = task.image['tag']
-        self._executor.in_dir = os.path.join("/", "input", task.job_id)
-        self._executor.out_dir = os.path.join("/", "output", task.job_id)
-        self._executor.log_dir = os.path.join("/", "log", task.job_id)
+        self._executor.in_dir = os.path.join(HOMEDIR, "input", task.job_id)
+        self._executor.out_dir = os.path.join(HOMEDIR, "output", task.job_id)
+        self._executor.log_dir = os.path.join(HOMEDIR, "log", task.job_id)
 
         self._docker.env = ["INPUT_FOLDER=" + self._executor.in_dir,
                             "OUTPUT_FOLDER=" + self._executor.out_dir,
@@ -445,7 +446,9 @@ class Sidecar:
         return next_task_nodes
 
 
-
-
 # TODO: if a singleton, then use
 SIDECAR = Sidecar()
+
+__all__ = [
+    "SIDECAR"
+]

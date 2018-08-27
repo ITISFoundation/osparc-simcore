@@ -1,58 +1,91 @@
-FROM python:3.6-alpine as common
+FROM python:3.6-alpine as base
 
-LABEL maintainer="Manuel Guidon <guidon@itis.ethz.ch"
+LABEL maintainer="Manuel Guidon guidon"
+
+ARG DOCKER_GID_ARG=1001
+
+# create user 'scu' and adds it to host's docker group
+RUN adduser -D -u 8004 scu &&\
+    addgroup -g $DOCKER_GID_ARG docker &&\
+    addgroup scu docker
+
+ENV HOME /home/scu
+ENV PIP  /home/scu/.venv/bin/pip3
+
+EXPOSE 8000
+VOLUME /home/scu/input
+VOLUME /home/scu/output
+VOLUME /home/scu/log
+#VOLUME /var/run/docker.sock TODO: PC->MaG is this using docker??
+
+# -------------------------- Build stage -------------------
+# Keeps same folder structure as in repo so we can reuse relative paths
+#
+# + /home/scu/              $HOME
+#    + services/sidecar
+#        ...
+#    + packages
+#        ...
+FROM base as build
 
 RUN apk add --no-cache \
       postgresql-dev \
       gcc \
       libc-dev
 
-RUN pip install --upgrade \
+RUN python3 -m venv $HOME/.venv &&\
+    $PIP install --no-cache-dir --upgrade \
       pip \
       wheel \
       setuptools
 
-WORKDIR /work
-# Buil context set at repo's root
-COPY services/sidecar/requirements requirements
+WORKDIR /home/scu
 
-RUN pip install -r requirements/base.txt &&\
+# Buil context set at repo's root
+COPY --chown=scu:scu services/sidecar/requirements requirements
+
+RUN $PIP install --no-cache-dir -r requirements/base.txt &&\
     rm -rf requirements
 
-# Keeps same folder structure as in repo so we can reuse relative paths
-RUN mkdir -p /work/packages &&\
-    mkdir -p /work/services/sidecar
-
-EXPOSE 8000
-
-
 # --------------------------Development stage -------------------
-FROM common as development
+FROM build as development
 
-VOLUME /work/packages
-VOLUME /work/services/sidecar
+ARG HOST_GID_ARG=1000
 
+# in dev-mode we give access to `scu` to host's mapped volumes
+RUN addgroup -g $HOST_GID_ARG hgrp &&\
+    addgroup scu hgrp && \
+    chown -R scu:scu $HOME/.venv
+
+VOLUME /home/scu/packages
+VOLUME /home/scu/services/sidecar
+
+USER scu
 ENV DEBUG 1
-WORKDIR /work/services/sidecar
+WORKDIR /home/scu/services/sidecar
 CMD ./boot.sh
-# FIXME: executing this as root will create folders (e.g. eggs) in the mapped
 
 
-# --------------------------Production stage -------------------
-FROM common as production
+# --------------------------Production mult-stage -------------------
+FROM build as build-production
 
 # Buil context set at repo's root
-COPY packages /work/packages
-COPY services/sidecar /work/services/sidecar
+COPY --chown=scu:scu packages $HOME/packages
+COPY --chown=scu:scu services/sidecar $HOME/services/sidecar
 
-WORKDIR /work/services/sidecar
+WORKDIR /home/scu/services/sidecar
+RUN $PIP --no-cache-dir install -r requirements/prod.txt ;\
+    $PIP list
 
-RUN pip install -r requirements/prod.txt ;\
-    pip list &&\
-    mv boot.sh /work &&\
-    rm -rf /work/packages &&\
-    rm -rf /work/services/sidecar
+#-------------------
+FROM base as production
 
+COPY --from=build-production --chown=scu:scu $HOME/services/sidecar/boot.sh $HOME
+COPY --from=build-production --chown=scu:scu $HOME/.venv $HOME/.venv
+
+RUN . $HOME/.venv/bin/activate; pip list
+
+WORKDIR /home/scu
+USER scu
 ENV DEBUG 0
-WORKDIR /work
 ENTRYPOINT ./boot.sh

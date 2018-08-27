@@ -19,3 +19,9 @@ rabbit_config = RabbitConfig()
 celery_obj= Celery(rabbit_config.name,
     broker=rabbit_config.broker,
     backend=rabbit_config.backend)
+
+
+__all__ = [
+    "rabbit_config",
+    "celery_obj"
+]
