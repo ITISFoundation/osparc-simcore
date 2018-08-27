@@ -56,6 +56,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     this.add(workbench, 0);
     this.add(settingsBox, 1);
 
+    project.addListener("changeWorkbench", function(e) {
+      console.log("changeWorkbench", e.getData());
+      let newWorkbenchData = e.getData();
+      this.__miniWorkbench.__loadProject(newWorkbenchData);
+    }, this);
+
     workbench.addListenerOnce("appear", () => {
       workbench.getContentElement().getDomElement()
         .addEventListener("transitionend", () => {
@@ -74,9 +80,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           }
         });
 
+      /*
       workbench.addListener("NodeMoved", function(e) {
         miniWorkbench.nodeMoved(e);
       }, this);
+      */
     });
 
 
@@ -208,15 +216,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       return win;
     },
 
-    getProjectJsonObject: function() {
-      console.log("this.__projectDocument.getJsonObject()");
-      console.log(this.__projectDocument.getJsonObject());
-      console.log("this.__workbench.saveProject()");
-      console.log(this.__workbench.saveProject());
-    },
-
     serializeProjectDocument: function() {
-      console.log(JSON.stringify(this.__projectDocument.getJsonObject()));
+      console.log("Workbench: saveProject()");
+      this.__workbench.saveProject();
+      this.__projectDocument.setWorkbench(this.__workbench.getWorkbenchData());
+      console.log(this.__projectDocument.getJsonObject());
     }
   }
 });

@@ -43,7 +43,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     this.__navBar.addListener("SavePressed", function() {
       if (this.__prjEditor) {
-        this.__prjEditor.getProjectJsonObject();
+        this.__prjEditor.serializeProjectDocument();
       }
     }, this);
   },

@@ -53,6 +53,8 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
     __svgWidget: null,
 
     __loadProject: function(workbenchData) {
+      this.removeAll();
+
       for (let nodeUuid in workbenchData) {
         let nodeData = workbenchData[nodeUuid];
         const nodeImageId = nodeData.key + "-" + nodeData.version;

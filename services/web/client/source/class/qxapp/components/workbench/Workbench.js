@@ -102,8 +102,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
   },
 
   events: {
-    "NodeDoubleClicked": "qx.event.type.Data",
-    "NodeMoved": "qx.event.type.Data"
+    // "NodeMoved": "qx.event.type.Data",
+    "NodeDoubleClicked": "qx.event.type.Data"
   },
 
   properties: {
@@ -121,6 +121,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
   },
 
   members: {
+    __workbenchData: null,
     __nodes: null,
     __links: null,
     __desktop: null,
@@ -305,13 +306,14 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       node.addListener("NodeMoving", function() {
         this.__updateLinks(node);
-
+        /*
         const data = {
           nodeId: node.getNodeId(),
           posX: node.getCurrentBounds().left,
           posY: node.getCurrentBounds().top
         };
         this.fireDataEvent("NodeMoved", data);
+        */
       }, this);
 
       node.addListener("appear", function() {
@@ -768,6 +770,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __loadProject: function() {
+      this.removeAll();
+
       if (this.__workbenchData) {
         let workbenchData = this.__workbenchData;
         for (let nodeUuid in workbenchData) {
@@ -798,8 +802,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     saveProject: function() {
       const savePosition = true;
-      this.__workbenchData = this.__serializePipeline(savePosition);
-      return (this.__workbenchData);
+      this.__workbenchData = this.__serializePipeline(savePosition).workbench;
+    },
+
+    getWorkbenchData: function() {
+      return this.__workbenchData;
     },
 
     __serializePipeline: function(savePosition = false) {
