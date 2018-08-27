@@ -17,8 +17,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       maxWidth: settingsWidth
     });
 
-    let settingsBoxContent = new qx.ui.container.Composite(new qx.ui.layout.VBox(10, null, "separator-vertical"));
-    settingsBox.add(settingsBoxContent, {
+    let sidePanel = new qx.ui.container.Composite(new qx.ui.layout.VBox(10, null, "separator-vertical"));
+    settingsBox.add(sidePanel, {
       top: 0,
       left: 0,
       right: 0,
@@ -29,20 +29,20 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       minHeight: 200,
       maxHeight: 500
     });
-    settingsBoxContent.add(miniWorkbench);
+    sidePanel.add(miniWorkbench);
 
     let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
       backgroundColor: "blue",
       minHeight: 200,
       maxHeight: 500
     });
-    settingsBoxContent.add(extraView);
+    sidePanel.add(extraView);
 
     let settingsView = this.__settingsView = new qxapp.components.workbench.SettingsView().set({
       minHeight: 200,
       maxHeight: 500
     });
-    settingsBoxContent.add(settingsView);
+    sidePanel.add(settingsView);
 
     settingsBox.addListener("changeWidth", e => {
       let width = e.getData();
