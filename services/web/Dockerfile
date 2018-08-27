@@ -44,6 +44,7 @@ ENV HOME /home/scu
 ENV SIMCORE_WEB_OUTDIR $HOME/client
 #ENV SIMCORE_WEB_OUTDIR $HOME/src/static
 ENV IS_CONTAINER_CONTEXT Yes
+# FIXME: install packages instead of reference it!
 ENV PYTHONPATH "$HOME/server/src:$HOME/packages/simcore-sdk/src:$HOME/packages/s3wrapper/src"
 
 

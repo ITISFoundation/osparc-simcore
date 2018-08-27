@@ -382,6 +382,7 @@ class Sidecar:
             if node_id:
                 do_process = True
                 # find the for the current node_id, skip if there is already a job_id around
+                # pylint: disable=assignment-from-no-return
                 query =_session.query(ComputationalTask).filter(and_(ComputationalTask.node_id==node_id,
                     ComputationalTask.pipeline_id==pipeline_id, ComputationalTask.job_id==None))
                 # Use SELECT FOR UPDATE TO lock the row
