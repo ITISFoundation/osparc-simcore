@@ -1,6 +1,6 @@
 FROM python:3.6-alpine as base
 
-LABEL maintainer="Manuel Guidon guidon"
+LABEL maintainer="mguidon"
 
 ARG DOCKER_GID_ARG=1001
 
@@ -16,7 +16,7 @@ EXPOSE 8000
 VOLUME /home/scu/input
 VOLUME /home/scu/output
 VOLUME /home/scu/log
-#VOLUME /var/run/docker.sock TODO: PC->MaG is this using docker??
+#VOLUME /var/run/docker.sock DO NOT EXPOSE .. fails!
 
 # -------------------------- Build stage -------------------
 # Keeps same folder structure as in repo so we can reuse relative paths
@@ -79,6 +79,8 @@ RUN $PIP --no-cache-dir install -r requirements/prod.txt ;\
 
 #-------------------
 FROM base as production
+
+# TODO: PC->MaG some postgresql missing? install non-dev package!?
 
 COPY --from=build-production --chown=scu:scu $HOME/services/sidecar/boot.sh $HOME
 COPY --from=build-production --chown=scu:scu $HOME/.venv $HOME/.venv
