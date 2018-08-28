@@ -263,12 +263,16 @@ def __get_repos_from_key(service_key):
 
 def __find_service_tag(list_of_images, docker_image_path, service_name, service_tag):
     available_tags_list = sorted(list_of_images[docker_image_path]['tags'])
+    # not tags available... probably an undefined service there...
     if not available_tags_list:
-        raise exceptions.ServiceNotFoundError(service_name, service_tag)
-
-    tag = available_tags_list[len(available_tags_list)-1]
-    if not service_tag == 'latest' and available_tags_list.count(service_tag) == 1:
-        tag = service_tag
+        raise exceptions.ServiceNotAvailableError(service_name, service_tag)
+    tag = service_tag
+    if not service_tag or service_tag == 'latest':
+        # get latest tag
+        tag = available_tags_list[len(available_tags_list)-1]
+    elif available_tags_list.count(service_tag) != 1:
+        raise exceptions.ServiceNotAvailableError(service_name=service_name, service_tag=service_tag)
+    
     _LOGGER.debug("Service tag found is %s ", service_tag)
     return tag
 

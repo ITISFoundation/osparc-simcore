@@ -41,7 +41,7 @@ async def running_interactive_services_post(request, service_key, service_uuid, 
         service = producer.start_service(service_key, service_tag, service_uuid)
         running_service = RunningService.from_dict(service)
         return running_service
-    except exceptions.ServiceNotFoundError as err:
+    except exceptions.ServiceNotAvailableError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except exceptions.ServiceUUIDInUseError as err:
         raise web_exceptions.HTTPConflict(reason=str(err))

@@ -37,7 +37,7 @@ def registry_request(path, method="GET"):
     except HTTPError as err:
         _LOGGER.exception("HTTP error returned while accessing registry")
         if err.response.status_code == 404:
-            raise exceptions.ServiceNotFoundError(path, None) from err
+            raise exceptions.ServiceNotAvailableError(path, None) from err
         raise exceptions.RegistryConnectionError(str(err)) from err
     except RequestException as err:
         _LOGGER.exception("Error while connecting to docker registry")
@@ -116,7 +116,7 @@ def __has_service_sub_name(repository_name, service_prefix):
     try:
         __get_service_sub_name(repository_name, service_prefix)
         return True
-    except exceptions.ServiceNotFoundError:
+    except exceptions.ServiceNotAvailableError:
         return False
     
 def __get_service_sub_name(repository_name, service_prefix):
@@ -124,7 +124,7 @@ def __get_service_sub_name(repository_name, service_prefix):
     list_of_suffixes = service_name_suffixes.split('/')
     last_suffix_index = len(list_of_suffixes) - 1
     if last_suffix_index < 0:
-        raise exceptions.ServiceNotFoundError(repository_name, None)
+        raise exceptions.ServiceNotAvailableError(repository_name, None)
     _LOGGER.info("retrieved service sub name from repo %s : %s", repository_name, list_of_suffixes)
     return list_of_suffixes[last_suffix_index]
 

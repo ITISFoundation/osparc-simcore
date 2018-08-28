@@ -12,6 +12,16 @@ class GenericDockerError(DirectorException):
         msg = msg + (": %s" % original_exception)
         super(GenericDockerError, self).__init__(msg)
 
+class ServiceNotAvailableError(DirectorException):
+    """Service not found"""
+    def __init__(self, service_name, service_tag=None):
+        if not service_tag:
+            service_tag = "not defined"
+        msg = "The service %s:%s does not exist" % (service_name, service_tag)
+        super(ServiceNotAvailableError, self).__init__(msg)
+        self.service_name = service_name
+        self.service_tag = service_tag
+
 class ServiceNotFoundError(DirectorException):
     """Service not found"""
     def __init__(self, service_name, service_tag=None, service_uuid=None):
