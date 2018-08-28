@@ -251,7 +251,7 @@ def __get_repos_from_key(service_key):
     }
     _LOGGER.info("entries %s", list_of_images)
     if not list_of_images[service_key]:
-        raise exceptions.ServiceNotFoundError(service_key, None)
+        raise exceptions.ServiceNotAvailableError(service_key)
     # look for dependencies
     dependent_repositories = registry_proxy.list_interactive_service_dependencies(service_key)
     for repo in dependent_repositories:
@@ -338,7 +338,7 @@ def __create_services(docker_client, list_of_images, service_name, service_tag, 
             # first cleanup
             stop_service(service_uuid)
             _LOGGER.exception("The docker image was not found")
-            raise exceptions.ServiceNotFoundError(service_name, service_tag) from err
+            raise exceptions.ServiceNotAvailableError(service_name, service_tag) from err
         except docker.errors.APIError as err:
             # first cleanup
             stop_service(service_uuid)
