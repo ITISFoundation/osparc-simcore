@@ -14,10 +14,16 @@ class GenericDockerError(DirectorException):
 
 class ServiceNotFoundError(DirectorException):
     """Service not found"""
-    def __init__(self, service_name, service_tag):
-        msg = "The service %s:%s was not found" % (service_name, service_tag)
+    def __init__(self, service_name, service_tag=None, service_uuid=None):
+        if not service_tag:
+            service_tag = "not defined"
+        if not service_uuid:
+            service_uuid = "not defined"
+        msg = "The service %s:%s with uuid %s was not found" % (service_name, service_tag, service_uuid)
         super(ServiceNotFoundError, self).__init__(msg)
         self.service_name = service_name
+        self.service_tag = service_tag
+        self.service_uuid = service_uuid
 
 class ServiceUUIDInUseError(DirectorException):
     """Service UUID is already in use"""

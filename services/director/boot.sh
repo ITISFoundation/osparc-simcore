@@ -13,4 +13,4 @@ else
   echo "Booting in production mode ..."
 fi
 
-python -m director
+simcore-service-director

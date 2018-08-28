@@ -8,7 +8,7 @@ import os
 
 from requests import RequestException, Session, HTTPError
 
-from director import exceptions
+from . import exceptions
 
 INTERACTIVE_SERVICES_PREFIX = 'simcore/services/dynamic/'
 COMPUTATIONAL_SERVICES_PREFIX = 'simcore/services/comp/'

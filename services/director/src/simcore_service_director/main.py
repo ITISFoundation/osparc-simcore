@@ -5,8 +5,8 @@ from pathlib import Path
 
 from aiohttp import web
 
-from director import registry_proxy
-from director.rest import routing
+from . import registry_proxy
+from .rest import routing
 
 _LOGGER = logging.getLogger(__name__)
 

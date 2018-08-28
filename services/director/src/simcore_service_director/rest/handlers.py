@@ -2,7 +2,7 @@ import logging
 
 from aiohttp import web_exceptions
 
-from director import exceptions, producer, registry_proxy
+from simcore_service_director import exceptions, producer, registry_proxy
 
 from .generated_code.models import (
     RunningService, 
@@ -36,7 +36,7 @@ def list_services(list_service_fct):
     return service_descs
 
 
-async def interactive_service_post(request, service_key, service_uuid, service_tag=None):  # pylint:disable=unused-argument
+async def running_interactive_services_post(request, service_key, service_uuid, service_tag=None):  # pylint:disable=unused-argument
     try:
         service = producer.start_service(service_key, service_tag, service_uuid)
         running_service = RunningService.from_dict(service)
@@ -48,8 +48,17 @@ async def interactive_service_post(request, service_key, service_uuid, service_t
     except exceptions.DirectorException as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
+async def running_interactive_services_get(request, service_uuid):  # pylint:disable=unused-argument
+    try:
+        producer.is_service_up(service_uuid)
+    except exceptions.ServiceNotFoundError as err:
+        raise web_exceptions.HTTPNotFound(reason=str(err))
+    except exceptions.DirectorException as err:
+        raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-async def interactive_service_delete(request, service_uuid):  # pylint:disable=unused-argument
+    return {"status": 204}
+
+async def running_interactive_services_delete(request, service_uuid):  # pylint:disable=unused-argument
     try:
         producer.stop_service(service_uuid)
     except exceptions.ServiceNotFoundError as err:

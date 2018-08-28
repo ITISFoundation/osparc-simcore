@@ -3,9 +3,10 @@
 # typical structure:
 # /src/package-name/.openapi/v1/package_api.yaml   -- this is the input file
 # /src/package-name/rest/generated_code            -- this is the output directory
-INPUT_SPEC=./src/director/.openapi/v1/director_api.yaml
-OUTPUT_DIR=./src/director/rest
-OUTPUT_DIR_GEN=./src/director/rest/generated_code
+SOURCE_DIR=./src/simcore_service_director
+INPUT_SPEC=${SOURCE_DIR}/.openapi/v1/director_api.yaml
+OUTPUT_DIR=${SOURCE_DIR}/rest
+OUTPUT_DIR_GEN=${SOURCE_DIR}/rest/generated_code
 INIT_FILE_PATH=${OUTPUT_DIR}/__init__.py
 HANDLERS_FILE_PATH=${OUTPUT_DIR}/handlers.py
 ROUTING_FILE_PATH=${OUTPUT_DIR_GEN}/routing.py

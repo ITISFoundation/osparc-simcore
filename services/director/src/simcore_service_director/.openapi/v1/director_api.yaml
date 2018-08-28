@@ -83,17 +83,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /interactive_service:
+  /running_interactive_services:
     post:
       tags: 
         - users
       summary: Starts an interactive service in the oSparc platform and returns its entrypoint
       description: Starts an interactive service in the oSparc platform and returns its entrypoint
-      operationId: interactive_service_post
+      operationId: running_interactive_services_post
       parameters:         
         - $ref: '#/components/parameters/ServiceKey'
         - $ref: '#/components/parameters/ServiceVersion'
-        - $ref: '#/components/parameters/ServiceUuid'
+        - $ref: '#/components/parameters/AssignmentUuid'
       responses:
         201:
           description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
@@ -127,13 +127,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-    
+  /running_interactive_services/{service_uuid}:      
+    get:
+      tags: 
+        - users
+      summary: Succesfully returns if a service with the defined uuid is up and running
+      description: Succesfully returns if a service with the defined uuid is up and running
+      operationId: running_interactive_services_get
+      parameters: 
+        - $ref: '#/components/parameters/ServiceUuid'
+      responses:
+        204:
+          description: OK service exists and runs
+        400:
+          description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
       tags: 
         - users
       summary: Stops and removes an interactive service from the oSparc platform
       description: Stops and removes an interactive service from the oSparc platform
-      operationId: interactive_service_delete
+      operationId: running_interactive_services_delete
       parameters: 
         - $ref: '#/components/parameters/ServiceUuid'
       responses:
@@ -160,8 +189,17 @@ paths:
 
 components:
   parameters:
-    ServiceUuid:
+    AssignmentUuid:
       in: query
+      name: service_uuid
+      description: The uuid of the service
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
+    ServiceUuid:
+      in: path
       name: service_uuid
       description: The uuid of the service
       required: true

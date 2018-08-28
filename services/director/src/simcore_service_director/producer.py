@@ -12,8 +12,8 @@ import docker
 import requests
 import tenacity
 
-from director import registry_proxy
-from director import exceptions
+from . import registry_proxy
+from . import exceptions
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
 SERVICE_RUNTIME_BOOTSETTINGS = 'simcore.service.bootsettings'
@@ -358,6 +358,19 @@ def start_service(service_key, service_tag, service_uuid):
     # we return only the info of the main service
     return containers_meta_data[0]
 
+def is_service_up(service_uuid):
+    # get the docker client
+    docker_client = __get_docker_client()
+    __login_docker_registry(docker_client)
+    try:
+        list_running_services_with_uuid = docker_client.services.list(
+            filters={'label': 'uuid=' + service_uuid})        
+    except docker.errors.APIError as err:
+        _LOGGER.exception("Error while stopping container with uuid: %s", service_uuid)
+        raise exceptions.GenericDockerError("Error while stopping container", err) from err
+    # error if no service with such an id exists
+    if not list_running_services_with_uuid:
+        raise exceptions.ServiceNotFoundError(service_uuid, None)
 
 def stop_service(service_uuid):
     # get the docker client
