@@ -91,7 +91,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
   },
 
   events: {
-    // "NodeMoved": "qx.event.type.Data",
     "NodeDoubleClicked": "qx.event.type.Data"
   },
 
@@ -234,14 +233,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       node.addListener("NodeMoving", function() {
         this.__updateLinks(node);
-        /*
-        const data = {
-          nodeId: node.getNodeId(),
-          posX: node.getCurrentBounds().left,
-          posY: node.getCurrentBounds().top
-        };
-        this.fireDataEvent("NodeMoved", data);
-        */
       }, this);
 
       node.addListener("appear", function() {
