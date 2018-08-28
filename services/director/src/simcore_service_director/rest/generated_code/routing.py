@@ -65,7 +65,7 @@ def create_web_app(base_folder, spec_file, additional_middlewares = None):
     router.include(
         spec=Path(base_folder / spec_file),
         operationId_mapping=opmap,
-        name='v1',  # name to access in swagger-ui,
+        name='director',  # name to access in swagger-ui,
         basePath="/v1" # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
     )
 

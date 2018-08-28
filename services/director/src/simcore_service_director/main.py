@@ -22,8 +22,8 @@ def main():
     registry_proxy.setup_registry_connection()
 
     # create web app and serve
-    base_folder = Path(__file__).parent
-    openapi_spec_file = ".openapi/v1/director_api.yaml"
+    base_folder = Path(__file__).parent / ".openapi/v1"
+    openapi_spec_file = "director_api.yaml"
     app = routing.create_web_app(base_folder, openapi_spec_file)
     web.run_app(app, port=8001)
 
