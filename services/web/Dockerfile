@@ -56,7 +56,7 @@ RUN pip3 install --no-cache-dir -r requirements/base.txt
 
 EXPOSE 8080
 
-ENTRYPOINT ["python3", "-m", "aiohttp.web"]
+#ENTRYPOINT ["python3", "-m", "aiohttp.web"]
 
 # ------------------------------------------------------------------------------------------
 FROM base-stage as development
@@ -80,9 +80,13 @@ VOLUME /home/scu/client/
 VOLUME /home/scu/packages
 
 # TODO: add watch functionality in dev mode
-CMD ["-H", "0.0.0.0", \
-     "-P", "8080", \
-     "server.main:init_app"]
+#CMD ["-H", "0.0.0.0", \
+#     "-P", "8080", \
+#     "server.main:init_app"]
+
+ENV DEBUG 1
+CMD ./boot.sh
+
 
 
 # ------------------------------------------------------------------------------------------
@@ -103,9 +107,8 @@ USER scu
 
 WORKDIR $HOME/server/src
 
-CMD ["-H", "0.0.0.0", \
-     "-P", "8080", \
-     "server.main:init_app"]
+ENV DEBUG 0
+CMD ./boot.sh
 
 
 # ------------------------------------------------------------------------------------------
@@ -131,6 +134,5 @@ USER scu
 
 WORKDIR $HOME/server/src
 
-CMD ["-H", "0.0.0.0", \
-     "-P", "8080", \
-     "server.main:init_app"]
+ENV DEBUG 0
+CMD ./boot.sh

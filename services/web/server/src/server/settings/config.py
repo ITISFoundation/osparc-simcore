@@ -94,7 +94,8 @@ def config_from_options(options, vars=None): # pylint: disable=W0622
 
     if not os.path.exists(options.config):
         options.config = resources.ConfigFile(options.config).path
-        _LOGGER.debug("It is a resource %s", options.config)
+
+    _LOGGER.debug("loading %s", options.config)
 
     return _tc_cli.config_from_options(options, trafaret=CONFIG_SCHEMA, vars=vars)
 

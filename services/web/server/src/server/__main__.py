@@ -19,7 +19,7 @@ def main(argv=None):
     config = settings.config_from_options(options)
 
     log_level = config.get("app",{}).get("log_level", "DEBUG")
-    logging.basicConfig( level=getattr("logging", log_level) )
+    logging.basicConfig( level=getattr(logging, log_level) )
 
     run(config)
 
