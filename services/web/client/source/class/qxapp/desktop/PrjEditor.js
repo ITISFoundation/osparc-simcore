@@ -85,7 +85,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__sidePanel.setTopView(miniWorkbench);
 
       let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
-        backgroundColor: "blue",
         minHeight: 200,
         maxHeight: 500
       });

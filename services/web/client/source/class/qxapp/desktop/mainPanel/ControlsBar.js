@@ -18,10 +18,6 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
       width: "50%"
     });
 
-    this.set({
-      backgroundColor: "blue"
-    });
-
     this.__initDefault();
 
     this.setCanStart(true);
