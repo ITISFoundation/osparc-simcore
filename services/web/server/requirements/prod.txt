@@ -1,5 +1,3 @@
-# continuous integration mode
-.[test]
-
+.
 ../../../packages/s3wrapper/
 ../../../packages/simcore-sdk/

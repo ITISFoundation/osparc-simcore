@@ -1,6 +1,6 @@
 FROM python:3.6-alpine as base
 
-LABEL maintainer="mguidon"
+LABEL maintainer=mguidon
 
 ARG DOCKER_GID_ARG=1001
 
@@ -41,7 +41,7 @@ RUN python3 -m venv $HOME/.venv &&\
 
 WORKDIR /home/scu
 
-# Buil context set at repo's root
+# Build context set at repo's root
 COPY --chown=scu:scu services/sidecar/requirements requirements
 
 RUN $PIP install --no-cache-dir -r requirements/base.txt &&\
@@ -66,7 +66,7 @@ WORKDIR /home/scu/services/sidecar
 CMD ./boot.sh
 
 
-# --------------------------Production mult-stage -------------------
+# --------------------------Production multi-stage -------------------
 FROM build as build-production
 
 # Buil context set at repo's root

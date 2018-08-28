@@ -20,8 +20,8 @@ services:
     build:
       target: development
     volumes:
-      - ./web/server:/home/scu/server
-      - ./web/client/source-output:/home/scu/client
+      - ./web/server:/home/scu/services/web/server
+      - ./web/client/source-output:/home/scu/services/web/client
       - ../packages:/home/scu/packages
     depends_on:
       - webclient
