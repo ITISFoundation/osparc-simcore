@@ -188,32 +188,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
     },
 
-    __createWindowForBuiltInService: function(widget, width, height, caption) {
-      let serviceWindow = new qx.ui.window.Window();
-      serviceWindow.set({
-        showMinimize: false,
-        showStatusbar: false,
-        width: width,
-        height: height,
-        minWidth: 400,
-        minHeight: 400,
-        modal: true,
-        caption: caption,
-        layout: new qx.ui.layout.Canvas()
-      });
-
-      serviceWindow.add(widget, {
-        left: 0,
-        top: 0,
-        right: 0,
-        bottom: 0
-      });
-
-      serviceWindow.moveTo(100, 100);
-
-      return serviceWindow;
-    },
-
     __addNodeToWorkbench: function(node, position) {
       if (position === undefined || position === null) {
         let farthestRight = 0;
@@ -240,36 +214,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       node.addListener("dblclick", function(e) {
-        if (node.getMetaData().key.includes("FileManager")) {
-          const width = 800;
-          const height = 600;
-          let fileManager = new qxapp.components.widgets.FileManager();
-          let fileManagerWindow = this.__createWindowForBuiltInService(fileManager, width, height, "File Manager");
-          fileManager.addListener("ItemSelected", function(data) {
-            const itemPath = data.getData().itemPath;
-            const splitted = itemPath.split("/");
-            const itemName = splitted[splitted.length-1];
-            const isDirectory = data.getData().isDirectory;
-            const activePort = isDirectory ? "outDir" : "outFile";
-            const inactivePort = isDirectory ? "outFile" : "outDir";
-            node.getMetaData().outputs[activePort].value = {
-              store: "s3-z43",
-              path: itemPath
-            };
-            node.getMetaData().outputs[inactivePort].value = null;
-            node.getOutputPorts(activePort).ui.setLabel(itemName);
-            node.getOutputPorts(activePort).ui.getToolTip().setLabel(itemName);
-            node.getOutputPorts(inactivePort).ui.setLabel("");
-            node.getOutputPorts(inactivePort).ui.getToolTip().setLabel("");
-            node.setProgress(100);
-            fileManagerWindow.close();
-          }, this);
-
-          fileManagerWindow.moveTo(100, 100);
-          fileManagerWindow.open();
-        } else {
-          this.fireDataEvent("NodeDoubleClicked", node.getNodeId());
-        }
+        this.fireDataEvent("NodeDoubleClicked", node.getNodeId());
         e.stopPropagation();
       }, this);
 

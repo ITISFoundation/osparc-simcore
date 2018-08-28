@@ -23,14 +23,14 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     /*
     this.__settingsView.addListener("ShowViewer", function(e) {
       let data = e.getData();
-      let viewerWin = this.__createBrowserWindow(data.url, data.name);
+      let iframe = this.__createIFrame(data.url, data.name);
 
       //  const metadata = e.getData().metadata;
       //  const nodeId = e.getData().nodeId;
       //  let url = "http://" + window.location.hostname + ":" + metadata.viewer.port;
-      //  let viewerWin = this.__createBrowserWindow(url, metadata.name);
+      //  let iframe = this.__createIFrame(url, metadata.name);
 
-      this.__workbench.addWindowToDesktop(viewerWin);
+      this.showInMainView(iframe);
 
       // Workaround for updating inputs
       if (data.name === "3d-viewer") {
@@ -133,6 +133,33 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         wb.addListener("NodeDoubleClicked", function(e) {
           let nodeId = e.getData();
           let node = this.__workbench.getNode(nodeId);
+
+          if (node.getMetaData().key.includes("FileManager")) {
+            let fileManager = new qxapp.components.widgets.FileManager();
+            fileManager.addListener("ItemSelected", function(data) {
+              const itemPath = data.getData().itemPath;
+              const splitted = itemPath.split("/");
+              const itemName = splitted[splitted.length-1];
+              const isDirectory = data.getData().isDirectory;
+              const activePort = isDirectory ? "outDir" : "outFile";
+              const inactivePort = isDirectory ? "outFile" : "outDir";
+              node.getMetaData().outputs[activePort].value = {
+                store: "s3-z43",
+                path: itemPath
+              };
+              node.getMetaData().outputs[inactivePort].value = null;
+              node.getOutputPorts(activePort).ui.setLabel(itemName);
+              node.getOutputPorts(activePort).ui.getToolTip().setLabel(itemName);
+              node.getOutputPorts(inactivePort).ui.setLabel("");
+              node.getOutputPorts(inactivePort).ui.getToolTip().setLabel("");
+              node.setProgress(100);
+              this.showInMainView(this.__workbench);
+            }, this);
+            this.showInMainView(fileManager);
+          } else {
+            this.showInMainView(this.__workbench);
+          }
+
           this.__settingsView.setNode(node);
         }, this);
       });
@@ -275,7 +302,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
     },
 
-    __createBrowserWindow: function(url, name) {
+    __createIFrame: function(url, name) {
       console.log("Accessing:", url);
       let win = new qx.ui.window.Window(name);
       win.setShowMinimize(false);
