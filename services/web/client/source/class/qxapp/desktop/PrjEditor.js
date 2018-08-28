@@ -80,11 +80,21 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       let project = this.__projectDocument = this.__getProjectDocument(projectId);
       let workbench = this.__workbench = new qxapp.components.workbench.Workbench(project.getWorkbench());
-      this.__mainPanel.setMainView(workbench);
+      this.showInMainView(workbench);
 
-
+      let showWorkbench = new qx.ui.form.Button(this.tr("Show workbench")).set({
+        allowGrowX: false
+      });
+      showWorkbench.addListener("execute", function() {
+        this.showInMainView(this.__workbench);
+      }, this);
       let miniWorkbench = this.__miniWorkbench = new qxapp.components.workbench.WorkbenchMini(project.getWorkbench());
-      this.__sidePanel.setTopView(miniWorkbench);
+      let vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      vBox.add(showWorkbench);
+      vBox.add(miniWorkbench, {
+        flex: 1
+      });
+      this.__sidePanel.setTopView(vBox);
 
       let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
         minHeight: 200,
@@ -132,6 +142,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         let newWorkbenchData = e.getData();
         this.__miniWorkbench.loadProject(newWorkbenchData);
       }, this);
+    },
+
+    showInMainView: function(widget) {
+      this.__mainPanel.setMainView(widget);
     },
 
     __getProjectDocument: function(projectId) {
