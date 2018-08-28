@@ -25,38 +25,42 @@ qx.Class.define("qxapp.desktop.sidePanel.SidePanel", {
     topView: {
       nullable: false,
       check : "qx.ui.core.Widget",
-      apply : "_applyTopView"
+      apply : "__applyTopView"
     },
 
     midView: {
       nullable: false,
       check : "qx.ui.core.Widget",
-      apply : "_applyMidView"
+      apply : "__applyMidView"
     },
 
     bottomView: {
       nullable: false,
       check : "qx.ui.core.Widget",
-      apply : "_applyBottomView"
+      apply : "__applyBottomView"
     }
   },
 
   events: {},
 
   members: {
-    _applyTopView: function(newWidget) {
-      this._removeAt(0);
-      this._addAt(newWidget, 0);
+    __applyTopView: function(newWidget) {
+      this.__replaceWidgetAt(newWidget, 0);
     },
 
-    _applyMidView: function(newWidget) {
-      this._removeAt(1);
-      this._addAt(newWidget, 1);
+    __applyMidView: function(newWidget) {
+      this.__replaceWidgetAt(newWidget, 1);
     },
 
-    _applyBottomView: function(newWidget) {
-      this._removeAt(2);
-      this._addAt(newWidget, 2);
+    __applyBottomView: function(newWidget) {
+      this.__replaceWidgetAt(newWidget, 2);
+    },
+
+    __replaceWidgetAt: function(newWidget, indexOf) {
+      if (this._indexOf(newWidget) !== indexOf) {
+        this._removeAt(indexOf);
+        this._addAt(newWidget, indexOf);
+      }
     }
   }
 });

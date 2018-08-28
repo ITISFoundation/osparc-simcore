@@ -38,7 +38,7 @@ qx.Class.define("qxapp.desktop.mainPanel.MainPanel", {
     mainView: {
       nullable: false,
       check : "qx.ui.core.Widget",
-      apply : "_applyMainView"
+      apply : "__applyMainView"
     }
   },
 
@@ -49,9 +49,11 @@ qx.Class.define("qxapp.desktop.mainPanel.MainPanel", {
     __optionsBar: null,
     __controlsBar: null,
 
-    _applyMainView: function(newWidget) {
-      this.__hBox._removeAt(1);
-      this.__hBox._addAt(newWidget, 1);
+    __applyMainView: function(newWidget) {
+      if (this.__hBox._indexOf(newWidget) != 1) {
+        this.__hBox._removeAt(1);
+        this.__hBox._addAt(newWidget, 1);
+      }
     },
 
     getOptions: function() {
