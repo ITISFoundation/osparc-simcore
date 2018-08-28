@@ -38,7 +38,7 @@ def registry_request(path, method="GET"):
         _LOGGER.exception("HTTP error returned while accessing registry")
         if err.response.status_code == 404:
             raise exceptions.ServiceNotAvailableError(path, None) from err
-        raise exceptions.RegistryConnectionError(str(err)) from err
+        raise exceptions.RegistryConnectionError("Error while accessing docker registry" ,err) from err
     except RequestException as err:
         _LOGGER.exception("Error while connecting to docker registry")
         raise exceptions.DirectorException(str(err)) from err

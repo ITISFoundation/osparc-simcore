@@ -26,7 +26,9 @@ async def services_get(request, service_type=None):  # pylint:disable=unused-arg
             services.extend(list_services(registry_proxy.list_interactive_services))
 
         return services
-    except exceptions.DirectorException as err:
+    except exceptions.RegistryConnectionError as err:
+        raise web_exceptions.HTTPUnauthorized(reason=str(err))
+    except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
 
@@ -45,7 +47,9 @@ async def running_interactive_services_post(request, service_key, service_uuid, 
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except exceptions.ServiceUUIDInUseError as err:
         raise web_exceptions.HTTPConflict(reason=str(err))
-    except exceptions.DirectorException as err:
+    except exceptions.RegistryConnectionError as err:
+        raise web_exceptions.HTTPUnauthorized(reason=str(err))
+    except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
 async def running_interactive_services_get(request, service_uuid):  # pylint:disable=unused-argument
@@ -53,7 +57,7 @@ async def running_interactive_services_get(request, service_uuid):  # pylint:dis
         producer.is_service_up(service_uuid)
     except exceptions.ServiceNotFoundError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
-    except exceptions.DirectorException as err:
+    except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
     return {"status": 204}
@@ -63,7 +67,7 @@ async def running_interactive_services_delete(request, service_uuid):  # pylint:
         producer.stop_service(service_uuid)
     except exceptions.ServiceNotFoundError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
-    except exceptions.DirectorException as err:
+    except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
     return {"status": 204}

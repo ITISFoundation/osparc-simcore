@@ -77,6 +77,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ServiceDescription'
+        401:
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         default:
           description: Unexpected error
           content:
@@ -105,6 +111,12 @@ paths:
                   $ref: '#/components/schemas/RunningService'
         400:
           description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Unauthorized access
           content:
             application/json:
               schema:

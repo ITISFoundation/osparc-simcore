@@ -78,10 +78,21 @@ from aiohttp_apiset.swagger.operations import OperationIdMapping
 
 from .. import handlers
 from .models.base_model_ import Model
+from .models.error import Error
 
 _LOGGER = logging.getLogger(__name__)
 
-def create_web_app(base_folder, spec_file):
+@web.middleware
+async def __simcore_middleware(request, handler):
+    try:
+        response = await handler(request)
+        return response
+    except web.HTTPError as ex:
+        error = Error(code=ex.status, message=ex.reason)
+        error_dict = error.to_dict()
+        return web.json_response(error_dict, status=ex.status)
+
+def create_web_app(base_folder, spec_file, additional_middlewares = None):
     # create the default mapping of the operationId to the implementation code in handlers
     opmap = __create_default_operation_mapping(Path(base_folder / spec_file))
 
@@ -97,10 +108,13 @@ def create_web_app(base_folder, spec_file):
     jsonify.singleton = Jsonify(indent=3, ensure_ascii=False)
     jsonify.singleton.add_converter(Model, lambda o: o.to_dict(), score=0)
 
+    middlewares = [jsonify, __simcore_middleware]
+    if additional_middlewares:
+        middlewares.extend(additional_middlewares)
     # create the web application using the API
     app = web.Application(
         router=router,
-        middlewares=[jsonify],
+        middlewares=middlewares,
     )
     router.set_cors(app, domains='*', headers=(
         (hdrs.ACCESS_CONTROL_EXPOSE_HEADERS, hdrs.AUTHORIZATION),
@@ -129,5 +143,4 @@ def __create_default_operation_mapping(specs_file):
             operation_id = method[1][op_str]            
             operation_mapping[operation_id] = getattr(handlers, operation_id)
     return OperationIdMapping(**operation_mapping)
-
 EOF

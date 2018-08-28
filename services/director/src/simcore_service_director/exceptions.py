@@ -11,6 +11,7 @@ class GenericDockerError(DirectorException):
     def __init__(self, msg, original_exception):
         msg = msg + (": %s" % original_exception)
         super(GenericDockerError, self).__init__(msg)
+        self.original_exception = original_exception
 
 class ServiceNotAvailableError(DirectorException):
     """Service not found"""
@@ -44,10 +45,11 @@ class ServiceUUIDInUseError(DirectorException):
 
 class RegistryConnectionError(DirectorException):
     """Error while connecting to the docker regitry"""
-    def __init__(self, msg=None):
+    def __init__(self, msg, original_exception):
         if msg is None:
-            msg = "Impossible to connect to docker registry"
+            msg = "Impossible to connect to docker registry: %s" % (original_exception)
         super(RegistryConnectionError, self).__init__(msg)
+        self.original_exception = original_exception
 
 class ServiceStartTimeoutError(DirectorException):
     """The service was created but never run (time-out)"""

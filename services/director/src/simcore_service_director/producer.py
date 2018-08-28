@@ -36,7 +36,7 @@ def __login_docker_registry(docker_client):
         _LOGGER.debug("logged into docker registry %s", registry_url)
     except docker.errors.APIError as err:
         _LOGGER.exception("Error while loggin into the registry")
-        raise exceptions.RegistryConnectionError(err) from err
+        raise exceptions.RegistryConnectionError("Error while logging to docker registry", err) from err
 
 def __check_service_uuid_available(docker_client, service_uuid):
     _LOGGER.debug("Checked if UUID %s is already in use", service_uuid)
