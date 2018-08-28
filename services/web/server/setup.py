@@ -35,7 +35,7 @@ setup(
     },
     include_package_data=True,
     package_data={
-        'config': ['../config/*.yaml'] #FIXME: this is still not copied!??
+        '': ['.config/*.yaml']
     },
     entry_points={
         'console_scripts': [
