@@ -5,95 +5,20 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   construct: function(projectId) {
     this.base(arguments, "horizontal");
 
-    let splitter = this.__splitter = this.getChildControl("splitter");
+    this.setProjectId(String(projectId));
 
-    const settingsWidth = this.__settingsWidth = 600;
-
-    let project = this.__projectDocument = this.__getProjectDocument(projectId);
-    let workbench = this.__workbench = new qxapp.components.workbench.Workbench(project.getWorkbench());
-    let settingsBox = this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
+    let mainPanel = this.__mainPanel = new qxapp.desktop.mainPanel.MainPanel();
+    let sidePanel = this.__sidePanel = new qxapp.desktop.sidePanel.SidePanel().set({
       minWidth: 0,
-      visibility: "excluded",
-      maxWidth: settingsWidth
+      maxWidth: 600
     });
 
-    let sidePanel = new qx.ui.container.Composite(new qx.ui.layout.VBox(10, null, "separator-vertical"));
-    settingsBox.add(sidePanel, {
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0
-    });
+    this.add(mainPanel, 0);
+    this.add(sidePanel, 1);
 
-    let miniWorkbench = this.__miniWorkbench = new qxapp.components.workbench.WorkbenchMini(project.getWorkbench()).set({
-      minHeight: 200,
-      maxHeight: 500
-    });
-    sidePanel.add(miniWorkbench);
-
-    let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
-      backgroundColor: "blue",
-      minHeight: 200,
-      maxHeight: 500
-    });
-    sidePanel.add(extraView);
-
-    let settingsView = this.__settingsView = new qxapp.components.workbench.SettingsView().set({
-      minHeight: 200,
-      maxHeight: 500
-    });
-    sidePanel.add(settingsView);
-
-    settingsBox.addListener("changeWidth", e => {
-      let width = e.getData();
-      if (width != 0) {
-        miniWorkbench.setWidth(width);
-        extraView.setWidth(width);
-        settingsView.setWidth(width);
-      }
-    });
-
-    this.add(workbench, 0);
-    this.add(settingsBox, 1);
-
-    project.addListener("changeWorkbench", function(e) {
-      console.log("changeWorkbench", e.getData());
-      let newWorkbenchData = e.getData();
-      this.__miniWorkbench.loadProject(newWorkbenchData);
-    }, this);
-
-    workbench.addListenerOnce("appear", () => {
-      workbench.getContentElement().getDomElement()
-        .addEventListener("transitionend", () => {
-          [
-            miniWorkbench,
-            extraView,
-            settingsView,
-            splitter,
-            settingsBox,
-            workbench
-          ].forEach(w => {
-            w.resetDecorator();
-          });
-          if (settingsBox.getWidth() === 0) {
-            settingsBox.exclude();
-          }
-        });
-
-      /*
-      workbench.addListener("NodeMoved", function(e) {
-        miniWorkbench.nodeMoved(e);
-      }, this);
-      */
-    });
-
-
-    this.showSettings(true);
-
-    this.__settingsView.addListener("SettingsEdited", function() {
-      this.showSettings(false);
-    }, this);
-
+    this.initDefault();
+    this.connectEvents();
+    /*
     this.__settingsView.addListener("ShowViewer", function(e) {
       let data = e.getData();
       let viewerWin = this.__createBrowserWindow(data.url, data.name);
@@ -116,66 +41,96 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         req.send();
       }
     }, this);
+    */
+  },
 
-    [
-      this.__workbench,
-      this.__miniWorkbench
-    ].forEach(wb => {
-      wb.addListener("NodeDoubleClicked", function(e) {
-        let nodeId = e.getData();
-        let node = this.__workbench.getNode(nodeId);
-        this.__settingsView.setNode(node);
-        this.showSettings(true);
-      }, this);
-    });
+  properties: {
+    projectId: {
+      check: "String",
+      nullable: false
+    },
 
-    this.__transDeco = new qx.ui.decoration.Decorator().set({
-      transitionProperty: ["left", "right", "width"],
-      transitionDuration: "0.3s",
-      transitionTimingFunction: "ease"
-    });
-
-    this.__settingsBox.set({
-      decorator: this.__transDeco
-    });
-    this.__miniWorkbench.set({
-      decorator: this.__transDeco
-    });
-    this.__extraView.set({
-      decorator: this.__transDeco
-    });
-    this.__settingsView.set({
-      decorator: this.__transDeco
-    });
-    this.__workbench.set({
-      decorator: this.__transDeco
-    });
-    this.__splitter.set({
-      decorator: this.__transDeco
-    });
+    canStart: {
+      nullable: false,
+      init: true,
+      check: "Boolean",
+      apply : "__applyCanStart"
+    }
   },
 
   members: {
-    __pane: null,
+    __pipelineId: null,
+    __mainPanel: null,
+    __sidePanel: null,
+    __workbench: null,
     __miniWorkbench: null,
     __extraView: null,
     __settingsView: null,
-    __settingsBox: null,
-    __workbench: null,
-    __settingsWidth: null,
     __transDeco: null,
     __splitter: null,
     __projectDocument: null,
 
-    showSettings: function(showSettings) {
-      console.log("showSettings", showSettings);
-      if (showSettings) {
-        this.__settingsBox.show();
+    initDefault: function() {
+      const projectId = this.getProjectId();
+      if (projectId === null || projectId === undefined) {
+        return;
       }
-      qx.ui.core.queue.Manager.flush();
-      this.__settingsBox.set({
-        width: showSettings ? Math.round(this.__settingsWidth * 0.75) : 0
+
+      let project = this.__projectDocument = this.__getProjectDocument(projectId);
+      let workbench = this.__workbench = new qxapp.components.workbench.Workbench(project.getWorkbench());
+      this.__mainPanel.setMainView(workbench);
+
+
+      let miniWorkbench = this.__miniWorkbench = new qxapp.components.workbench.WorkbenchMini(project.getWorkbench());
+      this.__sidePanel.setTopView(miniWorkbench);
+
+      let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
+        backgroundColor: "blue",
+        minHeight: 200,
+        maxHeight: 500
       });
+      this.__sidePanel.setMidView(extraView);
+
+      let settingsView = this.__settingsView = new qxapp.components.workbench.SettingsView().set({
+        minHeight: 200,
+        maxHeight: 500
+      });
+      this.__sidePanel.setBottomView(settingsView);
+    },
+
+    connectEvents: function() {
+      this.__mainPanel.getControls().addListener("ShowLogger", function() {
+        this.__workbench.showLogger();
+      }, this);
+
+      this.__mainPanel.getControls().addListener("StartPipeline", function() {
+        if (this.getCanStart()) {
+          this.__startPipeline();
+        } else {
+          this.__workbench.getLogger().info("Can not start pipeline");
+        }
+      }, this);
+
+      this.__mainPanel.getControls().addListener("StopPipeline", function() {
+        this.__stopPipeline();
+      }, this);
+
+      [
+        this.__workbench,
+        this.__miniWorkbench
+      ].forEach(wb => {
+        wb.addListener("NodeDoubleClicked", function(e) {
+          let nodeId = e.getData();
+          let node = this.__workbench.getNode(nodeId);
+          this.__settingsView.setNode(node);
+        }, this);
+      });
+
+      this.__projectDocument.addListener("changeWorkbench", function(e) {
+        console.log("changeWorkbench", e.getData());
+        let newWorkbenchData = e.getData();
+        this.__miniWorkbench.loadProject(newWorkbenchData);
+      }, this);
     },
 
     __getProjectDocument: function(projectId) {
@@ -189,6 +144,120 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
 
       return project;
+    },
+
+    __startPipeline: function() {
+      // ui start pipeline
+      // this.clearProgressData();
+
+      let socket = qxapp.wrappers.WebSocket.getInstance();
+
+      // callback for incoming logs
+      if (!socket.slotExists("logger")) {
+        socket.on("logger", function(data) {
+          let d = JSON.parse(data);
+          let node = d["Node"];
+          let msg = d["Message"];
+          this.__updateLogger(node, msg);
+        }, this);
+      }
+      socket.emit("logger");
+
+      // callback for incoming progress
+      if (!socket.slotExists("progress")) {
+        socket.on("progress", function(data) {
+          let d = JSON.parse(data);
+          let node = d["Node"];
+          let progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
+          this.__workbench.updateProgress(node, progress);
+        }, this);
+      }
+
+      // post pipeline
+      this.__pipelineId = null;
+      let currentPipeline = this.__workbench.serializePipeline();
+      console.log(currentPipeline);
+      let req = new qx.io.request.Xhr();
+      let data = {};
+      data = currentPipeline;
+      data["pipeline_mockup_id"] = qxapp.utils.Utils.uuidv4();
+      req.set({
+        url: "/start_pipeline",
+        method: "POST",
+        requestData: qx.util.Serializer.toJson(data)
+      });
+      req.addListener("success", this.__onPipelinesubmitted, this);
+      req.addListener("error", function(e) {
+        this.setCanStart(true);
+        this.__workbench.getLogger().error("Workbench", "Error submitting pipeline");
+      }, this);
+      req.addListener("fail", function(e) {
+        this.setCanStart(true);
+        this.__workbench.getLogger().error("Workbench", "Failed submitting pipeline");
+      }, this);
+      req.send();
+
+      this.__workbench.getLogger().info("Workbench", "Starting pipeline");
+    },
+
+    __stopPipeline: function() {
+      let req = new qx.io.request.Xhr();
+      let data = {};
+      data["pipeline_id"] = this.__pipelineId;
+      req.set({
+        url: "/stop_pipeline",
+        method: "POST",
+        requestData: qx.util.Serializer.toJson(data)
+      });
+      req.addListener("success", this.__onPipelineStopped, this);
+      req.addListener("error", function(e) {
+        this.setCanStart(false);
+        this.__workbench.getLogger().error("Workbench", "Error stopping pipeline");
+      }, this);
+      req.addListener("fail", function(e) {
+        this.setCanStart(false);
+        this.__workbench.getLogger().error("Workbench", "Failed stopping pipeline");
+      }, this);
+      // req.send();
+
+      // temporary solution
+      this.setCanStart(true);
+
+      this.__workbench.getLogger().info("Workbench", "Stopping pipeline. Not yet implemented");
+    },
+
+    __onPipelinesubmitted: function(e) {
+      let req = e.getTarget();
+
+      const pipelineId = req.getResponse().pipeline_id;
+      this.__workbench.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
+      const notGood = [null, undefined, -1];
+      if (notGood.includes(pipelineId)) {
+        this.setCanStart(true);
+        this.__pipelineId = null;
+        this.__workbench.getLogger().error("Workbench", "Submition failed");
+      } else {
+        this.setCanStart(false);
+        this.__pipelineId = pipelineId;
+        this.__workbench.getLogger().info("Workbench", "Pipeline started");
+      }
+    },
+
+    __onPipelineStopped: function(e) {
+      this.__workbench.clearProgressData();
+
+      this.setCanStart(true);
+    },
+
+    __applyCanStart: function(value, old) {
+      this.__mainPanel.getControls().setCanStart(value);
+    },
+
+    __updateLogger: function(nodeId, msg) {
+      let node = this.__workbench.getNode(nodeId);
+      if (node) {
+        this.__workbench.getLogger().info(node.getCaption(), msg);
+      }
     },
 
     __createBrowserWindow: function(url, name) {

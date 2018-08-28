@@ -59,12 +59,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     this.__nodes = [];
     this.__links = [];
 
-    let loggerButton = this.__getShowLoggerButton();
-    this.add(loggerButton, {
-      left: 20,
-      bottom: 20
-    });
-
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
     this.add(buttonContainer, {
       bottom: 20,
@@ -72,14 +66,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     });
     [
       this.__getPlusButton(),
-      this.__getRemoveButton(),
-      this.__getPlayButton(),
-      this.__getStopButton()
+      this.__getRemoveButton()
     ].forEach(widget => {
       buttonContainer.add(widget);
     });
-
-    this.setCanStart(true);
 
     this.addListener("dblclick", function(pointerEvent) {
       // FIXME:
@@ -105,15 +95,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     "NodeDoubleClicked": "qx.event.type.Data"
   },
 
-  properties: {
-    canStart: {
-      nullable: false,
-      init: true,
-      check: "Boolean",
-      apply : "__applyCanStart"
-    }
-  },
-
   members: {
     __workbenchData: null,
     __nodes: null,
@@ -130,23 +111,19 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __playButton: null,
     __stopButton: null,
 
-    __getShowLoggerButton: function() {
-      const icon = "@FontAwesome5Solid/list-alt/32";
-      let loggerButton = new qx.ui.form.Button(null, icon);
-      loggerButton.set({
-        width: BUTTON_SIZE,
-        height: BUTTON_SIZE
-      });
-      loggerButton.addListener("execute", function() {
-        const bounds = loggerButton.getBounds();
-        loggerButton.hide();
-        this.__logger.moveTo(bounds.left, bounds.top+bounds.height - this.__logger.getHeight());
+    getLogger: function() {
+      return this.__logger;
+    },
+
+    showLogger: function() {
+      if (this.__logger.isVisible()) {
+        this.__logger.close();
+      } else {
+        const dHeight = this.__desktop.getBounds().height;
+        const lHeight = this.__logger.getHeight();
+        this.__logger.moveTo(10, dHeight-lHeight-10);
         this.__logger.open();
-        this.__logger.addListenerOnce("close", function() {
-          loggerButton.show();
-        }, this);
-      }, this);
-      return loggerButton;
+      }
     },
 
     __getPlusButton: function() {
@@ -165,49 +142,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         }, this);
       }, this);
       return plusButton;
-    },
-
-    __getPlayButton: function() {
-      const icon = "@FontAwesome5Solid/play/32";
-      let playButton = this.__playButton = new qx.ui.form.Button(null, icon);
-      playButton.set({
-        width: BUTTON_SIZE,
-        height: BUTTON_SIZE
-      });
-
-      playButton.addListener("execute", function() {
-        if (this.getCanStart()) {
-          this.__startPipeline();
-        } else {
-          this.__logger.info("Can not start pipeline");
-        }
-      }, this);
-
-      return playButton;
-    },
-
-    __getStopButton: function() {
-      const icon = "@FontAwesome5Solid/stop-circle/32";
-      let stopButton = this.__stopButton = new qx.ui.form.Button(null, icon);
-      stopButton.set({
-        width: BUTTON_SIZE,
-        height: BUTTON_SIZE
-      });
-
-      stopButton.addListener("execute", function() {
-        this.__stopPipeline();
-      }, this);
-      return stopButton;
-    },
-
-    __applyCanStart: function(value, old) {
-      if (value) {
-        this.__playButton.setVisibility("visible");
-        this.__stopButton.setVisibility("excluded");
-      } else {
-        this.__playButton.setVisibility("excluded");
-        this.__stopButton.setVisibility("visible");
-      }
     },
 
     __getRemoveButton: function() {
@@ -796,14 +730,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     saveProject: function() {
       const savePosition = true;
-      this.__workbenchData = this.__serializePipeline(savePosition);
+      this.__workbenchData = this.serializePipeline(savePosition);
     },
 
-    getWorkbenchData: function() {
-      return this.__workbenchData;
-    },
-
-    __serializePipeline: function(savePosition = false) {
+    serializePipeline: function(savePosition = false) {
       let workbench = {};
       for (let i = 0; i < this.__nodes.length; i++) {
         const node = this.__nodes[i];
@@ -837,122 +767,16 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return workbench;
     },
 
+    getWorkbenchData: function() {
+      return this.__workbenchData;
+    },
+
     addWindowToDesktop: function(node) {
       this.__desktop.add(node);
       node.open();
     },
 
-    __startPipeline: function() {
-      // ui start pipeline
-      // this.__clearProgressData();
-
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-
-      // callback for incoming logs
-      if (!socket.slotExists("logger")) {
-        socket.on("logger", function(data) {
-          let d = JSON.parse(data);
-          let node = d["Node"];
-          let msg = d["Message"];
-          this.__updateLogger(node, msg);
-        }, this);
-      }
-      socket.emit("logger");
-
-      // callback for incoming progress
-      if (!socket.slotExists("progress")) {
-        socket.on("progress", function(data) {
-          let d = JSON.parse(data);
-          let node = d["Node"];
-          let progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
-          this.updateProgress(node, progress);
-        }, this);
-      }
-
-      // post pipeline
-      this.__pipelineId = null;
-      let currentPipeline = this.__serializePipeline();
-      console.log(currentPipeline);
-      let req = new qx.io.request.Xhr();
-      let data = {};
-      data = currentPipeline;
-      data["pipeline_mockup_id"] = qxapp.utils.Utils.uuidv4();
-      req.set({
-        url: "/start_pipeline",
-        method: "POST",
-        requestData: qx.util.Serializer.toJson(data)
-      });
-      req.addListener("success", this.__onPipelinesubmitted, this);
-      req.addListener("error", function(e) {
-        this.setCanStart(true);
-        this.__logger.error("Workbench", "Error submitting pipeline");
-      }, this);
-      req.addListener("fail", function(e) {
-        this.setCanStart(true);
-        this.__logger.error("Workbench", "Failed submitting pipeline");
-      }, this);
-      req.send();
-
-      this.__logger.info("Workbench", "Starting pipeline");
-    },
-
-    __onPipelinesubmitted: function(e) {
-      let req = e.getTarget();
-
-      const pipelineId = req.getResponse().pipeline_id;
-      this.__logger.debug("Workbench", "Pipeline ID " + pipelineId);
-      const notGood = [null, undefined, -1];
-      if (notGood.includes(pipelineId)) {
-        this.setCanStart(true);
-        this.__pipelineId = null;
-        this.__logger.error("Workbench", "Submition failed");
-      } else {
-        this.setCanStart(false);
-        this.__pipelineId = pipelineId;
-        this.__logger.info("Workbench", "Pipeline started");
-      }
-    },
-
-    __stopPipeline: function() {
-      let req = new qx.io.request.Xhr();
-      let data = {};
-      data["pipeline_id"] = this.__pipelineId;
-      req.set({
-        url: "/stop_pipeline",
-        method: "POST",
-        requestData: qx.util.Serializer.toJson(data)
-      });
-      req.addListener("success", this.__onPipelineStopped, this);
-      req.addListener("error", function(e) {
-        this.setCanStart(false);
-        this.__logger.error("Workbench", "Error stopping pipeline");
-      }, this);
-      req.addListener("fail", function(e) {
-        this.setCanStart(false);
-        this.__logger.error("Workbench", "Failed stopping pipeline");
-      }, this);
-      // req.send();
-
-      // temporary solution
-      this.setCanStart(true);
-
-      this.__logger.info("Workbench", "Stopping pipeline. Not yet implemented");
-    },
-
-    __onPipelineStopped: function(e) {
-      this.__clearProgressData();
-
-      this.setCanStart(true);
-    },
-
-    __updateLogger: function(nodeId, msg) {
-      let node = this.getNode(nodeId);
-      if (node) {
-        this.__logger.info(node.getCaption(), msg);
-      }
-    },
-
-    __clearProgressData: function() {
+    clearProgressData: function() {
       for (let i = 0; i < this.__nodes.length; i++) {
         this.__nodes[i].setProgress(0);
       }
