@@ -5,9 +5,9 @@ from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from director.generated_code.models.base_model_ import Model
-from director.generated_code.models.service_details import ServiceDetails  # noqa: F401,E501
-from director.generated_code import util
+from .base_model_ import Model
+from .service_details import ServiceDetails  # noqa: F401,E501
+from .. import util
 
 
 class ServiceDescription(Model):

@@ -5,11 +5,11 @@ from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from director.generated_code.models.base_model_ import Model
-from director.generated_code.models.author_details import AuthorDetails  # noqa: F401,E501
-from director.generated_code.models.port_details import PortDetails  # noqa: F401,E501
-from director.generated_code.models.viewer import Viewer  # noqa: F401,E501
-from director.generated_code import util
+from .base_model_ import Model
+from .author_details import AuthorDetails  # noqa: F401,E501
+from .port_details import PortDetails  # noqa: F401,E501
+from .viewer import Viewer  # noqa: F401,E501
+from .. import util
 
 
 class ServiceDetails(Model):

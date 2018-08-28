@@ -3,17 +3,16 @@ import logging
 from aiohttp import web_exceptions
 
 from director import exceptions, producer, registry_proxy
-from director.generated_code.models.running_service import RunningService
-from director.generated_code.models.service_description import \
+
+from .generated_code.models import (
+    RunningService, 
     ServiceDescription
+    )
 
 _LOGGER = logging.getLogger(__name__)
-registry_proxy.setup_registry_connection()
-
 
 async def root_get(request):  # pylint:disable=unused-argument
-    greeting = "<h1>Hoi zaeme! Salut les d'jeunz!</h1><h3>This is {} responding!</h3>".format(
-        __name__)
+    greeting = "<h1>Hoi zaeme! Salut les d'jeunz!</h1><h3>This is {} responding!</h3>".format(__name__)
     return greeting
 
 

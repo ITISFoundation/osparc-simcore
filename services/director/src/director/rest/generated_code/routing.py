@@ -1,62 +1,3 @@
-#!/bin/bash
-# define the input specification file and the output directory
-# typical structure:
-# /src/package-name/.openapi/v1/package_api.yaml   -- this is the input file
-# /src/package-name/rest/generated_code            -- this is the output directory
-INPUT_SPEC=./src/director/.openapi/v1/director_api.yaml
-OUTPUT_DIR=./src/director/rest
-OUTPUT_DIR_GEN=./src/director/rest/generated_code
-INIT_FILE_PATH=${OUTPUT_DIR}/__init__.py
-HANDLERS_FILE_PATH=${OUTPUT_DIR}/handlers.py
-ROUTING_FILE_PATH=${OUTPUT_DIR_GEN}/routing.py
-
-# create the folder for the output
-mkdir -p $OUTPUT_DIR
-# generate the python server models code
-ABSOLUTE_INPUT_PATH=$(realpath "${INPUT_SPEC}")
-ABSOLUTE_OUTPUT_DIR=$(realpath "${OUTPUT_DIR}")
-ABSOLUTE_OUTPUT_DIR_GEN=$(realpath "${OUTPUT_DIR_GEN}")
-../../scripts/openapi/openapi_python_server_codegen.sh -i ${ABSOLUTE_INPUT_PATH} -o ${ABSOLUTE_OUTPUT_DIR_GEN}
-# replace import entries in python code
-find ${OUTPUT_DIR_GEN} -type f -exec sed -i 's/openapi_server.models././g' {} \;
-find ${OUTPUT_DIR_GEN} -type f -exec sed -i 's/openapi_server/../g' {} \;
-# create __init__.py if always
-cat > "${INIT_FILE_PATH}" << EOF
-"""GENERATED CODE from codegen.sh
-It is advisable to not modify this code if possible.
-This will be overriden next time the code generator is called.
-"""
-from .generated_code import (
-    models,
-    util,
-    routing
-)
-EOF
-
-# only generate stub if necessary
-if [ ! -e "${HANDLERS_FILE_PATH}" ]; then
-    cat > "${HANDLERS_FILE_PATH}" << EOF
-"""This is a generated stub of handlers to be connected to the paths defined in the API
-
-"""
-import logging
-
-from aiohttp import web_exceptions
-
-_LOGGER = logging.getLogger(__name__)
-
-# This module shall contain the handlers of the API (implementation side of the openapi server side).
-# Each operation is typically defined as
-# async def root_get(request):
-#   return "hello API world"
-
-# The API shall define a path where the entry operationId:
-# operationId: root_get
-EOF
-fi
-
-# always generate routing
-cat > "${ROUTING_FILE_PATH}" << EOF
 """GENERATED CODE from codegen.sh
 It is advisable to not modify this code if possible.
 This will be overriden next time the code generator is called.
@@ -129,4 +70,3 @@ def __create_default_operation_mapping(specs_file):
             operation_mapping[operation_id] = getattr(handlers, operation_id)
     return OperationIdMapping(**operation_mapping)
 
-EOF
