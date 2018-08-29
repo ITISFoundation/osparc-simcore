@@ -147,11 +147,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
               const isDirectory = data.getData().isDirectory;
               const activePort = isDirectory ? "outDir" : "outFile";
               const inactivePort = isDirectory ? "outFile" : "outDir";
-              node.getMetaData().outputs[activePort].value = {
+              let metadata = node.getMetaData();
+              metadata.outputs[activePort].value = {
                 store: "s3-z43",
                 path: itemPath
               };
-              node.getMetaData().outputs[inactivePort].value = null;
+              metadata.outputs[inactivePort].value = null;
+              console.log(node.getMetaData());
               node.getOutputPort(activePort).ui.setLabel(itemName);
               node.getOutputPort(activePort).ui.getToolTip().setLabel(itemName);
               node.getOutputPort(inactivePort).ui.setLabel("");

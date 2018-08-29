@@ -673,14 +673,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let workbench = {};
       for (let i = 0; i < this.__nodes.length; i++) {
         const node = this.__nodes[i];
+        const nodeData = node.getMetaData();
         let cNode = workbench[node.getNodeId()] = {
-          key: node.getMetaData().key,
-          version: node.getMetaData().version,
+          key: nodeData.key,
+          version: nodeData.version,
           inputs: node.getInputValues(),
           outputs: {}
         };
         if (savePosition) {
-          cNode["position"] = {
+          cNode.position = {
             x: node.getCurrentBounds().left,
             y: node.getCurrentBounds().top
           };
@@ -691,8 +692,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             cNode.inputs[key] = linkPort;
           }
         }
-        for (let key in node.getOutputPorts()) {
-          const outputPort = node.getOutputPort(key);
+        for (let key in nodeData.outputs) {
+          const outputPort = nodeData.outputs[key];
           if ("value" in outputPort) {
             cNode.outputs[key] = outputPort.value;
           } else {
