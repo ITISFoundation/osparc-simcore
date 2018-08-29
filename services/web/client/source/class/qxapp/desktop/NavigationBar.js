@@ -22,24 +22,61 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       minHeight: 32
     };
 
-    let homeBtn = new qx.ui.form.Button();
-    homeBtn.set(commonBtnSettings);
-    homeBtn.setIcon("@FontAwesome5Solid/home/32");
-    this.add(homeBtn);
+    const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
 
-    let saveBtn = this.__saveButton = new qx.ui.form.Button();
-    saveBtn.set(commonBtnSettings);
-    saveBtn.setIcon("@FontAwesome5Solid/save/32");
-    this.add(saveBtn);
-
-    this.__currentState = new qx.ui.basic.Label().set({
-      minWidth: 20
+    let logo = new qx.ui.basic.Image("qxapp/osparc-white-small.png").set({
+      maxHeight: 32,
+      maxWidth: 92,
+      scale: true
     });
-    this.add(this.__currentState);
+    this.add(logo);
+
+    this.add(new qx.ui.toolbar.Separator());
+
+    let mainViewCaption = this.__mainViewCaption = new qx.ui.basic.Label().set({
+      font: navBarLabelFont
+    });
+    this.add(mainViewCaption);
+
 
     this.add(new qx.ui.core.Spacer(5), {
       flex: 1
     });
+
+
+    let projectName = this.__projectName = new qx.ui.basic.Label().set({
+      font: navBarLabelFont
+    });
+    this.add(projectName);
+
+    this.add(new qx.ui.toolbar.Separator());
+
+    let dashboardBtn = new qx.ui.form.Button(this.tr("Dashboard"));
+    dashboardBtn.set(commonBtnSettings);
+    dashboardBtn.addListener("execute", function() {
+      this.fireEvent("DashboardPressed");
+    }, this);
+    this.add(dashboardBtn);
+
+    this.add(new qx.ui.toolbar.Separator());
+
+    let pubPrjsBtn = new qx.ui.form.Button(this.tr("Public Projects"));
+    pubPrjsBtn.set(commonBtnSettings);
+    this.add(pubPrjsBtn);
+
+    this.add(new qx.ui.toolbar.Separator());
+
+    let forumBtn = new qx.ui.form.Button(this.tr("Forum"));
+    forumBtn.set(commonBtnSettings);
+    this.add(forumBtn);
+
+    this.add(new qx.ui.toolbar.Separator());
+
+    let helpBtn = new qx.ui.form.Button(this.tr("Help"));
+    helpBtn.set(commonBtnSettings);
+    this.add(helpBtn);
+
+    this.add(new qx.ui.toolbar.Separator());
 
     const dummyUser="bizzy";
     let userLbl = new qx.ui.basic.Label("@" + dummyUser).set({
@@ -51,37 +88,23 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     userBtn.set(commonBtnSettings);
     userBtn.setIcon(qxapp.utils.Avatar.getUrl(dummyUser + "@itis.ethz.ch", 32));
     this.add(userBtn);
-
-
-    // Connect listeners
-    homeBtn.addListener("execute", function() {
-      this.fireEvent("HomePressed");
-    }, this);
-
-    saveBtn.addListener("execute", function() {
-      this.fireEvent("SavePressed");
-    }, this);
   },
 
   events: {
-    "HomePressed": "qx.event.type.Event",
-    "SavePressed": "qx.event.type.Event"
+    "DashboardPressed": "qx.event.type.Event"
   },
 
   members: {
-    __currentState: null,
+    __mainViewCaption: null,
+    __projectName: null,
     __saveButton: null,
 
-    setCurrentStatus: function(newLabel) {
-      this.__currentState.setValue(newLabel);
+    setMainViewCaption: function(newLabel) {
+      this.__mainViewCaption.setValue(newLabel);
     },
 
-    showSaveButton: function(show) {
-      if (show) {
-        this.__saveButton.setVisibility("visible");
-      } else {
-        this.__saveButton.setVisibility("excluded");
-      }
+    setProjectName: function(newLabel) {
+      this.__projectName.setValue(newLabel);
     },
 
     __createUserBtn: function() {

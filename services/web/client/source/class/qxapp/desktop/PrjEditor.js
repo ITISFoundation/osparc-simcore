@@ -114,6 +114,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__workbench.showLogger();
       }, this);
 
+      this.__mainPanel.getControls().addListener("SavePressed", function() {
+        this.serializeProjectDocument();
+      }, this);
+
       this.__mainPanel.getControls().addListener("StartPipeline", function() {
         if (this.getCanStart()) {
           this.__startPipeline();

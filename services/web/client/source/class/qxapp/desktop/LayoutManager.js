@@ -22,10 +22,10 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       flex: 1
     });
 
-    this.__navBar.addListener("HomePressed", function() {
+    this.__navBar.addListener("DashboardPressed", function() {
       this.__prjStack.setSelection([this.__prjBrowser]);
-      this.__navBar.showSaveButton(false);
-      this.__navBar.setCurrentStatus("Browser");
+      this.__navBar.setMainViewCaption("Dashboard");
+      this.__navBar.setProjectName("");
     }, this);
 
     this.__prjBrowser.addListener("StartProject", function(e) {
@@ -36,15 +36,8 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjEditor = new qxapp.desktop.PrjEditor(project.getProjectId());
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
-      this.__navBar.showSaveButton(true);
-      this.__navBar.setCurrentStatus(project.getName());
-    }, this);
-
-
-    this.__navBar.addListener("SavePressed", function() {
-      if (this.__prjEditor) {
-        this.__prjEditor.serializeProjectDocument();
-      }
+      this.__navBar.setMainViewCaption("");
+      this.__navBar.setProjectName(project.getName());
     }, this);
   },
 
@@ -58,8 +51,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     __createNavigationBar: function() {
       let navBar = new qxapp.desktop.NavigationBar();
-      navBar.setCurrentStatus("Project Browser");
-      navBar.showSaveButton(false);
+      navBar.setMainViewCaption("Dashboard");
       return navBar;
     }
   }
