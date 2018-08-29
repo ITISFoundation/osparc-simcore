@@ -1,6 +1,11 @@
 import json
 import logging
-from jsonschema import SchemaError, ValidationError, validate
+
+from jsonschema import (
+    SchemaError,
+    ValidationError,
+    validate
+)
 
 from simcore_service_director import exceptions, config
 
@@ -19,9 +24,9 @@ def validate_nodes(services):
             _LOGGER.debug("service [%s] validated", service["key"])
         except ValidationError:
             _LOGGER.exception("Node validation error:")
-            # let's skip this service            
+            # let's skip this service
             continue
         except SchemaError:
             _LOGGER.exception("Schema error:")
-            raise exceptions.DirectorException("Incorrect json schema used from %s" % (node_schema_file))        
+            raise exceptions.DirectorException("Incorrect json schema used from %s" % (node_schema_file))
     return validated_services
