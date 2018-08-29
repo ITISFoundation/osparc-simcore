@@ -20,10 +20,10 @@
         "key": {
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path",
-            "pattern": "^(service)/(computational|dynamic)(/[^\\s/]+)+$",
+            "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
             "examples": [
-                "service/computational/itis/sleeper",
-                "service/dynamic/itis/3dviewer"
+                "simcore/services/comp/itis/sleeper",
+                "simcore/services/dynamic/3dviewer"
             ]
         },
         "version": {
@@ -290,7 +290,7 @@
                         },
                         "type": {
                             "type": "string",
-                            "pattern": "^(number|integer|boolean|string|data:[^/\\s\\*,]+/[^/\\s\\*,]+)$",
+                            "pattern": "^(number|integer|boolean|string|data:[^/\\s,]+/[^/\\s,]+)$",
                             "description": "data type expected on this output",
                             "examples": [
                                 "number",

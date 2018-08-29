@@ -76,8 +76,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: './components.yaml#/components/schemas/ServiceDescription'
-                  #$ref: '#/components/schemas/ServiceDescription'
+                  $ref: './node-meta-v0.0.1.json'
         401:
           description: Unauthorized access
           content:
@@ -205,7 +204,7 @@ components:
     AssignmentUuid:
       in: query
       name: service_uuid
-      description: The uuid of the service
+      description: The uuid to assign the service with
       required: true
       schema:
         type: string
