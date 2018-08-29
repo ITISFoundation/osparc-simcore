@@ -53,9 +53,7 @@ WORKDIR /home/scu
 
 # install base 3rd party packages to accelerate runtime installs
 COPY --chown=scu:scu services/web/server/requirements/base.txt requirements-base.txt
-RUN $PIP install --no-cache-dir -r requirements-base.txt &&\
-    rm requirements-base.txt
-
+RUN $PIP install --no-cache-dir -r requirements-base.txt
 
 # --------------------------Development stage -------------------
 FROM build as development
@@ -64,8 +62,7 @@ ARG HOST_GID_ARG=1000
 
 # install test 3rd party packages to accelerate runtime installs
 COPY --chown=scu:scu services/web/server/requirements/tests.txt requirements-tests.txt
-RUN $PIP install --no-cache-dir -r requirements-tests.txt &&\
-    rm requirements-tests.txt
+RUN $PIP install --no-cache-dir -r requirements-tests.txt
 
 # in dev mode we give access to `scu` to host's mapped volumes
 RUN addgroup -g $HOST_GID_ARG hgrp &&\
