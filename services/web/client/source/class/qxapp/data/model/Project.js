@@ -6,7 +6,7 @@ qx.Class.define("qxapp.data.model.Project", {
 
     if (prjData) {
       this.set({
-        id: prjData.id || this.getId(),
+        uuid: prjData.projectUuid || this.getUuid(),
         name: prjData.name || this.getName(),
         description: prjData.description || this.getDescription(),
         notes: prjData.notes || this.getNotes(),
@@ -20,7 +20,7 @@ qx.Class.define("qxapp.data.model.Project", {
   },
 
   properties: {
-    id: {
+    uuid: {
       check: "String",
       nullable: false,
       init: qxapp.utils.Utils.uuidv4()

@@ -20,6 +20,10 @@ qx.Class.define("qxapp.data.Store", {
       return qxapp.dev.fake.Data.getProjectList();
     },
 
+    getProjectData: function(projectUuid) {
+      return qxapp.dev.fake.Data.getProjectData(projectUuid);
+    },
+
     getNodeMetaData: function(nodeImageId) {
       let metaData = this.getServices()[nodeImageId];
       if (metaData === undefined) {

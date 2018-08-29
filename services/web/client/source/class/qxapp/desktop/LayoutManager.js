@@ -29,15 +29,17 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     }, this);
 
     this.__prjBrowser.addListener("StartProject", function(e) {
-      let project = e.getData();
+      const data = e.getData();
+      const projectUuid = data.projectUuid;
+      const projectName = data.name;
       if (this.__prjEditor) {
         this.__prjStack.remove(this.__prjEditor);
       }
-      this.__prjEditor = new qxapp.desktop.PrjEditor(project.getProjectId());
+      this.__prjEditor = new qxapp.desktop.PrjEditor(projectUuid);
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
       this.__navBar.setMainViewCaption("Workbench");
-      this.__navBar.setProjectName(project.getName());
+      this.__navBar.setProjectName(projectName);
 
       this.__prjEditor.addListener("ChangeMainViewCaption", function(ev) {
         const newLabel = ev.getData();

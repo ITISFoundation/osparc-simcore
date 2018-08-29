@@ -42,7 +42,11 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       // Monitors change in selection
       prjCtr.getSelection().addListener("change", function(e) {
         const selectedItem = e.getTarget().toArray()[0];
-        this.fireDataEvent("StartProject", selectedItem);
+        const data = {
+          name: selectedItem.getName(),
+          projectUuid: selectedItem.getProjectUuid()
+        };
+        this.fireDataEvent("StartProject", data);
       }, this);
     },
 
@@ -67,7 +71,11 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       // Monitors change in selection
       prjCtr.getSelection().addListener("change", function(e) {
         const selectedItem = e.getTarget().toArray()[0];
-        this.fireDataEvent("StartProject", selectedItem);
+        const data = {
+          name: selectedItem.getName(),
+          projectUuid: selectedItem.getProjectUuid()
+        };
+        this.fireDataEvent("StartProject", data);
       }, this);
     },
 
@@ -114,7 +122,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             (p, i) => qx.data.marshal.Json.createModel({
               name: p.name,
               thumbnail: p.thumbnail,
-              projectId: p.projectUuid,
+              projectUuid: p.projectUuid,
               created: p.creationDate
             })
           )
@@ -126,7 +134,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       data.insertAt(0, qx.data.marshal.Json.createModel({
         name: this.tr("New Project"),
         thumbnail: "@MaterialIcons/create/40",
-        projectId: null,
+        projectUuid: null,
         created: null
       }));
       return data;

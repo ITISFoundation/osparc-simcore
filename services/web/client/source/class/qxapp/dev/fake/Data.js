@@ -291,6 +291,16 @@ qx.Class.define("qxapp.dev.fake.Data", {
       ];
     },
 
+    getProjectData: function(projectUuid) {
+      const projectList = this.getProjectList();
+      for (let i = 0; i < projectList.length; i++) {
+        if (projectUuid === projectList[i].projectUuid) {
+          return projectList[i];
+        }
+      }
+      return null;
+    },
+
     getUsername: function() {
       return "bizzy";
     },

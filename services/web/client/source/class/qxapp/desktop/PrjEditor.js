@@ -2,10 +2,11 @@
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function(projectId) {
+  construct: function(projectUuid) {
     this.base(arguments, "horizontal");
 
-    this.setProjectId(String(projectId));
+    let project = this.__projectDocument = this.__getProjectDocument(projectUuid);
+    this.setProjectId(project.getUuid());
 
     let mainPanel = this.__mainPanel = new qxapp.desktop.mainPanel.MainPanel().set({
       minWidth: 1000
@@ -77,12 +78,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __projectDocument: null,
 
     initDefault: function() {
-      const projectId = this.getProjectId();
-      if (projectId === null || projectId === undefined) {
-        return;
-      }
-
-      let project = this.__projectDocument = this.__getProjectDocument(projectId);
+      let project = this.__projectDocument;
       let workbench = this.__workbench = new qxapp.components.workbench.Workbench(project.getWorkbench());
       this.showInMainView(workbench, "Workbench");
 
@@ -189,7 +185,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (projectId === null || projectId === undefined) {
         project = new qxapp.data.model.Project();
       } else {
-        let projectData = qxapp.data.Store.getInstance().getProjectList()[projectId];
+        // let projectData = qxapp.data.Store.getInstance().getProjectList()[projectId];
+        let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
         projectData.id = String(projectId);
         project = new qxapp.data.model.Project(projectData);
       }
