@@ -330,7 +330,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     serializeProjectDocument: function() {
       console.log("Workbench: saveProject()");
       this.__workbench.saveProject();
-      this.__projectDocument.setWorkbench(this.__workbench.getWorkbenchData());
+      this.__projectDocument.set({
+        workbench: this.__workbench.getWorkbenchData(),
+        lastChangeDate: new Date()
+      });
       console.log(this.__projectDocument.getJsonObject());
     }
   }
