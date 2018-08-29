@@ -2,48 +2,44 @@ FROM python:3.6-alpine as common
 
 LABEL maintainer="sanderegg"
 
-RUN addgroup docker && addgroup user \
-  && adduser -D app \
-  && addgroup app app && addgroup app docker
+# create standard user scu
+RUN adduser -D -u 8004 scu
+USER scu
 
-USER app
+# RUN addgroup docker && addgroup user \
+#   && adduser -D app \
+  # && addgroup app app && addgroup app docker
 
 ENV REGISTRY_AUTH = ''
 ENV REGISTRY_USER = ''
 ENV REGISTRY_PW = ''
 ENV REGISTRY_URL = ''
-ENV PYTHONPATH=/home/app/source
-ENV FLASK_APP=director.py
-ENV FLASK_DEBUG=0
 
-WORKDIR /home/app
+EXPOSE 8001
 
-# + /home/app/            $HOME, $WORKDIR,
-#    + test/
-#    + source/            $PYTHONPATH
-#    + requirements.txt
+WORKDIR /home/scu
+
+# + /home/scu/            $HOME, $WORKDIR,
+#    + src/            $PYTHONPATH
 #    + boot.sh
 
-COPY --chown=app:app requirements.txt requirements.txt
-
+# create virtual environment
 RUN python -m venv venv \
- && chown -R app:app venv
+    && chown -R scu:scu venv \
+    && /home/scu/venv/bin/pip install --upgrade pip wheel setuptools
 
-RUN venv/bin/pip3 install --upgrade pip wheel setuptools\
- && venv/bin/pip3 install -r requirements.txt
-
-COPY --chown=app:app boot.sh boot.sh
+# copy boot
+COPY --chown=scu:scu boot.sh boot.sh
 RUN chmod +x boot.sh
 
 # VOLUME /var/run/docker.sock # FIXME: fails when docker-compose run in production !?
-EXPOSE 8001
 
 # --------------------------Development stage -------------------
 FROM common as development
 
-ENV FLASK_DEBUG=1
-
-VOLUME /home/app/source
+ENV DEBUG 1
+# mount the director folder here
+VOLUME /home/scu/src
 
 USER root
 
@@ -52,10 +48,10 @@ CMD ["/bin/sh", "./boot.sh"]
 # --------------------------Production stage -------------------
 FROM common as production
 
-RUN venv/bin/pip install gunicorn==19.8.0
-
-# TODO: set non-root id
-COPY --chown=1000:docker source source
+ENV DEBUG 0
+COPY --chown=scu:scu . /home/scu/src
+RUN /home/scu/venv/bin/pip install /home/scu/src \
+    && rm -rf /home/scu/src
 
 # FIXME: this is the only way to get access to docker sockets !?
 USER root

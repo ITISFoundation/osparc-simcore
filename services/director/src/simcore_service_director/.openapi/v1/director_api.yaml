@@ -1,0 +1,284 @@
+openapi: "3.0.0"
+info:
+  description: This is the oSparc's director API
+  version: 1.0.0
+  title: Director API
+  # put the contact info for your development or API team
+  contact:
+    name: IT'IS Foundation
+    email: support@simcore.com
+  license:
+    name: MIT
+    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
+
+servers:
+  - url: http://localhost:{port}/{basePath}
+    description: Development server
+    variables:
+      port: 
+        default: '8001'
+      basePath:
+        default: v1
+  - url: https://director:{port}/{basePath}
+    description: Production server
+    variables:
+      port: 
+        default: '8001'
+      basePath:
+        default: v1
+
+# tags are used for organizing operations
+tags:
+- name: admins
+  description: Secured Admin-only calls
+- name: developers
+  description: Operations available to regular developers
+- name: users
+  description: Operations available to regular users
+
+paths:
+  /:
+    get:
+      tags: 
+        - users
+      summary: Returns a nice greeting
+      description: Returns a nice greeting
+      operationId: root_get
+      responses:
+        200:
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Message greeting
+                example: "Hello my friend!"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /services:
+    get:
+      tags: 
+        - users
+      summary: Lists available services in the oSparc platform
+      description: Lists available services in the oSparc platform
+      operationId: services_get
+      parameters:
+        - $ref: '#/components/parameters/ServiceType'
+      responses:
+        200:
+          description: Success, returns the list of available services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './node-meta-v0.0.1.json'
+        401:
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /running_interactive_services:
+    post:
+      tags: 
+        - users
+      summary: Starts an interactive service in the oSparc platform and returns its entrypoint
+      description: Starts an interactive service in the oSparc platform and returns its entrypoint
+      operationId: running_interactive_services_post
+      parameters:         
+        - $ref: '#/components/parameters/ServiceKey'
+        - $ref: '#/components/parameters/ServiceVersion'
+        - $ref: '#/components/parameters/AssignmentUuid'
+      responses:
+        201:
+          description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RunningService'
+        400:
+          description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        409:
+          description: A service with the same uuid already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /running_interactive_services/{service_uuid}:      
+    get:
+      tags: 
+        - users
+      summary: Succesfully returns if a service with the defined uuid is up and running
+      description: Succesfully returns if a service with the defined uuid is up and running
+      operationId: running_interactive_services_get
+      parameters: 
+        - $ref: '#/components/parameters/ServiceUuid'
+      responses:
+        204:
+          description: OK service exists and runs
+        400:
+          description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags: 
+        - users
+      summary: Stops and removes an interactive service from the oSparc platform
+      description: Stops and removes an interactive service from the oSparc platform
+      operationId: running_interactive_services_delete
+      parameters: 
+        - $ref: '#/components/parameters/ServiceUuid'
+      responses:
+        204:
+          description: Succesfully stopped and removed the service from the oSparc platform
+        400:
+          description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  parameters:
+    AssignmentUuid:
+      in: query
+      name: service_uuid
+      description: The uuid to assign the service with
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
+    ServiceUuid:
+      in: path
+      name: service_uuid
+      description: The uuid of the service
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
+    ServiceType:
+      in: query
+      name: service_type
+      description: |
+        The service type:
+          * computational - a computational service
+          * interactive - an interactive service
+      required: false
+      schema:
+        type: string          
+        enum: 
+          - computational
+          - interactive            
+        example: computational
+    ServiceKey:
+      in: query
+      name: service_key
+      description: The key (url) of the service
+      required: true
+      schema:
+        type: string   
+        format: url
+        example: simcore/services/dynamic/3d-viewer     
+    ServiceVersion:
+      in: query
+      name: service_tag
+      description: The tag/version of the service
+      required: false
+      schema:
+        type: string
+        example: "1.4"
+  
+  schemas:
+    RunningService:
+      type: object
+      required:
+        - published_port
+      properties:
+        published_port:
+          description: The ports where the service provides its interface
+          type: integer
+          format: int32
+          minimum: 1
+          example: 30000
+        entry_point:
+          description: The entry point where the service provides its interface if specified
+          type: string
+          example: /the/entry/point/is/here
+    
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          description: Error code
+          type: integer
+          example: 404
+        message:
+          description: Error message
+          type: string
+          example: Unexpected error

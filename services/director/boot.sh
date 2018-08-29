@@ -1,11 +1,16 @@
 #!/bin/sh
-source /home/app/venv/bin/activate
+echo "activating python virtual env..."
+source /home/scu/venv/bin/activate
 
-if [[ ${FLASK_DEBUG} == "1" ]]
+if [[ ${DEBUG} == "1" ]]
 then
   echo "Booting in development mode ..."
-  exec python -m flask run --host=0.0.0.0 --port=8001
+  echo "Installing director service ..."
+  cd /home/scu/src
+  /home/scu/venv/bin/pip install -r requirements-dev.txt
+  cd ..
 else
   echo "Booting in production mode ..."
-  exec gunicorn -b :8001 --access-logfile - --error-logfile - director:APP
 fi
+
+simcore-service-director

@@ -6,6 +6,7 @@ VERSION := $(shell cat /proc/version)
 ifneq (,$(findstring Microsoft,$(VERSION)))
 export DOCKER_COMPOSE=docker-compose.exe
 export DOCKER=docker.exe
+export COMPOSE_CONVERT_WINDOWS_PATHS=1
 else
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
