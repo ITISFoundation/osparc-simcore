@@ -1,5 +1,5 @@
 # development mode
-# continuous integration mode
+# paths relative to location of setup.py
 -e ".[test]"
 
 -e ../../../packages/s3wrapper/
