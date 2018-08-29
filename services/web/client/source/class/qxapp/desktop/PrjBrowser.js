@@ -113,8 +113,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           .map(
             (p, i) => qx.data.marshal.Json.createModel({
               name: p.name,
-              thumbnail: "https://placeimg.com/171/96/tech/grayscale/?"+i+".jpg",
-              projectId: i,
+              thumbnail: p.thumbnail,
+              projectId: p.projectUuid,
               created: p.creationDate
             })
           )

@@ -185,6 +185,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
     getProjectList: function() {
       return [
         {
+          projectUuid: "07640335-a91f-468c-ab69-a374fa82078d",
           name: "Sample Project",
           description: "A little fake project without actual backend",
           notes: "# title\nThere be dragons inside",
@@ -197,6 +198,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           },
           creationDate: "2018-07-02T16:01:00Z",
           lastChangeDate: "2018-07-02T16:02:22Z",
+          thumbnail: "https://placeimg.com/171/96/tech/grayscale/?0.jpg",
           workbench: {
             "UUID1": {
               key: "service/dynamic/itis/file-picker",
@@ -270,6 +272,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           }
         },
         {
+          projectUuid: "9bcf8feb-c1b1-41b6-b201-639cd6ccdba8",
           name: "Sample Project II",
           description: "An empty project",
           notes: "# title\nThere be dragons inside",
@@ -282,6 +285,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           },
           creationDate: "2018-07-08T16:01:00Z",
           lastChangeDate: "2018-07-09T16:02:22Z",
+          thumbnail: "https://placeimg.com/171/96/tech/grayscale/?1.jpg",
           workbench: {}
         }
       ];
