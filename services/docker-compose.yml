@@ -65,14 +65,6 @@ services:
     ports:
       - "15672:15672"
   #--------------------------------------------------------------------
-#  flower:
-#    image: ondrejit/flower:latest
-#    command: --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbit:5672
-#    ports:
-#      - 5555:5555
-#    depends_on:
-#      - rabbit
-  #--------------------------------------------------------------------
   postgres:
     image: postgres:10
     environment:
@@ -83,13 +75,6 @@ services:
       - postgres:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-  #--------------------------------------------------------------------
-  adminer:
-    image: adminer
-    ports:
-      - 18080:8080
-    depends_on:
-      - postgres
   #--------------------------------------------------------------------
   sidecar:
     build:
