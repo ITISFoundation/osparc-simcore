@@ -19,10 +19,16 @@ def setup_registry_connection():
     # get authentication state or set default value
     registry_auth = os.environ.get('REGISTRY_AUTH', False)
     if registry_auth in ("True","true"):
+        if not "REGISTRY_USER" in os.environ:
+            raise exceptions.DirectorException("User to access to registry is not defined")    
+        if not "REGISTRY_PW" in os.environ:
+            raise exceptions.DirectorException("PW to access to registry is not defined")    
         _SESSION.auth = (os.environ['REGISTRY_USER'], os.environ['REGISTRY_PW'])
 
 
 def registry_request(path, method="GET"):
+    if not "REGISTRY_URL" in os.environ:
+        raise exceptions.DirectorException("URL to registry is not defined")
     # TODO: is is always ssh?
     api_url = 'https://' + os.environ['REGISTRY_URL'] + '/v2/' + path
 
@@ -158,12 +164,10 @@ def list_computational_services():
     list_of_comp_repos = [repo for repo in list_all_repos if str(repo).startswith(COMPUTATIONAL_SERVICES_PREFIX)]
     _LOGGER.info("retrieved list of computational repos : %s", list_of_comp_repos)
     repositories = []
+    # or each repo get all tags details
     for repo in list_of_comp_repos:
         details = _get_repo_details(repo)
-        if details:
-            repositories.append(dict(
-                key=repo,
-                details=details
-            ))
+        for repo_detail in details:
+            repositories.append(repo_detail)
 
     return repositories
