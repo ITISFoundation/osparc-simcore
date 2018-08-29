@@ -56,8 +56,8 @@ CONFIG_SCHEMA_V1 = T.Dict({
     T.Key("director"): _DIRECTOR_SCHEMA,
     T.Key("postgres"): db.CONFIG_SCHEMA,
     T.Key("rabbit"): rabbit.CONFIG_SCHEMA,
-    T.Key("s3"): s3.CONFIG_SCHEMA,
-    T.Key("cs_s4l"): _CS_S4L_SCHEMA
+    T.Key("s3"): s3.CONFIG_SCHEMA
+    #T.Key("cs_s4l"): _CS_S4L_SCHEMA
 })
 
 CONFIG_SCHEMA = CONFIG_SCHEMA_V1

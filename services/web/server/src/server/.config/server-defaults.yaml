@@ -5,13 +5,6 @@ app:
   log_level: DEBUG
   port: 8080
   testing: true
-cs_s4l:
-  # cs_s4l might not be necessary anymore!
-  host: 172.16.9.89
-  app:
-    port: 9095
-  modeler:
-    port: 9096
 director:
   host: director
   port: 8001
