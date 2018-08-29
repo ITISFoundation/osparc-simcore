@@ -52,7 +52,9 @@ qx.Class.define("qxapp.desktop.mainPanel.MainPanel", {
     __applyMainView: function(newWidget) {
       if (this.__hBox._indexOf(newWidget) != 1) {
         this.__hBox._removeAt(1);
-        this.__hBox._addAt(newWidget, 1);
+        this.__hBox._addAt(newWidget, 1, {
+          flex: 1
+        });
       }
     },
 
