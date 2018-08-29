@@ -60,6 +60,68 @@ qx.Class.define("qxapp.data.Store", {
               type: "data:*/*"
             }
           }
+        },
+        "service/dynamic/itis/Simulator-LF-0.0.0": {
+          key: "service/dynamic/itis/Simulator-LF",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "LF Simulator",
+          description: "LF Simulator",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "modeler",
+              description: "Live link to Modeler",
+              type: "data:*/*"
+            },
+            materialDB: {
+              displayOrder: 1,
+              label: "materialDB",
+              description: "Live link to Material DB",
+              type: "data:*/*"
+            }
+          },
+          outputs: {
+            outFile: {
+              displayOrder: 0,
+              label: "File",
+              description: "LF Solver Input File",
+              type: "data:application/hdf5"
+            }
+          }
+        },
+        "service/computational/itis/Solver-LF-0.0.0": {
+          key: "service/computational/itis/Solver-LF",
+          version: "0.0.0",
+          type: "computational",
+          name: "LF Solver",
+          description: "LF Solver",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            inFile: {
+              displayOrder: 0,
+              label: "modeler",
+              description: "LF Solver Input File",
+              type: "data:application/hdf5"
+            }
+          },
+          outputs: {
+            outFile: {
+              displayOrder: 0,
+              label: "File",
+              description: "LF Solver Output File",
+              type: "data:application/hdf5"
+            }
+          }
         }
       };
       return builtInServices;
