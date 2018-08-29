@@ -3,10 +3,7 @@
 # flake8: noqa
 from __future__ import absolute_import
 # import models into model package
-from .author_details import AuthorDetails
 from .error import Error
-from .port_details import PortDetails
+from .node_meta_v0 import NodeMetaV0
+from .nodemetav0_authors import Nodemetav0Authors
 from .running_service import RunningService
-from .service_description import ServiceDescription
-from .service_details import ServiceDetails
-from .viewer import Viewer
