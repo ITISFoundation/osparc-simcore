@@ -4,6 +4,9 @@ LABEL maintainer=mguidon
 
 ARG DOCKER_GID_ARG=1001
 
+RUN apk add --no-cache \
+      su-exec
+
 # create user 'scu' and adds it to host's docker group
 RUN adduser -D -u 8004 scu &&\
     addgroup -g $DOCKER_GID_ARG docker &&\
@@ -42,7 +45,8 @@ RUN python3 -m venv $HOME/.venv &&\
 WORKDIR /home/scu
 
 # Build context set at repo's root
-COPY --chown=scu:scu services/sidecar/requirements requirements
+COPY --chown=scu:scu services/sidecar/requirements $HOME/requirements
+COPY services/sidecar/.docker $HOME/.docker
 
 RUN $PIP install --no-cache-dir -r requirements/base.txt &&\
     rm -rf requirements
@@ -60,10 +64,10 @@ RUN addgroup -g $HOST_GID_ARG hgrp &&\
 VOLUME /home/scu/packages
 VOLUME /home/scu/services/sidecar
 
-USER scu
 ENV DEBUG 1
-WORKDIR /home/scu/services/sidecar
-CMD ./boot.sh
+WORKDIR /home/scu
+ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
+CMD $HOME/boot.sh
 
 
 # --------------------------Production multi-stage -------------------
@@ -84,10 +88,11 @@ FROM base as production
 
 COPY --from=build-production --chown=scu:scu $HOME/services/sidecar/boot.sh $HOME
 COPY --from=build-production --chown=scu:scu $HOME/.venv $HOME/.venv
+COPY --from=build-production --chown=scu:scu $HOME/.docker $HOME/.docker
 
 RUN . $HOME/.venv/bin/activate; pip list
 
-WORKDIR /home/scu
-USER scu
 ENV DEBUG 0
-ENTRYPOINT ./boot.sh
+WORKDIR /home/scu
+ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
+CMD ./boot.sh
