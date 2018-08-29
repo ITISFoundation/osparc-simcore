@@ -2,7 +2,7 @@
 ---
 version: "1.0"
 app:
-  host: 127.0.0.1
+  host: 0.0.0.0
   port: 8080
   client_outdir: ${SIMCORE_WEB_OUTDIR}
   log_level: INFO
