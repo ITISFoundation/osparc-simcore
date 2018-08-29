@@ -6,7 +6,7 @@ qx.Class.define("qxapp.desktop.mainPanel.MainPanel", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(5));
 
     let optionsBar = this.__optionsBar = new qxapp.desktop.mainPanel.OptionsBar();
     let mainView = new qx.ui.core.Widget();
@@ -22,7 +22,7 @@ qx.Class.define("qxapp.desktop.mainPanel.MainPanel", {
       allowGrowY: false
     });
 
-    let hBox = this.__hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+    let hBox = this.__hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
     hBox.add(optionsBar);
     hBox.add(mainView, {
       flex: 1

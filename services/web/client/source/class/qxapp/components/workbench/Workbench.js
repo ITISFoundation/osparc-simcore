@@ -61,8 +61,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
     this.add(buttonContainer, {
-      bottom: 20,
-      right: 20
+      bottom: 10,
+      right: 10
     });
     [
       this.__getPlusButton(),
