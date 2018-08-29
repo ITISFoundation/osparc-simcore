@@ -1,13 +1,11 @@
 import logging
 
 from aiohttp import web_exceptions
+from simcore_service_director import (exceptions, producer, registry_proxy, config)
 
-from simcore_service_director import exceptions, producer, registry_proxy
+from . import (api_converters, node_validator)
 
-from .generated_code.models import (
-    RunningService, 
-    ServiceDescription
-    )
+from .generated_code.models import (RunningService, NodeMetaV0)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,10 +29,13 @@ async def services_get(request, service_type=None):  # pylint:disable=unused-arg
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-
 def list_services(list_service_fct):
     services = list_service_fct()
-    service_descs = [ServiceDescription.from_dict(x) for x in services]
+    if config.CONVERT_OLD_API:
+        services = [api_converters.convert_service_from_old_api(x) for x in services]
+    services = node_validator.validate_nodes(services)
+    
+    service_descs = [NodeMetaV0.from_dict(x) for x in services]
     return service_descs
 
 

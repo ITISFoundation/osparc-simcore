@@ -90,26 +90,6 @@ def retrieve_labels_of_image(image, tag):
     _LOGGER.info("retrieved labels of image %s:%s: %s", image, tag, result_json)
     return labels
 
-
-def list_interactive_services():
-    # pylint: disable=C0103
-    _LOGGER.info("getting list of interactive services")
-    list_all_repos = retrieve_list_of_repositories()
-    # get the services repos
-    list_of_interactive_repos = [repo for repo in list_all_repos if str(repo).startswith(INTERACTIVE_SERVICES_PREFIX)]
-    _LOGGER.info("retrieved list of interactive repos : %s", list_of_interactive_repos)
-    # only return the repos that provide with the valid details (some service may have dependencies, e.g. modeler)
-    repositories = []
-    for repo in list_of_interactive_repos:
-        details = _get_repo_details(repo)
-        if details:
-            repositories.append(dict(
-                key=repo,
-                details=details
-            ))
-
-    return repositories
-
 def get_service_name(repository_name, service_prefix):
     service_name_suffixes = str(repository_name)[len(service_prefix):]
     _LOGGER.info("retrieved service name from repo %s : %s", repository_name, service_name_suffixes)
@@ -158,14 +138,20 @@ def _get_repo_details(repo):
     return current_repo
 
 def list_computational_services():
+    return __list_services(COMPUTATIONAL_SERVICES_PREFIX)
+
+def list_interactive_services():
+    return __list_services(INTERACTIVE_SERVICES_PREFIX)
+
+def __list_services(service_prefix):
     _LOGGER.info("getting list of computational services")
     list_all_repos = retrieve_list_of_repositories()
     # get the services repos
-    list_of_comp_repos = [repo for repo in list_all_repos if str(repo).startswith(COMPUTATIONAL_SERVICES_PREFIX)]
-    _LOGGER.info("retrieved list of computational repos : %s", list_of_comp_repos)
+    list_of_specific_repos = [repo for repo in list_all_repos if str(repo).startswith(service_prefix)]
+    _LOGGER.info("retrieved list of computational repos : %s", list_of_specific_repos)
     repositories = []
     # or each repo get all tags details
-    for repo in list_of_comp_repos:
+    for repo in list_of_specific_repos:
         details = _get_repo_details(repo)
         for repo_detail in details:
             repositories.append(repo_detail)
