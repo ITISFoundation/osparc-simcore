@@ -95,15 +95,22 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
     },
 
     __getObjLists: function() {
+      const slotName = "listObjects";
       let socket = qxapp.wrappers.WebSocket.getInstance();
-      socket.removeSlot("listObjects");
-      socket.on("listObjects", function(data) {
-        console.log("listObjects", data);
+      socket.removeSlot(slotName);
+      socket.on(slotName, function(data) {
+        console.log(slotName, data);
         for (let i=0; i<data.length; i++) {
           this.__addTreeItem(data[i]);
         }
       }, this);
-      socket.emit("listObjects");
+      if (!socket.getSocket().connected) {
+        let data = qxapp.dev.fake.Data.getObjectList();
+        for (let i=0; i<data.length; i++) {
+          this.__addTreeItem(data[i]);
+        }
+      }
+      socket.emit(slotName);
     },
 
     __alreadyExists: function(parentTree, itemName) {
