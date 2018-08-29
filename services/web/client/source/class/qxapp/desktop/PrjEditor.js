@@ -152,10 +152,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
                 path: itemPath
               };
               node.getMetaData().outputs[inactivePort].value = null;
-              node.getOutputPorts(activePort).ui.setLabel(itemName);
-              node.getOutputPorts(activePort).ui.getToolTip().setLabel(itemName);
-              node.getOutputPorts(inactivePort).ui.setLabel("");
-              node.getOutputPorts(inactivePort).ui.getToolTip().setLabel("");
+              node.getOutputPort(activePort).ui.setLabel(itemName);
+              node.getOutputPort(activePort).ui.getToolTip().setLabel(itemName);
+              node.getOutputPort(inactivePort).ui.setLabel("");
+              node.getOutputPort(inactivePort).ui.getToolTip().setLabel("");
               node.setProgress(100);
               this.showInMainView(this.__workbench, "Workbench");
             }, this);
