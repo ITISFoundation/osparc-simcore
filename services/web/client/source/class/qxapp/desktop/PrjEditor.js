@@ -60,6 +60,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     }
   },
 
+  events: {
+    "ChangeMainViewCaption": "qx.event.type.Data"
+  },
+
   members: {
     __pipelineId: null,
     __mainPanel: null,
@@ -80,13 +84,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       let project = this.__projectDocument = this.__getProjectDocument(projectId);
       let workbench = this.__workbench = new qxapp.components.workbench.Workbench(project.getWorkbench());
-      this.showInMainView(workbench);
+      this.showInMainView(workbench, "Workbench");
 
       let showWorkbench = new qx.ui.form.Button(this.tr("Show workbench")).set({
         allowGrowX: false
       });
       showWorkbench.addListener("execute", function() {
-        this.showInMainView(this.__workbench);
+        this.showInMainView(this.__workbench, "Workbench");
       }, this);
       let miniWorkbench = this.__miniWorkbench = new qxapp.components.workbench.WorkbenchMini(project.getWorkbench());
       let vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
@@ -157,11 +161,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
               node.getOutputPorts(inactivePort).ui.setLabel("");
               node.getOutputPorts(inactivePort).ui.getToolTip().setLabel("");
               node.setProgress(100);
-              this.showInMainView(this.__workbench);
+              this.showInMainView(this.__workbench, "Workbench");
             }, this);
-            this.showInMainView(fileManager);
+            this.showInMainView(fileManager, node.getMetaData().name);
           } else {
-            this.showInMainView(this.__workbench);
+            this.showInMainView(this.__workbench, "Workbench");
           }
 
           this.__settingsView.setNode(node);
@@ -175,8 +179,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }, this);
     },
 
-    showInMainView: function(widget) {
+    showInMainView: function(widget, label) {
       this.__mainPanel.setMainView(widget);
+      this.fireDataEvent("ChangeMainViewCaption", label);
     },
 
     __getProjectDocument: function(projectId) {

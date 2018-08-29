@@ -36,8 +36,13 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjEditor = new qxapp.desktop.PrjEditor(project.getProjectId());
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
-      this.__navBar.setMainViewCaption("");
+      this.__navBar.setMainViewCaption("Workbench");
       this.__navBar.setProjectName(project.getName());
+
+      this.__prjEditor.addListener("ChangeMainViewCaption", function(ev) {
+        const newLabel = ev.getData();
+        this.__navBar.setMainViewCaption(newLabel);
+      }, this);
     }, this);
   },
 
