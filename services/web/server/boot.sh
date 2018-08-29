@@ -6,8 +6,8 @@ if [[ ${DEBUG} == "1" ]]
 then
   echo "Booting in development mode ..."
   pip install -r requirements/dev.txt
-  service-web-server --config server-docker-dev.yaml
+  simcore-service-webserver --config server-docker-dev.yaml
 else
   echo "Booting in production mode ..."
-  service-web-server --config server-docker-prod.yaml
+  simcore-service-webserver --config server-docker-prod.yaml
 fi

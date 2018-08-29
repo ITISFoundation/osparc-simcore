@@ -18,6 +18,8 @@ services:
   webserver:
     image: services_webserver:dev
     build:
+      args:
+        - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
       target: development
     volumes:
       - ./web/server:/home/scu/services/web/server
