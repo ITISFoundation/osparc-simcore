@@ -185,7 +185,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (projectId === null || projectId === undefined) {
         project = new qxapp.data.model.Project();
       } else {
-        // let projectData = qxapp.data.Store.getInstance().getProjectList()[projectId];
         let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
         projectData.id = String(projectId);
         project = new qxapp.data.model.Project(projectData);
