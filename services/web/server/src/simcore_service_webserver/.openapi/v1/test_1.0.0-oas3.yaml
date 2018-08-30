@@ -1,0 +1,242 @@
+openapi: 3.0.0
+servers:
+  - url: 'https://virtserver.swaggerhub.com/pcrespov/test/1.0.0'
+info:
+  description: API for sample authentication service
+  version: "1.0.0-oas3"
+  title: auth-service
+paths:
+  /:
+    get:
+      summary: Service health-check endpoint
+      description: Some general information on the API and state of the service behind
+      responses:
+        '200':
+          description: Service information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceInfo'
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /me:
+    get:
+      tags:
+        - authentication
+      summary: Base entry-point for current API client's information
+      responses:
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /register:
+    post:
+      tags:
+        - authentication
+      summary: Registers new user
+      responses:
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            multiple_invalid_sample:
+              examples:
+                response:
+                  value:
+                    error:
+                      status: 422
+                      error: FIELDS_VALIDATION_ERROR
+                      description: One or more fields raised validation errors
+                      fields:
+                        email: Invalid email address.
+                        password: Password too short
+            invalid_email_sample:
+              examples:
+                response:
+                  value:
+                    error:
+                      status: 409
+                      error: EMAIL_ALREADY_EXISTS
+                      description: An account already exists with this email
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationData'
+        required: true
+  '/confirm/{token}':
+    post:
+      tags:
+        - authentication
+      summary: Confirms some operation by given user
+      description: >-
+        E.g. to confirm account, password reset, etc. Token encrypts user and
+        action to be confirmed
+      parameters:
+        - name: token
+          in: path
+          description: Confirmation token encoding idenfitier and operation to confirm
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /login:
+    post:
+      tags:
+        - authentication
+      summary: Logs client into the service
+      responses:
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /logout:
+    post:
+      tags:
+        - authentication
+      description: Logs out client from the service
+      responses:
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/docs/{doc_id}':
+    get:
+      tags:
+        - documents
+      description: Gets document
+      parameters:
+        - name: doc_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags:
+        - documents
+      description: Set document
+      operationId: setDocument
+      parameters:
+        - name: doc_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Document'
+components:
+  schemas:
+    ServiceInfo:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            name:
+              type: string
+              example: auth service
+            status:
+              type: string
+              example: SERVICE_RUNNING
+            api_version:
+              type: string
+              example: 1.0.0-dev
+            version:
+              type: string
+              example: 1dfcfdc
+    RegistrationData:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: bizzy@foo.com
+        password:
+          type: string
+          format: password
+          example: secret123
+        username:
+          type: string
+          example: bizzy
+      description: Registration payload
+    Document:
+      type: object
+      required:
+        - text
+      properties:
+        doc_id:
+          type: string
+        text:
+          type: string
+      example:
+        text: text
+        doc_id: e7120959-fab0-481f-a1fd-0dbdcbe6016c
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: integer
+              format: int32
+              example: 422
+            error:
+              type: string
+              example: FIELDS_VALIDATION_ERROR
+            message:
+              type: string
+              example: One or more request's fields raised validation errors
+            fields:
+              type: object
+              description: a dict with error messages specific fot request's fields
+              additionalProperties:
+                type: string
+                example: Some field-specific error message
