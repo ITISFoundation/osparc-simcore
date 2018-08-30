@@ -96,9 +96,9 @@ qx.Class.define("qxapp.data.Store", {
           },
           innerServices: [
             {
-              key: "service/dynamic/itis/Simulator-LF/Setup",
+              key: "service/computational/itis/Simulator-LF/Setup",
               version: "0.0.0",
-              type: "dynamic",
+              type: "computational",
               name: "Setup Settings",
               description: "LF Simulator Setup Settings",
               inputs: {
