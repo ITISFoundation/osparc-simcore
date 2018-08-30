@@ -61,10 +61,10 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/Simulator-LF-0.0.0": {
-          key: "service/dynamic/itis/Simulator-LF",
+        "service/container/itis/Simulator-LF-0.0.0": {
+          key: "service/container/itis/Simulator-LF",
           version: "0.0.0",
-          type: "dynamic",
+          type: "container",
           name: "LF Simulator",
           description: "LF Simulator",
           authors: [{
@@ -93,7 +93,82 @@ qx.Class.define("qxapp.data.Store", {
               description: "LF Solver Input File",
               type: "data:application/hdf5"
             }
-          }
+          },
+          innerServices: [
+            {
+              key: "service/dynamic/itis/Simulator-LF/Setup",
+              version: "0.0.0",
+              type: "dynamic",
+              name: "Setup Settings",
+              description: "LF Simulator Setup Settings",
+              inputs: {
+                setupSetting: {
+                  displayOrder: 0,
+                  label: "SetupSetting",
+                  description: "Setup Setting",
+                  type: "number",
+                  defaultValue: 1
+                }
+              }
+            }, {
+              key: "service/dynamic/itis/Simulator-LF/Material",
+              version: "0.0.0",
+              type: "dynamic",
+              name: "Material Settings",
+              description: "LF Simulator Material Settings",
+              inputs: {
+                modeler: {
+                  displayOrder: 0,
+                  label: "Modeler",
+                  description: "Live Link to Modeler",
+                  type: "object",
+                  defaultValue: {
+                    innerInput: "modeler"
+                  }
+                },
+                materialDB: {
+                  displayOrder: 1,
+                  label: "MaterialDB",
+                  description: "Live Link to Material DB",
+                  type: "object",
+                  defaultValue: {
+                    innerInput: "materialDB"
+                  }
+                },
+                materialSetting: {
+                  displayOrder: 2,
+                  label: "MaterialSetting",
+                  description: "Material Setting",
+                  type: "number",
+                  defaultValue: 2
+                }
+              }
+            }, {
+              key: "service/dynamic/itis/Simulator-LF/Boundary",
+              version: "0.0.0",
+              type: "dynamic",
+              name: "Boundary Conditions",
+              description: "LF Simulator Boundary Conditions",
+              inputs: {
+                modeler: {
+                  displayOrder: 0,
+                  label: "modeler",
+                  description: "Live Link to Modeler",
+                  type: "object",
+                  defaultValue: {
+                    innerInput: "modeler"
+                  }
+                },
+                boundarySetting: {
+                  displayOrder: 1,
+                  label: "BoundaryConditions",
+                  description: "Boundary Conditions",
+                  type: "number",
+                  defaultValue: 3
+                }
+              }
+            }
+          ]
         },
         "service/computational/itis/Solver-LF-0.0.0": {
           key: "service/computational/itis/Solver-LF",
@@ -109,7 +184,7 @@ qx.Class.define("qxapp.data.Store", {
           inputs: {
             inFile: {
               displayOrder: 0,
-              label: "modeler",
+              label: "Input file",
               description: "LF Solver Input File",
               type: "data:application/hdf5"
             }
@@ -117,7 +192,7 @@ qx.Class.define("qxapp.data.Store", {
           outputs: {
             outFile: {
               displayOrder: 0,
-              label: "File",
+              label: "Output file",
               description: "LF Solver Output File",
               type: "data:application/hdf5"
             }
