@@ -272,16 +272,20 @@ class Sidecar:
         self._task = task
 
         HOMEDIR = os.environ["HOME"]
+
         self._docker.image_name = self._docker.registry_name + "/" + task.image['name']
         self._docker.image_tag = task.image['tag']
-        self._executor.in_dir = os.path.join(HOMEDIR, "input", task.job_id)
-        self._executor.out_dir = os.path.join(HOMEDIR, "output", task.job_id)
-        self._executor.log_dir = os.path.join(HOMEDIR, "log", task.job_id)
+        self._docker.env = []
 
-        self._docker.env = ["INPUT_FOLDER=" + self._executor.in_dir,
-                            "OUTPUT_FOLDER=" + self._executor.out_dir,
-                            "LOG_FOLDER=" + self._executor.log_dir]
+        tails = dict( (name, os.path.join(name, task.job_id)) for name in ("input", "output", "log") )
 
+        # volume paths for side-car container
+        self._executor.in_dir = os.path.join(HOMEDIR, tails['input'])
+        self._executor.out_dir = os.path.join(HOMEDIR, tails['output'])
+        self._executor.log_dir = os.path.join(HOMEDIR, tails['log'])
+
+        # volume paths for car container (w/o prefix)
+        self._docker.env = ["{}_FOLDER=/{}".format(name.upper(), tail) for name, tail in tails.items()]
 
     def preprocess(self):
         _LOGGER.debug('Pre-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
