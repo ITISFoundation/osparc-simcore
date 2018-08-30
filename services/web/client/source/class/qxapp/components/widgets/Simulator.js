@@ -28,7 +28,7 @@ qx.Class.define("qxapp.components.widgets.Simulator", {
 
       let tree = new qx.ui.tree.Tree().set({
         width: 300,
-        height: Math.min(400, 25 + innerServices.length * 25),
+        height: Math.min(400, 30 + innerServices.length * 25),
         selectionMode: "single"
       });
 
