@@ -1,4 +1,25 @@
-"""Defines the different exceptions that may arise in the director"""
+""" Defines the different exceptions that may arise in the director
+
+
+TODO: Exceptions should provide all info to create Error instances of the API model
+For instance, assume there is a ficticious exception class FieldValidationError, then it would
+translate into something like
+
+// response - 422
+{
+  "error": {
+    "status": 422,
+    "error": "FIELDS_VALIDATION_ERROR",
+    "description": "One or more fields raised validation errors."
+    "fields": {
+      "email": "Invalid email address.",
+      "password": "Password too short."
+    }
+  }
+}
+"""
+
+
 class DirectorException(Exception):
     """Basic exception"""
     def __init__(self, msg=None):
