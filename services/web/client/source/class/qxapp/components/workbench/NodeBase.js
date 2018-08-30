@@ -112,7 +112,15 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       let store = qxapp.data.Store.getInstance();
       let metaData = store.getNodeMetaData(nodeImageId);
       if (metaData) {
-        this.__populateNode(metaData, nodeData);
+        this.__metaData = metaData;
+        // this.__creteSettings(metaData.inputs);
+        this.setCaption(metaData.name + " " + metaData.version);
+        this.__createViewerButton();
+        this.__outputPorts = {};
+        this.__inputPorts = {};
+        this.__createPorts("Input", metaData.inputs);
+        this.__createPorts("Output", metaData.outputs);
+        this.__addSettings(metaData.inputs, nodeData);
       } else {
         console.error("Invalid ImageID - Not populating "+nodeImageId);
       }
@@ -159,22 +167,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return bounds;
     },
 
-    __populateNode: function(metaData, nodeData) {
-      this.__metaData = metaData;
-      // this.__creteSettings(metaData.inputs);
-      this.setCaption(metaData.name + " " + metaData.version);
-      this.__createViewerButton();
-      this.__outputPorts = {};
-      this.__inputPorts = {};
-      this.__createPorts("Input", metaData.inputs);
-      this.__createPorts("Output", metaData.outputs);
-      this.__addSettings(metaData.inputs);
-      if (nodeData) {
-        this.__settingsForm.setData(nodeData.inputs);
-      }
-    },
-
-    __addSettings: function(inputs) {
+    __addSettings: function(inputs, nodeData) {
       if (inputs === null) {
         return;
       }
@@ -193,6 +186,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       //  }
       // }, this);
       this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
+
+      if (nodeData) {
+        this.__settingsForm.setData(nodeData.inputs);
+      }
     },
 
     __createViewerButton: function() {
