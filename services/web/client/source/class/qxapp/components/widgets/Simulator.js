@@ -1,17 +1,17 @@
 qx.Class.define("qxapp.components.widgets.Simulator", {
   extend: qx.ui.core.Widget,
 
-  construct: function(metaData) {
+  construct: function(node) {
     this.base(arguments);
 
-    if (!(Object.prototype.hasOwnProperty.call(metaData, "innerServices"))) {
+    if (!(Object.prototype.hasOwnProperty.call(node.getMetaData(), "innerServices"))) {
       return;
     }
 
     let simulatorLayout = new qx.ui.layout.Grow();
     this._setLayout(simulatorLayout);
 
-    this.__buildLayout(metaData);
+    this.__buildLayout(node);
   },
 
   events: {
@@ -19,36 +19,31 @@ qx.Class.define("qxapp.components.widgets.Simulator", {
   },
 
   members: {
-    __metaData: null,
-
-    __buildLayout: function(metaData) {
-      this.__metaData = metaData;
-
-      const innerServices = metaData.innerServices;
+    __buildLayout: function(node) {
+      const innerNodes = node.getInnerNodes();
 
       let tree = new qx.ui.tree.Tree().set({
         width: 300,
-        height: Math.min(400, 30 + innerServices.length * 25),
+        height: Math.min(400, 30 + innerNodes.length * 25),
         selectionMode: "single"
       });
 
-      let root = new qx.ui.tree.TreeFolder(metaData.name);
+      let root = new qx.ui.tree.TreeFolder(node.getMetaData().name);
       root.setOpen(true);
       tree.setRoot(root);
 
-      for (let i=0; i<innerServices.length; i++) {
-        let conceptSetting = this.__getConceptSetting(innerServices[i]);
+      for (let i=0; i<innerNodes.length; i++) {
+        let conceptSetting = this.__getConceptSetting(innerNodes[i]);
         root.add(conceptSetting);
       }
 
       this._add(tree);
     },
 
-    __getConceptSetting: function(innerService) {
-      let conceptSetting = new qx.ui.tree.TreeFolder(innerService.name);
-      conceptSetting.metaData = innerService;
+    __getConceptSetting: function(innerNode) {
+      let conceptSetting = new qx.ui.tree.TreeFolder(innerNode.getMetaData().name);
       conceptSetting.addListener("dblclick", function(e) {
-        this.fireDataEvent("NodeDoubleClicked", innerService.key);
+        this.fireDataEvent("NodeDoubleClicked", innerNode.getNodeId());
         e.stopPropagation();
       }, this);
       return conceptSetting;
