@@ -122,3 +122,7 @@ services/docker-compose.swarm.yml
 # key-words in filename to ignore them
 *secret*
 *ignore*
+
+
+# Any generated output folder (e.g. codegen, build, ...)
+out/
