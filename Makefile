@@ -30,7 +30,7 @@ rebuild-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
 
 up-devel:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml up
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml up
 
 build:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build

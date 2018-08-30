@@ -1,10 +1,13 @@
 #!/bin/sh
-echo "activating python virtual env..."
+echo "Activating python virtual env..."
 source $HOME/.venv/bin/activate
 
 if [[ ${DEBUG} == "1" ]]
 then
   echo "Booting in development mode ..."
+  echo "DEBUG: User    :`id $(whoami)`"
+  echo "DEBUG: Workdir :`pwd`"
+
   cd $HOME/services/web/server
   pip install -r requirements/dev.txt
   pip list
