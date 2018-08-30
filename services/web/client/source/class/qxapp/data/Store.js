@@ -97,78 +97,105 @@ qx.Class.define("qxapp.data.Store", {
           innerServices: [
             {
               key: "service/computational/itis/Simulator-LF/Setup",
-              version: "0.0.0",
-              type: "computational",
-              name: "Setup Settings",
-              description: "LF Simulator Setup Settings",
-              inputs: {
-                setupSetting: {
-                  displayOrder: 0,
-                  label: "SetupSetting",
-                  description: "Setup Setting",
-                  type: "number",
-                  defaultValue: 1
-                }
-              }
+              version: "0.0.0"
             }, {
               key: "service/dynamic/itis/Simulator-LF/Material",
-              version: "0.0.0",
-              type: "dynamic",
-              name: "Material Settings",
-              description: "LF Simulator Material Settings",
-              inputs: {
-                modeler: {
-                  displayOrder: 0,
-                  label: "Modeler",
-                  description: "Live Link to Modeler",
-                  type: "object",
-                  defaultValue: {
-                    innerInput: "modeler"
-                  }
-                },
-                materialDB: {
-                  displayOrder: 1,
-                  label: "MaterialDB",
-                  description: "Live Link to Material DB",
-                  type: "object",
-                  defaultValue: {
-                    innerInput: "materialDB"
-                  }
-                },
-                materialSetting: {
-                  displayOrder: 2,
-                  label: "MaterialSetting",
-                  description: "Material Setting",
-                  type: "number",
-                  defaultValue: 2
-                }
-              }
+              version: "0.0.0"
             }, {
               key: "service/dynamic/itis/Simulator-LF/Boundary",
-              version: "0.0.0",
-              type: "dynamic",
-              name: "Boundary Conditions",
-              description: "LF Simulator Boundary Conditions",
-              inputs: {
-                modeler: {
-                  displayOrder: 0,
-                  label: "modeler",
-                  description: "Live Link to Modeler",
-                  type: "object",
-                  defaultValue: {
-                    innerInput: "modeler"
-                  }
-                },
-                boundarySetting: {
-                  displayOrder: 1,
-                  label: "BoundaryConditions",
-                  description: "Boundary Conditions",
-                  type: "number",
-                  defaultValue: 3
-                }
-              }
+              version: "0.0.0"
             }
           ]
+        },
+        "service/computational/itis/Simulator-LF/Setup-0.0.0": {
+          key: "service/computational/itis/Simulator-LF/Setup",
+          version: "0.0.0",
+          type: "computational",
+          name: "Setup Settings",
+          description: "LF Simulator Setup Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            setupSetting: {
+              displayOrder: 0,
+              label: "SetupSetting",
+              description: "Setup Setting",
+              type: "number",
+              defaultValue: 1
+            }
+          }
+        },
+        "service/dynamic/itis/Simulator-LF/Material-0.0.0": {
+          key: "service/dynamic/itis/Simulator-LF/Material",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "Material Settings",
+          description: "LF Simulator Material Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "object",
+              defaultValue: {
+                innerInput: "modeler"
+              }
+            },
+            materialDB: {
+              displayOrder: 1,
+              label: "MaterialDB",
+              description: "Live Link to Material DB",
+              type: "object",
+              defaultValue: {
+                innerInput: "materialDB"
+              }
+            },
+            materialSetting: {
+              displayOrder: 2,
+              label: "MaterialSetting",
+              description: "Material Setting",
+              type: "number",
+              defaultValue: 2
+            }
+          }
+        },
+        "service/dynamic/itis/Simulator-LF/Boundary-0.0.0": {
+          key: "service/dynamic/itis/Simulator-LF/Boundary",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "Boundary Conditions",
+          description: "LF Simulator Boundary Conditions",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "modeler",
+              description: "Live Link to Modeler",
+              type: "object",
+              defaultValue: {
+                innerInput: "modeler"
+              }
+            },
+            boundarySetting: {
+              displayOrder: 1,
+              label: "BoundaryConditions",
+              description: "Boundary Conditions",
+              type: "number",
+              defaultValue: 3
+            }
+          }
         },
         "service/computational/itis/Solver-LF-0.0.0": {
           key: "service/computational/itis/Solver-LF",
