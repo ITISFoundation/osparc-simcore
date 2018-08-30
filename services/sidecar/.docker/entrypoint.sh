@@ -10,9 +10,10 @@
 # See https://stackoverflow.com/questions/39397548/how-to-give-non-root-user-in-docker-container-access-to-a-volume-mounted-on-the
 
 
+addgroup scu docker
+
 chown -R scu:scu /home/scu/input
 chown -R scu:scu /home/scu/output
 chown -R scu:scu /home/scu/log
 
-#exec runuser --user scu "$@" <-- if ubuntu, use this
-su-exec scu:scu "$@"
+su-exec scu "$@"

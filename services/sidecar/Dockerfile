@@ -7,10 +7,9 @@ ARG DOCKER_GID_ARG=1001
 RUN apk add --no-cache \
       su-exec
 
-# create user 'scu' and adds it to host's docker group
+# create user `scu` and `docker` group (with same id as in host)
 RUN adduser -D -u 8004 scu &&\
-    addgroup -g $DOCKER_GID_ARG docker &&\
-    addgroup scu docker
+    addgroup -g $DOCKER_GID_ARG docker
 
 ENV HOME /home/scu
 ENV PIP  /home/scu/.venv/bin/pip3
@@ -19,10 +18,12 @@ EXPOSE 8000
 VOLUME /home/scu/input
 VOLUME /home/scu/output
 VOLUME /home/scu/log
-#VOLUME /var/run/docker.sock DO NOT EXPOSE .. fails!
+
+WORKDIR /home/scu
 
 # -------------------------- Build stage -------------------
-# Keeps same folder structure as in repo so we can reuse relative paths
+#
+# - Preserves relative folder structure
 #
 # + /home/scu/              $HOME
 #    + services/sidecar
@@ -42,14 +43,13 @@ RUN python3 -m venv $HOME/.venv &&\
       wheel \
       setuptools
 
-WORKDIR /home/scu
+# TODO: check if scu:scu copy is necessary!?
+COPY --chown=scu:scu services/sidecar/requirements/base.txt requirements-base.txt
+RUN $PIP install --no-cache-dir -r requirements-base.txt &&\
+    rm requirements-base.txt
 
-# Build context set at repo's root
-COPY --chown=scu:scu services/sidecar/requirements $HOME/requirements
-COPY services/sidecar/.docker $HOME/.docker
-
-RUN $PIP install --no-cache-dir -r requirements/base.txt &&\
-    rm -rf requirements
+COPY --chown=scu:scu services/sidecar/.docker .docker
+COPY --chown=scu:scu services/sidecar/boot.sh boot.sh
 
 # --------------------------Development stage -------------------
 FROM build as development
@@ -57,6 +57,7 @@ FROM build as development
 ARG HOST_GID_ARG=1000
 
 # in dev-mode we give access to `scu` to host's mapped volumes
+# FIXME: files created by scu cannot be deleted by host! we need to do the same group in host?
 RUN addgroup -g $HOST_GID_ARG hgrp &&\
     addgroup scu hgrp && \
     chown -R scu:scu $HOME/.venv
@@ -65,15 +66,15 @@ VOLUME /home/scu/packages
 VOLUME /home/scu/services/sidecar
 
 ENV DEBUG 1
-WORKDIR /home/scu
+USER root
 ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
-CMD $HOME/boot.sh
+CMD ./boot.sh
 
 
 # --------------------------Production multi-stage -------------------
 FROM build as build-production
 
-# Buil context set at repo's root
+# TODO: check if scu:scu copy is necessary in all cases!? since we are just installing?
 COPY --chown=scu:scu packages $HOME/packages
 COPY --chown=scu:scu services/sidecar $HOME/services/sidecar
 
@@ -86,13 +87,13 @@ FROM base as production
 
 # TODO: PC->MaG some postgresql missing? install non-dev package!?
 
-COPY --from=build-production --chown=scu:scu $HOME/services/sidecar/boot.sh $HOME
-COPY --from=build-production --chown=scu:scu $HOME/.venv $HOME/.venv
-COPY --from=build-production --chown=scu:scu $HOME/.docker $HOME/.docker
+COPY --from=build-production --chown=scu:scu $HOME/boot.sh boot.sh
+COPY --from=build-production --chown=scu:scu $HOME/.venv .venv
+COPY --from=build-production --chown=scu:scu $HOME/.docker .docker
 
 RUN . $HOME/.venv/bin/activate; pip list
 
 ENV DEBUG 0
-WORKDIR /home/scu
+USER root
 ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
 CMD ./boot.sh
