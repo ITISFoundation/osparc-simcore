@@ -140,27 +140,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
           if (node.getMetaData().key.includes("FileManager")) {
             let fileManager = new qxapp.components.widgets.FileManager();
-            fileManager.addListener("ItemSelected", function(data) {
-              const itemPath = data.getData().itemPath;
-              const splitted = itemPath.split("/");
-              const itemName = splitted[splitted.length-1];
-              const isDirectory = data.getData().isDirectory;
-              const activePort = isDirectory ? "outDir" : "outFile";
-              const inactivePort = isDirectory ? "outFile" : "outDir";
-              let metadata = node.getMetaData();
-              metadata.outputs[activePort].value = {
-                store: "s3-z43",
-                path: itemPath
-              };
-              metadata.outputs[inactivePort].value = null;
-              console.log(node.getMetaData());
-              node.getOutputPort(activePort).ui.setLabel(itemName);
-              node.getOutputPort(activePort).ui.getToolTip().setLabel(itemName);
-              node.getOutputPort(inactivePort).ui.setLabel("");
-              node.getOutputPort(inactivePort).ui.getToolTip().setLabel("");
-              node.setProgress(100);
               this.showInMainView(this.__workbench, "Workbench");
-            }, this);
             this.showInExtraView(new qx.ui.core.Widget());
             this.showInMainView(fileManager, node.getMetaData().name);
           } else if (node.getMetaData().type === "container") {

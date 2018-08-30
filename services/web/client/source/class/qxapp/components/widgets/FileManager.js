@@ -2,7 +2,7 @@
 qx.Class.define("qxapp.components.widgets.FileManager", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(node) {
     this.base(arguments);
 
     let fileManagerLayout = new qx.ui.layout.VBox(10);
@@ -48,10 +48,13 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
     }, this);
 
     this.__reloadTree();
+
+    this.__createConnections(node);
   },
 
   events: {
-    "ItemSelected": "qx.event.type.Data"
+    "ItemSelected": "qx.event.type.Data",
+    "Finished": "qx.event.type.Event"
   },
 
   members: {
@@ -92,6 +95,29 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
       this.__mainTree.setRoot(root);
 
       this.__getObjLists();
+    },
+
+    __createConnections: function(node) {
+      this.addListener("ItemSelected", function(data) {
+        const itemPath = data.getData().itemPath;
+        const splitted = itemPath.split("/");
+        const itemName = splitted[splitted.length-1];
+        const isDirectory = data.getData().isDirectory;
+        const activePort = isDirectory ? "outDir" : "outFile";
+        const inactivePort = isDirectory ? "outFile" : "outDir";
+        let metadata = node.getMetaData();
+        metadata.outputs[activePort].value = {
+          store: "s3-z43",
+          path: itemPath
+        };
+        metadata.outputs[inactivePort].value = null;
+        node.getOutputPort(activePort).ui.setLabel(itemName);
+        node.getOutputPort(activePort).ui.getToolTip().setLabel(itemName);
+        node.getOutputPort(inactivePort).ui.setLabel("");
+        node.getOutputPort(inactivePort).ui.getToolTip().setLabel("");
+        node.setProgress(100);
+        this.fireEvent("Finished");
+      }, this);
     },
 
     __getObjLists: function() {
