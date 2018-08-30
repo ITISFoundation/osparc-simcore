@@ -17,3 +17,5 @@ services:
     depends_on:
       - postgres
   #--------------------------------------------------------------------
+  # tool wishlist:
+  #  - something to monitor containers when docker-compose up. e.g. portainer?
