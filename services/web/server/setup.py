@@ -33,7 +33,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'simcore-service-webserver=server.__main__:main', ]
+            'simcore-service-webserver=simcore_service_webserver.__main__:main', ]
         },
     python_requires='>=3.6',
     install_requires=INSTALL_REQUIRES,

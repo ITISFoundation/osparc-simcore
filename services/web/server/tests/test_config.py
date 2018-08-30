@@ -5,9 +5,9 @@ import unittest.mock as mock
 import pytest
 
 # under test
-from server.settings.config import CONFIG_SCHEMA
-import server.settings
-import server.cli as srv_cli
+from simcore_service_webserver.settings.config import CONFIG_SCHEMA
+from simcore_service_webserver import settings as srv_settings
+import simcore_service_webserver.cli as srv_cli
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ def test_validate_available_config_files(package_paths):
             mock_environ[name] = fake_value
 
         with mock.patch('os.environ', mock_environ):
-            server.settings.read_and_validate(config_path)
+            srv_settings.read_and_validate(config_path)
             count +=1
 
         assert count!=0

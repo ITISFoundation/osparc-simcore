@@ -2,16 +2,16 @@ import logging
 
 import sqlalchemy as sa
 
-from server.main import init_app
-from server.settings import (
+from simcore_service_webserver.main import init_app
+from simcore_service_webserver.settings import (
     read_and_validate
 )
 
-from server.db._db import (
+from simcore_service_webserver.db._db import (
     create_aiopg,
     dispose_aiopg
 )
-from server.db.model import (
+from simcore_service_webserver.db.model import (
     users
 )
 

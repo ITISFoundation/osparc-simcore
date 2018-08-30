@@ -1,6 +1,6 @@
 import logging
 
-from server.resources import (
+from simcore_service_webserver.resources import (
     ConfigFile
 )
 
