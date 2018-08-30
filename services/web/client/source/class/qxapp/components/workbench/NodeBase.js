@@ -151,47 +151,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       }
     },
 
-    getCurrentBounds: function() {
-      let bounds = this.getBounds();
-      let cel = this.getContentElement();
-      if (cel) {
-        let domeEle = cel.getDomElement();
-        if (domeEle) {
-          bounds.left = parseInt(domeEle.style.left);
-          bounds.top = parseInt(domeEle.style.top);
-        }
-      }
-      // NavigationBar height must be subtracted
-      // bounds.left = this.getContentLocation().left;
-      // bounds.top = this.getContentLocation().top;
-      return bounds;
-    },
-
-    __addSettings: function(inputs, nodeData) {
-      if (inputs === null) {
-        return;
-      }
-      let form = this.__settingsForm = new qxapp.components.form.Auto(inputs);
-      // FIXME
-      // this.__settingsForm.addListener("changeData", function(e) {
-      //  let settingsForm = e.getData();
-      //  for (var settingKey in settingsForm) {
-      //    if (this.__metaData.inputs) {
-      //      for (let i=0; i<this.__metaData.inputs.length; i++) {
-      //        if (settingKey === this.__metaData.inputs[i].key) {
-      //          this.__metaData.inputs[i].value = settingsForm[settingKey];
-      //        }
-      //      }
-      //    }
-      //  }
-      // }, this);
-      this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
-
-      if (nodeData) {
-        this.__settingsForm.setData(nodeData.inputs);
-      }
-    },
-
     __createViewerButton: function() {
       let metaData = this.__metaData;
       if (metaData.type == "dynamic") {
@@ -313,6 +272,31 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return label;
     },
 
+    __addSettings: function(inputs, nodeData) {
+      if (inputs === null) {
+        return;
+      }
+      let form = this.__settingsForm = new qxapp.components.form.Auto(inputs);
+      // FIXME
+      // this.__settingsForm.addListener("changeData", function(e) {
+      //  let settingsForm = e.getData();
+      //  for (var settingKey in settingsForm) {
+      //    if (this.__metaData.inputs) {
+      //      for (let i=0; i<this.__metaData.inputs.length; i++) {
+      //        if (settingKey === this.__metaData.inputs[i].key) {
+      //          this.__metaData.inputs[i].value = settingsForm[settingKey];
+      //        }
+      //      }
+      //    }
+      //  }
+      // }, this);
+      this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
+
+      if (nodeData) {
+        this.__settingsForm.setData(nodeData.inputs);
+      }
+    },
+
     getLinkPoint: function(port) {
       const nodeBounds = this.getCurrentBounds();
       let x = nodeBounds.left;
@@ -333,6 +317,22 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       }
       let y = nodeBounds.top + captionHeight + 10 + portBounds.top + portBounds.height/2;
       return [x, y];
+    },
+
+    getCurrentBounds: function() {
+      let bounds = this.getBounds();
+      let cel = this.getContentElement();
+      if (cel) {
+        let domeEle = cel.getDomElement();
+        if (domeEle) {
+          bounds.left = parseInt(domeEle.style.left);
+          bounds.top = parseInt(domeEle.style.top);
+        }
+      }
+      // NavigationBar height must be subtracted
+      // bounds.left = this.getContentLocation().left;
+      // bounds.top = this.getContentLocation().top;
+      return bounds;
     },
 
     setProgress: function(progress) {
