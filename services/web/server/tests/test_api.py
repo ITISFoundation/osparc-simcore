@@ -7,8 +7,8 @@ import pathlib
 
 import pytest
 
-from server.main import init_app
-from server.settings import (
+from simcore_service_webserver.main import init_app
+from simcore_service_webserver.settings import (
     read_and_validate
 )
 

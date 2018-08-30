@@ -31,17 +31,17 @@ from tenacity import (
     before_sleep_log
 )
 
-from server.db.utils import (
+from simcore_service_webserver.db.utils import (
     DNS,
     acquire_engine,
     acquire_admin_engine
 )
 
-from server.db.model import (
+from simcore_service_webserver.db.model import (
     permissions,
     users
 )
-from server.settings import (
+from simcore_service_webserver.settings import (
     read_and_validate
 )
 

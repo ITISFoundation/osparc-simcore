@@ -16,15 +16,15 @@ import pytest
 import yaml
 
 import init_db
-from server.db.utils import (
+from simcore_service_webserver.db.utils import (
     DNS,
     acquire_admin_engine,
     acquire_engine
 )
-from server.settings import (
+from simcore_service_webserver.settings import (
     read_and_validate
 )
-from server.resources import (
+from simcore_service_webserver.resources import (
     ConfigFile
 )
 
