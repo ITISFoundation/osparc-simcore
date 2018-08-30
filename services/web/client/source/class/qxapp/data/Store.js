@@ -96,14 +96,11 @@ qx.Class.define("qxapp.data.Store", {
           },
           innerServices: [
             {
-              key: "service/computational/itis/Simulator-LF/Setup",
-              version: "0.0.0"
+              key: "service/computational/itis/Simulator-LF/Setup-0.0.0"
             }, {
-              key: "service/dynamic/itis/Simulator-LF/Material",
-              version: "0.0.0"
+              key: "service/dynamic/itis/Simulator-LF/Material-0.0.0"
             }, {
-              key: "service/dynamic/itis/Simulator-LF/Boundary",
-              version: "0.0.0"
+              key: "service/dynamic/itis/Simulator-LF/Boundary-0.0.0"
             }
           ]
         },
@@ -144,19 +141,13 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Live Link to Modeler",
-              type: "object",
-              defaultValue: {
-                innerInput: "modeler"
-              }
+              type: "data:application/hdf5"
             },
             materialDB: {
               displayOrder: 1,
               label: "MaterialDB",
               description: "Live Link to Material DB",
-              type: "object",
-              defaultValue: {
-                innerInput: "materialDB"
-              }
+              type: "data:application/hdf5"
             },
             materialSetting: {
               displayOrder: 2,
@@ -183,10 +174,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "modeler",
               description: "Live Link to Modeler",
-              type: "object",
-              defaultValue: {
-                innerInput: "modeler"
-              }
+              type: "data:application/hdf5"
             },
             boundarySetting: {
               displayOrder: 1,
