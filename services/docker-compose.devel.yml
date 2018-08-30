@@ -18,10 +18,12 @@ services:
   webserver:
     image: services_webserver:dev
     build:
+      args:
+        - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
       target: development
     volumes:
-      - ./web/server:/home/scu/server
-      - ./web/client/source-output:/home/scu/client
+      - ./web/server:/home/scu/services/web/server
+      - ./web/client/source-output:/home/scu/services/web/client
       - ../packages:/home/scu/packages
     depends_on:
       - webclient
@@ -29,7 +31,9 @@ services:
   sidecar:
     image: services_sidecar:dev
     build:
+      args:
+        - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
       target: development
     volumes:
-      - ./sidecar/src/sidecar:/work/sidecar
-      - ../packages:/work/packages
+      - ./sidecar:/home/scu/services/sidecar
+      - ../packages:/home/scu/packages

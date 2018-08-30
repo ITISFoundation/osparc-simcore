@@ -1,3 +1,5 @@
+# TODO: PC->MaG, please check if something missing and delete
+
 import json
 import logging
 import os
@@ -12,13 +14,14 @@ from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
 from sqlalchemy.orm.attributes import flag_modified
 
-from sidecar_utils import (DbSettings, DockerSettings, ExecutorSettings,
-                           RabbitSettings, S3Settings, delete_contents,
-                           find_entry_point, is_node_ready)
 from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
+
+from .utils import (DbSettings, DockerSettings, ExecutorSettings,
+                    RabbitSettings, S3Settings, delete_contents,
+                    find_entry_point, is_node_ready)
 
 rabbit_config = rabbit_config()
 celery= Celery(rabbit_config.name, broker=rabbit_config.broker, backend=rabbit_config.backend)
@@ -388,6 +391,7 @@ class Sidecar:
             if node_id:
                 do_process = True
                 # find the for the current node_id, skip if there is already a job_id around
+                # pylint: disable=assignment-from-no-return
                 query =_session.query(ComputationalTask).filter(and_(ComputationalTask.node_id==node_id,
                     ComputationalTask.pipeline_id==pipeline_id, ComputationalTask.job_id==None))
                 # Use SELECT FOR UPDATE TO lock the row
@@ -451,6 +455,8 @@ class Sidecar:
 
         return next_task_nodes
 
+
+# FIXME: this should be moved into tasks.py and need a main.py as well!
 SIDECAR = Sidecar()
 @celery.task(name='comp.task', bind=True)
 def pipeline(self, pipeline_id, node_id=None):
