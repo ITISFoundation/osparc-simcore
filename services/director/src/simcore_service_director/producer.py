@@ -374,7 +374,7 @@ def is_service_up(service_uuid):
         raise exceptions.GenericDockerError("Error while stopping container", err) from err
     # error if no service with such an id exists
     if not list_running_services_with_uuid:
-        raise exceptions.ServiceNotFoundError(service_uuid, None)
+        raise exceptions.ServiceUUIDNotFoundError(service_uuid)
 
 def stop_service(service_uuid):
     # get the docker client
@@ -390,7 +390,7 @@ def stop_service(service_uuid):
     
     # error if no service with such an id exists
     if not list_running_services_with_uuid:
-        raise exceptions.ServiceNotFoundError(service_uuid, None)
+        raise exceptions.ServiceUUIDNotFoundError(service_uuid)
     # remove the services
     try:
         for service in list_running_services_with_uuid:

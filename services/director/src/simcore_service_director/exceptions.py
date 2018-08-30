@@ -44,17 +44,11 @@ class ServiceNotAvailableError(DirectorException):
         self.service_name = service_name
         self.service_tag = service_tag
 
-class ServiceNotFoundError(DirectorException):
+class ServiceUUIDNotFoundError(DirectorException):
     """Service not found"""
-    def __init__(self, service_name, service_tag=None, service_uuid=None):
-        if not service_tag:
-            service_tag = "not defined"
-        if not service_uuid:
-            service_uuid = "not defined"
-        msg = "The service %s:%s with uuid %s was not found" % (service_name, service_tag, service_uuid)
-        super(ServiceNotFoundError, self).__init__(msg)
-        self.service_name = service_name
-        self.service_tag = service_tag
+    def __init__(self, service_uuid):
+        msg = "The service with uuid %s was not found" % (service_uuid)
+        super(ServiceUUIDNotFoundError, self).__init__(msg)
         self.service_uuid = service_uuid
 
 class ServiceUUIDInUseError(DirectorException):
