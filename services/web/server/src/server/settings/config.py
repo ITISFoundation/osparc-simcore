@@ -28,16 +28,6 @@ _DIRECTOR_SCHEMA = T.Dict({
     "port": T.Int()
 })
 
-# TODO: import from ?? director as well??
-_CS_S4L_SCHEMA = T.Dict({
-    "host": T.String(),
-    "app": T.Dict({
-        "port": T.Int()
-    }),
-    "modeler": T.Dict({
-        "port": T.Int()
-    }),
-})
 
 _APP_SCHEMA = T.Dict({
     "host": T.IP,
@@ -57,7 +47,6 @@ CONFIG_SCHEMA_V1 = T.Dict({
     T.Key("postgres"): db.CONFIG_SCHEMA,
     T.Key("rabbit"): rabbit.CONFIG_SCHEMA,
     T.Key("s3"): s3.CONFIG_SCHEMA
-    #T.Key("cs_s4l"): _CS_S4L_SCHEMA
 })
 
 CONFIG_SCHEMA = CONFIG_SCHEMA_V1
