@@ -21,6 +21,14 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       nodeImageId: nodeImageId,
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
     });
+
+    let store = qxapp.data.Store.getInstance();
+    let metaData = store.getNodeMetaData(nodeImageId);
+    if (metaData) {
+      this.__metaData = metaData;
+    } else {
+      console.error("Invalid ImageID - Not populating "+ nodeImageId);
+    }
   },
 
   properties: {
@@ -107,22 +115,22 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.add(progressBox);
     },
 
-    populateNode: function(nodeData) {
-      const nodeImageId = this.getNodeImageId();
-      let store = qxapp.data.Store.getInstance();
-      let metaData = store.getNodeMetaData(nodeImageId);
-      if (metaData) {
-        this.__metaData = metaData;
-        // this.__creteSettings(metaData.inputs);
+    populateNodeLayout: function() {
+      if (this.__metaData) {
+        let metaData = this.__metaData;
         this.setCaption(metaData.name + " " + metaData.version);
-        this.__createViewerButton();
         this.__outputPorts = {};
         this.__inputPorts = {};
         this.__createPorts("Input", metaData.inputs);
         this.__createPorts("Output", metaData.outputs);
+      }
+    },
+
+    populateNodeData: function(nodeData) {
+      if (this.__metaData) {
+        let metaData = this.__metaData;
+        this.__createViewerButton();
         this.__addSettings(metaData.inputs, nodeData);
-      } else {
-        console.error("Invalid ImageID - Not populating "+nodeImageId);
       }
     },
 
@@ -277,19 +285,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         return;
       }
       let form = this.__settingsForm = new qxapp.components.form.Auto(inputs);
-      // FIXME
-      // this.__settingsForm.addListener("changeData", function(e) {
-      //  let settingsForm = e.getData();
-      //  for (var settingKey in settingsForm) {
-      //    if (this.__metaData.inputs) {
-      //      for (let i=0; i<this.__metaData.inputs.length; i++) {
-      //        if (settingKey === this.__metaData.inputs[i].key) {
-      //          this.__metaData.inputs[i].value = settingsForm[settingKey];
-      //        }
-      //      }
-      //    }
-      //  }
-      // }, this);
       this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
 
       if (nodeData) {
