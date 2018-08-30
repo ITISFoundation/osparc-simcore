@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import logging
-from pathlib import Path
 
 from aiohttp import web
 from simcore_service_director import (registry_proxy, config)
