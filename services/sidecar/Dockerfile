@@ -72,7 +72,8 @@ CMD ./boot.sh
 
 
 # --------------------------Production multi-stage -------------------
-FROM build as build-production
+#FROM build as build-production
+FROM build as production
 
 # TODO: check if scu:scu copy is necessary in all cases!? since we are just installing?
 COPY --chown=scu:scu packages $HOME/packages
@@ -83,15 +84,18 @@ RUN $PIP --no-cache-dir install -r requirements/prod.txt ;\
     $PIP list
 
 #-------------------
-FROM base as production
+#FROM base as production
 
-# TODO: PC->MaG some postgresql missing? install non-dev package!?
+# TODO: PC Reduce docker size by installing only non-dev
 
-COPY --from=build-production --chown=scu:scu $HOME/boot.sh boot.sh
-COPY --from=build-production --chown=scu:scu $HOME/.venv .venv
-COPY --from=build-production --chown=scu:scu $HOME/.docker .docker
+#COPY --from=build-production --chown=scu:scu $HOME/boot.sh boot.sh
+#COPY --from=build-production --chown=scu:scu $HOME/.venv .venv
+#COPY --from=build-production --chown=scu:scu $HOME/.docker .docker
 
-RUN . $HOME/.venv/bin/activate; pip list
+WORKDIR /home/scu/
+
+RUN . $HOME/.venv/bin/activate; pip list &&\
+    rm -rf $HOME/services
 
 ENV DEBUG 0
 USER root
