@@ -9,6 +9,16 @@ INSTALL_REQUIRES = [
 'requests==2.19.1',
 ]
 
+TESTS_REQUIRE = [
+    'coveralls~=1.3',
+    'pylint~=2.0',
+    'pytest-aiohttp',
+    'pytest~=3.6',
+    'pytest-cov~=2.5',
+    'pytest-docker~=0.6'
+    ]
+
+
 setup(
     name='simcore-service-director',
     version="0.1.0",
@@ -23,5 +33,9 @@ setup(
         'console_scripts': ['simcore-service-director=simcore_service_director.__main__:main']},
     include_package_data=True,
     install_requires=INSTALL_REQUIRES,
+    tests_require=TESTS_REQUIRE,
+    extras_require= {
+        'test': TESTS_REQUIRE
+    },
     zip_safe=False,    
 )

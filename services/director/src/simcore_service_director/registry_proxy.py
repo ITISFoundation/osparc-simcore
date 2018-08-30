@@ -4,11 +4,10 @@
 # pylint: disable=C0111
 import json
 import logging
-import os
 
-from requests import RequestException, Session, HTTPError
+from requests import HTTPError, RequestException, Session
 
-from . import exceptions
+from . import exceptions, config
 
 INTERACTIVE_SERVICES_PREFIX = 'simcore/services/dynamic/'
 COMPUTATIONAL_SERVICES_PREFIX = 'simcore/services/comp/'
@@ -16,21 +15,71 @@ _SESSION = Session()
 _LOGGER = logging.getLogger(__name__)
 
 def setup_registry_connection():
+    _LOGGER.debug("Setup registry connection started...%s", config.REGISTRY_AUTH)
+
     # get authentication state or set default value
-    registry_auth = os.environ.get('REGISTRY_AUTH', False)
-    if registry_auth in ("True","true"):
-        if not "REGISTRY_USER" in os.environ:
+    if config.REGISTRY_AUTH:
+        _LOGGER.debug("Authentifying registry...")
+        if not config.REGISTRY_USER:
             raise exceptions.DirectorException("User to access to registry is not defined")    
-        if not "REGISTRY_PW" in os.environ:
+        if not config.REGISTRY_PW:
             raise exceptions.DirectorException("PW to access to registry is not defined")    
-        _SESSION.auth = (os.environ['REGISTRY_USER'], os.environ['REGISTRY_PW'])
+        _SESSION.auth = (config.REGISTRY_USER, config.REGISTRY_PW)
+        _LOGGER.debug("Session authorization complete")
 
+def list_computational_services():
+    return __list_services(COMPUTATIONAL_SERVICES_PREFIX)
 
-def registry_request(path, method="GET"):
-    if not "REGISTRY_URL" in os.environ:
+def list_interactive_services():
+    return __list_services(INTERACTIVE_SERVICES_PREFIX)
+
+def retrieve_list_of_images_in_repo(repository_name):
+    request_result = __registry_request(repository_name + '/tags/list')
+    result_json = request_result.json()
+    _LOGGER.info("retrieved list of images in %s: %s",repository_name, result_json)
+    return result_json
+
+def list_interactive_service_dependencies(service_key):
+    #TODO: dependencies should be explicitely listed in the main service labels... this is currently not good.
+    prefix = INTERACTIVE_SERVICES_PREFIX
+    # check if the service has a dependency
+    service_name_suffixes = str(service_key)[len(prefix):]    
+    try:
+        service_name_suffixes.index("/")
+    except ValueError:
+        return list()
+    # ok let's get the dependencies
+    dependencies = []
+    repos = __retrieve_list_of_repositories()
+    service_name = get_service_name(service_key, prefix)
+    for repo in repos:        
+        if get_service_name(repo, prefix) == service_name:
+            if repo == service_key:
+                continue
+            dependencies.append(repo)
+    return dependencies
+
+def retrieve_labels_of_image(image, tag):
+    request_result = __registry_request(image + '/manifests/' + tag)
+    result_json = request_result.json()
+    labels = json.loads(result_json["history"][0]["v1Compatibility"])[
+        "container_config"]["Labels"]
+    _LOGGER.info("retrieved labels of image %s:%s: %s", image, tag, result_json)
+    return labels
+
+def get_service_name(repository_name, service_prefix):
+    service_name_suffixes = str(repository_name)[len(service_prefix):]
+    _LOGGER.info("retrieved service name from repo %s : %s", repository_name, service_name_suffixes)
+    return service_name_suffixes.split('/')[0]
+
+def get_interactive_service_sub_name(repository_name):
+    return __get_service_sub_name(repository_name, INTERACTIVE_SERVICES_PREFIX)
+
+def __registry_request(path, method="GET"):
+    if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
     # TODO: is is always ssh?
-    api_url = 'https://' + os.environ['REGISTRY_URL'] + '/v2/' + path
+    api_url = 'https://' + config.REGISTRY_URL + '/v2/' + path
 
     try:
         # r = s.get(api_url, verify=False) #getattr(s, method.lower())(api_url)
@@ -49,54 +98,12 @@ def registry_request(path, method="GET"):
         _LOGGER.exception("Error while connecting to docker registry")
         raise exceptions.DirectorException(str(err)) from err
 
-def retrieve_list_of_repositories():
-    request_result = registry_request('_catalog')
+def __retrieve_list_of_repositories():
+    request_result = __registry_request('_catalog')
     result_json = request_result.json()['repositories']
     _LOGGER.info("retrieved list of repos: %s", result_json)
     return result_json
 
-
-def retrieve_list_of_images_in_repo(repository_name):
-    request_result = registry_request(repository_name + '/tags/list')
-    result_json = request_result.json()
-    _LOGGER.info("retrieved list of images in %s: %s",repository_name, result_json)
-    return result_json
-
-def list_interactive_service_dependencies(service_key):
-    #TODO: dependencies should be explicitely listed in the main service labels... this is currently not good.
-    prefix = INTERACTIVE_SERVICES_PREFIX
-    # check if the service has a dependency
-    service_name_suffixes = str(service_key)[len(prefix):]    
-    try:
-        service_name_suffixes.index("/")
-    except ValueError:
-        return list()
-    # ok let's get the dependencies
-    dependencies = []
-    repos = retrieve_list_of_repositories()
-    service_name = get_service_name(service_key, prefix)
-    for repo in repos:        
-        if get_service_name(repo, prefix) == service_name:
-            if repo == service_key:
-                continue
-            dependencies.append(repo)
-    return dependencies
-
-def retrieve_labels_of_image(image, tag):
-    request_result = registry_request(image + '/manifests/' + tag)
-    result_json = request_result.json()
-    labels = json.loads(result_json["history"][0]["v1Compatibility"])[
-        "container_config"]["Labels"]
-    _LOGGER.info("retrieved labels of image %s:%s: %s", image, tag, result_json)
-    return labels
-
-def get_service_name(repository_name, service_prefix):
-    service_name_suffixes = str(repository_name)[len(service_prefix):]
-    _LOGGER.info("retrieved service name from repo %s : %s", repository_name, service_name_suffixes)
-    return service_name_suffixes.split('/')[0]
-
-def get_interactive_service_sub_name(repository_name):
-    return __get_service_sub_name(repository_name, INTERACTIVE_SERVICES_PREFIX)
 
 def __has_service_sub_name(repository_name, service_prefix):
     try:
@@ -118,12 +125,12 @@ def _get_repo_details(repo):
     #pylint: disable=too-many-nested-blocks
     current_repo = []
     if "/comp/" in repo or "/dynamic/" in repo:
-        req_images = registry_request(repo + '/tags/list')
+        req_images = __registry_request(repo + '/tags/list')
         im_data = req_images.json()
         tags = im_data['tags']
         for tag in tags:
             image_tags = {}
-            label_request = registry_request(repo + '/manifests/' + tag)
+            label_request = __registry_request(repo + '/manifests/' + tag)
             label_data = label_request.json()
             labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
             if labels:
@@ -137,15 +144,9 @@ def _get_repo_details(repo):
 
     return current_repo
 
-def list_computational_services():
-    return __list_services(COMPUTATIONAL_SERVICES_PREFIX)
-
-def list_interactive_services():
-    return __list_services(INTERACTIVE_SERVICES_PREFIX)
-
 def __list_services(service_prefix):
     _LOGGER.info("getting list of computational services")
-    list_all_repos = retrieve_list_of_repositories()
+    list_all_repos = __retrieve_list_of_repositories()
     # get the services repos
     list_of_specific_repos = [repo for repo in list_all_repos if str(repo).startswith(service_prefix)]
     _LOGGER.info("retrieved list of computational repos : %s", list_of_specific_repos)
