@@ -82,6 +82,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
 
     __createNode: function(nodeImageId, uuid, nodeData) {
       let node = new qxapp.components.workbench.NodeBaseMini(nodeImageId, uuid);
+      node.createNodeLayout();
       return node;
     },
 

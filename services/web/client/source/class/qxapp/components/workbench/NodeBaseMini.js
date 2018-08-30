@@ -12,14 +12,12 @@ qx.Class.define("qxapp.components.workbench.NodeBaseMini", {
       maxWidth: nodeWidthMini,
       padding: 0
     });
-
-    this.__createNodeLayout();
   },
 
   members: {
     __label: null,
 
-    __createNodeLayout: function() {
+    createNodeLayout: function() {
       let nodeLayout = new qx.ui.layout.VBox();
       this.setLayout(nodeLayout);
 

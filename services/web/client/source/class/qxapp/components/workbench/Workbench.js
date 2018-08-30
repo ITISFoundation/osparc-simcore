@@ -223,6 +223,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __createNode: function(nodeImageId, uuid, nodeData) {
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeImageId, uuid);
+      nodeBase.createNodeLayout();
       nodeBase.populateNode(nodeData);
 
       const evType = "pointermove";

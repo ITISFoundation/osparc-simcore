@@ -21,8 +21,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       nodeImageId: nodeImageId,
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
     });
-
-    this.__createNodeLayout();
   },
 
   properties: {
@@ -68,7 +66,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return this.__metaData;
     },
 
-    __createNodeLayout: function() {
+    createNodeLayout: function() {
       let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
       this.setLayout(nodeLayout);
 
