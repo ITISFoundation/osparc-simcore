@@ -224,7 +224,14 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __createNode: function(nodeImageId, uuid, nodeData) {
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeImageId, uuid);
       nodeBase.createNodeLayout();
-      nodeBase.populateNode(nodeData);
+      nodeBase.populateNodeLayout();
+      nodeBase.populateNodeData(nodeData);
+      let store = qxapp.data.Store.getInstance();
+      let metaData = store.getNodeMetaData(nodeImageId);
+      if (metaData.type === "container") {
+        let innerNodes = nodeBase.createInnerNodes(metaData.innerServices);
+        this.__nodes = this.__nodes.concat(innerNodes);
+      }
 
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {

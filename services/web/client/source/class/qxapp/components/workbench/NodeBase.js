@@ -69,9 +69,14 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     __settingsForm: null,
     __progressBar: null,
     __metaData: null,
+    __innerNodes: null,
 
     getMetaData: function() {
       return this.__metaData;
+    },
+
+    getInnerNodes: function() {
+      return this.__innerNodes;
     },
 
     createNodeLayout: function() {
@@ -290,6 +295,17 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       if (nodeData) {
         this.__settingsForm.setData(nodeData.inputs);
       }
+    },
+
+    createInnerNodes: function(innerServices) {
+      this.__innerNodes = [];
+      for (let i=0; i<innerServices.length; i++) {
+        let innerServiceMetaData = innerServices[i];
+        let innerNode = new qxapp.components.workbench.NodeBase(innerServiceMetaData.key);
+        innerNode.populateNodeData();
+        this.__innerNodes.push(innerNode);
+      }
+      return this.__innerNodes;
     },
 
     getLinkPoint: function(port) {
