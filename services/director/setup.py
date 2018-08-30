@@ -2,11 +2,11 @@ from setuptools import find_packages, setup
 
 
 INSTALL_REQUIRES = [
-'docker==3.5.0',
-'tenacity==4.12.0',
-'aiohttp==3.3.2',
-'aiohttp_apiset==0.9.3',
-'requests==2.19.1',
+    'docker==3.5.0',
+    'tenacity==4.12.0',
+    'aiohttp==3.3.2',
+    'aiohttp_apiset==0.9.3',
+    'requests==2.19.1',
 ]
 
 TESTS_REQUIRE = [
@@ -37,5 +37,5 @@ setup(
     extras_require= {
         'test': TESTS_REQUIRE
     },
-    zip_safe=False,    
+    zip_safe=False,
 )
