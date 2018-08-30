@@ -28,7 +28,7 @@ async def __handle_errors(request, handler):
         response = await handler(request)
         return response
     except web.HTTPError as ex:
-        error = Error(code=ex.status, message=ex.reason)
+        error = Error(status=ex.status, message=ex.reason)
         error_dict = error.to_dict()
         return web.json_response(error_dict, status=ex.status)
 
@@ -48,7 +48,6 @@ def create_web_app(base_folder, spec_file, additional_middlewares = None):
     jsonify.singleton = Jsonify(indent=3, ensure_ascii=False)
     jsonify.singleton.add_converter(Model, lambda o: o.to_dict(), score=0)
 
-    # TODO: need an extra middleware validate requests arguments
     middlewares = [jsonify, __handle_errors]
     if additional_middlewares:
         middlewares.extend(additional_middlewares)
@@ -66,7 +65,7 @@ def create_web_app(base_folder, spec_file, additional_middlewares = None):
     router.include(
         spec=Path(base_folder / spec_file),
         operationId_mapping=opmap,
-        name='director',  # name to access in swagger-ui,
+        name='v1',  # name to access in swagger-ui,
         basePath="/v1" # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
     )
 

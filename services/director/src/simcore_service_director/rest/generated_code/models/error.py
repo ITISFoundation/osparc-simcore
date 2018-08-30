@@ -15,25 +15,25 @@ class Error(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, code: int=None, message: str=None):  # noqa: E501
+    def __init__(self, status: int=None, message: str=None):  # noqa: E501
         """Error - a model defined in OpenAPI
 
-        :param code: The code of this Error.  # noqa: E501
-        :type code: int
+        :param status: The status of this Error.  # noqa: E501
+        :type status: int
         :param message: The message of this Error.  # noqa: E501
         :type message: str
         """
         self.openapi_types = {
-            'code': int,
+            'status': int,
             'message': str
         }
 
         self.attribute_map = {
-            'code': 'code',
+            'status': 'status',
             'message': 'message'
         }
 
-        self._code = code
+        self._status = status
         self._message = message
 
     @classmethod
@@ -48,29 +48,29 @@ class Error(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def code(self) -> int:
-        """Gets the code of this Error.
+    def status(self) -> int:
+        """Gets the status of this Error.
 
         Error code  # noqa: E501
 
-        :return: The code of this Error.
+        :return: The status of this Error.
         :rtype: int
         """
-        return self._code
+        return self._status
 
-    @code.setter
-    def code(self, code: int):
-        """Sets the code of this Error.
+    @status.setter
+    def status(self, status: int):
+        """Sets the status of this Error.
 
         Error code  # noqa: E501
 
-        :param code: The code of this Error.
-        :type code: int
+        :param status: The status of this Error.
+        :type status: int
         """
-        if code is None:
-            raise ValueError("Invalid value for `code`, must not be `None`")  # noqa: E501
+        if status is None:
+            raise ValueError("Invalid value for `status`, must not be `None`")  # noqa: E501
 
-        self._code = code
+        self._status = status
 
     @property
     def message(self) -> str:

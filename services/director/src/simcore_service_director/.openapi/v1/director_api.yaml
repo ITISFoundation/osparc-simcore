@@ -271,10 +271,10 @@ components:
     Error:
       type: object
       required:
-        - code
+        - status
         - message
       properties:
-        code:
+        status:
           description: Error code
           type: integer
           example: 404

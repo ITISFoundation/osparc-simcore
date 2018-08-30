@@ -88,7 +88,7 @@ async def __handle_errors(request, handler):
         response = await handler(request)
         return response
     except web.HTTPError as ex:
-        error = Error(code=ex.status, message=ex.reason)
+        error = Error(status=ex.status, message=ex.reason)
         error_dict = error.to_dict()
         return web.json_response(error_dict, status=ex.status)
 
