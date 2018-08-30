@@ -170,6 +170,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       let nodeB = this.__createNode(nodeImageId, null);
       this.__addNodeToWorkbench(nodeB, pos);
+      this.__nodes.push(nodeB);
 
       if (nodeAId !== null && portA !== null) {
         let nodeBId = nodeB.getNodeId();
@@ -203,7 +204,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         node.moveTo(position.x, position.y);
       }
       this.addWindowToDesktop(node);
-      this.__nodes.push(node);
 
       node.addListener("NodeMoving", function() {
         this.__updateLinks(node);
@@ -644,6 +644,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           const nodeImageId = nodeData.key + "-" + nodeData.version;
           let node = this.__createNode(nodeImageId, nodeUuid, nodeData);
           this.__addNodeToWorkbench(node, nodeData.position);
+          this.__nodes.push(node);
         }
         for (let nodeUuid in workbenchData) {
           let nodeData = workbenchData[nodeUuid];
