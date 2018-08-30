@@ -256,6 +256,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
           }
         });
     },
+
     __addInputPort: function(portId, inputData) {
       let label = this.__createPort(true, portId, inputData);
       this.getInputPorts()[portId] = label;
@@ -267,6 +268,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.getOutputPorts()[portId] = label;
       this.__outputPortsUI.add(label.ui);
     },
+
     __createPort: function(isInput, portId, portData) {
       let label = {};
       label.portId = portId;
