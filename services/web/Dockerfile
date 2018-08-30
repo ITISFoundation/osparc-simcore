@@ -3,13 +3,16 @@ FROM python:3.6-alpine as base
 LABEL maintainer=pcrespov
 
 #  USAGE:
-#     docker build -f Dockerfile -t web:ci --target ci ../../
+#     cd sercices/web
+#     docker build -f Dockerfile -t web:prod --target production ../../
 #     docker run web:ci
 #
-#  REQUIRED: context expected at $(this-file-dir)/../../
+#  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 #  REQUIRED: client_qx:build image ready
 
-# create user 'scu'
+RUN apk add --no-cache \
+      su-exec
+
 RUN adduser -D -u 8004 scu
 
 ENV HOME /home/scu
@@ -19,7 +22,11 @@ ENV IS_CONTAINER_CONTEXT Yes
 
 EXPOSE 8080
 
+WORKDIR /home/scu
+
 # -------------------------- Build stage -------------------
+#
+# - Preserves relative folder structure as in host (except for client that avoid source-output)
 #
 # + /home/scu/              $HOME
 #    + packages
@@ -49,11 +56,11 @@ RUN python3 -m venv $HOME/.venv &&\
       wheel \
       setuptools
 
-WORKDIR /home/scu
-
 # install base 3rd party packages to accelerate runtime installs
 COPY --chown=scu:scu services/web/server/requirements/base.txt requirements-base.txt
-RUN $PIP install --no-cache-dir -r requirements-base.txt
+RUN $PIP install --no-cache-dir -r requirements-base.txt && rm requirements-base.txt
+
+COPY --chown=scu:scu services/web/server/.docker .docker
 
 # --------------------------Development stage -------------------
 FROM build as development
@@ -62,7 +69,7 @@ ARG HOST_GID_ARG=1000
 
 # install test 3rd party packages to accelerate runtime installs
 COPY --chown=scu:scu services/web/server/requirements/tests.txt requirements-tests.txt
-RUN $PIP install --no-cache-dir -r requirements-tests.txt
+RUN $PIP install --no-cache-dir -r requirements-tests.txt && rm requirements-tests.txt
 
 # in dev mode we give access to `scu` to host's mapped volumes
 RUN addgroup -g $HOST_GID_ARG hgrp &&\
@@ -73,15 +80,15 @@ VOLUME /home/scu/packages
 VOLUME /home/scu/services/web/server/
 VOLUME /home/scu/services/web/client/
 
-USER scu
 ENV SIMCORE_WEB_CONFIG development
 ENV DEBUG 1
-WORKDIR /home/scu/services/web/server
-CMD ./boot.sh
+ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
+CMD .docker/boot.sh
 
 
 # --------------------------Production multi-stage -------------------
-FROM build as build-production
+#FROM build as build-production
+FROM build as production
 
 ENV SIMCORE_WEB_CONFIG production
 
@@ -93,8 +100,7 @@ COPY --from=services_webclient:build --chown=scu:scu /home/scu/client/build-outp
 COPY --chown=scu:scu services/web/server $HOME/services/web/server
 
 WORKDIR /home/scu/services/web/server
-RUN $PIP --no-cache-dir install -r requirements/prod.txt ;\
-    $PIP list
+RUN $PIP --no-cache-dir install -r requirements/prod.txt
 
 #-------------------
 #FROM base as production
@@ -105,14 +111,12 @@ RUN $PIP --no-cache-dir install -r requirements/prod.txt ;\
 #RUN . $HOME/.venv/bin/activate; pip list
 
 # FIXME: temporary solution until found missing packages
-FROM build-production as production
+WORKDIR /home/scu
 
-RUN chown -R scu:scu $HOME/.venv &&\
-    cp $HOME/services/web/server/boot.sh $HOME &&\
+RUN . $HOME/.venv/bin/activate; pip list &&\
     rm -rf $HOME/packages &&\
     rm -rf $HOME/services/web/server
 
-WORKDIR /home/scu
-USER scu
 ENV DEBUG 0
-ENTRYPOINT ./boot.sh
+ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
+CMD .docker/boot.sh
