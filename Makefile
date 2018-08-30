@@ -12,7 +12,7 @@ export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
 
-PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*/generated_code/models*"))
+PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*/generated_code/models*" -not -path "*/generated_code/util*"))
 
 export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
