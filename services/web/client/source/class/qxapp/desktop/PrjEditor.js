@@ -148,15 +148,17 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
                   this.showInMainView(this.__workbench, "Workbench");
                 }, this);
               } else {
-                let simulatorSetting = new qxapp.components.widgets.SimulatorSetting(node.getMetaData());
+                let simulatorSetting = new qxapp.components.widgets.SimulatorSetting();
+                simulatorSetting.setNode(node);
                 this.showInMainView(simulatorSetting, node.getMetaData().name);
               }
               break;
             }
             case "container": {
-              let simulator = new qxapp.components.widgets.Simulator(node.getMetaData());
-              simulator.addListener("SettingSelected", function(data) {
-                console.log(data.getData());
+              let simulator = new qxapp.components.widgets.Simulator(node);
+              simulator.addListener("NodeDoubleClicked", function(ev) {
+                const data = ev.getData();
+                this.__workbench.fireDataEvent("NodeDoubleClicked", data);
               }, this);
               this.showInExtraView(simulator, node.getMetaData().name);
               this.showInMainView(this.__workbench, "Workbench");

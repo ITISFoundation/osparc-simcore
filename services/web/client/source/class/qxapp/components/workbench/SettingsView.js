@@ -29,6 +29,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       apply: "__applyNode"
     }
   },
+
   members: {
     __settingsBox: null,
     __dynamicViewer: null,
