@@ -15,10 +15,6 @@ qx.Class.define("qxapp.components.widgets.WidgetManager", {
         return simulatorSetting;
       } else if (nodeKey.includes("s4l/Simulator-")) {
         let simulator = new qxapp.components.widgets.Simulator(node);
-        simulator.addListener("NodeDoubleClicked", function(ev) {
-          const data = ev.getData();
-          this.__workbench.fireDataEvent("NodeDoubleClicked", data);
-        }, this);
         return simulator;
       }
       return null;
