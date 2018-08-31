@@ -317,9 +317,12 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       }
       const captionHeight = this.__childControls.captionbar.getBounds().height;
       const inputOutputs = this.getChildren()[0];
-      const inputPorts = inputOutputs.getChildren()[0].getChildren();
-      const outputPorts = inputOutputs.getChildren()[1].getChildren();
-      const ports = inputPorts.concat(outputPorts);
+      let ports = null;
+      if (port.isInput) {
+        ports = inputOutputs.getChildren()[0].getChildren();
+      } else {
+        ports = inputOutputs.getChildren()[1].getChildren();
+      }
       let portBounds;
       for (let i=0; i<ports.length; i++) {
         if (port.portId === ports[i].portId) {
