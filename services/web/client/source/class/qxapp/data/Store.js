@@ -156,7 +156,7 @@ qx.Class.define("qxapp.data.Store", {
               parentInputs: {},
               parentOutputs: {}
             }, {
-              key: "service/dynamic/itis/s4l/Simulator-LF/Solver",
+              key: "service/dynamic/itis/s4l/Simulator-LF/SolverSettings",
               version: "0.0.0",
               parentInputs: {},
               parentOutputs: {
