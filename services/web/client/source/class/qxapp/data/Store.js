@@ -96,11 +96,30 @@ qx.Class.define("qxapp.data.Store", {
           },
           innerServices: [
             {
-              key: "service/computational/itis/Simulator-LF/Setup-0.0.0"
+              key: "service/computational/itis/Simulator-LF/Setup",
+              version: "0.0.0",
+              innerInputs: {},
+              innerOutputs: {}
             }, {
-              key: "service/dynamic/itis/Simulator-LF/Material-0.0.0"
+              key: "service/dynamic/itis/Simulator-LF/Material",
+              version: "0.0.0",
+              innerInputs: {
+                modeler: "modeler",
+                materialDB: "materialDB"
+              },
+              innerOutputs: {}
             }, {
-              key: "service/dynamic/itis/Simulator-LF/Boundary-0.0.0"
+              key: "service/dynamic/itis/Simulator-LF/Boundary",
+              version: "0.0.0",
+              innerInputs: {},
+              innerOutputs: {}
+            }, {
+              key: "service/computational/itis/Simulator-LF/Solver",
+              version: "0.0.0",
+              innerInputs: {},
+              innerOutputs: {
+                outFile: "outFile"
+              }
             }
           ]
         },
@@ -123,7 +142,8 @@ qx.Class.define("qxapp.data.Store", {
               type: "number",
               defaultValue: 1
             }
-          }
+          },
+          outputs: {}
         },
         "service/dynamic/itis/Simulator-LF/Material-0.0.0": {
           key: "service/dynamic/itis/Simulator-LF/Material",
@@ -156,7 +176,8 @@ qx.Class.define("qxapp.data.Store", {
               type: "number",
               defaultValue: 2
             }
-          }
+          },
+          outputs: {}
         },
         "service/dynamic/itis/Simulator-LF/Boundary-0.0.0": {
           key: "service/dynamic/itis/Simulator-LF/Boundary",
@@ -182,6 +203,36 @@ qx.Class.define("qxapp.data.Store", {
               description: "Boundary Conditions",
               type: "number",
               defaultValue: 3
+            }
+          },
+          outputs: {}
+        },
+        "service/computational/itis/Simulator-LF/Solver-0.0.0": {
+          key: "service/computational/itis/Simulator-LF/Solver",
+          version: "0.0.0",
+          type: "computational",
+          name: "Solver Settings",
+          description: "LF Simulator Solver Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            setupSetting: {
+              displayOrder: 0,
+              label: "SolverSetting",
+              description: "Solver Setting",
+              type: "number",
+              defaultValue: 1
+            }
+          },
+          outputs: {
+            outFile: {
+              displayOrder: 0,
+              label: "Input file",
+              description: "LF Solver Input File",
+              type: "data:application/hdf5"
             }
           }
         },
