@@ -36,22 +36,24 @@ services:
     build:
       context: ../
       dockerfile: services/web/Dockerfile
-      target: ci
+      target: production
     ports:
       - '9081:8080'
     environment:
       - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8001
-      - RABBITMQ_USER=${RABBITMQ_USER}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
-      - S3_ENDPOINT=${S3_ENDPOINT}
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_PROGRESS_CHANNEL=${RABBITMQ_PROGRESS_CHANNEL}
+      - RABBITMQ_LOG_CHANNEL=${RABBITMQ_LOG_CHANNEL}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
     depends_on:
       - webclient
   #--------------------------------------------------------------------
@@ -62,14 +64,6 @@ services:
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
     ports:
       - "15672:15672"
-  #--------------------------------------------------------------------
-#  flower:
-#    image: ondrejit/flower:latest
-#    command: --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbit:5672
-#    ports:
-#      - 5555:5555
-#    depends_on:
-#      - rabbit
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10
@@ -82,29 +76,23 @@ services:
     ports:
       - "5432:5432"
   #--------------------------------------------------------------------
-  adminer:
-    image: adminer
-    ports:
-      - 18080:8080
-    depends_on:
-      - postgres
-  #--------------------------------------------------------------------
   sidecar:
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
       context: ../
       dockerfile: services/sidecar/Dockerfile
+      args:
+        - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
     volumes:
-      - input:/input
-      - output:/output
-      - log:/log
+      - input:/home/scu/input
+      - output:/home/scu/output
+      - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8000:8000"
     environment:
-      - PYTHONPATH=/work/packages/simcore-sdk/src:/work/packages/s3wrapper/src
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}

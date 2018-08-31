@@ -1,6 +1,0 @@
-# same as ci.txt ...
--e ".[test]"
-
-#  ... but different relative paths!
--e ../packages/s3wrapper/
--e ../packages/simcore-sdk/

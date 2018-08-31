@@ -1,6 +1,4 @@
-# continuous integration mode
 # paths relative to location of setup.py
-.[test]
-
+.
 ../../../packages/s3wrapper/
 ../../../packages/simcore-sdk/
