@@ -61,8 +61,50 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/container/itis/Simulator-LF-0.0.0": {
-          key: "service/container/itis/Simulator-LF",
+        "service/dynamic/itis/s4l/Modeler-0.0.0": {
+          key: "service/dynamic/itis/s4l/Modeler",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "Modeler",
+          description: "Modeler",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {},
+          outputs: {
+            outFile: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Modeler Live link",
+              type: "data:application/s4l-api"
+            }
+          }
+        },
+        "service/dynamic/itis/s4l/MaterialDB-0.0.0": {
+          key: "service/dynamic/itis/s4l/MaterialDB",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "MaterialDB",
+          description: "Material Database",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {},
+          outputs: {
+            outFile: {
+              displayOrder: 0,
+              label: "MaterialDB",
+              description: "MaterialDB Live link",
+              type: "data:application/s4l-api"
+            }
+          }
+        },
+        "service/container/itis/s4l/Simulator-LF-0.0.0": {
+          key: "service/container/itis/s4l/Simulator-LF",
           version: "0.0.0",
           type: "container",
           name: "LF Simulator",
@@ -75,15 +117,15 @@ qx.Class.define("qxapp.data.Store", {
           inputs: {
             modeler: {
               displayOrder: 0,
-              label: "modeler",
+              label: "Modeler",
               description: "Live link to Modeler",
-              type: "data:*/*"
+              type: "data:application/s4l-api"
             },
             materialDB: {
               displayOrder: 1,
-              label: "materialDB",
+              label: "MaterialDB",
               description: "Live link to Material DB",
-              type: "data:*/*"
+              type: "data:application/s4l-api"
             }
           },
           outputs: {
@@ -96,38 +138,38 @@ qx.Class.define("qxapp.data.Store", {
           },
           innerServices: [
             {
-              key: "service/computational/itis/Simulator-LF/Setup",
+              key: "service/dynamic/itis/s4l/Simulator-LF/Setup",
               version: "0.0.0",
-              innerInputs: {},
-              innerOutputs: {}
+              parentInputs: {},
+              parentOutputs: {}
             }, {
-              key: "service/dynamic/itis/Simulator-LF/Material",
+              key: "service/dynamic/itis/s4l/Simulator-LF/Materials",
               version: "0.0.0",
-              innerInputs: {
+              parentInputs: {
                 modeler: "modeler",
                 materialDB: "materialDB"
               },
-              innerOutputs: {}
+              parentOutputs: {}
             }, {
-              key: "service/dynamic/itis/Simulator-LF/Boundary",
+              key: "service/dynamic/itis/s4l/Simulator-LF/Boundary",
               version: "0.0.0",
-              innerInputs: {},
-              innerOutputs: {}
+              parentInputs: {},
+              parentOutputs: {}
             }, {
-              key: "service/computational/itis/Simulator-LF/Solver",
+              key: "service/dynamic/itis/s4l/Simulator-LF/Solver",
               version: "0.0.0",
-              innerInputs: {},
-              innerOutputs: {
+              parentInputs: {},
+              parentOutputs: {
                 outFile: "outFile"
               }
             }
           ]
         },
-        "service/computational/itis/Simulator-LF/Setup-0.0.0": {
-          key: "service/computational/itis/Simulator-LF/Setup",
+        "service/dynamic/itis/s4l/Simulator-LF/Setup-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator-LF/Setup",
           version: "0.0.0",
           type: "computational",
-          name: "Setup Settings",
+          name: "LF Setup",
           description: "LF Simulator Setup Settings",
           authors: [{
             name: "Odei Maiz",
@@ -135,22 +177,70 @@ qx.Class.define("qxapp.data.Store", {
           }],
           contact: "maiz@itis.ethz.ch",
           inputs: {
-            setupSetting: {
+            frequency: {
               displayOrder: 0,
-              label: "SetupSetting",
-              description: "Setup Setting",
+              label: "Frequency",
+              description: "Frequency (Hz)",
               type: "number",
-              defaultValue: 1
+              defaultValue: 1000
             }
           },
-          outputs: {}
+          outputs: {
+            setupSetting: {
+              displayOrder: 0,
+              label: "LF-Setup",
+              description: "LF Setup Settings",
+              type: "data:application/s4l-api"
+            }
+          }
         },
-        "service/dynamic/itis/Simulator-LF/Material-0.0.0": {
-          key: "service/dynamic/itis/Simulator-LF/Material",
+        "service/dynamic/itis/s4l/Simulator-LF/Material-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator-LF/Materials",
           version: "0.0.0",
           type: "dynamic",
-          name: "Material Settings",
+          name: "LF Materials",
           description: "LF Simulator Material Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/s4l-api"
+            },
+            materialDB: {
+              displayOrder: 1,
+              label: "MaterialDB",
+              description: "Live Link to Material DB",
+              type: "data:application/s4l-api"
+            },
+            updateDispersive: {
+              displayOrder: 2,
+              label: "UpdateDispersive",
+              description: "Enable automatic update of dispersive materials",
+              type: "boolean",
+              defaultValue: false
+            }
+          },
+          outputs: {
+            materialSetting: {
+              displayOrder: 0,
+              label: "MaterialSettings",
+              description: "Material Settings",
+              type: "data:application/s4l-api"
+            }
+          }
+        },
+        "service/dynamic/itis/s4l/Simulator-LF/Boundary-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator-LF/Boundary",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "LF Boundary Conditions",
+          description: "LF Simulator Boundary Conditions",
           authors: [{
             name: "Odei Maiz",
             email: "maiz@itis.ethz.ch"
@@ -163,28 +253,29 @@ qx.Class.define("qxapp.data.Store", {
               description: "Live Link to Modeler",
               type: "data:application/hdf5"
             },
-            materialDB: {
+            boundarySetting: {
               displayOrder: 1,
-              label: "MaterialDB",
-              description: "Live Link to Material DB",
-              type: "data:application/hdf5"
-            },
-            materialSetting: {
-              displayOrder: 2,
-              label: "MaterialSetting",
-              description: "Material Setting",
+              label: "BoundarySetting",
+              description: "Boundary Settings",
               type: "number",
-              defaultValue: 2
+              defaultValue: 3
             }
           },
-          outputs: {}
+          outputs: {
+            boundarySetting: {
+              displayOrder: 0,
+              label: "BoundaryConditions",
+              description: "Boundary Conditions",
+              type: "data:application/s4l-api"
+            }
+          }
         },
-        "service/dynamic/itis/Simulator-LF/Boundary-0.0.0": {
-          key: "service/dynamic/itis/Simulator-LF/Boundary",
+        "service/dynamic/itis/s4l/Simulator-LF/Sensors-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator-LF/Sensors",
           version: "0.0.0",
           type: "dynamic",
-          name: "Boundary Conditions",
-          description: "LF Simulator Boundary Conditions",
+          name: "LF Sensors",
+          description: "LF Simulator Sensors Settings",
           authors: [{
             name: "Odei Maiz",
             email: "maiz@itis.ethz.ch"
@@ -193,25 +284,126 @@ qx.Class.define("qxapp.data.Store", {
           inputs: {
             modeler: {
               displayOrder: 0,
-              label: "modeler",
+              label: "Modeler",
               description: "Live Link to Modeler",
               type: "data:application/hdf5"
             },
-            boundarySetting: {
+            sensorSetting: {
               displayOrder: 1,
-              label: "BoundaryConditions",
-              description: "Boundary Conditions",
+              label: "SensorsSettings",
+              description: "Sensors Settings",
               type: "number",
-              defaultValue: 3
+              defaultValue: 4
             }
           },
-          outputs: {}
+          outputs: {
+            sensorSetting: {
+              displayOrder: 0,
+              label: "SensorSettings",
+              description: "Sensor Settings",
+              type: "data:application/s4l-api"
+            }
+          }
         },
-        "service/computational/itis/Simulator-LF/Solver-0.0.0": {
-          key: "service/computational/itis/Simulator-LF/Solver",
+        "service/dynamic/itis/s4l/Simulator-LF/Grid-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator-LF/Grid",
           version: "0.0.0",
-          type: "computational",
-          name: "Solver Settings",
+          type: "dynamic",
+          name: "LF Grid",
+          description: "LF Simulator Grid Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/hdf5"
+            },
+            materialSetting: {
+              displayOrder: 1,
+              label: "MaterialSettings",
+              description: "Material Settings",
+              type: "data:application/s4l-api"
+            },
+            boundarySetting: {
+              displayOrder: 2,
+              label: "BoundarySettings",
+              description: "Boundary Settings",
+              type: "data:application/s4l-api"
+            },
+            sensorSetting: {
+              displayOrder: 3,
+              label: "SensorSettings",
+              description: "Sensor Settings",
+              type: "data:application/s4l-api"
+            },
+            gridSetting: {
+              displayOrder: 4,
+              label: "GridSettings",
+              description: "Grid Settings",
+              type: "number",
+              defaultValue: 5
+            }
+          },
+          outputs: {
+            gridSetting: {
+              displayOrder: 0,
+              label: "GridSettings",
+              description: "Grid Settings",
+              type: "data:application/s4l-api"
+            }
+          }
+        },
+        "service/dynamic/itis/s4l/Simulator-LF/Voxel-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator-LF/Voxel",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "LF Voxels",
+          description: "LF Simulator Voxel Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/hdf5"
+            },
+            gridSetting: {
+              displayOrder: 1,
+              label: "GridSettings",
+              description: "Grid Settings",
+              type: "data:application/s4l-api"
+            },
+            voxelSetting: {
+              displayOrder: 2,
+              label: "VoxelSettings",
+              description: "Voxel Settings",
+              type: "number",
+              defaultValue: 6
+            }
+          },
+          outputs: {
+            voxelSetting: {
+              displayOrder: 0,
+              label: "VoxelSettings",
+              description: "Voxel Settings",
+              type: "data:application/s4l-api"
+            }
+          }
+        },
+        "service/dynamic/itis/s4l/Simulator-LF/Solver-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator-LF/Solver",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "LF Solver",
           description: "LF Simulator Solver Settings",
           authors: [{
             name: "Odei Maiz",
@@ -221,10 +413,22 @@ qx.Class.define("qxapp.data.Store", {
           inputs: {
             setupSetting: {
               displayOrder: 0,
+              label: "SetupSettings",
+              description: "Setup Settings Out",
+              type: "data:application/s4l-api"
+            },
+            voxelSetting: {
+              displayOrder: 1,
+              label: "VoxelSettings",
+              description: "Voxel Settings",
+              type: "data:application/s4l-api"
+            },
+            solverSetting: {
+              displayOrder: 2,
               label: "SolverSetting",
               description: "Solver Setting",
               type: "number",
-              defaultValue: 1
+              defaultValue: 7
             }
           },
           outputs: {
