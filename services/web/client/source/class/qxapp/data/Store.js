@@ -399,11 +399,11 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator-LF/Solver-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator-LF/Solver",
+        "service/dynamic/itis/s4l/Simulator-LF/SolverSettings-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator-LF/SolverSettings",
           version: "0.0.0",
           type: "dynamic",
-          name: "LF Solver",
+          name: "LF Solver Settings",
           description: "LF Simulator Solver Settings",
           authors: [{
             name: "Odei Maiz",
