@@ -705,8 +705,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           const outputPort = nodeData.outputs[key];
           if ("value" in outputPort) {
             cNode.outputs[key] = outputPort.value;
-          } else {
-            cNode.outputs[key] = null;
           }
         }
       }
