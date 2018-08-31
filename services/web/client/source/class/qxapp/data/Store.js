@@ -153,7 +153,30 @@ qx.Class.define("qxapp.data.Store", {
             }, {
               key: "service/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
-              parentInputs: {},
+              parentInputs: {
+                modeler: "modeler"
+              },
+              parentOutputs: {}
+            }, {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Sensors",
+              version: "0.0.0",
+              parentInputs: {
+                modeler: "modeler"
+              },
+              parentOutputs: {}
+            }, {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Grid",
+              version: "0.0.0",
+              parentInputs: {
+                modeler: "modeler"
+              },
+              parentOutputs: {}
+            }, {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Voxel",
+              version: "0.0.0",
+              parentInputs: {
+                modeler: "modeler"
+              },
               parentOutputs: {}
             }, {
               key: "service/dynamic/itis/s4l/Simulator/LF/SolverSettings",
