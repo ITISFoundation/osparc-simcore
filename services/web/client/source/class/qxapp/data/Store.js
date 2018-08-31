@@ -194,7 +194,7 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator-LF/Material-0.0.0": {
+        "service/dynamic/itis/s4l/Simulator-LF/Materials-0.0.0": {
           key: "service/dynamic/itis/s4l/Simulator-LF/Materials",
           version: "0.0.0",
           type: "dynamic",
