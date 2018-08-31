@@ -140,27 +140,23 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
           switch (node.getMetaData().type) {
             case "dynamic": {
-              if (node.getMetaData().key.includes("FileManager")) {
-                let fileManager = new qxapp.components.widgets.FileManager(node);
-                this.showInExtraView(new qx.ui.core.Widget());
-                this.showInMainView(fileManager, node.getMetaData().name);
-                fileManager.addListener("Finished", function() {
-                  this.showInMainView(this.__workbench, "Workbench");
-                }, this);
-              } else {
-                let simulatorSetting = new qxapp.components.widgets.SimulatorSetting();
-                simulatorSetting.setNode(node);
-                this.showInMainView(simulatorSetting, node.getMetaData().name);
-              }
+              const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
+              let widget = widgetManager.getWidgetForNode(node);
+              widget.addListener("Finished", function() {
+                this.showInMainView(this.__workbench, "Workbench");
+              }, this);
+              this.showInExtraView(new qx.ui.core.Widget());
+              this.showInMainView(widget, node.getMetaData().name);
               break;
             }
             case "container": {
-              let simulator = new qxapp.components.widgets.Simulator(node);
-              simulator.addListener("NodeDoubleClicked", function(ev) {
+              const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
+              let widget = widgetManager.getWidgetForNode(node);
+              widget.addListener("NodeDoubleClicked", function(ev) {
                 const data = ev.getData();
                 this.__workbench.fireDataEvent("NodeDoubleClicked", data);
               }, this);
-              this.showInExtraView(simulator, node.getMetaData().name);
+              this.showInExtraView(widget);
               this.showInMainView(this.__workbench, "Workbench");
               break;
             }
