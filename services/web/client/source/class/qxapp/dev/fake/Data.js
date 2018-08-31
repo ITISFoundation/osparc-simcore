@@ -397,8 +397,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
           notes: "",
           owner: "UUID-OF-ODEI",
           collaborators: {},
-          creationDate: "2018-08-31T12:44:03.380Z",
-          lastChangeDate: "2018-08-31T13:21:24.026Z",
+          creationDate: "2018-08-31T12:44:03Z",
+          lastChangeDate: "2018-08-31T13:21:24Z",
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?3.jpg",
           workbench: {
             "8870a55b-680d-41b4-b40c-c928cceb7d2a": {
@@ -423,9 +423,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
               inputs: {
                 "frequency": 1000
               },
-              outputs: {
-                "setupSetting": null
-              },
               position: {
                 x: 348,
                 y: 2
@@ -445,9 +442,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "updateDispersive": false
               },
-              outputs: {
-                "materialSetting": null
-              },
               position: {
                 x: 349,
                 y: 103
@@ -463,9 +457,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "boundarySetting": 3
               },
-              outputs: {
-                "boundarySetting": null
-              },
               position: {
                 x: 351,
                 y: 242
@@ -480,9 +471,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   "output": "outFile"
                 },
                 "sensorSetting": 4
-              },
-              outputs: {
-                "sensorSetting": null
               },
               position: {
                 x: 353,
@@ -511,9 +499,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "gridSetting": 5
               },
-              outputs: {
-                "gridSetting": null
-              },
               position: {
                 x: 624,
                 y: 496
@@ -532,9 +517,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   "output": "voxelSetting"
                 },
                 "solverSetting": 7
-              },
-              outputs: {
-                "outFile": null
               },
               position: {
                 x: 955,
@@ -555,9 +537,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "voxelSetting": 6
               },
-              outputs: {
-                "voxelSetting": null
-              },
               position: {
                 x: 874,
                 y: 699
@@ -571,9 +550,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   "nodeUuid": "01e28708-46c4-474b-837b-479fd596e566",
                   "output": "outFile"
                 }
-              },
-              outputs: {
-                "outFile": null
               },
               position: {
                 x: 1245,
