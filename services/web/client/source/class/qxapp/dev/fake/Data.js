@@ -303,7 +303,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "e5ab3634-875f-4459-ab3f-00c91457ff49": {
-              key: "service/dynamic/itis/s4l/Simulator-LF/Setup",
+              key: "service/dynamic/itis/s4l/Simulator/LF/Setup",
               version: "0.0.0",
               inputs: {},
               position: {
@@ -312,7 +312,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "b7cd1659-d366-465b-b712-851b469ba654": {
-              key: "service/dynamic/itis/s4l/Simulator-LF/Materials",
+              key: "service/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
               inputs: {
                 modeler: {
@@ -358,7 +358,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "89e185ca-dda1-4a45-8059-715f2cb17100": {
-              key: "service/container/itis/s4l/Simulator-LF",
+              key: "service/container/itis/s4l/Simulator/LF",
               version: "0.0.0",
               inputs: {
                 modeler: {
@@ -418,7 +418,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "83bc4123-ebe4-4f5f-8770-b1584d6cf95f": {
-              key: "service/dynamic/itis/s4l/Simulator-LF/Setup",
+              key: "service/dynamic/itis/s4l/Simulator/LF/Setup",
               version: "0.0.0",
               inputs: {
                 "frequency": 1000
@@ -429,7 +429,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "ac80863e-e4ef-48c0-804b-d9296f1f3563": {
-              key: "service/dynamic/itis/s4l/Simulator-LF/Materials",
+              key: "service/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
               inputs: {
                 "modeler": {
@@ -448,7 +448,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "ed4c85a8-c20f-4acd-8e1e-5161301e2f3d": {
-              key: "service/dynamic/itis/s4l/Simulator-LF/Boundary",
+              key: "service/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
               inputs: {
                 "modeler": {
@@ -463,7 +463,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "36d70cf2-ef36-4052-988d-d32b3456b786": {
-              key: "service/dynamic/itis/s4l/Simulator-LF/Sensors",
+              key: "service/dynamic/itis/s4l/Simulator/LF/Sensors",
               version: "0.0.0",
               inputs: {
                 "modeler": {
@@ -478,7 +478,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "c3ab33a7-4ead-4302-9867-5b194a4f45ec": {
-              key: "service/dynamic/itis/s4l/Simulator-LF/Grid",
+              key: "service/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
               inputs: {
                 "modeler": {
@@ -505,7 +505,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "01e28708-46c4-474b-837b-479fd596e566": {
-              key: "service/dynamic/itis/s4l/Simulator-LF/SolverSettings",
+              key: "service/dynamic/itis/s4l/Simulator/LF/SolverSettings",
               version: "0.0.0",
               inputs: {
                 "setupSetting": {
@@ -524,7 +524,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "b37bea52-bb29-482a-9540-bc11c7dc779c": {
-              key: "service/dynamic/itis/s4l/Simulator-LF/Voxel",
+              key: "service/dynamic/itis/s4l/Simulator/LF/Voxel",
               version: "0.0.0",
               inputs: {
                 "modeler": {

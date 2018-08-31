@@ -103,8 +103,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/container/itis/s4l/Simulator-LF-0.0.0": {
-          key: "service/container/itis/s4l/Simulator-LF",
+        "service/container/itis/s4l/Simulator/LF-0.0.0": {
+          key: "service/container/itis/s4l/Simulator/LF",
           version: "0.0.0",
           type: "container",
           name: "LF Simulator",
@@ -138,12 +138,12 @@ qx.Class.define("qxapp.data.Store", {
           },
           innerServices: [
             {
-              key: "service/dynamic/itis/s4l/Simulator-LF/Setup",
+              key: "service/dynamic/itis/s4l/Simulator/LF/Setup",
               version: "0.0.0",
               parentInputs: {},
               parentOutputs: {}
             }, {
-              key: "service/dynamic/itis/s4l/Simulator-LF/Materials",
+              key: "service/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
               parentInputs: {
                 modeler: "modeler",
@@ -151,12 +151,12 @@ qx.Class.define("qxapp.data.Store", {
               },
               parentOutputs: {}
             }, {
-              key: "service/dynamic/itis/s4l/Simulator-LF/Boundary",
+              key: "service/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
               parentInputs: {},
               parentOutputs: {}
             }, {
-              key: "service/dynamic/itis/s4l/Simulator-LF/SolverSettings",
+              key: "service/dynamic/itis/s4l/Simulator/LF/SolverSettings",
               version: "0.0.0",
               parentInputs: {},
               parentOutputs: {
@@ -165,8 +165,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           ]
         },
-        "service/dynamic/itis/s4l/Simulator-LF/Setup-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator-LF/Setup",
+        "service/dynamic/itis/s4l/Simulator/LF/Setup-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator/LF/Setup",
           version: "0.0.0",
           type: "computational",
           name: "LF Setup",
@@ -194,8 +194,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator-LF/Materials-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator-LF/Materials",
+        "service/dynamic/itis/s4l/Simulator/LF/Materials-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator/LF/Materials",
           version: "0.0.0",
           type: "dynamic",
           name: "LF Materials",
@@ -235,8 +235,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator-LF/Boundary-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator-LF/Boundary",
+        "service/dynamic/itis/s4l/Simulator/LF/Boundary-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator/LF/Boundary",
           version: "0.0.0",
           type: "dynamic",
           name: "LF Boundary Conditions",
@@ -270,8 +270,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator-LF/Sensors-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator-LF/Sensors",
+        "service/dynamic/itis/s4l/Simulator/LF/Sensors-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator/LF/Sensors",
           version: "0.0.0",
           type: "dynamic",
           name: "LF Sensors",
@@ -305,8 +305,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator-LF/Grid-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator-LF/Grid",
+        "service/dynamic/itis/s4l/Simulator/LF/Grid-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator/LF/Grid",
           version: "0.0.0",
           type: "dynamic",
           name: "LF Grid",
@@ -358,8 +358,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator-LF/Voxel-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator-LF/Voxel",
+        "service/dynamic/itis/s4l/Simulator/LF/Voxel-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator/LF/Voxel",
           version: "0.0.0",
           type: "dynamic",
           name: "LF Voxels",
@@ -399,8 +399,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator-LF/SolverSettings-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator-LF/SolverSettings",
+        "service/dynamic/itis/s4l/Simulator/LF/SolverSettings-0.0.0": {
+          key: "service/dynamic/itis/s4l/Simulator/LF/SolverSettings",
           version: "0.0.0",
           type: "dynamic",
           name: "LF Solver Settings",
