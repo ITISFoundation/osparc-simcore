@@ -332,8 +332,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
           }
         }, {
           projectUuid: "d394ea07-8b2a-4748-8e29-e7cc03eb9250",
-          name: "LF Simulator collapsed",
-          description: "LF Simulator collapsed",
+          name: "LF Simulator",
+          description: "LF Simulator",
           notes: "",
           owner: "UUID-OF-ODEI",
           collaborators: {},

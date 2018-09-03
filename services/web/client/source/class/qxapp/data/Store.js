@@ -78,7 +78,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Modeler Live link",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/modeler"
             }
           }
         },
@@ -99,7 +99,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "MaterialDB",
               description: "MaterialDB Live link",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/materialDB"
             }
           }
         },
@@ -119,13 +119,13 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Live link to Modeler",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/modeler"
             },
             materialDB: {
               displayOrder: 1,
               label: "MaterialDB",
               description: "Live link to Material DB",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/materialDB"
             }
           },
           outputs: {
@@ -213,7 +213,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "LF-Setup",
               description: "LF Setup Settings",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/settings"
             }
           }
         },
@@ -233,13 +233,13 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Live Link to Modeler",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/modeler"
             },
             materialDB: {
               displayOrder: 1,
               label: "MaterialDB",
               description: "Live Link to Material DB",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/materialDB"
             },
             updateDispersive: {
               displayOrder: 2,
@@ -254,7 +254,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "MaterialSettings",
               description: "Material Settings",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/settings"
             }
           }
         },
@@ -274,7 +274,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Live Link to Modeler",
-              type: "data:application/hdf5"
+              type: "data:application/s4l-api/modeler"
             },
             boundarySetting: {
               displayOrder: 1,
@@ -289,7 +289,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "BoundaryConditions",
               description: "Boundary Conditions",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/settings"
             }
           }
         },
@@ -309,7 +309,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Live Link to Modeler",
-              type: "data:application/hdf5"
+              type: "data:application/s4l-api/modeler"
             },
             sensorSetting: {
               displayOrder: 1,
@@ -324,7 +324,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "SensorSettings",
               description: "Sensor Settings",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/settings"
             }
           }
         },
@@ -344,25 +344,25 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Live Link to Modeler",
-              type: "data:application/hdf5"
+              type: "data:application/s4l-api/modeler"
             },
             materialSetting: {
               displayOrder: 1,
               label: "MaterialSettings",
               description: "Material Settings",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/settings"
             },
             boundarySetting: {
               displayOrder: 2,
               label: "BoundarySettings",
               description: "Boundary Settings",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/settings"
             },
             sensorSetting: {
               displayOrder: 3,
               label: "SensorSettings",
               description: "Sensor Settings",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/settings"
             },
             gridSetting: {
               displayOrder: 4,
@@ -377,7 +377,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "GridSettings",
               description: "Grid Settings",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/settings"
             }
           }
         },
@@ -397,13 +397,13 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Live Link to Modeler",
-              type: "data:application/hdf5"
+              type: "data:application/s4l-api/modeler"
             },
             gridSetting: {
               displayOrder: 1,
               label: "GridSettings",
               description: "Grid Settings",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/settings"
             },
             voxelSetting: {
               displayOrder: 2,
@@ -418,7 +418,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "VoxelSettings",
               description: "Voxel Settings",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/settings"
             }
           }
         },
@@ -438,13 +438,13 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "SetupSettings",
               description: "Setup Settings Out",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/settings"
             },
             voxelSetting: {
               displayOrder: 1,
               label: "VoxelSettings",
               description: "Voxel Settings",
-              type: "data:application/s4l-api"
+              type: "data:application/s4l-api/settings"
             },
             solverSetting: {
               displayOrder: 2,
