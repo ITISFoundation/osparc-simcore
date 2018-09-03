@@ -24,6 +24,9 @@ from server.db.utils import (
 from server.settings import (
     read_and_validate
 )
+from server.resources import (
+    ConfigFile
+)
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,7 +49,7 @@ def _is_db_service_responsive(**pg_config):
 @pytest.fixture(scope='session')
 def package_paths(pytestconfig):
     package_root = CURRENT_DIR.parent
-    config_folder =  package_root / "config"
+    config_folder = ConfigFile("").path
     test_folder = package_root / "tests"
     mock_folder = test_folder / "mock"
 

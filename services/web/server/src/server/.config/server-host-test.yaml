@@ -1,3 +1,4 @@
+# This config is used for testing on the host
 ---
 version: "1.0"
 app:
@@ -29,10 +30,4 @@ s3:
   bucket_name: simcore
   endpoint: localhost:9000
   secret_key: '12345678'
-cs_s4l:
-  host: localhost
-  app:
-    port: 9095
-  modeler:
-    port: 9096
 ...
