@@ -443,7 +443,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
       this.__links.push(link);
 
-      node2.getPropsWidget().enableProp(port2.portId, false);
+      node2.addLink(link);
 
       link.getRepresentation().node.addEventListener("click", function(e) {
         // this is needed to get out of the context of svg
@@ -607,7 +607,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __removeLink: function(link) {
       let node2 = this.getNode(link.getOutputNodeId());
       if (node2) {
-        node2.getPropsWidget().enableProp(link.getOutputPortId(), true);
+        node2.removeLink(link);
       }
 
       this.__svgWidget.removeCurve(link.getRepresentation());
@@ -689,7 +689,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           inputs: node.getInputValues(),
           outputs: {}
         };
-        if (savePosition) {
+        if (savePosition && this.__desktop.indexOf(node)>-1) {
           cNode.position = {
             x: node.getCurrentBounds().left,
             y: node.getCurrentBounds().top

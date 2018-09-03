@@ -29,6 +29,9 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     } else {
       console.error("Invalid ImageID - Not populating "+ nodeImageId);
     }
+
+    this.__innerNodes = [];
+    this.__connectedTo = [];
   },
 
   properties: {
@@ -70,6 +73,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     __progressBar: null,
     __metaData: null,
     __innerNodes: null,
+    __connectedTo: null,
 
     getMetaData: function() {
       return this.__metaData;
@@ -154,6 +158,19 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     getInputValues: function() {
       return this.getPropsWidget().getValues();
+    },
+
+    addLink: function(link) {
+      this.__connectedTo.push(link);
+      this.getPropsWidget().enableProp(link.getOutputPortId(), false);
+    },
+
+    removeLink: function(link) {
+      const index = this.__connectedTo.indexOf(link);
+      if (index > -1) {
+        this.__connectedTo.splice(index, 1);
+      }
+      this.getPropsWidget().enableProp(link.getOutputPortId(), true);
     },
 
     // override qx.ui.window.Window "move" event listener
@@ -298,7 +315,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     },
 
     createInnerNodes: function(innerServices) {
-      this.__innerNodes = [];
       for (let i=0; i<innerServices.length; i++) {
         let innerServiceMetaData = innerServices[i];
         const innerServiceImageId = innerServiceMetaData.key + "-" + innerServiceMetaData.version;
