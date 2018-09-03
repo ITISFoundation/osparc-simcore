@@ -9,12 +9,17 @@ qx.Class.define("qxapp.desktop.mainPanel.OptionsBar", {
     this.__initDefault();
   },
 
-  events: {},
+  events: {
+    "ListClicked": "qx.event.type.Event"
+  },
 
   members: {
     __initDefault: function() {
       let treeBtn = new qx.ui.form.Button();
       treeBtn.setIcon("@FontAwesome5Solid/bars/32");
+      treeBtn.addListener("execute", function() {
+        this.fireDataEvent("ListClicked");
+      }, this);
       this._add(treeBtn);
 
       let databaseBtn = new qx.ui.form.Button();
