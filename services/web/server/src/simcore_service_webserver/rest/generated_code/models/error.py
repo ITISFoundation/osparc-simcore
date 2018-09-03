@@ -6,7 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
-from .error_error import ErrorError  # noqa: F401,E501
 from .. import util
 
 
@@ -16,21 +15,26 @@ class Error(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, error: ErrorError=None):  # noqa: E501
+    def __init__(self, message: str=None, errors: List[object]=None):  # noqa: E501
         """Error - a model defined in OpenAPI
 
-        :param error: The error of this Error.  # noqa: E501
-        :type error: ErrorError
+        :param message: The message of this Error.  # noqa: E501
+        :type message: str
+        :param errors: The errors of this Error.  # noqa: E501
+        :type errors: List[object]
         """
         self.openapi_types = {
-            'error': ErrorError
+            'message': str,
+            'errors': List[object]
         }
 
         self.attribute_map = {
-            'error': 'error'
+            'message': 'message',
+            'errors': 'errors'
         }
 
-        self._error = error
+        self._message = message
+        self._errors = errors
 
     @classmethod
     def from_dict(cls, dikt) -> 'Error':
@@ -44,22 +48,47 @@ class Error(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def error(self) -> ErrorError:
-        """Gets the error of this Error.
+    def message(self) -> str:
+        """Gets the message of this Error.
 
+        Human readable error message in english that could be displayed to final user  # noqa: E501
 
-        :return: The error of this Error.
-        :rtype: ErrorError
+        :return: The message of this Error.
+        :rtype: str
         """
-        return self._error
+        return self._message
 
-    @error.setter
-    def error(self, error: ErrorError):
-        """Sets the error of this Error.
+    @message.setter
+    def message(self, message: str):
+        """Sets the message of this Error.
+
+        Human readable error message in english that could be displayed to final user  # noqa: E501
+
+        :param message: The message of this Error.
+        :type message: str
+        """
+        if message is None:
+            raise ValueError("Invalid value for `message`, must not be `None`")  # noqa: E501
+
+        self._message = message
+
+    @property
+    def errors(self) -> List[object]:
+        """Gets the errors of this Error.
 
 
-        :param error: The error of this Error.
-        :type error: ErrorError
+        :return: The errors of this Error.
+        :rtype: List[object]
+        """
+        return self._errors
+
+    @errors.setter
+    def errors(self, errors: List[object]):
+        """Sets the errors of this Error.
+
+
+        :param errors: The errors of this Error.
+        :type errors: List[object]
         """
 
-        self._error = error
+        self._errors = errors

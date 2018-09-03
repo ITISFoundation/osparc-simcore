@@ -1,28 +1,43 @@
 openapi: 3.0.0
-servers:
-  - url: 'https://virtserver.swaggerhub.com/pcrespov/test/1.0.0'
 info:
-  description: API for sample authentication service
+  description: simcore-service-webserver rest API definition
   version: "1.0.0-oas3"
-  title: auth-service
+  title: simcore-service-webserver API
+  contact:
+    name: IT'IS Foundation
+    email: support at simcore.io
+  license:
+    name: MIT
+    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
+tags:
+  - name: admin
+    description: Secured Admin-only calls
+  - name: developers
+    description: Operations available to regular developers
+  - name: users
+    description: Operations available to regular users
+  - name: authentication
+    description: Groups API user's authentication calls
+  - name: document
+    description: Groups API calls for docs (test)
 paths:
   /:
     get:
       summary: Service health-check endpoint
-      description: Some general information on the API and state of the service behind
+      description: Tests healthchek of the service behind and returns info about the API and service state
       responses:
         '200':
-          description: Service information
+          description: Healthcheck info
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceInfo'
+                $ref: '#/components/schemas/HealthCheckEnveloped'
         default:
           description: Default error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
   /me:
     get:
       tags:
@@ -34,7 +49,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
   /register:
     post:
       tags:
@@ -46,39 +61,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-            multiple_invalid_sample:
-              examples:
-                response:
-                  value:
-                    error:
-                      status: 422
-                      error: FIELDS_VALIDATION_ERROR
-                      description: One or more fields raised validation errors
-                      fields:
-                        email: Invalid email address.
-                        password: Password too short
-            invalid_email_sample:
-              examples:
-                response:
-                  value:
-                    error:
-                      status: 409
-                      error: EMAIL_ALREADY_EXISTS
-                      description: An account already exists with this email
+                $ref: '#/components/schemas/ErrorEnveloped'
         default:
           description: Default error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegistrationData'
-        required: true
-  '/confirm/{token}':
+        $ref: '#/components/requestBodies/RegistrationInput'
+  /confirm/{token}:
     post:
       tags:
         - authentication
@@ -100,7 +92,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
   /login:
     post:
       tags:
@@ -112,7 +104,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
   /logout:
     post:
       tags:
@@ -124,71 +116,35 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-  '/docs/{doc_id}':
-    get:
-      tags:
-        - documents
-      description: Gets document
-      parameters:
-        - name: doc_id
-          in: path
-          required: true
-          schema:
-            type: integer
-            minimum: 0
-      responses:
-        default:
-          description: Default error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-    post:
-      tags:
-        - documents
-      description: Set document
-      operationId: setDocument
-      parameters:
-        - name: doc_id
-          in: path
-          required: true
-          schema:
-            type: integer
-            minimum: 0
-      responses:
-        default:
-          description: Default error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Document'
+                $ref: '#/components/schemas/ErrorEnveloped'
+#-------------------------------------------------------
 components:
+
   schemas:
-    ServiceInfo:
+    HealthCheckEnveloped:
       type: object
       properties:
         data:
-          type: object
-          properties:
-            name:
-              type: string
-              example: auth service
-            status:
-              type: string
-              example: SERVICE_RUNNING
-            api_version:
-              type: string
-              example: 1.0.0-dev
-            version:
-              type: string
-              example: 1dfcfdc
-    RegistrationData:
+          $ref: '#/components/schemas/HealthCheck'
+        status:
+          type: int32
+          example: 200
+    HealthCheck:
+      type: object
+      properties:
+        name:
+          type: string
+          example: simcore-service-webserver
+        status:
+          type: string
+          example: SERVICE_RUNNING
+        version:
+          type: string
+          example: 2.0.1-1dfcfdc
+        api_version:
+          type: string
+          example: 1.0.0-dev
+    RegistrationInput:
       type: object
       properties:
         email:
@@ -203,40 +159,70 @@ components:
           type: string
           example: bizzy
       description: Registration payload
-    Document:
+    ErrorEnveloped:
       type: object
       required:
-        - text
-      properties:
-        doc_id:
-          type: string
-        text:
-          type: string
-      example:
-        text: text
-        doc_id: e7120959-fab0-481f-a1fd-0dbdcbe6016c
-    Error:
-      type: object
+        - error
       properties:
         error:
-          type: object
-          required:
-            - code
-            - message
-          properties:
-            code:
-              type: integer
-              format: int32
-              example: 422
-            error:
-              type: string
-              example: FIELDS_VALIDATION_ERROR
-            message:
-              type: string
-              example: One or more request's fields raised validation errors
-            fields:
-              type: object
-              description: a dict with error messages specific fot request's fields
-              additionalProperties:
+          $ref: '#/components/schemas/Error'
+        status:
+          description: Error code
+          type: int32
+          example: 500
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          description: Human readable error message in english that could be displayed to final user
+          type: string
+          example: Unexpected error
+        errors:
+          type: array
+          items:
+            properties:
+              code:
                 type: string
-                example: Some field-specific error message
+                description: Server's error code. Typically the name of the error's exception
+                example: ServiceUUIDNotFoundError
+              message:
+                type: string
+                description: Error message specific to this item
+                example: Requested service not found
+              resource:
+                type: string
+                description: Resources affected by this error
+                example: service
+              field:
+                type: string
+                description: Specific field within the resource
+                example: identifier
+
+  requestBodies:
+    RegistrationInput:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationInput'
+        required: true
+
+#-------------------------------------------------------
+servers:
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/pcrespov/simcore-webserver/1.0.0
+  - description: Development server
+    url: http://localhost:{port}/{basePath}
+    variables:
+      port:
+        default: '8080'
+      basePath:
+        default: v1
+  - description: Production server
+    url: https://webserver:{port}/{basePath}
+    variables:
+      port:
+        default: '9081'
+      basePath:
+        default: v1

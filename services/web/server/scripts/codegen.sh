@@ -24,7 +24,7 @@ mkdir -p $OUTPUT_DIR_GEN
 ABSOLUTE_INPUT_PATH=$(realpath "${INPUT_SPEC}")
 ABSOLUTE_OUTPUT_DIR=$(realpath "${OUTPUT_DIR}")
 ABSOLUTE_OUTPUT_DIR_GEN=$(realpath "${OUTPUT_DIR_GEN}")
-$REPO_ROOT/scripts/openapi.ignore.1/openapi_python_server_codegen.sh -i ${ABSOLUTE_INPUT_PATH} -o ${ABSOLUTE_OUTPUT_DIR_GEN}
+$REPO_ROOT/scripts/openapi/openapi_python_server_codegen.sh -i ${ABSOLUTE_INPUT_PATH} -o ${ABSOLUTE_OUTPUT_DIR_GEN}
 
 # replace import entries in python code
 find ${OUTPUT_DIR_GEN} -type f -exec sed -i 's/openapi_server.models././g' {} \;
