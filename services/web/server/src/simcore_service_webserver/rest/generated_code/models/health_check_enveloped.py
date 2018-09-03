@@ -7,7 +7,6 @@ from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
 from .health_check import HealthCheck  # noqa: F401,E501
-from .int32 import Int32  # noqa: F401,E501
 from .. import util
 
 
@@ -17,17 +16,17 @@ class HealthCheckEnveloped(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: HealthCheck=None, status: Int32=None):  # noqa: E501
+    def __init__(self, data: HealthCheck=None, status: int=None):  # noqa: E501
         """HealthCheckEnveloped - a model defined in OpenAPI
 
         :param data: The data of this HealthCheckEnveloped.  # noqa: E501
         :type data: HealthCheck
         :param status: The status of this HealthCheckEnveloped.  # noqa: E501
-        :type status: Int32
+        :type status: int
         """
         self.openapi_types = {
             'data': HealthCheck,
-            'status': Int32
+            'status': int
         }
 
         self.attribute_map = {
@@ -71,22 +70,22 @@ class HealthCheckEnveloped(Model):
         self._data = data
 
     @property
-    def status(self) -> Int32:
+    def status(self) -> int:
         """Gets the status of this HealthCheckEnveloped.
 
 
         :return: The status of this HealthCheckEnveloped.
-        :rtype: Int32
+        :rtype: int
         """
         return self._status
 
     @status.setter
-    def status(self, status: Int32):
+    def status(self, status: int):
         """Sets the status of this HealthCheckEnveloped.
 
 
         :param status: The status of this HealthCheckEnveloped.
-        :type status: Int32
+        :type status: int
         """
 
         self._status = status

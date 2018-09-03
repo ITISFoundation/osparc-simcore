@@ -5,12 +5,33 @@ import logging
 
 from aiohttp import web_exceptions
 
+from .generated_code.models.health_check import HealthCheck
+from .generated_code.models.health_check_enveloped import HealthCheckEnveloped
+
+
 _LOGGER = logging.getLogger(__name__)
 
-# This module shall contain the handlers of the API (implementation side of the openapi server side).
-# Each operation is typically defined as
-# async def root_get(request):
-#   return "hello API world"
+async def check_health(request):
+    # TODO: unify location of service info. setup.py should take if from there?
+    info = HealthCheck(
+        name = "simcore-service-webserver",
+        status = "running",
+        version = "0.0",
+        api_version = "1.0")
 
-# The API shall define a path where the entry operationId:
-# operationId: root_get
+    return HealthCheckEnveloped(data=info, status=200)
+
+async def get_me(request):
+    pass
+
+async def register_user(request):
+    pass
+
+async def confirm_token(request):
+    pass
+
+async def login(request):
+    pass
+
+async def logout(request):
+    pass

@@ -18,7 +18,9 @@ from aiohttp_apiset.swagger.operations import OperationIdMapping
 
 from .. import handlers
 from .models.base_model_ import Model
-from .models.error import Error
+
+# FIXME: this will be overriten
+from .models.error_enveloped import ErrorEnveloped, Error
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,11 +30,16 @@ async def __handle_errors(request, handler):
         response = await handler(request)
         return response
     except web.HTTPError as ex:
-        error = Error(status=ex.status, message=ex.reason)
-        error_dict = error.to_dict()
-        return web.json_response(error_dict, status=ex.status)
+        # FIXME: need to fit detailed errors
+        ee = ErrorEnveloped(
+             error = Error(message=ex.reason, errors=[]),
+             status=ex.status
+            )
+        return web.json_response(ee.to_dict(), status=ex.status)
 
 def create_web_app(base_folder, spec_file, additional_middlewares = None):
+    # FIXME: just add path to oas file
+
     # create the default mapping of the operationId to the implementation code in handlers
     opmap = __create_default_operation_mapping(Path(base_folder / spec_file))
 

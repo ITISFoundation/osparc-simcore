@@ -6,9 +6,20 @@ import pathlib
 import re
 import pkg_resources
 import collections
-
+import functools
 
 PkgResourceArgs = collections.namedtuple("PkgResourceArgs", "package_or_requirement resource_name".split())
+
+
+# TODO: set package_or_requirement. Resources only rely on their name
+# TODO: add objects to used resources
+#exists = functools.partial(pkg_resources.resource_exists, __name__)
+#get_stream = functools.partial(pkg_resources.resource_exists, __name__)
+listdir = functools.partial(pkg_resources.resource_listdir, __name__)
+
+def get_path(resource_name):
+    resource_path = pathlib.Path( pkg_resources.resource_filename(__name__, resource_name) )
+    return resource_path
 
 class ConfigFile:
     """

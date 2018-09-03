@@ -7,7 +7,6 @@ from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
 from .error import Error  # noqa: F401,E501
-from .int32 import Int32  # noqa: F401,E501
 from .. import util
 
 
@@ -17,17 +16,17 @@ class ErrorEnveloped(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, error: Error=None, status: Int32=None):  # noqa: E501
+    def __init__(self, error: Error=None, status: int=None):  # noqa: E501
         """ErrorEnveloped - a model defined in OpenAPI
 
         :param error: The error of this ErrorEnveloped.  # noqa: E501
         :type error: Error
         :param status: The status of this ErrorEnveloped.  # noqa: E501
-        :type status: Int32
+        :type status: int
         """
         self.openapi_types = {
             'error': Error,
-            'status': Int32
+            'status': int
         }
 
         self.attribute_map = {
@@ -73,24 +72,24 @@ class ErrorEnveloped(Model):
         self._error = error
 
     @property
-    def status(self) -> Int32:
+    def status(self) -> int:
         """Gets the status of this ErrorEnveloped.
 
         Error code  # noqa: E501
 
         :return: The status of this ErrorEnveloped.
-        :rtype: Int32
+        :rtype: int
         """
         return self._status
 
     @status.setter
-    def status(self, status: Int32):
+    def status(self, status: int):
         """Sets the status of this ErrorEnveloped.
 
         Error code  # noqa: E501
 
         :param status: The status of this ErrorEnveloped.
-        :type status: Int32
+        :type status: int
         """
 
         self._status = status

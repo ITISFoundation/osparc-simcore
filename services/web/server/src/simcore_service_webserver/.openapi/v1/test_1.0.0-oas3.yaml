@@ -24,7 +24,10 @@ paths:
   /:
     get:
       summary: Service health-check endpoint
-      description: Tests healthchek of the service behind and returns info about the API and service state
+      operationId: check_health
+      description: >-
+        Tests healthchek of the service behind and returns info about the API and
+         service state
       responses:
         '200':
           description: Healthcheck info
@@ -43,6 +46,7 @@ paths:
       tags:
         - authentication
       summary: Base entry-point for current API client's information
+      operationId: get_me
       responses:
         default:
           description: Default error
@@ -55,6 +59,7 @@ paths:
       tags:
         - authentication
       summary: Registers new user
+      operationId: register_user
       responses:
         '400':
           description: Validation error
@@ -75,6 +80,7 @@ paths:
       tags:
         - authentication
       summary: Confirms some operation by given user
+      operationId: confirm_token
       description: >-
         E.g. to confirm account, password reset, etc. Token encrypts user and
         action to be confirmed
@@ -98,6 +104,7 @@ paths:
       tags:
         - authentication
       summary: Logs client into the service
+      operationId: login
       responses:
         default:
           description: Default error
@@ -109,7 +116,8 @@ paths:
     post:
       tags:
         - authentication
-      description: Logs out client from the service
+      summary: Logs out client from the service
+      operationId: logout
       responses:
         default:
           description: Default error
@@ -127,7 +135,8 @@ components:
         data:
           $ref: '#/components/schemas/HealthCheck'
         status:
-          type: int32
+          type: integer
+          format: int32
           example: 200
     HealthCheck:
       type: object
@@ -168,7 +177,8 @@ components:
           $ref: '#/components/schemas/Error'
         status:
           description: Error code
-          type: int32
+          type: integer
+          format: int32
           example: 500
     Error:
       type: object

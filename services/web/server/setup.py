@@ -29,7 +29,10 @@ setup(
     },
     include_package_data=True,
     package_data={
-        '': ['.config/*.yaml']
+        '': [
+            '.config/*.yaml',
+            '.opeanpi/v1/*.yaml'
+            ]
     },
     entry_points={
         'console_scripts': [

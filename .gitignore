@@ -126,3 +126,5 @@ services/docker-compose.swarm.yml
 
 # Any generated output folder (e.g. codegen, build, ...)
 out/
+
+tmp/
