@@ -441,21 +441,21 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (linkId !== undefined) {
         link.setLinkId(linkId);
       }
-      this.__links.push(linkBase);
+      this.__links.push(link);
 
       node2.getPropsWidget().enableProp(port2.portId, false);
 
-      linkBase.getRepresentation().node.addEventListener("click", function(e) {
+      link.getRepresentation().node.addEventListener("click", function(e) {
         // this is needed to get out of the context of svg
-        linkBase.fireDataEvent("linkSelected", linkBase.getLinkId());
+        link.fireDataEvent("linkSelected", link.getLinkId());
         e.stopPropagation();
       }, this);
 
-      linkBase.addListener("linkSelected", function(e) {
-        this.__selectedItemChanged(linkBase.getLinkId());
+      link.addListener("linkSelected", function(e) {
+        this.__selectedItemChanged(link.getLinkId());
       }, this);
 
-      return linkBase;
+      return link;
     },
 
     __updateLinks: function(node) {
