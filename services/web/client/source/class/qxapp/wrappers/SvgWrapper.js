@@ -54,7 +54,7 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
     },
 
     drawCurve: function(draw, controls, linkWidth = 3, portSphereDiameter = 4, arrowSize = 4) {
-      const linkColor = qxapp.theme.Color.colors["workbench-link-active"];
+      const linkColor = qxapp.theme.Color.colors["workbench-link-comp-active"];
 
       let path = draw.path()
         .M(controls[0].x, controls[0].y)

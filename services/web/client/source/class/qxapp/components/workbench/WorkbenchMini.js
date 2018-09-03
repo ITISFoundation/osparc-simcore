@@ -103,17 +103,17 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
       const x2 = pointList[1][0];
       const y2 = pointList[1][1];
       let linkRepresentation = this.__svgWidget.drawCurveMini(x1, y1, x2, y2);
-      let linkBase = new qxapp.components.workbench.LinkBase(linkRepresentation);
-      linkBase.setInputNodeId(node1.getNodeId());
-      linkBase.setInputPortId(port1.portId);
-      linkBase.setOutputNodeId(node2.getNodeId());
-      linkBase.setOutputPortId(port2.portId);
+      let link = new qxapp.components.workbench.LinkBase(linkRepresentation);
+      link.setInputNodeId(node1.getNodeId());
+      link.setInputPortId(port1.portId);
+      link.setOutputNodeId(node2.getNodeId());
+      link.setOutputPortId(port2.portId);
       if (linkId !== undefined) {
-        linkBase.setLinkId(linkId);
+        link.setLinkId(linkId);
       }
-      this.__links.push(linkBase);
+      this.__links.push(link);
 
-      return linkBase;
+      return link;
     },
 
     __removeNode: function(node) {

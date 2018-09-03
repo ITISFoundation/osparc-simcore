@@ -740,7 +740,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (oldId) {
         if (this.__isSelectedItemALink(oldId)) {
           let unselectedLink = this.__getLink(oldId);
-          const unselectedColor = qxapp.theme.Color.colors["workbench-link-active"];
+          const unselectedColor = qxapp.theme.Color.colors["workbench-link-comp-active"];
           this.__svgWidget.updateColor(unselectedLink.getRepresentation(), unselectedColor);
         }
       }
