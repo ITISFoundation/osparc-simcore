@@ -4,21 +4,23 @@
 VERSION := $(shell cat /proc/version)
 # SAN this is a hack so that docker-compose works in the linux virtual environment under Windows
 ifneq (,$(findstring Microsoft,$(VERSION)))
-export DOCKER_COMPOSE=docker-compose.exe
-export DOCKER=docker.exe
+export DOCKER_COMPOSE=docker-compose
+export DOCKER=docker
+export RUN_DOCKER_ENGINE_ROOT=1
 else
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
+export RUN_DOCKER_ENGINE_ROOT=0
 endif
 
 PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*"))
-
 export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
 all:
 	@echo 'run `make build-devel` to build your dev environment'
 	@echo 'run `make up-devel` to start your dev environment.'
 	@echo 'see Makefile for further targets'
+	@echo ${RUN_DOCKER_ENGINE_ROOT}
 
 clean:
 	@git clean -dxf -e .vscode/
