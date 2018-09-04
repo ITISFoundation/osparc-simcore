@@ -68,7 +68,7 @@ async def running_interactive_services_get(request, service_uuid):  # pylint:dis
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-    return web.json_response(data=Response204Enveloped(status=204), status=204)
+    return web.json_response(data=Response204Enveloped(status=204).to_dict(), status=204)
 
 async def running_interactive_services_delete(request, service_uuid):  # pylint:disable=unused-argument
     try:
@@ -78,4 +78,4 @@ async def running_interactive_services_delete(request, service_uuid):  # pylint:
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-    return web.json_response(data=Response204Enveloped(status=204), status=204)
+    return web.json_response(data=Response204Enveloped(status=204).to_dict(), status=204)
