@@ -12,12 +12,10 @@ from .session import setup_session
 from .statics import setup_statics
 from .computational_backend import setup_computational_backend
 from . async_sio import setup_sio
-
 # FIXME: application cannot be created from here!
 from .rest import routing
 from . import resources
 
-__version__ = "0.0.1"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,6 +38,9 @@ def init_app(config):
     setup_statics(app)
     setup_sio(app)
     setup_api(app)
+
+    # TODO: rest-api middlewares need to be the last to apply
+    routing.setup_rest(app)
 
     return app
 

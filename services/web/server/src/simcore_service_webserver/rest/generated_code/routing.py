@@ -24,6 +24,7 @@ from .models.error_enveloped import ErrorEnveloped, Error
 
 _LOGGER = logging.getLogger(__name__)
 
+
 @web.middleware
 async def __handle_errors(request, handler):
     try:
@@ -51,22 +52,6 @@ def create_web_app(base_folder, spec_file, additional_middlewares = None):
         default_validate=True,
     )
 
-    # add automatic jsonification of the models located in generated code
-    jsonify.singleton = Jsonify(indent=3, ensure_ascii=False)
-    jsonify.singleton.add_converter(Model, lambda o: o.to_dict(), score=0)
-
-    middlewares = [jsonify, __handle_errors]
-    if additional_middlewares:
-        middlewares.extend(additional_middlewares)
-    # create the web application using the API
-    app = web.Application(
-        router=router,
-        middlewares=middlewares,
-    )
-    router.set_cors(app, domains='*', headers=(
-        (hdrs.ACCESS_CONTROL_EXPOSE_HEADERS, hdrs.AUTHORIZATION),
-    ))
-
     # Include our specifications in a router,
     # is now available in the swagger-ui to the address http://localhost:8080/swagger/?spec=v1
     router.include(
@@ -75,6 +60,18 @@ def create_web_app(base_folder, spec_file, additional_middlewares = None):
         name='v1',  # name to access in swagger-ui,
         basePath="/v1" # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
     )
+
+    #middlewares = [jsonify, __handle_errors]
+    #if additional_middlewares:
+    #    middlewares.extend(additional_middlewares)
+    # create the web application using the API
+    app = web.Application( router=router)
+
+    router.set_cors(app, domains='*', headers=(
+        (hdrs.ACCESS_CONTROL_EXPOSE_HEADERS, hdrs.AUTHORIZATION),
+    ))
+
+
 
     return app
 
@@ -90,3 +87,14 @@ def __create_default_operation_mapping(specs_file):
             operation_id = method[1][op_str]
             operation_mapping[operation_id] = getattr(handlers, operation_id)
     return OperationIdMapping(**operation_mapping)
+
+
+def setup_rest(app):
+    """Setup the library in aiohttp fashion."""
+
+    # add automatic jsonification of the models located in generated code
+    jsonify.singleton = Jsonify(indent=3, ensure_ascii=False)
+    jsonify.singleton.add_converter(Model, lambda o: o.to_dict(), score=0)
+
+    app.middlewares.append(jsonify)
+    app.middlewares.append(__handle_errors)

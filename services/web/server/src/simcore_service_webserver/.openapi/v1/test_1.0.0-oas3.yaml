@@ -5,7 +5,7 @@ info:
   title: simcore-service-webserver API
   contact:
     name: IT'IS Foundation
-    email: support at simcore.io
+    email: support@simcore.io
   license:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE

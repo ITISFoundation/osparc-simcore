@@ -1,8 +1,9 @@
-import sys
 import pathlib
+import sys
+
 from setuptools import (
-    setup,
-    find_packages
+    find_packages,
+    setup
 )
 
 _CDIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent
@@ -13,6 +14,7 @@ def list_requirements_in(filename):
         requires = [line.strip() for line in fh.readlines() if not line.lstrip().startswith("#")]
     return requires
 
+
 #####################################################################################
 # NOTE see https://packaging.python.org/discussions/install-requires-vs-requirements/
 
@@ -22,7 +24,7 @@ TESTS_REQUIRE = list_requirements_in("tests.txt")
 
 setup(
     name='simcore-service-webserver',
-    version='0.0.0',
+    version="0.0.2",
     packages=find_packages(where='src'),
     package_dir={
         '': 'src',
