@@ -50,6 +50,7 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
     __databaseSettings: null,
     __settingsBox: null,
     __contentBox: null,
+    __settingsFolder: null,
 
     __applyNode: function(node, oldNode, propertyName) {
       this.__settingsBox.removeAll();
@@ -74,7 +75,7 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
         this.__populateList(root, nodeImageId, true);
       }
 
-      // modeler (and materialDB)
+      // modeler (and DB)
       for (const portKey in node.getInputPorts()) {
         const port = node.getInputPort(portKey);
         const portType = port.portType;
@@ -116,9 +117,8 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
           selectionMode: "single",
           openMode: "none"
         });
-        // tree.setDroppable(true);
         const settingName = node.getMetaData().name;
-        let root = new qx.ui.tree.TreeFolder(settingName).set({
+        let root = this.__settingsFolder = new qx.ui.tree.TreeFolder(settingName).set({
           open: true,
           droppable: true
         });
@@ -131,7 +131,7 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
           let compatible = false;
           const dataType = "setting-container";
           if (e.supportsType(dataType)) {
-            compatible = true;
+            compatible = this.__isCompatible();
           }
           if (!compatible) {
             e.preventDefault();
@@ -142,32 +142,33 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
           const eDataType = "setting-container";
           if (e.supportsType(eDataType)) {
             const eData = e.getData(eDataType);
-            const materialName = eData.name;
-            let materialSett = new qx.ui.tree.TreeFolder(materialName).set({
+            let conceptSetting = new qx.ui.tree.TreeFolder(eData.name).set({
               open: true,
               droppable: true
             });
-            root.add(materialSett);
+            conceptSetting.data = eData;
+            root.add(conceptSetting);
 
-            materialSett.addListener("dragover", ev => {
+            conceptSetting.addListener("dragover", ev => {
               let compatible = false;
               const evDataType = "setting-component";
               if (ev.supportsType(evDataType)) {
-                compatible = true;
+                compatible = this.__isCompatible();
               }
               if (!compatible) {
                 ev.preventDefault();
               }
             }, this);
 
-            materialSett.addListener("drop", ev => {
+            conceptSetting.addListener("drop", ev => {
               const evDataType = "setting-component";
               if (ev.supportsType(evDataType)) {
                 const evData = ev.getData(evDataType);
                 const componentName = evData.name;
                 let component = new qx.ui.tree.TreeFile(componentName);
-                materialSett.add(component);
-                materialSett.setOpen(true);
+                component.data = evData;
+                conceptSetting.add(component);
+                conceptSetting.setOpen(true);
               }
             }, this);
           }
@@ -175,8 +176,11 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
       }
     },
 
+    __isCompatible: function() {
+      return true;
+    },
+
     __populateList: function(root, imageId, isSetting = false) {
-      console.log(imageId);
       let store = qxapp.data.Store.getInstance();
       const list = store.getList(imageId);
       for (let i=0; i<list.length; i++) {
