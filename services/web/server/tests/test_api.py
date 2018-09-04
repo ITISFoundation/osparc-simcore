@@ -59,3 +59,7 @@ async def test_login(cli):
 
     text = await response.text()
     assert text == 'pong'
+
+async def test_rest(cli):
+    response = await cli.get("api/v1/")
+    print(response)

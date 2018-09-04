@@ -12,8 +12,8 @@ from .session import setup_session
 from .statics import setup_statics
 from .computational_backend import setup_computational_backend
 from . async_sio import setup_sio
-# FIXME: application cannot be created from here!
-from .rest import routing
+from . import rest
+from .rest import setup_rest
 from . import resources
 
 
@@ -26,9 +26,9 @@ def init_app(config):
     _LOGGER.debug("Initializing app ... ")
 
     oas_path = resources.get_path(".openapi/v1/test_1.0.0-oas3.yaml")
-    app = routing.create_web_app(oas_path.parent, oas_path.name)
+    router = rest.routing.create_router(oas_path)
 
-    #app = web.Application()
+    app = web.Application(router=router)
     app["config"] = config
 
     setup_db(app)
@@ -38,9 +38,7 @@ def init_app(config):
     setup_statics(app)
     setup_sio(app)
     setup_api(app)
-
-    # TODO: rest-api middlewares need to be the last to apply
-    routing.setup_rest(app)
+    setup_rest(app)
 
     return app
 
