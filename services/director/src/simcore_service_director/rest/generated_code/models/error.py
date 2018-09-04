@@ -15,26 +15,31 @@ class Error(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, status: int=None, message: str=None):  # noqa: E501
+    def __init__(self, message: str=None, errors: List[object]=None, status: int=None):  # noqa: E501
         """Error - a model defined in OpenAPI
 
-        :param status: The status of this Error.  # noqa: E501
-        :type status: int
         :param message: The message of this Error.  # noqa: E501
         :type message: str
+        :param errors: The errors of this Error.  # noqa: E501
+        :type errors: List[object]
+        :param status: The status of this Error.  # noqa: E501
+        :type status: int
         """
         self.openapi_types = {
-            'status': int,
-            'message': str
+            'message': str,
+            'errors': List[object],
+            'status': int
         }
 
         self.attribute_map = {
-            'status': 'status',
-            'message': 'message'
+            'message': 'message',
+            'errors': 'errors',
+            'status': 'status'
         }
 
-        self._status = status
         self._message = message
+        self._errors = errors
+        self._status = status
 
     @classmethod
     def from_dict(cls, dikt) -> 'Error':
@@ -46,31 +51,6 @@ class Error(Model):
         :rtype: Error
         """
         return util.deserialize_model(dikt, cls)
-
-    @property
-    def status(self) -> int:
-        """Gets the status of this Error.
-
-        Error code  # noqa: E501
-
-        :return: The status of this Error.
-        :rtype: int
-        """
-        return self._status
-
-    @status.setter
-    def status(self, status: int):
-        """Sets the status of this Error.
-
-        Error code  # noqa: E501
-
-        :param status: The status of this Error.
-        :type status: int
-        """
-        if status is None:
-            raise ValueError("Invalid value for `status`, must not be `None`")  # noqa: E501
-
-        self._status = status
 
     @property
     def message(self) -> str:
@@ -96,3 +76,49 @@ class Error(Model):
             raise ValueError("Invalid value for `message`, must not be `None`")  # noqa: E501
 
         self._message = message
+
+    @property
+    def errors(self) -> List[object]:
+        """Gets the errors of this Error.
+
+
+        :return: The errors of this Error.
+        :rtype: List[object]
+        """
+        return self._errors
+
+    @errors.setter
+    def errors(self, errors: List[object]):
+        """Sets the errors of this Error.
+
+
+        :param errors: The errors of this Error.
+        :type errors: List[object]
+        """
+
+        self._errors = errors
+
+    @property
+    def status(self) -> int:
+        """Gets the status of this Error.
+
+        Error code  # noqa: E501
+
+        :return: The status of this Error.
+        :rtype: int
+        """
+        return self._status
+
+    @status.setter
+    def status(self, status: int):
+        """Sets the status of this Error.
+
+        Error code  # noqa: E501
+
+        :param status: The status of this Error.
+        :type status: int
+        """
+        if status is None:
+            raise ValueError("Invalid value for `status`, must not be `None`")  # noqa: E501
+
+        self._status = status

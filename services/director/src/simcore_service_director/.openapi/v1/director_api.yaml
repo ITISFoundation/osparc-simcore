@@ -41,24 +41,23 @@ paths:
     get:
       tags: 
         - users
-      summary: Returns a nice greeting
-      description: Returns a nice greeting
+      summary: Service health-check endpoint
+      description: Some general information on the API and state of the service behind
       operationId: root_get
       responses:
         "200":
-          description: Successful response
+          description: Service information
           content:
             application/json:
               schema:
-                type: string
-                description: Message greeting
-                example: "Hello my friend!"
+                $ref: '#/components/schemas/HealthCheckEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
   /services:
     get:
       tags: 
@@ -74,21 +73,20 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: './node-meta-v0.0.1.json'
+                $ref: '#/components/schemas/ServicesEnveloped'                
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
+
   /running_interactive_services:
     post:
       tags: 
@@ -108,37 +106,38 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/RunningService'
+                  $ref: '#/components/schemas/RunningServiceEnveloped'
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
         "409":
           description: A service with the same uuid already exists
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
+
   /running_interactive_services/{service_uuid}:      
     get:
       tags: 
@@ -151,24 +150,28 @@ paths:
       responses:
         "204":
           description: OK service exists and runs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response204Enveloped'
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
     delete:
       tags: 
         - users
@@ -180,24 +183,28 @@ paths:
       responses:
         "204":
           description: Succesfully stopped and removed the service from the oSparc platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response204Enveloped'
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorEnveloped'
 
 components:
   parameters:
@@ -252,6 +259,66 @@ components:
         example: "1.4"
   
   schemas:
+    HealthCheckEnveloped:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/HealthCheck'
+        status:
+          type: integer
+          example: 200
+        error:
+          $ref: '#/components/schemas/Error'
+    HealthCheck:
+      type: object
+      properties:
+        name:
+          type: string
+          example: director service
+        status:
+          type: string
+          example: SERVICE_RUNNING
+        api_version:
+          type: string
+          example: 1.0.0-dev
+        version:
+          type: string
+          example: 1dfcfdc
+    Response204Enveloped:
+      type: object
+      properties:
+        data:
+          type: string
+          nullable: true
+          example: 'null'
+        status:
+          type: integer
+          example: 204
+        error:
+          $ref: '#/components/schemas/Error'
+    ServicesEnveloped:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: './node-meta-v0.0.1.json'
+        status:
+          type: integer
+          example: 200
+        error:
+          $ref: '#/components/schemas/Error'
+
+    RunningServiceEnveloped:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/RunningService'
+        status:
+          type: integer
+          example: 200
+        error:
+          $ref: '#/components/schemas/Error'
     RunningService:
       type: object
       required:
@@ -268,17 +335,32 @@ components:
           type: string
           example: /the/entry/point/is/here
     
+
+    ErrorEnveloped:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Error'
     Error:
       type: object
       required:
         - status
         - message
       properties:
-        status:
-          description: Error code
-          type: integer
-          example: 404
         message:
           description: Error message
           type: string
           example: Unexpected error
+        errors:
+          type: array
+          items:
+            properties:
+              code:
+                type: string
+                description: Server Exception
+                example: ServiceUUIDNotFoundError
+        status:
+          description: Error code
+          type: integer
+          example: 404
+        
