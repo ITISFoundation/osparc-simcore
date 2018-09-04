@@ -16,4 +16,10 @@ chown -R scu:scu /home/scu/input
 chown -R scu:scu /home/scu/output
 chown -R scu:scu /home/scu/log
 
-su-exec scu "$@"
+if [[ ${RUN_DOCKER_ENGINE_ROOT} == "1" ]]
+then
+    echo "running from windows host as root..."
+    exec "$@"
+else
+    su-exec scu "$@"
+fi
