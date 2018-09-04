@@ -19,7 +19,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
   },
 
   events: {
-    "SettingsEditionDone": "qx.event.type.Event",
+    "SettingsEdited": "qx.event.type.Event",
     "ShowViewer": "qx.event.type.Data"
   },
 
@@ -54,7 +54,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       this.add(titleBox);
 
       doneBtn.addListener("execute", function() {
-        this.fireEvent("SettingsEditionDone");
+        this.fireEvent("SettingsEdited");
       }, this);
     },
 
@@ -76,7 +76,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
         if (!viewerButton.hasListener("execute")) {
           viewerButton.addListener("execute", function(e) {
             const data = {
-              metadata: node.getMetadata(),
+              metadata: node.getMetaData(),
               nodeId: node.getNodeId()
             };
             console.log("ShowViewer", data);
