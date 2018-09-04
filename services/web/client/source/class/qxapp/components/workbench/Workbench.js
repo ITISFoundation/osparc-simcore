@@ -23,7 +23,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       bottom: 0
     });
 
-    this.__svgWidget = new qxapp.components.workbench.SvgWidget();
+    this.__svgWidget = new qxapp.components.workbench.SvgWidget("SvgWidgetLayer");
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
     // sure to catch this event
@@ -166,32 +166,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return plusButton;
     },
 
-    __getPlusMenuButton: function() {
-      const icon = "@FontAwesome5Solid/plus/32"; // qxapp.dev.Placeholders.getIcon("fa-plus", 32);
-      let plusButton = new qx.ui.form.MenuButton(null, icon, this.__getServicesMenu());
-      plusButton.set({
-        width: BUTTON_SIZE,
-        height: BUTTON_SIZE
-      });
-      plusButton.addListener("execute", function() {
-        plusButton.setMenu(this.__getServicesMenu());
-      }, this);
-      return plusButton;
-    },
-
-    __getServicesMenu: function() {
-      let menuNodeTypes = new qx.ui.menu.Menu();
-
-      let producersButton = new qx.ui.menu.Button("Producers", null, null, this.__getProducers());
-      menuNodeTypes.add(producersButton);
-      let computationalsButton = new qx.ui.menu.Button("Computationals", null, null, this.__getComputationals());
-      menuNodeTypes.add(computationalsButton);
-      let analysesButton = new qx.ui.menu.Button("Analyses", null, null, this.__getAnalyses());
-      menuNodeTypes.add(analysesButton);
-
-      return menuNodeTypes;
-    },
-
     __getPlayButton: function() {
       const icon = "@FontAwesome5Solid/play/32";
       let playButton = this.__playButton = new qx.ui.form.Button(null, icon);
@@ -255,11 +229,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __addServiceFromCatalogue: function(e, pos) {
       let data = e.getData();
-      let nodeMetaData = data.service;
+      let metaData = data.service;
+      console.log("metaData", metaData);
+      const nodeImageId = metaData.key + "-" + metaData.version;
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let nodeB = this.__createNode(nodeMetaData.imageId, null, nodeMetaData);
+      let nodeB = this.__createNode(nodeImageId, null);
       this.__addNodeToWorkbench(nodeB, pos);
 
       if (nodeAId !== null && portA !== null) {
@@ -277,22 +253,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           input: portB.portId
         });
       }
-    },
-
-    __createMenuFromList: function(nodesList) {
-      let buttonsListMenu = new qx.ui.menu.Menu();
-
-      nodesList.forEach(nodeMetaData => {
-        let nodeButton = new qx.ui.menu.Button(nodeMetaData.label);
-        nodeButton.addListener("execute", function() {
-          let nodeItem = this.__createNode(nodeMetaData.imageId, null, nodeMetaData);
-          this.__addNodeToWorkbench(nodeItem);
-        }, this);
-
-        buttonsListMenu.add(nodeButton);
-      });
-
-      return buttonsListMenu;
     },
 
     __createWindowForBuiltInService: function(widget, width, height, caption) {
@@ -384,7 +344,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __createNode: function(nodeImageId, uuid, nodeData) {
-      let nodeBase = new qxapp.components.workbench.NodeBase(nodeImageId, uuid, nodeData);
+      let nodeBase = new qxapp.components.workbench.NodeBase(nodeImageId, uuid);
+      nodeBase.createNodeLayout(nodeData);
 
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
@@ -781,6 +742,45 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__removeAllLinks();
     },
 
+    __getInputPortLinked: function(nodeId, inputPortId) {
+      for (let i = 0; i < this.__links.length; i++) {
+        const link = this.__links[i];
+        if (link.getOutputNodeId() === nodeId && link.getOutputPortId() === inputPortId) {
+          return {
+            nodeUuid: link.getInputNodeId(),
+            output: link.getInputPortId()
+          };
+        }
+      }
+      return null;
+    },
+
+    __loadProject: function(workbenchData) {
+      for (let nodeUuid in workbenchData) {
+        let nodeData = workbenchData[nodeUuid];
+        const nodeImageId = nodeData.key + "-" + nodeData.version;
+        let node = this.__createNode(nodeImageId, nodeUuid, nodeData);
+        this.__addNodeToWorkbench(node, nodeData.position);
+      }
+      for (let nodeUuid in workbenchData) {
+        let nodeData = workbenchData[nodeUuid];
+        if (nodeData.inputs) {
+          for (let prop in nodeData.inputs) {
+            let link = nodeData.inputs[prop];
+            if (typeof link == "object" && link.nodeUuid) {
+              this.__addLink({
+                nodeUuid: link.nodeUuid,
+                output: link.output
+              }, {
+                nodeUuid: nodeUuid,
+                input: prop
+              });
+            }
+          }
+        }
+      }
+    },
+
     __serializePipeline: function() {
       if (this.__projectId === null || this.__projectId === undefined) {
         this.__projectId = qxapp.utils.Utils.uuidv4();
@@ -813,73 +813,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         }
       }
       return pipeline;
-    },
-
-    __getInputPortLinked: function(nodeId, inputPortId) {
-      for (let i = 0; i < this.__links.length; i++) {
-        const link = this.__links[i];
-        if (link.getOutputNodeId() === nodeId && link.getOutputPortId() === inputPortId) {
-          return {
-            nodeUuid: link.getInputNodeId(),
-            output: link.getInputPortId()
-          };
-        }
-      }
-      return null;
-    },
-
-    __serializeData: function() {
-      let pipeline = {
-        "nodes": [],
-        "links": []
-      };
-      for (let i = 0; i < this.__nodes.length; i++) {
-        let node = {};
-        node["uuid"] = this.__nodes[i].getNodeId();
-        node["key"] = this.__nodes[i].getMetaData().key;
-        node["tag"] = this.__nodes[i].getMetaData().tag;
-        node["name"] = this.__nodes[i].getMetaData().name;
-        node["inputs"] = this.__nodes[i].getMetaData().inputs;
-        node["outputs"] = this.__nodes[i].getMetaData().outputs;
-        node["settings"] = this.__nodes[i].getMetaData().settings;
-        pipeline["nodes"].push(node);
-      }
-      for (let i = 0; i < this.__links.length; i++) {
-        let link = {};
-        link["uuid"] = this.__links[i].getLinkId();
-        link["node1Id"] = this.__links[i].getInputNodeId();
-        link["port1Id"] = this.__links[i].getInputPortId();
-        link["node2Id"] = this.__links[i].getOutputNodeId();
-        link["port2Id"] = this.__links[i].getOutputPortId();
-        pipeline["links"].push(link);
-      }
-      return pipeline;
-    },
-
-    __loadProject: function(workbenchData) {
-      for (let nodeUuid in workbenchData) {
-        let nodeData = workbenchData[nodeUuid];
-        let node =
-          this.__createNode(nodeData.key + "-" + nodeData.version, nodeUuid, nodeData);
-        this.__addNodeToWorkbench(node, nodeData.position);
-      }
-      for (let nodeUuid in workbenchData) {
-        let nodeData = workbenchData[nodeUuid];
-        if (nodeData.inputs) {
-          for (let prop in nodeData.inputs) {
-            let link = nodeData.inputs[prop];
-            if (typeof link == "object" && link.nodeUuid) {
-              this.__addLink({
-                nodeUuid: link.nodeUuid,
-                output: link.output
-              }, {
-                nodeUuid: nodeUuid,
-                input: prop
-              });
-            }
-          }
-        }
-      }
     },
 
     addWindowToDesktop: function(node) {
@@ -1037,21 +970,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __isSelectedItemALink: function() {
       return Boolean(this.__getLink(this.__selectedItemId));
-    },
-
-    __getProducers: function() {
-      const producers = qxapp.dev.fake.Data.getProducers();
-      return this.__createMenuFromList(producers);
-    },
-
-    __getComputationals: function() {
-      const computationals = qxapp.dev.fake.Data.getComputationals();
-      return this.__createMenuFromList(computationals);
-    },
-
-    __getAnalyses: function() {
-      const analyses = qxapp.dev.fake.Data.getAnalyses();
-      return this.__createMenuFromList(analyses);
     }
   }
 });

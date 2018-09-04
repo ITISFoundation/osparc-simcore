@@ -1,16 +1,14 @@
-const LINKS_LAYER_ID = "drawing";
-
 qx.Class.define("qxapp.components.workbench.SvgWidget", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(svgLayerId) {
     this.base();
     this.addListenerOnce("appear", () => {
       let el = this.getContentElement().getDomElement();
-      qx.bom.element.Attribute.set(el, "id", LINKS_LAYER_ID);
+      qx.bom.element.Attribute.set(el, "id", svgLayerId);
       this.__svgWrapper = new qxapp.wrappers.SvgWrapper();
       this.__svgWrapper.addListener(("SvgLibReady"), () => {
-        this.__linksCanvas = this.__svgWrapper.createEmptyCanvas(LINKS_LAYER_ID);
+        this.__linksCanvas = this.__svgWrapper.createEmptyCanvas(svgLayerId);
         this.fireDataEvent("SvgWidgetReady", true);
       });
       this.__svgWrapper.init();

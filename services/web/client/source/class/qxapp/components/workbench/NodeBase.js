@@ -4,7 +4,7 @@ const portHeight = 16;
 qx.Class.define("qxapp.components.workbench.NodeBase", {
   extend: qx.ui.window.Window,
 
-  construct: function(nodeImageId, uuid, nodeData) {
+  construct: function(nodeImageId, uuid) {
     this.base();
 
     this.set({
@@ -21,56 +21,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       nodeImageId: nodeImageId,
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
     });
-
-
-    let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
-    this.setLayout(nodeLayout);
-
-    let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-    this.add(inputsOutputsLayout, {
-      flex: 1
-    });
-
-    let inputsBox = new qx.ui.layout.VBox(5);
-    this.__inputPortsUI = new qx.ui.container.Composite(inputsBox);
-    inputsOutputsLayout.add(this.__inputPortsUI, {
-      width: "50%"
-    });
-
-    let outputsBox = new qx.ui.layout.VBox(5);
-    this.__outputPortsUI = new qx.ui.container.Composite(outputsBox);
-    inputsOutputsLayout.add(this.__outputPortsUI, {
-      width: "50%"
-    });
-
-
-    let progressBox = new qx.ui.container.Composite(new qx.ui.layout.Basic());
-    progressBox.setMinWidth(nodeWidth-20);
-
-    this.__progressBar = new qx.ui.indicator.ProgressBar();
-    this.__progressBar.setWidth(nodeWidth-20);
-    progressBox.add(this.__progressBar, {
-      top: 0,
-      left: 0
-    });
-
-    this.__progressLabel = new qx.ui.basic.Label("0%");
-    progressBox.add(this.__progressLabel, {
-      top: 3,
-      left: nodeWidth/2 - 20
-    });
-
-    this.add(progressBox);
-    let metaData = qxapp.dev.fake.Data.getNodeMap()[nodeImageId];
-    if (metaData === undefined) {
-      let store = qxapp.data.Store.getInstance();
-      metaData = store.getBuiltInServices()[nodeImageId];
-    }
-    if (metaData) {
-      this.__populateNode(metaData, nodeData);
-    } else {
-      console.error("Invalid ImageID - Not populating "+nodeImageId);
-    }
   },
 
   properties: {
@@ -114,6 +64,56 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     getMetaData: function() {
       return this.__metaData;
+    },
+
+    createNodeLayout: function(nodeData) {
+      let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
+      this.setLayout(nodeLayout);
+
+      let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      this.add(inputsOutputsLayout, {
+        flex: 1
+      });
+
+      let inputsBox = new qx.ui.layout.VBox(5);
+      this.__inputPortsUI = new qx.ui.container.Composite(inputsBox);
+      inputsOutputsLayout.add(this.__inputPortsUI, {
+        width: "50%"
+      });
+
+      let outputsBox = new qx.ui.layout.VBox(5);
+      this.__outputPortsUI = new qx.ui.container.Composite(outputsBox);
+      inputsOutputsLayout.add(this.__outputPortsUI, {
+        width: "50%"
+      });
+
+
+      let progressBox = new qx.ui.container.Composite(new qx.ui.layout.Basic());
+      progressBox.setMinWidth(nodeWidth-20);
+
+      this.__progressBar = new qx.ui.indicator.ProgressBar();
+      this.__progressBar.setWidth(nodeWidth-20);
+      progressBox.add(this.__progressBar, {
+        top: 0,
+        left: 0
+      });
+
+      this.__progressLabel = new qx.ui.basic.Label("0%");
+      progressBox.add(this.__progressLabel, {
+        top: 3,
+        left: nodeWidth/2 - 20
+      });
+
+      this.add(progressBox);
+
+      const nodeImageId = this.getNodeImageId();
+      let store = qxapp.data.Store.getInstance();
+      let metaData = store.getNodeMetaData(nodeImageId);
+      if (metaData) {
+        this.__populateNode(metaData, nodeData);
+      } else {
+        console.error("Invalid ImageID - Not populating "+nodeImageId);
+      }
     },
 
     getInputPorts: function() {
@@ -167,7 +167,9 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.__createPorts("Input", metaData.inputs);
       this.__createPorts("Output", metaData.outputs);
       this.__addSettings(metaData.inputs);
-      this.__settingsForm.setData(nodeData.inputs);
+      if (nodeData) {
+        this.__settingsForm.setData(nodeData.inputs);
+      }
     },
 
     __addSettings: function(inputs) {

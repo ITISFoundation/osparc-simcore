@@ -8,7 +8,39 @@ qx.Class.define("qxapp.data.Store", {
     "interactiveServicesRegistered": "qx.event.type.Event"
   },
 
+  statics: {
+    /**
+     * Represents an empty project descriptor
+    */
+    NEW_PROJECT_DESCRIPTOR: qx.data.marshal.Json.createModel({
+      name: "New Project",
+      description: "Empty",
+      thumbnail: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round",
+      created: new Date(),
+      projectId: qxapp.utils.Utils.uuidv4()
+    })
+  },
+
   members: {
+    getServices: function() {
+      let services = {};
+      services = Object.assign(services, this.getBuiltInServices());
+      services = Object.assign(services, qxapp.dev.fake.Data.getNodeMap());
+      return services;
+    },
+
+    getProjectList: function() {
+      return qxapp.dev.fake.Data.getProjectList();
+    },
+
+    getNodeMetaData: function(nodeImageId) {
+      let metaData = this.getServices()[nodeImageId];
+      if (metaData === undefined) {
+        metaData = this.getBuiltInServices()[nodeImageId];
+      }
+      return metaData;
+    },
+
     getBuiltInServices: function() {
       let builtInServices = {
         "service/dynamic/itis/FileManager-0.0.0": {

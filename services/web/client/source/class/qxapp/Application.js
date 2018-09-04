@@ -118,16 +118,10 @@ qx.Class.define("qxapp.Application", {
         let data = e.getTarget().getResponse();
         try {
           let ajv = new qxapp.wrappers.Ajv(data);
-          let map = qxapp.dev.fake.Data.getNodeMap();
+          let map = qxapp.data.Store.getInstance().getServices();
           for (let key in map) {
             let check = ajv.validate(map[key]);
-            console.log("validation result " + key + ":", check);
-          }
-          let store = qxapp.data.Store.getInstance();
-          map = store.getBuiltInServices();
-          for (let key in map) {
-            let check = ajv.validate(map[key]);
-            console.log("validation result " + key + ":", check);
+            console.log("services validation result " + key + ":", check);
           }
         } catch (err) {
           console.error(err);
@@ -139,10 +133,10 @@ qx.Class.define("qxapp.Application", {
         let data = e.getTarget().getResponse();
         try {
           let ajv = new qxapp.wrappers.Ajv(data);
-          let list = qxapp.dev.fake.Data.getProjectList();
+          let list = qxapp.data.Store.getInstance().getProjectList();
           list.forEach((project, i) => {
             let check = ajv.validate(project);
-            console.log("validation result " + i + ":", check);
+            console.log("project validation result " + i + ":", check);
           });
         } catch (err) {
           console.error(err);

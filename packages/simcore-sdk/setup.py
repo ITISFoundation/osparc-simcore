@@ -1,10 +1,13 @@
-from setuptools import setup
+from setuptools import (
+    setup,
+    find_packages
+)
 
 INSTALL_REQUIRES = [
     'networkx==2.1',
     'psycopg2==2.7.4',
-    'sqlalchemy==1.2.8',
-    'tenacity==4.12.0'
+    'sqlalchemy==1.2.9',
+    'tenacity==4.12.0',
     'trafaret-config==2.0.1'
 ]
 
@@ -21,11 +24,13 @@ TEST_REQUIRE = [
 setup(
     name='simcore-sdk',
     version='0.1.0',
-    package_dir={'': 'src'},
-    packages=['simcore_sdk'],
+    packages=find_packages(where='src'),
+    package_dir={
+        '': 'src',
+    },
     python_requires='>=3.6',
-    INSTALL_REQUIRES=INSTALL_REQUIRES,
-    TEST_REQUIRE=TEST_REQUIRE,
+    install_requires=INSTALL_REQUIRES,
+    tests_require=TEST_REQUIRE,
     extras_require= {
         'test': TEST_REQUIRE
     },

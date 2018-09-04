@@ -121,7 +121,7 @@
                       "additionalProperties": false,
                       "required": [
                         "nodeUuid",
-                        "property"
+                        "output"
                       ],
                       "properties": {
                         "nodeUuid": {
