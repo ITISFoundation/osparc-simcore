@@ -32,6 +32,21 @@ qx.Class.define("qxapp.data.Store", {
       return metaData;
     },
 
+    getList: function(nodeImageId) {
+      switch (nodeImageId) {
+        case "service/dynamic/itis/s4l/Modeler-0.0.0": {
+          return ["Model 1", "Model 2", "Model 3", "Model 4"];
+        }
+        case "service/dynamic/itis/s4l/MaterialDB-0.0.0": {
+          return ["Air", "Brain", "Eye", "Heart"];
+        }
+        case "service/dynamic/itis/s4l/Simulator/LF/Materials-0.0.0": {
+          return ["PEC", "PMC", "Dielectric"];
+        }
+      }
+      return null;
+    },
+
     getBuiltInServices: function() {
       let builtInServices = {
         "service/dynamic/itis/FileManager-0.0.0": {
