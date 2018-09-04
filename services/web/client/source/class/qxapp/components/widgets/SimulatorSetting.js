@@ -59,11 +59,12 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
       // default settings
       {
         let tree = new qx.ui.tree.Tree().set({
-          selectionMode: "single"
+          selectionMode: "single",
+          openMode: "none"
         });
-        tree.setDraggable(true);
-        let root = new qx.ui.tree.TreeFolder("Default Settings");
-        root.setOpen(true);
+        let root = new qx.ui.tree.TreeFolder("Default Settings").set({
+          open: true
+        });
         tree.setRoot(root);
         this.__settingsBox.add(tree, {
           flex: 1
@@ -73,19 +74,20 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
         this.__populateList(root, nodeImageId, true);
       }
 
+      // modeler (and materialDB)
       for (const portKey in node.getInputPorts()) {
         const port = node.getInputPort(portKey);
-        console.log(port);
         const portType = port.portType;
         if (portType.includes("data:application/s4l-api")) {
           const apiType = portType.split("/").pop();
           if (apiType !== "settings") {
             let tree = new qx.ui.tree.Tree().set({
-              selectionMode: "single"
+              selectionMode: "single",
+              openMode: "none"
             });
-            tree.setDraggable(true);
-            let root = new qx.ui.tree.TreeFolder(portKey);
-            root.setOpen(true);
+            let root = new qx.ui.tree.TreeFolder(portKey).set({
+              open: true
+            });
             tree.setRoot(root);
             switch (apiType) {
               case "modeler":
@@ -108,30 +110,88 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
         }
       }
 
+      // Settings
       {
         let tree = new qx.ui.tree.Tree().set({
-          selectionMode: "single"
+          selectionMode: "single",
+          openMode: "none"
         });
-        tree.setDroppable(true);
-        const name = node.getMetaData().name;
-        let root = new qx.ui.tree.TreeFolder(name);
-        root.setOpen(true);
+        // tree.setDroppable(true);
+        const settingName = node.getMetaData().name;
+        let root = new qx.ui.tree.TreeFolder(settingName).set({
+          open: true,
+          droppable: true
+        });
         tree.setRoot(root);
         this.__contentBox.add(tree, {
           flex: 1
         });
+
+        root.addListener("dragover", e => {
+          let compatible = false;
+          const dataType = "setting-container";
+          if (e.supportsType(dataType)) {
+            compatible = true;
+          }
+          if (!compatible) {
+            e.preventDefault();
+          }
+        }, this);
+
+        root.addListener("drop", e => {
+          const eDataType = "setting-container";
+          if (e.supportsType(eDataType)) {
+            const eData = e.getData(eDataType);
+            const materialName = eData.name;
+            let materialSett = new qx.ui.tree.TreeFolder(materialName).set({
+              open: true,
+              droppable: true
+            });
+            root.add(materialSett);
+
+            materialSett.addListener("dragover", ev => {
+              let compatible = false;
+              const evDataType = "setting-component";
+              if (ev.supportsType(evDataType)) {
+                compatible = true;
+              }
+              if (!compatible) {
+                ev.preventDefault();
+              }
+            }, this);
+
+            materialSett.addListener("drop", ev => {
+              const evDataType = "setting-component";
+              if (ev.supportsType(evDataType)) {
+                const evData = ev.getData(evDataType);
+                const componentName = evData.name;
+                let component = new qx.ui.tree.TreeFile(componentName);
+                materialSett.add(component);
+                materialSett.setOpen(true);
+              }
+            }, this);
+          }
+        }, this);
       }
     },
 
-    __populateList: function(tree, imageId, showAsFolder = false) {
+    __populateList: function(root, imageId, isSetting = false) {
       console.log(imageId);
       let store = qxapp.data.Store.getInstance();
       const list = store.getList(imageId);
       for (let i=0; i<list.length; i++) {
         const label = list[i].name;
-        let treeItem = showAsFolder ? new qx.ui.tree.TreeFolder(label) : new qx.ui.tree.TreeFile(label);
-        treeItem.info = list[i];
-        tree.add(treeItem);
+        let treeItem = isSetting ? new qx.ui.tree.TreeFolder(label) : new qx.ui.tree.TreeFile(label);
+        treeItem.setDraggable(true);
+        root.add(treeItem);
+
+        treeItem.addListener("dragstart", e => {
+          e.addAction("copy");
+
+          const dataType = isSetting ? "setting-container" : "setting-component";
+          e.addType(dataType);
+          e.addData(dataType, list[i]);
+        }, this);
       }
     },
 
