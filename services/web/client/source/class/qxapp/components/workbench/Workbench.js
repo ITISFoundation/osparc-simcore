@@ -229,7 +229,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let store = qxapp.data.Store.getInstance();
       let metaData = store.getNodeMetaData(nodeImageId);
       if (metaData.type === "container") {
-        let innerNodes = nodeBase.createInnerNodes(metaData.innerServices);
+        let innerNodes = nodeBase.createInnerNodes(metaData.innerNodes);
         this.__nodes = this.__nodes.concat(innerNodes);
       }
 

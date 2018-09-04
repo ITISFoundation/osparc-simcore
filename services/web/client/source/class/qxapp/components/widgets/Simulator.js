@@ -4,7 +4,7 @@ qx.Class.define("qxapp.components.widgets.Simulator", {
   construct: function(node) {
     this.base(arguments);
 
-    if (!(Object.prototype.hasOwnProperty.call(node.getMetaData(), "innerServices"))) {
+    if (!(Object.prototype.hasOwnProperty.call(node.getMetaData(), "innerNodes"))) {
       return;
     }
 

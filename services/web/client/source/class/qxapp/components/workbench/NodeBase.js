@@ -314,9 +314,9 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       }
     },
 
-    createInnerNodes: function(innerServices) {
-      for (let i=0; i<innerServices.length; i++) {
-        let innerServiceMetaData = innerServices[i];
+    createInnerNodes: function(innerNodes) {
+      for (let i=0; i<innerNodes.length; i++) {
+        let innerServiceMetaData = innerNodes[i];
         const innerServiceImageId = innerServiceMetaData.key + "-" + innerServiceMetaData.version;
         let innerNode = new qxapp.components.workbench.NodeBase(innerServiceImageId);
         innerNode.populateNodeData();

@@ -136,7 +136,7 @@ qx.Class.define("qxapp.data.Store", {
               type: "data:application/hdf5"
             }
           },
-          innerServices: [
+          innerNodes: [
             {
               key: "service/dynamic/itis/s4l/Simulator/LF/Setup",
               version: "0.0.0",
