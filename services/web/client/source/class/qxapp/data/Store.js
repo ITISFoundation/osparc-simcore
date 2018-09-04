@@ -36,14 +36,64 @@ qx.Class.define("qxapp.data.Store", {
       switch (nodeImageId) {
         // case "service/dynamic/itis/s4l/Modeler-0.0.0": {
         case "data:application/s4l-api/modeler": {
-          return ["Model 1", "Model 2", "Model 3", "Model 4"];
+          return [
+            {
+              name: "Model 1",
+              uuid: "MODEL1-UUID",
+              payload: {}
+            }, {
+              name: "Model 2",
+              uuid: "MODEL2-UUID",
+              payload: {}
+            }, {
+              name: "Model 3",
+              uuid: "MODEL3-UUID",
+              payload: {}
+            }, {
+              name: "Model 4",
+              uuid: "MODEL4-UUID",
+              payload: {}
+            }
+          ];
         }
         // case "service/dynamic/itis/s4l/MaterialDB-0.0.0": {
         case "data:application/s4l-api/materialDB": {
-          return ["Air", "Brain", "Eye", "Heart"];
+          return [
+            {
+              name: "Air",
+              uuid: "Air-UUID",
+              payload: {}
+            }, {
+              name: "Brain",
+              uuid: "Brain-UUID",
+              payload: {}
+            }, {
+              name: "Eye",
+              uuid: "Eye-UUID",
+              payload: {}
+            }, {
+              name: "Heart",
+              uuid: "Heart-UUID",
+              payload: {}
+            }
+          ];
         }
         case "service/dynamic/itis/s4l/Simulator/LF/Materials-0.0.0": {
-          return ["PEC", "PMC", "Dielectric"];
+          return [
+            {
+              name: "PEC",
+              uuid: "PEC-UUID",
+              payload: {}
+            }, {
+              name: "PMC",
+              uuid: "PMC-UUID",
+              payload: {}
+            }, {
+              name: "Dielectric",
+              uuid: "Dielectric-UUID",
+              payload: {}
+            }
+          ];
         }
       }
       return [];

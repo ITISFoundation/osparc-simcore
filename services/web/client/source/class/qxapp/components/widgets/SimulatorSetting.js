@@ -128,7 +128,9 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
       let store = qxapp.data.Store.getInstance();
       const list = store.getList(imageId);
       for (let i=0; i<list.length; i++) {
-        let treeItem = showAsFolder ? new qx.ui.tree.TreeFolder(list[i]) : new qx.ui.tree.TreeFile(list[i]);
+        const label = list[i].name;
+        let treeItem = showAsFolder ? new qx.ui.tree.TreeFolder(label) : new qx.ui.tree.TreeFile(label);
+        treeItem.info = list[i];
         tree.add(treeItem);
       }
     },
