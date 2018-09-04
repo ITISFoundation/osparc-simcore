@@ -28,7 +28,7 @@ def init_app(config):
     _LOGGER.debug("Initializing app ... ")
 
     oas_path = resources.get_path(".openapi/v1/test_1.0.0-oas3.yaml")
-    app = routing.create_web_app(oas_path.parent, oas_path.name, )
+    app = routing.create_web_app(oas_path.parent, oas_path.name)
 
     #app = web.Application()
     app["config"] = config

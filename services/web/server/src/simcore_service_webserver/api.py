@@ -81,6 +81,16 @@ def setup_api(app):
     _LOGGER.debug("Setting up %s ...", __name__)
 
     router = app.router
+
+    # FIXME: create a router in scsdk that extends SwaggerRouter
+    def _add_routes(self, routes):
+        """Append routes to route table.
+
+        Parameter should be a sequence of RouteDef objects.
+        """
+        for route_obj in routes:
+            route_obj.register(self)
+
     # NOTE: Keep a single digit version in the url
     prefix = "/api/v{:.0f}".format(float(__version__))
 
@@ -89,8 +99,11 @@ def setup_api(app):
     router.add_get(prefix+"/ping", ping, name="ping")
 
     # TODO: add authorization on there routes
-    app.router.add_routes(registry_routes)
-    app.router.add_routes(comp_backend_routes)
+
+    #app.router.add_routes(registry_routes)
+    #app.router.add_routes(comp_backend_routes)
+    _add_routes(router, registry_routes)
+    _add_routes(router, comp_backend_routes)
 
     # middlewares
     setup_swagger(app, swagger_url=prefix+"/doc")
