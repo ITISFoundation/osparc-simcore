@@ -20,7 +20,6 @@ all:
 	@echo 'run `make build-devel` to build your dev environment'
 	@echo 'run `make up-devel` to start your dev environment.'
 	@echo 'see Makefile for further targets'
-	@echo ${RUN_DOCKER_ENGINE_ROOT}
 
 clean:
 	@git clean -dxf -e .vscode/
