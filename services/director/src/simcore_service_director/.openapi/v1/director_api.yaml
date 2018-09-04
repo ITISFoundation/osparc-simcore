@@ -267,8 +267,6 @@ components:
         status:
           type: integer
           example: 200
-        error:
-          $ref: '#/components/schemas/Error'
     HealthCheck:
       type: object
       properties:
@@ -294,8 +292,6 @@ components:
         status:
           type: integer
           example: 204
-        error:
-          $ref: '#/components/schemas/Error'
     ServicesEnveloped:
       type: object
       properties:
@@ -306,8 +302,6 @@ components:
         status:
           type: integer
           example: 200
-        error:
-          $ref: '#/components/schemas/Error'
 
     RunningServiceEnveloped:
       type: object
@@ -317,8 +311,6 @@ components:
         status:
           type: integer
           example: 200
-        error:
-          $ref: '#/components/schemas/Error'
     RunningService:
       type: object
       required:
@@ -339,8 +331,11 @@ components:
     ErrorEnveloped:
       type: object
       properties:
-        error:
+        data:
           $ref: '#/components/schemas/Error'
+        status:
+          type: integer
+          example: 404
     Error:
       type: object
       required:

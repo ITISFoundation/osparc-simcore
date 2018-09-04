@@ -14,12 +14,14 @@ _LOGGER = logging.getLogger(__name__)
 _SESSION = Session()
 
 
-def director_request(path, method="GET", data=None):
+def director_request(path, method="GET", data=None, query=None):
     if data is None:
         data = dict()
+    if query is None:
+        query = dict()
 
     api_url = os.environ.get("DIRECTOR_HOST", "0.0.0.0") + \
-        ":" + os.environ.get("DIRECTOR_PORT", "8001") + "/" + path
+        ":" + os.environ.get("DIRECTOR_PORT", "8001") + "/v1/" + path
 
     # TODO: Unsafe! Improve linking of service. Check https://docs.docker.com/docker-cloud/apps/service-links/#using-service-links-for-service-discovery
     if not re.match(r"http[s]*://", api_url):
@@ -27,9 +29,9 @@ def director_request(path, method="GET", data=None):
 
     try:
         if data:
-            request_result = getattr(_SESSION, method.lower())(api_url, json=data)
+            request_result = getattr(_SESSION, method.lower())(api_url, json=data, params=query)
         else:
-            request_result = getattr(_SESSION, method.lower())(api_url)
+            request_result = getattr(_SESSION, method.lower())(api_url, params=query)
 
         # TODO: we should only check for success (e.g. 201), and handle any error in a dedicated function
         if request_result.status_code == 400:
@@ -49,12 +51,12 @@ def director_request(path, method="GET", data=None):
 
 
 def retrieve_interactive_services():
-    request = director_request("list_interactive_services")
+    request = director_request("services", method="GET", query={"service_type":"interactive"})
     return request.json()
 
 
 def retrieve_computational_services():
-    request = director_request("list_computational_services")
+    request = director_request("services", method="GET", query={"service_type":"computational"})
     return request.json()
 
 

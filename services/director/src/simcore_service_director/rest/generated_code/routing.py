@@ -30,7 +30,7 @@ async def __handle_errors(request, handler):
         return response
     except web.HTTPError as ex:
         error = Error(status=ex.status, message=ex.reason)
-        error_enveloped = ErrorEnveloped(error=error)
+        error_enveloped = ErrorEnveloped(data=error, status=ex.status_code)
         error_dict = error_enveloped.to_dict()
         return web.json_response(error_dict, status=ex.status)
 
