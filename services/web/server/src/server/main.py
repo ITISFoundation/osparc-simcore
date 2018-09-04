@@ -48,5 +48,5 @@ def run(config):
 
     app = init_app(config)
     web.run_app(app,
-                host=config["host"],
-                port=config["port"])
+                host=config["app"]["host"],
+                port=config["app"]["port"])

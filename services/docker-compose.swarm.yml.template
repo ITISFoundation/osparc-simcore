@@ -87,9 +87,9 @@ services:
       - S3_SECRET_KEY=<enter secret key>
       - S3_BUCKET_NAME=simcore
     volumes:
-      - input:/input
-      - output:/output
-      - log:/log
+      - input:/home/scu/input
+      - output:/home/scu/output
+      - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8000:8000"

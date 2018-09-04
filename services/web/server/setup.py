@@ -20,23 +20,21 @@ INSTALL_REQUIRES = list_requirements_in("base.txt")
 TESTS_REQUIRE = list_requirements_in("tests.txt")
 
 
-# TODO: normalize naming of packages, scripts and modules naming. E.g in this case
-#  package name  : simcore-service-webserver
-#  import name   : simcore_service_webserver
-#  main console script name: simcore-service-webserver
-# TODO: document clear guidelines for versioning and compatibility
-#
 setup(
-    name='simcore-web-server',
+    name='simcore-service-webserver',
     version='0.0.0',
-    package_dir={'': 'src'},
-    packages=find_packages('src'),
+    packages=find_packages(where='src'),
+    package_dir={
+        '': 'src',
+    },
     include_package_data=True,
     package_data={
-        'config': ['../config/*.yaml'] #FIXME: this is still not copied!??
+        '': ['.config/*.yaml']
     },
     entry_points={
-        'console_scripts': ['service-web-server=server.__main__:main']},
+        'console_scripts': [
+            'simcore-service-webserver=server.__main__:main', ]
+        },
     python_requires='>=3.6',
     install_requires=INSTALL_REQUIRES,
     tests_require=TESTS_REQUIRE,

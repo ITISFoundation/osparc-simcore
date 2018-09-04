@@ -1,0 +1,31 @@
+# Runs insides a container
+---
+version: "1.0"
+app:
+  host: 0.0.0.0
+  port: 8080
+  client_outdir: ${SIMCORE_WEB_OUTDIR}
+  log_level: INFO
+  testing: False
+director:
+  host: ${DIRECTOR_HOST}
+  port: ${DIRECTOR_PORT}
+postgres:
+  database: ${POSTGRES_DB}
+  endpoint: ${POSTGRES_ENDPOINT}
+  user: ${POSTGRES_USER}
+  password: ${POSTGRES_PASSWORD}
+  host: postgres
+  port: 5432
+rabbit:
+  user: ${RABBITMQ_USER}
+  password: ${RABBITMQ_PASSWORD}
+  channels:
+    progress: ${RABBITMQ_PROGRESS_CHANNEL}
+    log: ${RABBITMQ_LOG_CHANNEL}
+s3:
+  endpoint: ${S3_ENDPOINT}
+  access_key: ${S3_ACCESS_KEY}
+  secret_key: ${S3_SECRET_KEY}
+  bucket_name: ${S3_BUCKET_NAME}
+...
