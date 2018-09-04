@@ -29,10 +29,4 @@ s3:
   access_key: ${S3_ACCESS_KEY}
   secret_key: ${S3_SECRET_KEY}
   bucket_name: ${S3_BUCKET_NAME}
-cs_s4l:
-  host: ${CS_S4L_HOSTNAME}
-  app:
-    port: ${CS_S4L_PORT_APP}
-  modeler:
-    port: ${CS_S4L_PORT_MOD}
 ...
