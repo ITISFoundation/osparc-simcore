@@ -317,11 +317,11 @@ qx.Class.define("qxapp.dev.fake.Data", {
               inputs: {
                 modeler: {
                   nodeUuid: "bc466582-9240-4d97-9f9e-197b5f3a354b",
-                  output: "outFile"
+                  output: "modeler"
                 },
                 materialDB: {
                   nodeUuid: "eb51440a-04bd-4847-b457-86c83400abf5",
-                  output: "outFile"
+                  output: "materialDB"
                 }
               },
               position: {
@@ -363,11 +363,11 @@ qx.Class.define("qxapp.dev.fake.Data", {
               inputs: {
                 modeler: {
                   nodeUuid: "c104bb08-77b1-4157-b9f9-e9df7779df08",
-                  output: "outFile"
+                  output: "modeler"
                 },
                 materialDB: {
                   nodeUuid: "bf88496d-ddf8-476c-8d6c-24c716c2ae4c",
-                  output: "outFile"
+                  output: "materialDB"
                 }
               },
               position: {
@@ -432,13 +432,13 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
               inputs: {
-                "modeler": {
-                  "nodeUuid": "17a932a0-f401-4571-9c55-b579f5050d37",
-                  "output": "outFile"
+                modeler: {
+                  nodeUuid: "17a932a0-f401-4571-9c55-b579f5050d37",
+                  output: "modeler"
                 },
-                "materialDB": {
-                  "nodeUuid": "8870a55b-680d-41b4-b40c-c928cceb7d2a",
-                  "output": "outFile"
+                materialDB: {
+                  nodeUuid: "8870a55b-680d-41b4-b40c-c928cceb7d2a",
+                  output: "materialDB"
                 },
                 "updateDispersive": false
               },
@@ -451,9 +451,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
               inputs: {
-                "modeler": {
-                  "nodeUuid": "17a932a0-f401-4571-9c55-b579f5050d37",
-                  "output": "outFile"
+                modeler: {
+                  nodeUuid: "17a932a0-f401-4571-9c55-b579f5050d37",
+                  output: "modeler"
                 },
                 "boundarySetting": 3
               },
@@ -466,9 +466,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/dynamic/itis/s4l/Simulator/LF/Sensors",
               version: "0.0.0",
               inputs: {
-                "modeler": {
-                  "nodeUuid": "17a932a0-f401-4571-9c55-b579f5050d37",
-                  "output": "outFile"
+                modeler: {
+                  nodeUuid: "17a932a0-f401-4571-9c55-b579f5050d37",
+                  output: "modeler"
                 },
                 "sensorSetting": 4
               },
@@ -481,21 +481,21 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
               inputs: {
-                "modeler": {
-                  "nodeUuid": "17a932a0-f401-4571-9c55-b579f5050d37",
-                  "output": "outFile"
+                modeler: {
+                  nodeUuid: "17a932a0-f401-4571-9c55-b579f5050d37",
+                  output: "modeler"
                 },
                 "materialSetting": {
-                  "nodeUuid": "ac80863e-e4ef-48c0-804b-d9296f1f3563",
-                  "output": "materialSetting"
+                  nodeUuid: "ac80863e-e4ef-48c0-804b-d9296f1f3563",
+                  output: "materialSetting"
                 },
                 "boundarySetting": {
-                  "nodeUuid": "ed4c85a8-c20f-4acd-8e1e-5161301e2f3d",
-                  "output": "boundarySetting"
+                  nodeUuid: "ed4c85a8-c20f-4acd-8e1e-5161301e2f3d",
+                  output: "boundarySetting"
                 },
                 "sensorSetting": {
-                  "nodeUuid": "36d70cf2-ef36-4052-988d-d32b3456b786",
-                  "output": "sensorSetting"
+                  nodeUuid: "36d70cf2-ef36-4052-988d-d32b3456b786",
+                  output: "sensorSetting"
                 },
                 "gridSetting": 5
               },
@@ -509,12 +509,12 @@ qx.Class.define("qxapp.dev.fake.Data", {
               version: "0.0.0",
               inputs: {
                 "setupSetting": {
-                  "nodeUuid": "83bc4123-ebe4-4f5f-8770-b1584d6cf95f",
-                  "output": "setupSetting"
+                  nodeUuid: "83bc4123-ebe4-4f5f-8770-b1584d6cf95f",
+                  output: "setupSetting"
                 },
                 "voxelSetting": {
-                  "nodeUuid": "b37bea52-bb29-482a-9540-bc11c7dc779c",
-                  "output": "voxelSetting"
+                  nodeUuid: "b37bea52-bb29-482a-9540-bc11c7dc779c",
+                  output: "voxelSetting"
                 },
                 "solverSetting": 7
               },
@@ -527,13 +527,13 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/dynamic/itis/s4l/Simulator/LF/Voxel",
               version: "0.0.0",
               inputs: {
-                "modeler": {
-                  "nodeUuid": "17a932a0-f401-4571-9c55-b579f5050d37",
-                  "output": "outFile"
+                modeler: {
+                  nodeUuid: "17a932a0-f401-4571-9c55-b579f5050d37",
+                  output: "modeler"
                 },
                 "gridSetting": {
-                  "nodeUuid": "c3ab33a7-4ead-4302-9867-5b194a4f45ec",
-                  "output": "gridSetting"
+                  nodeUuid: "c3ab33a7-4ead-4302-9867-5b194a4f45ec",
+                  output: "gridSetting"
                 },
                 "voxelSetting": 6
               },
@@ -547,8 +547,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
               version: "0.0.0",
               inputs: {
                 "inFile": {
-                  "nodeUuid": "01e28708-46c4-474b-837b-479fd596e566",
-                  "output": "outFile"
+                  nodeUuid: "01e28708-46c4-474b-837b-479fd596e566",
+                  output: "outFile"
                 }
               },
               position: {

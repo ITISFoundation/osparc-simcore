@@ -74,7 +74,7 @@ qx.Class.define("qxapp.data.Store", {
           contact: "maiz@itis.ethz.ch",
           inputs: {},
           outputs: {
-            outFile: {
+            modeler: {
               displayOrder: 0,
               label: "Modeler",
               description: "Modeler Live link",
@@ -95,7 +95,7 @@ qx.Class.define("qxapp.data.Store", {
           contact: "maiz@itis.ethz.ch",
           inputs: {},
           outputs: {
-            outFile: {
+            materialDB: {
               displayOrder: 0,
               label: "MaterialDB",
               description: "MaterialDB Live link",
