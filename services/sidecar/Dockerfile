@@ -66,6 +66,7 @@ VOLUME /home/scu/packages
 VOLUME /home/scu/services/sidecar
 
 ENV DEBUG 1
+ENV RUN_DOCKER_ENGINE_ROOT=0
 USER root
 ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
 CMD ./boot.sh
@@ -98,6 +99,10 @@ RUN . $HOME/.venv/bin/activate; pip list &&\
     rm -rf $HOME/services
 
 ENV DEBUG 0
+<<<<<<< HEAD
+=======
+ENV RUN_DOCKER_ENGINE_ROOT=0
+>>>>>>> master
 USER root
 ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
 CMD ./boot.sh

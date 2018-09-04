@@ -10,9 +10,7 @@ LABEL maintainer=pcrespov
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 #  REQUIRED: client_qx:build image ready
 
-RUN apk add --no-cache \
-      su-exec
-
+# create user 'scu'
 RUN adduser -D -u 8004 scu
 
 ENV HOME /home/scu
@@ -22,11 +20,7 @@ ENV IS_CONTAINER_CONTEXT Yes
 
 EXPOSE 8080
 
-WORKDIR /home/scu
-
 # -------------------------- Build stage -------------------
-#
-# - Preserves relative folder structure as in host (except for client that avoid source-output)
 #
 # + /home/scu/              $HOME
 #    + packages
@@ -56,11 +50,11 @@ RUN python3 -m venv $HOME/.venv &&\
       wheel \
       setuptools
 
+WORKDIR /home/scu
+
 # install base 3rd party packages to accelerate runtime installs
 COPY --chown=scu:scu services/web/server/requirements/base.txt requirements-base.txt
-RUN $PIP install --no-cache-dir -r requirements-base.txt && rm requirements-base.txt
-
-COPY --chown=scu:scu services/web/server/.docker .docker
+RUN $PIP install --no-cache-dir -r requirements-base.txt
 
 # --------------------------Development stage -------------------
 FROM build as development
@@ -69,7 +63,7 @@ ARG HOST_GID_ARG=1000
 
 # install test 3rd party packages to accelerate runtime installs
 COPY --chown=scu:scu services/web/server/requirements/tests.txt requirements-tests.txt
-RUN $PIP install --no-cache-dir -r requirements-tests.txt && rm requirements-tests.txt
+RUN $PIP install --no-cache-dir -r requirements-tests.txt
 
 # in dev mode we give access to `scu` to host's mapped volumes
 RUN addgroup -g $HOST_GID_ARG hgrp &&\

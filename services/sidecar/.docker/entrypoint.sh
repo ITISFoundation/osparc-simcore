@@ -3,7 +3,7 @@
 # This entrypoint script:
 #
 # - Executes with root privileges *inside* of the container upon start
-# - Allows starting the container as root to perform some root-level operations at runtime
+# - Allows starting the conner as root to perform some root-level operations at runtime
 #  (e.g. on volumes mapped inside)
 # - Notice that this way, the container *starts* as root but *runs* as scu (non-root user)
 #
@@ -16,4 +16,10 @@ chown -R scu:scu /home/scu/input
 chown -R scu:scu /home/scu/output
 chown -R scu:scu /home/scu/log
 
-su-exec scu "$@"
+if [[ ${RUN_DOCKER_ENGINE_ROOT} == "1" ]]
+then
+    echo "running from windows host as root..."
+    exec "$@"
+else
+    su-exec scu "$@"
+fi
