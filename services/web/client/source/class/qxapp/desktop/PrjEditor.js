@@ -148,6 +148,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
               this.__mainPanel.getOptions().addListener("ListClicked", function() {
                 widget.listClicked();
               }, this);
+              this.__mainPanel.getOptions().addListener("AddClicked", function() {
+                widget.addClicked();
+              }, this);
               this.showInExtraView(new qx.ui.core.Widget());
               this.showInMainView(widget, node.getMetaData().name);
               break;

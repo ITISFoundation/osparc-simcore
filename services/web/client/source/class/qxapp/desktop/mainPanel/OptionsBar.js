@@ -10,7 +10,8 @@ qx.Class.define("qxapp.desktop.mainPanel.OptionsBar", {
   },
 
   events: {
-    "ListClicked": "qx.event.type.Event"
+    "ListClicked": "qx.event.type.Event",
+    "AddClicked": "qx.event.type.Event"
   },
 
   members: {
@@ -22,13 +23,16 @@ qx.Class.define("qxapp.desktop.mainPanel.OptionsBar", {
       }, this);
       this._add(treeBtn);
 
+      let addBtn = new qx.ui.form.Button();
+      addBtn.setIcon("@FontAwesome5Solid/plus/32");
+      addBtn.addListener("execute", function() {
+        this.fireDataEvent("AddClicked");
+      }, this);
+      this._add(addBtn);
+
       let databaseBtn = new qx.ui.form.Button();
       databaseBtn.setIcon("@FontAwesome5Solid/database/32");
       this._add(databaseBtn);
-
-      let addBtn = new qx.ui.form.Button();
-      addBtn.setIcon("@FontAwesome5Solid/plus/32");
-      this._add(addBtn);
 
       let linkBtn = new qx.ui.form.Button();
       linkBtn.setIcon("@FontAwesome5Solid/magnet/32");
