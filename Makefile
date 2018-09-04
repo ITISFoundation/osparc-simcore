@@ -7,10 +7,14 @@ ifneq (,$(findstring Microsoft,$(VERSION)))
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 export RUN_DOCKER_ENGINE_ROOT=1
+# Windows does not have these things defined... but they are needed to execute a local swarm
+export DOCKER_GID=1001
+export HOST_ID=1000
 else
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 export RUN_DOCKER_ENGINE_ROOT=0
+# TODO: Add a meaningfull call to retrieve the local docker group ID and the user ID in linux.
 endif
 
 PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*/generated_code/models*" -not -path "*/generated_code/util*"))
