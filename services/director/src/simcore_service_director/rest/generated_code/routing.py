@@ -19,6 +19,7 @@ from aiohttp_apiset.swagger.operations import OperationIdMapping
 from .. import handlers
 from .models.base_model_ import Model
 from .models.error import Error
+from .models.error_enveloped import ErrorEnveloped
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,7 +30,8 @@ async def __handle_errors(request, handler):
         return response
     except web.HTTPError as ex:
         error = Error(status=ex.status, message=ex.reason)
-        error_dict = error.to_dict()
+        error_enveloped = ErrorEnveloped(error=error)
+        error_dict = error_enveloped.to_dict()
         return web.json_response(error_dict, status=ex.status)
 
 def create_web_app(base_folder, spec_file, additional_middlewares = None):

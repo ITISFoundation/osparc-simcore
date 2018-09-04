@@ -2,11 +2,12 @@
 
 # files and folders recursively
 /docs/                   @pcrespov
-/services/web/client     @odeimaiz
-/services/web/server     @pcrespov
-/services/modeling       @sanderegg
 /services/authentication @pcrespov
 /services/computation    @mguidon
+/services/dy*            @sanderegg
+/services/sidecar        @pcrespov, @mguidon
+/services/web/client     @odeimaiz
+/services/web/server     @pcrespov
 
 # any change in travis
 /.travis.yml     @odeimaiz

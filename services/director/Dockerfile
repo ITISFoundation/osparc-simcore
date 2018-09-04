@@ -2,6 +2,7 @@ FROM python:3.6-alpine as common
 
 LABEL maintainer="sanderegg"
 
+RUN apk add --no-cache gcc libc-dev
 # create standard user scu
 RUN adduser -D -u 8004 scu
 USER scu
@@ -22,6 +23,8 @@ WORKDIR /home/scu
 # + /home/scu/            $HOME, $WORKDIR,
 #    + src/            $PYTHONPATH
 #    + boot.sh
+
+
 
 # create virtual environment
 RUN python -m venv venv \

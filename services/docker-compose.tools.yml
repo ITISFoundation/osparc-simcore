@@ -1,0 +1,21 @@
+version: '3.4'
+services:
+  # Maintenance services
+  #--------------------------------------------------------------------
+  flower:
+    image: ondrejit/flower:latest
+    command: --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbit:5672
+    ports:
+      - 5555:5555
+    depends_on:
+      - rabbit
+  #--------------------------------------------------------------------
+  adminer:
+    image: adminer
+    ports:
+      - 18080:8080
+    depends_on:
+      - postgres
+  #--------------------------------------------------------------------
+  # tool wishlist:
+  #  - something to monitor containers when docker-compose up. e.g. portainer?

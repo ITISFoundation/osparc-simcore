@@ -1,4 +1,4 @@
-FROM python:3.6-alpine as base-stage
+FROM python:3.6-alpine as base
 
 LABEL maintainer=pcrespov
 
@@ -9,127 +9,110 @@ LABEL maintainer=pcrespov
 #  REQUIRED: context expected at $(this-file-dir)/../../
 #  REQUIRED: client_qx:build image ready
 
+# create user 'scu'
+RUN adduser -D -u 8004 scu
+
+ENV HOME /home/scu
+ENV PIP  /home/scu/.venv/bin/pip3
+ENV SIMCORE_WEB_OUTDIR $HOME/services/web/client
+ENV IS_CONTAINER_CONTEXT Yes
+
+EXPOSE 8080
+
+# -------------------------- Build stage -------------------
 #
 # + /home/scu/              $HOME
-#    + client               $SIMCORE_WEB_OUTDIR
+#    + packages
+#    + services/web/client         $SIMCORE_WEB_OUTDIR
 #       - index.html
 #        ...
-#    + packages         *   installed simcore/packages
-#       + simcore_sdk
-#    + server
-#       + src           *
+#    + services/web/server
+#       + src
 #       + tests
 #
-#  * = in PYTHONPATH
-#
-#
-# TODO: try installing in .venv in $HOME would allow installing as non-root all 3rd, 2nd
-#       and even the application itself
 #
 # TODO: straight copying python packages bring unnecessary files (e.g. __pycache__) -> dockerignore!
 #       could copy and then python setup.py install OR git clone into the container.
 #       This applies for both
 #
-
-RUN adduser -D -u 8004 scu
+FROM base as build
 
 RUN apk add --no-cache \
-  postgresql-dev \
-  gcc \
-  libc-dev \
-  libffi-dev
+      postgresql-dev \
+      gcc \
+      libc-dev \
+      libffi-dev
 
-
-ENV HOME /home/scu
-ENV SIMCORE_WEB_OUTDIR $HOME/client
-#ENV SIMCORE_WEB_OUTDIR $HOME/src/static
-ENV IS_CONTAINER_CONTEXT Yes
-ENV PYTHONPATH "$HOME/server/src:$HOME/packages/simcore-sdk/src:$HOME/packages/s3wrapper/src"
-
+RUN python3 -m venv $HOME/.venv &&\
+    $PIP install --no-cache-dir --upgrade \
+      pip \
+      wheel \
+      setuptools
 
 WORKDIR /home/scu
 
-# 1. install base 3rd party packages
-COPY --chown=scu:scu services/web/server/requirements requirements
-RUN pip3 install --no-cache-dir -r requirements/base.txt
+# install base 3rd party packages to accelerate runtime installs
+COPY --chown=scu:scu services/web/server/requirements/base.txt requirements-base.txt
+RUN $PIP install --no-cache-dir -r requirements-base.txt
 
-EXPOSE 8080
+# --------------------------Development stage -------------------
+FROM build as development
 
-ENTRYPOINT ["python3", "-m", "aiohttp.web"]
+ARG HOST_GID_ARG=1000
 
-# ------------------------------------------------------------------------------------------
-FROM base-stage as development
+# install test 3rd party packages to accelerate runtime installs
+COPY --chown=scu:scu services/web/server/requirements/tests.txt requirements-tests.txt
+RUN $PIP install --no-cache-dir -r requirements-tests.txt
 
-ENV SIMCORE_WEB_CONFIG development
+# in dev mode we give access to `scu` to host's mapped volumes
+RUN addgroup -g $HOST_GID_ARG hgrp &&\
+    addgroup scu hgrp && \
+    chown -R scu:scu $HOME/.venv
 
-# 1.1 install packages needed for testing
-RUN pip3 install --no-cache-dir -r requirements/tests.txt && \
-    rm -rf requirements
-
-USER scu
-
-# 2. creates mounted volumes
-RUN mkdir $HOME/client && \
-    mkdir $HOME/packages
-
-WORKDIR $HOME/server/src
-
-VOLUME /home/scu/server/
-VOLUME /home/scu/client/
 VOLUME /home/scu/packages
+VOLUME /home/scu/services/web/server/
+VOLUME /home/scu/services/web/client/
 
-# TODO: add watch functionality in dev mode
-CMD ["-H", "0.0.0.0", \
-     "-P", "8080", \
-     "server.main:init_app"]
+USER scu
+ENV SIMCORE_WEB_CONFIG development
+ENV DEBUG 1
+WORKDIR /home/scu/services/web/server
+CMD ./boot.sh
 
 
-# ------------------------------------------------------------------------------------------
-FROM base-stage as production
+# --------------------------Production multi-stage -------------------
+FROM build as build-production
 
 ENV SIMCORE_WEB_CONFIG production
 
-# 2. install 2nd party packages
-COPY --chown=scu:scu packages packages
+# 2nd party packages
+COPY --chown=scu:scu packages $HOME/packages
+# client
+COPY --from=services_webclient:build --chown=scu:scu /home/scu/client/build-output $HOME/services/web/client
+# server
+COPY --chown=scu:scu services/web/server $HOME/services/web/server
 
-# 3. install client
-COPY --from=services_webclient:build --chown=scu:scu /home/scu/client/build-output client
+WORKDIR /home/scu/services/web/server
+RUN $PIP --no-cache-dir install -r requirements/prod.txt ;\
+    $PIP list
 
-# 4. install server
-COPY --chown=scu:scu services/web/server/src server/src
+#-------------------
+#FROM base as production
+# TODO: PC some basic package missing
 
+#COPY --from=build-production --chown=scu:scu $HOME/services/web/server/boot.sh $HOME
+#COPY --from=build-production --chown=scu:scu $HOME/.venv $HOME/.venv
+#RUN . $HOME/.venv/bin/activate; pip list
+
+# FIXME: temporary solution until found missing packages
+FROM build-production as production
+
+RUN chown -R scu:scu $HOME/.venv &&\
+    cp $HOME/services/web/server/boot.sh $HOME &&\
+    rm -rf $HOME/packages &&\
+    rm -rf $HOME/services/web/server
+
+WORKDIR /home/scu
 USER scu
-
-WORKDIR $HOME/server/src
-
-CMD ["-H", "0.0.0.0", \
-     "-P", "8080", \
-     "server.main:init_app"]
-
-
-# ------------------------------------------------------------------------------------------
-FROM base-stage as ci
-
-ENV SIMCORE_WEB_CONFIG production
-
-# 2. install 2nd party packages
-COPY --chown=scu:scu packages packages
-
-# 3. install client
-COPY --from=services_webclient:build --chown=scu:scu /home/scu/client/build-output client
-
-# 4. copy all server
-COPY --chown=scu:scu services/web/server server
-
-WORKDIR $HOME/server/
-
-# 5. installs all packages
-RUN pip3 install --no-cache-dir -r requirements/docker-ci.txt
-
-USER scu
-
-WORKDIR $HOME/server/src
-
-CMD ["-H", "0.0.0.0", \
-     "-P", "8080", \
-     "server.main:init_app"]
+ENV DEBUG 0
+ENTRYPOINT ./boot.sh

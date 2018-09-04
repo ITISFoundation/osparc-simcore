@@ -369,8 +369,8 @@ def is_service_up(service_uuid):
         list_running_services_with_uuid = docker_client.services.list(
             filters={'label': 'uuid=' + service_uuid})        
     except docker.errors.APIError as err:
-        _LOGGER.exception("Error while stopping container with uuid: %s", service_uuid)
-        raise exceptions.GenericDockerError("Error while stopping container", err) from err
+        _LOGGER.exception("Error while accessing container with uuid: %s", service_uuid)
+        raise exceptions.GenericDockerError("Error while accessing container", err) from err
     # error if no service with such an id exists
     if not list_running_services_with_uuid:
         raise exceptions.ServiceUUIDNotFoundError(service_uuid)
