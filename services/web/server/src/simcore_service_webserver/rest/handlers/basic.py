@@ -16,8 +16,7 @@ from aiohttp_security import (
     has_permission, login_required
 )
 
-from ..settings import api_version
-
+from ..config import api_version
 from .._generated_code.models.health_check import HealthCheck
 from .._generated_code.models.health_check_enveloped import HealthCheckEnveloped
 

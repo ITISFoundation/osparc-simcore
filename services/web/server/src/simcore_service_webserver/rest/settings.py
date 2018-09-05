@@ -1,8 +1,6 @@
 import logging
-from pathlib import Path
 
 from aiohttp import hdrs
-import yaml
 
 from ._generated_code.models.base_model_ import Model
 from .middlewares import (
@@ -10,24 +8,9 @@ from .middlewares import (
     handle_errors
 )
 from . import routing
-from .. import resources
 
 _LOGGER = logging.getLogger(__name__)
 
-#-------------------------------------------------------------------
-# NOTE: Set here the version of API to be used
-# NOTE: Versions and name consistency tested in test_rest.py
-API_MAJOR_VERSION = 1
-API_URL_PREFIX = "v{:.0f}".format(API_MAJOR_VERSION)
-API_SPECS_NAME = ".oas3/{}/openapi.yaml".format(API_URL_PREFIX)
-#-------------------------------------------------------------------
-
-def api_version() -> str:
-    specs = yaml.load(resources.stream(API_SPECS_NAME))
-    return specs['info']['version']
-
-def api_specification_path() -> Path:
-    return resources.get_path(API_SPECS_NAME)
 
 def setup_rest(app):
     """Setup the rest API module in the application in aiohttp fashion. """
@@ -52,9 +35,6 @@ def setup_rest(app):
     app.middlewares.append(handle_errors)
 
 
-__all__ = [
-    'API_MAJOR_VERSION',
-    'API_URL_PREFIX',
-    'setup_rest',
-    'api_specification_path'
-]
+__all__ = (
+    'setup_rest'
+)

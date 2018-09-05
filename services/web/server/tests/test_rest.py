@@ -65,12 +65,12 @@ async def test_apiversion():
     """
         Checks consistency between versionings
     """
-    assert resources.exists(rest.settings.API_SPECS_NAME)
+    assert resources.exists(rest.config.API_SPECS_NAME)
 
-    specs = yaml.load(resources.stream(rest.settings.API_SPECS_NAME))
+    specs = yaml.load(resources.stream(rest.config.API_SPECS_NAME))
 
     api_version = specs['info']['version'].split(".")
-    assert int(api_version[0]) == rest.settings.API_MAJOR_VERSION
+    assert int(api_version[0]) == rest.config.API_MAJOR_VERSION
 
     # TODO: follow https://semver.org/
     oas_version = [int(n) for n in specs['openapi'].split(".")]
@@ -93,7 +93,7 @@ async def test_swagger_doc(cli):
     text = await response.text()
 
     api_specs = json.loads(text)
-    doc_specs = yaml.load(resources.stream(rest.settings.API_SPECS_NAME))
+    doc_specs = yaml.load(resources.stream(rest.config.API_SPECS_NAME))
 
     # NOTE: api_specs is not identical to doc_specs because the latter has references
     assert api_specs["info"] == doc_specs["info"]

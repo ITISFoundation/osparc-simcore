@@ -6,7 +6,7 @@ from aiohttp_apiset.swagger.loader import ExtendedSchemaFile
 from aiohttp_apiset.swagger.operations import OperationIdMapping
 
 from . import handlers
-from .settings import (
+from .config import (
     api_specification_path,
     API_URL_PREFIX
 )
