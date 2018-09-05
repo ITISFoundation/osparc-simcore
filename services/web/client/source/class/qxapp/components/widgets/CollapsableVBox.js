@@ -83,10 +83,10 @@ qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
         });
         // content
         this.__contentBox.removeAll();
-        let contentWidgets = this.getContentWidgets();
-        for (let i = 0; i < contentWidgets.length; i++) {
-          let widget = contentWidgets[i];
-          this.__contentBox.add(widget);
+        for (let i = 0; i < this.__contentWidgets.length; i++) {
+          let widget = this.__contentWidgets[i].widget;
+          let map = this.__contentWidgets[i].map;
+          this.__contentBox.add(widget, map);
         }
         this.setWidth(this.getMaxWidth());
       }
@@ -128,8 +128,11 @@ qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
       this.__contentWidgets = widgets;
     },
 
-    addContentWidget: function(widget) {
-      this.__contentWidgets.push(widget);
+    addContentWidget: function(widget, map) {
+      this.__contentWidgets.push({
+        widget: widget,
+        map: map
+      });
     }
   }
 });

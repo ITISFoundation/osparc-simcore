@@ -11,14 +11,18 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
     let componentsBox = this.__componentsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
       width: 250
     });
-    collapsableVBox1.addContentWidget(componentsBox);
+    collapsableVBox1.addContentWidget(componentsBox, {
+      flex: 1
+    });
     this._add(collapsableVBox1);
 
     let collapsableVBox2 = new qxapp.components.widgets.CollapsableVBox("Settings");
     let settingsBox = this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
       width: 250
     });
-    collapsableVBox2.addContentWidget(settingsBox);
+    collapsableVBox2.addContentWidget(settingsBox, {
+      flex: 1
+    });
     this._add(collapsableVBox2);
 
     let contentBox = this.__contentBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
