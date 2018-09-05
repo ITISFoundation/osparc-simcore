@@ -28,13 +28,13 @@ _DIRECTOR_SCHEMA = T.Dict({
     "port": T.Int()
 })
 
-
 _APP_SCHEMA = T.Dict({
     "host": T.IP,
     "port": T.Int(),
     "client_outdir": T.String(),
     "log_level": T.Enum("DEBUG", "WARNING", "INFO", "ERROR", "CRITICAL", "FATAL", "NOTSET"),
-    "testing": T.Bool()
+    "testing": T.Bool(),
+    T.Key("disable_services", default=[], optional=True): T.List(T.String())
 })
 
 # TODO: add support for versioning.

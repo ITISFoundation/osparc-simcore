@@ -12,12 +12,12 @@ import logging
 import aiopg.sa
 
 # FIXME: this is temporary here so database gets properly initialized
-# FIXME:
 from ..comp_backend_api import init_database as _init_db
 
 _LOGGER = logging.getLogger(__name__)
 
 APP_ENGINE_KEY = 'db_engine'
+DB_SERVICE_NAME = 'postgres'
 
 class RecordNotFound(Exception):
     """Requested record in database was not found"""
@@ -38,7 +38,7 @@ async def create_aiopg(app):
     # TODO: define connection policy for services. What happes if cannot connect to a service? do not have access to its services but
     # what do we do with the server? Retry? stop and exit?
 
-    conf = app["config"]["postgres"]
+    conf = app["config"][DB_SERVICE_NAME]
 
     try:
         engine = await aiopg.sa.create_engine(
@@ -71,7 +71,13 @@ async def dispose_aiopg(app):
 
 
 def setup_db(app):
-    _LOGGER.debug("Setting up %s ...", __name__)
+    _LOGGER.debug("Setting up %s [service: %s] ...", __name__, DB_SERVICE_NAME)
+
+    disable_services = app["config"].get("app", {}).get("disable_services",[])
+    if DB_SERVICE_NAME in disable_services:
+        app[APP_ENGINE_KEY] = None
+        _LOGGER.warning("Service '%s' explicitly disabled in config", DB_SERVICE_NAME)
+        return
 
     # FIXME: this create an engine to connect to simcoredb with comp_pipeline and comp_tasks
     app.on_startup.append(_init_db)

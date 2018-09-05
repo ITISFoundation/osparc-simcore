@@ -8,12 +8,21 @@
 """
 import logging
 
-from .comp_backend_subscribe import subscribe
+from .comp_backend_subscribe import (
+    subscribe,
+    SERVICE_NAME
+)
 
 _LOGGER = logging.getLogger(__file__)
 
+
 def setup_computational_backend(app):
-    _LOGGER.debug("Setting up %s ...", __name__)
+    _LOGGER.debug("Setting up %s [service: %s] ...", __name__, SERVICE_NAME)
+
+    disable_services = app["config"].get("app", {}).get("disable_services",[])
+    if SERVICE_NAME in disable_services:
+        _LOGGER.warning("Service '%s' explicitly disabled in config", SERVICE_NAME)
+        return
 
     # subscribe to rabbit upon startup
     # TODO: REmoved temporarily!

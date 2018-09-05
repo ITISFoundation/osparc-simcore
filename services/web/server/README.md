@@ -20,7 +20,8 @@ cd services/web/server
 pip3 install -r requirements-dev.txt
 
 # runs server.__main__.py e.g.
-python3 -m server --help
+
+simcore-service-webserver --help
 ```
 
 Init database service by hand and fill it with fake data
@@ -32,32 +33,50 @@ cd ../../config
 python init_db.py
 ```
 
-Run server
+Run server passing a configuration file (see example under ``services/web/server/src/simcore_service_webserver/.config``)
 ```bash
+python3 -m simcore_service_webserver --config path/to/config.yml
 
-cd services/web/server
-python3 -m server --config config/server-test.yaml
-
+# or altenatively, use script entrypoint
+simcore-service-webserver -c path/to/config.yml
 ```
 
----
+With the configuration file it is possible to start the server and disable the connection to other services. This will obviously limit the functionality of the webserver but
+it can be handy mostly to reduce the boot time and complexity while testing or simply to make some
+diagnostics. This is an example of how the ``app`` section of the config file might look like:
 
-Build images of ```webserver```
-
-### Debug
-
-```bash
-  cd /path/to/simcore/services
-
-  # development image: image gets labeled as services_webserver:dev
-  docker-compose -f docker-compose.yml -f docker-compose.debug.yml build webserver
+```yaml
+# reduced-config.yml
+version: '1.0'
+app:
+  client_outdir: ~/devp/osparc-simcore/services/web/client/source-output
+  host: 127.0.0.1
+  log_level: DEBUG
+  port: 8080
+  testing: true
+  disable_services:
+    - postgres
+    - rabbit
+# ...
 ```
+and then
 
-### Release
-
-```bash
-  cd /path/to/simcore/services
-
-  # production image: image gets labeled as services_webserver:latest
-  docker-compose -f docker-compose.yml build webserver
+```shell
+$ simcore-service-webserver -c reduced-config.yml
+DEBUG:simcore_service_webserver.settings.config:loading config.ignore.yaml
+DEBUG:simcore_service_webserver.main:Serving app ...
+DEBUG:simcore_service_webserver.main:Initializing app ...
+DEBUG:simcore_service_webserver.rest.routing:OAS3 in ~/osparc-simcore/services/web/server/src/simcore_service_webserver/.oas3/v1/openapi.yaml
+DEBUG:simcore_service_webserver.db.core:Setting up simcore_service_webserver.db.core [service: postgres] ...
+WARNING:simcore_service_webserver.db.core:Service 'postgres' explicitly disabled in config
+DEBUG:~/osparc-simcore/services/web/server/src/simcore_service_webserver/session.py:Setting up simcore_service_webserver.session ...
+DEBUG:~/osparc-simcore/services/web/server/src/simcore_service_webserver/auth.py:Setting up simcore_service_webserver.auth ...
+DEBUG:~/osparc-simcore/services/web/server/src/simcore_service_webserver/computational_backend.py:Setting up simcore_service_webserver.computational_backend [service: rabbit] ...
+WARNING:~/osparc-simcore/services/web/server/src/simcore_service_webserver/computational_backend.py:Service 'rabbit' explicitly disabled in config
+DEBUG:~/osparc-simcore/services/web/server/src/simcore_service_webserver/statics.py:Setting up simcore_service_webserver.statics ...
+DEBUG:~/osparc-simcore/services/web/server/src/simcore_service_webserver/async_sio.py:Setting up simcore_service_webserver.async_sio ...
+DEBUG:simcore_service_webserver.rest.settings:Setting up simcore_service_webserver.rest.settings ...
+DEBUG:asyncio:Using selector: EpollSelector
+======== Running on http://127.0.0.1:8080 ========
+(Press CTRL+C to quit)
 ```

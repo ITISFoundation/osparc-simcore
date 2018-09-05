@@ -5,6 +5,7 @@ app:
   log_level: DEBUG
   port: 8080
   testing: true
+  disable_services: []
 director:
   host: director
   port: 8001

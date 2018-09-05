@@ -8,6 +8,7 @@ from simcore_sdk.config.rabbit import eval_broker
 from .async_sio import SIO
 
 _LOGGER = logging.getLogger(__file__)
+SERVICE_NAME = 'rabbit'
 
 async def on_message(message: aio_pika.IncomingMessage):
     with message.process():
@@ -23,7 +24,7 @@ async def subscribe(_app=None):
     # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
 
-    rb_config = _app["config"]["rabbit"]
+    rb_config = _app["config"][SERVICE_NAME]
     rabbit_broker = eval_broker(rb_config)
 
     # FIXME: This tmp resolves ``aio pika 169: IncompatibleProtocolError`` upon apio_pika.connect
