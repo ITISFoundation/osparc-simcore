@@ -7,7 +7,6 @@ from aiohttp import web
 
 from .db import setup_db
 from .auth import setup_auth
-from .api import setup_api
 from .rest import setup_rest
 from .session import setup_session
 from .statics import setup_statics
@@ -33,7 +32,6 @@ def init_app(config):
     setup_computational_backend(app)
     setup_statics(app)
     setup_sio(app)
-    setup_api(app)
     setup_rest(app)
 
     return app

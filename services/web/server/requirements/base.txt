@@ -4,7 +4,6 @@ aiohttp==3.3.2
 aiohttp_apiset==0.9.3
 aiohttp_session[secure]==2.5.1
 aiohttp-security==0.2.0
-aiohttp-swagger==1.0.5
 aiopg[sa]==0.14.0
 aio-pika==2.9.0
 celery==4.1.0
