@@ -1,4 +1,17 @@
 #/bin/bash
+# SAN this allows to know whether we are running in the Windows linux environment or under linux/mac
+VERSION=$(uname -a);
+MICROSOFT_STRING="Microsoft"
+if echo "$VERSION" | grep -q "$MICROSOFT_STRING"; then
+DOCKER_COMPOSE=docker-compose
+DOCKER=docker
+export COMPOSE_CONVERT_WINDOWS_PATHS=1
+else
+DOCKER_COMPOSE=docker-compose
+DOCKER=docker
+fi
+
+
 #
 # TODO: Uses https://github.com/OpenAPITools tools instead of swagger-codegen.
 #  THIS IS THE LAST VERSION!
@@ -9,7 +22,17 @@
 
 usage()
 {
-    echo "usage: openapi_codegen [[[-i input] [-o output directory] [-g generator]] | [-h help]]"
+    echo "usage: openapi_codegen [[[-i input] [-o output directory] [-g generator] [-c configuration file]] | [-h help] | [-languages] [-config-help language]]"
+}
+
+list_languages()
+{
+    exec ${DOCKER} run --rm openapitools/openapi-generator-cli list
+}
+
+print_languages_config_options()
+{
+    exec ${DOCKER} run --rm openapitools/openapi-generator-cli config-help -g $1
 }
 
 ##### Main
@@ -17,6 +40,7 @@ usage()
 input_file= 
 output_directory= 
 generator= 
+configuration=
 # process arguments
 while [ "$1" != "" ]; do
     case $1 in
@@ -29,7 +53,17 @@ while [ "$1" != "" ]; do
         -g | --generator )      shift
                                 generator=$1
                                 ;;
+        -c | --config_file )    shift
+                                configuration=$1
+                                ;;
         -h | --help )           usage
+                                exit
+                                ;;
+        -languages )            list_languages
+                                exit
+                                ;;                                
+        -config-help )          shift
+                                print_languages_config_options $1
                                 exit
                                 ;;
         * )                     usage
@@ -38,17 +72,6 @@ while [ "$1" != "" ]; do
     shift
 done
 
-# SAN this allows to know whether we are running in the Windows linux environment or under linux/mac
-VERSION=$(uname -a);
-MICROSOFT_STRING="Microsoft"
-if echo "$VERSION" | grep -q "$MICROSOFT_STRING"; then
-export DOCKER_COMPOSE=docker-compose.exe
-export DOCKER=docker.exe
-export COMPOSE_CONVERT_WINDOWS_PATHS=1
-else
-export DOCKER_COMPOSE=docker-compose
-export DOCKER=docker
-fi
 
 # check arguments
 if [ -z "$input_file" ]; then
@@ -63,6 +86,8 @@ elif [ -z "$generator" ]; then
     echo "please define a generator..."
     usage
     exit 1
+elif [ -z "$configuration" ]; then
+    echo "using default configuration..."
 fi
 
 input_file_absolute_path="$(realpath "${input_file}")"
@@ -73,6 +98,11 @@ echo "input file name is ${input_filename}"
 
 output_absolute_dir="$(realpath ${output_directory})"
 echo "output directory is ${output_absolute_dir}"
+if [ ! -z "$configuration" ]; then
+    configuration_absolute_file_path="$(realpath ${configuration})"
+    configuration_parent_dir="$(dirname "${configuration_absolute_file_path}")"
+    configuration_filename="$(basename "${configuration_absolute_file_path}")"
+fi
 
 if echo "$VERSION" | grep -q "$MICROSOFT_STRING"; then
     # if windows WSL we need to correct the mounted path to be understandable for docker
@@ -81,12 +111,24 @@ if echo "$VERSION" | grep -q "$MICROSOFT_STRING"; then
     echo "windows corrected input directory is ${input_parent_dir}"
     output_absolute_dir=$(echo $output_absolute_dir | sed -e 's,/mnt/\(.\)/,\1:/,')
     echo "windows corrected output directory is ${output_absolute_dir}"
+    if [ ! -z "$configuration" ]; then
+        configuration_parent_dir=$(echo $configuration_parent_dir | sed -e 's,/mnt/\(.\)/,\1:/,')
+        echo "windows corrected configuration directory is ${configuration_parent_dir}"
+    fi
 fi
 
 echo "generating code..."
+if [ ! -z "$configuration" ]; then
+exec ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output -v ${configuration_parent_dir}:/config openapitools/openapi-generator-cli \
+    generate \
+    -i /local/${input_filename} \
+    -g ${generator} \
+    -o /output/${generator} \
+    -c /config/${configuration_filename}
+else
 exec ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output openapitools/openapi-generator-cli \
     generate \
     -i /local/${input_filename} \
     -g ${generator} \
     -o /output/${generator}
-echo "code generated"
+fi
