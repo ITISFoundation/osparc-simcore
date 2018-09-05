@@ -30,7 +30,7 @@ setup(
     version=VERSION,
     description="Director API",
     author_email="support@simcore.com",
-    url="www.google.com",
+    url="https://github.com/ITISFoundation/osparc-simcore/tree/master/packages/director-sdk/python",
     keywords=["OpenAPI", "OpenAPI-Generator", "Director API"],
     install_requires=REQUIRES,
     packages=find_packages(),
