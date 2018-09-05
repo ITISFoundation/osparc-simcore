@@ -75,6 +75,7 @@ qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
           let charLabel = this.__headerLabelCollapsed[i];
           this.__contentBox.add(charLabel);
         }
+        this.setWidth(24);
       } else {
         // header
         this.__headerBox.add(this.__headerLabelExpanded, {
@@ -87,6 +88,7 @@ qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
           let widget = contentWidgets[i];
           this.__contentBox.add(widget);
         }
+        this.setWidth(this.getMaxWidth());
       }
     },
 
@@ -127,7 +129,7 @@ qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
     },
 
     addContentWidget: function(widget) {
-      this.__contentWidgets.add(widget);
+      this.__contentWidgets.push(widget);
     }
   }
 });

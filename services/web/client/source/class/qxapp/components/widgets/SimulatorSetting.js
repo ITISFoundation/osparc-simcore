@@ -7,15 +7,19 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
     let simulatorSettingLayout = new qx.ui.layout.HBox(10);
     this._setLayout(simulatorSettingLayout);
 
+    let collapsableVBox1 = new qxapp.components.widgets.CollapsableVBox("Inputs");
     let componentsBox = this.__componentsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
       width: 250
     });
-    this._add(componentsBox);
+    collapsableVBox1.addContentWidget(componentsBox);
+    this._add(collapsableVBox1);
 
+    let collapsableVBox2 = new qxapp.components.widgets.CollapsableVBox("Settings");
     let settingsBox = this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
       width: 250
     });
-    this._add(settingsBox);
+    collapsableVBox2.addContentWidget(settingsBox);
+    this._add(collapsableVBox2);
 
     let contentBox = this.__contentBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
       width: 250
