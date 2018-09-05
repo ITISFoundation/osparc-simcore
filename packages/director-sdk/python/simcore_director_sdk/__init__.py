@@ -25,9 +25,7 @@ from simcore_director_sdk.api_client import ApiClient
 from simcore_director_sdk.configuration import Configuration
 # import models into sdk package
 from simcore_director_sdk.models.error import Error
-from simcore_director_sdk.models.error2 import Error2
 from simcore_director_sdk.models.error_enveloped import ErrorEnveloped
-from simcore_director_sdk.models.error_enveloped2 import ErrorEnveloped2
 from simcore_director_sdk.models.health_check import HealthCheck
 from simcore_director_sdk.models.health_check_enveloped import HealthCheckEnveloped
 from simcore_director_sdk.models.node_meta_v0 import NodeMetaV0
