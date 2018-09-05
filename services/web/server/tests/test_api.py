@@ -6,6 +6,7 @@ import sys
 import pathlib
 
 import pytest
+import yaml
 
 from simcore_service_webserver.main import init_app
 from simcore_service_webserver.settings import (
@@ -39,7 +40,7 @@ def cli(loop, aiohttp_client, mock_services, server_test_file):
 async def test_swagger_doc(cli):
     _LOGGER.debug("cli fixture: %s", cli)
 
-    response = await cli.get('/api/v1/doc')
+    response = await cli.get('/apidoc/')
     assert response.status == 200
     text = await response.text()
     assert "swagger-ui-wrap" in text

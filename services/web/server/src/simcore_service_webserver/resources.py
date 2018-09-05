@@ -13,8 +13,10 @@ PkgResourceArgs = collections.namedtuple("PkgResourceArgs", "package_or_requirem
 
 # TODO: set package_or_requirement. Resources only rely on their name
 # TODO: add objects to used resources
-#exists = functools.partial(pkg_resources.resource_exists, __name__)
-#get_stream = functools.partial(pkg_resources.resource_exists, __name__)
+
+# List of pkg_resources functions bound to current package
+exists  = functools.partial(pkg_resources.resource_exists, __name__)
+stream  = functools.partial(pkg_resources.resource_stream, __name__)
 listdir = functools.partial(pkg_resources.resource_listdir, __name__)
 
 def get_path(resource_name):

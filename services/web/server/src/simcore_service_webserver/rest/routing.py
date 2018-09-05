@@ -6,11 +6,23 @@ from aiohttp_apiset.swagger.loader import ExtendedSchemaFile
 from aiohttp_apiset.swagger.operations import OperationIdMapping
 
 from . import handlers
+from .settings import (
+    api_specification_path,
+    API_URL_PREFIX
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def create_router( oas3_path :Path):
+def create_router(oas3_path: Path=None):
+    """
+        Creates a router provided openapi specification file version 3 (oas3)
+
+        oas3_path: path to rest-api specifications. Mostly used for testing different apis
+    """
+    if oas3_path is None:
+        oas3_path = api_specification_path()
+
     _LOGGER.debug("OAS3 in %s", oas3_path)
 
     # generate a version 3 of the API documentation
@@ -21,8 +33,6 @@ def create_router( oas3_path :Path):
         default_validate=True,
     )
 
-    version_prefix = str(oas3_path.parent.name)
-
     # create the default mapping of the operationId to the implementation code in handlers
     opmap = _create_default_operation_mapping(oas3_path, handlers)
 
@@ -31,8 +41,8 @@ def create_router( oas3_path :Path):
     router.include(
         spec=oas3_path,
         operationId_mapping=opmap,
-        name=version_prefix,  # name to access in swagger-ui,
-        basePath="/" + version_prefix # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
+        name=API_URL_PREFIX,  # name to access in swagger-ui,
+        basePath="/" + API_URL_PREFIX # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
     )
 
     return router

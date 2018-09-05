@@ -7,9 +7,9 @@ import pkg_resources
 
 from aiohttp import web_exceptions
 
-from .generated_code_.models.health_check import HealthCheck
-from .generated_code_.models.health_check_enveloped import HealthCheckEnveloped
-from .generated_code_.models.registration_input import RegistrationInput
+from ._generated_code.models.health_check import HealthCheck
+from ._generated_code.models.health_check_enveloped import HealthCheckEnveloped
+from ._generated_code.models.registration_input import RegistrationInput
 
 
 _LOGGER = logging.getLogger(__name__)

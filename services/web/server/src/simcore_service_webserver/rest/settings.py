@@ -1,11 +1,21 @@
-from aiohttp import hdrs, web
+from aiohttp import hdrs
 
+from ._generated_code.models.base_model_ import Model
 from .middlewares import (
     Jsonify, jsonify,
     handle_errors
 )
+from .. import resources
 
-from .generated_code_.models.base_model_ import Model
+
+# NOTE: Set here the version of API to be used
+# NOTE: Versions and name consistency tested in test_rest.py
+API_MAJOR_VERSION = 1
+API_URL_PREFIX = "v{:.0f}".format(API_MAJOR_VERSION)
+API_SPECS_NAME = ".oas3/{}/openapi.yaml".format(API_URL_PREFIX)
+
+def api_specification_path():
+    return resources.get_path(API_SPECS_NAME)
 
 def setup_rest(app):
     """Setup the library in aiohttp fashion."""
@@ -24,5 +34,8 @@ def setup_rest(app):
 
 
 __all__ = [
-    "setup_rest"
+    'API_MAJOR_VERSION',
+    'API_URL_PREFIX',
+    'setup_rest',
+    'api_specification_path'
 ]

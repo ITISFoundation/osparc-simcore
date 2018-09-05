@@ -1,3 +1,3 @@
 
 from . import routing
-from .init import setup_rest
+from .settings import setup_rest

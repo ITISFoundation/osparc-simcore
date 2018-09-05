@@ -3,7 +3,7 @@ from aiohttp import web
 
 from aiohttp_apiset.middlewares import Jsonify, jsonify
 
-from .generated_code_.models.error_enveloped import ErrorEnveloped, Error
+from ._generated_code.models.error_enveloped import ErrorEnveloped, Error
 
 
 @web.middleware

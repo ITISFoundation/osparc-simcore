@@ -8,13 +8,12 @@ from aiohttp import web
 from .db import setup_db
 from .auth import setup_auth
 from .api import setup_api
+from .rest import setup_rest
 from .session import setup_session
 from .statics import setup_statics
 from .computational_backend import setup_computational_backend
-from . async_sio import setup_sio
-from . import rest
-from .rest import setup_rest
-from . import resources
+from .async_sio import setup_sio
+from .router import create_router
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,10 +24,7 @@ def init_app(config):
     """
     _LOGGER.debug("Initializing app ... ")
 
-    oas_path = resources.get_path(".oas3/v1/openapi.yaml")
-    router = rest.routing.create_router(oas_path)
-
-    app = web.Application(router=router)
+    app = web.Application(router=create_router())
     app["config"] = config
 
     setup_db(app)
