@@ -4,6 +4,8 @@
     - Database is deployed on a separate service
 
 TODO: async (e.g. in aiopg.sa) or sync(e.g. in comp_backend_api) access? MaG recommends second.
+TODO: merge engines!!!
+TODO: create tools to diagnose state of db-service
 """
 import logging
 
@@ -15,8 +17,18 @@ from ..comp_backend_api import init_database as _init_db
 
 _LOGGER = logging.getLogger(__name__)
 
+APP_ENGINE_KEY = 'db_engine'
+
 class RecordNotFound(Exception):
     """Requested record in database was not found"""
+
+def is_dbservice_ready(app):
+    # TODO: create service states!!!!
+    # FIXME: this does not accout for status of the other engine!!!
+    try:
+        return app[APP_ENGINE_KEY] is not None
+    except KeyError:
+        return False
 
 async def create_aiopg(app):
     _LOGGER.debug("creating db engine ... ")
@@ -27,25 +39,33 @@ async def create_aiopg(app):
     # what do we do with the server? Retry? stop and exit?
 
     conf = app["config"]["postgres"]
-    engine = await aiopg.sa.create_engine(
-        database=conf["database"],
-        user=conf["user"],
-        password=conf["password"],
-        host=conf["host"],
-        port=conf["port"],
-        minsize=conf["minsize"],
-        maxsize=conf["maxsize"],
-    )
 
-    app["db_engine"] = engine
-    _LOGGER.debug("db engine created")
+    try:
+        engine = await aiopg.sa.create_engine(
+            database=conf["database"],
+            user=conf["user"],
+            password=conf["password"],
+            host=conf["host"],
+            port=conf["port"],
+            minsize=conf["minsize"],
+            maxsize=conf["maxsize"],
+        )
+
+        app[APP_ENGINE_KEY] = engine
+        _LOGGER.debug("db engine created")
+
+    except Exception: #pylint: disable=W0703
+        app[APP_ENGINE_KEY] = None
+        _LOGGER.exception("db engine failed")
 
 
 async def dispose_aiopg(app):
     _LOGGER.debug("closing db engine ...")
 
-    app["db_engine"].close()
-    await app["db_engine"].wait_closed()
+    engine = app[APP_ENGINE_KEY]
+    if engine:
+        engine.close()
+        await engine.wait_closed()
 
     _LOGGER.debug("db engine closed")
 
