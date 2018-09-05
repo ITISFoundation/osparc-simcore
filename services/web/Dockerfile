@@ -13,6 +13,9 @@ LABEL maintainer=pcrespov
 # create user 'scu'
 RUN adduser -D -u 8004 scu
 
+RUN apk add --no-cache \
+      su-exec
+
 ENV HOME /home/scu
 ENV PIP  /home/scu/.venv/bin/pip3
 ENV SIMCORE_WEB_OUTDIR $HOME/services/web/client
@@ -54,6 +57,7 @@ WORKDIR /home/scu
 
 # install base 3rd party packages to accelerate runtime installs
 COPY --chown=scu:scu services/web/server/requirements/base.txt requirements-base.txt
+COPY --chown=scu:scu services/web/server/.docker .docker
 RUN $PIP install --no-cache-dir -r requirements-base.txt
 
 # --------------------------Development stage -------------------
