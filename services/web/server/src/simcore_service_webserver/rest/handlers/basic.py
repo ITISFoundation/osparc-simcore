@@ -20,9 +20,9 @@ from ..config import api_version
 from .._generated_code.models.health_check import HealthCheck
 from .._generated_code.models.health_check_enveloped import HealthCheckEnveloped
 
+from ... import decorators
 
 _LOGGER = logging.getLogger(__name__)
-
 
 async def check_health(request):
     distb = pkg_resources.get_distribution('simcore-service-webserver')
@@ -37,10 +37,13 @@ async def check_health(request):
 
     return HealthCheckEnveloped(data=info, status=200)
 
+@decorators.args_adapter
 @login_required
 async def get_me(request):
     pass
 
+
+@decorators.args_adapter
 @has_permission("tester")
 async def ping(request):
     """

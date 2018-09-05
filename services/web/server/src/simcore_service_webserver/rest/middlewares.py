@@ -19,7 +19,6 @@ async def handle_errors(request, handler):
             )
         return web.json_response(ee.to_dict(), status=ex.status)
 
-
 __all__ = [
     "handle_errors",
     "jsonify", "Jsonify"
