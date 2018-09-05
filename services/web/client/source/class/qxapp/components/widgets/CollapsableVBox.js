@@ -1,7 +1,7 @@
 qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
   extend: qx.ui.core.Widget,
 
-  construct: function(headerText, contentWidgets) {
+  construct: function(headerText = "Header", contentWidgets = []) {
     this.base(arguments);
 
     let widgetLayout = new qx.ui.layout.VBox(5);
@@ -33,10 +33,10 @@ qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
         flex: 1
       });
 
-      this.setContentWidgets([]);
+      this.setContentWidgets(contentWidgets);
     }
 
-    this.setHeaderText("Header");
+    this.setHeaderText(headerText);
     this.setCollapsed(true);
   },
 
