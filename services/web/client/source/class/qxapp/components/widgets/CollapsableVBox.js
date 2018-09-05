@@ -9,7 +9,9 @@ qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
 
     // header
     {
-      let header = this.__headerBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      let header = this.__headerBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignY: "middle"
+      }));
       this._add(header);
 
       const icon = "@FontAwesome5Solid/expand-arrows-alt/24";
@@ -37,14 +39,14 @@ qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
     }
 
     this.setHeaderText(headerText);
-    this.setCollapsed(true);
+    this.setCollapsed(false);
   },
 
   properties: {
     collapsed: {
       nullable: false,
       check: "Boolean",
-      init: true,
+      init: false,
       apply: "__buildLayout"
     },
     headerText: {
@@ -78,8 +80,12 @@ qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
         this.setWidth(24);
       } else {
         // header
-        this.__headerBox.add(this.__headerLabelExpanded, {
+        this.__headerBox.add(new qx.ui.core.Spacer(), {
           flex: 1
+        });
+        this.__headerBox.add(this.__headerLabelExpanded);
+        this.__headerBox.add(new qx.ui.core.Spacer(), {
+          flex: 3
         });
         // content
         this.__contentBox.removeAll();
@@ -115,10 +121,6 @@ qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
       this.rebuildLayout();
     },
 
-    getContentWidgets: function() {
-      return this.__contentWidgets;
-    },
-
     setContentWidgets: function(widgets) {
       if (Array.isArray(widgets) != true) {
         // Type check: Make sure it is a valid array
@@ -133,6 +135,8 @@ qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
         widget: widget,
         map: map
       });
+
+      this.rebuildLayout();
     }
   }
 });
