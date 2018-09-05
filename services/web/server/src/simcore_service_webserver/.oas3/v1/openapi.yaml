@@ -40,7 +40,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
   /me:
     get:
       tags:
@@ -53,7 +53,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
   /register:
     post:
       tags:
@@ -66,13 +66,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
         default:
           description: Default error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
       requestBody:
         $ref: '#/components/requestBodies/RegistrationInput'
   /confirm/{token}:
@@ -98,7 +98,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
   /login:
     post:
       tags:
@@ -111,7 +111,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
   /logout:
     post:
       tags:
@@ -124,7 +124,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
 #-------------------------------------------------------
 components:
 
@@ -168,48 +168,6 @@ components:
           type: string
           example: bizzy
       description: Registration payload
-    ErrorEnveloped:
-      type: object
-      required:
-        - error
-      properties:
-        error:
-          $ref: '#/components/schemas/Error'
-        status:
-          description: Error code
-          type: integer
-          format: int32
-          example: 500
-    Error:
-      type: object
-      required:
-        - message
-      properties:
-        message:
-          description: Human readable error message in english that could be displayed to final user
-          type: string
-          example: Unexpected error
-        errors:
-          type: array
-          items:
-            properties:
-              code:
-                type: string
-                description: Server's error code. Typically the name of the error's exception
-                example: ServiceUUIDNotFoundError
-              message:
-                type: string
-                description: Error message specific to this item
-                example: Requested service not found
-              resource:
-                type: string
-                description: Resources affected by this error
-                example: service
-              field:
-                type: string
-                description: Specific field within the resource
-                example: identifier
-
   requestBodies:
     RegistrationInput:
         content:

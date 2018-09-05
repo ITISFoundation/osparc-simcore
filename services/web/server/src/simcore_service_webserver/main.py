@@ -25,7 +25,7 @@ def init_app(config):
     """
     _LOGGER.debug("Initializing app ... ")
 
-    oas_path = resources.get_path(".openapi/v1/test_1.0.0-oas3.yaml")
+    oas_path = resources.get_path(".oas3/v1/openapi.yaml")
     router = rest.routing.create_router(oas_path)
 
     app = web.Application(router=router)

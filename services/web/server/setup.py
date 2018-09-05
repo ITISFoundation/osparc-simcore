@@ -33,7 +33,7 @@ setup(
     package_data={
         '': [
             '.config/*.yaml',
-            '.opeanpi/v1/*.yaml'
+            '.oas3/v1/*.yaml'
             ]
     },
     entry_points={

@@ -92,11 +92,11 @@ def setup_api(app):
             route_obj.register(self)
 
     # NOTE: Keep a single digit version in the url
-    prefix = "/api/v{:.0f}".format(float(__version__))
+    #prefix = "/api/v{:.0f}".format(float(__version__))
 
-    router.add_post(prefix+"/login", login, name="login")
-    router.add_get(prefix+"/logout", logout, name="logout")
-    router.add_get(prefix+"/ping", ping, name="ping")
+    #router.add_post(prefix+"/login", login, name="login")
+    #router.add_get(prefix+"/logout", logout, name="logout")
+    #router.add_get(prefix+"/ping", ping, name="ping")
 
     # TODO: add authorization on there routes
 
@@ -106,4 +106,4 @@ def setup_api(app):
     _add_routes(router, comp_backend_routes)
 
     # middlewares
-    setup_swagger(app, swagger_url=prefix+"/doc")
+    # setup_swagger(app, swagger_url=prefix+"/doc")

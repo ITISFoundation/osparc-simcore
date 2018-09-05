@@ -90,12 +90,12 @@ async def start_pipeline(request):
     ---
     description: This end-point starts a computational pipeline.
     tags:
-    - computational backend
+    - services management
     produces:
     - application/json
     responses:
         "200":
-            description: successful operation. Return "pong" text
+            description: successful operation
         "405":
             description: invalid HTTP Method
     """

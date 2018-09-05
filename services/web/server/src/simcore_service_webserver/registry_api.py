@@ -31,7 +31,7 @@ async def get_computational_services(request):
     ---
     description: This end-point returns a list of computational services.
     tags:
-    - service registry
+    - services management
     produces:
     - application/json
     responses:

@@ -24,7 +24,7 @@ def create_router( oas3_path :Path):
     version_prefix = str(oas3_path.parent.name)
 
     # create the default mapping of the operationId to the implementation code in handlers
-    opmap = create_default_operation_mapping(oas3_path, handlers)
+    opmap = _create_default_operation_mapping(oas3_path, handlers)
 
     # Include our specifications in a router,
     # is now available in the swagger-ui to the address http://localhost:8080/swagger/?spec=v1
@@ -38,7 +38,7 @@ def create_router( oas3_path :Path):
     return router
 
 
-def create_default_operation_mapping(specs_file, handlers_module):
+def _create_default_operation_mapping(specs_file, handlers_module):
     """
         maps every route's "operationId" in the OAS with a function with the same
         name within ``handlers_module``
@@ -54,3 +54,9 @@ def create_default_operation_mapping(specs_file, handlers_module):
             operation_id = method[1][op_str]
             operation_mapping[operation_id] = getattr(handlers_module, operation_id)
     return OperationIdMapping(**operation_mapping)
+
+
+
+__all__ = [
+    "create_router"
+]

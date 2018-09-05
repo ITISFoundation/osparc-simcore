@@ -16,6 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def check_health(request):
     distb = pkg_resources.get_distribution('simcore-service-webserver')
+    # TODO: add state of services (e.g. database not connected/failed, etc)
 
     # TODO: unify location of service info. setup.py should take if from there?
     info = HealthCheck(
