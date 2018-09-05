@@ -3,18 +3,11 @@
 import logging
 
 from aiohttp import web
-from simcore_service_director import (registry_proxy, config)
+
+from simcore_service_director import config, registry_proxy
 from simcore_service_director.rest import routing
 
-
 _LOGGER = logging.getLogger(__name__)
-
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(levelname)s:%(name)s-%(lineno)d: %(message)s'
-    )
-
 
 def main():
     # init registry proxy
