@@ -41,16 +41,3 @@ def get_thrift_api_folders(startdir):
             dirs[:] = []  # stop looking under this node
             folders.append(os.path.join(root, "gen-py"))
     return folders
-
-
-def import_thrift_api_module(module_name):
-    """
-        Imports of thrift API and retries including different paths
-        in sys.path.
-
-        If all retrials fail, it raises ImportError
-
-        TODO: deprecate this function
-    """
-    from .settings.deprecated import THRIFT_GEN_OUTDIR
-    return import_with_retry(module_name, *list(THRIFT_GEN_OUTDIR))
