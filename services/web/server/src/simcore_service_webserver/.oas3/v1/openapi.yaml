@@ -18,11 +18,13 @@ tags:
     description: Operations available to regular users
   - name: authentication
     description: Groups API user's authentication calls
-  - name: document
-    description: Groups API calls for docs (test)
+  - name: test
+    description: Groups API calls for diagnostics and checks
 paths:
   /:
     get:
+      tags:
+        - test
       summary: Service health-check endpoint
       operationId: check_health
       description: >-

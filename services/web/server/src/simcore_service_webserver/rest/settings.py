@@ -9,9 +9,8 @@ from .middlewares import (
     Jsonify, jsonify,
     handle_errors
 )
+from . import routing
 from .. import resources
-from ..comp_backend_api import comp_backend_routes
-from ..registry_api import registry_routes
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,39 +39,17 @@ def setup_rest(app):
         (hdrs.ACCESS_CONTROL_EXPOSE_HEADERS, hdrs.AUTHORIZATION),
     ))
 
+    # routing
+    routing.include_oaspecs_routes(router)
+    routing.include_other_routes(router)
+
+    # middlewahres
     # add automatic jsonification of the models located in generated code
     jsonify.singleton = Jsonify(indent=3, ensure_ascii=False)
     jsonify.singleton.add_converter(Model, lambda o: o.to_dict(), score=0)
 
     app.middlewares.append(jsonify)
     app.middlewares.append(handle_errors)
-
-
-    # FIXME: create a router in scsdk that extends SwaggerRouter
-    def _add_routes(self, routes):
-        """Append routes to route table.
-
-        Parameter should be a sequence of RouteDef objects.
-        """
-        for route_obj in routes:
-            route_obj.register(self)
-
-    # NOTE: Keep a single digit version in the url
-    #prefix = "/api/v{:.0f}".format(float(__version__))
-
-    #router.add_post(prefix+"/login", login, name="login")
-    #router.add_get(prefix+"/logout", logout, name="logout")
-    #router.add_get(prefix+"/ping", ping, name="ping")
-
-    # TODO: add authorization on there routes
-
-    #app.router.add_routes(registry_routes)
-    #app.router.add_routes(comp_backend_routes)
-    _add_routes(router, registry_routes)
-    _add_routes(router, comp_backend_routes)
-
-    # middlewares
-    # setup_swagger(app, swagger_url=prefix+"/doc")
 
 
 __all__ = [

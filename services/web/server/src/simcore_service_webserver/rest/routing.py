@@ -11,6 +11,10 @@ from .settings import (
     API_URL_PREFIX
 )
 
+from ..comp_backend_api import comp_backend_routes
+from ..registry_api import registry_routes
+
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -33,6 +37,14 @@ def create_router(oas3_path: Path=None):
         default_validate=True,
     )
 
+    # TODO: check root_factory in SwaggerRouter?!
+
+    return router
+
+def include_oaspecs_routes(router, oas3_path: Path=None):
+    if oas3_path is None:
+        oas3_path = api_specification_path()
+
     # create the default mapping of the operationId to the implementation code in handlers
     opmap = _create_default_operation_mapping(oas3_path, handlers)
 
@@ -45,13 +57,37 @@ def create_router(oas3_path: Path=None):
         basePath="/" + API_URL_PREFIX # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
     )
 
-    return router
+def include_other_routes(router):
+    # FIXME: create a router in scsdk that extends SwaggerRouter
+    def _add_routes(self, routes):
+        """Append routes to route table.
+
+        Parameter should be a sequence of RouteDef objects.
+        """
+        for route_obj in routes:
+            route_obj.register(self)
+
+
+    basePath="/" + API_URL_PREFIX
+    router.add_get(basePath+"/ping", handlers.ping, name="ping")
+
+    # TODO: add authorization on there routes
+
+    #app.router.add_routes(registry_routes)
+    #app.router.add_routes(comp_backend_routes)
+    _add_routes(router, registry_routes)
+    _add_routes(router, comp_backend_routes)
+
+    # middlewares
+    # setup_swagger(app, swagger_url=prefix+"/doc")
 
 
 def _create_default_operation_mapping(specs_file, handlers_module):
     """
         maps every route's "operationId" in the OAS with a function with the same
         name within ``handlers_module``
+
+        Ensures all operationId tags are mapped to handlers_module's functions
     """
     operation_mapping = {}
     yaml_specs = ExtendedSchemaFile(specs_file)
@@ -60,13 +96,15 @@ def _create_default_operation_mapping(specs_file, handlers_module):
         for method in path[1].items(): # can be get, post, patch, put, delete...
             op_str = "operationId"
             if op_str not in method[1]:
-                raise Exception("The API %s does not contain the operationId tag for route %s %s" % (specs_file, path[0], method[0]))
+                raise ValueError("The API %s does not contain the operationId tag for route %s %s" % (specs_file, path[0], method[0]))
             operation_id = method[1][op_str]
             operation_mapping[operation_id] = getattr(handlers_module, operation_id)
     return OperationIdMapping(**operation_mapping)
 
 
 
-__all__ = [
-    "create_router"
-]
+__all__ = (
+    'create_router',
+    'include_oaspecs_routes',
+    'include_other_routes'
+)

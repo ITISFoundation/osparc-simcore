@@ -6,5 +6,6 @@ from .basic import (
 from .auth import (
     login,
     logout,
-    register_user
+    register_user,
+    confirm_token
 )
