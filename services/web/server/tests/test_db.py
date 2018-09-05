@@ -7,9 +7,10 @@ from simcore_service_webserver.settings import (
     read_and_validate
 )
 
-from simcore_service_webserver.db._db import (
+from simcore_service_webserver.db.core import (
     create_aiopg,
-    dispose_aiopg
+    dispose_aiopg,
+    APP_ENGINE_KEY
 )
 from simcore_service_webserver.db.model import (
     users
@@ -35,8 +36,8 @@ async def test_basic_db_workflow(mock_services, server_test_file):
     # emulates app startup (see app.on_startup in setup_db)
     await create_aiopg(app)
 
-    assert "db_engine" in app
-    engine = app["db_engine"]
+    assert APP_ENGINE_KEY in app
+    engine = app[APP_ENGINE_KEY]
 
     # pylint: disable=E1111, E1120
     async with engine.acquire() as connection:

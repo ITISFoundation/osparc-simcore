@@ -61,8 +61,8 @@ app:
 ```
 and then
 
-```shell
-$ simcore-service-webserver -c reduced-config.yml
+```console
+usr@machine:~$ simcore-service-webserver -c reduced-config.yml
 DEBUG:simcore_service_webserver.settings.config:loading config.ignore.yaml
 DEBUG:simcore_service_webserver.main:Serving app ...
 DEBUG:simcore_service_webserver.main:Initializing app ...

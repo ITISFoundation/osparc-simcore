@@ -13,7 +13,7 @@ export DOCKER=docker
 export RUN_DOCKER_ENGINE_ROOT=0
 endif
 
-PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*"))
+PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*generated_code*"))
 export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
 all:

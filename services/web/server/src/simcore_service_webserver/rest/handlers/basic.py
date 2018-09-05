@@ -1,7 +1,9 @@
 """This is a generated stub of handlers to be connected to the paths defined in the API
 
 """
+# TODO: exceptions while developing ...
 # pylint: disable=unused-argument
+# pylint: disable=unused-import
 
 import logging
 import pkg_resources
