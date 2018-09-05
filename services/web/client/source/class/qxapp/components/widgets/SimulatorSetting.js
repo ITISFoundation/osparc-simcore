@@ -67,14 +67,9 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
 
       // default settings
       {
-        let tree = new qx.ui.tree.Tree().set({
-          selectionMode: "single",
-          openMode: "none"
-        });
-        let root = new qx.ui.tree.TreeFolder("Default Settings").set({
-          open: true
-        });
-        tree.setRoot(root);
+        let res = this.__createTree("Default Settings");
+        let tree = res.tree;
+        let root = res.root;
         this.__settingsBox.add(tree, {
           flex: 1
         });
@@ -90,14 +85,9 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
         if (portType.includes("data:application/s4l-api")) {
           const apiType = portType.split("/").pop();
           if (apiType !== "settings") {
-            let tree = new qx.ui.tree.Tree().set({
-              selectionMode: "single",
-              openMode: "none"
-            });
-            let root = new qx.ui.tree.TreeFolder(portKey).set({
-              open: true
-            });
-            tree.setRoot(root);
+            let res = this.__createTree(portKey);
+            let tree = res.tree;
+            let root = res.root;
             switch (apiType) {
               case "modeler":
                 tree.setSelectionMode("multi");
@@ -121,16 +111,11 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
 
       // Settings
       {
-        let tree = new qx.ui.tree.Tree().set({
-          selectionMode: "single",
-          openMode: "none"
-        });
         const settingName = node.getMetaData().name;
-        let root = this.__settingsFolder = new qx.ui.tree.TreeFolder(settingName).set({
-          open: true,
-          droppable: true
-        });
-        tree.setRoot(root);
+        let res = this.__createTree(settingName);
+        let tree = res.tree;
+        let root = res.root;
+        root.setDroppable(true);
         this.__contentBox.add(tree, {
           flex: 1
         });
@@ -186,6 +171,22 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
 
     __isCompatible: function() {
       return true;
+    },
+
+    __createTree: function(rootLabel) {
+      let tree = new qx.ui.tree.Tree().set({
+        selectionMode: "single",
+        openMode: "none"
+      });
+      let root = this.__settingsFolder = new qx.ui.tree.TreeFolder(rootLabel).set({
+        open: true
+      });
+      tree.setRoot(root);
+
+      return {
+        tree: tree,
+        root: root
+      };
     },
 
     __populateList: function(root, imageId, isSetting = false) {
