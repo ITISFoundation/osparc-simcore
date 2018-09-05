@@ -79,7 +79,9 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [Error](docs/Error.md)
+ - [Error2](docs/Error2.md)
  - [ErrorEnveloped](docs/ErrorEnveloped.md)
+ - [ErrorEnveloped2](docs/ErrorEnveloped2.md)
  - [HealthCheck](docs/HealthCheck.md)
  - [HealthCheckEnveloped](docs/HealthCheckEnveloped.md)
  - [NodeMetaV0](docs/NodeMetaV0.md)
