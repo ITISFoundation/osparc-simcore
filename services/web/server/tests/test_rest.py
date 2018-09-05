@@ -24,14 +24,14 @@ _LOGGER = logging.getLogger(__file__)
 
 
 @pytest.fixture
-def cli(loop, aiohttp_client, mock_services, server_test_file):
+def cli(loop, aiohttp_client, mock_services, server_test_configfile):
     """
         - starts a db service
         - starts an application in test-mode and serves it
         - starts a client that connects to the server
         - returns client
     """
-    config = read_and_validate( server_test_file )
+    config = read_and_validate( server_test_configfile )
 
     assert "POSTGRES_PORT" in os.environ
     assert config["app"]["testing"] == True
@@ -42,17 +42,17 @@ def cli(loop, aiohttp_client, mock_services, server_test_file):
     return client
 
 @pytest.fixture
-def cli_light(loop, aiohttp_client, server_test_file):
+def cli_light(loop, aiohttp_client, light_test_configfile):
     """ same as cli but w/o extra mockup services.
 
     Only server is started and a client to communicate with it is created on the fly
     """
-    # Patches os.environ to fill server_test_file
+    # Patches os.environ to fill server_test_configfile
     pre_os_environ = os.environ.copy()
     os.environ["POSTGRES_PORT"] = "0000"
     os.environ["RABBIT_HOST"] = "None"
 
-    config = read_and_validate( server_test_file )
+    config = read_and_validate( light_test_configfile )
     app = init_app(config)
     client = loop.run_until_complete(aiohttp_client(app))
 
@@ -118,3 +118,7 @@ async def test_login(cli):
 
     text = await response.text()
     assert text == 'pong'
+
+async def test_unauthorized(cli_light):
+    response = await cli_light.get('v1/ping')
+    assert response.status == 401

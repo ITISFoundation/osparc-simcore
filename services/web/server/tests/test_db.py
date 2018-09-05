@@ -19,7 +19,7 @@ from simcore_service_webserver.db.model import (
 
 _LOGGER = logging.getLogger(__name__)
 
-async def test_basic_db_workflow(mock_services, server_test_file):
+async def test_basic_db_workflow(mock_services, server_test_configfile):
     """
         create engine
         connect
@@ -30,7 +30,7 @@ async def test_basic_db_workflow(mock_services, server_test_file):
     _LOGGER.debug("Started %s", mock_services)
 
     # init app from config file
-    config = read_and_validate( server_test_file )
+    config = read_and_validate( server_test_configfile )
     app = init_app(config)
 
     # emulates app startup (see app.on_startup in setup_db)

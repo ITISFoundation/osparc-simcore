@@ -48,6 +48,7 @@ def _is_db_service_responsive(**pg_config):
 
 @pytest.fixture(scope='session')
 def package_paths(pytestconfig):
+    # TODO: use instead resources?
     package_root = CURRENT_DIR.parent
     config_folder = ConfigFile("").path
     test_folder = package_root / "tests"
@@ -77,15 +78,21 @@ def docker_compose_file(package_paths):
     return str(fpath)
 
 @pytest.fixture(scope="session")
-def server_test_file(package_paths):
+def server_test_configfile(package_paths):
     fpath = package_paths.CONFIG_FOLDER / "server-host-test.yaml"
+    assert fpath.exists()
+    return fpath
+
+@pytest.fixture(scope="session")
+def light_test_configfile(package_paths):
+    fpath = package_paths.CONFIG_FOLDER / "light-test.yaml"
     assert fpath.exists()
     return fpath
 
 # TODO: extend Service object from pytest-docker
 
 @pytest.fixture(scope="session")
-def mock_services(docker_ip, docker_services, docker_compose_file, server_test_file):
+def mock_services(docker_ip, docker_services, docker_compose_file, server_test_configfile):
     """
       services in mock/docker-compose.yml
     """
@@ -102,7 +109,7 @@ def mock_services(docker_ip, docker_services, docker_compose_file, server_test_f
     os.environ["RABBIT_HOST"] = str(docker_ip)
 
     # loads app config
-    app_config = read_and_validate( server_test_file )
+    app_config = read_and_validate( server_test_configfile )
     pg_config = app_config["postgres"]
 
     # NOTE: this can be eventualy handled by the service under test as well!!

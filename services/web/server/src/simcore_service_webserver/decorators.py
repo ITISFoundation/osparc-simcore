@@ -4,7 +4,7 @@ from functools import wraps
 
 def args_adapter(func):
     """
-        Patch to fix issue between aiohttp_security
+        Patch to fix bug1 in issue #186 between aiohttp_security
 
         request = args[-1]
 
