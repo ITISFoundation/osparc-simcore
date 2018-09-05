@@ -22,7 +22,7 @@
   pip install -r requirements-dev.txt  
 ```
 
-The director implements a REST API defined in __/src/simcore_service_director/.openapi/v1/director_api.yaml__.
+The director implements a REST API defined in __/src/simcore_service_director/.oas3/v1/openapi.yaml__.
 First extend the API and validate the API before implementing any new route.
 
 ## Current status
@@ -80,7 +80,7 @@ NOTE: Issue #3 must still be taken care of manually!
 
 ```docker
 docker run -v C:\Users\anderegg\Documents\dev\OSPARC\gith
-ub\osparc-simcore\services\director\.openapi\v1\:/local/ openapitools/openapi-generator-cli generate -i /local/director_api.yaml -g python-flask -o /
+ub\osparc-simcore\services\director\.openapi\v1\:/local/ openapitools/openapi-generator-cli generate -i /local/openapi.yaml -g python-flask -o /
 local/codegen
 ```
 
