@@ -94,6 +94,7 @@ COPY --chown=scu:scu services/web/server $HOME/services/web/server
 
 WORKDIR /home/scu/services/web/server
 RUN $PIP --no-cache-dir install -r requirements/prod.txt ;\
+    $PIP --no-cache-dir install $HOME/packages/director-sdk/python ;\
     $PIP list
 
 #-------------------
