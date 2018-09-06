@@ -7,7 +7,7 @@
 
 """
 # pylint: disable=C0111
-
+# pylint: disable=W0703
 
 import logging
 
@@ -38,65 +38,37 @@ async def get_interactive_services_handler(sid, data):
     # pylint: disable=C0103
     # pylint: disable=W0613
     _LOGGER.debug("client %s gets interactive services", sid)
-    result = interactive_services_manager.retrieve_list_of_services()
-    await SIO.emit("getInteractiveServices", data=result, room=sid)
+    try:
+        result = await interactive_services_manager.retrieve_list_of_services()
+        await SIO.emit("getInteractiveServices", data=result, room=sid)
+    except IOError:
+        _LOGGER.exception("Error emitting retrieved services")
+    except Exception:
+        _LOGGER.exception("Error while retrieving interactive services")
+    
 
 
 @SIO.on("startDynamic")
 async def start_dynamic_service(sid, data):
-    service_name = data["serviceName"]
-    node_id = data["nodeId"]
-    _LOGGER.debug("client %s requests start %s", sid, service_name)
-    result = interactive_services_manager.start_service(sid, service_name, node_id)
-    # TODO: Connection failure raises exception that is not treated, which stops the webserver
-    # Add mechanism to handle these situations (retry, abandon...)
+    _LOGGER.debug("client %s starts dynamic service %s", sid, data)
     try:
+        service_name = data["serviceName"]
+        node_id = data["nodeId"]
+        result = await interactive_services_manager.start_service(sid, service_name, node_id)
         await SIO.emit("startDynamic", data=result, room=sid)
-    except IOError as err:
-        _LOGGER.exception(err)
-
+    except IOError:
+        _LOGGER.exception("Error emitting results")
+    except Exception:
+        _LOGGER.exception("Error while starting service")
 
 @SIO.on("stopDynamic")
-def stop_dynamic_service(sid, data):
-    node_id = data["nodeId"]
-    _LOGGER.debug("client %s requests stop %s", sid, node_id)
-    interactive_services_manager.stop_service(sid, node_id)
-
-
-@SIO.on("startModeler")
-async def start_modeler_handler(sid, data):
-    _LOGGER.debug("client %s requests start modeler %s", sid, data)
-    result = interactive_services_manager.start_service(sid, "modeler", data)
-    # TODO: Connection failure raises exception that is not treated, which stops the webserver
-    # Add mechanism to handle these situations (retry, abandon...)
+async def stop_dynamic_service(sid, data):
+    _LOGGER.debug("client %s stops dynamic service %s", sid, data)
     try:
-        await SIO.emit("startModeler", data=result, room=sid)
-    except IOError as err:
-        _LOGGER.exception(err)
-
-
-@SIO.on("stopModeler")
-async def stop_modeler_handler(sid, data):
-    _LOGGER.debug("client %s requests stop modeler %s", sid, data)
-    result = interactive_services_manager.stop_service(sid, data)
-    await SIO.emit("stopModeler", data=result, room=sid)
-
-
-@SIO.on("startJupyter")
-async def start_jupyter_handler(sid, data):
-    _LOGGER.debug("client %s requests start jupyter %s", sid, data)
-    result = interactive_services_manager.start_service(
-        sid, "jupyter-base-notebook", data)
-    _LOGGER.debug("director %s starts jupyter %s: %s", sid, data, result)
-    await SIO.emit("startJupyter", data=result, room=sid)
-
-
-@SIO.on("stopJupyter")
-async def stop_jupyter_handler(sid, data):
-    _LOGGER.debug("client %s requests stop jupyter %s", sid, data)
-    result = interactive_services_manager.stop_service(sid, data)
-    await SIO.emit("stopJupyter", data=result, room=sid)
-
+        node_id = data["nodeId"]
+        await interactive_services_manager.stop_service(sid, node_id)
+    except Exception:
+        _LOGGER.exception("Error while stopping service")
 
 @SIO.on("presignedUrl")
 async def retrieve_url_for_file(sid, data):
@@ -113,7 +85,11 @@ async def retrieve_url_for_file(sid, data):
     # bucket location.
     data_out = {}
     data_out["url"] = url
-    await SIO.emit("presignedUrl", data=data_out, room=sid)
+    try:
+        await SIO.emit("presignedUrl", data=data_out, room=sid)
+    except IOError:
+        _LOGGER.exception("Error emitting results")
+    
 
 
 @SIO.on("listObjects")
@@ -133,13 +109,21 @@ async def list_S3_objects(sid, data):
         #obj_info["lastModified"] = obj.last_modified.isoformat()
         obj_info["size"] = obj.size
         data_out.append(obj_info)
-    await SIO.emit("listObjects", data=data_out, room=sid)
+    try:
+        await SIO.emit("listObjects", data=data_out, room=sid)
+    except IOError:
+        _LOGGER.exception("Error emitting results")
+    
 
 
 @SIO.on("disconnect")
-def disconnect(sid):
+async def disconnect(sid):
     _LOGGER.debug("client %s disconnected", sid)
-    interactive_services_manager.session_disconnected(sid)
+    try:
+        await interactive_services_manager.session_disconnected(sid)
+    except Exception:
+        _LOGGER.exception("Error while disconnecting client")
+    
 
 
 def setup_sio(app):
