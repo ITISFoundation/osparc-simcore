@@ -65,7 +65,7 @@ except ApiException as e:
 
 ## Documentation for API Endpoints
 
-All URIs are relative to *http://localhost:{port}/{basePath}*
+All URIs are relative to *http://{host}:{port}/{version}*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------

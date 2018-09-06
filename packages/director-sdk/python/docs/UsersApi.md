@@ -1,6 +1,6 @@
 # simcore_director_sdk.UsersApi
 
-All URIs are relative to *http://localhost:{port}/{basePath}*
+All URIs are relative to *http://{host}:{port}/{version}*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
