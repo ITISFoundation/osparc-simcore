@@ -2,8 +2,12 @@
 
 Corresponds to the ```webserver``` service (see all services in ``services/docker-compose.yml``)
 
-## Development
 
+
+
+
+
+## Development
 
 ### Manual test on (linux) host
 
@@ -40,6 +44,8 @@ python3 -m simcore_service_webserver --config path/to/config.yml
 # or altenatively, use script entrypoint
 simcore-service-webserver -c path/to/config.yml
 ```
+
+### Disabling $\mu$services
 
 With the configuration file it is possible to start the server and disable the connection to other services. This will obviously limit the functionality of the webserver but
 it can be handy mostly to reduce the boot time and complexity while testing or simply to make some
@@ -80,3 +86,7 @@ DEBUG:asyncio:Using selector: EpollSelector
 ======== Running on http://127.0.0.1:8080 ========
 (Press CTRL+C to quit)
 ```
+
+### RestAPI doc & test
+
+To access the apidoc page, open http://localhost:8080/apidoc/ and explore http://localhost:8080/apidoc/swagger.yaml?spec=/v1 (i.e. add this in explore entry)

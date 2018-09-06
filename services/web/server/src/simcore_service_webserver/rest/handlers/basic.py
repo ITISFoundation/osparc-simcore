@@ -16,7 +16,10 @@ from aiohttp_security import (
     has_permission, login_required
 )
 
-from ..config import api_version
+from ..config import (
+    API_URL_VERSION_STR,
+    api_version
+)
 from .._generated_code.models.health_check import HealthCheck
 from .._generated_code.models.health_check_enveloped import HealthCheckEnveloped
 
@@ -36,6 +39,10 @@ async def check_health(request):
         api_version = api_version())
 
     return HealthCheckEnveloped(data=info, status=200)
+
+
+async def get_oas_doc(request):
+    raise web.HTTPFound('/apidoc/swagger.yaml?spec=/{}'.format(API_URL_VERSION_STR))
 
 @decorators.args_adapter
 @login_required

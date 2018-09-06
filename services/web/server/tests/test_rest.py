@@ -10,6 +10,12 @@ import pytest
 import yaml
 import json
 
+from aiohttp.web_exceptions import (
+    HTTPFound,
+    HTTPOk
+)
+
+
 from simcore_service_webserver import (
     resources,
     rest
@@ -80,28 +86,33 @@ async def test_apiversion():
 
 # TODO: *all* oas entries have are mapped to a valid handler
 
-async def test_swagger_doc(cli):
-    # TODO: cli = cli_light
+async def test_apidoc(cli_light):
+    cli = cli_light
     _LOGGER.debug("cli fixture: %s", cli)
 
     response = await cli.get('apidoc/')
-    assert response.status == 200
+    assert response.status == HTTPOk.status_code
     text = await response.text()
     assert "Swagger UI" in text
 
     response = await cli.get('apidoc/swagger.yaml')
-    text = await response.text()
+    full_specs = await response.json()
 
-    api_specs = json.loads(text)
-    doc_specs = yaml.load(resources.stream(rest.config.API_SPECS_NAME))
+    root_specs = yaml.load(resources.stream(rest.config.API_SPECS_NAME))
 
-    # NOTE: api_specs is not identical to doc_specs because the latter has references
-    assert api_specs["info"] == doc_specs["info"]
-    assert api_specs["paths"] == doc_specs["paths"]
-    assert api_specs["tags"] == doc_specs["tags"]
-    assert api_specs["servers"] == doc_specs["servers"]
+    # NOTE: full_specs is not identical to root_specs because the latter has references
+    assert full_specs["info"] == root_specs["info"]
+    assert full_specs["paths"] == root_specs["paths"]
+    assert full_specs["tags"] == root_specs["tags"]
+    assert full_specs["servers"] == root_specs["servers"]
     #for section in ('openapi', 'info', 'tags', 'paths', 'components', 'servers'):
     #    assert got_oas[section] == expected_oas[section]
+
+    response = await cli.get('v1/oas')
+    assert response.status == 200 # TODO: why not HTTPFound.status_code
+
+    full_specs = await response.json()
+    assert full_specs == full_specs
 
 
 async def test_login(cli):
@@ -111,10 +122,10 @@ async def test_login(cli):
                                      'email': 'bizzy@itis.ethz.ch',
                                      'password': 'z43'
                                  })
-    assert response.status == 200
+    assert response.status == HTTPOk.status_code
 
     response = await cli.get('v1/ping')
-    assert response.status == 200
+    assert response.status == HTTPOk.status_code
 
     text = await response.text()
     assert text == 'pong'

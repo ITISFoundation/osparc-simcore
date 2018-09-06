@@ -9,8 +9,8 @@ import yaml
 from .. import resources
 
 API_MAJOR_VERSION = 1
-API_URL_PREFIX = "v{:.0f}".format(API_MAJOR_VERSION)
-API_SPECS_NAME = ".oas3/{}/openapi.yaml".format(API_URL_PREFIX)
+API_URL_VERSION_STR = "v{:.0f}".format(API_MAJOR_VERSION)
+API_SPECS_NAME = ".oas3/{}/openapi.yaml".format(API_URL_VERSION_STR)
 
 def api_version() -> str:
     specs = yaml.load(resources.stream(API_SPECS_NAME))
@@ -22,7 +22,7 @@ def api_specification_path() -> Path:
 
 __all__ = (
     'API_MAJOR_VERSION',
-    'API_URL_PREFIX',
+    'API_URL_VERSION_STR',
     'api_version',
     'api_specification_path'
 )

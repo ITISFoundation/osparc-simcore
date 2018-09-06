@@ -43,6 +43,15 @@ paths:
             application/json:
               schema:
                 $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
+  /oas:
+    get:
+      tags:
+        - test
+      summary: Returns complete schema for OpenApi Specifications
+      operationId: get_oas_doc
+      reponses:
+        '200':
+          description: oas schema
   /me:
     get:
       tags:

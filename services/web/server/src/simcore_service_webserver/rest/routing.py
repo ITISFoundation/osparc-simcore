@@ -8,7 +8,7 @@ from aiohttp_apiset.swagger.operations import OperationIdMapping
 from . import handlers
 from .config import (
     api_specification_path,
-    API_URL_PREFIX
+    API_URL_VERSION_STR
 )
 
 from ..comp_backend_api import comp_backend_routes
@@ -49,12 +49,12 @@ def include_oaspecs_routes(router, oas3_path: Path=None):
     opmap = _create_default_operation_mapping(oas3_path, handlers)
 
     # Include our specifications in a router,
-    # is now available in the swagger-ui to the address http://localhost:8080/swagger/?spec=v1
+    # Gets file in http://localhost:8080/apidoc/swagger.yaml?spec=/v1
     router.include(
         spec=oas3_path,
         operationId_mapping=opmap,
-        name=API_URL_PREFIX,  # name to access in swagger-ui,
-        basePath="/" + API_URL_PREFIX # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
+        name=API_URL_VERSION_STR,  # name to access in swagger-ui,
+        basePath="/" + API_URL_VERSION_STR # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
     )
 
 def include_other_routes(router):
@@ -68,11 +68,10 @@ def include_other_routes(router):
             route_obj.register(self)
 
 
-    basePath="/" + API_URL_PREFIX
+    basePath="/" + API_URL_VERSION_STR
     router.add_get(basePath+"/ping", handlers.ping, name="ping")
 
     # TODO: add authorization on there routes
-
     #app.router.add_routes(registry_routes)
     #app.router.add_routes(comp_backend_routes)
     _add_routes(router, registry_routes)
