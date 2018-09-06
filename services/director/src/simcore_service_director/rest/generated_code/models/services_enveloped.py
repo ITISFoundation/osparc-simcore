@@ -6,7 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
-from .error import Error  # noqa: F401,E501
 from .node_meta_v0 import NodeMetaV0  # noqa: F401,E501
 from .. import util
 
@@ -17,31 +16,26 @@ class ServicesEnveloped(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: List[NodeMetaV0]=None, status: int=None, error: Error=None):  # noqa: E501
+    def __init__(self, data: List[NodeMetaV0]=None, status: int=None):  # noqa: E501
         """ServicesEnveloped - a model defined in OpenAPI
 
         :param data: The data of this ServicesEnveloped.  # noqa: E501
         :type data: List[NodeMetaV0]
         :param status: The status of this ServicesEnveloped.  # noqa: E501
         :type status: int
-        :param error: The error of this ServicesEnveloped.  # noqa: E501
-        :type error: Error
         """
         self.openapi_types = {
             'data': List[NodeMetaV0],
-            'status': int,
-            'error': Error
+            'status': int
         }
 
         self.attribute_map = {
             'data': 'data',
-            'status': 'status',
-            'error': 'error'
+            'status': 'status'
         }
 
         self._data = data
         self._status = status
-        self._error = error
 
     @classmethod
     def from_dict(cls, dikt) -> 'ServicesEnveloped':
@@ -95,24 +89,3 @@ class ServicesEnveloped(Model):
         """
 
         self._status = status
-
-    @property
-    def error(self) -> Error:
-        """Gets the error of this ServicesEnveloped.
-
-
-        :return: The error of this ServicesEnveloped.
-        :rtype: Error
-        """
-        return self._error
-
-    @error.setter
-    def error(self, error: Error):
-        """Sets the error of this ServicesEnveloped.
-
-
-        :param error: The error of this ServicesEnveloped.
-        :type error: Error
-        """
-
-        self._error = error

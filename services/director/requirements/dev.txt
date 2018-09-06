@@ -1,0 +1,6 @@
+# paths relative to location of setup.py
+-e .
+
+# extra dev tools
+autopep8
+pylint

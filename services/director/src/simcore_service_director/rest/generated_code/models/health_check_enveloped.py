@@ -6,7 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
-from .error import Error  # noqa: F401,E501
 from .health_check import HealthCheck  # noqa: F401,E501
 from .. import util
 
@@ -17,31 +16,26 @@ class HealthCheckEnveloped(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: HealthCheck=None, status: int=None, error: Error=None):  # noqa: E501
+    def __init__(self, data: HealthCheck=None, status: int=None):  # noqa: E501
         """HealthCheckEnveloped - a model defined in OpenAPI
 
         :param data: The data of this HealthCheckEnveloped.  # noqa: E501
         :type data: HealthCheck
         :param status: The status of this HealthCheckEnveloped.  # noqa: E501
         :type status: int
-        :param error: The error of this HealthCheckEnveloped.  # noqa: E501
-        :type error: Error
         """
         self.openapi_types = {
             'data': HealthCheck,
-            'status': int,
-            'error': Error
+            'status': int
         }
 
         self.attribute_map = {
             'data': 'data',
-            'status': 'status',
-            'error': 'error'
+            'status': 'status'
         }
 
         self._data = data
         self._status = status
-        self._error = error
 
     @classmethod
     def from_dict(cls, dikt) -> 'HealthCheckEnveloped':
@@ -95,24 +89,3 @@ class HealthCheckEnveloped(Model):
         """
 
         self._status = status
-
-    @property
-    def error(self) -> Error:
-        """Gets the error of this HealthCheckEnveloped.
-
-
-        :return: The error of this HealthCheckEnveloped.
-        :rtype: Error
-        """
-        return self._error
-
-    @error.setter
-    def error(self, error: Error):
-        """Sets the error of this HealthCheckEnveloped.
-
-
-        :param error: The error of this HealthCheckEnveloped.
-        :type error: Error
-        """
-
-        self._error = error

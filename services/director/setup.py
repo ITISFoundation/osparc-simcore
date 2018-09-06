@@ -1,23 +1,26 @@
+import pathlib
+import sys
+
 from setuptools import find_packages, setup
 
+_CDIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent
+_PACKAGES_DIR = _CDIR.absolute().parent.parent / "packages"
 
-INSTALL_REQUIRES = [
-    'docker==3.5.0',
-    'tenacity==4.12.0',
-    'aiohttp==3.3.2',
-    'aiohttp_apiset==0.9.3',
-    'requests==2.19.1',
-]
+def list_requirements_in(filename):
+    requires = []
+    with (_CDIR / "requirements" / filename).open() as fh:
+        requires = [line.strip() for line in fh.readlines() if not line.lstrip().startswith("#")]
+    return requires
 
-TESTS_REQUIRE = [
-    'coveralls~=1.3',
-    'pylint~=2.0',
-    'pytest-aiohttp',
-    'pytest~=3.6',
-    'pytest-cov~=2.5',
-    'pytest-docker~=0.6'
-    ]
+def package_files(package_dir, data_dir):
+    abs_path = _CDIR / package_dir / data_dir
+    return [str(x.relative_to(_CDIR / package_dir)) for x in abs_path.rglob('**/*.*')]
 
+
+INSTALL_REQUIRES = list_requirements_in("base.txt")
+TESTS_REQUIRE = list_requirements_in("test.txt")
+PACKAGES = find_packages('src')
+EXTRA_FILES = package_files("src/simcore_service_director", ".oas3")
 
 setup(
     name='simcore-service-director',
@@ -27,7 +30,7 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages('src'),
     package_data={
-        '': ['.openapi/v1/*']
+        '': EXTRA_FILES
     },
     entry_points={
         'console_scripts': ['simcore-service-director=simcore_service_director.__main__:main']},
@@ -38,4 +41,5 @@ setup(
         'test': TESTS_REQUIRE
     },
     zip_safe=False,
+    python_requires='>=3.6',
 )

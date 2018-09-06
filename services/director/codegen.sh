@@ -4,7 +4,7 @@
 # /src/package-name/.openapi/v1/package_api.yaml   -- this is the input file
 # /src/package-name/rest/generated_code            -- this is the output directory
 SOURCE_DIR=./src/simcore_service_director
-INPUT_SPEC=${SOURCE_DIR}/.openapi/v1/director_api.yaml
+INPUT_SPEC=${SOURCE_DIR}/.oas3/v1/openapi.yaml
 OUTPUT_DIR=${SOURCE_DIR}/rest
 OUTPUT_DIR_GEN=${SOURCE_DIR}/rest/generated_code
 INIT_FILE_PATH=${OUTPUT_DIR}/__init__.py
@@ -90,7 +90,7 @@ async def __handle_errors(request, handler):
         return response
     except web.HTTPError as ex:
         error = Error(status=ex.status, message=ex.reason)
-        error_enveloped = ErrorEnveloped(error=error)
+        error_enveloped = ErrorEnveloped(data=error, status=ex.status_code)
         error_dict = error_enveloped.to_dict()
         return web.json_response(error_dict, status=ex.status)
 

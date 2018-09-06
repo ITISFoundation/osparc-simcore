@@ -5,14 +5,13 @@
 
 import json
 import logging
-import os
 import time
 
 import docker
 import requests
 import tenacity
 
-from . import exceptions, registry_proxy
+from . import config, exceptions, registry_proxy
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
 SERVICE_RUNTIME_BOOTSETTINGS = 'simcore.service.bootsettings'
@@ -26,9 +25,9 @@ def __get_docker_client():
 def __login_docker_registry(docker_client):
     try:
         # login
-        registry_url = os.environ.get('REGISTRY_URL')
-        username = os.environ.get('REGISTRY_USER')
-        password = os.environ.get('REGISTRY_PW')
+        registry_url = config.REGISTRY_URL
+        username = config.REGISTRY_USER
+        password = config.REGISTRY_PW
         _LOGGER.debug("logging into docker registry %s", registry_url)
         docker_client.login(registry=registry_url + '/v2',
                             username=username, password=password)
@@ -134,14 +133,14 @@ def __add_network_to_service_runtime_params(docker_service_runtime_parameters, d
 
 def __add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, service_uuid):
     variables = [
-        "POSTGRES_ENDPOINT=" + os.environ.get("POSTGRES_ENDPOINT"),
-        "POSTGRES_USER=" + os.environ.get("POSTGRES_USER"),
-        "POSTGRES_PASSWORD=" + os.environ.get("POSTGRES_PASSWORD"),
-        "POSTGRES_DB=" + os.environ.get("POSTGRES_DB"),
-        "S3_ENDPOINT=" + os.environ.get("S3_ENDPOINT"),
-        "S3_ACCESS_KEY=" + os.environ.get("S3_ACCESS_KEY"),
-        "S3_SECRET_KEY=" + os.environ.get("S3_SECRET_KEY"),
-        "S3_BUCKET_NAME=" + os.environ.get("S3_BUCKET_NAME"),
+        "POSTGRES_ENDPOINT=" + config.POSTGRES_ENDPOINT,
+        "POSTGRES_USER=" + config.POSTGRES_USER,
+        "POSTGRES_PASSWORD=" + config.POSTGRES_PASSWORD,
+        "POSTGRES_DB=" + config.POSTGRES_DB,
+        "S3_ENDPOINT=" + config.S3_ENDPOINT,
+        "S3_ACCESS_KEY=" + config.S3_ACCESS_KEY,
+        "S3_SECRET_KEY=" + config.S3_SECRET_KEY,
+        "S3_BUCKET_NAME=" + config.S3_BUCKET_NAME,
         "SIMCORE_NODE_UUID=" + service_uuid
     ]
     if "env" in docker_service_runtime_parameters:
@@ -313,7 +312,7 @@ def __create_services(docker_client, list_of_images, service_name, service_tag, 
 
         #let-s start the service
         try:
-            docker_image_full_path = os.environ.get('REGISTRY_URL') + '/' + docker_image_path + ':' + tag
+            docker_image_full_path = config.REGISTRY_URL + '/' + docker_image_path + ':' + tag
             _LOGGER.debug("Starting docker service %s using parameters %s", docker_image_full_path, docker_service_runtime_parameters)
             service = docker_client.services.create(docker_image_full_path, **docker_service_runtime_parameters)
             _LOGGER.debug("Service started now waiting for it to run")

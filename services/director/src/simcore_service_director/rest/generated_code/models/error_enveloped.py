@@ -16,21 +16,26 @@ class ErrorEnveloped(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, error: Error=None):  # noqa: E501
+    def __init__(self, data: Error=None, status: int=None):  # noqa: E501
         """ErrorEnveloped - a model defined in OpenAPI
 
-        :param error: The error of this ErrorEnveloped.  # noqa: E501
-        :type error: Error
+        :param data: The data of this ErrorEnveloped.  # noqa: E501
+        :type data: Error
+        :param status: The status of this ErrorEnveloped.  # noqa: E501
+        :type status: int
         """
         self.openapi_types = {
-            'error': Error
+            'data': Error,
+            'status': int
         }
 
         self.attribute_map = {
-            'error': 'error'
+            'data': 'data',
+            'status': 'status'
         }
 
-        self._error = error
+        self._data = data
+        self._status = status
 
     @classmethod
     def from_dict(cls, dikt) -> 'ErrorEnveloped':
@@ -44,22 +49,43 @@ class ErrorEnveloped(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def error(self) -> Error:
-        """Gets the error of this ErrorEnveloped.
+    def data(self) -> Error:
+        """Gets the data of this ErrorEnveloped.
 
 
-        :return: The error of this ErrorEnveloped.
+        :return: The data of this ErrorEnveloped.
         :rtype: Error
         """
-        return self._error
+        return self._data
 
-    @error.setter
-    def error(self, error: Error):
-        """Sets the error of this ErrorEnveloped.
+    @data.setter
+    def data(self, data: Error):
+        """Sets the data of this ErrorEnveloped.
 
 
-        :param error: The error of this ErrorEnveloped.
-        :type error: Error
+        :param data: The data of this ErrorEnveloped.
+        :type data: Error
         """
 
-        self._error = error
+        self._data = data
+
+    @property
+    def status(self) -> int:
+        """Gets the status of this ErrorEnveloped.
+
+
+        :return: The status of this ErrorEnveloped.
+        :rtype: int
+        """
+        return self._status
+
+    @status.setter
+    def status(self, status: int):
+        """Sets the status of this ErrorEnveloped.
+
+
+        :param status: The status of this ErrorEnveloped.
+        :type status: int
+        """
+
+        self._status = status
