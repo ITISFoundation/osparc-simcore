@@ -10,7 +10,6 @@ _DIRECTOR_PATH = "v1"
 
 
 def get_director():
-    _LOGGER.debug("HOST is %s", _DIRECTOR_HOST)
     configuration = simcore_director_sdk.Configuration()
     configuration.host = configuration.host.format(host=_DIRECTOR_HOST, port=_DIRECTOR_PORT, version=_DIRECTOR_PATH)
     api_instance = simcore_director_sdk.UsersApi(simcore_director_sdk.ApiClient(configuration))
