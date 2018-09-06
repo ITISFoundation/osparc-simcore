@@ -8,7 +8,7 @@ import logging
 from aiohttp import web
 import async_timeout
 
-from . import director_proxy
+from . import director_sdk
 
 _LOGGER = logging.getLogger(__file__)
 
@@ -42,6 +42,11 @@ async def get_computational_services(request):
     """
     _LOGGER.debug(request)
 
-    repo_list = director_proxy.retrieve_computational_services()
-
-    return web.json_response(repo_list)
+    try:
+        director = director_sdk.get_director()
+        services = await director.services_get(service_type="computational")
+        return web.json_response(services.to_dict())
+    except Exception:
+        _LOGGER.exception("Error while retrieving computational services")
+        raise
+    
