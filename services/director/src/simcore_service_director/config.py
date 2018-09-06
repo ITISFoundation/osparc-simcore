@@ -7,6 +7,7 @@ logging.basicConfig(
     format='%(levelname)s:%(name)s-%(lineno)d: %(message)s'
     )
 
+# FIXME: adapt to new config. Issue #195
 CONVERT_OLD_API = True
 
 OPEN_API_BASE_FOLDER = Path(__file__).parent / ".oas3/v1"
