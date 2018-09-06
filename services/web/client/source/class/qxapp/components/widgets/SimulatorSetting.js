@@ -54,7 +54,9 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
   members: {
     __componentsBox: null,
     __settingsBox: null,
+    __settingProps: null,
     __contentBox: null,
+    __contentProps: null,
 
     __applyNode: function(node, oldNode, propertyName) {
       this.__settingsBox.removeAll();
@@ -66,6 +68,10 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
         let res = this.__createTree("Default Settings");
         let tree = res.tree;
         let root = res.root;
+        tree.addListener("changeSelection", e => {
+          let data = e.getData()[0];
+          this.__showPropertiesInSettings(data);
+        }, this);
         this.__settingsBox.add(tree, {
           flex: 1
         });
@@ -93,6 +99,10 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
                 this.__populateList(root, portType, false);
                 break;
               case "materialDB":
+                tree.addListener("changeSelection", e => {
+                  let data = e.getData()[0];
+                  this.__showPropertiesInSettings(data);
+                }, this);
                 this.__settingsBox.add(tree, {
                   flex: 1
                 });
@@ -110,6 +120,10 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
         let tree = res.tree;
         let root = res.root;
         root.setDroppable(true);
+        tree.addListener("changeSelection", e => {
+          let data = e.getData()[0];
+          this.__showPropertiesInContent(data);
+        }, this);
         this.__contentBox.add(tree, {
           flex: 1
         });
@@ -134,6 +148,7 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
               droppable: true
             });
             conceptSetting.data = eData;
+            conceptSetting.form = this.__createForm(eData.properties);
             root.add(conceptSetting);
 
             conceptSetting.addListener("dragover", ev => {
@@ -161,6 +176,11 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
           }
         }, this);
       }
+
+      this.__settingProps = new qx.ui.core.Widget();
+      this.__settingsBox.add(this.__settingProps);
+      this.__contentProps = new qx.ui.core.Widget();
+      this.__contentBox.add(this.__contentProps);
     },
 
     __isCompatible: function() {
@@ -190,6 +210,7 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
         const label = list[i].name;
         let treeItem = isSetting ? new qx.ui.tree.TreeFolder(label) : new qx.ui.tree.TreeFile(label);
         treeItem.setDraggable(true);
+        treeItem.form = this.__createForm(list[i].properties);
         root.add(treeItem);
 
         treeItem.addListener("dragstart", e => {
@@ -200,6 +221,36 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
           e.addData(dataType, list[i]);
         }, this);
       }
+    },
+
+    __createForm: function(inputs) {
+      if (inputs === null) {
+        return null;
+      }
+      let form = new qxapp.components.form.Auto(inputs);
+      let propForm = new qxapp.components.form.renderer.PropForm(form);
+      return propForm;
+    },
+
+    __showPropertiesInSettings: function(data) {
+      this.__settingsBox.remove(this.__settingProps);
+      if ("form" in data) {
+        this.__settingProps = data.form;
+        this.__settingProps.enableAllProps(false);
+      } else {
+        this.__settingProps = new qx.ui.core.Widget();
+      }
+      this.__settingsBox.add(this.__settingProps);
+    },
+
+    __showPropertiesInContent: function(data) {
+      this.__contentBox.remove(this.__contentProps);
+      if ("form" in data) {
+        this.__contentProps = data.form;
+      } else {
+        this.__contentProps = new qx.ui.core.Widget();
+      }
+      this.__contentBox.add(this.__contentProps);
     },
 
     listClicked: function() {
