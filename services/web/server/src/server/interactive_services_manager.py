@@ -35,7 +35,7 @@ async def session_disconnected(session_id):
         _LOGGER.exception("Unexpected error")
         raise
 
-async def retrieve_list_of_services():    
+async def retrieve_list_of_services():
     _LOGGER.debug("Retrieving list of services")
     try:
         director = director_sdk.get_director()
