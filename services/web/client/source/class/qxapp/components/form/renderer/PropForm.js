@@ -88,6 +88,12 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
       if (this._form && this._form.getControl(key)) {
         this._form.getControl(key).setEnabled(enable);
       }
+    },
+
+    enableAllProps: function(enable) {
+      for (const key of Object.keys(this._form.__ctrlMap)) {
+        this.enableProp(key, enable);
+      }
     }
   }
 });
