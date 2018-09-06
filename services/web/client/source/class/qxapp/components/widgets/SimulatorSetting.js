@@ -52,13 +52,9 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
   events: {},
 
   members: {
-    __components: null,
     __componentsBox: null,
-    __defaultSettings: null,
-    __databaseSettings: null,
     __settingsBox: null,
     __contentBox: null,
-    __settingsFolder: null,
 
     __applyNode: function(node, oldNode, propertyName) {
       this.__settingsBox.removeAll();
@@ -91,14 +87,12 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
             switch (apiType) {
               case "modeler":
                 tree.setSelectionMode("multi");
-                this.__components = tree;
                 this.__componentsBox.add(tree, {
                   flex: 1
                 });
                 this.__populateList(root, portType, false);
                 break;
               case "materialDB":
-                this.__databaseSettings = tree;
                 this.__settingsBox.add(tree, {
                   flex: 1
                 });
@@ -178,7 +172,7 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
         selectionMode: "single",
         openMode: "none"
       });
-      let root = this.__settingsFolder = new qx.ui.tree.TreeFolder(rootLabel).set({
+      let root = new qx.ui.tree.TreeFolder(rootLabel).set({
         open: true
       });
       tree.setRoot(root);
