@@ -29,7 +29,6 @@ First extend the API and validate the API before implementing any new route.
 
 End validation of the requests/responses is missing as some issues arose with using the openapi-core library. It seems it is not happy with referencing a json schema file. An issue was filed to see if something may be done quickly [github](https://github.com/p1c2u/openapi-core/issues/90).
 
-
 ## docker
 
 - Uses multi-stage dockerfile to extend a common stack of layers into production or development images
@@ -66,8 +65,6 @@ Then open [director-swagger-ui](http://localhost:8001/apidoc/) to see the direct
 
 ## code generation from REST API "server side"
 
-### simplified system
-
 Execute the following script for generating the necessary code server side
 
 ```bash
@@ -76,31 +73,7 @@ Execute the following script for generating the necessary code server side
 
 NOTE: Issue #3 must still be taken care of manually!
 
-### python flask generation with openapi 3.0.0
-
-```docker
-docker run -v C:\Users\anderegg\Documents\dev\OSPARC\gith
-ub\osparc-simcore\services\director\.openapi\v1\:/local/ openapitools/openapi-generator-cli generate -i /local/openapi.yaml -g python-flask -o /
-local/codegen
-```
-
-creates a structure with
-
-```bash
-/.openapi-generator/VERSION
-/openapi_server/
-    controllers/
-    models/
-    openapi/
-    test/
-    __init__.py
-    __main__.py
-    encoder.py
-    util.py
-    ...
-```
-
-### Issues:
+### Issues
 
 1. SwaggerRouter must be created with __version_ui__ set to 3 or the swagger ui must be access with ?version=3
 2. SwaggerRouter.include needs to have the argument __basePath__ filled to serve the API at the right location (ndlr /v1)  [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
