@@ -9,7 +9,7 @@ export DOCKER=docker
 export RUN_DOCKER_ENGINE_ROOT=1
 # Windows does not have these things defined... but they are needed to execute a local swarm
 export DOCKER_GID=1001
-export HOST_ID=1000
+export HOST_GID=1000
 else
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
@@ -36,7 +36,7 @@ rebuild-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
 
 up-devel:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml up
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml up
 
 build:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
@@ -45,18 +45,18 @@ rebuild:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
 
 up:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml up
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml up
 
 up-swarm:
 	${DOCKER} swarm init
-	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml services
+	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml  -c services/docker-compose.tools.yml services
 
 up-swarm-devel:
 	${DOCKER} swarm init
-	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.devel.yml -c services/docker-compose.deploy.devel.yml services
+	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.devel.yml -c services/docker-compose.deploy.devel.yml  -c services/docker-compose.tools.yml services
 
 down:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml down
+	${DOCKER_COMPOSE} -f services/docker-compose.yml  -f services/docker-compose.tools.yml down
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml down
 
 down-swarm:
