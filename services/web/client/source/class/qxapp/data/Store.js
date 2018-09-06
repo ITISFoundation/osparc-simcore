@@ -40,19 +40,19 @@ qx.Class.define("qxapp.data.Store", {
             {
               name: "Model 1",
               uuid: "MODEL1-UUID",
-              payload: {}
+              properties: {}
             }, {
               name: "Model 2",
               uuid: "MODEL2-UUID",
-              payload: {}
+              properties: {}
             }, {
               name: "Model 3",
               uuid: "MODEL3-UUID",
-              payload: {}
+              properties: {}
             }, {
               name: "Model 4",
               uuid: "MODEL4-UUID",
-              payload: {}
+              properties: {}
             }
           ];
         }
@@ -62,95 +62,122 @@ qx.Class.define("qxapp.data.Store", {
             {
               name: "Air",
               uuid: "Air-UUID",
-              payload: {
-                properties: [{
-                  key: "massDensity",
+              properties: {
+                "massDensity": {
+                  displayOrder: 0,
                   label: "Mass Density",
                   unit: "kg/m3",
-                  value: 1.16409
-                }, {
-                  key: "electricConductivity",
+                  type: "number",
+                  defaultValue: 1.16409
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
                   label: "Electric Conductivity",
                   unit: "S/m",
-                  value: 0
-                }, {
-                  key: "electricRelativePermitivity",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
                   label: "Electric Relative Permeability",
                   unit: "",
-                  value: 1
-                }, {
-                  key: "magneticConductivity",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
                   label: "Magnetic Conductivity",
                   unit: "Ohm/m",
-                  value: 0
-                }, {
-                  key: "magneticRelativePermitivity",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermitivity": {
+                  displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
-                  value: 1
-                }]
+                  type: "number",
+                  defaultValue: 1
+                }
               }
             }, {
               name: "Brain",
               uuid: "Brain-UUID",
-              payload: {
-                properties: [{
-                  key: "massDensity",
+              properties: {
+                "massDensity": {
+                  displayOrder: 0,
                   label: "Mass Density",
                   unit: "kg/m3",
-                  value: 1045.5
-                }, {
-                  key: "electricConductivity",
+                  type: "number",
+                  defaultValue: 1045.5
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
                   label: "Electric Conductivity",
                   unit: "S/m",
-                  value: 0.234007
-                }, {
-                  key: "electricRelativePermitivity",
+                  type: "number",
+                  defaultValue: 0.234007
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
                   label: "Electric Relative Permeability",
                   unit: "",
-                  value: 1
-                }, {
-                  key: "magneticConductivity",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
                   label: "Magnetic Conductivity",
                   unit: "Ohm/m",
-                  value: 0
-                }, {
-                  key: "magneticRelativePermitivity",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermitivity": {
+                  displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
-                  value: 1
-                }]
+                  type: "number",
+                  defaultValue: 1
+                }
               }
             }, {
               name: "Eye",
               uuid: "Eye-UUID",
-              payload: {
-                properties: [{
-                  key: "massDensity",
+              properties: {
+                "massDensity": {
+                  displayOrder: 0,
                   label: "Mass Density",
                   unit: "kg/m3",
-                  value: 1050.5
-                }, {
-                  key: "electricConductivity",
+                  type: "number",
+                  defaultValue: 1050.5
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
                   label: "Electric Conductivity",
                   unit: "S/m",
-                  value: 0.62
-                }, {
-                  key: "electricRelativePermitivity",
+                  type: "number",
+                  defaultValue: 0.62
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
                   label: "Electric Relative Permeability",
                   unit: "",
-                  value: 1
-                }, {
-                  key: "magneticConductivity",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
                   label: "Magnetic Conductivity",
                   unit: "Ohm/m",
-                  value: 0
-                }, {
-                  key: "magneticRelativePermitivity",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermitivity": {
+                  displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
-                  value: 1
-                }]
+                  type: "number",
+                  defaultValue: 1
+                }
               }
             }
           ];
@@ -160,41 +187,50 @@ qx.Class.define("qxapp.data.Store", {
             {
               name: "PEC",
               uuid: "PEC-UUID",
-              payload: {}
+              properties: {}
             }, {
               name: "PMC",
               uuid: "PMC-UUID",
-              payload: {}
+              properties: {}
             }, {
               name: "Dielectric",
               uuid: "Dielectric-UUID",
-              payload: {
-                properties: [{
-                  key: "massDensity",
+              properties: {
+                "massDensity": {
+                  displayOrder: 0,
                   label: "Mass Density",
                   unit: "kg/m3",
-                  value: 1000
-                }, {
-                  key: "electricConductivity",
+                  type: "number",
+                  defaultValue: 1000
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
                   label: "Electric Conductivity",
                   unit: "S/m",
-                  value: 0
-                }, {
-                  key: "electricRelativePermitivity",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
                   label: "Electric Relative Permeability",
                   unit: "",
-                  value: 1
-                }, {
-                  key: "magneticConductivity",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
                   label: "Magnetic Conductivity",
                   unit: "Ohm/m",
-                  value: 0
-                }, {
-                  key: "magneticRelativePermitivity",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermitivity": {
+                  displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
-                  value: 1
-                }]
+                  type: "number",
+                  defaultValue: 1
+                }
               }
             }
           ];
