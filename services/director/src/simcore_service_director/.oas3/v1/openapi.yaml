@@ -12,20 +12,17 @@ info:
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 
 servers:
-  - url: http://localhost:{port}/{basePath}
+  - url: http://{host}:{port}/{version}
     description: Development server
     variables:
+      host:
+        default: 'localhost'
       port: 
         default: '8001'
-      basePath:
-        default: v1
-  - url: https://director:{port}/{basePath}
-    description: Production server
-    variables:
-      port: 
-        default: '8001'
-      basePath:
-        default: v1
+      version:
+        default: 'v1'
+        enum:
+          - 'v1'
 
 # tags are used for organizing operations
 tags:

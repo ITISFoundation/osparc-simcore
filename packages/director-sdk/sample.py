@@ -7,7 +7,7 @@ import simcore_director_sdk
 from simcore_director_sdk.rest import ApiException
 
 configuration = simcore_director_sdk.Configuration()
-configuration.host = configuration.host.format(port=8001, basePath="/v1/")
+configuration.host = configuration.host.format(host="localhost", port=8001, version="/v1/")
 api_instance = simcore_director_sdk.UsersApi(simcore_director_sdk.ApiClient(configuration))
 
 async def get_root():
