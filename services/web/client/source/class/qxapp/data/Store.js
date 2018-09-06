@@ -82,18 +82,23 @@ qx.Class.define("qxapp.data.Store", {
       });
       req.addListener("success", function(e) {
         let requ = e.getTarget();
-        const listOfRepositories = JSON.parse(requ.getResponse());
-        console.log("listOfServices", listOfRepositories);
-        let services = [];
-        for (const key of Object.keys(listOfRepositories)) {
-          const repo = listOfRepositories[key];
-          const nTags = repo.length;
-          for (let i=0; i<nTags; i++) {
-            let newMetaData = qxapp.data.Converters.registryToMetaData(repo[i]);
+        const {data, status} = requ.getResponse();
+        if (status >= 200 && status <= 299) {
+          const listOfRepositories = data
+          console.log("listOfServices", listOfRepositories);
+          let services = [];
+          for (const key of Object.keys(listOfRepositories)) {
+            const repoData = listOfRepositories[key];
+            let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
             services.push(newMetaData);
           }
+          this.fireDataEvent("servicesRegistered", services);
         }
-        this.fireDataEvent("servicesRegistered", services);
+        else {
+          // error
+          console.error("Error retrieving services: ", data)
+        }
+        
       }, this);
       req.send();
     },
@@ -102,18 +107,22 @@ qx.Class.define("qxapp.data.Store", {
       let socket = qxapp.wrappers.WebSocket.getInstance();
       socket.removeSlot("getInteractiveServices");
       socket.on("getInteractiveServices", function(e) {
-        let listOfIntercativeServices = e;
-        console.log("listOfIntercativeServices", listOfIntercativeServices);
-        let services = [];
-        for (const key of Object.keys(listOfIntercativeServices)) {
-          const repo = listOfIntercativeServices[key];
-          if (repo["details"].length>0 && repo["details"][0].length>0) {
-            const repoData = repo["details"][0][0];
+        const {data, status} = e
+        if (status >= 200 && status <= 299) {
+          let listOfInteractiveServices = data;
+          console.log("listOfInteractiveServices", listOfInteractiveServices);
+          let services = [];
+          for (const key of Object.keys(listOfInteractiveServices)) {
+            const repoData = listOfInteractiveServices[key];
             let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
             services.push(newMetaData);
           }
+          this.fireDataEvent("interactiveServicesRegistered", services);
         }
-        this.fireDataEvent("interactiveServicesRegistered", services);
+        else {
+          // error
+          console.error("Error retrieving services: ", data)
+        }
       }, this);
       socket.emit("getInteractiveServices");
     }
