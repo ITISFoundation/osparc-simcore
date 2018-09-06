@@ -1,9 +1,15 @@
 import logging
 
+import pkg_resources
+import yaml
 from aiohttp import web_exceptions
 
-from simcore_service_director import (config, exceptions, producer,
-                                      registry_proxy)
+from simcore_service_director import (
+    config, 
+    exceptions, 
+    producer,
+    registry_proxy
+    )
 
 from . import api_converters, node_validator
 from .generated_code.models import (HealthCheck, HealthCheckEnveloped,
@@ -14,7 +20,16 @@ from .generated_code.models import (HealthCheck, HealthCheckEnveloped,
 _LOGGER = logging.getLogger(__name__)
 
 async def root_get(request):  # pylint:disable=unused-argument
-    service_health = HealthCheck(name="simcore-service-director", status="SERVICE_RUNNING", api_version="1.0.0", version="1.0.0")
+    distb = pkg_resources.get_distribution('simcore-service-director')
+    api_path = config.OPEN_API_BASE_FOLDER / config.OPEN_API_SPEC_FILE
+    with api_path.open() as file_ptr:
+        api_dict = yaml.load(file_ptr)
+
+    service_health = HealthCheck(
+        name=distb.project_name, 
+        status="SERVICE_RUNNING", 
+        api_version=api_dict["info"]["version"], 
+        version=distb.version)
     return HealthCheckEnveloped(data=service_health, status=200).to_dict()
 
 async def services_get(request, service_type=None):  # pylint:disable=unused-argument
