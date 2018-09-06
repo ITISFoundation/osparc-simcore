@@ -8,35 +8,69 @@ qx.Class.define("qxapp.data.Store", {
     "interactiveServicesRegistered": "qx.event.type.Event"
   },
 
+  statics: {
+    /**
+     * Represents an empty project descriptor
+    */
+    NEW_PROJECT_DESCRIPTOR: qx.data.marshal.Json.createModel({
+      name: "New Project",
+      description: "Empty",
+      thumbnail: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round",
+      created: new Date(),
+      projectId: qxapp.utils.Utils.uuidv4()
+    })
+  },
+
   members: {
+    getServices: function() {
+      let services = {};
+      services = Object.assign(services, this.getBuiltInServices());
+      services = Object.assign(services, qxapp.dev.fake.Data.getNodeMap());
+      return services;
+    },
+
+    getProjectList: function() {
+      return qxapp.dev.fake.Data.getProjectList();
+    },
+
+    getNodeMetaData: function(nodeImageId) {
+      let metaData = this.getServices()[nodeImageId];
+      if (metaData === undefined) {
+        metaData = this.getBuiltInServices()[nodeImageId];
+      }
+      return metaData;
+    },
+
     getBuiltInServices: function() {
-      let builtInServices = [{
-        "key": "FileManager",
-        "name": "File Manager",
-        "tag": "0.0.1",
-        "description": "File Manager",
-        "authors": [{
-          "name": "Odei Maiz",
-          "email": "maiz@itis.ethz.ch",
-          "affiliation": "ITIS Foundation"
-        }],
-        "contact": "maiz@itis.ethz.ch",
-        "inputs": [],
-        "outputs": [{
-          "key": "out_1",
-          "label": "File-url",
-          "description": "File-url",
-          "type": "file-url",
-          "defaultValue": null
-        }, {
-          "key": "out_2",
-          "label": "Folder-url",
-          "description": "Folder-url",
-          "type": "folder-url",
-          "defaultValue": null
-        }],
-        "settings": []
-      }];
+      let builtInServices = {
+        "service/dynamic/itis/FileManager-0.0.0": {
+          key: "service/dynamic/itis/FileManager",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "File Manager",
+          description: "File Manager",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {},
+          outputs: {
+            outFile: {
+              displayOrder: 0,
+              label: "File",
+              description: "Chosen File",
+              type: "data:*/*"
+            },
+            outDir: {
+              displayOrder: 1,
+              label: "Folder",
+              description: "Chosen Folder",
+              type: "data:*/*"
+            }
+          }
+        }
+      };
       return builtInServices;
     },
 
@@ -55,8 +89,8 @@ qx.Class.define("qxapp.data.Store", {
           const repo = listOfRepositories[key];
           const nTags = repo.length;
           for (let i=0; i<nTags; i++) {
-            let newMetadata = qxapp.data.Converters.registryToMetadata(repo[i]);
-            services.push(newMetadata);
+            let newMetaData = qxapp.data.Converters.registryToMetaData(repo[i]);
+            services.push(newMetaData);
           }
         }
         this.fireDataEvent("servicesRegistered", services);
@@ -75,8 +109,8 @@ qx.Class.define("qxapp.data.Store", {
           const repo = listOfIntercativeServices[key];
           if (repo["details"].length>0 && repo["details"][0].length>0) {
             const repoData = repo["details"][0][0];
-            let newMetadata = qxapp.data.Converters.registryToMetadata(repoData);
-            services.push(newMetadata);
+            let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
+            services.push(newMetaData);
           }
         }
         this.fireDataEvent("interactiveServicesRegistered", services);

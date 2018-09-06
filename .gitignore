@@ -125,3 +125,6 @@ services/docker-compose.swarm.yml
 
 # Any output directory
 *output/
+# backup files
+*~
+*.bak
