@@ -1,4 +1,6 @@
-# pylint: disable=W0621
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-import
 import logging
 import io
 import pathlib
@@ -23,7 +25,7 @@ def app_resources(package_paths):
 #------------------------------------------------------------------------------
 
 def test_resource_io_utils(app_resources):
-    
+
     assert not resources.exists("fake_resource_name")
 
     for resource_name in app_resources:
@@ -35,7 +37,7 @@ def test_resource_io_utils(app_resources):
         with resources.stream(resource_name) as ostream:
             assert isinstance(ostream, io.IOBase)
             assert ostream.read()
-        
+
         assert ostream.closed
 
 def test_named_resources():
@@ -45,12 +47,11 @@ def test_named_resources():
         assert resources.exists(resource_name)
         assert resources.isdir(resource_name)
         assert resources.listdir(resource_name)
-    
-def test_paths(app_resources):    
+
+def test_paths(app_resources):
     for resource_name in app_resources:
         assert resources.get_path(resource_name).exists()
-        
+
     # WARNING!
     some_path = resources.get_path("fake_resource_name")
     assert some_path and not some_path.exists()
-
