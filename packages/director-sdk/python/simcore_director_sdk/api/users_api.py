@@ -326,7 +326,7 @@ class UsersApi(object):
         :param str service_key: The key (url) of the service (required)
         :param str service_uuid: The uuid to assign the service with (required)
         :param str service_tag: The tag/version of the service
-        :return: list[RunningServiceEnveloped]
+        :return: RunningServiceEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -350,7 +350,7 @@ class UsersApi(object):
         :param str service_key: The key (url) of the service (required)
         :param str service_uuid: The uuid to assign the service with (required)
         :param str service_tag: The tag/version of the service
-        :return: list[RunningServiceEnveloped]
+        :return: RunningServiceEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -413,7 +413,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='list[RunningServiceEnveloped]',  # noqa: E501
+            response_type='RunningServiceEnveloped',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501

@@ -152,7 +152,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **running_interactive_services_post**
-> list[RunningServiceEnveloped] running_interactive_services_post(service_key, service_uuid, service_tag=service_tag)
+> RunningServiceEnveloped running_interactive_services_post(service_key, service_uuid, service_tag=service_tag)
 
 Starts an interactive service in the oSparc platform and returns its entrypoint
 
@@ -190,7 +190,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**list[RunningServiceEnveloped]**](RunningServiceEnveloped.md)
+[**RunningServiceEnveloped**](RunningServiceEnveloped.md)
 
 ### Authorization
 

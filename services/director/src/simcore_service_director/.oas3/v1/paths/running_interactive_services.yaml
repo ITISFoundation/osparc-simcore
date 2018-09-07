@@ -14,9 +14,7 @@ post:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: '../schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
+            $ref: '../schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
     "400":
       description: Malformed function call, missing field
       content:
