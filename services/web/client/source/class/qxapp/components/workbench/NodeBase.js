@@ -66,7 +66,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return this.__metaData;
     },
 
-    createNodeLayout: function(nodeData) {
+    createNodeLayout: function(nodeMetaData, nodeData) {
       let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
       this.setLayout(nodeLayout);
 
@@ -108,9 +108,9 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
       const nodeImageId = this.getNodeImageId();
       let store = qxapp.data.Store.getInstance();
-      let metaData = store.getNodeMetaData(nodeImageId);
-      if (metaData) {
-        this.__populateNode(metaData, nodeData);
+      // let metaData = store.getNodeMetaData(nodeImageId);
+      if (nodeMetaData) {
+        this.__populateNode(nodeMetaData, nodeData);
       } else {
         console.error("Invalid ImageID - Not populating "+nodeImageId);
       }
@@ -199,13 +199,16 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         const slotName = "startDynamic";
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
-          // FIXME this is not unique as multiple instances of this
-          // service could be starting up at the same time
-          if (val["service_uuid"] === this.getNodeId()) {
-            let portNumber = val["containers"][0].published_ports[0];
-            if (portNumber !== null) {
+          const {data, status} = val;
+          if (status == 201) {
+            const {published_port, entry_point} = data;
+            if (published_port) {
               let button = new qx.ui.form.Button("Open Viewer");
-              const srvUrl = "http://" + window.location.hostname + ":" + portNumber;
+              let entryPoint = "";
+              if (entry_point) {
+                entryPoint = "/" + entry_point
+              }
+              const srvUrl = "http://" + window.location.hostname + ":" + published_port + entryPoint;
               this.set({
                 viewerButton: button
               });
@@ -219,9 +222,13 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
               console.debug(metaData.name, "Service ready on " + srvUrl);
             }
           }
+          else {
+            console.error("Error starting dynamic service: ", data);
+          }
         }, this);
         let data = {
-          serviceName: metaData.name,
+          serviceKey: metaData.key,
+          serviceVersion: metaData.version,
           nodeId: this.getNodeId()
         };
         socket.emit(slotName, data);

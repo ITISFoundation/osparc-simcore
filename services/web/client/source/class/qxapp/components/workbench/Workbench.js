@@ -235,7 +235,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let nodeB = this.__createNode(nodeImageId, null);
+      let nodeB = this.__createNode(nodeImageId, metaData, null);
       this.__addNodeToWorkbench(nodeB, pos);
 
       if (nodeAId !== null && portA !== null) {
@@ -343,9 +343,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       qx.ui.core.queue.Layout.flush();
     },
 
-    __createNode: function(nodeImageId, uuid, nodeData) {
+    __createNode: function(nodeImageId, nodeMetaData, uuid, nodeData) {
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeImageId, uuid);
-      nodeBase.createNodeLayout(nodeData);
+      nodeBase.createNodeLayout(nodeMetaData, nodeData);
 
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
@@ -757,6 +757,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __loadProject: function(workbenchData) {
       for (let nodeUuid in workbenchData) {
+        // TODO: SAN: What is the difference between node data and node meta data??
         let nodeData = workbenchData[nodeUuid];
         const nodeImageId = nodeData.key + "-" + nodeData.version;
         let node = this.__createNode(nodeImageId, nodeUuid, nodeData);
