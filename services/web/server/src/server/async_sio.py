@@ -10,7 +10,6 @@
 # pylint: disable=W0703
 
 import logging
-
 import socketio
 
 from s3wrapper.s3_client import S3Client
@@ -41,6 +40,7 @@ async def get_interactive_services_handler(sid, data):
     try:
         result = await interactive_services_manager.retrieve_list_of_services()
         await SIO.emit("getInteractiveServices", data=result, room=sid)
+    #TODO: see how we handle errors back to the frontend
     except IOError:
         _LOGGER.exception("Error emitting retrieved services")
     except Exception:
@@ -52,9 +52,12 @@ async def get_interactive_services_handler(sid, data):
 async def start_dynamic_service(sid, data):
     _LOGGER.debug("client %s starts dynamic service %s", sid, data)
     try:
-        service_name = data["serviceName"]
+        service_key = data["serviceKey"]
+        service_version = "latest"
+        # if "serviceVersion" in data:
+        #     service_version = data["serviceVersion"]
         node_id = data["nodeId"]
-        result = await interactive_services_manager.start_service(sid, service_name, node_id)
+        result = await interactive_services_manager.start_service(sid, service_key, node_id, service_version)
         await SIO.emit("startDynamic", data=result, room=sid)
     except IOError:
         _LOGGER.exception("Error emitting results")

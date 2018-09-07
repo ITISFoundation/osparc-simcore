@@ -58,7 +58,7 @@ async def start_service(session_id, service_key, service_uuid, service_version=N
         result = await director.running_interactive_services_post(service_key, service_uuid, service_tag=service_version)
         _LOGGER.debug("Started service result: %s", result)
         __RUNNING_SERVICES[session_id].append(service_uuid)
-        return result
+        return result.to_dict()
     except ApiException as exc:
         _LOGGER.exception("Api Error while accessing director")
         return {"data": exc.reason, "status":exc.status}
