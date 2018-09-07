@@ -35,7 +35,8 @@ FROM base as build
 
 RUN apk add --no-cache \
     gcc \
-    libc-dev
+    libc-dev \
+    git
 
 # create virtual environment
 RUN python3 -m venv $HOME/.venv &&\
@@ -75,8 +76,9 @@ FROM build as production
 ENV DEBUG 0
 ENV RUN_DOCKER_ENGINE_ROOT=0
 COPY --chown=scu:scu services/director $HOME/services/director
-RUN $PIP --no-cache-dir install $HOME/services/director \
+WORKDIR $HOME/services/director
+RUN $PIP install --no-cache-dir -r requirements/prod.txt \
     && rm -rf $HOME/services/director
-
+WORKDIR $HOME
 ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
 CMD ["/bin/sh", ".docker/boot.sh"]
