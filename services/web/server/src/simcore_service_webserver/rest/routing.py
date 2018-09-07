@@ -7,8 +7,8 @@ from aiohttp_apiset.swagger.operations import OperationIdMapping
 
 from . import handlers
 from .config import (
-    api_specification_path,
-    API_URL_VERSION_STR
+    openapi_path,
+    API_URL_VERSION
 )
 
 from ..comp_backend_api import comp_backend_routes
@@ -25,7 +25,7 @@ def create_router(oas3_path: Path=None):
         oas3_path: path to rest-api specifications. Mostly used for testing different apis
     """
     if oas3_path is None:
-        oas3_path = api_specification_path()
+        oas3_path = openapi_path()
 
     _LOGGER.debug("OAS3 in %s", oas3_path)
 
@@ -38,12 +38,14 @@ def create_router(oas3_path: Path=None):
     )
 
     # TODO: check root_factory in SwaggerRouter?!
+    # TODO: Deprecated since version 3.3: The custom routers support is deprecated, the parameter will be removed in 4.0.
+    # See https://docs.aiohttp.org/en/stable/web_advanced.html#custom-routing-criteria
 
     return router
 
 def include_oaspecs_routes(router, oas3_path: Path=None):
     if oas3_path is None:
-        oas3_path = api_specification_path()
+        oas3_path = openapi_path()
 
     # create the default mapping of the operationId to the implementation code in handlers
     opmap = _create_default_operation_mapping(oas3_path, handlers)
@@ -53,8 +55,8 @@ def include_oaspecs_routes(router, oas3_path: Path=None):
     router.include(
         spec=oas3_path,
         operationId_mapping=opmap,
-        name=API_URL_VERSION_STR,  # name to access in swagger-ui,
-        basePath="/" + API_URL_VERSION_STR # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
+        name=API_URL_VERSION,  # name to access in swagger-ui,
+        basePath="/" + API_URL_VERSION # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
     )
 
 def include_other_routes(router):
@@ -68,7 +70,7 @@ def include_other_routes(router):
             route_obj.register(self)
 
 
-    basePath="/" + API_URL_VERSION_STR
+    basePath="/" + API_URL_VERSION
     router.add_get(basePath+"/ping", handlers.ping, name="ping")
 
     # TODO: add authorization on there routes

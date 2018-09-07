@@ -17,7 +17,7 @@ from aiohttp_security import (
 )
 
 from ..config import (
-    API_URL_VERSION_STR,
+    API_URL_VERSION,
     api_version
 )
 from .._generated_code.models.health_check import HealthCheck
@@ -42,7 +42,7 @@ async def check_health(request):
 
 
 async def get_oas_doc(request):
-    raise web.HTTPFound('/apidoc/swagger.yaml?spec=/{}'.format(API_URL_VERSION_STR))
+    raise web.HTTPFound('/apidoc/swagger.yaml?spec=/{}'.format(API_URL_VERSION))
 
 @decorators.args_adapter
 @login_required

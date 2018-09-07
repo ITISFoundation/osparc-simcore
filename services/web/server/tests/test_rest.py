@@ -71,9 +71,9 @@ async def test_apiversion():
     """
         Checks consistency between versionings
     """
-    assert resources.exists(rest.config.API_SPECS_NAME)
+    assert resources.exists(rest.config.OAS_ROOT_FILE)
 
-    specs = yaml.load(resources.stream(rest.config.API_SPECS_NAME))
+    specs = yaml.load(resources.stream(rest.config.OAS_ROOT_FILE))
 
     api_version = specs['info']['version'].split(".")
     assert int(api_version[0]) == rest.config.API_MAJOR_VERSION
@@ -88,31 +88,45 @@ async def test_apiversion():
 
 async def test_apidoc(cli_light):
     cli = cli_light
-    _LOGGER.debug("cli fixture: %s", cli)
-
+    
     response = await cli.get('apidoc/')
     assert response.status == HTTPOk.status_code
     text = await response.text()
     assert "Swagger UI" in text
 
+async def test_oas(cli_light):
+    cli = cli_light
+
+    # shows api, static and sockets
     response = await cli.get('apidoc/swagger.yaml')
-    full_specs = await response.json()
+    assert response.status == 200
+    swagger_yml = await response.json()
+    assert swagger_yml
 
-    root_specs = yaml.load(resources.stream(rest.config.API_SPECS_NAME))
+    # shows only api/v?
+    response = await cli.get('/apidoc/swagger.yaml?spec=/{}'.format(rest.config.API_URL_VERSION))
+    assert response.status == 200
+    api_specs = await response.json()
 
-    # NOTE: full_specs is not identical to root_specs because the latter has references
-    assert full_specs["info"] == root_specs["info"]
-    assert full_specs["paths"] == root_specs["paths"]
-    assert full_specs["tags"] == root_specs["tags"]
-    assert full_specs["servers"] == root_specs["servers"]
-    #for section in ('openapi', 'info', 'tags', 'paths', 'components', 'servers'):
-    #    assert got_oas[section] == expected_oas[section]
-
+    # returns open api specs in a json
     response = await cli.get('v1/oas')
     assert response.status == 200 # TODO: why not HTTPFound.status_code
+    api_specs2 = await response.json()
+    
+    assert api_specs == api_specs2
 
-    full_specs = await response.json()
-    assert full_specs == full_specs
+    # loads root file
+    root_specs = yaml.load(resources.stream(rest.config.OAS_ROOT_FILE))
+
+    # NOTE: api_specs is not identical to root_specs because the latter has references
+    assert api_specs["info"] == root_specs["info"]
+    assert api_specs["servers"] == root_specs["servers"]
+    assert api_specs["tags"] == root_specs["tags"]
+    
+    # TODO: Not sure why 'apidoc/swagger.yaml is smaller than the spec?
+    #swagger_paths = swagger_yml["paths"].keys()
+    #api_paths = api_specs["paths"].keys()
+    #assert set(swagger_paths) <= set(api_paths)
 
 
 async def test_login(cli):
