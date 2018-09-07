@@ -8,7 +8,8 @@ qx.Class.define("qxapp.data.Converters", {
       [
         "key",
         "name",
-        "tag",
+        "version",
+        "type",
         "description",
         "authors",
         "contact",
@@ -20,11 +21,7 @@ qx.Class.define("qxapp.data.Converters", {
         if (Object.prototype.hasOwnProperty.call(data, field)) {
           metaData[field] = data[field];
         }
-      });
-      // for dynamic services
-      if (data.viewer) {
-        metaData["viewer"] = data["viewer"];
-      }
+      });      
       return metaData;
     }
   }
