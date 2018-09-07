@@ -16,6 +16,7 @@ import pytest
 import yaml
 
 import init_db
+import simcore_service_webserver
 from simcore_service_webserver.db.utils import (
     DNS,
     acquire_admin_engine,
@@ -24,10 +25,6 @@ from simcore_service_webserver.db.utils import (
 from simcore_service_webserver.settings import (
     read_and_validate
 )
-from simcore_service_webserver.resources import (
-    ConfigFile
-)
-
 
 _LOGGER = logging.getLogger(__name__)
 CURRENT_DIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
@@ -50,13 +47,14 @@ def _is_db_service_responsive(**pg_config):
 def package_paths(pytestconfig):
     # TODO: use instead resources?
     package_root = CURRENT_DIR.parent
-    config_folder = ConfigFile("").path
+    src_folder = package_root / "src"
     test_folder = package_root / "tests"
     mock_folder = test_folder / "mock"
 
     paths={}
     paths["ROOT_FOLDER"] = package_root
-    paths["CONFIG_FOLDER"] = config_folder
+    paths["SRC_FOLDER"] = src_folder
+    paths["PACKAGE_FOLDER"] = src_folder / simcore_service_webserver.__name__
     paths["TEST_FOLDER"] = test_folder
     paths["MOCK_FOLDER"] = mock_folder
 
@@ -79,13 +77,13 @@ def docker_compose_file(package_paths):
 
 @pytest.fixture(scope="session")
 def server_test_configfile(package_paths):
-    fpath = package_paths.CONFIG_FOLDER / "server-host-test.yaml"
+    fpath = package_paths.MOCK_FOLDER / "configs/server-host-test.yaml"
     assert fpath.exists()
     return fpath
 
 @pytest.fixture(scope="session")
 def light_test_configfile(package_paths):
-    fpath = package_paths.CONFIG_FOLDER / "light-test.yaml"
+    fpath = package_paths.MOCK_FOLDER / "configs/light-test.yaml"
     assert fpath.exists()
     return fpath
 

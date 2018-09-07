@@ -82,7 +82,7 @@ def config_from_options(options, vars=None): # pylint: disable=W0622
         vars = os.environ
 
     if not os.path.exists(options.config):
-        options.config = resources.ConfigFile(options.config).path
+        options.config = resources.get_path(resource_name=options.config)
 
     _LOGGER.debug("loading %s", options.config)
 

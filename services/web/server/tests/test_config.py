@@ -1,13 +1,18 @@
+# pylint: disable=W0613
 import logging
 import os
 import unittest.mock as mock
 
 import pytest
 
-# under test
+
+from simcore_service_webserver import (
+    resources,
+    settings as srv_settings,
+    cli as srv_cli
+)    
 from simcore_service_webserver.settings.config import CONFIG_SCHEMA
-from simcore_service_webserver import settings as srv_settings
-import simcore_service_webserver.cli as srv_cli
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,8 +35,9 @@ def test_config_options_in_cli(capsys):
 def test_validate_available_config_files(package_paths):
     import trafaret_config.simple as _ts
 
+    config_folder = resources.get_path(resources.RESOURCE_CONFIG)
     count = 0
-    for config_path in package_paths.CONFIG_FOLDER.glob("*.yaml"):
+    for config_path in config_folder.rglob("*.y*ml"):
 
         config_vars = _ts.read_and_get_vars(config_path, CONFIG_SCHEMA, vars=os.environ)
 
