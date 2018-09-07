@@ -128,3 +128,7 @@ services/docker-compose.swarm.yml
 out/
 
 tmp/
+
+
+# See .vscode-template
+pytest.ini
