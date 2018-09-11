@@ -108,7 +108,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
       const nodeImageId = this.getNodeImageId();
       let store = qxapp.data.Store.getInstance();
-      let metaData = store.getNodeMetaData(nodeImageId);
+      let metaData = store.getNodeMetaDataFromCache(nodeImageId);
       if (metaData) {
         this.__populateNode(metaData, nodeData);
       } else {
