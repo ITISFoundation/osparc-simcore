@@ -66,7 +66,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return this.__metaData;
     },
 
-    createNodeLayout: function(nodeMetaData, nodeData) {
+    createNodeLayout: function(nodeData) {
       let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
       this.setLayout(nodeLayout);
 
@@ -108,9 +108,9 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
       const nodeImageId = this.getNodeImageId();
       let store = qxapp.data.Store.getInstance();
-      // let metaData = store.getNodeMetaData(nodeImageId);
-      if (nodeMetaData) {
-        this.__populateNode(nodeMetaData, nodeData);
+      let metaData = store.getNodeMetaData(nodeImageId);
+      if (metaData) {
+        this.__populateNode(metaData, nodeData);
       } else {
         console.error("Invalid ImageID - Not populating "+nodeImageId);
       }
