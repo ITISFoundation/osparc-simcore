@@ -1,0 +1,25 @@
+components:
+  schemas:
+    RunningServiceEnveloped:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/RunningService'
+        status:
+          type: integer
+          example: 200
+    RunningService:
+      type: object
+      required:
+        - published_port
+      properties:
+        published_port:
+          description: The ports where the service provides its interface
+          type: integer
+          format: int32
+          minimum: 1
+          example: 30000
+        entry_point:
+          description: The entry point where the service provides its interface if specified
+          type: string
+          example: /the/entry/point/is/here
