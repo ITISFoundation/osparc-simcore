@@ -21,7 +21,7 @@ qx.Class.define("qxapp.data.Converters", {
         if (Object.prototype.hasOwnProperty.call(data, field)) {
           metaData[field] = data[field];
         }
-      });      
+      });
       return metaData;
     }
   }
