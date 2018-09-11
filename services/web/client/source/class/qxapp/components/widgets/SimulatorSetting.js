@@ -54,6 +54,7 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
   members: {
     __componentsBox: null,
     __settingsBox: null,
+    __settingsTree: null,
     __settingProps: null,
     __contentBox: null,
     __contentProps: null,
@@ -64,21 +65,21 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
       this.__contentBox.removeAll();
 
       // default settings
-      {
-        let res = this.__createTree("Default Settings");
-        let tree = res.tree;
-        let root = res.root;
-        tree.addListener("changeSelection", e => {
-          let data = e.getData()[0];
-          this.__showPropertiesInSettings(data);
-        }, this);
-        this.__settingsBox.add(tree, {
-          flex: 1
-        });
-        const metaData = this.getNode().getMetaData();
-        const nodeImageId = metaData.key + "-" + metaData.version;
-        this.__populateList(root, nodeImageId, true);
-      }
+      let inputSettingsTree = this.__settingsTree = this.__createTree();
+      let defaultSettingsFolder = new qx.ui.tree.TreeFolder("Default Settings").set({
+        open: true
+      });
+      inputSettingsTree.getRoot().add(defaultSettingsFolder);
+      inputSettingsTree.addListener("changeSelection", e => {
+        let data = e.getData()[0];
+        this.__showPropertiesInSettings(data);
+      }, this);
+      this.__settingsBox.add(inputSettingsTree, {
+        flex: 1
+      });
+      const metaData = this.getNode().getMetaData();
+      const nodeImageId = metaData.key + "-" + metaData.version;
+      this.__populateList(defaultSettingsFolder, nodeImageId, true);
 
       // modeler (and DB)
       for (const portKey in node.getInputPorts()) {
@@ -87,26 +88,27 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
         if (portType.includes("data:application/s4l-api")) {
           const apiType = portType.split("/").pop();
           if (apiType !== "settings") {
-            let res = this.__createTree(portKey);
-            let tree = res.tree;
-            let root = res.root;
             switch (apiType) {
-              case "modeler":
-                tree.setSelectionMode("multi");
-                this.__componentsBox.add(tree, {
+              case "modeler": {
+                let inputModelerTree = this.__modelerTree = this.__createTree();
+                let modelerFolder = new qx.ui.tree.TreeFolder(portKey).set({
+                  open: true
+                });
+                inputModelerTree.getRoot().add(modelerFolder);
+                inputModelerTree.setSelectionMode("multi");
+                this.__componentsBox.add(inputModelerTree, {
                   flex: 1
                 });
-                this.__populateList(root, portType, false);
+                this.__populateList(modelerFolder, portType, false);
+              }
                 break;
-              case "materialDB":
-                tree.addListener("changeSelection", e => {
-                  let data = e.getData()[0];
-                  this.__showPropertiesInSettings(data);
-                }, this);
-                this.__settingsBox.add(tree, {
-                  flex: 1
+              case "materialDB": {
+                let matFolder = new qx.ui.tree.TreeFolder(portKey).set({
+                  open: true
                 });
-                this.__populateList(root, portType, true);
+                this.__settingsTree.getRoot().add(matFolder);
+                this.__populateList(matFolder, portType, true);
+              }
                 break;
             }
           }
@@ -115,20 +117,22 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
 
       // Settings
       {
+        let conceptSettingsTree = this.__createTree();
         const settingName = node.getMetaData().name;
-        let res = this.__createTree(settingName);
-        let tree = res.tree;
-        let root = res.root;
-        root.setDroppable(true);
-        tree.addListener("changeSelection", e => {
+        let conceptSettingsFolder = new qx.ui.tree.TreeFolder(settingName).set({
+          open: true,
+          droppable: true
+        });
+        conceptSettingsTree.getRoot().add(conceptSettingsFolder);
+        conceptSettingsTree.addListener("changeSelection", e => {
           let data = e.getData()[0];
           this.__showPropertiesInContent(data);
         }, this);
-        this.__contentBox.add(tree, {
+        this.__contentBox.add(conceptSettingsTree, {
           flex: 1
         });
 
-        root.addListener("dragover", e => {
+        conceptSettingsFolder.addListener("dragover", e => {
           let compatible = false;
           const dataType = "setting-container";
           if (e.supportsType(dataType)) {
@@ -139,7 +143,7 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
           }
         }, this);
 
-        root.addListener("drop", e => {
+        conceptSettingsFolder.addListener("drop", e => {
           const eDataType = "setting-container";
           if (e.supportsType(eDataType)) {
             const eData = e.getData(eDataType);
@@ -149,7 +153,7 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
             });
             conceptSetting.data = eData;
             conceptSetting.form = this.__createForm(eData.properties);
-            root.add(conceptSetting);
+            conceptSettingsFolder.add(conceptSetting);
 
             conceptSetting.addListener("dragover", ev => {
               let compatible = false;
@@ -187,20 +191,18 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
       return true;
     },
 
-    __createTree: function(rootLabel) {
+    __createTree: function(folderLabel) {
       let tree = new qx.ui.tree.Tree().set({
         selectionMode: "single",
         openMode: "none"
       });
-      let root = new qx.ui.tree.TreeFolder(rootLabel).set({
-        open: true
-      });
-      tree.setRoot(root);
 
-      return {
-        tree: tree,
-        root: root
-      };
+      let root = new qx.ui.tree.TreeFolder("root");
+      root.setOpen(true);
+      tree.setRoot(root);
+      tree.setHideRoot(true);
+
+      return tree;
     },
 
     __populateList: function(root, imageId, isSetting = false) {
