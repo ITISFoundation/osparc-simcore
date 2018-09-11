@@ -82,9 +82,12 @@ qx.Class.define("qxapp.data.Store", {
       });
       req.addListener("success", function(e) {
         let requ = e.getTarget();
-        const {data, status} = requ.getResponse();
+        const {
+          data,
+          status
+        } = requ.getResponse();
         if (status >= 200 && status <= 299) {
-          const listOfRepositories = data
+          const listOfRepositories = data;
           console.log("listOfServices", listOfRepositories);
           let services = [];
           for (const key of Object.keys(listOfRepositories)) {
@@ -93,12 +96,10 @@ qx.Class.define("qxapp.data.Store", {
             services.push(newMetaData);
           }
           this.fireDataEvent("servicesRegistered", services);
-        }
-        else {
+        } else {
           // error
-          console.error("Error retrieving services: ", data)
+          console.error("Error retrieving services: ", data);
         }
-        
       }, this);
       req.send();
     },
@@ -107,7 +108,10 @@ qx.Class.define("qxapp.data.Store", {
       let socket = qxapp.wrappers.WebSocket.getInstance();
       socket.removeSlot("getInteractiveServices");
       socket.on("getInteractiveServices", function(e) {
-        const {data, status} = e
+        const {
+          data,
+          status
+        } = e;
         if (status >= 200 && status <= 299) {
           let listOfInteractiveServices = data;
           console.log("listOfInteractiveServices", listOfInteractiveServices);
@@ -118,10 +122,9 @@ qx.Class.define("qxapp.data.Store", {
             services.push(newMetaData);
           }
           this.fireDataEvent("interactiveServicesRegistered", services);
-        }
-        else {
+        } else {
           // error
-          console.error("Error retrieving services: ", data)
+          console.error("Error retrieving services: ", data);
         }
       }, this);
       socket.emit("getInteractiveServices");
