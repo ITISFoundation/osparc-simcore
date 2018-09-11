@@ -4,6 +4,7 @@ qx.Class.define("qxapp.data.Store", {
   type : "singleton",
 
   events: {
+    "builtInServicesRegistered": "qx.event.type.Event",
     "servicesRegistered": "qx.event.type.Event",
     "interactiveServicesRegistered": "qx.event.type.Event"
   },
@@ -22,6 +23,10 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   members: {
+    __servicesCacheBuiltIn: null,
+    __servicesCacheComputational: null,
+    __servicesCacheInteractive: null,
+
     getServices: function() {
       let services = {};
       services = Object.assign(services, this.getBuiltInServices());
@@ -39,6 +44,19 @@ qx.Class.define("qxapp.data.Store", {
         metaData = this.getBuiltInServices()[nodeImageId];
       }
       return metaData;
+    },
+
+    getNodeMetaDataFromCache: function(nodeImageId) {
+      let services = this.__servicesCacheBuiltIn.concat(this.__servicesCacheComputational);
+      services = services.concat(this.__servicesCacheInteractive);
+      for (let i=0; i<services.length; i++) {
+        const service = services[i];
+        const id = service.key + "-" + service.version;
+        if (nodeImageId === id) {
+          return service;
+        }
+      }
+      return null;
     },
 
     getBuiltInServices: function() {
@@ -74,6 +92,25 @@ qx.Class.define("qxapp.data.Store", {
       return builtInServices;
     },
 
+    getBuiltInServicesAsync: function() {
+      let builtInServices = [];
+      let builtInServicesMap = this.getBuiltInServices();
+      for (const mapKey of Object.keys(builtInServicesMap)) {
+        builtInServices.push(builtInServicesMap[mapKey]);
+      }
+
+      console.log("builtInServicesRegistered", builtInServices);
+      let services = [];
+      for (const key of Object.keys(builtInServices)) {
+        const repoData = builtInServices[key];
+        let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
+        services.push(newMetaData);
+      }
+      // this.fireDataEvent("builtInServicesRegistered", builtInServices);
+      this.__servicesCacheBuiltIn = services;
+      this.fireDataEvent("builtInServicesRegistered", services);
+    },
+
     getComputationalServices: function() {
       let req = new qx.io.request.Xhr();
       req.set({
@@ -95,6 +132,7 @@ qx.Class.define("qxapp.data.Store", {
             let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
             services.push(newMetaData);
           }
+          this.__servicesCacheComputational = services;
           this.fireDataEvent("servicesRegistered", services);
         } else {
           // error
@@ -121,6 +159,7 @@ qx.Class.define("qxapp.data.Store", {
             let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
             services.push(newMetaData);
           }
+          this.__servicesCacheInteractive = services;
           this.fireDataEvent("interactiveServicesRegistered", services);
         } else {
           // error
