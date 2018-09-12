@@ -49,7 +49,7 @@ paths:
         - test
       summary: Returns complete schema for OpenApi Specifications
       operationId: get_oas_doc
-      reponses:
+      responses:
         '200':
           description: oas schema
   /me:
