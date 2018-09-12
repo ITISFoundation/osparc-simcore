@@ -62,13 +62,13 @@ async def ping(request):
       - text/plain
       responses:
           "200":
-              description: successful operation. Return "pong" text
+              description: successful operation. Return pong text
           "405":
               description: invalid HTTP Method
           "401":
               Unauthorized: need to login first
           "403":
-              Forbidden: permission denied given the user"s privilege
+              Forbidden: permission denied given the user privilege
     """
     _LOGGER.debug("ping with request %s", request)
     return web.Response(text="pong")

@@ -56,6 +56,7 @@ paths:
             application/json:
               schema:
                 type: string
+                format: text
 
   /me:
     get:
