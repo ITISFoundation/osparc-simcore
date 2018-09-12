@@ -106,11 +106,19 @@ def __convert_ports_to_old_version(ports, node_description):
     _LOGGER.debug("converting ports from %s using description %s", ports, node_description)
     old_ports = []
     for port_key, port_data in ports.items():
+        # sanitize port key (some old services define some keys with a . inside that is not accepted by the schema)
+        #TODO: Remove this once the services are updated
+        for key in node_description.keys():
+            if str(key).startswith(port_key):
+                port_key = key
+                break
+        # port_key = str(port_key).partition(".")[0]
         port_description = node_description[port_key]
         old_port = {
             "key":port_key,
             "label":port_description["label"],
-            "desc":port_description["description"]            
+            "desc":port_description["description"],
+            "type":port_description["type"]
         }
         if port_description["type"] == "data:*/*":
             old_port["type"] = "file-url"
@@ -119,6 +127,11 @@ def __convert_ports_to_old_version(ports, node_description):
         
         if port_data:
             old_port["value"] = port_data
+            if isinstance(port_data, dict):
+                old_port["value"] = "null"
+                if "nodeUuid" in port_data and "output" in port_data:
+                    old_port["value"] = str(".").join(["link", port_data["nodeUuid"], port_data["output"]])
+
         else:
             old_port["value"] = "null"
         old_ports.append(old_port)
@@ -211,7 +224,10 @@ async def start_pipeline(request):
             }
         }
 
-        if True:            
+        if str(node_key).count("FileManager") > 0:
+            continue
+
+        if True:
             task = await __convert_task_to_old_version(task)
             
 
@@ -314,14 +330,16 @@ async def start_pipeline(request):
         task = celery.send_task("comp.task", args=(pipeline_id,), kwargs={})
         _LOGGER.debug("Task commited")
 
-    except sqlalchemy.exc.SQLAlchemyError:
+    except sqlalchemy.exc.SQLAlchemyError as err:
         _LOGGER.exception("Alchemy error. Rolling backe and returning pipeline_id=-1")
         db_session.rollback()
         pipeline_id = -1
+        raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
 
-    except Exception:
+    except Exception as err:
         _LOGGER.exception("Unexpected Exception. Returning pipeline_id=-1")
         pipeline_id = -1
+        raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
 
     finally:
         _LOGGER.debug("Close session")
