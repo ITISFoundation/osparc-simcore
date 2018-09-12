@@ -17,7 +17,7 @@ export RUN_DOCKER_ENGINE_ROOT=0
 # TODO: Add a meaningfull call to retrieve the local docker group ID and the user ID in linux.
 endif
 
-PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*/director-sdk/python*" -not -path "*generated_code*"))
+PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*-sdk/python*" -not -path "*generated_code*"))
 
 export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 

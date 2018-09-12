@@ -4,7 +4,7 @@
 from contextlib import contextmanager
 import asyncio
 import simcore_webserver_sdk
-import json
+#import json
 
 from simcore_webserver_sdk.rest import ApiException
 from simcore_webserver_sdk.models.health_check_enveloped import HealthCheckEnveloped
@@ -15,8 +15,10 @@ def api_client(cfg):
     client = simcore_webserver_sdk.ApiClient(cfg)
     try:
         yield client
+    except ApiException as err:
+        print("%s\n" % err)
     finally:
-        #NOTE:  enforces to closing client session and connector.
+        #NOTE: enforces to closing client session and connector.
         # this is a defect of the sdk
         del client.rest_client
 
@@ -33,7 +35,7 @@ async def run_test():
         assert res.status == 200
         print(res)
         res = await api.get_oas_doc()
-        res = json.loads(res)
+        # res = json.loads(res)
         assert res
         print(res)
 
