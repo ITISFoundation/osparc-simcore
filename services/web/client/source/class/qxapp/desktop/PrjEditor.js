@@ -5,8 +5,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   construct: function(projectId) {
     this.base(arguments, "horizontal");
 
-    this.__nodeCheck();
-
     let splitter = this.__splitter = this.getChildControl("splitter");
 
     const settingsWidth = this.__settingsWidth = 500;
@@ -171,38 +169,5 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       });
 
       return win;
-    },
-
-    __nodeCheck: function() {
-      /** a little ajv test */
-      let nodeCheck = new qx.io.request.Xhr("/resource/qxapp/node-meta-v0.0.1.json");
-      nodeCheck.addListener("success", e => {
-        let data = e.getTarget().getResponse();
-        try {
-          let ajv = new qxapp.wrappers.Ajv(data);
-          let store = qxapp.data.Store.getInstance();
-          [
-            "builtInServicesRegistered",
-            "servicesRegistered",
-            "interactiveServicesRegistered"
-          ].forEach(event => {
-            store.addListener(event, ev => {
-              const services = ev.getData();
-              for (let i = 0; i < services.length; i++) {
-                const service = services[i];
-                let check = ajv.validate(service);
-                console.log("services validation result " + service.key + ":", check);
-              }
-            }, this);
-          });
-          store.getBuiltInServicesAsync();
-          store.getComputationalServices();
-          store.getInteractiveServices();
-        } catch (err) {
-          console.error(err);
-        }
-      });
-      nodeCheck.send();
     }
-  }
 });
