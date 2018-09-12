@@ -33,6 +33,9 @@ def list_computational_services():
 def list_interactive_services():
     return __list_services(INTERACTIVE_SERVICES_PREFIX)
 
+def get_service_details(service_key, service_version):
+    return _get_repo_version_details(service_key, service_version)
+
 def retrieve_list_of_images_in_repo(repository_name):
     request_result = __registry_request(repository_name + '/tags/list')
     result_json = request_result.json()
@@ -121,24 +124,29 @@ def __get_service_sub_name(repository_name, service_prefix):
     _LOGGER.info("retrieved service sub name from repo %s : %s", repository_name, list_of_suffixes)
     return list_of_suffixes[last_suffix_index]
 
+def _get_repo_version_details(key, version):
+    image_tags = {}
+    label_request = __registry_request(key + '/manifests/' + version)
+    label_data = label_request.json()
+    labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
+    if labels:
+        for key in labels.keys():
+            if key.startswith("io.simcore."):
+                label_data = json.loads(labels[key])
+                for label_key in label_data.keys():
+                    image_tags[label_key] = label_data[label_key]
+    return image_tags
+
 def _get_repo_details(repo):
     #pylint: disable=too-many-nested-blocks
     current_repo = []
     if "/comp/" in repo or "/dynamic/" in repo:
+        # get list of repo versions
         req_images = __registry_request(repo + '/tags/list')
         im_data = req_images.json()
         tags = im_data['tags']
         for tag in tags:
-            image_tags = {}
-            label_request = __registry_request(repo + '/manifests/' + tag)
-            label_data = label_request.json()
-            labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
-            if labels:
-                for key in labels.keys():
-                    if key.startswith("io.simcore."):
-                        label_data = json.loads(labels[key])
-                        for label_key in label_data.keys():
-                            image_tags[label_key] = label_data[label_key]
+            image_tags = _get_repo_version_details(repo, tag)
             if image_tags:
                 current_repo.append(image_tags)
 

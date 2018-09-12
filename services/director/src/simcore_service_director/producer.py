@@ -331,16 +331,29 @@ def __create_services(docker_client, list_of_images, service_name, service_tag, 
 
             if published_ports:
                 __pass_port_to_service(service, published_ports[0], service_boot_parameters_labels)
-
-        except docker.errors.ImageNotFound as err:
+        except exceptions.ServiceStartTimeoutError as err:
+            _LOGGER.exception("Service failed to start")
             # first cleanup
-            stop_service(service_uuid)
+            try:
+                stop_service(service_uuid)
+            except exceptions.DirectorException:
+                pass
+            raise
+        except docker.errors.ImageNotFound as err:
             _LOGGER.exception("The docker image was not found")
+            # first cleanup
+            try:
+                stop_service(service_uuid)
+            except exceptions.DirectorException:
+                pass
             raise exceptions.ServiceNotAvailableError(service_name, service_tag) from err
         except docker.errors.APIError as err:
-            # first cleanup
-            stop_service(service_uuid)
             _LOGGER.exception("Error while accessing the server")
+            # first cleanup
+            try:
+                stop_service(service_uuid)
+            except exceptions.DirectorException:
+                pass
             raise exceptions.GenericDockerError("Error while creating service", err) from err
     return containers_meta_data
 

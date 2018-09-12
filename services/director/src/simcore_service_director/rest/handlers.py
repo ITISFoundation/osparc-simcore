@@ -48,6 +48,20 @@ async def services_get(request, service_type=None):  # pylint:disable=unused-arg
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
+async def services_by_key_version_get(request, service_key, service_version):  # pylint:disable=unused-argument
+    _LOGGER.debug("Client does services_get request %s with service_key %s, service_version %s", request, service_key, service_version)
+    try:
+        services = [registry_proxy.get_service_details(service_key, service_version)]    
+        if config.CONVERT_OLD_API:
+            services = [api_converters.convert_service_from_old_api(x) for x in services]    
+        return ServicesEnveloped(data=services, status=200).to_dict()
+    except exceptions.ServiceNotAvailableError as err:
+        raise web_exceptions.HTTPNotFound(reason=str(err))
+    except exceptions.RegistryConnectionError as err:
+        raise web_exceptions.HTTPUnauthorized(reason=str(err))
+    except Exception as err:
+        raise web_exceptions.HTTPInternalServerError(reason=str(err))
+
 def list_services(list_service_fct):    
     services = list_service_fct()
     if config.CONVERT_OLD_API:
@@ -66,6 +80,8 @@ async def running_interactive_services_post(request, service_key, service_uuid, 
         service = producer.start_service(service_key, service_tag, service_uuid)
         running_service = RunningService.from_dict(service)
         return RunningServiceEnveloped(data=running_service, status=201).to_dict()
+    except exceptions.ServiceStartTimeoutError as err:
+        raise web_exceptions.HTTPInternalServerError(reason=str(err))
     except exceptions.ServiceNotAvailableError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except exceptions.ServiceUUIDInUseError as err:
