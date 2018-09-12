@@ -18,3 +18,14 @@ def test_openapi_specs():
             validate_spec(specs, spec_url='file://%s' % openapi_path.absolute())
         except OpenAPIValidationError as err:
             pytest.fail(err.message)
+
+
+def test_server_specs():
+    name = resources.RESOURCE_OPENAPI + "/v1/openapi.yaml"
+    with resources.stream(name) as fh:
+        specs = yaml.load(fh)
+
+        # client-sdk current limitation
+        #  - hooks to first server listed in oas
+        default_server = specs['servers'][0]
+        assert default_server['url']=='http://{host}:{port}/{version}', "Invalid convention"

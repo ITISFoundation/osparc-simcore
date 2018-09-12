@@ -189,19 +189,21 @@ components:
 
 #-------------------------------------------------------
 servers:
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/pcrespov/simcore-webserver/1.0.0
-  - description: Development server
-    url: http://localhost:{port}/{basePath}
+  - description: Default server
+    url: http://{host}:{port}/{version}
     variables:
+      host:
+        default: 'localhost'
       port:
         default: '8080'
-      basePath:
+      version:
         default: v1
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/pcrespov/simcore-webserver/1.0.0
   - description: Production server
-    url: https://webserver:{port}/{basePath}
+    url: https://webserver:{port}/{version}
     variables:
       port:
         default: '9081'
-      basePath:
+      version:
         default: v1
