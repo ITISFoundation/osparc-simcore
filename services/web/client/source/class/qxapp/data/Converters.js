@@ -7,15 +7,14 @@ qx.Class.define("qxapp.data.Converters", {
       let metaData = {};
       [
         "key",
-        "name",
         "version",
         "type",
+        "name",
         "description",
         "authors",
         "contact",
         "inputs",
-        "outputs",
-        "settings"
+        "outputs"
       ].forEach(field => {
         metaData[field] = null;
         if (Object.prototype.hasOwnProperty.call(data, field)) {
