@@ -421,6 +421,110 @@ class UsersApi(object):
             _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats)
 
+    def services_by_key_version_get(self, service_key, service_version, **kwargs):  # noqa: E501
+        """Returns details of the selected service if available in the oSparc platform  # noqa: E501
+
+        Returns details of the selected service if available in the oSparc platform  # noqa: E501
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+        >>> thread = api.services_by_key_version_get(service_key, service_version, async_req=True)
+        >>> result = thread.get()
+
+        :param async_req bool
+        :param str service_key: The key (url) of the service (required)
+        :param str service_version: The tag/version of the service (required)
+        :return: ServicesEnveloped
+                 If the method is called asynchronously,
+                 returns the request thread.
+        """
+        kwargs['_return_http_data_only'] = True
+        if kwargs.get('async_req'):
+            return self.services_by_key_version_get_with_http_info(service_key, service_version, **kwargs)  # noqa: E501
+        else:
+            (data) = self.services_by_key_version_get_with_http_info(service_key, service_version, **kwargs)  # noqa: E501
+            return data
+
+    def services_by_key_version_get_with_http_info(self, service_key, service_version, **kwargs):  # noqa: E501
+        """Returns details of the selected service if available in the oSparc platform  # noqa: E501
+
+        Returns details of the selected service if available in the oSparc platform  # noqa: E501
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+        >>> thread = api.services_by_key_version_get_with_http_info(service_key, service_version, async_req=True)
+        >>> result = thread.get()
+
+        :param async_req bool
+        :param str service_key: The key (url) of the service (required)
+        :param str service_version: The tag/version of the service (required)
+        :return: ServicesEnveloped
+                 If the method is called asynchronously,
+                 returns the request thread.
+        """
+
+        local_var_params = locals()
+
+        all_params = ['service_key', 'service_version']  # noqa: E501
+        all_params.append('async_req')
+        all_params.append('_return_http_data_only')
+        all_params.append('_preload_content')
+        all_params.append('_request_timeout')
+
+        for key, val in six.iteritems(local_var_params['kwargs']):
+            if key not in all_params:
+                raise TypeError(
+                    "Got an unexpected keyword argument '%s'"
+                    " to method services_by_key_version_get" % key
+                )
+            local_var_params[key] = val
+        del local_var_params['kwargs']
+        # verify the required parameter 'service_key' is set
+        if ('service_key' not in local_var_params or
+                local_var_params['service_key'] is None):
+            raise ValueError("Missing the required parameter `service_key` when calling `services_by_key_version_get`")  # noqa: E501
+        # verify the required parameter 'service_version' is set
+        if ('service_version' not in local_var_params or
+                local_var_params['service_version'] is None):
+            raise ValueError("Missing the required parameter `service_version` when calling `services_by_key_version_get`")  # noqa: E501
+
+        collection_formats = {}
+
+        path_params = {}
+        if 'service_key' in local_var_params:
+            path_params['service_key'] = local_var_params['service_key']  # noqa: E501
+        if 'service_version' in local_var_params:
+            path_params['service_version'] = local_var_params['service_version']  # noqa: E501
+
+        query_params = []
+
+        header_params = {}
+
+        form_params = []
+        local_var_files = {}
+
+        body_params = None
+        # HTTP header `Accept`
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
+
+        # Authentication setting
+        auth_settings = []  # noqa: E501
+
+        return self.api_client.call_api(
+            '/services/{service_key}/{service_version}', 'GET',
+            path_params,
+            query_params,
+            header_params,
+            body=body_params,
+            post_params=form_params,
+            files=local_var_files,
+            response_type='ServicesEnveloped',  # noqa: E501
+            auth_settings=auth_settings,
+            async_req=local_var_params.get('async_req'),
+            _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=local_var_params.get('_preload_content', True),
+            _request_timeout=local_var_params.get('_request_timeout'),
+            collection_formats=collection_formats)
+
     def services_get(self, **kwargs):  # noqa: E501
         """Lists available services in the oSparc platform  # noqa: E501
 
@@ -431,7 +535,7 @@ class UsersApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service 
+        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service
         :return: ServicesEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
@@ -453,7 +557,7 @@ class UsersApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service 
+        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service
         :return: ServicesEnveloped
                  If the method is called asynchronously,
                  returns the request thread.

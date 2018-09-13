@@ -33,24 +33,28 @@ class RunningService(object):
     """
     openapi_types = {
         'published_port': 'int',
-        'entry_point': 'str'
+        'entry_point': 'str',
+        'service_uuid': 'str'
     }
 
     attribute_map = {
         'published_port': 'published_port',
-        'entry_point': 'entry_point'
+        'entry_point': 'entry_point',
+        'service_uuid': 'service_uuid'
     }
 
-    def __init__(self, published_port=None, entry_point=None):  # noqa: E501
+    def __init__(self, published_port=None, entry_point=None, service_uuid=None):  # noqa: E501
         """RunningService - a model defined in OpenAPI"""  # noqa: E501
 
         self._published_port = None
         self._entry_point = None
+        self._service_uuid = None
         self.discriminator = None
 
         self.published_port = published_port
         if entry_point is not None:
             self.entry_point = entry_point
+        self.service_uuid = service_uuid
 
     @property
     def published_port(self):
@@ -101,6 +105,31 @@ class RunningService(object):
         """
 
         self._entry_point = entry_point
+
+    @property
+    def service_uuid(self):
+        """Gets the service_uuid of this RunningService.  # noqa: E501
+
+        The UUID attached to this service  # noqa: E501
+
+        :return: The service_uuid of this RunningService.  # noqa: E501
+        :rtype: str
+        """
+        return self._service_uuid
+
+    @service_uuid.setter
+    def service_uuid(self, service_uuid):
+        """Sets the service_uuid of this RunningService.
+
+        The UUID attached to this service  # noqa: E501
+
+        :param service_uuid: The service_uuid of this RunningService.  # noqa: E501
+        :type: str
+        """
+        if service_uuid is None:
+            raise ValueError("Invalid value for `service_uuid`, must not be `None`")  # noqa: E501
+
+        self._service_uuid = service_uuid
 
     def to_dict(self):
         """Returns the model properties as a dict"""

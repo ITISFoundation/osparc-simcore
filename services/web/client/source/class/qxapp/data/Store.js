@@ -4,6 +4,7 @@ qx.Class.define("qxapp.data.Store", {
   type : "singleton",
 
   events: {
+    "builtInServicesRegistered": "qx.event.type.Event",
     "servicesRegistered": "qx.event.type.Event",
     "interactiveServicesRegistered": "qx.event.type.Event"
   },
@@ -22,6 +23,10 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   members: {
+    __servicesCacheBuiltIn: null,
+    __servicesCacheComputational: null,
+    __servicesCacheInteractive: null,
+
     getServices: function() {
       let services = {};
       services = Object.assign(services, this.getBuiltInServices());
@@ -39,6 +44,23 @@ qx.Class.define("qxapp.data.Store", {
         metaData = this.getBuiltInServices()[nodeImageId];
       }
       return metaData;
+    },
+
+    getNodeMetaDataFromCache: function(nodeImageId) {
+      let metadata = this.getNodeMetaData(nodeImageId);
+      if (metadata) {
+        return metadata;
+      }
+      let services = this.__servicesCacheBuiltIn.concat(this.__servicesCacheComputational);
+      services = services.concat(this.__servicesCacheInteractive);
+      for (let i=0; i<services.length; i++) {
+        const service = services[i];
+        const id = service.key + "-" + service.version;
+        if (nodeImageId === id) {
+          return service;
+        }
+      }
+      return null;
     },
 
     getBuiltInServices: function() {
@@ -74,6 +96,25 @@ qx.Class.define("qxapp.data.Store", {
       return builtInServices;
     },
 
+    getBuiltInServicesAsync: function() {
+      let builtInServices = [];
+      let builtInServicesMap = this.getBuiltInServices();
+      for (const mapKey of Object.keys(builtInServicesMap)) {
+        builtInServices.push(builtInServicesMap[mapKey]);
+      }
+
+      console.log("builtInServicesRegistered", builtInServices);
+      let services = [];
+      for (const key of Object.keys(builtInServices)) {
+        const repoData = builtInServices[key];
+        let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
+        services.push(newMetaData);
+      }
+      // this.fireDataEvent("builtInServicesRegistered", builtInServices);
+      this.__servicesCacheBuiltIn = services;
+      this.fireDataEvent("builtInServicesRegistered", services);
+    },
+
     getComputationalServices: function() {
       let req = new qx.io.request.Xhr();
       req.set({
@@ -82,9 +123,12 @@ qx.Class.define("qxapp.data.Store", {
       });
       req.addListener("success", function(e) {
         let requ = e.getTarget();
-        const {data, status} = requ.getResponse();
+        const {
+          data,
+          status
+        } = requ.getResponse();
         if (status >= 200 && status <= 299) {
-          const listOfRepositories = data
+          const listOfRepositories = data;
           console.log("listOfServices", listOfRepositories);
           let services = [];
           for (const key of Object.keys(listOfRepositories)) {
@@ -92,13 +136,12 @@ qx.Class.define("qxapp.data.Store", {
             let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
             services.push(newMetaData);
           }
+          this.__servicesCacheComputational = services;
           this.fireDataEvent("servicesRegistered", services);
-        }
-        else {
+        } else {
           // error
-          console.error("Error retrieving services: ", data)
+          console.error("Error retrieving services: ", data);
         }
-        
       }, this);
       req.send();
     },
@@ -107,7 +150,10 @@ qx.Class.define("qxapp.data.Store", {
       let socket = qxapp.wrappers.WebSocket.getInstance();
       socket.removeSlot("getInteractiveServices");
       socket.on("getInteractiveServices", function(e) {
-        const {data, status} = e
+        const {
+          data,
+          status
+        } = e;
         if (status >= 200 && status <= 299) {
           let listOfInteractiveServices = data;
           console.log("listOfInteractiveServices", listOfInteractiveServices);
@@ -117,11 +163,11 @@ qx.Class.define("qxapp.data.Store", {
             let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
             services.push(newMetaData);
           }
+          this.__servicesCacheInteractive = services;
           this.fireDataEvent("interactiveServicesRegistered", services);
-        }
-        else {
+        } else {
           // error
-          console.error("Error retrieving services: ", data)
+          console.error("Error retrieving services: ", data);
         }
       }, this);
       socket.emit("getInteractiveServices");

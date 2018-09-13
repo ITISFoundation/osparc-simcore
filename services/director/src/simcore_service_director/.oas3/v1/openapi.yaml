@@ -17,7 +17,7 @@ servers:
     variables:
       host:
         default: 'localhost'
-      port: 
+      port:
         default: '8001'
       version:
         default: 'v1'
@@ -35,14 +35,16 @@ tags:
 
 paths:
   /:
-    $ref: './paths/health_check.yaml'    
+    $ref: './paths/health_check.yaml'
 
   /services:
     $ref: './paths/services.yaml'
+
+  /services/{service_key}/{service_version}:
+    $ref: './paths/services-by-key-and-version.yaml'
 
   /running_interactive_services:
     $ref: './paths/running_interactive_services.yaml'
 
   /running_interactive_services/{service_uuid}:
     $ref: './paths/running_interactive_services-by-uuid.yaml'
-  

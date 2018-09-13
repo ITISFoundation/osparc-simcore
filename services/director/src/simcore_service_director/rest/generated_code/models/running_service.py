@@ -15,26 +15,31 @@ class RunningService(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, published_port: int=None, entry_point: str=None):  # noqa: E501
+    def __init__(self, published_port: int=None, entry_point: str=None, service_uuid: str=None):  # noqa: E501
         """RunningService - a model defined in OpenAPI
 
         :param published_port: The published_port of this RunningService.  # noqa: E501
         :type published_port: int
         :param entry_point: The entry_point of this RunningService.  # noqa: E501
         :type entry_point: str
+        :param service_uuid: The service_uuid of this RunningService.  # noqa: E501
+        :type service_uuid: str
         """
         self.openapi_types = {
             'published_port': int,
-            'entry_point': str
+            'entry_point': str,
+            'service_uuid': str
         }
 
         self.attribute_map = {
             'published_port': 'published_port',
-            'entry_point': 'entry_point'
+            'entry_point': 'entry_point',
+            'service_uuid': 'service_uuid'
         }
 
         self._published_port = published_port
         self._entry_point = entry_point
+        self._service_uuid = service_uuid
 
     @classmethod
     def from_dict(cls, dikt) -> 'RunningService':
@@ -96,3 +101,28 @@ class RunningService(Model):
         """
 
         self._entry_point = entry_point
+
+    @property
+    def service_uuid(self) -> str:
+        """Gets the service_uuid of this RunningService.
+
+        The UUID attached to this service  # noqa: E501
+
+        :return: The service_uuid of this RunningService.
+        :rtype: str
+        """
+        return self._service_uuid
+
+    @service_uuid.setter
+    def service_uuid(self, service_uuid: str):
+        """Sets the service_uuid of this RunningService.
+
+        The UUID attached to this service  # noqa: E501
+
+        :param service_uuid: The service_uuid of this RunningService.
+        :type service_uuid: str
+        """
+        if service_uuid is None:
+            raise ValueError("Invalid value for `service_uuid`, must not be `None`")  # noqa: E501
+
+        self._service_uuid = service_uuid
