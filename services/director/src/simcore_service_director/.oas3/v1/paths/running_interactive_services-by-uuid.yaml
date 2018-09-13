@@ -1,0 +1,66 @@
+get:
+  tags: 
+    - users
+  summary: Succesfully returns if a service with the defined uuid is up and running
+  description: Succesfully returns if a service with the defined uuid is up and running
+  operationId: running_interactive_services_get
+  parameters: 
+    - $ref: '../parameters/service_uuid.yaml#/components/parameters/ServiceUuid'
+  responses:
+    "204":
+      description: OK service exists and runs
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/response204.yaml#/components/schemas/Response204Enveloped'
+    "400":
+      description: Malformed function call, missing field
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+    "404":
+      description: Service not found
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+delete:
+  tags: 
+    - users
+  summary: Stops and removes an interactive service from the oSparc platform
+  description: Stops and removes an interactive service from the oSparc platform
+  operationId: running_interactive_services_delete
+  parameters: 
+    - $ref: '../parameters/service_uuid.yaml#/components/parameters/ServiceUuid'
+  responses:
+    "204":
+      description: Succesfully stopped and removed the service from the oSparc platform
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/response204.yaml#/components/schemas/Response204Enveloped'
+    "400":
+      description: Malformed function call, missing field
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+    "404":
+      description: Service not found
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'

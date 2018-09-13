@@ -1,0 +1,6 @@
+# Common third party packages
+# Please keep alphabetical order
+aiohttp==3.3.2
+docker==3.5.0
+requests==2.19.1
+tenacity==4.12.0

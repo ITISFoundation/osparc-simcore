@@ -1,63 +1,84 @@
-FROM python:3.6-alpine as common
+FROM python:3.6-alpine as base
 
-LABEL maintainer="sanderegg"
+LABEL maintainer=sanderegg
 
-RUN addgroup docker && addgroup user \
-  && adduser -D app \
-  && addgroup app app && addgroup app docker
+ARG DOCKER_GID_ARG=1001
 
-USER app
+RUN apk add --no-cache \
+    su-exec
 
+# create user `scu` and `docker` group (with same id as in host)
+RUN adduser -D -u 8004 scu &&\
+    addgroup -g $DOCKER_GID_ARG docker
+
+ENV HOME /home/scu
+ENV PIP  /home/scu/.venv/bin/pip3
+
+EXPOSE 8001
 ENV REGISTRY_AUTH = ''
 ENV REGISTRY_USER = ''
 ENV REGISTRY_PW = ''
 ENV REGISTRY_URL = ''
-ENV PYTHONPATH=/home/app/source
-ENV FLASK_APP=director.py
-ENV FLASK_DEBUG=0
 
-WORKDIR /home/app
+WORKDIR /home/scu
 
-# + /home/app/            $HOME, $WORKDIR,
-#    + test/
-#    + source/            $PYTHONPATH
-#    + requirements.txt
-#    + boot.sh
+# -------------------------- Build stage -------------------
+#
+# - Preserves relative folder structure
+#
+# + /home/scu/              $HOME
+#    + services/director
+#        ...
+#    + packages
+#        ...
+FROM base as build
 
-COPY --chown=app:app requirements.txt requirements.txt
+RUN apk add --no-cache \
+    gcc \
+    libc-dev \
+    git
 
-RUN python -m venv venv \
- && chown -R app:app venv
+# create virtual environment
+RUN python3 -m venv $HOME/.venv &&\
+    $PIP install --no-cache-dir --upgrade \
+      pip \
+      wheel \
+      setuptools
 
-RUN venv/bin/pip3 install --upgrade pip wheel setuptools\
- && venv/bin/pip3 install -r requirements.txt
+# this is done to accelerate installation of director later on
+COPY --chown=scu:scu services/director/requirements/base.txt requirements-base.txt
+RUN $PIP install --no-cache-dir -r requirements-base.txt &&\
+    rm requirements-base.txt
 
-COPY --chown=app:app boot.sh boot.sh
-RUN chmod +x boot.sh
-
-# VOLUME /var/run/docker.sock # FIXME: fails when docker-compose run in production !?
-EXPOSE 8001
+COPY --chown=scu:scu services/director/.docker .docker
 
 # --------------------------Development stage -------------------
-FROM common as development
+FROM build as development
 
-ENV FLASK_DEBUG=1
+ARG HOST_GID_ARG=1000
 
-VOLUME /home/app/source
+# in dev-mode we give access to `scu` to host's mapped volumes
+# FIXME: files created by scu cannot be deleted by host! we need to do the same group in host?
+RUN addgroup -g $HOST_GID_ARG hgrp &&\
+    addgroup scu hgrp && \
+    chown -R scu:scu $HOME/.venv
 
-USER root
+VOLUME /home/scu/services/director
 
-CMD ["/bin/sh", "./boot.sh"]
+ENV DEBUG 1
+ENV RUN_DOCKER_ENGINE_ROOT=0
+ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
+CMD ["/bin/sh", ".docker/boot.sh"]
 
 # --------------------------Production stage -------------------
-FROM common as production
+FROM build as production
 
-RUN venv/bin/pip install gunicorn==19.8.0
-
-# TODO: set non-root id
-COPY --chown=1000:docker source source
-
-# FIXME: this is the only way to get access to docker sockets !?
-USER root
-
-ENTRYPOINT ["/bin/sh", "./boot.sh"]
+ENV DEBUG 0
+ENV RUN_DOCKER_ENGINE_ROOT=0
+COPY --chown=scu:scu services/director $HOME/services/director
+WORKDIR $HOME/services/director
+RUN $PIP install --no-cache-dir -r requirements/prod.txt \
+    && rm -rf $HOME/services/director
+WORKDIR $HOME
+ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
+CMD ["/bin/sh", ".docker/boot.sh"]

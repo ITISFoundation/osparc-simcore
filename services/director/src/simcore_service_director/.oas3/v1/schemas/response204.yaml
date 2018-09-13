@@ -1,0 +1,12 @@
+components:
+  schemas:
+    Response204Enveloped:
+      type: object
+      properties:
+        data:
+          type: string
+          nullable: true
+          example: 'null'
+        status:
+          type: integer
+          example: 204

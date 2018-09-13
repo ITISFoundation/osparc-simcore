@@ -93,7 +93,7 @@ COPY --from=services_webclient:build --chown=scu:scu /home/scu/client/build-outp
 COPY --chown=scu:scu services/web/server $HOME/services/web/server
 
 WORKDIR /home/scu/services/web/server
-RUN $PIP --no-cache-dir install -r requirements/prod.txt ;\
+RUN $PIP --no-cache-dir install -r requirements/prod.txt &&\
     $PIP list
 
 #-------------------

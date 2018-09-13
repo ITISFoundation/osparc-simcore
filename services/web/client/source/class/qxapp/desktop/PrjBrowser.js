@@ -6,12 +6,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   construct: function() {
     this.base(arguments, new qx.ui.layout.VBox());
 
-    this.__createUserList();
-    this.__createTempList();
+    this.__createProjectList();
+    this.__createTemplateList();
   },
 
   events: {
-    "StartPrj": "qx.event.type.Data"
+    "StartProject": "qx.event.type.Data"
   },
 
   members: {
@@ -20,7 +20,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     __controller2: null,
     __list2: null,
 
-    __createUserList: function() {
+    __createProjectList: function() {
       // layout
       let prjLst = this.__list = new qx.ui.form.List();
       prjLst.set({
@@ -33,7 +33,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
       // controller
 
-      let prjCtr = this.__controller = new qx.data.controller.List(qxapp.desktop.PrjBrowser.getFakeUserModel(), prjLst, "name");
+      let prjCtr = this.__controller = new qx.data.controller.List(this.__getProjectArray(), prjLst, "name"
+      );
       this.__setDelegate(prjCtr);
       // FIXME: selection does not work if model is not passed in the constructor!!!!
       // prjCtr.setModel();
@@ -41,11 +42,11 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       // Monitors change in selection
       prjCtr.getSelection().addListener("change", function(e) {
         const selectedItem = e.getTarget().toArray()[0];
-        this.fireDataEvent("StartPrj", selectedItem);
+        this.fireDataEvent("StartProject", selectedItem);
       }, this);
     },
 
-    __createTempList: function() {
+    __createTemplateList: function() {
       // layout
       let prjLst = this.__list2 = new qx.ui.form.List();
       prjLst.set({
@@ -58,7 +59,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
       // controller
 
-      let prjCtr = this.__controller2 = new qx.data.controller.List(qxapp.desktop.PrjBrowser.getFakeTempModel(), prjLst, "name");
+      let prjCtr = this.__controller2 = new qx.data.controller.List(this.__getTemplateArray(), prjLst, "name");
       this.__setDelegate(prjCtr);
       // FIXME: selection does not work if model is not passed in the constructor!!!!
       // prjCtr.setModel();
@@ -66,12 +67,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       // Monitors change in selection
       prjCtr.getSelection().addListener("change", function(e) {
         const selectedItem = e.getTarget().toArray()[0];
-        this.fireDataEvent("StartPrj", selectedItem);
+        this.fireDataEvent("StartProject", selectedItem);
       }, this);
     },
 
     /**
-     * Delegates apperance and binding of each project item
+     * Delegates appearance and binding of each project item
      */
     __setDelegate: function(projectController) {
       let delegate = {
@@ -81,44 +82,53 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             iconPosition: "top",
             gap: 0,
             rich: true,
-            allowGrowY: false,
-            maxWidth: 200
+            allowGrowY: false
+          });
+          item.getChildControl("icon").set({
+            height: 96,
+            width: 176
           });
         },
         // Item's data binding
-        bindItem: function(controler, item, id) {
-          controler.bindProperty("name", "label", {
+        bindItem: function(controller, item, id) {
+          controller.bindProperty("name", "label", {
             converter: function(data, model, source, target) {
               return "<b>" + data + "</b>"; // + model.getDescription();
             }
           }, item, id);
-          controler.bindProperty("thumbnail", "icon", {
+          controller.bindProperty("thumbnail", "icon", {
             converter: function(data) {
-              return data === null ? "http://via.placeholder.com/171x96" : data;
+              return data === null ? "https://placeimg.com/171/96/tech/grayscale/?random.jpg" : data;
             }
           }, item, id);
         }
       };
 
       projectController.setDelegate(delegate);
-    }
-
-  }, // members
-
-  statics: {
-
-    /**
-     * Mockup data
-     */
-    getFakeUserModel: function() {
-      let data = qxapp.dev.fake.Data.getUserProjects(3, "bizzy");
-      data.insertAt(0, qxapp.dev.fake.Data.NEW_PROJECT_DESCRIPTOR);
-      return data;
     },
 
-    getFakeTempModel: function() {
-      let data = qxapp.dev.fake.Data.getTemplateProjects();
-      data.insertAt(0, qxapp.dev.fake.Data.NEW_PROJECT_DESCRIPTOR);
+    __getProjectArray: function() {
+      return new qx.data.Array(
+        qxapp.data.Store.getInstance().getProjectList()
+          .map(
+            (p, i) => qx.data.marshal.Json.createModel({
+              name: p.name,
+              thumbnail: "https://placeimg.com/171/96/tech/grayscale/?"+i+".jpg",
+              projectId: i,
+              created: p.creationDate
+            })
+          )
+      );
+    },
+
+    __getTemplateArray: function() {
+      let data = this.__getProjectArray();
+      data.insertAt(0, qx.data.marshal.Json.createModel({
+        name: this.tr("New Project"),
+        thumbnail: "@MaterialIcons/create/40",
+        projectId: null,
+        created: null
+      }));
       return data;
     }
 

@@ -1,0 +1,27 @@
+get:
+  tags: 
+    - users
+  summary: Lists available services in the oSparc platform
+  description: Lists available services in the oSparc platform
+  operationId: services_get
+  parameters:
+    - $ref: '../parameters/service_type.yaml#/components/parameters/ServiceType'
+  responses:
+    "200":
+      description: Success, returns the list of available services
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/services.yaml#/components/schemas/ServicesEnveloped'                
+    "401":
+      description: Unauthorized access
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'

@@ -1,19 +1,24 @@
 # author: Sylvain Anderegg
 
 # TODO: add flavours by combinging docker-compose files. Namely development, test and production.
-VERSION := $(shell cat /proc/version)
+VERSION := $(shell uname -a)
 # SAN this is a hack so that docker-compose works in the linux virtual environment under Windows
 ifneq (,$(findstring Microsoft,$(VERSION)))
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 export RUN_DOCKER_ENGINE_ROOT=1
+# Windows does not have these things defined... but they are needed to execute a local swarm
+export DOCKER_GID=1001
+export HOST_GID=1000
 else
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 export RUN_DOCKER_ENGINE_ROOT=0
+# TODO: Add a meaningfull call to retrieve the local docker group ID and the user ID in linux.
 endif
 
-PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*"))
+PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*/director-sdk/python*" -not -path "*/generated_code/models*" -not -path "*/generated_code/util*"))
+
 export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
 all:
@@ -31,7 +36,7 @@ rebuild-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
 
 up-devel:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml up
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml up
 
 build:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
@@ -40,18 +45,18 @@ rebuild:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
 
 up:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml up
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml up
 
 up-swarm:
 	${DOCKER} swarm init
-	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml services
+	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml  -c services/docker-compose.tools.yml services
 
 up-swarm-devel:
 	${DOCKER} swarm init
-	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.devel.yml -c services/docker-compose.deploy.devel.yml services
+	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.devel.yml -c services/docker-compose.deploy.devel.yml  -c services/docker-compose.tools.yml services
 
 down:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml down
+	${DOCKER_COMPOSE} -f services/docker-compose.yml  -f services/docker-compose.tools.yml down
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml down
 
 down-swarm:
@@ -84,6 +89,7 @@ run_test:
 	pytest --cov=s3wrapper -v packages/s3wrapper/tests
 	pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
 	pytest --cov=server -v services/web/server/tests
+	pytest --cov=simcore_service_director -v services/director/tests
 
 after_test:
 	# leave a clean slate (not sure whether this is actually needed)

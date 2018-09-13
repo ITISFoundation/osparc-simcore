@@ -122,3 +122,9 @@ services/docker-compose.swarm.yml
 # key-words in filename to ignore them
 *secret*
 *ignore*
+
+# Any output directory
+*output/
+# backup files
+*~
+*.bak
