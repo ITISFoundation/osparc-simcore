@@ -14,7 +14,7 @@ import aiopg.sa
 # FIXME: this is temporary here so database gets properly initialized
 from ..comp_backend_api import init_database as _init_db
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 APP_ENGINE_KEY = 'db_engine'
 DB_SERVICE_NAME = 'postgres'
@@ -31,7 +31,7 @@ def is_dbservice_ready(app):
         return False
 
 async def create_aiopg(app):
-    _LOGGER.debug("creating db engine ... ")
+    log.debug("creating db engine ... ")
 
     # FIXME: psycopg2.OperationalError: could not connect to server: Connection refused if db service is not up!
     # FIXME: psycopg2.OperationalError: FATAL:  role "test_aiohttpdemo_user" does not exist
@@ -52,31 +52,31 @@ async def create_aiopg(app):
         )
 
         app[APP_ENGINE_KEY] = engine
-        _LOGGER.debug("db engine created")
+        log.debug("db engine created")
 
     except Exception: #pylint: disable=W0703
         app[APP_ENGINE_KEY] = None
-        _LOGGER.exception("db engine failed")
+        log.exception("db engine failed")
 
 
 async def dispose_aiopg(app):
-    _LOGGER.debug("closing db engine ...")
+    log.debug("closing db engine ...")
 
     engine = app[APP_ENGINE_KEY]
     if engine:
         engine.close()
         await engine.wait_closed()
 
-    _LOGGER.debug("db engine closed")
+    log.debug("db engine closed")
 
 
 def setup_db(app):
-    _LOGGER.debug("Setting up %s [service: %s] ...", __name__, DB_SERVICE_NAME)
+    log.debug("Setting up %s [service: %s] ...", __name__, DB_SERVICE_NAME)
 
     disable_services = app["config"].get("app", {}).get("disable_services",[])
     if DB_SERVICE_NAME in disable_services:
         app[APP_ENGINE_KEY] = None
-        _LOGGER.warning("Service '%s' explicitly disabled in config", DB_SERVICE_NAME)
+        log.warning("Service '%s' explicitly disabled in config", DB_SERVICE_NAME)
         return
 
     # FIXME: this create an engine to connect to simcoredb with comp_pipeline and comp_tasks

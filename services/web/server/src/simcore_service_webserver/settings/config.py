@@ -20,7 +20,7 @@ from .. import resources
 
 __version__ = "1.0"
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # TODO: import from director
 _DIRECTOR_SCHEMA = T.Dict({
@@ -84,7 +84,7 @@ def config_from_options(options, vars=None): # pylint: disable=W0622
     if not os.path.exists(options.config):
         options.config = resources.get_path(resource_name=options.config)
 
-    _LOGGER.debug("loading %s", options.config)
+    log.debug("loading %s", options.config)
 
     return _tc_cli.config_from_options(options, trafaret=CONFIG_SCHEMA, vars=vars)
 

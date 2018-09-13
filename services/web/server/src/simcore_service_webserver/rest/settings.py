@@ -9,12 +9,12 @@ from .middlewares import (
 )
 from . import routing
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def setup_rest(app):
     """Setup the rest API module in the application in aiohttp fashion. """
-    _LOGGER.debug("Setting up %s ...", __name__)
+    log.debug("Setting up %s ...", __name__)
 
     router = app.router
 

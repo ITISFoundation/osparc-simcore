@@ -30,7 +30,7 @@ from .comp_backend_worker import celery
 
 
 
-_LOGGER = logging.getLogger(__file__)
+log = logging.getLogger(__file__)
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 
@@ -68,7 +68,7 @@ async def init_database(_app):
         except sqlalchemy.exc.SQLAlchemyError as err:
             await asyncio.sleep(RETRY_WAIT_SECS)
             msg = "Retrying to create database %d/%d ..." % (i+1, RETRY_COUNT)
-            _LOGGER.warning("%s: %s", str(err), msg)
+            log.warning("%s: %s", str(err), msg)
             print("oops " + msg)
 
 
@@ -86,13 +86,13 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
     dag_adjacency_list = dict()
     tasks = dict()
     io_files = []
-    
+
     for node_uuid, node_data in pipeline_data.items():
         node_key = node_data["key"]
         node_version = node_data["version"]
         node_inputs = node_data["inputs"]
         node_outputs = node_data["outputs"]
-        _LOGGER.debug("node %s:%s has inputs: \n%s\n outputs: \n%s", node_key, node_version, node_inputs, node_outputs)
+        log.debug("node %s:%s has inputs: \n%s\n outputs: \n%s", node_key, node_version, node_inputs, node_outputs)
         #TODO: we should validate all these things before processing...
 
         # build adjacency list
@@ -107,7 +107,7 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
                         dag_adjacency_list[input_node_uuid] = []
                     if node_uuid not in dag_adjacency_list[input_node_uuid] and str(node_key).count("/dynamic/") == 0:
                         dag_adjacency_list[input_node_uuid].append(node_uuid)
-            
+
         for output_key, output_data in node_outputs.items():
             if not isinstance(output_data, dict):
                 continue
@@ -135,7 +135,7 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
             task = await api_converter.convert_task_to_old_version(task)
         #     continue
 
-        
+
 
         tasks[node_uuid] = task
 
@@ -149,7 +149,7 @@ async def _transfer_data(app, pipeline_id, io_files):
         for io_file in io_files:
             _from = io_file["from"]
             _to = str(pipeline_id) + "/" + io_file["to"]
-            _LOGGER.debug("COPYING from %s to %s", _from, _to )
+            log.debug("COPYING from %s to %s", _from, _to )
             #TODO: make async?
             s3_client.copy_object(_config['bucket_name'], _to, _from)
 
@@ -178,19 +178,19 @@ async def start_pipeline(request):
         await init_database(request.app)
     request_data = await request.json()
 
-    _LOGGER.debug("Client calls start_pipeline with %s", request_data)
+    log.debug("Client calls start_pipeline with %s", request_data)
     _app = request.app["config"]
-    _LOGGER.debug("Parse pipeline %s", _app)
+    log.debug("Parse pipeline %s", _app)
     dag_adjacency_list, tasks, io_files = await _parse_pipeline(request_data["workbench"])
-    _LOGGER.debug("Pipeline parsed")
+    log.debug("Pipeline parsed")
     try:
         # create the new pipeline in db
         pipeline = ComputationalPipeline(dag_adjacency_list=dag_adjacency_list, state=0)
-        _LOGGER.debug("Pipeline object created")
+        log.debug("Pipeline object created")
         db_session.add(pipeline)
-        _LOGGER.debug("Pipeline object added")
+        log.debug("Pipeline object added")
         db_session.flush()
-        _LOGGER.debug("Pipeline flushed")
+        log.debug("Pipeline flushed")
         pipeline_id = pipeline.pipeline_id
 
         # now we know the id, lets copy over data
@@ -214,25 +214,25 @@ async def start_pipeline(request):
         db_session.commit()
         # commit the tasks to celery
         task = celery.send_task("comp.task", args=(pipeline_id,), kwargs={})
-        _LOGGER.debug("Task commited")
+        log.debug("Task commited")
         # answer the client
         response = {
         "pipeline_name":pipeline_name,
         "pipeline_id":str(pipeline_id)
         }
-        _LOGGER.debug("END OF ROUTINE. Response %s", response)
+        log.debug("END OF ROUTINE. Response %s", response)
         return web.json_response(response, status=201)
     except sqlalchemy.exc.InvalidRequestError as err:
-        _LOGGER.exception("Alchemy error: Invalid request. Rolling back db.")
+        log.exception("Alchemy error: Invalid request. Rolling back db.")
         db_session.rollback()
         raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
     except sqlalchemy.exc.SQLAlchemyError as err:
-        _LOGGER.exception("Alchemy error: General error. Rolling back db.")
+        log.exception("Alchemy error: General error. Rolling back db.")
         db_session.rollback()
         raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
     except Exception as err:
-        _LOGGER.exception("Unexpected error.")
+        log.exception("Unexpected error.")
         raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
     finally:
-        _LOGGER.debug("Close session")
+        log.debug("Close session")
         db_session.close()

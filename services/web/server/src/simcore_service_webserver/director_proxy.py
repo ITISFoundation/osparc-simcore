@@ -9,7 +9,7 @@ import re
 
 from requests import RequestException, Session
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 _SESSION = Session()
 
@@ -41,7 +41,7 @@ def director_request(path, method="GET", data=None):
         elif request_result.status_code == 500:
             raise Exception("Return code 500, Internal Server Error!")
         else:
-            _LOGGER.info("Request returned %s. Details: %s", request_result.status_code, request_result.json())
+            log.info("Request returned %s. Details: %s", request_result.status_code, request_result.json())
             return request_result
 
     except RequestException as err:

@@ -19,7 +19,7 @@ from passlib.hash import sha256_crypt
 
 from .db import model
 
-_LOGGER = logging.getLogger(__file__)
+log = logging.getLogger(__file__)
 
 
 class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
@@ -54,7 +54,7 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
         Return True if the identity is allowed the permission in the
         current context, else return False.
         """
-        _LOGGER.debug("context: %s", context)
+        log.debug("context: %s", context)
         if identity is None:
             return False
 
@@ -99,7 +99,7 @@ generate_password_hash = sha256_crypt.hash
 
 
 def setup_auth(app):
-    _LOGGER.debug("Setting up %s ...", __name__)
+    log.debug("Setting up %s ...", __name__)
 
     # WARNING: expected aiosession already initialized!
     identity_policy = SessionIdentityPolicy()

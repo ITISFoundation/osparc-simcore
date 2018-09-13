@@ -7,13 +7,13 @@ from simcore_sdk.config.rabbit import eval_broker
 
 from .async_sio import SIO
 
-_LOGGER = logging.getLogger(__file__)
+log = logging.getLogger(__file__)
 SERVICE_NAME = 'rabbit'
 
 async def on_message(message: aio_pika.IncomingMessage):
     with message.process():
         data = json.loads(message.body)
-        _LOGGER.debug(data)
+        log.debug(data)
         if data["Channel"] == "Log":
             await SIO.emit("logger", data = json.dumps(data))
         elif data["Channel"] == "Progress":

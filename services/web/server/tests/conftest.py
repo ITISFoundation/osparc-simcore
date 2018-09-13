@@ -26,7 +26,7 @@ from simcore_service_webserver.settings import (
     read_and_validate
 )
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 CURRENT_DIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
 
 
@@ -36,7 +36,7 @@ def _is_db_service_responsive(**pg_config):
         conn = admin_engine.connect()
         conn.close()
     except:
-        _LOGGER.exception("Connection to db failed")
+        log.exception("Connection to db failed")
         return False
     return True
 

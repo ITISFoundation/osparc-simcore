@@ -25,7 +25,7 @@ from .._generated_code.models.health_check_enveloped import HealthCheckEnveloped
 
 from ... import decorators
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 async def check_health(request):
     distb = pkg_resources.get_distribution('simcore-service-webserver')
@@ -70,5 +70,5 @@ async def ping(request):
           "403":
               Forbidden: permission denied given the user privilege
     """
-    _LOGGER.debug("ping with request %s", request)
+    log.debug("ping with request %s", request)
     return web.Response(text="pong")

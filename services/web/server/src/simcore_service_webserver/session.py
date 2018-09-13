@@ -26,7 +26,7 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 
 __all__ = ["setup_session", "get_session"]
 
-_LOGGER = logging.getLogger(__file__)
+log = logging.getLogger(__file__)
 
 get_session = aiohttp_session.get_session
 
@@ -34,7 +34,7 @@ def setup_session(app):
     """
         Inits and registers a session middleware in aiohttp.web.Application
     """
-    _LOGGER.debug("Setting up %s ...", __name__)
+    log.debug("Setting up %s ...", __name__)
 
     secret_key = app["config"].get("SECRET_KEY")
     if secret_key is None:

@@ -15,7 +15,7 @@ from ..comp_backend_api import comp_backend_routes
 from ..registry_api import registry_routes
 
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def create_router(oas3_path: Path=None):
@@ -27,7 +27,7 @@ def create_router(oas3_path: Path=None):
     if oas3_path is None:
         oas3_path = openapi_path()
 
-    _LOGGER.debug("OAS3 in %s", oas3_path)
+    log.debug("OAS3 in %s", oas3_path)
 
     # generate a version 3 of the API documentation
     router = SwaggerRouter(

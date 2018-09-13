@@ -11,7 +11,7 @@ from simcore_director_sdk.rest import ApiException
 
 from . import director_sdk
 
-_LOGGER = logging.getLogger(__file__)
+log = logging.getLogger(__file__)
 
 registry_routes = web.RouteTableDef()
 
@@ -41,15 +41,15 @@ async def get_computational_services(request):
         "405":
             description: invalid HTTP Method
     """
-    _LOGGER.debug(request)
+    log.debug(request)
 
     try:
         director = director_sdk.get_director()
         services = await director.services_get(service_type="computational")
         return web.json_response(services.to_dict())
     except ApiException as exc:
-        _LOGGER.exception("Api Error while accessing director")
+        log.exception("Api Error while accessing director")
         return web.json_response(exc.reason, status=exc.status)
     except Exception:
-        _LOGGER.exception("Error while retrieving computational services")
+        log.exception("Error while retrieving computational services")
         raise

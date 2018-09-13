@@ -2,7 +2,7 @@ import os
 import logging
 import simcore_director_sdk
 
-_LOGGER = logging.getLogger(__file__)
+log = logging.getLogger(__file__)
 
 # FIXME: This has to come from settings.config._DIRECTOR_SCHEMA schema !
 # Better wait until server is merged since there were lots of changes

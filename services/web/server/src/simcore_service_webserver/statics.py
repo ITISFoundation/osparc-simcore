@@ -11,14 +11,14 @@ import pathlib
 
 from aiohttp import web
 
-_LOGGER = logging.getLogger(__file__)
+log = logging.getLogger(__file__)
 
 
 async def index(request):
     """
         Serves boot application under index
     """
-    _LOGGER.debug("index.request:\n %s", request)
+    log.debug("index.request:\n %s", request)
 
     client_dir = pathlib.Path(request.app["config"]["app"]["client_outdir"])
     index_path = client_dir / "index.html"
@@ -27,13 +27,13 @@ async def index(request):
 
 
 def setup_statics(app):
-    _LOGGER.debug("Setting up %s ...", __name__)
+    log.debug("Setting up %s ...", __name__)
 
     outdir = pathlib.Path( app["config"]["app"]["client_outdir"] )
 
     if not outdir.exists():
         # FIXME: This error is silent to let tests pass
-        _LOGGER.error("Client application is not ready. Invalid path %s", outdir)
+        log.error("Client application is not ready. Invalid path %s", outdir)
         return
 
     # RIA qx-application
@@ -46,4 +46,4 @@ def setup_statics(app):
         if folderpath.exists():
             app.router.add_static('/' + name, folderpath)
         else:
-            _LOGGER.error("Missing client folder %s", folderpath)
+            log.error("Missing client folder %s", folderpath)

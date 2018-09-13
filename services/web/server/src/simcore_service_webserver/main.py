@@ -15,13 +15,13 @@ from .async_sio import setup_sio
 from .router import create_router
 
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 def init_app(config):
     """
         Initializes service
     """
-    _LOGGER.debug("Initializing app ... ")
+    log.debug("Initializing app ... ")
 
     app = web.Application(router=create_router())
     app["config"] = config
@@ -41,7 +41,7 @@ def run(config):
 
     NOTICE it is sync!
     """
-    _LOGGER.debug("Serving app ... ")
+    log.debug("Serving app ... ")
 
     app = init_app(config)
     web.run_app(app,

@@ -53,7 +53,7 @@ import logging
 
 from aiohttp import web_exceptions
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # This module shall contain the handlers of the API (implementation side of the openapi server side).
 # Each operation is typically defined as
@@ -89,7 +89,7 @@ from .. import handlers
 from .models.base_model_ import Model
 from .models.error import Error
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 @web.middleware
 async def __handle_errors(request, handler):

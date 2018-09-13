@@ -10,7 +10,7 @@ import pytest
 # under test
 from simcore_service_webserver import resources
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 @pytest.fixture
 def app_resources(package_paths):

@@ -10,11 +10,11 @@ from simcore_service_webserver import (
     resources,
     settings as srv_settings,
     cli as srv_cli
-)    
+)
 from simcore_service_webserver.settings.config import CONFIG_SCHEMA
 
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 def test_config_options_in_cli(capsys):
     with pytest.raises(SystemExit) as einfo:

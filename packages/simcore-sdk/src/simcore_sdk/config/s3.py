@@ -6,7 +6,7 @@ import logging
 
 import trafaret as T
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 CONFIG_SCHEMA = T.Dict({

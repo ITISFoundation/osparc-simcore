@@ -17,7 +17,7 @@ from simcore_service_webserver.db.model import (
 )
 
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 async def test_basic_db_workflow(mock_services, server_test_configfile):
     """
@@ -27,7 +27,7 @@ async def test_basic_db_workflow(mock_services, server_test_configfile):
         check against expected
         disconnect
     """
-    _LOGGER.debug("Started %s", mock_services)
+    log.debug("Started %s", mock_services)
 
     # init app from config file
     config = read_and_validate( server_test_configfile )

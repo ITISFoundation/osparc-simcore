@@ -21,7 +21,7 @@ from ...auth import (
     check_credentials
 )
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 #  TODO:  middleware to convert input-body from dict to RegistrationInput
 async def register_user(request, input_body:RegistrationInput):

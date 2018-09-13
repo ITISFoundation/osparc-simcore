@@ -26,7 +26,7 @@ from simcore_service_webserver.settings import (
 )
 
 CURRENT_DIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.parent
-_LOGGER = logging.getLogger(__file__)
+log = logging.getLogger(__file__)
 
 
 @pytest.fixture
@@ -88,7 +88,7 @@ async def test_apiversion():
 
 async def test_apidoc(cli_light):
     cli = cli_light
-    
+
     response = await cli.get('apidoc/')
     assert response.status == HTTPOk.status_code
     text = await response.text()
@@ -112,7 +112,7 @@ async def test_oas(cli_light):
     response = await cli.get('v1/oas')
     assert response.status == 200 # TODO: why not HTTPFound.status_code
     api_specs2 = await response.json()
-    
+
     assert api_specs == api_specs2
 
     # loads root file
@@ -122,7 +122,7 @@ async def test_oas(cli_light):
     assert api_specs["info"] == root_specs["info"]
     assert api_specs["servers"] == root_specs["servers"]
     assert api_specs["tags"] == root_specs["tags"]
-    
+
     # TODO: Not sure why 'apidoc/swagger.yaml is smaller than the spec?
     #swagger_paths = swagger_yml["paths"].keys()
     #api_paths = api_specs["paths"].keys()
@@ -130,7 +130,7 @@ async def test_oas(cli_light):
 
 
 async def test_login(cli):
-    _LOGGER.debug("cli fixture: %s", cli)
+    log.debug("cli fixture: %s", cli)
     response = await cli.post('v1/login',
                                  data={
                                      'email': 'bizzy@itis.ethz.ch',
