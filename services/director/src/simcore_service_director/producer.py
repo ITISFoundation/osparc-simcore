@@ -325,7 +325,8 @@ def __create_services(docker_client, list_of_images, service_name, service_tag, 
             _LOGGER.debug("Service with parameters %s successfully started, published ports are %s, entry_point is %s", docker_service_runtime_parameters, published_ports, service_entrypoint)
             container_meta_data = {
                 "published_port": published_port,
-                "entry_point": service_entrypoint
+                "entry_point": service_entrypoint,
+                "service_uuid":service_uuid
                 }
             containers_meta_data.append(container_meta_data)
 

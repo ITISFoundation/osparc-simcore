@@ -49,14 +49,10 @@ def __convert_ports_to_old_version(ports, node_description):
         elif port_description["type"] == "data:application/zip":
             old_port["type"] = "folder-url"
         
-        if port_data:
-            old_port["value"] = port_data
-            if isinstance(port_data, dict):
-                old_port["value"] = "null"
-                if "nodeUuid" in port_data and "output" in port_data:
-                    old_port["value"] = str(".").join(["link", port_data["nodeUuid"], port_data["output"]])
-
-        else:
+        old_port["value"] = port_data
+        if isinstance(port_data, dict):
             old_port["value"] = "null"
+            if "nodeUuid" in port_data and "output" in port_data:
+                old_port["value"] = str(".").join(["link", port_data["nodeUuid"], port_data["output"]])
         old_ports.append(old_port)
     return old_ports
