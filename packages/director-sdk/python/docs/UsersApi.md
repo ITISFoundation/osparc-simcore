@@ -8,6 +8,7 @@ Method | HTTP request | Description
 [**running_interactive_services_delete**](UsersApi.md#running_interactive_services_delete) | **DELETE** /running_interactive_services/{service_uuid} | Stops and removes an interactive service from the oSparc platform
 [**running_interactive_services_get**](UsersApi.md#running_interactive_services_get) | **GET** /running_interactive_services/{service_uuid} | Succesfully returns if a service with the defined uuid is up and running
 [**running_interactive_services_post**](UsersApi.md#running_interactive_services_post) | **POST** /running_interactive_services | Starts an interactive service in the oSparc platform and returns its entrypoint
+[**services_by_key_version_get**](UsersApi.md#services_by_key_version_get) | **GET** /services/{service_key}/{service_version} | Returns details of the selected service if available in the oSparc platform
 [**services_get**](UsersApi.md#services_get) | **GET** /services | Lists available services in the oSparc platform
 
 
@@ -191,6 +192,56 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**RunningServiceEnveloped**](RunningServiceEnveloped.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **services_by_key_version_get**
+> ServicesEnveloped services_by_key_version_get(service_key, service_version)
+
+Returns details of the selected service if available in the oSparc platform
+
+Returns details of the selected service if available in the oSparc platform
+
+### Example
+```python
+from __future__ import print_function
+import time
+import simcore_director_sdk
+from simcore_director_sdk.rest import ApiException
+from pprint import pprint
+
+# create an instance of the API class
+api_instance = simcore_director_sdk.UsersApi()
+service_key = simcore/services/dynamic/3d-viewer # str | The key (url) of the service
+service_version = 1.4 # str | The tag/version of the service
+
+try:
+    # Returns details of the selected service if available in the oSparc platform
+    api_response = api_instance.services_by_key_version_get(service_key, service_version)
+    pprint(api_response)
+except ApiException as e:
+    print("Exception when calling UsersApi->services_by_key_version_get: %s\n" % e)
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **service_key** | **str**| The key (url) of the service | 
+ **service_version** | **str**| The tag/version of the service | 
+
+### Return type
+
+[**ServicesEnveloped**](ServicesEnveloped.md)
 
 ### Authorization
 

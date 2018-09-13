@@ -39,6 +39,9 @@ paths:
 
   /services:
     $ref: './paths/services.yaml'
+  
+  /services/{service_key}/{service_version}:
+    $ref: './paths/services-by-key-and-version.yaml'
 
   /running_interactive_services:
     $ref: './paths/running_interactive_services.yaml'
