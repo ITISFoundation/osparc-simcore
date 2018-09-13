@@ -30,26 +30,8 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     });
     this.add(searchLayout);
 
-    let store = qxapp.data.Store.getInstance();
     this.__allServices = [];
-    for (let imageId in store.getServices()) {
-      let service = store.getServices()[imageId];
-      service.imageId = imageId;
-      this.__allServices.push(service);
-    }
-    store.addListener("servicesRegistered", e => {
-      this.__addNewData(e.getData());
-    }, this);
-    store.getComputationalServices();
-    store.addListener("interactiveServicesRegistered", e => {
-      this.__addNewData(e.getData());
-    }, this);
-    store.getInteractiveServices();
-    // TODO: OM & PC replace this with delegates
     let names = [];
-    for (let i = 0; i < this.__allServices.length; i++) {
-      names.push(this.__allServices[i].name);
-    }
     let rawData = new qx.data.Array(names);
 
     this.__list = new qx.ui.form.List();
@@ -103,6 +85,8 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     this.__list.addListener("dblclick", function(mouseEvent) {
       this.__onAddService();
     }, this);
+
+    this.__populateList();
   },
 
   events: {
@@ -121,6 +105,22 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
       this.__contextNodeId = nodeId;
       this.__contextPort = port;
       this.__updateCompatibleList();
+    },
+
+    __populateList: function() {
+      let store = qxapp.data.Store.getInstance();
+      [
+        "builtInServicesRegistered",
+        "servicesRegistered",
+        "interactiveServicesRegistered"
+      ].forEach(event => {
+        store.addListener(event, e => {
+          this.__addNewData(e.getData());
+        }, this);
+      });
+      store.getBuiltInServicesAsync();
+      store.getComputationalServices();
+      store.getInteractiveServices();
     },
 
     __updateCompatibleList: function() {

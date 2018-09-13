@@ -66,7 +66,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return this.__metaData;
     },
 
-    createNodeLayout: function(nodeMetaData, nodeData) {
+    createNodeLayout: function(nodeData) {
       let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
       this.setLayout(nodeLayout);
 
@@ -108,9 +108,9 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
       const nodeImageId = this.getNodeImageId();
       let store = qxapp.data.Store.getInstance();
-      // let metaData = store.getNodeMetaData(nodeImageId);
-      if (nodeMetaData) {
-        this.__populateNode(nodeMetaData, nodeData);
+      let metaData = store.getNodeMetaDataFromCache(nodeImageId);
+      if (metaData) {
+        this.__populateNode(metaData, nodeData);
       } else {
         console.error("Invalid ImageID - Not populating "+nodeImageId);
       }
@@ -199,16 +199,20 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         const slotName = "startDynamic";
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
-          const {data, status} = val;
+          const {
+            data,
+            status
+          } = val;
           if (status == 201) {
-            const {published_port, entry_point} = data;
-            if (published_port) {
+            const publishedPort = data["published_port"];
+            const entryPointD = data["entry_point"];
+            if (publishedPort) {
               let button = new qx.ui.form.Button("Open Viewer");
               let entryPoint = "";
-              if (entry_point) {
-                entryPoint = "/" + entry_point
+              if (entryPointD) {
+                entryPoint = "/" + entryPointD;
               }
-              const srvUrl = "http://" + window.location.hostname + ":" + published_port + entryPoint;
+              const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
               this.set({
                 viewerButton: button
               });
@@ -221,8 +225,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
               }, this);
               console.debug(metaData.name, "Service ready on " + srvUrl);
             }
-          }
-          else {
+          } else {
             console.error("Error starting dynamic service: ", data);
           }
         }, this);

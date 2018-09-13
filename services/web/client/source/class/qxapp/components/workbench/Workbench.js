@@ -235,7 +235,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let nodeB = this.__createNode(nodeImageId, metaData, null);
+      let nodeB = this.__createNode(nodeImageId, null);
       this.__addNodeToWorkbench(nodeB, pos);
 
       if (nodeAId !== null && portA !== null) {
@@ -319,11 +319,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             const isDirectory = data.getData().isDirectory;
             const activePort = isDirectory ? "outDir" : "outFile";
             const inactivePort = isDirectory ? "outFile" : "outDir";
-            node.getMetaData().outputs[activePort].value = {
+            let metadata = node.getMetaData();
+            metadata.outputs[activePort].value = {
               store: "s3-z43",
               path: itemPath
             };
-            node.getMetaData().outputs[inactivePort].value = null;
+            metadata.outputs[inactivePort].value = null;
             node.getOutputPort(activePort).ui.setLabel(itemName);
             node.getOutputPort(activePort).ui.getToolTip().setLabel(itemName);
             node.getOutputPort(inactivePort).ui.setLabel("");
@@ -343,9 +344,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       qx.ui.core.queue.Layout.flush();
     },
 
-    __createNode: function(nodeImageId, nodeMetaData, uuid, nodeData) {
+    __createNode: function(nodeImageId, uuid, nodeData) {
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeImageId, uuid);
-      nodeBase.createNodeLayout(nodeMetaData, nodeData);
+      nodeBase.createNodeLayout(nodeData);
 
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
