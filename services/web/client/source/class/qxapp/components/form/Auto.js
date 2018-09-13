@@ -10,28 +10,40 @@
  * Create a form. The argument to the form
  * widget defines the structure of the form.
  *
- *     [
- *         {
- *           key: 'xyc',             // unique name
- *           label: 'label',
- *           type: string|integer|bool,
- *           widget: 'text',
- *           cfg: {},                // widget specific configuration
- *           set: {}                 // normal qx porperties to apply
+ *     {
+ *          key: {
+ *            displayOrder: 5,
+              label: "Widget SelectBox Test",
+              description: "Test Input for SelectBox",
+              defaultValue: "dog",
+              type: "string",
+              widget: {
+                type: "SelectBox",
+                structure: [
+                  {
+                    key: "dog",
+                    label: "A Dog"
+                  },
+                  {
+                    key: "cat",
+                    label: "A Cat"
+                  }
+                ]
+              }
  *          },
- *          ....
- *     ]
+ *          ...
+ *     }
  *
  * The default widgets for data types are as follows:
  *
  *     string: text
  *     integer: spinner
  *     bool:  checkBox
+ *     number: text
+ *     data:  file-upload/selection
  *
- * The following widgets are supported:
- *     header: { label: "header text"},
- *     text: { },
- *     selectBox: { cfg: { structure: [ {key: x, label: y}, ...] } },
+ * The following widget types are supported:
+ *     selectBox: { structure: [ {key: x, label: y}, ...] },
  *     date: { }, // following unix tradition, dates are represented in epoc seconds
  *     password: {},
  *     textArea: {},
@@ -60,9 +72,9 @@ qx.Class.define("qxapp.components.form.Auto", {
     let formCtrl = this.__formCtrl = new qx.data.controller.Form(null, this);
     this.__boxCtrl = {};
     this.__typeMap = {};
-
-    content.forEach(this.__addField, this);
-
+    for (let key in content) {
+      this.__addField(content[key], key);
+    }
     let model = this.__model = formCtrl.createModel(true);
 
     model.addListener("changeBubble", function(e) {
@@ -177,6 +189,11 @@ qx.Class.define("qxapp.components.form.Auto", {
       this.__settingData = true;
 
       for (let key in data) {
+        if (typeof data[key] == "object" && data[key].nodeUuid) {
+          this.getControl(key).setEnabled(false);
+          continue;
+        }
+        this.getControl(key).setEnabled(true);
         let upkey = qx.lang.String.firstUp(key);
         let setter = "set" + upkey;
         let value = data[key];
@@ -256,8 +273,14 @@ qx.Class.define("qxapp.components.form.Auto", {
         }
       }
     },
-    __setupTextField: function(s) {
-      this.__formCtrl.addBindingOptions(s.key,
+    __setupTextArea: function(s, key, control) {
+      if (s.widget.minHeight) {
+        control.setMinHeight(s.widget.minHeight);
+      }
+      this.__setupTextField(s, key, control);
+    },
+    __setupTextField: function(s, key) {
+      this.__formCtrl.addBindingOptions(key,
         { // model2target
           converter : function(data) {
             return String(data);
@@ -270,14 +293,41 @@ qx.Class.define("qxapp.components.form.Auto", {
         }
       );
     },
-    __setupSpinner: function(s) {
+    __setupNumberField: function(s, key) {
       if (!s.set) {
         s.set = {};
       }
       if (s.defaultValue) {
-        s.set.value = parseInt(s.defaultValue);
+        s.set.value = qx.lang.Type.isNumber(s.defaultValue) ? String(s.defaultValue) : s.defaultValue;
+      } else {
+        s.set.value = String(0);
       }
-      this.__formCtrl.addBindingOptions(s.key,
+      this.__formCtrl.addBindingOptions(key,
+        { // model2target
+          converter : function(data) {
+            if (qx.lang.Type.isNumber(data)) {
+              return String(data);
+            }
+            return data;
+          }
+        },
+        { // target2model
+          converter : function(data) {
+            return parseFloat(data);
+          }
+        }
+      );
+    },
+    __setupSpinner: function(s, key) {
+      if (!s.set) {
+        s.set = {};
+      }
+      if (s.defaultValue) {
+        s.set.value = parseInt(String(s.defaultValue));
+      } else {
+        s.set.value = 0;
+      }
+      this.__formCtrl.addBindingOptions(key,
         { // model2target
           converter : function(data) {
             let d = String(data);
@@ -294,34 +344,35 @@ qx.Class.define("qxapp.components.form.Auto", {
         }
       );
     },
-    __setupSelectBox: function(s, control) {
-      let controller = this.__boxCtrl[s.key] = new qx.data.controller.List(null, control, "label");
+
+    __setupSelectBox: function(s, key, control) {
+      let controller = this.__boxCtrl[key] = new qx.data.controller.List(null, control, "label");
       controller.setDelegate({
         bindItem : function(ctrl, item, index) {
           ctrl.bindProperty("key", "model", null, item, index);
           ctrl.bindProperty("label", "label", null, item, index);
         }
       });
-      let cfg = s.cfg;
+      let cfg = s.widget;
       if (cfg.structure) {
         cfg.structure.forEach(function(item) {
           item.label = item.label ? this["tr"](item.label) : null;
         }, this);
       } else {
-        cfg.strucuture = [{
+        cfg.structure = [{
           label : "",
           key   : null
         }];
       }
-      if (s.set.value) {
-        s.set.value = [s.set.value];
+      if (s.defaultValue) {
+        s.set.value = [s.defaultValue];
       }
       // console.log(cfg.structure);
       let sbModel = qx.data.marshal.Json.createModel(cfg.structure);
       controller.setModel(sbModel);
     },
-    __setupComboBox: function(s, control) {
-      let ctrl = this.__boxCtrl[s.key] = new qx.data.controller.List(null, control);
+    __setupComboBox: function(s, key, control) {
+      let ctrl = this.__boxCtrl[key] = new qx.data.controller.List(null, control);
       let cfg = s.cfg;
       if (cfg.structure) {
         cfg.structure.forEach(function(item) {
@@ -333,14 +384,11 @@ qx.Class.define("qxapp.components.form.Auto", {
       let sbModel = qx.data.marshal.Json.createModel(cfg.structure);
       ctrl.setModel(sbModel);
     },
-    __setupBoolField: function(s, control) {
+    __setupBoolField: function(s, key, control) {
       if (!s.set) {
         s.set = {};
       }
-      if (s.defaultValue) {
-        s.set.value = s.defaultValue;
-      }
-      this.__formCtrl.addBindingOptions(s.key,
+      this.__formCtrl.addBindingOptions(key,
         { // model2target
           converter : function(data) {
             return data;
@@ -353,8 +401,8 @@ qx.Class.define("qxapp.components.form.Auto", {
         }
       );
     },
-    __setupFileButton: function(s) {
-      this.__formCtrl.addBindingOptions(s.key,
+    __setupFileButton: function(s, key) {
+      this.__formCtrl.addBindingOptions(key,
         { // model2target
           converter : function(data) {
             return String(data);
@@ -367,58 +415,45 @@ qx.Class.define("qxapp.components.form.Auto", {
         }
       );
     },
-    __addField: function(s) {
-      // FIXME: OM why null?
-      if (s === null) {
-        return;
-      }
-      let option = {
-        exposable: s.exposable
-      }; // for passing info into the form renderer
-
-      if (s.widget == "header") {
-        this.addGroupHeader(s.label ? this["tr"](s.label):null, option);
-        return;
-      }
-
-      if (!s.key) {
-        throw new Error("the key property is required");
-      }
+    __addField: function(s, key) {
       if (s.defaultValue) {
         if (!s.set) {
           s.set = {};
         }
         s.set.value = s.defaultValue;
       }
-      // FIXME: This should go away
-      if (s.value) {
-        if (!s.set) {
-          s.set = {};
-        }
-        s.set.value = s.value;
-      }
+
       if (!s.widget) {
+        let type = s.type;
+        if (type.match(/^data:/)) {
+          type = "data";
+        }
         s.widget = {
-          string: "text",
-          integer: "spinner",
-          number: "spinner",
-          bool: "checkBox",
-          "file-url": "fileButton",
-          "folder-url": "fileButton"
-        }[s.type];
+          type: {
+            string: "Text",
+            integer: "Spinner",
+            number: "Number",
+            boolean: "CheckBox",
+            data: "FileButton"
+          }[type]
+        };
       }
       let control;
       let setup;
-      switch (s.widget) {
-        case "date":
+      switch (s.widget.type) {
+        case "Date":
           control = new qx.ui.form.DateField();
           setup = this.__setupDateField;
           break;
-        case "text":
+        case "Text":
           control = new qx.ui.form.TextField();
           setup = this.__setupTextField;
           break;
-        case "spinner":
+        case "Number":
+          control = new qx.ui.form.TextField();
+          setup = this.__setupNumberField;
+          break;
+        case "Spinner":
           control = new qx.ui.form.Spinner();
           control.set({
             maximum: 10000,
@@ -426,42 +461,38 @@ qx.Class.define("qxapp.components.form.Auto", {
           });
           setup = this.__setupSpinner;
           break;
-        case "password":
+        case "Password":
           control = new qx.ui.form.PasswordField();
           setup = this.__setupTextField;
           break;
-        case "textArea":
+        case "TextArea":
           control = new qx.ui.form.TextArea();
-          setup = this.__setupTextField;
+          setup = this.__setupTextArea;
           break;
-        case "hiddenText":
-          control = new qx.ui.form.TextField();
-          control.exclude();
-          setup = this.__setupTextField;
-          break;
-        case "checkBox":
+        case "CheckBox":
           control = new qx.ui.form.CheckBox();
           setup = this.__setupBoolField;
           break;
-        case "selectBox":
+        case "SelectBox":
           control = new qx.ui.form.SelectBox();
           setup = this.__setupSelectBox;
           break;
-        case "comboBox":
+        case "ComboBox":
           control = new qx.ui.form.ComboBox();
           setup = this.__setupComboBox;
           break;
-        case "fileButton":
+        case "FileButton":
           control = new qx.ui.form.TextField();
           setup = this.__setupFileButton;
           break;
         default:
-          throw new Error("unknown widget type " + s.widget);
+          throw new Error("unknown widget type " + s.widget.type);
       }
-      this.__ctrlMap[s.key] = control;
-      this.add(control, s.label ? this["tr"](s.label):null, null, s.key, null, option);
+      this.__ctrlMap[key] = control;
+      let option = {}; // could use this to pass on info to the form renderer
+      this.add(control, s.label ? this["tr"](s.label):null, null, key, null, option);
 
-      setup.call(this, s, control);
+      setup.call(this, s, key, control);
 
       if (s.set) {
         if (s.set.filter) {
@@ -476,7 +507,7 @@ qx.Class.define("qxapp.components.form.Auto", {
         console.log(s.set);
         control.set(s.set);
       }
-      this.__ctrlMap[s.key] = control;
+      this.__ctrlMap[key] = control;
     }
   }
 });

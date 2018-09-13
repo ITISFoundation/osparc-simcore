@@ -1,0 +1,12 @@
+components:
+  schemas:
+    ServicesEnveloped:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: './node-meta-v0.0.1.json'
+        status:
+          type: integer
+          example: 200

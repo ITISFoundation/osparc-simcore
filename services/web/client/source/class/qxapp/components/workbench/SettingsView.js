@@ -19,7 +19,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
   },
 
   events: {
-    "SettingsEditionDone": "qx.event.type.Event",
+    "SettingsEdited": "qx.event.type.Event",
     "ShowViewer": "qx.event.type.Data"
   },
 
@@ -54,7 +54,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       this.add(titleBox);
 
       doneBtn.addListener("execute", function() {
-        this.fireEvent("SettingsEditionDone");
+        this.fireEvent("SettingsEdited");
       }, this);
     },
 
@@ -73,16 +73,10 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       this.__dynamicViewer.removeAll();
       let viewerButton = node.getViewerButton();
       if (viewerButton) {
-        if (!viewerButton.hasListener("execute")) {
-          viewerButton.addListener("execute", function(e) {
-            const data = {
-              metadata: node.getMetadata(),
-              nodeId: node.getNodeId()
-            };
-            console.log("ShowViewer", data);
-            this.fireDataEvent("ShowViewer", data);
-          }, this);
-        }
+        node.addListenerOnce("ShowViewer", function(e) {
+          const data = e.getData();
+          this.fireDataEvent("ShowViewer", data);
+        }, this);
         this.__dynamicViewer.add(viewerButton);
       }
     }

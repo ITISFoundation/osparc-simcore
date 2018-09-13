@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "cookie-parser": "^1.4.3",
     "qxcompiler": "^0.2.13"
   },
   "scripts": {

@@ -1,0 +1,11 @@
+components:
+  parameters:
+    ServiceKey:
+      in: query
+      name: service_key
+      description: The key (url) of the service
+      required: true
+      schema:
+        type: string   
+        format: url
+        example: simcore/services/dynamic/3d-viewer

@@ -1,0 +1,7 @@
+{
+    "packageName":"simcore_director_sdk",
+    "projectName":"simcore-director-sdk",
+    "packageVersion":"1.0.0",
+    "packageUrl":"https://github.com/ITISFoundation/osparc-simcore/tree/master/packages/director-sdk/python",
+    "library":"asyncio"
+}
