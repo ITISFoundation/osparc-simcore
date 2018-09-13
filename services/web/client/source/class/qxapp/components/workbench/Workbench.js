@@ -235,7 +235,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let nodeB = this.__createNode(nodeImageId, metaData, null);
+      let nodeB = this.__createNode(nodeImageId, null);
       this.__addNodeToWorkbench(nodeB, pos);
 
       if (nodeAId !== null && portA !== null) {
@@ -319,15 +319,16 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             const isDirectory = data.getData().isDirectory;
             const activePort = isDirectory ? "outDir" : "outFile";
             const inactivePort = isDirectory ? "outFile" : "outDir";
-            node.getMetaData().outputs[activePort].value = {
+            let metadata = node.getMetaData();
+            metadata.outputs[activePort].value = {
               store: "s3-z43",
               path: itemPath
             };
-            node.getMetaData().outputs[inactivePort].value = null;
-            node.getOutputPorts(activePort).ui.setLabel(itemName);
-            node.getOutputPorts(activePort).ui.getToolTip().setLabel(itemName);
-            node.getOutputPorts(inactivePort).ui.setLabel("");
-            node.getOutputPorts(inactivePort).ui.getToolTip().setLabel("");
+            metadata.outputs[inactivePort].value = null;
+            node.getOutputPort(activePort).ui.setLabel(itemName);
+            node.getOutputPort(activePort).ui.getToolTip().setLabel(itemName);
+            node.getOutputPort(inactivePort).ui.setLabel("");
+            node.getOutputPort(inactivePort).ui.getToolTip().setLabel("");
             node.setProgress(100);
             fileManagerWindow.close();
           }, this);
@@ -343,9 +344,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       qx.ui.core.queue.Layout.flush();
     },
 
-    __createNode: function(nodeImageId, nodeMetaData, uuid, nodeData) {
+    __createNode: function(nodeImageId, uuid, nodeData) {
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeImageId, uuid);
-      nodeBase.createNodeLayout(nodeMetaData, nodeData);
+      nodeBase.createNodeLayout(nodeData);
 
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
@@ -792,9 +793,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       };
       for (let i = 0; i < this.__nodes.length; i++) {
         const node = this.__nodes[i];
+        const nodeData = node.getMetaData();
         let cNode = pipeline.workbench[node.getNodeId()] = {
-          key: node.getMetaData().key,
-          version: node.getMetaData().version,
+          key: nodeData.key,
+          version: nodeData.version,
           inputs: node.getInputValues(),
           outputs: {}
         };
@@ -804,12 +806,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             cNode.inputs[key] = linkPort;
           }
         }
-        for (let key in node.getOutputPorts()) {
-          const outputPort = node.getOutputPort(key);
+        for (let key in nodeData.outputs) {
+          const outputPort = nodeData.outputs[key];
           if ("value" in outputPort) {
             cNode.outputs[key] = outputPort.value;
-          } else {
-            cNode.outputs[key] = null;
           }
         }
       }
