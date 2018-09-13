@@ -170,4 +170,5 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       return win;
     }
+  }
 });
