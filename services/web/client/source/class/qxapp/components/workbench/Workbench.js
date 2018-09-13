@@ -319,15 +319,16 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             const isDirectory = data.getData().isDirectory;
             const activePort = isDirectory ? "outDir" : "outFile";
             const inactivePort = isDirectory ? "outFile" : "outDir";
-            node.getMetaData().outputs[activePort].value = {
+            let metadata = node.getMetaData();
+            metadata.outputs[activePort].value = {
               store: "s3-z43",
               path: itemPath
             };
-            node.getMetaData().outputs[inactivePort].value = null;
-            node.getOutputPorts(activePort).ui.setLabel(itemName);
-            node.getOutputPorts(activePort).ui.getToolTip().setLabel(itemName);
-            node.getOutputPorts(inactivePort).ui.setLabel("");
-            node.getOutputPorts(inactivePort).ui.getToolTip().setLabel("");
+            metadata.outputs[inactivePort].value = null;
+            node.getOutputPort(activePort).ui.setLabel(itemName);
+            node.getOutputPort(activePort).ui.getToolTip().setLabel(itemName);
+            node.getOutputPort(inactivePort).ui.setLabel("");
+            node.getOutputPort(inactivePort).ui.getToolTip().setLabel("");
             node.setProgress(100);
             fileManagerWindow.close();
           }, this);
