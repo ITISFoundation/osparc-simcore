@@ -300,7 +300,7 @@ qx.Class.define("qxapp.components.form.Auto", {
       if (s.defaultValue) {
         s.set.value = qx.lang.Type.isNumber(s.defaultValue) ? String(s.defaultValue) : s.defaultValue;
       } else {
-        s.set.value = 0;
+        s.set.value = String(0);
       }
       this.__formCtrl.addBindingOptions(key,
         { // model2target
