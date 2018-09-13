@@ -101,11 +101,11 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
                 continue
             if "nodeUuid" in input_data and "output" in input_data:
                 input_node_uuid = input_data["nodeUuid"]
-
-                if pipeline_data[input_node_uuid]["key"].count("FileManager") == 0:
+                if pipeline_data[input_node_uuid]["key"].count("/dynamic/") == 0:
+                # if pipeline_data[input_node_uuid]["key"].count("FileManager") == 0:
                     if input_node_uuid not in dag_adjacency_list:
                         dag_adjacency_list[input_node_uuid] = []
-                    if node_uuid not in dag_adjacency_list[input_node_uuid]:
+                    if node_uuid not in dag_adjacency_list[input_node_uuid] and str(node_key).count("/dynamic/") == 0:
                         dag_adjacency_list[input_node_uuid].append(node_uuid)
             
         for output_key, output_data in node_outputs.items():
@@ -130,11 +130,12 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
         }
 
         # currently here a special case to handle the built-in file manager that should not be set as a task
-        if str(node_key).count("FileManager") > 0:
-            continue
+        if str(node_key).count("FileManager") == 0:
+            # TODO: SAN This is temporary. As soon as the services are converted this should be removed.
+            task = await api_converter.convert_task_to_old_version(task)
+        #     continue
 
-        # TODO: SAN This is temporary. As soon as the services are converted this should be removed.
-        task = await api_converter.convert_task_to_old_version(task)
+        
 
         tasks[node_uuid] = task
 
