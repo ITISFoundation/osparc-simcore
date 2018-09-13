@@ -30,7 +30,7 @@ build:
 	${DOCKER_COMPOSE} -f docker-compose.yml build
 
 rebuild:
-	${DOCKER_COMPOSE} -f docker-compose.yml build
+	${DOCKER_COMPOSE} -f docker-compose.yml build --no-cache
 
 up:
 	${DOCKER_COMPOSE} -f docker-compose.yml up
