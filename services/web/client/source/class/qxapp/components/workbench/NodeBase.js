@@ -207,7 +207,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
           if (status == 201) {
             const publishedPort = data["published_port"];
             const entryPointD = data["entry_point"];
-            const nodeId = data["node_id"];
+            const nodeId = data["service_uuid"];
             if (nodeId !== this.getNodeId()) {
               return;
             }
