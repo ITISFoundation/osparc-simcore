@@ -49,7 +49,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     "LinkDragOver": "qx.event.type.Data",
     "LinkDrop": "qx.event.type.Data",
     "LinkDragEnd": "qx.event.type.Data",
-    "NodeMoving": "qx.event.type.Event"
+    "NodeMoving": "qx.event.type.Event",
+    "ShowViewer": "qx.event.type.Data"
   },
 
   members: {
@@ -217,7 +218,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
                 viewerButton: button
               });
               button.addListener("execute", function(e) {
-                this.getPropsWidget().fireDataEvent("ShowViewer", {
+                this.fireDataEvent("ShowViewer", {
                   url: srvUrl,
                   name: metaData.name,
                   nodeId: this.getNodeId()
