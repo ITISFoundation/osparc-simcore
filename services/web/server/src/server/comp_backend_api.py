@@ -82,7 +82,7 @@ async def async_request(method, session, url, data=None, timeout=10):
                 return await response.json()
         # TODO: else raise ValueError method not implemented?
 
-async def _parse_pipeline(pipeline_data):
+async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
     dag_adjacency_list = dict()
     tasks = dict()
     io_files = []
