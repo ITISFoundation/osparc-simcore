@@ -102,10 +102,11 @@ async def _parse_pipeline(pipeline_data):
             if "nodeUuid" in input_data and "output" in input_data:
                 input_node_uuid = input_data["nodeUuid"]
 
-                if input_node_uuid not in dag_adjacency_list:
-                    dag_adjacency_list[input_node_uuid] = []
-                if node_uuid not in dag_adjacency_list[input_node_uuid]:
-                    dag_adjacency_list[input_node_uuid].append(node_uuid)
+                if pipeline_data[input_node_uuid]["key"].count("FileManager") == 0:
+                    if input_node_uuid not in dag_adjacency_list:
+                        dag_adjacency_list[input_node_uuid] = []
+                    if node_uuid not in dag_adjacency_list[input_node_uuid]:
+                        dag_adjacency_list[input_node_uuid].append(node_uuid)
             
         for output_key, output_data in node_outputs.items():
             if not isinstance(output_data, dict):

@@ -124,9 +124,9 @@ def __get_service_sub_name(repository_name, service_prefix):
     _LOGGER.info("retrieved service sub name from repo %s : %s", repository_name, list_of_suffixes)
     return list_of_suffixes[last_suffix_index]
 
-def _get_repo_version_details(key, version):
+def _get_repo_version_details(repo_key, repo_tag):
     image_tags = {}
-    label_request = __registry_request(key + '/manifests/' + version)
+    label_request = __registry_request(repo_key + '/manifests/' + repo_tag)
     label_data = label_request.json()
     labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
     if labels:

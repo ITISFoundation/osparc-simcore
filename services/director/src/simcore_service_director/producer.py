@@ -288,7 +288,7 @@ def __prepare_runtime_parameters(docker_image_path, tag, service_uuid, docker_cl
         service_uuid)
     return docker_service_runtime_parameters
 
-def __create_services(docker_client, list_of_images, service_name, service_tag, service_uuid):
+def __create_services(docker_client, list_of_images, service_name, service_tag, service_uuid): # pylint: disable=R0915
     _LOGGER.debug("Start creating docker services for service %s", service_name)
 
     # if the service uses several docker images, a network needs to be setup to connect them together
