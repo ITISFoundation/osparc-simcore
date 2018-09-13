@@ -73,7 +73,7 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
       this.__dynamicViewer.removeAll();
       let viewerButton = node.getViewerButton();
       if (viewerButton) {
-        node.addListener("ShowViewer", function(e) {
+        node.addListenerOnce("ShowViewer", function(e) {
           const data = e.getData();
           this.fireDataEvent("ShowViewer", data);
         }, this);
