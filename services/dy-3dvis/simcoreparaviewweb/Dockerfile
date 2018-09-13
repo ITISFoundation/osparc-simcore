@@ -36,19 +36,6 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 # set python path
 ENV PYTHONPATH="/home/root/packages/packages/simcore-sdk/src:/home/root/packages/packages/s3wrapper/src"
 
-# Labels.
-ARG VCS_REF
-ARG BUILD_DATE
-LABEL org.label-schema.schema-version="1.0" \
-    org.label-schema.build-date=${BUILD_DATE} \
-    org.label-schema.url="https://www.itis.ethz.ch" \
-    org.label-schema.vcs-url="https://github.com/ITISFoundation/osparc-simcore" \
-    org.label-schema.vcs-ref=${VCS_REF} \
-    org.label-schema.vendor="IT'IS foundation"
-# service runtime settings
-LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 80}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
-LABEL simcore.service.bootsettings='[{"name": "entry_point", "type": "string", "value": "visualizer"}, {"name": "published_port", "type": "string", "value": "setport"}]'
-
 # copy start script
 ARG PORT
 ENV SERVER_PORT=$PORT
