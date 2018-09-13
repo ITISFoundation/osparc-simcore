@@ -142,7 +142,7 @@ async def _parse_pipeline(pipeline_data):
 
 async def _transfer_data(app, pipeline_id, io_files):
     if io_files:
-        _config = app["config"]["s3"]
+        _config = app["s3"]
 
         s3_client = S3Client(endpoint=_config['endpoint'], access_key=_config['access_key'], secret_key=_config['secret_key'])
         for io_file in io_files:
@@ -179,7 +179,7 @@ async def start_pipeline(request):
 
     _LOGGER.debug("Client calls start_pipeline with %s", request_data)
     _app = request.app["config"]
-    _LOGGER.debug("Parse pipeline")
+    _LOGGER.debug("Parse pipeline %s", _app)
     dag_adjacency_list, tasks, io_files = await _parse_pipeline(request_data["workbench"])
     _LOGGER.debug("Pipeline parsed")
     try:
