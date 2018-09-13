@@ -73,6 +73,7 @@ Class | Method | HTTP request | Description
 *UsersApi* | [**running_interactive_services_delete**](docs/UsersApi.md#running_interactive_services_delete) | **DELETE** /running_interactive_services/{service_uuid} | Stops and removes an interactive service from the oSparc platform
 *UsersApi* | [**running_interactive_services_get**](docs/UsersApi.md#running_interactive_services_get) | **GET** /running_interactive_services/{service_uuid} | Succesfully returns if a service with the defined uuid is up and running
 *UsersApi* | [**running_interactive_services_post**](docs/UsersApi.md#running_interactive_services_post) | **POST** /running_interactive_services | Starts an interactive service in the oSparc platform and returns its entrypoint
+*UsersApi* | [**services_by_key_version_get**](docs/UsersApi.md#services_by_key_version_get) | **GET** /services/{service_key}/{service_version} | Returns details of the selected service if available in the oSparc platform
 *UsersApi* | [**services_get**](docs/UsersApi.md#services_get) | **GET** /services | Lists available services in the oSparc platform
 
 
