@@ -75,7 +75,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       // Workaround for updating inputs
       if (data.name === "3d-viewer") {
-        let urlUpdate = "http://" + window.location.hostname + ":" + data.viewer.port + "/retrieve";
+        let urlUpdate = data.url + "/retrieve";
         let req = new qx.io.request.Xhr();
         req.set({
           url: urlUpdate,

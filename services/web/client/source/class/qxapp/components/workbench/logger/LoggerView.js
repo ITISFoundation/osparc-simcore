@@ -209,7 +209,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
 
     __createInitMsg: function() {
       const who = "System";
-      const what = "Logger intialized";
+      const what = "Logger initialized";
       this.debug(who, what);
     },
 

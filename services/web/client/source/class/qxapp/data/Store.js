@@ -47,6 +47,10 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getNodeMetaDataFromCache: function(nodeImageId) {
+      let metadata = this.getNodeMetaData(nodeImageId);
+      if (metadata) {
+        return metadata;
+      }
       let services = this.__servicesCacheBuiltIn.concat(this.__servicesCacheComputational);
       services = services.concat(this.__servicesCacheInteractive);
       for (let i=0; i<services.length; i++) {
