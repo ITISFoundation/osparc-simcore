@@ -33,10 +33,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
     });
 
-    let workbenchData = {};
-    if (projectId !== null) {
-      workbenchData = qxapp.dev.fake.Data.getProjectList()[projectId].workbench;
-    }
+    let workbenchData = this.__getProjectDocument(projectId);
     let workbench = this.__workbench = new qxapp.components.workbench.Workbench(workbenchData);
     this.add(workbench, 1);
 
@@ -77,8 +74,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__workbench.addWindowToDesktop(viewerWin);
 
       // Workaround for updating inputs
-      if (metadata.name === "3d-viewer") {
-        let urlUpdate = "http://" + window.location.hostname + ":" + metadata.viewer.port + "/retrieve";
+      if (data.name === "3d-viewer") {
+        let urlUpdate = data.url + "/retrieve";
         let req = new qx.io.request.Xhr();
         req.set({
           url: urlUpdate,
@@ -86,14 +83,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         });
         req.send();
       }
-
-      const slotName = "openDynamic";
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-      let args = {
-        serviceName: data.name,
-        nodeId: data.nodeId
-      };
-      socket.emit(slotName, args);
     }, this);
 
     // this.__settingsView.addListener("NodeProgress", function(e) {
@@ -123,6 +112,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __settingsWidth: null,
     __transDeco: null,
     __splitter: null,
+    __projectId: null,
 
     showSettings: function(showSettings) {
       if (showSettings) {
@@ -142,6 +132,18 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__splitter.set({
         decorator: this.__transDeco
       });
+    },
+
+    __getProjectDocument: function(projectId) {
+      let workbenchData = {};
+      if (projectId === null || projectId === undefined) {
+        projectId = qxapp.utils.Utils.uuidv4();
+      } else {
+        workbenchData = qxapp.data.Store.getInstance().getProjectList()[projectId].workbench;
+      }
+      this.__projectId = projectId;
+
+      return workbenchData;
     },
 
     __createBrowserWindow: function(url, name) {

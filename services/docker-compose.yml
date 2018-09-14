@@ -2,7 +2,8 @@ version: '3.4'
 services:
   director:
     build:
-      context: ./director
+      context: ../
+      dockerfile: services/director/Dockerfile
       target: production
     ports:
       - '8001:8001'
@@ -22,6 +23,7 @@ services:
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - RUN_DOCKER_ENGINE_ROOT=${RUN_DOCKER_ENGINE_ROOT}
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
   #--------------------------------------------------------------------

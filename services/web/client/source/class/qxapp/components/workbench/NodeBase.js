@@ -4,7 +4,7 @@ const portHeight = 16;
 qx.Class.define("qxapp.components.workbench.NodeBase", {
   extend: qx.ui.window.Window,
 
-  construct: function(nodeImageId, uuid, nodeData) {
+  construct: function(nodeImageId, uuid) {
     this.base();
 
     this.set({
@@ -21,52 +21,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       nodeImageId: nodeImageId,
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
     });
-
-
-    let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
-    this.setLayout(nodeLayout);
-
-    let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-    this.add(inputsOutputsLayout, {
-      flex: 1
-    });
-
-    let inputsBox = new qx.ui.layout.VBox(5);
-    this.__inputPortsUI = new qx.ui.container.Composite(inputsBox);
-    inputsOutputsLayout.add(this.__inputPortsUI, {
-      width: "50%"
-    });
-
-    let outputsBox = new qx.ui.layout.VBox(5);
-    this.__outputPortsUI = new qx.ui.container.Composite(outputsBox);
-    inputsOutputsLayout.add(this.__outputPortsUI, {
-      width: "50%"
-    });
-
-
-    let progressBox = new qx.ui.container.Composite(new qx.ui.layout.Basic());
-    progressBox.setMinWidth(nodeWidth-20);
-
-    this.__progressBar = new qx.ui.indicator.ProgressBar();
-    this.__progressBar.setWidth(nodeWidth-20);
-    progressBox.add(this.__progressBar, {
-      top: 0,
-      left: 0
-    });
-
-    this.__progressLabel = new qx.ui.basic.Label("0%");
-    progressBox.add(this.__progressLabel, {
-      top: 3,
-      left: nodeWidth/2 - 20
-    });
-
-    this.add(progressBox);
-    let metaData = qxapp.dev.fake.Data.getNodeMap()[nodeImageId];
-    if (metaData) {
-      this.__populateNode(metaData, nodeData);
-    } else {
-      console.error("Invalid ImageID - Not populating "+nodeImageId);
-    }
   },
 
   properties: {
@@ -95,7 +49,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     "LinkDragOver": "qx.event.type.Data",
     "LinkDrop": "qx.event.type.Data",
     "LinkDragEnd": "qx.event.type.Data",
-    "NodeMoving": "qx.event.type.Event"
+    "NodeMoving": "qx.event.type.Event",
+    "ShowViewer": "qx.event.type.Data"
   },
 
   members: {
@@ -112,16 +67,71 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return this.__metaData;
     },
 
+    createNodeLayout: function(nodeData) {
+      let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
+      this.setLayout(nodeLayout);
+
+      let inputsOutputsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      this.add(inputsOutputsLayout, {
+        flex: 1
+      });
+
+      let inputsBox = new qx.ui.layout.VBox(5);
+      this.__inputPortsUI = new qx.ui.container.Composite(inputsBox);
+      inputsOutputsLayout.add(this.__inputPortsUI, {
+        width: "50%"
+      });
+
+      let outputsBox = new qx.ui.layout.VBox(5);
+      this.__outputPortsUI = new qx.ui.container.Composite(outputsBox);
+      inputsOutputsLayout.add(this.__outputPortsUI, {
+        width: "50%"
+      });
+
+
+      let progressBox = new qx.ui.container.Composite(new qx.ui.layout.Basic());
+      progressBox.setMinWidth(nodeWidth-20);
+
+      this.__progressBar = new qx.ui.indicator.ProgressBar();
+      this.__progressBar.setWidth(nodeWidth-20);
+      progressBox.add(this.__progressBar, {
+        top: 0,
+        left: 0
+      });
+
+      this.__progressLabel = new qx.ui.basic.Label("0%");
+      progressBox.add(this.__progressLabel, {
+        top: 3,
+        left: nodeWidth/2 - 20
+      });
+
+      this.add(progressBox);
+
+      const nodeImageId = this.getNodeImageId();
+      let store = qxapp.data.Store.getInstance();
+      let metaData = store.getNodeMetaDataFromCache(nodeImageId);
+      if (metaData) {
+        this.__populateNode(metaData, nodeData);
+      } else {
+        console.error("Invalid ImageID - Not populating "+nodeImageId);
+      }
+    },
+
     getInputPorts: function() {
       return this.__inputPorts;
     },
-
+    getInputPort: function(portId) {
+      return this.__inputPorts[portId];
+    },
     getOutputPorts: function() {
       return this.__outputPorts;
     },
+    getOutputPort: function(portId) {
+      return this.__outputPorts[portId];
+    },
 
-    getProp: function(key) {
-      return this.getPropsWidget().getData()[key];
+    getInputValues: function() {
+      return this.getPropsWidget().getValues();
     },
 
     // override qx.ui.window.Window "move" event listener
@@ -158,7 +168,9 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.__createPorts("Input", metaData.inputs);
       this.__createPorts("Output", metaData.outputs);
       this.__addSettings(metaData.inputs);
-      this.__settingsForm.setData(nodeData.inputs);
+      if (nodeData) {
+        this.__settingsForm.setData(nodeData.inputs);
+      }
     },
 
     __addSettings: function(inputs) {
@@ -188,18 +200,29 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         const slotName = "startDynamic";
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
-          // FIXME this is not unique as multiple instances of this
-          // service could be starting up at the same time
-          if (val["service_uuid"] === this.getNodeId()) {
-            let portNumber = val["containers"][0].published_ports[0];
-            if (portNumber !== null) {
+          const {
+            data,
+            status
+          } = val;
+          if (status == 201) {
+            const publishedPort = data["published_port"];
+            const entryPointD = data["entry_point"];
+            const nodeId = data["service_uuid"];
+            if (nodeId !== this.getNodeId()) {
+              return;
+            }
+            if (publishedPort) {
               let button = new qx.ui.form.Button("Open Viewer");
-              const srvUrl = "http://" + window.location.hostname + ":" + portNumber;
+              let entryPoint = "";
+              if (entryPointD) {
+                entryPoint = "/" + entryPointD;
+              }
+              const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
               this.set({
                 viewerButton: button
               });
               button.addListener("execute", function(e) {
-                this.getPropsWidget().fireDataEvent("ShowViewer", {
+                this.fireDataEvent("ShowViewer", {
                   url: srvUrl,
                   name: metaData.name,
                   nodeId: this.getNodeId()
@@ -207,43 +230,17 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
               }, this);
               console.debug(metaData.name, "Service ready on " + srvUrl);
             }
+          } else {
+            console.error("Error starting dynamic service: ", data);
           }
         }, this);
         let data = {
-          serviceName: metaData.name,
+          serviceKey: metaData.key,
+          serviceVersion: metaData.version,
           nodeId: this.getNodeId()
         };
         socket.emit(slotName, data);
       }
-    },
-
-
-
-    getPort: function(portId) {
-      const nInPorts = this.getInputPorts().length;
-      for (let i = 0; i < nInPorts; i++) {
-        if (this.getInputPorts()[i].portId === portId) {
-          return this.getInputPorts()[i];
-        }
-      }
-      const nOutPorts = this.getOutputPorts().length;
-      for (let i = 0; i < nOutPorts; i++) {
-        if (this.getOutputPorts()[i].portId === portId) {
-          return this.getOutputPorts()[i];
-        }
-      }
-      return null;
-    },
-
-    getPortByIndex: function(isInput, portIdx) {
-      const nInPorts = this.getInputPorts().length;
-      const nOutPorts = this.getOutputPorts().length;
-      if (isInput && portIdx < nInPorts) {
-        return this.getInputPorts()[portIdx];
-      } else if (!isInput && portIdx < nOutPorts) {
-        return this.getOutputPorts()[portIdx];
-      }
-      return null;
     },
 
     __createPorts: function(type, ports) {
@@ -302,7 +299,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         alignX: alignX,
         allowGrowX: false
       });
-      // label.ui.portId = portId;
+      label.ui.portId = portId;
 
       var tooltip = new qx.ui.tooltip.ToolTip(portData.description, icon);
       tooltip.setShowTimeout(50);

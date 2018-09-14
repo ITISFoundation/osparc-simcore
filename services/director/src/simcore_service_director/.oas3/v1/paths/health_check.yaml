@@ -1,0 +1,19 @@
+get:
+  tags: 
+    - users
+  summary: Service health-check endpoint
+  description: Some general information on the API and state of the service behind
+  operationId: root_get
+  responses:
+    "200":
+      description: Service information
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped'
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
