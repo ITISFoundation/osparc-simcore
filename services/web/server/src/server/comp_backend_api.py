@@ -95,17 +95,23 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
         _LOGGER.debug("node %s:%s has inputs: \n%s\n outputs: \n%s", node_key, node_version, node_inputs, node_outputs)
         #TODO: we should validate all these things before processing...
 
-        # build adjacency list
+        # build computational adjacency list for sidecar
         for input_data in node_inputs.values():
+            is_node_computational = (str(node_key).count("/comp/") > 0)
+            # add it to the list
+            if node_uuid not in dag_adjacency_list:
+                dag_adjacency_list[node_uuid] = []
+            
+            # check for links
             if not isinstance(input_data, dict):
                 continue
             if "nodeUuid" in input_data and "output" in input_data:
                 input_node_uuid = input_data["nodeUuid"]
-                if pipeline_data[input_node_uuid]["key"].count("/dynamic/") == 0:
-                # if pipeline_data[input_node_uuid]["key"].count("FileManager") == 0:
+                is_predecessor_computational = (pipeline_data[input_node_uuid]["key"].count("/comp/") > 0)
+                if is_predecessor_computational:
                     if input_node_uuid not in dag_adjacency_list:
                         dag_adjacency_list[input_node_uuid] = []
-                    if node_uuid not in dag_adjacency_list[input_node_uuid] and str(node_key).count("/dynamic/") == 0:
+                    if node_uuid not in dag_adjacency_list[input_node_uuid] and is_node_computational:
                         dag_adjacency_list[input_node_uuid].append(node_uuid)
             
         for output_key, output_data in node_outputs.items():

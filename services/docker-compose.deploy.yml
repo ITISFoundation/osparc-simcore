@@ -18,6 +18,8 @@ services:
       - POSTGRES_USER=simcore
       - POSTGRES_PASSWORD=simcore
       - POSTGRES_DB=simcoredb
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
       - RABBITMQ_USER=simcore
       - RABBITMQ_PASSWORD=simcore
       - RABBITMQ_PROGRESS_CHANNEL=comp.backend.channels.progress
@@ -41,6 +43,8 @@ services:
       - POSTGRES_USER=simcore
       - POSTGRES_PASSWORD=simcore
       - POSTGRES_DB=simcoredb
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
       - RABBITMQ_USER=simcore
       - RABBITMQ_PASSWORD=simcore
       - RABBITMQ_PROGRESS_CHANNEL=comp.backend.channels.progress
@@ -71,6 +75,8 @@ services:
       - POSTGRES_USER=simcore
       - POSTGRES_PASSWORD=simcore
       - POSTGRES_DB=simcoredb
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
       - RABBITMQ_USER=simcore
       - RABBITMQ_PASSWORD=simcore
       - RABBITMQ_PROGRESS_CHANNEL=comp.backend.channels.progress
