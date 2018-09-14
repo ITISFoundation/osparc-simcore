@@ -20,7 +20,6 @@ from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from . import api_converter
 from .comp_backend_worker import celery
 
 # TODO: this should be coordinated with postgres options from config/server.yaml
@@ -134,14 +133,6 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
                 "tag":node_version
             }
         }
-
-        # currently here a special case to handle the built-in file manager that should not be set as a task
-        if str(node_key).count("FileManager") == 0:
-            # TODO: SAN This is temporary. As soon as the services are converted this should be removed.
-            task = await api_converter.convert_task_to_old_version(task)
-        #     continue
-
-        
 
         tasks[node_uuid] = task
 
