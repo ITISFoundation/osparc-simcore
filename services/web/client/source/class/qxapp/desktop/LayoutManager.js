@@ -9,6 +9,8 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       layout: new qx.ui.layout.VBox()
     });
 
+    this.__nodeCheck();
+
     this.__navBar = this.__createNavigationBar();
     this.__navBar.setHeight(100);
     this.add(this.__navBar);
@@ -60,6 +62,38 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       let navBar = new qxapp.desktop.NavigationBar();
       navBar.setMainViewCaption("Dashboard");
       return navBar;
+    },
+
+    __nodeCheck: function() {
+      /** a little ajv test */
+      let nodeCheck = new qx.io.request.Xhr("/resource/qxapp/node-meta-v0.0.1.json");
+      nodeCheck.addListener("success", e => {
+        let data = e.getTarget().getResponse();
+        try {
+          let ajv = new qxapp.wrappers.Ajv(data);
+          let store = qxapp.data.Store.getInstance();
+          [
+            "builtInServicesRegistered",
+            "servicesRegistered",
+            "interactiveServicesRegistered"
+          ].forEach(event => {
+            store.addListener(event, ev => {
+              const services = ev.getData();
+              for (let i = 0; i < services.length; i++) {
+                const service = services[i];
+                let check = ajv.validate(service);
+                console.log("services validation result " + service.key + ":", check);
+              }
+            }, this);
+          });
+          store.getBuiltInServicesAsync();
+          store.getComputationalServices();
+          store.getInteractiveServices();
+        } catch (err) {
+          console.error(err);
+        }
+      });
+      nodeCheck.send();
     }
   }
 });

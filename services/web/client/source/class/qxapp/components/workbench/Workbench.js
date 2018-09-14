@@ -204,6 +204,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         node.moveTo(position.x, position.y);
       }
       this.addWindowToDesktop(node);
+      this.__nodes.push(node);
 
       node.addListener("NodeMoving", function() {
         this.__updateLinks(node);

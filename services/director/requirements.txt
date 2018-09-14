@@ -1,3 +1,0 @@
-docker==3.3.0
-Flask==1.0.1
-tenacity==4.12.0

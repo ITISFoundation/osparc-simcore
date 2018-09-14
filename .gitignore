@@ -123,6 +123,8 @@ services/docker-compose.swarm.yml
 *secret*
 *ignore*
 
+# Any output directory
+*output/
 # backup files
 *~
 *.bak

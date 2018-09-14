@@ -5,10 +5,11 @@
 # pylint: disable=C0103
 import logging
 
-from aiohttp import web
 import async_timeout
+from aiohttp import web
+from simcore_director_sdk.rest import ApiException
 
-from . import director_proxy
+from . import director_sdk
 
 _LOGGER = logging.getLogger(__file__)
 
@@ -42,6 +43,13 @@ async def get_computational_services(request):
     """
     _LOGGER.debug(request)
 
-    repo_list = director_proxy.retrieve_computational_services()
-
-    return web.json_response(repo_list)
+    try:
+        director = director_sdk.get_director()
+        services = await director.services_get(service_type="computational")
+        return web.json_response(services.to_dict())
+    except ApiException as exc:
+        _LOGGER.exception("Api Error while accessing director")
+        return web.json_response(exc.reason, status=exc.status)
+    except Exception:
+        _LOGGER.exception("Error while retrieving computational services")
+        raise

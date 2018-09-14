@@ -7,24 +7,20 @@ qx.Class.define("qxapp.data.Converters", {
       let metaData = {};
       [
         "key",
+        "version",
+        "type",
         "name",
-        "tag",
         "description",
         "authors",
         "contact",
         "inputs",
-        "outputs",
-        "settings"
+        "outputs"
       ].forEach(field => {
         metaData[field] = null;
         if (Object.prototype.hasOwnProperty.call(data, field)) {
           metaData[field] = data[field];
         }
       });
-      // for dynamic services
-      if (data.viewer) {
-        metaData["viewer"] = data["viewer"];
-      }
       return metaData;
     }
   }

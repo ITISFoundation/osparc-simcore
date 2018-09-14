@@ -60,7 +60,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     "LinkDragOver": "qx.event.type.Data",
     "LinkDrop": "qx.event.type.Data",
     "LinkDragEnd": "qx.event.type.Data",
-    "NodeMoving": "qx.event.type.Event"
+    "NodeMoving": "qx.event.type.Event",
+    "ShowViewer": "qx.event.type.Data"
   },
 
   members: {
@@ -187,18 +188,29 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         const slotName = "startDynamic";
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
-          // FIXME this is not unique as multiple instances of this
-          // service could be starting up at the same time
-          if (val["service_uuid"] === this.getNodeId()) {
-            let portNumber = val["containers"][0].published_ports[0];
-            if (portNumber !== null) {
+          const {
+            data,
+            status
+          } = val;
+          if (status == 201) {
+            const publishedPort = data["published_port"];
+            const entryPointD = data["entry_point"];
+            const nodeId = data["service_uuid"];
+            if (nodeId !== this.getNodeId()) {
+              return;
+            }
+            if (publishedPort) {
               let button = new qx.ui.form.Button("Open Viewer");
-              const srvUrl = "http://" + window.location.hostname + ":" + portNumber;
+              let entryPoint = "";
+              if (entryPointD) {
+                entryPoint = "/" + entryPointD;
+              }
+              const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
               this.set({
                 viewerButton: button
               });
               button.addListener("execute", function(e) {
-                this.getPropsWidget().fireDataEvent("ShowViewer", {
+                this.fireDataEvent("ShowViewer", {
                   url: srvUrl,
                   name: metaData.name,
                   nodeId: this.getNodeId()
@@ -208,10 +220,13 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
               this.__logger.info(metaData.name, "Service ready");
               console.debug(metaData.name, "Service ready on " + srvUrl);
             }
+          } else {
+            console.error("Error starting dynamic service: ", data);
           }
         }, this);
         let data = {
-          serviceName: metaData.name,
+          serviceKey: metaData.key,
+          serviceVersion: metaData.version,
           nodeId: this.getNodeId()
         };
         socket.emit(slotName, data);

@@ -1,3 +1,15 @@
+FROM node:8.12.0 AS visuliazer
+WORKDIR /home/node
+RUN git clone --branch v3.1.9 https://github.com/Kitware/visualizer.git
+WORKDIR /home/node/visualizer
+COPY rebrand-osparc/to-be-copied .
+COPY rebrand-osparc/rebrand-osparc.patch rebrand-osparc.patch
+RUN git apply rebrand-osparc.patch
+RUN npm install
+RUN npm run build
+RUN npm link
+
+
 FROM kitware/paraviewweb:pvw-visualizer-osmesa-master  AS common
 
 LABEL maintainer="sanderegg"
@@ -9,6 +21,7 @@ RUN apt-get update && \
     apt-get install -y \
     git python3-pip
 
+COPY --from=visuliazer /home/node/visualizer/dist /opt/paraview/install/share/paraview-5.5/web/visualizer/www
 # define user
 #TODO: check with @crespo if this is correct
 # RUN useradd -m -U -u 8004 scu
@@ -35,19 +48,6 @@ RUN pip3 install --upgrade pip
 RUN pip3 install --no-cache-dir -r requirements.txt
 # set python path
 ENV PYTHONPATH="/home/root/packages/packages/simcore-sdk/src:/home/root/packages/packages/s3wrapper/src"
-
-# Labels.
-ARG VCS_REF
-ARG BUILD_DATE
-LABEL org.label-schema.schema-version="1.0" \
-    org.label-schema.build-date=${BUILD_DATE} \
-    org.label-schema.url="https://www.itis.ethz.ch" \
-    org.label-schema.vcs-url="https://github.com/ITISFoundation/osparc-simcore" \
-    org.label-schema.vcs-ref=${VCS_REF} \
-    org.label-schema.vendor="IT'IS foundation"
-# service runtime settings
-LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 80}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
-LABEL simcore.service.bootsettings='[{"name": "entry_point", "type": "string", "value": "visualizer"}, {"name": "published_port", "type": "string", "value": "setport"}]'
 
 # copy start script
 ARG PORT
