@@ -5,6 +5,8 @@ services:
       context: ../
       dockerfile: services/director/Dockerfile
       target: production
+      args:
+        - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
     ports:
       - '8001:8001'
     environment:
