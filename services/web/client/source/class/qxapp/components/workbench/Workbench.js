@@ -946,7 +946,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let node = this.__getNode(nodeId);
       if (node) {
         node.setProgress(progress);
-      }      
+      }
     },
 
     __selectedItemChanged: function(newID) {
