@@ -222,6 +222,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchMini", {
       p2 = node2.getLinkPoint(port2);
       // hack to place the arrow-head properly
       p2[0] -= 6;
+      p2[0] += 21;
       return [p1, p2];
     },
 
