@@ -253,6 +253,67 @@ qx.Class.define("qxapp.data.Store", {
             }
           ];
         }
+        case "service/dynamic/itis/s4l/Simulator/LF/Boundary-0.0.0": {
+          return [
+            {
+              name: "Dirichlet",
+              uuid: "Dirichlet-UUID",
+              properties: {
+                "constantPotential": {
+                  displayOrder: 0,
+                  label: "Constant Potential",
+                  unit: "V",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "phase": {
+                  displayOrder: 1,
+                  label: "Phase",
+                  unit: "deg",
+                  type: "number",
+                  defaultValue: 0
+                }
+              }
+            }, {
+              name: "Neumann",
+              uuid: "Neumann-UUID",
+              properties: {
+                "normalDerivative": {
+                  displayOrder: 0,
+                  label: "Normal Derivative",
+                  unit: "V/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "phase": {
+                  displayOrder: 1,
+                  label: "Phase",
+                  unit: "deg",
+                  type: "number",
+                  defaultValue: 0
+                }
+              }
+            }, {
+              name: "Flux",
+              uuid: "Flux-UUID",
+              properties: {
+                "constantFlux": {
+                  displayOrder: 0,
+                  label: "Constant Flux",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "phase": {
+                  displayOrder: 1,
+                  label: "Phase",
+                  unit: "deg",
+                  type: "number",
+                  defaultValue: 0
+                }
+              }
+            }
+          ];
+        }
       }
       return [];
     },
