@@ -6,7 +6,7 @@ It is currently available as an auto-generated python package but could be easil
 
 ## Usage
 
-pip install -v  git+https://github.com/ITISFoundation/osparc-simcore.git@director-sdk#subdirectory=packages/director-sdk/python
+pip install -v  git+https://github.com/ITISFoundation/osparc-simcore.git@master#subdirectory=packages/director-sdk/python
 
 ## Development
 
