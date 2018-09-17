@@ -123,6 +123,10 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
       store.getInteractiveServices();
     },
 
+    __getServiceNameInList: function(service) {
+      return (service.name + " " + service.version);
+    },
+
     __updateCompatibleList: function() {
       let newData = [];
       if (this.__contextNodeId !== null && this.__contextPort !== null) {
@@ -131,7 +135,8 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
             let outputsMap = this.__allServices[i].outputs;
             for (let key in outputsMap) {
               if (outputsMap[key].type === this.__contextPort.portType) {
-                newData.push(this.__allServices[i].name);
+                const listName = this.__getServiceNameInList(this.__allServices[i]);
+                newData.push(listName);
                 break;
               }
             }
@@ -139,7 +144,8 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
             let inputsMap = this.__allServices[i].inputs;
             for (let key in inputsMap) {
               if (inputsMap[key].type === this.__contextPort.portType) {
-                newData.push(this.__allServices[i].name);
+                const listName = this.__getServiceNameInList(this.__allServices[i]);
+                newData.push(listName);
                 break;
               }
             }
@@ -147,7 +153,8 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
         }
       } else {
         for (let i = 0; i < this.__allServices.length; i++) {
-          newData.push(this.__allServices[i].name);
+          const listName = this.__getServiceNameInList(this.__allServices[i]);
+          newData.push(listName);
         }
       }
       this.__setNewData(newData);
@@ -171,7 +178,8 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
       let selection = this.__list.getSelection();
       let selectedLabel = selection[0].getLabel();
       for (let i = 0; i < this.__allServices.length; i++) {
-        if (selectedLabel === this.__allServices[i].name) {
+        const listName = this.__getServiceNameInList(this.__allServices[i]);
+        if (selectedLabel === listName) {
           const eData = {
             service: this.__allServices[i],
             contextNodeId: this.__contextNodeId,
