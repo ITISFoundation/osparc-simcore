@@ -10,6 +10,10 @@ pip install -v  git+https://github.com/ITISFoundation/osparc-simcore.git@master#
 
 Instructions to use the package: [director-sdk](https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/director-sdk/python/README.md)
 
+## Example code
+
+see [sample.py](https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/director-sdk/sample.py)
+
 ## Development
 
 No development as the code is automatically generated.
