@@ -8,6 +8,8 @@ It is currently available as an auto-generated python package but could be easil
 
 pip install -v  git+https://github.com/ITISFoundation/osparc-simcore.git@master#subdirectory=packages/director-sdk/python
 
+Instructions to use the package: [director-sdk](https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/director-sdk/python/README.md)
+
 ## Development
 
 No development as the code is automatically generated.
