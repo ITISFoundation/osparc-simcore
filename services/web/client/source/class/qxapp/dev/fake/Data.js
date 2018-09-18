@@ -286,7 +286,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
         }
       ];
     },
-
     getUsername: function() {
       return "bizzy";
     },

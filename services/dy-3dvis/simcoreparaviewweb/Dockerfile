@@ -1,3 +1,15 @@
+FROM node:8.12.0 AS visuliazer
+WORKDIR /home/node
+RUN git clone --branch v3.1.9 https://github.com/Kitware/visualizer.git
+WORKDIR /home/node/visualizer
+COPY rebrand-osparc/to-be-copied .
+COPY rebrand-osparc/rebrand-osparc.patch rebrand-osparc.patch
+RUN git apply rebrand-osparc.patch
+RUN npm install
+RUN npm run build
+RUN npm link
+
+
 FROM kitware/paraviewweb:pvw-visualizer-osmesa-master  AS common
 
 LABEL maintainer="sanderegg"
@@ -9,6 +21,7 @@ RUN apt-get update && \
     apt-get install -y \
     git python3-pip
 
+COPY --from=visuliazer /home/node/visualizer/dist /opt/paraview/install/share/paraview-5.5/web/visualizer/www
 # define user
 #TODO: check with @crespo if this is correct
 # RUN useradd -m -U -u 8004 scu
