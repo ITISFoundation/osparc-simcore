@@ -728,8 +728,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     updateProgress: function(nodeId, progress) {
-      let node = this.getNode(nodeId);
-      node.setProgress(progress);
+      let node = this.__getNode(nodeId);
+      if (node) {
+        node.setProgress(progress);
+      }
     },
 
     __selectedItemChanged: function(newID) {

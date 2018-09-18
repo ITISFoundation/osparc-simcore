@@ -6,7 +6,13 @@ It is currently available as an auto-generated python package but could be easil
 
 ## Usage
 
-pip install -v  git+https://github.com/ITISFoundation/osparc-simcore.git@director-sdk#subdirectory=packages/director-sdk/python
+pip install -v  git+https://github.com/ITISFoundation/osparc-simcore.git@master#subdirectory=packages/director-sdk/python
+
+Instructions to use the package: [director-sdk](https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/director-sdk/python/README.md)
+
+## Example code
+
+see [sample.py](https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/director-sdk/sample.py)
 
 ## Development
 
