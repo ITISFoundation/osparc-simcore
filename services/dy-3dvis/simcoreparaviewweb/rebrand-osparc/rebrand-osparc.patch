@@ -1,0 +1,147 @@
+diff --git a/dist/index.html b/dist/index.html
+index 96df3ae..a495382 100644
+--- a/dist/index.html
++++ b/dist/index.html
+@@ -4,7 +4,7 @@
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+     <link rel="icon" type="image/png" href="favicon-32x32.png">
+-    <title>ParaViewWeb Visualizer</title>
++    <title>oSPARC PostPro</title>
+   </head>
+   <body>
+     <div class='content'></div>
+diff --git a/server/pvw-visualizer.py b/server/pvw-visualizer.py
+index 6efe5de..8f20412 100644
+--- a/server/pvw-visualizer.py
++++ b/server/pvw-visualizer.py
+@@ -192,7 +192,7 @@ class _VisualizerServer(pv_wslink.PVServerProtocol):
+         self.registerVtkWebProtocol(pv_protocols.ParaViewWebStartupPluginLoader(_VisualizerServer.plugins))
+         self.registerVtkWebProtocol(pv_protocols.ParaViewWebFileListing(_VisualizerServer.dataDir, "Home", _VisualizerServer.excludeRegex, _VisualizerServer.groupRegex))
+         self.registerVtkWebProtocol(pv_protocols.ParaViewWebProxyManager(allowedProxiesFile=_VisualizerServer.proxies, baseDir=_VisualizerServer.dataDir, fileToLoad=_VisualizerServer.fileToLoad, allowUnconfiguredReaders=_VisualizerServer.allReaders))
+-        self.registerVtkWebProtocol(pv_protocols.ParaViewWebColorManager(pathToColorMaps=_VisualizerServer.colorPalette, showBuiltin=_VisualizerServer.showBuiltin))
++        self.registerVtkWebProtocol(pv_protocols.ParaViewWebColorManager(pathToColorMaps=_VisualizerServer.colorPalette))
+         self.registerVtkWebProtocol(pv_protocols.ParaViewWebMouseHandler())
+         self.registerVtkWebProtocol(pv_protocols.ParaViewWebViewPort(_VisualizerServer.viewportScale, _VisualizerServer.viewportMaxWidth, _VisualizerServer.viewportMaxHeight))
+         self.registerVtkWebProtocol(pv_protocols.ParaViewWebPublishImageDelivery(decode=False))
+@@ -212,7 +212,7 @@ class _VisualizerServer(pv_wslink.PVServerProtocol):
+ 
+         # Disable interactor-based render calls
+         simple.GetRenderView().EnableRenderOnInteraction = 0
+-        simple.GetRenderView().Background = [0,0,0]
++        simple.GetRenderView().Background = [0.246,0.246,0.246]
+ 
+         # ProxyManager helper
+         pxm = simple.servermanager.ProxyManager()
+diff --git a/src/MainView.js b/src/MainView.js
+index 2182e0d..311c71f 100644
+--- a/src/MainView.js
++++ b/src/MainView.js
+@@ -117,9 +117,14 @@ export class Visualizer extends React.Component {
+                 height="34px"
+                 width="34px"
+                 icon={logo}
+-                alt="ParaViewWeb Visualizer"
++                alt="oSPARC PostPro"
+               />
+-              Visualizer
++              <img
++                src="osparc-white-small.png"
++                alt="oSPARC PostPro"
++                height="34"
++              />
++              powered by ParaView + Visualizer
+             </div>
+             <ControlPanel
+               className={this.state.menuVisible ? style.menu : style.hiddenMenu}
+diff --git a/src/app.js b/src/app.js
+index d9120a9..3f0bfc1 100644
+--- a/src/app.js
++++ b/src/app.js
+@@ -5,7 +5,7 @@ import React from 'react';
+ import ReactDOM from 'react-dom';
+ 
+ import vtkURLExtract from 'vtk.js/Sources/Common/Core/URLExtract';
+-import ProgressLoaderWidget from 'paraviewweb/src/React/Widgets/ProgressLoaderWidget';
++import ProgressLoaderWidgetOsparc from './panels/ProgressLoaderWidgetOsparc';
+ 
+ import network from './network';
+ import setup from './setup';
+@@ -29,11 +29,11 @@ function start() {
+   );
+ }
+ 
+-function loading(message = 'Loading ParaView...') {
++function loading(message = 'Loading oSPARC PostPro') {
+   // Mount UI
+   const container = document.querySelector('.content');
+   ReactDOM.unmountComponentAtNode(container);
+-  ReactDOM.render(<ProgressLoaderWidget message={message} />, container);
++  ReactDOM.render(<ProgressLoaderWidgetOsparc message={message} />, container);
+ }
+ 
+ export function connect(config = {}) {
+diff --git a/src/logo.isvg b/src/logo.isvg
+index 1f31590..4adce33 100644
+--- a/src/logo.isvg
++++ b/src/logo.isvg
+@@ -1,11 +1,11 @@
+ <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+ <svg viewBox="0 0 128 128" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+-    <title>ParaViewWeb</title>
++    <title>oSPARC PostPro</title>
+     <g class="logo-container-outer" fill-rule="evenodd">
+         <g id="ParaViewWeb" class="logo-container-inner">
+-            <polygon class="pvw_1" points="25.4298056 108 13 108 20.5701944 20 48 20"></polygon>
+-            <polygon class="pvw_2" points="59.4298056 108 32 108 54 50 68 50"></polygon>
+-            <polygon class="pvw_3" points="78 108 66 108 88.5701944 20 116 20"></polygon>
++            <polygon class="pvw_1" points="30 110 10 110 10 60 30 60"></polygon>
++            <polygon class="pvw_2" points="60 110 40 110 40 40 60 40"></polygon>
++            <polygon class="pvw_3" points="90 110 70 110 70 20 90 20"></polygon>
+         </g>
+     </g>
+ </svg>
+diff --git a/style/MainView.mcss b/style/MainView.mcss
+index 5acc169..6e3570b 100644
+--- a/style/MainView.mcss
++++ b/style/MainView.mcss
+@@ -19,7 +19,7 @@
+ }
+ 
+ .topBar {
+-    background-color: #00bcd4;
++    background-color: rgba(32,32,32,0.4);
+     color: white;
+     font-size: 30px;
+ 
+@@ -53,6 +53,7 @@
+ .toggleMenu {
+     font-family: RobotoDraft, Roboto, sans-serif;
+     font-weight: 400;
++    font-size: 12px;
+ 
+     display: flex;
+     align-items: center;
+@@ -185,19 +186,19 @@
+ 
+ .networkActive :global(.pvw_1) {
+   animation: redTransition 0.3s ease infinite;
+-  fill: #000;
++  fill: #f00;
+ }
+ 
+ .networkActive :global(.pvw_2) {
+   animation: greenTransition 0.3s ease infinite;
+   animation-delay: 0.1s;
+-  fill: #000;
++  fill: #f00;
+ }
+ 
+ .networkActive :global(.pvw_3) {
+   animation: blueTransition 0.3s ease infinite;
+   animation-delay: 0.2s;
+-  fill: #000;
++  fill: #f00;
+ }
+ 
+ input:focus {
