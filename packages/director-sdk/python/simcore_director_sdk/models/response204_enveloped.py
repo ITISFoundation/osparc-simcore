@@ -41,7 +41,7 @@ class Response204Enveloped(object):
         'status': 'status'
     }
 
-    def __init__(self, data=None, status=None):  # noqa: E501
+    def __init__(self, data='null', status=204):  # noqa: E501
         """Response204Enveloped - a model defined in OpenAPI"""  # noqa: E501
 
         self._data = None

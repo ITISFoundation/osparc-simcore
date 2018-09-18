@@ -8,12 +8,14 @@ export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 export RUN_DOCKER_ENGINE_ROOT=1
 # Windows does not have these things defined... but they are needed to execute a local swarm
-export DOCKER_GID=1001
+export DOCKER_GID=1042
 export HOST_GID=1000
 else
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 export RUN_DOCKER_ENGINE_ROOT=0
+export DOCKER_GID=1042
+export HOST_GID=1000
 # TODO: Add a meaningfull call to retrieve the local docker group ID and the user ID in linux.
 endif
 
@@ -102,7 +104,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.11
+PLATFORM_VERSION=3.13
 
 push_platform_images:
 	${DOCKER} login masu.speag.com

@@ -58,6 +58,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     this.__desktop.add(this.__logger);
 
     this.__nodes = [];
+    this.__nodeMap = {};
     this.__links = [];
 
     let loggerButton = this.__getShowLoggerButton();
@@ -116,6 +117,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
   members: {
     __nodes: null,
+    __nodeMap: null,
     __links: null,
     __desktop: null,
     __svgWidget: null,
@@ -944,7 +946,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     updateProgress: function(nodeId, progress) {
       let node = this.__getNode(nodeId);
-      node.setProgress(progress);
+      if (node) {
+        node.setProgress(progress);
+      }
     },
 
     __selectedItemChanged: function(newID) {
