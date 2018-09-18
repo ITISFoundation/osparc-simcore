@@ -99,7 +99,7 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
         for input_data in node_inputs.values():
             is_node_computational = (str(node_key).count("/comp/") > 0)
             # add it to the list
-            if node_uuid not in dag_adjacency_list:
+            if is_node_computational and node_uuid not in dag_adjacency_list:
                 dag_adjacency_list[node_uuid] = []
             
             # check for links
