@@ -326,7 +326,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               },
               position: {
                 x: 400,
-                y: 150
+                y: 250
               }
             }
           }
