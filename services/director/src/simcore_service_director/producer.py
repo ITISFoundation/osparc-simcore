@@ -284,7 +284,7 @@ def __prepare_runtime_parameters(docker_image_path, tag, service_uuid, docker_cl
     __add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
     __add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
     __set_service_name(docker_service_runtime_parameters,
-        registry_proxy.get_interactive_service_sub_name(docker_image_path),
+        registry_proxy.get_service_last_names(docker_image_path),
         service_uuid)
     return docker_service_runtime_parameters
 
@@ -369,7 +369,7 @@ def start_service(service_key, service_tag, service_uuid):
 
     # create services
     __login_docker_registry(docker_client)
-    service_name = registry_proxy.get_service_name(service_key, registry_proxy.INTERACTIVE_SERVICES_PREFIX)
+    service_name = registry_proxy.get_service_first_name(service_key)
     containers_meta_data = __create_services(docker_client, list_of_images, service_name, service_tag, service_uuid)
     # we return only the info of the main service
     return containers_meta_data[0]

@@ -126,8 +126,17 @@ services:
       - "9001:9000"
     command: server /data
   #--------------------------------------------------------------------
+  registry:
+    image: registry:2
+    ports:
+      - "5000:5000"
+    volumes: 
+      - registry:/var/lib/registry
+    
+  #--------------------------------------------------------------------
 volumes:
   input:
   output:
   log:
   postgres:
+  registry:

@@ -18,6 +18,7 @@ REGISTRY_AUTH = os.environ.get("REGISTRY_AUTH", False) in ["true", "True"]
 REGISTRY_USER = os.environ.get("REGISTRY_USER", "")
 REGISTRY_PW = os.environ.get("REGISTRY_PW", "")
 REGISTRY_URL = os.environ.get("REGISTRY_URL", "")
+REGISTRY_SSL = os.environ.get("REGISTRY_SSL", True)
 
 POSTGRES_ENDPOINT = os.environ.get("POSTGRES_ENDPOINT", "")
 POSTGRES_USER = os.environ.get("POSTGRES_USER", "")
