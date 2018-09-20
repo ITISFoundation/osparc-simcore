@@ -27,6 +27,30 @@ qx.Class.define("qxapp.data.Store", {
     __servicesCacheComputational: null,
     __servicesCacheInteractive: null,
 
+    __getMimeType: function(type) {
+      let match = type.match(/^data:([^/\s]+\/[^/;\s])/);
+      if (match) {
+        return match[1];
+      }
+      return null;
+    },
+
+    __matchPortType: function(typeA, typeB) {
+      if (typeA === typeB) {
+        return true;
+      }
+      let mtA = this.__getMimeType(typeA);
+      let mtB = this.__getMimeType(typeB);
+      return mtA && mtB &&
+        new qxapp.data.MimeType(mtA).match(new qxapp.data.MimeType(mtB));
+    },
+
+    arePortsCompatible: function(port1, port2) {
+      console.log("arePortsCompatible", port1, port2);
+      return this.__matchPortType(port1.portType, port2.portType) &&
+        (port1.isInput !== port2.isInput);
+    },
+
     getServices: function() {
       let services = {};
       services = Object.assign(services, this.getBuiltInServices());

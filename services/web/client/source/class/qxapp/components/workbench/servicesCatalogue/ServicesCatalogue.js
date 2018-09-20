@@ -134,7 +134,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
           if (this.__contextPort.isInput === true) {
             let outputsMap = this.__allServices[i].outputs;
             for (let key in outputsMap) {
-              if (outputsMap[key].type === this.__contextPort.portType) {
+              if (this.__arePortsCompatible(outputsMap[key], this.__contextPort)) {
                 const listName = this.__getServiceNameInList(this.__allServices[i]);
                 newData.push(listName);
                 break;
@@ -143,7 +143,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
           } else {
             let inputsMap = this.__allServices[i].inputs;
             for (let key in inputsMap) {
-              if (inputsMap[key].type === this.__contextPort.portType) {
+              if (this.__arePortsCompatible(inputsMap[key], this.__contextPort)) {
                 const listName = this.__getServiceNameInList(this.__allServices[i]);
                 newData.push(listName);
                 break;
@@ -158,6 +158,11 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
         }
       }
       this.__setNewData(newData);
+    },
+
+
+    __arePortsCompatible: function(port1, port2) {
+      return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
     },
 
     __setNewData: function(newData) {
