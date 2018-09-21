@@ -64,6 +64,7 @@ def test_retrieve_list_of_images_in_repo(docker_registry, push_services):
         list_of_images = registry_proxy.retrieve_list_of_images_in_repo(key)
         assert len(list_of_images["tags"]) == number
 
+@pytest.mark.skip(reason="SAN: this must be changed according to issue #222")
 def test_list_interactive_service_dependencies():
     # need to setup a fake registry to test this
     pass
