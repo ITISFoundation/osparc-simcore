@@ -5,7 +5,7 @@ import aio_pika
 
 from simcore_sdk.config.rabbit import eval_broker
 
-from .async_sio import SIO
+from .sockets import SIO
 
 log = logging.getLogger(__file__)
 SERVICE_NAME = 'rabbit'

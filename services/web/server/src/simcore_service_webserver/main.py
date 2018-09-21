@@ -11,7 +11,7 @@ from .rest import setup_rest
 from .session import setup_session
 from .statics import setup_statics
 from .computational_backend import setup_computational_backend
-from .async_sio import setup_sio
+from .sockets import setup_sio
 from .router import create_router
 
 

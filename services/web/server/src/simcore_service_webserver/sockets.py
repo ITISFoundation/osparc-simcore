@@ -1,10 +1,7 @@
-"""
-    Defines **async** handlers for socket.io server
-
+""" Defines **async** handlers for socket.io server
 
     SEE https://pypi.python.org/pypi/python-socketio
     SEE http://python-socketio.readthedocs.io/en/latest/
-
 """
 # pylint: disable=C0111
 # pylint: disable=W0703
@@ -45,7 +42,6 @@ async def get_interactive_services_handler(sid, data):
         log.exception("Error emitting retrieved services")
     except Exception:
         log.exception("Error while retrieving interactive services")
-
 
 
 @SIO.on("startDynamic")
@@ -93,8 +89,6 @@ async def retrieve_url_for_file(sid, data):
     except IOError:
         log.exception("Error emitting results")
 
-
-
 @SIO.on("listObjects")
 async def list_S3_objects(sid, data):
     log.debug("client %s requests objects in storage. Extra argument %s", sid, data)
@@ -117,8 +111,6 @@ async def list_S3_objects(sid, data):
     except IOError:
         log.exception("Error emitting results")
 
-
-
 @SIO.on("disconnect")
 async def disconnect(sid):
     log.debug("client %s disconnected", sid)
@@ -126,7 +118,6 @@ async def disconnect(sid):
         await interactive_services_manager.session_disconnected(sid)
     except Exception:
         log.exception("Error while disconnecting client")
-
 
 
 def setup_sio(app):
