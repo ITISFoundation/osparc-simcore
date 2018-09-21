@@ -4,6 +4,9 @@ import textwrap
 from pathlib import Path
 
 import docker
+from jsonschema import (SchemaError, 
+                        ValidationError, 
+                        validate)
 import pytest
 from pytest_docker import docker_ip, docker_services  # pylint:disable=W0611
 
@@ -36,19 +39,31 @@ def _create_base_image(base_dir, labels):
 def _create_service_description(service_type, name, tag):
     dummy_description_path = Path(__file__).parent / "dummy_service_description.json"
     with dummy_description_path.open() as file_pt:
-        description_dict = json.load(file_pt)
+        service_desc = json.load(file_pt)
 
     if service_type == "computational":
         service_key_type = "comp"
     elif service_type == "dynamic":
         service_key_type = "dynamic"
-    description_dict["key"] = "simcore/services/" + service_key_type + "/" + name
-    description_dict["version"] = tag
-    description_dict["type"] = service_type
+    service_desc["key"] = "simcore/services/" + service_key_type + "/" + name
+    service_desc["version"] = tag
+    service_desc["type"] = service_type
 
-    # SAN TODO: validate the schema here
-    
-    return description_dict
+    # validate service
+    try:
+        # TODO: use resources!
+        json_schema_path = Path(__file__).parent.parent.parent / "src/simcore_service_director/.oas3/v1/schemas/node-meta-v0.0.1.json"
+        with json_schema_path.open() as file_pt:
+            service_schema = json.load(file_pt)
+        validate(service_desc, service_schema)
+    except ValidationError:
+        _logger.exception("Node validation error:")
+        raise
+    except SchemaError:
+        _logger.exception("Schema validation error:")
+        raise
+
+    return service_desc
 
 def _create_docker_labels(service_description):
     docker_labels = {}
@@ -83,12 +98,11 @@ def _clean_registry(registry_url, list_of_images):
     for image in list_of_images:
         service_description = image["service_description"]
         # get the image digest
-        url = registry_url + "/v2/" + service_description["key"] + "/manifests/" + service_description["version"]
-        response = requests.request("GET", url, headers=request_headers)
-        print(response.headers)
+        url = "http://{host}/v2/{name}/manifests/{tag}".format(host=registry_url, name=service_description["key"], tag=service_description["version"])
+        response = requests.request("GET", url, headers=request_headers)        
         docker_content_digest = response.headers["Docker-Content-Digest"]
         # remove the image from the registry
-        url = registry_url + "/v2/" + service_description["key"] + "/manifests/" + docker_content_digest
+        url = "http://{host}/v2/{name}/manifests/{digest}".format(host=registry_url, name=service_description["key"], digest=docker_content_digest)
         response = requests.request("DELETE", url, headers=request_headers)
 
 # pylint:disable=redefined-outer-name
@@ -137,11 +151,12 @@ def push_services(docker_registry, tmpdir):
     list_of_pushed_images_tags = []
     def build_push_images(number_of_computational_services, number_of_interactive_services):        
         try:        
+            version = "2.3."
             for image_index in range(0, number_of_computational_services):                
-                image = _build_push_image(tmp_dir, registry_url, "computational", "test", str(image_index))
+                image = _build_push_image(tmp_dir, registry_url, "computational", "test", version + str(image_index))
                 list_of_pushed_images_tags.append(image)
             for image_index in range(0, number_of_interactive_services):                
-                image = _build_push_image(tmp_dir, registry_url, "dynamic", "test", str(image_index))
+                image = _build_push_image(tmp_dir, registry_url, "dynamic", "test", version + str(image_index))
                 list_of_pushed_images_tags.append(image)
         except docker.errors.APIError:
             _logger.exception("Unexpected docker API error")
