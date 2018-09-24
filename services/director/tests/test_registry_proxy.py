@@ -1,3 +1,5 @@
+# pylint: disable=W0613, W0621
+
 import pytest
 from simcore_service_director import (
     config,
