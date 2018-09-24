@@ -17,7 +17,7 @@ from aiohttp_security import (
 
 from .._generated_code.models.registration_input import RegistrationInput
 
-from ...auth import (
+from ...security import (
     check_credentials
 )
 

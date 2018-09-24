@@ -4,7 +4,7 @@ from .basic import (
     get_me,
     ping
 )
-from .auth import (
+from .security import (
     login,
     logout,
     register_user,

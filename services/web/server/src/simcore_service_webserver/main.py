@@ -6,7 +6,7 @@ import logging
 from aiohttp import web
 
 from .db import setup_db
-from .auth import setup_auth
+from .security import setup_security
 from .rest import setup_rest
 from .session import setup_session
 from .statics import setup_statics
@@ -28,7 +28,7 @@ def init_app(config):
 
     setup_db(app)
     setup_session(app)
-    setup_auth(app)
+    setup_security(app)
     setup_computational_backend(app)
     setup_statics(app)
     setup_sio(app)
