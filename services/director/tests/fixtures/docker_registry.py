@@ -26,8 +26,8 @@ def _create_base_image(base_dir, labels):
     docker_file = base_dir / "Dockerfile"
     with docker_file.open("w") as file_pointer:        
         file_pointer.write(textwrap.dedent("""
-            FROM scratch
-            CMD ['echo']
+            FROM alpine
+            CMD ['sleep 10']
         """
         ))
     assert docker_file.exists() == True
