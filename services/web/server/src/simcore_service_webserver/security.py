@@ -1,16 +1,14 @@
-""" User's authentication and authorization
+""" Authentication and authorization
 
     - authentication: Identity gets ide
-
     - based in aiohttp_security library : https://aiohttp-security.readthedocs.io/en/latest/
-
 """
 # pylint: disable=assignment-from-no-return
 import logging
 import sqlalchemy as sa
 
+import aiohttp_security
 from aiohttp_security import (
-    setup as setup_security,
     SessionIdentityPolicy
 )
 from aiohttp_security.abc import AbstractAuthorizationPolicy
@@ -106,4 +104,4 @@ def setup_security(app):
 
     # FIXME: cannot guarantee correct config key for db"s engine!
     authorization_policy = DBAuthorizationPolicy(app, "db_engine")
-    setup_security(app, identity_policy, authorization_policy)
+    aiohttp_security.setup(app, identity_policy, authorization_policy)
