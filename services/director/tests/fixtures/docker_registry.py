@@ -36,8 +36,9 @@ def _create_base_image(base_dir, labels):
     base_docker_image = docker_client.images.build(path=str(base_dir), rm=True, labels=labels)
     return base_docker_image[0]
 
-def _create_service_description(service_type, name, tag):
-    dummy_description_path = Path(__file__).parent / "dummy_service_description.json"
+def _create_service_description(service_type, name, tag, schema_version):
+    file_name = "dummy_service_description-" + schema_version + ".json"
+    dummy_description_path = Path(__file__).parent / file_name
     with dummy_description_path.open() as file_pt:
         service_desc = json.load(file_pt)
 
@@ -45,23 +46,29 @@ def _create_service_description(service_type, name, tag):
         service_key_type = "comp"
     elif service_type == "dynamic":
         service_key_type = "dynamic"
-    service_desc["key"] = "simcore/services/" + service_key_type + "/" + name
-    service_desc["version"] = tag
-    service_desc["type"] = service_type
+    service_desc["key"] = "simcore/services/" + service_key_type + "/" + name    
+    # version 0 had no validation, no version, no type
+    if schema_version == "v0":
+        service_desc["tag"] = tag
+    elif schema_version == "v1":
+        service_desc["version"] = tag
+        service_desc["type"] = service_type
 
-    # validate service
-    try:
-        # TODO: use resources!
-        json_schema_path = Path(__file__).parent.parent.parent / "src/simcore_service_director/.oas3/v1/schemas/node-meta-v0.0.1.json"
-        with json_schema_path.open() as file_pt:
-            service_schema = json.load(file_pt)
-        validate(service_desc, service_schema)
-    except ValidationError:
-        _logger.exception("Node validation error:")
-        raise
-    except SchemaError:
-        _logger.exception("Schema validation error:")
-        raise
+        # validate service
+        try:
+            # TODO: use resources!
+            json_schema_path = Path(__file__).parent.parent.parent / "src/simcore_service_director/.oas3/v1/schemas/node-meta-v0.0.1.json"
+            with json_schema_path.open() as file_pt:
+                service_schema = json.load(file_pt)
+            validate(service_desc, service_schema)
+        except ValidationError:
+            _logger.exception("Node validation error:")
+            raise
+        except SchemaError:
+            _logger.exception("Schema validation error:")
+            raise
+    else:
+        raise Exception("invalid version!!")
 
     return service_desc
 
@@ -71,16 +78,16 @@ def _create_docker_labels(service_description):
         docker_labels[".".join(["io", "simcore", key])] = json.dumps({key:value})
     return docker_labels
 
-def _build_push_image(docker_dir, registry_url, service_type, name, tag):
+def _build_push_image(docker_dir, registry_url, service_type, name, tag, schema_version="v1"):
     docker_client = docker.from_env()
     # crate image
-    service_description = _create_service_description(service_type, name, tag)
+    service_description = _create_service_description(service_type, name, tag, schema_version)
     docker_labels = _create_docker_labels(service_description)
     if service_type == "dynamic":
         docker_labels["simcore.service.settings"] = json.dumps([{"name": "ports", "type": "int", "value": 8888}])
     image = _create_base_image(docker_dir, labels=docker_labels)
     # tag image
-    image_tag = registry_url + "/{key}:{version}".format(**service_description)
+    image_tag = registry_url + "/{key}:{version}".format(key=service_description["key"], version=tag)
     assert image.tag(image_tag) == True
     # push image to registry
     docker_client.images.push(image_tag)
@@ -92,13 +99,17 @@ def _build_push_image(docker_dir, registry_url, service_type, name, tag):
         "image_path":image_tag
         }
 
-def _clean_registry(registry_url, list_of_images):
+def _clean_registry(registry_url, list_of_images, schema_version="v1"):
     import requests
     request_headers = {'accept': "application/vnd.docker.distribution.manifest.v2+json"}
     for image in list_of_images:
         service_description = image["service_description"]
         # get the image digest
-        url = "http://{host}/v2/{name}/manifests/{tag}".format(host=registry_url, name=service_description["key"], tag=service_description["version"])
+        if schema_version == "v0":
+            tag = service_description["tag"]
+        else:
+            tag = service_description["version"]
+        url = "http://{host}/v2/{name}/manifests/{tag}".format(host=registry_url, name=service_description["key"], tag=tag)
         response = requests.request("GET", url, headers=request_headers)        
         docker_content_digest = response.headers["Docker-Content-Digest"]
         # remove the image from the registry
@@ -151,7 +162,7 @@ def push_services(docker_registry, tmpdir):
     list_of_pushed_images_tags = []
     def build_push_images(number_of_computational_services, number_of_interactive_services):        
         try:        
-            version = "2.3."
+            version = "1.0."
             for image_index in range(0, number_of_computational_services):                
                 image = _build_push_image(tmp_dir, registry_url, "computational", "test", version + str(image_index))
                 list_of_pushed_images_tags.append(image)
@@ -167,3 +178,29 @@ def push_services(docker_registry, tmpdir):
     yield build_push_images
     print("clean registry")
     _clean_registry(registry_url, list_of_pushed_images_tags)
+
+@pytest.fixture(scope="function")
+def push_v0_schema_services(docker_registry, tmpdir):
+    registry_url = docker_registry
+    tmp_dir = Path(tmpdir)
+
+    schema_version = "v0"
+    list_of_pushed_images_tags = []
+    def build_push_images(number_of_computational_services, number_of_interactive_services):        
+        try:        
+            version = "0.0."
+            for image_index in range(0, number_of_computational_services):                
+                image = _build_push_image(tmp_dir, registry_url, "computational", "test", version + str(image_index), schema_version)
+                list_of_pushed_images_tags.append(image)
+            for image_index in range(0, number_of_interactive_services):                
+                image = _build_push_image(tmp_dir, registry_url, "dynamic", "test", version + str(image_index), schema_version)
+                list_of_pushed_images_tags.append(image)
+        except docker.errors.APIError:
+            _logger.exception("Unexpected docker API error")
+            raise
+
+        return list_of_pushed_images_tags
+
+    yield build_push_images
+    print("clean registry")
+    _clean_registry(registry_url, list_of_pushed_images_tags, schema_version)

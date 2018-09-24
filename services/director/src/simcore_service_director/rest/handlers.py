@@ -38,10 +38,10 @@ async def services_get(request, service_type=None):  # pylint:disable=unused-arg
     try:
         services = []
         if not service_type or "computational" in service_type:
-            services.extend(list_services(registry_proxy.list_computational_services))
+            services.extend(_list_services(registry_proxy.list_computational_services))
         
         if not service_type or "interactive" in service_type:
-            services.extend(list_services(registry_proxy.list_interactive_services))
+            services.extend(_list_services(registry_proxy.list_interactive_services))
         return ServicesEnveloped(data=services, status=200).to_dict()
     except exceptions.RegistryConnectionError as err:
         raise web_exceptions.HTTPUnauthorized(reason=str(err))
@@ -62,15 +62,15 @@ async def services_by_key_version_get(request, service_key, service_version):  #
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-def list_services(list_service_fct):    
+def _list_services(list_service_fct):    
     services = list_service_fct()
+    
     if config.CONVERT_OLD_API:
-        services = [api_converters.convert_service_from_old_api(x) for x in services]
+        services = [api_converters.convert_service_from_old_api(x) for x in services if not node_validator.is_service_valid(x)]
     services = node_validator.validate_nodes(services)
     
     service_descs = [NodeMetaV0.from_dict(x) for x in services]
     return service_descs
-
 
 async def running_interactive_services_post(request, service_key, service_uuid, service_tag):  # pylint:disable=unused-argument
     _LOGGER.debug("Client does running_interactive_services_post request %s with service_key %s, service_uuid %s and service_tag %s", 

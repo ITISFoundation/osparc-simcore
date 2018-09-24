@@ -7,7 +7,8 @@
     "authors": [
         {
             "name": "tester",
-            "email": "tester@test.com"
+            "email": "tester@test.com",
+            "affiliation": "test foundation"
         }
     ],
     "contact": "contact@test.com",
