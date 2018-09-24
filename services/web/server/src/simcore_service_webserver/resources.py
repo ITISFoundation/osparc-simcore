@@ -8,16 +8,16 @@ import functools
 
 
 # resources names
-RESOURCE_OPENAPI = ".oas3"
-RESOURCE_CONFIG  = ".config"
+RESOURCE_OPENAPI = "oas3"
+RESOURCE_CONFIG  = "config"
 
 """
  List of pkg_resources functions *bound* to current package with the following signature
 
    function(resource_name)
 
- Note that resource names must be /-separated paths and 
- cannot be absolute (i.e. no leading /) or contain relative names like "..". 
+ Note that resource names must be /-separated paths and
+ cannot be absolute (i.e. no leading /) or contain relative names like "..".
  Do not use os.path routines to manipulate resource paths, as they are not filesystem paths.
 
  Resources are read/only files/folders
@@ -29,9 +29,9 @@ isdir = functools.partial(pkg_resources.resource_isdir, __name__)
 
 
 def get_path(resource_name):
-    """ Returns a path to a resource 
-        
-        WARNING: existence of file is not guaranteed. Use resources.exists 
+    """ Returns a path to a resource
+
+        WARNING: existence of file is not guaranteed. Use resources.exists
         WARNING: resource files are supposed to be used as read-only!
     """
     resource_path = pathlib.Path( pkg_resources.resource_filename(__name__, resource_name) )

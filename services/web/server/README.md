@@ -37,7 +37,7 @@ cd ../../config
 python init_db.py
 ```
 
-Run server passing a configuration file (see example under ``services/web/server/src/simcore_service_webserver/.config``)
+Run server passing a configuration file (see example under ``services/web/server/src/simcore_service_webserver/config``)
 ```bash
 python3 -m simcore_service_webserver --config path/to/config.yml
 
@@ -69,10 +69,10 @@ and then
 
 ```console
 usr@machine:~$ simcore-service-webserver -c reduced-config.yml
-DEBUG:simcore_service_webserver.settings.config:loading config.ignore.yaml
+DEBUG:simcore_service_webserver.settingsconfig:loading config.ignore.yaml
 DEBUG:simcore_service_webserver.main:Serving app ...
 DEBUG:simcore_service_webserver.main:Initializing app ...
-DEBUG:simcore_service_webserver.rest.routing:OAS3 in ~/osparc-simcore/services/web/server/src/simcore_service_webserver/.oas3/v1/openapi.yaml
+DEBUG:simcore_service_webserver.rest.routing:OAS3 in ~/osparc-simcore/services/web/server/src/simcore_service_webserver/oas3/v1/openapi.yaml
 DEBUG:simcore_service_webserver.db.core:Setting up simcore_service_webserver.db.core [service: postgres] ...
 WARNING:simcore_service_webserver.db.core:Service 'postgres' explicitly disabled in config
 DEBUG:~/osparc-simcore/services/web/server/src/simcore_service_webserver/session.py:Setting up simcore_service_webserver.session ...

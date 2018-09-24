@@ -10,7 +10,7 @@ from .. import resources
 
 API_MAJOR_VERSION = 1
 API_URL_VERSION = "v{:.0f}".format(API_MAJOR_VERSION)
-OAS_ROOT_FILE = ".oas3/{}/openapi.yaml".format(API_URL_VERSION)
+OAS_ROOT_FILE = "oas3/{}/openapi.yaml".format(API_URL_VERSION)
 
 def api_version() -> str:
     specs = yaml.load(resources.stream(OAS_ROOT_FILE))
@@ -18,7 +18,7 @@ def api_version() -> str:
 
 def openapi_path() -> Path:
     """ Returns path to the roots's oas file
-    
+
     Notice that the specs can be split in multiple files. Thisone
     is the root file and it is normally named as `opeapi.yaml`
     """
