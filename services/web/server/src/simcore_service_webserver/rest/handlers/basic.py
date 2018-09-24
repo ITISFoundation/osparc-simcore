@@ -38,7 +38,7 @@ async def check_health(request):
         version = distb.version,
         api_version = api_version())
 
-    return HealthCheckEnveloped(data=info, status=200)
+    return HealthCheckEnveloped(data=info, status=200).to_dict()
 
 
 async def get_oas_doc(request):

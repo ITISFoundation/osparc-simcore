@@ -32,7 +32,7 @@ def test_config_options_in_cli(capsys):
     assert einfo.value.code == 0
 
 
-def test_validate_available_config_files(package_paths):
+def test_validate_available_config_files():
     import trafaret_config.simple as _ts
 
     config_folder = resources.get_path(resources.RESOURCE_CONFIG)

@@ -45,7 +45,8 @@ def _is_db_service_responsive(**pg_config):
 
 @pytest.fixture(scope='session')
 def package_paths(pytestconfig):
-    # TODO: use instead resources?
+    # Intentionally not using resource paths so we have an alternative
+    # way to retrieve paths to test resource logic itself
     package_root = CURRENT_DIR.parent
     src_folder = package_root / "src"
     test_folder = package_root / "tests"
