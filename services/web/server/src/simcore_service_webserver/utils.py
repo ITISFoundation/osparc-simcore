@@ -3,6 +3,7 @@
 """
 import os
 import sys
+from aiohttp.web import HTTPFound
 
 CDIR = os.path.dirname(sys.argv[0] if __name__ == '__main__' else __file__)
 
@@ -41,3 +42,12 @@ def get_thrift_api_folders(startdir):
             dirs[:] = []  # stop looking under this node
             folders.append(os.path.join(root, "gen-py"))
     return folders
+
+
+def redirect(*args, **kwargs):
+    raise HTTPFound(*args, **kwargs)
+
+
+__all__ = (
+    'redirect',
+)

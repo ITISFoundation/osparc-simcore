@@ -24,6 +24,7 @@ from .._generated_code.models.health_check import HealthCheck
 from .._generated_code.models.health_check_enveloped import HealthCheckEnveloped
 
 from ... import decorators
+from ... import utils
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ async def check_health(request):
 
 
 async def get_oas_doc(request):
-    raise web.HTTPFound('/apidoc/swagger.yaml?spec=/{}'.format(API_URL_VERSION))
+    utils.redirect('/apidoc/swagger.yaml?spec=/{}'.format(API_URL_VERSION))
 
 @decorators.args_adapter
 @login_required
