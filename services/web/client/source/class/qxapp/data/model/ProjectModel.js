@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.data.model.Project", {
+qx.Class.define("qxapp.data.model.ProjectModel", {
   extend: qx.core.Object,
 
   construct: function(prjData) {
@@ -13,9 +13,14 @@ qx.Class.define("qxapp.data.model.Project", {
         thumbnail: prjData.thumbnail || this.getThumbnail(),
         collaborators: prjData.collaborators || this.getCollaborators(),
         creationDate: new Date(prjData.creationDate) || this.getCreationDate(),
-        lastChangeDate: new Date(prjData.lastChangeDate) || this.getLastChangeDate(),
-        workbench: prjData.workbench || this.getWorkbench()
+        lastChangeDate: new Date(prjData.lastChangeDate) || this.getLastChangeDate()
       });
+    }
+
+    if (prjData && prjData.workbench) {
+      this.setWorkbench(new qxapp.data.model.WorkbenchModel(prjData.workbench));
+    } else {
+      this.setWorkbench(new qxapp.data.model.WorkbenchModel({}));
     }
   },
 
@@ -69,10 +74,8 @@ qx.Class.define("qxapp.data.model.Project", {
     },
 
     workbench: {
-      check: "Object",
-      nullable: true,
-      event: "changeWorkbench",
-      init: {}
+      check: "qxapp.data.model.WorkbenchModel",
+      nullable: false
     }
   },
 
@@ -84,28 +87,6 @@ qx.Class.define("qxapp.data.model.Project", {
         jsonObject[key] = this.get(key);
       }
       return jsonObject;
-    },
-
-    toStringOld: function() {
-      // return qx.dev.Debug.debugProperties(this, 3, false, 2);
-      let newLine = "\n";
-      let indent = 4;
-      let html = false;
-      const maxLevel = 5;
-      let message = "";
-
-      let properties = this.constructor.$$properties;
-      for (let key in properties) {
-        message += newLine;
-        // print out the indentation
-        for (var j = 0; j < indent; j++) {
-          message += "-";
-        }
-        message += " " + key + ": " + this.toString(
-          this["get" + qx.lang.String.firstUp(key)](), maxLevel - 1, html, indent + 1
-        );
-      }
-      return message;
     }
   }
 });

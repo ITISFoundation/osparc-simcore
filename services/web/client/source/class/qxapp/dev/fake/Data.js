@@ -126,6 +126,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               defaultValue: "dog",
               type: "string",
               widget: {
+                /*
                 type: "SelectBox",
                 structure: [
                   {
@@ -137,6 +138,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
                     label: "A Cat"
                   }
                 ]
+                */
+                type: "TextArea",
+                minHeight: 50
               }
             },
             inFile: {
@@ -264,6 +268,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   path: "bucket32/file.png"
                 }
               },
+              links: [
+                "UUID3",
+                "UUID1"
+              ],
               position: {
                 x: 400,
                 y: 400
@@ -324,9 +332,66 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   output: "materialDB"
                 }
               },
+              links: [
+                "bc466582-9240-4d97-9f9e-197b5f3a354b",
+                "eb51440a-04bd-4847-b457-86c83400abf5"
+              ],
               position: {
                 x: 400,
                 y: 250
+              }
+            }
+          }
+        }, {
+          projectUuid: "f54da025-2667-477f-b307-e126b006accd",
+          name: "Macros",
+          description: "Project containing a macro",
+          notes: "# title\nBlah",
+          owner: "UUID-OF-ODEI",
+          collaborators: {
+            "UUID-OF-ODEI": [
+              "read",
+              "write"
+            ]
+          },
+          creationDate: "2018-09-24T16:01:00Z",
+          lastChangeDate: "2018-09-24T16:02:22Z",
+          thumbnail: "https://placeimg.com/171/96/tech/grayscale/?15.jpg",
+          workbench: {
+            "fa6c1606-b4ba-4e8b-8fca-f0cfa19012cd": {
+              key: "container",
+              name: "Container 1",
+              innerNodes: {
+                "abc00186-d987-4e5b-b0c1-c77354eba4ce": {
+                  key: "container",
+                  name: "Container 2",
+                  innerNodes: {
+                    "72c70ea3-5724-4d16-a51b-f0e05c9c8178": {
+                      key: "service/dynamic/itis/s4l/MaterialDB",
+                      version: "0.0.0",
+                      position: {
+                        x: 50,
+                        y: 50
+                      }
+                    }
+                  },
+                  position: {
+                    x: 50,
+                    y: 50
+                  }
+                },
+                "86261280-a03a-4c45-95a4-386d8a17f962": {
+                  key: "service/dynamic/itis/s4l/Modeler",
+                  version: "0.0.0",
+                  position: {
+                    x: 50,
+                    y: 250
+                  }
+                }
+              },
+              position: {
+                x: 50,
+                y: 50
               }
             }
           }
@@ -370,6 +435,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   output: "materialDB"
                 }
               },
+              links: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08",
+                "bf88496d-ddf8-476c-8d6c-24c716c2ae4c"
+              ],
               position: {
                 x: 400,
                 y: 150
@@ -384,6 +453,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   output: "outFile"
                 }
               },
+              links: [
+                "89e185ca-dda1-4a45-8059-715f2cb17100"
+              ],
               position: {
                 x: 750,
                 y: 150
@@ -442,6 +514,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "updateDispersive": false
               },
+              links: [
+                "17a932a0-f401-4571-9c55-b579f5050d37",
+                "8870a55b-680d-41b4-b40c-c928cceb7d2a"
+              ],
               position: {
                 x: 349,
                 y: 103
@@ -472,6 +548,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "sensorSetting": 4
               },
+              links: [
+                "17a932a0-f401-4571-9c55-b579f5050d37"
+              ],
               position: {
                 x: 353,
                 y: 363
@@ -499,6 +578,12 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "gridSetting": 5
               },
+              links: [
+                "17a932a0-f401-4571-9c55-b579f5050d37",
+                "ac80863e-e4ef-48c0-804b-d9296f1f3563",
+                "ed4c85a8-c20f-4acd-8e1e-5161301e2f3d",
+                "36d70cf2-ef36-4052-988d-d32b3456b786"
+              ],
               position: {
                 x: 624,
                 y: 496
@@ -518,6 +603,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "solverSetting": 7
               },
+              links: [
+                "83bc4123-ebe4-4f5f-8770-b1584d6cf95f",
+                "b37bea52-bb29-482a-9540-bc11c7dc779c"
+              ],
               position: {
                 x: 955,
                 y: 318
@@ -537,6 +626,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "voxelSetting": 6
               },
+              links: [
+                "17a932a0-f401-4571-9c55-b579f5050d37",
+                "c3ab33a7-4ead-4302-9867-5b194a4f45ec"
+              ],
               position: {
                 x: 874,
                 y: 699
@@ -551,6 +644,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   output: "outFile"
                 }
               },
+              links: [
+                "01e28708-46c4-474b-837b-479fd596e566"
+              ],
               position: {
                 x: 1245,
                 y: 318
@@ -727,6 +823,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
               "finalStates.txt": null,
               "vm_1Hz.txt": null
             },
+            links: [
+              "UUID5"
+            ],
             position: {
               x: 350,
               y: 100
@@ -746,6 +845,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             outputs: {},
+            links: [
+              "UUID6"
+            ],
             position: {
               x: 700,
               y: 100

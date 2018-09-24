@@ -202,6 +202,17 @@
                 }
               }
             },
+            "links": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "node IDs of where the node is connected to",
+              "examples": [
+                "nodeUuid1",
+                "nodeUuid2"
+              ]
+            },
             "position": {
               "type": "object",
               "additionalProperties": false,

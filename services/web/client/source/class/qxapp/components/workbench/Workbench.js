@@ -7,7 +7,7 @@ const BUTTON_SPACING = 10;
 qx.Class.define("qxapp.components.workbench.Workbench", {
   extend: qx.ui.container.Composite,
 
-  construct: function(workbenchData) {
+  construct: function(workbenchModel) {
     this.base();
 
     let canvas = new qx.ui.layout.Canvas();
@@ -23,7 +23,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       bottom: 0
     });
 
-    this.__workbenchData = workbenchData;
+    this.setWorkbenchModel(workbenchModel);
     this.__svgWidget = new qxapp.components.workbench.SvgWidget("SvgWidgetLayer");
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
@@ -56,8 +56,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     this.__logger = new qxapp.components.workbench.logger.LoggerView();
     this.__desktop.add(this.__logger);
 
-    this.__nodes = [];
-    this.__links = [];
+    this.__nodesUI = [];
+    this.__linksUI = [];
 
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
     this.add(buttonContainer, {
@@ -94,10 +94,16 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     "NodeDoubleClicked": "qx.event.type.Data"
   },
 
+  properties: {
+    workbenchModel: {
+      check: "qxapp.data.model.WorkbenchModel",
+      nullable: false
+    }
+  },
+
   members: {
-    __workbenchData: null,
-    __nodes: null,
-    __links: null,
+    __nodesUI: null,
+    __linksUI: null,
     __desktop: null,
     __svgWidget: null,
     __logger: null,
@@ -164,13 +170,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __addServiceFromCatalogue: function(e, pos) {
       let data = e.getData();
       let metaData = data.service;
-      const nodeImageId = metaData.key + "-" + metaData.version;
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let nodeB = this.__createNode(nodeImageId, null);
+      let nodeB = this.__createNode(metaData);
       this.__addNodeToWorkbench(nodeB, pos);
-      this.__nodes.push(nodeB);
 
       if (nodeAId !== null && portA !== null) {
         let nodeBId = nodeB.getNodeId();
@@ -191,20 +195,22 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __addNodeToWorkbench: function(node, position) {
       if (position === undefined || position === null) {
+        position = {};
         let farthestRight = 0;
-        for (let i=0; i < this.__nodes.length; i++) {
-          let boundPos = this.__nodes[i].getBounds();
+        for (let i=0; i < this.__nodesUI.length; i++) {
+          let boundPos = this.__nodesUI[i].getBounds();
           let rightPos = boundPos.left + boundPos.width;
           if (farthestRight < rightPos) {
             farthestRight = rightPos;
           }
         }
-        node.moveTo(50 + farthestRight, 200);
-      } else {
-        node.moveTo(position.x, position.y);
+        position.x = 50 + farthestRight;
+        position.y = 200;
       }
+      node.getNodeModel().setPosition(position.x, position.y);
+      node.moveTo(position.x, position.y);
       this.addWindowToDesktop(node);
-      this.__nodes.push(node);
+      this.__nodesUI.push(node);
 
       node.addListener("NodeMoving", function() {
         this.__updateLinks(node);
@@ -222,17 +228,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       qx.ui.core.queue.Layout.flush();
     },
 
-    __createNode: function(nodeImageId, uuid, nodeData) {
-      let nodeBase = new qxapp.components.workbench.NodeBase(nodeImageId, uuid);
+    __createNode: function(metaData, uuid, nodeData) {
+      let nodeModel = this.getWorkbenchModel().createNode(metaData, uuid);
+      nodeModel.populateNodeData(nodeData);
+
+      let nodeBase = new qxapp.components.workbench.NodeBase(nodeModel);
       nodeBase.createNodeLayout();
       nodeBase.populateNodeLayout();
-      nodeBase.populateNodeData(nodeData);
-      let store = qxapp.data.Store.getInstance();
-      let metaData = store.getNodeMetaData(nodeImageId);
-      if (metaData.type === "container") {
-        let innerNodes = nodeBase.createInnerNodes(metaData.innerNodes);
-        this.__nodes = this.__nodes.concat(innerNodes);
-      }
 
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
@@ -363,13 +365,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __removeSelectedNode: function() {
-      for (let i=0; i<this.__nodes.length; i++) {
-        if (this.__desktop.getActiveWindow() === this.__nodes[i]) {
-          let connectedLinks = this.__getConnectedLinks(this.__nodes[i].getNodeId());
+      for (let i=0; i<this.__nodesUI.length; i++) {
+        if (this.__desktop.getActiveWindow() === this.__nodesUI[i]) {
+          let connectedLinks = this.__getConnectedLinks(this.__nodesUI[i].getNodeId());
           for (let j=0; j<connectedLinks.length; j++) {
             this.__removeLink(this.__getLink(connectedLinks[j]));
           }
-          this.__removeNode(this.__nodes[i]);
+          this.__removeNode(this.__nodesUI[i]);
           return;
         }
       }
@@ -423,7 +425,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (linkId !== undefined) {
         link.setLinkId(linkId);
       }
-      this.__links.push(link);
+      this.__linksUI.push(link);
 
       node2.addLink(link);
 
@@ -533,9 +535,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     getNode: function(id) {
-      for (let i = 0; i < this.__nodes.length; i++) {
-        if (this.__nodes[i].getNodeId() === id) {
-          return this.__nodes[i];
+      for (let i = 0; i < this.__nodesUI.length; i++) {
+        if (this.__nodesUI[i].getNodeId() === id) {
+          return this.__nodesUI[i];
         }
       }
       return null;
@@ -543,65 +545,57 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __getConnectedLinks: function(nodeId) {
       let connectedLinks = [];
-      for (let i = 0; i < this.__links.length; i++) {
-        if (this.__links[i].getInputNodeId() === nodeId) {
-          connectedLinks.push(this.__links[i].getLinkId());
+      for (let i = 0; i < this.__linksUI.length; i++) {
+        if (this.__linksUI[i].getInputNodeId() === nodeId) {
+          connectedLinks.push(this.__linksUI[i].getLinkId());
         }
-        if (this.__links[i].getOutputNodeId() === nodeId) {
-          connectedLinks.push(this.__links[i].getLinkId());
+        if (this.__linksUI[i].getOutputNodeId() === nodeId) {
+          connectedLinks.push(this.__linksUI[i].getLinkId());
         }
       }
       return connectedLinks;
     },
 
     __getLink: function(id) {
-      for (let i = 0; i < this.__links.length; i++) {
-        if (this.__links[i].getLinkId() === id) {
-          return this.__links[i];
+      for (let i = 0; i < this.__linksUI.length; i++) {
+        if (this.__linksUI[i].getLinkId() === id) {
+          return this.__linksUI[i];
         }
       }
       return null;
     },
 
     __removeNode: function(node) {
-      if (node.getMetaData().type == "dynamic") {
-        const slotName = "stopDynamic";
-        let socket = qxapp.wrappers.WebSocket.getInstance();
-        let data = {
-          nodeId: node.getNodeId()
-        };
-        socket.emit(slotName, data);
-      }
-
-      this.__desktop.remove(node);
-      let index = this.__nodes.indexOf(node);
-      if (index > -1) {
-        this.__nodes.splice(index, 1);
+      const removed = this.getWorkbenchModel().removeNode(node.getNodeModel());
+      if (removed) {
+        this.__desktop.remove(node);
+        let index = this.__nodesUI.indexOf(node);
+        if (index > -1) {
+          this.__nodesUI.splice(index, 1);
+        }
       }
     },
 
     __removeAllNodes: function() {
-      while (this.__nodes.length > 0) {
-        this.__removeNode(this.__nodes[this.__nodes.length-1]);
+      while (this.__nodesUI.length > 0) {
+        this.__removeNode(this.__nodesUI[this.__nodesUI.length-1]);
       }
     },
 
     __removeLink: function(link) {
-      let node2 = this.getNode(link.getOutputNodeId());
-      if (node2) {
-        node2.removeLink(link);
-      }
-
-      this.__svgWidget.removeCurve(link.getRepresentation());
-      let index = this.__links.indexOf(link);
-      if (index > -1) {
-        this.__links.splice(index, 1);
+      const removed = this.getWorkbenchModel().removeNode(link);
+      if (removed) {
+        this.__svgWidget.removeCurve(link.getRepresentation());
+        let index = this.__linksUI.indexOf(link);
+        if (index > -1) {
+          this.__linksUI.splice(index, 1);
+        }
       }
     },
 
     __removeAllLinks: function() {
-      while (this.__links.length > 0) {
-        this.__removeLink(this.__links[this.__links.length-1]);
+      while (this.__linksUI.length > 0) {
+        this.__removeLink(this.__linksUI[this.__linksUI.length-1]);
       }
     },
 
@@ -611,8 +605,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __getInputPortLinked: function(nodeId, inputPortId) {
-      for (let i = 0; i < this.__links.length; i++) {
-        const link = this.__links[i];
+      for (let i = 0; i < this.__linksUI.length; i++) {
+        const link = this.__linksUI[i];
         if (link.getOutputNodeId() === nodeId && link.getOutputPortId() === inputPortId) {
           return {
             nodeUuid: link.getInputNodeId(),
@@ -626,75 +620,38 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __loadProject: function() {
       this.removeAll();
 
-      if (this.__workbenchData) {
-        let workbenchData = this.__workbenchData;
-        for (let nodeUuid in workbenchData) {
-          let nodeData = workbenchData[nodeUuid];
-          const nodeImageId = nodeData.key + "-" + nodeData.version;
-          let node = this.__createNode(nodeImageId, nodeUuid, nodeData);
-          this.__addNodeToWorkbench(node, nodeData.position);
-          this.__nodes.push(node);
+      const workbenchModel = this.getWorkbenchModel();
+      if (workbenchModel) {
+        for (const nodeUuid in workbenchModel.getNodes()) {
+          const nodeModel = workbenchModel.getNodes()[nodeUuid];
+          const nodeImageId = nodeModel.getNodeImageId();
+          let node = this.__createNode(nodeImageId, nodeUuid, nodeModel);
+          this.__addNodeToWorkbench(node, nodeModel.getPosition());
         }
-        for (let nodeUuid in workbenchData) {
-          let nodeData = workbenchData[nodeUuid];
-          if (nodeData.inputs) {
-            for (let prop in nodeData.inputs) {
-              let link = nodeData.inputs[prop];
-              if (typeof link == "object" && link.nodeUuid) {
-                this.__addLink({
-                  nodeUuid: link.nodeUuid,
-                  output: link.output
-                }, {
-                  nodeUuid: nodeUuid,
-                  input: prop
-                });
-              }
-            }
-          }
+        for (const linkUuid in workbenchModel.getLinks()) {
+          const linkData = workbenchModel.getLinks()[linkUuid];
+          this.__addLink(
+            {
+              nodeUuid: linkData.output.nodeUuid,
+              output: linkData.output.output
+            },
+            {
+              nodeUuid: linkData.input.nodeUuid,
+              input: linkData.input.input
+            },
+            linkUuid);
         }
       }
     },
 
     saveProject: function() {
       const savePosition = true;
-      this.__workbenchData = this.serializePipeline(savePosition);
+      this.serializePipeline(savePosition);
     },
 
     serializePipeline: function(savePosition = false) {
-      let workbench = {};
-      for (let i = 0; i < this.__nodes.length; i++) {
-        const node = this.__nodes[i];
-        const nodeData = node.getMetaData();
-        let cNode = workbench[node.getNodeId()] = {
-          key: nodeData.key,
-          version: nodeData.version,
-          inputs: node.getInputValues(),
-          outputs: {}
-        };
-        if (savePosition && this.__desktop.indexOf(node)>-1) {
-          cNode.position = {
-            x: node.getCurrentBounds().left,
-            y: node.getCurrentBounds().top
-          };
-        }
-        for (let key in node.getInputPorts()) {
-          const linkPort = this.__getInputPortLinked(node.getNodeId(), key);
-          if (linkPort) {
-            cNode.inputs[key] = linkPort;
-          }
-        }
-        for (let key in nodeData.outputs) {
-          const outputPort = nodeData.outputs[key];
-          if ("value" in outputPort) {
-            cNode.outputs[key] = outputPort.value;
-          }
-        }
-      }
+      let workbench = this.getWorkbenchModel().serializeWorkbench(savePosition);
       return workbench;
-    },
-
-    getWorkbenchData: function() {
-      return this.__workbenchData;
     },
 
     addWindowToDesktop: function(node) {
@@ -703,8 +660,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     clearProgressData: function() {
-      for (let i = 0; i < this.__nodes.length; i++) {
-        this.__nodes[i].setProgress(0);
+      for (let i = 0; i < this.__nodesUI.length; i++) {
+        this.__nodesUI[i].setProgress(0);
       }
     },
 

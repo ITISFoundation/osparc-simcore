@@ -69,8 +69,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __pipelineId: null,
     __mainPanel: null,
     __sidePanel: null,
-    __workbench: null,
-    __miniWorkbench: null,
+    __workbenchView: null,
+    __treeView: null,
     __extraView: null,
     __settingsView: null,
     __transDeco: null,
@@ -79,21 +79,19 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     initDefault: function() {
       let project = this.__projectDocument;
-      let workbench = this.__workbench = new qxapp.components.workbench.Workbench(project.getWorkbench());
+      let workbench = this.__workbenchView = new qxapp.components.workbench.Workbench(project.getWorkbench());
       this.showInMainView(workbench, "Workbench");
 
       let showWorkbench = new qx.ui.form.Button(this.tr("Show workbench")).set({
         allowGrowX: false
       });
       showWorkbench.addListener("execute", function() {
-        this.showInMainView(this.__workbench, "Workbench");
+        this.showInMainView(this.__workbenchView, "Workbench");
       }, this);
-      let miniWorkbench = this.__miniWorkbench = new qxapp.components.workbench.WorkbenchMini(project.getWorkbench());
+      let treeView = this.__treeView = new qxapp.components.widgets.TreeTool(project.getWorkbench());
       let vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       vBox.add(showWorkbench);
-      vBox.add(miniWorkbench, {
-        flex: 1
-      });
+      vBox.add(treeView);
       this.__sidePanel.setTopView(vBox);
 
       let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
@@ -111,7 +109,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     connectEvents: function() {
       this.__mainPanel.getControls().addListener("ShowLogger", function() {
-        this.__workbench.showLogger();
+        this.__workbenchView.showLogger();
       }, this);
 
       this.__mainPanel.getControls().addListener("SavePressed", function() {
@@ -122,7 +120,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         if (this.getCanStart()) {
           this.__startPipeline();
         } else {
-          this.__workbench.getLogger().info("Can not start pipeline");
+          this.__workbenchView.getLogger().info("Can not start pipeline");
         }
       }, this);
 
@@ -130,20 +128,25 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__stopPipeline();
       }, this);
 
+      this.__projectDocument.getWorkbench().addListener("WorkbenchModelChanged", function() {
+        console.log("WorkbenchModelChanged", this.__projectDocument.getWorkbench());
+        this.__treeView.buildTree();
+      }, this);
+
       [
-        this.__workbench,
-        this.__miniWorkbench
+        this.__treeView,
+        this.__workbenchView
       ].forEach(wb => {
         wb.addListener("NodeDoubleClicked", function(e) {
           let nodeId = e.getData();
-          let node = this.__workbench.getNode(nodeId);
+          let node = this.__workbenchView.getNode(nodeId);
 
           switch (node.getMetaData().type) {
             case "dynamic": {
               const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
               let widget = widgetManager.getWidgetForNode(node);
               widget.addListener("Finished", function() {
-                this.showInMainView(this.__workbench, "Workbench");
+                this.showInMainView(this.__workbenchView, "Workbench");
               }, this);
               this.__mainPanel.getOptions().addListener("ListClicked", function() {
                 widget.listClicked();
@@ -160,15 +163,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
               let widget = widgetManager.getWidgetForNode(node);
               widget.addListener("NodeDoubleClicked", function(ev) {
                 const data = ev.getData();
-                this.__workbench.fireDataEvent("NodeDoubleClicked", data);
+                this.__workbenchView.fireDataEvent("NodeDoubleClicked", data);
               }, this);
               this.showInExtraView(widget);
-              this.showInMainView(this.__workbench, "Workbench");
+              this.showInMainView(this.__workbenchView, "Workbench");
               break;
             }
             default: {
               this.showInExtraView(new qx.ui.core.Widget());
-              this.showInMainView(this.__workbench, "Workbench");
+              this.showInMainView(this.__workbenchView, "Workbench");
               break;
             }
           }
@@ -176,12 +179,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.__settingsView.setNode(node);
         }, this);
       });
-
-      this.__projectDocument.addListener("changeWorkbench", function(e) {
-        console.log("changeWorkbench", e.getData());
-        let newWorkbenchData = e.getData();
-        this.__miniWorkbench.loadProject(newWorkbenchData);
-      }, this);
     },
 
     showInMainView: function(widget, label) {
@@ -195,14 +192,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     __getProjectDocument: function(projectId) {
       let project = null;
-      if (projectId === null || projectId === undefined) {
-        project = new qxapp.data.model.Project();
-      } else {
+      if (projectId) {
         let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
         projectData.id = String(projectId);
-        project = new qxapp.data.model.Project(projectData);
+        project = new qxapp.data.model.ProjectModel(projectData);
+      } else {
+        project = new qxapp.data.model.ProjectModel();
       }
-
       return project;
     },
 
@@ -229,13 +225,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           let d = JSON.parse(data);
           let node = d["Node"];
           let progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
-          this.__workbench.updateProgress(node, progress);
+          this.__workbenchView.updateProgress(node, progress);
         }, this);
       }
 
       // post pipeline
       this.__pipelineId = null;
-      let currentPipeline = this.__workbench.serializePipeline();
+      let currentPipeline = this.__workbenchView.serializePipeline();
       console.log(currentPipeline);
       let req = new qx.io.request.Xhr();
       let data = {};
@@ -249,15 +245,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", function(e) {
         this.setCanStart(true);
-        this.__workbench.getLogger().error("Workbench", "Error submitting pipeline");
+        this.__workbenchView.getLogger().error("Workbench", "Error submitting pipeline");
       }, this);
       req.addListener("fail", function(e) {
         this.setCanStart(true);
-        this.__workbench.getLogger().error("Workbench", "Failed submitting pipeline");
+        this.__workbenchView.getLogger().error("Workbench", "Failed submitting pipeline");
       }, this);
       req.send();
 
-      this.__workbench.getLogger().info("Workbench", "Starting pipeline");
+      this.__workbenchView.getLogger().info("Workbench", "Starting pipeline");
     },
 
     __stopPipeline: function() {
@@ -272,39 +268,39 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       req.addListener("success", this.__onPipelineStopped, this);
       req.addListener("error", function(e) {
         this.setCanStart(false);
-        this.__workbench.getLogger().error("Workbench", "Error stopping pipeline");
+        this.__workbenchView.getLogger().error("Workbench", "Error stopping pipeline");
       }, this);
       req.addListener("fail", function(e) {
         this.setCanStart(false);
-        this.__workbench.getLogger().error("Workbench", "Failed stopping pipeline");
+        this.__workbenchView.getLogger().error("Workbench", "Failed stopping pipeline");
       }, this);
       // req.send();
 
       // temporary solution
       this.setCanStart(true);
 
-      this.__workbench.getLogger().info("Workbench", "Stopping pipeline. Not yet implemented");
+      this.__workbenchView.getLogger().info("Workbench", "Stopping pipeline. Not yet implemented");
     },
 
     __onPipelinesubmitted: function(e) {
       let req = e.getTarget();
 
       const pipelineId = req.getResponse().pipeline_id;
-      this.__workbench.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
+      this.__workbenchView.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
         this.setCanStart(true);
         this.__pipelineId = null;
-        this.__workbench.getLogger().error("Workbench", "Submition failed");
+        this.__workbenchView.getLogger().error("Workbench", "Submition failed");
       } else {
         this.setCanStart(false);
         this.__pipelineId = pipelineId;
-        this.__workbench.getLogger().info("Workbench", "Pipeline started");
+        this.__workbenchView.getLogger().info("Workbench", "Pipeline started");
       }
     },
 
     __onPipelineStopped: function(e) {
-      this.__workbench.clearProgressData();
+      this.__workbenchView.clearProgressData();
 
       this.setCanStart(true);
     },
@@ -314,9 +310,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __updateLogger: function(nodeId, msg) {
-      let node = this.__workbench.getNode(nodeId);
+      let node = this.__workbenchView.getNode(nodeId);
       if (node) {
-        this.__workbench.getLogger().info(node.getCaption(), msg);
+        this.__workbenchView.getLogger().info(node.getCaption(), msg);
       }
     },
 
@@ -346,13 +342,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     serializeProjectDocument: function() {
-      console.log("Workbench: saveProject()");
-      this.__workbench.saveProject();
       this.__projectDocument.set({
-        workbench: this.__workbench.getWorkbenchData(),
         lastChangeDate: new Date()
       });
-      console.log(this.__projectDocument.getJsonObject());
+      console.log("serializeProjectDocument", this.__projectDocument.getJsonObject());
     }
   }
 });
