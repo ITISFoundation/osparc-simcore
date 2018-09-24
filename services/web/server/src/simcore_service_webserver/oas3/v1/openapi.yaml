@@ -204,8 +204,6 @@ servers:
         default: '8080'
       version:
         default: v1
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/pcrespov/simcore-webserver/1.0.0
   - description: Production server
     url: https://webserver:{port}/{version}
     variables:
