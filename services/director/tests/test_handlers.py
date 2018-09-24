@@ -173,7 +173,7 @@ async def test_running_services_post_and_delete_no_swarm(configure_registry_acce
         await _start_get_stop_services(push_services)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def docker_swarm(docker_registry): #pylint: disable=W0613, W0621
     client = docker.from_env()
     assert client is not None
