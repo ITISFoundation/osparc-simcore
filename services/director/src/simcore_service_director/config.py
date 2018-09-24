@@ -10,9 +10,9 @@ logging.basicConfig(
 # FIXME: adapt to new config. Issue #195
 CONVERT_OLD_API = True
 
-OPEN_API_BASE_FOLDER = Path(__file__).parent / ".oas3/v1"
+OPEN_API_BASE_FOLDER = Path(__file__).parent / "oas3/v1"
 OPEN_API_SPEC_FILE = "openapi.yaml"
-JSON_SCHEMA_BASE_FOLDER = Path(__file__).parent / ".oas3/v1/schemas"
+JSON_SCHEMA_BASE_FOLDER = Path(__file__).parent / "oas3/v1/schemas"
 NODE_JSON_SCHEMA_FILE = "node-meta-v0.0.1.json"
 
 REGISTRY_AUTH = os.environ.get("REGISTRY_AUTH", False) in ["true", "True"]

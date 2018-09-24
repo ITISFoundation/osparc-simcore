@@ -4,7 +4,7 @@
 # /src/package-name/.openapi/v1/package_api.yaml   -- this is the input file
 # /src/package-name/rest/generated_code            -- this is the output directory
 SOURCE_DIR=./src/simcore_service_director
-INPUT_SPEC=${SOURCE_DIR}/.oas3/v1/openapi.yaml
+INPUT_SPEC=${SOURCE_DIR}/oas3/v1/openapi.yaml
 OUTPUT_DIR=${SOURCE_DIR}/rest
 OUTPUT_DIR_GEN=${SOURCE_DIR}/rest/generated_code
 INIT_FILE_PATH=${OUTPUT_DIR}/__init__.py
