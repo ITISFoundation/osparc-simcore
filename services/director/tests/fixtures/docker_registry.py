@@ -78,7 +78,7 @@ def _create_docker_labels(service_description):
         docker_labels[".".join(["io", "simcore", key])] = json.dumps({key:value})
     return docker_labels
 
-def _build_push_image(docker_dir, registry_url, service_type, name, tag, schema_version="v1"):
+def _build_push_image(docker_dir, registry_url, service_type, name, tag, schema_version="v1"): # pylint: disable=R0913
     docker_client = docker.from_env()
     # crate image
     service_description = _create_service_description(service_type, name, tag, schema_version)

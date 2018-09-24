@@ -145,10 +145,11 @@ def __get_repo_details(repo):
         req_images = __registry_request(repo + '/tags/list')
         im_data = req_images.json()
         tags = im_data['tags']
-        for tag in tags:
-            image_tags = __get_repo_version_details(repo, tag)
-            if image_tags:
-                current_repo.append(image_tags)
+        if tags:
+            for tag in tags:
+                image_tags = __get_repo_version_details(repo, tag)
+                if image_tags:
+                    current_repo.append(image_tags)
 
     return current_repo
 
