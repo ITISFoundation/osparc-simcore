@@ -57,7 +57,7 @@ WORKDIR /home/scu
 
 # install base 3rd party packages to accelerate runtime installs
 COPY --chown=scu:scu services/web/server/requirements/base.txt requirements-base.txt
-COPY --chown=scu:scu services/web/server/.docker .docker
+COPY --chown=scu:scu services/web/server/docker docker
 RUN $PIP install --no-cache-dir -r requirements-base.txt
 
 # --------------------------Development stage -------------------
@@ -80,8 +80,8 @@ VOLUME /home/scu/services/web/client/
 
 ENV SIMCORE_WEB_CONFIG development
 ENV DEBUG 1
-ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
-CMD .docker/boot.sh
+ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
+CMD docker/boot.sh
 
 
 # --------------------------Production multi-stage -------------------
@@ -117,5 +117,5 @@ RUN . $HOME/.venv/bin/activate; pip list &&\
     rm -rf $HOME/services/web/server
 
 ENV DEBUG 0
-ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
-CMD .docker/boot.sh
+ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
+CMD docker/boot.sh

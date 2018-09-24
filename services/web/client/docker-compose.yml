@@ -20,7 +20,7 @@ services:
       - '.:/home/scu/client'
     ports:
       - '8081:8080'
-    entrypoint: ./client/.docker/entrypoint.sh
+    entrypoint: ./client/docker/entrypoint.sh
     working_dir: /home/scu
     command: srv . -p 8080
   #---------------------------------------------------------
