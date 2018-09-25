@@ -3,7 +3,7 @@
 import logging
 
 from aiohttp import web
-from simcore_service_director import config, registry_proxy, resources
+from simcore_service_director import registry_proxy, resources
 from simcore_service_director.rest import routing
 
 log = logging.getLogger(__name__)

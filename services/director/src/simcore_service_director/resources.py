@@ -4,8 +4,9 @@ from pathlib import Path
 import pkg_resources
 from simcore_service_director import config
 
-RESOURCE_OPEN_API = "oas3/{version}/openapi.yaml".format(version=config.API_VERSION)
-RESOURCE_NODE_SCHEMA = "oas3/{version}/schemas/node-meta-v0.0.1.json".format(version=config.API_VERSION)
+RESOURCE_OPENAPI_ROOT = "oas3"
+RESOURCE_OPEN_API = "{root}/{version}/openapi.yaml".format(root=RESOURCE_OPENAPI_ROOT, version=config.API_VERSION)
+RESOURCE_NODE_SCHEMA = "{root}/{version}/schemas/node-meta-v0.0.1.json".format(root=RESOURCE_OPENAPI_ROOT, version=config.API_VERSION)
 
 """
  List of pkg_resources functions *bound* to current package with the following signature
