@@ -4,7 +4,7 @@
 # /src/package-name/.openapi/v1/package_api.yaml   -- this is the input file
 # /src/package-name/rest/generated_code            -- this is the output directory
 SOURCE_DIR=./src/simcore_service_director
-INPUT_SPEC=${SOURCE_DIR}/.oas3/v1/openapi.yaml
+INPUT_SPEC=${SOURCE_DIR}/oas3/v1/openapi.yaml
 OUTPUT_DIR=${SOURCE_DIR}/rest
 OUTPUT_DIR_GEN=${SOURCE_DIR}/rest/generated_code
 INIT_FILE_PATH=${OUTPUT_DIR}/__init__.py
@@ -44,7 +44,7 @@ import logging
 
 from aiohttp import web_exceptions
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # This module shall contain the handlers of the API (implementation side of the openapi server side).
 # Each operation is typically defined as
@@ -82,23 +82,23 @@ from .models.base_model_ import Model
 from .models.error import Error
 from .models.error_enveloped import ErrorEnveloped
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 @web.middleware
 async def __handle_errors(request, handler):
     try:
-        _LOGGER.debug("error middleware handling request %s to handler %s", request, handler)
+        log.debug("error middleware handling request %s to handler %s", request, handler)
         response = await handler(request)
         return response
     except ValidationError as ex:
         # aiohttp apiset errors
-        _LOGGER.exception("error happened in handling route")
+        log.exception("error happened in handling route")
         error = Error(status=ex.status, message=ex.to_tree())
         error_enveloped = ErrorEnveloped(data=error, status=ex.status_code)
         error_dict = error_enveloped.to_dict()
         return web.json_response(error_dict, status=ex.status)
     except web.HTTPError as ex:
-        _LOGGER.exception("error happened in handling route")
+        log.exception("error happened in handling route")
         error = Error(status=ex.status, message=str(ex.reason))
         error_enveloped = ErrorEnveloped(data=error, status=ex.status_code)
         error_dict = error_enveloped.to_dict()

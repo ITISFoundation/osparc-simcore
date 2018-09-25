@@ -5,7 +5,7 @@ FROM node:8.9.2 as base-stage
 #
 # + /home/scu/              $HOME
 #    + client/              $PWD, WORKDIR, VOLUME( only devel)
-#       + .docker/          scripts and config to install contributions and run entrypoint
+#       + docker/          scripts and config to install contributions and run entrypoint
 #       + source/
 #       + source-output/    $QOOXDOO_OUTDIR
 #       + packages.json     specifies qx-compiler
@@ -69,8 +69,8 @@ FROM base-stage as development
 VOLUME /home/scu/client
 
 # 3. installs contribs and qx serve -> source-output/
-# NOTE: expects .docker available via volume bound
-ENTRYPOINT ["./.docker/entrypoint.sh"]
+# NOTE: expects docker available via volume bound
+ENTRYPOINT ["./docker/entrypoint.sh"]
 
 # 4. serves
 CMD ["serve", "--set", "qx.allowUrlSettings=true"]
@@ -79,13 +79,13 @@ CMD ["serve", "--set", "qx.allowUrlSettings=true"]
 FROM base-stage as build
 
 
-# 3. prepares .docker
-COPY --chown=scu:scu .docker .docker
-RUN chmod +x .docker/*.sh
+# 3. prepares docker
+COPY --chown=scu:scu docker docker
+RUN chmod +x docker/*.sh
 
 # 4. Installs qooxdoo contributions in $WORKDIR/contrib/ within container
 COPY --chown=scu:scu compile.json compile.json
-RUN ./.docker/install-contrib.sh
+RUN ./docker/install-contrib.sh
 
 # 5. compiles source -> build-output/
 COPY --chown=scu:scu source source

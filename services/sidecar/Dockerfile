@@ -48,7 +48,7 @@ COPY --chown=scu:scu services/sidecar/requirements/base.txt requirements-base.tx
 RUN $PIP install --no-cache-dir -r requirements-base.txt &&\
     rm requirements-base.txt
 
-COPY --chown=scu:scu services/sidecar/.docker .docker
+COPY --chown=scu:scu services/sidecar/docker docker
 COPY --chown=scu:scu services/sidecar/boot.sh boot.sh
 
 # --------------------------Development stage -------------------
@@ -68,7 +68,7 @@ VOLUME /home/scu/services/sidecar
 ENV DEBUG 1
 ENV RUN_DOCKER_ENGINE_ROOT=0
 USER root
-ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
+ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD ./boot.sh
 
 
@@ -91,7 +91,7 @@ RUN $PIP --no-cache-dir install -r requirements/prod.txt ;\
 
 #COPY --from=build-production --chown=scu:scu $HOME/boot.sh boot.sh
 #COPY --from=build-production --chown=scu:scu $HOME/.venv .venv
-#COPY --from=build-production --chown=scu:scu $HOME/.docker .docker
+#COPY --from=build-production --chown=scu:scu $HOME/docker docker
 
 WORKDIR /home/scu/
 
@@ -101,5 +101,5 @@ RUN . $HOME/.venv/bin/activate; pip list &&\
 ENV DEBUG 0
 ENV RUN_DOCKER_ENGINE_ROOT=0
 USER root
-ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
+ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD ./boot.sh

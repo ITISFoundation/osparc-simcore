@@ -3,14 +3,18 @@ FROM python:3.6-alpine as base
 LABEL maintainer=pcrespov
 
 #  USAGE:
-#     docker build -f Dockerfile -t web:ci --target ci ../../
+#     cd sercices/web
+#     docker build -f Dockerfile -t web:prod --target production ../../
 #     docker run web:ci
 #
-#  REQUIRED: context expected at $(this-file-dir)/../../
+#  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 #  REQUIRED: client_qx:build image ready
 
 # create user 'scu'
 RUN adduser -D -u 8004 scu
+
+RUN apk add --no-cache \
+      su-exec
 
 ENV HOME /home/scu
 ENV PIP  /home/scu/.venv/bin/pip3
@@ -53,6 +57,7 @@ WORKDIR /home/scu
 
 # install base 3rd party packages to accelerate runtime installs
 COPY --chown=scu:scu services/web/server/requirements/base.txt requirements-base.txt
+COPY --chown=scu:scu services/web/server/docker docker
 RUN $PIP install --no-cache-dir -r requirements-base.txt
 
 # --------------------------Development stage -------------------
@@ -73,15 +78,15 @@ VOLUME /home/scu/packages
 VOLUME /home/scu/services/web/server/
 VOLUME /home/scu/services/web/client/
 
-USER scu
 ENV SIMCORE_WEB_CONFIG development
 ENV DEBUG 1
-WORKDIR /home/scu/services/web/server
-CMD ./boot.sh
+ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
+CMD docker/boot.sh
 
 
 # --------------------------Production multi-stage -------------------
-FROM build as build-production
+#FROM build as build-production
+FROM build as production
 
 ENV SIMCORE_WEB_CONFIG production
 
@@ -105,14 +110,12 @@ RUN $PIP --no-cache-dir install -r requirements/prod.txt &&\
 #RUN . $HOME/.venv/bin/activate; pip list
 
 # FIXME: temporary solution until found missing packages
-FROM build-production as production
+WORKDIR /home/scu
 
-RUN chown -R scu:scu $HOME/.venv &&\
-    cp $HOME/services/web/server/boot.sh $HOME &&\
+RUN . $HOME/.venv/bin/activate; pip list &&\
     rm -rf $HOME/packages &&\
     rm -rf $HOME/services/web/server
 
-WORKDIR /home/scu
-USER scu
 ENV DEBUG 0
-ENTRYPOINT ./boot.sh
+ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
+CMD docker/boot.sh

@@ -20,7 +20,7 @@ def package_files(package_dir, data_dir):
 INSTALL_REQUIRES = list_requirements_in('base.txt')
 TESTS_REQUIRE = list_requirements_in('test.txt')
 PACKAGES = find_packages(where='src')
-EXTRA_FILES = package_files('src/simcore_service_director', '.oas3')
+EXTRA_FILES = package_files('src/simcore_service_director', 'oas3')
 
 setup(
     name='simcore-service-director',

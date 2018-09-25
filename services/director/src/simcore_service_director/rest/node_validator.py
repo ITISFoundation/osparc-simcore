@@ -8,10 +8,10 @@ from jsonschema import (
 )
 
 from simcore_service_director import (
-    exceptions, 
+    exceptions,
     config)
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 _NODE_SCHENA_FILE = config.JSON_SCHEMA_BASE_FOLDER / config.NODE_JSON_SCHEMA_FILE
 with _NODE_SCHENA_FILE.open() as fp:
@@ -23,12 +23,12 @@ def validate_nodes(services):
         try:
             validate(service, schema)
             validated_services.append(service)
-            _LOGGER.debug("service [%s] validated", service["key"])
+            log.debug("service [%s] validated", service["key"])
         except ValidationError:
-            _LOGGER.exception("Node validation error:")
+            log.exception("Node validation error:")
             # let's skip this service
             continue
         except SchemaError:
-            _LOGGER.exception("Schema error:")
+            log.exception("Schema error:")
             raise exceptions.DirectorException("Incorrect json schema used from %s" % (_NODE_SCHENA_FILE))
     return validated_services
