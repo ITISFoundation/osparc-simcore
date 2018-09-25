@@ -1,12 +1,11 @@
-import pytest
 import logging
-from pathlib import Path
 import sys
+from pathlib import Path
 
-from simcore_service_director import (
-    config,
-    registry_proxy
-    )
+import docker
+import pytest
+from simcore_service_director import config, registry_proxy
+
 # pylint:disable=unused-argument
 
 pytest_plugins = ["fixtures.docker_registry"]
@@ -26,3 +25,14 @@ def configure_registry_access(docker_registry):
     config.REGISTRY_SSL = False
     config.CONVERT_OLD_API = False
     registry_proxy.setup_registry_connection()
+
+@pytest.fixture(scope="session")
+def docker_swarm(docker_registry): #pylint: disable=W0613, W0621
+    client = docker.from_env()
+    assert client is not None
+    client.swarm.init()
+
+    yield client
+
+    # teardown
+    assert client.swarm.leave(force=True) == True

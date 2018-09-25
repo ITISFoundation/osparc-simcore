@@ -2,7 +2,6 @@ import json
 import uuid
 from pathlib import Path
 
-import docker
 import pytest
 from aiohttp import web_exceptions
 from simcore_service_director import config, rest
@@ -164,18 +163,6 @@ async def _start_get_stop_services(push_services):
 async def test_running_services_post_and_delete_no_swarm(configure_registry_access, push_services): #pylint: disable=W0613, W0621
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal error as there is no docker swarm"):
         await _start_get_stop_services(push_services)
-
-
-@pytest.fixture(scope="session")
-def docker_swarm(docker_registry): #pylint: disable=W0613, W0621
-    client = docker.from_env()
-    assert client is not None
-    client.swarm.init()
-
-    yield client
-
-    # teardown
-    assert client.swarm.leave(force=True) == True
 
 @pytest.mark.asyncio
 async def test_running_services_post_and_delete(configure_registry_access, push_services, docker_swarm): #pylint: disable=W0613, W0621
