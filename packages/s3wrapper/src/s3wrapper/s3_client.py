@@ -6,7 +6,7 @@ from datetime import timedelta
 from minio import Minio, CopyConditions
 from minio.error import ResponseError
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class S3Client:
@@ -141,7 +141,7 @@ class S3Client:
         try:
             for del_err in self.client.remove_objects(bucket_name, objects):
                 msg = "Deletion Error: {}".format(del_err)
-                _LOGGER.debug(msg)
+                log.debug(msg)
         except ResponseError as _err:
             logging.exception("Could remove objects")
             return False
@@ -177,7 +177,7 @@ class S3Client:
 
         for r in results:
             msg = "Object {} in bucket {} matches query {}".format(r.object_name, r.bucket_name, query)
-            _LOGGER.debug(msg)
+            log.debug(msg)
 
         return results
 

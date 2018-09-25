@@ -2,13 +2,16 @@
 # SAN this allows to know whether we are running in the Windows linux environment or under linux/mac
 VERSION=$(uname -a);
 MICROSOFT_STRING="Microsoft"
+
 if echo "$VERSION" | grep -q "$MICROSOFT_STRING"; then
-DOCKER_COMPOSE=docker-compose
-DOCKER=docker
-export COMPOSE_CONVERT_WINDOWS_PATHS=1
+  DOCKER_COMPOSE=docker-compose
+  DOCKER=docker
+  export COMPOSE_CONVERT_WINDOWS_PATHS=1
+  export IS_WINDOWS=1
 else
-DOCKER_COMPOSE=docker-compose
-DOCKER=docker
+  DOCKER_COMPOSE=docker-compose
+  DOCKER=docker
+  export IS_WINDOWS=0
 fi
 
 
@@ -37,9 +40,9 @@ print_languages_config_options()
 
 ##### Main
 
-input_file= 
-output_directory= 
-generator= 
+input_file=
+output_directory=
+generator=
 configuration=
 # process arguments
 while [ "$1" != "" ]; do
@@ -61,7 +64,7 @@ while [ "$1" != "" ]; do
                                 ;;
         -languages )            list_languages
                                 exit
-                                ;;                                
+                                ;;
         -config-help )          shift
                                 print_languages_config_options $1
                                 exit
@@ -117,18 +120,22 @@ if echo "$VERSION" | grep -q "$MICROSOFT_STRING"; then
     fi
 fi
 
+
 echo "generating code..."
 if [ ! -z "$configuration" ]; then
-exec ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output -v ${configuration_parent_dir}:/config openapitools/openapi-generator-cli \
+  ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output -v ${configuration_parent_dir}:/config openapitools/openapi-generator-cli \
     generate \
     -i /local/${input_filename} \
     -g ${generator} \
     -o /output/${generator} \
     -c /config/${configuration_filename}
 else
-exec ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output openapitools/openapi-generator-cli \
+  ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output openapitools/openapi-generator-cli \
     generate \
     -i /local/${input_filename} \
     -g ${generator} \
     -o /output/${generator}
 fi
+
+
+sudo chown -R $USER:$USER ${output_absolute_dir}/${generator}

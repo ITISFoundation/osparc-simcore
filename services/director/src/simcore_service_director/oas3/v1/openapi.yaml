@@ -1,0 +1,50 @@
+openapi: "3.0.0"
+info:
+  description: This is the oSparc's director API
+  version: 1.0.0
+  title: Director API
+  # put the contact info for your development or API team
+  contact:
+    name: IT'IS Foundation
+    email: support@simcore.com
+  license:
+    name: MIT
+    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
+
+servers:
+  - url: http://{host}:{port}/{version}
+    description: Development server
+    variables:
+      host:
+        default: 'localhost'
+      port:
+        default: '8001'
+      version:
+        default: 'v1'
+        enum:
+          - 'v1'
+
+# tags are used for organizing operations
+tags:
+- name: admins
+  description: Secured Admin-only calls
+- name: developers
+  description: Operations available to regular developers
+- name: users
+  description: Operations available to regular users
+
+paths:
+  /:
+    $ref: './paths/health_check.yaml'
+
+  /services:
+    $ref: './paths/services.yaml'
+
+  /services/{service_key}/{service_version}:
+    $ref: './paths/services-by-key-and-version.yaml'
+
+  /running_interactive_services:
+    $ref: './paths/running_interactive_services.yaml'
+
+  /running_interactive_services/{service_uuid}:
+    $ref: './paths/running_interactive_services-by-uuid.yaml'

@@ -123,8 +123,16 @@ services/docker-compose.swarm.yml
 *secret*
 *ignore*
 
+# Any generated output folder (e.g. codegen, build, ...)
+out/
+tmp/
+
+# See .vscode-template
+pytest.ini
+
 # Any output directory
 *output/
+
 # backup files
 *~
 *.bak

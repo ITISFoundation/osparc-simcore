@@ -1,0 +1,8 @@
+# TEMPORARY skipping these files in auto-generated code
+python/README.md
+python/docs/
+python/*.sh
+python/.travis.yml
+python/tox.ini
+python/test/
+python/test*
