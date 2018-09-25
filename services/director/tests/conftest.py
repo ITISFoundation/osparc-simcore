@@ -2,13 +2,12 @@ import logging
 import sys
 from pathlib import Path
 
-import docker
 import pytest
 from simcore_service_director import config, registry_proxy
 
 # pylint:disable=unused-argument
 
-pytest_plugins = ["fixtures.docker_registry"]
+pytest_plugins = ["fixtures.docker_registry", "fixtures.docker_swarm", "fixtures.fake_services"]
 
 _logger = logging.getLogger(__name__)
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
@@ -25,14 +24,3 @@ def configure_registry_access(docker_registry):
     config.REGISTRY_SSL = False
     config.CONVERT_OLD_API = False
     registry_proxy.setup_registry_connection()
-
-@pytest.fixture(scope="session")
-def docker_swarm(): #pylint: disable=W0613, W0621
-    client = docker.from_env()
-    assert client is not None
-    client.swarm.init()
-
-    yield client
-
-    # teardown
-    assert client.swarm.leave(force=True) == True
