@@ -79,13 +79,6 @@ async def test_services_get(docker_registry, push_services):
     services = services_enveloped.data
     _check_services(created_services, services)
 
-@pytest.fixture
-def configure_registry_access(docker_registry):
-    config.REGISTRY_URL = docker_registry
-    config.REGISTRY_SSL = False
-    config.CONVERT_OLD_API = False
-
-
 @pytest.mark.asyncio
 async def test_v0_services_conversion_to_new(configure_registry_access, push_v0_schema_services): #pylint: disable=W0613, W0621
     fake_request = "fake request"
