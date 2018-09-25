@@ -2,23 +2,24 @@ import logging
 
 import sqlalchemy as sa
 
-from server.main import init_app
-from server.settings import (
+from simcore_service_webserver.main import init_app
+from simcore_service_webserver.settings import (
     read_and_validate
 )
 
-from server.db._db import (
+from simcore_service_webserver.db.core import (
     create_aiopg,
-    dispose_aiopg
+    dispose_aiopg,
+    APP_ENGINE_KEY
 )
-from server.db.model import (
+from simcore_service_webserver.db.model import (
     users
 )
 
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
-async def test_basic_db_workflow(mock_services, server_test_file):
+async def test_basic_db_workflow(mock_services, server_test_configfile):
     """
         create engine
         connect
@@ -26,17 +27,17 @@ async def test_basic_db_workflow(mock_services, server_test_file):
         check against expected
         disconnect
     """
-    _LOGGER.debug("Started %s", mock_services)
+    log.debug("Started %s", mock_services)
 
     # init app from config file
-    config = read_and_validate( server_test_file )
+    config = read_and_validate( server_test_configfile )
     app = init_app(config)
 
     # emulates app startup (see app.on_startup in setup_db)
     await create_aiopg(app)
 
-    assert "db_engine" in app
-    engine = app["db_engine"]
+    assert APP_ENGINE_KEY in app
+    engine = app[APP_ENGINE_KEY]
 
     # pylint: disable=E1111, E1120
     async with engine.acquire() as connection:

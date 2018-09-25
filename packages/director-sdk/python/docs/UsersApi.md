@@ -87,7 +87,7 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **service_uuid** | [**str**](.md)| The uuid of the service | 
+ **service_uuid** | [**str**](.md)| The uuid of the service |
 
 ### Return type
 
@@ -135,7 +135,7 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **service_uuid** | [**str**](.md)| The uuid of the service | 
+ **service_uuid** | [**str**](.md)| The uuid of the service |
 
 ### Return type
 
@@ -185,9 +185,9 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **service_key** | **str**| The key (url) of the service | 
- **service_uuid** | [**str**](.md)| The uuid to assign the service with | 
- **service_tag** | **str**| The tag/version of the service | [optional] 
+ **service_key** | **str**| The key (url) of the service |
+ **service_uuid** | [**str**](.md)| The uuid to assign the service with |
+ **service_tag** | **str**| The tag/version of the service | [optional]
 
 ### Return type
 
@@ -236,8 +236,8 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **service_key** | **str**| The key (url) of the service | 
- **service_version** | **str**| The tag/version of the service | 
+ **service_key** | **str**| The key (url) of the service |
+ **service_version** | **str**| The tag/version of the service |
 
 ### Return type
 
@@ -285,7 +285,7 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **service_type** | **str**| The service type:   * computational - a computational service   * interactive - an interactive service  | [optional] 
+ **service_type** | **str**| The service type:   * computational - a computational service   * interactive - an interactive service  | [optional]
 
 ### Return type
 
@@ -301,4 +301,3 @@ No authorization required
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-

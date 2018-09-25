@@ -1,0 +1,213 @@
+openapi: 3.0.0
+info:
+  description: simcore-service-webserver rest API definition
+  version: "1.0.0-oas3"
+  title: simcore-service-webserver API
+  contact:
+    name: IT'IS Foundation
+    email: support@simcore.io
+  license:
+    name: MIT
+    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
+tags:
+  - name: admin
+    description: Secured Admin-only calls
+  - name: developers
+    description: Operations available to regular developers
+  - name: users
+    description: Operations available to regular users
+  - name: authentication
+    description: Groups API user's authentication calls
+  - name: test
+    description: Groups API calls for diagnostics and checks
+paths:
+  /:
+    get:
+      tags:
+        - test
+      summary: Service health-check endpoint
+      operationId: check_health
+      description: >-
+        Tests healthchek of the service behind and returns info about the API and
+         service state
+      responses:
+        '200':
+          description: Healthcheck info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckEnveloped'
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
+  /oas:
+    get:
+      tags:
+        - test
+      summary: Returns complete schema for OpenApi Specifications
+      operationId: get_oas_doc
+      responses:
+        '200':
+          description: oas schema
+          content:
+            application/json:
+              schema:
+                type: string
+                format: text
+
+  /me:
+    get:
+      tags:
+        - authentication
+      summary: Base entry-point for current API client's information
+      operationId: get_me
+      responses:
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
+  /register:
+    post:
+      tags:
+        - authentication
+      summary: Registers new user
+      operationId: register_user
+      responses:
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
+      requestBody:
+        $ref: '#/components/requestBodies/RegistrationInput'
+  /confirm/{token}:
+    post:
+      tags:
+        - authentication
+      summary: Confirms some operation by given user
+      operationId: confirm_token
+      description: >-
+        E.g. to confirm account, password reset, etc. Token encrypts user and
+        action to be confirmed
+      parameters:
+        - name: token
+          in: path
+          description: Confirmation token encoding idenfitier and operation to confirm
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
+  /login:
+    post:
+      tags:
+        - authentication
+      summary: Logs client into the service
+      operationId: login
+      responses:
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
+  /logout:
+    post:
+      tags:
+        - authentication
+      summary: Logs out client from the service
+      operationId: logout
+      responses:
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: './errors.yaml#/components/schemas/ErrorEnveloped'
+#-------------------------------------------------------
+components:
+
+  schemas:
+    HealthCheckEnveloped:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/HealthCheck'
+        status:
+          type: integer
+          format: int32
+          example: 200
+    HealthCheck:
+      type: object
+      properties:
+        name:
+          type: string
+          example: simcore-service-webserver
+        status:
+          type: string
+          example: SERVICE_RUNNING
+        version:
+          type: string
+          example: 2.0.1-1dfcfdc
+        api_version:
+          type: string
+          example: 1.0.0-dev
+    RegistrationInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: bizzy@foo.com
+        password:
+          type: string
+          format: password
+          example: secret123
+        username:
+          type: string
+          example: bizzy
+      description: Registration payload
+  requestBodies:
+    RegistrationInput:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationInput'
+        required: true
+
+#-------------------------------------------------------
+servers:
+  - description: Default server
+    url: http://{host}:{port}/{version}
+    variables:
+      host:
+        default: 'localhost'
+      port:
+        default: '8080'
+      version:
+        default: v1
+  - description: Production server
+    url: https://webserver:{port}/{version}
+    variables:
+      port:
+        default: '9081'
+      version:
+        default: v1

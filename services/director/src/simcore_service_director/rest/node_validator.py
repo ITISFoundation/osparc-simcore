@@ -8,10 +8,10 @@ from jsonschema import (
 )
 
 from simcore_service_director import (
-    exceptions, 
+    exceptions,
     config)
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 _NODE_SCHENA_FILE = config.JSON_SCHEMA_BASE_FOLDER / config.NODE_JSON_SCHEMA_FILE
 with _NODE_SCHENA_FILE.open() as fp:

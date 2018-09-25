@@ -50,7 +50,7 @@ COPY --chown=scu:scu services/director/requirements/base.txt requirements-base.t
 RUN $PIP install --no-cache-dir -r requirements-base.txt &&\
     rm requirements-base.txt
 
-COPY --chown=scu:scu services/director/.docker .docker
+COPY --chown=scu:scu services/director/docker docker
 
 # --------------------------Development stage -------------------
 FROM build as development
@@ -67,8 +67,8 @@ VOLUME /home/scu/services/director
 
 ENV DEBUG 1
 ENV RUN_DOCKER_ENGINE_ROOT=0
-ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
-CMD ["/bin/sh", ".docker/boot.sh"]
+ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
+CMD ["/bin/sh", "docker/boot.sh"]
 
 # --------------------------Production stage -------------------
 FROM build as production
@@ -80,5 +80,5 @@ WORKDIR $HOME/services/director
 RUN $PIP install --no-cache-dir -r requirements/prod.txt \
     && rm -rf $HOME/services/director
 WORKDIR $HOME
-ENTRYPOINT [ "/bin/sh", ".docker/entrypoint.sh" ]
-CMD ["/bin/sh", ".docker/boot.sh"]
+ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
+CMD ["/bin/sh", "docker/boot.sh"]

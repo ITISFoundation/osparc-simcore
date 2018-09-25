@@ -5,8 +5,8 @@ usage()
     echo "usage: openapi_python_server_codegen [[[-i input] [-o output directory]] | [-h help]]"
 }
 
-input_file= 
-output_directory= 
+input_file=
+output_directory=
 generator="python-flask"
 # process arguments
 while [ "$1" != "" ]; do
@@ -45,6 +45,8 @@ mkdir ${temp_folder}
 if [ ! -d "$output_directory" ]; then
   mkdir ${output_directory}
 fi
+
+sudo chown -R $USER $temp_folder
 
 echo "retrieving util.py..."
 mv -uf ${temp_folder}/${generator}/openapi_server/util.py ${output_directory}/util.py

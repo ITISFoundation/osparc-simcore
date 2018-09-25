@@ -21,9 +21,9 @@ def setup_registry_connection():
     if config.REGISTRY_AUTH:
         _logger.debug("Authentifying registry...")
         if not config.REGISTRY_USER:
-            raise exceptions.DirectorException("User to access to registry is not defined")    
+            raise exceptions.DirectorException("User to access to registry is not defined")
         if not config.REGISTRY_PW:
-            raise exceptions.DirectorException("PW to access to registry is not defined")    
+            raise exceptions.DirectorException("PW to access to registry is not defined")
         _SESSION.auth = (config.REGISTRY_USER, config.REGISTRY_PW)
         _logger.debug("Session authorization complete")
 
@@ -46,7 +46,7 @@ def list_interactive_service_dependencies(service_key):
     #TODO: dependencies should be explicitely listed in the main service labels... this is currently not good.
     prefix = INTERACTIVE_SERVICES_PREFIX
     # check if the service has a dependency
-    service_name_suffixes = str(service_key)[len(prefix):]    
+    service_name_suffixes = str(service_key)[len(prefix):]
     try:
         service_name_suffixes.index("/")
     except ValueError:
@@ -107,7 +107,7 @@ def __registry_request(path, method="GET"):
         _logger.info("Request status: %s",request_result.status_code)
         if request_result.status_code > 399:            
             request_result.raise_for_status()
-            
+
         return request_result
     except HTTPError as err:
         _logger.exception("HTTP error returned while accessing registry")

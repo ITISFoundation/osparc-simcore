@@ -23,7 +23,7 @@ pip install git+https://github.com/GIT_USER_ID/GIT_REPO_ID.git
 
 Then import the package:
 ```python
-import simcore_director_sdk 
+import simcore_director_sdk
 ```
 
 ### Setuptools
@@ -99,5 +99,3 @@ Class | Method | HTTP request | Description
 ## Author
 
 support@simcore.com
-
-
