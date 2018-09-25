@@ -2,19 +2,17 @@ import json
 import logging
 
 from jsonschema import (
-    SchemaError,
-    ValidationError,
-    validate
-)
-
+    SchemaError, 
+    ValidationError, 
+    validate)
 from simcore_service_director import (
-    exceptions,
-    config)
+    exceptions, 
+    resources)
 
 log = logging.getLogger(__name__)
 
-_NODE_SCHENA_FILE = config.JSON_SCHEMA_BASE_FOLDER / config.NODE_JSON_SCHEMA_FILE
-with _NODE_SCHENA_FILE.open() as fp:
+
+with resources.stream(resources.RESOURCE_NODE_SCHEMA) as fp:
     schema = json.load(fp)
 
 def is_service_valid(service):
@@ -26,8 +24,8 @@ def is_service_valid(service):
         log.exception("Node validation error:")
         return False
     except SchemaError:
-        log.exception("Schema error:")
-        raise exceptions.DirectorException("Incorrect json schema used from %s" % (_NODE_SCHENA_FILE))
+        log.exception("Schema error:")        
+        raise exceptions.DirectorException("Incorrect json schema used from %s" % (resources.get_path(resources.RESOURCE_NODE_SCHEMA)))
 
 def validate_nodes(services):
     validated_services = []

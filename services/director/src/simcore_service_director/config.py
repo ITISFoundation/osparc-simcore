@@ -1,6 +1,8 @@
+"""Director service configuration
+"""
+
 import logging
 import os
-from pathlib import Path
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -8,11 +10,7 @@ logging.basicConfig(
     )
 
 CONVERT_OLD_API = False
-
-OPEN_API_BASE_FOLDER = Path(__file__).parent / "oas3/v1"
-OPEN_API_SPEC_FILE = "openapi.yaml"
-JSON_SCHEMA_BASE_FOLDER = Path(__file__).parent / "oas3/v1/schemas"
-NODE_JSON_SCHEMA_FILE = "node-meta-v0.0.1.json"
+API_VERSION = "v1"
 
 REGISTRY_AUTH = os.environ.get("REGISTRY_AUTH", False) in ["true", "True"]
 REGISTRY_USER = os.environ.get("REGISTRY_USER", "")

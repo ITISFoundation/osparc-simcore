@@ -3,15 +3,11 @@ import logging
 import pkg_resources
 import yaml
 from aiohttp import web_exceptions
+from simcore_service_director import (config, exceptions, producer,
+                                      registry_proxy, resources)
 
-from simcore_service_director import (
-    config,
-    exceptions,
-    producer,
-    registry_proxy
-    )
+from . import (api_converters, node_validator)
 
-from . import api_converters, node_validator
 from .generated_code.models import (HealthCheck, HealthCheckEnveloped,
                                     NodeMetaV0, Response204Enveloped,
                                     RunningService, RunningServiceEnveloped,
@@ -22,8 +18,7 @@ log = logging.getLogger(__name__)
 async def root_get(request):  # pylint:disable=unused-argument
     log.debug("Client does root_get request %s", request)
     distb = pkg_resources.get_distribution('simcore-service-director')
-    api_path = config.OPEN_API_BASE_FOLDER / config.OPEN_API_SPEC_FILE
-    with api_path.open() as file_ptr:
+    with resources.stream(resources.RESOURCE_OPEN_API) as file_ptr:
         api_dict = yaml.load(file_ptr)
 
     service_health = HealthCheck(
