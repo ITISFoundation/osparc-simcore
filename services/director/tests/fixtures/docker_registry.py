@@ -52,7 +52,7 @@ def _create_service_description(service_type, name, tag, schema_version):
         # validate service
         try:
             # TODO: use resources!
-            json_schema_path = Path(__file__).parent.parent.parent / "src/simcore_service_director/.oas3/v1/schemas/node-meta-v0.0.1.json"
+            json_schema_path = Path(__file__).parent.parent.parent / "src/simcore_service_director/oas3/v1/schemas/node-meta-v0.0.1.json"
             with json_schema_path.open() as file_pt:
                 service_schema = json.load(file_pt)
             validate(service_desc, service_schema)

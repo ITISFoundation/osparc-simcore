@@ -20,13 +20,13 @@ with _NODE_SCHENA_FILE.open() as fp:
 def is_service_valid(service):
     try:
         validate(service, schema)
-        _LOGGER.debug("service [%s] validated", service["key"])
+        log.debug("service [%s] validated", service["key"])
         return True
     except ValidationError:
-        _LOGGER.exception("Node validation error:")
+        log.exception("Node validation error:")
         return False
     except SchemaError:
-        _LOGGER.exception("Schema error:")
+        log.exception("Schema error:")
         raise exceptions.DirectorException("Incorrect json schema used from %s" % (_NODE_SCHENA_FILE))
 
 def validate_nodes(services):
