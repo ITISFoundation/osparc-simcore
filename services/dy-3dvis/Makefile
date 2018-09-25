@@ -37,8 +37,6 @@ up-devel:
 
 down:
 	${DOCKER_COMPOSE} -f docker-compose.yml down
-
-down-devel:
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml down
 
 push_service_images:
