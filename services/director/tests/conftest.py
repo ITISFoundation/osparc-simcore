@@ -27,7 +27,7 @@ def configure_registry_access(docker_registry):
     registry_proxy.setup_registry_connection()
 
 @pytest.fixture(scope="session")
-def docker_swarm(docker_registry): #pylint: disable=W0613, W0621
+def docker_swarm(): #pylint: disable=W0613, W0621
     client = docker.from_env()
     assert client is not None
     client.swarm.init()

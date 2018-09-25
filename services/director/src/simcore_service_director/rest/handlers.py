@@ -94,7 +94,7 @@ async def running_interactive_services_post(request, service_key, service_uuid, 
 async def running_interactive_services_get(request, service_uuid):  # pylint:disable=unused-argument
     _LOGGER.debug("Client does running_interactive_services_get request %s with service_uuid %s", request, service_uuid)
     try:
-        producer.is_service_up(service_uuid)
+        producer.get_service_details(service_uuid)
     except exceptions.ServiceUUIDNotFoundError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except Exception as err:

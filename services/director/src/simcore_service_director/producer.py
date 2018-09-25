@@ -134,6 +134,8 @@ def __add_network_to_service_runtime_params(docker_service_runtime_parameters, d
 def __add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, service_uuid):
     variables = [
         "POSTGRES_ENDPOINT=" + config.POSTGRES_ENDPOINT,
+        "POSTGRES_HOST=" + config.POSTGRES_HOST,
+        "POSTGRES_PORT=" + config.POSTGRES_PORT,
         "POSTGRES_USER=" + config.POSTGRES_USER,
         "POSTGRES_PASSWORD=" + config.POSTGRES_PASSWORD,
         "POSTGRES_DB=" + config.POSTGRES_DB,
@@ -374,7 +376,7 @@ def start_service(service_key, service_tag, service_uuid):
     # we return only the info of the main service
     return containers_meta_data[0]
 
-def is_service_up(service_uuid):
+def get_service_details(service_uuid):
     # get the docker client
     docker_client = __get_docker_client()
     __login_docker_registry(docker_client)
