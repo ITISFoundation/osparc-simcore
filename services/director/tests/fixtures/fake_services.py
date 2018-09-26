@@ -99,7 +99,7 @@ def _create_base_image(base_dir, labels, sleep_time_s):
     # create a basic dockerfile
     docker_file = base_dir / "Dockerfile"
     with docker_file.open("w") as file_pointer:        
-        file_pointer.write("FROM alpine\nCMD ['sleep {sleep_time_s}']".format(sleep_time_s=sleep_time_s))
+        file_pointer.write("FROM alpine\nCMD ['sleep', '{sleep_time_s}']".format(sleep_time_s=sleep_time_s))
     assert docker_file.exists() == True
     # build docker base image
     docker_client = docker.from_env()

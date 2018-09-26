@@ -242,11 +242,7 @@ def __wait_until_service_running_or_failed(service_id, service_name, service_uui
             if task_state == "running":
                 break
             elif task_state in ("failed", "rejected"):
-                service_logs = client.service_logs(service_id, stdout=True, stderr=True)
-                log.error("Error logs from service:")
-                for service_log in service_logs:
-                    log.error("%s", str(service_log))
-                
+                log.error("Error while waiting for service")               
                 raise exceptions.ServiceStartTimeoutError(service_name, service_uuid)
         # TODO: all these functions should be async and here one could use await sleep which
         # would allow dealing with other events instead of wasting time here
