@@ -42,7 +42,7 @@ def run_services(configure_registry_access, push_services, docker_swarm): #pylin
 
 def test_start_stop_service(run_services): #pylint: disable=W0613, W0621
     # standard test
-    run_services(1,0)
+    run_services(1,1)
 
 
 def _check_env_variable(envs, variable_name):
@@ -50,7 +50,7 @@ def _check_env_variable(envs, variable_name):
     assert envs[variable_name] == getattr(config, variable_name)
 
 def test_service_assigned_env_variables(run_services): #pylint: disable=W0621
-    started_services = run_services(1,0)
+    started_services = run_services(1,1)
     client = docker.from_env()
     for service in started_services:
         service_uuid = service["service_uuid"]
