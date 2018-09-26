@@ -29,6 +29,7 @@ matrix:
         - lsb_release -a
         - docker --version
         - docker-compose --version
+        - docker node ls
         # shutdown postgres because sometimes is is alrady up ???
         - sudo service postgresql stop
         # wait for postgresql to shutdown
