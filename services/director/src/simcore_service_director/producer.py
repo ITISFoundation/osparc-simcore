@@ -245,7 +245,7 @@ def __wait_until_service_running_or_failed(service_id, service_name, service_uui
                 service_logs = client.service_logs(service_id)
                 log.error("Error logs from service:")
                 for service_log in service_logs:
-                    log.error("%s", service_log)
+                    log.error("%s", str(service_log))
                 
                 raise exceptions.ServiceStartTimeoutError(service_name, service_uuid)
         # TODO: all these functions should be async and here one could use await sleep which
