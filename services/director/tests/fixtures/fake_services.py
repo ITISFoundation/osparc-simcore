@@ -62,8 +62,10 @@ def _build_push_image(docker_dir, registry_url, service_type, name, tag, sleep_t
     # crate image
     service_description = _create_service_description(service_type, name, tag, schema_version)
     docker_labels = _create_docker_labels(service_description)
+    additional_docker_labels = [{"name": "constraints", "type": "string", "value": ["node.role==manager"]}]
     if service_type == "dynamic":
-        docker_labels["simcore.service.settings"] = json.dumps([{"name": "ports", "type": "int", "value": 8888}])
+        additional_docker_labels.append({"name": "ports", "type": "int", "value": 8888})
+    docker_labels["simcore.service.settings"] = json.dumps(additional_docker_labels)
     image = _create_base_image(docker_dir, docker_labels, sleep_time_s)
     # tag image
     image_tag = registry_url + "/{key}:{version}".format(key=service_description["key"], version=tag)
@@ -99,7 +101,7 @@ def _create_base_image(base_dir, labels, sleep_time_s):
     # create a basic dockerfile
     docker_file = base_dir / "Dockerfile"
     with docker_file.open("w") as file_pointer:        
-        file_pointer.write("FROM alpine\nCMD ['sleep', '{sleep_time_s}']".format(sleep_time_s=sleep_time_s))
+        file_pointer.write('FROM alpine\nCMD sleep %s\n' % (sleep_time_s))
     assert docker_file.exists() == True
     # build docker base image
     docker_client = docker.from_env()
