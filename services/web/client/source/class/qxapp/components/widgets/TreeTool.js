@@ -27,10 +27,13 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
 
   members: {
     __tree: null,
+    __selectedNodeId: null,
 
     buildTree: function() {
       this.__buildLayout();
-      this.__populateTree();
+
+      const nodes = this.getWorkbenchModel().getNodes();
+      this.__populateTree(nodes);
     },
 
     __buildLayout: function() {
@@ -58,28 +61,32 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
       this._add(tree);
     },
 
-    __populateTree: function() {
+    __populateTree: function(nodes, parent = null) {
       let dataModel = this.__tree.getDataModel();
 
-      const nodes = this.getWorkbenchModel().getNodes();
       for (let nodeId in nodes) {
         const node = nodes[nodeId];
-        if (node.type === "container") {
+        if (node.isContainer()) {
           const label = node.getMetaData().name;
-          let branch = dataModel.addBranch(null, label, true);
+          let branch = dataModel.addBranch(parent, label, true);
           dataModel.setColumnData(branch, 1, nodeId);
+          this.__populateTree(node.getInnerNodes(false), branch);
         } else {
           const label = node.getMetaData().name + " " + node.getMetaData().version;
-          let leaf = dataModel.addLeaf(null, label);
+          let leaf = dataModel.addLeaf(parent, label);
           dataModel.setColumnData(leaf, 1, nodeId);
         }
       }
 
       dataModel.setData();
 
-      this.__tree.addListener("dblclick", function(e) {
-        let nodeClicked = e.getData();
-        console.log(nodeClicked);
+      this.__tree.addListener("changeSelection", function(e) {
+        let selectedRow = e.getData();
+        this.__selectedNodeId = selectedRow[0].columnData[1];
+      }, this);
+
+      this.__tree.addListener("dblclick", function() {
+        this.fireDataEvent("NodeDoubleClicked", this.__selectedNodeId);
       }, this);
     },
 
