@@ -12,7 +12,7 @@ def push_services(docker_registry, tmpdir):
     tmp_dir = Path(tmpdir)
 
     list_of_pushed_images_tags = []
-    def build_push_images(number_of_computational_services, number_of_interactive_services, sleep_time_s=10):
+    def build_push_images(number_of_computational_services, number_of_interactive_services, sleep_time_s=60):
         try:        
             version = "1.0."
             for image_index in range(0, number_of_computational_services):                
