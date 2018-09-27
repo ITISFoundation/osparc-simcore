@@ -46,6 +46,7 @@ def _check_services(created_services, services, schema_version="v1"):
 
 @pytest.mark.asyncio
 async def test_services_get(docker_registry, push_services):
+    config.CONVERT_OLD_API = False
     fake_request = "fake request"
     # no registry defined
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting HTTP Internal Error as no registry URL is defined"):
