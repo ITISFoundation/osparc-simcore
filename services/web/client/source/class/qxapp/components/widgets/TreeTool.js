@@ -95,7 +95,7 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
     },
 
     __applyMe: function(value, old) {
-      console.log("__updateMe");
+      console.log("__applyMe");
     }
   }
 });
