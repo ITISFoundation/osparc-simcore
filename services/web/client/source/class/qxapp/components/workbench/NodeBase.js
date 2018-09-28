@@ -44,8 +44,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     __outputPortsUI: null,
     __progressLabel: null,
     __progressBar: null,
-    __innerNodes: null,
-    __connectedTo: null,
 
     getNodeId: function() {
       return this.getNodeModel().getNodeId();
@@ -53,10 +51,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     getMetaData: function() {
       return this.getNodeModel().getMetaData();
-    },
-
-    getInnerNodes: function() {
-      return this.getNodeModel().getInnerNodes();
     },
 
     addLink: function(link) {
@@ -113,8 +107,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       this.setCaption(metaData.name + " " + metaData.version);
       this.__outputPorts = {};
       this.__inputPorts = {};
-      this.__createPorts("Input", metaData.inputs);
-      this.__createPorts("Output", metaData.outputs);
+      this.__createUIPorts("Input", metaData.inputs);
+      this.__createUIPorts("Output", metaData.outputs);
     },
 
     getInputPorts: function() {
@@ -135,20 +129,21 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return this.__outputPorts["Output"];
     },
 
-    __createPorts: function(portId, ports) {
-      const nPorts = Object.keys(ports).length;
-      if (nPorts < 1) {
+    __createUIPorts: function(portId, ports) {
+      let nPorts = Object.keys(ports).length;
+      // Always create ports if node is a container
+      if (!this.getNodeModel().isContainer() && nPorts < 1) {
         return;
       }
       switch (portId) {
         case "Input": {
-          let label = this.__createPort(true, portId, ports);
+          let label = this.__createUIPort(true, portId);
           this.getInputPorts()[portId] = label;
           this.__inputPortsUI.add(label.ui);
         }
           break;
         case "Output": {
-          let label = this.__createPort(false, portId, ports);
+          let label = this.__createUIPort(false, portId);
           this.getOutputPorts()[portId] = label;
           this.__outputPortsUI.add(label.ui);
         }
@@ -156,7 +151,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       }
     },
 
-    __createPort: function(isInput, portId, portsData) {
+    __createUIPort: function(isInput, portId) {
       let label = {};
       label.portId = portId;
       label.isInput = isInput;

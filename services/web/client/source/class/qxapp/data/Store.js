@@ -463,57 +463,61 @@ qx.Class.define("qxapp.data.Store", {
               type: "data:application/hdf5"
             }
           },
-          innerNodes: [
-            {
+          innerNodes: {
+            "inner1": {
               key: "service/dynamic/itis/s4l/Simulator/LF/Setup",
               version: "0.0.0",
-              parentInputs: {},
-              parentOutputs: {}
-            }, {
+              inputNodes: [],
+              outputNode: false
+            },
+            "inner2": {
               key: "service/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
-              parentInputs: {
-                modeler: "modeler",
-                materialDB: "materialDB"
-              },
-              parentOutputs: {}
-            }, {
+              inputNodes: [
+                "modeler",
+                "materialDB"
+              ],
+              outputNode: false
+            },
+            "inner3": {
               key: "service/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
-              parentInputs: {
-                modeler: "modeler"
-              },
-              parentOutputs: {}
-            }, {
+              inputNodes: [
+                "modeler"
+              ],
+              outputNode: false
+            },
+            "inner4": {
               key: "service/dynamic/itis/s4l/Simulator/LF/Sensors",
               version: "0.0.0",
-              parentInputs: {
-                modeler: "modeler"
-              },
-              parentOutputs: {}
-            }, {
+              inputNodes: [
+                "modeler"
+              ],
+              outputNode: false
+            },
+            "inner5": {
               key: "service/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
-              parentInputs: {
-                modeler: "modeler"
-              },
-              parentOutputs: {}
-            }, {
+              inputNodes: [
+                "modeler"
+              ],
+              outputNode: false
+            },
+            "inner6": {
               key: "service/dynamic/itis/s4l/Simulator/LF/Voxel",
               version: "0.0.0",
-              parentInputs: {
-                modeler: "modeler"
-              },
-              parentOutputs: {}
-            }, {
+              inputNodes: [
+                "modeler"
+              ],
+              outputNode: false
+            },
+            "inner7": {
               key: "service/dynamic/itis/s4l/Simulator/LF/SolverSettings",
               version: "0.0.0",
-              parentInputs: {},
-              parentOutputs: {
-                outFile: "outFile"
-              }
+              inputNodes: [],
+              outputNode: true
             }
-          ]
+          }
         },
         "service/dynamic/itis/s4l/Simulator/LF/Setup-0.0.0": {
           key: "service/dynamic/itis/s4l/Simulator/LF/Setup",

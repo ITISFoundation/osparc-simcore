@@ -139,44 +139,41 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       ].forEach(wb => {
         wb.addListener("NodeDoubleClicked", function(e) {
           let nodeId = e.getData();
-          let node = this.__workbenchView.getNode(nodeId);
+          let nodeModel = this.__projectDocument.getWorkbench().getNode(nodeId);
+          console.log("NodeDoubleClicked", nodeModel);
 
-          switch (node.getMetaData().type) {
-            case "dynamic": {
-              const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
-              let widget = widgetManager.getWidgetForNode(node);
-              widget.addListener("Finished", function() {
-                this.showInMainView(this.__workbenchView, "Workbench");
-              }, this);
-              this.__mainPanel.getOptions().addListener("ListClicked", function() {
-                widget.listClicked();
-              }, this);
-              this.__mainPanel.getOptions().addListener("AddClicked", function() {
-                widget.addClicked();
-              }, this);
-              this.showInExtraView(new qx.ui.core.Widget());
-              this.showInMainView(widget, node.getMetaData().name);
-              break;
-            }
-            case "container": {
-              const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
-              let widget = widgetManager.getWidgetForNode(node);
-              widget.addListener("NodeDoubleClicked", function(ev) {
-                const data = ev.getData();
-                this.__workbenchView.fireDataEvent("NodeDoubleClicked", data);
-              }, this);
-              this.showInExtraView(widget);
+          if (nodeModel.isContainer()) {
+            this.__workbenchView.loadNode(nodeModel);
+            /*
+            const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
+            let widget = widgetManager.getWidgetForNode(nodeModel);
+            widget.addListener("NodeDoubleClicked", function(ev) {
+              const data = ev.getData();
+              this.__workbenchView.fireDataEvent("NodeDoubleClicked", data);
+            }, this);
+            this.showInExtraView(widget);
+            this.showInMainView(this.__workbenchView, "Workbench");
+            */
+          } else if (nodeModel.getMetaData().type === "dynamic") {
+            const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
+            let widget = widgetManager.getWidgetForNode(nodeModel);
+            widget.addListener("Finished", function() {
               this.showInMainView(this.__workbenchView, "Workbench");
-              break;
-            }
-            default: {
-              this.showInExtraView(new qx.ui.core.Widget());
-              this.showInMainView(this.__workbenchView, "Workbench");
-              break;
-            }
+            }, this);
+            this.__mainPanel.getOptions().addListener("ListClicked", function() {
+              widget.listClicked();
+            }, this);
+            this.__mainPanel.getOptions().addListener("AddClicked", function() {
+              widget.addClicked();
+            }, this);
+            this.showInExtraView(new qx.ui.core.Widget());
+            this.showInMainView(widget, nodeModel.getMetaData().name);
+          } else {
+            this.showInExtraView(new qx.ui.core.Widget());
+            this.showInMainView(this.__workbenchView, "Workbench");
           }
 
-          this.__settingsView.setNode(node);
+          this.__settingsView.setNode(nodeModel);
         }, this);
       });
     },

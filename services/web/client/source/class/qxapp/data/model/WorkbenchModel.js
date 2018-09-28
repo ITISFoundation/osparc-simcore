@@ -1,3 +1,5 @@
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.data.model.WorkbenchModel", {
   extend: qx.core.Object,
 
@@ -20,7 +22,22 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     __links: null,
 
     getNode: function(nodeId) {
-      return this.__nodes[nodeId];
+      // return this.__nodes[nodeId];
+      const allNodes = this.getAllLevelNodes();
+      const exists = Object.prototype.hasOwnProperty.call(allNodes, nodeId);
+      if (exists) {
+        return allNodes[nodeId];
+      }
+      return null;
+    },
+
+    getAllLevelNodes: function() {
+      let allNodes = Object.assign({}, this.__nodes);
+      for (const nodeId of Object.keys(this.__nodes)) {
+        let innerNodes = this.__nodes[nodeId].getInnerNodes(true);
+        allNodes = Object.assign(allNodes, innerNodes);
+      }
+      return allNodes;
     },
 
     getNodes: function() {
@@ -32,8 +49,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       if (existingNodeModel) {
         return existingNodeModel;
       }
-      const nodeImageId = nodeData.key + "-" + nodeData.version;
-      let nodeModel = new qxapp.data.model.NodeModel(nodeImageId, uuid);
+      let nodeModel = new qxapp.data.model.NodeModel(nodeData, uuid);
       nodeModel.populateNodeData(nodeData);
       uuid = nodeModel.getNodeId();
       this.__nodes[uuid] = nodeModel;
@@ -70,27 +86,33 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return this.__links;
     },
 
+    createLink: function(outputNodeId, inputNodeId) {
+      const linkObj = {
+        output: {
+          nodeUuid: outputNodeId
+        },
+        input: {
+          nodeUuid: inputNodeId
+        }
+      };
+      const linkId = qxapp.utils.Utils.uuidv4();
+      // TODO: always returns false
+      const exists = Object.values(this.__links).includes(linkObj);
+      if (exists) {
+        console.log("Link already exists", linkObj);
+      } else {
+        this.__links[linkId] = linkObj;
+        this.fireEvent("WorkbenchModelChanged");
+      }
+    },
+
     createLinks: function(workbenchData) {
-      for (const key of Object.keys(workbenchData)) {
-        const nodeData = workbenchData[key];
-        if (nodeData.inputs) {
-          for (const inputPortId in nodeData.inputs) {
-            let link = nodeData.inputs[inputPortId];
-            if (typeof link == "object" && link.nodeUuid) {
-              const linkObj = {
-                output: {
-                  nodeUuid: link.nodeUuid,
-                  output: link.output
-                },
-                input: {
-                  nodeUuid: key,
-                  input: inputPortId
-                }
-              };
-              const linkId = qxapp.utils.Utils.uuidv4();
-              this.__links[linkId] = linkObj;
-              this.fireEvent("WorkbenchModelChanged");
-            }
+      for (const nodeId of Object.keys(workbenchData)) {
+        const nodeData = workbenchData[nodeId];
+        if (nodeData.inputNodes) {
+          for (let i=0; i < nodeData.inputNodes.length; i++) {
+            const outputNodeId = nodeData.inputNodes[i];
+            this.createLink(outputNodeId, nodeId);
           }
         }
       }

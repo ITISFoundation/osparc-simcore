@@ -1,12 +1,17 @@
 qx.Class.define("qxapp.data.model.NodeModel", {
   extend: qx.core.Object,
 
-  construct: function(nodeImageId, uuid) {
+  construct: function(nodeData, uuid) {
     this.base(arguments);
 
-    this.__innerNodes = [];
+    this.__metaData = {};
+    this.__innerNodes = {};
     this.__connectedTo = [];
 
+    let nodeImageId = nodeData.key;
+    if (nodeData.key !== "container") {
+      nodeImageId = nodeImageId + "-" + nodeData.version;
+    }
     this.set({
       nodeImageId: nodeImageId || null,
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
@@ -16,10 +21,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     let metaData = store.getNodeMetaData(this.getNodeImageId());
     if (metaData) {
       this.__metaData = metaData;
-      if (metaData.type === "container") {
-        let innerNodes = this.createInnerNodes(metaData.innerNodes);
-        this.__nodes = this.__nodes.concat(innerNodes);
-      }
+    } else if (this.isContainer()) {
+      this.__metaData.name = nodeData.name;
     } else {
       console.log("ImageID not found in registry - Not populating "+ this.getNodeImageId());
     }
@@ -54,27 +57,39 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __posX: null,
     __posY: null,
 
-    getMetaData: function() {
-      return this.__metaData;
+    isContainer: function() {
+      let isContainer = false;
+      isContainer = isContainer || (this.getNodeImageId() === "container"); // built Container
+      isContainer = isContainer || (this.getMetaData().type === "container"); // container by default
+      return isContainer;
     },
 
-    getInnerNodes: function() {
-      return this.__innerNodes;
+    getMetaData: function() {
+      return this.__metaData;
     },
 
     getInputValues: function() {
       return this.getPropsWidget().getValues();
     },
 
-    createInnerNodes: function(innerNodes) {
-      for (let i=0; i<innerNodes.length; i++) {
-        let innerNodeMetaData = innerNodes[i];
-        const innerNodeImageId = innerNodeMetaData.key + "-" + innerNodeMetaData.version;
-        let innerNode = new qxapp.data.model.NodeModel(innerNodeImageId);
-        innerNode.populateNodeData();
-        this.__innerNodes.push(innerNode);
+    getInnerNodes: function(recursive = true) {
+      let innerNodes = Object.assign({}, this.__innerNodes);
+      if (recursive) {
+        for (const innerNodeId of Object.keys(this.__innerNodes)) {
+          let myInnerNodes = this.__innerNodes[innerNodeId].getInnerNodes(true);
+          innerNodes = Object.assign(innerNodes, myInnerNodes);
+        }
       }
-      return this.__innerNodes;
+      return innerNodes;
+    },
+
+    createInnerNodes: function(innerNodes) {
+      for (const innerNodeId of Object.keys(innerNodes)) {
+        let innerNodeMetaData = innerNodes[innerNodeId];
+        let innerNode = new qxapp.data.model.NodeModel(innerNodeMetaData, innerNodeId);
+        innerNode.populateNodeData(innerNodeMetaData);
+        this.__innerNodes[innerNodeId] = innerNode;
+      }
     },
 
     populateNodeData: function(nodeData) {
@@ -85,6 +100,15 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
         if (nodeData && nodeData.position) {
           this.setPosition(nodeData.position.x, nodeData.position.y);
+        }
+
+        if (this.isContainer()) {
+          if ("innerNodes" in nodeData) {
+            this.createInnerNodes(nodeData.innerNodes);
+          }
+          if ("innerNodes" in metaData) {
+            this.createInnerNodes(metaData.innerNodes);
+          }
         }
       }
     },
@@ -137,7 +161,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
-    addLink: function(link, enable) {
+    addLink: function(link) {
       this.__connectedTo.push(link);
       this.getPropsWidget().enableProp(link.getOutputPortId(), false);
     },

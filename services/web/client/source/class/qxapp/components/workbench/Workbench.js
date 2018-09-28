@@ -229,8 +229,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __createNode: function(metaData, uuid, nodeData) {
-      let nodeModel = this.getWorkbenchModel().createNode(metaData, uuid);
-      nodeModel.populateNodeData(nodeData);
+      // let nodeModel = this.getWorkbenchModel().createNode(metaData, uuid);
+      // nodeModel.populateNodeData(nodeData);
+      let nodeModel = this.getWorkbenchModel().getNode(uuid);
 
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeModel);
       nodeBase.createNodeLayout();
@@ -583,7 +584,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __removeLink: function(link) {
-      const removed = this.getWorkbenchModel().removeNode(link);
+      const removed = this.getWorkbenchModel().removeLink(link);
       if (removed) {
         this.__svgWidget.removeCurve(link.getRepresentation());
         let index = this.__linksUI.indexOf(link);
@@ -618,18 +619,22 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __loadProject: function() {
+      const workbenchModel = this.getWorkbenchModel();
+      this.loadNode(workbenchModel);
+    },
+
+    loadNode: function(model) {
       this.removeAll();
 
-      const workbenchModel = this.getWorkbenchModel();
-      if (workbenchModel) {
-        for (const nodeUuid in workbenchModel.getNodes()) {
-          const nodeModel = workbenchModel.getNodes()[nodeUuid];
+      if (model) {
+        for (const nodeUuid in model.getNodes()) {
+          const nodeModel = model.getNodes()[nodeUuid];
           const nodeImageId = nodeModel.getNodeImageId();
           let node = this.__createNode(nodeImageId, nodeUuid, nodeModel);
           this.__addNodeToWorkbench(node, nodeModel.getPosition());
         }
-        for (const linkUuid in workbenchModel.getLinks()) {
-          const linkData = workbenchModel.getLinks()[linkUuid];
+        for (const linkUuid in model.getLinks()) {
+          const linkData = model.getLinks()[linkUuid];
           this.__addLink(
             {
               nodeUuid: linkData.output.nodeUuid,

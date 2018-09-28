@@ -264,11 +264,11 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   output: "outFile"
                 },
                 inImage: {
-                  store: "s3-z43",
-                  path: "bucket32/file.png"
+                  nodeUuid: "UUID1",
+                  output: "outFile"
                 }
               },
-              links: [
+              inputNodes: [
                 "UUID3",
                 "UUID1"
               ],
@@ -332,7 +332,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   output: "materialDB"
                 }
               },
-              links: [
+              inputNodes: [
                 "bc466582-9240-4d97-9f9e-197b5f3a354b",
                 "eb51440a-04bd-4847-b457-86c83400abf5"
               ],
@@ -345,7 +345,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         }, {
           projectUuid: "f54da025-2667-477f-b307-e126b006accd",
           name: "Macros",
-          description: "Project containing a macro",
+          description: "Project containing nested custom macros",
           notes: "# title\nBlah",
           owner: "UUID-OF-ODEI",
           collaborators: {
@@ -358,17 +358,42 @@ qx.Class.define("qxapp.dev.fake.Data", {
           lastChangeDate: "2018-09-24T16:02:22Z",
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?15.jpg",
           workbench: {
+            "UUID2": {
+              key: "service/computational/itis/sleeper",
+              version: "0.0.0",
+              inputs: {
+                inNumber: 1
+              },
+              outputs: {
+                outNumber: 33
+              },
+              position: {
+                x: 400,
+                y: 10
+              }
+            },
             "fa6c1606-b4ba-4e8b-8fca-f0cfa19012cd": {
               key: "container",
               name: "Container 1",
+              inputs: {},
+              outputs: {},
+              inputNodes: [],
+              outputNode: false,
               innerNodes: {
                 "abc00186-d987-4e5b-b0c1-c77354eba4ce": {
                   key: "container",
                   name: "Container 2",
+                  inputs: {},
+                  outputs: {},
+                  inputNodes: [],
+                  outputNode: false,
                   innerNodes: {
                     "72c70ea3-5724-4d16-a51b-f0e05c9c8178": {
-                      key: "service/dynamic/itis/s4l/MaterialDB",
+                      key: "service/computational/itis/sleeper",
                       version: "0.0.0",
+                      inputs: {
+                        inNumber: 2
+                      },
                       position: {
                         x: 50,
                         y: 50
@@ -381,8 +406,11 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   }
                 },
                 "86261280-a03a-4c45-95a4-386d8a17f962": {
-                  key: "service/dynamic/itis/s4l/Modeler",
+                  key: "service/computational/itis/sleeper",
                   version: "0.0.0",
+                  inputs: {
+                    inNumber: 3
+                  },
                   position: {
                     x: 50,
                     y: 250
@@ -435,7 +463,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   output: "materialDB"
                 }
               },
-              links: [
+              inputNodes: [
                 "c104bb08-77b1-4157-b9f9-e9df7779df08",
                 "bf88496d-ddf8-476c-8d6c-24c716c2ae4c"
               ],
@@ -453,7 +481,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   output: "outFile"
                 }
               },
-              links: [
+              inputNodes: [
                 "89e185ca-dda1-4a45-8059-715f2cb17100"
               ],
               position: {
@@ -514,7 +542,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "updateDispersive": false
               },
-              links: [
+              inputNodes: [
                 "17a932a0-f401-4571-9c55-b579f5050d37",
                 "8870a55b-680d-41b4-b40c-c928cceb7d2a"
               ],
@@ -548,7 +576,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "sensorSetting": 4
               },
-              links: [
+              inputNodes: [
                 "17a932a0-f401-4571-9c55-b579f5050d37"
               ],
               position: {
@@ -578,7 +606,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "gridSetting": 5
               },
-              links: [
+              inputNodes: [
                 "17a932a0-f401-4571-9c55-b579f5050d37",
                 "ac80863e-e4ef-48c0-804b-d9296f1f3563",
                 "ed4c85a8-c20f-4acd-8e1e-5161301e2f3d",
@@ -603,7 +631,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "solverSetting": 7
               },
-              links: [
+              inputNodes: [
                 "83bc4123-ebe4-4f5f-8770-b1584d6cf95f",
                 "b37bea52-bb29-482a-9540-bc11c7dc779c"
               ],
@@ -626,7 +654,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 },
                 "voxelSetting": 6
               },
-              links: [
+              inputNodes: [
                 "17a932a0-f401-4571-9c55-b579f5050d37",
                 "c3ab33a7-4ead-4302-9867-5b194a4f45ec"
               ],
@@ -644,7 +672,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   output: "outFile"
                 }
               },
-              links: [
+              inputNodes: [
                 "01e28708-46c4-474b-837b-479fd596e566"
               ],
               position: {
@@ -795,7 +823,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
               outFile: {
                 store: "s3-z43",
                 path: "/bucket1/file1"
-              }
+              },
+              outDir: null
             },
             position: {
               x: 50,
@@ -815,6 +844,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
               "initial_WTstates.txt": {
                 nodeUuid: "UUID5",
                 output: "outFile"
+              },
+              "initial_WTstates2.txt": {
+                nodeUuid: "UUID5",
+                output: "outFile"
               }
             },
             outputs: {
@@ -823,7 +856,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               "finalStates.txt": null,
               "vm_1Hz.txt": null
             },
-            links: [
+            inputNodes: [
               "UUID5"
             ],
             position: {
@@ -845,7 +878,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             outputs: {},
-            links: [
+            inputNodes: [
               "UUID6"
             ],
             position: {

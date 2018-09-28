@@ -25,7 +25,8 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
 
   properties: {
     node: {
-      check: "qxapp.components.workbench.NodeBase",
+      // check: "qxapp.components.workbench.NodeBase",
+      check: "qxapp.data.model.NodeModel",
       apply: "__applyNode"
     }
   },
@@ -69,7 +70,8 @@ qx.Class.define("qxapp.components.workbench.SettingsView", {
 
     __applyNode: function(node, oldNode, propertyName) {
       this.__settingsBox.removeAll();
-      this.__settingsBox.add(node.getNodeModel().getPropsWidget());
+      // this.__settingsBox.add(node.getNodeModel().getPropsWidget());
+      this.__settingsBox.add(node.getPropsWidget());
       /*
       this.__dynamicViewer.removeAll();
       let viewerButton = node.getViewerButton();
