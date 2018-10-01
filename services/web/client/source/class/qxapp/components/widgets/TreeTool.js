@@ -70,7 +70,7 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
           const label = node.getMetaData().name;
           let branch = dataModel.addBranch(parent, label, true);
           dataModel.setColumnData(branch, 1, nodeId);
-          this.__populateTree(node.getInnerNodes(false), branch);
+          this.__populateTree(node.getInnerNodes(), branch);
         } else {
           const label = node.getMetaData().name + " " + node.getMetaData().version;
           let leaf = dataModel.addLeaf(parent, label);

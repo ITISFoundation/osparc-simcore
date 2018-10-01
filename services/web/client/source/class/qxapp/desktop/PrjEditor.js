@@ -143,7 +143,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           console.log("NodeDoubleClicked", nodeModel);
 
           if (nodeModel.isContainer()) {
-            this.__workbenchView.loadNode(nodeModel);
+            this.__workbenchView.loadContainer(nodeModel);
             /*
             const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
             let widget = widgetManager.getWidgetForNode(nodeModel);

@@ -630,21 +630,52 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     */
     __loadProject: function() {
       const workbenchModel = this.getWorkbenchModel();
-      this.loadNode(workbenchModel);
+      this.loadRoot(workbenchModel);
     },
 
-    loadNode: function(model) {
+    loadRoot: function(model) {
       this.removeAll();
 
       if (model) {
-        for (const nodeUuid in model.getNodes()) {
-          const nodeModel = model.getNodes()[nodeUuid];
+        let nodes = model.getNodes();
+        let links = model.getLinks();
+        for (const nodeUuid in nodes) {
+          const nodeModel = nodes[nodeUuid];
           const nodeImageId = nodeModel.getNodeImageId();
           let node = this.__createNode(nodeImageId, nodeUuid, nodeModel);
           this.__addNodeToWorkbench(node, nodeModel.getPosition());
         }
-        for (const linkUuid in model.getLinks()) {
-          const linkData = model.getLinks()[linkUuid];
+        for (const linkUuid in links) {
+          const linkData = links[linkUuid];
+          this.__createLink(
+            {
+              nodeUuid: linkData.output.nodeUuid,
+              output: linkData.output.output
+            },
+            {
+              nodeUuid: linkData.input.nodeUuid,
+              input: linkData.input.input
+            },
+            linkUuid);
+        }
+      }
+    },
+
+    loadContainer: function(model) {
+      this.removeAll();
+
+      if (model) {
+        let nodes = model.getInnerNodes();
+        // let links = model.getLinks();
+        let links = {};
+        for (const nodeUuid in nodes) {
+          const nodeModel = nodes[nodeUuid];
+          const nodeImageId = nodeModel.getNodeImageId();
+          let node = this.__createNode(nodeImageId, nodeUuid, nodeModel);
+          this.__addNodeToWorkbench(node, nodeModel.getPosition());
+        }
+        for (const linkUuid in links) {
+          const linkData = links[linkUuid];
           this.__createLink(
             {
               nodeUuid: linkData.output.nodeUuid,

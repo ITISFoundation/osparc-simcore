@@ -72,7 +72,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return this.getPropsWidget().getValues();
     },
 
-    getInnerNodes: function(recursive = true) {
+    getInnerNodes: function(recursive = false) {
       let innerNodes = Object.assign({}, this.__innerNodes);
       if (recursive) {
         for (const innerNodeId of Object.keys(this.__innerNodes)) {
