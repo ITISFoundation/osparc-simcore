@@ -358,7 +358,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           lastChangeDate: "2018-09-24T16:02:22Z",
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?15.jpg",
           workbench: {
-            "UUID2": {
+            "Sleeper1": {
               key: "service/computational/itis/sleeper",
               version: "0.0.0",
               inputs: {
@@ -372,17 +372,17 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 y: 50
               }
             },
-            "fa6c1606-b4ba-4e8b-8fca-f0cfa19012cd": {
+            "Container1": {
               key: "container",
               name: "Container 1",
               inputs: {},
               outputs: {},
               inputNodes: [
-                "UUID2"
+                "Sleeper1"
               ],
               outputNode: false,
               innerNodes: {
-                "abc00186-d987-4e5b-b0c1-c77354eba4ce": {
+                "Container2": {
                   key: "container",
                   name: "Container 2",
                   inputs: {},
@@ -390,7 +390,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   inputNodes: [],
                   outputNode: false,
                   innerNodes: {
-                    "72c70ea3-5724-4d16-a51b-f0e05c9c8178": {
+                    "Sleeper3": {
                       key: "service/computational/itis/sleeper",
                       version: "0.0.0",
                       inputs: {
@@ -407,15 +407,18 @@ qx.Class.define("qxapp.dev.fake.Data", {
                     y: 50
                   }
                 },
-                "86261280-a03a-4c45-95a4-386d8a17f962": {
+                "Sleeper2": {
                   key: "service/computational/itis/sleeper",
                   version: "0.0.0",
                   inputs: {
                     inNumber: 3
                   },
+                  inputNodes: [
+                    "Container2"
+                  ],
                   position: {
-                    x: 50,
-                    y: 250
+                    x: 350,
+                    y: 50
                   }
                 }
               },
