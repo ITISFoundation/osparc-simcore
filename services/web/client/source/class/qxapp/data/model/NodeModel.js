@@ -1,30 +1,24 @@
 qx.Class.define("qxapp.data.model.NodeModel", {
   extend: qx.core.Object,
 
-  construct: function(nodeData, uuid) {
+  construct: function(metaData, uuid) {
     this.base(arguments);
 
     this.__metaData = {};
     this.__innerNodes = {};
     this.__connectedTo = [];
 
-    let nodeImageId = nodeData.key;
-    if (nodeData.key !== "container") {
-      nodeImageId = nodeImageId + "-" + nodeData.version;
+    let nodeImageId = metaData.key;
+    if (metaData.key !== "container") {
+      nodeImageId = nodeImageId + "-" + metaData.version;
     }
     this.set({
-      nodeImageId: nodeImageId || null,
+      nodeImageId: nodeImageId,
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
     });
 
-    let store = qxapp.data.Store.getInstance();
-    let metaData = store.getNodeMetaData(this.getNodeImageId());
     if (metaData) {
       this.__metaData = metaData;
-    } else if (this.isContainer()) {
-      this.__metaData.name = nodeData.name;
-    } else {
-      console.log("ImageID not found in registry - Not populating "+ this.getNodeImageId());
     }
   },
 
@@ -85,10 +79,13 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     createInnerNodes: function(innerNodes) {
       for (const innerNodeId of Object.keys(innerNodes)) {
-        let innerNodeMetaData = innerNodes[innerNodeId];
-        let innerNode = new qxapp.data.model.NodeModel(innerNodeMetaData, innerNodeId);
-        innerNode.populateNodeData(innerNodeMetaData);
-        this.__innerNodes[innerNodeId] = innerNode;
+        let innerNodeData = innerNodes[innerNodeId];
+        const innerNodeImageId = innerNodeData.key + "-" + innerNodeData.version;
+        let store = qxapp.data.Store.getInstance();
+        let innerNodeMetaData = store.getNodeMetaData(innerNodeImageId);
+        let innerNodeModel = new qxapp.data.model.NodeModel(innerNodeMetaData, innerNodeId);
+        innerNodeModel.populateNodeData(innerNodeData);
+        this.__innerNodes[innerNodeId] = innerNodeModel;
       }
     },
 
