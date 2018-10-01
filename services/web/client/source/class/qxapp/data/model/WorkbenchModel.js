@@ -86,7 +86,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return this.__links;
     },
 
-    createLink: function(outputNodeId, inputNodeId) {
+    createLink: function(outputNodeId, inputNodeId, prelinkId) {
       const linkObj = {
         output: {
           nodeUuid: outputNodeId
@@ -95,15 +95,17 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
           nodeUuid: inputNodeId
         }
       };
-      const linkId = qxapp.utils.Utils.uuidv4();
-      // TODO: always returns false
-      const exists = Object.values(this.__links).includes(linkObj);
-      if (exists) {
-        console.log("Link already exists", linkObj);
-      } else {
-        this.__links[linkId] = linkObj;
-        this.fireEvent("WorkbenchModelChanged");
+      // Link might already exist
+      for (const linkId in this.__links) {
+        if (this.__links[linkId].output.nodeUuid === outputNodeId &&
+          this.__links[linkId].input.nodeUuid === inputNodeId) {
+          return linkId;
+        }
       }
+      const linkId = prelinkId || qxapp.utils.Utils.uuidv4();
+      this.__links[linkId] = linkObj;
+      this.fireEvent("WorkbenchModelChanged");
+      return linkId;
     },
 
     createLinks: function(workbenchData) {
@@ -127,6 +129,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
           node2.removeLink(link);
         }
       }
+      delete this.__links[linkId];
       this.fireEvent("WorkbenchModelChanged");
       return exists;
     },

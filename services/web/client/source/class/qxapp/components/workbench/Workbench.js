@@ -183,7 +183,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         if (portA.isInput) {
           [nodeAId, portA, nodeBId, portB] = [nodeBId, portB, nodeAId, portA];
         }
-        this.__addLink({
+        this.__createLink({
           nodeUuid: nodeAId,
           output: portA.portId
         }, {
@@ -229,9 +229,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __createNode: function(metaData, uuid, nodeData) {
-      // let nodeModel = this.getWorkbenchModel().createNode(metaData, uuid);
+      let nodeModel = this.getWorkbenchModel().createNode(metaData, uuid);
       // nodeModel.populateNodeData(nodeData);
-      let nodeModel = this.getWorkbenchModel().getNode(uuid);
+      // let nodeModel = this.getWorkbenchModel().getNode(uuid);
 
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeModel);
       nodeBase.createNodeLayout();
@@ -309,7 +309,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           let nodeBId = dragIsInput ? dragNodeId : dropNodeId;
           let nodeBPortId = dragIsInput ? dragPortId : dropPortId;
 
-          this.__addLink({
+          this.__createLink({
             nodeUuid: nodeAId,
             output: nodeAPortId
           }, {
@@ -328,7 +328,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       nodeBase.addListener("LinkDragEnd", function(e) {
         let data = e.getData();
-        // let event = data.event"];
         let dragNodeId = data.nodeId;
         let dragPortId = data.portId;
 
@@ -383,6 +382,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __findCompatiblePort: function(nodeB, portA) {
+      if (portA.isInput && nodeB.getOutputPort()) {
+        return nodeB.getOutputPort();
+      } else if (nodeB.getInputPort()) {
+        return nodeB.getInputPort();
+      }
+      return null;
+      /*
       if (portA.isInput) {
         for (let portBId in nodeB.getOutputPorts()) {
           let portB = nodeB.getOutputPort(portBId);
@@ -399,9 +405,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         }
       }
       return null;
+      */
     },
 
-    __addLink: function(from, to, linkId) {
+    __createLink: function(from, to, linkId) {
       let node1Id = from.nodeUuid;
       let port1Id = from.output;
       let node2Id = to.nodeUuid;
@@ -412,20 +419,21 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let node2 = this.getNode(node2Id);
       let port2 = node2.getInputPort(port2Id);
 
+      linkId = this.getWorkbenchModel().createLink(node1Id, node2Id, linkId);
+
       const pointList = this.__getLinkPoints(node1, port1, node2, port2);
       const x1 = pointList[0][0];
       const y1 = pointList[0][1];
       const x2 = pointList[1][0];
       const y2 = pointList[1][1];
       let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
+
       let link = new qxapp.components.workbench.LinkBase(linkRepresentation);
       link.setInputNodeId(node1.getNodeId());
-      link.setInputPortId(port1.portId);
+      // link.setInputPortId(port1.portId);
       link.setOutputNodeId(node2.getNodeId());
-      link.setOutputPortId(port2.portId);
-      if (linkId !== undefined) {
-        link.setLinkId(linkId);
-      }
+      // link.setOutputPortId(port2.portId);
+      link.setLinkId(linkId);
       this.__linksUI.push(link);
 
       node2.addLink(link);
@@ -450,9 +458,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let link = this.__getLink(linkId);
         if (link) {
           let node1 = this.getNode(link.getInputNodeId());
-          let port1 = node1.getOutputPort(link.getInputPortId());
+          // let port1 = node1.getOutputPort(link.getInputPortId());
+          let port1 = node1.getOutputPort();
           let node2 = this.getNode(link.getOutputNodeId());
-          let port2 = node2.getInputPort(link.getOutputPortId());
+          // let port2 = node2.getInputPort(link.getOutputPortId());
+          let port2 = node2.getInputPort();
           const pointList = this.__getLinkPoints(node1, port1, node2, port2);
           const x1 = pointList[0][0];
           const y1 = pointList[0][1];
@@ -604,7 +614,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__removeAllNodes();
       this.__removeAllLinks();
     },
-
+    /*
     __getInputPortLinked: function(nodeId, inputPortId) {
       for (let i = 0; i < this.__linksUI.length; i++) {
         const link = this.__linksUI[i];
@@ -617,7 +627,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
       return null;
     },
-
+    */
     __loadProject: function() {
       const workbenchModel = this.getWorkbenchModel();
       this.loadNode(workbenchModel);
@@ -635,7 +645,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         }
         for (const linkUuid in model.getLinks()) {
           const linkData = model.getLinks()[linkUuid];
-          this.__addLink(
+          this.__createLink(
             {
               nodeUuid: linkData.output.nodeUuid,
               output: linkData.output.output

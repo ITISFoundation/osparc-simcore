@@ -38,10 +38,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
   },
 
   members: {
-    __inputPorts: null,
-    __outputPorts: null,
-    __inputPortsUI: null,
-    __outputPortsUI: null,
+    __inputPortLayout: null,
+    __outputPortLayout: null,
+    __inputPort: null,
+    __outputPort: null,
     __progressLabel: null,
     __progressBar: null,
 
@@ -71,14 +71,14 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       });
 
       let inputsBox = new qx.ui.layout.VBox(5);
-      this.__inputPortsUI = new qx.ui.container.Composite(inputsBox);
-      inputsOutputsLayout.add(this.__inputPortsUI, {
+      this.__inputPortLayout = new qx.ui.container.Composite(inputsBox);
+      inputsOutputsLayout.add(this.__inputPortLayout, {
         width: "50%"
       });
 
       let outputsBox = new qx.ui.layout.VBox(5);
-      this.__outputPortsUI = new qx.ui.container.Composite(outputsBox);
-      inputsOutputsLayout.add(this.__outputPortsUI, {
+      this.__outputPortLayout = new qx.ui.container.Composite(outputsBox);
+      inputsOutputsLayout.add(this.__outputPortLayout, {
         width: "50%"
       });
 
@@ -104,67 +104,54 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
 
     populateNodeLayout: function() {
       const metaData = this.getNodeModel().getMetaData();
-      this.setCaption(metaData.name + " " + metaData.version);
-      this.__outputPorts = {};
-      this.__inputPorts = {};
-      this.__createUIPorts("Input", metaData.inputs);
-      this.__createUIPorts("Output", metaData.outputs);
+      if (this.getNodeModel().isContainer()) {
+        this.setCaption(metaData.name);
+      } else {
+        this.setCaption(metaData.name + " " + metaData.version);
+      }
+      this.__inputPort = {};
+      this.__outputPort = {};
+      this.__createUIPorts(true, metaData.inputs);
+      this.__createUIPorts(false, metaData.outputs);
     },
 
-    getInputPorts: function() {
-      return this.__inputPorts;
+    getInputPort: function() {
+      return this.__inputPort["Input"];
     },
 
-    getInputPort: function(portId) {
-      // return this.__inputPorts[portId];
-      return this.__inputPorts["Input"];
+    getOutputPort: function() {
+      return this.__outputPort["Output"];
     },
 
-    getOutputPorts: function() {
-      return this.__outputPorts;
-    },
-
-    getOutputPort: function(portId) {
-      // return this.__outputPorts[portId];
-      return this.__outputPorts["Output"];
-    },
-
-    __createUIPorts: function(portId, ports) {
-      let nPorts = Object.keys(ports).length;
+    __createUIPorts: function(isInput, ports) {
       // Always create ports if node is a container
-      if (!this.getNodeModel().isContainer() && nPorts < 1) {
+      if (!this.getNodeModel().isContainer() && Object.keys(ports).length < 1) {
         return;
       }
-      switch (portId) {
-        case "Input": {
-          let label = this.__createUIPort(true, portId);
-          this.getInputPorts()[portId] = label;
-          this.__inputPortsUI.add(label.ui);
-        }
-          break;
-        case "Output": {
-          let label = this.__createUIPort(false, portId);
-          this.getOutputPorts()[portId] = label;
-          this.__outputPortsUI.add(label.ui);
-        }
-          break;
+      let label = {
+        isInput: isInput,
+        ui: this.__createUIPort(isInput)
+      };
+      label.ui.isInput = isInput;
+      if (isInput) {
+        this.__inputPort["Input"] = label;
+        this.__inputPortLayout.add(label.ui);
+      } else {
+        this.__outputPort["Output"] = label;
+        this.__outputPortLayout.add(label.ui);
       }
     },
 
-    __createUIPort: function(isInput, portId) {
-      let label = {};
-      label.portId = portId;
-      label.isInput = isInput;
+    __createUIPort: function(isInput) {
       const labelText = (isInput) ? "Input(s)" : "Output(s)";
       const alignX = (isInput) ? "left" : "right";
-      label.ui = new qx.ui.basic.Atom(labelText).set({
+      let uiPort = new qx.ui.basic.Atom(labelText).set({
         height: portHeight,
         draggable: true,
         droppable: true,
         alignX: alignX,
         allowGrowX: false
       });
-      label.ui.portId = portId;
 
       [
         ["dragstart", "LinkDragStart"],
@@ -172,17 +159,16 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         ["drop", "LinkDrop"],
         ["dragend", "LinkDragEnd"]
       ].forEach(eventPair => {
-        label.ui.addListener(eventPair[0], e => {
+        uiPort.addListener(eventPair[0], e => {
           const eData = {
             event: e,
             nodeId: this.getNodeId(),
-            portId: portId,
             isInput: isInput
           };
           this.fireDataEvent(eventPair[1], eData);
         }, this);
       }, this);
-      return label;
+      return uiPort;
     },
 
     getLinkPoint: function(port) {
@@ -200,11 +186,8 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         ports = inputOutputs.getChildren()[1].getChildren();
       }
       let portBounds;
-      for (let i=0; i<ports.length; i++) {
-        if (port.portId === ports[i].portId) {
-          portBounds = ports[i].getBounds();
-          break;
-        }
+      if (ports.length > 0) {
+        portBounds = ports[0].getBounds();
       }
       let y = nodeBounds.top + captionHeight + 10 + portBounds.top + portBounds.height/2;
       return [x, y];
