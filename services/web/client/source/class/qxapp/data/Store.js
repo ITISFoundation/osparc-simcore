@@ -66,7 +66,11 @@ qx.Class.define("qxapp.data.Store", {
       return qxapp.dev.fake.Data.getProjectData(projectUuid);
     },
 
-    getNodeMetaData: function(nodeImageId) {
+    getNodeMetaData: function(nodeData) {
+      let nodeImageId = nodeData.key;
+      if (nodeData.key !== "container") {
+        nodeImageId = nodeImageId + "-" + nodeData.version;
+      }
       let metaData = this.getServices()[nodeImageId];
       if (metaData === undefined) {
         metaData = this.getBuiltInServices()[nodeImageId];
@@ -829,13 +833,13 @@ qx.Class.define("qxapp.data.Store", {
     getBuiltInServicesAsync: function() {
       let builtInServices = [];
       let builtInServicesMap = this.getBuiltInServices();
-      for (const mapKey of Object.keys(builtInServicesMap)) {
+      for (const mapKey in builtInServicesMap) {
         builtInServices.push(builtInServicesMap[mapKey]);
       }
 
       console.log("builtInServicesRegistered", builtInServices);
       let services = [];
-      for (const key of Object.keys(builtInServices)) {
+      for (const key in builtInServices) {
         const repoData = builtInServices[key];
         let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
         services.push(newMetaData);
@@ -861,7 +865,7 @@ qx.Class.define("qxapp.data.Store", {
           const listOfRepositories = data;
           console.log("listOfServices", listOfRepositories);
           let services = [];
-          for (const key of Object.keys(listOfRepositories)) {
+          for (const key in listOfRepositories) {
             const repoData = listOfRepositories[key];
             let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
             services.push(newMetaData);
@@ -888,7 +892,7 @@ qx.Class.define("qxapp.data.Store", {
           let listOfInteractiveServices = data;
           console.log("listOfInteractiveServices", listOfInteractiveServices);
           let services = [];
-          for (const key of Object.keys(listOfInteractiveServices)) {
+          for (const key in listOfInteractiveServices) {
             const repoData = listOfInteractiveServices[key];
             let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
             services.push(newMetaData);

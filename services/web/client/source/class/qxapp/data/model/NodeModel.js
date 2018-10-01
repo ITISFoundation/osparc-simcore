@@ -69,7 +69,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     getInnerNodes: function(recursive = false) {
       let innerNodes = Object.assign({}, this.__innerNodes);
       if (recursive) {
-        for (const innerNodeId of Object.keys(this.__innerNodes)) {
+        for (const innerNodeId in his.__innerNodes) {
           let myInnerNodes = this.__innerNodes[innerNodeId].getInnerNodes(true);
           innerNodes = Object.assign(innerNodes, myInnerNodes);
         }
@@ -78,11 +78,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     createInnerNodes: function(innerNodes) {
-      for (const innerNodeId of Object.keys(innerNodes)) {
+      for (const innerNodeId in innerNodes) {
         let innerNodeData = innerNodes[innerNodeId];
-        const innerNodeImageId = innerNodeData.key + "-" + innerNodeData.version;
         let store = qxapp.data.Store.getInstance();
-        let innerNodeMetaData = store.getNodeMetaData(innerNodeImageId);
+        let innerNodeMetaData = store.getNodeMetaData(innerNodeData);
         let innerNodeModel = new qxapp.data.model.NodeModel(innerNodeMetaData, innerNodeId);
         innerNodeModel.populateNodeData(innerNodeData);
         this.__innerNodes[innerNodeId] = innerNodeModel;

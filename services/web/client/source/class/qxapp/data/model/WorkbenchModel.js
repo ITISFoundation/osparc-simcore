@@ -33,7 +33,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
     getAllLevelNodes: function() {
       let allNodes = Object.assign({}, this.__nodes);
-      for (const nodeId of Object.keys(this.__nodes)) {
+      for (const nodeId in this.__nodes) {
         let innerNodes = this.__nodes[nodeId].getInnerNodes(true);
         allNodes = Object.assign(allNodes, innerNodes);
       }
@@ -58,12 +58,11 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     },
 
     createNodes: function(workbenchData) {
-      for (const key of Object.keys(workbenchData)) {
-        const nodeData = workbenchData[key];
-        const nodeImageId = nodeData.key + "-" + nodeData.version;
+      for (const nodeId in workbenchData) {
+        const nodeData = workbenchData[nodeId];
         let store = qxapp.data.Store.getInstance();
-        let metaData = store.getNodeMetaData(nodeImageId);
-        this.createNode(metaData, key, nodeData);
+        let metaData = store.getNodeMetaData(nodeData);
+        this.createNode(metaData, nodeId, nodeData);
       }
     },
 
@@ -112,7 +111,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     },
 
     createLinks: function(workbenchData) {
-      for (const nodeId of Object.keys(workbenchData)) {
+      for (const nodeId in workbenchData) {
         const nodeData = workbenchData[nodeId];
         if (nodeData.inputNodes) {
           for (let i=0; i < nodeData.inputNodes.length; i++) {
@@ -139,7 +138,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
     serializeWorkbench: function(savePosition = false) {
       let workbench = {};
-      for (const nodeId of Object.keys(this.getNodes())) {
+      for (const nodeId in this.getNodes()) {
         const nodeModel = this.getNode(nodeId);
         const nodeData = nodeModel.getMetaData();
         // let cNode = workbench[nodeModel.getNodeId()] = {

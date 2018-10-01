@@ -91,7 +91,7 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
     },
 
     enableAllProps: function(enable) {
-      for (const key of Object.keys(this._form.__ctrlMap)) {
+      for (const key in this._form.__ctrlMap) {
         this.enableProp(key, enable);
       }
     }
