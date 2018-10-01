@@ -40,7 +40,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjEditor = new qxapp.desktop.PrjEditor(projectUuid);
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
-      this.__navBar.setMainViewCaption("Workbench");
+      this.__navBar.setMainViewCaption("Workbench /");
       this.__navBar.setProjectName(projectName);
 
       this.__prjEditor.addListener("ChangeMainViewCaption", function(ev) {

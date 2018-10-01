@@ -67,13 +67,16 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getNodeMetaData: function(nodeData) {
+      let metaData;
       let nodeImageId = nodeData.key;
-      if (nodeData.key !== "container") {
+      if (nodeData.key === "container") {
+        metaData = nodeData;
+      } else {
         nodeImageId = nodeImageId + "-" + nodeData.version;
-      }
-      let metaData = this.getServices()[nodeImageId];
-      if (metaData === undefined) {
-        metaData = this.getBuiltInServices()[nodeImageId];
+        metaData = this.getServices()[nodeImageId];
+        if (metaData === undefined) {
+          metaData = this.getBuiltInServices()[nodeImageId];
+        }
       }
       return metaData;
     },

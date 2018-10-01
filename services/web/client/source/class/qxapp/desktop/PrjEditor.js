@@ -79,20 +79,24 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     initDefault: function() {
       let project = this.__projectDocument;
-      let workbench = this.__workbenchView = new qxapp.components.workbench.Workbench(project.getWorkbench());
-      this.showInMainView(workbench, "Workbench");
 
       let showWorkbench = new qx.ui.form.Button(this.tr("Show workbench")).set({
         allowGrowX: false
       });
       showWorkbench.addListener("execute", function() {
-        this.showInMainView(this.__workbenchView, "Workbench");
+        this.showInMainView(this.__workbenchView);
+        const workbenchModel = this.__projectDocument.getWorkbench();
+        this.__workbenchView.loadRoot(workbenchModel);
       }, this);
+
       let treeView = this.__treeView = new qxapp.components.widgets.TreeTool(project.getWorkbench());
       let vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       vBox.add(showWorkbench);
       vBox.add(treeView);
       this.__sidePanel.setTopView(vBox);
+
+      let workbench = this.__workbenchView = new qxapp.components.workbench.Workbench(project.getWorkbench());
+      this.showInMainView(workbench);
 
       let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
         minHeight: 200,
@@ -141,24 +145,17 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           let nodeId = e.getData();
           let nodeModel = this.__projectDocument.getWorkbench().getNode(nodeId);
           console.log("NodeDoubleClicked", nodeModel);
+          this.__settingsView.setNode(nodeModel);
 
+          let widget;
           if (nodeModel.isContainer()) {
             this.__workbenchView.loadContainer(nodeModel);
-            /*
-            const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
-            let widget = widgetManager.getWidgetForNode(nodeModel);
-            widget.addListener("NodeDoubleClicked", function(ev) {
-              const data = ev.getData();
-              this.__workbenchView.fireDataEvent("NodeDoubleClicked", data);
-            }, this);
-            this.showInExtraView(widget);
-            this.showInMainView(this.__workbenchView, "Workbench");
-            */
+            widget = this.__workbenchView;
           } else if (nodeModel.getMetaData().type === "dynamic") {
             const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
-            let widget = widgetManager.getWidgetForNode(nodeModel);
+            widget = widgetManager.getWidgetForNode(nodeModel);
             widget.addListener("Finished", function() {
-              this.showInMainView(this.__workbenchView, "Workbench");
+              this.showInMainView(this.__workbenchView, nodeId);
             }, this);
             this.__mainPanel.getOptions().addListener("ListClicked", function() {
               widget.listClicked();
@@ -167,20 +164,20 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
               widget.addClicked();
             }, this);
             this.showInExtraView(new qx.ui.core.Widget());
-            this.showInMainView(widget, nodeModel.getMetaData().name);
           } else {
             this.showInExtraView(new qx.ui.core.Widget());
-            this.showInMainView(this.__workbenchView, "Workbench");
+            widget = this.__settingsView;
           }
 
-          this.__settingsView.setNode(nodeModel);
+          this.showInMainView(widget, nodeId);
         }, this);
       });
     },
 
-    showInMainView: function(widget, label) {
+    showInMainView: function(widget, nodeId) {
       this.__mainPanel.setMainView(widget);
-      this.fireDataEvent("ChangeMainViewCaption", label);
+      let nodePath = this.__treeView.getPath(nodeId);
+      this.fireDataEvent("ChangeMainViewCaption", nodePath);
     },
 
     showInExtraView: function(widget) {

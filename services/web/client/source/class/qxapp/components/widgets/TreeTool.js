@@ -90,6 +90,21 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
       }, this);
     },
 
+    getPath: function(nodeId) {
+      let nodePath = "Workbench / ";
+      if (nodeId) {
+        let dataModel = this.__tree.getDataModel();
+        for (let i=0; i<dataModel.getRowCount(); i++) {
+          if (dataModel.getRowData(i)[1] === nodeId) {
+            const node = dataModel.getData();
+            const hierarchy = this.__tree.getHierarchy(node[i+1]).join(" / ");
+            nodePath += hierarchy;
+          }
+        }
+      }
+      return nodePath;
+    },
+
     __updateMe: function(value, old) {
       console.log("__updateMe");
     },
