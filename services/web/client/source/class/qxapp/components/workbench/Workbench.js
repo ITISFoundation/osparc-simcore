@@ -579,11 +579,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __removeNode: function(node) {
       const removed = this.getWorkbenchModel().removeNode(node.getNodeModel());
       if (removed) {
-        this.__desktop.remove(node);
-        let index = this.__nodesUI.indexOf(node);
-        if (index > -1) {
-          this.__nodesUI.splice(index, 1);
-        }
+        this.__clearNode(node);
       }
     },
 
@@ -596,11 +592,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __removeLink: function(link) {
       const removed = this.getWorkbenchModel().removeLink(link);
       if (removed) {
-        this.__svgWidget.removeCurve(link.getRepresentation());
-        let index = this.__linksUI.indexOf(link);
-        if (index > -1) {
-          this.__linksUI.splice(index, 1);
-        }
+        this.__clearLink(link);
       }
     },
 
@@ -613,6 +605,39 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     removeAll: function() {
       this.__removeAllNodes();
       this.__removeAllLinks();
+    },
+
+    __clearNode: function(node) {
+      this.__desktop.remove(node);
+      let index = this.__nodesUI.indexOf(node);
+      if (index > -1) {
+        this.__nodesUI.splice(index, 1);
+      }
+    },
+
+    __clearAllNodes: function() {
+      while (this.__nodesUI.length > 0) {
+        this.__clearNode(this.__nodesUI[this.__nodesUI.length-1]);
+      }
+    },
+
+    __clearLink: function(link) {
+      this.__svgWidget.removeCurve(link.getRepresentation());
+      let index = this.__linksUI.indexOf(link);
+      if (index > -1) {
+        this.__linksUI.splice(index, 1);
+      }
+    },
+
+    __clearAllLinks: function() {
+      while (this.__linksUI.length > 0) {
+        this.__clearLink(this.__linksUI[this.__linksUI.length-1]);
+      }
+    },
+
+    clearAll: function() {
+      this.__clearAllNodes();
+      this.__clearAllLinks();
     },
     /*
     __getInputPortLinked: function(nodeId, inputPortId) {
@@ -629,12 +654,14 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
     */
     __loadProject: function() {
+      this.removeAll();
+
       const workbenchModel = this.getWorkbenchModel();
       this.loadRoot(workbenchModel);
     },
 
     loadRoot: function(model) {
-      this.removeAll();
+      this.clearAll();
 
       if (model) {
         let nodes = model.getNodes();
@@ -662,7 +689,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     loadContainer: function(model) {
-      this.removeAll();
+      this.clearAll();
 
       if (model) {
         let nodes = model.getInnerNodes();
