@@ -368,8 +368,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 outNumber: 33
               },
               position: {
-                x: 400,
-                y: 10
+                x: 50,
+                y: 50
               }
             },
             "fa6c1606-b4ba-4e8b-8fca-f0cfa19012cd": {
@@ -377,7 +377,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
               name: "Container 1",
               inputs: {},
               outputs: {},
-              inputNodes: [],
+              inputNodes: [
+                "UUID2"
+              ],
               outputNode: false,
               innerNodes: {
                 "abc00186-d987-4e5b-b0c1-c77354eba4ce": {
@@ -418,7 +420,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 }
               },
               position: {
-                x: 50,
+                x: 300,
                 y: 50
               }
             }
