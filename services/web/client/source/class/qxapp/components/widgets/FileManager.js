@@ -105,12 +105,12 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
         const isDirectory = data.getData().isDirectory;
         const activePort = isDirectory ? "outDir" : "outFile";
         const inactivePort = isDirectory ? "outFile" : "outDir";
-        let metadata = node.getMetaData();
-        metadata.outputs[activePort].value = {
+        let metaData = node.getMetaData();
+        metaData.outputs[activePort].value = {
           store: "s3-z43",
           path: itemPath
         };
-        metadata.outputs[inactivePort].value = null;
+        metaData.outputs[inactivePort].value = null;
         node.getOutputPort(activePort).ui.setLabel(itemName);
         node.getOutputPort(activePort).ui.getToolTip().setLabel(itemName);
         node.getOutputPort(inactivePort).ui.setLabel("");
