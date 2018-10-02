@@ -253,25 +253,6 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
         this.__contentProps = new qx.ui.core.Widget();
       }
       this.__contentBox.add(this.__contentProps);
-    },
-
-    listClicked: function() {
-      const compIndex = this._indexOf(this.__componentsBox);
-      if (compIndex > -1) {
-        this._remove(this.__componentsBox);
-      } else {
-        this._addAt(this.__componentsBox, 0);
-      }
-    },
-
-    addClicked: function() {
-      const compIndex = this._indexOf(this.__componentsBox);
-      const settIndex = this._indexOf(this.__settingsBox);
-      if (settIndex > -1) {
-        this._remove(this.__settingsBox);
-      } else {
-        this._addAt(this.__settingsBox, compIndex+1);
-      }
     }
   }
 });

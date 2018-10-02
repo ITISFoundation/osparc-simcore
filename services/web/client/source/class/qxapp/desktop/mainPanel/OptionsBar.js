@@ -9,25 +9,14 @@ qx.Class.define("qxapp.desktop.mainPanel.OptionsBar", {
     this.__initDefault();
   },
 
-  events: {
-    "ListClicked": "qx.event.type.Event",
-    "AddClicked": "qx.event.type.Event"
-  },
-
   members: {
     __initDefault: function() {
       let treeBtn = new qx.ui.form.Button();
       treeBtn.setIcon("@FontAwesome5Solid/bars/32");
-      treeBtn.addListener("execute", function() {
-        this.fireDataEvent("ListClicked");
-      }, this);
       this._add(treeBtn);
 
       let addBtn = new qx.ui.form.Button();
       addBtn.setIcon("@FontAwesome5Solid/plus/32");
-      addBtn.addListener("execute", function() {
-        this.fireDataEvent("AddClicked");
-      }, this);
       this._add(addBtn);
 
       let databaseBtn = new qx.ui.form.Button();

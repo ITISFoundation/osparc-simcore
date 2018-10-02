@@ -150,19 +150,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           let widget;
           if (nodeModel.isContainer()) {
             widget = this.__workbenchView;
-            this.showInMainView(widget, nodeId);
-            this.__workbenchView.loadContainer(nodeModel);
           } else if (nodeModel.getMetaData().type === "dynamic") {
             const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
             widget = widgetManager.getWidgetForNode(nodeModel);
             widget.addListener("Finished", function() {
               this.showInMainView(this.__workbenchView, nodeId);
-            }, this);
-            this.__mainPanel.getOptions().addListener("ListClicked", function() {
-              widget.listClicked();
-            }, this);
-            this.__mainPanel.getOptions().addListener("AddClicked", function() {
-              widget.addClicked();
             }, this);
             this.showInExtraView(new qx.ui.core.Widget());
           } else {
@@ -171,6 +163,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           }
 
           this.showInMainView(widget, nodeId);
+
+          if (nodeModel.isContainer()) {
+            this.__workbenchView.loadContainer(nodeModel);
+          }
         }, this);
       });
     },
