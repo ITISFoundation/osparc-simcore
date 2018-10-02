@@ -173,7 +173,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       // this.getPropsWidget().enableProp(link.getOutputPortId(), false);
     },
 
-    deleteLink: function(inputNodeId) {
+    removeLink: function(inputNodeId) {
       const index = this.__inputNodes.indexOf(inputNodeId);
       if (index > -1) {
         this.__inputNodes.splice(index, 1);
