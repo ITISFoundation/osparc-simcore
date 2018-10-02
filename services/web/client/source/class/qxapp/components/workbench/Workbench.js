@@ -682,6 +682,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     addWindowToDesktop: function(node) {
       this.__desktop.add(node);
       node.open();
+
+      qx.ui.core.queue.Layout.flush();
     },
 
     clearProgressData: function() {
