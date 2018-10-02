@@ -3,6 +3,7 @@
 
 const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
+const INPUTS_WIDTH = 200;
 
 qx.Class.define("qxapp.components.workbench.Workbench", {
   extend: qx.ui.container.Composite,
@@ -10,13 +11,33 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
   construct: function(workbenchModel) {
     this.base();
 
-    let canvas = new qx.ui.layout.Canvas();
+    let hBox = new qx.ui.layout.HBox();
     this.set({
-      layout: canvas
+      layout: hBox
+    });
+
+    let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    inputNodesLayout.set({
+      width: INPUTS_WIDTH,
+      maxWidth: INPUTS_WIDTH,
+      // backgroundColor: "blue",
+      allowGrowX: false
+    });
+    this.add(inputNodesLayout);
+    const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
+    let inputLabel = new qx.ui.basic.Label("Inputs").set({
+      font: navBarLabelFont,
+      alignX: "center"
+    });
+    inputNodesLayout.add(inputLabel);
+
+    this.__desktopCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+    this.add(this.__desktopCanvas, {
+      flex : 1
     });
 
     this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
-    this.add(this.__desktop, {
+    this.__desktopCanvas.add(this.__desktop, {
       left: 0,
       top: 0,
       right: 0,
@@ -60,7 +81,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     this.__linksUI = [];
 
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
-    this.add(buttonContainer, {
+    this.__desktopCanvas.add(buttonContainer, {
       bottom: 10,
       right: 10
     });
@@ -104,6 +125,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
   members: {
     __nodesUI: null,
     __linksUI: null,
+    __inputNodesLayout: null,
     __desktop: null,
     __svgWidget: null,
     __logger: null,
@@ -463,7 +485,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       const portPos = node.getLinkPoint(port);
       // FIXME:
       const navBarHeight = 50;
-      this.__pointerPosX = pointerEvent.getViewportLeft() - this.getBounds().left;
+      const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
+      this.__pointerPosX = pointerEvent.getViewportLeft() - this.getBounds().left - inputNodesLayoutWidth;
       this.__pointerPosY = pointerEvent.getViewportTop() - navBarHeight;
 
       if (port.isInput) {
@@ -613,6 +636,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     loadRoot: function(model) {
+      this.__inputNodesLayout.setVisibility("excluded");
+
       this.clearAll();
 
       if (model) {
@@ -639,6 +664,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     loadContainer: function(model) {
+      this.__inputNodesLayout.setVisibility("visible");
+
+      console.log("model", model);
       this.clearAll();
 
       if (model) {
