@@ -7,6 +7,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     this.__metaData = {};
     this.__innerNodes = {};
     this.__connectedTo = [];
+    this.__inputNodes = [];
 
     let nodeImageId = metaData.key;
     if (metaData.key !== "container") {
@@ -47,6 +48,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __metaData: null,
     __innerNodes: null,
     __connectedTo: null,
+    __inputNodes: null,
     __settingsForm: null,
     __posX: null,
     __posY: null,
@@ -88,6 +90,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
+    getInputNodes: function() {
+      return this.__inputNodes;
+    },
+
     populateNodeData: function(nodeData) {
       if (this.__metaData) {
         let metaData = this.__metaData;
@@ -96,6 +102,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
         if (nodeData && nodeData.position) {
           this.setPosition(nodeData.position.x, nodeData.position.y);
+        }
+
+        this.__inputNodes = [];
+        if (nodeData && nodeData.inputNodes) {
+          this.__inputNodes = nodeData.inputNodes;
         }
 
         if (this.isContainer()) {
@@ -160,6 +171,22 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     addLink: function(link) {
       this.__connectedTo.push(link);
       this.getPropsWidget().enableProp(link.getOutputPortId(), false);
+    },
+
+    addInputNode: function(inputNodeId) {
+      if (!this.__inputNodes.includes(inputNodeId)) {
+        this.__inputNodes.push(inputNodeId);
+      }
+    },
+
+    deleteLink: function(inputNodeId) {
+      const index = this.__inputNodes.indexOf(inputNodeId);
+      if (index > -1) {
+        this.__inputNodes.splice(index, 1);
+        return true;
+      }
+      // this.getPropsWidget().enableProp(link.getOutputPortId(), true);
+      return false;
     },
 
     removeLink: function(link) {

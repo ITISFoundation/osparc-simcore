@@ -410,16 +410,19 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __createLink: function(from, to, linkId) {
       let node1Id = from.nodeUuid;
-      let port1Id = from.output;
+      // let port1Id = from.output;
       let node2Id = to.nodeUuid;
-      let port2Id = to.input;
+      // let port2Id = to.input;
 
       let node1 = this.getNode(node1Id);
-      let port1 = node1.getOutputPort(port1Id);
+      // let port1 = node1.getOutputPort(port1Id);
+      let port1 = node1.getOutputPort();
       let node2 = this.getNode(node2Id);
-      let port2 = node2.getInputPort(port2Id);
+      // let port2 = node2.getInputPort(port2Id);
+      let port2 = node2.getInputPort();
 
-      linkId = this.getWorkbenchModel().createLink(node1Id, node2Id, linkId);
+      node2.getNodeModel().addInputNode(node1Id);
+      linkId = linkId || qxapp.utils.Utils.uuidv4();
 
       const pointList = this.__getLinkPoints(node1, port1, node2, port2);
       const x1 = pointList[0][0];
@@ -590,7 +593,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __removeLink: function(link) {
-      const removed = this.getWorkbenchModel().removeLink(link);
+      const removed = this.getWorkbenchModel().removeLink(link.getInputNodeId(), link.getOutputNodeId());
       if (removed) {
         this.__clearLink(link);
       }
@@ -665,25 +668,34 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       if (model) {
         let nodes = model.getNodes();
-        let links = model.getLinks();
         for (const nodeUuid in nodes) {
           const nodeModel = nodes[nodeUuid];
           const nodeImageId = nodeModel.getNodeImageId();
           let node = this.__createNode(nodeImageId, nodeUuid, nodeModel);
           this.__addNodeToWorkbench(node, nodeModel.getPosition());
         }
-        for (const linkUuid in links) {
+
+        for (const nodeUuid in nodes) {
+          const nodeModel = nodes[nodeUuid];
+          const inputNodes = nodeModel.getInputNodes();
+          for (let i=0; i<inputNodes.length; i++) {
+            this.__createLink({
+              nodeUuid: inputNodes[i]
+            }, {
+              nodeUuid: nodeUuid
+            });
+          }
+          /*
           const linkData = links[linkUuid];
-          this.__createLink(
-            {
-              nodeUuid: linkData.output.nodeUuid,
-              output: linkData.output.output
-            },
-            {
-              nodeUuid: linkData.input.nodeUuid,
-              input: linkData.input.input
-            },
-            linkUuid);
+          this.__createLink({
+            nodeUuid: linkData.output.nodeUuid,
+            output: linkData.output.output
+          }, {
+            nodeUuid: linkData.input.nodeUuid,
+            input: linkData.input.input
+          },
+          linkUuid);
+          */
         }
       }
     },
@@ -693,27 +705,38 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       if (model) {
         let nodes = model.getInnerNodes();
-        // let links = model.getLinks();
-        let links = {};
         for (const nodeUuid in nodes) {
           const nodeModel = nodes[nodeUuid];
           const nodeImageId = nodeModel.getNodeImageId();
           let node = this.__createNode(nodeImageId, nodeUuid, nodeModel);
           this.__addNodeToWorkbench(node, nodeModel.getPosition());
         }
-        for (const linkUuid in links) {
-          const linkData = links[linkUuid];
-          this.__createLink(
-            {
-              nodeUuid: linkData.output.nodeUuid,
-              output: linkData.output.output
-            },
-            {
-              nodeUuid: linkData.input.nodeUuid,
-              input: linkData.input.input
-            },
-            linkUuid);
+
+        for (const nodeUuid in nodes) {
+          const nodeModel = nodes[nodeUuid];
+          const inputNodes = nodeModel.getInputNodes();
+          for (let i=0; i<inputNodes.length; i++) {
+            this.__createLink({
+              nodeUuid: inputNodes[i]
+            }, {
+              nodeUuid: nodeUuid
+            });
+          }
         }
+        /*
+        for (const nodeUuid in nodes) {
+          const nodeModel = nodes[nodeUuid];
+          const inputNodes = nodeModel.getInputNodes();
+          for (let i=0; i<inputNodes.length; i++) {
+            this.__createLink({
+              nodeUuid: inputNodes[i],
+              output: "Output"
+            }, {
+              nodeUuid: nodeUuid,
+              input: "Input"
+            });
+          }
+          */
       }
     },
 

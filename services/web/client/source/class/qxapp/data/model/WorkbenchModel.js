@@ -8,8 +8,6 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
     this.__nodes = {};
     this.createNodes(wbData);
-
-    this.__links = {};
     this.createLinks(wbData);
   },
 
@@ -19,7 +17,6 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
   members: {
     __nodes: null,
-    __links: null,
 
     getNode: function(nodeId) {
       // return this.__nodes[nodeId];
@@ -84,30 +81,11 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return exists;
     },
 
-    getLinks: function() {
-      return this.__links;
-    },
-
-    createLink: function(outputNodeId, inputNodeId, prelinkId) {
-      const linkObj = {
-        output: {
-          nodeUuid: outputNodeId
-        },
-        input: {
-          nodeUuid: inputNodeId
-        }
-      };
-      // Link might already exist
-      for (const linkId in this.__links) {
-        if (this.__links[linkId].output.nodeUuid === outputNodeId &&
-          this.__links[linkId].input.nodeUuid === inputNodeId) {
-          return linkId;
-        }
+    createLink: function(outputNodeId, inputNodeId) {
+      let node = this.getNode(inputNodeId);
+      if (node) {
+        node.addInputNode(outputNodeId);
       }
-      const linkId = prelinkId || qxapp.utils.Utils.uuidv4();
-      this.__links[linkId] = linkObj;
-      this.fireEvent("WorkbenchModelChanged");
-      return linkId;
     },
 
     createLinks: function(workbenchData) {
@@ -122,18 +100,12 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       }
     },
 
-    removeLink: function(link) {
-      const linkId = link.getLinkId();
-      const exists = Object.prototype.hasOwnProperty.call(this.__links, linkId);
-      if (exists) {
-        let node2 = this.getNode(link.getOutputNodeId());
-        if (node2) {
-          node2.removeLink(link);
-        }
+    removeLink: function(outputNodeId, inputNodeId) {
+      let node = this.getNode(inputNodeId);
+      if (node) {
+        return node.deleteLink(outputNodeId);
       }
-      delete this.__links[linkId];
-      this.fireEvent("WorkbenchModelChanged");
-      return exists;
+      return false;
     },
 
     serializeWorkbench: function(savePosition = false) {
