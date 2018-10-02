@@ -149,8 +149,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
           let widget;
           if (nodeModel.isContainer()) {
-            this.__workbenchView.loadContainer(nodeModel);
             widget = this.__workbenchView;
+            this.showInMainView(widget, nodeId);
+            this.__workbenchView.loadContainer(nodeModel);
           } else if (nodeModel.getMetaData().type === "dynamic") {
             const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
             widget = widgetManager.getWidgetForNode(nodeModel);

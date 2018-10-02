@@ -19,8 +19,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     __nodes: null,
 
     getNode: function(nodeId) {
-      // return this.__nodes[nodeId];
-      const allNodes = this.getAllLevelNodes();
+      const allNodes = this.getNodes(true);
       const exists = Object.prototype.hasOwnProperty.call(allNodes, nodeId);
       if (exists) {
         return allNodes[nodeId];
@@ -28,17 +27,15 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return null;
     },
 
-    getAllLevelNodes: function() {
-      let allNodes = Object.assign({}, this.__nodes);
-      for (const nodeId in this.__nodes) {
-        let innerNodes = this.__nodes[nodeId].getInnerNodes(true);
-        allNodes = Object.assign(allNodes, innerNodes);
+    getNodes: function(recursive = false) {
+      let nodes = Object.assign({}, this.__nodes);
+      if (recursive) {
+        for (const nodeId in this.__nodes) {
+          let innerNodes = this.__nodes[nodeId].getInnerNodes(true);
+          nodes = Object.assign(nodes, innerNodes);
+        }
       }
-      return allNodes;
-    },
-
-    getNodes: function() {
-      return this.__nodes;
+      return nodes;
     },
 
     createNode: function(metaData, uuid, nodeData) {
