@@ -439,8 +439,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       link.setLinkId(linkId);
       this.__linksUI.push(link);
 
-      node2.addLink(link);
-
       link.getRepresentation().node.addEventListener("click", function(e) {
         // this is needed to get out of the context of svg
         link.fireDataEvent("linkSelected", link.getLinkId());

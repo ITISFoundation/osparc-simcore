@@ -53,10 +53,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return this.getNodeModel().getMetaData();
     },
 
-    addLink: function(link) {
-      this.getNodeModel().addLink(link);
-    },
-
     removeLink: function(link) {
       this.getNodeModel().removeLink(link);
     },

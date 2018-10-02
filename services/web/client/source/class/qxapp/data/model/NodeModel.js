@@ -6,7 +6,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     this.__metaData = {};
     this.__innerNodes = {};
-    this.__connectedTo = [];
     this.__inputNodes = [];
 
     let nodeImageId = metaData.key;
@@ -47,7 +46,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
   members: {
     __metaData: null,
     __innerNodes: null,
-    __connectedTo: null,
     __inputNodes: null,
     __settingsForm: null,
     __posX: null,
@@ -168,15 +166,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
-    addLink: function(link) {
-      this.__connectedTo.push(link);
-      this.getPropsWidget().enableProp(link.getOutputPortId(), false);
-    },
-
     addInputNode: function(inputNodeId) {
       if (!this.__inputNodes.includes(inputNodeId)) {
         this.__inputNodes.push(inputNodeId);
       }
+      // this.getPropsWidget().enableProp(link.getOutputPortId(), false);
     },
 
     deleteLink: function(inputNodeId) {
