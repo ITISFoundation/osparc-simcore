@@ -153,9 +153,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           } else if (nodeModel.getMetaData().type === "dynamic") {
             const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
             widget = widgetManager.getWidgetForNode(nodeModel);
-            widget.addListener("Finished", function() {
-              this.showInMainView(this.__workbenchView, nodeId);
-            }, this);
             this.showInExtraView(new qx.ui.core.Widget());
           } else {
             this.showInExtraView(new qx.ui.core.Widget());
