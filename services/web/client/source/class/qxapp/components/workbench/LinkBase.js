@@ -25,15 +25,7 @@ qx.Class.define("qxapp.components.workbench.LinkBase", {
       init: null,
       check: "String"
     },
-    inputPortId: {
-      init: null,
-      check: "String"
-    },
     outputNodeId: {
-      init: null,
-      check: "String"
-    },
-    outputPortId: {
       init: null,
       check: "String"
     }

@@ -184,11 +184,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           [nodeAId, portA, nodeBId, portB] = [nodeBId, portB, nodeAId, portA];
         }
         this.__createLink({
-          nodeUuid: nodeAId,
-          output: portA.portId
+          nodeUuid: nodeAId
         }, {
-          nodeUuid: nodeBId,
-          input: portB.portId
+          nodeUuid: nodeBId
         });
       }
     },
@@ -297,24 +295,18 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let event = data.event;
         let dropNodeId = data.nodeId;
         let dropIsInput = data.isInput;
-        let dropPortId = data.portId;
 
         if (event.supportsType("osparc-metaData")) {
           let dragNodeId = event.getData("osparc-metaData").dragNodeId;
           let dragIsInput = event.getData("osparc-metaData").dragIsInput;
-          let dragPortId = event.getData("osparc-metaData").dragPortId;
 
           let nodeAId = dropIsInput ? dragNodeId : dropNodeId;
-          let nodeAPortId = dropIsInput ? dragPortId : dropPortId;
           let nodeBId = dragIsInput ? dragNodeId : dropNodeId;
-          let nodeBPortId = dragIsInput ? dragPortId : dropPortId;
 
           this.__createLink({
-            nodeUuid: nodeAId,
-            output: nodeAPortId
+            nodeUuid: nodeAId
           }, {
-            nodeUuid: nodeBId,
-            input: nodeBPortId
+            nodeUuid: nodeBId
           });
           this.__removeTempLink();
           qx.bom.Element.removeListener(
@@ -388,37 +380,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         return nodeB.getInputPort();
       }
       return null;
-      /*
-      if (portA.isInput) {
-        for (let portBId in nodeB.getOutputPorts()) {
-          let portB = nodeB.getOutputPort(portBId);
-          if (this.__arePortsCompatible(portA, portB)) {
-            return portB;
-          }
-        }
-      } else {
-        for (let portBId in nodeB.getInputPorts()) {
-          let portB = nodeB.getInputPort(portBId);
-          if (this.__arePortsCompatible(portA, portB)) {
-            return portB;
-          }
-        }
-      }
-      return null;
-      */
     },
 
     __createLink: function(from, to, linkId) {
       let node1Id = from.nodeUuid;
-      // let port1Id = from.output;
       let node2Id = to.nodeUuid;
-      // let port2Id = to.input;
 
       let node1 = this.getNode(node1Id);
-      // let port1 = node1.getOutputPort(port1Id);
       let port1 = node1.getOutputPort();
       let node2 = this.getNode(node2Id);
-      // let port2 = node2.getInputPort(port2Id);
       let port2 = node2.getInputPort();
 
       node2.getNodeModel().addInputNode(node1Id);
@@ -433,9 +403,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
       let link = new qxapp.components.workbench.LinkBase(linkRepresentation);
       link.setInputNodeId(node1.getNodeId());
-      // link.setInputPortId(port1.portId);
       link.setOutputNodeId(node2.getNodeId());
-      // link.setOutputPortId(port2.portId);
       link.setLinkId(linkId);
       this.__linksUI.push(link);
 
@@ -459,10 +427,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let link = this.__getLink(linkId);
         if (link) {
           let node1 = this.getNode(link.getInputNodeId());
-          // let port1 = node1.getOutputPort(link.getInputPortId());
           let port1 = node1.getOutputPort();
           let node2 = this.getNode(link.getOutputNodeId());
-          // let port2 = node2.getInputPort(link.getOutputPortId());
           let port2 = node2.getInputPort();
           const pointList = this.__getLinkPoints(node1, port1, node2, port2);
           const x1 = pointList[0][0];
@@ -640,20 +606,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__clearAllNodes();
       this.__clearAllLinks();
     },
-    /*
-    __getInputPortLinked: function(nodeId, inputPortId) {
-      for (let i = 0; i < this.__linksUI.length; i++) {
-        const link = this.__linksUI[i];
-        if (link.getOutputNodeId() === nodeId && link.getOutputPortId() === inputPortId) {
-          return {
-            nodeUuid: link.getInputNodeId(),
-            output: link.getInputPortId()
-          };
-        }
-      }
-      return null;
-    },
-    */
+
     __loadProject: function() {
       this.removeAll();
 
@@ -683,17 +636,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
               nodeUuid: nodeUuid
             });
           }
-          /*
-          const linkData = links[linkUuid];
-          this.__createLink({
-            nodeUuid: linkData.output.nodeUuid,
-            output: linkData.output.output
-          }, {
-            nodeUuid: linkData.input.nodeUuid,
-            input: linkData.input.input
-          },
-          linkUuid);
-          */
         }
       }
     },
@@ -721,20 +663,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             });
           }
         }
-        /*
-        for (const nodeUuid in nodes) {
-          const nodeModel = nodes[nodeUuid];
-          const inputNodes = nodeModel.getInputNodes();
-          for (let i=0; i<inputNodes.length; i++) {
-            this.__createLink({
-              nodeUuid: inputNodes[i],
-              output: "Output"
-            }, {
-              nodeUuid: nodeUuid,
-              input: "Input"
-            });
-          }
-          */
       }
     },
 

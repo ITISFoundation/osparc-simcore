@@ -127,12 +127,6 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
             y: nodeModel.getPosition().y
           };
         }
-        for (let key in nodeModel.getInputPorts()) {
-          const linkPort = this.__getInputPortLinked(nodeModel.getNodeId(), key);
-          if (linkPort) {
-            cNode.inputs[key] = linkPort;
-          }
-        }
         for (let key in nodeData.outputs) {
           const outputPort = nodeData.outputs[key];
           if ("value" in outputPort) {
