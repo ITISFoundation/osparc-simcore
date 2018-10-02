@@ -183,14 +183,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return false;
     },
 
-    removeLink: function(link) {
-      const index = this.__connectedTo.indexOf(link);
-      if (index > -1) {
-        this.__connectedTo.splice(index, 1);
-      }
-      this.getPropsWidget().enableProp(link.getOutputPortId(), true);
-    },
-
     setPosition: function(x, y) {
       this.__posX = x;
       this.__posY = y;

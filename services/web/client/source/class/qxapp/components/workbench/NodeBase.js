@@ -53,10 +53,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       return this.getNodeModel().getMetaData();
     },
 
-    removeLink: function(link) {
-      this.getNodeModel().removeLink(link);
-    },
-
     createNodeLayout: function() {
       let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
       this.setLayout(nodeLayout);
