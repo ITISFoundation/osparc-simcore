@@ -16,7 +16,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       layout: hBox
     });
 
-    let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     inputNodesLayout.set({
       width: INPUTS_WIDTH,
       maxWidth: INPUTS_WIDTH,
@@ -636,11 +636,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     loadRoot: function(model) {
-      this.__inputNodesLayout.setVisibility("excluded");
-
       this.clearAll();
 
       if (model) {
+        this.__inputNodesLayout.setVisibility("excluded");
+
         let nodes = model.getNodes();
         for (const nodeUuid in nodes) {
           const nodeModel = nodes[nodeUuid];
@@ -664,12 +664,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     loadContainer: function(model) {
-      this.__inputNodesLayout.setVisibility("visible");
-
-      console.log("model", model);
       this.clearAll();
 
       if (model) {
+        this.__addInputNodes(model);
+
         let nodes = model.getInnerNodes();
         for (const nodeUuid in nodes) {
           const nodeModel = nodes[nodeUuid];
@@ -692,6 +691,31 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             }
           }
         }
+      }
+    },
+
+    __addInputNodes: function(model) {
+      // remove all but the title
+      while (this.__inputNodesLayout.getChildren().length > 1) {
+        this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length-1);
+      }
+
+      const inputNodes = model.getInputNodes();
+      this.__inputNodesLayout.setVisibility("visible");
+      for (let i=0; i<inputNodes.length; i++) {
+        let inputNode = this.getWorkbenchModel().getNode(inputNodes[i]);
+        console.log(inputNode);
+        const nodeName = inputNode.getName();
+        let inputLabel = new qx.ui.basic.Atom(nodeName).set({
+          center : true,
+          draggable: true,
+          droppable: true,
+          decorator: "main"
+        });
+
+        this.__inputNodesLayout.add(inputLabel, {
+          flex: 1
+        });
       }
     },
 
