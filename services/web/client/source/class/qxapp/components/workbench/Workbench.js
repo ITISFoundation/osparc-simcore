@@ -227,9 +227,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __createNode: function(metaData, uuid, nodeData) {
-      let nodeModel = this.getWorkbenchModel().createNode(metaData, uuid);
-      // nodeModel.populateNodeData(nodeData);
-      // let nodeModel = this.getWorkbenchModel().getNode(uuid);
+      let nodeModel = this.getWorkbenchModel().createNode(metaData, uuid, nodeData);
 
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeModel);
       nodeBase.createNodeLayout();
@@ -621,8 +619,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let nodes = model.getNodes();
         for (const nodeUuid in nodes) {
           const nodeModel = nodes[nodeUuid];
-          const nodeImageId = nodeModel.getNodeImageId();
-          let node = this.__createNode(nodeImageId, nodeUuid, nodeModel);
+          const metaData = nodeModel.getMetaData();
+          let node = this.__createNode(metaData, nodeUuid, nodeModel);
           this.__addNodeToWorkbench(node, nodeModel.getPosition());
         }
 
@@ -647,8 +645,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let nodes = model.getInnerNodes();
         for (const nodeUuid in nodes) {
           const nodeModel = nodes[nodeUuid];
-          const nodeImageId = nodeModel.getNodeImageId();
-          let node = this.__createNode(nodeImageId, nodeUuid, nodeModel);
+          const metaData = nodeModel.getMetaData();
+          let node = this.__createNode(metaData, nodeUuid, nodeModel);
           this.__addNodeToWorkbench(node, nodeModel.getPosition());
         }
 
