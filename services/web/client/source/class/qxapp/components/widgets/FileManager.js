@@ -100,8 +100,6 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
     __createConnections: function(node) {
       this.addListener("ItemSelected", function(data) {
         const itemPath = data.getData().itemPath;
-        const splitted = itemPath.split("/");
-        const itemName = splitted[splitted.length-1];
         const isDirectory = data.getData().isDirectory;
         const activePort = isDirectory ? "outDir" : "outFile";
         const inactivePort = isDirectory ? "outFile" : "outDir";
@@ -111,10 +109,14 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
           path: itemPath
         };
         metaData.outputs[inactivePort].value = null;
+        /*
+        // const splitted = itemPath.split("/");
+        // const itemName = splitted[splitted.length-1];
         node.getOutputPort(activePort).ui.setLabel(itemName);
         node.getOutputPort(activePort).ui.getToolTip().setLabel(itemName);
         node.getOutputPort(inactivePort).ui.setLabel("");
         node.getOutputPort(inactivePort).ui.getToolTip().setLabel("");
+        */
         node.setProgress(100);
         this.fireEvent("Finished");
       }, this);
