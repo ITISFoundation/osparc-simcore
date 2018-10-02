@@ -183,7 +183,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         if (portA.isInput) {
           [nodeAId, portA, nodeBId, portB] = [nodeBId, portB, nodeAId, portA];
         }
-        this.__createLink({
+        this.__createLinkBetweenNodes({
           nodeUuid: nodeAId
         }, {
           nodeUuid: nodeBId
@@ -303,7 +303,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           let nodeAId = dropIsInput ? dragNodeId : dropNodeId;
           let nodeBId = dragIsInput ? dragNodeId : dropNodeId;
 
-          this.__createLink({
+          this.__createLinkBetweenNodes({
             nodeUuid: nodeAId
           }, {
             nodeUuid: nodeBId
@@ -382,7 +382,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return null;
     },
 
-    __createLink: function(from, to, linkId) {
+    __createLinkBetweenNodes: function(from, to, linkId) {
       let node1Id = from.nodeUuid;
       let node2Id = to.nodeUuid;
 
@@ -630,7 +630,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           const nodeModel = nodes[nodeUuid];
           const inputNodes = nodeModel.getInputNodes();
           for (let i=0; i<inputNodes.length; i++) {
-            this.__createLink({
+            this.__createLinkBetweenNodes({
               nodeUuid: inputNodes[i]
             }, {
               nodeUuid: nodeUuid
@@ -656,11 +656,14 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           const nodeModel = nodes[nodeUuid];
           const inputNodes = nodeModel.getInputNodes();
           for (let i=0; i<inputNodes.length; i++) {
-            this.__createLink({
-              nodeUuid: inputNodes[i]
-            }, {
-              nodeUuid: nodeUuid
-            });
+            let inputNode = inputNodes[i];
+            if (inputNode in nodes) {
+              this.__createLinkBetweenNodes({
+                nodeUuid: inputNode
+              }, {
+                nodeUuid: nodeUuid
+              });
+            }
           }
         }
       }
