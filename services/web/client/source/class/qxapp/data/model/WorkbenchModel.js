@@ -18,6 +18,10 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
   members: {
     __nodes: null,
 
+    isContainer: function() {
+      return false;
+    },
+
     getNode: function(nodeId) {
       const allNodes = this.getNodes(true);
       const exists = Object.prototype.hasOwnProperty.call(allNodes, nodeId);

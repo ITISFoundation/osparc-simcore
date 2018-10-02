@@ -77,6 +77,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return innerNodes;
     },
 
+    addInnerNode: function(innerNodeId, innerNodeModel) {
+      this.__innerNodes[innerNodeId] = innerNodeModel;
+    },
+
     createInnerNodes: function(innerNodes) {
       for (const innerNodeId in innerNodes) {
         let innerNodeData = innerNodes[innerNodeId];
@@ -84,7 +88,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         let innerNodeMetaData = store.getNodeMetaData(innerNodeData);
         let innerNodeModel = new qxapp.data.model.NodeModel(innerNodeMetaData, innerNodeId);
         innerNodeModel.populateNodeData(innerNodeData);
-        this.__innerNodes[innerNodeId] = innerNodeModel;
+        this.addInnerNode(innerNodeId, innerNodeModel);
       }
     },
 
