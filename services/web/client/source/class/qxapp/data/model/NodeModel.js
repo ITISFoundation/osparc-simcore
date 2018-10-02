@@ -19,6 +19,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     if (metaData) {
       this.__metaData = metaData;
+      this.setName(metaData.name);
     }
   },
 
@@ -40,6 +41,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     propsWidget: {
       check: "qxapp.components.form.renderer.PropForm"
+    },
+
+    name: {
+      check: "String",
+      nullable: true
     }
   },
 
