@@ -59,6 +59,15 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
 
       this._removeAll();
       this._add(tree);
+
+      this.__tree.addListener("changeSelection", function(e) {
+        let selectedRow = e.getData();
+        this.__selectedNodeId = selectedRow[0].columnData[1];
+      }, this);
+
+      this.__tree.addListener("dblclick", function() {
+        this.fireDataEvent("NodeDoubleClicked", this.__selectedNodeId);
+      }, this);
     },
 
     __populateTree: function(nodes, parent = null) {
@@ -79,15 +88,6 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
       }
 
       dataModel.setData();
-
-      this.__tree.addListener("changeSelection", function(e) {
-        let selectedRow = e.getData();
-        this.__selectedNodeId = selectedRow[0].columnData[1];
-      }, this);
-
-      this.__tree.addListener("dblclick", function() {
-        this.fireDataEvent("NodeDoubleClicked", this.__selectedNodeId);
-      }, this);
     },
 
     getPath: function(nodeId) {
