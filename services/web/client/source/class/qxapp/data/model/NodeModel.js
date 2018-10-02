@@ -99,7 +99,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     populateNodeData: function(nodeData) {
       if (this.__metaData) {
         let metaData = this.__metaData;
-        this.__startNode();
+        // this.__startNode();
         this.__addSettings(metaData.inputs, nodeData);
 
         if (nodeData && nodeData.position) {
