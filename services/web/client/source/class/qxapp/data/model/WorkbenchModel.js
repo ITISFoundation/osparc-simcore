@@ -58,10 +58,19 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
         let store = qxapp.data.Store.getInstance();
         let metaData = store.getNodeMetaData(nodeData);
         let nodeModel = this.createNodeModel(metaData, nodeId, nodeData);
-        let uuid = nodeModel.getNodeId();
-        this.__nodesTopLevel[uuid] = nodeModel;
-        this.fireEvent("WorkbenchModelChanged");
+        this.addNodeModel(nodeModel);
       }
+    },
+
+    addNodeModel: function(nodeModel, parentNodeModel) {
+      const uuid = nodeModel.getNodeId();
+      if (parentNodeModel) {
+        // addInnerNode: function(innerNodeId, innerNodeModel) {
+        parentNodeModel.addInnerNode(uuid, nodeModel);
+      } else {
+        this.__nodesTopLevel[uuid] = nodeModel;
+      }
+      this.fireEvent("WorkbenchModelChanged");
     },
 
     removeNode: function(nodeModel) {

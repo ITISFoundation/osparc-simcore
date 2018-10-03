@@ -137,6 +137,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __selectedItemId: null,
     __playButton: null,
     __stopButton: null,
+    __currentModel: null,
 
     getLogger: function() {
       return this.__logger;
@@ -196,6 +197,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let portA = data.contextPort;
 
       let nodeModel = this.getWorkbenchModel().createNodeModel(metaData);
+      let parent = null;
+      if (this.__currentModel.isContainer()) {
+        parent = this.__currentModel;
+      }
+      this.getWorkbenchModel().addNodeModel(nodeModel, parent);
+
       let nodeB = this.__createNodeUI(nodeModel.getNodeId());
       this.__addNodeToWorkbench(nodeB, pos);
 
@@ -669,6 +676,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     loadModel: function(model) {
       this.clearAll();
+
+      this.__currentModel = model;
 
       if (model) {
         const isContainer = model.isContainer();
