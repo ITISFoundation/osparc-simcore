@@ -348,9 +348,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         if (this.__tempLinkNodeId === dragNodeId && this.__tempLinkPortId === dragPortId) {
           let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
           if (this.__tempLinkIsInput === true) {
-            srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort(dragPortId));
+            srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort());
           } else {
-            srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getOutputPort(dragPortId));
+            srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getOutputPort());
           }
           srvCat.moveTo(posX, posY);
           srvCat.open();
@@ -470,9 +470,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
       let port;
       if (this.__tempLinkIsInput) {
-        port = node.getInputPort(this.__tempLinkPortId);
+        port = node.getInputPort();
       } else {
-        port = node.getOutputPort(this.__tempLinkPortId);
+        port = node.getOutputPort();
       }
       if (port === null) {
         return;
