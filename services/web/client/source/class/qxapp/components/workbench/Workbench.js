@@ -20,16 +20,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     inputNodesLayout.set({
       width: INPUTS_WIDTH,
       maxWidth: INPUTS_WIDTH,
-      // backgroundColor: "blue",
       allowGrowX: false
     });
-    this.add(inputNodesLayout);
     const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
     let inputLabel = new qx.ui.basic.Label("Inputs").set({
       font: navBarLabelFont,
       alignX: "center"
     });
     inputNodesLayout.add(inputLabel);
+    this.add(inputNodesLayout);
 
     this.__desktopCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
     this.add(this.__desktopCanvas, {
