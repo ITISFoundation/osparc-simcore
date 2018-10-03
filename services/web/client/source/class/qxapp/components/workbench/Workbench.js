@@ -369,6 +369,35 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return nodeBase;
     },
 
+    __createInputNode: function(inputNode) {
+      const nodeName = inputNode.getName();
+      let inputLabel = new qx.ui.basic.Atom(nodeName).set({
+        center : true,
+        draggable: true,
+        droppable: true,
+        decorator: "main"
+      });
+      inputLabel.nodeId = inputNode.getNodeId();
+      return inputLabel;
+    },
+
+    __createInputNodes: function(model) {
+      // remove all but the title
+      while (this.__inputNodesLayout.getChildren().length > 1) {
+        this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length-1);
+      }
+
+      const inputNodes = model.getInputNodes();
+      this.__inputNodesLayout.setVisibility("visible");
+      for (let i=0; i<inputNodes.length; i++) {
+        let inputNode = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
+        let inputLabel = this.__createInputNode(inputNode);
+        this.__inputNodesLayout.add(inputLabel, {
+          flex: 1
+        });
+      }
+    },
+
     __removeSelectedNode: function() {
       for (let i=0; i<this.__nodesUI.length; i++) {
         if (this.__desktop.getActiveWindow() === this.__nodesUI[i]) {
@@ -659,7 +688,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.clearAll();
 
       if (model) {
-        this.__addInputNodes(model);
+        this.__createInputNodes(model);
 
         let nodes = model.getInnerNodes();
         for (const nodeUuid in nodes) {
@@ -683,31 +712,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             }
           }
         }
-      }
-    },
-
-    __addInputNodes: function(model) {
-      // remove all but the title
-      while (this.__inputNodesLayout.getChildren().length > 1) {
-        this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length-1);
-      }
-
-      const inputNodes = model.getInputNodes();
-      this.__inputNodesLayout.setVisibility("visible");
-      for (let i=0; i<inputNodes.length; i++) {
-        let inputNode = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
-        const nodeName = inputNode.getName();
-        let inputLabel = new qx.ui.basic.Atom(nodeName).set({
-          center : true,
-          draggable: true,
-          droppable: true,
-          decorator: "main"
-        });
-        inputLabel.nodeId = inputNode.getNodeId();
-
-        this.__inputNodesLayout.add(inputLabel, {
-          flex: 1
-        });
       }
     },
 
