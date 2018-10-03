@@ -23,7 +23,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     },
 
     getNodeModel: function(nodeId) {
-      const allNodes = this.getNodes(true);
+      const allNodes = this.getNodeModels(true);
       const exists = Object.prototype.hasOwnProperty.call(allNodes, nodeId);
       if (exists) {
         return allNodes[nodeId];
@@ -31,7 +31,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return null;
     },
 
-    getNodes: function(recursive = false) {
+    getNodeModels: function(recursive = false) {
       let nodes = Object.assign({}, this.__nodes);
       if (recursive) {
         for (const nodeId in this.__nodes) {
@@ -111,7 +111,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
     serializeWorkbench: function(savePosition = false) {
       let workbench = {};
-      for (const nodeId in this.getNodes()) {
+      for (const nodeId in this.getNodeModels()) {
         const nodeModel = this.getNodeModel(nodeId);
         const nodeData = nodeModel.getMetaData();
         // let cNode = workbench[nodeModel.getNodeId()] = {

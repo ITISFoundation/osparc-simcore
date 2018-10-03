@@ -32,7 +32,7 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
     buildTree: function() {
       this.__buildLayout();
 
-      const nodes = this.getWorkbenchModel().getNodes();
+      const nodes = this.getWorkbenchModel().getNodeModels();
       this.__populateTree(nodes);
     },
 

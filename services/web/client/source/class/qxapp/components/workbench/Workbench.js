@@ -663,7 +663,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (model) {
         this.__inputNodesLayout.setVisibility("excluded");
 
-        let nodes = model.getNodes();
+        let nodes = model.getNodeModels();
         for (const nodeUuid in nodes) {
           const nodeModel = nodes[nodeUuid];
           let node = this.__createNodeUI(nodeUuid);
