@@ -474,8 +474,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
               },
               outputs: {},
               inputNodes: [
-                "c104bb08-77b1-4157-b9f9-e9df7779df08",
-                "bf88496d-ddf8-476c-8d6c-24c716c2ae4c"
+                "bf88496d-ddf8-476c-8d6c-24c716c2ae4c",
+                "c104bb08-77b1-4157-b9f9-e9df7779df08"
               ],
               outputNode: false,
               innerNodes: {
@@ -485,7 +485,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   inputNodes: [],
                   outputNode: false,
                   position: {
-                    x: 50,
+                    x: 100,
                     y: 50
                   }
                 },
@@ -498,7 +498,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   ],
                   outputNode: false,
                   position: {
-                    x: 50,
+                    x: 100,
                     y: 150
                   }
                 },
@@ -510,7 +510,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   ],
                   outputNode: false,
                   position: {
-                    x: 50,
+                    x: 100,
                     y: 250
                   }
                 },
@@ -522,7 +522,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   ],
                   outputNode: false,
                   position: {
-                    x: 50,
+                    x: 100,
                     y: 350
                   }
                 },
@@ -534,7 +534,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   ],
                   outputNode: false,
                   position: {
-                    x: 50,
+                    x: 100,
                     y: 450
                   }
                 },
@@ -546,7 +546,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   ],
                   outputNode: false,
                   position: {
-                    x: 50,
+                    x: 100,
                     y: 550
                   }
                 },
