@@ -703,8 +703,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       const inputNodes = model.getInputNodes();
       this.__inputNodesLayout.setVisibility("visible");
       for (let i=0; i<inputNodes.length; i++) {
-        let inputNode = this.getWorkbenchModel().getNode(inputNodes[i]);
-        console.log(inputNode);
+        let inputNode = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
         const nodeName = inputNode.getName();
         let inputLabel = new qx.ui.basic.Atom(nodeName).set({
           center : true,
@@ -743,7 +742,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     updateProgress: function(nodeId, progress) {
-      let node = this.__getNode(nodeId);
+      let node = this.getNode(nodeId);
       if (node) {
         node.setProgress(progress);
       }

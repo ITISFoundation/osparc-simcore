@@ -85,17 +85,17 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       });
       showWorkbench.addListener("execute", function() {
         this.showInMainView(this.__workbenchView);
-        const workbenchModel = this.__projectDocument.getWorkbench();
+        const workbenchModel = this.__projectDocument.getWorkbenchModel();
         this.__workbenchView.loadRoot(workbenchModel);
       }, this);
 
-      let treeView = this.__treeView = new qxapp.components.widgets.TreeTool(project.getWorkbench());
+      let treeView = this.__treeView = new qxapp.components.widgets.TreeTool(project.getWorkbenchModel());
       let vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       vBox.add(showWorkbench);
       vBox.add(treeView);
       this.__sidePanel.setTopView(vBox);
 
-      let workbench = this.__workbenchView = new qxapp.components.workbench.Workbench(project.getWorkbench());
+      let workbench = this.__workbenchView = new qxapp.components.workbench.Workbench(project.getWorkbenchModel());
       this.showInMainView(workbench);
 
       let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
@@ -132,8 +132,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__stopPipeline();
       }, this);
 
-      this.__projectDocument.getWorkbench().addListener("WorkbenchModelChanged", function() {
-        console.log("WorkbenchModelChanged", this.__projectDocument.getWorkbench());
+      this.__projectDocument.getWorkbenchModel().addListener("WorkbenchModelChanged", function() {
+        console.log("WorkbenchModelChanged", this.__projectDocument.getWorkbenchModel());
         this.__treeView.buildTree();
       }, this);
 
@@ -143,7 +143,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       ].forEach(wb => {
         wb.addListener("NodeDoubleClicked", function(e) {
           let nodeId = e.getData();
-          let nodeModel = this.__projectDocument.getWorkbench().getNode(nodeId);
+          let nodeModel = this.__projectDocument.getWorkbenchModel().getNodeModel(nodeId);
           this.__settingsView.setNode(nodeModel);
 
           let widget;

@@ -22,7 +22,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return false;
     },
 
-    getNode: function(nodeId) {
+    getNodeModel: function(nodeId) {
       const allNodes = this.getNodes(true);
       const exists = Object.prototype.hasOwnProperty.call(allNodes, nodeId);
       if (exists) {
@@ -43,7 +43,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     },
 
     createNode: function(metaData, uuid, nodeData) {
-      let existingNodeModel = this.getNode(uuid);
+      let existingNodeModel = this.getNodeModel(uuid);
       if (existingNodeModel) {
         return existingNodeModel;
       }
@@ -83,7 +83,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     },
 
     createLink: function(outputNodeId, inputNodeId) {
-      let node = this.getNode(inputNodeId);
+      let node = this.getNodeModel(inputNodeId);
       if (node) {
         node.addInputNode(outputNodeId);
       }
@@ -102,7 +102,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     },
 
     removeLink: function(outputNodeId, inputNodeId) {
-      let node = this.getNode(inputNodeId);
+      let node = this.getNodeModel(inputNodeId);
       if (node) {
         return node.removeLink(outputNodeId);
       }
@@ -112,7 +112,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     serializeWorkbench: function(savePosition = false) {
       let workbench = {};
       for (const nodeId in this.getNodes()) {
-        const nodeModel = this.getNode(nodeId);
+        const nodeModel = this.getNodeModel(nodeId);
         const nodeData = nodeModel.getMetaData();
         // let cNode = workbench[nodeModel.getNodeId()] = {
         workbench[nodeModel.getNodeId()] = {

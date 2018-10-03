@@ -18,9 +18,9 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
     }
 
     if (prjData && prjData.workbench) {
-      this.setWorkbench(new qxapp.data.model.WorkbenchModel(prjData.workbench));
+      this.setWorkbenchModel(new qxapp.data.model.WorkbenchModel(prjData.workbench));
     } else {
-      this.setWorkbench(new qxapp.data.model.WorkbenchModel({}));
+      this.setWorkbenchModel(new qxapp.data.model.WorkbenchModel({}));
     }
   },
 
@@ -73,7 +73,7 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
       init: new Date()
     },
 
-    workbench: {
+    workbenchModel: {
       check: "qxapp.data.model.WorkbenchModel",
       nullable: false
     }
