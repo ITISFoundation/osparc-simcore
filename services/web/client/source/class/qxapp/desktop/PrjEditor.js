@@ -297,7 +297,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __updateLogger: function(nodeId, msg) {
-      let node = this.__workbenchView.getNode(nodeId);
+      let node = this.__workbenchView.getNodeUI(nodeId);
       if (node) {
         this.__workbenchView.getLogger().info(node.getCaption(), msg);
       }

@@ -77,7 +77,7 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
       this.__settingsBox.add(inputSettingsTree, {
         flex: 1
       });
-      const metaData = this.getNode().getMetaData();
+      const metaData = this.getNodeUI().getMetaData();
       const nodeImageId = metaData.key + "-" + metaData.version;
       this.__populateList(defaultSettingsFolder, nodeImageId, true);
 

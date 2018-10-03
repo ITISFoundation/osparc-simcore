@@ -298,8 +298,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           const dragNodeId = event.getData("osparc-metaData").dragNodeId;
           const dragIsInput = event.getData("osparc-metaData").dragIsInput;
           const dragPortId = event.getData("osparc-metaData").dragPortId;
-          const dragNode = this.getNode(dragNodeId);
-          const dropNode = this.getNode(dropNodeId);
+          const dragNode = this.getNodeUI(dragNodeId);
+          const dropNode = this.getNodeUI(dropNodeId);
           const dragPortTarget = dragIsInput ? dragNode.getInputPort(dragPortId) : dragNode.getOutputPort(dragPortId);
           const dropPortTarget = dropIsInput ? dropNode.getInputPort(dropPortId) : dropNode.getOutputPort(dropPortId);
           compatible = this.__arePortsCompatible(dragPortTarget, dropPortTarget);
@@ -348,9 +348,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         if (this.__tempLinkNodeId === dragNodeId && this.__tempLinkPortId === dragPortId) {
           let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
           if (this.__tempLinkIsInput === true) {
-            srvCat.setContext(dragNodeId, this.getNode(dragNodeId).getInputPort(dragPortId));
+            srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort(dragPortId));
           } else {
-            srvCat.setContext(dragNodeId, this.getNode(dragNodeId).getOutputPort(dragPortId));
+            srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getOutputPort(dragPortId));
           }
           srvCat.moveTo(posX, posY);
           srvCat.open();
@@ -406,9 +406,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let node1Id = from.nodeUuid;
       let node2Id = to.nodeUuid;
 
-      let node1 = this.getNode(node1Id);
+      let node1 = this.getNodeUI(node1Id);
       let port1 = node1.getOutputPort();
-      let node2 = this.getNode(node2Id);
+      let node2 = this.getNodeUI(node2Id);
       let port2 = node2.getInputPort();
 
       node2.getNodeModel().addInputNode(node1Id);
@@ -446,9 +446,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       linksInvolved.forEach(linkId => {
         let link = this.__getLink(linkId);
         if (link) {
-          let node1 = this.getNode(link.getInputNodeId());
+          let node1 = this.getNodeUI(link.getInputNodeId());
           let port1 = node1.getOutputPort();
-          let node2 = this.getNode(link.getOutputNodeId());
+          let node2 = this.getNodeUI(link.getOutputNodeId());
           let port2 = node2.getInputPort();
           const pointList = this.__getLinkPoints(node1, port1, node2, port2);
           const x1 = pointList[0][0];
@@ -464,7 +464,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       if (this.__tempLinkNodeId === null || this.__tempLinkPortId === null) {
         return;
       }
-      let node = this.getNode(this.__tempLinkNodeId);
+      let node = this.getNodeUI(this.__tempLinkNodeId);
       if (node === null) {
         return;
       }
@@ -533,7 +533,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return [p1, p2];
     },
 
-    getNode: function(id) {
+    getNodeUI: function(id) {
       for (let i = 0; i < this.__nodesUI.length; i++) {
         if (this.__nodesUI[i].getNodeId() === id) {
           return this.__nodesUI[i];
@@ -711,6 +711,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           droppable: true,
           decorator: "main"
         });
+        inputLabel.nodeId = inputNode.getNodeId();
 
         this.__inputNodesLayout.add(inputLabel, {
           flex: 1
@@ -742,7 +743,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     updateProgress: function(nodeId, progress) {
-      let node = this.getNode(nodeId);
+      let node = this.getNodeUI(nodeId);
       if (node) {
         node.setProgress(progress);
       }
