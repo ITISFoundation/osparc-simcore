@@ -120,9 +120,11 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       if (!this.getNodeModel().isContainer() && Object.keys(ports).length < 1) {
         return;
       }
+      let portUI = this.__createUIPort(isInput);
+      this.__createUIPortConnections(portUI, isInput);
       let label = {
         isInput: isInput,
-        ui: this.__createUIPort(isInput)
+        ui: portUI
       };
       label.ui.isInput = isInput;
       if (isInput) {
@@ -144,7 +146,10 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         alignX: alignX,
         allowGrowX: false
       });
+      return uiPort;
+    },
 
+    __createUIPortConnections: function(uiPort, isInput) {
       [
         ["dragstart", "LinkDragStart"],
         ["dragover", "LinkDragOver"],
@@ -160,7 +165,6 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
           this.fireDataEvent(eventPair[1], eData);
         }, this);
       }, this);
-      return uiPort;
     },
 
     getLinkPoint: function(port) {

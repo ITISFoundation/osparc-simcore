@@ -255,7 +255,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       let nodeBase = new qxapp.components.workbench.NodeBase(nodeModel);
       nodeBase.createNodeLayout();
       nodeBase.populateNodeLayout();
+      this.__createDragDropMechanism(nodeBase);
+      return nodeBase;
+    },
 
+    __createDragDropMechanism: function(nodeBase) {
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", function(e) {
         let data = e.getData();
@@ -367,8 +371,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
           this
         );
       }, this);
-
-      return nodeBase;
     },
 
     __createInputNodeUI: function(inputNode) {
@@ -619,7 +621,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __clearNode: function(node) {
-      this.__desktop.remove(node);
+      if (this.__desktop.getChildren().includes(node)) {
+        this.__desktop.remove(node);
+      }
       let index = this.__nodesUI.indexOf(node);
       if (index > -1) {
         this.__nodesUI.splice(index, 1);
