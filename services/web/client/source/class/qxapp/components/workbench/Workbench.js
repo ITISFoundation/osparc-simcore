@@ -51,7 +51,8 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     // sure to catch this event
     this.__svgWidget.addListenerOnce("SvgWidgetReady", () => {
       // Will be called only the first time Svg lib is loaded
-      this.__loadProject();
+      this.removeAll();
+      this.loadModel(this.getWorkbenchModel());
     });
 
     this.__desktop.add(this.__svgWidget, {
@@ -664,13 +665,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     clearAll: function() {
       this.__clearAllNodes();
       this.__clearAllLinks();
-    },
-
-    __loadProject: function() {
-      this.removeAll();
-
-      const workbenchModel = this.getWorkbenchModel();
-      this.loadModel(workbenchModel);
     },
 
     loadModel: function(model) {
