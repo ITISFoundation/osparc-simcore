@@ -31,8 +31,6 @@ qx.Class.define("qxapp.components.workbench.NodeInput", {
   },
 
   members: {
-    // __inputPortLayout: null,
-    // __outputPortLayout: null,
     __inputPort: null,
     __outputPort: null,
 
@@ -73,10 +71,8 @@ qx.Class.define("qxapp.components.workbench.NodeInput", {
       label.ui.isInput = isInput;
       if (isInput) {
         this.__inputPort["Input"] = label;
-        // this.__inputPortLayout.add(label.ui);
       } else {
         this.__outputPort["Output"] = label;
-        // this.__outputPortLayout.add(label.ui);
       }
     },
 
@@ -105,12 +101,9 @@ qx.Class.define("qxapp.components.workbench.NodeInput", {
         qx.ui.core.queue.Layout.flush();
         nodeBounds = this.getCurrentBounds();
       }
-      let x = nodeBounds.left;
-      if (port.isInput === false) {
-        x += nodeBounds.width;
-      }
+      // It is always on the very left of the Desktop
+      let x = 0;
       let y = nodeBounds.top + nodeBounds.height/2;
-      x = 0;
       return [x, y];
     },
 
