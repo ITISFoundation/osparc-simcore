@@ -424,10 +424,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return null;
     },
 
-    __createLinkBetweenNodes: function(from, to, linkId) {
-      let node1Id = from.nodeUuid;
-      let node2Id = to.nodeUuid;
-
+    __createLink: function(node1Id, node2Id, linkId) {
       let node1 = this.getNodeUI(node1Id);
       let port1 = node1.getOutputPort();
       let node2 = this.getNodeUI(node2Id);
@@ -437,10 +434,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       linkId = linkId || qxapp.utils.Utils.uuidv4();
 
       const pointList = this.__getLinkPoints(node1, port1, node2, port2);
-      const x1 = pointList[0][0];
-      const y1 = pointList[0][1];
-      const x2 = pointList[1][0];
-      const y2 = pointList[1][1];
+      const x1 = pointList[0] ? pointList[0][0] : 0;
+      const y1 = pointList[0] ? pointList[0][1] : 0;
+      const x2 = pointList[1] ? pointList[1][0] : 0;
+      const y2 = pointList[1] ? pointList[1][1] : 0;
       let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
 
       let link = new qxapp.components.workbench.LinkBase(linkRepresentation);
@@ -462,7 +459,13 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       return link;
     },
 
-    __createLinkBetweenNodeAndInput: function(from, to, linkId) {
+    __createLinkBetweenNodes: function(from, to, linkId) {
+      let node1Id = from.nodeUuid;
+      let node2Id = to.nodeUuid;
+      this.__createLink(node1Id, node2Id, linkId);
+    },
+
+    __createLinkBetweenNodesAndInputNodes: function(from, to, linkId) {
       const inputNodes = this.__inputNodesLayout.getChildren();
       // Children[0] is the title
       for (let i=1; i<inputNodes.length; i++) {
@@ -470,37 +473,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         if (inputNodeId === from.nodeUuid) {
           let node1Id = from.nodeUuid;
           let node2Id = to.nodeUuid;
-
-          let node1 = this.getNodeUI(node1Id);
-          let port1 = node1.getOutputPort();
-          let node2 = this.getNodeUI(node2Id);
-          let port2 = node2.getInputPort();
-
-          node2.getNodeModel().addInputNode(node1Id);
-          linkId = linkId || qxapp.utils.Utils.uuidv4();
-
-          const pointList = this.__getLinkPoints(node1, port1, node2, port2);
-          const x1 = pointList[0] ? pointList[0][0] : 0;
-          const y1 = pointList[0] ? pointList[0][1] : 0;
-          const x2 = pointList[1] ? pointList[1][0] : 0;
-          const y2 = pointList[1] ? pointList[1][1] : 0;
-          let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
-
-          let link = new qxapp.components.workbench.LinkBase(linkRepresentation);
-          link.setInputNodeId(node1Id);
-          link.setOutputNodeId(node2.getNodeId());
-          link.setLinkId(linkId);
-          this.__linksUI.push(link);
-
-          link.getRepresentation().node.addEventListener("click", function(e) {
-            // this is needed to get out of the context of svg
-            link.fireDataEvent("linkSelected", link.getLinkId());
-            e.stopPropagation();
-          }, this);
-
-          link.addListener("linkSelected", function(e) {
-            this.__selectedItemChanged(link.getLinkId());
-          }, this);
+          this.__createLink(node1Id, node2Id, linkId);
         }
       }
     },
@@ -753,7 +726,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
                 nodeUuid: nodeUuid
               });
             } else {
-              this.__createLinkBetweenNodeAndInput({
+              this.__createLinkBetweenNodesAndInputNodes({
                 nodeUuid: inputNode
               }, {
                 nodeUuid: nodeUuid
