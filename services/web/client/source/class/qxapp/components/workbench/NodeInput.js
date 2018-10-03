@@ -95,11 +95,14 @@ qx.Class.define("qxapp.components.workbench.NodeInput", {
     },
 
     getLinkPoint: function(port) {
+      if (port.isInput === true) {
+        console.log("Port should always be output");
+        return null;
+      }
       let nodeBounds = this.getCurrentBounds();
       if (nodeBounds === null) {
-        qx.ui.core.queue.Widget.flush();
-        qx.ui.core.queue.Layout.flush();
-        nodeBounds = this.getCurrentBounds();
+        // not rendered yet
+        return null;
       }
       // It is always on the very left of the Desktop
       let x = 0;
