@@ -130,7 +130,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     __svgWidget: null,
     __logger: null,
     __tempLinkNodeId: null,
-    __tempLinkPortId: null,
     __tempLinkRepr: null,
     __pointerPosX: null,
     __pointerPosY: null,
@@ -261,7 +260,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let event = data.event;
         let dragNodeId = data.nodeId;
         let dragIsInput = data.isInput;
-        let dragPortId = data.portId;
 
         // Register supported actions
         event.addAction("move");
@@ -270,14 +268,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         event.addType("osparc-metaData");
         let dragData = {
           dragNodeId: dragNodeId,
-          dragIsInput: dragIsInput,
-          dragPortId: dragPortId
+          dragIsInput: dragIsInput
         };
         event.addData("osparc-metaData", dragData);
 
         this.__tempLinkNodeId = dragData.dragNodeId;
         this.__tempLinkIsInput = dragData.dragIsInput;
-        this.__tempLinkPortId = dragData.dragPortId;
         qx.bom.Element.addListener(
           this.__desktop,
           evType,
@@ -291,17 +287,15 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         let event = data.event;
         let dropNodeId = data.nodeId;
         let dropIsInput = data.isInput;
-        let dropPortId = data.portId;
 
         let compatible = false;
         if (event.supportsType("osparc-metaData")) {
           const dragNodeId = event.getData("osparc-metaData").dragNodeId;
           const dragIsInput = event.getData("osparc-metaData").dragIsInput;
-          const dragPortId = event.getData("osparc-metaData").dragPortId;
           const dragNode = this.getNodeUI(dragNodeId);
           const dropNode = this.getNodeUI(dropNodeId);
-          const dragPortTarget = dragIsInput ? dragNode.getInputPort(dragPortId) : dragNode.getOutputPort(dragPortId);
-          const dropPortTarget = dropIsInput ? dropNode.getInputPort(dropPortId) : dropNode.getOutputPort(dropPortId);
+          const dragPortTarget = dragIsInput ? dragNode.getInputPort() : dragNode.getOutputPort();
+          const dropPortTarget = dropIsInput ? dropNode.getInputPort() : dropNode.getOutputPort();
           compatible = this.__arePortsCompatible(dragPortTarget, dropPortTarget);
         }
 
@@ -341,11 +335,10 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       nodeBase.addListener("LinkDragEnd", function(e) {
         let data = e.getData();
         let dragNodeId = data.nodeId;
-        let dragPortId = data.portId;
 
         let posX = this.__pointerPosX;
         let posY = this.__pointerPosY;
-        if (this.__tempLinkNodeId === dragNodeId && this.__tempLinkPortId === dragPortId) {
+        if (this.__tempLinkNodeId === dragNodeId) {
           let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
           if (this.__tempLinkIsInput === true) {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort());
@@ -461,7 +454,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
     },
 
     __startTempLink: function(pointerEvent) {
-      if (this.__tempLinkNodeId === null || this.__tempLinkPortId === null) {
+      if (this.__tempLinkNodeId === null) {
         return;
       }
       let node = this.getNodeUI(this.__tempLinkNodeId);
@@ -514,7 +507,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
       this.__tempLinkRepr = null;
       this.__tempLinkNodeId = null;
-      this.__tempLinkPortId = null;
       this.__pointerPosX = null;
       this.__pointerPosY = null;
     },
