@@ -31,7 +31,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     }, this);
     filterLayout.add(clearButton);
 
-    let searchLabel = new qx.ui.basic.Label("Filter");
+    let searchLabel = new qx.ui.basic.Label(this.tr("Filter"));
     filterLayout.add(searchLabel);
     this.__textfield = new qx.ui.form.TextField();
     this.__textfield.setLiveUpdate(true);

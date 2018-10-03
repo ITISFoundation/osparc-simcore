@@ -23,7 +23,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       allowGrowX: false
     });
     const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-    let inputLabel = new qx.ui.basic.Label("Inputs").set({
+    let inputLabel = new qx.ui.basic.Label(this.tr("Inputs")).set({
       font: navBarLabelFont,
       alignX: "center"
     });

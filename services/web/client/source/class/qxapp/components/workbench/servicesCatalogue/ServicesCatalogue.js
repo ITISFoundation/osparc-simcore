@@ -21,7 +21,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
 
     // create the textfield
     let searchLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-    let searchLabel = new qx.ui.basic.Label("Search");
+    let searchLabel = new qx.ui.basic.Label(this.tr("Search"));
     searchLayout.add(searchLabel);
     let textfield = this.__textfield = new qx.ui.form.TextField();
     textfield.setLiveUpdate(true);
