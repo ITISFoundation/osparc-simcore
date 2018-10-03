@@ -104,7 +104,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       });
       this.__sidePanel.setMidView(extraView);
 
-      let settingsView = this.__settingsView = new qxapp.components.workbench.SettingsView().set({
+      let settingsView = this.__settingsView = new qxapp.components.widgets.SettingsView().set({
         minHeight: 200,
         maxHeight: 500
       });
