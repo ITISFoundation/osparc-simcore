@@ -6,7 +6,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
   construct: function(wbData) {
     this.base(arguments);
 
-    this.__nodes = {};
+    this.__nodesTopLevel = {};
     this.createNodeModels(wbData);
     this.createLinks(wbData);
   },
@@ -16,7 +16,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
   },
 
   members: {
-    __nodes: null,
+    __nodesTopLevel: null,
 
     isContainer: function() {
       return false;
@@ -32,10 +32,10 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     },
 
     getNodeModels: function(recursive = false) {
-      let nodes = Object.assign({}, this.__nodes);
+      let nodes = Object.assign({}, this.__nodesTopLevel);
       if (recursive) {
-        for (const nodeId in this.__nodes) {
-          let innerNodes = this.__nodes[nodeId].getInnerNodes(true);
+        for (const nodeId in this.__nodesTopLevel) {
+          let innerNodes = this.__nodesTopLevel[nodeId].getInnerNodes(true);
           nodes = Object.assign(nodes, innerNodes);
         }
       }
@@ -49,9 +49,6 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       }
       let nodeModel = new qxapp.data.model.NodeModel(metaData, uuid);
       nodeModel.populateNodeData(nodeData);
-      uuid = nodeModel.getNodeId();
-      this.__nodes[uuid] = nodeModel;
-      this.fireEvent("WorkbenchModelChanged");
       return nodeModel;
     },
 
@@ -60,13 +57,16 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
         const nodeData = workbenchData[nodeId];
         let store = qxapp.data.Store.getInstance();
         let metaData = store.getNodeMetaData(nodeData);
-        this.createNodeModel(metaData, nodeId, nodeData);
+        let nodeModel = this.createNodeModel(metaData, nodeId, nodeData);
+        let uuid = nodeModel.getNodeId();
+        this.__nodesTopLevel[uuid] = nodeModel;
+        this.fireEvent("WorkbenchModelChanged");
       }
     },
 
     removeNode: function(nodeModel) {
       const nodeId = nodeModel.getNodeId();
-      const exists = Object.prototype.hasOwnProperty.call(this.__nodes, nodeId);
+      const exists = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
       if (exists) {
         if (nodeModel.getMetaData().type == "dynamic") {
           const slotName = "stopDynamic";
@@ -76,7 +76,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
           };
           socket.emit(slotName, data);
         }
-        delete this.__nodes[nodeModel.getNodeId()];
+        delete this.__nodesTopLevel[nodeModel.getNodeId()];
         this.fireEvent("WorkbenchModelChanged");
       }
       return exists;
