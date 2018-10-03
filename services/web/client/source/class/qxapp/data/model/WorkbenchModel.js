@@ -65,6 +65,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     },
 
     removeNode: function(nodeModel) {
+      // TODO: only works with top level nodes
       const nodeId = nodeModel.getNodeId();
       const exists = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
       if (exists) {
