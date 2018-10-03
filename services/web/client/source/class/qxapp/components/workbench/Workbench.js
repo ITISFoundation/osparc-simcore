@@ -387,7 +387,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
 
       const inputNodes = model.getInputNodes();
-      this.__inputNodesLayout.setVisibility("visible");
       for (let i=0; i<inputNodes.length; i++) {
         let inputNodeModel = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
         let inputLabel = this.__createInputNodeUI(inputNodeModel);
@@ -671,43 +670,22 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.removeAll();
 
       const workbenchModel = this.getWorkbenchModel();
-      this.loadRoot(workbenchModel);
+      this.loadModel(workbenchModel);
     },
 
-    loadRoot: function(model) {
+    loadModel: function(model) {
       this.clearAll();
 
       if (model) {
-        this.__inputNodesLayout.setVisibility("excluded");
-
-        let nodes = model.getNodeModels();
-        for (const nodeUuid in nodes) {
-          const nodeModel = nodes[nodeUuid];
-          let node = this.__createNodeUI(nodeUuid);
-          this.__addNodeToWorkbench(node, nodeModel.getPosition());
+        const isContainer = model.isContainer();
+        if (isContainer) {
+          this.__inputNodesLayout.setVisibility("visible");
+          this.__createInputNodeUIs(model);
+        } else {
+          this.__inputNodesLayout.setVisibility("excluded");
         }
 
-        for (const nodeUuid in nodes) {
-          const nodeModel = nodes[nodeUuid];
-          const inputNodes = nodeModel.getInputNodes();
-          for (let i=0; i<inputNodes.length; i++) {
-            this.__createLinkBetweenNodes({
-              nodeUuid: inputNodes[i]
-            }, {
-              nodeUuid: nodeUuid
-            });
-          }
-        }
-      }
-    },
-
-    loadContainer: function(model) {
-      this.clearAll();
-
-      if (model) {
-        this.__createInputNodeUIs(model);
-
-        let nodes = model.getInnerNodes();
+        let nodes = isContainer ? model.getInnerNodes() : model.getNodeModels();
         for (const nodeUuid in nodes) {
           const nodeModel = nodes[nodeUuid];
           let node = this.__createNodeUI(nodeUuid);
@@ -726,6 +704,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
                 nodeUuid: nodeUuid
               });
             } else {
+              if (!isContainer) {
+                console.log("Shouldn't be the case");
+              }
               this.__createLinkBetweenNodesAndInputNodes({
                 nodeUuid: inputNode
               }, {

@@ -86,7 +86,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       showWorkbench.addListener("execute", function() {
         this.showInMainView(this.__workbenchView);
         const workbenchModel = this.__projectDocument.getWorkbenchModel();
-        this.__workbenchView.loadRoot(workbenchModel);
+        this.__workbenchView.loadModel(workbenchModel);
       }, this);
 
       let treeView = this.__treeView = new qxapp.components.widgets.TreeTool(project.getWorkbenchModel());
@@ -161,7 +161,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.showInMainView(widget, nodeId);
 
           if (nodeModel.isContainer()) {
-            this.__workbenchView.loadContainer(nodeModel);
+            this.__workbenchView.loadModel(nodeModel);
           }
         }, this);
       });
