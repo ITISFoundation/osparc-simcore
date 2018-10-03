@@ -464,55 +464,55 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
 
     __createLinkBetweenNodeAndInput: function(from, to, linkId) {
       const inputNodes = this.__inputNodesLayout.getChildren();
-      for (let i=0; i<inputNodes.length; i++) {
-        if ("nodeId" in inputNodes[i]) {
-          if (inputNodes[i].nodeId === from.nodeUuid) {
-            console.log("Create this link", from.nodeUuid, to.nodeUuid);
-            console.log(inputNodes[i]);
+      // Children[0] is the title
+      for (let i=1; i<inputNodes.length; i++) {
+        const inputNodeId = inputNodes[i].getNodeId();
+        if (inputNodeId === from.nodeUuid) {
+          console.log("Create this link", from.nodeUuid, to.nodeUuid);
+          console.log(inputNodes[i]);
 
-            let node1Id = from.nodeUuid;
-            let node2Id = to.nodeUuid;
+          let node1Id = from.nodeUuid;
+          let node2Id = to.nodeUuid;
 
-            // let node1 = this.getNodeUI(node1Id);
-            // let port1 = node1.getOutputPort();
-            let node2 = this.getNodeUI(node2Id);
-            let port2 = node2.getInputPort();
+          // let node1 = this.getNodeUI(node1Id);
+          // let port1 = node1.getOutputPort();
+          let node2 = this.getNodeUI(node2Id);
+          let port2 = node2.getInputPort();
 
-            node2.getNodeModel().addInputNode(node1Id);
-            linkId = linkId || qxapp.utils.Utils.uuidv4();
+          node2.getNodeModel().addInputNode(node1Id);
+          linkId = linkId || qxapp.utils.Utils.uuidv4();
 
-            // const pointList = this.__getLinkPoints(node1, port1, node2, port2);
-            // swap node-ports to have node1 as input and node2 as output
-            // if (port1.isInput) {
-            //   [node1, port1, node2, port2] = [node2, port2, node1, port1];
-            // }
-            // p1 = node1.getLinkPoint(port1);
-            let p2 = node2.getLinkPoint(port2);
-            // hack to place the arrow-head properly
-            p2[0] -= 6;
+          // const pointList = this.__getLinkPoints(node1, port1, node2, port2);
+          // swap node-ports to have node1 as input and node2 as output
+          // if (port1.isInput) {
+          //   [node1, port1, node2, port2] = [node2, port2, node1, port1];
+          // }
+          // p1 = node1.getLinkPoint(port1);
+          let p2 = node2.getLinkPoint(port2);
+          // hack to place the arrow-head properly
+          p2[0] -= 6;
 
-            const x1 = 200;
-            const y1 = 28 + 205;
-            const x2 = p2[1][0];
-            const y2 = p2[1][1];
-            let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
+          const x1 = 200;
+          const y1 = 28 + 205;
+          const x2 = p2[1][0];
+          const y2 = p2[1][1];
+          let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
 
-            let link = new qxapp.components.workbench.LinkBase(linkRepresentation);
-            link.setInputNodeId(node1Id);
-            link.setOutputNodeId(node2.getNodeId());
-            link.setLinkId(linkId);
-            this.__linksUI.push(link);
+          let link = new qxapp.components.workbench.LinkBase(linkRepresentation);
+          link.setInputNodeId(node1Id);
+          link.setOutputNodeId(node2.getNodeId());
+          link.setLinkId(linkId);
+          this.__linksUI.push(link);
 
-            link.getRepresentation().node.addEventListener("click", function(e) {
-              // this is needed to get out of the context of svg
-              link.fireDataEvent("linkSelected", link.getLinkId());
-              e.stopPropagation();
-            }, this);
+          link.getRepresentation().node.addEventListener("click", function(e) {
+            // this is needed to get out of the context of svg
+            link.fireDataEvent("linkSelected", link.getLinkId());
+            e.stopPropagation();
+          }, this);
 
-            link.addListener("linkSelected", function(e) {
-              this.__selectedItemChanged(link.getLinkId());
-            }, this);
-          }
+          link.addListener("linkSelected", function(e) {
+            this.__selectedItemChanged(link.getLinkId());
+          }, this);
         }
       }
     },
