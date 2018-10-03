@@ -87,14 +87,18 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       this.__innerNodes[innerNodeId] = innerNodeModel;
     },
 
+    createInnerNode: function(innerNodeData, innerNodeId) {
+      let store = qxapp.data.Store.getInstance();
+      let innerNodeMetaData = store.getNodeMetaData(innerNodeData);
+      let innerNodeModel = new qxapp.data.model.NodeModel(innerNodeMetaData, innerNodeId);
+      innerNodeModel.populateNodeData(innerNodeData);
+      this.addInnerNode(innerNodeId, innerNodeModel);
+    },
+
     createInnerNodes: function(innerNodes) {
       for (const innerNodeId in innerNodes) {
         let innerNodeData = innerNodes[innerNodeId];
-        let store = qxapp.data.Store.getInstance();
-        let innerNodeMetaData = store.getNodeMetaData(innerNodeData);
-        let innerNodeModel = new qxapp.data.model.NodeModel(innerNodeMetaData, innerNodeId);
-        innerNodeModel.populateNodeData(innerNodeData);
-        this.addInnerNode(innerNodeId, innerNodeModel);
+        this.createInnerNode(innerNodeData, innerNodeId);
       }
     },
 
