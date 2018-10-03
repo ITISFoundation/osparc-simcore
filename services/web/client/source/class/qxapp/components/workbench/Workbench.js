@@ -245,6 +245,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
         e.stopPropagation();
       }, this);
 
+      qx.ui.core.queue.Widget.flush();
       qx.ui.core.queue.Layout.flush();
     },
 
@@ -728,6 +729,7 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       this.__desktop.add(node);
       node.open();
 
+      qx.ui.core.queue.Widget.flush();
       qx.ui.core.queue.Layout.flush();
     },
 

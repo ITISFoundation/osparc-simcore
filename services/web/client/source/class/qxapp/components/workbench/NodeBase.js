@@ -164,7 +164,12 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     },
 
     getLinkPoint: function(port) {
-      const nodeBounds = this.getCurrentBounds();
+      let nodeBounds = this.getCurrentBounds();
+      if (nodeBounds === null) {
+        qx.ui.core.queue.Widget.flush();
+        qx.ui.core.queue.Layout.flush();
+        nodeBounds = this.getCurrentBounds();
+      }
       let x = nodeBounds.left;
       if (port.isInput === false) {
         x += nodeBounds.width;
