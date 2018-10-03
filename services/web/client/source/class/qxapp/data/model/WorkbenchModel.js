@@ -7,7 +7,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     this.base(arguments);
 
     this.__nodes = {};
-    this.createNodes(wbData);
+    this.createNodeModels(wbData);
     this.createLinks(wbData);
   },
 
@@ -42,7 +42,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return nodes;
     },
 
-    createNode: function(metaData, uuid, nodeData) {
+    createNodeModel: function(metaData, uuid, nodeData) {
       let existingNodeModel = this.getNodeModel(uuid);
       if (existingNodeModel) {
         return existingNodeModel;
@@ -55,12 +55,12 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return nodeModel;
     },
 
-    createNodes: function(workbenchData) {
+    createNodeModels: function(workbenchData) {
       for (const nodeId in workbenchData) {
         const nodeData = workbenchData[nodeId];
         let store = qxapp.data.Store.getInstance();
         let metaData = store.getNodeMetaData(nodeData);
-        this.createNode(metaData, nodeId, nodeData);
+        this.createNodeModel(metaData, nodeId, nodeData);
       }
     },
 
