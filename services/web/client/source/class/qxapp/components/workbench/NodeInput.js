@@ -1,0 +1,133 @@
+qx.Class.define("qxapp.components.workbench.NodeInput", {
+  extend: qx.ui.basic.Atom,
+
+  construct: function(nodeModel) {
+    this.base();
+
+    const nodeName = nodeModel.getName();
+    this.set({
+      label: nodeName,
+      center : true,
+      draggable: true,
+      droppable: true,
+      decorator: "main"
+    });
+
+    this.setNodeModel(nodeModel);
+  },
+
+  properties: {
+    nodeModel: {
+      check: "qxapp.data.model.NodeModel",
+      nullable: false
+    }
+  },
+
+  events: {
+    "LinkDragStart": "qx.event.type.Data",
+    "LinkDragOver": "qx.event.type.Data",
+    "LinkDrop": "qx.event.type.Data",
+    "LinkDragEnd": "qx.event.type.Data"
+  },
+
+  members: {
+    // __inputPortLayout: null,
+    // __outputPortLayout: null,
+    __inputPort: null,
+    __outputPort: null,
+
+    getNodeId: function() {
+      return this.getNodeModel().getNodeId();
+    },
+
+    getMetaData: function() {
+      return this.getNodeModel().getMetaData();
+    },
+
+    populateNodeLayout: function() {
+      const metaData = this.getNodeModel().getMetaData();
+      this.__inputPort = {};
+      this.__outputPort = {};
+      // this.__createUIPorts(true, metaData.inputs);
+      this.__createUIPorts(false, metaData.outputs);
+    },
+
+    getInputPort: function() {
+      return this.__inputPort["Input"];
+    },
+
+    getOutputPort: function() {
+      return this.__outputPort["Output"];
+    },
+
+    __createUIPorts: function(isInput, ports) {
+      // Always create ports if node is a container
+      if (!this.getNodeModel().isContainer() && Object.keys(ports).length < 1) {
+        return;
+      }
+      this.__createUIPortConnections(this, isInput);
+      let label = {
+        isInput: isInput,
+        ui: this
+      };
+      label.ui.isInput = isInput;
+      if (isInput) {
+        this.__inputPort["Input"] = label;
+        // this.__inputPortLayout.add(label.ui);
+      } else {
+        this.__outputPort["Output"] = label;
+        // this.__outputPortLayout.add(label.ui);
+      }
+    },
+
+    __createUIPortConnections: function(uiPort, isInput) {
+      [
+        ["dragstart", "LinkDragStart"],
+        ["dragover", "LinkDragOver"],
+        ["drop", "LinkDrop"],
+        ["dragend", "LinkDragEnd"]
+      ].forEach(eventPair => {
+        uiPort.addListener(eventPair[0], e => {
+          const eData = {
+            event: e,
+            nodeId: this.getNodeId(),
+            isInput: isInput
+          };
+          this.fireDataEvent(eventPair[1], eData);
+        }, this);
+      }, this);
+    },
+
+    getLinkPoint: function(port) {
+      let nodeBounds = this.getCurrentBounds();
+      if (nodeBounds === null) {
+        qx.ui.core.queue.Widget.flush();
+        qx.ui.core.queue.Layout.flush();
+        nodeBounds = this.getCurrentBounds();
+      }
+      let x = nodeBounds.left;
+      if (port.isInput === false) {
+        x += nodeBounds.width;
+      }
+      let y = nodeBounds.top + nodeBounds.height/2;
+      x = 0;
+      return [x, y];
+    },
+
+    getCurrentBounds: function() {
+      let bounds = this.getBounds();
+      let cel = this.getContentElement();
+      if (cel) {
+        let domeEle = cel.getDomElement();
+        if (domeEle) {
+          bounds.left = parseInt(domeEle.style.left);
+          bounds.top = parseInt(domeEle.style.top);
+        }
+      }
+      // NavigationBar height must be subtracted
+      // bounds.left = this.getContentLocation().left;
+      // bounds.top = this.getContentLocation().top;
+      return bounds;
+    }
+  }
+});

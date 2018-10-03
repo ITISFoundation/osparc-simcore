@@ -373,16 +373,11 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
     },
 
-    __createInputNodeUI: function(inputNode) {
-      const nodeName = inputNode.getName();
-      let inputLabel = new qx.ui.basic.Atom(nodeName).set({
-        center : true,
-        draggable: true,
-        droppable: true,
-        decorator: "main"
-      });
-      inputLabel.nodeId = inputNode.getNodeId();
-      return inputLabel;
+    __createInputNodeUI: function(inputNodeModel) {
+      let nodeInput = new qxapp.components.workbench.NodeInput(inputNodeModel);
+      nodeInput.populateNodeLayout();
+      this.__createDragDropMechanism(nodeInput);
+      return nodeInput;
     },
 
     __createInputNodeUIs: function(model) {
@@ -394,8 +389,9 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       const inputNodes = model.getInputNodes();
       this.__inputNodesLayout.setVisibility("visible");
       for (let i=0; i<inputNodes.length; i++) {
-        let inputNode = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
-        let inputLabel = this.__createInputNodeUI(inputNode);
+        let inputNodeModel = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
+        let inputLabel = this.__createInputNodeUI(inputNodeModel);
+        this.__nodesUI.push(inputLabel);
         this.__inputNodesLayout.add(inputLabel, {
           flex: 1
         });
@@ -464,6 +460,61 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }, this);
 
       return link;
+    },
+
+    __createLinkBetweenNodeAndInput: function(from, to, linkId) {
+      const inputNodes = this.__inputNodesLayout.getChildren();
+      for (let i=0; i<inputNodes.length; i++) {
+        if ("nodeId" in inputNodes[i]) {
+          if (inputNodes[i].nodeId === from.nodeUuid) {
+            console.log("Create this link", from.nodeUuid, to.nodeUuid);
+            console.log(inputNodes[i]);
+
+            let node1Id = from.nodeUuid;
+            let node2Id = to.nodeUuid;
+
+            // let node1 = this.getNodeUI(node1Id);
+            // let port1 = node1.getOutputPort();
+            let node2 = this.getNodeUI(node2Id);
+            let port2 = node2.getInputPort();
+
+            node2.getNodeModel().addInputNode(node1Id);
+            linkId = linkId || qxapp.utils.Utils.uuidv4();
+
+            // const pointList = this.__getLinkPoints(node1, port1, node2, port2);
+            // swap node-ports to have node1 as input and node2 as output
+            // if (port1.isInput) {
+            //   [node1, port1, node2, port2] = [node2, port2, node1, port1];
+            // }
+            // p1 = node1.getLinkPoint(port1);
+            let p2 = node2.getLinkPoint(port2);
+            // hack to place the arrow-head properly
+            p2[0] -= 6;
+
+            const x1 = 200;
+            const y1 = 28 + 205;
+            const x2 = p2[1][0];
+            const y2 = p2[1][1];
+            let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
+
+            let link = new qxapp.components.workbench.LinkBase(linkRepresentation);
+            link.setInputNodeId(node1Id);
+            link.setOutputNodeId(node2.getNodeId());
+            link.setLinkId(linkId);
+            this.__linksUI.push(link);
+
+            link.getRepresentation().node.addEventListener("click", function(e) {
+              // this is needed to get out of the context of svg
+              link.fireDataEvent("linkSelected", link.getLinkId());
+              e.stopPropagation();
+            }, this);
+
+            link.addListener("linkSelected", function(e) {
+              this.__selectedItemChanged(link.getLinkId());
+            }, this);
+          }
+        }
+      }
     },
 
     __updateLinks: function(node) {
@@ -709,6 +760,12 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
             let inputNode = inputNodes[i];
             if (inputNode in nodes) {
               this.__createLinkBetweenNodes({
+                nodeUuid: inputNode
+              }, {
+                nodeUuid: nodeUuid
+              });
+            } else {
+              this.__createLinkBetweenNodeAndInput({
                 nodeUuid: inputNode
               }, {
                 nodeUuid: nodeUuid
