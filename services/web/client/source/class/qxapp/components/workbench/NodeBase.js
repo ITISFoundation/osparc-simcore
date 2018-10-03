@@ -176,7 +176,11 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
       let x = nodeBounds.left;
       if (port.isInput === false) {
         x += nodeBounds.width;
+      } else {
+        // hack to place the arrow-head properly
+        x -= 6;
       }
+
       const captionHeight = this.__childControls.captionbar.getBounds().height;
       const inputOutputs = this.getChildren()[0];
       let ports = null;

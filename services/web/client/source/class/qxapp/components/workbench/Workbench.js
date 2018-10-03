@@ -572,8 +572,6 @@ qx.Class.define("qxapp.components.workbench.Workbench", {
       }
       p1 = node1.getLinkPoint(port1);
       p2 = node2.getLinkPoint(port2);
-      // hack to place the arrow-head properly
-      p2[0] -= 6;
       return [p1, p2];
     },
 
