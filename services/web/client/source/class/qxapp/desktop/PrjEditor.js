@@ -197,15 +197,16 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let socket = qxapp.wrappers.WebSocket.getInstance();
 
       // callback for incoming logs
-      if (!socket.slotExists("logger")) {
-        socket.on("logger", function(data) {
+      const slotName = "logger";
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, function(data) {
           let d = JSON.parse(data);
           let node = d["Node"];
           let msg = d["Message"];
           this.__updateLogger(node, msg);
         }, this);
       }
-      socket.emit("logger");
+      socket.emit(slotName);
 
       // callback for incoming progress
       if (!socket.slotExists("progress")) {

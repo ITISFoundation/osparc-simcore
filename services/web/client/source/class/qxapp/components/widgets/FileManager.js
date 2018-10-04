@@ -232,8 +232,9 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
     __retrieveURLAndUpload: function(file) {
       let socket = qxapp.wrappers.WebSocket.getInstance();
 
-      socket.removeSlot("presignedUrl");
-      socket.on("presignedUrl", function(data) {
+      const slotName = "presignedUrl";
+      socket.removeSlot(slotName);
+      socket.on(slotName, function(data) {
         const url = data["url"];
         this.__uploadFile(file, url);
       }, this);
@@ -241,7 +242,7 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
         bucketName: qxapp.dev.fake.Data.getS3PublicBucketName(),
         fileName: file.name
       };
-      socket.emit("presignedUrl", data);
+      socket.emit(slotName, data);
     },
 
     // Use XMLHttpRequest to upload the file to S3.
