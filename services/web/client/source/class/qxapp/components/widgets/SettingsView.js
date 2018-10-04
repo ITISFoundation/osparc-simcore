@@ -63,6 +63,7 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
     // __dynamicViewer: null,
     __inputNodesLayout: null,
     __mainLayout: null,
+    __nodesUI: null,
     __openInteractiveNode: null,
     __openFoler: null,
 
@@ -115,10 +116,128 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
       this.__mainLayout.add(buttonsBox);
     },
 
+    __getNodeUI: function(id) {
+      for (let i = 0; i < this.__nodesUI.length; i++) {
+        if (this.__nodesUI[i].getNodeUI() === id) {
+          return this.__nodesUI[i];
+        }
+      }
+      return null;
+    },
+
+    __arePortsCompatible: function(port1, port2) {
+      return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
+    },
+
+    __createDragDropMechanism: function(nodeBase) {
+      const evType = "pointermove";
+      nodeBase.addListener("LinkDragStart", function(e) {
+        let data = e.getData();
+        let event = data.event;
+        let dragNodeId = data.nodeId;
+        let dragIsInput = data.isInput;
+
+        // Register supported actions
+        event.addAction("move");
+
+        // Register supported types
+        event.addType("osparc-metaData");
+        let dragData = {
+          dragNodeId: dragNodeId,
+          dragIsInput: dragIsInput
+        };
+        event.addData("osparc-metaData", dragData);
+
+        this.__tempLinkNodeId = dragData.dragNodeId;
+        this.__tempLinkIsInput = dragData.dragIsInput;
+        qx.bom.Element.addListener(
+          this.__desktop,
+          evType,
+          this.__startTempLink,
+          this
+        );
+      }, this);
+
+      nodeBase.addListener("LinkDragOver", function(e) {
+        let data = e.getData();
+        let event = data.event;
+        let dropNodeId = data.nodeId;
+        let dropIsInput = data.isInput;
+
+        let compatible = false;
+        if (event.supportsType("osparc-metaData")) {
+          const dragNodeId = event.getData("osparc-metaData").dragNodeId;
+          const dragIsInput = event.getData("osparc-metaData").dragIsInput;
+          const dragNode = this.__getNodeUI(dragNodeId);
+          const dropNode = this.__getNodeUI(dropNodeId);
+          const dragPortTarget = dragIsInput ? dragNode.getInputPort() : dragNode.getOutputPort();
+          const dropPortTarget = dropIsInput ? dropNode.getInputPort() : dropNode.getOutputPort();
+          compatible = this.__arePortsCompatible(dragPortTarget, dropPortTarget);
+        }
+
+        if (!compatible) {
+          event.preventDefault();
+        }
+      }, this);
+
+      nodeBase.addListener("LinkDrop", function(e) {
+        let data = e.getData();
+        let event = data.event;
+        let dropNodeId = data.nodeId;
+        let dropIsInput = data.isInput;
+
+        if (event.supportsType("osparc-metaData")) {
+          let dragNodeId = event.getData("osparc-metaData").dragNodeId;
+          let dragIsInput = event.getData("osparc-metaData").dragIsInput;
+
+          let nodeAId = dropIsInput ? dragNodeId : dropNodeId;
+          let nodeBId = dragIsInput ? dragNodeId : dropNodeId;
+
+          this.__createLinkBetweenNodes({
+            nodeUuid: nodeAId
+          }, {
+            nodeUuid: nodeBId
+          });
+          this.__removeTempLink();
+          qx.bom.Element.removeListener(
+            this.__desktop,
+            evType,
+            this.__startTempLink,
+            this
+          );
+        }
+      }, this);
+    },
+
+    __createInputNodeUI: function(inputNodeModel) {
+      let nodeInput = new qxapp.components.widgets.NodeInput(inputNodeModel);
+      nodeInput.populateNodeLayout();
+      this.__createDragDropMechanism(nodeInput);
+      return nodeInput;
+    },
+
+    __createInputNodeUIs: function(model) {
+      // remove all but the title
+      while (this.__inputNodesLayout.getChildren().length > 1) {
+        this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length-1);
+      }
+
+      const inputNodes = model.getInputNodes();
+      for (let i=0; i<inputNodes.length; i++) {
+        let inputNodeModel = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
+        let inputLabel = this.__createInputNodeUI(inputNodeModel);
+        this.__nodesUI.push(inputLabel);
+        this.__inputNodesLayout.add(inputLabel, {
+          flex: 1
+        });
+      }
+    },
+
     __applyNode: function(nodeModel, oldNode, propertyName) {
       this.__settingsBox.removeAll();
       this.__settingsBox.add(nodeModel.getPropsWidget());
 
+      this.__createInputNodeUIs(nodeModel);
       /*
       this.__dynamicViewer.removeAll();
       let viewerButton = nodeModel.getViewerButton();
