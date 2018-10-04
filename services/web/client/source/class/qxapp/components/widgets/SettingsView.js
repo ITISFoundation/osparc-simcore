@@ -39,6 +39,7 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
 
     this.__initTitle();
     this.__initSettings();
+    this.__initButtons();
   },
 
   events: {
@@ -62,6 +63,8 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
     // __dynamicViewer: null,
     __inputNodesLayout: null,
     __mainLayout: null,
+    __openInteractiveNode: null,
+    __openFoler: null,
 
     __initTitle: function() {
       let box = new qx.ui.layout.HBox();
@@ -70,19 +73,16 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
         alignX: "right"
       });
       let titleBox = new qx.ui.container.Composite(box);
+
       let settLabel = new qx.ui.basic.Label(this.tr("Settings"));
       settLabel.set({
         alignX: "center",
         alignY: "middle"
       });
 
-      let openFolder = this.__openFoler = new qx.ui.form.Button();
-      openFolder.setIcon("@FontAwesome5Solid/folder-open/32");
-
       titleBox.add(settLabel, {
         width: "75%"
       });
-      titleBox.add(openFolder);
       this.__mainLayout.add(titleBox);
     },
 
@@ -92,6 +92,27 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
 
       // this.__dynamicViewer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       // this.add(this.__dynamicViewer);
+    },
+
+    __initButtons: function() {
+      let box = new qx.ui.layout.HBox();
+      box.set({
+        spacing: 10,
+        alignX: "right"
+      });
+      let buttonsBox = new qx.ui.container.Composite(box);
+
+      let openInteractiveNode = this.__openInteractiveNode = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/play/32"
+      });
+
+      let openFolder = this.__openFoler = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/folder-open/32"
+      });
+
+      buttonsBox.add(openInteractiveNode);
+      buttonsBox.add(openFolder);
+      this.__mainLayout.add(buttonsBox);
     },
 
     __applyNode: function(nodeModel, oldNode, propertyName) {

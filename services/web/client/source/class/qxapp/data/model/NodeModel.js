@@ -109,7 +109,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     populateNodeData: function(nodeData) {
       if (this.__metaData) {
         let metaData = this.__metaData;
-        // this.__startNode();
+        this.__startInteractiveNode();
         this.__addSettings(metaData.inputs, nodeData);
 
         if (nodeData && nodeData.position) {
@@ -132,7 +132,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
-    __startNode: function() {
+    __startInteractiveNode: function() {
       let metaData = this.__metaData;
       if (metaData.type == "dynamic") {
         const slotName = "startDynamic";
