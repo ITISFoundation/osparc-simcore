@@ -35,12 +35,13 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
       flex: 1
     });
 
+    this.__nodesUI = [];
+
     this.__initTitle();
     this.__initSettings();
   },
 
   events: {
-    "SettingsEdited": "qx.event.type.Event",
     "ShowViewer": "qx.event.type.Data"
   },
 
@@ -74,17 +75,15 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
         alignX: "center",
         alignY: "middle"
       });
-      let doneBtn = new qx.ui.form.Button(this.tr("Done"));
+
+      let openFolder = this.__openFoler = new qx.ui.form.Button();
+      openFolder.setIcon("@FontAwesome5Solid/folder-open/32");
 
       titleBox.add(settLabel, {
         width: "75%"
       });
-      titleBox.add(doneBtn);
+      titleBox.add(openFolder);
       this.__mainLayout.add(titleBox);
-
-      doneBtn.addListener("execute", function() {
-        this.fireEvent("SettingsEdited");
-      }, this);
     },
 
     __initSettings: function() {
@@ -97,7 +96,6 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
 
     __applyNode: function(nodeModel, oldNode, propertyName) {
       this.__settingsBox.removeAll();
-      // this.__settingsBox.add(nodeModel.getNodeModel().getPropsWidget());
       this.__settingsBox.add(nodeModel.getPropsWidget());
 
       /*
