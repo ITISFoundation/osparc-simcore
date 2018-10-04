@@ -95,8 +95,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       vBox.add(treeView);
       this.__sidePanel.setTopView(vBox);
 
-      let workbench = this.__workbenchView = new qxapp.components.workbench.Workbench(project.getWorkbenchModel());
-      this.showInMainView(workbench);
+      let workbenchView = this.__workbenchView = new qxapp.components.workbench.WorkbenchView(project.getWorkbenchModel());
+      this.showInMainView(workbenchView);
 
       let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
         minHeight: 200,

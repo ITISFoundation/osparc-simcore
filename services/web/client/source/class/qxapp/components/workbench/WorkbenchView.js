@@ -5,7 +5,7 @@ const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
 const INPUTS_WIDTH = 200;
 
-qx.Class.define("qxapp.components.workbench.Workbench", {
+qx.Class.define("qxapp.components.workbench.WorkbenchView", {
   extend: qx.ui.container.Composite,
 
   construct: function(workbenchModel) {
