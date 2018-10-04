@@ -45,7 +45,12 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
   },
 
   properties: {
-    node: {
+    workbenchModel: {
+      check: "qxapp.data.model.WorkbenchModel",
+      nullable: false
+    },
+
+    nodeModel: {
       check: "qxapp.data.model.NodeModel",
       apply: "__applyNode"
     }
@@ -90,15 +95,16 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
       // this.add(this.__dynamicViewer);
     },
 
-    __applyNode: function(node, oldNode, propertyName) {
+    __applyNode: function(nodeModel, oldNode, propertyName) {
       this.__settingsBox.removeAll();
-      // this.__settingsBox.add(node.getNodeModel().getPropsWidget());
-      this.__settingsBox.add(node.getPropsWidget());
+      // this.__settingsBox.add(nodeModel.getNodeModel().getPropsWidget());
+      this.__settingsBox.add(nodeModel.getPropsWidget());
+
       /*
       this.__dynamicViewer.removeAll();
-      let viewerButton = node.getViewerButton();
+      let viewerButton = nodeModel.getViewerButton();
       if (viewerButton) {
-        node.addListenerOnce("ShowViewer", function(e) {
+        nodeModel.addListenerOnce("ShowViewer", function(e) {
           const data = e.getData();
           this.fireDataEvent("ShowViewer", data);
         }, this);
