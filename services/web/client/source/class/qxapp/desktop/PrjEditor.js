@@ -109,7 +109,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         maxHeight: 500
       });
       settingsView.setWorkbenchModel(project.getWorkbenchModel());
-      this.__sidePanel.setBottomView(settingsView);
     },
 
     connectEvents: function() {

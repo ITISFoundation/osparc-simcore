@@ -381,7 +381,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
     },
 
     __createInputNodeUI: function(inputNodeModel) {
-      let nodeInput = new qxapp.components.workbench.NodeInput(inputNodeModel);
+      let nodeInput = new qxapp.components.widgets.NodeInput(inputNodeModel);
       nodeInput.populateNodeLayout();
       this.__createDragDropMechanism(nodeInput);
       return nodeInput;

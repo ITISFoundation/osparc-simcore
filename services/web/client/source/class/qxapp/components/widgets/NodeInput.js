@@ -1,16 +1,22 @@
-qx.Class.define("qxapp.components.workbench.NodeInput", {
-  extend: qx.ui.basic.Atom,
+qx.Class.define("qxapp.components.widgets.NodeInput", {
+  extend: qx.ui.core.Widget,
 
   construct: function(nodeModel) {
     this.base();
 
-    const nodeName = nodeModel.getName();
-    this.set({
-      label: nodeName,
+    let nodeInputLayout = new qx.ui.layout.VBox(10);
+    this._setLayout(nodeInputLayout);
+
+    let atom = new qx.ui.basic.Atom().set({
+      label: nodeModel.getName(),
       center : true,
       draggable: true,
       droppable: true,
       decorator: "main"
+    });
+
+    this._add(atom, {
+      flex: 1
     });
 
     this.setNodeModel(nodeModel);
