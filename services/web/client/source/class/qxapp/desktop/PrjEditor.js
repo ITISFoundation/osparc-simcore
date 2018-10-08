@@ -147,7 +147,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         const data = e.getData();
         const url = data.url;
         const name = data.name;
-        const nodeId = data.nodeId;
+        // const nodeId = data.nodeId;
 
         let iframe = this.__createIFrame(url, name);
         // this.showInMainView(iframe, nodeId);
