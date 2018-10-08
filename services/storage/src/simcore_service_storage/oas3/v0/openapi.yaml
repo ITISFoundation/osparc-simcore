@@ -31,21 +31,129 @@ tags:
 paths:
   /:
     get:
-      tags: 
+      tags:
         - users
       summary: Service health-check endpoint
       description: Some general information on the API and state of the service behind
       operationId: root_get
       responses:
         "200":
-          description: Service information
-          content:
-            application/json:
-              schema:
-                $ref: 'components/schemas/health_check.yaml#HealthCheckEnveloped'
+          $ref: '#/components/responses/HealthCheck_200'
         default:
-          description: Unexpected error
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  /files/metadata:
+    get:
+      summary: Get Files Metadata
+      operationId: get_files_metadata
+      responses:
+        '200':
+          description: 'list of file meta-datas'
           content:
             application/json:
               schema:
-                $ref: 'components/schemas/error.yaml#ErrorEnveloped'
+                type: array
+                items:
+                  $ref: 'components/schemas/files.yaml#FileMetaData'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  /files/{fileId}/metadata:
+    get:
+      summary: Get File Metadata
+      operationId: get_file_metadata
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/FileMetadata_200'
+    patch:
+      summary: Update File Metadata
+      operationId: update_file_meta_data
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/FileMetadata_200'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: 'components/schemas/files.yaml#FileMetaData'
+
+
+  /files/{fileId}:
+    get:
+      summary: Donwload File
+      operationId: download_file
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/FileMetadata_200'
+    put:
+      summary: Upload File
+      operationId: upload_file
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        $ref: '#/components/requestBodies/FileMetaData'
+      responses:
+        '200':
+          $ref: '#/components/responses/FileMetadata_200'
+    delete:
+      summary: Delte File
+      operationId: delete_file
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: ''
+
+components:
+  responses:
+    HeathCheck_200:
+      description: Returns service information
+      content:
+        application/json:
+          schema:
+            $ref: 'components/schemas/health_check.yaml#HealthCheckEnveloped'
+
+    FileMetaData_200:
+      description: 'Returns file metadata'
+      content:
+        application/json:
+          schema:
+            $ref: 'components/schemas/files.yaml#FileMetaData'
+
+    DefaultErrorResponse:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: 'components/schemas/error.yaml#ErrorEnveloped'
