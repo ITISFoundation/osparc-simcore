@@ -1,4 +1,3 @@
-import asyncio
 import os
 import re
 from operator import itemgetter
@@ -13,6 +12,13 @@ from .datcore_wrapper import DatcoreWrapper
 
 from .models import FileMetaData, file_meta_data
 
+#pylint: disable=W0212
+#FIXME: W0212:Access to a protected member _result_proxy of a client class
+
+#pylint: disable=E1120
+##FIXME: E1120:No value for argument 'dml' in method call
+
+
 FileMetaDataVec = List[FileMetaData]
 
 class Dsm:
@@ -22,7 +28,7 @@ class Dsm:
         is simcore's S3 [minio] and the datcore storage facilities.
 
         For all data that is in-house (simcore.s3, ...) we keep a synchronized database with meta information
-        for the physical files. 
+        for the physical files.
 
         For physical changes on S3, that might be time-consuming, the db keeps a state (delete and upload mostly)
 
@@ -31,13 +37,13 @@ class Dsm:
         - listing of folders for a given users, optionally filtered using a regular expression and optionally
           sorted by one of the meta data keys
 
-        - upload/download of files 
+        - upload/download of files
 
             client -> S3 : presigned upload link
             S3 -> client : presigned download link
             datcore -> client: presigned download link
             S3 -> datcore: local copy and then upload via their api
-        
+
         minio/S3 and postgres can talk nicely with each other via Notifications using rabbigMQ which we already have.
         See:
 
@@ -51,13 +57,12 @@ class Dsm:
 
     async def list_files(self, user_id: int, location: str, regex: str="", sortby: str="") -> FileMetaDataVec:
         """ Returns a list of file paths
-            
+
             Works for simcore.s3 and datcore
 
             Can filter upon regular expression (for now only on key: value pairs of the FileMetaData)
 
             Can sort results by key [assumes that sortby is actually a key in the FileMetaData]
-
         """
         data = []
         if location == "simcore.s3":
@@ -74,7 +79,7 @@ class Dsm:
             return dc.list_files(regex, sortby)
 
         if sortby:
-            data = sorted(data, key=itemgetter(sortby)) 
+            data = sorted(data, key=itemgetter(sortby))
 
         if regex:
             _query = re.compile(regex, re.IGNORECASE)
@@ -86,12 +91,12 @@ class Dsm:
                         filtered_data.append(d)
                         break
             return filtered_data
-        
+
         return data
 
     async def delete_file(self, user_id: int, location: str, fmd: FileMetaData):
         """ Deletes a file given its fmd and location
-        
+
             Additionally requires a user_id for 3rd party auth
 
             For internal storage, the db state should be updated upon completion via
@@ -113,7 +118,7 @@ class Dsm:
                             # threaded please
                             if self.s3_client.remove_objects(d.bucket_name, [d.object_name]):
                                 stmt = file_meta_data.delete().where(file_meta_data.c.file_id == file_id)
-                                await conn.execute(stmt) 
+                                await conn.execute(stmt)
 
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
@@ -121,11 +126,14 @@ class Dsm:
             return dc.delete_file(fmd)
 
 
-    async def upload_file_to_datcore(self, user_id: int, local_file_path: str, remote_file_path: str, fmd: FileMetaData = None):
-        # uploads a locally available file to dat core given the storage path, optionally attached some meta data
-        tokens = await self._get_datcore_tokens(user_id)
 
-        pass
+    async def upload_file_to_datcore(self, user_id: int, local_file_path: str, remote_file_path: str, fmd: FileMetaData = None): # pylint: disable=W0613
+
+        # uploads a locally available file to dat core given the storage path, optionally attached some meta data
+        tokens = await self._get_datcore_tokens(user_id) # pylint: disable=W0612
+
+        #TODO: finish!!!
+
 
     async def _get_datcore_tokens(self, user_id: int)->Tuple[str, str]:
         # actually we have to query the master db
@@ -139,17 +147,18 @@ class Dsm:
 
 
     async def upload_link(self, fmd : FileMetaData):
-         async with create_engine(self.db_endpoint) as engine:
+        async with create_engine(self.db_endpoint) as engine:
             async with engine.acquire() as conn:
                 ins = file_meta_data.insert().values(**vars(fmd))
                 await conn.execute(ins)
                 return self.s3_client.create_presigned_put_url(fmd.bucket_name, fmd.object_name)
-        
-    async def download_link(self, user_id: int, fmd: FileMetaData, location: str)->str:
-        if location == "simcore.s3":
-            return self.s3_client.create_presigned_get_url(fmd.bucket_name, fmd.object_name)
 
+    async def download_link(self, user_id: int, fmd: FileMetaData, location: str)->str:
+        link = None
+        if location == "simcore.s3":
+            link = self.s3_client.create_presigned_get_url(fmd.bucket_name, fmd.object_name)
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
             dc = DatcoreWrapper(api_token, api_secret)
-            return dc.download_link(fmd)
+            link = dc.download_link(fmd)
+        return link

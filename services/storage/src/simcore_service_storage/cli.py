@@ -23,11 +23,13 @@ from . import application
 
 log = logging.getLogger(__name__)
 
-#
-parser = argparse.ArgumentParser(description='Command description.')
-parser.add_argument('names', metavar='NAME', nargs=argparse.ZERO_OR_MORE,
+
+
+def setup(_parser):
+    _parser.add_argument('names', metavar='NAME', nargs=argparse.ZERO_OR_MORE,
                     help="A name of something.")
-parser = cli_config.add_cli_options(parser)
+    cli_config.add_cli_options(_parser)
+
 
 def parse(args):
     """ Parse options and returns a configuration object """
@@ -52,3 +54,7 @@ def main(args=None):
     logging.basicConfig( level=getattr(logging, log_level) )
 
     application.run(config)
+
+
+parser = argparse.ArgumentParser(description='Service to manage data storage in simcore.')
+setup(parser)

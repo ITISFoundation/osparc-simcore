@@ -1,17 +1,21 @@
-from aiohttp import web
-
-from .session import get_session
 import time
 
-from .rest.generated_code.models import FileMetaData
+from aiohttp import web
 
-__version__ = "0.0.0"
+from . import __version__
+from ._generated_code.models import FileMetaData
+from .session import get_session
+
+#FIXME: W0613: Unused argument 'request' (unused-argument)
+#pylint: disable=W0613
+
+
 
 async def health_check(request):
     session = await get_session(request)
 
     data = {
-        'name':__name__.split('.')[0], 
+        'name':__name__.split('.')[0],
         'version': __version__,
         'status': 'RUNNING_FINE',
         'last_access' : session.get("last", -1.)
@@ -38,7 +42,7 @@ async def get_files_metadata(request):
     return [data1, data2]
 
 async def get_file_metadata(request, fileId):
-  
+
     data = FileMetaData(**{
         'filename' : "a.txt",
         'version': '1.0',

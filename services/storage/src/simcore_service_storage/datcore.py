@@ -2,12 +2,18 @@
 
     requires Blackfynn, check Makefile env2
 """
-
-from blackfynn import Blackfynn
-from blackfynn.api.transfers import IOAPI
-
 import os
 import urllib
+
+from blackfynn import Blackfynn
+
+#FIXME: W0611:Unused IOAPI imported from blackfynn.api.transfers
+#from blackfynn.api.transfers import IOAPI
+
+
+#FIXME: W0212:Access to a protected member _api of a client class
+# pylint: disable=W0212
+
 
 class DatcoreClient(object):
     def __init__(self, api_token=None, api_secret=None, host=None, streaming_host=None):
@@ -46,7 +52,7 @@ class DatcoreClient(object):
                 files.append(os.path.join(ds.name, item.name))
 
         return files
-    
+
     def create_dataset(self, ds_name, force_delete=False):
         """
         Creates a new dataset for the current user and returns it. Returns existing one
@@ -56,14 +62,14 @@ class DatcoreClient(object):
             ds_name (str): Name for the dataset (_,-,' ' and capitalization are ignored)
             force_delete (bool, optional): Delete first if dataset already exists
         """
-        
+
         ds = None
         try:
             ds = self.client.get_dataset(ds_name)
             if force_delete:
                 ds.delete()
                 ds = None
-        except:
+        except Exception: # pylint: disable=W0703
             pass
 
         if ds is None:
@@ -83,7 +89,7 @@ class DatcoreClient(object):
         ds = None
         try:
             ds = self.client.get_dataset(ds_name)
-        except:
+        except Exception: # pylint: disable=W0703
             pass
 
         if ds is None and create_if_not_exists:
@@ -132,7 +138,7 @@ class DatcoreClient(object):
             only single file data.
         """
 
-        
+
 
         files = [filepath]
         # pylint: disable = E1101
@@ -144,7 +150,7 @@ class DatcoreClient(object):
             package = self.get_package(dataset, filename)
             if package is not None:
                 self._update_meta_data(package, meta_data)
-                
+
     def _update_meta_data(self, package, meta_data):
         """
         Updates or replaces metadata for a package
@@ -156,9 +162,9 @@ class DatcoreClient(object):
 
         for key in meta_data.keys():
             package.set_property(key, meta_data[key], category='simcore')
-            
+
         package.update()
-    
+
     def download_file(self, source, filename, destination_path):
         """
         Downloads a frile from a source dataset/collection given its filename. Stores
@@ -184,15 +190,15 @@ class DatcoreClient(object):
         """
 
         # pylint: disable = E1101
-        
+
         for item in source:
             if item.name == filename:
                 file_desc = self.client._api.packages.get_sources(item.id)[0]
                 url = self.client._api.packages.get_presigned_url_for_file(item.id, file_desc.id)
                 return url
-        
+
         return ""
-        
+
     def exists_file(self, source, filename):
         """
         Checks if file exists in source
@@ -212,7 +218,7 @@ class DatcoreClient(object):
     def get_package(self, source, filename):
         """
         Returns package from source by name if exists
-        
+
         Args:
             source (dataset/collection): The dataset or collection to donwload from
             filename (str): Name of the file
@@ -228,7 +234,7 @@ class DatcoreClient(object):
     def delete_file(self, source, filename):
         """
         Deletes file by name from source by name
-        
+
         Args:
             source (dataset/collection): The dataset or collection to donwload from
             filename (str): Name of the file
@@ -237,11 +243,11 @@ class DatcoreClient(object):
         for item in source:
             if item.name == filename:
                 self.client.delete(item)
-    
+
     def delete_files(self, source):
         """
         Deletes all files in source
-        
+
         Args:
             source (dataset/collection): The dataset or collection to donwload from
         """
@@ -255,7 +261,7 @@ class DatcoreClient(object):
         Updates metadata for a file
 
         Args:
-            dataset (package): Which dataset 
+            dataset (package): Which dataset
             filename (str): Which file
             meta_data (dict): Dictionary of meta data
         """
@@ -263,14 +269,15 @@ class DatcoreClient(object):
         filename = os.path.basename(filename)
         package = self.get_package(dataset, filename)
         if package is not None:
-           self._update_meta_data(package, meta_data)
+            self._update_meta_data(package, meta_data)
+
 
     def get_meta_data(self, dataset, filename):
         """
         Returns metadata for a file
 
         Args:
-            dataset (package): Which dataset 
+            dataset (package): Which dataset
             filename (str): Which file
         """
 
@@ -281,15 +288,15 @@ class DatcoreClient(object):
             meta_list = package.properties
             for m in meta_list:
                 meta_data[m.key] = m.value
-    
+
         return meta_data
 
     def delete_meta_data(self, dataset, filename, keys=None):
         """
-        Deletes specified keys in meta data for source/filename. 
+        Deletes specified keys in meta data for source/filename.
 
         Args:
-            dataset (package): Which dataset 
+            dataset (package): Which dataset
             filename (str): Which file
             keys (list of str, optional): Deletes specified keys, deletes
             all meta data if None
@@ -314,7 +321,3 @@ class DatcoreClient(object):
             max_count (int): Max number of results to return
         """
         return self.client.search(what, max_count)
-    
-
-
-    

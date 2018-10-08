@@ -1,6 +1,10 @@
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
 
+#FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
+#from sqlalchemy.dialects.postgresql import UUID
+
+#FIXME: R0902: Too many instance attributes (11/7) (too-many-instance-attributes)
+#pylint: disable=R0902
 
 metadata = sa.MetaData()
 
@@ -24,8 +28,8 @@ class FileMetaData:
     """ This is a proposal, probably no everything is needed.
 
 
-        for simcore.s3: 
-            bucket_name = "simcore", probably fixed  
+        for simcore.s3:
+            bucket_name = "simcore", probably fixed
             object_name = proj_id/node_id/file_name ? can also be a uuid because we still have the filename?
             file_id = unique identifier
             file_name = the acutal filename (this may be different from what we store in s3)
@@ -44,10 +48,10 @@ class FileMetaData:
 
             # dat core allows to attach metadata to files --> see datcore.py
         """
-
+    #pylint: disable=W0613
     def __init__(self, object_name: str, bucket_name ="", file_id: str="", file_name: str="", user_id: int=-1, user_name: str="", location: str="", project_id: int=-1,
             project_name: str="", node_id: int=-1, node_name: str="", **kargs):
-        
+
         self.object_name = object_name
         self.bucket_name = bucket_name
         self.file_id = file_id
@@ -59,5 +63,3 @@ class FileMetaData:
         self.project_name = project_name
         self.node_id = node_id
         self.node_name = node_name
-
-
