@@ -1,4 +1,4 @@
-const INPUTS_WIDTH = 200;
+const INPUTS_WIDTH = 300;
 
 qx.Class.define("qxapp.components.widgets.SettingsView", {
   extend: qx.ui.container.Composite,
@@ -207,10 +207,10 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
     },
 
     __createInputNodeUI: function(inputNodeModel) {
-      let nodeInput = new qxapp.components.widgets.NodeInput(inputNodeModel);
-      nodeInput.populateNodeLayout();
-      this.__createDragDropMechanism(nodeInput);
-      return nodeInput;
+      let nodePorts = new qxapp.components.widgets.NodePorts(inputNodeModel);
+      nodePorts.populateNodeLayout();
+      this.__createDragDropMechanism(nodePorts);
+      return nodePorts;
     },
 
     __createInputNodeUIs: function(model) {
