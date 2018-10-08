@@ -520,7 +520,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                   inputNodes: [
                     "c104bb08-77b1-4157-b9f9-e9df7779df08"
                   ],
-                  outputNode: false,
+                  outputNode: true,
                   position: {
                     x: 100,
                     y: 350
