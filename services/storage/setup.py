@@ -12,13 +12,13 @@ from setuptools import find_packages, setup
 _CDIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 if sys.version_info<(3, 6):
-    raise RuntimeError("Requires >=3.6, got %s" % sys.version_info)
+    raise RuntimeError("Requires >=3.6, got %s. Did you forget to activate virtualenv?" % sys.version_info)
 
 def list_datafiles_at(*locations):
     def _listdir(root, wildcard='*'):
         """ Recursively list all files under 'root' whose names fit a given wildcard.
 
-        Returns (dirname, files) pair per level. 
+        Returns (dirname, files) pair per level.
         See https://docs.python.org/2/distutils/setupscript.html#installing-additional-files
         """
         for dirname, _, names in walk(root):
@@ -45,7 +45,7 @@ _CONFIG = dict(
     name='simcore-service-storage',
     version='0.1.0',
     description='Service to manage data storage in simcore',
-    author='Manuel Guidon',
+    author='Manuel Guidon (mguidon)',
     python_requires='>=3.6',
     packages=find_packages(where='src'),
     package_dir={
