@@ -1,0 +1,30 @@
+ErrorEnveloped:
+  type: object
+  properties:
+    data:
+      $ref: '#Error'
+    status:
+      type: integer
+      example: 404
+Error:
+  type: object
+  required:
+    - status
+    - message
+  properties:
+    message:
+      description: Error message
+      type: string
+      example: Unexpected error
+    errors:
+      type: array
+      items:
+        properties:
+          code:
+            type: string
+            description: Server Exception
+            example: ServiceUUIDNotFoundError
+    status:
+      description: Error code
+      type: integer
+      example: 404

@@ -1,0 +1,23 @@
+HealthCheckEnveloped:
+  type: object
+  properties:
+    data:
+      $ref: '#HealthCheck'
+    status:
+      type: integer
+      example: 200
+HealthCheck:
+  type: object
+  properties:
+    name:
+      type: string
+      example: director service
+    status:
+      type: string
+      example: SERVICE_RUNNING
+    api_version:
+      type: string
+      example: 1.0.0-dev
+    version:
+      type: string
+      example: 1dfcfdc

@@ -1,0 +1,9 @@
+## Python requirements for running tests.
+##
+##    pip install --requirement=requirements.txt
+##
+coveralls
+pytest
+pytest-aiohttp
+pytest-cov
+pytest-docker
