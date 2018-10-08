@@ -1,8 +1,15 @@
+# TODO: W0611:Unused import ...
+# pylint: disable=W0611
+# W0612:Unused variable
+# TODO: W0613:Unused argument ...
+# pylint: disable=W0613
+
 import pytest
-import utils
 
 import simcore_dsm_sdk
+import utils
 from simcore_dsm_sdk import HealthInfo
+
 
 def test_table_creation(postgres_service):
     utils.create_tables(url=postgres_service)
@@ -34,13 +41,14 @@ async def test_api(test_server):
 
         assert isinstance(check, HealthInfo)
         assert check.last_access == -1
-        
+
         #last_access = 0
         for _ in range(5):
             check = await api.health_check()
             print(check)
             #last_access < check.last_access
-            last_access = check.last_access
+            #FIXME: W0612: Unused variable 'last_access' (unused-variable)
+            last_access = check.last_access #pylint: disable=unused-variable
 
 def test_s3(s3_client):
     bucket_name = "simcore-test"

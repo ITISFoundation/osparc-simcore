@@ -1,17 +1,21 @@
+# TODO: W0611:Unused import ...
+# pylint: disable=W0611
+# TODO: W0613:Unused argument ...
+# pylint: disable=W0613
+
+import filecmp
+import os
+import pdb
+import urllib
+import uuid
+from pprint import pprint
+
 import pytest
 
-from simcore_service_dsm.dsm import Dsm
-from simcore_service_dsm.models import FileMetaData
-
 import utils
-import uuid
-import os
-import urllib
-import filecmp
+from simcore_service_storage.dsm import Dsm
+from simcore_service_storage.models import FileMetaData
 
-import pdb
-
-from pprint import pprint
 
 def test_mockup(dsm_mockup_db):
     assert len(dsm_mockup_db)
@@ -28,17 +32,17 @@ async def test_dsm_s3(dsm_mockup_db, postgres_service, s3_client):
             id_file_count[md.user_id] = id_file_count[md.user_id] + 1
 
     dsm = Dsm(postgres_service, s3_client)
-    
+
     # list files for every user
-    for id in id_file_count:
-        data = await dsm.list_files(user_id=id, location="simcore.s3")
-        assert len(data) == id_file_count[id]
+    for _id in id_file_count:
+        data = await dsm.list_files(user_id=_id, location="simcore.s3")
+        assert len(data) == id_file_count[_id]
 
     # Get files from bob from the project biology
     bob_id = 0
-    for id in id_name_map.keys():
-        if id_name_map[id] == "bob":
-            bob_id = id
+    for _id in id_name_map.keys():
+        if id_name_map[_id] == "bob":
+            bob_id = _id
             break
     assert not bob_id == 0
 
@@ -56,16 +60,16 @@ async def test_dsm_s3(dsm_mockup_db, postgres_service, s3_client):
 
     # now we should have less items
     new_size = 0
-    for id in id_file_count:
-        data = await dsm.list_files(user_id=id, location="simcore.s3")
+    for _id in id_file_count:
+        data = await dsm.list_files(user_id=_id, location="simcore.s3")
         new_size = new_size + len(data)
 
     assert len(dsm_mockup_db) == new_size + len(bobs_files)
-    
+
 
 def create_file_on_s3(postgres_url, s3_client, tmp_file):
     utils.create_tables(url=postgres_url)
-    bucket_name = utils.bucket_name()
+    bucket_name = utils.BUCKET_NAME
     s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
 
 
@@ -74,7 +78,7 @@ def create_file_on_s3(postgres_url, s3_client, tmp_file):
     project_id = 22
     node_id = 1006
     file_id = uuid.uuid4()
-   
+
     d = {   'object_name' : os.path.join(str(project_id), str(node_id), str(file_id)),
             'bucket_name' : bucket_name,
             'file_id' : str(file_id),
@@ -86,7 +90,7 @@ def create_file_on_s3(postgres_url, s3_client, tmp_file):
             'project_name' : "battlestar",
             'node_id' : node_id,
             'node_name' : "this is the name of the node"
-        }   
+        }
 
     fmd = FileMetaData(**d)
     ## TODO: acutally upload the file gettin a upload link
@@ -148,7 +152,7 @@ async def test_dsm_s3_to_datcore(postgres_service, s3_client, tmp_files):
     urllib.request.urlretrieve(down_url, tmp_file2)
     fmd.location = "datcore"
     # now we have the file locally, upload the file
-    
+
 
 async def test_dsm_datcore_to_s3(postgres_service, s3_client, tmp_files):
     utils.create_tables(url=postgres_service)
@@ -161,11 +165,3 @@ async def test_dsm_datcore_to_s3(postgres_service, s3_client, tmp_files):
     fmd_to_get = data[0]
     url = await dsm.download_link(user_id, fmd_to_get, "datcore")
     print(url)
-
-
-    
-
-
-
-        
-

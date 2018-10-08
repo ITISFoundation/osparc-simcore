@@ -48,7 +48,11 @@ PACKAGE_VERSION = get_version_object()
 API_MAJOR_VERSION = PACKAGE_VERSION.major
 API_URL_VERSION = "v{:.0f}".format(API_MAJOR_VERSION)
 
-RESOURCE_KEY_OPENAPI = "oas3/{}".format(API_URL_VERSION)
+# resources names
+RESOURCE_OPENAPI = "oas3"
+RESOURCE_CONFIG  = "config"
+
+RESOURCE_KEY_OPENAPI = "{}/{}".format(RESOURCE_OPENAPI, API_URL_VERSION)
 OAS_ROOT_FILE = "{}/openapi.yaml".format(RESOURCE_KEY_OPENAPI)
 
 

@@ -10,3 +10,4 @@
 
 bumpversion
 autopep8
+rope

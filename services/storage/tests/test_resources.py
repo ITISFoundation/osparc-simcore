@@ -1,14 +1,15 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-import
-import logging
+
 import io
+import logging
 import pathlib
 
 import pytest
 
 # under test
-from simcore_service_dsm import resources
+from simcore_service_storage.resources import resources
 
 log = logging.getLogger(__name__)
 
