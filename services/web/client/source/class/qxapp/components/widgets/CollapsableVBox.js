@@ -62,39 +62,33 @@ qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
     __headerBox: null,
     __contentBox: null,
     __expandBtn: null,
-    __headerLabelExpanded: null,
-    __headerLabelCollapsed: null,
+    __headerLabel: null,
     __contentWidgets: null,
 
     __buildLayout: function(collapse) {
+      // header
       this.__headerBox.removeAll();
-      this.__contentBox.removeAll();
-
       this.__headerBox.add(this.__expandBtn);
+      this.__headerBox.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+      this.__headerBox.add(this.__headerLabel);
+      this.__headerBox.add(new qx.ui.core.Spacer(), {
+        flex: 3
+      });
+
+      // content
+      this.__contentBox.removeAll();
       if (collapse) {
-        // content
-        for (let i = 0; i < this.__headerLabelCollapsed.length; i++) {
-          let charLabel = this.__headerLabelCollapsed[i];
-          this.__contentBox.add(charLabel);
-        }
-        this.setWidth(24);
+        this.__contentBox.setVisibility("excluded");
       } else {
-        // header
-        this.__headerBox.add(new qx.ui.core.Spacer(), {
-          flex: 1
-        });
-        this.__headerBox.add(this.__headerLabelExpanded);
-        this.__headerBox.add(new qx.ui.core.Spacer(), {
-          flex: 3
-        });
-        // content
-        this.__contentBox.removeAll();
+        this.__contentBox.setVisibility("visible");
         for (let i = 0; i < this.__contentWidgets.length; i++) {
           let widget = this.__contentWidgets[i].widget;
           let map = this.__contentWidgets[i].map;
           this.__contentBox.add(widget, map);
         }
-        this.setWidth(this.getMaxWidth());
+        // this.setWidth(this.getMaxWidth());
       }
     },
 
@@ -103,21 +97,12 @@ qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
     },
 
     __applyHeaderText: function(newHeader) {
-      if (this.__headerLabelExpanded === null) {
-        this.__headerLabelExpanded = new qx.ui.basic.Label(newHeader).set({
+      if (this.__headerLabel === null) {
+        this.__headerLabel = new qx.ui.basic.Label(newHeader).set({
           textAlign: "center"
         });
       }
-      this.__headerLabelExpanded.setValue(newHeader);
-
-      this.__headerLabelCollapsed = [];
-      for (let i = 0; i < newHeader.length; i++) {
-        let charLabel = new qx.ui.basic.Label(newHeader.charAt(i)).set({
-          textAlign: "center"
-        });
-        this.__headerLabelCollapsed.push(charLabel);
-      }
-
+      this.__headerLabel.setValue(newHeader);
       this.rebuildLayout();
     },
 
