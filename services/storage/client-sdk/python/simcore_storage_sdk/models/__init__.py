@@ -14,5 +14,5 @@
 from __future__ import absolute_import
 
 # import models into model package
-from simcore_dsm_sdk.models.error_model import ErrorModel
-from simcore_dsm_sdk.models.health_info import HealthInfo
+from simcore_storage_sdk.models.error_model import ErrorModel
+from simcore_storage_sdk.models.health_info import HealthInfo

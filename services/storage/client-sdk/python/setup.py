@@ -12,8 +12,8 @@
 
 from setuptools import setup, find_packages  # noqa: H301
 
-NAME = "simcore-dsm-sdk"
-VERSION = "1.0.0"
+NAME = "simcore_storage_sdk"
+VERSION = "0.1.0"
 # To install the library, run the following
 #
 # python setup.py install
@@ -27,7 +27,7 @@ REQUIRES.append("aiohttp")
 setup(
     name=NAME,
     version=VERSION,
-    description="dsm-api",
+    description="client sdk for simcore-service-storage",
     author_email="",
     url="https://github.com/mguidon/aiohttp-dsm/tree/master/data-storage-manager-sdk/python",
     keywords=["OpenAPI", "OpenAPI-Generator", "dsm-api"],
@@ -35,6 +35,6 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     long_description="""\
-    dsm api  # noqa: E501
+    client sdk for simcore-service-storage  # noqa: E501
     """
 )

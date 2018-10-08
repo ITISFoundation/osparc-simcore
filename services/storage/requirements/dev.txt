@@ -2,6 +2,8 @@
 # development mode
 # paths relative to location of setup.py
 -e ".[test]"
+
+# for testing
 -e ./client-sdk/python
 
 -e ../..//packages/s3wrapper/

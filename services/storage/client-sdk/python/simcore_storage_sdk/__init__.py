@@ -17,11 +17,11 @@ from __future__ import absolute_import
 __version__ = "1.0.0"
 
 # import apis into sdk package
-from simcore_dsm_sdk.api.default_api import DefaultApi
+from simcore_storage_sdk.api.default_api import DefaultApi
 
 # import ApiClient
-from simcore_dsm_sdk.api_client import ApiClient
-from simcore_dsm_sdk.configuration import Configuration
+from simcore_storage_sdk.api_client import ApiClient
+from simcore_storage_sdk.configuration import Configuration
 # import models into sdk package
-from simcore_dsm_sdk.models.error_model import ErrorModel
-from simcore_dsm_sdk.models.health_info import HealthInfo
+from simcore_storage_sdk.models.error_model import ErrorModel
+from simcore_storage_sdk.models.health_info import HealthInfo

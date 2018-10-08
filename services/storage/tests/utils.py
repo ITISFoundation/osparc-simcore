@@ -2,7 +2,7 @@ from contextlib import contextmanager
 
 import sqlalchemy as sa
 
-import simcore_dsm_sdk
+import simcore_storage_sdk
 from simcore_service_storage.models import file_meta_data
 
 BUCKET_NAME ="simcore-testing"
@@ -16,10 +16,10 @@ def create_tables(url, engine=None):
     meta.create_all(bind=engine, tables=[file_meta_data])
 
 @contextmanager
-def api_client(cfg: simcore_dsm_sdk.Configuration) -> simcore_dsm_sdk.ApiClient:
-    from simcore_dsm_sdk.rest import ApiException
+def api_client(cfg: simcore_storage_sdk.Configuration) -> simcore_storage_sdk.ApiClient:
+    from simcore_storage_sdk.rest import ApiException
 
-    client = simcore_dsm_sdk.ApiClient(cfg)
+    client = simcore_storage_sdk.ApiClient(cfg)
     try:
         yield client
     except ApiException as err:

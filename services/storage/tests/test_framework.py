@@ -6,9 +6,9 @@
 
 import pytest
 
-import simcore_dsm_sdk
+import simcore_storage_sdk
 import utils
-from simcore_dsm_sdk import HealthInfo
+from simcore_storage_sdk import HealthInfo
 
 
 def test_table_creation(postgres_service):
@@ -25,7 +25,7 @@ async def test_app(test_client):
 
 #FIXME: still not working because of cookies
 async def test_api(test_server):
-    cfg = simcore_dsm_sdk.Configuration()
+    cfg = simcore_storage_sdk.Configuration()
     cfg.host = cfg.host.format(
         host=test_server.host,
         port=test_server.port,
@@ -35,7 +35,7 @@ async def test_api(test_server):
         session = api_client.rest_client.pool_manager
         for cookie in session.cookie_jar:
             print(cookie.key)
-        api = simcore_dsm_sdk.DefaultApi(api_client)
+        api = simcore_storage_sdk.DefaultApi(api_client)
         check = await api.health_check()
         print(check)
 
