@@ -29,7 +29,8 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
 
     let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     mainLayout.set({
-      alignX: "center"
+      alignX: "center",
+      padding: 70
     });
     this.add(mainLayout, {
       flex: 1
@@ -60,11 +61,10 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
 
   members: {
     __settingsBox: null,
-    // __dynamicViewer: null,
     __inputNodesLayout: null,
     __mainLayout: null,
     __nodesUI: null,
-    __openInteractiveNode: null,
+    __startNode: null,
     __openFoler: null,
 
     __initTitle: function() {
@@ -90,9 +90,6 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
     __initSettings: function() {
       this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Grow());
       this.__mainLayout.add(this.__settingsBox);
-
-      // this.__dynamicViewer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      // this.add(this.__dynamicViewer);
     },
 
     __initButtons: function() {
@@ -103,7 +100,7 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
       });
       let buttonsBox = new qx.ui.container.Composite(box);
 
-      let openInteractiveNode = this.__openInteractiveNode = new qx.ui.form.Button().set({
+      let startNode = this.__startNode = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/play/32"
       });
 
@@ -111,7 +108,7 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
         icon: "@FontAwesome5Solid/folder-open/32"
       });
 
-      buttonsBox.add(openInteractiveNode);
+      buttonsBox.add(startNode);
       buttonsBox.add(openFolder);
       this.__mainLayout.add(buttonsBox);
     },
@@ -238,17 +235,15 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
       this.__settingsBox.add(nodeModel.getPropsWidget());
 
       this.__createInputNodeUIs(nodeModel);
-      /*
-      this.__dynamicViewer.removeAll();
+
       let viewerButton = nodeModel.getViewerButton();
       if (viewerButton) {
         nodeModel.addListenerOnce("ShowViewer", function(e) {
           const data = e.getData();
           this.fireDataEvent("ShowViewer", data);
         }, this);
-        this.__dynamicViewer.add(viewerButton);
+        this.__startNode = viewerButton;
       }
-      */
     }
   }
 });

@@ -43,6 +43,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       check: "qxapp.components.form.renderer.PropForm"
     },
 
+    viewerButton: {
+      init: null,
+      check: "qx.ui.form.Button"
+    },
+
     name: {
       check: "String",
       nullable: true
@@ -153,6 +158,19 @@ qx.Class.define("qxapp.data.model.NodeModel", {
               const entryPoint = entryPointD ? ("/" + entryPointD) : "";
               const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
               this.setServiceUrl(srvUrl);
+              let button = new qx.ui.form.Button().set({
+                icon: "@FontAwesome5Solid/play-circle/32"
+              });
+              this.set({
+                viewerButton: button
+              });
+              button.addListener("execute", function(e) {
+                this.fireDataEvent("ShowViewer", {
+                  url: srvUrl,
+                  name: this.getName(),
+                  nodeId: this.getNodeId()
+                });
+              }, this);
               console.log(metaData.name, "Service ready on " + srvUrl);
             }
           } else {

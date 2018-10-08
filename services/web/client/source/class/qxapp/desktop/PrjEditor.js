@@ -21,30 +21,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     this.initDefault();
     this.connectEvents();
-    /*
-    this.__settingsView.addListener("ShowViewer", function(e) {
-      let data = e.getData();
-      let iframe = this.__createIFrame(data.url, data.name);
-
-      //  const metadata = e.getData().metadata;
-      //  const nodeId = e.getData().nodeId;
-      //  let url = "http://" + window.location.hostname + ":" + metadata.viewer.port;
-      //  let iframe = this.__createIFrame(url, metadata.name);
-
-      this.showInMainView(iframe);
-
-      // Workaround for updating inputs
-      if (data.name === "3d-viewer") {
-        let urlUpdate = data.url + "/retrieve";
-        let req = new qx.io.request.Xhr();
-        req.set({
-          url: urlUpdate,
-          method: "POST"
-        });
-        req.send();
-      }
-    }, this);
-    */
   },
 
   properties: {
@@ -166,6 +142,28 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           }
         }, this);
       });
+
+      this.__settingsView.addListener("ShowViewer", function(e) {
+        const data = e.getData();
+        const url = data.url;
+        const name = data.name;
+        const nodeId = data.nodeId;
+
+        let iframe = this.__createIFrame(url, name);
+        // this.showInMainView(iframe, nodeId);
+        this.__mainPanel.setMainView(iframe);
+
+        // Workaround for updating inputs
+        if (name === "3d-viewer") {
+          let urlUpdate = url + "/retrieve";
+          let req = new qx.io.request.Xhr();
+          req.set({
+            url: urlUpdate,
+            method: "POST"
+          });
+          req.send();
+        }
+      }, this);
     },
 
     showInMainView: function(widget, nodeId) {
