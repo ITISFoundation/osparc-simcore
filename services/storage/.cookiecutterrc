@@ -5,20 +5,21 @@
 # automatically for any template). To use it:
 #
 #    pip install cookiepatcher
-#    cookiepatcher gh:pcrespov/cookiecutter-simcore-pyservice project-path
+#    cookiepatcher gh:itisfoundation/cookiecutter-simcore-pyservice project-path
 #
 # See:
 #    https://pypi.python.org/pypi/cookiepatcher
 #
 # Alternatively, you can run:
 #
-#    cookiecutter --overwrite-if-exists --config-file=project-path/.cookiecutterrc gh:pcrespov/cookiecutter-simcore-pyservice
+#    cookiecutter --overwrite-if-exists --config-file=project-path/.cookiecutterrc gh:itisfoundation/cookiecutter-simcore-pyservice
 #
 
 default_context:
 
     _extensions:               [u'jinja2_time.TimeExtension']
     _template:                 '../../cookiecutter-simcore-pyservice/'
+    # _template:                 'gh:itisfoundation/cookiecutter-simcore-pyservice'
     command_line_interface_bin_name: 'simcore-service-storage'
     distribution_name:         'simcore-service-storage'
     full_name:                 'Manuel Guidon'
