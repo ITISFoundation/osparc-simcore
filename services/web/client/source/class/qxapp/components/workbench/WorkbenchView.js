@@ -35,29 +35,6 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
       flex : 1
     });
 
-    let outputNodesLayout = this.__outputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-    outputNodesLayout.set({
-      width: INPUTS_WIDTH,
-      maxWidth: INPUTS_WIDTH,
-      allowGrowX: false
-    });
-    let outputLabel = new qx.ui.basic.Label(this.tr("Outputs")).set({
-      font: navBarLabelFont,
-      alignX: "center"
-    });
-    let addOutput = new qx.ui.basic.Atom().set({
-      icon: "@FontAwesome5Solid/plus/32",
-      center: true,
-      draggable: true,
-      droppable: true,
-      decorator: "main"
-    });
-    outputNodesLayout.add(outputLabel);
-    outputNodesLayout.add(addOutput, {
-      flex: 1
-    });
-    this.add(outputNodesLayout);
-
     this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
     this.__desktopCanvas.add(this.__desktop, {
       left: 0,
@@ -149,7 +126,6 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
     __nodesUI: null,
     __linksUI: null,
     __inputNodesLayout: null,
-    __outputNodesLayout: null,
     __desktop: null,
     __svgWidget: null,
     __logger: null,
@@ -425,32 +401,6 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
         this.__inputNodesLayout.add(inputLabel, {
           flex: 1
         });
-      }
-    },
-
-    __createOutputNodeUI: function(nodeModel) {
-      let nodeExposed = new qxapp.components.widgets.NodeExposed(nodeModel);
-      nodeExposed.populateNodeLayout();
-      this.__createDragDropMechanism(nodeExposed);
-      return nodeExposed;
-    },
-
-    __createOutputNodeUIs: function(model) {
-      // remove all but the title and plus button
-      while (this.__outputNodesLayout.getChildren().length > 2) {
-        this.__outputNodesLayout.removeAt(this.__outputNodesLayout.getChildren().length-1);
-      }
-
-      let nodes = model.isContainer() ? model.getInnerNodes() : model.getNodeModels();
-      for (const nodeUuid in nodes) {
-        const nodeModel = nodes[nodeUuid];
-        if (nodeModel.getNodeExposed()) {
-          let outputLabel = this.__createOutputNodeUI(nodeModel);
-          // this.__nodesUI.push(inputLabel);
-          this.__outputNodesLayout.add(outputLabel, {
-            flex: 1
-          });
-        }
       }
     },
 
@@ -730,12 +680,9 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
         const isContainer = model.isContainer();
         if (isContainer) {
           this.__inputNodesLayout.setVisibility("visible");
-          this.__outputNodesLayout.setVisibility("visible");
           this.__createInputNodeUIs(model);
-          this.__createOutputNodeUIs(model);
         } else {
           this.__inputNodesLayout.setVisibility("excluded");
-          this.__outputNodesLayout.setVisibility("excluded");
         }
 
         let nodes = isContainer ? model.getInnerNodes() : model.getNodeModels();

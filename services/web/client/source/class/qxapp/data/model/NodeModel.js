@@ -46,12 +46,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     name: {
       check: "String",
       nullable: true
-    },
-
-    nodeExposed: {
-      check: "Boolean",
-      init: false,
-      nullable: false
     }
   },
 
@@ -134,9 +128,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           if ("innerNodes" in metaData) {
             this.createInnerNodes(metaData.innerNodes);
           }
-        }
-        if ("outputNode" in nodeData) {
-          this.setNodeExposed(nodeData.outputNode);
         }
       }
     },
