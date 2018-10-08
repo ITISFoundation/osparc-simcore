@@ -3,6 +3,7 @@
 ##    pip install --requirement=requirements.txt
 ##
 coveralls
+openapi_spec_validator
 pytest
 pytest-aiohttp
 pytest-cov
