@@ -13,6 +13,7 @@
     "creationDate",
     "lastChangeDate",
     "workbench",
+    "thumbnail",
     "$schema"
   ],
   "properties": {
@@ -40,6 +41,10 @@
       "examples": [
         "# title\nSome Text `with` common mark markup"
       ]
+    },
+    "thumbnail": {
+      "type": "string",
+      "description": "base64 encoded png image with 512x512 resolution"
     },
     "owner": {
       "type": "string",
