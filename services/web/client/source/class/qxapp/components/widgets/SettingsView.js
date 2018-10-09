@@ -1,4 +1,4 @@
-const INPUTS_WIDTH = 300;
+const PORT_INPUTS_WIDTH = 300;
 
 qx.Class.define("qxapp.components.widgets.SettingsView", {
   extend: qx.ui.container.Composite,
@@ -14,8 +14,8 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
 
     let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     inputNodesLayout.set({
-      width: INPUTS_WIDTH,
-      maxWidth: INPUTS_WIDTH,
+      width: PORT_INPUTS_WIDTH,
+      maxWidth: PORT_INPUTS_WIDTH,
       allowGrowX: false
     });
     const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);

@@ -7,10 +7,13 @@ qx.Class.define("qxapp.components.widgets.NodePorts", {
     let nodeInputLayout = new qx.ui.layout.VBox(10);
     this._setLayout(nodeInputLayout);
 
+    this.set({
+      decorator: "main"
+    });
+
     let atom = new qx.ui.basic.Atom().set({
       label: nodeModel.getName(),
-      center : true,
-      decorator: "main"
+      center : true
     });
 
     this._add(atom);

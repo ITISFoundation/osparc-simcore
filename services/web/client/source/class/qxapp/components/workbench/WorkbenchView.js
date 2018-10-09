@@ -3,7 +3,7 @@
 
 const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
-const INPUTS_WIDTH = 200;
+const NODE_INPUTS_WIDTH = 200;
 
 qx.Class.define("qxapp.components.workbench.WorkbenchView", {
   extend: qx.ui.container.Composite,
@@ -18,8 +18,8 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
 
     let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     inputNodesLayout.set({
-      width: INPUTS_WIDTH,
-      maxWidth: INPUTS_WIDTH,
+      width: NODE_INPUTS_WIDTH,
+      maxWidth: NODE_INPUTS_WIDTH,
       allowGrowX: false
     });
     const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
