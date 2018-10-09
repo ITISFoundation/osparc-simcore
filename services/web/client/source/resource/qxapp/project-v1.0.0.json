@@ -12,9 +12,14 @@
     "collaborators",
     "creationDate",
     "lastChangeDate",
-    "workbench"
+    "workbench",
+    "$schema"
   ],
   "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri"
+    },
     "name": {
       "type": "string",
       "description": "project name",

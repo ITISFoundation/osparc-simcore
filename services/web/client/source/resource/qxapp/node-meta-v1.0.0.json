@@ -13,9 +13,14 @@
         "description",
         "authors",
         "contact",
-        "outputs"
+        "outputs",
+        "$schema"
     ],
     "properties": {
+        "$schema": {
+          "type": "string",
+          "format": "uri"
+        },
         "key": {
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path",
