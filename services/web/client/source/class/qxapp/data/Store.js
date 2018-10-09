@@ -669,7 +669,7 @@ qx.Class.define("qxapp.data.Store", {
               description: "Sensor Settings",
               type: "data:application/s4l-api/settings"
             },
-            sensorSetting: {
+            sensorSettingAPI: {
               displayOrder: 1,
               label: "SensorSettingsAPI",
               description: "Sensors",
