@@ -1,0 +1,29 @@
+RunningServiceEnveloped:
+  type: object
+  properties:
+    data:
+      $ref: '#/RunningService'
+    status:
+      type: integer
+      example: 200
+RunningService:
+  type: object
+  required:
+    - published_port
+    - service_uuid
+  properties:
+    published_port:
+      description: The ports where the service provides its interface
+      type: integer
+      format: int32
+      minimum: 1
+      example: 30000
+    entry_point:
+      description: The entry point where the service provides its interface if specified
+      type: string
+      example: /the/entry/point/is/here
+    service_uuid:
+      description: The UUID attached to this service
+      type: string
+      format: UUID
+      example: 123e4567-e89b-12d3-a456-426655440000

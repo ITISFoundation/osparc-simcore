@@ -1,0 +1,8 @@
+ServiceVersionPath:
+  in: path
+  name: service_version
+  description: The tag/version of the service
+  required: true
+  schema:
+    type: string
+    example: "1.4"

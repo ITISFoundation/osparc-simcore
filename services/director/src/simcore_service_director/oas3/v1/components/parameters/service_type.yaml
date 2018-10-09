@@ -1,0 +1,14 @@
+ServiceType:
+  in: query
+  name: service_type
+  description: |
+    The service type:
+      * computational - a computational service
+      * interactive - an interactive service
+  required: false
+  schema:
+    type: string          
+    enum: 
+      - computational
+      - interactive            
+    example: computational
