@@ -1,0 +1,113 @@
+openapi: 3.0.0
+info:
+  description: API definition for simcore-service-webserver service
+  version: 0.1.0
+  title: simcore-service-webserver API
+  contact:
+    name: IT'IS Foundation
+    email: support@simcore.io
+  license:
+    name: MIT
+    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
+
+servers:
+  - url: http://{host}:{port}/{version}
+    description: Development server
+    variables:
+      host:
+        default: 'localhost'
+      port:
+        default: '8001'
+      version:
+        default: 'v0'
+        enum:
+          - 'v0'
+
+tags:
+- name: admins
+  description: Secured Admin-only calls
+- name: developers
+  description: Operations available to regular developers
+- name: users
+  description: Operations available to regular users
+
+paths:
+  /:
+    get:
+      tags:
+        - users
+      summary: Service health-check endpoint
+      description: Some general information on the API and state of the service behind
+      operationId: root_get
+      responses:
+        "200":
+          $ref: '#/components/responses/HealthCheck_200'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  /items/{provider:google|facebook|amazon}/:
+    get:
+      parameters:
+        - in: path
+          name: provider
+          required: True
+          schema:
+            type: string
+          example:
+            value: google
+        - in: query
+          name: search_re
+          schema:
+            type: string
+          example:
+            value: '^b\d+'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                age:
+                  type: integer
+                  format: int32
+                  minimum: 0
+      responses:
+        '200':
+          description: Requested items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    age:
+                      type: integer
+                      format: int32
+                      minimum: 0
+
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+
+
+
+components:
+  responses:
+    HeathCheck_200:
+      description: Returns service information
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/health_check.yaml#HealthCheckEnveloped'
+
+    DefaultErrorResponse:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/error.yaml#ErrorEnveloped'
