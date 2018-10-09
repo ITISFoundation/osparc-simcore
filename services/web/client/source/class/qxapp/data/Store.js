@@ -373,8 +373,8 @@ qx.Class.define("qxapp.data.Store", {
 
     getBuiltInServices: function() {
       let builtInServices = {
-        "service/dynamic/itis/FileManager-0.0.0": {
-          key: "service/dynamic/itis/FileManager",
+        "service/dynamic/itis/FilePicker-0.0.0": {
+          key: "service/dynamic/itis/FilePicker",
           version: "0.0.0",
           type: "dynamic",
           name: "File Manager",

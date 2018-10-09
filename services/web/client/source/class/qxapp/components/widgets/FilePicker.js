@@ -1,12 +1,12 @@
 /* global XMLHttpRequest */
-qx.Class.define("qxapp.components.widgets.FileManager", {
+qx.Class.define("qxapp.components.widgets.FilePicker", {
   extend: qx.ui.core.Widget,
 
   construct: function(node) {
     this.base(arguments);
 
-    let fileManagerLayout = new qx.ui.layout.VBox(10);
-    this._setLayout(fileManagerLayout);
+    let filePickerLayout = new qx.ui.layout.VBox(10);
+    this._setLayout(filePickerLayout);
 
     // Create a button
     let input = new qx.html.Input("file", {
