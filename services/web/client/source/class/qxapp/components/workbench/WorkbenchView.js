@@ -309,7 +309,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
           const dropNode = this.getNodeUI(dropNodeId);
           const dragPortTarget = dragIsInput ? dragNode.getInputPort() : dragNode.getOutputPort();
           const dropPortTarget = dropIsInput ? dropNode.getInputPort() : dropNode.getOutputPort();
-          compatible = this.__arePortsCompatible(dragPortTarget, dropPortTarget);
+          compatible = this.__areNodesCompatible(dragPortTarget, dropPortTarget);
         }
 
         if (!compatible) {
@@ -417,8 +417,8 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
       }
     },
 
-    __arePortsCompatible: function(port1, port2) {
-      return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
+    __areNodesCompatible: function(topLevelPort1, topLevelPort2) {
+      return qxapp.data.Store.getInstance().areNodesCompatible(topLevelPort1, topLevelPort2);
     },
 
     __findCompatiblePort: function(nodeB, portA) {

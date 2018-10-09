@@ -45,6 +45,11 @@ qx.Class.define("qxapp.data.Store", {
         new qxapp.data.MimeType(mtA).match(new qxapp.data.MimeType(mtB));
     },
 
+    areNodesCompatible: function(topLevelPort1, topLevelPort2) {
+      console.log("areNodesCompatible", topLevelPort1, topLevelPort2);
+      return topLevelPort1.isInput !== topLevelPort2.isInput;
+    },
+
     arePortsCompatible: function(port1, port2) {
       console.log("arePortsCompatible", port1, port2);
       return this.__matchPortType(port1.portType, port2.portType) &&
