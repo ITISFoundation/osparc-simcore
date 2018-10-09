@@ -70,20 +70,26 @@ qx.Class.define("qxapp.components.widgets.NodePorts", {
       }
       for (const portKey in ports) {
         const port = ports[portKey];
-        let portLabel = new qx.ui.basic.Label(port.label).set({
-          draggable: true
-        });
-        this._add(portLabel);
-        this.__createUIPortConnections(portLabel, portKey, isInput);
-        let label = {
-          isInput: isInput,
-          ui: portLabel
-        };
-        label.ui.isInput = isInput;
-        if (isInput) {
-          this.__inputPort["Input"] = label;
+        if (port.type.includes("api")) {
+          console.log("Provide widget for ", port.type);
         } else {
-          this.__outputPort["Output"] = label;
+          let toolTip = new qx.ui.tooltip.ToolTip(port.description);
+          let portLabel = new qx.ui.basic.Label(port.label).set({
+            draggable: true,
+            toolTip: toolTip
+          });
+          this._add(portLabel);
+          this.__createUIPortConnections(portLabel, portKey, isInput);
+          let label = {
+            isInput: isInput,
+            ui: portLabel
+          };
+          label.ui.isInput = isInput;
+          if (isInput) {
+            this.__inputPort["Input"] = label;
+          } else {
+            this.__outputPort["Output"] = label;
+          }
         }
       }
     },
