@@ -377,8 +377,8 @@ qx.Class.define("qxapp.data.Store", {
           key: "service/dynamic/itis/FilePicker",
           version: "0.0.0",
           type: "dynamic",
-          name: "File Manager",
-          description: "File Manager",
+          name: "File Picker",
+          description: "File Picker",
           authors: [{
             name: "Odei Maiz",
             email: "maiz@itis.ethz.ch"
