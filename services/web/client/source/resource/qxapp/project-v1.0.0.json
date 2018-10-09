@@ -44,7 +44,8 @@
     },
     "thumbnail": {
       "type": "string",
-      "description": "base64 encoded png image with 512x512 resolution"
+      "format": "uri",
+      "description": "pointer to an 512x512 image, ideally a data url"
     },
     "owner": {
       "type": "string",
