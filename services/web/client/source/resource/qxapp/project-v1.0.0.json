@@ -203,6 +203,9 @@
             "position": {
               "$ref": "#/properties/workbench/definitions/node/properties/position"
             },
+            "inputNodes": {
+              "$ref": "#/properties/workbench/definitions/node/properties/inputNodes"
+            },
             "parent": {
               "$ref": "#/properties/workbench/definitions/node/properties/parent"
             }
