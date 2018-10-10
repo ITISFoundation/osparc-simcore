@@ -222,7 +222,7 @@
       },
       "patternProperties": {
         "^[-_a-zA-Z0-9]+$": {
-          "anyOf": [
+          "oneOf": [
             { "$ref": "#/properties/workbench/definitions/node" },
             { "$ref": "#/properties/workbench/definitions/containerNode" }
           ]
