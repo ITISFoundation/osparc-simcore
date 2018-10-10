@@ -97,11 +97,7 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     populateNodeLayout: function() {
       const nodeModel = this.getNodeModel();
       const metaData = nodeModel.getMetaData();
-      if (nodeModel.isContainer()) {
-        this.setCaption(nodeModel.getName());
-      } else {
-        this.setCaption(metaData.key + " " + metaData.version);
-      }
+      this.setCaption(nodeModel.getName());
       this.__inputPort = {};
       this.__outputPort = {};
       this.__createUIPorts(true, metaData.inputs);
