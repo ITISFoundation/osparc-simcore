@@ -1,0 +1,18 @@
+{
+    "inputs": {
+        "vm_1Hz": {
+            "displayOrder": 1,
+            "label": "VM 1Hz",
+            "description": "VM 1Hz",
+            "type": "data:text/plain",
+            "defaultValue": "null"
+        },
+        "all_results_1Hz": {
+            "displayOrder": 2,
+            "label": "All results 1Hz",
+            "description": "All results 1Hz",
+            "type": "data:text/plain",
+            "defaultValue": "null"
+        }
+    }
+}

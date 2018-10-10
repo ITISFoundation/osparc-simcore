@@ -138,6 +138,8 @@ def __add_network_to_service_runtime_params(docker_service_runtime_parameters, d
 def __add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, service_uuid):
     variables = [
         "POSTGRES_ENDPOINT=" + config.POSTGRES_ENDPOINT,
+        "POSTGRES_HOST=" + config.POSTGRES_HOST,
+        "POSTGRES_PORT=" + config.POSTGRES_PORT,
         "POSTGRES_USER=" + config.POSTGRES_USER,
         "POSTGRES_PASSWORD=" + config.POSTGRES_PASSWORD,
         "POSTGRES_DB=" + config.POSTGRES_DB,
@@ -240,6 +242,7 @@ def __wait_until_service_running_or_failed(service_id, service_name, service_uui
             if task_state == "running":
                 break
             elif task_state in ("failed", "rejected"):
+                log.error("Error while waiting for service")               
                 raise exceptions.ServiceStartTimeoutError(service_name, service_uuid)
         # TODO: all these functions should be async and here one could use await sleep which
         # would allow dealing with other events instead of wasting time here
@@ -288,7 +291,7 @@ def __prepare_runtime_parameters(docker_image_path, tag, service_uuid, docker_cl
     __add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
     __add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, service_uuid)
     __set_service_name(docker_service_runtime_parameters,
-        registry_proxy.get_interactive_service_sub_name(docker_image_path),
+        registry_proxy.get_service_last_names(docker_image_path),
         service_uuid)
     return docker_service_runtime_parameters
 
@@ -373,12 +376,12 @@ def start_service(service_key, service_tag, service_uuid):
 
     # create services
     __login_docker_registry(docker_client)
-    service_name = registry_proxy.get_service_name(service_key, registry_proxy.INTERACTIVE_SERVICES_PREFIX)
+    service_name = registry_proxy.get_service_first_name(service_key)
     containers_meta_data = __create_services(docker_client, list_of_images, service_name, service_tag, service_uuid)
     # we return only the info of the main service
     return containers_meta_data[0]
 
-def is_service_up(service_uuid):
+def get_service_details(service_uuid):
     # get the docker client
     docker_client = __get_docker_client()
     __login_docker_registry(docker_client)
