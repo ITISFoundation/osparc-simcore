@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://osparc.io/schema/node-meta-v1.0.0",
+    "$id": "https://simcore.io/schema/node-meta-v1.0.0",
     "title": "simcore node",
     "description": "Description of a simcore node 'class' with output definitions",
     "type": "object",
@@ -23,9 +23,9 @@
         "key": {
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path",
-            "pattern": "^(service)/(computational|dynamic)(/[^\\s/]+)+$",
+            "pattern": "^(service)/(comp|dynamic)(/[^\\s/]+)+$",
             "examples": [
-                "service/computational/itis/sleeper",
+                "service/comp/itis/sleeper",
                 "service/dynamic/itis/3dviewer"
             ]
         },
