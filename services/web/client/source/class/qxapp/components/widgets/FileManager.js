@@ -89,8 +89,6 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
           });
           break;
         case "nodeTree":
-          control = new qx.ui.tree.Tree();
-          break;
         case "userTree":
           control = new qx.ui.tree.Tree();
           break;
@@ -118,7 +116,7 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
       this.__nodeTree.setRoot(root);
 
       // this.__populateNodeFiles();
-      this.__populateFiles(this.__nodeTree);
+      this.__populateFiles(this.__nodeTree, true, false);
     },
 
     __reloadUserTree: function() {
@@ -129,10 +127,10 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
       this.__userTree.setRoot(root);
 
       // this.__populateUserFiles();
-      this.__populateFiles(this.__userTree);
+      this.__populateFiles(this.__userTree, false, true);
     },
 
-    __populateFiles: function(tree) {
+    __populateFiles: function(tree, isDraggable = false, isDroppable = false) {
       const slotName = "listObjects";
       let socket = qxapp.wrappers.WebSocket.getInstance();
       socket.removeSlot(slotName);
@@ -140,11 +138,31 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
         for (let i=0; i<data.length; i++) {
           this.__addTreeItem(data[i], tree);
         }
+        let allItems = tree.getItems(true, true);
+        for (let i=0; i<allItems.length; i++) {
+          let treeItem = allItems[i];
+          if (isDraggable && treeItem instanceof qx.ui.tree.TreeFile) {
+            this.__createDragMechanism(treeItem);
+          }
+          if (isDroppable && treeItem instanceof qx.ui.tree.TreeFolder) {
+            this.__createDropMechanism(treeItem);
+          }
+        }
       }, this);
       if (!socket.getSocket().connected) {
         let data = qxapp.dev.fake.Data.getObjectList();
         for (let i=0; i<data.length; i++) {
           this.__addTreeItem(data[i], tree);
+        }
+        let allItems = tree.getItems(true, true);
+        for (let i=0; i<allItems.length; i++) {
+          let treeItem = allItems[i];
+          if (isDraggable && treeItem instanceof qx.ui.tree.TreeFile) {
+            this.__createDragMechanism(treeItem);
+          }
+          if (isDroppable && treeItem instanceof qx.ui.tree.TreeFolder) {
+            this.__createDropMechanism(treeItem);
+          }
         }
       }
       socket.emit(slotName);
@@ -162,7 +180,6 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
 
     __addTreeItem: function(data, root) {
       let splitted = data.path.split("/");
-      // let parentFolder = this.__nodeTree.getRoot();
       let parentFolder = root.getRoot();
       for (let i=0; i<splitted.length-1; i++) {
         let parentPath = splitted.slice(0, i);
@@ -173,9 +190,9 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
         if (this.__alreadyExists(parentFolder, folderName)) {
           parentFolder = this.__alreadyExists(parentFolder, folderName);
         } else {
-          let newFolder = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), folderName, folderPath);
-          parentFolder.add(newFolder);
-          parentFolder = newFolder;
+          let treeItem = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), folderName, folderPath);
+          parentFolder.add(treeItem);
+          parentFolder = treeItem;
         }
       }
 
@@ -237,8 +254,50 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
       return treeItem;
     },
 
+    __createDragMechanism: function(treeItem) {
+      treeItem.setDraggable(true);
+      treeItem.addListener("dragstart", function(e) {
+        if (e.getOriginalTarget().isDir == true) {
+          e.preventDefault();
+        } else {
+          // Register supported actions
+          e.addAction("copy");
+          // Register supported types
+          e.addType("osparc-filePath");
+        }
+      }, this);
+    },
+
+    __createDropMechanism: function(treeItem) {
+      treeItem.setDroppable(true);
+      treeItem.addListener("dragover", function(e) {
+        let compatible = false;
+        if (e.supportsType("osparc-filePath")) {
+          const from = e.getRelatedTarget();
+          const to = e.getCurrentTarget();
+          if (from.isDir === false && to.isDir === true) {
+            compatible = true;
+          }
+        }
+        if (!compatible) {
+          e.preventDefault();
+        }
+      }, this);
+
+      treeItem.addListener("drop", function(e) {
+        if (e.supportsType("osparc-filePath")) {
+          const from = e.getRelatedTarget();
+          const to = e.getCurrentTarget();
+          console.log("Copy", from.path, "to", to.path);
+        }
+      }, this);
+    },
+
     __itemSelected: function() {
       let selectedItem = this.__nodeTree.getSelection();
+      if (selectedItem.length < 1) {
+        return;
+      }
       if ("path" in selectedItem[0]) {
         const data = {
           itemPath: selectedItem[0].path,
