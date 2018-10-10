@@ -1,0 +1,14 @@
+Envelope:
+  description: default envelope
+  required:
+    - data
+    - error
+  type: object
+  properties:
+    data:
+      nullable: true
+      default: null
+    error:
+      $ref: "./error.yml#/ErrorType"
+      nullable: true
+      default: null

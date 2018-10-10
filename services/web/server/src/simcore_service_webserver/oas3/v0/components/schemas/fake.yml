@@ -1,12 +1,19 @@
 FakeEnveloped:
   type: object
+  required:
+    - data
+    - error
   properties:
     data:
-      $ref: '#Fake'
-    status:
-      type: integer
-      example: 200
-Fake:
+      $ref: '#/FakeType'
+      nullable: true
+      default: null
+    error:
+      $ref: "./error.yml#/ErrorType"
+      nullable: true
+      default: null
+
+FakeType:
   type: object
   required:
     - path_value

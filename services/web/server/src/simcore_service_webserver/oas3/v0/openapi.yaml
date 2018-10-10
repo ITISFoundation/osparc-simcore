@@ -43,10 +43,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: 'components/schemas/health_check.yml#HealthCheckEnveloped'
+                $ref: './components/schemas/health_check.yml#/HealthCheckEnveloped'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-
   /check/{action}:
     get:
       tags:
@@ -67,16 +66,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: 'components/schemas/fake.yml#Fake'
+              $ref: './components/schemas/fake.yml#/FakeType'
       responses:
         '200':
           description: Echoes response based on action
           content:
             application/json:
               schema:
-                $ref: 'components/schemas/fake.yml#FakeEnveloped'
+                $ref: './components/schemas/fake.yml#/FakeEnveloped'
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          description: 'Returns enveloped payload w/ or w/o data'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/fake.yml#/FakeEnveloped'
   /auth/register:
     post:
       operationId: auth_register
@@ -85,7 +88,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: 'components/schemas/registration.yml#RegistrationEnveloped'
+              $ref: './components/schemas/registration.yml#/RegistrationType'
         required: true
       responses:
         '200':
@@ -93,11 +96,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: 'components/schemas/log_message.yml#LogMessageEnveloped'
+                $ref: './components/schemas/log_message.yml#/LogMessageEnveloped'
         '409':
             $ref: '#/components/responses/DataError_Conflict_409'
         '422':
             $ref: '#/components/responses/DataError_UnprocessableEntity_422'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
 
   #/auth/login:
   #/auth/logout:
@@ -113,60 +118,60 @@ components:
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/log_message.yml#LogMessageEnveloped'
+            $ref: './components/schemas/log_message.yml#LogMessageEnveloped'
 
     DefaultErrorResponse:
       description: Unexpected error
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/error.yml#/ErrorEnveloped'
+            $ref: './components/schemas/error.yml#/ErrorEnveloped'
 
     DataError_BadRequest_400:
       description: requested information is incomplete or malformed
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/error.yml#/ErrorEnveloped'
+            $ref: './components/schemas/error.yml#/ErrorEnveloped'
 
     DataError_UnprocessableEntity_422:
       description: requested information is ok but invalid
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/error.yml#/ErrorEnveloped'
+            $ref: './components/schemas/error.yml#/ErrorEnveloped'
 
     DataError_NotFound_404:
       description: everything is okay, but the resource doesnt exist
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/error.yml#/ErrorEnveloped'
+            $ref: './components/schemas/error.yml#/ErrorEnveloped'
 
     DataError_Conflict_409:
       description: a confict of data exists, even with valid information
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/error.yml#/ErrorEnveloped'
+            $ref: './components/schemas/error.yml#/ErrorEnveloped'
 
     AuthError_Unauthorized_401:
       description: access token isnt provided or is invalid
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/error.yml#/ErrorEnveloped'
+            $ref: './components/schemas/error.yml#/ErrorEnveloped'
 
     AuthError_Forbidden_403:
       description: an access token is valid, but requires more privileges
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/error.yml#/ErrorEnveloped'
+            $ref: './components/schemas/error.yml#/ErrorEnveloped'
 
     InternalServerError_500:
       description: server throws an error, completely unexpected
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/error.yml#/ErrorEnveloped'
+            $ref: './components/schemas/error.yml#/ErrorEnveloped'

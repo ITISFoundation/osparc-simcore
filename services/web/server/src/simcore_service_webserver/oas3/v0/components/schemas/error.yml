@@ -1,29 +1,28 @@
 ErrorEnveloped:
   type: object
   required:
-    - error
     - data
+    - error
   properties:
-    error:
-      $ref: '#/Error'
     data:
-      type: object
-    status:
-      type: integer
+      nullable: true
+      default: null
+    error:
+      $ref: "#/ErrorType"
 
-Error:
+ErrorType:
   type: object
   properties:
     logs:
       description: log messages
       type: array
       items:
-        $ref: 'log_message.yml#LogMessage'
+        $ref: './log_message.yml#/LogMessageType'
     errors:
       description: errors metadata
       type: array
       items:
-         $ref: '#/ErrorItem'
+         $ref: '#/ErrorItemType'
     status:
       description: HTTP error code
       type: integer
@@ -49,7 +48,7 @@ Error:
 #  - meta-information to allow client taking a decision (e.g. raise execption).
 #  - Some mechanism to transmit exceptions from server to client? Serialization of exceptions?
 
-ErrorItem:
+ErrorItemType:
   type: object
   required:
     - code
