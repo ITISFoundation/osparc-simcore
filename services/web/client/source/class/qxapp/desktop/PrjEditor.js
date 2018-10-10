@@ -107,6 +107,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       ].forEach(wb => {
         wb.addListener("NodeDoubleClicked", function(e) {
           let nodeId = e.getData();
+          if (nodeId === "root") {
+            const workbenchModel = this.__projectDocument.getWorkbenchModel();
+            this.__workbenchView.loadModel(workbenchModel);
+            this.showInMainView(this.__workbenchView, nodeId);
+            return;
+          }
+
           let nodeModel = this.__projectDocument.getWorkbenchModel().getNodeModel(nodeId);
 
           let widget;
