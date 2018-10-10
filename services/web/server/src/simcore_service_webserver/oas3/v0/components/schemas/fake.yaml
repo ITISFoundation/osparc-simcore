@@ -1,0 +1,29 @@
+FakeEnveloped:
+  type: object
+  properties:
+    data:
+      $ref: '#Fake'
+    status:
+      type: integer
+      example: 200
+Fake:
+  type: object
+  required:
+    - path_value
+    - query_value
+    - body_value
+  properties:
+    path_value:
+      type: string
+    query_value:
+      type: string
+    body_value:
+      type: object
+      additionalProperties:
+        type: string
+  example:
+    path_value: foo
+    query_value: bar
+    body_value:
+      key1: value1
+      key2: value2

@@ -9,7 +9,6 @@ info:
   license:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
-
 servers:
   - url: http://{host}:{port}/{version}
     description: Development server
@@ -21,93 +20,69 @@ servers:
       version:
         default: 'v0'
         enum:
+          # TODO: add all possible versions and set latest as default
           - 'v0'
-
 tags:
 - name: admins
   description: Secured Admin-only calls
-- name: developers
-  description: Operations available to regular developers
+- name: tests
+  description: Operations available for testing
 - name: users
   description: Operations available to regular users
-
 paths:
   /:
     get:
-      tags:
+      tags: 
         - users
       summary: Service health-check endpoint
       description: Some general information on the API and state of the service behind
       operationId: root_get
       responses:
         "200":
-          $ref: '#/components/responses/HealthCheck_200'
+          description: Service information
+          content:
+            application/json:
+              schema:
+                $ref: 'components/schemas/health_check.yaml#HealthCheckEnveloped'
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-
-  /items/{provider:google|facebook|amazon}/:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: 'components/schemas/error.yaml#ErrorEnveloped'
+  /check/{action}:
     get:
+      tags:
+        - tests
+      summary: Test checkpoint to ask server to fail or echo back the transmitted data
       parameters:
-        - in: path
-          name: provider
-          required: True
-          schema:
-            type: string
-          example:
-            value: google
         - in: query
-          name: search_re
+          name: data
           schema:
             type: string
-          example:
-            value: '^b\d+'
+        - in: path
+          name: action
+          schema:
+            type: string
+            default: 'echo'
+            enum: ['fail', 'echo']
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                age:
-                  type: integer
-                  format: int32
-                  minimum: 0
+              $ref: 'components/schemas/fake.yaml#Fake'
       responses:
         '200':
-          description: Requested items
+          description: Echoes response based on action
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                    age:
-                      type: integer
-                      format: int32
-                      minimum: 0
-
+                $ref: 'components/schemas/fake.yaml#FakeEnveloped'
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: 'components/schemas/error.yaml#ErrorEnveloped'
 
-
-
-
-components:
-  responses:
-    HeathCheck_200:
-      description: Returns service information
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/health_check.yaml#HealthCheckEnveloped'
-
-    DefaultErrorResponse:
-      description: Unexpected error
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#ErrorEnveloped'
+          
