@@ -141,7 +141,7 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
             task = await api_converter.convert_task_to_old_version(task)
         #     continue
 
-
+        
 
         tasks[node_uuid] = task
 
