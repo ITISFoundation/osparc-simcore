@@ -343,7 +343,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             }
           }
         }, {
-          projectUuid: "f54da025-2667-477f-b307-e126b006accd",
+          projectUuid: "80363288-84c2-49db-95d1-22e1ea78043e",
           name: "Macros",
           description: "Project containing nested custom macros",
           notes: "# title\nBlah",
@@ -361,6 +361,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "Sleeper1": {
               key: "service/computational/itis/sleeper",
               version: "0.0.0",
+              label: "Sleeper 1",
               inputs: {
                 inNumber: 1
               },
@@ -373,63 +374,60 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "Container1": {
-              key: "container",
-              name: "Container 1",
+              label: "Container 1",
               inputs: {},
               outputs: {},
               inputNodes: [
                 "Sleeper1"
               ],
               outputNode: false,
-              innerNodes: {
-                "Container2": {
-                  key: "container",
-                  name: "Container 2",
-                  inputs: {},
-                  outputs: {},
-                  inputNodes: [],
-                  outputNode: false,
-                  innerNodes: {
-                    "Sleeper3": {
-                      key: "service/computational/itis/sleeper",
-                      version: "0.0.0",
-                      inputs: {
-                        inNumber: 2
-                      },
-                      position: {
-                        x: 50,
-                        y: 50
-                      }
-                    }
-                  },
-                  position: {
-                    x: 50,
-                    y: 50
-                  }
-                },
-                "Sleeper2": {
-                  key: "service/computational/itis/sleeper",
-                  version: "0.0.0",
-                  inputs: {
-                    inNumber: 3
-                  },
-                  inputNodes: [
-                    "Container2"
-                  ],
-                  position: {
-                    x: 350,
-                    y: 50
-                  }
-                }
-              },
               position: {
                 x: 300,
                 y: 50
               }
+            },
+            "Container2": {
+              label: "Container 2",
+              inputs: {},
+              outputs: {},
+              inputNodes: [],
+              outputNode: false,
+              position: {
+                x: 50,
+                y: 50
+              },
+              parent: "Container1"
+            },
+            "Sleeper2": {
+              key: "service/computational/itis/sleeper",
+              version: "0.0.0",
+              inputs: {
+                inNumber: 3
+              },
+              inputNodes: [
+                "Container2"
+              ],
+              position: {
+                x: 350,
+                y: 50
+              },
+              parent: "Container1"
+            },
+            "Sleeper3": {
+              key: "service/computational/itis/sleeper",
+              version: "0.0.0",
+              inputs: {
+                inNumber: 2
+              },
+              position: {
+                x: 50,
+                y: 50
+              },
+              parent: "Container2"
             }
           }
         }, {
-          projectUuid: "d394ea07-8b2a-4748-8e29-e7cc03eb9250",
+          projectUuid: "345a37ab-5346-4983-951a-19ba2ef9ca0f",
           name: "LF Simulator",
           description: "LF Simulator",
           notes: "",
@@ -437,11 +435,12 @@ qx.Class.define("qxapp.dev.fake.Data", {
           collaborators: {},
           creationDate: "2018-07-08T16:01:00Z",
           lastChangeDate: "2018-07-09T16:02:22Z",
-          thumbnail: "https://placeimg.com/171/96/tech/grayscale/?2.jpg",
+          thumbnail: "https://placeimg.com/171/96/tech/grayscale/?8.jpg",
           workbench: {
             "c104bb08-77b1-4157-b9f9-e9df7779df08": {
               key: "service/dynamic/itis/s4l/Modeler",
               version: "0.0.0",
+              label: "Modeler 1",
               position: {
                 x: 50,
                 y: 50
@@ -450,125 +449,125 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "bf88496d-ddf8-476c-8d6c-24c716c2ae4c": {
               key: "service/dynamic/itis/s4l/MaterialDB",
               version: "0.0.0",
+              label: "Material DB 1",
               position: {
                 x: 50,
                 y: 300
               }
             },
             "89e185ca-dda1-4a45-8059-715f2cb17100": {
-              // key: "service/container/itis/s4l/Simulator/LF",
-              // version: "0.0.0",
-              key: "container",
-              name: "LF Simulator",
-              inputs: {
-                /*
-                modeler: {
-                  nodeUuid: "c104bb08-77b1-4157-b9f9-e9df7779df08",
-                  output: "modeler"
-                },
-                materialDB: {
-                  nodeUuid: "bf88496d-ddf8-476c-8d6c-24c716c2ae4c",
-                  output: "materialDB"
-                }
-                */
+              label: "LF Simulator Container",
+              position: {
+                x: 400,
+                y: 150
               },
+              inputs: {},
               outputs: {},
               inputNodes: [
                 "bf88496d-ddf8-476c-8d6c-24c716c2ae4c",
                 "c104bb08-77b1-4157-b9f9-e9df7779df08"
               ],
+              outputNode: false
+            },
+            "SetupId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Setup",
+              version: "0.0.0",
+              label: "LF Setup 1",
+              inputNodes: [],
               outputNode: false,
-              innerNodes: {
-                "SetupId": {
-                  key: "service/dynamic/itis/s4l/Simulator/LF/Setup",
-                  version: "0.0.0",
-                  inputNodes: [],
-                  outputNode: false,
-                  position: {
-                    x: 100,
-                    y: 50
-                  }
-                },
-                "MaterialsId": {
-                  key: "service/dynamic/itis/s4l/Simulator/LF/Materials",
-                  version: "0.0.0",
-                  inputNodes: [
-                    "c104bb08-77b1-4157-b9f9-e9df7779df08",
-                    "bf88496d-ddf8-476c-8d6c-24c716c2ae4c"
-                  ],
-                  outputNode: false,
-                  position: {
-                    x: 100,
-                    y: 150
-                  }
-                },
-                "BoundaryId": {
-                  key: "service/dynamic/itis/s4l/Simulator/LF/Boundary",
-                  version: "0.0.0",
-                  inputNodes: [
-                    "c104bb08-77b1-4157-b9f9-e9df7779df08"
-                  ],
-                  outputNode: false,
-                  position: {
-                    x: 100,
-                    y: 250
-                  }
-                },
-                "SensorsId": {
-                  key: "service/dynamic/itis/s4l/Simulator/LF/Sensors",
-                  version: "0.0.0",
-                  inputNodes: [
-                    "c104bb08-77b1-4157-b9f9-e9df7779df08"
-                  ],
-                  outputNode: true,
-                  position: {
-                    x: 100,
-                    y: 350
-                  }
-                },
-                "GridId": {
-                  key: "service/dynamic/itis/s4l/Simulator/LF/Grid",
-                  version: "0.0.0",
-                  inputNodes: [
-                    "c104bb08-77b1-4157-b9f9-e9df7779df08"
-                  ],
-                  outputNode: false,
-                  position: {
-                    x: 100,
-                    y: 450
-                  }
-                },
-                "VoxelId": {
-                  key: "service/dynamic/itis/s4l/Simulator/LF/Voxel",
-                  version: "0.0.0",
-                  inputNodes: [
-                    "c104bb08-77b1-4157-b9f9-e9df7779df08"
-                  ],
-                  outputNode: false,
-                  position: {
-                    x: 100,
-                    y: 550
-                  }
-                },
-                "SolverSettingsId": {
-                  key: "service/dynamic/itis/s4l/Simulator/LF/SolverSettings",
-                  version: "0.0.0",
-                  inputNodes: [],
-                  outputNode: true,
-                  position: {
-                    x: 500,
-                    y: 250
-                  }
-                }
-              },
               position: {
-                x: 400,
+                x: 100,
+                y: 50
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
+            },
+            "MaterialsId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Materials",
+              version: "0.0.0",
+              label: "LF Materials 1",
+              inputNodes: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08",
+                "bf88496d-ddf8-476c-8d6c-24c716c2ae4c"
+              ],
+              outputNode: false,
+              position: {
+                x: 100,
                 y: 150
-              }
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
+            },
+            "BoundaryId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Boundary",
+              version: "0.0.0",
+              label: "LF Boundary 1",
+              inputNodes: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08"
+              ],
+              outputNode: false,
+              position: {
+                x: 100,
+                y: 250
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
+            },
+            "SensorsId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Sensors",
+              version: "0.0.0",
+              label: "LF Sensors 1",
+              inputNodes: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08"
+              ],
+              outputNode: true,
+              position: {
+                x: 100,
+                y: 350
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
+            },
+            "GridId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Grid",
+              version: "0.0.0",
+              label: "LF Grid 1",
+              inputNodes: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08"
+              ],
+              outputNode: false,
+              position: {
+                x: 100,
+                y: 450
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
+            },
+            "VoxelId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Voxel",
+              version: "0.0.0",
+              label: "LF Voxel 1",
+              inputNodes: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08"
+              ],
+              outputNode: false,
+              position: {
+                x: 100,
+                y: 550
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
+            },
+            "SolverSettingsId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+              version: "0.0.0",
+              label: "LF SolverSett 1",
+              inputNodes: [],
+              outputNode: true,
+              position: {
+                x: 500,
+                y: 250
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "4069bf2e-e2be-4799-ad1c-c53f0cb46e4e": {
               key: "service/computational/itis/Solver-LF",
               version: "0.0.0",
+              label: "LF Solver 1",
               inputs: {
                 inFile: {
                   nodeUuid: "89e185ca-dda1-4a45-8059-715f2cb17100",
