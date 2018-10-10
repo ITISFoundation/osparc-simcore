@@ -1,0 +1,64 @@
+{
+    "key": "registry_url + /simcore/services/ + service_key_type + /test",
+    "tag": "service_tag",
+    "name": "test",
+    "description": "this is a test service",
+    "viewer": {
+        "ip": null,
+        "port": null
+    },
+    "authors": [
+        {
+            "name": "tester",
+            "email": "tester@test.com",
+            "affiliation": "test foundation"
+        }
+    ],
+    "contact": "contact@test.com",
+    "inputs": [
+        {
+            "key": "input_1",
+            "label": "input 1 label",
+            "desc": "input 1 description",
+            "type": "number",
+            "value": -5.56545
+        },
+        {
+            "key": "input_2",
+            "label": "input 2 label",
+            "desc": "input 2 description",
+            "type": "integer",
+            "value": 15
+        },
+        {
+            "key": "input_32",
+            "label": "input 32 label",
+            "desc": "input 32 description",
+            "type": "file-url",
+            "value": null
+        }
+    ],
+    "outputs": [
+        {
+            "key": "output_1",
+            "label": "output 1 label",
+            "desc": "output 1 description",
+            "type": "number",
+            "value": null
+        },
+        {
+            "key": "output_2",
+            "label": "output 2 label",
+            "desc": "output 2 description",
+            "type": "integer",
+            "value": null
+        },
+        {
+            "key": "output_23",
+            "label": "output 23 label",
+            "desc": "output 23 description",
+            "type": "file-url",
+            "value": null
+        }
+    ]
+}
