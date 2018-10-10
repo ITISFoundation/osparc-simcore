@@ -53,7 +53,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
     getPath: function(nodeId) {
       let nodePath = [this.getProjectName()];
-      if (nodeId === "root") {
+      if (nodeId === "root" || nodeId === undefined) {
         return nodePath;
       }
 
