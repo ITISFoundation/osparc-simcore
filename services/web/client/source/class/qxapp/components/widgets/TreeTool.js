@@ -37,64 +37,48 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
     buildTree: function() {
       this.__buildLayout();
 
-      const nodes = this.getWorkbenchModel().getNodeModels();
-      this.__populateTree(nodes);
+      const topLevelNodes = this.getWorkbenchModel().getNodeModels();
+
+      let data = {
+        label: this.getProjectName(),
+        children: this.__convertModel(topLevelNodes),
+        nodeId: "root"
+      };
+      var model = qx.data.marshal.Json.createModel(data, true);
+      this.__tree.setModel(model);
     },
 
     __buildLayout: function() {
-      let tree = this.__tree = new qx.ui.treevirtual.TreeVirtual([
-        "Tree",
-        "NodeId",
-        "Status"
-      ]);
-      tree.set({
-        // alwaysShowOpenCloseSymbol: true,
-        columnVisibilityButtonVisible: false,
-        statusBarVisible: false
-      });
-
-      // Obtain the resize behavior object to manipulate
-      let resizeBehavior = tree.getTableColumnModel().getBehavior();
-
-      // Ensure that the tree column remains sufficiently wide
-      resizeBehavior.set(0, {
-        width: "1*",
-        minWidth: 180
+      let tree = this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+        openMode: "none"
       });
 
       this._removeAll();
       this._add(tree);
 
-      this.__tree.addListener("changeSelection", function(e) {
-        let selectedRow = e.getData();
-        this.__selectedNodeId = selectedRow[0].columnData[1];
-      }, this);
-
-      this.__tree.addListener("dblclick", function() {
-        this.fireDataEvent("NodeDoubleClicked", this.__selectedNodeId);
+      this.__tree.addListener("dblclick", function(e) {
+        let selection = this.__tree.getSelection();
+        let currentSelection = selection.toArray();
+        if (currentSelection.length > 0) {
+          let selectedRow = currentSelection[0];
+          this.fireDataEvent("NodeDoubleClicked", selectedRow.getNodeId());
+        }
       }, this);
     },
 
-    __populateTree: function(nodes, parent = null) {
-      let dataModel = this.__tree.getDataModel();
-
+    __convertModel: function(nodes) {
+      let children = [];
       for (let nodeId in nodes) {
         const node = nodes[nodeId];
+        let nodeInTree = {
+          label: "",
+          children: [],
+          nodeId: node.getNodeId()
+        };
         if (node.isContainer()) {
-          const label = node.getName();
-          let branch = dataModel.addBranch(parent, label, true);
-          dataModel.setColumnData(branch, 1, nodeId);
-          this.__populateTree(node.getInnerNodes(), branch);
+          nodeInTree.label = node.getName();
+          nodeInTree.children = this.__convertModel(node.getInnerNodes());
         } else {
-          const label = node.getMetaData().name + " " + node.getMetaData().version;
-          let leaf = dataModel.addLeaf(parent, label);
-          dataModel.setColumnData(leaf, 1, nodeId);
-        }
-      }
-
-      dataModel.setData();
-    },
-
     getPath: function(nodeId) {
       let nodePath = "Workbench / ";
       if (nodeId) {
