@@ -6,7 +6,7 @@ components:
         - error
       properties:
         error:
-          $ref: '#Error'
+          $ref: '#components/schemas/Error'
         status:
           description: Error code
           type: integer
