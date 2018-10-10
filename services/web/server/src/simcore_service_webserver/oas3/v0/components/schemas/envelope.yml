@@ -12,9 +12,6 @@ Envelope:
       $ref: "./error.yml#/ErrorType"
       nullable: true
       default: null
-<<<<<<< HEAD
 
 
 # TODO: still not sure how to reuse this ...
-=======
->>>>>>> 4d3d97a567e337e5ce556f2cd3ef20ad22d287e7
