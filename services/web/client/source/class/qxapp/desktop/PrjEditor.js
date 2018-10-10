@@ -56,20 +56,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     initDefault: function() {
       let project = this.__projectDocument;
 
-      let showWorkbench = new qx.ui.form.Button(this.tr("Show workbench")).set({
-        allowGrowX: false
-      });
-      showWorkbench.addListener("execute", function() {
-        this.showInMainView(this.__workbenchView);
-        const workbenchModel = this.__projectDocument.getWorkbenchModel();
-        this.__workbenchView.loadModel(workbenchModel);
-      }, this);
-
-      let treeView = this.__treeView = new qxapp.components.widgets.TreeTool(project.getWorkbenchModel());
-      let vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      vBox.add(showWorkbench);
-      vBox.add(treeView);
-      this.__sidePanel.setTopView(vBox);
+      let treeView = this.__treeView = new qxapp.components.widgets.TreeTool(project.getName(), project.getWorkbenchModel());
+      this.__sidePanel.setTopView(treeView);
 
       let workbenchView = this.__workbenchView = new qxapp.components.workbench.WorkbenchView(project.getWorkbenchModel());
       this.showInMainView(workbenchView);
