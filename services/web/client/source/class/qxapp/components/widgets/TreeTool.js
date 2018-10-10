@@ -1,13 +1,16 @@
 qx.Class.define("qxapp.components.widgets.TreeTool", {
   extend: qx.ui.core.Widget,
 
-  construct: function(workbenchModel) {
+  construct: function(projectName, workbenchModel) {
     this.base(arguments);
 
     let treeLayout = new qx.ui.layout.VBox(10);
     this._setLayout(treeLayout);
 
-    this.setWorkbenchModel(workbenchModel);
+    this.set({
+      projectName: projectName,
+      workbenchModel: workbenchModel
+    });
 
     this.buildTree();
   },
@@ -19,9 +22,11 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
   properties: {
     workbenchModel: {
       check: "qxapp.data.model.WorkbenchModel",
-      nullable: false,
-      event: "__updateMe",
-      apply: "__applyMe"
+      nullable: false
+    },
+
+    projectName: {
+      check: "String"
     }
   },
 
