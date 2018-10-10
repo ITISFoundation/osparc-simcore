@@ -3,12 +3,21 @@
 qx.Class.define("qxapp.data.model.WorkbenchModel", {
   extend: qx.core.Object,
 
-  construct: function(wbData) {
+  construct: function(prjName, wbData) {
     this.base(arguments);
 
     this.__nodesTopLevel = {};
+
+    this.setProjectName(prjName);
     this.createNodeModels(wbData);
     this.createLinks(wbData);
+  },
+
+  properties: {
+    projectName: {
+      check: "String",
+      nullable: false
+    }
   },
 
   events: {
