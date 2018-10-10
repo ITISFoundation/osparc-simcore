@@ -1,29 +1,38 @@
 ErrorEnveloped:
+# - notice that data is defaulted to null
+#
   type: object
   required:
-    - error
     - data
+    - error
   properties:
-    error:
-      $ref: '#/Error'
     data:
-      type: object
-    status:
-      type: integer
+      nullable: true
+      default: null
+    error:
+      $ref: "#/ErrorType"
 
-Error:
+
+
+ErrorType:
+#  - Normally transmitted as a response from server to client
+#  - can exchage log messages between server and client. Possible applications:
+#     - e.g. client side can render a widget to display messages logged to 'user'
+#  - contains meta-information to allow client programatically understand the error. Possible applications:
+#     - e.g. metadata can serialize an exception in server that can be reproduced in client side
+#
   type: object
   properties:
     logs:
       description: log messages
       type: array
       items:
-        $ref: 'log_message.yml#LogMessage'
+        $ref: './log_message.yml#/LogMessageType'
     errors:
       description: errors metadata
       type: array
       items:
-         $ref: '#/ErrorItem'
+         $ref: '#/ErrorItemType'
     status:
       description: HTTP error code
       type: integer
@@ -44,12 +53,8 @@ Error:
           field: pasword
       status: 400
 
-# TODO: improve structure of Error model needs. Still not convince it is good enough!
-#  - log entry
-#  - meta-information to allow client taking a decision (e.g. raise execption).
-#  - Some mechanism to transmit exceptions from server to client? Serialization of exceptions?
 
-ErrorItem:
+ErrorItemType:
   type: object
   required:
     - code
