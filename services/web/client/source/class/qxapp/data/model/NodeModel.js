@@ -112,10 +112,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           this.__inputNodes = nodeData.inputNodes;
         }
 
-        if (nodeData && nodeData.label) {
-          const label = nodeData.label ? nodeData.label : metaData.name;
-          this.setName(label);
-        }
+        const label = nodeData.label ? nodeData.label : metaData.name;
+        this.setName(label);
       }
     },
 
