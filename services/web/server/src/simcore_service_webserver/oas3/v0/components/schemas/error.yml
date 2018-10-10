@@ -11,7 +11,6 @@ ErrorEnveloped:
       default: null
     error:
       $ref: "#/ErrorType"
-<<<<<<< HEAD
 
 
 
@@ -22,10 +21,6 @@ ErrorType:
 #  - contains meta-information to allow client programatically understand the error. Possible applications:
 #     - e.g. metadata can serialize an exception in server that can be reproduced in client side
 #
-=======
-
-ErrorType:
->>>>>>> 4d3d97a567e337e5ce556f2cd3ef20ad22d287e7
   type: object
   properties:
     logs:
