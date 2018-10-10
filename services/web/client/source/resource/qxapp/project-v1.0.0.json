@@ -133,6 +133,10 @@
                 "description": "node UUID"
               }
             },
+            "outputNode": {
+              "type": "boolean",
+              "description": "should the node be present in the output set of a container node"
+            },
             "outputs": {
               "type": "object",
               "description": "nodes providing static (non api output) store their output here after computation is complete.",
@@ -206,6 +210,9 @@
             },
             "inputNodes": {
               "$ref": "#/properties/workbench/definitions/node/properties/inputNodes"
+            },
+            "outputNode": {
+              "$ref": "#/properties/workbench/definitions/node/properties/outputNode"
             },
             "parent": {
               "$ref": "#/properties/workbench/definitions/node/properties/parent"
