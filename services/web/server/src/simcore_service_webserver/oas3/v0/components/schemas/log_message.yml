@@ -1,0 +1,36 @@
+LogMessageEnveloped:
+  type: object
+  properties:
+    data:
+      $ref: '#LogMessage'
+    status:
+      type: integer
+      example: 200
+LogMessage:
+  type: object
+  properties:
+    level:
+      description: log level.
+      type: string
+      default: INFO
+      enum:
+       - DEBUG
+       - WARNING
+       - INFO
+       - ERROR
+    message:
+      description: log message. Must be human readable if logger is set to USER.
+      type: string
+    logger:
+      description: defines the target logger
+      type: string
+      default: ROOT
+      enum:
+       - USER
+       - ROOT
+  required:
+   - message
+  example:
+    message: 'Hi there, Mr user'
+    level: INFO
+    logger: USER

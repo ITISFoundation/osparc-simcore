@@ -1,0 +1,23 @@
+RegistrationEnveloped:
+  type: object
+  properties:
+    data:
+      $ref: '#Registration'
+    status:
+      type: integer
+      example: 200
+Registration:
+  type: object
+  properties:
+    email:
+      type: string
+      #format: email
+      example: 'foo@mymail.com'
+    password:
+      type: string
+      #format: password
+      example: 'my secret pass'
+    confirm:
+      type: string
+      #format: password
+      example: 'my secret pass'
