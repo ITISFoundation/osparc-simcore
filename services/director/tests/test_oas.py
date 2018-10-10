@@ -17,8 +17,8 @@ def test_openapi_specs(version):
     with resources.stream(name) as fh:
         specs = yaml.load(fh)
         # remove json schema stuff not valid for openapi validator
-        specs["paths"].pop("/services")
-        specs["paths"].pop("/services/{service_key}/{service_version}")
+        # specs["paths"].pop("/services")
+        # specs["paths"].pop("/services/{service_key}/{service_version}")
         try:
             validate_spec(specs, spec_url=openapi_path.as_uri())
         except OpenAPIValidationError as err:
