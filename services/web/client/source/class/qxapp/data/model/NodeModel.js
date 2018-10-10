@@ -8,10 +8,12 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     this.__innerNodes = {};
     this.__inputNodes = [];
 
-    let nodeImageId = metaData.key;
-    if (metaData.key !== "container") {
-      nodeImageId = nodeImageId + "-" + metaData.version;
+    let nodeImageId = null;
+    if (metaData && "key" in metaData) {
+      // not container
+      nodeImageId = metaData.key + "-" + metaData.version;
     }
+
     this.set({
       nodeImageId: nodeImageId,
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
@@ -19,7 +21,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     if (metaData) {
       this.__metaData = metaData;
-      this.setName(metaData.name);
     }
   },
 
@@ -63,10 +64,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __posY: null,
 
     isContainer: function() {
-      let isContainer = false;
-      isContainer = isContainer || (this.getNodeImageId() === "container"); // built Container
-      isContainer = isContainer || (this.getMetaData().type === "container"); // container by default
-      return isContainer;
+      return (this.getNodeImageId() === null);
     },
 
     getMetaData: function() {
@@ -92,21 +90,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       this.__innerNodes[innerNodeId] = innerNodeModel;
     },
 
-    createInnerNode: function(innerNodeData, innerNodeId) {
-      let store = qxapp.data.Store.getInstance();
-      let innerNodeMetaData = store.getNodeMetaData(innerNodeData);
-      let innerNodeModel = new qxapp.data.model.NodeModel(innerNodeMetaData, innerNodeId);
-      innerNodeModel.populateNodeData(innerNodeData);
-      this.addInnerNode(innerNodeId, innerNodeModel);
-    },
-
-    createInnerNodes: function(innerNodes) {
-      for (const innerNodeId in innerNodes) {
-        let innerNodeData = innerNodes[innerNodeId];
-        this.createInnerNode(innerNodeData, innerNodeId);
-      }
-    },
-
     getInputNodes: function() {
       return this.__inputNodes;
     },
@@ -115,7 +98,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       if (this.__metaData) {
         let metaData = this.__metaData;
         this.__startInteractiveNode();
-        this.__addSettings(metaData.inputs, nodeData);
+
+        if (metaData && metaData.inputs) {
+          this.__addSettings(metaData.inputs, nodeData);
+        }
 
         if (nodeData && nodeData.position) {
           this.setPosition(nodeData.position.x, nodeData.position.y);
@@ -126,13 +112,9 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           this.__inputNodes = nodeData.inputNodes;
         }
 
-        if (this.isContainer()) {
-          if ("innerNodes" in nodeData) {
-            this.createInnerNodes(nodeData.innerNodes);
-          }
-          if ("innerNodes" in metaData) {
-            this.createInnerNodes(metaData.innerNodes);
-          }
+        if (nodeData && nodeData.label) {
+          const label = nodeData.label ? nodeData.label : metaData.name;
+          this.setName(label);
         }
       }
     },

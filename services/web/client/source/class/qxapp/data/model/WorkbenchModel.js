@@ -53,19 +53,48 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     },
 
     createNodeModels: function(workbenchData) {
-      for (const nodeId in workbenchData) {
+      let keys = Object.keys(workbenchData);
+      for (let i=0; i<keys.length; i++) {
+        const nodeId = keys[i];
         const nodeData = workbenchData[nodeId];
-        let store = qxapp.data.Store.getInstance();
-        let metaData = store.getNodeMetaData(nodeData);
-        let nodeModel = this.createNodeModel(metaData, nodeId, nodeData);
-        this.addNodeModel(nodeModel);
+        if ("parent" in nodeData) {
+          let parentNode = this.getNodeModel(nodeData.parent);
+          if (parentNode === null) {
+            // If parent was not yet created, delay the creation of its' children
+            keys.push(nodeId);
+            // check if there is an inconsitency
+            const nKeys = keys.length;
+            if (nKeys > 1) {
+              if (keys[nKeys-1] === keys[nKeys-2]) {
+                console.log(nodeId, "will never be created, parent missing", nodeData.parent);
+                return;
+              }
+            }
+            continue;
+          }
+        }
+        let nodeModel = null;
+        if ("key" in nodeData) {
+          // not container
+          let store = qxapp.data.Store.getInstance();
+          let metaData = store.getNodeMetaData(nodeData);
+          nodeModel = this.createNodeModel(metaData, nodeId, nodeData);
+        } else {
+          // container
+          nodeModel = this.createNodeModel(null, nodeId, nodeData);
+        }
+        if ("parent" in nodeData) {
+          let parentModel = this.getNodeModel(nodeData.parent);
+          this.addNodeModel(nodeModel, parentModel);
+        } else {
+          this.addNodeModel(nodeModel);
+        }
       }
     },
 
     addNodeModel: function(nodeModel, parentNodeModel) {
       const uuid = nodeModel.getNodeId();
       if (parentNodeModel) {
-        // addInnerNode: function(innerNodeId, innerNodeModel) {
         parentNodeModel.addInnerNode(uuid, nodeModel);
       } else {
         this.__nodesTopLevel[uuid] = nodeModel;

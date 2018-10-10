@@ -95,11 +95,12 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
     },
 
     populateNodeLayout: function() {
-      const metaData = this.getNodeModel().getMetaData();
-      if (this.getNodeModel().isContainer()) {
-        this.setCaption(metaData.name);
+      const nodeModel = this.getNodeModel();
+      const metaData = nodeModel.getMetaData();
+      if (nodeModel.isContainer()) {
+        this.setCaption(nodeModel.getName());
       } else {
-        this.setCaption(metaData.name + " " + metaData.version);
+        this.setCaption(metaData.key + " " + metaData.version);
       }
       this.__inputPort = {};
       this.__outputPort = {};

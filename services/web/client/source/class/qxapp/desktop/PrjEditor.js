@@ -120,19 +120,21 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         wb.addListener("NodeDoubleClicked", function(e) {
           let nodeId = e.getData();
           let nodeModel = this.__projectDocument.getWorkbenchModel().getNodeModel(nodeId);
-          this.__settingsView.setNodeModel(nodeModel);
 
           let widget;
           if (nodeModel.isContainer()) {
             widget = this.__workbenchView;
-          } else if (nodeModel.getMetaData().type === "dynamic") {
-            // const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
-            // widget = widgetManager.getWidgetForNode(nodeModel);
-            this.showInExtraView(new qx.ui.core.Widget());
-            widget = this.__settingsView;
           } else {
-            this.showInExtraView(new qx.ui.core.Widget());
-            widget = this.__settingsView;
+            this.__settingsView.setNodeModel(nodeModel);
+            if (nodeModel.getMetaData().type === "dynamic") {
+              // const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
+              // widget = widgetManager.getWidgetForNode(nodeModel);
+              this.showInExtraView(new qx.ui.core.Widget());
+              widget = this.__settingsView;
+            } else {
+              this.showInExtraView(new qx.ui.core.Widget());
+              widget = this.__settingsView;
+            }
           }
 
           this.showInMainView(widget, nodeId);
