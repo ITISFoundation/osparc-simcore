@@ -42,6 +42,30 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return nodes;
     },
 
+    getPath: function(nodeId) {
+      let nodePath = [this.getProjectName()];
+      if (nodeId === "root") {
+        return nodePath;
+      }
+
+      let topLevelNodes = this.getNodeModels(false);
+      if (nodeId in topLevelNodes) {
+        const nodeModel = this.getNodeModel(nodeId);
+        nodePath.push(nodeModel.getName());
+      } else {
+        for (const topLevelNodeId in topLevelNodes) {
+          const topLevelNode = this.getNodeModel(topLevelNodeId);
+          const innerNodes = topLevelNode.getInnerNodes(true);
+          if (nodeId in innerNodes) {
+            nodePath.push(topLevelNode.getName());
+            const nodeModel = this.getNodeModel(nodeId);
+            nodePath.push(nodeModel.getName());
+          }
+        }
+      }
+      return nodePath;
+    },
+
     createNodeModel: function(metaData, uuid, nodeData) {
       let existingNodeModel = this.getNodeModel(uuid);
       if (existingNodeModel) {
