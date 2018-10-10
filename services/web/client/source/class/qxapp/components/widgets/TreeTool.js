@@ -76,7 +76,7 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
       for (let nodeId in nodes) {
         const node = nodes[nodeId];
         if (node.isContainer()) {
-          const label = node.getMetaData().name;
+          const label = node.getName();
           let branch = dataModel.addBranch(parent, label, true);
           dataModel.setColumnData(branch, 1, nodeId);
           this.__populateTree(node.getInnerNodes(), branch);
