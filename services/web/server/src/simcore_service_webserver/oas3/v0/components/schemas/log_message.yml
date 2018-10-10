@@ -15,10 +15,13 @@ LogMessageEnveloped:
 
 
 LogMessageType:
+<<<<<<< HEAD
 # - logger can be use as a way for the client to filter messages.
 # - E.g. logger naming can be hierarchical, and all including "*.user.*"
 #   are displayed as a flash message in the front-end
 #
+=======
+>>>>>>> 4d3d97a567e337e5ce556f2cd3ef20ad22d287e7
   type: object
   properties:
     level:
