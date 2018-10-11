@@ -41,8 +41,7 @@ def validate_individual_schemas(list_of_paths):
             "schemas":{}
         }
     }
-
-    list_of_paths = _API_DIR.rglob("*.yaml")    
+    
     for spec_file_path in list_of_paths:
         assert spec_file_path.exists()
         # only consider schemas
@@ -59,6 +58,6 @@ def validate_individual_schemas(list_of_paths):
             except OpenAPIValidationError as err:
                 pytest.fail(err.message)
 
-def test_valid_individual_schemas_specs():
+def test_valid_individual_openapi_schemas_specs():
     validate_individual_schemas(_API_DIR.rglob("*.yaml"))
     validate_individual_schemas(_API_DIR.rglob("*.yml"))
