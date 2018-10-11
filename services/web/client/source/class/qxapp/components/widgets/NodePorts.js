@@ -29,10 +29,7 @@ qx.Class.define("qxapp.components.widgets.NodePorts", {
   },
 
   events: {
-    "LinkDragStart": "qx.event.type.Data",
-    "LinkDragOver": "qx.event.type.Data",
-    "LinkDrop": "qx.event.type.Data",
-    "LinkDragEnd": "qx.event.type.Data"
+    "PortDragStart": "qx.event.type.Data"
   },
 
   members: {
@@ -82,7 +79,7 @@ qx.Class.define("qxapp.components.widgets.NodePorts", {
             paddingRight: 20
           });
           this._add(portLabel);
-          this.__createUIPortConnections(portLabel, portKey, isInput);
+          this.__createUIPortConnections(portLabel, portKey);
           let label = {
             isInput: isInput,
             ui: portLabel
@@ -97,19 +94,15 @@ qx.Class.define("qxapp.components.widgets.NodePorts", {
       }
     },
 
-    __createUIPortConnections: function(uiPort, portId, isInput) {
+    __createUIPortConnections: function(uiPort, portId) {
       [
-        ["dragstart", "LinkDragStart"],
-        ["dragover", "LinkDragOver"],
-        ["drop", "LinkDrop"],
-        ["dragend", "LinkDragEnd"]
+        ["dragstart", "PortDragStart"]
       ].forEach(eventPair => {
         uiPort.addListener(eventPair[0], e => {
           const eData = {
             event: e,
             nodeId: this.getNodeId(),
-            portId: portId,
-            isInput: isInput
+            portId: portId
           };
           this.fireDataEvent(eventPair[1], eData);
         }, this);
