@@ -714,7 +714,6 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
       node.open();
 
       qx.ui.core.queue.Widget.flush();
-      qx.ui.core.queue.Layout.flush();
     },
 
     clearProgressData: function() {
