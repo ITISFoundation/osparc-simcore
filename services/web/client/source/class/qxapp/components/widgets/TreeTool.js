@@ -54,7 +54,9 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
       });
 
       this._removeAll();
-      this._add(tree);
+      this._add(tree, {
+        flex: 1
+      });
 
       this.__tree.addListener("dblclick", function(e) {
         let selection = this.__tree.getSelection();

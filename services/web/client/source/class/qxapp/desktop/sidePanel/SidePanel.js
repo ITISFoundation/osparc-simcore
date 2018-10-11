@@ -59,7 +59,9 @@ qx.Class.define("qxapp.desktop.sidePanel.SidePanel", {
     __replaceWidgetAt: function(newWidget, indexOf) {
       if (this._indexOf(newWidget) !== indexOf) {
         this._removeAt(indexOf);
-        this._addAt(newWidget, indexOf);
+        this._addAt(newWidget, indexOf, {
+          height: "33%"
+        });
       }
     }
   }
