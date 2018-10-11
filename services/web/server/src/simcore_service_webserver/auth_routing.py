@@ -1,22 +1,38 @@
+import logging
+from typing import List
 
-from .auth_handlers as handlers
+from aiohttp import web
+
+from simcore_servicelib import openapi
+
+from . import auth_handlers as handlers
 from .settings.constants import API_URL_VERSION, APP_OAS_KEY
 
+log = logging.getLogger(__name__)
 
-def map_handlers(router, specs):
-    PREFIX = '/' + API_URL_VERSION
+
+
+def create(specs: openapi.Spec) -> List[web.RouteDef]:
+    # TODO: consider the case in which server creates routes for both v0 and v1!!!
+    BASEPATH = '/v' + specs.info.version.split('.')[0]
+
+    log.debug("Creating routes for %s", BASEPATH)
+    routes = []
 
     # TODO: this will be done automatically
     path = '/'
     operation_id = specs.paths[path].operations['get'].operation_id
-    router.add_route('GET', PREFIX+path, handlers.check_health, name=operation_id)
+    routes.append( web.get(BASEPATH+path, handlers.check_health, name=operation_id) )
 
     path = '/check/{action}'
     operation_id = specs.paths[path].operations['post'].operation_id
-    router.add_route('POST', PREFIX+path, handlers.check_action, name=operation_id)
+    routes.append( web.post(BASEPATH+path, handlers.check_action, name=operation_id) )
+
+    return routes
 
 
-def setup(app):
-    validated_spec = app[APP_OAS_KEY]
+def setup(app: web.Application):
+    validated_specs = app[APP_OAS_KEY]
 
-    map_handlers(validated_spec, app.router)
+    routes = create(validated_specs)
+    app.router.add_routes(routes)

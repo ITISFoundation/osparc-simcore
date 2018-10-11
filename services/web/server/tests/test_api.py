@@ -16,6 +16,7 @@ import yaml
 
 from simcore_service_webserver import resources
 from simcore_service_webserver.settings.constants import APP_OAS_KEY, API_URL_VERSION
+import simcore_service_webserver.auth_routing as auth_routing
 
 # TODO: reduce log from openapi_core loggers
 
@@ -39,31 +40,19 @@ def spec_dict(openapi_path):
 
 
 async def test_health_check(openapi_path, spec_dict, aiohttp_client, aiohttp_unused_port):
-    import simcore_service_webserver.auth_handlers as handlers
-
     app = web.Application()
     app[APP_OAS_KEY] = spec = openapi_core.create_spec(spec_dict, spec_url=openapi_path.as_uri())
 
+    # fit specs server
     server_vars = spec.servers[0].variables
     host = server_vars['host'].default
     port = server_vars['port'].default = aiohttp_unused_port()
-    assert server_vars['version'].default == API_URL_VERSION
-    PREFIX = '/' + API_URL_VERSION
 
-
-    PATH = '/'
-    operation_id = spec.paths[PATH].operations['get'].operation_id
-    app.router.add_route('GET', PREFIX+PATH, handlers.check_health, name=operation_id)
-
-    PATH = '/check/{action}'
-    operation_id = spec.paths[PATH].operations['post'].operation_id
-    app.router.add_route('POST', PREFIX+PATH, handlers.check_action, name=operation_id)
-    #app.router.add_route('GET', PATH, handlers.check_action, name=operation_id)
-
+    routes = auth_routing.create(spec)
+    app.router.add_routes(routes)
 
     client = await aiohttp_client(app, server_kwargs={'port': port, 'host': host})
 
-    assert PREFIX == '/v0'
     resp = await client.get("/v0/")
     assert resp.status == 200
 

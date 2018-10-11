@@ -13,7 +13,7 @@ OAI_VERSION_URL = 'https://github.com/OAI/OpenAPI-Specification/blob/master/vers
 
 # TODO: ensure openapi_core.__version__ is up-to-date with OAI_VERSION
 
-def create_specification(openapi_path: Path) -> Spec:
+def create_specs(openapi_path: Path) -> Spec:
     with openapi_path.open() as f:
         spec_dict = yaml.safe_load(f)
 
@@ -22,6 +22,7 @@ def create_specification(openapi_path: Path) -> Spec:
 
 
 __all__ = (
-    'create_specification',
-    'OAI_VERSION'
+    'create_specs',
+    'OAI_VERSION',
+    'Spec'
 )
