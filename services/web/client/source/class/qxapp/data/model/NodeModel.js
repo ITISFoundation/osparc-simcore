@@ -35,7 +35,12 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       nullable: true
     },
 
-    serviceUrl: {
+    name: {
+      check: "String",
+      nullable: true
+    },
+
+    parentNodeId: {
       check: "String",
       nullable: true
     },
@@ -44,14 +49,14 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       check: "qxapp.components.form.renderer.PropForm"
     },
 
+    serviceUrl: {
+      check: "String",
+      nullable: true
+    },
+
     viewerButton: {
       init: null,
       check: "qx.ui.form.Button"
-    },
-
-    name: {
-      check: "String",
-      nullable: true
     }
   },
 
