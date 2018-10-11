@@ -103,13 +103,57 @@ paths:
             $ref: '#/components/responses/DataError_UnprocessableEntity_422'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-
-  #/auth/login:
-  #/auth/logout:
+  /auth/login:
+    get:
+      operationId: auth_login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/login.yml#/LoginFormType'
+      responses:
+        '200':
+          description: Succesfully logged in
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yml#/LogMessageEnveloped'
+        '401':
+          $ref: '#/components/responses/AuthError_Unauthorized_401'
+        '422':
+            $ref: '#/components/responses/DataError_UnprocessableEntity_422'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /auth/logout:
+    get:
+      responses:
+        '200':
+          description: Succesfully logged out
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yml#/LogMessageEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
   #/auth/reset-password:
   #/auth/change-email:
   #/auth/change-password:
-  #/auth/confirmation/{code}:
+  /auth/confirmation/{code}:
+    get:
+      operationId: auth_confirmation
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        default:
+          $ref: '#/components/responses/OK_NoContent_204'
+
+
+
 components:
   responses:
     # TODO:Envelope objects are still not well/easily defined. See discriminators

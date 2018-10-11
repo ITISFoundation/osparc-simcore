@@ -15,7 +15,7 @@ Every folder contains a python package with the following properties:
   pip install -r requirements/dev.txt
 
   # or for production
-  pip install -r requirements/prod.txt
+  pip install .
 ```
 
 - it can be a package with or without with *entrypoints*.
