@@ -158,12 +158,12 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
         event.addAction("move");
 
         // Register supported types
-        event.addType("osparc-metaData");
+        event.addType("osparc-port-link");
         let dragData = {
           dragNodeId: dragNodeId,
           dragIsInput: dragIsInput
         };
-        event.addData("osparc-metaData", dragData);
+        event.addData("osparc-port-link", dragData);
 
         this.__tempLinkNodeId = dragData.dragNodeId;
         this.__tempLinkIsInput = dragData.dragIsInput;
@@ -182,9 +182,9 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
         let dropIsInput = data.isInput;
 
         let compatible = false;
-        if (event.supportsType("osparc-metaData")) {
-          const dragNodeId = event.getData("osparc-metaData").dragNodeId;
-          const dragIsInput = event.getData("osparc-metaData").dragIsInput;
+        if (event.supportsType("osparc-port-link")) {
+          const dragNodeId = event.getData("osparc-port-link").dragNodeId;
+          const dragIsInput = event.getData("osparc-port-link").dragIsInput;
           const dragNode = this.__getNodeUI(dragNodeId);
           const dropNode = this.__getNodeUI(dropNodeId);
           const dragPortTarget = dragIsInput ? dragNode.getInputPort() : dragNode.getOutputPort();
@@ -203,9 +203,9 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
         let dropNodeId = data.nodeId;
         let dropIsInput = data.isInput;
 
-        if (event.supportsType("osparc-metaData")) {
-          let dragNodeId = event.getData("osparc-metaData").dragNodeId;
-          let dragIsInput = event.getData("osparc-metaData").dragIsInput;
+        if (event.supportsType("osparc-port-link")) {
+          let dragNodeId = event.getData("osparc-port-link").dragNodeId;
+          let dragIsInput = event.getData("osparc-port-link").dragIsInput;
 
           let nodeAId = dropIsInput ? dragNodeId : dropNodeId;
           let nodeBId = dragIsInput ? dragNodeId : dropNodeId;
