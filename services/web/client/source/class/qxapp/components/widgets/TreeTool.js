@@ -1,3 +1,5 @@
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.components.widgets.TreeTool", {
   extend: qx.ui.core.Widget,
 
@@ -66,6 +68,15 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
       let oldModel = this.__tree.getModel();
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
         this.__tree.setModel(newModel);
+        /*
+        TODO: Ask Tobi
+        this.__tree.setDelegate({
+          bindItem : function(controller, item, index) {
+            // controller.bindDefaultProperties(item, index);
+            controller.bindProperty("nodeId", "nodeId", null, item, index);
+          }
+        });
+        */
       }
     },
 
