@@ -24,7 +24,6 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
   },
 
   events: {
-    "ShowLogger": "qx.event.type.Event",
     "SavePressed": "qx.event.type.Event",
     "StartPipeline": "qx.event.type.Event",
     "StopPipeline": "qx.event.type.Event"
@@ -35,27 +34,12 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
     __stopButton: null,
 
     __initDefault: function() {
-      let loggerBtn = this.__createLoggerButton();
-      this.__leftSide.add(loggerBtn);
-
       let saveBtn = this.__createSaveButton();
       this.__rightSide.add(saveBtn);
       let playBtn = this.__startButton = this.__createStartButton();
       let stopButton = this.__stopButton = this.__createStopButton();
       this.__rightSide.add(playBtn);
       this.__rightSide.add(stopButton);
-    },
-
-    __createLoggerButton: function() {
-      let loggerButton = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/list-alt/32"
-      });
-
-      loggerButton.addListener("execute", function() {
-        this.fireDataEvent("ShowLogger");
-      }, this);
-
-      return loggerButton;
     },
 
     __createSaveButton: function() {

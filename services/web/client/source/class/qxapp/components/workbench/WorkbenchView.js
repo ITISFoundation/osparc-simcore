@@ -73,9 +73,6 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
         this.__selectedItemChanged(null);
       }
     }, this);
-    // TODO how about making the LoggerView a singleton then it could be accessed from anywhere
-    this.__logger = new qxapp.components.workbench.logger.LoggerView();
-    this.__desktop.add(this.__logger);
 
     this.__nodesUI = [];
     this.__linksUI = [];
@@ -128,7 +125,6 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
     __inputNodesLayout: null,
     __desktop: null,
     __svgWidget: null,
-    __logger: null,
     __tempLinkNodeId: null,
     __tempLinkRepr: null,
     __pointerPosX: null,
@@ -137,21 +133,6 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
     __playButton: null,
     __stopButton: null,
     __currentModel: null,
-
-    getLogger: function() {
-      return this.__logger;
-    },
-
-    showLogger: function() {
-      if (this.__logger.isVisible()) {
-        this.__logger.close();
-      } else {
-        const dHeight = this.__desktop.getBounds().height;
-        const lHeight = this.__logger.getHeight();
-        this.__logger.moveTo(10, dHeight-lHeight-10);
-        this.__logger.open();
-      }
-    },
 
     __getPlusButton: function() {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.dev.Placeholders.getIcon("fa-plus", 32);

@@ -8,20 +8,13 @@ const LOG_LEVEL = {
 };
 Object.freeze(LOG_LEVEL);
 
-qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
-  extend: qx.ui.window.Window,
+qx.Class.define("qxapp.components.widgets.logger.LoggerView", {
+  extend: qx.ui.core.Widget,
 
   construct: function() {
     this.base();
 
-    this.set({
-      showMinimize: false,
-      showStatusbar: false,
-      width: 800,
-      height: 300,
-      caption: "Logger",
-      layout: new qx.ui.layout.VBox(10)
-    });
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
@@ -68,10 +61,10 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     group.setSelection(defSelected);
     group.setAllowEmptySelection(false);
 
-    this.add(filterLayout);
+    this._add(filterLayout);
 
     // let tableModel = this.__logModel = new qx.ui.table.model.Filtered();
-    let tableModel = this.__logModel = new qxapp.components.workbench.logger.RemoteTableModel();
+    let tableModel = this.__logModel = new qxapp.components.widgets.logger.RemoteTableModel();
     tableModel.setColumns(["Origin", "Message"], ["whoRich", "whatRich"]);
 
     let custom = {
@@ -92,7 +85,7 @@ qx.Class.define("qxapp.components.workbench.logger.LoggerView", {
     resizeBehavior.setWidth(0, "15%");
     resizeBehavior.setWidth(1, "85%");
 
-    this.add(table, {
+    this._add(table, {
       flex: 1
     });
 

@@ -48,6 +48,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __workbenchView: null,
     __treeView: null,
     __extraView: null,
+    __loggerView: null,
     __settingsView: null,
     __transDeco: null,
     __splitter: null,
@@ -59,14 +60,17 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let treeView = this.__treeView = new qxapp.components.widgets.TreeTool(project.getName(), project.getWorkbenchModel());
       this.__sidePanel.setTopView(treeView);
 
-      let workbenchView = this.__workbenchView = new qxapp.components.workbench.WorkbenchView(project.getWorkbenchModel());
-      this.showInMainView(workbenchView, "root");
-
       let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
         minHeight: 200,
         maxHeight: 500
       });
       this.__sidePanel.setMidView(extraView);
+
+      let loggerView = this.__loggerView = new qxapp.components.widgets.logger.LoggerView();
+      this.__sidePanel.setBottomView(loggerView);
+
+      let workbenchView = this.__workbenchView = new qxapp.components.workbench.WorkbenchView(project.getWorkbenchModel());
+      this.showInMainView(workbenchView, "root");
 
       let settingsView = this.__settingsView = new qxapp.components.widgets.SettingsView().set({
         minHeight: 200,
@@ -76,10 +80,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     connectEvents: function() {
-      this.__mainPanel.getControls().addListener("ShowLogger", function() {
-        this.__workbenchView.showLogger();
-      }, this);
-
       this.__mainPanel.getControls().addListener("SavePressed", function() {
         this.serializeProjectDocument();
       }, this);
@@ -173,6 +173,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__sidePanel.setMidView(widget);
     },
 
+    getLogger: function() {
+      return this.__loggerView;
+    },
+
     __getProjectDocument: function(projectId) {
       let project = null;
       if (projectId) {
@@ -229,15 +233,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", function(e) {
         this.setCanStart(true);
-        this.__workbenchView.getLogger().error("Workbench", "Error submitting pipeline");
+        this.getLogger().error("Workbench", "Error submitting pipeline");
       }, this);
       req.addListener("fail", function(e) {
         this.setCanStart(true);
-        this.__workbenchView.getLogger().error("Workbench", "Failed submitting pipeline");
+        this.getLogger().error("Workbench", "Failed submitting pipeline");
       }, this);
       req.send();
 
-      this.__workbenchView.getLogger().info("Workbench", "Starting pipeline");
+      this.getLogger().info("Workbench", "Starting pipeline");
     },
 
     __stopPipeline: function() {
@@ -252,34 +256,34 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       req.addListener("success", this.__onPipelineStopped, this);
       req.addListener("error", function(e) {
         this.setCanStart(false);
-        this.__workbenchView.getLogger().error("Workbench", "Error stopping pipeline");
+        this.getLogger().error("Workbench", "Error stopping pipeline");
       }, this);
       req.addListener("fail", function(e) {
         this.setCanStart(false);
-        this.__workbenchView.getLogger().error("Workbench", "Failed stopping pipeline");
+        this.getLogger().error("Workbench", "Failed stopping pipeline");
       }, this);
       // req.send();
 
       // temporary solution
       this.setCanStart(true);
 
-      this.__workbenchView.getLogger().info("Workbench", "Stopping pipeline. Not yet implemented");
+      this.getLogger().info("Workbench", "Stopping pipeline. Not yet implemented");
     },
 
     __onPipelinesubmitted: function(e) {
       let req = e.getTarget();
 
       const pipelineId = req.getResponse().pipeline_id;
-      this.__workbenchView.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
+      this.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
         this.setCanStart(true);
         this.__pipelineId = null;
-        this.__workbenchView.getLogger().error("Workbench", "Submition failed");
+        this.getLogger().error("Workbench", "Submition failed");
       } else {
         this.setCanStart(false);
         this.__pipelineId = pipelineId;
-        this.__workbenchView.getLogger().info("Workbench", "Pipeline started");
+        this.getLogger().info("Workbench", "Pipeline started");
       }
     },
 
@@ -296,7 +300,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __updateLogger: function(nodeId, msg) {
       let node = this.__workbenchView.getNodeUI(nodeId);
       if (node) {
-        this.__workbenchView.getLogger().info(node.getCaption(), msg);
+        this.getLogger().info(node.getCaption(), msg);
       }
     },
 
