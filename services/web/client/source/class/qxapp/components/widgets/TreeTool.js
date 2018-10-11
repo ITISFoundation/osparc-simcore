@@ -75,11 +75,9 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
           children: [],
           nodeId: node.getNodeId()
         };
+        nodeInTree.label = node.getName();
         if (node.isContainer()) {
-          nodeInTree.label = node.getName();
           nodeInTree.children = this.__convertModel(node.getInnerNodes());
-        } else {
-          nodeInTree.label = node.getMetaData().name + " " + node.getMetaData().version;
         }
         children.push(nodeInTree);
       }
