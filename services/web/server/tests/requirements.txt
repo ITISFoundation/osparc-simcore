@@ -8,6 +8,3 @@ pytest-aiohttp
 pytest~=3.6
 pytest-cov~=2.5
 pytest-docker~=0.6
-
-
-# TODO: deprecate for tests/requirements.txt instead

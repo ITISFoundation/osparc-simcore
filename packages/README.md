@@ -1,5 +1,9 @@
 # packages
 
+Folder for [simcore] python packages (libraries, client-sdks, programs, ... )
+
+## Rationale
+
 Every folder contains a python package with the following properties:
 
 - it is *pip-installable* python packages
@@ -35,4 +39,8 @@ Every folder contains a python package with the following properties:
 
 
 ## TODO
+
   - [ ] cookiecutters to assist creation of modules w/ or w/o entrypoints
+
+
+[simcore]:https://github.com/pcrespov/osparc-simcore
