@@ -142,8 +142,8 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
       return null;
     },
 
-    __arePortsCompatible: function(port1, port2) {
-      return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
+    __arePortsCompatible: function(node1, port1, node2, port2) {
+      return qxapp.data.Store.getInstance().arePortsCompatible(node1, port1, node2, port2);
     },
 
     __createDragDropMechanism: function(nodeBase) {
