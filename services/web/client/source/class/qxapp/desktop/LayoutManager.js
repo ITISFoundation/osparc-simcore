@@ -13,6 +13,12 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     this.__navBar = this.__createNavigationBar();
     this.__navBar.setHeight(100);
+    this.__navBar.addListener("NodeDoubleClicked", function(e) {
+      if (this.__prjEditor) {
+        let nodeId = e.getData();
+        this.__prjEditor.nodeSelected(nodeId);
+      }
+    }, this);
     this.add(this.__navBar);
 
     let prjStack = this.__prjStack = new qx.ui.container.Stack();
@@ -39,12 +45,13 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjEditor = new qxapp.desktop.PrjEditor(projectUuid);
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
-      this.__navBar.setMainViewCaption(projectName);
+      this.__navBar.setMainViewCaption([{
+        "root": projectName
+      }]);
 
       this.__prjEditor.addListener("ChangeMainViewCaption", function(ev) {
         const elements = ev.getData();
-        const newLabel = elements.join(" > ");
-        this.__navBar.setMainViewCaption(newLabel);
+        this.__navBar.setMainViewCaption(elements);
       }, this);
     }, this);
   },

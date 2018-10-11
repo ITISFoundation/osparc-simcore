@@ -1,5 +1,7 @@
 /* eslint no-warning-comments: "off" */
 
+const NAVIGATION_BUTTON_HEIGHT = 32;
+
 qx.Class.define("qxapp.desktop.NavigationBar", {
   extend: qx.ui.container.Composite,
 
@@ -19,13 +21,12 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     const commonBtnSettings = {
       allowGrowY: false,
       minWidth: 32,
-      minHeight: 32
+      minHeight: NAVIGATION_BUTTON_HEIGHT
     };
 
-    const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
 
     let logo = new qx.ui.basic.Image("qxapp/osparc-white-small.png").set({
-      maxHeight: 32,
+      maxHeight: NAVIGATION_BUTTON_HEIGHT,
       maxWidth: 92,
       scale: true
     });
@@ -33,10 +34,11 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     this.add(new qx.ui.toolbar.Separator());
 
-    let mainViewCaption = this.__mainViewCaption = new qx.ui.basic.Label().set({
-      font: navBarLabelFont
+    let hBox = new qx.ui.layout.HBox(5).set({
+      alignY: "middle"
     });
-    this.add(mainViewCaption);
+    let mainViewCaptionLayout = this.__mainViewCaptionLayout = new qx.ui.container.Composite(hBox);
+    this.add(mainViewCaptionLayout);
 
 
     this.add(new qx.ui.core.Spacer(5), {
@@ -79,19 +81,56 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     let userBtn = this.__createUserBtn();
     userBtn.set(commonBtnSettings);
-    userBtn.setIcon(qxapp.utils.Avatar.getUrl(dummyUser + "@itis.ethz.ch", 32));
+    userBtn.setIcon(qxapp.utils.Avatar.getUrl(dummyUser + "@itis.ethz.ch", NAVIGATION_BUTTON_HEIGHT));
     this.add(userBtn);
   },
 
   events: {
+    "NodeDoubleClicked": "qx.event.type.Data",
     "DashboardPressed": "qx.event.type.Event"
   },
 
   members: {
-    __mainViewCaption: null,
+    __mainViewCaptionLayout: null,
 
     setMainViewCaption: function(newLabel) {
-      this.__mainViewCaption.setValue(newLabel);
+      this.__mainViewCaptionLayout.removeAll();
+      if (typeof newLabel === "string") {
+        this.__showMainViewCaptionAsText(newLabel);
+      } else if (Array.isArray(newLabel)) {
+        this.__showMainViewCaptionAsButtons(newLabel);
+      }
+    },
+
+    __showMainViewCaptionAsText: function(newLabel) {
+      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
+      let mainViewCaption = this.__mainViewCaption = new qx.ui.basic.Label(newLabel).set({
+        font: navBarLabelFont
+      });
+      this.__mainViewCaptionLayout.add(mainViewCaption);
+    },
+
+    __showMainViewCaptionAsButtons: function(newLabels) {
+      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
+      for (let i=0; i<newLabels.length; i++) {
+        const newLabel = newLabels[i];
+        const label = Object.values(newLabel)[0];
+        const nodeId = Object.keys(newLabel)[0];
+        let btn = new qx.ui.form.Button(label).set({
+          maxHeight: NAVIGATION_BUTTON_HEIGHT
+        });
+        btn.addListener("execute", function() {
+          this.fireDataEvent("NodeDoubleClicked", nodeId);
+        }, this);
+        this.__mainViewCaptionLayout.add(btn);
+
+        if (i<newLabels.length-1) {
+          let mainViewCaption = this.__mainViewCaption = new qx.ui.basic.Label(">").set({
+            font: navBarLabelFont
+          });
+          this.__mainViewCaptionLayout.add(mainViewCaption);
+        }
+      }
     },
 
     __createUserBtn: function() {
