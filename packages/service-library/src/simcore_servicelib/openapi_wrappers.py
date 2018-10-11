@@ -1,19 +1,18 @@
-""" Implements interfaces in BaseOpenAPIRequest and BaseOpenAPIResponse for aiohttp """
+""" Implements interfaces in BaseOpenAPIRequest and BaseOpenAPIResponse for aiohttp
+
+"""
 import logging
-import asyncio
-from aiohttp import web
-from yarl import URL
 import re
 
-from werkzeug.datastructures import ImmutableMultiDict
+from aiohttp import web
 from openapi_core.wrappers.base import BaseOpenAPIRequest, BaseOpenAPIResponse
+from werkzeug.datastructures import ImmutableMultiDict
 
 # TODO: add typing
 log = logging.getLogger(__name__)
 TIMEOUT = 5
 CAPTURES = re.compile(r'\(\?P<([_a-zA-Z][_a-zA-Z0-9]+)>(.[^)]+)\)')
 
-# [scheme:]//[user[:password]@]host[:port][/path][?query][#fragment]
 class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
     wrappedcls = web.Request
 
@@ -25,10 +24,6 @@ class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
     async def create(request: web.Request):
         data = await request.text()
         return AiohttpOpenAPIRequest(request, data)
-
-    async def eval(self):
-        # TODO: replace by create()
-        self._body = await self._request.text()
 
     @property
     def host_url(self):
