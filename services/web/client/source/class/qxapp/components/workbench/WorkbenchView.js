@@ -260,12 +260,12 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
         event.addAction("move");
 
         // Register supported types
-        event.addType("osparc-metaData");
+        event.addType("osparc-node-link");
         let dragData = {
           dragNodeId: dragNodeId,
           dragIsInput: dragIsInput
         };
-        event.addData("osparc-metaData", dragData);
+        event.addData("osparc-node-link", dragData);
 
         this.__tempLinkNodeId = dragData.dragNodeId;
         this.__tempLinkIsInput = dragData.dragIsInput;
@@ -284,9 +284,9 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
         let dropIsInput = data.isInput;
 
         let compatible = false;
-        if (event.supportsType("osparc-metaData")) {
-          const dragNodeId = event.getData("osparc-metaData").dragNodeId;
-          const dragIsInput = event.getData("osparc-metaData").dragIsInput;
+        if (event.supportsType("osparc-node-link")) {
+          const dragNodeId = event.getData("osparc-node-link").dragNodeId;
+          const dragIsInput = event.getData("osparc-node-link").dragIsInput;
           const dragNode = this.getNodeUI(dragNodeId);
           const dropNode = this.getNodeUI(dropNodeId);
           const dragPortTarget = dragIsInput ? dragNode.getInputPort() : dragNode.getOutputPort();
@@ -305,9 +305,9 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
         let dropNodeId = data.nodeId;
         let dropIsInput = data.isInput;
 
-        if (event.supportsType("osparc-metaData")) {
-          let dragNodeId = event.getData("osparc-metaData").dragNodeId;
-          let dragIsInput = event.getData("osparc-metaData").dragIsInput;
+        if (event.supportsType("osparc-node-link")) {
+          let dragNodeId = event.getData("osparc-node-link").dragNodeId;
+          let dragIsInput = event.getData("osparc-node-link").dragIsInput;
 
           let nodeAId = dropIsInput ? dragNodeId : dropNodeId;
           let nodeBId = dragIsInput ? dragNodeId : dropNodeId;
