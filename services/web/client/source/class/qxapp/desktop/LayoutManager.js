@@ -27,7 +27,6 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     this.__navBar.addListener("DashboardPressed", function() {
       this.__prjStack.setSelection([this.__prjBrowser]);
       this.__navBar.setMainViewCaption("Dashboard");
-      this.__navBar.setProjectName("");
     }, this);
 
     this.__prjBrowser.addListener("StartProject", function(e) {
@@ -41,11 +40,10 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
       this.__navBar.setMainViewCaption(projectName);
-      this.__navBar.setProjectName(projectName);
 
       this.__prjEditor.addListener("ChangeMainViewCaption", function(ev) {
         const elements = ev.getData();
-        const newLabel = elements.join(" / ");
+        const newLabel = elements.join(" > ");
         this.__navBar.setMainViewCaption(newLabel);
       }, this);
     }, this);

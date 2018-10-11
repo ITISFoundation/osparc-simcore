@@ -44,13 +44,6 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     });
 
 
-    let projectName = this.__projectName = new qx.ui.basic.Label().set({
-      font: navBarLabelFont
-    });
-    this.add(projectName);
-
-    this.add(new qx.ui.toolbar.Separator());
-
     let dashboardBtn = new qx.ui.form.Button(this.tr("Dashboard"));
     dashboardBtn.set(commonBtnSettings);
     dashboardBtn.addListener("execute", function() {
@@ -96,15 +89,9 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
   members: {
     __mainViewCaption: null,
-    __projectName: null,
-    __saveButton: null,
 
     setMainViewCaption: function(newLabel) {
       this.__mainViewCaption.setValue(newLabel);
-    },
-
-    setProjectName: function(newLabel) {
-      this.__projectName.setValue(newLabel);
     },
 
     __createUserBtn: function() {
