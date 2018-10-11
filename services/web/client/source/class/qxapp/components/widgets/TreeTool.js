@@ -35,20 +35,6 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
     __tree: null,
     __selectedNodeId: null,
 
-    buildTree: function() {
-      const topLevelNodes = this.getWorkbenchModel().getNodeModels();
-      let data = {
-        label: this.getProjectName(),
-        children: this.__convertModel(topLevelNodes),
-        nodeId: "root"
-      };
-      let newModel = qx.data.marshal.Json.createModel(data, true);
-      let oldModel = this.__tree.getModel();
-      if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
-        this.__tree.setModel(newModel);
-      }
-    },
-
     __buildLayout: function() {
       let tree = this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
         openMode: "none"
@@ -69,6 +55,20 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
       }, this);
     },
 
+    buildTree: function() {
+      const topLevelNodes = this.getWorkbenchModel().getNodeModels();
+      let data = {
+        label: this.getProjectName(),
+        children: this.__convertModel(topLevelNodes),
+        nodeId: "root"
+      };
+      let newModel = qx.data.marshal.Json.createModel(data, true);
+      let oldModel = this.__tree.getModel();
+      if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
+        this.__tree.setModel(newModel);
+      }
+    },
+
     __convertModel: function(nodes) {
       let children = [];
       for (let nodeId in nodes) {
@@ -85,6 +85,29 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
         children.push(nodeInTree);
       }
       return children;
+    },
+
+    __getNodeInTree: function(model, nodeId) {
+      if (model.getNodeId() === nodeId) {
+        return model;
+      } else if (model.getChildren() !== null) {
+        let node = null;
+        let children = model.getChildren().toArray();
+        for (let i=0; node === null && i < children.length; i++) {
+          node = this.__getNodeInTree(children[i], nodeId);
+        }
+        return node;
+      }
+      return null;
+    },
+
+    nodeSelected: function(nodeId) {
+      const dataModel = this.__tree.getModel();
+      let nodeInTree = this.__getNodeInTree(dataModel, nodeId);
+      if (nodeInTree) {
+        this.__tree.openNodeAndParents(nodeInTree);
+        this.__tree.setSelection(new qx.data.Array([nodeInTree]));
+      }
     }
   }
 });

@@ -53,6 +53,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __transDeco: null,
     __splitter: null,
     __projectDocument: null,
+    __currentNodeId: null,
 
     initDefault: function() {
       let project = this.__projectDocument;
@@ -97,8 +98,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }, this);
 
       this.__projectDocument.getWorkbenchModel().addListener("WorkbenchModelChanged", function() {
-        console.log("WorkbenchModelChanged", this.__projectDocument.getWorkbenchModel());
-        this.__treeView.buildTree();
+        this.__workbenchModelChanged();
       }, this);
 
       [
@@ -135,6 +135,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     nodeSelected: function(nodeId) {
+      if (!nodeId) {
+        return;
+      }
+
+      this.__currentNodeId = nodeId;
+      this.__treeView.nodeSelected(nodeId);
+
       if (nodeId === "root") {
         const workbenchModel = this.__projectDocument.getWorkbenchModel();
         this.__workbenchView.loadModel(workbenchModel);
@@ -165,6 +172,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (nodeModel.isContainer()) {
         this.__workbenchView.loadModel(nodeModel);
       }
+    },
+
+    __workbenchModelChanged: function() {
+      this.__treeView.buildTree();
+      this.__treeView.nodeSelected(this.__currentNodeId);
     },
 
     showInMainView: function(widget, nodeId) {
