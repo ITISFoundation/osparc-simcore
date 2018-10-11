@@ -13,11 +13,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     });
     let sidePanel = this.__sidePanel = new qxapp.desktop.sidePanel.SidePanel().set({
       minWidth: 0,
-      maxWidth: 600
+      maxWidth: 800,
+      width: 600
     });
 
-    this.add(mainPanel, 0);
-    this.add(sidePanel, 1);
+    this.add(mainPanel, 1); // flex 1
+    this.add(sidePanel, 0); // flex 0
 
     this.initDefault();
     this.connectEvents();
