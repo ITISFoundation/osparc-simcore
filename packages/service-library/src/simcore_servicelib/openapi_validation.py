@@ -3,8 +3,9 @@ from aiohttp import web
 from openapi_core import shortcuts
 from openapi_core.schema.specs.models import Spec as OpenApiSpec
 from openapi_core.wrappers.mock import MockRequest
-from .openapi_wrappers import AiohttpOpenAPIRequest, AiohttpOpenAPIResponse
 
+from .openapi_wrappers import (PARAMETERS_KEYS, AiohttpOpenAPIRequest,
+                               AiohttpOpenAPIResponse)
 
 
 async def validate_parameters(spec: OpenApiSpec, request: web.Request):
@@ -16,7 +17,7 @@ async def validate_body(spec: OpenApiSpec, request: web.Request):
     return shortcuts.validate_body(spec, req)
 
 async def validate_data(spec: OpenApiSpec, request, response: web.Response):
-    
+
     if isinstance(request, web.Request):
         req = await AiohttpOpenAPIRequest.create(request)
     else:
@@ -25,7 +26,7 @@ async def validate_data(spec: OpenApiSpec, request, response: web.Response):
         #opapi_request = MockRequest(*args)
 
         params = ['full_url_pattern', 'method']
-        assert all(hasattr(request, attr) for attr in params) 
+        assert all(hasattr(request, attr) for attr in params)
         # TODO: if a dict with params, convert dict to dot operations! and reverse
 
 

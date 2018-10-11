@@ -12,9 +12,11 @@ from werkzeug.datastructures import ImmutableMultiDict
 log = logging.getLogger(__name__)
 TIMEOUT = 5
 CAPTURES = re.compile(r'\(\?P<([_a-zA-Z][_a-zA-Z0-9]+)>(.[^)]+)\)')
+PARAMETERS_KEYS = ('path', 'query', 'header', 'cookie')
 
 class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
     wrappedcls = web.Request
+
 
     def __init__(self, request: web.Request, data: str):
         self._request = request
@@ -83,11 +85,12 @@ class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
         # A multidict of all request's cookies
         cookies = rq.cookies
 
+        kpath, kquery, kheader, kcookie = PARAMETERS_KEYS
         return {
-            'path': view_args or {},
-            'query': ImmutableMultiDict(args or []),
-            'header': headers or {},
-            'cookie': cookies or {},
+            kpath: view_args or {},
+            kquery: ImmutableMultiDict(args or []),
+            kheader: headers or {},
+            kcookie: cookies or {},
         }
 
     @property
