@@ -76,7 +76,10 @@ qx.Class.define("qxapp.components.widgets.NodePorts", {
           let toolTip = new qx.ui.tooltip.ToolTip(port.description);
           let portLabel = new qx.ui.basic.Label(port.label).set({
             draggable: true,
-            toolTip: toolTip
+            toolTip: toolTip,
+            textAlign: "right",
+            allowGrowX: true,
+            paddingRight: 20
           });
           this._add(portLabel);
           this.__createUIPortConnections(portLabel, portKey, isInput);
