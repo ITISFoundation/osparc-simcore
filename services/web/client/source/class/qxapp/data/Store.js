@@ -52,8 +52,11 @@ qx.Class.define("qxapp.data.Store", {
 
     arePortsCompatible: function(node1, port1, node2, port2) {
       console.log("arePortsCompatible", node1, port1, node2, port2);
+      return true;
+      /*
       return this.__matchPortType(port1.portType, port2.portType) &&
         (port1.isInput !== port2.isInput);
+      */
     },
 
     getServices: function() {
