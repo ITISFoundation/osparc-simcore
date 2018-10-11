@@ -52,6 +52,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
       // Will be called only the first time Svg lib is loaded
       this.removeAll();
       this.loadModel(this.getWorkbenchModel());
+      this.fireDataEvent("NodeDoubleClicked", "root");
     });
 
     this.__desktop.add(this.__svgWidget, {
