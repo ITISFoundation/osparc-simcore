@@ -10,8 +10,8 @@ info:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 servers:
-  - url: http://{host}:{port}/{version}
-    description: Development server
+  - description: Development server
+    url: http://{host}:{port}/{version}
     variables:
       host:
         default: 'localhost'
@@ -22,6 +22,13 @@ servers:
         enum:
           # TODO: add all possible versions and set latest as default
           - 'v0'
+  - description: Production server
+    url: https://webserver:{port}/{version}
+    variables:
+      port:
+        default: '9081'
+      version:
+        default: v0
 tags:
 - name: admins
   description: Secured Admin-only calls

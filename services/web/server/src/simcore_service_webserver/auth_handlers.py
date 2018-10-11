@@ -6,7 +6,7 @@ from simcore_servicelib.openapi_validation import (validate_body,
                                                    validate_parameters,
                                                    PARAMETERS_KEYS)
 
-from ..settings.constants import APP_OAS_KEY
+from .settings.constants import APP_OAS_KEY
 
 
 async def _extract_and_validate(request):

@@ -34,9 +34,12 @@ def spec_dict(openapi_path):
         spec_dict = yaml.safe_load(f)
     return spec_dict
 
+#@pytest.fixture
+#def client():
+
 
 async def test_health_check(openapi_path, spec_dict, aiohttp_client, aiohttp_unused_port):
-    from simcore_service_webserver.authentication import handlers
+    import simcore_service_webserver.auth_handlers as handlers
 
     app = web.Application()
     app[APP_OAS_KEY] = spec = openapi_core.create_spec(spec_dict, spec_url=openapi_path.as_uri())
