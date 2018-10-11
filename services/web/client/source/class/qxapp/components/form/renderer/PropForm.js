@@ -30,6 +30,11 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
     fl.setColumnMinWidth(1, 130);
   },
 
+  events: {
+    "PortDragOver": "qx.event.type.Data",
+    "PortDrop": "qx.event.type.Data"
+  },
+
   members: {
     addItems: function(items, names, title, itemOptions, headerOptions) {
       // add the header
@@ -80,6 +85,10 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
             item: items[i]
           });
         }
+        label.setDroppable(true);
+        item.setDroppable(true);
+        this.__createUIPortConnections(label, item.key);
+        this.__createUIPortConnections(item, item.key);
       }
     },
 
@@ -97,6 +106,22 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
       for (const key in this._form.__ctrlMap) {
         this.enableProp(key, enable);
       }
+    },
+
+    __createUIPortConnections: function(uiElement, portId) {
+      [
+        ["dragover", "PortDragOver"],
+        ["drop", "PortDrop"]
+      ].forEach(eventPair => {
+        uiElement.addListener(eventPair[0], e => {
+          const eData = {
+            event: e,
+            // nodeId: nodeId,
+            portId: portId
+          };
+          this.fireDataEvent(eventPair[1], eData);
+        }, this);
+      }, this);
     }
   }
 });

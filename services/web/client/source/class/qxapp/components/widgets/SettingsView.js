@@ -146,50 +146,37 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
       return qxapp.data.Store.getInstance().arePortsCompatible(node1, port1, node2, port2);
     },
 
-    __createDragDropMechanism: function(nodeBase) {
-      const evType = "pointermove";
-      nodeBase.addListener("LinkDragStart", function(e) {
+    __createDragDropMechanism: function(portUI) {
+      portUI.addListener("PortDragStart", function(e) {
         let data = e.getData();
         let event = data.event;
         let dragNodeId = data.nodeId;
-        let dragIsInput = data.isInput;
+        let dragPortId = data.portId;
 
         // Register supported actions
-        event.addAction("move");
+        event.addAction("copy");
 
         // Register supported types
         event.addType("osparc-port-link");
         let dragData = {
           dragNodeId: dragNodeId,
-          dragIsInput: dragIsInput
+          dragPortId: dragPortId
         };
         event.addData("osparc-port-link", dragData);
-
-        this.__tempLinkNodeId = dragData.dragNodeId;
-        this.__tempLinkIsInput = dragData.dragIsInput;
-        qx.bom.Element.addListener(
-          this.__desktop,
-          evType,
-          this.__startTempLink,
-          this
-        );
       }, this);
 
-      nodeBase.addListener("LinkDragOver", function(e) {
+      portUI.addListener("PortDragOver", function(e) {
         let data = e.getData();
         let event = data.event;
-        let dropNodeId = data.nodeId;
-        let dropIsInput = data.isInput;
+        // let dropNodeId = data.nodeId;
+        let dropNodeId = this.getNodeModel().getNodeId();
+        let dropPortId = data.portId;
 
         let compatible = false;
         if (event.supportsType("osparc-port-link")) {
           const dragNodeId = event.getData("osparc-port-link").dragNodeId;
-          const dragIsInput = event.getData("osparc-port-link").dragIsInput;
-          const dragNode = this.__getNodeUI(dragNodeId);
-          const dropNode = this.__getNodeUI(dropNodeId);
-          const dragPortTarget = dragIsInput ? dragNode.getInputPort() : dragNode.getOutputPort();
-          const dropPortTarget = dropIsInput ? dropNode.getInputPort() : dropNode.getOutputPort();
-          compatible = this.__arePortsCompatible(dragPortTarget, dropPortTarget);
+          const dragPortId = event.getData("osparc-port-link").dragPortId;
+          compatible = this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId);
         }
 
         if (!compatible) {
@@ -197,31 +184,17 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
         }
       }, this);
 
-      nodeBase.addListener("LinkDrop", function(e) {
+      portUI.addListener("PortDrop", function(e) {
         let data = e.getData();
         let event = data.event;
-        let dropNodeId = data.nodeId;
-        let dropIsInput = data.isInput;
+        // let dropNodeId = data.nodeId;
+        let dropNodeId = this.getNodeModel().getNodeId();
+        let dropPortId = data.portId;
 
         if (event.supportsType("osparc-port-link")) {
           let dragNodeId = event.getData("osparc-port-link").dragNodeId;
-          let dragIsInput = event.getData("osparc-port-link").dragIsInput;
-
-          let nodeAId = dropIsInput ? dragNodeId : dropNodeId;
-          let nodeBId = dragIsInput ? dragNodeId : dropNodeId;
-
-          this.__createLinkBetweenNodes({
-            nodeUuid: nodeAId
-          }, {
-            nodeUuid: nodeBId
-          });
-          this.__removeTempLink();
-          qx.bom.Element.removeListener(
-            this.__desktop,
-            evType,
-            this.__startTempLink,
-            this
-          );
+          let dragPortId = event.getData("osparc-port-link").dragPortId;
+          console.log("Create data link", dragNodeId, dragPortId, dropNodeId, dropPortId);
         }
       }, this);
     },
@@ -253,6 +226,7 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
     __applyNode: function(nodeModel, oldNode, propertyName) {
       this.__settingsBox.removeAll();
       this.__settingsBox.add(nodeModel.getPropsWidget());
+      this.__createDragDropMechanism(nodeModel.getPropsWidget());
 
       this.__createInputNodeUIs(nodeModel);
 

@@ -506,6 +506,7 @@ qx.Class.define("qxapp.components.form.Auto", {
         }
         control.set(s.set);
       }
+      control.key = key;
       this.__ctrlMap[key] = control;
     }
   }
