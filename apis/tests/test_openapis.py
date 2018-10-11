@@ -6,13 +6,12 @@ import yaml
 from openapi_spec_validator import validate_spec
 from openapi_spec_validator.exceptions import OpenAPIValidationError
 
+_API_DIR = Path(__file__).parent.parent
 
-def test_openapi_specs():
-    parent_path = Path(__file__).parent.parent
-    print("testing...")
-    list_of_paths = parent_path.rglob("openapi.yaml")
+def test_valid_openapi_specs():
+    # get all the openapi complete specs
+    list_of_paths = _API_DIR.rglob("openapi.yaml")
     for spec_file_path in list_of_paths:
-        print("testing ", str(spec_file_path))
         assert spec_file_path.exists()
         with spec_file_path.open() as file_ptr:
             openapi_specs = yaml.load(file_ptr)
