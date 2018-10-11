@@ -1,3 +1,8 @@
+"""
+
+FIXME: for the moment all handlers, models and utils are here
+"""
+import sys
 import typing
 
 from aiohttp import web
@@ -18,10 +23,13 @@ async def _extract_and_validate(request):
 
     kpath, kquery, kheader, kcookie = PARAMETERS_KEYS #pylint: disable=W0612
 
-    return parameters[kpath], body
+    return parameters[kpath], parameters[kquery], body
 
 
 # api models --------------------------------
+# NOTE: using these, optional and required fields are always transmitted!
+# NOTE: make some attrs nullable by default!?
+
 @attr.s(auto_attribs=True)
 class RegistrationType:
     email: str
@@ -75,10 +83,11 @@ class HealthCheckType:
 # handlers ----------------------
 async def check_health(request: web.Request):
     # input
-    params, body = await _extract_and_validate(request)
+    params, query, body = await _extract_and_validate(request)
 
     assert not params
     assert not body
+    assert not query
 
     # business logic
     data = HealthCheckType(
@@ -97,14 +106,50 @@ async def check_health(request: web.Request):
 
 async def check_action(request: web.Request):
     # input
-    params, body = await _extract_and_validate(request)
+    params, query, body = await _extract_and_validate(request)
 
     assert params
     assert body
 
-    #form = RegistrationType.from_body(body)
+    error = None
+    try:
+        action = params['action']
+
+        data = FakeType(
+            path_value=action,
+            query_value=query,
+            # TODO to_dict of string
+            # TODO: analyze how schemas models are deserialized!
+            body_value= 'under construction', )
+
+        error = ErrorType(errors=[], logs=[])
+        if action == 'fail':
+            log = LogMessageType(
+                message='Enforced failure',
+                level='ERROR',)
+            error.logs.append(log)
+            raise ValueError("some randome failure")
+
+    except ValueError:
+        # TODO: for Exceptions to errors it mi
+        ex_cls, ex_obj, _ = sys.exc_info()
+        err = ErrorItemType(
+            code=ex_cls.__name__,
+            message=str(ex_obj)
+            )
+        error.errors.append(err)
+    else:
+        error = None
+
+    enveloped = {
+        'data': attr.asdict(data),
+        'error': error,
+        }
+    # output
+    return web.json_response(data=enveloped)
 
 
+#----------------------------------
 
 async def auth_register(request: web.Request):
     # input
@@ -119,7 +164,8 @@ async def auth_register(request: web.Request):
     # output
     data = LogMessageType()
     data.message = "True"
-    error = form.get_error()
+    error = None
+    #error = form.get_error()
 
     return web.json_response({
         'data': data,

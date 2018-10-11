@@ -48,7 +48,6 @@ def client(loop, aiohttp_unused_port, aiohttp_client):
     return cli
 
 async def test_health_check(client):
-
     resp = await client.get("/v0/")
     assert resp.status == 200
 
@@ -60,3 +59,29 @@ async def test_health_check(client):
 
     assert data['name'] == 'simcore-director-service'
     assert data['status'] == 'SERVICE_RUNNING'
+
+async def test_action_check(client):
+
+    fake = {
+        'path_value': 'one',
+        'query_value': 'two',
+        'body_value': {
+            'a': 33,
+            'b': 45
+        }
+    }
+
+    resp = await client.post("/v0/check/echo", json=fake)
+    assert resp.status == 200
+
+    envelope = await resp.json()
+    data, error = [envelope[k] for k in ('data', 'error')]
+
+    assert data
+    assert not error
+
+    # TODO: validate response against specs
+
+    assert data['path_value'] == 'echo'
+    assert not data['query_value']
+    #assert data['body_value'] == fake
