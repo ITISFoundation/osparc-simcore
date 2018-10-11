@@ -14,8 +14,9 @@ from aiohttp import web
 import openapi_core
 import yaml
 
+from simcore_service_webserver import rest
 from simcore_service_webserver import resources
-from simcore_service_webserver.settings.constants import APP_OAS_KEY, API_URL_VERSION
+from simcore_service_webserver.settings.constants import APP_OAS_KEY, APP_CONFIG_KEY
 import simcore_service_webserver.auth_routing as auth_routing
 
 # TODO: reduce log from openapi_core loggers
@@ -35,23 +36,18 @@ def spec_dict(openapi_path):
         spec_dict = yaml.safe_load(f)
     return spec_dict
 
-#@pytest.fixture
-#def client():
-
-
-async def test_health_check(openapi_path, spec_dict, aiohttp_client, aiohttp_unused_port):
+@pytest.fixture
+def client(loop, aiohttp_unused_port, aiohttp_client):
     app = web.Application()
-    app[APP_OAS_KEY] = spec = openapi_core.create_spec(spec_dict, spec_url=openapi_path.as_uri())
 
-    # fit specs server
-    server_vars = spec.servers[0].variables
-    host = server_vars['host'].default
-    port = server_vars['port'].default = aiohttp_unused_port()
+    server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
+    app[APP_CONFIG_KEY] = { 'app': server_kwargs } # Fake config
+    rest.setup(app)
 
-    routes = auth_routing.create(spec)
-    app.router.add_routes(routes)
+    cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
+    return cli
 
-    client = await aiohttp_client(app, server_kwargs={'port': port, 'host': host})
+async def test_health_check(client):
 
     resp = await client.get("/v0/")
     assert resp.status == 200

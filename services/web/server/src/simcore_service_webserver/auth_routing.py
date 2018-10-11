@@ -11,12 +11,11 @@ from .settings.constants import API_URL_VERSION, APP_OAS_KEY
 log = logging.getLogger(__name__)
 
 
-
 def create(specs: openapi.Spec) -> List[web.RouteDef]:
     # TODO: consider the case in which server creates routes for both v0 and v1!!!
     BASEPATH = '/v' + specs.info.version.split('.')[0]
 
-    log.debug("Creating routes for %s", BASEPATH)
+    log.debug("creating %s ", __name__)
     routes = []
 
     # TODO: this will be done automatically
@@ -34,5 +33,8 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
 def setup(app: web.Application):
     validated_specs = app[APP_OAS_KEY]
 
-    routes = create(validated_specs)
-    app.router.add_routes(routes)
+    if validated_specs:
+        routes = create(validated_specs)
+        app.router.add_routes(routes)
+    else:
+        log.debug("skipping setup %s ", __name__)
