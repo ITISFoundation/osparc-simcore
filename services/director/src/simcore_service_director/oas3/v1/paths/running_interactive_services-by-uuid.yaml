@@ -5,32 +5,32 @@ get:
   description: Succesfully returns if a service with the defined uuid is up and running
   operationId: running_interactive_services_get
   parameters: 
-    - $ref: '../parameters/service_uuid.yaml#/components/parameters/ServiceUuid'
+    - $ref: '../components/parameters/service_uuid.yaml#ServiceUuid'
   responses:
     "204":
       description: OK service exists and runs
       content:
         application/json:
           schema:
-            $ref: '../schemas/response204.yaml#/components/schemas/Response204Enveloped'
+            $ref: '../components/schemas/response204.yaml#Response204Enveloped'
     "400":
       description: Malformed function call, missing field
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
     "404":
       description: Service not found
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
     default:
       description: Unexpected error
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
 delete:
   tags: 
     - users
@@ -38,29 +38,29 @@ delete:
   description: Stops and removes an interactive service from the oSparc platform
   operationId: running_interactive_services_delete
   parameters: 
-    - $ref: '../parameters/service_uuid.yaml#/components/parameters/ServiceUuid'
+    - $ref: '../components/parameters/service_uuid.yaml#ServiceUuid'
   responses:
     "204":
       description: Succesfully stopped and removed the service from the oSparc platform
       content:
         application/json:
           schema:
-            $ref: '../schemas/response204.yaml#/components/schemas/Response204Enveloped'
+            $ref: '../components/schemas/response204.yaml#Response204Enveloped'
     "400":
       description: Malformed function call, missing field
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
     "404":
       description: Service not found
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
     default:
       description: Unexpected error
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
