@@ -12,6 +12,7 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
       workbenchModel: workbenchModel
     });
 
+    this.__buildLayout();
     this.buildTree();
   },
 
@@ -35,17 +36,17 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
     __selectedNodeId: null,
 
     buildTree: function() {
-      this.__buildLayout();
-
       const topLevelNodes = this.getWorkbenchModel().getNodeModels();
-
       let data = {
         label: this.getProjectName(),
         children: this.__convertModel(topLevelNodes),
         nodeId: "root"
       };
-      var model = qx.data.marshal.Json.createModel(data, true);
-      this.__tree.setModel(model);
+      let newModel = qx.data.marshal.Json.createModel(data, true);
+      let oldModel = this.__tree.getModel();
+      if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
+        this.__tree.setModel(newModel);
+      }
     },
 
     __buildLayout: function() {
