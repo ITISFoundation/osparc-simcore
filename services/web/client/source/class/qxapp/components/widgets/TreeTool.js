@@ -77,7 +77,7 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
           children: [],
           nodeId: node.getNodeId()
         };
-        nodeInTree.label = node.getName();
+        nodeInTree.label = node.getLabel();
         if (node.isContainer()) {
           nodeInTree.children = this.__convertModel(node.getInnerNodes());
         }

@@ -108,7 +108,7 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
         icon: "@FontAwesome5Solid/folder-open/32"
       });
       openFolder.addListener("execute", function() {
-        let win = new qx.ui.window.Window(this.getNodeModel().getName()).set({
+        let win = new qx.ui.window.Window(this.getNodeModel().getLabel()).set({
           layout: new qx.ui.layout.Canvas(),
           contentPadding: 0,
           showMinimize: false

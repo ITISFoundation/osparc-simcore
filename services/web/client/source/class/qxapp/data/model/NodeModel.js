@@ -35,7 +35,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       nullable: true
     },
 
-    name: {
+    label: {
       check: "String",
       nullable: true
     },
@@ -117,8 +117,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           this.__inputNodes = nodeData.inputNodes;
         }
 
-        const label = nodeData.label ? nodeData.label : metaData.name;
-        this.setName(label);
+        const label = (nodeData && nodeData.label) ? nodeData.label : metaData.name;
+        this.setLabel(label);
       }
     },
 
@@ -152,7 +152,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
               button.addListener("execute", function(e) {
                 this.fireDataEvent("ShowViewer", {
                   url: srvUrl,
-                  name: this.getName(),
+                  name: this.getLabel(),
                   nodeId: this.getNodeId()
                 });
               }, this);

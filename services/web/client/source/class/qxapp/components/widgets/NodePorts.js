@@ -12,7 +12,7 @@ qx.Class.define("qxapp.components.widgets.NodePorts", {
     });
 
     let atom = new qx.ui.basic.Atom().set({
-      label: nodeModel.getName(),
+      label: nodeModel.getLabel(),
       center : true
     });
 

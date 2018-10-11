@@ -12,7 +12,7 @@ qx.Class.define("qxapp.components.widgets.NodeInput", {
     });
 
     let atom = new qx.ui.basic.Atom().set({
-      label: nodeModel.getName(),
+      label: nodeModel.getLabel(),
       center : true,
       draggable: true,
       droppable: true

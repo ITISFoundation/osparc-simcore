@@ -110,7 +110,7 @@ qx.Class.define("qxapp.components.widgets.FileManager", {
     __reloadNodeTree: function() {
       this.__nodeTree.resetRoot();
 
-      const nodeName = this.getNodeModel().getName();
+      const nodeName = this.getNodeModel().getLabel();
       let root = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), nodeName);
       root.setOpen(true);
       this.__nodeTree.setRoot(root);

@@ -70,14 +70,14 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       const nodeModel = this.getNodeModel(nodeId);
       let nodePath = [];
       let obj = {};
-      obj[nodeId] = nodeModel.getName();
+      obj[nodeId] = nodeModel.getLabel();
       nodePath.unshift(obj);
       let parentNodeId = nodeModel.getParentNodeId();
       while (parentNodeId) {
         const checkThisNode = this.getNodeModel(parentNodeId);
         if (checkThisNode) {
           let thisObj = {};
-          thisObj[parentNodeId] = checkThisNode.getName();
+          thisObj[parentNodeId] = checkThisNode.getLabel();
           nodePath.unshift(thisObj);
           parentNodeId = checkThisNode.getParentNodeId();
         }
