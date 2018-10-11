@@ -233,13 +233,13 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
       return nodePorts;
     },
 
-    __createInputNodeUIs: function(model) {
+    __createInputNodeUIs: function(nodeModel) {
       // remove all but the title
       while (this.__inputNodesLayout.getChildren().length > 1) {
         this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length-1);
       }
 
-      const inputNodes = model.getInputNodes();
+      const inputNodes = nodeModel.getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
         let inputNodeModel = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
         let inputLabel = this.__createInputNodeUI(inputNodeModel);
