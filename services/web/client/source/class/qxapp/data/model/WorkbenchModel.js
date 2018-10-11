@@ -52,26 +52,25 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     },
 
     getPath: function(nodeId) {
-      let nodePath = [this.getProjectName()];
       if (nodeId === "root" || nodeId === undefined) {
-        return nodePath;
+        return [this.getProjectName()];
+      }
+      const nodeModel = this.getNodeModel(nodeId);
+      if (nodeModel === null) {
+        return [this.getProjectName()];
       }
 
-      let topLevelNodes = this.getNodeModels(false);
-      if (nodeId in topLevelNodes) {
-        const nodeModel = this.getNodeModel(nodeId);
-        nodePath.push(nodeModel.getName());
-      } else {
-        for (const topLevelNodeId in topLevelNodes) {
-          const topLevelNode = this.getNodeModel(topLevelNodeId);
-          const innerNodes = topLevelNode.getInnerNodes(true);
-          if (nodeId in innerNodes) {
-            nodePath.push(topLevelNode.getName());
-            const nodeModel = this.getNodeModel(nodeId);
-            nodePath.push(nodeModel.getName());
-          }
+      let nodePath = [];
+      nodePath.unshift(nodeModel.getName());
+      let parentNodeId = nodeModel.getParentNodeId();
+      while (parentNodeId) {
+        const checkThisNode = this.getNodeModel(parentNodeId);
+        if (checkThisNode) {
+          nodePath.unshift(checkThisNode.getName());
+          parentNodeId = checkThisNode.getParentNodeId();
         }
       }
+      nodePath.unshift(this.getProjectName());
       return nodePath;
     },
 
@@ -129,6 +128,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       const uuid = nodeModel.getNodeId();
       if (parentNodeModel) {
         parentNodeModel.addInnerNode(uuid, nodeModel);
+        nodeModel.setParentNodeId(parentNodeModel.getNodeId());
       } else {
         this.__nodesTopLevel[uuid] = nodeModel;
       }
