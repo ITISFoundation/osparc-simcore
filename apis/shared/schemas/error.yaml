@@ -6,6 +6,7 @@ ErrorEnveloped:
     status:
       type: integer
       example: 404
+      
 Error:
   type: object
   required:

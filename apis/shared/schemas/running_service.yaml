@@ -6,6 +6,7 @@ RunningServiceEnveloped:
     status:
       type: integer
       example: 200
+      
 RunningService:
   type: object
   required:
