@@ -88,6 +88,7 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
         item.setDroppable(true);
         this.__createUIPortConnections(label, item.key);
         this.__createUIPortConnections(item, item.key);
+        qx.ui.core.queue.Visibility.flush();
       }
     },
 
