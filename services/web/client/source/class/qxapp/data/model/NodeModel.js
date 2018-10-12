@@ -40,13 +40,19 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       nullable: true
     },
 
+    propsWidget: {
+      check: "qxapp.components.form.renderer.PropForm"
+    },
+
     parentNodeId: {
       check: "String",
       nullable: true
     },
 
-    propsWidget: {
-      check: "qxapp.components.form.renderer.PropForm"
+    isOutputNode: {
+      check: "Boolean",
+      init: false,
+      nullable: false
     },
 
     serviceUrl: {
@@ -95,6 +101,18 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       this.__innerNodes[innerNodeId] = innerNodeModel;
     },
 
+    getExposedInnerNodes: function(recursive = false) {
+      const innerNodes = this.getInnerNodes(recursive);
+      let exposedInnerNodes = {};
+      for (const innerNodeId in innerNodes) {
+        const innerNode = innerNodes[innerNodeId];
+        if (innerNode.getIsOutputNode()) {
+          exposedInnerNodes[innerNodeId] = innerNode;
+        }
+      }
+      return exposedInnerNodes;
+    },
+
     getInputNodes: function() {
       return this.__inputNodes;
     },
@@ -119,6 +137,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
         const label = (nodeData && nodeData.label) ? nodeData.label : metaData.name;
         this.setLabel(label);
+
+        if (nodeData && nodeData.outputNode) {
+          this.setIsOutputNode(nodeData.outputNode);
+        }
       }
     },
 

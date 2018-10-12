@@ -366,6 +366,9 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
       let nodeInput = new qxapp.components.widgets.NodeInput(inputNodeModel);
       nodeInput.populateNodeLayout();
       this.__createDragDropMechanism(nodeInput);
+      this.__inputNodesLayout.add(nodeInput, {
+        flex: 1
+      });
       return nodeInput;
     },
 
@@ -375,9 +378,6 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
         let inputNodeModel = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
         let inputLabel = this.__createInputNodeUI(inputNodeModel);
         this.__nodesUI.push(inputLabel);
-        this.__inputNodesLayout.add(inputLabel, {
-          flex: 1
-        });
       }
     },
 

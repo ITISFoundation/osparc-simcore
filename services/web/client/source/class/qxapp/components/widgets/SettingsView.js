@@ -203,6 +203,9 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
       let nodePorts = new qxapp.components.widgets.NodePorts(inputNodeModel);
       nodePorts.populateNodeLayout();
       this.__createDragDropMechanism(nodePorts);
+      this.__inputNodesLayout.add(nodePorts, {
+        flex: 1
+      });
       return nodePorts;
     },
 
@@ -210,11 +213,15 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
       const inputNodes = nodeModel.getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
         let inputNodeModel = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
-        let inputLabel = this.__createInputPortsUI(inputNodeModel);
-        this.__nodesUI.push(inputLabel);
-        this.__inputNodesLayout.add(inputLabel, {
-          flex: 1
-        });
+        if (inputNodeModel.isContainer()) {
+          for (const exposedInnerNodeId in inputNodeModel.getExposedInnerNodes()) {
+            const exposedInnerNode = inputNodeModel.getExposedInnerNodes()[exposedInnerNodeId];
+            this.__createInputPortsUI(exposedInnerNode);
+          }
+        } else {
+          let inputLabel = this.__createInputPortsUI(inputNodeModel);
+          this.__nodesUI.push(inputLabel);
+        }
       }
     },
 
