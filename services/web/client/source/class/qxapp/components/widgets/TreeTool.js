@@ -62,7 +62,8 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
       let data = {
         label: this.getProjectName(),
         children: this.__convertModel(topLevelNodes),
-        nodeId: "root"
+        nodeId: "root",
+        isContainer: true
       };
       let newModel = qx.data.marshal.Json.createModel(data, true);
       let oldModel = this.__tree.getModel();
@@ -89,6 +90,7 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
           nodeId: node.getNodeId()
         };
         nodeInTree.label = node.getLabel();
+        nodeInTree.isContainer = node.isContainer();
         if (node.isContainer()) {
           nodeInTree.children = this.__convertModel(node.getInnerNodes());
         }
@@ -98,9 +100,9 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
     },
 
     __getNodeInTree: function(model, nodeId) {
-      if ("nodeId" in model && model.getNodeId() === nodeId) {
+      if (model.getNodeId() === nodeId) {
         return model;
-      } else if ("children" in model && model.getChildren() !== null) {
+      } else if (model.getIsContainer() && model.getChildren() !== null) {
         let node = null;
         let children = model.getChildren().toArray();
         for (let i=0; node === null && i < children.length; i++) {
