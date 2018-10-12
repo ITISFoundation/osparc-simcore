@@ -4,6 +4,7 @@
 
 -e ../../../packages/s3wrapper/
 -e ../../../packages/simcore-sdk/
+-e ../../../packages/service-library/
 -e ../../../packages/director-sdk/python
 
 aiohttp-devtools==0.10.1

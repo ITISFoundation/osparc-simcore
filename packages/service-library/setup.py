@@ -24,7 +24,7 @@ setup_requirements = ['pytest-runner', ]
 test_requirements = ['pytest', ]
 
 setup(
-    name='simcore-servicelib',
+    name='simcore-service-library',
     version='0.1.0',
     author="Pedro Crespo",
     description="Core service library for simcore",

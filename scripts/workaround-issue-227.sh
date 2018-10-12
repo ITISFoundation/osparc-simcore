@@ -2,28 +2,33 @@
 #
 # Installs all python services in workspace's virtual environment
 #
-# - Expects a python virtual environment at $WORKDIR/.venv that can be built using make .venv at $WORKDIR
+# - Expects a python virtual environment at $ROOTDIR/.venv that can be built using make .venv at $ROOTDIR
 # - Temporary solution to issue #227 (or PR#220) since it  will create all .egg folders
 
 
 BASEDIR=$(dirname "$0")
-WORKDIR=$BASEDIR/..
-SETUPDIRS =
+ROOTDIR=$BASEDIR/..
 
 # if .venv does not exists, notify user to use make .venv
-source $WORKDIR/.venv/bin/activate
+source $ROOTDIR/.venv/bin/activate
 
-pushd $WORKDIR/services/web/server
+pushd $ROOTDIR/services/web/server
 pip3 install -r requirements/dev.txt
 popd
 
-pushd $WORKDIR/services/director
+pushd $ROOTDIR/services/director
 pip3 install -r requirements/dev.txt
 popd
 
-pushd $WORKDIR/services/sidecar
+pushd $ROOTDIR/services/sidecar
 pip3 install -r requirements/dev.txt
 popd
+
+# find . -type d -name "*.egg*" | xargs chmod -R g+w
+for a_folder in `find $ROOTDIR -type d \( -name "*.egg*" \)`
+do
+  chmod -R g+w $a_folder
+done
 
 #for package_dir in setup_dirs; do
 #  pushd package_dir
