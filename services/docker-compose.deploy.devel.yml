@@ -3,6 +3,12 @@
 # FIXME: remove explicit dns
 version: '3.4'
 services:
+  apihub:
+    image: services_apihub:dev
+    deploy:
+      placement:
+       constraints:
+          - node.platform.os == linux
   director:
     #image: masu.speag.com/simcore/workbench/director:2.3
     image: services_director:dev
