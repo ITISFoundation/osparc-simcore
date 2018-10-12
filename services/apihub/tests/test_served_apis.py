@@ -1,7 +1,7 @@
 import io
 import logging
 from pathlib import Path
-from urllib.parse import urlparse
+# from urllib.parse import urlparse
 
 import pytest
 import yaml
