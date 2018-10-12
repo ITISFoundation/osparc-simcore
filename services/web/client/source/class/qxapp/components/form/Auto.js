@@ -190,12 +190,12 @@ qx.Class.define("qxapp.components.form.Auto", {
       this.__settingData = true;
 
       for (let key in data) {
-        this.getControl(key).isLinked = false;
         if (typeof data[key] == "object" && data[key].nodeUuid) {
           this.getControl(key).isLinked = true;
           this.getControl(key).setEnabled(false);
           continue;
         }
+        this.getControl(key).isLinked = false;
         this.getControl(key).setEnabled(true);
         let upkey = qx.lang.String.firstUp(key);
         let setter = "set" + upkey;
