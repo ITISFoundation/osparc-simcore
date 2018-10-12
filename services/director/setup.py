@@ -56,9 +56,9 @@ _CONFIG = dict(
     setup_requires=['pytest-runner'],
     package_data={
         '': [
-            'api/**/*.yaml',
-            'api/**/schemas/*.json',
-            'api/**/schemas/*.yaml',
+            'oas3/**/*.yaml',
+            'oas3/**/schemas/*.json',
+            'oas3/**/schemas/*.yaml',
             ],
     },
     entry_points={
