@@ -100,23 +100,11 @@ qx.Class.define("qxapp.components.widgets.FilePicker", {
     __createConnections: function(node) {
       this.addListener("ItemSelected", function(data) {
         const itemPath = data.getData().itemPath;
-        const isDirectory = data.getData().isDirectory;
-        const activePort = isDirectory ? "outDir" : "outFile";
-        const inactivePort = isDirectory ? "outFile" : "outDir";
         let metaData = node.getMetaData();
-        metaData.outputs[activePort].value = {
+        metaData.outputs["outDir"].value = {
           store: "s3-z43",
           path: itemPath
         };
-        metaData.outputs[inactivePort].value = null;
-        /*
-        // const splitted = itemPath.split("/");
-        // const itemName = splitted[splitted.length-1];
-        node.getOutputPort(activePort).ui.setLabel(itemName);
-        node.getOutputPort(activePort).ui.getToolTip().setLabel(itemName);
-        node.getOutputPort(inactivePort).ui.setLabel("");
-        node.getOutputPort(inactivePort).ui.getToolTip().setLabel("");
-        */
         node.setProgress(100);
         this.fireEvent("Finished");
       }, this);
