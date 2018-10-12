@@ -144,7 +144,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
       });
       plusButton.addListener("execute", function() {
         let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
-        srvCat.moveTo(200, 200);
+        srvCat.center();
         srvCat.open();
         srvCat.addListener("AddService", function(e) {
           this.__addServiceFromCatalogue(e);

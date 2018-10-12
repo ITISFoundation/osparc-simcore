@@ -108,17 +108,15 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
         icon: "@FontAwesome5Solid/folder-open/32"
       });
       openFolder.addListener("execute", function() {
+        let fileManager = new qxapp.components.widgets.FileManager(this.getNodeModel()).set({
+          width: 600,
+          height: 400
+        });
+
         let win = new qx.ui.window.Window(this.getNodeModel().getLabel()).set({
           layout: new qx.ui.layout.Canvas(),
           contentPadding: 0,
           showMinimize: false
-        });
-        win.moveTo(300, 200);
-        win.open();
-
-        let fileManager = new qxapp.components.widgets.FileManager(this.getNodeModel()).set({
-          width: 600,
-          height: 400
         });
         win.add(fileManager, {
           top: 0,
@@ -126,6 +124,9 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
           bottom: 0,
           left: 0
         });
+
+        win.center();
+        win.open();
       }, this);
 
       buttonsBox.add(startNode);

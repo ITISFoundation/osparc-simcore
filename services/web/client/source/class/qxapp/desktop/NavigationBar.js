@@ -177,10 +177,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
       let win = this.__preferencesWin;
       if (win) {
+        win.center();
         win.open();
-
-        const [left, top] = qxapp.utils.Dom.getCenteredLoc(win.getWidth(), win.getHeight());
-        win.moveTo(left, top);
       }
     }
   }
