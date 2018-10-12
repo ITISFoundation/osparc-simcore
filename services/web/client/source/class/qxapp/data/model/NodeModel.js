@@ -126,7 +126,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.__startInteractiveNode();
 
         if (metaData && metaData.inputs) {
-          this.__addSettings(metaData.inputs, nodeData);
+          this.__addSettings(metaData.inputs);
+          this.setSettingsData(nodeData);
         }
 
         if (nodeData && nodeData.position) {
@@ -196,7 +197,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
-    __addSettings: function(inputs, nodeData) {
+    __addSettings: function(inputs) {
       if (inputs === null) {
         return;
       }
@@ -207,8 +208,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }, this);
 
       this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
+    },
 
-      if (nodeData) {
+    setSettingsData: function(nodeData) {
+      if (this.__settingsForm && nodeData) {
         this.__settingsForm.setData(nodeData.inputs);
       }
     },

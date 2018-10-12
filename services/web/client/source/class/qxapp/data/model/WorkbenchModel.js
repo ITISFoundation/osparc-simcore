@@ -205,7 +205,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
         // node generic
         let node = workbench[nodeModel.getNodeId()] = {
           label: nodeModel.getLabel(),
-          inputs: nodeModel.getInputValues(),
+          inputs: nodeModel.getInputValues(), // can a container have inputs?
           inputNodes: nodeModel.getInputNodes(),
           outputNode: nodeModel.getIsOutputNode(),
           outputs: {}, // can a container have outputs?
