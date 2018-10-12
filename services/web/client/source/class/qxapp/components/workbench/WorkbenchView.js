@@ -669,6 +669,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
         } else {
           this.__inputNodesLayout.setVisibility("excluded");
         }
+        qx.ui.core.queue.Visibility.flush();
 
         let nodes = isContainer ? model.getInnerNodes() : model.getNodeModels();
         for (const nodeUuid in nodes) {
