@@ -6,10 +6,11 @@ qx.Class.define("qxapp.components.widgets.WidgetManager", {
   members: {
     getWidgetForNode: function(node) {
       let nodeKey = node.getMetaData().key;
-      if (nodeKey.includes("FilePicker")) {
+      if (nodeKey.includes("file-picker")) {
         let filePicker = new qxapp.components.widgets.FilePicker(node);
         return filePicker;
-      } else if (nodeKey.includes("s4l/Simulator/LF/")) {
+      }
+      /* else if (nodeKey.includes("s4l/Simulator/LF/")) {
         let simulatorSetting = new qxapp.components.widgets.SimulatorSetting();
         simulatorSetting.setNode(node);
         return simulatorSetting;
@@ -17,6 +18,7 @@ qx.Class.define("qxapp.components.widgets.WidgetManager", {
         let simulator = new qxapp.components.widgets.Simulator(node);
         return simulator;
       }
+      */
       return null;
     }
   }
