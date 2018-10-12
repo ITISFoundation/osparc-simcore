@@ -20,9 +20,9 @@ async def test_root_get():
 
     healthcheck_enveloped = rest.models.HealthCheckEnveloped.from_dict(response)
     assert healthcheck_enveloped.status == 200
-    assert isinstance(healthcheck_enveloped.data, rest.models.HealthCheck)
+    assert isinstance(healthcheck_enveloped.data, object)
 
-    healthcheck = healthcheck_enveloped.data
+    healthcheck = rest.models.HealthCheck.from_dict(healthcheck_enveloped.data)
     assert healthcheck.name == "simcore-service-director"
     assert healthcheck.status == "SERVICE_RUNNING"
     assert healthcheck.version == "0.1.0"
