@@ -1,0 +1,12 @@
+Response204Enveloped:
+  type: object
+  properties:
+    data:
+      type: string
+      nullable: true
+      example: 'null'
+      default: 'null'
+    status:
+      type: integer
+      example: 204
+      default: 204

@@ -5,30 +5,30 @@ get:
   description: Returns details of the selected service if available in the oSparc platform
   operationId: services_by_key_version_get
   parameters:
-    - $ref: '../parameters/service_key_path.yaml#/components/parameters/ServiceKeyPath'
-    - $ref: '../parameters/service_version_path.yaml#/components/parameters/ServiceVersionPath'
+    - $ref: '../components/parameters/service_key_path.yaml#ServiceKeyPath'
+    - $ref: '../components/parameters/service_version_path.yaml#ServiceVersionPath'
   responses:
     "200":
       description: Success, returns the details of the service
       content:
         application/json:
           schema:
-            $ref: '../schemas/services.yaml#/components/schemas/ServicesEnveloped'                
+            $ref: '../components/schemas/services.yaml#ServicesEnveloped'                
     "401":
       description: Unauthorized access
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
     "404":
       description: Service not found
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
     default:
       description: Unexpected error
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
