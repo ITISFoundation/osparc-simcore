@@ -62,17 +62,16 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
           row: this._row,
           column: 1
         });
-        if (itemOptions !== null && itemOptions[i] !== null && itemOptions[i].exposable) {
-          let exposeCtrl = new qx.ui.form.CheckBox().set({
-            marginLeft: 20,
-            marginRight: 20
+        if (item.isLinked) {
+          let unlinkBtn = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/unlink/16"
           });
-          this._add(exposeCtrl, {
+          this._add(unlinkBtn, {
             row: this._row,
             column: 2
           });
-          exposeCtrl.addListener("changeValue", function(e) {
-            item.setEnabled(!e.getData());
+          unlinkBtn.addListener("execute", function() {
+            console.log("Unlink", item.key);
           }, this);
         }
         this._row++;

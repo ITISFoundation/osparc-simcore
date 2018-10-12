@@ -201,6 +201,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         return;
       }
       let form = this.__settingsForm = new qxapp.components.form.Auto(inputs);
+      form.addListener("changeData", function(e) {
+        let newForm = e.getData();
+        this.setPropsWidget(new qxapp.components.form.renderer.PropForm(newForm));
+      }, this);
+
       this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
 
       if (nodeData) {

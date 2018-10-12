@@ -79,7 +79,8 @@ qx.Class.define("qxapp.components.form.Auto", {
 
     model.addListener("changeBubble", function(e) {
       if (!this.__settingData) {
-        this.fireDataEvent("changeData", this.getData());
+        // this.fireDataEvent("changeData", this.getData());
+        this.fireDataEvent("changeData", this);
       }
     },
     this);
@@ -189,7 +190,9 @@ qx.Class.define("qxapp.components.form.Auto", {
       this.__settingData = true;
 
       for (let key in data) {
+        this.getControl(key).isLinked = false;
         if (typeof data[key] == "object" && data[key].nodeUuid) {
+          this.getControl(key).isLinked = true;
           this.getControl(key).setEnabled(false);
           continue;
         }
@@ -207,7 +210,8 @@ qx.Class.define("qxapp.components.form.Auto", {
 
       /* only fire ONE if there was an attempt at change */
 
-      this.fireDataEvent("changeData", this.getData());
+      // this.fireDataEvent("changeData", this.getData());
+      this.fireDataEvent("changeData", this);
     },
 
 
@@ -507,6 +511,7 @@ qx.Class.define("qxapp.components.form.Auto", {
         control.set(s.set);
       }
       control.key = key;
+      control.isLinked = false;
       this.__ctrlMap[key] = control;
     }
   }
