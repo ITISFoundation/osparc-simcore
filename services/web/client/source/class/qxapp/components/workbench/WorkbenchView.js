@@ -370,11 +370,6 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
     },
 
     __createInputNodeUIs: function(model) {
-      // remove all but the title
-      while (this.__inputNodesLayout.getChildren().length > 1) {
-        this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length-1);
-      }
-
       const inputNodes = model.getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
         let inputNodeModel = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
@@ -383,6 +378,13 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
         this.__inputNodesLayout.add(inputLabel, {
           flex: 1
         });
+      }
+    },
+
+    __clearInputNodeUIs: function() {
+      // remove all but the title
+      while (this.__inputNodesLayout.getChildren().length > 1) {
+        this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length-1);
       }
     },
 
@@ -662,6 +664,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
         const isContainer = model.isContainer();
         if (isContainer) {
           this.__inputNodesLayout.setVisibility("visible");
+          this.__clearInputNodeUIs();
           this.__createInputNodeUIs(model);
         } else {
           this.__inputNodesLayout.setVisibility("excluded");

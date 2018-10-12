@@ -199,27 +199,29 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
       }, this);
     },
 
-    __createInputNodeUI: function(inputNodeModel) {
+    __createInputPortsUI: function(inputNodeModel) {
       let nodePorts = new qxapp.components.widgets.NodePorts(inputNodeModel);
       nodePorts.populateNodeLayout();
       this.__createDragDropMechanism(nodePorts);
       return nodePorts;
     },
 
-    __createInputNodeUIs: function(nodeModel) {
-      // remove all but the title
-      while (this.__inputNodesLayout.getChildren().length > 1) {
-        this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length-1);
-      }
-
+    __createInputPortsUIs: function(nodeModel) {
       const inputNodes = nodeModel.getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
         let inputNodeModel = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
-        let inputLabel = this.__createInputNodeUI(inputNodeModel);
+        let inputLabel = this.__createInputPortsUI(inputNodeModel);
         this.__nodesUI.push(inputLabel);
         this.__inputNodesLayout.add(inputLabel, {
           flex: 1
         });
+      }
+    },
+
+    __clearInputPortsUIs: function() {
+      // remove all but the title
+      while (this.__inputNodesLayout.getChildren().length > 1) {
+        this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length-1);
       }
     },
 
@@ -228,7 +230,8 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
       this.__settingsBox.add(nodeModel.getPropsWidget());
       this.__createDragDropMechanism(nodeModel.getPropsWidget());
 
-      this.__createInputNodeUIs(nodeModel);
+      this.__clearInputPortsUIs();
+      this.__createInputPortsUIs(nodeModel);
 
       let viewerButton = nodeModel.getViewerButton();
       if (viewerButton) {
