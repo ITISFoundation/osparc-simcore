@@ -17,7 +17,7 @@ def test_openapi_specs(version):
     with resources.stream(name) as fh:
         specs = yaml.load(fh)
         try:
-            validate_spec(specs, spec_url='file://%s' % openapi_path.absolute())
+            validate_spec(specs, spec_url=openapi_path.as_uri())
         except OpenAPIValidationError as err:
             pytest.fail(err.message)
 

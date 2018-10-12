@@ -33,7 +33,7 @@ def _check_services(created_services, services, schema_version="v1"):
     created_service_descriptions = [x["service_description"] for x in created_services]
     
     # TODO: use resources!
-    json_schema_path = Path(__file__).parent.parent / "src/simcore_service_director/oas3/v1/schemas/node-meta-v0.0.1.json"
+    json_schema_path = Path(__file__).parent.parent / "src/simcore_service_director/oas3/v1/components/schemas/node-meta-v0.0.1.json"
     assert json_schema_path.exists() == True
     with json_schema_path.open() as file_pt:
         service_schema = json.load(file_pt)

@@ -5,43 +5,43 @@ post:
   description: Starts an interactive service in the oSparc platform and returns its entrypoint
   operationId: running_interactive_services_post
   parameters:         
-    - $ref: '../parameters/service_key.yaml#/components/parameters/ServiceKey'
-    - $ref: '../parameters/service_version.yaml#/components/parameters/ServiceVersion'
-    - $ref: '../parameters/assignment_uuid.yaml#/components/parameters/AssignmentUuid'
+    - $ref: '../components/parameters/service_key.yaml#ServiceKey'
+    - $ref: '../components/parameters/service_version.yaml#ServiceVersion'
+    - $ref: '../components/parameters/assignment_uuid.yaml#AssignmentUuid'
   responses:
     "201":
       description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
       content:
         application/json:
           schema:
-            $ref: '../schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
+            $ref: '../components/schemas/running_service.yaml#RunningServiceEnveloped'
     "400":
       description: Malformed function call, missing field
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
     "401":
       description: Unauthorized access
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
     "404":
       description: Service not found
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
     "409":
       description: A service with the same uuid already exists
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
     default:
       description: Unexpected error
       content:
         application/json:
           schema:
-            $ref: '../schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
