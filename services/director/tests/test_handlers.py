@@ -1,6 +1,5 @@
 import json
 import uuid
-from pathlib import Path
 
 import pytest
 from aiohttp import web_exceptions
