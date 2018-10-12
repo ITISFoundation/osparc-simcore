@@ -1,9 +1,9 @@
 # List of packages for setup.install_requires
 #   Outsourced here so can be installed in base-stage of the web/Dockerfile
 aiohttp==3.3.2
-aiohttp-security==0.2.0
+aiohttp_apiset>=0.9.3
 aiohttp_session[secure]==2.5.1
-aiohttp-swagger==1.0.5
+aiohttp-security==0.2.0
 aiopg[sa]==0.14.0
 aio-pika==2.9.0
 celery==4.1.0

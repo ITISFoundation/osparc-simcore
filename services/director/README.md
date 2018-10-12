@@ -19,10 +19,10 @@
   # go to director folder
   cd /services/director
   # install with symlinks
-  pip install -r requirements-dev.txt  
+  pip install -r requirements-dev.txt
 ```
 
-The director implements a REST API defined in __/src/simcore_service_director/.oas3/v1/openapi.yaml__.
+The director implements a REST API defined in __/src/simcore_service_director/oas3/v1/openapi.yaml__.
 First extend the API and validate the API before implementing any new route.
 
 ## Current status

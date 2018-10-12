@@ -22,23 +22,23 @@ from .models.base_model_ import Model
 from .models.error import Error
 from .models.error_enveloped import ErrorEnveloped
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 @web.middleware
 async def __handle_errors(request, handler):
     try:
-        _LOGGER.debug("error middleware handling request %s to handler %s", request, handler)
+        log.debug("error middleware handling request %s to handler %s", request, handler)
         response = await handler(request)
         return response
     except ValidationError as ex:
         # aiohttp apiset errors
-        _LOGGER.exception("error happened in handling route")
+        log.exception("error happened in handling route")
         error = Error(status=ex.status, message=ex.to_tree())
         error_enveloped = ErrorEnveloped(data=error, status=ex.status_code)
         error_dict = error_enveloped.to_dict()
         return web.json_response(error_dict, status=ex.status)
     except web.HTTPError as ex:
-        _LOGGER.exception("error happened in handling route")
+        log.exception("error happened in handling route")
         error = Error(status=ex.status, message=str(ex.reason))
         error_enveloped = ErrorEnveloped(data=error, status=ex.status_code)
         error_dict = error_enveloped.to_dict()

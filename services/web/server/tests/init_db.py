@@ -31,22 +31,22 @@ from tenacity import (
     before_sleep_log
 )
 
-from server.db.utils import (
+from simcore_service_webserver.db.utils import (
     DNS,
     acquire_engine,
     acquire_admin_engine
 )
 
-from server.db.model import (
+from simcore_service_webserver.db.model import (
     permissions,
     users
 )
-from server.settings import (
+from simcore_service_webserver.settings import (
     read_and_validate
 )
 
 logging.basicConfig(level=logging.DEBUG)
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 CURRENT_DIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
 
@@ -132,7 +132,7 @@ def sample_data(engine):
 
 @retry(stop=stop_after_attempt(5),
     wait=wait_fixed(2),
-    before_sleep=before_sleep_log(_LOGGER, logging.DEBUG))
+    before_sleep=before_sleep_log(log, logging.DEBUG))
 def main():
     test_config_path = CURRENT_DIR.parent / "config" / "server-host-test.yaml"
     config = read_and_validate(test_config_path.as_posix())
@@ -140,21 +140,21 @@ def main():
 
     test_engine = acquire_engine(DNS.format(**pg_config))
 
-    _LOGGER.info("Setting up db ...")
+    log.info("Setting up db ...")
     setup_db(pg_config)
-    _LOGGER.info("")
+    log.info("")
 
-    _LOGGER.info("Creating tables ...")
+    log.info("Creating tables ...")
     create_tables(engine=test_engine)
 
-    _LOGGER.info("Adding sample data ...")
+    log.info("Adding sample data ...")
     sample_data(engine=test_engine)
 
-    _LOGGER.info("Droping ...")
+    log.info("Droping ...")
     drop_tables(test_engine)
     teardown_db(pg_config)
 
 
 if __name__ == "__main__":
     main()
-    _LOGGER.info("Main retry stats: %s", main.retry.statistics)
+    log.info("Main retry stats: %s", main.retry.statistics)

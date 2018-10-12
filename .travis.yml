@@ -27,6 +27,10 @@ matrix:
         - python --version
         - uname -a
         - lsb_release -a
+        - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        - sudo apt-get update
+        - sudo apt-get -y install docker-ce
         - docker --version
         - docker-compose --version
         # shutdown postgres because sometimes is is alrady up ???
@@ -37,8 +41,8 @@ matrix:
       install:
         - pip install --upgrade pip wheel setuptools && pip3 --version
         - pip3 install packages/s3wrapper[test]
-        - pip3 install packages/simcore-sdk[test]
-        - pip3 install services/director[test]
+        - pip3 install packages/simcore-sdk[test]        
+        - pushd services/director; pip3 install -r requirements/ci.txt; popd
         - pip3 install packages/director-sdk/python
         - pushd services/web/server; pip3 install -r requirements/ci.txt; popd
 
