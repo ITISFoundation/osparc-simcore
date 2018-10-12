@@ -86,7 +86,6 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
         const node = nodes[nodeId];
         let nodeInTree = {
           label: "",
-          children: [],
           nodeId: node.getNodeId()
         };
         nodeInTree.label = node.getLabel();
