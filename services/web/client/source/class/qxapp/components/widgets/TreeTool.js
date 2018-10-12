@@ -98,9 +98,9 @@ qx.Class.define("qxapp.components.widgets.TreeTool", {
     },
 
     __getNodeInTree: function(model, nodeId) {
-      if (model.getNodeId() === nodeId) {
+      if ("nodeId" in model && model.getNodeId() === nodeId) {
         return model;
-      } else if (model.getChildren() !== null) {
+      } else if ("children" in model && model.getChildren() !== null) {
         let node = null;
         let children = model.getChildren().toArray();
         for (let i=0; node === null && i < children.length; i++) {
