@@ -47,13 +47,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/health_check.yaml#HealthCheckEnveloped'
+                $ref: '../../shared/schemas/health_check.yaml#/HealthCheckEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
 
   /services:
     get:
@@ -70,19 +70,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/services.yaml#ServicesEnveloped'                
+                $ref: '../../shared/schemas/services.yaml#/ServicesEnveloped'                
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
 
   /services/{service_key}/{service_version}:
     get:
@@ -92,33 +92,33 @@ paths:
       description: Returns details of the selected service if available in the oSparc platform
       operationId: services_by_key_version_get
       parameters:
-        - $ref: '#components/parameters/ServiceKeyPath'
-        - $ref: '#components/parameters/ServiceVersionPath'
+        - $ref: '#/components/parameters/ServiceKeyPath'
+        - $ref: '#/components/parameters/ServiceVersionPath'
       responses:
         "200":
           description: Success, returns the details of the service
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/services.yaml#ServicesEnveloped'                
+                $ref: '../../shared/schemas/services.yaml#/ServicesEnveloped'                
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
 
   /running_interactive_services:
     post:
@@ -128,46 +128,46 @@ paths:
       description: Starts an interactive service in the oSparc platform and returns its entrypoint
       operationId: running_interactive_services_post
       parameters:         
-        - $ref: '#components/parameters/ServiceKey'
-        - $ref: '#components/parameters/ServiceVersion'
-        - $ref: '#components/parameters/AssignmentUuid'
+        - $ref: '#/components/parameters/ServiceKey'
+        - $ref: '#/components/parameters/ServiceVersion'
+        - $ref: '#/components/parameters/AssignmentUuid'
       responses:
         "201":
           description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/running_service.yaml#RunningServiceEnveloped'
+                $ref: '../../shared/schemas/running_service.yaml#/RunningServiceEnveloped'
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
         "409":
           description: A service with the same uuid already exists
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
 
   /running_interactive_services/{service_uuid}:
     get:
@@ -177,32 +177,32 @@ paths:
       description: Succesfully returns if a service with the defined uuid is up and running
       operationId: running_interactive_services_get
       parameters: 
-        - $ref: '#components/parameters/ServiceUuid'
+        - $ref: '#/components/parameters/ServiceUuid'
       responses:
         "204":
           description: OK service exists and runs
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/response204.yaml#Response204Enveloped'
+                $ref: '../../shared/schemas/response204.yaml#/Response204Enveloped'
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
     delete:
       tags: 
         - users
@@ -210,32 +210,32 @@ paths:
       description: Stops and removes an interactive service from the oSparc platform
       operationId: running_interactive_services_delete
       parameters: 
-        - $ref: '#components/parameters/ServiceUuid'
+        - $ref: '#/components/parameters/ServiceUuid'
       responses:
         "204":
           description: Succesfully stopped and removed the service from the oSparc platform
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/response204.yaml#Response204Enveloped'
+                $ref: '../../shared/schemas/response204.yaml#/Response204Enveloped'
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
 
 components:
   parameters:
