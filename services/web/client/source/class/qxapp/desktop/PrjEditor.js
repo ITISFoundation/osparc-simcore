@@ -147,31 +147,29 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         const workbenchModel = this.__projectDocument.getWorkbenchModel();
         this.__workbenchView.loadModel(workbenchModel);
         this.showInMainView(this.__workbenchView, nodeId);
-        return;
-      }
-
-      let nodeModel = this.__projectDocument.getWorkbenchModel().getNodeModel(nodeId);
-
-      let widget;
-      if (nodeModel.isContainer()) {
-        widget = this.__workbenchView;
       } else {
-        this.__settingsView.setNodeModel(nodeModel);
-        if (nodeModel.getMetaData().type === "dynamic") {
-          // const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
-          // widget = widgetManager.getWidgetForNode(nodeModel);
-          this.showInExtraView(new qx.ui.core.Widget());
-          widget = this.__settingsView;
+        let nodeModel = this.__projectDocument.getWorkbenchModel().getNodeModel(nodeId);
+
+        let widget;
+        if (nodeModel.isContainer()) {
+          widget = this.__workbenchView;
         } else {
-          this.showInExtraView(new qx.ui.core.Widget());
-          widget = this.__settingsView;
+          this.__settingsView.setNodeModel(nodeModel);
+          if (nodeModel.getMetaData().type === "dynamic") {
+            const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
+            widget = widgetManager.getWidgetForNode(nodeModel);
+            if (!widget) {
+              widget = this.__settingsView;
+            }
+          } else {
+            widget = this.__settingsView;
+          }
         }
-      }
+        this.showInMainView(widget, nodeId);
 
-      this.showInMainView(widget, nodeId);
-
-      if (nodeModel.isContainer()) {
-        this.__workbenchView.loadModel(nodeModel);
+        if (nodeModel.isContainer()) {
+          this.__workbenchView.loadModel(nodeModel);
+        }
       }
     },
 
