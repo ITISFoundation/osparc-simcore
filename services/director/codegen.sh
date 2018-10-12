@@ -4,7 +4,8 @@
 # /src/package-name/.openapi/v1/package_api.yaml   -- this is the input file
 # /src/package-name/rest/generated_code            -- this is the output directory
 SOURCE_DIR=./src/simcore_service_director
-INPUT_SPEC=${SOURCE_DIR}/oas3/v1/openapi.yaml
+API_VERSION=v0
+INPUT_SPEC=${SOURCE_DIR}/oas3/${API_VERSION}/openapi.yaml
 OUTPUT_DIR=${SOURCE_DIR}/rest
 OUTPUT_DIR_GEN=${SOURCE_DIR}/rest/generated_code
 INIT_FILE_PATH=${OUTPUT_DIR}/__init__.py
@@ -138,8 +139,8 @@ def create_web_app(base_folder, spec_file, additional_middlewares = None):
     router.include(
         spec=Path(base_folder / spec_file),
         operationId_mapping=opmap,
-        name='v1',  # name to access in swagger-ui,
-        basePath="/v1" # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
+        name='${API_VERSION}',  # name to access in swagger-ui,
+        basePath="/${API_VERSION}" # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
     )
 
     return app
