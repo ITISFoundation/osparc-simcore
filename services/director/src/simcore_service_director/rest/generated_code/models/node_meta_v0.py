@@ -6,8 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
-from .nodemetav0_authors import Nodemetav0Authors  # noqa: F401,E501
-import re  # noqa: F401,E501
 from .. import util
 
 
@@ -17,7 +15,7 @@ class NodeMetaV0(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, key: str=None, version: str=None, type: str=None, name: str=None, description: str=None, authors: List[Nodemetav0Authors]=None, contact: str=None, inputs: object=None, outputs: object=None):  # noqa: E501
+    def __init__(self, key=None, version=None, type=None, name=None, description=None, authors=None, contact=None, inputs=None, outputs=None):  # noqa: E501
         """NodeMetaV0 - a model defined in OpenAPI
 
         :param key: The key of this NodeMetaV0.  # noqa: E501
@@ -40,15 +38,15 @@ class NodeMetaV0(Model):
         :type outputs: object
         """
         self.openapi_types = {
-            'key': str,
-            'version': str,
-            'type': str,
-            'name': str,
-            'description': str,
-            'authors': List[Nodemetav0Authors],
-            'contact': str,
-            'inputs': object,
-            'outputs': object
+            'key': 'str',
+            'version': 'str',
+            'type': 'str',
+            'name': 'str',
+            'description': 'str',
+            'authors': 'List[Nodemetav0Authors]',
+            'contact': 'str',
+            'inputs': 'object',
+            'outputs': 'object'
         }
 
         self.attribute_map = {
@@ -85,7 +83,7 @@ class NodeMetaV0(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def key(self) -> str:
+    def key(self):
         """Gets the key of this NodeMetaV0.
 
         distinctive name for the node based on the docker registry path  # noqa: E501
@@ -96,7 +94,7 @@ class NodeMetaV0(Model):
         return self._key
 
     @key.setter
-    def key(self, key: str):
+    def key(self, key):
         """Sets the key of this NodeMetaV0.
 
         distinctive name for the node based on the docker registry path  # noqa: E501
@@ -112,7 +110,7 @@ class NodeMetaV0(Model):
         self._key = key
 
     @property
-    def version(self) -> str:
+    def version(self):
         """Gets the version of this NodeMetaV0.
 
         semantic version number  # noqa: E501
@@ -123,7 +121,7 @@ class NodeMetaV0(Model):
         return self._version
 
     @version.setter
-    def version(self, version: str):
+    def version(self, version):
         """Sets the version of this NodeMetaV0.
 
         semantic version number  # noqa: E501
@@ -139,7 +137,7 @@ class NodeMetaV0(Model):
         self._version = version
 
     @property
-    def type(self) -> str:
+    def type(self):
         """Gets the type of this NodeMetaV0.
 
         service type  # noqa: E501
@@ -150,7 +148,7 @@ class NodeMetaV0(Model):
         return self._type
 
     @type.setter
-    def type(self, type: str):
+    def type(self, type):
         """Sets the type of this NodeMetaV0.
 
         service type  # noqa: E501
@@ -168,7 +166,7 @@ class NodeMetaV0(Model):
         self._type = type
 
     @property
-    def name(self) -> str:
+    def name(self):
         """Gets the name of this NodeMetaV0.
 
         short, human readable name for the node  # noqa: E501
@@ -179,7 +177,7 @@ class NodeMetaV0(Model):
         return self._name
 
     @name.setter
-    def name(self, name: str):
+    def name(self, name):
         """Sets the name of this NodeMetaV0.
 
         short, human readable name for the node  # noqa: E501
@@ -193,7 +191,7 @@ class NodeMetaV0(Model):
         self._name = name
 
     @property
-    def description(self) -> str:
+    def description(self):
         """Gets the description of this NodeMetaV0.
 
         human readable description of the purpose of the node  # noqa: E501
@@ -204,7 +202,7 @@ class NodeMetaV0(Model):
         return self._description
 
     @description.setter
-    def description(self, description: str):
+    def description(self, description):
         """Sets the description of this NodeMetaV0.
 
         human readable description of the purpose of the node  # noqa: E501
@@ -218,7 +216,7 @@ class NodeMetaV0(Model):
         self._description = description
 
     @property
-    def authors(self) -> List[Nodemetav0Authors]:
+    def authors(self):
         """Gets the authors of this NodeMetaV0.
 
 
@@ -228,7 +226,7 @@ class NodeMetaV0(Model):
         return self._authors
 
     @authors.setter
-    def authors(self, authors: List[Nodemetav0Authors]):
+    def authors(self, authors):
         """Sets the authors of this NodeMetaV0.
 
 
@@ -241,7 +239,7 @@ class NodeMetaV0(Model):
         self._authors = authors
 
     @property
-    def contact(self) -> str:
+    def contact(self):
         """Gets the contact of this NodeMetaV0.
 
         email to correspond to the authors about the node  # noqa: E501
@@ -252,7 +250,7 @@ class NodeMetaV0(Model):
         return self._contact
 
     @contact.setter
-    def contact(self, contact: str):
+    def contact(self, contact):
         """Sets the contact of this NodeMetaV0.
 
         email to correspond to the authors about the node  # noqa: E501
@@ -266,7 +264,7 @@ class NodeMetaV0(Model):
         self._contact = contact
 
     @property
-    def inputs(self) -> object:
+    def inputs(self):
         """Gets the inputs of this NodeMetaV0.
 
         definition of the inputs of this node  # noqa: E501
@@ -277,7 +275,7 @@ class NodeMetaV0(Model):
         return self._inputs
 
     @inputs.setter
-    def inputs(self, inputs: object):
+    def inputs(self, inputs):
         """Sets the inputs of this NodeMetaV0.
 
         definition of the inputs of this node  # noqa: E501
@@ -291,7 +289,7 @@ class NodeMetaV0(Model):
         self._inputs = inputs
 
     @property
-    def outputs(self) -> object:
+    def outputs(self):
         """Gets the outputs of this NodeMetaV0.
 
         definition of the outputs of this node  # noqa: E501
@@ -302,7 +300,7 @@ class NodeMetaV0(Model):
         return self._outputs
 
     @outputs.setter
-    def outputs(self, outputs: object):
+    def outputs(self, outputs):
         """Sets the outputs of this NodeMetaV0.
 
         definition of the outputs of this node  # noqa: E501

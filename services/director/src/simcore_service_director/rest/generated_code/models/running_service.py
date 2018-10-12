@@ -15,7 +15,7 @@ class RunningService(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, published_port: int=None, entry_point: str=None, service_uuid: str=None):  # noqa: E501
+    def __init__(self, published_port=None, entry_point=None, service_uuid=None):  # noqa: E501
         """RunningService - a model defined in OpenAPI
 
         :param published_port: The published_port of this RunningService.  # noqa: E501
@@ -26,9 +26,9 @@ class RunningService(Model):
         :type service_uuid: str
         """
         self.openapi_types = {
-            'published_port': int,
-            'entry_point': str,
-            'service_uuid': str
+            'published_port': 'int',
+            'entry_point': 'str',
+            'service_uuid': 'str'
         }
 
         self.attribute_map = {
@@ -53,7 +53,7 @@ class RunningService(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def published_port(self) -> int:
+    def published_port(self):
         """Gets the published_port of this RunningService.
 
         The ports where the service provides its interface  # noqa: E501
@@ -64,7 +64,7 @@ class RunningService(Model):
         return self._published_port
 
     @published_port.setter
-    def published_port(self, published_port: int):
+    def published_port(self, published_port):
         """Sets the published_port of this RunningService.
 
         The ports where the service provides its interface  # noqa: E501
@@ -80,7 +80,7 @@ class RunningService(Model):
         self._published_port = published_port
 
     @property
-    def entry_point(self) -> str:
+    def entry_point(self):
         """Gets the entry_point of this RunningService.
 
         The entry point where the service provides its interface if specified  # noqa: E501
@@ -91,7 +91,7 @@ class RunningService(Model):
         return self._entry_point
 
     @entry_point.setter
-    def entry_point(self, entry_point: str):
+    def entry_point(self, entry_point):
         """Sets the entry_point of this RunningService.
 
         The entry point where the service provides its interface if specified  # noqa: E501
@@ -103,7 +103,7 @@ class RunningService(Model):
         self._entry_point = entry_point
 
     @property
-    def service_uuid(self) -> str:
+    def service_uuid(self):
         """Gets the service_uuid of this RunningService.
 
         The UUID attached to this service  # noqa: E501
@@ -114,7 +114,7 @@ class RunningService(Model):
         return self._service_uuid
 
     @service_uuid.setter
-    def service_uuid(self, service_uuid: str):
+    def service_uuid(self, service_uuid):
         """Sets the service_uuid of this RunningService.
 
         The UUID attached to this service  # noqa: E501

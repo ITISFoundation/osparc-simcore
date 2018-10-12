@@ -15,7 +15,7 @@ class Error(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, message: str=None, errors: List[object]=None, status: int=None):  # noqa: E501
+    def __init__(self, message=None, errors=None, status=None):  # noqa: E501
         """Error - a model defined in OpenAPI
 
         :param message: The message of this Error.  # noqa: E501
@@ -26,9 +26,9 @@ class Error(Model):
         :type status: int
         """
         self.openapi_types = {
-            'message': str,
-            'errors': List[object],
-            'status': int
+            'message': 'str',
+            'errors': 'List[object]',
+            'status': 'int'
         }
 
         self.attribute_map = {
@@ -53,7 +53,7 @@ class Error(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def message(self) -> str:
+    def message(self):
         """Gets the message of this Error.
 
         Error message  # noqa: E501
@@ -64,7 +64,7 @@ class Error(Model):
         return self._message
 
     @message.setter
-    def message(self, message: str):
+    def message(self, message):
         """Sets the message of this Error.
 
         Error message  # noqa: E501
@@ -78,7 +78,7 @@ class Error(Model):
         self._message = message
 
     @property
-    def errors(self) -> List[object]:
+    def errors(self):
         """Gets the errors of this Error.
 
 
@@ -88,7 +88,7 @@ class Error(Model):
         return self._errors
 
     @errors.setter
-    def errors(self, errors: List[object]):
+    def errors(self, errors):
         """Sets the errors of this Error.
 
 
@@ -99,7 +99,7 @@ class Error(Model):
         self._errors = errors
 
     @property
-    def status(self) -> int:
+    def status(self):
         """Gets the status of this Error.
 
         Error code  # noqa: E501
@@ -110,7 +110,7 @@ class Error(Model):
         return self._status
 
     @status.setter
-    def status(self, status: int):
+    def status(self, status):
         """Sets the status of this Error.
 
         Error code  # noqa: E501

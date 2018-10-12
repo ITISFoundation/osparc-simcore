@@ -6,7 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
-from .running_service import RunningService  # noqa: F401,E501
 from .. import util
 
 
@@ -16,17 +15,17 @@ class RunningServiceEnveloped(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: RunningService=None, status: int=None):  # noqa: E501
+    def __init__(self, data=None, status=None):  # noqa: E501
         """RunningServiceEnveloped - a model defined in OpenAPI
 
         :param data: The data of this RunningServiceEnveloped.  # noqa: E501
-        :type data: RunningService
+        :type data: object
         :param status: The status of this RunningServiceEnveloped.  # noqa: E501
         :type status: int
         """
         self.openapi_types = {
-            'data': RunningService,
-            'status': int
+            'data': 'object',
+            'status': 'int'
         }
 
         self.attribute_map = {
@@ -49,28 +48,28 @@ class RunningServiceEnveloped(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def data(self) -> RunningService:
+    def data(self):
         """Gets the data of this RunningServiceEnveloped.
 
 
         :return: The data of this RunningServiceEnveloped.
-        :rtype: RunningService
+        :rtype: object
         """
         return self._data
 
     @data.setter
-    def data(self, data: RunningService):
+    def data(self, data):
         """Sets the data of this RunningServiceEnveloped.
 
 
         :param data: The data of this RunningServiceEnveloped.
-        :type data: RunningService
+        :type data: object
         """
 
         self._data = data
 
     @property
-    def status(self) -> int:
+    def status(self):
         """Gets the status of this RunningServiceEnveloped.
 
 
@@ -80,7 +79,7 @@ class RunningServiceEnveloped(Model):
         return self._status
 
     @status.setter
-    def status(self, status: int):
+    def status(self, status):
         """Sets the status of this RunningServiceEnveloped.
 
 

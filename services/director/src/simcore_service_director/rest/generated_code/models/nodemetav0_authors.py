@@ -15,7 +15,7 @@ class Nodemetav0Authors(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, name: str=None, email: str=None, affiliation: str=None):  # noqa: E501
+    def __init__(self, name=None, email=None, affiliation=None):  # noqa: E501
         """Nodemetav0Authors - a model defined in OpenAPI
 
         :param name: The name of this Nodemetav0Authors.  # noqa: E501
@@ -26,9 +26,9 @@ class Nodemetav0Authors(Model):
         :type affiliation: str
         """
         self.openapi_types = {
-            'name': str,
-            'email': str,
-            'affiliation': str
+            'name': 'str',
+            'email': 'str',
+            'affiliation': 'str'
         }
 
         self.attribute_map = {
@@ -53,7 +53,7 @@ class Nodemetav0Authors(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def name(self) -> str:
+    def name(self):
         """Gets the name of this Nodemetav0Authors.
 
         Name of the author  # noqa: E501
@@ -64,7 +64,7 @@ class Nodemetav0Authors(Model):
         return self._name
 
     @name.setter
-    def name(self, name: str):
+    def name(self, name):
         """Sets the name of this Nodemetav0Authors.
 
         Name of the author  # noqa: E501
@@ -76,7 +76,7 @@ class Nodemetav0Authors(Model):
         self._name = name
 
     @property
-    def email(self) -> str:
+    def email(self):
         """Gets the email of this Nodemetav0Authors.
 
         Email address  # noqa: E501
@@ -87,7 +87,7 @@ class Nodemetav0Authors(Model):
         return self._email
 
     @email.setter
-    def email(self, email: str):
+    def email(self, email):
         """Sets the email of this Nodemetav0Authors.
 
         Email address  # noqa: E501
@@ -99,7 +99,7 @@ class Nodemetav0Authors(Model):
         self._email = email
 
     @property
-    def affiliation(self) -> str:
+    def affiliation(self):
         """Gets the affiliation of this Nodemetav0Authors.
 
         Affiliation of the author  # noqa: E501
@@ -110,7 +110,7 @@ class Nodemetav0Authors(Model):
         return self._affiliation
 
     @affiliation.setter
-    def affiliation(self, affiliation: str):
+    def affiliation(self, affiliation):
         """Sets the affiliation of this Nodemetav0Authors.
 
         Affiliation of the author  # noqa: E501
