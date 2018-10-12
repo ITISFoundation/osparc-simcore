@@ -236,7 +236,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       // post pipeline
       this.__pipelineId = null;
-      let currentPipeline = this.__workbenchView.serializePipeline();
+      const saveContainers = false;
+      const savePosition = false;
+      let currentPipeline = this.__projectDocument.getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
       console.log(currentPipeline);
       let req = new qx.io.request.Xhr();
       let data = {};
@@ -347,10 +349,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     serializeProjectDocument: function() {
-      this.__projectDocument.set({
-        lastChangeDate: new Date()
-      });
-      console.log("serializeProjectDocument", this.__projectDocument.getJsonObject());
+      console.log("serializeProject", this.__projectDocument.serializeProject());
     }
   }
 });

@@ -193,20 +193,22 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return false;
     },
 
-    serializeWorkbench: function(savePosition = false) {
+    serializeWorkbench: function(saveContainers = true, savePosition = true) {
       let workbench = {};
-      for (const nodeId in this.getNodeModels()) {
-        const nodeModel = this.getNodeModel(nodeId);
+      const allModels = this.getNodeModels(true);
+      for (const nodeId in allModels) {
+        const nodeModel = allModels[nodeId];
+        if (!saveContainers && nodeModel.isContainer()) {
+          continue;
+        }
         const nodeData = nodeModel.getMetaData();
-        // let cNode = workbench[nodeModel.getNodeId()] = {
-        workbench[nodeModel.getNodeId()] = {
+        let cNode = workbench[nodeModel.getNodeId()] = {
           key: nodeData.key,
           version: nodeData.version,
           inputs: nodeModel.getInputValues(),
           outputs: {}
         };
-        /*
-        if (savePosition && this.__desktop.indexOf(nodeModel)>-1) {
+        if (savePosition) {
           cNode.position = {
             x: nodeModel.getPosition().x,
             y: nodeModel.getPosition().y
@@ -218,7 +220,6 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
             cNode.outputs[key] = outputPort.value;
           }
         }
-        */
       }
       return workbench;
     }

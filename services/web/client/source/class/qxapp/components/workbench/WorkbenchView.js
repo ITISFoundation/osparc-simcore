@@ -703,16 +703,6 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
       }
     },
 
-    saveProject: function() {
-      const savePosition = true;
-      this.serializePipeline(savePosition);
-    },
-
-    serializePipeline: function(savePosition = false) {
-      let workbench = this.getWorkbenchModel().serializeWorkbench(savePosition);
-      return workbench;
-    },
-
     addWindowToDesktop: function(node) {
       this.__desktop.add(node);
       node.open();

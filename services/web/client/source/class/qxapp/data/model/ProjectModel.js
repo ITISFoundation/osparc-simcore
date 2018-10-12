@@ -80,11 +80,17 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
   },
 
   members: {
-    getJsonObject: function() {
+    serializeProject: function() {
+      this.setLastChangeDate(new Date());
+
       let jsonObject = {};
       let properties = this.constructor.$$properties;
       for (let key in properties) {
-        jsonObject[key] = this.get(key);
+        if (key === "workbenchModel") {
+          jsonObject["workbench"] = this.getWorkbenchModel().serializeWorkbench();
+        } else {
+          jsonObject[key] = this.get(key);
+        }
       }
       return jsonObject;
     }
