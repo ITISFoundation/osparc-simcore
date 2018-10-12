@@ -2,10 +2,10 @@ Response204Enveloped:
   type: object
   properties:
     data:
-      type: string
+      type: object
       nullable: true
-      example: 'null'
-      default: 'null'
+      example: null
+      default: null
     status:
       type: integer
       example: 204

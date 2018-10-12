@@ -148,7 +148,7 @@ async def _start_get_stop_services(push_services):
         # start the service
         running_service_enveloped = rest.models.RunningServiceEnveloped.from_dict(await rest.handlers.running_interactive_services_post(fake_request, service_key, service_uuid, service_tag))
         assert running_service_enveloped.status == 201
-        assert isinstance(running_service_enveloped.data, rest.models.RunningService)
+        assert isinstance(running_service_enveloped.data, object)
 
         # get the service
         response = rest.models.Response204Enveloped.from_dict(await rest.handlers.running_interactive_services_get(fake_request, service_uuid))
