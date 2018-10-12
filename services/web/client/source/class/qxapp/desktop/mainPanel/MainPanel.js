@@ -8,22 +8,22 @@ qx.Class.define("qxapp.desktop.mainPanel.MainPanel", {
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    let optionsBar = this.__optionsBar = new qxapp.desktop.mainPanel.OptionsBar();
+    // let optionsBar = this.__optionsBar = new qxapp.desktop.mainPanel.OptionsBar();
     let mainView = new qx.ui.core.Widget();
     let controlsBar = this.__controlsBar = new qxapp.desktop.mainPanel.ControlsBar();
-
+    /*
     optionsBar.set({
       width: 60,
       allowGrowX: false
     });
-
+    */
     controlsBar.set({
       height: 60,
       allowGrowY: false
     });
 
     let hBox = this.__hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-    hBox.add(optionsBar);
+    // hBox.add(optionsBar);
     hBox.add(mainView, {
       flex: 1
     });
@@ -46,22 +46,24 @@ qx.Class.define("qxapp.desktop.mainPanel.MainPanel", {
 
   members: {
     __hBox: null,
-    __optionsBar: null,
+    // __optionsBar: null,
     __controlsBar: null,
 
     __applyMainView: function(newWidget) {
-      if (this.__hBox._indexOf(newWidget) != 1) {
-        this.__hBox._removeAt(1);
-        this.__hBox._addAt(newWidget, 1, {
+      // const mainViewIndex = 1;
+      const mainViewIndex = 0;
+      if (this.__hBox._indexOf(newWidget) != mainViewIndex) {
+        this.__hBox._removeAt(mainViewIndex);
+        this.__hBox._addAt(newWidget, mainViewIndex, {
           flex: 1
         });
       }
     },
-
+    /*
     getOptions: function() {
       return this.__optionsBar;
     },
-
+    */
     getControls: function() {
       return this.__controlsBar;
     }
