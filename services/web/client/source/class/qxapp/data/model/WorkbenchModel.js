@@ -201,23 +201,35 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
         if (!saveContainers && nodeModel.isContainer()) {
           continue;
         }
-        const nodeData = nodeModel.getMetaData();
-        let cNode = workbench[nodeModel.getNodeId()] = {
-          key: nodeData.key,
-          version: nodeData.version,
+
+        // node generic
+        let node = workbench[nodeModel.getNodeId()] = {
+          label: nodeModel.getName(),
           inputs: nodeModel.getInputValues(),
-          outputs: {}
+          inputNodes: nodeModel.getInputNodes(),
+          outputNode: nodeModel.getIsOutputNode(),
+          outputs: {}, // can a container have outputs?
+          parent: nodeModel.getParentNodeId()
         };
+
         if (savePosition) {
-          cNode.position = {
+          node.position = {
             x: nodeModel.getPosition().x,
             y: nodeModel.getPosition().y
           };
         }
-        for (let key in nodeData.outputs) {
-          const outputPort = nodeData.outputs[key];
-          if ("value" in outputPort) {
-            cNode.outputs[key] = outputPort.value;
+
+        // node especific
+        if (!nodeModel.isContainer()) {
+          node = {
+            key: nodeModel.getMetaData().key,
+            version: nodeModel.getMetaData().version
+          };
+          for (let key in nodeModel.getMetaData().outputs) {
+            const outputPort = nodeModel.getMetaData().outputs[key];
+            if ("value" in outputPort) {
+              node.outputs[key] = outputPort.value;
+            }
           }
         }
       }
