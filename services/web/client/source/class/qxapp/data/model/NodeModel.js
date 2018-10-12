@@ -61,8 +61,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     viewerButton: {
-      init: null,
-      check: "qx.ui.form.Button"
+      check: "qx.ui.form.Button",
+      init: null
     }
   },
 
@@ -83,7 +83,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     getInputValues: function() {
-      return this.getPropsWidget().getValues();
+      if (this.isPropertyInitialized("propsWidget")) {
+        return this.getPropsWidget().getValues();
+      }
+      return {};
     },
 
     getInnerNodes: function(recursive = false) {
