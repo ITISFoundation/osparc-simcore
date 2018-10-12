@@ -7,7 +7,6 @@ from os import walk
 from os.path import join
 from pathlib import Path
 
-
 from setuptools import find_packages, setup
 
 _CDIR = Path(sys.argv[0] if __name__ == '__main__' else __file__).resolve().parent
@@ -57,15 +56,11 @@ _CONFIG = dict(
     setup_requires=['pytest-runner'],
     package_data={
         '': [
-            'oas3/**/*.yaml',
-            'oas3/**/paths/*.yaml',
-            'oas3/**/components/**/*.yaml',
-            'oas3/**/components/**/*.json',
+            'api/**/*.yaml',
+            'api/**/schemas/*.json',
+            'api/**/schemas/*.yaml',
             ],
     },
-    data_files = list_datafiles_at(
-        "etc/", # Contain the configuration files for all the programs that run on your system.
-    ),
     entry_points={
         'console_scripts': [
             'simcore-service-director = simcore_service_director.__main__:main',
