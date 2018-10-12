@@ -204,7 +204,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
         // node generic
         let node = workbench[nodeModel.getNodeId()] = {
-          label: nodeModel.getName(),
+          label: nodeModel.getLabel(),
           inputs: nodeModel.getInputValues(),
           inputNodes: nodeModel.getInputNodes(),
           outputNode: nodeModel.getIsOutputNode(),
