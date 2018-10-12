@@ -535,7 +535,7 @@ class UsersApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service 
+        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service
         :return: ServicesEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
@@ -557,7 +557,7 @@ class UsersApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service 
+        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service
         :return: ServicesEnveloped
                  If the method is called asynchronously,
                  returns the request thread.

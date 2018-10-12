@@ -11,7 +11,7 @@ print()
 
 form = cgi.FieldStorage()
 server_port = form["port"].value
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 _INPUT_FILE = Path(r"/home/root/trigger/server_port")
 
 with _INPUT_FILE.open(mode='w') as fp:

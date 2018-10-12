@@ -1,6 +1,6 @@
 version: '3.4'
 services:
-  db:
+  postgres:
     image: postgres:10
     #volumes: TODO: make db persistent
     #  - '.:/home/scu/client'
@@ -11,7 +11,7 @@ services:
     ports:
       - 18080:8080
     depends_on:
-      - db
+      - postgres
   rabbit:
     image: rabbitmq:3-management
     environment:
