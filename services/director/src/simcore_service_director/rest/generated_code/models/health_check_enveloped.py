@@ -15,7 +15,7 @@ class HealthCheckEnveloped(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data=None, status=None):  # noqa: E501
+    def __init__(self, data: object=None, status: int=None):  # noqa: E501
         """HealthCheckEnveloped - a model defined in OpenAPI
 
         :param data: The data of this HealthCheckEnveloped.  # noqa: E501
@@ -24,8 +24,8 @@ class HealthCheckEnveloped(Model):
         :type status: int
         """
         self.openapi_types = {
-            'data': 'object',
-            'status': 'int'
+            'data': object,
+            'status': int
         }
 
         self.attribute_map = {
@@ -48,7 +48,7 @@ class HealthCheckEnveloped(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def data(self):
+    def data(self) -> object:
         """Gets the data of this HealthCheckEnveloped.
 
 
@@ -58,7 +58,7 @@ class HealthCheckEnveloped(Model):
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: object):
         """Sets the data of this HealthCheckEnveloped.
 
 
@@ -69,7 +69,7 @@ class HealthCheckEnveloped(Model):
         self._data = data
 
     @property
-    def status(self):
+    def status(self) -> int:
         """Gets the status of this HealthCheckEnveloped.
 
 
@@ -79,7 +79,7 @@ class HealthCheckEnveloped(Model):
         return self._status
 
     @status.setter
-    def status(self, status):
+    def status(self, status: int):
         """Sets the status of this HealthCheckEnveloped.
 
 

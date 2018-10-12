@@ -6,6 +6,7 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
+from .node_meta_v0 import NodeMetaV0  # noqa: F401,E501
 from .. import util
 
 
@@ -15,7 +16,7 @@ class ServicesEnveloped(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data=None, status=None):  # noqa: E501
+    def __init__(self, data: List[NodeMetaV0]=None, status: int=None):  # noqa: E501
         """ServicesEnveloped - a model defined in OpenAPI
 
         :param data: The data of this ServicesEnveloped.  # noqa: E501
@@ -24,8 +25,8 @@ class ServicesEnveloped(Model):
         :type status: int
         """
         self.openapi_types = {
-            'data': 'List[NodeMetaV0]',
-            'status': 'int'
+            'data': List[NodeMetaV0],
+            'status': int
         }
 
         self.attribute_map = {
@@ -48,7 +49,7 @@ class ServicesEnveloped(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def data(self):
+    def data(self) -> List[NodeMetaV0]:
         """Gets the data of this ServicesEnveloped.
 
 
@@ -58,7 +59,7 @@ class ServicesEnveloped(Model):
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: List[NodeMetaV0]):
         """Sets the data of this ServicesEnveloped.
 
 
@@ -69,7 +70,7 @@ class ServicesEnveloped(Model):
         self._data = data
 
     @property
-    def status(self):
+    def status(self) -> int:
         """Gets the status of this ServicesEnveloped.
 
 
@@ -79,7 +80,7 @@ class ServicesEnveloped(Model):
         return self._status
 
     @status.setter
-    def status(self, status):
+    def status(self, status: int):
         """Sets the status of this ServicesEnveloped.
 
 

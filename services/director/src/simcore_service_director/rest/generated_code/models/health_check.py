@@ -15,7 +15,7 @@ class HealthCheck(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, name=None, status=None, api_version=None, version=None):  # noqa: E501
+    def __init__(self, name: str=None, status: str=None, api_version: str=None, version: str=None):  # noqa: E501
         """HealthCheck - a model defined in OpenAPI
 
         :param name: The name of this HealthCheck.  # noqa: E501
@@ -28,10 +28,10 @@ class HealthCheck(Model):
         :type version: str
         """
         self.openapi_types = {
-            'name': 'str',
-            'status': 'str',
-            'api_version': 'str',
-            'version': 'str'
+            'name': str,
+            'status': str,
+            'api_version': str,
+            'version': str
         }
 
         self.attribute_map = {
@@ -58,7 +58,7 @@ class HealthCheck(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Gets the name of this HealthCheck.
 
 
@@ -68,7 +68,7 @@ class HealthCheck(Model):
         return self._name
 
     @name.setter
-    def name(self, name):
+    def name(self, name: str):
         """Sets the name of this HealthCheck.
 
 
@@ -79,7 +79,7 @@ class HealthCheck(Model):
         self._name = name
 
     @property
-    def status(self):
+    def status(self) -> str:
         """Gets the status of this HealthCheck.
 
 
@@ -89,7 +89,7 @@ class HealthCheck(Model):
         return self._status
 
     @status.setter
-    def status(self, status):
+    def status(self, status: str):
         """Sets the status of this HealthCheck.
 
 
@@ -100,7 +100,7 @@ class HealthCheck(Model):
         self._status = status
 
     @property
-    def api_version(self):
+    def api_version(self) -> str:
         """Gets the api_version of this HealthCheck.
 
 
@@ -110,7 +110,7 @@ class HealthCheck(Model):
         return self._api_version
 
     @api_version.setter
-    def api_version(self, api_version):
+    def api_version(self, api_version: str):
         """Sets the api_version of this HealthCheck.
 
 
@@ -121,7 +121,7 @@ class HealthCheck(Model):
         self._api_version = api_version
 
     @property
-    def version(self):
+    def version(self) -> str:
         """Gets the version of this HealthCheck.
 
 
@@ -131,7 +131,7 @@ class HealthCheck(Model):
         return self._version
 
     @version.setter
-    def version(self, version):
+    def version(self, version: str):
         """Sets the version of this HealthCheck.
 
 
