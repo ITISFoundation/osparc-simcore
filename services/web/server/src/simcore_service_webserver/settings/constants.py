@@ -33,7 +33,9 @@ API_URL_VERSION = "v{:.0f}".format(API_MAJOR_VERSION)
 #
 
 # APP=application
-APP_CONFIG_KEY="configuration"
+APP_CONFIG_KEY="config" # FIXME: replace all "config" by this key
+
+
 APP_OAS_KEY="openapi_specs"
 
 # CFG=configuration

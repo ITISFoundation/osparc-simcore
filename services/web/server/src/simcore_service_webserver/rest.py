@@ -20,10 +20,14 @@ def setup(app: web.Application):
 
         # sets servers variables to current server's config
         app_config = app[APP_CONFIG_KEY]["app"]
-        for server in specs.servers:
-            for key in ('host', 'port'):
-                if key in server.variables:
-                    server.variables[key].default = app_config[key]
+        # FIXME: host/port in host side!
+        host, port = 'localhost', 9081
+        specs.servers[0].variables['host'].default = 'localhost'
+        specs.servers[0].variables['port'].default = 9081
+        #for server in specs.servers:
+        #    for key in ('host', 'port'):
+        #        if key in server.variables:
+        #            server.variables[key].default = app_config[key]
 
     except openapi.OpenAPIError:
         log.exception("Invalid specs")

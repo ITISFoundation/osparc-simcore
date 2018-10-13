@@ -48,19 +48,19 @@ qx.Class.define("qxapp.auth.Manager", {
 
     login: function(email, pass, callback, context) {
       //---------------------------------------------------------------------------
-      // TODO: temporarily will allow any user until issue #162 is resolved and/or python server has active API
-      if (!qx.core.Environment.get("dev.enableFakeSrv")) {
-        this.setToken("fake-token");
-        callback.call(context, true);
-        return;
-      }
+      // FIXME: temporarily will allow any user until issue #162 is resolved and/or python server has active API
+      //if (!qx.core.Environment.get("dev.enableFakeSrv")) {
+      //  this.setToken("fake-token");
+      //  callback.call(context, true);
+      //  return;
+      //}
       //---------------------------------------------------------------------------
 
       let request = new qx.io.request.Xhr();
       const prefix = qxapp.io.rest.AbstractResource.API;
       request.set({
         authentication: new qx.io.request.authentication.Basic(email, pass),
-        url: prefix + "/token",
+        url: prefix + "/",
         method: "GET"
       });
 
@@ -70,7 +70,11 @@ qx.Class.define("qxapp.auth.Manager", {
         console.debug("Login suceeded:", "status  :", req.getStatus(), "phase   :", req.getPhase(), "response: ", req.getResponse());
         this.assert(req == request);
 
-        this.setToken(req.getResponse().token);
+        res = req.getResponse()
+        // res.data, res.error
+        console.debug(req.getResponse())
+        this.setToken('fake-token')
+        // this.setToken(req.getResponse().token);
         callback.call(context, true, null);
       }, this);
 
