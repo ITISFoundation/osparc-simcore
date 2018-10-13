@@ -84,3 +84,30 @@ async def test_action_check(client):
     assert data['path_value'] == 'echo'
     assert not data['query_value']
     #assert data['body_value'] == fake
+
+async def test_auth_register(client, caplog):
+    caplog.set_level(logging.ERROR, logger='openapi_spec_validator')
+    caplog.set_level(logging.ERROR, logger='openapi_core')
+
+    response = await client.post('v0/auth/register',
+        json = {
+            'email': 'foo@mymail.com',
+            'password': 'my secret',
+            'confirm': 'my secret',
+            },
+    )
+    payload = await response.json()
+
+    assert response.status==web.HTTPOk.status_code, str(payload)
+
+    data, error = [payload[k] for k in ('data', 'error')]
+    assert not error
+    assert data
+
+    assert 'message' in data
+    assert data.get('logger') == "user"
+
+    # possible usage
+    client_log = logging.getLogger(data.get('logger', __name__))
+    level = getattr(logging, data.get('level', "INFO"))
+    client_log.log(level, msg=data['message'])
