@@ -2,11 +2,12 @@ import sys
 import warnings
 import logging
 
+# TODO: refactor as in cookiecutter
 warnings.filterwarnings("ignore")
 
 from . import cli
 from . import settings
-from .main import run
+from .main import run_service
 
 def main(argv=None):
     logging.basicConfig(level=logging.DEBUG)
@@ -21,7 +22,7 @@ def main(argv=None):
     log_level = config.get("app",{}).get("log_level", "DEBUG")
     logging.basicConfig( level=getattr(logging, log_level) )
 
-    run(config)
+    run_service(config)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

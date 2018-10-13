@@ -20,7 +20,7 @@ from simcore_service_webserver import (
     resources,
     rest
 )
-from simcore_service_webserver.main import init_app
+from simcore_service_webserver.main import create_application
 from simcore_service_webserver.settings import (
     read_and_validate
 )
@@ -42,7 +42,7 @@ def cli(loop, aiohttp_client, mock_services, server_test_configfile):
     assert "POSTGRES_PORT" in os.environ
     assert config["app"]["testing"] == True
 
-    app = init_app(config)
+    app = create_application(config)
     client = loop.run_until_complete(aiohttp_client(app))
 
     return client
@@ -59,7 +59,7 @@ def cli_light(loop, aiohttp_client, light_test_configfile):
     os.environ["RABBIT_HOST"] = "None"
 
     config = read_and_validate( light_test_configfile )
-    app = init_app(config)
+    app = create_application(config)
     client = loop.run_until_complete(aiohttp_client(app))
 
     yield client

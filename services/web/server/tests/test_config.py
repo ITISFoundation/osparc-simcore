@@ -5,16 +5,13 @@ import unittest.mock as mock
 
 import pytest
 
-
-from simcore_service_webserver import (
-    resources,
-    settings as srv_settings,
-    cli as srv_cli
-)
+from simcore_service_webserver import cli as srv_cli
+from simcore_service_webserver import resources
+from simcore_service_webserver import settings as srv_settings
 from simcore_service_webserver.settings.config import CONFIG_SCHEMA
 
-
 log = logging.getLogger(__name__)
+
 
 def test_config_options_in_cli(capsys):
     with pytest.raises(SystemExit) as einfo:

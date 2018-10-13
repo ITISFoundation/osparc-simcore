@@ -6,17 +6,17 @@
 # W0621: Redefining name ... from outer scope
 # pylint: disable=W0621
 import logging
-from pathlib import Path
 import sys
+from pathlib import Path
 
-import pytest
-from aiohttp import web
 import openapi_core
+import pytest
 import yaml
+from aiohttp import web
 
-from simcore_service_webserver import rest
-from simcore_service_webserver import resources
-from simcore_service_webserver.settings.constants import APP_OAS_KEY, APP_CONFIG_KEY
+from simcore_service_webserver import resources, rest
+from simcore_service_webserver.settings.constants import (APP_CONFIG_KEY,
+                                                          APP_OAS_KEY)
 
 # TODO: reduce log from openapi_core loggers
 

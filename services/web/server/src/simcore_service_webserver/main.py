@@ -17,7 +17,7 @@ from .settings.constants import APP_CONFIG_KEY
 
 log = logging.getLogger(__name__)
 
-def init_app(config):
+def create_application(config):
     """
         Initializes service
     """
@@ -36,14 +36,14 @@ def init_app(config):
 
     return app
 
-def run(config):
+def run_service(config):
     """ Runs service
 
     NOTICE it is sync!
     """
     log.debug("Serving app ... ")
 
-    app = init_app(config)
+    app = create_application(config)
     web.run_app(app,
                 host=config["app"]["host"],
                 port=config["app"]["port"])

@@ -2,7 +2,7 @@ import logging
 
 import sqlalchemy as sa
 
-from simcore_service_webserver.main import init_app
+from simcore_service_webserver.main import create_application
 from simcore_service_webserver.settings import (
     read_and_validate
 )
@@ -31,7 +31,7 @@ async def test_basic_db_workflow(mock_services, server_test_configfile):
 
     # init app from config file
     config = read_and_validate( server_test_configfile )
-    app = init_app(config)
+    app = create_application(config)
 
     # emulates app startup (see app.on_startup in setup_db)
     await create_aiopg(app)
