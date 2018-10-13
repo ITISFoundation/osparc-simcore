@@ -1,5 +1,9 @@
 """
  TODO: this is a placeholder for the command line interface module
+ TODO: should fail if invalid config name
+ TODO: should fail if invalid commands
+ TODO: should list available config files
+
 """
 import argparse
 

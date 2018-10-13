@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 
 def create(specs: openapi.Spec) -> List[web.RouteDef]:
     # TODO: consider the case in which server creates routes for both v0 and v1!!!
+    # TODO: should this be taken from servers instead?
     BASEPATH = '/v' + specs.info.version.split('.')[0]
 
     log.debug("creating %s ", __name__)
