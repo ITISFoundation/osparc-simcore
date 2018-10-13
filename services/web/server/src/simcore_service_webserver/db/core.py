@@ -11,8 +11,10 @@ import logging
 
 import aiopg.sa
 
-# FIXME: this is temporary here so database gets properly initialized
 from ..comp_backend_api import init_database as _init_db
+from ..settings.constants import APP_CONFIG_KEY
+
+# FIXME: _init_db is temporary here so database gets properly initialized
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +40,7 @@ async def create_aiopg(app):
     # TODO: define connection policy for services. What happes if cannot connect to a service? do not have access to its services but
     # what do we do with the server? Retry? stop and exit?
 
-    conf = app["config"][DB_SERVICE_NAME]
+    conf = app[APP_CONFIG_KEY][DB_SERVICE_NAME]
 
     try:
         engine = await aiopg.sa.create_engine(
@@ -73,7 +75,7 @@ async def dispose_aiopg(app):
 def setup_db(app):
     log.debug("Setting up %s [service: %s] ...", __name__, DB_SERVICE_NAME)
 
-    disable_services = app["config"].get("app", {}).get("disable_services",[])
+    disable_services = app[APP_CONFIG_KEY].get("app", {}).get("disable_services",[])
     if DB_SERVICE_NAME in disable_services:
         app[APP_ENGINE_KEY] = None
         log.warning("Service '%s' explicitly disabled in config", DB_SERVICE_NAME)

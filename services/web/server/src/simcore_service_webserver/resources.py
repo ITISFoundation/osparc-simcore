@@ -2,14 +2,19 @@
 
 See https://setuptools.readthedocs.io/en/latest/pkg_resources.html
 """
-import pathlib
-import pkg_resources
 import functools
+import pathlib
 
+import pkg_resources
+
+from .settings.constants import APP_CONFIG_KEY
+
+#TODO: from simcore_servicelib import resources
 
 # resources names
+# TODO: import all RSC_* within .settings.constants!
 RESOURCE_OPENAPI = "oas3"
-RESOURCE_CONFIG  = "config"
+RESOURCE_CONFIG  = APP_CONFIG_KEY
 
 """
  List of pkg_resources functions *bound* to current package with the following signature

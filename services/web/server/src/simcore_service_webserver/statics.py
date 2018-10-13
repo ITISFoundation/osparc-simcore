@@ -11,6 +11,8 @@ import pathlib
 
 from aiohttp import web
 
+from .settings.constants import APP_CONFIG_KEY
+
 log = logging.getLogger(__file__)
 
 
@@ -20,7 +22,7 @@ async def index(request):
     """
     log.debug("index.request:\n %s", request)
 
-    client_dir = pathlib.Path(request.app["config"]["app"]["client_outdir"])
+    client_dir = pathlib.Path(request.app[APP_CONFIG_KEY]["app"]["client_outdir"])
     index_path = client_dir / "index.html"
     with open(index_path) as ofh:
         return web.Response(text=ofh.read(), content_type="text/html")
@@ -29,7 +31,7 @@ async def index(request):
 def setup_statics(app):
     log.debug("Setting up %s ...", __name__)
 
-    outdir = pathlib.Path( app["config"]["app"]["client_outdir"] )
+    outdir = pathlib.Path( app[APP_CONFIG_KEY]["app"]["client_outdir"] )
 
     if not outdir.exists():
         # FIXME: This error is silent to let tests pass

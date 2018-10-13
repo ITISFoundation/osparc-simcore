@@ -9,6 +9,9 @@ TODO: this should be the actual settings
 """
 import logging
 
+from simcore_servicelib.constants import (APP_CONFIG_KEY, APP_OAS_KEY,
+                                         RSC_CONFIG_KEY)
+
 from ..__version__ import get_version_object
 
 log = logging.getLogger(__name__)
@@ -26,22 +29,18 @@ API_MAJOR_VERSION = package_version.major
 API_URL_VERSION = "v{:.0f}".format(API_MAJOR_VERSION)
 
 
-## KEYS -------------------------
+# STORAGE KEYS -------------------------
 # Keys used in different scopes. Common naming format:
 #
 #    $(SCOPE)_$(NAME)_KEY
 #
+# See https://aiohttp.readthedocs.io/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
 
 # APP=application
-APP_CONFIG_KEY="config" # FIXME: replace all "config" by this key
-
-
-APP_OAS_KEY="openapi_specs"
 
 # CFG=configuration
 
 # RSC=resource
-RSC_CONFIG_KEY  = "config"
 RSC_OPENAPI_KEY = "oas3/{}/openapi.yaml".format(API_URL_VERSION)
 
 # RQT=request

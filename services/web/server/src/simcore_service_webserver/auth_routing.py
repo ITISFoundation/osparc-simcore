@@ -36,10 +36,9 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
 
 
 def setup(app: web.Application):
-    validated_specs = app[APP_OAS_KEY]
+    valid_specs = app[APP_OAS_KEY]
 
-    if validated_specs:
-        routes = create(validated_specs)
-        app.router.add_routes(routes)
-    else:
-        log.debug("skipping setup %s ", __name__)
+    assert valid_specs, "No API specs in app[%s]. Skipping setup %s "% (APP_OAS_KEY, __name__)
+
+    routes = create(valid_specs)
+    app.router.add_routes(routes)

@@ -27,7 +27,7 @@ log = logging.getLogger(__file__)
 #    version needs to be given by simcore_director_sdk!!!
 #
 #
-# notice that app['config']['service']['director'] returns this config
+# notice that app[APP_CONFIG_KEY]['service']['director'] returns this config
 #
 # OR cache per session?
 #

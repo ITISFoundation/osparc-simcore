@@ -13,7 +13,6 @@ from .statics import setup_statics
 from .computational_backend import setup_computational_backend
 from .sockets import setup_sio
 from .settings.constants import APP_CONFIG_KEY
-#from .router import create_router
 
 
 log = logging.getLogger(__name__)
@@ -24,6 +23,7 @@ def init_app(config):
     """
     log.debug("Initializing app ... ")
 
+    # TODO: remove completely apiset dependency!
     #app = web.Application(router=create_router())
     app = web.Application()
     app[APP_CONFIG_KEY] = config
