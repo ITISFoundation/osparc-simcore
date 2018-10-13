@@ -23,8 +23,6 @@ def init_app(config):
     """
     log.debug("Initializing app ... ")
 
-    # TODO: remove completely apiset dependency!
-    #app = web.Application(router=create_router())
     app = web.Application()
     app[APP_CONFIG_KEY] = config
 

@@ -17,7 +17,6 @@ import yaml
 from simcore_service_webserver import rest
 from simcore_service_webserver import resources
 from simcore_service_webserver.settings.constants import APP_OAS_KEY, APP_CONFIG_KEY
-import simcore_service_webserver.auth_routing as auth_routing
 
 # TODO: reduce log from openapi_core loggers
 

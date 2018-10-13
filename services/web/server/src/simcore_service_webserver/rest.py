@@ -8,7 +8,7 @@ from aiohttp import web
 
 from simcore_servicelib import openapi
 
-from . import auth_routing, resources
+from . import rest_routing, resources
 from .settings.constants import APP_CONFIG_KEY, APP_OAS_KEY, RSC_OPENAPI_KEY
 
 log = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ def setup(app: web.Application):
         # sets servers variables to current server's config
         app_config = app[APP_CONFIG_KEY]['app'] # TODO: define appconfig key based on config schema
 
-        if app_config['testing']:
+        if app_config.get('testing', True):
             # FIXME: host/port in host side!  Consider
             #  - server running inside container. use environ set by container to find port maps maps (see portainer)
             #  - server running in host
@@ -40,7 +40,7 @@ def setup(app: web.Application):
             HOSTNAMES = ('127.0.0.1', 'localhost')
             if host in HOSTNAMES:
                 new_server = copy.deepcopy(devserver)
-                new_server.variables['host'].default = HOSTNAMES[ HOSTNAMES.index(host)+1 % 2]
+                new_server.variables['host'].default = HOSTNAMES[(HOSTNAMES.index(host)+1) % 2]
                 specs.servers.append(new_server)
 
         # NOTE: after setup app-keys are all defined, but they might be set to None when they cannot
@@ -50,7 +50,7 @@ def setup(app: web.Application):
         app[APP_OAS_KEY] = specs # validated openapi specs
 
         # collect here all maps and join in the router
-        auth_routing.setup(app)
+        rest_routing.setup(app)
 
     except openapi.OpenAPIError:
         # TODO: protocol when some parts are unavailable because of failure
