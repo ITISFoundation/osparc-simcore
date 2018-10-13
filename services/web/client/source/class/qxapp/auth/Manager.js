@@ -70,17 +70,29 @@ qx.Class.define("qxapp.auth.Manager", {
         console.debug("Login suceeded:", "status  :", req.getStatus(), "phase   :", req.getPhase(), "response: ", req.getResponse());
         this.assert(req == request);
 
-        res = req.getResponse()
-        // res.data, res.error
-        console.debug(req.getResponse())
-        this.setToken('fake-token')
-        // this.setToken(req.getResponse().token);
-        callback.call(context, true, null);
+        let hasLoggedIn = false;
+        let msg = null;
+
+        // enveloped, error extraction from payload
+        const {data, error} = req.getResponse();
+
+        if (error) {
+          msg = this._createErrorMessage(error.errors.logs);
+        } else {
+          // TODO: validate data against specs
+
+          this.setToken(data.token);
+          hasLoggedIn = true;
+        }
+
+        callback.call(context, hasLoggedIn, msg);
       }, this);
 
       request.addListener("fail", function(e) {
-        // TODO: why if failed? Add server response message
-        callback.call(context, false, "Authentication failed");
+        let req = e.getTarget();
+        const msg = this._createErrorMessage(req.error) | "Authentication failed";
+
+        callback.call(context, false, msg);
       }, this);
 
       request.send();
@@ -107,6 +119,26 @@ qx.Class.define("qxapp.auth.Manager", {
       let success = true;
       let msg = "User has been registered. A confirmation email has been sent to you.";
       callback.call(context, success, msg);
+    },
+
+    _createErrorMessage: function(logs) {
+      // Adds server response to error message
+
+      let msg = null;
+      if (logs) {
+        // TODO: improve error logging
+        for (let i=0; i<logs.length; ++i) {
+          const log = logs[i];
+          if (log.level=="ERROR") {
+            msg = log.message;
+            break;
+          } else {
+            console.debug(logs[i]);
+          }
+        }
+      }
+      return msg;
     }
+
   }
 });

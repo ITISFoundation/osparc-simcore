@@ -83,7 +83,6 @@ class HealthCheckType:
 # handlers ----------------------
 async def check_health(request: web.Request):
     # input
-    import pdb; pdb.set_trace()
     params, query, body = await _extract_and_validate(request)
 
     assert not params
