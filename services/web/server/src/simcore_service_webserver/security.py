@@ -1,21 +1,21 @@
 """ Authentication and authorization
 
-    - authentication: Identity gets ide
-    - based in aiohttp_security library : https://aiohttp-security.readthedocs.io/en/latest/
+
+    See https://aiohttp-security.readthedocs.io/en/latest/
 """
 # pylint: disable=assignment-from-no-return
+# pylint: disable=unused-import
 import logging
-import sqlalchemy as sa
 
 import aiohttp_security
-from aiohttp_security import (
-    SessionIdentityPolicy
-)
+import sqlalchemy as sa
+from aiohttp_security import (SessionIdentityPolicy, authorized_userid, forget,
+                              permits, remember)
 from aiohttp_security.abc import AbstractAuthorizationPolicy
 from passlib.hash import sha256_crypt
 
-
 from .db import model
+from .session import setup_session
 
 log = logging.getLogger(__file__)
 
@@ -96,12 +96,25 @@ async def check_credentials(db_engine, username, password):
 generate_password_hash = sha256_crypt.hash
 
 
-def setup_security(app):
+def setup(app):
     log.debug("Setting up %s ...", __name__)
 
-    # WARNING: expected aiosession already initialized!
+    # TODO: create dependency mechanism and compute setup order
+    setup_session(app)
+
+    # Once user is identified, an identity string is created for that user
     identity_policy = SessionIdentityPolicy()
 
     # FIXME: cannot guarantee correct config key for db"s engine!
     authorization_policy = DBAuthorizationPolicy(app, "db_engine")
     aiohttp_security.setup(app, identity_policy, authorization_policy)
+
+
+# alias
+setup_security = setup
+
+__all__ = (
+    'setup_security',
+    'generate_password_hash', 'check_credentials',
+    'authorized_userid', 'forget', 'permits', 'remember'
+)

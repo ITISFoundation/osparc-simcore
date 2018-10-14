@@ -1,15 +1,30 @@
 """ Authentication handlers
 
 """
+import logging
+
 from aiohttp import web
 
-from .rest_utils import (ErrorItemType, LogMessageType, RegistrationType,
-                         extract_and_validate, EnvelopeFactory)
+from .rest_utils import (EnvelopeFactory, ErrorItemType, LogMessageType,
+                         RegistrationType, extract_and_validate)
+from .security import authorized_userid, forget, generate_password_hash, remember
 
-# TODO: temporary while DB is ready
-DUMMY_USERS_DB = {}
+log = logging.getLogger(__name__)
+
+# TODO: temporary while DB is not ready
+dummy_database = {
+    'admin': {'email': 'admin@admin.com', 'password': 'my secret', 'confirmed': True, 'role': 'ADMIN' }
+}
+
+# maps token with user
+dummy_active_tokens = { }
+
+
+# TODO: middleware to envelop errors
 
 async def register(request: web.Request):
+    global dummy_database
+
     # input
     params, query, body = await extract_and_validate(request)
 
@@ -18,11 +33,20 @@ async def register(request: web.Request):
     assert body
 
     if body.password != body.confirm:
-        raise web.HTTPConflict(reason="Passwords do not match")
+        raise web.HTTPConflict(reason="Passwords do not match", content_type='application/json')
 
-    if body.email in DUMMY_USERS_DB:
-        raise web.HTTPUnprocessableEntity(reason="User already registerd")
+    if body.email in dummy_database:
+        raise web.HTTPUnprocessableEntity(reason="User already registered", content_type='application/json')
 
+    dummy_database[body.email] = {
+        'email': body.email,
+        'password': body.password,
+        'confirmed': True, # TODO:
+        'role': "USER",
+    }
+
+    log.debug("Creating confirmation token ...")
+    log.debug("Sending confirmation email to %s ...", body.email)
 
     # TODO: DataError_Conflict_409
     # TODO: DataError_UnprocessableEntity_422
@@ -30,39 +54,74 @@ async def register(request: web.Request):
     #form.errors.append()
 
     # output
-    payload = EnvelopeFactory(
-        data = LogMessageType(
-            level="INFO",
-            message="Confirmation email sent",
-            logger="user"
-        ),
-        error = None).as_dict()
-
+    payload = EnvelopeFactory(data=LogMessageType(level="INFO", message="Confirmation email sent", logger="user")).as_dict()
     return web.json_response(payload)
 
 
 async def login(request: web.Request):
-    """
-     1. Receive email and password through a /login endpoint.
-     2. Check the email and password hash against the database.
-     3. Create a new refresh token and JWT access token.
-     4. Return both.
-    """
-    params, query, body, errors = await extract_and_validate(request)
+    global dummy_active_tokens
+
+    # 1. Receive email and password through a /login endpoint.
+    params, query, body = await extract_and_validate(request)
+
+    assert not params
+    assert not query
+    assert body
+
+    # Authentication: users identity is verified
+
+    # 2. Check the email and password hash against the database.
+    if body.email not in dummy_database:
+        raise web.HTTPUnprocessableEntity(reason="User not registered", content_type='application/json')
+
+    import pdb; pdb.set_trace()
+    user = dummy_database[body.email]
+    if user['password'] != body.password:
+        raise web.HTTPConflict(reason="Passwords do not match", content_type='application/json')
+
+    if not user['confirmed']:
+        raise web.HTTPConflict(reason="User still not confirmed", content_type='application/json')
+
+    #3. Create a new refresh token and JWT access token ?
+    #4. Return both ?
+    # Currently identity is stored in session and the latter stored in an encrypted cookie
+    identity = user['email'] # TODO: create token as identity? can set expiration!?
+
+    dummy_active_tokens[identity] = user['email']
 
 
+    response = web.json_response(EnvelopeFactory(data = LogMessageType(
+        level="DEBUG",
+        message="{} has logged in".format(identity),
+        logger="user")).as_dict())
 
-    raise web.HTTPNotImplemented(reason="Handler in %s still not implemented"%__name__)
-
+    # TODO: check new_session(request) issue!
+    await remember(request, response, identity)
+    return response
 
 
 async def logout(request: web.Request):
-    params, query, body, errors = await extract_and_validate(request)
+    global dummy_active_tokens
+    params, query, body = await extract_and_validate(request)
 
-    raise web.HTTPNotImplemented(reason="Handler in %s still not implemented"%__name__)
+    assert not params
+    assert not query
+    assert not body
+
+    identity = await authorized_userid(request)
+
+    dummy_active_tokens.pop(identity, None)
+
+    response = web.json_response(EnvelopeFactory(data = LogMessageType(
+        level="DEBUG",
+        message="{} has logged out".format(identity),
+        logger="user")).as_dict())
+
+    await forget(request, response)
+    return response
 
 
 async def confirmation(request: web.Request):
-    params, query, body, errors = await extract_and_validate(request)
+    params, query, body = await extract_and_validate(request)
 
     raise web.HTTPNotImplemented(reason="Handler in %s still not implemented"%__name__)

@@ -105,7 +105,7 @@ paths:
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/login:
-    get:
+    post:
       operationId: auth_login
       requestBody:
         content:

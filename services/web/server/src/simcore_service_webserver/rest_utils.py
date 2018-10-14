@@ -1,5 +1,6 @@
 """ Utilities
 
+    Miscelaneous of functions and classes to build rest API sub-module
 """
 import json
 import typing
@@ -8,6 +9,7 @@ from typing import Dict
 import attr
 from aiohttp import web
 
+#pylint: disable=W0611
 from simcore_servicelib.openapi_validation import (COOKIE_KEY, HEADER_KEY,
                                                    PATH_KEY, QUERY_KEY,
                                                    validate_request)

@@ -42,9 +42,12 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     routes.append( web.post(BASEPATH+path, handle, name=operation_id) )
 
     path, handle = '/auth/login', auth_handlers.login
+    operation_id = specs.paths[path].operations['post'].operation_id
+    routes.append( web.post(BASEPATH+path, handle, name=operation_id) )
+
+    path, handle = '/auth/logout', auth_handlers.logout
     operation_id = specs.paths[path].operations['get'].operation_id
     routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
-
 
 
     return routes

@@ -19,10 +19,10 @@ LoginFormType:
   properties:
     email:
       type: string
-      format: email
+      #FIXME: format: email
     password:
       type: string
-      format: password
+      #FIXME: format: password
   example:
     email: foo@mymail.com
     password: 'my secret'

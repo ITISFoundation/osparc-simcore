@@ -8,7 +8,6 @@ from aiohttp import web
 from .db import setup_db
 from .security import setup_security
 from .rest import setup_rest
-from .session import setup_session
 from .statics import setup_statics
 from .computational_backend import setup_computational_backend
 from .sockets import setup_sio
@@ -27,7 +26,6 @@ def create_application(config):
     app[APP_CONFIG_KEY] = config
 
     setup_db(app)
-    setup_session(app)
     setup_security(app)
     setup_computational_backend(app)
     setup_statics(app)

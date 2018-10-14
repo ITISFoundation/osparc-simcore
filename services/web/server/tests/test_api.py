@@ -17,6 +17,7 @@ from aiohttp import web
 from simcore_service_webserver import resources, rest
 from simcore_service_webserver.settings.constants import (APP_CONFIG_KEY,
                                                           APP_OAS_KEY)
+from simcore_service_webserver import security
 
 # TODO: reduce log from openapi_core loggers
 
@@ -41,7 +42,11 @@ def client(loop, aiohttp_unused_port, aiohttp_client):
 
     server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
     app[APP_CONFIG_KEY] = { 'app': server_kwargs } # Fake config
+    security.setup(app)
     rest.setup(app)
+
+    assert "SECRET_KEY" in app[APP_CONFIG_KEY]
+
 
     cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
     return cli
@@ -111,3 +116,68 @@ async def test_auth_register(client, caplog):
     client_log = logging.getLogger(data.get('logger', __name__))
     level = getattr(logging, data.get('level', "INFO"))
     client_log.log(level, msg=data['message'])
+
+
+async def test_auth_login(client):
+    # valid registration
+    response = await client.post('v0/auth/register',
+        json = {
+            'email': 'foo@mymail.com',
+            'password': 'my secret',
+            'confirm': 'my secret',
+            },
+    )
+    payload = await response.json()
+    assert response.status==200, str(payload)
+
+    data, error = unenvelope(payload)
+    assert not error
+    assert data
+
+    # FIXME: routing errors are returned as text and not json!!
+
+    # valid login on registered ser
+    response = await client.post('v0/auth/login',
+        json = {
+            'email': 'foo@mymail.com',
+            'password': 'my secret',
+            },
+    )
+    payload = await response.json()
+    assert response.status==200, str(payload)
+
+    data, error = unenvelope(payload)
+    assert not error
+    assert data
+
+
+    # invalid login
+    response = await client.post('v0/auth/login',
+        json = {
+            'email': 'foo@mymail.com',
+            'password': 'wrong pass',
+            },
+    )
+    payload = await response.json()
+    assert response.status==web.HTTPUnprocessableEntity.status_code, str(payload)
+
+    data, error = unenvelope(payload)
+    assert error
+    assert not data
+
+
+  # logout
+    response = await client.get('v0/auth/logout')
+
+    payload = await response.json()
+    assert response.status==web.HTTPOk.status_code, str(payload)
+
+    data, error = unenvelope(payload)
+    assert not error
+    assert not data
+
+
+# utils
+def unenvelope(payload):
+    data, error = [payload[k] for k in ('data', 'error')]
+    return data, error
