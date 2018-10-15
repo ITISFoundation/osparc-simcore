@@ -5,12 +5,14 @@ import logging
 
 from aiohttp import web
 
-from .rest_utils import (EnvelopeFactory, ErrorItemType, LogMessageType,
-                         RegistrationType, extract_and_validate)
-from .security import authorized_userid, forget, generate_password_hash, remember
+from .rest_utils import EnvelopeFactory, LogMessageType, extract_and_validate
+from .security import authorized_userid, forget, remember
 
 log = logging.getLogger(__name__)
 
+
+# FIXME: W0603: Using the global statement (global-statement)
+#pylint: disable=global-statement
 # TODO: temporary while DB is not ready
 dummy_database = {
     'admin': {'email': 'admin@admin.com', 'password': 'my secret', 'confirmed': True, 'role': 'ADMIN' }
@@ -121,6 +123,7 @@ async def logout(request: web.Request):
 
 
 async def confirmation(request: web.Request):
-    params, query, body = await extract_and_validate(request)
+    print(request)
+    #params, query, body = await extract_and_validate(request)
 
     raise web.HTTPNotImplemented(reason="Handler in %s still not implemented"%__name__)

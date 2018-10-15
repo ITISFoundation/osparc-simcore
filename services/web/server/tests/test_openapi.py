@@ -32,7 +32,7 @@ def test_openapi_specs(version):
 
 
 
-@pytest.mark.skip(reason="Temporaly disabled")
+@pytest.mark.skip(reason="Temporarly disabled")
 @pytest.mark.parametrize('version', API_VERSIONS)
 def test_server_specs(version):
     # FIXME: what servers ins pecs? What if there are multiple versions?

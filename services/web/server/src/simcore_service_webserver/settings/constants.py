@@ -9,8 +9,8 @@ TODO: this should be the actual settings
 """
 import logging
 
-from simcore_servicelib.constants import (APP_CONFIG_KEY, APP_OAS_KEY,
-                                         RSC_CONFIG_KEY)
+from simcore_servicelib.constants import (APP_CONFIG_KEY,  # pylint: disable=unused-import
+                                          APP_OAS_KEY, RSC_CONFIG_KEY)
 
 from ..__version__ import get_version_object
 
