@@ -7,6 +7,10 @@ to all of them.
 """
 import logging
 
+# pylint: disable=unused-import
+from simcore_servicelib.constants import (APP_CONFIG_KEY, APP_OAS_KEY,
+                                          )
+
 from .__version__ import get_version_object
 from .settings_schema import CONFIG_SCHEMA
 
@@ -18,7 +22,6 @@ RESOURCE_KEY_OPENAPI = "oas3/v0"
 
 
 DEFAULT_CONFIG='config-prod.yaml'
-CONFIG_SCHEMA = CONFIG_SCHEMA
 
 ## BUILD ------------------------
 #  - Settings revealed at build/installation time
@@ -36,14 +39,12 @@ API_URL_VERSION = "v{:.0f}".format(API_MAJOR_VERSION)
 #
 
 # APP=application
-APP_CONFIG_KEY="config"
 
 # CFG=configuration
 
 # RSC=resource
-RSC_CONFIG_KEY  = "config"
 RSC_OPENAPI_KEY = "oas3/{}".format(API_URL_VERSION)
-
+RSC_CONFIG_KEY = "etc"
 
 # RQT=request
 

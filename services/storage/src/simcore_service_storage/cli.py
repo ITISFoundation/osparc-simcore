@@ -1,5 +1,4 @@
-"""
-Module that contains the command line app.
+""" Application's command line .
 
 Why does this file exist, and why not put this in __main__?
 
@@ -16,13 +15,11 @@ Why does this file exist, and why not put this in __main__?
 import argparse
 import logging
 import sys
-from pprint import pprint
 
 from . import cli_config
 from . import application
 
 log = logging.getLogger(__name__)
-
 
 
 def setup(_parser):
@@ -45,13 +42,10 @@ def parse(args):
 
 
 def main(args=None):
-    logging.basicConfig(level=logging.DEBUG)
-    logging.debug("Starting app with arguments:\n %s", pprint(args.names))
-
     config = parse(args)
 
     log_level = config.get("app",{}).get("log_level", "DEBUG")
-    logging.basicConfig( level=getattr(logging, log_level) )
+    logging.basicConfig(level=getattr(logging, log_level))
 
     application.run(config)
 

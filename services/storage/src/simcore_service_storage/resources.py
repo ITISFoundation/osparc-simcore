@@ -2,12 +2,16 @@
 
 """
 from pathlib import Path
-from simcore_servicelib.resources import Resources
+from simcore_servicelib.resources import ResourcesFacade
 
 from .settings import RSC_CONFIG_KEY, RSC_OPENAPI_KEY #pylint: disable=unused-import
 from .settings import OAS_ROOT_FILE
 
-resources = Resources(__name__, config_folder='etc/simcore_service_storage')
+resources = ResourcesFacade(
+    package_name=__name__,
+    distribution_name="simcore-service-storage",
+    config_folder='etc/',
+)
 
 
 def openapi_path() -> Path:

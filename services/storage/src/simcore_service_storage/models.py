@@ -1,3 +1,6 @@
+""" Database models
+
+"""
 import sqlalchemy as sa
 
 #FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
@@ -47,6 +50,8 @@ class FileMetaData:
             file_name = filename
 
             # dat core allows to attach metadata to files --> see datcore.py
+
+        TODO: use attrs for this!
         """
     #pylint: disable=W0613
     def __init__(self, object_name: str, bucket_name ="", file_id: str="", file_name: str="", user_id: int=-1, user_name: str="", location: str="", project_id: int=-1,
