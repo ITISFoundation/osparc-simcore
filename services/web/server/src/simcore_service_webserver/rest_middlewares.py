@@ -18,11 +18,16 @@ def is_enveloped(payload):
 
 
 
+
 @web.middleware
 async def error_middleware(request: web.Request, handler):
     """
         Ensure all error raised are properly enveloped and json responses
     """
+    # FIXME: bypass if not api. create decorator!?
+    if 'v0' not in request.path:
+        return await handler(request)
+
     # FIXME: review when to send info to client and when not!
     try:
         response = await handler(request)
@@ -69,6 +74,9 @@ async def envelope_middleware(request: web.Request, handler):
     """
         Ensures all responses are enveloped as {'data': .. , 'error', ...} as json
     """
+    # FIXME: bypass if not api
+    if 'v0' not in request.path:
+        return await handler(request)
 
     resp = await handler(request)
 

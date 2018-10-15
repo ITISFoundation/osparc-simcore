@@ -16,7 +16,7 @@ qx.Class.define("qxapp.auth.Manager", {
   */
 
   events: {
-    "logout" : "qx.event.type.Event"
+    "logout": "qx.event.type.Event"
   },
 
 
@@ -26,7 +26,7 @@ qx.Class.define("qxapp.auth.Manager", {
   *****************************************************************************
   */
 
-  members:{
+  members: {
     __auth: null,
 
     setToken: function(token) {
@@ -49,51 +49,58 @@ qx.Class.define("qxapp.auth.Manager", {
     login: function(email, pass, callback, context) {
       //---------------------------------------------------------------------------
       // FIXME: temporarily will allow any user until issue #162 is resolved and/or python server has active API
-      //if (!qx.core.Environment.get("dev.enableFakeSrv")) {
+      // if (!qx.core.Environment.get("dev.enableFakeSrv")) {
       //  this.setToken("fake-token");
       //  callback.call(context, true);
       //  return;
-      //}
+      // }
       //---------------------------------------------------------------------------
 
-      let request = new qx.io.request.Xhr();
-      const prefix = qxapp.io.rest.AbstractResource.API;
+      let request = new qxapp.io.request.ApiRequest("/auth/login", "POST");
       request.set({
-        authentication: new qx.io.request.authentication.Basic(email, pass),
-        url: prefix + "/",
-        method: "GET"
+        authentication: new qx.io.request.authentication.Basic(email, pass), // FIXME: remove from here
+        requestData: {
+          "email": email,
+          "password": pass
+        }
       });
 
       request.addListener("success", function(e) {
-        // Completes without error and *transport status indicates success*
-        let req = e.getTarget();
-        console.debug("Login suceeded:", "status  :", req.getStatus(), "phase   :", req.getPhase(), "response: ", req.getResponse());
-        this.assert(req == request);
+        const {
+          data,
+          error
+        } = e.getTarget().getResponse();
 
-        let hasLoggedIn = false;
-        let msg = null;
-
-        // enveloped, error extraction from payload
-        const {data, error} = req.getResponse();
+        let msg = "Login failed";
+        let success = false;
 
         if (error) {
-          msg = this._createErrorMessage(error.errors.logs);
+          // TODO: call isntead callback for "statusError"!
+          msg = this.composeMessage(error.logs) || msg; // This should never happen?
+          success = false;
         } else {
           // TODO: validate data against specs
-
           this.setToken(data.token);
-          hasLoggedIn = true;
+          msg = "Login succeeded";
+          success = true;
         }
-
-        callback.call(context, hasLoggedIn, msg);
+        callback.call(context, success, msg);
       }, this);
 
       request.addListener("fail", function(e) {
-        let req = e.getTarget();
-        const msg = this._createErrorMessage(req.error) | "Authentication failed";
+        const {
+          error
+        } = e.getTarget().getResponse();
 
-        callback.call(context, false, msg);
-      }, this);
+        let msg = "Unable to login";
+        let success = false;
+        if (error) {
+          //msg = this.composeMessage(error.logs) || "Login failed"; // FIXME: TypeError: this.composeMessage is not a function!?
+          msg = error.logs[0].message || msg;
+          success = false;
+        }
+        callback.call(context, success, msg);
+      });
 
       request.send();
     },
@@ -121,15 +128,14 @@ qx.Class.define("qxapp.auth.Manager", {
       callback.call(context, success, msg);
     },
 
-    _createErrorMessage: function(logs) {
-      // Adds server response to error message
-
-      let msg = null;
+    composeMessage: function(logs) {
+      // Composes a message out of logs array
+      let msg = "";
       if (logs) {
         // TODO: improve error logging
-        for (let i=0; i<logs.length; ++i) {
+        for (let i = 0; i < logs.length; ++i) {
           const log = logs[i];
-          if (log.level=="ERROR") {
+          if (log.level == "ERROR") {
             msg = log.message;
             break;
           } else {
@@ -137,6 +143,7 @@ qx.Class.define("qxapp.auth.Manager", {
           }
         }
       }
+      console.debug(msg);
       return msg;
     }
 

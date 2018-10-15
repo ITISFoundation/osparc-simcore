@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 #pylint: disable=global-statement
 # TODO: temporary while DB is not ready
 dummy_database = {
-    'admin': {'email': 'admin@admin.com', 'password': 'my secret', 'confirmed': True, 'role': 'ADMIN' }
+    'admin@simcore.io': {'email': 'admin@simcore.io', 'password': 'mysecret', 'confirmed': True, 'role': 'ADMIN' },
 }
 
 # maps token with user

@@ -126,9 +126,8 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
         if (success) {
           this.fireDataEvent("done", msg);
         } else {
-          if (msg===null) {
-            msg = this.tr("Invalid email or password");
-          }
+          // TODO: can get field info from response here
+          msg = String(msg) || this.tr("Introduced an invalid email or password");
           [email, pass].forEach(item => {
             item.set({
               invalidMessage: msg,
