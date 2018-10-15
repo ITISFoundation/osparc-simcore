@@ -152,18 +152,31 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         return;
       }
       let form = this.__settingsForm = new qxapp.components.form.Auto(inputs);
-      form.addListener("changeData", function(e) {
-        let newForm = e.getData();
-        this.setPropsWidget(new qxapp.components.form.renderer.PropForm(newForm));
+      form.addListener("linkAdded", function(e) {
+        let changedField = e.getData();
+        this.getPropsWidget().linkAdded(changedField);
+      }, this);
+      form.addListener("linkRemoved", function(e) {
+        let changedField = e.getData();
+        this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
+      let propsWidget = new qxapp.components.form.renderer.PropForm(form);
+      this.setPropsWidget(propsWidget);
+      propsWidget.addListener("RemoveLink", function(e) {
+        let changedField = e.getData();
+        this.__settingsForm.removeLink(changedField);
+      }, this);
     },
 
     setSettingsData: function(nodeData) {
       if (this.__settingsForm && nodeData) {
         this.__settingsForm.setData(nodeData.inputs);
       }
+    },
+
+    addPortLink: function(fromNodeId, fromPortId, toPortId) {
+      this.__settingsForm.addLink(fromNodeId, fromPortId, toPortId);
     },
 
     addInputNode: function(inputNodeId) {

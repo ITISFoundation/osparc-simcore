@@ -32,7 +32,8 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
 
   events: {
     "PortDragOver": "qx.event.type.Data",
-    "PortDrop": "qx.event.type.Data"
+    "PortDrop": "qx.event.type.Data",
+    "RemoveLink" : "qx.event.type.Data"
   },
 
   members: {
@@ -62,18 +63,6 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
           row: this._row,
           column: 1
         });
-        if (item.isLinked) {
-          let unlinkBtn = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/unlink/16"
-          });
-          this._add(unlinkBtn, {
-            row: this._row,
-            column: 2
-          });
-          unlinkBtn.addListener("execute", function() {
-            console.log("Unlink", item.key);
-          }, this);
-        }
         this._row++;
         this._connectVisibility(item, label);
         // store the names for translation
@@ -88,17 +77,60 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
         item.setDroppable(true);
         this.__createUIPortConnections(label, item.key);
         this.__createUIPortConnections(item, item.key);
-        qx.ui.core.queue.Visibility.flush();
       }
     },
 
     getValues: function() {
-      return this._form.getData();
+      let data = this._form.getData();
+      for (const portId in data) {
+        let ctrl = this._form.getControl(portId);
+        if ("link" in ctrl) {
+          data[portId] = ctrl.link;
+        }
+      }
+      return data;
     },
 
-    enableProp: function(key, enable) {
-      if (this._form && this._form.getControl(key)) {
-        this._form.getControl(key).setEnabled(enable);
+    linkAdded: function(portId) {
+      let children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        let child = children[i];
+        if ("key" in child && child.key === portId) {
+          const layoutProps = child.getLayoutProperties();
+          this._remove(child);
+          let hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          hBox.add(this._form.getControlLink(portId), {
+            flex: 1
+          });
+          let unlinkBtn = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/unlink/16"
+          });
+          unlinkBtn.addListener("execute", function() {
+            console.log("Unlink", portId);
+            this.fireDataEvent("RemoveLink", portId);
+          }, this);
+          hBox.add(unlinkBtn);
+          hBox.key = portId;
+          this._addAt(hBox, i, {
+            row: layoutProps.row,
+            column: 1
+          });
+        }
+      }
+    },
+
+    linkRemoved: function(portId) {
+      let children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        let child = children[i];
+        if ("key" in child && child.key === portId) {
+          const layoutProps = child.getLayoutProperties();
+          this._remove(child);
+          this._addAt(this._form.getControl(portId), i, {
+            row: layoutProps.row,
+            column: 1
+          });
+        }
       }
     },
 

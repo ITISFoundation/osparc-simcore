@@ -194,14 +194,7 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
         if (event.supportsType("osparc-port-link")) {
           let dragNodeId = event.getData("osparc-port-link").dragNodeId;
           let dragPortId = event.getData("osparc-port-link").dragPortId;
-          let newData = {
-            inputs: {}
-          };
-          newData.inputs[dropPortId] = {
-            nodeUuid: dragNodeId,
-            output: dragPortId
-          };
-          this.getNodeModel().setSettingsData(newData);
+          this.getNodeModel().addPortLink(dropPortId, dragNodeId, dragPortId);
         }
       }, this);
     },

@@ -69,6 +69,7 @@ qx.Class.define("qxapp.components.form.Auto", {
   construct : function(content) {
     this.base(arguments);
     this.__ctrlMap = {};
+    this.__ctrlLinkMap = {};
     let formCtrl = this.__formCtrl = new qx.data.controller.Form(null, this);
     this.__boxCtrl = {};
     this.__typeMap = {};
@@ -79,8 +80,7 @@ qx.Class.define("qxapp.components.form.Auto", {
 
     model.addListener("changeBubble", function(e) {
       if (!this.__settingData) {
-        // this.fireDataEvent("changeData", this.getData());
-        this.fireDataEvent("changeData", this);
+        this.fireDataEvent("changeData", this.getData());
       }
     },
     this);
@@ -91,12 +91,15 @@ qx.Class.define("qxapp.components.form.Auto", {
      * fire when the form changes content and
      * and provide access to the data
      */
-    "changeData" : "qx.event.type.Data"
+    "changeData" : "qx.event.type.Data",
+    "linkAdded" : "qx.event.type.Data",
+    "linkRemoved" : "qx.event.type.Data"
   },
 
   members : {
     __boxCtrl : null,
     __ctrlMap : null,
+    __ctrlLinkMap : null,
     __formCtrl: null,
     __model : null,
     __settingData : false,
@@ -130,6 +133,10 @@ qx.Class.define("qxapp.components.form.Auto", {
      */
     getControl : function(key) {
       return this.__ctrlMap[key];
+    },
+
+    getControlLink : function(key) {
+      return this.__ctrlLinkMap[key];
     },
 
 
@@ -191,8 +198,7 @@ qx.Class.define("qxapp.components.form.Auto", {
 
       for (let key in data) {
         if (typeof data[key] == "object" && data[key].nodeUuid) {
-          this.getControl(key).isLinked = true;
-          this.getControl(key).setEnabled(false);
+          this.addLink(key, data[key].nodeUuid, data[key].output);
           continue;
         }
         this.getControl(key).isLinked = false;
@@ -210,8 +216,7 @@ qx.Class.define("qxapp.components.form.Auto", {
 
       /* only fire ONE if there was an attempt at change */
 
-      // this.fireDataEvent("changeData", this.getData());
-      this.fireDataEvent("changeData", this);
+      this.fireDataEvent("changeData", this.getData());
     },
 
 
@@ -513,6 +518,32 @@ qx.Class.define("qxapp.components.form.Auto", {
       control.key = key;
       control.isLinked = false;
       this.__ctrlMap[key] = control;
+
+      let controlKey = new qx.ui.form.TextField().set({
+        enabled: false
+      });
+      controlKey.key = key;
+      this.__ctrlLinkMap[key] = controlKey;
+    },
+
+    addLink: function(toPortId, fromNodeId, fromPortId) {
+      this.getControl(toPortId).isLinked = true;
+      this.getControl(toPortId).link = {
+        nodeUuid: fromNodeId,
+        output: fromPortId
+      };
+      this.getControlLink(toPortId).setValue("Linked to " + fromNodeId + ": " + fromPortId);
+
+      this.fireDataEvent("linkAdded", toPortId);
+    },
+
+    removeLink: function(toPortId) {
+      this.getControl(toPortId).isLinked = false;
+      if ("link" in this.getControl(toPortId)) {
+        delete this.getControl(toPortId).link;
+      }
+
+      this.fireDataEvent("linkRemoved", toPortId);
     }
   }
 });
