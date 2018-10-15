@@ -517,11 +517,11 @@ qx.Class.define("qxapp.components.form.Auto", {
       control.key = key;
       this.__ctrlMap[key] = control;
 
-      let controlKey = new qx.ui.form.TextField().set({
+      let controlLink = new qx.ui.form.TextField().set({
         enabled: false
       });
-      controlKey.key = key;
-      this.__ctrlLinkMap[key] = controlKey;
+      controlLink.key = key;
+      this.__ctrlLinkMap[key] = controlLink;
     },
 
     addLink: function(toPortId, fromNodeId, fromPortId) {
