@@ -72,15 +72,14 @@ async def login(request: web.Request):
 
     # 2. Check the email and password hash against the database.
     if body.email not in dummy_database:
-        raise web.HTTPUnprocessableEntity(reason="User not registered", content_type='application/json')
+        raise web.HTTPUnprocessableEntity(reason="Invalid user or password", content_type='application/json')
 
-    import pdb; pdb.set_trace()
     user = dummy_database[body.email]
     if user['password'] != body.password:
-        raise web.HTTPConflict(reason="Passwords do not match", content_type='application/json')
+        raise web.HTTPUnprocessableEntity(reason="Invalid user or password", content_type='application/json')
 
     if not user['confirmed']:
-        raise web.HTTPConflict(reason="User still not confirmed", content_type='application/json')
+        raise web.HTTPUnprocessableEntity(reason="User still not confirmed", content_type='application/json')
 
     #3. Create a new refresh token and JWT access token ?
     #4. Return both ?

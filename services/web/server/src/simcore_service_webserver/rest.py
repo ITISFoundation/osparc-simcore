@@ -1,14 +1,14 @@
 """ Restful API
 
 """
-import logging
 import copy
+import logging
 
 from aiohttp import web
 
 from simcore_servicelib import openapi
 
-from . import rest_routing, resources
+from . import resources, rest_middlewares, rest_routing
 from .settings.constants import APP_CONFIG_KEY, APP_OAS_KEY, RSC_OPENAPI_KEY
 
 log = logging.getLogger(__name__)
@@ -49,8 +49,9 @@ def setup(app: web.Application):
         # TODO: should freeze specs here??
         app[APP_OAS_KEY] = specs # validated openapi specs
 
-        # collect here all maps and join in the router
+        # setup rest submodules
         rest_routing.setup(app)
+        rest_middlewares.setup(app)
 
     except openapi.OpenAPIError:
         # TODO: protocol when some parts are unavailable because of failure

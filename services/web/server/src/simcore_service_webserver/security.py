@@ -36,15 +36,18 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        # pylint: disable=E1120
-        async with self.dbengine.acquire() as conn:
-            where = sa.and_(model.users.c.login == identity,
-                            sa.not_(model.users.c.disabled))
-            query = model.users.count().where(where)
-            ret = await conn.scalar(query)
-            if ret:
-                return identity
-            return None
+        # FIXME: temporary solution!
+        return identity
+
+        # # pylint: disable=E1120
+        # async with self.dbengine.acquire() as conn:
+        #     where = sa.and_(model.users.c.login == identity,
+        #                     sa.not_(model.users.c.disabled))
+        #     query = model.users.count().where(where)
+        #     ret = await conn.scalar(query)
+        #     if ret:
+        #         return identity
+        #     return None
 
     async def permits(self, identity, permission, context=None):
         """Check user model.permissions.
@@ -52,32 +55,35 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
         Return True if the identity is allowed the permission in the
         current context, else return False.
         """
-        log.debug("context: %s", context)
-        if identity is None:
-            return False
+        # FIXME: temporary solution!
+        return True
 
-        async with self.dbengine.acquire() as conn:
-            where = sa.and_(model.users.c.login == identity,
-                            sa.not_(model.users.c.disabled))
-            query = model.users.select().where(where)
-            ret = await conn.execute(query)
-            user = await ret.fetchone()
-            if user is not None:
-                user_id = user[0]
-                is_superuser = user[3]
-                if is_superuser:
-                    return True
+        # log.debug("context: %s", context)
+        # if identity is None:
+        #     return False
 
-                where = model.permissions.c.user_id == user_id
-                query = model.permissions.select().where(where)
-                ret = await conn.execute(query)
-                result = await ret.fetchall()
-                if ret is not None:
-                    for record in result:
-                        if record.perm_name == permission:
-                            return True
+        # async with self.dbengine.acquire() as conn:
+        #     where = sa.and_(model.users.c.login == identity,
+        #                     sa.not_(model.users.c.disabled))
+        #     query = model.users.select().where(where)
+        #     ret = await conn.execute(query)
+        #     user = await ret.fetchone()
+        #     if user is not None:
+        #         user_id = user[0]
+        #         is_superuser = user[3]
+        #         if is_superuser:
+        #             return True
 
-            return False
+        #         where = model.permissions.c.user_id == user_id
+        #         query = model.permissions.select().where(where)
+        #         ret = await conn.execute(query)
+        #         result = await ret.fetchall()
+        #         if ret is not None:
+        #             for record in result:
+        #                 if record.perm_name == permission:
+        #                     return True
+
+        #     return False
 
 
 async def check_credentials(db_engine, username, password):

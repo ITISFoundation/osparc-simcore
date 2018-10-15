@@ -19,6 +19,9 @@ from simcore_service_webserver.settings.constants import (APP_CONFIG_KEY,
                                                           APP_OAS_KEY)
 from simcore_service_webserver import security
 
+logging.basicConfig(level=logging.INFO)
+
+
 # TODO: reduce log from openapi_core loggers
 
 @pytest.fixture
@@ -96,7 +99,7 @@ async def test_auth_register(client, caplog):
 
     response = await client.post('v0/auth/register',
         json = {
-            'email': 'foo@mymail.com',
+            'email': 'bar@mail.com',
             'password': 'my secret',
             'confirm': 'my secret',
             },
@@ -117,8 +120,11 @@ async def test_auth_register(client, caplog):
     level = getattr(logging, data.get('level', "INFO"))
     client_log.log(level, msg=data['message'])
 
+async def test_auth_login(client, caplog):
 
-async def test_auth_login(client):
+    log_filter = logging.Filter(name='simcore_service_webserver')
+    logging.getLogger().addFilter(log_filter)
+
     # valid registration
     response = await client.post('v0/auth/register',
         json = {
@@ -174,7 +180,9 @@ async def test_auth_login(client):
 
     data, error = unenvelope(payload)
     assert not error
-    assert not data
+    assert data # logs
+    assert all( k in data for k in ('level', 'logger', 'message') )
+
 
 
 # utils

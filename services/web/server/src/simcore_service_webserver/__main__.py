@@ -10,7 +10,7 @@ from . import settings
 from .main import run_service
 
 def main(argv=None):
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     if argv is None:
         argv = sys.argv[1:]
