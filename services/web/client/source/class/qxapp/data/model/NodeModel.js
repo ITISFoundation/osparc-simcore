@@ -128,7 +128,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     populateNodeData: function(nodeData) {
       this.__inputNodes = [];
       if (nodeData) {
-        this.setSettingsData(nodeData);
+        this.setInputData(nodeData);
 
         if (nodeData.position) {
           this.setPosition(nodeData.position.x, nodeData.position.y);
@@ -169,7 +169,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }, this);
     },
 
-    setSettingsData: function(nodeData) {
+    setInputData: function(nodeData) {
       if (this.__settingsForm && nodeData) {
         this.__settingsForm.setData(nodeData.inputs);
       }
