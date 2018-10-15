@@ -170,16 +170,14 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       if (!this.__inputNodes.includes(inputNodeId)) {
         this.__inputNodes.push(inputNodeId);
       }
-      // this.getPropsWidget().enableProp(link.getOutputPortId(), false);
     },
 
-    removeLink: function(inputNodeId) {
+    removeInputNode: function(inputNodeId) {
       const index = this.__inputNodes.indexOf(inputNodeId);
       if (index > -1) {
         this.__inputNodes.splice(index, 1);
         return true;
       }
-      // this.getPropsWidget().enableProp(link.getOutputPortId(), true);
       return false;
     },
 

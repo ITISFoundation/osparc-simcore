@@ -186,7 +186,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     removeLink: function(outputNodeId, inputNodeId) {
       let node = this.getNodeModel(inputNodeId);
       if (node) {
-        return node.removeLink(outputNodeId);
+        return node.removeInputNode(outputNodeId);
       }
       return false;
     },
