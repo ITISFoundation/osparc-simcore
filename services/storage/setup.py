@@ -18,7 +18,7 @@ def list_datafiles_at(*locations):
     def _listdir(root, wildcard='*'):
         """ Recursively list all files under 'root' whose names fit a given wildcard.
 
-        Returns (dirname, files) pair per level. 
+        Returns (dirname, files) pair per level.
         See https://docs.python.org/2/distutils/setupscript.html#installing-additional-files
         """
         for dirname, _, names in walk(root):
@@ -61,13 +61,16 @@ _CONFIG = dict(
     setup_requires=['pytest-runner'],
     package_data={
         '': [
-            'schema/*.json',
+            'data/*.json',
+            'data/*.yml',
+            'data/*.yaml',
             'openapi/*.yaml',
+            'openapi/*.yml',
             ],
     },
-    data_files = list_datafiles_at(
-        "etc/", # Contain the configuration files for all the programs that run on your system.
-    ),
+    #data_files = list_datafiles_at(
+    #    "etc/", # Contain the configuration files for all the programs that run on your system.
+    #),
     entry_points={
         'console_scripts': [
             'simcore-service-storage = simcore_service_storage.cli:main',

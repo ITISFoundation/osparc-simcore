@@ -4,7 +4,7 @@
 from pathlib import Path
 from simcore_servicelib.resources import ResourcesFacade
 
-from .settings import RSC_CONFIG_KEY, RSC_OPENAPI_KEY #pylint: disable=unused-import
+from .settings import RSC_CONFIG_DIR_KEY, RSC_OPENAPI_KEY #pylint: disable=unused-import
 from .settings import OAS_ROOT_FILE
 
 resources = ResourcesFacade(
@@ -24,6 +24,6 @@ def openapi_path() -> Path:
 
 __all__ = (
     'resources',
-    'RSC_CONFIG_KEY',
+    'RSC_CONFIG_DIR_KEY',
     'RSC_OPENAPI_KEY'
 )
