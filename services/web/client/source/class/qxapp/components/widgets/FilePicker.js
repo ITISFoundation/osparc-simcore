@@ -105,7 +105,7 @@ qx.Class.define("qxapp.components.widgets.FilePicker", {
           store: "s3-z43",
           path: itemPath
         };
-        node.setProgress(100);
+        // node.setProgress(100);
         this.fireEvent("Finished");
       }, this);
     },
