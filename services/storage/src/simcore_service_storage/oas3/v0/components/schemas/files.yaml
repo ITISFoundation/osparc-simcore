@@ -1,3 +1,5 @@
+#TODO: envelope for front-end
+
 FileMetaData:
   type: object
   properties:

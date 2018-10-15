@@ -10,7 +10,7 @@ from .db import setup_db
 from .rest_routing import create_router
 from .rest import setup_rest
 from .session import setup_session
-from .settings import CONFIG_KEY
+from .settings import APP_CONFIG_KEY
 
 log = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ def create(config):
     log.debug("Initializing ... ")
 
     app = web.Application(router=create_router())
-    app[CONFIG_KEY] = config
+    app[APP_CONFIG_KEY] = config
 
     setup_db(app)
     setup_session(app)

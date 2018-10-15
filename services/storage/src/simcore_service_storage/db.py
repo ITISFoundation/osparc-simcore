@@ -1,5 +1,5 @@
 import logging
-from .settings import CONFIG_KEY
+from .settings import APP_CONFIG_KEY
 from aiopg.sa import create_engine
 
 log = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ RETRY_COUNT = 20
 CONNECT_TIMEOUT_SECS = 30
 
 async def pg_engine(app):
-    cfg = app[CONFIG_KEY]["postgres"]
+    cfg = app[APP_CONFIG_KEY]["postgres"]
     engine = None
     try:
         engine = await create_engine(user=cfg["user"],

@@ -10,24 +10,26 @@ info:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 servers:
-  - url: http://{host}:{port}/{version}
-    description: Development server
+  - description: Development server
+    url: 'http://{host}:{port}/v0'
     variables:
       host:
         default: 'localhost'
       port:
         default: '8001'
-      version:
-        default: 'v0'
-        enum:
-          - 'v0'
+  - description: Production server
+    url: https://storage:{port}/v0'
+    variables:
+      port:
+        default: '8080'
 tags:
 - name: admins
   description: Secured Admin-only calls
-- name: developers
-  description: Operations available to regular developers
+- name: tests
+  description: Operations available for testing
 - name: users
   description: Operations available to regular users
+
 paths:
   /:
     get:
@@ -35,12 +37,54 @@ paths:
         - users
       summary: Service health-check endpoint
       description: Some general information on the API and state of the service behind
-      operationId: root_get
+      operationId: health_check
       responses:
         "200":
-          $ref: '#/components/responses/HealthCheck_200'
+          description: Service information
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/health_check.yml#/HealthCheckEnveloped'
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yml#/ErrorEnveloped'
+  /check/{action}:
+    get:
+      tags:
+        - tests
+      summary: Test checkpoint to ask server to fail or echo back the transmitted data
+      parameters:
+        - in: query
+          name: data
+          schema:
+            type: string
+        - in: path
+          name: action
+          schema:
+            type: string
+            default: 'echo'
+            enum: ['fail', 'echo']
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/fake.yml#/FakeType'
+      responses:
+        '200':
+          description: Echoes response based on action
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/fake.yml#/FakeEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yml#/ErrorEnveloped'
 
   /files/metadata:
     get:
@@ -54,7 +98,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: 'components/schemas/files.yaml#FileMetaData'
+                  $ref: 'components/schemas/files.yml#FileMetaData'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
@@ -89,7 +133,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: 'components/schemas/files.yaml#FileMetaData'
+              $ref: 'components/schemas/files.yml#FileMetaData'
 
 
   /files/{fileId}:
@@ -136,24 +180,17 @@ paths:
           description: ''
 
 components:
-  responses:
-    HeathCheck_200:
-      description: Returns service information
-      content:
-        application/json:
-          schema:
-            $ref: 'components/schemas/health_check.yaml#HealthCheckEnveloped'
 
     FileMetaData_200:
       description: 'Returns file metadata'
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/files.yaml#FileMetaData'
+            $ref: 'components/schemas/files.yml#FileMetaData'
 
     DefaultErrorResponse:
       description: Unexpected error
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/error.yaml#ErrorEnveloped'
+            $ref: 'components/schemas/error.yml#ErrorEnveloped'

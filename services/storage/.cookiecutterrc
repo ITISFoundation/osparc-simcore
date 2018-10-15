@@ -18,10 +18,11 @@
 default_context:
 
     _extensions:               [u'jinja2_time.TimeExtension']
-    _template:                 '../../cookiecutter-simcore-pyservice/'
     # _template:                 'gh:itisfoundation/cookiecutter-simcore-pyservice'
     command_line_interface_bin_name: 'simcore-service-storage'
     distribution_name:         'simcore-service-storage'
+    dockercompose_service_api_port: '8080'
+    dockercompose_service_name: 'storage'
     full_name:                 'Manuel Guidon'
     github_username:           'mguidon'
     openapi_specs_version:     'v0'
@@ -30,5 +31,6 @@ default_context:
     project_short_description: 'Service to manage data storage in simcore'
     project_slug:              'storage'
     release_date:              '2018-10-08'
+    sdk_package_name:          'simcore_storage_sdk'
     simcore_install_root:      '../../'
     version:                   '0.1.0'
