@@ -525,6 +525,7 @@ qx.Class.define("qxapp.components.form.Auto", {
     },
 
     addLink: function(toPortId, fromNodeId, fromPortId) {
+      this.getControl(toPortId).setEnabled(false);
       this.getControl(toPortId).link = {
         nodeUuid: fromNodeId,
         output: fromPortId
@@ -535,6 +536,7 @@ qx.Class.define("qxapp.components.form.Auto", {
     },
 
     removeLink: function(toPortId) {
+      this.getControl(toPortId).setEnabled(true);
       if ("link" in this.getControl(toPortId)) {
         delete this.getControl(toPortId).link;
       }
