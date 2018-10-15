@@ -206,7 +206,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
           inputs: nodeModel.getInputValues(), // can a container have inputs?
           inputNodes: nodeModel.getInputNodes(),
           outputNode: nodeModel.getIsOutputNode(),
-          outputs: {}, // can a container have outputs?
+          outputs: nodeModel.getOutputValues(), // can a container have outputs?
           parent: nodeModel.getParentNodeId()
         };
 
@@ -221,16 +221,6 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
         if (!nodeModel.isContainer()) {
           node.key = nodeModel.getMetaData().key;
           node.version = nodeModel.getMetaData().version;
-          for (let key in nodeModel.getMetaData().outputs) {
-            const outputPort = nodeModel.getMetaData().outputs[key];
-            if ("value" in outputPort) {
-              node.outputs[key] = outputPort.value;
-            }
-          }
-          for (let key in nodeModel.getOutputValues()) {
-            const outputValue = nodeModel.getOutputValues()[key];
-            node.outputs[key] = outputValue;
-          }
         }
       }
       return workbench;
