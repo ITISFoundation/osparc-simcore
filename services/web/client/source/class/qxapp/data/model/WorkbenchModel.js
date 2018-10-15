@@ -219,10 +219,8 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
         // node especific
         if (!nodeModel.isContainer()) {
-          node = {
-            key: nodeModel.getMetaData().key,
-            version: nodeModel.getMetaData().version
-          };
+          node.key = nodeModel.getMetaData().key;
+          node.version = nodeModel.getMetaData().version;
           for (let key in nodeModel.getMetaData().outputs) {
             const outputPort = nodeModel.getMetaData().outputs[key];
             if ("value" in outputPort) {
