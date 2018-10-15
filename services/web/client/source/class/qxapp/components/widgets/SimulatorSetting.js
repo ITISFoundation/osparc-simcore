@@ -238,7 +238,6 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
       this.__settingsBox.remove(this.__settingProps);
       if ("form" in data) {
         this.__settingProps = data.form;
-        this.__settingProps.enableAllProps(false);
       } else {
         this.__settingProps = new qx.ui.core.Widget();
       }

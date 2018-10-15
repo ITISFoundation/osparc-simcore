@@ -102,12 +102,6 @@ qx.Class.define("qxapp.components.form.renderer.PropForm", {
       }
     },
 
-    enableAllProps: function(enable) {
-      for (const key in this._form.__ctrlMap) {
-        this.enableProp(key, enable);
-      }
-    },
-
     __createUIPortConnections: function(uiElement, portId) {
       [
         ["dragover", "PortDragOver"],
