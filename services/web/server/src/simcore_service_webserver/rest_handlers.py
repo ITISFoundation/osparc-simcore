@@ -1,4 +1,4 @@
-""" Handles to the rest API diagnostic operations
+""" Basic diagnostic handles to the rest API for operations
 
 
 """

@@ -10,7 +10,7 @@ from aiohttp import web
 
 from simcore_servicelib import openapi
 
-from . import auth_handlers, rest_diagnostics
+from . import auth_handlers, rest_handlers
 from .settings.constants import APP_OAS_KEY
 
 log = logging.getLogger(__name__)
@@ -27,11 +27,11 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     # TODO: routing will be done automatically using operation_id/tags, etc...
 
     # diagnostics --
-    path, handle = '/', rest_diagnostics.check_health
+    path, handle = '/', rest_handlers.check_health
     operation_id = specs.paths[path].operations['get'].operation_id
     routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
 
-    path, handle = '/check/{action}', rest_diagnostics.check_action
+    path, handle = '/check/{action}', rest_handlers.check_action
     operation_id = specs.paths[path].operations['post'].operation_id
     routes.append( web.post(BASEPATH+path, handle, name=operation_id) )
 

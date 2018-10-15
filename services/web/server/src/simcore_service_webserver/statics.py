@@ -62,7 +62,7 @@ def setup_statics(app: web.Application):
         app.router.add_get("/", index)
 
         # NOTE: source-output and build-output have both the same subfolder structure
-        # TODO: check whether this can be done at once
+        # TODO: check whether this can be done at oncen
         for path in folders:
             app.router.add_static('/' + path.name, path)
 
