@@ -3,13 +3,11 @@ import time
 from aiohttp import web
 
 from . import __version__
-from ._generated_code.models import FileMetaData
+from .rest_models import FileMetaDataType
 from .session import get_session
 
 #FIXME: W0613: Unused argument 'request' (unused-argument)
 #pylint: disable=W0613
-
-
 
 async def health_check(request):
     session = await get_session(request)
@@ -24,7 +22,7 @@ async def health_check(request):
     return web.json_response(data, status=200)
 
 async def get_files_metadata(request):
-    data1 = FileMetaData(**{
+    data1 = FileMetaDataType(**{
         'filename' : "a.txt",
         'version': '1.0',
         'last_accessed' : 1234.2,
@@ -32,7 +30,7 @@ async def get_files_metadata(request):
         'storage_location' : 'simcore.s3'
     })
 
-    data2 = FileMetaData(**{
+    data2 = FileMetaDataType(**{
         'filename' : "a.txt",
         'version': '1.0',
         'last_accessed' : 1234.2,
@@ -43,7 +41,7 @@ async def get_files_metadata(request):
 
 async def get_file_metadata(request, fileId):
 
-    data = FileMetaData(**{
+    data = FileMetaDataType(**{
         'filename' : "a.txt",
         'version': '1.0',
         'last_accessed' : 1234.2,
