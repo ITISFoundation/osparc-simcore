@@ -26,7 +26,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           this.__addSettings(metaData.inputs);
         }
         if (metaData.outputs) {
-          this.__outputs = metaData.outputs;
+          this.__addOutputs(metaData.outputs);
         }
       }
     }
@@ -103,6 +103,16 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return this.__outputs;
     },
 
+    getOutputValues: function() {
+      let output = {};
+      for (const outputId in this.__outputs) {
+        if ("value" in this.__outputs[outputId]) {
+          output[outputId] = this.__outputs[outputId].value;
+        }
+      }
+      return output;
+    },
+
     getInnerNodes: function(recursive = false) {
       let innerNodes = Object.assign({}, this.__innerNodes);
       if (recursive) {
@@ -138,6 +148,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       this.__inputNodes = [];
       if (nodeData) {
         this.setInputData(nodeData);
+        this.setOutputData(nodeData);
 
         if (nodeData.position) {
           this.setPosition(nodeData.position.x, nodeData.position.y);
@@ -178,9 +189,21 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }, this);
     },
 
+    __addOutputs: function(outputs) {
+      this.__outputs = outputs;
+    },
+
     setInputData: function(nodeData) {
       if (this.__settingsForm && nodeData) {
         this.__settingsForm.setData(nodeData.inputs);
+      }
+    },
+
+    setOutputData: function(nodeData) {
+      if ("outputs" in nodeData) {
+        for (const outputKey in nodeData.outputs) {
+          this.__outputs[outputKey].value = nodeData.outputs[outputKey];
+        }
       }
     },
 
