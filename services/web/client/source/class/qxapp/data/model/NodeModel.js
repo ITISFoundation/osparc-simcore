@@ -148,6 +148,42 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
+    __addSettings: function(inputs) {
+      if (inputs === null) {
+        return;
+      }
+      let form = this.__settingsForm = new qxapp.components.form.Auto(inputs);
+      form.addListener("changeData", function(e) {
+        let newForm = e.getData();
+        this.setPropsWidget(new qxapp.components.form.renderer.PropForm(newForm));
+      }, this);
+
+      this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
+    },
+
+    setSettingsData: function(nodeData) {
+      if (this.__settingsForm && nodeData) {
+        this.__settingsForm.setData(nodeData.inputs);
+      }
+    },
+
+    addInputNode: function(inputNodeId) {
+      if (!this.__inputNodes.includes(inputNodeId)) {
+        this.__inputNodes.push(inputNodeId);
+      }
+      // this.getPropsWidget().enableProp(link.getOutputPortId(), false);
+    },
+
+    removeLink: function(inputNodeId) {
+      const index = this.__inputNodes.indexOf(inputNodeId);
+      if (index > -1) {
+        this.__inputNodes.splice(index, 1);
+        return true;
+      }
+      // this.getPropsWidget().enableProp(link.getOutputPortId(), true);
+      return false;
+    },
+
     __startInteractiveNode: function() {
       let metaData = this.__metaData;
       if (metaData.type == "dynamic") {
@@ -195,42 +231,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         };
         socket.emit(slotName, data);
       }
-    },
-
-    __addSettings: function(inputs) {
-      if (inputs === null) {
-        return;
-      }
-      let form = this.__settingsForm = new qxapp.components.form.Auto(inputs);
-      form.addListener("changeData", function(e) {
-        let newForm = e.getData();
-        this.setPropsWidget(new qxapp.components.form.renderer.PropForm(newForm));
-      }, this);
-
-      this.setPropsWidget(new qxapp.components.form.renderer.PropForm(form));
-    },
-
-    setSettingsData: function(nodeData) {
-      if (this.__settingsForm && nodeData) {
-        this.__settingsForm.setData(nodeData.inputs);
-      }
-    },
-
-    addInputNode: function(inputNodeId) {
-      if (!this.__inputNodes.includes(inputNodeId)) {
-        this.__inputNodes.push(inputNodeId);
-      }
-      // this.getPropsWidget().enableProp(link.getOutputPortId(), false);
-    },
-
-    removeLink: function(inputNodeId) {
-      const index = this.__inputNodes.indexOf(inputNodeId);
-      if (index > -1) {
-        this.__inputNodes.splice(index, 1);
-        return true;
-      }
-      // this.getPropsWidget().enableProp(link.getOutputPortId(), true);
-      return false;
     },
 
     setPosition: function(x, y) {
