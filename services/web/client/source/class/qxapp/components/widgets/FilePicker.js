@@ -101,7 +101,7 @@ qx.Class.define("qxapp.components.widgets.FilePicker", {
       this.addListener("ItemSelected", function(data) {
         const itemPath = data.getData().itemPath;
         let metaData = node.getMetaData();
-        metaData.outputs["outDir"].value = {
+        metaData.outputs["outFile"].value = {
           store: "s3-z43",
           path: itemPath
         };
