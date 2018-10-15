@@ -3,13 +3,13 @@ import re
 from operator import itemgetter
 from typing import List, Tuple
 
+import attr
 import sqlalchemy as sa
 from aiopg.sa import create_engine
 
 from s3wrapper.s3_client import S3Client
 
 from .datcore_wrapper import DatcoreWrapper
-
 from .models import FileMetaData, file_meta_data
 
 #pylint: disable=W0212
@@ -21,7 +21,8 @@ from .models import FileMetaData, file_meta_data
 
 FileMetaDataVec = List[FileMetaData]
 
-class Dsm:
+@attr.s(auto_attribs=True)
+class DataStorageManager:
     """ Data storage manager
 
         The dsm has access to the database for all meta data and to the actual backend. For now this
@@ -51,9 +52,8 @@ class Dsm:
             https://docs.minio.io/docs/minio-bucket-notification-guide.html
 
     """
-    def __init__(self, db_endpoint: str, s3_client: S3Client):
-        self.db_endpoint = db_endpoint
-        self.s3_client = s3_client
+    db_endpoint: str
+    s3_client: S3Client
 
     async def list_files(self, user_id: int, location: str, regex: str="", sortby: str="") -> FileMetaDataVec:
         """ Returns a list of file paths
@@ -125,15 +125,12 @@ class Dsm:
             dc = DatcoreWrapper(api_token, api_secret)
             return dc.delete_file(fmd)
 
-
-
     async def upload_file_to_datcore(self, user_id: int, local_file_path: str, remote_file_path: str, fmd: FileMetaData = None): # pylint: disable=W0613
 
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
         tokens = await self._get_datcore_tokens(user_id) # pylint: disable=W0612
-
         #TODO: finish!!!
-
+        raise NotImplementedError("Under development")
 
     async def _get_datcore_tokens(self, user_id: int)->Tuple[str, str]:
         # actually we have to query the master db

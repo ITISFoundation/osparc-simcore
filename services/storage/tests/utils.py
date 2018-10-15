@@ -8,6 +8,16 @@ from simcore_service_storage.models import file_meta_data
 BUCKET_NAME ="simcore-testing"
 
 
+def is_postgres_responsive(url):
+    """Check if something responds to ``url`` """
+    try:
+        engine = sa.create_engine(url)
+        conn = engine.connect()
+        conn.close()
+    except sa.exc.OperationalError:
+        return False
+    return True
+
 def create_tables(url, engine=None):
     meta = sa.MetaData()
     if not engine:

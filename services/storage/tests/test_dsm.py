@@ -13,7 +13,7 @@ from pprint import pprint
 import pytest
 
 import utils
-from simcore_service_storage.dsm import Dsm
+from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import FileMetaData
 
 
@@ -31,7 +31,7 @@ async def test_dsm_s3(dsm_mockup_db, postgres_service, s3_client):
         else:
             id_file_count[md.user_id] = id_file_count[md.user_id] + 1
 
-    dsm = Dsm(postgres_service, s3_client)
+    dsm = DataStorageManager(postgres_service, s3_client)
 
     # list files for every user
     for _id in id_file_count:
@@ -100,7 +100,7 @@ async def test_links_s3(postgres_service, s3_client, tmp_files):
     tmp_file = tmp_files(1)[0]
     fmd = create_file_on_s3(postgres_service, s3_client, tmp_file)
 
-    dsm = Dsm(postgres_service, s3_client)
+    dsm = DataStorageManager(postgres_service, s3_client)
 
     up_url = await dsm.upload_link(fmd)
     with open(tmp_file, 'rb') as fp:
@@ -122,7 +122,7 @@ async def test_links_s3(postgres_service, s3_client, tmp_files):
 
 async def test_dsm_datcore(postgres_service, s3_client):
     utils.create_tables(url=postgres_service)
-    dsm = Dsm(postgres_service, s3_client)
+    dsm = DataStorageManager(postgres_service, s3_client)
     user_id = 0
     data = await dsm.list_files(user_id=user_id, location="datcore")
     assert len(data)
@@ -136,7 +136,7 @@ async def test_dsm_s3_to_datcore(postgres_service, s3_client, tmp_files):
     tmp_file = tmp_files(1)[0]
     fmd = create_file_on_s3(postgres_service, s3_client, tmp_file)
 
-    dsm = Dsm(postgres_service, s3_client)
+    dsm = DataStorageManager(postgres_service, s3_client)
 
     up_url = await dsm.upload_link(fmd)
     with open(tmp_file, 'rb') as fp:
@@ -156,7 +156,7 @@ async def test_dsm_s3_to_datcore(postgres_service, s3_client, tmp_files):
 
 async def test_dsm_datcore_to_s3(postgres_service, s3_client, tmp_files):
     utils.create_tables(url=postgres_service)
-    dsm = Dsm(postgres_service, s3_client)
+    dsm = DataStorageManager(postgres_service, s3_client)
     user_id = 0
     data = await dsm.list_files(user_id=user_id, location="datcore")
     assert len(data)
