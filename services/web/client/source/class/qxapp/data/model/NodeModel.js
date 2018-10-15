@@ -7,6 +7,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     this.__metaData = {};
     this.__innerNodes = {};
     this.__inputNodes = [];
+    this.__outputs = {};
 
     this.set({
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
@@ -23,6 +24,9 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.__startInteractiveNode();
         if (metaData.inputs) {
           this.__addSettings(metaData.inputs);
+        }
+        if (metaData.outputs) {
+          this.__outputs = metaData.outputs;
         }
       }
     }
@@ -76,6 +80,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __innerNodes: null,
     __inputNodes: null,
     __settingsForm: null,
+    __outputs: null,
     __posX: null,
     __posY: null,
 
@@ -92,6 +97,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         return this.getPropsWidget().getValues();
       }
       return {};
+    },
+
+    getOutputs: function() {
+      return this.__outputs;
     },
 
     getInnerNodes: function(recursive = false) {

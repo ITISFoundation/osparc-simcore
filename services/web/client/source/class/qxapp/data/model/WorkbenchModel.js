@@ -227,6 +227,10 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
               node.outputs[key] = outputPort.value;
             }
           }
+          for (let key in nodeModel.getOutputs()) {
+            const outputValue = nodeModel.getOutputs()[key];
+            node.outputs[key] = outputValue;
+          }
         }
       }
       return workbench;
