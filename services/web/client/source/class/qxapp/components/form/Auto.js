@@ -201,7 +201,6 @@ qx.Class.define("qxapp.components.form.Auto", {
           this.addLink(key, data[key].nodeUuid, data[key].output);
           continue;
         }
-        this.getControl(key).isLinked = false;
         this.getControl(key).setEnabled(true);
         let upkey = qx.lang.String.firstUp(key);
         let setter = "set" + upkey;
@@ -516,7 +515,6 @@ qx.Class.define("qxapp.components.form.Auto", {
         control.set(s.set);
       }
       control.key = key;
-      control.isLinked = false;
       this.__ctrlMap[key] = control;
 
       let controlKey = new qx.ui.form.TextField().set({
@@ -527,7 +525,6 @@ qx.Class.define("qxapp.components.form.Auto", {
     },
 
     addLink: function(toPortId, fromNodeId, fromPortId) {
-      this.getControl(toPortId).isLinked = true;
       this.getControl(toPortId).link = {
         nodeUuid: fromNodeId,
         output: fromPortId
@@ -538,7 +535,6 @@ qx.Class.define("qxapp.components.form.Auto", {
     },
 
     removeLink: function(toPortId) {
-      this.getControl(toPortId).isLinked = false;
       if ("link" in this.getControl(toPortId)) {
         delete this.getControl(toPortId).link;
       }
