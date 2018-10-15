@@ -86,12 +86,12 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return nodePath;
     },
 
-    createNodeModel: function(metaData, uuid, nodeData) {
+    createNodeModel: function(key, version, uuid, nodeData) {
       let existingNodeModel = this.getNodeModel(uuid);
       if (existingNodeModel) {
         return existingNodeModel;
       }
-      let nodeModel = new qxapp.data.model.NodeModel(metaData, uuid);
+      let nodeModel = new qxapp.data.model.NodeModel(key, version, uuid);
       nodeModel.populateNodeData(nodeData);
       return nodeModel;
     },
@@ -120,12 +120,10 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
         let nodeModel = null;
         if ("key" in nodeData) {
           // not container
-          let store = qxapp.data.Store.getInstance();
-          let metaData = store.getNodeMetaData(nodeData);
-          nodeModel = this.createNodeModel(metaData, nodeId, nodeData);
+          nodeModel = this.createNodeModel(nodeData.key, nodeData.version, nodeId, nodeData);
         } else {
           // container
-          nodeModel = this.createNodeModel(null, nodeId, nodeData);
+          nodeModel = this.createNodeModel(null, null, nodeId, nodeData);
         }
         if ("parent" in nodeData) {
           let parentModel = this.getNodeModel(nodeData.parent);

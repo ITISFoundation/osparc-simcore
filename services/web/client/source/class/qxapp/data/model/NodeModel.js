@@ -1,26 +1,30 @@
 qx.Class.define("qxapp.data.model.NodeModel", {
   extend: qx.core.Object,
 
-  construct: function(metaData, uuid) {
+  construct: function(key, version, uuid) {
     this.base(arguments);
 
     this.__metaData = {};
     this.__innerNodes = {};
     this.__inputNodes = [];
 
-    let nodeImageId = null;
-    if (metaData && "key" in metaData) {
-      // not container
-      nodeImageId = metaData.key + "-" + metaData.version;
-    }
-
     this.set({
-      nodeImageId: nodeImageId,
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
     });
 
-    if (metaData) {
-      this.__metaData = metaData;
+    if (key && version) {
+      // not container
+      this.set({
+        nodeImageId: key + "-" + version
+      });
+      let store = qxapp.data.Store.getInstance();
+      let metaData = this.__metaData = store.getNodeMetaData(key, version);
+      if (metaData) {
+        this.__startInteractiveNode();
+        if (metaData.inputs) {
+          this.__addSettings(metaData.inputs);
+        }
+      }
     }
   },
 
@@ -32,6 +36,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     nodeImageId: {
       check: "String",
+      init: null,
       nullable: true
     },
 
@@ -121,30 +126,24 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     populateNodeData: function(nodeData) {
-      if (this.__metaData) {
-        let metaData = this.__metaData;
-        this.__startInteractiveNode();
+      this.__inputNodes = [];
+      if (nodeData) {
+        this.setSettingsData(nodeData);
 
-        if (metaData && metaData.inputs) {
-          this.__addSettings(metaData.inputs);
-          this.setSettingsData(nodeData);
-        }
-
-        if (nodeData && nodeData.position) {
+        if (nodeData.position) {
           this.setPosition(nodeData.position.x, nodeData.position.y);
         }
 
-        this.__inputNodes = [];
-        if (nodeData && nodeData.inputNodes) {
+        if (nodeData.inputNodes) {
           this.__inputNodes = nodeData.inputNodes;
         }
 
-        const label = (nodeData && nodeData.label) ? nodeData.label : metaData.name;
-        this.setLabel(label);
-
-        if (nodeData && nodeData.outputNode) {
+        if (nodeData.outputNode) {
           this.setIsOutputNode(nodeData.outputNode);
         }
+
+        const label = ("label" in nodeData) ? nodeData.label : this.__metaData.name;
+        this.setLabel(label);
       }
     },
 

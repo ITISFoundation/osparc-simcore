@@ -74,13 +74,11 @@ qx.Class.define("qxapp.data.Store", {
       return qxapp.dev.fake.Data.getProjectData(projectUuid);
     },
 
-    getNodeMetaData: function(nodeData) {
-      let metaData;
-      let nodeImageId = nodeData.key;
-      if (nodeData.key === "container") {
-        metaData = nodeData;
-      } else {
-        nodeImageId = nodeImageId + "-" + nodeData.version;
+    // getNodeMetaData: function(nodeData) {
+    getNodeMetaData: function(key, version) {
+      let metaData = {};
+      if (key && version) {
+        const nodeImageId = key + "-" + version;
         metaData = this.getServices()[nodeImageId];
         if (metaData === undefined) {
           metaData = this.getBuiltInServices()[nodeImageId];
@@ -355,23 +353,6 @@ qx.Class.define("qxapp.data.Store", {
         }
       }
       return [];
-    },
-
-    getNodeMetaDataFromCache: function(nodeImageId) {
-      let metaData = this.getNodeMetaData(nodeImageId);
-      if (metaData) {
-        return metaData;
-      }
-      let services = this.__servicesCacheBuiltIn.concat(this.__servicesCacheComputational);
-      services = services.concat(this.__servicesCacheInteractive);
-      for (let i=0; i<services.length; i++) {
-        const service = services[i];
-        const id = service.key + "-" + service.version;
-        if (nodeImageId === id) {
-          return service;
-        }
-      }
-      return null;
     },
 
     getBuiltInServices: function() {
