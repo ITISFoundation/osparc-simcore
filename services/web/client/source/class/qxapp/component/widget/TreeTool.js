@@ -69,15 +69,13 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       let oldModel = this.__tree.getModel();
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
         this.__tree.setModel(newModel);
-        /*
-        TODO: Ask Tobi
         this.__tree.setDelegate({
-          bindItem : function(controller, item, index) {
-            // controller.bindDefaultProperties(item, index);
-            controller.bindProperty("nodeId", "nodeId", null, item, index);
+          createItem: () => new qxapp.components.widgets.NodeTreeItem(),
+          bindItem: (c, item, id) => {
+            c.bindDefaultProperties(item, id);
+            c.bindProperty("nodeId", "nodeId", null, item, id);
           }
         });
-        */
       }
     },
 
