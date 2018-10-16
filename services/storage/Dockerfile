@@ -17,7 +17,11 @@ RUN apk add --no-cache \
       su-exec
 
 ENV HOME /home/scu
+ENV VENV /home/scu/.venv/
+ENV VENV3 $VENV
+ENV VENV2 /home/scu/.venv27/
 ENV PIP  /home/scu/.venv/bin/pip3
+ENV PIP2 $VENV2/bin/pip
 
 EXPOSE 8080
 
@@ -41,7 +45,8 @@ RUN apk add --no-cache \
       postgresql-dev \
       gcc \
       libc-dev \
-      libffi-dev
+      libffi-dev \
+      python2
 
 RUN python3 -m venv $HOME/.venv &&\
     $PIP install --no-cache-dir --upgrade \
@@ -49,12 +54,17 @@ RUN python3 -m venv $HOME/.venv &&\
       wheel \
       setuptools
 
+RUN $PIP install virtualenv &&\
+  $VENV3/bin/virtualenv --python=python2  $VENV2
+
 WORKDIR /home/scu
 
 # install base 3rd party packages to accelerate runtime installs
+COPY --chown=scu:scu services/storage/requirements/py27.txt requirements-py27.txt
 COPY --chown=scu:scu services/storage/requirements/base.txt requirements-base.txt
 COPY --chown=scu:scu services/storage/docker docker
 RUN $PIP install --no-cache-dir -r requirements-base.txt
+RUN $PIP2 install --no-cache-dir -r requirements-py27.txt
 
 # --------------------------Development stage -------------------
 FROM build as development
