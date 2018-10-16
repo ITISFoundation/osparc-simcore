@@ -29,7 +29,7 @@ async def check_health(request: web.Request):
     data = {
         'name':__name__.split('.')[0],
         'version': __version__,
-        'status': 'RUNNING_FINE',
+        'status': 'SERVICE_RUNNING',
         'last_access' : session.get("last", -1.)
     }
 
@@ -51,11 +51,11 @@ async def check_action(request: web.Request):
     # echo's input FIXME: convert to dic
     # FIXME: output = fake_schema.dump(body)
     output = {
-    "path_value" : "foo",
-    "query_value": "bar",
+    "path_value" : params.get('action'),
+    "query_value": query.get('data'),
     "body_value" :{
-        "key1": 1,
-        "key2": 2
+        "key1": 1, #body.body_value.key1,
+        "key2": 0  #body.body_value.key2,
         }
     }
     return output
