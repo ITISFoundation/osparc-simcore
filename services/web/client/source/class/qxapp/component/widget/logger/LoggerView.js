@@ -8,7 +8,7 @@ const LOG_LEVEL = {
 };
 Object.freeze(LOG_LEVEL);
 
-qx.Class.define("qxapp.components.widgets.logger.LoggerView", {
+qx.Class.define("qxapp.component.widget.logger.LoggerView", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -64,7 +64,7 @@ qx.Class.define("qxapp.components.widgets.logger.LoggerView", {
     this._add(filterLayout);
 
     // let tableModel = this.__logModel = new qx.ui.table.model.Filtered();
-    let tableModel = this.__logModel = new qxapp.components.widgets.logger.RemoteTableModel();
+    let tableModel = this.__logModel = new qxapp.component.widget.logger.RemoteTableModel();
     tableModel.setColumns(["Origin", "Message"], ["whoRich", "whatRich"]);
 
     let custom = {

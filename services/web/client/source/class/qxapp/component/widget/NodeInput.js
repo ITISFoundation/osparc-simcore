@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.components.widgets.NodeInput", {
+qx.Class.define("qxapp.component.widget.NodeInput", {
   extend: qx.ui.core.Widget,
 
   construct: function(nodeModel) {

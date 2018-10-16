@@ -59,7 +59,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     initDefault: function() {
       let project = this.__projectDocument;
 
-      let treeView = this.__treeView = new qxapp.components.widgets.TreeTool(project.getName(), project.getWorkbenchModel());
+      let treeView = this.__treeView = new qxapp.component.widget.TreeTool(project.getName(), project.getWorkbenchModel());
       this.__sidePanel.setTopView(treeView);
 
       let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
@@ -68,13 +68,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       });
       this.__sidePanel.setMidView(extraView);
 
-      let loggerView = this.__loggerView = new qxapp.components.widgets.logger.LoggerView();
+      let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView();
       this.__sidePanel.setBottomView(loggerView);
 
-      let workbenchView = this.__workbenchView = new qxapp.components.workbench.WorkbenchView(project.getWorkbenchModel());
+      let workbenchView = this.__workbenchView = new qxapp.component.workbench.WorkbenchView(project.getWorkbenchModel());
       this.showInMainView(workbenchView, "root");
 
-      let settingsView = this.__settingsView = new qxapp.components.widgets.SettingsView().set({
+      let settingsView = this.__settingsView = new qxapp.component.widget.SettingsView().set({
         minHeight: 200,
         maxHeight: 500
       });
@@ -156,7 +156,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         } else {
           this.__settingsView.setNodeModel(nodeModel);
           if (nodeModel.getMetaData().type === "dynamic") {
-            const widgetManager = qxapp.components.widgets.WidgetManager.getInstance();
+            const widgetManager = qxapp.component.widget.WidgetManager.getInstance();
             widget = widgetManager.getWidgetForNode(nodeModel);
             if (!widget) {
               widget = this.__settingsView;

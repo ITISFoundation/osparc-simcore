@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.components.widgets.WidgetManager", {
+qx.Class.define("qxapp.component.widget.WidgetManager", {
   extend: qx.core.Object,
 
   type: "singleton",
@@ -7,15 +7,15 @@ qx.Class.define("qxapp.components.widgets.WidgetManager", {
     getWidgetForNode: function(node) {
       let nodeKey = node.getMetaData().key;
       if (nodeKey.includes("file-picker")) {
-        let filePicker = new qxapp.components.widgets.FilePicker(node);
+        let filePicker = new qxapp.component.widget.FilePicker(node);
         return filePicker;
       }
       /* else if (nodeKey.includes("s4l/Simulator/LF/")) {
-        let simulatorSetting = new qxapp.components.widgets.SimulatorSetting();
+        let simulatorSetting = new qxapp.component.widget.SimulatorSetting();
         simulatorSetting.setNode(node);
         return simulatorSetting;
       } else if (nodeKey.includes("s4l/Simulator/")) {
-        let simulator = new qxapp.components.widgets.Simulator(node);
+        let simulator = new qxapp.component.widget.Simulator(node);
         return simulator;
       }
       */

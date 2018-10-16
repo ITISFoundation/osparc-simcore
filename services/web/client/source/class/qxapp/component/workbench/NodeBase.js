@@ -1,7 +1,7 @@
 const nodeWidth = 180;
 const portHeight = 16;
 
-qx.Class.define("qxapp.components.workbench.NodeBase", {
+qx.Class.define("qxapp.component.workbench.NodeBase", {
   extend: qx.ui.window.Window,
 
   construct: function(nodeModel) {

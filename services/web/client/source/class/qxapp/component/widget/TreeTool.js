@@ -1,6 +1,6 @@
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.components.widgets.TreeTool", {
+qx.Class.define("qxapp.component.widget.TreeTool", {
   extend: qx.ui.core.Widget,
 
   construct: function(projectName, workbenchModel) {

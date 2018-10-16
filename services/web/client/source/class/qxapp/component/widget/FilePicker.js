@@ -1,5 +1,5 @@
 /* global XMLHttpRequest */
-qx.Class.define("qxapp.components.widgets.FilePicker", {
+qx.Class.define("qxapp.component.widget.FilePicker", {
   extend: qx.ui.core.Widget,
 
   construct: function(node) {

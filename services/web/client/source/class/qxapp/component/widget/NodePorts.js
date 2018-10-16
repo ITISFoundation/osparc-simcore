@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.components.widgets.NodePorts", {
+qx.Class.define("qxapp.component.widget.NodePorts", {
   extend: qx.ui.core.Widget,
 
   construct: function(nodeModel) {

@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.components.workbench.LinkBase", {
+qx.Class.define("qxapp.component.workbench.LinkBase", {
   extend: qx.core.Object,
 
   construct: function(representation) {

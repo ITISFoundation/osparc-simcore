@@ -13,7 +13,7 @@
 
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__ctrlMap"] }] */
 
-qx.Class.define("qxapp.components.form.renderer.PropForm", {
+qx.Class.define("qxapp.component.form.renderer.PropForm", {
   extend : qx.ui.form.renderer.Single,
   /**
      * create a page for the View Tab with the given title

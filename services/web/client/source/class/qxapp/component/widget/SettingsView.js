@@ -1,6 +1,6 @@
 const PORT_INPUTS_WIDTH = 300;
 
-qx.Class.define("qxapp.components.widgets.SettingsView", {
+qx.Class.define("qxapp.component.widget.SettingsView", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
@@ -108,7 +108,7 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
         icon: "@FontAwesome5Solid/folder-open/32"
       });
       openFolder.addListener("execute", function() {
-        let fileManager = new qxapp.components.widgets.FileManager(this.getNodeModel()).set({
+        let fileManager = new qxapp.component.widget.FileManager(this.getNodeModel()).set({
           width: 600,
           height: 400
         });
@@ -200,7 +200,7 @@ qx.Class.define("qxapp.components.widgets.SettingsView", {
     },
 
     __createInputPortsUI: function(inputNodeModel) {
-      let nodePorts = new qxapp.components.widgets.NodePorts(inputNodeModel);
+      let nodePorts = new qxapp.component.widget.NodePorts(inputNodeModel);
       nodePorts.populateNodeLayout();
       this.__createDragDropMechanism(nodePorts);
       this.__inputNodesLayout.add(nodePorts, {

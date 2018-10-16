@@ -27,7 +27,7 @@
 
 /* eslint no-underscore-dangle: "off" */
 
-qx.Class.define("qxapp.components.widgets.logger.RemoteTableModel", {
+qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
 
   extend : qx.ui.table.model.Remote,
 

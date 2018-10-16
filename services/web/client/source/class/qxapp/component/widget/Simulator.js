@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.components.widgets.Simulator", {
+qx.Class.define("qxapp.component.widget.Simulator", {
   extend: qx.ui.core.Widget,
 
   construct: function(node) {

@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.components.widgets.FileManager", {
+qx.Class.define("qxapp.component.widget.FileManager", {
   extend: qx.ui.core.Widget,
 
   construct: function(nodeModel) {

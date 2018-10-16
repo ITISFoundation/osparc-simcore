@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.components.widgets.CollapsableVBox", {
+qx.Class.define("qxapp.component.widget.CollapsableVBox", {
   extend: qx.ui.core.Widget,
 
   construct: function(headerText = "Header", contentWidgets = []) {

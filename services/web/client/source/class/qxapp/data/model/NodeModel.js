@@ -53,7 +53,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     propsWidget: {
-      check: "qxapp.components.form.renderer.PropForm"
+      check: "qxapp.component.form.renderer.PropForm"
     },
 
     parentNodeId: {
@@ -174,7 +174,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       if (inputs === null) {
         return;
       }
-      let form = this.__settingsForm = new qxapp.components.form.Auto(inputs);
+      let form = this.__settingsForm = new qxapp.component.form.Auto(inputs);
       form.addListener("linkAdded", function(e) {
         let changedField = e.getData();
         this.getPropsWidget().linkAdded(changedField);
@@ -184,7 +184,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      let propsWidget = new qxapp.components.form.renderer.PropForm(form);
+      let propsWidget = new qxapp.component.form.renderer.PropForm(form);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("RemoveLink", function(e) {
         let changedField = e.getData();

@@ -5,7 +5,7 @@ const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
 const NODE_INPUTS_WIDTH = 200;
 
-qx.Class.define("qxapp.components.workbench.WorkbenchView", {
+qx.Class.define("qxapp.component.workbench.WorkbenchView", {
   extend: qx.ui.container.Composite,
 
   construct: function(workbenchModel) {
@@ -44,7 +44,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
     });
 
     this.setWorkbenchModel(workbenchModel);
-    this.__svgWidget = new qxapp.components.workbench.SvgWidget("SvgWidgetLayer");
+    this.__svgWidget = new qxapp.component.workbench.SvgWidget("SvgWidgetLayer");
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
     // sure to catch this event
@@ -96,7 +96,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
       let x = pointerEvent.getViewportLeft() - this.getBounds().left;
       let y = pointerEvent.getViewportTop() - navBarHeight;
 
-      let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
+      let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
       srvCat.moveTo(x, y);
       srvCat.open();
       let pos = {
@@ -143,7 +143,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
         height: BUTTON_SIZE
       });
       plusButton.addListener("execute", function() {
-        let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
+        let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
         srvCat.center();
         srvCat.open();
         srvCat.addListener("AddService", function(e) {
@@ -241,7 +241,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
     __createNodeUI: function(nodeId) {
       let nodeModel = this.getWorkbenchModel().getNodeModel(nodeId);
 
-      let nodeBase = new qxapp.components.workbench.NodeBase(nodeModel);
+      let nodeBase = new qxapp.component.workbench.NodeBase(nodeModel);
       nodeBase.createNodeLayout();
       nodeBase.populateNodeLayout();
       this.__createDragDropMechanism(nodeBase);
@@ -334,7 +334,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
         let posX = this.__pointerPosX;
         let posY = this.__pointerPosY;
         if (this.__tempLinkNodeId === dragNodeId) {
-          let srvCat = new qxapp.components.workbench.servicesCatalogue.ServicesCatalogue();
+          let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
           if (this.__tempLinkIsInput === true) {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort());
           } else {
@@ -363,7 +363,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
     },
 
     __createInputNodeUI: function(inputNodeModel) {
-      let nodeInput = new qxapp.components.widgets.NodeInput(inputNodeModel);
+      let nodeInput = new qxapp.component.widget.NodeInput(inputNodeModel);
       nodeInput.populateNodeLayout();
       this.__createDragDropMechanism(nodeInput);
       this.__inputNodesLayout.add(nodeInput, {
@@ -430,7 +430,7 @@ qx.Class.define("qxapp.components.workbench.WorkbenchView", {
       const y2 = pointList[1] ? pointList[1][1] : 0;
       let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
 
-      let link = new qxapp.components.workbench.LinkBase(linkRepresentation);
+      let link = new qxapp.component.workbench.LinkBase(linkRepresentation);
       link.setInputNodeId(node1.getNodeId());
       link.setOutputNodeId(node2.getNodeId());
       link.setLinkId(linkId);

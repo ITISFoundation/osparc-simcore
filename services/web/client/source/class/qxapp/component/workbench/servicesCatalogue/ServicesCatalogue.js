@@ -1,6 +1,6 @@
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue", {
+qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue", {
   extend: qx.ui.window.Window,
 
   construct: function() {
@@ -45,7 +45,7 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     // controller.setLabelPath("name");
 
     // create the filter
-    let filterObj = new qxapp.components.workbench.servicesCatalogue.SearchTypeFilter(this.__controller);
+    let filterObj = new qxapp.component.workbench.servicesCatalogue.SearchTypeFilter(this.__controller);
     // Item's data sorting
     filterObj.sorter = function(a, b) {
       return a > b;

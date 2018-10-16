@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.components.workbench.SvgWidget", {
+qx.Class.define("qxapp.component.workbench.SvgWidget", {
   extend: qx.ui.core.Widget,
 
   construct: function(svgLayerId) {

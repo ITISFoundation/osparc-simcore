@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
+qx.Class.define("qxapp.component.widget.SimulatorSetting", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -7,7 +7,7 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
     let simulatorSettingLayout = new qx.ui.layout.HBox(10);
     this._setLayout(simulatorSettingLayout);
 
-    let collapsableVBox1 = new qxapp.components.widgets.CollapsableVBox("Inputs");
+    let collapsableVBox1 = new qxapp.component.widget.CollapsableVBox("Inputs");
     let componentsBox = this.__componentsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
       width: 250
     });
@@ -16,7 +16,7 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
     });
     this._add(collapsableVBox1);
 
-    let collapsableVBox2 = new qxapp.components.widgets.CollapsableVBox("Settings");
+    let collapsableVBox2 = new qxapp.component.widget.CollapsableVBox("Settings");
     let settingsBox = this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
       width: 250
     });
@@ -44,7 +44,7 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
 
   properties: {
     node: {
-      check: "qxapp.components.workbench.NodeBase",
+      check: "qxapp.component.workbench.NodeBase",
       apply: "__applyNode"
     }
   },
@@ -229,8 +229,8 @@ qx.Class.define("qxapp.components.widgets.SimulatorSetting", {
       if (inputs === null) {
         return null;
       }
-      let form = new qxapp.components.form.Auto(inputs);
-      let propForm = new qxapp.components.form.renderer.PropForm(form);
+      let form = new qxapp.component.form.Auto(inputs);
+      let propForm = new qxapp.component.form.renderer.PropForm(form);
       return propForm;
     },
 

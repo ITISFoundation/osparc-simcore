@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.components.workbench.servicesCatalogue.SearchTypeFilter", {
+qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", {
   extend : qx.core.Object,
 
   construct: function(controller) {

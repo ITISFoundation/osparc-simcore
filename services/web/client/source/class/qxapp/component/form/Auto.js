@@ -59,7 +59,7 @@
 
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.components.form.Auto", {
+qx.Class.define("qxapp.component.form.Auto", {
   extend : qx.ui.form.Form,
   include : [qx.locale.MTranslation],
 
