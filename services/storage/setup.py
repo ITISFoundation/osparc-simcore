@@ -46,7 +46,7 @@ _CONFIG = dict(
     version='0.1.0',
     description='Service to manage data storage in simcore',
     author='Manuel Guidon (mguidon)',
-    python_requires='==3.6',
+    python_requires='>3.6, <3.7',
     packages=find_packages(where='src'),
     package_dir={
         '': 'src',

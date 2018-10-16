@@ -6,6 +6,14 @@ from typing import List
 
 FileMetaDataVec = List[FileMetaData]
 
+def create_virtualenv_py27():
+    # TODO: finixh!!!
+    commands = [
+        "virtualenv --version",
+        "virtualenv --python=python2.7 /tmp/virtualenvs"
+    ]
+    #for cmd in commands
+
 
 def call_python_2(module, function, args):
     """ calls a module::function from python2 with the arguments list
