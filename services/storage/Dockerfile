@@ -46,7 +46,8 @@ RUN apk add --no-cache \
       gcc \
       libc-dev \
       libffi-dev \
-      python2
+      python2 \
+      python2-dev
 
 RUN python3 -m venv $HOME/.venv &&\
     $PIP install --no-cache-dir --upgrade \
@@ -55,15 +56,19 @@ RUN python3 -m venv $HOME/.venv &&\
       setuptools
 
 RUN $PIP install virtualenv &&\
-  $VENV3/bin/virtualenv --python=python2  $VENV2
+    $VENV3/bin/virtualenv --python=python2  $VENV2
 
 WORKDIR /home/scu
+
 
 # install base 3rd party packages to accelerate runtime installs
 COPY --chown=scu:scu services/storage/requirements/py27.txt requirements-py27.txt
 COPY --chown=scu:scu services/storage/requirements/base.txt requirements-base.txt
 COPY --chown=scu:scu services/storage/docker docker
 RUN $PIP install --no-cache-dir -r requirements-base.txt
+
+RUN apk add --no-cache \
+  linux-headers
 RUN $PIP2 install --no-cache-dir -r requirements-py27.txt
 
 # --------------------------Development stage -------------------

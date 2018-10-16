@@ -1,26 +1,20 @@
 import execnet
-
+from functools import partial
 from .models import FileMetaData
-
+from pathlib import Path
 from typing import List
+from textwrap import dedent
 
 FileMetaDataVec = List[FileMetaData]
 
-def create_virtualenv_py27():
-    # TODO: finixh!!!
-    commands = [
-        "virtualenv --version",
-        "virtualenv --python=python2.7 /tmp/virtualenvs"
-    ]
-    #for cmd in commands
+CURRENT_DIR = Path(__file__).resolve().parent
 
-
-def call_python_2(module, function, args):
+def call_python_2(module, function, args, python_exec: Path):
     """ calls a module::function from python2 with the arguments list
     """
-    # TODO: fix hardcoded path to the venv
-
-    gw = execnet.makegateway("popen//python=/home/guidon/miniconda3/envs/py27/bin/python")
+    # pylint: disable=E1101
+    # "E1101:Module 'execnet' has no 'makegateway' member",
+    gw = execnet.makegateway("popen//python=%s" % python_exec)
     channel = gw.remote_exec("""
         from %s import %s as the_function
         channel.send(the_function(*channel.receive()))
@@ -28,13 +22,18 @@ def call_python_2(module, function, args):
     channel.send(args)
     return channel.receive()
 
-def call_python_2_script(script: str):
+def call_python_2_script(script: str, python_exec: Path):
     """ calls an arbitrary script with remote interpreter
 
         MaG: I wonder how secure it is to pass the tokens that way...
 
     """
-    gw = execnet.makegateway("popen//python=/home/guidon/miniconda3/envs/py27/bin/python")
+    prefix = "import sys\n" \
+             "sys.path.append('%s')\n" % CURRENT_DIR
+    script = prefix + dedent(script)
+
+    # pylint: disable=E1101
+    gw = execnet.makegateway("popen//python=%s" % python_exec)
     channel = gw.remote_exec(script)
     return channel.receive()
 
@@ -44,9 +43,12 @@ class DatcoreWrapper:
         Assumes that python 2 is installed in a virtual env
 
     """
-    def __init__(self, api_token, api_secret):
+    def __init__(self, api_token: str, api_secret: str, python2_exec: Path):
         self.api_token = api_token
         self.api_secret = api_secret
+
+        #TODO: guarantee that python2_exec is a valid
+        self._py2_call = partial(call_python_2_script, python_exec=python2_exec)
 
     def list_files(self, regex = "", sortby = "")->FileMetaDataVec: #pylint: disable=W0613
         # FIXME: W0613:Unused argument 'regex', sortby!!!
@@ -65,7 +67,7 @@ class DatcoreWrapper:
 
             """%(self.api_token, self.api_secret)
 
-        files = call_python_2_script(script)
+        files = self._py2_call(script)
         data = []
         for f in files:
             # extract bucket name, object name and filename
@@ -105,7 +107,7 @@ class DatcoreWrapper:
             channel.send(None)
             """.format(self.api_token, self.api_secret, dataset, file_name)
 
-        return call_python_2_script(script)
+        return self._py2_call(script)
 
     def download_link(self, fmd):
         dataset = fmd.bucket_name
@@ -128,4 +130,4 @@ class DatcoreWrapper:
             channel.send(url)
             """.format(self.api_token, self.api_secret, dataset, file_name)
 
-        return call_python_2_script(script)
+        return self._py2_call(script)

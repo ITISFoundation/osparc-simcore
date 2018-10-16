@@ -9,3 +9,4 @@ pytest-cov
 pytest-docker
 openapi_spec_validator
 pyyaml
+virtualenv

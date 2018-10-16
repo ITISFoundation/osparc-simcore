@@ -1,6 +1,7 @@
 import os
 import re
 from operator import itemgetter
+from pathlib import Path
 from typing import List, Tuple
 
 import attr
@@ -54,6 +55,8 @@ class DataStorageManager:
     """
     db_endpoint: str
     s3_client: S3Client
+    python27_exec: Path
+
 
     async def list_files(self, user_id: int, location: str, regex: str="", sortby: str="") -> FileMetaDataVec:
         """ Returns a list of file paths
@@ -75,7 +78,7 @@ class DataStorageManager:
                         data.append(d)
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
-            dc = DatcoreWrapper(api_token, api_secret)
+            dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
             return dc.list_files(regex, sortby)
 
         if sortby:
@@ -122,7 +125,7 @@ class DataStorageManager:
 
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
-            dc = DatcoreWrapper(api_token, api_secret)
+            dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
             return dc.delete_file(fmd)
 
     async def upload_file_to_datcore(self, user_id: int, local_file_path: str, remote_file_path: str, fmd: FileMetaData = None): # pylint: disable=W0613
@@ -135,9 +138,11 @@ class DataStorageManager:
     async def _get_datcore_tokens(self, user_id: int)->Tuple[str, str]:
         # actually we have to query the master db
         async with create_engine(self.db_endpoint) as engine:
+            # FIXME: load from app[APP_DB_ENGINE_KEY]
             async with engine.acquire() as conn:
                 query = sa.select([file_meta_data]).where(file_meta_data.c.user_id == user_id)
                 _fmd = await conn.execute(query)
+                # FIXME: load from app[APP_CONFIG_KEY]["test_datcore"]
                 api_token = os.environ.get("BF_API_KEY", "none")
                 api_secret = os.environ.get("BF_API_SECRET", "none")
                 return (api_token, api_secret)
@@ -156,6 +161,6 @@ class DataStorageManager:
             link = self.s3_client.create_presigned_get_url(fmd.bucket_name, fmd.object_name)
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
-            dc = DatcoreWrapper(api_token, api_secret)
+            dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
             link = dc.download_link(fmd)
         return link

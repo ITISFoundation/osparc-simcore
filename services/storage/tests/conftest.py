@@ -12,7 +12,7 @@ from pathlib import Path
 from random import randrange
 
 import pytest
-
+import subprocess
 import simcore_service_storage
 import utils
 from simcore_service_storage.models import FileMetaData
@@ -29,6 +29,26 @@ def package_dir(here):
     dirpath = Path(simcore_service_storage.__file__).parent
     assert dirpath.exists()
     return dirpath
+
+@pytest.fixture(scope='session')
+def osparc_simcore_root_dir(here):
+    root_dir = here.parent.parent.parent
+    assert root_dir.exists(), "Is this service within osparc-simcore repo?"
+    return root_dir
+
+@pytest.fixture(scope='session')
+def python27_exec(osparc_simcore_root_dir, tmpdir_factory):
+    # Assumes already created with make .venv27
+    venv27 = osparc_simcore_root_dir / ".venv27"
+    if not venv27.exists():
+        # create its own virtualenv
+        venv27 = tmpdir_factory.mktemp("virtualenv") / ".venv27"
+        cmd = "virtualenv --python=python27 '%s'"%(venv27) # TODO: how to split in command safely?
+        assert subprocess.check_call(cmd.split()) == 0, "Unable to run %s" %cmd
+
+    python27_exec = venv27 / "bin" / "python2.7"
+    assert python27_exec.exists()
+    return python27_exec
 
 
 @pytest.fixture(scope='session')
@@ -71,7 +91,6 @@ def postgres_service(docker_services, docker_ip):
 
     return url
 
-
 @pytest.fixture(scope='session')
 def minio_service(docker_services, docker_ip):
 
@@ -94,7 +113,6 @@ def minio_service(docker_services, docker_ip):
         'secret_key' : SECRET_KEY,
         }
 
-
 @pytest.fixture(scope="module")
 def s3_client(minio_service):
     from s3wrapper.s3_client import S3Client
@@ -102,12 +120,11 @@ def s3_client(minio_service):
     s3_client = S3Client(**minio_service)
     return s3_client
 
-
 @pytest.fixture(scope="function")
 def mock_files_factory(tmpdir_factory):
-    def _create_files(N):
+    def _create_files(count):
         filepaths = []
-        for _i in range(N):
+        for _i in range(count):
             name = str(uuid.uuid4())
             filepath = os.path.normpath(str(tmpdir_factory.mktemp('data').join(name + ".txt")))
             with open(filepath, 'w') as fout:
@@ -120,7 +137,6 @@ def mock_files_factory(tmpdir_factory):
 
 @pytest.fixture(scope="function")
 def dsm_mockup_db(postgres_service, s3_client, mock_files_factory):
-
     # db
     utils.create_tables(url=postgres_service)
 
@@ -138,7 +154,7 @@ def dsm_mockup_db(postgres_service, s3_client, mock_files_factory):
 
     N = 100
 
-    files = mock_files_factory(N)
+    files = mock_files_factory(count=N)
     counter = 0
     data = {}
     for _file in files:
