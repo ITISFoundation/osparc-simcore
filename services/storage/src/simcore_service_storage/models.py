@@ -2,6 +2,7 @@
 
 """
 import sqlalchemy as sa
+import attr
 
 #FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
 #from sqlalchemy.dialects.postgresql import UUID
@@ -27,6 +28,7 @@ file_meta_data = sa.Table(
     sa.Column("node_name", sa.String),
 )
 
+@attr.s(auto_attribs=True)
 class FileMetaData:
     """ This is a proposal, probably no everything is needed.
 
@@ -54,17 +56,14 @@ class FileMetaData:
         TODO: use attrs for this!
         """
     #pylint: disable=W0613
-    def __init__(self, object_name: str, bucket_name ="", file_id: str="", file_name: str="", user_id: int=-1, user_name: str="", location: str="", project_id: int=-1,
-            project_name: str="", node_id: int=-1, node_name: str="", **kargs):
-
-        self.object_name = object_name
-        self.bucket_name = bucket_name
-        self.file_id = file_id
-        self.file_name = file_name
-        self.user_id = user_id
-        self.user_name =user_name
-        self.location = location
-        self.project_id = project_id
-        self.project_name = project_name
-        self.node_id = node_id
-        self.node_name = node_name
+    object_name: str
+    bucket_name: str =""
+    file_id: str =""
+    file_name: str=""
+    user_id: int=-1
+    user_name: str=""
+    location: str=""
+    project_id: int=-1
+    project_name: str=""
+    node_id: int=-1
+    node_name: str=""

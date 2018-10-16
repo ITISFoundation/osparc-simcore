@@ -1,8 +1,6 @@
 """ RestAPI models
 
 """
-import attr
-
 from marshmallow import Schema, fields
 from servicelib.rest_models import (ErrorItemType,  # pylint: disable=W0611
                                     ErrorType, LogMessageType)

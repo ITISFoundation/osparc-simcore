@@ -10,7 +10,7 @@ import logging
 from servicelib import constants
 
 from .__version__ import get_version_object
-from .settings_schema import CONFIG_SCHEMA
+from .settings_schema import CONFIG_SCHEMA #pylint: disable=W0611
 
 log = logging.getLogger(__name__)
 
@@ -62,3 +62,8 @@ RSC_CONFIG_SCHEMA_KEY = RSC_CONFIG_DIR_KEY + "/config-schema-v1.json"
 #  - via the config file passed to the cli
 
 OAS_ROOT_FILE = "{}/openapi.yaml".format(RSC_OPENAPI_DIR_KEY) # TODO: delete
+
+
+__all__ = (
+    'CONFIG_SCHEMA', # TODO: fill with proper values
+)

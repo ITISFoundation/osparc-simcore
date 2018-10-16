@@ -1,7 +1,9 @@
 """ Python2 Datcore client wrapper for simcore
 
     requires Blackfynn, check Makefile env2
+
 """
+# pylint: skip-file
 import os
 import urllib
 
