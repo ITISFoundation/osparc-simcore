@@ -41,14 +41,24 @@ async def check_health(request: web.Request):
 async def check_action(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
-    assert params
-    assert query
-    assert body
+    assert params, "params %s" % params
+    assert query, "query %s" % query
+    assert body, "body %s" % body
 
     if params['action'] == 'fail':
         raise ValueError("some randome failure")
 
-    return body # echo's input
+    # echo's input FIXME: convert to dic
+    # FIXME: output = fake_schema.dump(body)
+    output = {
+    "path_value" : "foo",
+    "query_value": "bar",
+    "body_value" :{
+        "key1": 1,
+        "key2": 2
+        }
+    }
+    return output
 
 async def get_files_metadata(request: web.Request):
     data1 = {

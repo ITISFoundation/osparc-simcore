@@ -44,7 +44,7 @@ def parse(args):
 def main(args=None):
     config = parse(args)
 
-    log_level = config.get("app",{}).get("log_level", "DEBUG")
+    log_level = config["main"]["log_level"]
     logging.basicConfig(level=getattr(logging, log_level))
 
     application.run(config)

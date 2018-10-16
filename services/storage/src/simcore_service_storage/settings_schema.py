@@ -17,3 +17,7 @@ CONFIG_SCHEMA = T.Dict({
     T.Key("postgres"): db.CONFIG_SCHEMA,
     T.Key("s3"): s3.CONFIG_SCHEMA
 })
+
+
+# TODO: config submodule that knows about schema with web.Application intpu parameters
+# TODO: def get_main_config(app: ):

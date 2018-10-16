@@ -31,6 +31,7 @@ API_URL_VERSION = "v{:.0f}".format(API_MAJOR_VERSION)
 
 
 ## KEYS -------------------------
+# TODO: test no key collisions
 # Keys used in different scopes. Common naming format:
 #
 #    $(SCOPE)_$(NAME)_KEY
@@ -40,10 +41,14 @@ API_URL_VERSION = "v{:.0f}".format(API_MAJOR_VERSION)
 APP_CONFIG_KEY = constants.APP_CONFIG_KEY
 APP_OAS_KEY = constants.APP_OAS_KEY
 
+APP_DB_ENGINE_KEY  = 'db_engine'
+APP_DB_SESSION_KEY = 'db_session'
+
 # CFG=configuration
 
 # RSC=resource
-RSC_OPENAPI_KEY = "oas3/{}".format(API_URL_VERSION)
+RSC_OPENAPI_DIR_KEY = "oas3/{}".format(API_URL_VERSION)
+RSC_OPENAPI_ROOTFILE_KEY = "{}/openapi.yaml".format(RSC_OPENAPI_DIR_KEY)
 RSC_CONFIG_DIR_KEY  = "data"
 RSC_CONFIG_SCHEMA_KEY = RSC_CONFIG_DIR_KEY + "/config-schema-v1.json"
 
@@ -56,4 +61,4 @@ RSC_CONFIG_SCHEMA_KEY = RSC_CONFIG_DIR_KEY + "/config-schema-v1.json"
 ## Settings revealed at runtime: only known when the application starts
 #  - via the config file passed to the cli
 
-OAS_ROOT_FILE = "{}/openapi.yaml".format(RSC_OPENAPI_KEY)
+OAS_ROOT_FILE = "{}/openapi.yaml".format(RSC_OPENAPI_DIR_KEY) # TODO: delete

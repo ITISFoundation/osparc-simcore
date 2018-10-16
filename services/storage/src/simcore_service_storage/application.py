@@ -9,6 +9,7 @@ from aiohttp import web
 from .db import setup_db
 from .rest import setup_rest
 from .session import setup_session
+from . import s3
 from .settings import APP_CONFIG_KEY
 
 log = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ def create(config):
     setup_db(app)
     setup_session(app)
     setup_rest(app)
+    s3.setup(app)
 
     return app
 
