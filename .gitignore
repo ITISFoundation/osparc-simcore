@@ -137,3 +137,6 @@ pytest.ini
 # backup files
 *~
 *.bak
+
+# pylint-profile output
+prof/
