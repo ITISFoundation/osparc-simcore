@@ -78,23 +78,15 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
         try {
           let ajv = new qxapp.wrappers.Ajv(data);
           let store = qxapp.data.Store.getInstance();
-          [
-            "builtInServicesRegistered",
-            "servicesRegistered",
-            "interactiveServicesRegistered"
-          ].forEach(event => {
-            store.addListener(event, ev => {
-              const services = ev.getData();
-              for (let i = 0; i < services.length; i++) {
-                const service = services[i];
-                let check = ajv.validate(service);
-                console.log("services validation result " + service.key + ":", check);
-              }
-            }, this);
+          store.addListener("servicesRegistered", ev => {
+            const services = ev.getData();
+            for (let i = 0; i < services.length; i++) {
+              const service = services[i];
+              let check = ajv.validate(service);
+              console.log("services validation result " + service.key + ":", check);
+            }
           });
-          store.getBuiltInServicesAsync();
-          store.getComputationalServices();
-          store.getInteractiveServices();
+          store.getServices();
         } catch (err) {
           console.error(err);
         }

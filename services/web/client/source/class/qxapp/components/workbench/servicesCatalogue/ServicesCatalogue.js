@@ -109,18 +109,10 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
 
     __populateList: function() {
       let store = qxapp.data.Store.getInstance();
-      [
-        "builtInServicesRegistered",
-        "servicesRegistered",
-        "interactiveServicesRegistered"
-      ].forEach(event => {
-        store.addListener(event, e => {
-          this.__addNewData(e.getData());
-        }, this);
-      });
-      store.getBuiltInServicesAsync();
-      store.getComputationalServices();
-      store.getInteractiveServices();
+      store.addListener("servicesRegistered", e => {
+        this.__addNewData(e.getData());
+      }, this);
+      store.getServices();
     },
 
     __getServiceNameInList: function(service) {
@@ -171,7 +163,9 @@ qx.Class.define("qxapp.components.workbench.servicesCatalogue.ServicesCatalogue"
     },
 
     __addNewData: function(newData) {
-      this.__allServices = this.__allServices.concat(newData);
+      for (const serviceKey in newData) {
+        this.__allServices.push(newData[serviceKey]);
+      }
       this.__updateCompatibleList();
     },
 
