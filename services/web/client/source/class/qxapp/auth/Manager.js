@@ -95,12 +95,11 @@ qx.Class.define("qxapp.auth.Manager", {
         let msg = "Unable to login";
         let success = false;
         if (error) {
-          //msg = this.composeMessage(error.logs) || "Login failed"; // FIXME: TypeError: this.composeMessage is not a function!?
-          msg = error.logs[0].message || msg;
+          msg = this.composeMessage(error.logs) || "Login failed";
           success = false;
         }
         callback.call(context, success, msg);
-      });
+      }, this);
 
       request.send();
     },
