@@ -1,18 +1,18 @@
 """ RESTful API for simcore_service_storage
 
 """
+import copy
 import logging
 from typing import Dict
 
 from aiohttp import web
-import copy
 
 from servicelib import openapi
 from servicelib.rest_middlewares import envelope_middleware, error_middleware
 
-from . import rest_routings
+from . import rest_routes
 from .resources import resources
-from .settings import RSC_OPENAPI_ROOTFILE_KEY, APP_CONFIG_KEY, APP_OAS_KEY
+from .settings import APP_CONFIG_KEY, APP_OAS_KEY, RSC_OPENAPI_ROOTFILE_KEY
 
 log = logging.getLogger(__name__)
 
@@ -51,9 +51,7 @@ def create_apispecs(app_config: Dict) -> openapi.Spec:
         specs = None
     return specs
 
-
-
-def setup_rest(app):
+def setup(app: web.Application):
     """Setup the rest API module in the application in aiohttp fashion. """
     log.debug("Setting up %s ...", __name__)
 
@@ -75,7 +73,11 @@ def setup_rest(app):
     app.middlewares.append(error_middleware)
     app.middlewares.append(envelope_middleware)
 
-    rest_routings.setup(app)
+    rest_routes.setup(app)
+
+
+# alias
+setup_rest = setup
 
 __all__ = (
     'setup_rest'

@@ -6,9 +6,9 @@ from typing import Dict
 
 from aiohttp import web
 
-from s3wrapper.s3_client import S3Client
-
 from .settings import APP_CONFIG_KEY
+
+#from s3wrapper.s3_client import S3Client
 
 
 log = logging.getLogger(__name__)
@@ -17,7 +17,9 @@ _SERVICE_NAME = 's3'
 
 
 def setup(app: web.Application):
+    """ minio/s3 service setup"""
 
+    log.debug("Setting up %s ...", __name__)
     disable_services = app[APP_CONFIG_KEY].get("main", {}).get("disable_services",[])
 
     if _SERVICE_NAME in disable_services:
