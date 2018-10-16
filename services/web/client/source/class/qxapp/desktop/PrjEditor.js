@@ -102,6 +102,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__workbenchModelChanged();
       }, this);
 
+      this.__projectDocument.getWorkbenchModel().addListener("ShowInLogger", e => {
+        const data = e.getData();
+        const nodeLabel = data.nodeLabel;
+        const msg = data.msg;
+        this.getLogger().info(nodeLabel, msg);
+      }, this);
+
       [
         this.__treeView,
         this.__workbenchView

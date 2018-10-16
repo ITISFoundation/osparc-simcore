@@ -21,7 +21,8 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
   },
 
   events: {
-    "WorkbenchModelChanged": "qx.event.type.Event"
+    "WorkbenchModelChanged": "qx.event.type.Event",
+    "ShowInLogger": "qx.event.type.Event"
   },
 
   members: {
@@ -93,6 +94,9 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       }
       let nodeModel = new qxapp.data.model.NodeModel(key, version, uuid);
       nodeModel.populateNodeData(nodeData);
+      nodeModel.addListener("ShowInLogger", e => {
+        this.fireDataEvent("ShowInLogger", e.getData());
+      }, this);
       return nodeModel;
     },
 

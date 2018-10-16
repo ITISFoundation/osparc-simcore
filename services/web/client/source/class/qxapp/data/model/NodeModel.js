@@ -78,6 +78,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     }
   },
 
+  events: {
+    "ShowInLogger": "qx.event.type.Event"
+  },
+
   members: {
     __metaData: null,
     __innerNodes: null,
@@ -263,7 +267,13 @@ qx.Class.define("qxapp.data.model.NodeModel", {
                   nodeId: this.getNodeId()
                 });
               }, this);
-              console.log(metaData.name, "Service ready on " + srvUrl);
+              const msg = "Service ready on " + srvUrl;
+              const msgData = {
+                nodeLabel: this.getLabel(),
+                msg: msg
+              };
+              this.fireDataEvent("ShowInLogger", msgData);
+              console.log(this.getLabel(), msg);
             }
           } else {
             console.error("Error starting dynamic service: ", data);
