@@ -73,11 +73,7 @@ Mixing JSONSchema with OpenAPI schema needs some additional steps:
 
 The current python-based packages use the aiohttp-apiset library to create routes from the defined API. The aiohttp-apiset library requires a physical file to create the routes. Therefore one needs to generate that file by following:
 
-1. Generate a 1 file OpenAPI formatted file using [prance](https://pypi.org/project/prance/):
-    ```bash
-    pip install prance
-    prance compile path/to/input.yml path/to/output.yml
-    ```
+1. Generate a 1 file OpenAPI formatted file using [prance](https://pypi.org/project/prance/). By using [openapi-resolver](../scripts/openapi/oas_resolver).
 2. Copy the generated file in a folder in the python-based code and use it.
 
 ### Python: in development and should be available soon
