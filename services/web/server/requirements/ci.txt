@@ -4,3 +4,5 @@
 
 ../../../packages/s3wrapper/
 ../../../packages/simcore-sdk/
+../../../packages/director-sdk/python/
+../../../packages/service-library/
