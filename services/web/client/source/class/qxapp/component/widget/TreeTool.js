@@ -70,7 +70,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
         this.__tree.setModel(newModel);
         this.__tree.setDelegate({
-          createItem: () => new qxapp.components.widgets.NodeTreeItem(),
+          createItem: () => new qxapp.component.widget.NodeTreeItem(),
           bindItem: (c, item, id) => {
             c.bindDefaultProperties(item, id);
             c.bindProperty("nodeId", "nodeId", null, item, id);

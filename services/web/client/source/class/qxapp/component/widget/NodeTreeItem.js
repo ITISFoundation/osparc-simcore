@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.components.widgets.NodeTreeItem", {
+qx.Class.define("qxapp.component.widget.NodeTreeItem", {
   extend : qx.ui.tree.VirtualTreeItem,
 
   properties : {
