@@ -3,7 +3,7 @@
 """
 import attr
 
-from simcore_servicelib.rest_models import ErrorItemType, ErrorType, LogMessageType #pylint: disable=W0611
+from servicelib.rest_models import ErrorItemType, ErrorType, LogMessageType #pylint: disable=W0611
 
 
 # NOTE: using these, optional and required fields are always transmitted!

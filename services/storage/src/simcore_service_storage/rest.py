@@ -3,7 +3,7 @@
 """
 import logging
 
-from simcore_servicelib.rest_middlewares import (envelope_middleware,
+from servicelib.rest_middlewares import (envelope_middleware,
                                                  error_middleware)
 
 from . import rest_routings

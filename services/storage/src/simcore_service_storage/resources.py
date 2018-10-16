@@ -2,7 +2,7 @@
 
 """
 from pathlib import Path
-from simcore_servicelib.resources import ResourcesFacade
+from servicelib.resources import ResourcesFacade
 
 from .settings import RSC_CONFIG_DIR_KEY, RSC_OPENAPI_KEY #pylint: disable=unused-import
 from .settings import OAS_ROOT_FILE

@@ -7,7 +7,7 @@ to all of them.
 """
 import logging
 
-from simcore_servicelib import constants
+from servicelib import constants
 
 from .__version__ import get_version_object
 from .settings_schema import CONFIG_SCHEMA

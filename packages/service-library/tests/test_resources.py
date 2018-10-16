@@ -1,4 +1,4 @@
 import pytest
 
 
-import simcore_servicelib
+import servicelib

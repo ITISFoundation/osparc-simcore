@@ -8,7 +8,7 @@ from typing import List
 
 from aiohttp import web
 
-from simcore_servicelib import openapi
+from servicelib import openapi
 
 from . import handlers
 from .settings import APP_OAS_KEY
