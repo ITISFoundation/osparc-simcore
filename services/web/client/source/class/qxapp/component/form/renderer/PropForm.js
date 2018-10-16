@@ -84,7 +84,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       let data = this._form.getData();
       for (const portId in data) {
         let ctrl = this._form.getControl(portId);
-        if ("link" in ctrl) {
+        if (ctrl && ctrl.hasOwnProperty("link")) {
           data[portId] = ctrl.link;
         }
       }
