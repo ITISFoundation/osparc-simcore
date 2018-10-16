@@ -148,7 +148,7 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
     },
 
     __createDragDropMechanism: function(portUI) {
-      portUI.addListener("PortDragStart", function(e) {
+      portUI.addListener("PortDragStart", e => {
         let data = e.getData();
         let event = data.event;
         let dragNodeId = data.nodeId;
@@ -166,7 +166,7 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
         event.addData("osparc-port-link", dragData);
       }, this);
 
-      portUI.addListener("PortDragOver", function(e) {
+      portUI.addListener("PortDragOver", e => {
         let data = e.getData();
         let event = data.event;
         // let dropNodeId = data.nodeId;
@@ -185,7 +185,7 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
         }
       }, this);
 
-      portUI.addListener("PortDrop", function(e) {
+      portUI.addListener("PortDrop", e => {
         let data = e.getData();
         let event = data.event;
         // let dropNodeId = data.nodeId;
@@ -242,7 +242,7 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
 
       let viewerButton = nodeModel.getViewerButton();
       if (viewerButton) {
-        nodeModel.addListenerOnce("ShowViewer", function(e) {
+        nodeModel.addListenerOnce("ShowViewer", e => {
           const data = e.getData();
           this.fireDataEvent("ShowViewer", data);
         }, this);

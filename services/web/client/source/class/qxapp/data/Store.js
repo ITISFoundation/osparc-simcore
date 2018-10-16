@@ -833,7 +833,7 @@ qx.Class.define("qxapp.data.Store", {
         method: "GET"
       });
 
-      req.addListener("success", function(e) {
+      req.addListener("success", e => {
         let requ = e.getTarget();
         const {
           data,
@@ -858,7 +858,7 @@ qx.Class.define("qxapp.data.Store", {
         }
       }, this);
 
-      req.addListener("fail", function(e) {
+      req.addListener("fail", e => {
         let requ = e.getTarget();
         const {
           data,

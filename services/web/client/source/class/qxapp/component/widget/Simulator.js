@@ -42,7 +42,7 @@ qx.Class.define("qxapp.component.widget.Simulator", {
 
     __getConceptSetting: function(innerNode) {
       let conceptSetting = new qx.ui.tree.TreeFolder(innerNode.getMetaData().name);
-      conceptSetting.addListener("dblclick", function(e) {
+      conceptSetting.addListener("dblclick", e => {
         this.fireDataEvent("NodeDoubleClicked", innerNode.getNodeId());
         e.stopPropagation();
       }, this);

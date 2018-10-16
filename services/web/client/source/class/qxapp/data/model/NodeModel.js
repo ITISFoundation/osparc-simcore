@@ -175,18 +175,18 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         return;
       }
       let form = this.__settingsForm = new qxapp.component.form.Auto(inputs);
-      form.addListener("linkAdded", function(e) {
+      form.addListener("linkAdded", e => {
         let changedField = e.getData();
         this.getPropsWidget().linkAdded(changedField);
       }, this);
-      form.addListener("linkRemoved", function(e) {
+      form.addListener("linkRemoved", e => {
         let changedField = e.getData();
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
       let propsWidget = new qxapp.component.form.renderer.PropForm(form);
       this.setPropsWidget(propsWidget);
-      propsWidget.addListener("RemoveLink", function(e) {
+      propsWidget.addListener("RemoveLink", e => {
         let changedField = e.getData();
         this.__settingsForm.removeLink(changedField);
       }, this);
@@ -256,7 +256,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
               this.set({
                 viewerButton: button
               });
-              button.addListener("execute", function(e) {
+              button.addListener("execute", e => {
                 this.fireDataEvent("ShowViewer", {
                   url: srvUrl,
                   name: this.getLabel(),

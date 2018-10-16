@@ -40,7 +40,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       // prjCtr.setModel();
 
       // Monitors change in selection
-      prjCtr.getSelection().addListener("change", function(e) {
+      prjCtr.getSelection().addListener("change", e => {
         const selectedItem = e.getTarget().toArray()[0];
         const data = {
           name: selectedItem.getName(),
@@ -69,7 +69,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       // prjCtr.setModel();
 
       // Monitors change in selection
-      prjCtr.getSelection().addListener("change", function(e) {
+      prjCtr.getSelection().addListener("change", e => {
         const selectedItem = e.getTarget().toArray()[0];
         const data = {
           name: selectedItem.getName(),

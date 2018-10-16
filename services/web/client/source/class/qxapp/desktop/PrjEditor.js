@@ -106,13 +106,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__treeView,
         this.__workbenchView
       ].forEach(wb => {
-        wb.addListener("NodeDoubleClicked", function(e) {
+        wb.addListener("NodeDoubleClicked", e => {
           let nodeId = e.getData();
           this.nodeSelected(nodeId);
         }, this);
       });
 
-      this.__settingsView.addListener("ShowViewer", function(e) {
+      this.__settingsView.addListener("ShowViewer", e => {
         const data = e.getData();
         const url = data.url;
         const name = data.name;
@@ -248,11 +248,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         requestData: qx.util.Serializer.toJson(data)
       });
       req.addListener("success", this.__onPipelinesubmitted, this);
-      req.addListener("error", function(e) {
+      req.addListener("error", e => {
         this.setCanStart(true);
         this.getLogger().error("Workbench", "Error submitting pipeline");
       }, this);
-      req.addListener("fail", function(e) {
+      req.addListener("fail", e => {
         this.setCanStart(true);
         this.getLogger().error("Workbench", "Failed submitting pipeline");
       }, this);
@@ -271,11 +271,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         requestData: qx.util.Serializer.toJson(data)
       });
       req.addListener("success", this.__onPipelineStopped, this);
-      req.addListener("error", function(e) {
+      req.addListener("error", e => {
         this.setCanStart(false);
         this.getLogger().error("Workbench", "Error stopping pipeline");
       }, this);
-      req.addListener("fail", function(e) {
+      req.addListener("fail", e => {
         this.setCanStart(false);
         this.getLogger().error("Workbench", "Failed stopping pipeline");
       }, this);
@@ -339,7 +339,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       });
       win.moveTo(150, 150);
 
-      win.addListener("dblclick", function(e) {
+      win.addListener("dblclick", e => {
         e.stopPropagation();
       });
 

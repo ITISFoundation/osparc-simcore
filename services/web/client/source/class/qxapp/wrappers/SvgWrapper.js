@@ -34,13 +34,13 @@ qx.Class.define("qxapp.wrappers.SvgWrapper", {
         svgPathPath
       ]);
 
-      dynLoader.addListenerOnce("ready", function(e) {
+      dynLoader.addListenerOnce("ready", e => {
         console.log(svgPath + " loaded");
         this.setLibReady(true);
         this.fireDataEvent("SvgLibReady", true);
       }, this);
 
-      dynLoader.addListener("failed", function(e) {
+      dynLoader.addListener("failed", e => {
         let data = e.getData();
         console.log("failed to load " + data.script);
         this.fireDataEvent("SvgLibReady", false);

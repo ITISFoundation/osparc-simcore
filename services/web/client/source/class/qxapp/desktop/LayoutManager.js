@@ -13,7 +13,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     this.__navBar = this.__createNavigationBar();
     this.__navBar.setHeight(100);
-    this.__navBar.addListener("NodeDoubleClicked", function(e) {
+    this.__navBar.addListener("NodeDoubleClicked", e => {
       if (this.__prjEditor) {
         let nodeId = e.getData();
         this.__prjEditor.nodeSelected(nodeId);
@@ -35,7 +35,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__navBar.setMainViewCaption("Dashboard");
     }, this);
 
-    this.__prjBrowser.addListener("StartProject", function(e) {
+    this.__prjBrowser.addListener("StartProject", e => {
       const data = e.getData();
       const projectUuid = data.projectUuid;
       const projectName = data.name;

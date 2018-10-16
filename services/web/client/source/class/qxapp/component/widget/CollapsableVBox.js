@@ -23,7 +23,7 @@ qx.Class.define("qxapp.component.widget.CollapsableVBox", {
         maxHeight: 24,
         padding: 0
       });
-      expandBtn.addListener("execute", function(e) {
+      expandBtn.addListener("execute", e => {
         this.toggleCollapsed();
       }, this);
     }

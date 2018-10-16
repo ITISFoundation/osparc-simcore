@@ -19,7 +19,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
     let clearButton = new qx.ui.form.Button("Clear");
-    clearButton.addListener("execute", function(e) {
+    clearButton.addListener("execute", e => {
       this.clearLogger();
     }, this);
     filterLayout.add(clearButton);
@@ -52,7 +52,7 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
       if (this.getLogLevel() === logLevelBtn.logLevel) {
         defSelected.push(logLevelBtn);
       }
-      logLevelBtn.addListener("changeValue", function(e) {
+      logLevelBtn.addListener("changeValue", e => {
         if (e.getData() === true) {
           this.setLogLevel(logLevelBtn.logLevel);
         }

@@ -78,7 +78,7 @@ qx.Class.define("qxapp.component.form.Auto", {
     }
     let model = this.__model = formCtrl.createModel(true);
 
-    model.addListener("changeBubble", function(e) {
+    model.addListener("changeBubble", e => {
       if (!this.__settingData) {
         this.fireDataEvent("changeData", this.getData());
       }

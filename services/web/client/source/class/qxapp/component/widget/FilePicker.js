@@ -20,11 +20,11 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
 
     let pick = this._createChildControlImpl("addButton");
     // Add an event listener
-    pick.addListener("execute", function(e) {
+    pick.addListener("execute", e => {
       input.getDomElement().click();
     });
 
-    input.addListener("change", function(e) {
+    input.addListener("change", e => {
       let files = input.getDomElement().files;
       for (let i=0; i<files.length; i++) {
         this.__retrieveURLAndUpload(files[i]);
@@ -245,7 +245,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
         width: "85%"
       });
       let xhr = new XMLHttpRequest();
-      xhr.upload.addEventListener("progress", function(e) {
+      xhr.upload.addEventListener("progress", e => {
         if (e.lengthComputable) {
           const percentComplete = e.loaded / e.total * 100;
           progressBar.setValue(percentComplete);

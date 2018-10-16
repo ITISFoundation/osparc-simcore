@@ -37,14 +37,14 @@ qx.Class.define("qxapp.component.widget.FileManager", {
       let downloadBtn = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/cloud-download-alt/24"
       });
-      downloadBtn.addListener("execute", function(e) {
+      downloadBtn.addListener("execute", e => {
         this.__downloadFile();
       }, this);
 
       let deleteBtn = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/trash-alt/24"
       });
-      deleteBtn.addListener("execute", function(e) {
+      deleteBtn.addListener("execute", e => {
         this.__deleteFile();
       }, this);
 
@@ -256,7 +256,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
 
     __createDragMechanism: function(treeItem) {
       treeItem.setDraggable(true);
-      treeItem.addListener("dragstart", function(e) {
+      treeItem.addListener("dragstart", e => {
         if (e.getOriginalTarget().isDir == true) {
           e.preventDefault();
         } else {
@@ -270,7 +270,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
 
     __createDropMechanism: function(treeItem) {
       treeItem.setDroppable(true);
-      treeItem.addListener("dragover", function(e) {
+      treeItem.addListener("dragover", e => {
         let compatible = false;
         if (e.supportsType("osparc-filePath")) {
           const from = e.getRelatedTarget();
@@ -284,7 +284,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
         }
       }, this);
 
-      treeItem.addListener("drop", function(e) {
+      treeItem.addListener("drop", e => {
         if (e.supportsType("osparc-filePath")) {
           const from = e.getRelatedTarget();
           const to = e.getCurrentTarget();
