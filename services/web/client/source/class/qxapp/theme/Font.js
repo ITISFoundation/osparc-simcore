@@ -14,7 +14,7 @@ qx.Theme.define("qxapp.theme.Font", {
   fonts: {
     "nav-bar-label": {
       size: 20,
-      family: ["sans-serif"],
+      family: ["Roboto"],
       color: "text",
       bold: true
     }
