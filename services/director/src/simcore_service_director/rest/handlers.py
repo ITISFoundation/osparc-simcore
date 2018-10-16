@@ -8,11 +8,6 @@ from simcore_service_director import (config, exceptions, producer,
 
 from . import (api_converters, node_validator)
 
-# from .generated_code.models import (HealthCheck, HealthCheckEnveloped,
-#                                     NodeMetaV0, Response204Enveloped,
-#                                     RunningService, RunningServiceEnveloped,
-#                                     ServicesEnveloped)
-
 log = logging.getLogger(__name__)
 
 async def root_get(request):  # pylint:disable=unused-argument
@@ -95,7 +90,7 @@ async def running_interactive_services_get(request, service_uuid):  # pylint:dis
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-    return dict(status=204)
+    return dict(data=None, status=204)
 
 async def running_interactive_services_delete(request, service_uuid):  # pylint:disable=unused-argument
     log.debug("Client does running_interactive_services_delete request %s with service_uuid %s", request, service_uuid)
@@ -106,4 +101,4 @@ async def running_interactive_services_delete(request, service_uuid):  # pylint:
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-    return dict(status=204)
+    return dict(data=None, status=204)
