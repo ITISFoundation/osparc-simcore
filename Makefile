@@ -92,7 +92,7 @@ run_test:
 	pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
 	pytest --cov=simcore_service_webserver -v services/web/server/tests
 	pytest --cov=simcore_service_director -v services/director/tests
-	pytest --cov=simcore_service_storage -v services/storage/tests
+	pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
 
 after_test:
 	# leave a clean slate (not sure whether this is actually needed)

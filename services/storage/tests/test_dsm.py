@@ -120,6 +120,7 @@ async def test_links_s3(postgres_service, s3_client, mock_files_factory, python2
 
 #NOTE: Below tests directly access the datcore platform, use with care!
 
+@pytest.mark.travis
 async def test_dsm_datcore(postgres_service, s3_client, python27_exec):
     utils.create_tables(url=postgres_service)
     dsm = DataStorageManager(postgres_service, s3_client, python27_exec)
@@ -153,6 +154,7 @@ async def test_dsm_s3_to_datcore(postgres_service, s3_client, mock_files_factory
     fmd.location = "datcore"
     # now we have the file locally, upload the file
 
+@pytest.mark.travis
 async def test_dsm_datcore_to_s3(postgres_service, s3_client, python27_exec):
     utils.create_tables(url=postgres_service)
     dsm = DataStorageManager(postgres_service, s3_client, python27_exec)
