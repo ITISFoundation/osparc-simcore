@@ -12,7 +12,3 @@ Response204Enveloped:
       type: object
       nullable: true
       default: null
-    status:
-      type: integer
-      example: 204
-      default: 204

@@ -2,7 +2,7 @@ import json
 import uuid
 
 import pytest
-from aiohttp import web_exceptions
+from aiohttp import web_exceptions, web
 from simcore_service_director import config, resources, rest
 
 from helpers import json_schema_validator
@@ -12,10 +12,11 @@ API_VERSIONS = resources.listdir(resources.RESOURCE_OPENAPI_ROOT)
 @pytest.mark.asyncio
 async def test_root_get():
     fake_request = "fake request"
-    healthcheck_enveloped = await rest.handlers.root_get(fake_request)
+    web_response = await rest.handlers.root_get(fake_request)
+    assert web_response.content_type == "application/json"    
+    assert web_response.status == 200
+    healthcheck_enveloped = json.loads(web_response.text)
     assert "data" in healthcheck_enveloped
-    assert "status" in healthcheck_enveloped
-    assert healthcheck_enveloped["status"] == 200
 
     assert isinstance(healthcheck_enveloped["data"], dict)
 
@@ -61,16 +62,20 @@ async def test_services_get(docker_registry, push_services):
     # no SSL
     config.REGISTRY_SSL = False
     # empty case
-    services_enveloped = await rest.handlers.services_get(fake_request)
-    assert services_enveloped["status"] == 200
+    web_response = await rest.handlers.services_get(fake_request)
+    assert web_response.status == 200
+    assert web_response.content_type == "application/json"
+    services_enveloped = json.loads(web_response.text)
     assert isinstance(services_enveloped["data"], list)
     services = services_enveloped["data"]
     _check_services([], services)
 
     # some services
     created_services = push_services(3,2)
-    services_enveloped = await rest.handlers.services_get(fake_request)
-    assert services_enveloped["status"] == 200
+    web_response = await rest.handlers.services_get(fake_request)
+    assert web_response.status == 200
+    assert web_response.content_type == "application/json"
+    services_enveloped = json.loads(web_response.text)
     assert isinstance(services_enveloped["data"], list)
     services = services_enveloped["data"]
     _check_services(created_services, services)
@@ -80,8 +85,10 @@ async def test_v0_services_conversion_to_new(configure_registry_access, push_v0_
     fake_request = "fake request"
     created_services = push_v0_schema_services(3,2)
     assert len(created_services) == 5
-    services_enveloped = await rest.handlers.services_get(fake_request)
-    assert services_enveloped["status"] == 200
+    web_response = await rest.handlers.services_get(fake_request)
+    assert web_response.status == 200
+    assert web_response.content_type == "application/json"
+    services_enveloped = json.loads(web_response.text)
     assert isinstance(services_enveloped["data"], list)
     services = services_enveloped["data"]
     # ensure old style services are not retrieved
@@ -89,8 +96,10 @@ async def test_v0_services_conversion_to_new(configure_registry_access, push_v0_
 
     # check conversion
     config.CONVERT_OLD_API = True
-    services_enveloped = await rest.handlers.services_get(fake_request)
-    assert services_enveloped["status"] == 200
+    web_response = await rest.handlers.services_get(fake_request)
+    assert web_response.status == 200
+    assert web_response.content_type == "application/json"
+    services_enveloped = json.loads(web_response.text)
     assert isinstance(services_enveloped["data"], list)
     services = services_enveloped["data"]
     _check_services(created_services, services, "v0")
@@ -101,16 +110,20 @@ async def test_v1_services_with_old_conversion(configure_registry_access, push_s
     created_services = push_services(3,2)
     assert len(created_services) == 5
     # no conversion, shoult return the exact same services    
-    services_enveloped = await rest.handlers.services_get(fake_request)
-    assert services_enveloped["status"] == 200
+    web_response = await rest.handlers.services_get(fake_request)
+    assert web_response.status == 200
+    assert web_response.content_type == "application/json"
+    services_enveloped = json.loads(web_response.text)    
     assert isinstance(services_enveloped["data"], list)
     services = services_enveloped["data"]
     _check_services(created_services, services)
 
     # with conversion enabled, should return no services
     config.CONVERT_OLD_API = True
-    services_enveloped = await rest.handlers.services_get(fake_request)
-    assert services_enveloped["status"] == 200
+    web_response = await rest.handlers.services_get(fake_request)
+    assert web_response.status == 200
+    assert web_response.content_type == "application/json"
+    services_enveloped = json.loads(web_response.text)    
     assert isinstance(services_enveloped["data"], list)
     services = services_enveloped["data"]
     assert len(services) == 0
@@ -124,8 +137,10 @@ async def test_services_by_key_version_get(configure_registry_access, push_servi
     retrieved_services = []
     for created_service in created_services:
         service_description = created_service["service_description"]
-        services_enveloped = await rest.handlers.services_by_key_version_get(fake_request, service_description["key"], service_description["version"])
-        assert services_enveloped["status"] == 200
+        web_response = await rest.handlers.services_by_key_version_get(fake_request, service_description["key"], service_description["version"])
+        assert web_response.status == 200
+        assert web_response.content_type == "application/json"
+        services_enveloped = json.loads(web_response.text)
         assert isinstance(services_enveloped["data"], list)
         services = services_enveloped["data"]
         assert len(services) == 1
@@ -142,19 +157,23 @@ async def _start_get_stop_services(push_services):
         service_tag = service_description["version"]
         service_uuid = str(uuid.uuid4())
         # start the service
-        running_service_enveloped = await rest.handlers.running_interactive_services_post(fake_request, service_key, service_uuid, service_tag)
-        assert running_service_enveloped["status"] == 201
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, service_key, service_uuid, service_tag)
+        assert web_response.status == 201
+        assert web_response.content_type == "application/json"
+        running_service_enveloped = json.loads(web_response.text)
         assert isinstance(running_service_enveloped["data"], dict)
 
         # get the service
-        healthcheck_enveloped = await rest.handlers.running_interactive_services_get(fake_request, service_uuid)
-        assert healthcheck_enveloped["status"] == 204
-        assert healthcheck_enveloped["data"] is None
+        web_response = await rest.handlers.running_interactive_services_get(fake_request, service_uuid)
+        assert web_response.status == 204
+        assert web_response.content_type == "application/json"
+        assert web_response.text is None
 
         # stop the service
-        healthcheck_enveloped = await rest.handlers.running_interactive_services_delete(fake_request, service_uuid)
-        assert healthcheck_enveloped["status"] == 204
-        assert healthcheck_enveloped["data"] is None
+        web_response = await rest.handlers.running_interactive_services_delete(fake_request, service_uuid)
+        assert web_response.status == 204
+        assert web_response.content_type == "application/json"
+        assert web_response.text is None
 
 @pytest.mark.asyncio
 async def test_running_services_post_and_delete_no_swarm(configure_registry_access, push_services): #pylint: disable=W0613, W0621

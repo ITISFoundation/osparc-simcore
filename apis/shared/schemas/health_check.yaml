@@ -10,9 +10,6 @@ HealthCheckEnveloped:
       type: object
       nullable: true
       default: null
-    status:
-      type: integer
-      example: 200
       
 HealthCheckType:
   type: object

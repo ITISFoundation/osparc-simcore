@@ -2,7 +2,7 @@ import logging
 
 import pkg_resources
 import yaml
-from aiohttp import web_exceptions
+from aiohttp import web_exceptions, web
 from simcore_service_director import (config, exceptions, producer,
                                       registry_proxy, resources)
 
@@ -21,7 +21,7 @@ async def root_get(request):  # pylint:disable=unused-argument
         status="SERVICE_RUNNING",
         api_version=api_dict["info"]["version"],
         version=distb.version)
-    return dict(data=service_health, status=200)
+    return web.json_response(dict(data=service_health))
 
 async def services_get(request, service_type=None):  # pylint:disable=unused-argument
     log.debug("Client does services_get request %s with service_type %s", request, service_type)
@@ -29,10 +29,9 @@ async def services_get(request, service_type=None):  # pylint:disable=unused-arg
         services = []
         if not service_type or "computational" in service_type:
             services.extend(_list_services(registry_proxy.list_computational_services))
-        
         if not service_type or "interactive" in service_type:
             services.extend(_list_services(registry_proxy.list_interactive_services))
-        return dict(data=services, status=200)
+        return web.json_response(data=dict(data=services))
     except exceptions.RegistryConnectionError as err:
         raise web_exceptions.HTTPUnauthorized(reason=str(err))
     except Exception as err:
@@ -44,7 +43,7 @@ async def services_by_key_version_get(request, service_key, service_version):  #
         services = [registry_proxy.get_service_details(service_key, service_version)]
         if config.CONVERT_OLD_API:
             services = [api_converters.convert_service_from_old_api(x) for x in services]
-        return dict(data=services, status=200)
+        return web.json_response(data=dict(data=services))
     except exceptions.ServiceNotAvailableError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except exceptions.RegistryConnectionError as err:
@@ -59,8 +58,6 @@ def _list_services(list_service_fct):
         services = [api_converters.convert_service_from_old_api(x) for x in services if not node_validator.is_service_valid(x)]
     services = node_validator.validate_nodes(services)
     return services
-    # service_descs = [NodeMetaV0.from_dict(x) for x in services]
-    # return service_descs
 
 async def running_interactive_services_post(request, service_key, service_uuid, service_tag):  # pylint:disable=unused-argument
     log.debug("Client does running_interactive_services_post request %s with service_key %s, service_uuid %s and service_tag %s",
@@ -68,8 +65,7 @@ async def running_interactive_services_post(request, service_key, service_uuid, 
 
     try:
         service = producer.start_service(service_key, service_tag, service_uuid)
-        # running_service = RunningService.from_dict(service)
-        return dict(data=service, status=201)
+        return web.json_response(data=dict(data=service), status=201)
     except exceptions.ServiceStartTimeoutError as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
     except exceptions.ServiceNotAvailableError as err:
@@ -90,7 +86,7 @@ async def running_interactive_services_get(request, service_uuid):  # pylint:dis
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-    return dict(data=None, status=204)
+    return web.json_response(status=204)
 
 async def running_interactive_services_delete(request, service_uuid):  # pylint:disable=unused-argument
     log.debug("Client does running_interactive_services_delete request %s with service_uuid %s", request, service_uuid)
@@ -101,4 +97,4 @@ async def running_interactive_services_delete(request, service_uuid):  # pylint:
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-    return dict(data=None, status=204)
+    return web.json_response(status=204)

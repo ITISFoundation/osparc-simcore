@@ -93,12 +93,12 @@ async def __handle_errors(request, handler):
         # aiohttp apiset errors
         log.exception("error happened in handling route")
         error = dict(status=ex.status, message=ex.to_tree())
-        error_enveloped = dict(data=error, status=ex.status_code)        
+        error_enveloped = dict(error=error)        
         return web.json_response(error_enveloped, status=ex.status)
     except web.HTTPError as ex:
         log.exception("error happened in handling route")
         error = dict(status=ex.status, message=str(ex.reason))
-        error_enveloped = dict(data=error, status=ex.status_code)        
+        error_enveloped = dict(data=error)        
         return web.json_response(error_enveloped, status=ex.status)
 
 

@@ -10,9 +10,6 @@ ErrorEnveloped:
       default: null
     error:
       $ref: '#/ErrorType'
-    status:
-      type: integer
-      example: 404
       
 ErrorType:
   type: object
