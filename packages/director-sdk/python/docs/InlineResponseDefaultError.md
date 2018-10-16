@@ -1,10 +1,11 @@
-# InlineResponse2001
+# InlineResponseDefaultError
 
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**data** | [**list[SimcoreNode]**](SimcoreNode.md) |  | [optional] 
-**error** | **object** |  | [optional] 
+**errors** | **list[object]** |  | [optional] 
+**message** | **str** | Error message | [optional] 
+**status** | **int** | Error code | [optional] 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

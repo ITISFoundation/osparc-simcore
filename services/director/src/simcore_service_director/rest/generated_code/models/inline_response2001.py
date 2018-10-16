@@ -16,26 +16,26 @@ class InlineResponse2001(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: List[SimcoreNode]=None, status: int=None):  # noqa: E501
+    def __init__(self, data: List[SimcoreNode]=None, error: object=None):  # noqa: E501
         """InlineResponse2001 - a model defined in OpenAPI
 
         :param data: The data of this InlineResponse2001.  # noqa: E501
         :type data: List[SimcoreNode]
-        :param status: The status of this InlineResponse2001.  # noqa: E501
-        :type status: int
+        :param error: The error of this InlineResponse2001.  # noqa: E501
+        :type error: object
         """
         self.openapi_types = {
             'data': List[SimcoreNode],
-            'status': int
+            'error': object
         }
 
         self.attribute_map = {
             'data': 'data',
-            'status': 'status'
+            'error': 'error'
         }
 
         self._data = data
-        self._status = status
+        self._error = error
 
     @classmethod
     def from_dict(cls, dikt) -> 'InlineResponse2001':
@@ -70,22 +70,22 @@ class InlineResponse2001(Model):
         self._data = data
 
     @property
-    def status(self) -> int:
-        """Gets the status of this InlineResponse2001.
+    def error(self) -> object:
+        """Gets the error of this InlineResponse2001.
 
 
-        :return: The status of this InlineResponse2001.
-        :rtype: int
+        :return: The error of this InlineResponse2001.
+        :rtype: object
         """
-        return self._status
+        return self._error
 
-    @status.setter
-    def status(self, status: int):
-        """Sets the status of this InlineResponse2001.
+    @error.setter
+    def error(self, error: object):
+        """Sets the error of this InlineResponse2001.
 
 
-        :param status: The status of this InlineResponse2001.
-        :type status: int
+        :param error: The error of this InlineResponse2001.
+        :type error: object
         """
 
-        self._status = status
+        self._error = error

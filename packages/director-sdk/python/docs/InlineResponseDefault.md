@@ -3,8 +3,8 @@
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**data** | [**InlineResponseDefaultData**](InlineResponseDefaultData.md) |  | [optional] 
-**status** | **int** |  | [optional] 
+**data** | **object** |  | [optional] 
+**error** | [**InlineResponseDefaultError**](InlineResponseDefaultError.md) |  | [optional] 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

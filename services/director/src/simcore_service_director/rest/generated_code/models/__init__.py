@@ -11,5 +11,5 @@ from .inline_response201 import InlineResponse201
 from .inline_response201_data import InlineResponse201Data
 from .inline_response204 import InlineResponse204
 from .inline_response_default import InlineResponseDefault
-from .inline_response_default_data import InlineResponseDefaultData
+from .inline_response_default_error import InlineResponseDefaultError
 from .simcore_node import SimcoreNode
