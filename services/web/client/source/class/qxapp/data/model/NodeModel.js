@@ -28,6 +28,9 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         if (metaData.outputs) {
           this.__addOutputs(metaData.outputs);
         }
+        if (metaData.name) {
+          this.setLabel(metaData.name);
+        }
       }
     }
   },
@@ -145,7 +148,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     populateNodeData: function(nodeData) {
-      this.__inputNodes = [];
       if (nodeData) {
         this.setInputData(nodeData);
         this.setOutputData(nodeData);
@@ -162,8 +164,9 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           this.setIsOutputNode(nodeData.outputNode);
         }
 
-        const label = ("label" in nodeData) ? nodeData.label : this.__metaData.name;
-        this.setLabel(label);
+        if (nodeData.label) {
+          this.setLabel(nodeData.label);
+        }
       }
     },
 
