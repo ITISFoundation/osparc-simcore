@@ -1,12 +1,20 @@
 RunningServiceEnveloped:
   type: object
+  required:
+    - data
+    - error
   properties:
     data:
-      $ref: '#/RunningService'
+      $ref: '#/RunningServiceType'
+    error:
+      type: object
+      nullable: true
+      default: null
     status:
       type: integer
       example: 200
-RunningService:
+      
+RunningServiceType:
   type: object
   required:
     - published_port

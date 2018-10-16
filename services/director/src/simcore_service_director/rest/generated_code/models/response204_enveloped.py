@@ -15,16 +15,16 @@ class Response204Enveloped(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: str=None, status: int=None):  # noqa: E501
+    def __init__(self, data: object=None, status: int=204):  # noqa: E501
         """Response204Enveloped - a model defined in OpenAPI
 
         :param data: The data of this Response204Enveloped.  # noqa: E501
-        :type data: str
+        :type data: object
         :param status: The status of this Response204Enveloped.  # noqa: E501
         :type status: int
         """
         self.openapi_types = {
-            'data': str,
+            'data': object,
             'status': int
         }
 
@@ -48,22 +48,22 @@ class Response204Enveloped(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def data(self) -> str:
+    def data(self) -> object:
         """Gets the data of this Response204Enveloped.
 
 
         :return: The data of this Response204Enveloped.
-        :rtype: str
+        :rtype: object
         """
         return self._data
 
     @data.setter
-    def data(self, data: str):
+    def data(self, data: object):
         """Sets the data of this Response204Enveloped.
 
 
         :param data: The data of this Response204Enveloped.
-        :type data: str
+        :type data: object
         """
 
         self._data = data

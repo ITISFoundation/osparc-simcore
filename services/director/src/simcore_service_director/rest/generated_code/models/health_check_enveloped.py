@@ -6,7 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
-from .health_check import HealthCheck  # noqa: F401,E501
 from .. import util
 
 
@@ -16,16 +15,16 @@ class HealthCheckEnveloped(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: HealthCheck=None, status: int=None):  # noqa: E501
+    def __init__(self, data: object=None, status: int=None):  # noqa: E501
         """HealthCheckEnveloped - a model defined in OpenAPI
 
         :param data: The data of this HealthCheckEnveloped.  # noqa: E501
-        :type data: HealthCheck
+        :type data: object
         :param status: The status of this HealthCheckEnveloped.  # noqa: E501
         :type status: int
         """
         self.openapi_types = {
-            'data': HealthCheck,
+            'data': object,
             'status': int
         }
 
@@ -49,22 +48,22 @@ class HealthCheckEnveloped(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def data(self) -> HealthCheck:
+    def data(self) -> object:
         """Gets the data of this HealthCheckEnveloped.
 
 
         :return: The data of this HealthCheckEnveloped.
-        :rtype: HealthCheck
+        :rtype: object
         """
         return self._data
 
     @data.setter
-    def data(self, data: HealthCheck):
+    def data(self, data: object):
         """Sets the data of this HealthCheckEnveloped.
 
 
         :param data: The data of this HealthCheckEnveloped.
-        :type data: HealthCheck
+        :type data: object
         """
 
         self._data = data

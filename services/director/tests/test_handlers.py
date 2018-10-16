@@ -1,13 +1,13 @@
 import json
 import uuid
-from pathlib import Path
 
 import pytest
 from aiohttp import web_exceptions
-from simcore_service_director import config, rest
+from simcore_service_director import config, resources, rest
 
 from helpers import json_schema_validator
 
+API_VERSIONS = resources.listdir(resources.RESOURCE_OPENAPI_ROOT)
 
 @pytest.mark.asyncio
 async def test_root_get():
@@ -19,9 +19,9 @@ async def test_root_get():
 
     healthcheck_enveloped = rest.models.HealthCheckEnveloped.from_dict(response)
     assert healthcheck_enveloped.status == 200
-    assert isinstance(healthcheck_enveloped.data, rest.models.HealthCheck)
+    assert isinstance(healthcheck_enveloped.data, object)
 
-    healthcheck = healthcheck_enveloped.data
+    healthcheck = rest.models.HealthCheck.from_dict(healthcheck_enveloped.data)
     assert healthcheck.name == "simcore-service-director"
     assert healthcheck.status == "SERVICE_RUNNING"
     assert healthcheck.version == "0.1.0"
@@ -32,8 +32,7 @@ def _check_services(created_services, services, schema_version="v1"):
 
     created_service_descriptions = [x["service_description"] for x in created_services]
     
-    # TODO: use resources!
-    json_schema_path = Path(__file__).parent.parent / "src/simcore_service_director/oas3/v1/components/schemas/node-meta-v0.0.1.json"
+    json_schema_path = resources.get_path(resources.RESOURCE_NODE_SCHEMA)
     assert json_schema_path.exists() == True
     with json_schema_path.open() as file_pt:
         service_schema = json.load(file_pt)
@@ -148,7 +147,7 @@ async def _start_get_stop_services(push_services):
         # start the service
         running_service_enveloped = rest.models.RunningServiceEnveloped.from_dict(await rest.handlers.running_interactive_services_post(fake_request, service_key, service_uuid, service_tag))
         assert running_service_enveloped.status == 201
-        assert isinstance(running_service_enveloped.data, rest.models.RunningService)
+        assert isinstance(running_service_enveloped.data, object)
 
         # get the service
         response = rest.models.Response204Enveloped.from_dict(await rest.handlers.running_interactive_services_get(fake_request, service_uuid))

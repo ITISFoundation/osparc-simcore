@@ -1,12 +1,20 @@
 ErrorEnveloped:
   type: object
+  required:
+    - data
+    - error
   properties:
-    data:
-      $ref: '#/Error'
+    data:      
+      type: object
+      nullable: true
+      default: null
+    error:
+      $ref: '#/ErrorType'
     status:
       type: integer
       example: 404
-Error:
+      
+ErrorType:
   type: object
   required:
     - status

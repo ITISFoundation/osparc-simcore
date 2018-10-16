@@ -6,7 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
-from .error import Error  # noqa: F401,E501
 from .. import util
 
 
@@ -16,16 +15,16 @@ class ErrorEnveloped(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: Error=None, status: int=None):  # noqa: E501
+    def __init__(self, data: object=None, status: int=None):  # noqa: E501
         """ErrorEnveloped - a model defined in OpenAPI
 
         :param data: The data of this ErrorEnveloped.  # noqa: E501
-        :type data: Error
+        :type data: object
         :param status: The status of this ErrorEnveloped.  # noqa: E501
         :type status: int
         """
         self.openapi_types = {
-            'data': Error,
+            'data': object,
             'status': int
         }
 
@@ -49,22 +48,22 @@ class ErrorEnveloped(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def data(self) -> Error:
+    def data(self) -> object:
         """Gets the data of this ErrorEnveloped.
 
 
         :return: The data of this ErrorEnveloped.
-        :rtype: Error
+        :rtype: object
         """
         return self._data
 
     @data.setter
-    def data(self, data: Error):
+    def data(self, data: object):
         """Sets the data of this ErrorEnveloped.
 
 
         :param data: The data of this ErrorEnveloped.
-        :type data: Error
+        :type data: object
         """
 
         self._data = data
