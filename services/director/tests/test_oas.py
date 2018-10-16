@@ -6,13 +6,13 @@ from openapi_spec_validator.exceptions import (
     OpenAPIValidationError
 )
 
-from simcore_service_webserver import resources
+from simcore_service_director import resources
 
-API_VERSIONS = resources.listdir(resources.RESOURCE_OPENAPI)
+API_VERSIONS = resources.listdir(resources.RESOURCE_OPENAPI_ROOT)
 
 @pytest.mark.parametrize('version', API_VERSIONS)
 def test_openapi_specs(version):
-    name = resources.RESOURCE_OPENAPI + "/{}/openapi.yaml".format(version)
+    name = "{root}/{version}/openapi.yaml".format(root=resources.RESOURCE_OPENAPI_ROOT, version=version)
     openapi_path = resources.get_path(name)
     with resources.stream(name) as fh:
         specs = yaml.load(fh)
@@ -23,7 +23,7 @@ def test_openapi_specs(version):
 
 @pytest.mark.parametrize('version', API_VERSIONS)
 def test_server_specs(version):
-    name = resources.RESOURCE_OPENAPI + "/{}/openapi.yaml".format(version)
+    name = "{root}/{version}/openapi.yaml".format(root=resources.RESOURCE_OPENAPI_ROOT, version=version)
     with resources.stream(name) as fh:
         specs = yaml.load(fh)
 
