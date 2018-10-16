@@ -1,12 +1,31 @@
 from contextlib import contextmanager
 
+import requests
 import sqlalchemy as sa
 
 import simcore_storage_sdk
 from simcore_service_storage.models import file_meta_data
 
+DATABASE = 'aio_login_tests'
+USER = 'admin'
+PASS = 'admin'
+
+ACCESS_KEY = '12345678'
+SECRET_KEY = '12345678'
+
 BUCKET_NAME ="simcore-testing"
 
+
+def is_responsive(url, code=200):
+    """Check if something responds to ``url`` syncronously"""
+    try:
+        response = requests.get(url)
+        if response.status_code == code:
+            return True
+    except requests.exceptions.RequestException as _e:
+        pass
+
+    return False
 
 def is_postgres_responsive(url):
     """Check if something responds to ``url`` """

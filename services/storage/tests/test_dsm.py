@@ -4,6 +4,7 @@
 # pylint: disable=W0613
 
 import filecmp
+import io
 import os
 import pdb
 import urllib
@@ -15,10 +16,11 @@ import pytest
 import utils
 from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import FileMetaData
+from utils import BUCKET_NAME
 
 
 def test_mockup(dsm_mockup_db):
-    assert len(dsm_mockup_db)
+    assert len(dsm_mockup_db)==100
 
 async def test_dsm_s3(dsm_mockup_db, postgres_service, s3_client):
     id_name_map = {}
@@ -66,10 +68,9 @@ async def test_dsm_s3(dsm_mockup_db, postgres_service, s3_client):
 
     assert len(dsm_mockup_db) == new_size + len(bobs_files)
 
-
-def create_file_on_s3(postgres_url, s3_client, tmp_file):
+def _create_file_on_s3(postgres_url, s3_client, tmp_file):
     utils.create_tables(url=postgres_url)
-    bucket_name = utils.BUCKET_NAME
+    bucket_name = BUCKET_NAME
     s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
 
 
@@ -96,14 +97,14 @@ def create_file_on_s3(postgres_url, s3_client, tmp_file):
     ## TODO: acutally upload the file gettin a upload link
     return fmd
 
-async def test_links_s3(postgres_service, s3_client, tmp_files):
-    tmp_file = tmp_files(1)[0]
-    fmd = create_file_on_s3(postgres_service, s3_client, tmp_file)
+async def test_links_s3(postgres_service, s3_client, mock_files_factory):
+    tmp_file = mock_files_factory(1)[0]
+    fmd = _create_file_on_s3(postgres_service, s3_client, tmp_file)
 
     dsm = DataStorageManager(postgres_service, s3_client)
 
     up_url = await dsm.upload_link(fmd)
-    with open(tmp_file, 'rb') as fp:
+    with io.open(tmp_file, 'rb') as fp:
         d = fp.read()
         req = urllib.request.Request(up_url, data=d, method='PUT')
         with urllib.request.urlopen(req) as _f:
@@ -116,7 +117,6 @@ async def test_links_s3(postgres_service, s3_client, tmp_files):
     urllib.request.urlretrieve(down_url, tmp_file2)
 
     assert filecmp.cmp(tmp_file2, tmp_file)
-
 
 #NOTE: Below tests directly access the datcore platform, use with care!
 
@@ -132,14 +132,14 @@ async def test_dsm_datcore(postgres_service, s3_client):
     print("Deleting", fmd_to_delete.bucket_name, fmd_to_delete.object_name)
     await dsm.delete_file(user_id, "datcore", fmd_to_delete)
 
-async def test_dsm_s3_to_datcore(postgres_service, s3_client, tmp_files):
-    tmp_file = tmp_files(1)[0]
-    fmd = create_file_on_s3(postgres_service, s3_client, tmp_file)
+async def test_dsm_s3_to_datcore(postgres_service, s3_client, mock_files_factory):
+    tmp_file = mock_files_factory(1)[0]
+    fmd = _create_file_on_s3(postgres_service, s3_client, tmp_file)
 
     dsm = DataStorageManager(postgres_service, s3_client)
 
     up_url = await dsm.upload_link(fmd)
-    with open(tmp_file, 'rb') as fp:
+    with io.open(tmp_file, 'rb') as fp:
         d = fp.read()
         req = urllib.request.Request(up_url, data=d, method='PUT')
         with urllib.request.urlopen(req) as _f:
@@ -153,8 +153,7 @@ async def test_dsm_s3_to_datcore(postgres_service, s3_client, tmp_files):
     fmd.location = "datcore"
     # now we have the file locally, upload the file
 
-
-async def test_dsm_datcore_to_s3(postgres_service, s3_client, tmp_files):
+async def test_dsm_datcore_to_s3(postgres_service, s3_client):
     utils.create_tables(url=postgres_service)
     dsm = DataStorageManager(postgres_service, s3_client)
     user_id = 0
@@ -164,4 +163,5 @@ async def test_dsm_datcore_to_s3(postgres_service, s3_client, tmp_files):
     #pdb.set_trace()
     fmd_to_get = data[0]
     url = await dsm.download_link(user_id, fmd_to_get, "datcore")
+    assert url
     print(url)
