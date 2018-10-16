@@ -1,11 +1,17 @@
 Response204Enveloped:
   type: object
+  required:
+    - data
+    - error
   properties:
     data:
-      type: string
+      type: object
       nullable: true
-      example: 'null'
-      default: 'null'
+      default: null
+    error:
+      type: object
+      nullable: true
+      default: null
     status:
       type: integer
       example: 204

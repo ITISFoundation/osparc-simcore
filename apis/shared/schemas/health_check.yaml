@@ -1,13 +1,20 @@
 HealthCheckEnveloped:
   type: object
+  required:
+    - data
+    - error
   properties:
     data:
-      $ref: '#/HealthCheck'
+      $ref: '#/HealthCheckType'
+    error:
+      type: object
+      nullable: true
+      default: null
     status:
       type: integer
       example: 200
       
-HealthCheck:
+HealthCheckType:
   type: object
   properties:
     name:
