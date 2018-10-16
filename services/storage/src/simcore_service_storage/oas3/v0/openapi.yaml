@@ -52,7 +52,7 @@ paths:
               schema:
                 $ref: './components/schemas/error.yml#/ErrorEnveloped'
   /check/{action}:
-    get:
+    post:
       tags:
         - tests
       summary: Test checkpoint to ask server to fail or echo back the transmitted data
