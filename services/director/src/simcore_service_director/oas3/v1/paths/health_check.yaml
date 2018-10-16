@@ -10,10 +10,10 @@ get:
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/health_check.yaml#HealthCheckEnveloped'
+            $ref: '../components/schemas/health_check.yaml#/HealthCheckEnveloped'
     default:
       description: Unexpected error
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/error.yaml#ErrorEnveloped'
+            $ref: '../components/schemas/error.yaml#/ErrorEnveloped'
