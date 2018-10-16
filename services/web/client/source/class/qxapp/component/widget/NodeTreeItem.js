@@ -39,12 +39,14 @@ qx.Class.define("qxapp.component.widget.NodeTreeItem", {
       this.addLabel();
 
       // All else should be right justified
-      this.addWidget(new qx.ui.core.Spacer(), {flex: 1});
+      this.addWidget(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
 
       // Add a NodeId
       var nodeIdWidget = new qx.ui.basic.Label();
       this.bind("nodeId", nodeIdWidget, "value");
-      nodeIdWidget.setWidth(50);
+      nodeIdWidget.setMaxWidth(250);
       this.addWidget(nodeIdWidget);
     }
   }
