@@ -10,15 +10,6 @@ qx.Class.define("qxapp.component.widget.WidgetManager", {
         let filePicker = new qxapp.component.widget.FilePicker(node);
         return filePicker;
       }
-      /* else if (nodeKey.includes("s4l/Simulator/LF/")) {
-        let simulatorSetting = new qxapp.component.widget.SimulatorSetting();
-        simulatorSetting.setNode(node);
-        return simulatorSetting;
-      } else if (nodeKey.includes("s4l/Simulator/")) {
-        let simulator = new qxapp.component.widget.Simulator(node);
-        return simulator;
-      }
-      */
       return null;
     }
   }
