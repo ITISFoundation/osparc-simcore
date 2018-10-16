@@ -80,6 +80,30 @@ async def test_services_get(docker_registry, push_services):
     services = services_enveloped["data"]
     _check_services(created_services, services)
 
+    web_response = await rest.handlers.services_get(fake_request, "blahblah")
+    assert web_response.status == 200
+    assert web_response.content_type == "application/json"
+    services_enveloped = json.loads(web_response.text)
+    assert isinstance(services_enveloped["data"], list)
+    services = services_enveloped["data"]
+    assert len(services) == 0
+
+    web_response = await rest.handlers.services_get(fake_request, "computational")
+    assert web_response.status == 200
+    assert web_response.content_type == "application/json"
+    services_enveloped = json.loads(web_response.text)
+    assert isinstance(services_enveloped["data"], list)
+    services = services_enveloped["data"]
+    assert len(services) == 3
+
+    web_response = await rest.handlers.services_get(fake_request, "interactive")
+    assert web_response.status == 200
+    assert web_response.content_type == "application/json"
+    services_enveloped = json.loads(web_response.text)
+    assert isinstance(services_enveloped["data"], list)
+    services = services_enveloped["data"]
+    assert len(services) == 2
+
 @pytest.mark.asyncio
 async def test_v0_services_conversion_to_new(configure_registry_access, push_v0_schema_services): #pylint: disable=W0613, W0621
     fake_request = "fake request"
@@ -132,8 +156,19 @@ async def test_v1_services_with_old_conversion(configure_registry_access, push_s
 @pytest.mark.asyncio
 async def test_services_by_key_version_get(configure_registry_access, push_services): #pylint: disable=W0613, W0621
     fake_request = "fake request"
+
+    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+        web_response = await rest.handlers.services_by_key_version_get(fake_request, None, None)
+
+    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+        web_response = await rest.handlers.services_by_key_version_get(fake_request, "whatever", None)
+
+    with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
+        web_response = await rest.handlers.services_by_key_version_get(fake_request, "whatever", "ofwhateverversion")
+
     created_services = push_services(3,2)
-    assert len(created_services) == 5
+    assert len(created_services) == 5    
+
     retrieved_services = []
     for created_service in created_services:
         service_description = created_service["service_description"]
@@ -149,6 +184,31 @@ async def test_services_by_key_version_get(configure_registry_access, push_servi
 
 async def _start_get_stop_services(push_services):
     fake_request = "fake request"
+
+    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, None, None, None)
+    
+    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", None, None)
+    
+    with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", None)
+
+    with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "ablah")
+    
+    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+        web_response = await rest.handlers.running_interactive_services_get(fake_request, None)
+
+    with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
+        web_response = await rest.handlers.running_interactive_services_get(fake_request, "service_uuid")
+
+    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+        web_response = await rest.handlers.running_interactive_services_delete(fake_request, None)
+
+    with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
+        web_response = await rest.handlers.running_interactive_services_delete(fake_request, "service_uuid")
+
     created_services = push_services(0,2)
     assert len(created_services) == 2
     for created_service in created_services:
