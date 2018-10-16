@@ -59,13 +59,6 @@ qx.Class.define("qxapp.data.Store", {
       */
     },
 
-    getServices: function() {
-      let services = {};
-      services = Object.assign(services, this.getBuiltInServices());
-      services = Object.assign(services, qxapp.dev.fake.Data.getNodeMap());
-      return services;
-    },
-
     getProjectList: function() {
       return qxapp.dev.fake.Data.getProjectList();
     },
@@ -845,6 +838,44 @@ qx.Class.define("qxapp.data.Store", {
       // this.fireDataEvent("builtInServicesRegistered", builtInServices);
       this.__servicesCacheBuiltIn = services;
       this.fireDataEvent("builtInServicesRegistered", services);
+    },
+
+    getServices: function() {
+      let services = {};
+      services = Object.assign(services, this.getBuiltInServices());
+      services = Object.assign(services, qxapp.dev.fake.Data.getNodeMap());
+      return services;
+    },
+
+    __getServices: function() {
+      let req = new qx.io.request.Xhr();
+      req.set({
+        url: "/get_services",
+        method: "GET"
+      });
+      req.addListener("success", function(e) {
+        let requ = e.getTarget();
+        const {
+          data,
+          status
+        } = requ.getResponse();
+        if (status >= 200 && status <= 299) {
+          const listOfRepositories = data;
+          console.log("listOfServices", listOfRepositories);
+          let services = [];
+          for (const key in listOfRepositories) {
+            const repoData = listOfRepositories[key];
+            let newMetaData = qxapp.data.Converters.registryToMetaData(repoData);
+            services.push(newMetaData);
+          }
+          this.__servicesCacheComputational = services;
+          this.fireDataEvent("servicesRegistered", services);
+        } else {
+          // error
+          console.error("Error retrieving services: ", data);
+        }
+      }, this);
+      req.send();
     },
 
     getComputationalServices: function() {
