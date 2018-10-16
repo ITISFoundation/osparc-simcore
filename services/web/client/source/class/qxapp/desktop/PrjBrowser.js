@@ -40,9 +40,13 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       // prjCtr.setModel();
 
       // Monitors change in selection
-      prjCtr.getSelection().addListener("change", function(e) {
+      prjCtr.getSelection().addListener("change", e => {
         const selectedItem = e.getTarget().toArray()[0];
-        this.fireDataEvent("StartProject", selectedItem);
+        const data = {
+          name: selectedItem.getName(),
+          projectUuid: selectedItem.getProjectUuid()
+        };
+        this.fireDataEvent("StartProject", data);
       }, this);
     },
 
@@ -65,9 +69,13 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       // prjCtr.setModel();
 
       // Monitors change in selection
-      prjCtr.getSelection().addListener("change", function(e) {
+      prjCtr.getSelection().addListener("change", e => {
         const selectedItem = e.getTarget().toArray()[0];
-        this.fireDataEvent("StartProject", selectedItem);
+        const data = {
+          name: selectedItem.getName(),
+          projectUuid: selectedItem.getProjectUuid()
+        };
+        this.fireDataEvent("StartProject", data);
       }, this);
     },
 
@@ -113,8 +121,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           .map(
             (p, i) => qx.data.marshal.Json.createModel({
               name: p.name,
-              thumbnail: "https://placeimg.com/171/96/tech/grayscale/?"+i+".jpg",
-              projectId: i,
+              thumbnail: p.thumbnail,
+              projectUuid: p.projectUuid,
               created: p.creationDate
             })
           )
@@ -126,7 +134,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       data.insertAt(0, qx.data.marshal.Json.createModel({
         name: this.tr("New Project"),
         thumbnail: "@MaterialIcons/create/40",
-        projectId: null,
+        projectUuid: null,
         created: null
       }));
       return data;

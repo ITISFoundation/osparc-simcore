@@ -7,7 +7,7 @@ const TOOL_ACTIVE = 1;
 const ENTITY_PICKING = 2;
 const FACE_PICKING = 3;
 
-qx.Class.define("qxapp.components.ThreeView", {
+qx.Class.define("qxapp.component.ThreeView", {
   extend: qx.ui.container.Composite,
 
   construct : function(width, height, backgroundColor) {
