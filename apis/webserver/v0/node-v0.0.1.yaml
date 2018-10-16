@@ -28,7 +28,7 @@ paths:
       # a custom json schema for this description has to be provided
     post:
       tags:
-        -node
+        - node
       summary: send data back. the protocol depends on the ui description.
   /node/{nodeInstanceUUID}/outputUi/{outputKey}:
     get:
