@@ -8,6 +8,11 @@ _APP_SCHEMA = T.Dict({
     "port": T.Int(),
     "log_level": T.Enum("DEBUG", "WARNING", "INFO", "ERROR", "CRITICAL", "FATAL", "NOTSET"),
     "testing": T.Bool(),
+    "python2": T.String(),
+    T.Key("test_datcore", optional=True): T.Dict({
+        "api_token": T.String(),
+        "api_secret": T.String()
+    }),
     T.Key("disable_services", default=[], optional=True): T.List(T.String())
 })
 
