@@ -14,7 +14,7 @@ from .settings import APP_CONFIG_KEY
 log = logging.getLogger(__name__)
 
 def create(config):
-    log.debug("Initializing ... ")
+    log.debug("Creating and setting up application")
 
     app = web.Application()
     app[APP_CONFIG_KEY] = config
@@ -26,8 +26,7 @@ def create(config):
     return app
 
 def run(config, app=None):
-    """ Runs service """
-    log.debug("Serving app ... ")
+    log.debug("Serving application ")
     if not app:
         app = create(config)
 

@@ -45,9 +45,8 @@ _CONFIG = dict(
     name='simcore-service-storage',
     version='0.1.0',
     description='Service to manage data storage in simcore',
-    # FIXME: 'Real Name' (github_name) !!
-    author='Manuel Guidon',
-    python_requires='>=3.6',
+    author='Manuel Guidon (mguidon)',
+    python_requires='==3.6',
     packages=find_packages(where='src'),
     package_dir={
         '': 'src',
@@ -64,8 +63,8 @@ _CONFIG = dict(
             'data/*.json',
             'data/*.yml',
             'data/*.yaml',
-            'openapi/*.yaml',
-            'openapi/*.yml',
+            'oas3/*.yaml',
+            'oas3/*.yml',
             ],
     },
     #data_files = list_datafiles_at(

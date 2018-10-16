@@ -24,7 +24,11 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     log.debug("creating %s ", __name__)
     routes = []
 
+
+
     # TODO: routing will be done automatically using operation_id/tags, etc...
+    #   routes = auto_routing(specs, handlers)
+
 
     # diagnostics --
     path, handle = '/', handlers.health_check

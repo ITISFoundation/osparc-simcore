@@ -33,3 +33,6 @@ def test_specifications(spec_basepath, version):
             validate_spec(specs, spec_url=spec_path.as_uri())
         except OpenAPIValidationError as err:
             pytest.fail(err.message)
+
+
+# TODO: test that all response schemas are enveloped
