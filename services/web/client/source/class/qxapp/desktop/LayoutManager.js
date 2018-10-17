@@ -13,29 +13,46 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     this.__navBar = this.__createNavigationBar();
     this.__navBar.setHeight(100);
+    this.__navBar.addListener("NodeDoubleClicked", e => {
+      if (this.__prjEditor) {
+        let nodeId = e.getData();
+        this.__prjEditor.nodeSelected(nodeId);
+      }
+    }, this);
     this.add(this.__navBar);
 
-    this.__prjStack = this.__getPrjStack();
+    let prjStack = this.__prjStack = new qx.ui.container.Stack();
+
+    this.__prjBrowser = new qxapp.desktop.PrjBrowser();
+    prjStack.add(this.__prjBrowser);
 
     this.add(this.__prjStack, {
       flex: 1
     });
 
-    this.__navBar.addListener("HomePressed", function() {
+    this.__navBar.addListener("DashboardPressed", function() {
       this.__prjStack.setSelection([this.__prjBrowser]);
-      this.__navBar.setCurrentStatus("Browser");
+      this.__navBar.setMainViewCaption("Dashboard");
     }, this);
 
-    this.__prjBrowser.addListener("StartProject", function(e) {
-      let project = e.getData();
+    this.__prjBrowser.addListener("StartProject", e => {
+      const data = e.getData();
+      const projectUuid = data.projectUuid;
+      const projectName = data.name;
       if (this.__prjEditor) {
         this.__prjStack.remove(this.__prjEditor);
       }
-      this.__prjEditor = new qxapp.desktop.PrjEditor(project.getProjectId());
+      this.__prjEditor = new qxapp.desktop.PrjEditor(projectUuid);
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
-      this.__navBar.setCurrentStatus(project.getName());
-      // this.__PrjEditor.showSettings(false);
+      this.__navBar.setMainViewCaption([{
+        "root": projectName
+      }]);
+
+      this.__prjEditor.addListener("ChangeMainViewCaption", function(ev) {
+        const elements = ev.getData();
+        this.__navBar.setMainViewCaption(elements);
+      }, this);
     }, this);
   },
 
@@ -49,17 +66,8 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     __createNavigationBar: function() {
       let navBar = new qxapp.desktop.NavigationBar();
-      navBar.setCurrentStatus("Browser");
+      navBar.setMainViewCaption("Dashboard");
       return navBar;
-    },
-
-    __getPrjStack: function() {
-      let prjStack = new qx.ui.container.Stack();
-
-      this.__prjBrowser = new qxapp.desktop.PrjBrowser();
-      prjStack.add(this.__prjBrowser);
-
-      return prjStack;
     },
 
     __nodeCheck: function() {
@@ -70,23 +78,15 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
         try {
           let ajv = new qxapp.wrappers.Ajv(data);
           let store = qxapp.data.Store.getInstance();
-          [
-            "builtInServicesRegistered",
-            "servicesRegistered",
-            "interactiveServicesRegistered"
-          ].forEach(event => {
-            store.addListener(event, ev => {
-              const services = ev.getData();
-              for (let i = 0; i < services.length; i++) {
-                const service = services[i];
-                let check = ajv.validate(service);
-                console.log("services validation result " + service.key + ":", check);
-              }
-            }, this);
+          store.addListener("servicesRegistered", ev => {
+            const services = ev.getData();
+            for (let i = 0; i < services.length; i++) {
+              const service = services[i];
+              let check = ajv.validate(service);
+              console.log("services validation result " + service.key + ":", check);
+            }
           });
-          store.getBuiltInServicesAsync();
-          store.getComputationalServices();
-          store.getInteractiveServices();
+          store.getServices();
         } catch (err) {
           console.error(err);
         }
