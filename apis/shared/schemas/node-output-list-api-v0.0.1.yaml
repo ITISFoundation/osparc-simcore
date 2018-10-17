@@ -1,0 +1,56 @@
+$schema: http://json-schema.org/draft-07/schema#
+$id: https://simcore.io/apis/shared/schemas/node-output-list-api-v0.0.1.yaml
+
+title: node output list api
+description: nodes using the list representation for the output
+  must be able to handle the following requests
+type: object
+properties:
+  getItemList:
+    description: all the items in the list
+    type: object
+    properties:
+      call:
+        type: string
+        enum:
+          - getItemList
+      request:
+        type: object
+        required:
+          - start
+          - count
+        properties:
+          start:
+            type: integer
+          count:
+            type: integer
+          filter:
+            type: string
+          orderBy:
+            type: string
+      response:
+        type: array
+        items:
+          type: object
+          properties:
+            key:
+              type: string
+            label:
+              type: string
+  getItem:
+      description: get details about an item in the list
+      type: object
+      properties:
+        call:
+          type: string
+          enum:
+            - getItem
+        request:
+          type: object
+          required:
+            - key
+          properties:
+            key:
+              type: string
+        response:
+          type: object

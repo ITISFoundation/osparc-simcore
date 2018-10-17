@@ -1,0 +1,134 @@
+openapi: 3.0.2
+servers: []
+
+info:
+  description: OSparc Node UI API
+  version: "0.0.1"
+  title: OSparc Node UI REST API
+  contact:
+    name: Tobias Oetiker
+    email: tobi@itis.swiss
+  license:
+    name: MIT
+    url: 'https://opensource.org/licenses/MIT'
+
+tags:
+  - name: node
+    description: |
+      The simcore frontend provides a bunch of custom ui elements for nodes to interact with users.
+      The frontend uses these api calls to query the nodes about the gui elemets they want to use, and it
+      defines the protocol for the frontend to interact with the node.
+
+paths:
+  #/node/{nodeInstanceUUID}/mainUi:
+  #  get:
+  #    tags:
+  #      - node
+  #    summary: get a json description of the ui to use to present the node specific ui
+  #    # a custom json schema for this description has to be provided
+  #  post:
+  #    tags:
+  #      - node
+  #    summary: send data back. the protocol depends on the ui description.
+
+  /node/{nodeInstanceUUID}/outputUi/{outputKey}:
+    get:
+      tags:
+        - node
+      summary: get a json description of the ui for presenting the output within the mainUi
+        and a list of open api json schema objects describing the possible
+        json payloads and responses for the api calls available at this endpoint
+      parameters:
+        - $ref: '#/components/parameters/nodeInstanceUUID'
+        - $ref: '#/components/parameters/outputKey'
+      responses:
+        "200":
+          description: Service Information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/outputUi'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+    post:
+      tags:
+        - node
+      summary: send data back to the output api ... protocol depends on the definition
+      parameters:
+        - $ref: '#/components/parameters/nodeInstanceUUID'
+        - $ref: '#/components/parameters/outputKey'
+      requestBody:
+         content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/outputUi/apiSchemas/items/properties/request'
+
+      responses:
+        default:
+          description: node type specific api call according to the node type presented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/outputUi/apiSchemas/items/properties/response'
+
+
+  /node/{nodeInstanceUUID}/iframe:
+    get:
+      tags:
+        - node api
+      summary: entry point for iframe interaction with the node. This relies on the reverse proxy code.
+      parameters:
+        - $ref: '#/components/parameters/nodeInstanceUUID'
+      responses:
+        default:
+          description: "any response appropriate in the iframe context"
+
+
+components:
+  parameters:
+    nodeInstanceUUID:
+      in: path
+      name: nodeInstanceUUID
+      required: true
+      schema:
+        type: string
+    outputKey:
+      in: path
+      name: outputKey
+      required: true
+      schema:
+        type: string
+  schemas:
+    outputUi:
+      type: object
+      properties:
+        plugin:
+          type: string
+        config:
+          type: object
+        apiCalls:
+          type: array
+          items:
+            type: object
+            properties:
+              call:
+                type: string
+              request:
+                type: object
+                description: oa3 json schema description of the request object
+              response:
+                type: object
+                description: oa3 json schema description of the response object
+    outputApiCall:
+      type: object
+      properties:
+        call:
+          type: string
+        request:
+          type: object
+    outputApiResponse:
+      type: object
