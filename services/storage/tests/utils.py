@@ -66,6 +66,7 @@ def drop_tables(url, engine=None):
     meta.drop_all(bind=engine, tables=[file_meta_data])
 
 # pylint: disable=W0611
+# pylint: disable=R0913
 def insert_metadata(url: str,
         object_name: str,
         bucket_name: str,
