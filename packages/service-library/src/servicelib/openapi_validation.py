@@ -1,3 +1,8 @@
+""" Implements openapi specs validation
+
+Based on openapi-core
+"""
+
 import logging
 
 from aiohttp import web

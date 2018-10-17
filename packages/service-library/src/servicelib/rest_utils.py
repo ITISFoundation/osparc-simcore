@@ -1,4 +1,4 @@
-""" Utilities
+""" Rest-API utilities
 
     Miscelaneous of functions and classes to build rest API sub-module
 """

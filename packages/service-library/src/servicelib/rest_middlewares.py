@@ -1,4 +1,4 @@
-""" Rest API common middlewares
+""" Middlewares for rest-api submodule
 
 """
 
