@@ -10,7 +10,11 @@ properties:
     description: all the items in the list
     type: object
     properties:
-      arguments:
+      call:
+        type: string
+        enum:
+          - getItemList
+      request:
         type: object
         required:
           - start
@@ -33,3 +37,20 @@ properties:
               type: string
             label:
               type: string
+  getItem:
+      description: get details about an item in the list
+      type: object
+      properties:
+        call:
+          type: string
+          enum:
+            - getItem
+        request:
+          type: object
+          required:
+            - key
+          properties:
+            key:
+              type: string
+        response:
+          type: object
