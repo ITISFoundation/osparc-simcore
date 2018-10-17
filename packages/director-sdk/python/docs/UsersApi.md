@@ -13,7 +13,7 @@ Method | HTTP request | Description
 
 
 # **root_get**
-> HealthCheckEnveloped root_get()
+> InlineResponse200 root_get()
 
 Service health-check endpoint
 
@@ -43,7 +43,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**HealthCheckEnveloped**](HealthCheckEnveloped.md)
+[**InlineResponse200**](InlineResponse200.md)
 
 ### Authorization
 
@@ -57,7 +57,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **running_interactive_services_delete**
-> Response204Enveloped running_interactive_services_delete(service_uuid)
+> InlineResponse204 running_interactive_services_delete(service_uuid)
 
 Stops and removes an interactive service from the oSparc platform
 
@@ -87,11 +87,11 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **service_uuid** | [**str**](.md)| The uuid of the service |
+ **service_uuid** | [**str**](.md)| The uuid of the service | 
 
 ### Return type
 
-[**Response204Enveloped**](Response204Enveloped.md)
+[**InlineResponse204**](InlineResponse204.md)
 
 ### Authorization
 
@@ -105,7 +105,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **running_interactive_services_get**
-> Response204Enveloped running_interactive_services_get(service_uuid)
+> InlineResponse204 running_interactive_services_get(service_uuid)
 
 Succesfully returns if a service with the defined uuid is up and running
 
@@ -135,11 +135,11 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **service_uuid** | [**str**](.md)| The uuid of the service |
+ **service_uuid** | [**str**](.md)| The uuid of the service | 
 
 ### Return type
 
-[**Response204Enveloped**](Response204Enveloped.md)
+[**InlineResponse204**](InlineResponse204.md)
 
 ### Authorization
 
@@ -153,7 +153,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **running_interactive_services_post**
-> RunningServiceEnveloped running_interactive_services_post(service_key, service_uuid, service_tag=service_tag)
+> InlineResponse201 running_interactive_services_post(service_key, service_uuid, service_tag=service_tag)
 
 Starts an interactive service in the oSparc platform and returns its entrypoint
 
@@ -185,13 +185,13 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **service_key** | **str**| The key (url) of the service |
- **service_uuid** | [**str**](.md)| The uuid to assign the service with |
- **service_tag** | **str**| The tag/version of the service | [optional]
+ **service_key** | **str**| The key (url) of the service | 
+ **service_uuid** | [**str**](.md)| The uuid to assign the service with | 
+ **service_tag** | **str**| The tag/version of the service | [optional] 
 
 ### Return type
 
-[**RunningServiceEnveloped**](RunningServiceEnveloped.md)
+[**InlineResponse201**](InlineResponse201.md)
 
 ### Authorization
 
@@ -205,7 +205,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **services_by_key_version_get**
-> ServicesEnveloped services_by_key_version_get(service_key, service_version)
+> InlineResponse2001 services_by_key_version_get(service_key, service_version)
 
 Returns details of the selected service if available in the oSparc platform
 
@@ -236,12 +236,12 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **service_key** | **str**| The key (url) of the service |
- **service_version** | **str**| The tag/version of the service |
+ **service_key** | **str**| The key (url) of the service | 
+ **service_version** | **str**| The tag/version of the service | 
 
 ### Return type
 
-[**ServicesEnveloped**](ServicesEnveloped.md)
+[**InlineResponse2001**](InlineResponse2001.md)
 
 ### Authorization
 
@@ -255,7 +255,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **services_get**
-> ServicesEnveloped services_get(service_type=service_type)
+> InlineResponse2001 services_get(service_type=service_type)
 
 Lists available services in the oSparc platform
 
@@ -285,11 +285,11 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **service_type** | **str**| The service type:   * computational - a computational service   * interactive - an interactive service  | [optional]
+ **service_type** | **str**| The service type:   * computational - a computational service   * interactive - an interactive service  | [optional] 
 
 ### Return type
 
-[**ServicesEnveloped**](ServicesEnveloped.md)
+[**InlineResponse2001**](InlineResponse2001.md)
 
 ### Authorization
 
@@ -301,3 +301,4 @@ No authorization required
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+

@@ -1,0 +1,313 @@
+openapi: "3.0.0"
+info:
+  description: This is the oSparc's director API
+  version: 1.0.0
+  title: Director API
+  # put the contact info for your development or API team
+  contact:
+    name: IT'IS Foundation
+    email: support@simcore.com
+  license:
+    name: MIT
+    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
+
+servers:
+  - url: http://{host}:{port}/{version}
+    description: Development server
+    variables:
+      host:
+        default: 'localhost'
+      port:
+        default: '8001'
+      version:
+        default: 'v0'
+        enum:
+          - 'v0'
+
+# tags are used for organizing operations
+tags:
+- name: admins
+  description: Secured Admin-only calls
+- name: developers
+  description: Operations available to regular developers
+- name: users
+  description: Operations available to regular users
+
+paths:
+  /:
+    get:
+      tags: 
+        - users
+      summary: Service health-check endpoint
+      description: Some general information on the API and state of the service behind
+      operationId: root_get
+      responses:
+        "200":
+          description: Service information
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/health_check.yaml#/HealthCheckEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+
+  /services:
+    get:
+      tags: 
+        - users
+      summary: Lists available services in the oSparc platform
+      description: Lists available services in the oSparc platform
+      operationId: services_get
+      parameters:
+        - $ref: '#/components/parameters/ServiceType'
+      responses:
+        "200":
+          description: Success, returns the list of available services
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/services.yaml#/ServicesEnveloped'                
+        "401":
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+
+  /services/{service_key}/{service_version}:
+    get:
+      tags: 
+        - users
+      summary: Returns details of the selected service if available in the oSparc platform
+      description: Returns details of the selected service if available in the oSparc platform
+      operationId: services_by_key_version_get
+      parameters:
+        - $ref: '#/components/parameters/ServiceKeyPath'
+        - $ref: '#/components/parameters/ServiceVersionPath'
+      responses:
+        "200":
+          description: Success, returns the details of the service
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/services.yaml#/ServicesEnveloped'                
+        "401":
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        "404":
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+
+  /running_interactive_services:
+    post:
+      tags: 
+        - users
+      summary: Starts an interactive service in the oSparc platform and returns its entrypoint
+      description: Starts an interactive service in the oSparc platform and returns its entrypoint
+      operationId: running_interactive_services_post
+      parameters:         
+        - $ref: '#/components/parameters/ServiceKey'
+        - $ref: '#/components/parameters/ServiceVersion'
+        - $ref: '#/components/parameters/AssignmentUuid'
+      responses:
+        "201":
+          description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/running_service.yaml#/RunningServiceEnveloped'
+        "400":
+          description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        "401":
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        "404":
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        "409":
+          description: A service with the same uuid already exists
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+
+  /running_interactive_services/{service_uuid}:
+    get:
+      tags: 
+        - users
+      summary: Succesfully returns if a service with the defined uuid is up and running
+      description: Succesfully returns if a service with the defined uuid is up and running
+      operationId: running_interactive_services_get
+      parameters: 
+        - $ref: '#/components/parameters/ServiceUuid'
+      responses:
+        "204":
+          description: OK service exists and runs
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/response204.yaml#/Response204Enveloped'
+        "400":
+          description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        "404":
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+    delete:
+      tags: 
+        - users
+      summary: Stops and removes an interactive service from the oSparc platform
+      description: Stops and removes an interactive service from the oSparc platform
+      operationId: running_interactive_services_delete
+      parameters: 
+        - $ref: '#/components/parameters/ServiceUuid'
+      responses:
+        "204":
+          description: Succesfully stopped and removed the service from the oSparc platform
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/response204.yaml#/Response204Enveloped'
+        "400":
+          description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        "404":
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+
+components:
+  parameters:
+    AssignmentUuid:
+      in: query
+      name: service_uuid
+      description: The uuid to assign the service with
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
+
+    ServiceKeyPath:
+      in: path
+      name: service_key
+      description: The key (url) of the service
+      required: true
+      schema:
+        type: string   
+        format: url
+        example: simcore/services/dynamic/3d-viewer
+    
+    ServiceKey:
+      in: query
+      name: service_key
+      description: The key (url) of the service
+      required: true
+      schema:
+        type: string   
+        format: url
+        example: simcore/services/dynamic/3d-viewer
+    
+    ServiceType:
+      in: query
+      name: service_type
+      description: |
+        The service type:
+          * computational - a computational service
+          * interactive - an interactive service
+      required: false
+      schema:
+        type: string          
+        enum: 
+          - computational
+          - interactive            
+        example: computational
+    
+    ServiceUuid:
+      in: path
+      name: service_uuid
+      description: The uuid of the service
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
+
+    ServiceVersionPath:
+      in: path
+      name: service_version
+      description: The tag/version of the service
+      required: true
+      schema:
+        type: string
+        example: "1.4"
+
+    ServiceVersion:
+      in: query
+      name: service_tag
+      description: The tag/version of the service
+      required: false
+      schema:
+        type: string
+        example: "1.4"
