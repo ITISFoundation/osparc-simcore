@@ -10,7 +10,7 @@ logging.basicConfig(
     )
 
 CONVERT_OLD_API = True
-API_VERSION = "v1"
+API_VERSION = "v0"
 
 REGISTRY_AUTH = os.environ.get("REGISTRY_AUTH", False) in ["true", "True"]
 REGISTRY_USER = os.environ.get("REGISTRY_USER", "")

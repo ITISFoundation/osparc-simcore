@@ -1,0 +1,1494 @@
+components:
+  parameters:
+    AssignmentUuid:
+      description: The uuid to assign the service with
+      in: query
+      name: service_uuid
+      required: true
+      schema:
+        example: 123e4567-e89b-12d3-a456-426655440000
+        format: uuid
+        type: string
+    ServiceKey:
+      description: The key (url) of the service
+      in: query
+      name: service_key
+      required: true
+      schema:
+        example: simcore/services/dynamic/3d-viewer
+        format: url
+        type: string
+    ServiceKeyPath:
+      description: The key (url) of the service
+      in: path
+      name: service_key
+      required: true
+      schema:
+        example: simcore/services/dynamic/3d-viewer
+        format: url
+        type: string
+    ServiceType:
+      description: "The service type:\n  * computational - a computational service\n\
+        \  * interactive - an interactive service\n"
+      in: query
+      name: service_type
+      required: false
+      schema:
+        enum:
+        - computational
+        - interactive
+        example: computational
+        type: string
+    ServiceUuid:
+      description: The uuid of the service
+      in: path
+      name: service_uuid
+      required: true
+      schema:
+        example: 123e4567-e89b-12d3-a456-426655440000
+        format: uuid
+        type: string
+    ServiceVersion:
+      description: The tag/version of the service
+      in: query
+      name: service_tag
+      required: false
+      schema:
+        example: '1.4'
+        type: string
+    ServiceVersionPath:
+      description: The tag/version of the service
+      in: path
+      name: service_version
+      required: true
+      schema:
+        example: '1.4'
+        type: string
+info:
+  contact:
+    email: support@simcore.com
+    name: IT'IS Foundation
+  description: This is the oSparc's director API
+  license:
+    name: MIT
+    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
+  title: Director API
+  version: 1.0.0
+openapi: 3.0.0
+paths:
+  /:
+    get:
+      description: Some general information on the API and state of the service behind
+      operationId: root_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      api_version:
+                        example: 1.0.0-dev
+                        type: string
+                      name:
+                        example: director service
+                        type: string
+                      status:
+                        example: SERVICE_RUNNING
+                        type: string
+                      version:
+                        example: 1dfcfdc
+                        type: string
+                    type: object
+                  error:
+                    default: null
+                    nullable: true
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Service information
+        default:
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Unexpected error
+      summary: Service health-check endpoint
+      tags:
+      - users
+  /running_interactive_services:
+    post:
+      description: Starts an interactive service in the oSparc platform and returns
+        its entrypoint
+      operationId: running_interactive_services_post
+      parameters:
+      - description: The key (url) of the service
+        in: query
+        name: service_key
+        required: true
+        schema:
+          example: simcore/services/dynamic/3d-viewer
+          format: url
+          type: string
+      - description: The tag/version of the service
+        in: query
+        name: service_tag
+        required: false
+        schema:
+          example: '1.4'
+          type: string
+      - description: The uuid to assign the service with
+        in: query
+        name: service_uuid
+        required: true
+        schema:
+          example: 123e4567-e89b-12d3-a456-426655440000
+          format: uuid
+          type: string
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      entry_point:
+                        description: The entry point where the service provides its
+                          interface if specified
+                        example: /the/entry/point/is/here
+                        type: string
+                      published_port:
+                        description: The ports where the service provides its interface
+                        example: 30000
+                        format: int32
+                        minimum: 1
+                        type: integer
+                      service_uuid:
+                        description: The UUID attached to this service
+                        example: 123e4567-e89b-12d3-a456-426655440000
+                        format: UUID
+                        type: string
+                    required:
+                    - published_port
+                    - service_uuid
+                    type: object
+                  error:
+                    default: null
+                    nullable: true
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Succesfully created the service in the oSparc platform. Returns
+            the location where the service runs.
+        '400':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Malformed function call, missing field
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Unauthorized access
+        '404':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Service not found
+        '409':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: A service with the same uuid already exists
+        default:
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Unexpected error
+      summary: Starts an interactive service in the oSparc platform and returns its
+        entrypoint
+      tags:
+      - users
+  /running_interactive_services/{service_uuid}:
+    delete:
+      description: Stops and removes an interactive service from the oSparc platform
+      operationId: running_interactive_services_delete
+      parameters:
+      - description: The uuid of the service
+        in: path
+        name: service_uuid
+        required: true
+        schema:
+          example: 123e4567-e89b-12d3-a456-426655440000
+          format: uuid
+          type: string
+      responses:
+        '204':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    default: null
+                    nullable: true
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Succesfully stopped and removed the service from the oSparc
+            platform
+        '400':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Malformed function call, missing field
+        '404':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Service not found
+        default:
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Unexpected error
+      summary: Stops and removes an interactive service from the oSparc platform
+      tags:
+      - users
+    get:
+      description: Succesfully returns if a service with the defined uuid is up and
+        running
+      operationId: running_interactive_services_get
+      parameters:
+      - description: The uuid of the service
+        in: path
+        name: service_uuid
+        required: true
+        schema:
+          example: 123e4567-e89b-12d3-a456-426655440000
+          format: uuid
+          type: string
+      responses:
+        '204':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    default: null
+                    nullable: true
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: OK service exists and runs
+        '400':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Malformed function call, missing field
+        '404':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Service not found
+        default:
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Unexpected error
+      summary: Succesfully returns if a service with the defined uuid is up and running
+      tags:
+      - users
+  /services:
+    get:
+      description: Lists available services in the oSparc platform
+      operationId: services_get
+      parameters:
+      - description: "The service type:\n  * computational - a computational service\n\
+          \  * interactive - an interactive service\n"
+        in: query
+        name: service_type
+        required: false
+        schema:
+          enum:
+          - computational
+          - interactive
+          example: computational
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    items:
+                      additionalProperties: false
+                      description: Description of a simcore node 'class' with input
+                        and output
+                      properties:
+                        authors:
+                          items:
+                            additionalProperties: false
+                            properties:
+                              affiliation:
+                                description: Affiliation of the author
+                                example:
+                                - Sense8
+                                - Babylon 5
+                                type: string
+                              email:
+                                description: Email address
+                                example:
+                                - sun@sense.eight
+                                - deleen@minbar.bab
+                                format: email
+                                type: string
+                              name:
+                                description: Name of the author
+                                example:
+                                - Sun Bak
+                                - Delenn
+                                type: string
+                            required:
+                            - name
+                            - email
+                            type: object
+                          minItems: 1
+                          type: array
+                        contact:
+                          description: email to correspond to the authors about the
+                            node
+                          example:
+                          - lab@net.flix
+                          format: email
+                          type: string
+                        description:
+                          description: human readable description of the purpose of
+                            the node
+                          example:
+                          - Our best node type
+                          - The mother of all nodes, makes your numbers shine!
+                          type: string
+                        inputs:
+                          description: definition of the inputs of this node
+                          type: object
+                          x-patternProperties:
+                            ^[-_a-zA-Z0-9]+$:
+                              additionalProperties: false
+                              description: all the input configurable for this service
+                              properties:
+                                defaultValue:
+                                  description: initial value for this input
+                                  example:
+                                  - Dog
+                                  - true
+                                  type:
+                                  - string
+                                  - number
+                                  - integer
+                                  - boolean
+                                description:
+                                  description: description of the property
+                                  example:
+                                  - Age in seconds since 1970
+                                  type: string
+                                displayOrder:
+                                  description: use this to numerically sort the properties
+                                    for display
+                                  example:
+                                  - 1
+                                  - -0.2
+                                  type: number
+                                fileToKeyMap:
+                                  description: Place the data associated with the
+                                    named keys in files
+                                  example:
+                                  - dir/input1.txt: key_1
+                                    dir33/input2.txt: key2
+                                  patternProperties:
+                                    .+:
+                                      pattern: ^[_a-z0-9]+$
+                                      type: string
+                                  type: object
+                                label:
+                                  description: short name for the property
+                                  example:
+                                  - Age
+                                  type: string
+                                type:
+                                  description: data type expected on this input glob
+                                    matching for data type is allowed
+                                  example:
+                                  - number
+                                  - boolean
+                                  - data:*/*
+                                  - data:text/*
+                                  - data:[image/jpeg,image/png]
+                                  - data:application/json
+                                  - data:application/json;schema=https://my-schema/not/really/schema.json
+                                  - data:application/vnd.ms-excel
+                                  - data:text/plain
+                                  - data:application/hdf5
+                                  - data:application/edu.ucdavis@ceclancy.xyz
+                                  pattern: ^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$
+                                  type: string
+                                widget:
+                                  anyOf:
+                                  - additionalProperties: false
+                                    properties:
+                                      minHeight:
+                                        description: minimum Height of the textarea
+                                        minimum: 1
+                                        type: integer
+                                      type:
+                                        description: type of the property
+                                        enum:
+                                        - TextArea
+                                        type: string
+                                    required:
+                                    - type
+                                    type: object
+                                  - additionalProperties: false
+                                    properties:
+                                      structure:
+                                        items:
+                                          additionalProperties: false
+                                          example:
+                                          - - key: rat
+                                              label: The Rat
+                                            - key: dog
+                                              label: Bello the Dog
+                                          properties:
+                                            key:
+                                              type:
+                                              - string
+                                              - boolean
+                                              - number
+                                            label:
+                                              type: string
+                                          required:
+                                          - key
+                                          - label
+                                          type: object
+                                        minItems: 1
+                                        type: array
+                                      type:
+                                        description: type of the property
+                                        enum:
+                                        - SelectBox
+                                        type: string
+                                    required:
+                                    - type
+                                    - structure
+                                    type: object
+                                  description: custom widget to use instead of the
+                                    default one determined from the data-type
+                              required:
+                              - displayOrder
+                              - label
+                              - description
+                              - type
+                              type: object
+                        key:
+                          description: distinctive name for the node based on the
+                            docker registry path
+                          example:
+                          - simcore/services/comp/itis/sleeper
+                          - simcore/services/dynamic/3dviewer
+                          pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$
+                          type: string
+                        name:
+                          description: short, human readable name for the node
+                          example:
+                          - Fast Counter
+                          type: string
+                        outputs:
+                          description: definition of the outputs of this node
+                          type: object
+                          x-patternProperties:
+                            ^[-_a-zA-Z0-9]+$:
+                              additionalProperties: false
+                              description: all the output produced by this node
+                              properties:
+                                description:
+                                  description: description of the property
+                                  example:
+                                  - Age in seconds since 1970
+                                  type: string
+                                displayOrder:
+                                  description: use this to numerically sort the properties
+                                    for display
+                                  example:
+                                  - 1
+                                  - -0.2
+                                  type: number
+                                fileToKeyMap:
+                                  description: Place the data stored in the named
+                                    files and store it in the locations pointed to
+                                    by the respective output key.
+                                  example:
+                                  - dir/input1.txt: key_1
+                                    dir33/input2.txt: key2
+                                  patternProperties:
+                                    .+:
+                                      pattern: ^[_a-z0-9]+$
+                                      type: string
+                                  type: object
+                                label:
+                                  description: short name for the property
+                                  example:
+                                  - Age
+                                  type: string
+                                type:
+                                  description: data type expected on this output
+                                  example:
+                                  - number
+                                  - integer
+                                  - boolean
+                                  - string
+                                  - data:application/json
+                                  - 'data:application/vnd.ms-excel '
+                                  - data:text/plain
+                                  - data:application/hdf5
+                                  pattern: ^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$
+                                  type: string
+                              required:
+                              - displayOrder
+                              - label
+                              - description
+                              - type
+                              type: object
+                        type:
+                          description: service type
+                          enum:
+                          - computational
+                          - dynamic
+                          example:
+                          - computational
+                          type: string
+                        version:
+                          description: semantic version number
+                          example:
+                          - 1.0.0
+                          - 0.0.1
+                          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+                          type: string
+                      required:
+                      - key
+                      - version
+                      - type
+                      - name
+                      - description
+                      - authors
+                      - contact
+                      - inputs
+                      - outputs
+                      title: simcore node
+                      type: object
+                    type: array
+                  error:
+                    default: null
+                    nullable: true
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Success, returns the list of available services
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Unauthorized access
+        default:
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Unexpected error
+      summary: Lists available services in the oSparc platform
+      tags:
+      - users
+  /services/{service_key}/{service_version}:
+    get:
+      description: Returns details of the selected service if available in the oSparc
+        platform
+      operationId: services_by_key_version_get
+      parameters:
+      - description: The key (url) of the service
+        in: path
+        name: service_key
+        required: true
+        schema:
+          example: simcore/services/dynamic/3d-viewer
+          format: url
+          type: string
+      - description: The tag/version of the service
+        in: path
+        name: service_version
+        required: true
+        schema:
+          example: '1.4'
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    items:
+                      additionalProperties: false
+                      description: Description of a simcore node 'class' with input
+                        and output
+                      properties:
+                        authors:
+                          items:
+                            additionalProperties: false
+                            properties:
+                              affiliation:
+                                description: Affiliation of the author
+                                example:
+                                - Sense8
+                                - Babylon 5
+                                type: string
+                              email:
+                                description: Email address
+                                example:
+                                - sun@sense.eight
+                                - deleen@minbar.bab
+                                format: email
+                                type: string
+                              name:
+                                description: Name of the author
+                                example:
+                                - Sun Bak
+                                - Delenn
+                                type: string
+                            required:
+                            - name
+                            - email
+                            type: object
+                          minItems: 1
+                          type: array
+                        contact:
+                          description: email to correspond to the authors about the
+                            node
+                          example:
+                          - lab@net.flix
+                          format: email
+                          type: string
+                        description:
+                          description: human readable description of the purpose of
+                            the node
+                          example:
+                          - Our best node type
+                          - The mother of all nodes, makes your numbers shine!
+                          type: string
+                        inputs:
+                          description: definition of the inputs of this node
+                          type: object
+                          x-patternProperties:
+                            ^[-_a-zA-Z0-9]+$:
+                              additionalProperties: false
+                              description: all the input configurable for this service
+                              properties:
+                                defaultValue:
+                                  description: initial value for this input
+                                  example:
+                                  - Dog
+                                  - true
+                                  type:
+                                  - string
+                                  - number
+                                  - integer
+                                  - boolean
+                                description:
+                                  description: description of the property
+                                  example:
+                                  - Age in seconds since 1970
+                                  type: string
+                                displayOrder:
+                                  description: use this to numerically sort the properties
+                                    for display
+                                  example:
+                                  - 1
+                                  - -0.2
+                                  type: number
+                                fileToKeyMap:
+                                  description: Place the data associated with the
+                                    named keys in files
+                                  example:
+                                  - dir/input1.txt: key_1
+                                    dir33/input2.txt: key2
+                                  patternProperties:
+                                    .+:
+                                      pattern: ^[_a-z0-9]+$
+                                      type: string
+                                  type: object
+                                label:
+                                  description: short name for the property
+                                  example:
+                                  - Age
+                                  type: string
+                                type:
+                                  description: data type expected on this input glob
+                                    matching for data type is allowed
+                                  example:
+                                  - number
+                                  - boolean
+                                  - data:*/*
+                                  - data:text/*
+                                  - data:[image/jpeg,image/png]
+                                  - data:application/json
+                                  - data:application/json;schema=https://my-schema/not/really/schema.json
+                                  - data:application/vnd.ms-excel
+                                  - data:text/plain
+                                  - data:application/hdf5
+                                  - data:application/edu.ucdavis@ceclancy.xyz
+                                  pattern: ^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$
+                                  type: string
+                                widget:
+                                  anyOf:
+                                  - additionalProperties: false
+                                    properties:
+                                      minHeight:
+                                        description: minimum Height of the textarea
+                                        minimum: 1
+                                        type: integer
+                                      type:
+                                        description: type of the property
+                                        enum:
+                                        - TextArea
+                                        type: string
+                                    required:
+                                    - type
+                                    type: object
+                                  - additionalProperties: false
+                                    properties:
+                                      structure:
+                                        items:
+                                          additionalProperties: false
+                                          example:
+                                          - - key: rat
+                                              label: The Rat
+                                            - key: dog
+                                              label: Bello the Dog
+                                          properties:
+                                            key:
+                                              type:
+                                              - string
+                                              - boolean
+                                              - number
+                                            label:
+                                              type: string
+                                          required:
+                                          - key
+                                          - label
+                                          type: object
+                                        minItems: 1
+                                        type: array
+                                      type:
+                                        description: type of the property
+                                        enum:
+                                        - SelectBox
+                                        type: string
+                                    required:
+                                    - type
+                                    - structure
+                                    type: object
+                                  description: custom widget to use instead of the
+                                    default one determined from the data-type
+                              required:
+                              - displayOrder
+                              - label
+                              - description
+                              - type
+                              type: object
+                        key:
+                          description: distinctive name for the node based on the
+                            docker registry path
+                          example:
+                          - simcore/services/comp/itis/sleeper
+                          - simcore/services/dynamic/3dviewer
+                          pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$
+                          type: string
+                        name:
+                          description: short, human readable name for the node
+                          example:
+                          - Fast Counter
+                          type: string
+                        outputs:
+                          description: definition of the outputs of this node
+                          type: object
+                          x-patternProperties:
+                            ^[-_a-zA-Z0-9]+$:
+                              additionalProperties: false
+                              description: all the output produced by this node
+                              properties:
+                                description:
+                                  description: description of the property
+                                  example:
+                                  - Age in seconds since 1970
+                                  type: string
+                                displayOrder:
+                                  description: use this to numerically sort the properties
+                                    for display
+                                  example:
+                                  - 1
+                                  - -0.2
+                                  type: number
+                                fileToKeyMap:
+                                  description: Place the data stored in the named
+                                    files and store it in the locations pointed to
+                                    by the respective output key.
+                                  example:
+                                  - dir/input1.txt: key_1
+                                    dir33/input2.txt: key2
+                                  patternProperties:
+                                    .+:
+                                      pattern: ^[_a-z0-9]+$
+                                      type: string
+                                  type: object
+                                label:
+                                  description: short name for the property
+                                  example:
+                                  - Age
+                                  type: string
+                                type:
+                                  description: data type expected on this output
+                                  example:
+                                  - number
+                                  - integer
+                                  - boolean
+                                  - string
+                                  - data:application/json
+                                  - 'data:application/vnd.ms-excel '
+                                  - data:text/plain
+                                  - data:application/hdf5
+                                  pattern: ^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$
+                                  type: string
+                              required:
+                              - displayOrder
+                              - label
+                              - description
+                              - type
+                              type: object
+                        type:
+                          description: service type
+                          enum:
+                          - computational
+                          - dynamic
+                          example:
+                          - computational
+                          type: string
+                        version:
+                          description: semantic version number
+                          example:
+                          - 1.0.0
+                          - 0.0.1
+                          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+                          type: string
+                      required:
+                      - key
+                      - version
+                      - type
+                      - name
+                      - description
+                      - authors
+                      - contact
+                      - inputs
+                      - outputs
+                      title: simcore node
+                      type: object
+                    type: array
+                  error:
+                    default: null
+                    nullable: true
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Success, returns the details of the service
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Unauthorized access
+        '404':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Service not found
+        default:
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
+                    properties:
+                      errors:
+                        items:
+                          properties:
+                            code:
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                              type: string
+                        type: array
+                      message:
+                        description: Error message
+                        example: Unexpected error
+                        type: string
+                      status:
+                        description: Error code
+                        example: 404
+                        type: integer
+                    required:
+                    - status
+                    - message
+                    type: object
+                required:
+                - data
+                - error
+                type: object
+          description: Unexpected error
+      summary: Returns details of the selected service if available in the oSparc
+        platform
+      tags:
+      - users
+servers:
+- description: Development server
+  url: http://{host}:{port}/{version}
+  variables:
+    host:
+      default: localhost
+    port:
+      default: '8001'
+    version:
+      default: v0
+      enum:
+      - v0
+tags:
+- description: Secured Admin-only calls
+  name: admins
+- description: Operations available to regular developers
+  name: developers
+- description: Operations available to regular users
+  name: users

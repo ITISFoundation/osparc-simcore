@@ -27,7 +27,7 @@ filenames.forEach(filepath => {
     // [link to problem](https://swagger.io/docs/specification/adding-examples/)
     yamlSchema = yamlSchema.replace(/examples:\n/g, "example:\n");
     // write as yaml
-    fs.writeFileSync(outputPath + path.basename(filepath, ".json") + ".yaml", yamlSchema);
+    fs.writeFileSync(outputPath + path.basename(filepath, ".json") + "-converted.yaml", yamlSchema);
     // fs.writeFileSync(outputPath + "converted_" + filepath, JSON.stringify(convertedSchema));    
   }
   
