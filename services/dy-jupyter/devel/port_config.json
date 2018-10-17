@@ -6,7 +6,7 @@
             "label": "input 1",
             "desc": "input 1",
             "type": "file-url",
-            "value": "link.SIMCORE_NODE_UUID.input_1",
+            "value": "link.SIMCORE_NODE_UUID.FILENAME_ID",
             "settings": {
                 "value":"null"
             },
