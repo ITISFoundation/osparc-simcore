@@ -1,45 +1,77 @@
-import pathlib
+import io
+import re
 import sys
+from fnmatch import fnmatch
+from itertools import chain
+from os import walk
+from os.path import join
+from pathlib import Path
 
 from setuptools import find_packages, setup
 
-_CDIR = pathlib.Path(sys.argv[0] if __name__ == '__main__' else __file__).parent
-_PACKAGES_DIR = _CDIR.absolute().parent.parent / 'packages'
+_CDIR = Path(sys.argv[0] if __name__ == '__main__' else __file__).resolve().parent
 
-def list_requirements_in(filename):
-    requires = []
-    with (_CDIR / 'requirements' / filename).open() as fh:
-        requires = [line.strip() for line in fh.readlines() if not line.lstrip().startswith('#')]
-    return requires
+if sys.version_info<(3, 6):
+    raise RuntimeError("Requires >=3.6, got %s. Did you forget to activate virtualenv?" % sys.version_info)
 
-def package_files(package_dir, data_dir):
-    abs_path = _CDIR / package_dir / data_dir
-    return [str(p.relative_to(_CDIR / package_dir)) for p in abs_path.rglob('**/*.*')]
+def list_datafiles_at(*locations):
+    def _listdir(root, wildcard='*'):
+        """ Recursively list all files under 'root' whose names fit a given wildcard.
+         Returns (dirname, files) pair per level.
+        See https://docs.python.org/2/distutils/setupscript.html#installing-additional-files
+        """
+        for dirname, _, names in walk(root):
+            yield dirname, tuple(join(dirname, name) for name in names if fnmatch(name, wildcard))
+    return list(chain.from_iterable(_listdir(root) for root in locations))
 
+def read(*names, **kwargs):
+    with io.open(join(_CDIR, *names), encoding=kwargs.get('encoding', 'utf8')) as f:
+        return f.read()
 
-INSTALL_REQUIRES = list_requirements_in('base.txt')
-TESTS_REQUIRE = list_requirements_in('test.txt')
-PACKAGES = find_packages(where='src')
-EXTRA_FILES = package_files('src/simcore_service_director', 'oas3')
+def list_packages(*parts):
+    pkg_names = []
+    COMMENT = re.compile(r'^\s*#')
+    with io.open(join(_CDIR, *parts)) as f:
+        pkg_names = [line.strip() for line in f.readlines() if not COMMENT.match(line)]
+    return pkg_names
+ #####################################################################################
+# NOTE see https://packaging.python.org/discussions/install-requires-vs-requirements/
 
-setup(
+_CONFIG = dict(
     name='simcore-service-director',
     version='0.1.0',
     description='oSparc Director webserver service',
-    platforms=['POSIX'],
-    package_dir={'': 'src'},
-    packages=PACKAGES,
+    author='Sylvain Anderegg (sanderegg)',
+    python_requires='>=3.6',
+    packages=find_packages(where='src'),
+    package_dir={
+        '': 'src',
+    },
+    include_package_data=True,
+    install_requires= list_packages("requirements", "base.txt"),
+    tests_require=list_packages("tests", "requirements.txt"),
+    extras_require= {
+        'test': list_packages("tests", "requirements.txt")
+    },
+    setup_requires=['pytest-runner'],
     package_data={
-        '': EXTRA_FILES
+        '': [
+            'oas3/**/*.yaml',
+            'oas3/**/schemas/*.json',
+            'oas3/**/schemas/*.yaml',
+            ],
     },
     entry_points={
-        'console_scripts': ['simcore-service-director=simcore_service_director.__main__:main']},
-    include_package_data=True,
-    install_requires=INSTALL_REQUIRES,
-    tests_require=TESTS_REQUIRE,
-    extras_require= {
-        'test': TESTS_REQUIRE
+        'console_scripts': [
+            'simcore-service-director = simcore_service_director.__main__:main',
+        ],
     },
-    zip_safe=False,
-    python_requires='>=3.6',
 )
+def main():
+    """ Execute the setup commands.
+     """
+    setup(**_CONFIG)
+    return 0 # syccessful termination
+
+if __name__ == "__main__":
+    raise SystemExit(main())

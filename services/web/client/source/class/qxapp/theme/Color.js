@@ -12,7 +12,8 @@ qx.Theme.define("qxapp.theme.Color", {
   extend: osparc.theme.osparcdark.Color,
 
   colors: {
-    "workbench-link-active": "#777",
+    "workbench-link-comp-active": "#777",
+    "workbench-link-api-active": "#BBB",
     "workbench-link-selected": "#00F",
     "logger-debug-message": "#FFF",
     "logger-info-message": "#FFF",

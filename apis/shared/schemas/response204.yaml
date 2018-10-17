@@ -1,0 +1,14 @@
+Response204Enveloped:
+  type: object
+  required:
+    - data
+    - error
+  properties:
+    data:
+      type: object
+      nullable: true
+      default: null
+    error:
+      type: object
+      nullable: true
+      default: null

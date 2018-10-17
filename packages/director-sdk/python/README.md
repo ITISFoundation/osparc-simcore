@@ -23,7 +23,7 @@ pip install git+https://github.com/GIT_USER_ID/GIT_REPO_ID.git
 
 Then import the package:
 ```python
-import simcore_director_sdk
+import simcore_director_sdk 
 ```
 
 ### Setuptools
@@ -79,16 +79,16 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
- - [Error](docs/Error.md)
- - [ErrorEnveloped](docs/ErrorEnveloped.md)
- - [HealthCheck](docs/HealthCheck.md)
- - [HealthCheckEnveloped](docs/HealthCheckEnveloped.md)
- - [NodeMetaV0](docs/NodeMetaV0.md)
- - [Nodemetav0Authors](docs/Nodemetav0Authors.md)
- - [Response204Enveloped](docs/Response204Enveloped.md)
- - [RunningService](docs/RunningService.md)
- - [RunningServiceEnveloped](docs/RunningServiceEnveloped.md)
- - [ServicesEnveloped](docs/ServicesEnveloped.md)
+ - [InlineResponse200](docs/InlineResponse200.md)
+ - [InlineResponse2001](docs/InlineResponse2001.md)
+ - [InlineResponse2001Authors](docs/InlineResponse2001Authors.md)
+ - [InlineResponse200Data](docs/InlineResponse200Data.md)
+ - [InlineResponse201](docs/InlineResponse201.md)
+ - [InlineResponse201Data](docs/InlineResponse201Data.md)
+ - [InlineResponse204](docs/InlineResponse204.md)
+ - [InlineResponseDefault](docs/InlineResponseDefault.md)
+ - [InlineResponseDefaultError](docs/InlineResponseDefaultError.md)
+ - [SimcoreNode](docs/SimcoreNode.md)
 
 
 ## Documentation For Authorization
@@ -99,3 +99,5 @@ Class | Method | HTTP request | Description
 ## Author
 
 support@simcore.com
+
+

@@ -28,14 +28,16 @@ usage()
     echo "usage: openapi_codegen [[[-i input] [-o output directory] [-g generator] [-c configuration file]] | [-h help] | [-languages] [-config-help language]]"
 }
 
+openapi_generator=openapitools/openapi-generator-cli:v3.2.3
+
 list_languages()
 {
-    exec ${DOCKER} run --rm openapitools/openapi-generator-cli list
+    exec ${DOCKER} run --rm ${openapi_generator} list
 }
 
 print_languages_config_options()
 {
-    exec ${DOCKER} run --rm openapitools/openapi-generator-cli config-help -g $1
+    exec ${DOCKER} run --rm ${openapi_generator} config-help -g $1
 }
 
 ##### Main
@@ -123,14 +125,14 @@ fi
 
 echo "generating code..."
 if [ ! -z "$configuration" ]; then
-  ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output -v ${configuration_parent_dir}:/config openapitools/openapi-generator-cli \
+  ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output -v ${configuration_parent_dir}:/config ${openapi_generator} \
     generate \
     -i /local/${input_filename} \
     -g ${generator} \
     -o /output/${generator} \
     -c /config/${configuration_filename}
 else
-  ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output openapitools/openapi-generator-cli \
+  ${DOCKER} run --rm -v ${input_parent_dir}:/local -v ${output_absolute_dir}:/output ${openapi_generator} \
     generate \
     -i /local/${input_filename} \
     -g ${generator} \

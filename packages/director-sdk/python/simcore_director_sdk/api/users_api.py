@@ -43,7 +43,7 @@ class UsersApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: HealthCheckEnveloped
+        :return: InlineResponse200
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -64,7 +64,7 @@ class UsersApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: HealthCheckEnveloped
+        :return: InlineResponse200
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -113,7 +113,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='HealthCheckEnveloped',  # noqa: E501
+            response_type='InlineResponse200',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -132,7 +132,7 @@ class UsersApi(object):
 
         :param async_req bool
         :param str service_uuid: The uuid of the service (required)
-        :return: Response204Enveloped
+        :return: InlineResponse204
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -154,7 +154,7 @@ class UsersApi(object):
 
         :param async_req bool
         :param str service_uuid: The uuid of the service (required)
-        :return: Response204Enveloped
+        :return: InlineResponse204
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -209,7 +209,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='Response204Enveloped',  # noqa: E501
+            response_type='InlineResponse204',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -228,7 +228,7 @@ class UsersApi(object):
 
         :param async_req bool
         :param str service_uuid: The uuid of the service (required)
-        :return: Response204Enveloped
+        :return: InlineResponse204
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -250,7 +250,7 @@ class UsersApi(object):
 
         :param async_req bool
         :param str service_uuid: The uuid of the service (required)
-        :return: Response204Enveloped
+        :return: InlineResponse204
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -305,7 +305,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='Response204Enveloped',  # noqa: E501
+            response_type='InlineResponse204',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -326,7 +326,7 @@ class UsersApi(object):
         :param str service_key: The key (url) of the service (required)
         :param str service_uuid: The uuid to assign the service with (required)
         :param str service_tag: The tag/version of the service
-        :return: RunningServiceEnveloped
+        :return: InlineResponse201
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -350,7 +350,7 @@ class UsersApi(object):
         :param str service_key: The key (url) of the service (required)
         :param str service_uuid: The uuid to assign the service with (required)
         :param str service_tag: The tag/version of the service
-        :return: RunningServiceEnveloped
+        :return: InlineResponse201
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -413,7 +413,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='RunningServiceEnveloped',  # noqa: E501
+            response_type='InlineResponse201',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -433,7 +433,7 @@ class UsersApi(object):
         :param async_req bool
         :param str service_key: The key (url) of the service (required)
         :param str service_version: The tag/version of the service (required)
-        :return: ServicesEnveloped
+        :return: InlineResponse2001
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -456,7 +456,7 @@ class UsersApi(object):
         :param async_req bool
         :param str service_key: The key (url) of the service (required)
         :param str service_version: The tag/version of the service (required)
-        :return: ServicesEnveloped
+        :return: InlineResponse2001
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -517,7 +517,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='ServicesEnveloped',  # noqa: E501
+            response_type='InlineResponse2001',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -535,8 +535,8 @@ class UsersApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service
-        :return: ServicesEnveloped
+        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service 
+        :return: InlineResponse2001
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -557,8 +557,8 @@ class UsersApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service
-        :return: ServicesEnveloped
+        :param str service_type: The service type:   * computational - a computational service   * interactive - an interactive service 
+        :return: InlineResponse2001
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -609,7 +609,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='ServicesEnveloped',  # noqa: E501
+            response_type='InlineResponse2001',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
