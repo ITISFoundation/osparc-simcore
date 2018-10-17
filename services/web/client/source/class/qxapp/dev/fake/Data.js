@@ -12,29 +12,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
   statics: {
     getNodeMap: function() {
       return {
-        "service/dynamic/itis/file-picker-0.0.0":{
-          key: "service/dynamic/itis/file-picker",
-          version: "0.0.0",
-          type: "dynamic",
-          name: "filepicker service",
-          description: "dummy file picker",
-          authors: [
-            {
-              name: "Odei Maiz",
-              email: "maiz@itis.ethz.ch"
-            }
-          ],
-          contact: "maiz@itis.ethz.ch",
-          inputs: {},
-          outputs: {
-            outFile: {
-              displayOrder: 0,
-              label: "File",
-              description: "Chosen File",
-              type: "data:*/*"
-            }
-          }
-        },
         "service/computational/itis/sleeper-0.0.0":{
           key: "service/computational/itis/sleeper",
           version: "0.0.0",
