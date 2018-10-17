@@ -1,0 +1,36 @@
+# This file exists so you can easily regenerate your project.
+#
+# `cookiepatcher` is a convenient shim around `cookiecutter`
+# for regenerating projects (it will generate a .cookiecutterrc
+# automatically for any template). To use it:
+#
+#    pip install cookiepatcher
+#    cookiepatcher gh:itisfoundation/cookiecutter-simcore-pyservice project-path
+#
+# See:
+#    https://pypi.python.org/pypi/cookiepatcher
+#
+# Alternatively, you can run:
+#
+#    cookiecutter --overwrite-if-exists --config-file=project-path/.cookiecutterrc gh:itisfoundation/cookiecutter-simcore-pyservice
+#
+
+default_context:
+
+    _extensions:               [u'jinja2_time.TimeExtension']
+    # _template:                 'gh:itisfoundation/cookiecutter-simcore-pyservice'
+    command_line_interface_bin_name: 'simcore-service-storage'
+    distribution_name:         'simcore-service-storage'
+    dockercompose_service_api_port: '8080'
+    dockercompose_service_name: 'storage'
+    full_name:                 'Manuel Guidon'
+    github_username:           'mguidon'
+    openapi_specs_version:     'v0'
+    package_name:              'simcore_service_storage'
+    project_name:              'Data storage manager service'
+    project_short_description: 'Service to manage data storage in simcore'
+    project_slug:              'storage'
+    release_date:              '2018-10-08'
+    sdk_package_name:          'simcore_storage_sdk'
+    simcore_install_root:      '../../'
+    version:                   '0.1.0'

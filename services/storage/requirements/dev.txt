@@ -1,0 +1,23 @@
+
+# development mode
+# paths relative to location of setup.py
+-e ".[test]"
+
+
+# Please uncomment if you need these dependencies
+# simcore-service-storage client sdk
+-e ./client-sdk/python
+
+# osparc-simcore packages
+-e ../../packages/service-library
+-e ../../packages/s3wrapper/
+-e ../../packages/simcore-sdk/
+#-e ../..//packages/director-sdk/python
+
+
+# code versioning
+bumpversion
+# code formatting
+autopep8
+# code replament/rename
+rope

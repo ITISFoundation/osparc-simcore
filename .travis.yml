@@ -41,10 +41,11 @@ matrix:
       install:
         - pip install --upgrade pip wheel setuptools && pip3 --version
         - pip3 install packages/s3wrapper[test]
-        - pip3 install packages/simcore-sdk[test]        
+        - pip3 install packages/simcore-sdk[test]
         - pushd services/director; pip3 install -r requirements/ci.txt; popd
         - pip3 install packages/director-sdk/python
         - pushd services/web/server; pip3 install -r requirements/ci.txt; popd
+        - pushd services/storage; pip3 install -r requirements/dev.txt; popd
         - pip3 install -r apis/tests/requirements.txt
         - pip3 install -r services/apihub/tests/requirements.txt
 
