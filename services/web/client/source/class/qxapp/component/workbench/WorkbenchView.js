@@ -35,6 +35,19 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       flex : 1
     });
 
+    let nodesExposedLayout = this.__outputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+    nodesExposedLayout.set({
+      width: NODE_INPUTS_WIDTH,
+      maxWidth: NODE_INPUTS_WIDTH,
+      allowGrowX: false
+    });
+    let outputLabel = new qx.ui.basic.Label(this.tr("Outputs")).set({
+      font: navBarLabelFont,
+      alignX: "center"
+    });
+    nodesExposedLayout.add(outputLabel);
+    this.add(nodesExposedLayout);
+
     this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
     this.__desktopCanvas.add(this.__desktop, {
       left: 0,
@@ -124,6 +137,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     __nodesUI: null,
     __linksUI: null,
     __inputNodesLayout: null,
+    __outputNodesLayout: null,
     __desktop: null,
     __svgWidget: null,
     __tempLinkNodeId: null,
@@ -388,6 +402,28 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }
     },
 
+    __createNodeExposedUI: function(currentModel) {
+      let nodeOutput = new qxapp.component.widget.NodeExposed(currentModel);
+      nodeOutput.populateNodeLayout();
+      this.__createDragDropMechanism(nodeOutput);
+      this.__outputNodesLayout.add(nodeOutput, {
+        flex: 1
+      });
+      return nodeOutput;
+    },
+
+    __createNodeExposedUIs: function(model) {
+      let outputLabel = this.__createNodeExposedUI(model);
+      this.__nodesUI.push(outputLabel);
+    },
+
+    __clearNodeExposedUIs: function() {
+      // remove all but the title
+      while (this.__outputNodesLayout.getChildren().length > 1) {
+        this.__outputNodesLayout.removeAt(this.__outputNodesLayout.getChildren().length-1);
+      }
+    },
+
     __removeSelectedNode: function() {
       for (let i=0; i<this.__nodesUI.length; i++) {
         if (this.__desktop.getActiveWindow() === this.__nodesUI[i]) {
@@ -420,7 +456,11 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       let node2 = this.getNodeUI(node2Id);
       let port2 = node2.getInputPort();
 
-      node2.getNodeModel().addInputNode(node1Id);
+      if (this.__currentModel.isContainer() && node2.getNodeId() === this.__currentModel.getNodeId()) {
+        node1.getNodeModel().setIsOutputNode(true);
+      } else {
+        node2.getNodeModel().addInputNode(node1Id);
+      }
       linkId = linkId || qxapp.utils.Utils.uuidv4();
 
       const pointList = this.__getLinkPoints(node1, port1, node2, port2);
@@ -466,6 +506,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
           this.__createLink(node1Id, node2Id, linkId);
         }
       }
+    },
+
+    __createLinkToExposedOutputs: function(from, to, linkId) {
+      let node1Id = from.nodeUuid;
+      let node2Id = to.nodeUuid;
+      this.__createLink(node1Id, node2Id, linkId);
     },
 
     __updateLinks: function(node) {
@@ -554,7 +600,17 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         [node1, port1, node2, port2] = [node2, port2, node1, port1];
       }
       p1 = node1.getLinkPoint(port1);
-      p2 = node2.getLinkPoint(port2);
+      if (this.__currentModel.isContainer() && node2.getNodeModel().getNodeId() === this.__currentModel.getNodeId()) {
+        // connection to the exposed output
+        const dc = this.__desktopCanvas.getBounds();
+        const onl = this.__outputNodesLayout.getBounds();
+        p2 = [
+          parseInt(dc.width - 6),
+          parseInt(onl.height / 2)
+        ];
+      } else {
+        p2 = node2.getLinkPoint(port2);
+      }
       return [p1, p2];
     },
 
@@ -603,7 +659,25 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     },
 
     __removeLink: function(link) {
-      const removed = this.getWorkbenchModel().removeLink(link.getInputNodeId(), link.getOutputNodeId());
+      let removed = false;
+      if (this.__currentModel.isContainer() && link.getOutputNodeId() === this.__currentModel.getNodeId()) {
+        let inputNode = this.getWorkbenchModel().getNodeModel(link.getInputNodeId());
+        inputNode.setIsOutputNode(false);
+
+        // Remove also dependencies from outter nodes
+        const cNodeId = inputNode.getNodeId();
+        const allNodes = this.getWorkbenchModel().getNodeModels(true);
+        for (const nodeId in allNodes) {
+          let node = allNodes[nodeId];
+          if (node.isInputNode(cNodeId) && !this.__currentModel.isInnerNode(node.getNodeId())) {
+            this.getWorkbenchModel().removeLink(cNodeId, nodeId);
+          }
+        }
+
+        removed = true;
+      } else {
+        removed = this.getWorkbenchModel().removeLink(link.getInputNodeId(), link.getOutputNodeId());
+      }
       if (removed) {
         this.__clearLink(link);
       }
@@ -666,8 +740,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
           this.__inputNodesLayout.setVisibility("visible");
           this.__clearInputNodeUIs();
           this.__createInputNodeUIs(model);
+          this.__outputNodesLayout.setVisibility("visible");
+          this.__clearNodeExposedUIs();
+          this.__createNodeExposedUIs(model);
         } else {
           this.__inputNodesLayout.setVisibility("excluded");
+          this.__outputNodesLayout.setVisibility("excluded");
         }
         qx.ui.core.queue.Visibility.flush();
 
@@ -699,6 +777,18 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
                 nodeUuid: nodeUuid
               });
             }
+          }
+        }
+
+        const innerNodes = isContainer ? model.getInnerNodes() : {};
+        for (const innerNodeId in innerNodes) {
+          const innerNode = innerNodes[innerNodeId];
+          if (innerNode.getIsOutputNode()) {
+            this.__createLinkToExposedOutputs({
+              nodeUuid: innerNode.getNodeId()
+            }, {
+              nodeUuid: model.getNodeId()
+            });
           }
         }
       }

@@ -135,6 +135,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       this.__innerNodes[innerNodeId] = innerNodeModel;
     },
 
+    isInnerNode: function(inputNodeId) {
+      return (inputNodeId in this.__innerNodes);
+    },
+
     getExposedInnerNodes: function(recursive = false) {
       const innerNodes = this.getInnerNodes(recursive);
       let exposedInnerNodes = {};
@@ -231,6 +235,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         return true;
       }
       return false;
+    },
+
+    isInputNode: function(inputNodeId) {
+      const index = this.__inputNodes.indexOf(inputNodeId);
+      return (index > -1);
     },
 
     __startInteractiveNode: function() {
