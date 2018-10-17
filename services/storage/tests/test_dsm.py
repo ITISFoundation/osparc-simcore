@@ -121,20 +121,29 @@ async def test_links_s3(postgres_service, s3_client, mock_files_factory, python2
 #NOTE: Below tests directly access the datcore platform, use with care!
 
 @pytest.mark.travis
-async def test_dsm_datcore(postgres_service, s3_client, python27_exec):
+def test_datcore_fixture(datcore_testbucket):
+    print(datcore_testbucket)
+
+@pytest.mark.travis
+async def test_dsm_datcore(postgres_service, s3_client, python27_exec, datcore_testbucket):
     utils.create_tables(url=postgres_service)
     dsm = DataStorageManager(postgres_service, s3_client, python27_exec)
     user_id = 0
     data = await dsm.list_files(user_id=user_id, location="datcore")
-    assert len(data)
+    # the fixture creates two files
+    assert len(data) == 2
 
-    #pdb.set_trace()
+    # delete the first one
     fmd_to_delete = data[0]
     print("Deleting", fmd_to_delete.bucket_name, fmd_to_delete.object_name)
     await dsm.delete_file(user_id, "datcore", fmd_to_delete)
 
-async def test_dsm_s3_to_datcore(postgres_service, s3_client, mock_files_factory, python27_exec):
+    data = await dsm.list_files(user_id=user_id, location="datcore")
+    assert len(data) == 1
+
+async def test_dsm_s3_to_datcore(postgres_service, s3_client, mock_files_factory, python27_exec, datcore_testbucket):
     tmp_file = mock_files_factory(1)[0]
+
     fmd = _create_file_on_s3(postgres_service, s3_client, tmp_file)
 
     dsm = DataStorageManager(postgres_service, s3_client, python27_exec)
@@ -148,22 +157,34 @@ async def test_dsm_s3_to_datcore(postgres_service, s3_client, mock_files_factory
 
     # given the fmd, upload to datcore
     tmp_file2 = tmp_file + ".fordatcore"
+    print(tmp_file2)
     user_id = 0
     down_url = await dsm.download_link(user_id, fmd, "simcore.s3" )
     urllib.request.urlretrieve(down_url, tmp_file2)
-    fmd.location = "datcore"
+    assert filecmp.cmp(tmp_file2, tmp_file)
     # now we have the file locally, upload the file
+    await dsm.upload_file_to_datcore(user_id, tmp_file2, datcore_testbucket, fmd)
+
+    data = await dsm.list_files(user_id=user_id, location="datcore")
+
+    # there should now be 3 files
+    assert len(data) == 3
+
 
 @pytest.mark.travis
-async def test_dsm_datcore_to_s3(postgres_service, s3_client, python27_exec):
+async def test_dsm_datcore_to_s3(postgres_service, s3_client, python27_exec, mock_files_factory, datcore_testbucket):
     utils.create_tables(url=postgres_service)
     dsm = DataStorageManager(postgres_service, s3_client, python27_exec)
     user_id = 0
     data = await dsm.list_files(user_id=user_id, location="datcore")
     assert len(data)
 
-    #pdb.set_trace()
     fmd_to_get = data[0]
     url = await dsm.download_link(user_id, fmd_to_get, "datcore")
-    assert url
-    print(url)
+
+    tmp_file = mock_files_factory(1)[0]
+    tmp_file2 = tmp_file + ".fromdatcore"
+
+    urllib.request.urlretrieve(url, tmp_file2)
+
+    assert filecmp.cmp(tmp_file2, tmp_file)

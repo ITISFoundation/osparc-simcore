@@ -128,12 +128,11 @@ class DataStorageManager:
             dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
             return dc.delete_file(fmd)
 
-    async def upload_file_to_datcore(self, user_id: int, local_file_path: str, remote_file_path: str, fmd: FileMetaData = None): # pylint: disable=W0613
-
+    async def upload_file_to_datcore(self, user_id: int, local_file_path: str, datcore_bucket: str, fmd: FileMetaData = None): # pylint: disable=W0613
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
-        tokens = await self._get_datcore_tokens(user_id) # pylint: disable=W0612
-        #TODO: finish!!!
-        raise NotImplementedError("Under development")
+        api_token, api_secret = await self._get_datcore_tokens(user_id)
+        dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
+        dc.upload_file(datcore_bucket, local_file_path, fmd)
 
     async def _get_datcore_tokens(self, user_id: int)->Tuple[str, str]:
         # actually we have to query the master db

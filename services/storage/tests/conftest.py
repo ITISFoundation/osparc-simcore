@@ -5,6 +5,7 @@
 #
 # pylint: disable=W0621
 import os
+import subprocess
 import sys
 import uuid
 from collections import namedtuple
@@ -12,9 +13,10 @@ from pathlib import Path
 from random import randrange
 
 import pytest
-import subprocess
+
 import simcore_service_storage
 import utils
+from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 from simcore_service_storage.models import FileMetaData
 from utils import ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER
 
@@ -215,3 +217,21 @@ def dsm_mockup_db(postgres_service, s3_client, mock_files_factory):
 
     # db
     utils.drop_tables(url=postgres_service)
+
+@pytest.fixture(scope="function")
+def datcore_testbucket(python27_exec, mock_files_factory):
+    # TODO: what if I do not have an app to the the config from?
+    api_token = os.environ.get("BF_API_KEY", "none")
+    api_secret = os.environ.get("BF_API_SECRET", "none")
+
+    dc = DatcoreWrapper(api_token, api_secret, python27_exec)
+
+    dc.create_test_dataset(BUCKET_NAME)
+
+    tmp_files = mock_files_factory(2)
+    for f in tmp_files:
+        dc.upload_file(BUCKET_NAME, os.path.normpath(f), meta_data=None)
+
+    yield BUCKET_NAME
+
+    dc.delete_test_dataset(BUCKET_NAME)

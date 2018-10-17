@@ -1,9 +1,14 @@
-import execnet
+import json
+import os
 from functools import partial
-from .models import FileMetaData
 from pathlib import Path
-from typing import List
 from textwrap import dedent
+from typing import Dict, List
+
+import attr
+import execnet
+
+from .models import FileMetaData
 
 FileMetaDataVec = List[FileMetaData]
 
@@ -129,5 +134,74 @@ class DatcoreWrapper:
 
             channel.send(url)
             """.format(self.api_token, self.api_secret, dataset, file_name)
+
+        return self._py2_call(script)
+
+    def create_test_dataset(self, dataset):
+        script = """
+            from datcore import DatcoreClient
+
+            api_token = "{0}"
+            api_secret = "{1}"
+
+            d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
+                host='https://api.blackfynn.io')
+
+            ds = d_client.get_dataset("{2}")
+            if ds is not None:
+                d_client.delete_files(ds)
+            else:
+                d_client.create_dataset("{2}")
+
+
+            channel.send(None)
+            """.format(self.api_token, self.api_secret, dataset)
+
+        return self._py2_call(script)
+
+    def delete_test_dataset(self, dataset):
+        script = """
+            from datcore import DatcoreClient
+
+            api_token = "{0}"
+            api_secret = "{1}"
+
+            d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
+                host='https://api.blackfynn.io')
+
+            ds = d_client.get_dataset("{2}")
+            if ds is not None:
+                d_client.delete_files(ds)
+
+            channel.send(None)
+            """.format(self.api_token, self.api_secret, dataset)
+
+        return self._py2_call(script)
+
+    def upload_file(self, dataset: str, local_path: str, meta_data: FileMetaData):
+        json_meta = ""
+        if meta_data:
+            json_meta = json.dumps(attr.asdict(meta_data))
+
+        script = """
+            from datcore import DatcoreClient
+            import json
+
+            api_token = "{0}"
+            api_secret = "{1}"
+
+            d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
+                host='https://api.blackfynn.io')
+
+            ds = d_client.get_dataset("{2}")
+
+            str_meta = '{4}'
+            if str_meta :
+                meta_data = json.loads(str_meta)
+                d_client.upload_file(ds, "{3}", meta_data)
+            else:
+                d_client.upload_file(ds, "{3}")
+            channel.send(None)
+            """.format(self.api_token, self.api_secret, dataset, local_path, json_meta)
 
         return self._py2_call(script)
