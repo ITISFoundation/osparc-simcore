@@ -180,7 +180,6 @@ def dsm_mockup_db(postgres_service, s3_client, mock_files_factory):
         node_id = idx + 10000
         file_id = str(uuid.uuid4())
         file_name = str(counter)
-        counter = counter + 1
         object_name = os.path.join(str(project_id), str(node_id), str(counter))
         assert s3_client.upload_file(bucket_name, object_name, _file)
 
@@ -197,6 +196,8 @@ def dsm_mockup_db(postgres_service, s3_client, mock_files_factory):
               'node_id' : node_id,
               'node_name' : node
              }
+
+        counter = counter + 1
 
         data[object_name] = FileMetaData(**d)
 

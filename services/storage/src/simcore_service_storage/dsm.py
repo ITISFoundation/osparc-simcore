@@ -57,7 +57,6 @@ class DataStorageManager:
     s3_client: S3Client
     python27_exec: Path
 
-
     async def list_files(self, user_id: int, location: str, regex: str="", sortby: str="") -> FileMetaDataVec:
         """ Returns a list of file paths
 

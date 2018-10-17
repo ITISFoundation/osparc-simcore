@@ -1,5 +1,6 @@
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
 from textwrap import dedent
@@ -7,6 +8,7 @@ from typing import Dict, List
 
 import attr
 import execnet
+import time
 
 from .models import FileMetaData
 
@@ -54,6 +56,9 @@ class DatcoreWrapper:
 
         #TODO: guarantee that python2_exec is a valid
         self._py2_call = partial(call_python_2_script, python_exec=python2_exec)
+
+        self.pool =  ThreadPoolExecutor(1)
+
 
     def list_files(self, regex = "", sortby = "")->FileMetaDataVec: #pylint: disable=W0613
         # FIXME: W0613:Unused argument 'regex', sortby!!!
@@ -204,4 +209,8 @@ class DatcoreWrapper:
             channel.send(None)
             """.format(self.api_token, self.api_secret, dataset, local_path, json_meta)
 
-        return self._py2_call(script)
+        # TODO: use this https://pymotw.com/3/asyncio/executors.html
+        fut = self.pool.submit(self._py2_call, script)
+        while not fut.done():
+            time.sleep(0.1)
+        #return self._py2_call(script)

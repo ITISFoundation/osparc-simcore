@@ -5,12 +5,14 @@
 
 import filecmp
 import io
+import json
 import os
 import pdb
 import urllib
 import uuid
 from pprint import pprint
 
+import attr
 import pytest
 
 import utils
@@ -39,6 +41,15 @@ async def test_dsm_s3(dsm_mockup_db, postgres_service, s3_client, python27_exec)
     for _id in id_file_count:
         data = await dsm.list_files(user_id=_id, location="simcore.s3")
         assert len(data) == id_file_count[_id]
+
+    #data_as_dict = []
+    #for d in data:
+    #    data_as_dict.append(attr.asdict(d))
+
+    #ith open("example.json", 'w') as _f:
+    #    json.dump(data_as_dict, _f)
+
+
 
     # Get files from bob from the project biology
     bob_id = 0
