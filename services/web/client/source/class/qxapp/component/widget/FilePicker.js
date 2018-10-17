@@ -60,6 +60,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
   members: {
     __mainTree: null,
     __selectBtn: null,
+    __currentUserId: "ODEI-UUID",
 
     _createChildControlImpl: function(id) {
       let control;
@@ -90,7 +91,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
     __reloadTree: function() {
       this.__mainTree.resetRoot();
 
-      let root = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), this.tr("Available Files"));
+      let root = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), this.__currentUserId);
       root.setOpen(true);
       this.__mainTree.setRoot(root);
 
