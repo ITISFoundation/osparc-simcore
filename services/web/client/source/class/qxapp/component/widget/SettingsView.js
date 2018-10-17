@@ -64,7 +64,7 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
     __inputNodesLayout: null,
     __mainLayout: null,
     __nodesUI: null,
-    __startNode: null,
+    __startInteractive: null,
     __openFoler: null,
 
     __initTitle: function() {
@@ -98,10 +98,10 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
         spacing: 10,
         alignX: "right"
       });
-      let buttonsBox = new qx.ui.container.Composite(box);
+      let buttonsLayout = new qx.ui.container.Composite(box);
 
-      let startNode = this.__startNode = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/play/32"
+      let startInteractive = this.__startInteractive = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/sign-in-alt/32"
       });
 
       let openFolder = this.__openFoler = new qx.ui.form.Button().set({
@@ -129,9 +129,9 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
         win.open();
       }, this);
 
-      buttonsBox.add(startNode);
-      buttonsBox.add(openFolder);
-      this.__mainLayout.add(buttonsBox);
+      buttonsLayout.add(startInteractive);
+      buttonsLayout.add(openFolder);
+      this.__mainLayout.add(buttonsLayout);
     },
 
     __getNodeUI: function(id) {
@@ -246,7 +246,7 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
           const data = e.getData();
           this.fireDataEvent("ShowViewer", data);
         }, this);
-        this.__startNode = viewerButton;
+        this.__startInteractive = viewerButton;
       }
     }
   }
