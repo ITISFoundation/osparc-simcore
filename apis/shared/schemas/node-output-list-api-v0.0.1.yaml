@@ -10,11 +10,8 @@ properties:
     description: all the items in the list
     type: object
     properties:
-      call:
-        type: string
-        enum:
-          - getItemList
       request:
+        description: oa3 json schema description of the request structure
         type: object
         required:
           - start
@@ -41,10 +38,6 @@ properties:
       description: get details about an item in the list
       type: object
       properties:
-        call:
-          type: string
-          enum:
-            - getItem
         request:
           type: object
           required:

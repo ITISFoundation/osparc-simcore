@@ -54,6 +54,7 @@ paths:
             application/json:
               schema:
                 $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+  /node/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}:
     post:
       tags:
         - node
@@ -61,20 +62,23 @@ paths:
       parameters:
         - $ref: '#/components/parameters/nodeInstanceUUID'
         - $ref: '#/components/parameters/outputKey'
+        - $ref: '#/components/parameters/apiCall'
       requestBody:
          content:
             application/json:
               schema:
-                $ref: '#/components/schemas/outputUi/apiSchemas/items/properties/request'
-
+                oneOf:
+                  - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/request'
+                  - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/request'
       responses:
         default:
           description: node type specific api call according to the node type presented
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/outputUi/apiSchemas/items/properties/response'
-
+                oneOf:
+                  - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/response'
+                  - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/response'
 
   /node/{nodeInstanceUUID}/iframe:
     get:
@@ -99,6 +103,12 @@ components:
     outputKey:
       in: path
       name: outputKey
+      required: true
+      schema:
+        type: string
+    apiCall:
+      in: path
+      name: apiCall
       required: true
       schema:
         type: string
