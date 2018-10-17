@@ -79,30 +79,30 @@ qx.Class.define("qxapp.Application", {
       const menuBarHeight = 35;
       const avaiBarHeight = 55;
 
-      this._menuBar = new qxapp.components.MenuBar(
+      this._menuBar = new qxapp.component.MenuBar(
         docWidth, menuBarHeight,
         this._appModel.getColors().getMenuBar()
           .getBackground(), this._appModel.getColors().getMenuBar()
           .getFont());
 
-      this._userMenu = new qxapp.components.UserMenu(
+      this._userMenu = new qxapp.component.UserMenu(
         this._appModel,
         this._appModel.getColors().getMenuBar()
           .getBackground(), this._appModel.getColors().getMenuBar()
           .getFont());
 
-      this.__availableServicesBar = new qxapp.components.AvailableServices(
+      this.__availableServicesBar = new qxapp.component.AvailableServices(
         docWidth, avaiBarHeight,
         this._appModel.getColors().getToolBar()
           .getBackground(), this._appModel.getColors().getToolBar()
           .getFont());
 
-      this.__threeView = new qxapp.components.ThreeView(
+      this.__threeView = new qxapp.component.ThreeView(
         docWidth, docHeight,
         this._appModel.getColors().get3DView()
           .getBackground());
 
-      this.__entityList = new qxapp.components.EntityList(
+      this.__entityList = new qxapp.component.EntityList(
         250, 300,
         this._appModel.getColors().getSettingsView()
           .getBackground(), this._appModel.getColors().getSettingsView()
@@ -442,7 +442,7 @@ qx.Class.define("qxapp.Application", {
     },
 
     _showPreferences: function() {
-      let preferencesDlg = new qxapp.components.Preferences(
+      let preferencesDlg = new qxapp.component.Preferences(
         this._appModel, 250, 300,
         this._appModel.getColors().getSettingsView()
           .getBackground(), this._appModel.getColors().getSettingsView()

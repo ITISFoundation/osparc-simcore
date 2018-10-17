@@ -1,6 +1,13 @@
 # USAGE:  docker-compose -f docker-compose.yml -f docker-compose.devel.yml ...
 version: '3.4'
 services:
+  apihub:
+    image: services_apihub:dev
+    build:
+      target: development
+    volumes:
+      - '../apis:/srv/http/apis'
+  #--------------------------------------------------------------------
   director:
     image: services_director:dev
     build:

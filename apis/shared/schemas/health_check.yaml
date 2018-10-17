@@ -1,0 +1,28 @@
+HealthCheckEnveloped:
+  type: object
+  required:
+    - data
+    - error
+  properties:
+    data:
+      $ref: '#/HealthCheckType'
+    error:
+      type: object
+      nullable: true
+      default: null
+      
+HealthCheckType:
+  type: object
+  properties:
+    name:
+      type: string
+      example: director service
+    status:
+      type: string
+      example: SERVICE_RUNNING
+    api_version:
+      type: string
+      example: 1.0.0-dev
+    version:
+      type: string
+      example: 1dfcfdc
