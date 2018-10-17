@@ -1,28 +1,26 @@
-""" Configuration of simcore_service_webserver
+""" Configuration keys for simcore_service_webserver
 
 The application can consume settings revealed at different
-stages of the development workflow. This submodule gives access
-to all of them.
-
+stages of its lifetime workflow:
+    - from development/statics : e.g. constants, api-specs,...
+    - at build-time: e.g. versioning,
+    - on startup: use configuration file (accounts for environment variables) and command-line
 
 TODO: this should be the actual settings
 """
 import logging
 
-from simcore_servicelib.constants import (APP_CONFIG_KEY,  # pylint: disable=unused-import
-                                          APP_OAS_KEY, RSC_CONFIG_KEY)
+import servicelib.storage_keys
 
 from ..__version__ import get_version_object
 
 log = logging.getLogger(__name__)
 
-## CONSTANTS--------------------
+
+## CONSTANTS-----------------------------
 TIMEOUT_IN_SECS = 2
 
-
-## BUILD ------------------------
-#  - Settings revealed at build/installation time
-#  - Only known after some setup or build step is completed
+## VERSIONS -----------------------------
 package_version = get_version_object()
 
 API_MAJOR_VERSION = package_version.major
@@ -30,17 +28,15 @@ API_URL_VERSION = "v{:.0f}".format(API_MAJOR_VERSION)
 
 
 # STORAGE KEYS -------------------------
-# Keys used in different scopes. Common naming format:
-#
-#    $(SCOPE)_$(NAME)_KEY
-#
-# See https://aiohttp.readthedocs.io/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
 
 # APP=application
+APP_CONFIG_KEY = servicelib.storage_keys.APP_CONFIG_KEY
+APP_OPENAPI_SPECS_KEY = servicelib.storage_keys.APP_OPENAPI_SPECS_KEY
 
 # CFG=configuration
 
 # RSC=resource
+RSC_CONFIG_KEY  = "config"
 RSC_OPENAPI_KEY = "oas3/{}/openapi.yaml".format(API_URL_VERSION)
 
 # RQT=request

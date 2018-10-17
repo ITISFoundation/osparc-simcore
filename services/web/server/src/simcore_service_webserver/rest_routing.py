@@ -8,10 +8,10 @@ from typing import List
 
 from aiohttp import web
 
-from simcore_servicelib import openapi
+from servicelib import openapi
 
 from . import auth_handlers, rest_handlers
-from .settings.constants import APP_OAS_KEY
+from .settings.constants import APP_OPENAPI_SPECS_KEY
 
 log = logging.getLogger(__name__)
 
@@ -54,9 +54,9 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
 
 
 def setup(app: web.Application):
-    valid_specs = app[APP_OAS_KEY]
+    valid_specs = app[APP_OPENAPI_SPECS_KEY]
 
-    assert valid_specs, "No API specs in app[%s]. Skipping setup %s "% (APP_OAS_KEY, __name__)
+    assert valid_specs, "No API specs in app[%s]. Skipping setup %s "% (APP_OPENAPI_SPECS_KEY, __name__)
 
     routes = create(valid_specs)
     app.router.add_routes(routes)

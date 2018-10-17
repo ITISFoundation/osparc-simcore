@@ -16,7 +16,7 @@ from aiohttp import web
 
 from simcore_service_webserver import resources, rest
 from simcore_service_webserver.settings.constants import (APP_CONFIG_KEY,
-                                                          APP_OAS_KEY)
+                                                          APP_OPENAPI_SPECS_KEY)
 from simcore_service_webserver import security
 
 logging.basicConfig(level=logging.INFO)

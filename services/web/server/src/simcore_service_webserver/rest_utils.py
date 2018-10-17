@@ -10,11 +10,11 @@ import attr
 from aiohttp import web
 
 #pylint: disable=W0611
-from simcore_servicelib.openapi_validation import (COOKIE_KEY, HEADER_KEY,
+from servicelib.openapi_validation import (COOKIE_KEY, HEADER_KEY,
                                                    PATH_KEY, QUERY_KEY,
                                                    validate_request)
 
-from .settings.constants import APP_OAS_KEY
+from .settings.constants import APP_OPENAPI_SPECS_KEY
 
 
 class EnvelopeFactory:
@@ -47,7 +47,7 @@ async def extract_and_validate(request: web.Request):
     Can raise '400 Bad Request': indicates that the server could not understand the request due to invalid syntax
     See https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
     """
-    spec = request.app[APP_OAS_KEY]
+    spec = request.app[APP_OPENAPI_SPECS_KEY]
     assert spec is not None
 
     params, body, errors = await validate_request(request, spec)

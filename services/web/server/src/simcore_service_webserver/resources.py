@@ -9,7 +9,7 @@ import pkg_resources
 
 from .settings.constants import APP_CONFIG_KEY
 
-#TODO: from simcore_servicelib import resources
+#TODO: from servicelib import resources
 
 # resources names
 # TODO: import all RSC_* within .settings.constants!

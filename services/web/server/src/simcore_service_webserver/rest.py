@@ -6,10 +6,10 @@ import logging
 
 from aiohttp import web
 
-from simcore_servicelib import openapi
+from servicelib import openapi
 
 from . import resources, rest_middlewares, rest_routing
-from .settings.constants import APP_CONFIG_KEY, APP_OAS_KEY, RSC_OPENAPI_KEY
+from .settings.constants import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY, RSC_OPENAPI_KEY
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ def setup(app: web.Application):
         # be initialized
         # TODO: What if many specs to expose? v0, v1, v2 ... perhaps a dict instead?
         # TODO: should freeze specs here??
-        app[APP_OAS_KEY] = specs # validated openapi specs
+        app[APP_OPENAPI_SPECS_KEY] = specs # validated openapi specs
 
         # setup rest submodules
         rest_routing.setup(app)
