@@ -202,9 +202,9 @@ qx.Class.define("qxapp.components.workbench.NodeBase", {
         socket.on(slotName, function(val) {
           const {
             data,
-            error
+            status
           } = val;
-          if (!error) {
+          if (status == 201) {
             const publishedPort = data["published_port"];
             const entryPointD = data["entry_point"];
             const nodeId = data["service_uuid"];

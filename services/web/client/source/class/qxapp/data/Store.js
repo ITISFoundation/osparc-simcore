@@ -125,9 +125,9 @@ qx.Class.define("qxapp.data.Store", {
         let requ = e.getTarget();
         const {
           data,
-          error
+          status
         } = requ.getResponse();
-        if (!error) {
+        if (status >= 200 && status <= 299) {
           const listOfRepositories = data;
           console.log("listOfServices", listOfRepositories);
           let services = [];
@@ -152,9 +152,9 @@ qx.Class.define("qxapp.data.Store", {
       socket.on("getInteractiveServices", function(e) {
         const {
           data,
-          error
+          status
         } = e;
-        if (!error) {
+        if (status >= 200 && status <= 299) {
           let listOfInteractiveServices = data;
           console.log("listOfInteractiveServices", listOfInteractiveServices);
           let services = [];
