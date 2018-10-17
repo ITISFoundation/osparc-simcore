@@ -2,6 +2,7 @@
 
     pytest-docker https://github.com/AndreLouisCaron/pytest-docker
 """
+import collections
 # pylint: disable=unused-argument
 # pylint: disable=unused-import
 # pylint: disable=bare-except
@@ -10,21 +11,15 @@ import logging
 import os
 import pathlib
 import sys
-import collections
 
 import pytest
 import yaml
 
 import init_db
 import simcore_service_webserver
-from simcore_service_webserver.db.utils import (
-    DNS,
-    acquire_admin_engine,
-    acquire_engine
-)
-from simcore_service_webserver.settings import (
-    read_and_validate
-)
+from simcore_service_webserver.cli_config import read_and_validate
+from simcore_service_webserver.db.utils import (DNS, acquire_admin_engine,
+                                                acquire_engine)
 
 log = logging.getLogger(__name__)
 CURRENT_DIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
