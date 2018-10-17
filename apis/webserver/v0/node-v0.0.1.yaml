@@ -121,18 +121,9 @@ components:
         config:
           type: object
         apiCalls:
-          type: array
-          items:
-            type: object
-            properties:
-              call:
-                type: string
-              request:
-                type: object
-                description: oa3 json schema description of the request object
-              response:
-                type: object
-                description: oa3 json schema description of the response object
+          type: object
+          oneOf:
+              - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties'
     outputApiCall:
       type: object
       properties:
