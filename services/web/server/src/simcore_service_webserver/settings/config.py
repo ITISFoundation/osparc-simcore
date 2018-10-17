@@ -16,7 +16,8 @@ from simcore_sdk.config import (
     s3
 )
 
-from .. import resources
+from ..resources_keys import RSC_CONFIG_DIR_KEY
+from ..resources import resources
 
 __version__ = "1.0"
 
@@ -86,7 +87,7 @@ def config_from_options(options, vars=None): # pylint: disable=W0622
         if resources.exists(resource_name):
             options.config = resources.get_path(resource_name)
         else:
-            resource_name = resources.RESOURCE_CONFIG + '/' + resource_name
+            resource_name = RSC_CONFIG_DIR_KEY + '/' + resource_name
             if resources.exists(resource_name):
                 options.config = resources.get_path(resource_name)
 

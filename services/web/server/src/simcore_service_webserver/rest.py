@@ -7,9 +7,12 @@ import logging
 from aiohttp import web
 
 from servicelib import openapi
+from servicelib.rest_middlewares import envelope_middleware, error_middleware
 
-from . import resources, rest_middlewares, rest_routing
-from .settings.constants import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY, RSC_OPENAPI_KEY
+from . import rest_routes
+from .resources import resources
+from .application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
+from .resources_keys import RSC_OPENAPI_ROOTFILE_KEY
 
 log = logging.getLogger(__name__)
 
@@ -18,7 +21,7 @@ def setup(app: web.Application):
     log.debug("Setting up %s ...", __name__)
 
     # TODO: What if many specs to expose? v0, v1, v2 ...
-    openapi_path = resources.get_path(RSC_OPENAPI_KEY)
+    openapi_path = resources.get_path(RSC_OPENAPI_ROOTFILE_KEY)
 
     try:
         specs = openapi.create_specs(openapi_path)
@@ -50,8 +53,10 @@ def setup(app: web.Application):
         app[APP_OPENAPI_SPECS_KEY] = specs # validated openapi specs
 
         # setup rest submodules
-        rest_routing.setup(app)
-        rest_middlewares.setup(app)
+        rest_routes.setup(app)
+
+        app.middlewares.append(error_middleware)
+        app.middlewares.append(envelope_middleware)
 
     except openapi.OpenAPIError:
         # TODO: protocol when some parts are unavailable because of failure

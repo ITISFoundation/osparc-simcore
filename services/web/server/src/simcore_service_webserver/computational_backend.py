@@ -9,7 +9,7 @@
 import logging
 
 from .comp_backend_subscribe import SERVICE_NAME, subscribe
-from .settings.constants import APP_CONFIG_KEY
+from .application_keys import APP_CONFIG_KEY
 
 log = logging.getLogger(__file__)
 

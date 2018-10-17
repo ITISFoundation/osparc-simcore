@@ -8,12 +8,15 @@ from typing import Dict
 import attr
 from aiohttp import web
 
-from .constants import APP_OAS_KEY
+from .application_keys import APP_OPENAPI_SPECS_KEY
 #pylint: disable=W0611
 from .openapi_validation import (COOKIE_KEY, HEADER_KEY, PATH_KEY, QUERY_KEY,
                                  validate_request)
 from .rest_models import ErrorItemType, ErrorType
 
+
+def unwrap_envelope(payload):
+    return tuple( payload[k] for k in ('data', 'error') )
 
 class EnvelopeFactory:
     """
@@ -44,7 +47,8 @@ async def extract_and_validate(request: web.Request):
     Can raise '400 Bad Request': indicates that the server could not understand the request due to invalid syntax
     See https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
     """
-    spec = request.app[APP_OAS_KEY]
+    # TODO: how to discriminate if multiple version of specs served?
+    spec = request.app[APP_OPENAPI_SPECS_KEY]
     assert spec is not None
 
     params, body, errors = await validate_request(request, spec)

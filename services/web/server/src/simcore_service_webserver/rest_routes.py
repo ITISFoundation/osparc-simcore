@@ -11,7 +11,9 @@ from aiohttp import web
 from servicelib import openapi
 
 from . import auth_handlers, rest_handlers
-from .settings.constants import APP_OPENAPI_SPECS_KEY
+from .application_keys import APP_OPENAPI_SPECS_KEY
+
+
 
 log = logging.getLogger(__name__)
 

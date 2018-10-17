@@ -6,8 +6,8 @@ import unittest.mock as mock
 import pytest
 
 from simcore_service_webserver import cli as srv_cli
-from simcore_service_webserver import resources
 from simcore_service_webserver import settings as srv_settings
+from simcore_service_webserver.resources import resources, RSC_CONFIG_DIR_KEY
 from simcore_service_webserver.settings.config import CONFIG_SCHEMA
 
 log = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ def test_config_options_in_cli(capsys):
 def test_validate_available_config_files():
     import trafaret_config.simple as _ts
 
-    config_folder = resources.get_path(resources.RESOURCE_CONFIG)
+    config_folder = resources.get_path(RSC_CONFIG_DIR_KEY)
     count = 0
     for config_path in config_folder.rglob("*.y*ml"):
 

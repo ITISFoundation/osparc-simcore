@@ -12,7 +12,7 @@ import logging
 import aiopg.sa
 
 from ..comp_backend_api import init_database as _init_db
-from ..settings.constants import APP_CONFIG_KEY
+from ..application_keys import APP_CONFIG_KEY
 
 # FIXME: _init_db is temporary here so database gets properly initialized
 

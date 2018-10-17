@@ -1,18 +1,16 @@
-import yaml
 import pytest
+import yaml
+from openapi_spec_validator import validate_spec  # , openapi_v3_spec_validator
+from openapi_spec_validator.exceptions import OpenAPIValidationError
 
-from openapi_spec_validator import validate_spec, openapi_v3_spec_validator
-from openapi_spec_validator.exceptions import (
-    OpenAPIValidationError
-)
+from simcore_service_webserver.resources import RSC_OPENAPI_DIR_KEY, resources
 
-from simcore_service_webserver import resources
-
-API_VERSIONS = resources.listdir(resources.RESOURCE_OPENAPI)
+API_VERSIONS = ("v0", "v1")
+OPENAPI_MAIN = "oas3/{}/openapi.yaml"
 
 @pytest.mark.parametrize('version', API_VERSIONS)
 def test_openapi_specs(version):
-    name = resources.RESOURCE_OPENAPI + "/{}/openapi.yaml".format(version)
+    name = OPENAPI_MAIN.format(version)
     openapi_path = resources.get_path(name)
     spec_dict = {}
     with resources.stream(name) as fh:
@@ -36,7 +34,7 @@ def test_openapi_specs(version):
 @pytest.mark.parametrize('version', API_VERSIONS)
 def test_server_specs(version):
     # FIXME: what servers ins pecs? What if there are multiple versions?
-    name = resources.RESOURCE_OPENAPI + "/{}/openapi.yaml".format(version)
+    name = OPENAPI_MAIN.format(version)
     with resources.stream(name) as fh:
         spec_dict = yaml.load(fh)
 

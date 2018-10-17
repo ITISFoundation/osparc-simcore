@@ -15,9 +15,10 @@ import yaml
 from aiohttp import web
 
 from simcore_service_webserver import resources, rest
-from simcore_service_webserver.settings.constants import (APP_CONFIG_KEY,
+from simcore_service_webserver.application_keys import (APP_CONFIG_KEY,
                                                           APP_OPENAPI_SPECS_KEY)
-from simcore_service_webserver import security
+from simcore_service_webserver.security import setup_security
+from simcore_service_webserver.rest import setup_rest
 
 logging.basicConfig(level=logging.INFO)
 
@@ -45,16 +46,18 @@ def client(loop, aiohttp_unused_port, aiohttp_client):
 
     server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
     app[APP_CONFIG_KEY] = { 'app': server_kwargs } # Fake config
-    security.setup(app)
-    rest.setup(app)
 
-    assert "SECRET_KEY" in app[APP_CONFIG_KEY]
-
+    # activates only security+restAPI sub-modules
+    setup_security(app)
+    setup_rest(app)
 
     cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
     return cli
 
-async def test_health_check(client):
+
+
+
+async def test_check_health(client):
     resp = await client.get("/v0/")
     assert resp.status == 200
 
@@ -67,9 +70,10 @@ async def test_health_check(client):
     assert data['name'] == 'simcore-director-service'
     assert data['status'] == 'SERVICE_RUNNING'
 
-async def test_action_check(client):
-
-    fake = {
+async def test_check_action(client):
+    QUERY = 'mguidon'
+    ACTION = 'echo'
+    FAKE = {
         'path_value': 'one',
         'query_value': 'two',
         'body_value': {
@@ -78,20 +82,21 @@ async def test_action_check(client):
         }
     }
 
-    resp = await client.post("/v0/check/echo", json=fake)
-    assert resp.status == 200
-
+    resp = await client.post("/v0/check/{}?data={}".format(ACTION, QUERY), json=FAKE)
     envelope = await resp.json()
     data, error = [envelope[k] for k in ('data', 'error')]
 
+    assert resp.status == 200, str(envelope)
     assert data
     assert not error
 
     # TODO: validate response against specs
 
-    assert data['path_value'] == 'echo'
-    assert not data['query_value']
-    #assert data['body_value'] == fake
+    assert data['path_value'] == ACTION
+    assert data['query_value'] == QUERY
+    #assert data['body_value'] == FAKE['body_value']
+
+
 
 async def test_auth_register(client, caplog):
     caplog.set_level(logging.ERROR, logger='openapi_spec_validator')
@@ -136,7 +141,7 @@ async def test_auth_login(client, caplog):
     payload = await response.json()
     assert response.status==200, str(payload)
 
-    data, error = unenvelope(payload)
+    data, error = unwrap_envelope(payload)
     assert not error
     assert data
 
@@ -152,7 +157,7 @@ async def test_auth_login(client, caplog):
     payload = await response.json()
     assert response.status==200, str(payload)
 
-    data, error = unenvelope(payload)
+    data, error = unwrap_envelope(payload)
     assert not error
     assert data
 
@@ -167,7 +172,7 @@ async def test_auth_login(client, caplog):
     payload = await response.json()
     assert response.status==web.HTTPUnprocessableEntity.status_code, str(payload)
 
-    data, error = unenvelope(payload)
+    data, error = unwrap_envelope(payload)
     assert error
     assert not data
 
@@ -178,7 +183,7 @@ async def test_auth_login(client, caplog):
     payload = await response.json()
     assert response.status==web.HTTPOk.status_code, str(payload)
 
-    data, error = unenvelope(payload)
+    data, error = unwrap_envelope(payload)
     assert not error
     assert data # logs
     assert all( k in data for k in ('level', 'logger', 'message') )
@@ -186,6 +191,6 @@ async def test_auth_login(client, caplog):
 
 
 # utils
-def unenvelope(payload):
-    data, error = [payload[k] for k in ('data', 'error')]
-    return data, error
+
+def unwrap_envelope(payload):
+    return tuple( payload.get(k) for k in ('data', 'error') )

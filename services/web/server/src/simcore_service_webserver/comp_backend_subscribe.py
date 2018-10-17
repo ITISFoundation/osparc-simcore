@@ -6,7 +6,7 @@ import aio_pika
 
 from simcore_sdk.config.rabbit import eval_broker
 
-from .settings.constants import APP_CONFIG_KEY
+from .application_keys import APP_CONFIG_KEY
 from .sockets import SIO
 
 log = logging.getLogger(__file__)

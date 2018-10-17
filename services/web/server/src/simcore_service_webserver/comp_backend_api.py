@@ -21,7 +21,7 @@ from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
 
 from . import api_converter
 from .comp_backend_worker import celery
-from .settings.constants import APP_CONFIG_KEY
+from .application_keys import APP_CONFIG_KEY
 
 # TODO: this should be coordinated with postgres options from config/server.yaml
 #from simcore_sdk.config.db import Config as DbConfig

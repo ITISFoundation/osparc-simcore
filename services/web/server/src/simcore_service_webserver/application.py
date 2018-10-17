@@ -11,7 +11,7 @@ from .rest import setup_rest
 from .statics import setup_statics
 from .computational_backend import setup_computational_backend
 from .sockets import setup_sio
-from .settings.constants import APP_CONFIG_KEY
+from .application_keys import APP_CONFIG_KEY
 
 
 log = logging.getLogger(__name__)
@@ -45,3 +45,9 @@ def run_service(config):
     web.run_app(app,
                 host=config["app"]["host"],
                 port=config["app"]["port"])
+
+
+__all__ = (
+    'create_application',
+    'run_service'
+)

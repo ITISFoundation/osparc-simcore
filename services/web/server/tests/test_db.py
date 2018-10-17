@@ -2,7 +2,7 @@ import logging
 
 import sqlalchemy as sa
 
-from simcore_service_webserver.main import create_application
+from simcore_service_webserver.application import create_application
 from simcore_service_webserver.settings import (
     read_and_validate
 )

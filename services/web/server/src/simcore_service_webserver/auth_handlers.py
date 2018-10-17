@@ -3,9 +3,12 @@
 """
 import logging
 
+import attr
 from aiohttp import web
 
-from .rest_utils import EnvelopeFactory, LogMessageType, extract_and_validate
+from servicelib.rest_utils import EnvelopeFactory, extract_and_validate
+
+from .rest_models import LogMessageType
 from .security import authorized_userid, forget, remember
 
 log = logging.getLogger(__name__)
@@ -56,8 +59,8 @@ async def register(request: web.Request):
     #form.errors.append()
 
     # output
-    payload = EnvelopeFactory(data=LogMessageType(level="INFO", message="Confirmation email sent", logger="user")).as_dict()
-    return web.json_response(payload)
+    return attr.asdict(LogMessageType(level="INFO", message="Confirmation email sent", logger="user"))
+
 
 
 async def login(request: web.Request):

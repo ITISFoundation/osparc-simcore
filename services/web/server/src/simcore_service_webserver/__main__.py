@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore")
 
 from . import cli
 from . import settings
-from .main import run_service
+from .application import run_service
 
 def main(argv=None):
     #logging.basicConfig(level=logging.DEBUG)
