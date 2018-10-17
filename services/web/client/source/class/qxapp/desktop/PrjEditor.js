@@ -125,7 +125,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         const name = data.name;
         // const nodeId = data.nodeId;
 
-        this.__showIFrame(url);
+        let iFrame = this.__createIFrame(url);
+        this.__addWidgetToMainView(iFrame);
 
         // Workaround for updating inputs
         if (name === "3d-viewer") {
@@ -326,30 +327,36 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
     },
 
-    __showIFrame: function(url, name) {
-      let iFrameContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      let iframe = new qx.ui.embed.Iframe().set({
+    __createIFrame: function(url) {
+      let iFrame = new qx.ui.embed.Iframe().set({
         source: url
       });
-      iFrameContainer.add(iframe, {
+      return iFrame;
+    },
+
+    __addWidgetToMainView: function(widget) {
+      let widgetContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+
+      widgetContainer.add(widget, {
         top: 0,
         right: 0,
         bottom: 0,
         left: 0
       });
-      let button = new qx.ui.form.Button().set({
+
+      let closeBtn = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/window-close/24",
-        zIndex: iframe.getZIndex() + 1
+        zIndex: widget.getZIndex() + 1
       });
-      iFrameContainer.add(button, {
+      widgetContainer.add(closeBtn, {
         right: 0,
         top: 0
       });
       let previousWidget = this.__mainPanel.getMainView();
-      button.addListener("execute", function() {
+      closeBtn.addListener("execute", function() {
         this.__mainPanel.setMainView(previousWidget);
       }, this);
-      this.__mainPanel.setMainView(iFrameContainer);
+      this.__mainPanel.setMainView(widgetContainer);
     },
 
     serializeProjectDocument: function() {
