@@ -6,10 +6,9 @@ import logging
 import trafaret_config
 import trafaret_config.commandline as commandline
 
-from .settings import CONFIG_SCHEMA
 from .resources_keys import RSC_CONFIG_DIR_KEY
 from .resources import resources
-
+from .settings import CONFIG_SCHEMA
 
 log = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ def add_cli_options(argument_parser, default_config):
     return argument_parser
 
 
-def config_from_options(options, vars=None): # pylint: disable=W0622
+def config_from_options(options, schema, vars=None): # pylint: disable=W0622
     if vars is None:
         vars = os.environ
 
@@ -49,7 +48,17 @@ def config_from_options(options, vars=None): # pylint: disable=W0622
 
     log.debug("loading %s", options.config)
 
-    return commandline.config_from_options(options, trafaret=CONFIG_SCHEMA, vars=vars)
+    return commandline.config_from_options(options, trafaret=schema, vars=vars)
+
+
+
+
+
+
+
+
+
+
 
 def read_and_validate(filepath, vars=None): # pylint: disable=W0622
     if vars is None:

@@ -17,7 +17,7 @@ log = logging.getLogger(__file__)
 
 
 def get_client_outdir(app: web.Application) -> Path:
-    cfg = app[APP_CONFIG_KEY]["app"]
+    cfg = app[APP_CONFIG_KEY]["main"]
 
     client_dir = Path(cfg["client_outdir"]).expanduser()
     if not client_dir.exists():

@@ -27,7 +27,7 @@ def setup(app: web.Application):
         specs = openapi.create_specs(openapi_path)
 
         # sets servers variables to current server's config
-        app_config = app[APP_CONFIG_KEY]['app'] # TODO: define appconfig key based on config schema
+        app_config = app[APP_CONFIG_KEY]["main"] # TODO: define appconfig key based on config schema
 
         if app_config.get('testing', True):
             # FIXME: host/port in host side!  Consider

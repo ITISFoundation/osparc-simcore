@@ -40,7 +40,7 @@ def cli(loop, aiohttp_client, mock_services, server_test_configfile):
     config = read_and_validate( server_test_configfile )
 
     assert "POSTGRES_PORT" in os.environ
-    assert config["app"]["testing"] == True
+    assert config["main"]["testing"] == True
 
     app = create_application(config)
     client = loop.run_until_complete(aiohttp_client(app))

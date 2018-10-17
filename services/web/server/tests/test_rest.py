@@ -45,7 +45,7 @@ def client(loop, aiohttp_unused_port, aiohttp_client):
     app = web.Application()
 
     server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
-    app[APP_CONFIG_KEY] = { 'app': server_kwargs } # Fake config
+    app[APP_CONFIG_KEY] = { "main": server_kwargs } # Fake config
 
     # activates only security+restAPI sub-modules
     setup_security(app)

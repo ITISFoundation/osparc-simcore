@@ -1,5 +1,5 @@
 version: '1.0'
-app:
+main:
   client_outdir: /usr/src/app/client
   host: 127.0.0.1
   log_level: DEBUG

@@ -9,7 +9,7 @@ Why does this file exist, and why __main__? For more info, read:
 """
 import sys
 
-from simcore_service_storage.cli import main
+from simcore_service_webserver.cli import main
 
 if __name__ == "__main__":
     sys.exit(main())

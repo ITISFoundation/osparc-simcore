@@ -12,13 +12,12 @@ import logging
 import aiopg.sa
 
 from ..comp_backend_api import init_database as _init_db
-from ..application_keys import APP_CONFIG_KEY
+from ..application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 
 # FIXME: _init_db is temporary here so database gets properly initialized
 
 log = logging.getLogger(__name__)
 
-APP_ENGINE_KEY = 'db_engine'
 DB_SERVICE_NAME = 'postgres'
 
 class RecordNotFound(Exception):
@@ -28,7 +27,7 @@ def is_dbservice_ready(app):
     # TODO: create service states!!!!
     # FIXME: this does not accout for status of the other engine!!!
     try:
-        return app[APP_ENGINE_KEY] is not None
+        return app[APP_DB_ENGINE_KEY] is not None
     except KeyError:
         return False
 
@@ -53,18 +52,18 @@ async def create_aiopg(app):
             maxsize=conf["maxsize"],
         )
 
-        app[APP_ENGINE_KEY] = engine
+        app[APP_DB_ENGINE_KEY] = engine
         log.debug("db engine created")
 
     except Exception: #pylint: disable=W0703
-        app[APP_ENGINE_KEY] = None
+        app[APP_DB_ENGINE_KEY] = None
         log.exception("db engine failed")
 
 
 async def dispose_aiopg(app):
     log.debug("closing db engine ...")
 
-    engine = app[APP_ENGINE_KEY]
+    engine = app[APP_DB_ENGINE_KEY]
     if engine:
         engine.close()
         await engine.wait_closed()
@@ -75,9 +74,9 @@ async def dispose_aiopg(app):
 def setup_db(app):
     log.debug("Setting up %s [service: %s] ...", __name__, DB_SERVICE_NAME)
 
-    disable_services = app[APP_CONFIG_KEY].get("app", {}).get("disable_services",[])
+    disable_services = app[APP_CONFIG_KEY].get("main", {}).get("disable_services",[])
     if DB_SERVICE_NAME in disable_services:
-        app[APP_ENGINE_KEY] = None
+        app[APP_DB_ENGINE_KEY] = None
         log.warning("Service '%s' explicitly disabled in config", DB_SERVICE_NAME)
         return
 

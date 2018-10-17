@@ -36,7 +36,7 @@ def create_configfile_schema():
     #   - parse/format version in schema
     return T.Dict({
         "version": T.String(),
-        T.Key("app"): _APP_SCHEMA,
+        T.Key("main"): _APP_SCHEMA,
         T.Key("director"): _DIRECTOR_SCHEMA,
         T.Key("postgres"): db.CONFIG_SCHEMA,
         T.Key("rabbit"): rabbit.CONFIG_SCHEMA,

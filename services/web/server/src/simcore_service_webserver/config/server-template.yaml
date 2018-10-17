@@ -1,6 +1,6 @@
 ---
 version: "1.0"
-app:
+main:
   host: 127.0.0.1
   port: 8080
   client_outdir: ${SIMCORE_WEB_OUTDIR}

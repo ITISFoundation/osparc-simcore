@@ -43,8 +43,8 @@ def run_service(config):
 
     app = create_application(config)
     web.run_app(app,
-                host=config["app"]["host"],
-                port=config["app"]["port"])
+                host=config["main"]["host"],
+                port=config["main"]["port"])
 
 
 __all__ = (

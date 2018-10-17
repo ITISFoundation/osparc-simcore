@@ -16,8 +16,10 @@ import argparse
 import logging
 import sys
 
-from . import cli_config
+from .cli_config import add_cli_options, config_from_options
+from .settings import CLI_DEFAULT_CONFIGFILE
 from .application import run_service
+from .settings import CONFIG_SCHEMA
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +32,7 @@ def setup(parser):
     parser.add_argument('names', metavar='NAME', nargs=argparse.ZERO_OR_MORE,
                     help="A name of something.")
 
-    cli_config.add_cli_options(parser)
+    add_cli_options(parser, CLI_DEFAULT_CONFIGFILE)
 
     # Add here more options ....
 
@@ -41,7 +43,7 @@ def parse(args, parser):
 
     # ignore unknown options
     options, _ = parser.parse_known_args(args)
-    config = cli_config.config_from_options(options)
+    config = config_from_options(options, CONFIG_SCHEMA)
 
     # TODO: check whether extra options can be added to the config?!
     return config
@@ -52,6 +54,8 @@ def main(args=None):
 
     setup(parser)
     config = parse(args, parser)
+
+    import pdb; pdb.set_trace()
 
     # TODO: improve keys!
     log_level = config["main"]["log_level"]
