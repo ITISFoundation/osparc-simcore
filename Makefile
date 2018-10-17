@@ -19,7 +19,7 @@ export HOST_GID=1000
 # TODO: Add a meaningfull call to retrieve the local docker group ID and the user ID in linux.
 endif
 
-PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*-sdk/python*" -not -path "*generated_code*"))
+PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*-sdk/python*" -not -path "*generated_code*" -not -path "*datcore.py"))
 
 export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
@@ -94,6 +94,7 @@ run_test:
 	pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
 	pytest --cov=simcore_service_webserver -v services/web/server/tests
 	pytest --cov=simcore_service_director -v services/director/tests
+	pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
 
 after_test:
 	# leave a clean slate (not sure whether this is actually needed)
@@ -132,8 +133,14 @@ push_platform_images:
 .venv:
 	python3 -m venv .venv
 	.venv/bin/pip3 install --upgrade pip wheel setuptools
-	.venv/bin/pip3 install pylint autopep8
+	.venv/bin/pip3 install pylint autopep8 virtualenv
 	@echo "To activate the venv, execute 'source .venv/bin/activate' or '.venv/bin/activate.bat' (WIN)"
+
+.venv27: .venv
+	@python2 --version
+	.venv/bin/virtualenv --python=python2 .venv27
+	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
+
 
 
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images
