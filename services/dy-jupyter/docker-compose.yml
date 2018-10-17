@@ -1,49 +1,34 @@
-version: '3'
+version: '3.6'
 services:
   jupyter-base-notebook:
+    image: ${REGISTRY_KEY}jupyter-base-notebook:${SERVICES_VERSION}
     build:
+      context: ../../
+      dockerfile: services/dy-jupyter/Dockerfile
+      target: production
       args: 
         BASE_IMAGE: jupyter/base-notebook
-      image: masu.speag.com/simcore/services/jupyter-base-notebook
-      labels: 
-        io.simcore.key: '{"key": "simcore/services/jupyter-base-notebook"}'        
-        io.simcore.tag: '{"tag": "${SERVICES_VERSION}"}'
-        io.simcore.name: '{"name": "jupyter-base-notebook"}'
-        io.simcore.description: '{"description": "Jupyter notebook using base docker image"}'
-        io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
-        io.simcore.authors: '{"authors": [{"name": "sanderegg", "email": ""anderegg@itis.swiss"", "affiliation": "ITIS Foundation"}]}'
-        io.simcore.inputs: '{"inputs": []}'
-        io.simcore.outputs: '{"outputs": []}'
-        io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
-        simcore.service.settings: '[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
-        org.label-schema.url: 'http://jupyter.org/'
-        org.label-schema.vcs-url: 'https://github.com/jupyter/docker-stacks'
-        org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        SERVICE_NAME: jupyter-base-notebook
+        SERVICE_KEY: simcore/services/jupyter-base-notebook
+        SERVICE_VERSION: ${SERVICES_VERSION}
+        BUILD_DATE: ${BUILD_DATE}
+        VCS_REF: ${VCS_REF}
     ports:
       - '8888:8888'
-  #--------------------------------------------------------------------
+#--------------------------------------------------------------------
   jupyter-scipy-notebook:
+    image: ${REGISTRY_KEY}jupyter-scipy-notebook:${SERVICES_VERSION}
     build:
+      context: ../../
+      dockerfile: services/dy-jupyter/Dockerfile
+      target: production
       args: 
         BASE_IMAGE: jupyter/scipy-notebook
-      image: masu.speag.com/simcore/services/jupyter-scipy-notebook
-      labels: 
-        io.simcore.key: '{"key": "simcore/services/jupyter-scipy-notebook"}'        
-        io.simcore.tag: '{"tag": "${SERVICES_VERSION}"}'
-        io.simcore.name: '{"name": "jupyter-scipy-notebook"}'
-        io.simcore.description: '{"description": "Jupyter notebook using base docker image"}'
-        io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
-        io.simcore.authors: '{"authors": [{"name": "sanderegg", "email": ""anderegg@itis.swiss"", "affiliation": "ITIS Foundation"}]}'
-        io.simcore.inputs: '{"inputs": []}'
-        io.simcore.outputs: '{"outputs": []}'
-        io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
-        simcore.service.settings: '[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
-        org.label-schema.url: 'http://jupyter.org/'
-        org.label-schema.vcs-url: 'https://github.com/jupyter/docker-stacks'
-        org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        SERVICE_NAME: jupyter-scipy-notebook
+        SERVICE_KEY: simcore/services/jupyter-scipy-notebook
+        SERVICE_VERSION: ${SERVICES_VERSION}
+        BUILD_DATE: ${BUILD_DATE}
+        VCS_REF: ${VCS_REF}
     ports:
       - '8889:8888'
+  
