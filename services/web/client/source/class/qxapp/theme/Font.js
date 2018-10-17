@@ -9,7 +9,14 @@
 ************************************************************************ */
 
 qx.Theme.define("qxapp.theme.Font", {
-  extend: qx.theme.indigo.Font,
+  extend: osparc.theme.osparcdark.Font,
 
-  fonts: {}
+  fonts: {
+    "nav-bar-label": {
+      size: 20,
+      family: ["Roboto"],
+      color: "text",
+      bold: true
+    }
+  }
 });

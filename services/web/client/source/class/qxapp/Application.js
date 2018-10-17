@@ -118,11 +118,20 @@ qx.Class.define("qxapp.Application", {
         let data = e.getTarget().getResponse();
         try {
           let ajv = new qxapp.wrappers.Ajv(data);
-          let map = qxapp.data.Store.getInstance().getServices();
+          let map = qxapp.data.Store.getInstance().getFakeServices();
           for (let key in map) {
             let check = ajv.validate(map[key]);
             console.log("services validation result " + key + ":", check);
           }
+          /*
+          let servicesPromise = new qx.Promise(qxapp.data.Store.getInstance().getServices, this);
+          servicesPromise.then(function(map) {
+            for (let key in map) {
+              let check = ajv.validate(map[key]);
+              console.log("services validation result " + key + ":", check);
+            }
+          });
+          */
         } catch (err) {
           console.error(err);
         }

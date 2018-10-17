@@ -1,5 +1,13 @@
 version: '3.4'
-services:
+services:  
+  apihub:
+    build:
+      context: ../
+      dockerfile: services/apihub/Dockerfile
+      target: production
+    ports:
+      - '8043:8043'
+#--------------------------------------------------------------------
   director:
     build:
       context: ../
@@ -132,8 +140,7 @@ services:
       - "5000:5000"
     volumes: 
       - registry:/var/lib/registry
-    
-  #--------------------------------------------------------------------
+    #--------------------------------------------------------------------
 volumes:
   input:
   output:

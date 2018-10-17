@@ -87,6 +87,8 @@ before_test:
 	${DOCKER_COMPOSE} -f packages/simcore-sdk/tests/docker-compose.yml build
 
 run_test:
+	pytest -v apis/tests
+	pytest -v services/apihub/tests
 	pytest --cov=pytest_docker -v packages/pytest_docker/tests
 	pytest --cov=s3wrapper -v packages/s3wrapper/tests
 	pytest --cov=simcore_sdk -v packages/simcore-sdk/tests

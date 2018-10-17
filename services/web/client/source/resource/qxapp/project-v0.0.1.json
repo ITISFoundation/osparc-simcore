@@ -5,6 +5,7 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "projectUuid",
     "name",
     "description",
     "notes",
@@ -12,9 +13,18 @@
     "collaborators",
     "creationDate",
     "lastChangeDate",
+    "thumbnail",
     "workbench"
   ],
   "properties": {
+    "projectUuid": {
+      "type": "string",
+      "description": "project unique identifier",
+      "examples": [
+        "07640335-a91f-468c-ab69-a374fa82078d",
+        "9bcf8feb-c1b1-41b6-b201-639cd6ccdba8"
+      ]
+    },
     "name": {
       "type": "string",
       "description": "project name",
@@ -70,6 +80,13 @@
       "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}Z",
       "examples": [
         "2018-07-01T11:13:43Z"
+      ]
+    },
+    "thumbnail": {
+      "type": "string",
+      "description": "url of the latest screenshot of the project",
+      "examples": [
+        "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
       ]
     },
     "workbench": {
@@ -184,6 +201,17 @@
                   ]
                 }
               }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "node IDs of where the node is connected to",
+              "examples": [
+                "nodeUuid1",
+                "nodeUuid2"
+              ]
             },
             "position": {
               "type": "object",

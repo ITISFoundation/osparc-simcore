@@ -1,6 +1,6 @@
 /* global window */
 
-qx.Class.define("qxapp.components.MenuBar", {
+qx.Class.define("qxapp.component.MenuBar", {
   extend: qx.ui.container.Composite,
 
   include: [qx.locale.MTranslation],

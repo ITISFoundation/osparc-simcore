@@ -1,0 +1,5 @@
+coveralls~=1.3
+jsonschema~=2.6
+openapi_spec_validator
+pytest~=3.6
+pytest-cov~=2.5

@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.components.Preferences", {
+qx.Class.define("qxapp.component.Preferences", {
   extend: qx.ui.window.Window,
 
   include: [qx.locale.MTranslation],

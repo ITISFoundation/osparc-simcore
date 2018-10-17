@@ -1,7 +1,7 @@
 /* eslint no-warning-comments: "off" */
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true, "allow": ["__widgetChildren"] }] */
 
-qx.Class.define("qxapp.components.EntityList", {
+qx.Class.define("qxapp.component.EntityList", {
   extend: qx.ui.window.Window,
 
   include: [qx.locale.MTranslation],
