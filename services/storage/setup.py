@@ -12,7 +12,7 @@ from setuptools import find_packages, setup
 _CDIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 if sys.version_info < (3, 6):
-    raise RuntimeError("Requires >=3.6, got %s. Did you forget to activate virtualenv?" % sys.version_info)
+    raise RuntimeError("Requires 3.6, got %s. Did you forget to activate virtualenv?" % sys.version_info)
 
 def list_datafiles_at(*locations):
     def _listdir(root, wildcard='*'):
@@ -37,9 +37,7 @@ def list_packages(*parts):
         pkg_names = [line.strip() for line in f.readlines() if not COMMENT.match(line)]
     return pkg_names
 
-#####################################################################################
-# NOTE see https://packaging.python.org/discussions/install-requires-vs-requirements/
-
+#-----------------------------------------------------------------
 
 _CONFIG = dict(
     name='simcore-service-storage',
@@ -67,9 +65,6 @@ _CONFIG = dict(
             'oas3/*.yml',
             ],
     },
-    #data_files = list_datafiles_at(
-    #    "etc/", # Contain the configuration files for all the programs that run on your system.
-    #),
     entry_points={
         'console_scripts': [
             'simcore-service-storage = simcore_service_storage.cli:main',
@@ -79,7 +74,7 @@ _CONFIG = dict(
 
 
 def main():
-    """ Execute the setup commands.
+    """ Execute the setup commands
 
     """
     setup(**_CONFIG)

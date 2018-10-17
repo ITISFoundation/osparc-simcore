@@ -5,7 +5,7 @@ from pathlib import Path
 
 import openapi_core
 import yaml
-from openapi_core.schema.exceptions import OpenAPIError, OpenAPIMappingError #
+from openapi_core.schema.exceptions import OpenAPIError, OpenAPIMappingError #pylint: disable=W0611
 from openapi_core.schema.specs.models import Spec
 
 # Supported version of openapi
