@@ -241,42 +241,42 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         socket.on(slotName, function(val) {
           const {
             data,
-            status
+            error
           } = val;
-          if (status == 201) {
-            const publishedPort = data["published_port"];
-            const entryPointD = data["entry_point"];
-            const nodeId = data["service_uuid"];
-            if (nodeId !== this.getNodeId()) {
-              return;
-            }
-            if (publishedPort) {
-              const entryPoint = entryPointD ? ("/" + entryPointD) : "";
-              const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
-              this.setServiceUrl(srvUrl);
-              let button = new qx.ui.form.Button().set({
-                icon: "@FontAwesome5Solid/play-circle/32"
-              });
-              this.set({
-                viewerButton: button
-              });
-              button.addListener("execute", e => {
-                this.fireDataEvent("ShowViewer", {
-                  url: srvUrl,
-                  name: this.getLabel(),
-                  nodeId: this.getNodeId()
-                });
-              }, this);
-              const msg = "Service ready on " + srvUrl;
-              const msgData = {
-                nodeLabel: this.getLabel(),
-                msg: msg
-              };
-              this.fireDataEvent("ShowInLogger", msgData);
-              console.log(this.getLabel(), msg);
-            }
-          } else {
+          if (error) {
             console.error("Error starting dynamic service: ", data);
+            return;
+          }
+          const publishedPort = data["published_port"];
+          const entryPointD = data["entry_point"];
+          const nodeId = data["service_uuid"];
+          if (nodeId !== this.getNodeId()) {
+            return;
+          }
+          if (publishedPort) {
+            const entryPoint = entryPointD ? ("/" + entryPointD) : "";
+            const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
+            this.setServiceUrl(srvUrl);
+            let button = new qx.ui.form.Button().set({
+              icon: "@FontAwesome5Solid/play-circle/32"
+            });
+            this.set({
+              viewerButton: button
+            });
+            button.addListener("execute", e => {
+              this.fireDataEvent("ShowViewer", {
+                url: srvUrl,
+                name: this.getLabel(),
+                nodeId: this.getNodeId()
+              });
+            }, this);
+            const msg = "Service ready on " + srvUrl;
+            const msgData = {
+              nodeLabel: this.getLabel(),
+              msg: msg
+            };
+            this.fireDataEvent("ShowInLogger", msgData);
+            console.log(this.getLabel(), msg);
           }
         }, this);
         let data = {

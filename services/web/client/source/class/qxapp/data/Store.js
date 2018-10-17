@@ -837,34 +837,33 @@ qx.Class.define("qxapp.data.Store", {
         let requ = e.getTarget();
         const {
           data,
-          status
+          error
         } = requ.getResponse();
-        if (status >= 200 && status <= 299) {
-          const listOfRepositories = data;
-          let services = Object.assign({}, this.getBuiltInServices());
-          for (const key in listOfRepositories) {
-            const repoData = listOfRepositories[key];
-            const nodeImageId = repoData.key + "-" + repoData.version;
-            services[nodeImageId] = repoData;
-          }
-          if (this.__servicesCache === null) {
-            this.__servicesCache = {};
-          }
-          this.__servicesCache = Object.assign(this.__servicesCache, services);
-          this.fireDataEvent("servicesRegistered", services);
-        } else {
-          // error
-          console.error("Error retrieving services: ", data);
+        if (error) {
+          console.error("Error retrieving services: ", error);
+          return;
         }
+        const listOfRepositories = data;
+        let services = Object.assign({}, this.getBuiltInServices());
+        for (const key in listOfRepositories) {
+          const repoData = listOfRepositories[key];
+          const nodeImageId = repoData.key + "-" + repoData.version;
+          services[nodeImageId] = repoData;
+        }
+        if (this.__servicesCache === null) {
+          this.__servicesCache = {};
+        }
+        this.__servicesCache = Object.assign(this.__servicesCache, services);
+        this.fireDataEvent("servicesRegistered", services);
       }, this);
 
       req.addListener("fail", e => {
         let requ = e.getTarget();
         const {
           data,
-          status
+          error
         } = requ.getResponse();
-        console.log("getServices failed", data, status);
+        console.log("getServices failed", data, error);
         let services = this.getFakeServices();
         if (this.__servicesCache === null) {
           this.__servicesCache = {};
