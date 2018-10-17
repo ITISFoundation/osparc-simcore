@@ -24,14 +24,18 @@ pushd $ROOTDIR/services/sidecar
 pip3 install -r requirements/dev.txt
 popd
 
-# find . -type d -name "*.egg*" | xargs chmod -R g+w
-for a_folder in `find $ROOTDIR -type d \( -name "*.egg*" \)`
-do
-  chmod -R g+w $a_folder
-done
+pushd $WORKDIR/services/storage
+pip3 install -r requirements/dev.txt
+popd
 
 #for package_dir in setup_dirs; do
 #  pushd package_dir
 #  pip3 install -r requirements/dev.txt
 #  popd
 #done
+
+# find . -type d -name "*.egg*" | xargs chmod -R g+w
+for a_folder in `find $ROOTDIR -type d \( -name "*.egg*" \)`
+do
+  chmod -R g+w $a_folder
+done

@@ -1,0 +1,25 @@
+main:
+  disable_services: ['postgres', 's3']
+  host: 127.0.0.1
+  log_level: INFO
+  port: 8080
+  testing: true
+  python2: ~/devp/osparc-simcore/.venv2 #${VENV2}
+  test_datcore:
+     api_token: ${BF_API_KEY}
+     api_secret: ${BF_API_SECRET}
+postgres:
+  database: simcoredb
+  endpoint: postgres:5432
+  host: localhost
+  maxsize: 5
+  minsize: 1
+  password: simcore
+  port: 5432
+  user: simcore
+s3:
+  access_key: '12345678'
+  bucket_name: simcore
+  endpoint: minio:9000
+  secret_key: '12345678'
+version: '1.0'

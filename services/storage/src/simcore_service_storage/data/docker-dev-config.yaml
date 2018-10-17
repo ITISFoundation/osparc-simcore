@@ -1,0 +1,21 @@
+main:
+  host: 0.0.0.0
+  log_level: INFO
+  port: 8080
+  testing: true
+  python2: ${VENV2}
+postgres:
+  database: simcoredb
+  endpoint: postgres:5432
+  host: localhost
+  maxsize: 5
+  minsize: 1
+  password: simcore
+  port: 5432
+  user: simcore
+s3:
+  access_key: '12345678'
+  bucket_name: simcore
+  endpoint: minio:9000
+  secret_key: '12345678'
+version: '1.0'

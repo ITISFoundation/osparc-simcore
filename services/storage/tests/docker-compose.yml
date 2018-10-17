@@ -1,0 +1,26 @@
+version: '3.4'
+services:
+  postgres:
+    image: postgres:10
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-aio_login_tests}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+    ports:
+      - '5432:5432'
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 18080:8080
+    depends_on:
+      - postgres
+  minio:
+    image: minio/minio
+    environment:
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-12345678}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-12345678}
+    ports:
+      - "9001:9000"
+    command: server /data
