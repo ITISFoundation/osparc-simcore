@@ -1,22 +1,49 @@
-version: '3.4'
+version: '3'
 services:
   jupyter-base-notebook:
     build:
-      context: base-notebook
       args: 
-        VCS_REF: 
-        BUILD_DATE:
+        BASE_IMAGE: jupyter/base-notebook
+      image: masu.speag.com/simcore/services/jupyter-base-notebook
       labels: 
-        io.simcore.key: '{"key": "simcore/services/jupyter-base-notebook"}'
-        io.simcore.outputs: '{"outputs": []}'
-        io.simcore.tag: '{"tag": "1.2.1"}'
+        io.simcore.key: '{"key": "simcore/services/jupyter-base-notebook"}'        
+        io.simcore.tag: '{"tag": "${SERVICES_VERSION}"}'
         io.simcore.name: '{"name": "jupyter-base-notebook"}'
         io.simcore.description: '{"description": "Jupyter notebook using base docker image"}'
-        io.simcore.contact: '{"contact": "anderegg@itis.ethz.ch"}'
-        io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email": "anderegg@itis.ethz.ch", "affiliation": "ITIS Foundation"}]}'
+        io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
+        io.simcore.authors: '{"authors": [{"name": "sanderegg", "email": ""anderegg@itis.swiss"", "affiliation": "ITIS Foundation"}]}'
         io.simcore.inputs: '{"inputs": []}'
+        io.simcore.outputs: '{"outputs": []}'
         io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
+        simcore.service.settings: '[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        org.label-schema.url: 'http://jupyter.org/'
+        org.label-schema.vcs-url: 'https://github.com/jupyter/docker-stacks'
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '8888:8888'
   #--------------------------------------------------------------------
-  
+  jupyter-scipy-notebook:
+    build:
+      args: 
+        BASE_IMAGE: jupyter/scipy-notebook
+      image: masu.speag.com/simcore/services/jupyter-scipy-notebook
+      labels: 
+        io.simcore.key: '{"key": "simcore/services/jupyter-scipy-notebook"}'        
+        io.simcore.tag: '{"tag": "${SERVICES_VERSION}"}'
+        io.simcore.name: '{"name": "jupyter-scipy-notebook"}'
+        io.simcore.description: '{"description": "Jupyter notebook using base docker image"}'
+        io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
+        io.simcore.authors: '{"authors": [{"name": "sanderegg", "email": ""anderegg@itis.swiss"", "affiliation": "ITIS Foundation"}]}'
+        io.simcore.inputs: '{"inputs": []}'
+        io.simcore.outputs: '{"outputs": []}'
+        io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
+        simcore.service.settings: '[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        org.label-schema.url: 'http://jupyter.org/'
+        org.label-schema.vcs-url: 'https://github.com/jupyter/docker-stacks'
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-ref: "${VCS_REF}"
+    ports:
+      - '8889:8888'

@@ -1,9 +1,17 @@
 VERSION := $(shell cat /proc/version)
 # SAN this is a hack so that docker-compose works in the linux virtual environment under Windows
 ifneq (,$(findstring Microsoft,$(VERSION)))
+# executing from bash
+@echo 'detected WSL'
+export DOCKER_COMPOSE=docker-compose
+export DOCKER=docker
+ifeq ($(OS), Windows_NT)
+@echo 'detected Powershell/CMD'
+# executing from powershell
 export DOCKER_COMPOSE=docker-compose.exe
 export DOCKER=docker.exe
 else
+@echo 'detected native linux'
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
@@ -25,7 +33,7 @@ up:
 down:
 	${DOCKER_COMPOSE} -f docker-compose.yml down
 
-SERVICES_VERSION=1.3
+SERVICES_VERSION=1.4.0
 JUPYTER_SERVICE_NAME=masu.speag.com/simcore/services/jupyter-base-notebook
 push_service_images:
 	${DOCKER} login masu.speag.com
