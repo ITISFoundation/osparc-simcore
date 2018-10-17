@@ -6,7 +6,7 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
-from .inline_response_default_data import InlineResponseDefaultData  # noqa: F401,E501
+from .inline_response_default_error import InlineResponseDefaultError  # noqa: F401,E501
 from .. import util
 
 
@@ -16,26 +16,26 @@ class InlineResponseDefault(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: InlineResponseDefaultData=None, status: int=None):  # noqa: E501
+    def __init__(self, data: object=None, error: InlineResponseDefaultError=None):  # noqa: E501
         """InlineResponseDefault - a model defined in OpenAPI
 
         :param data: The data of this InlineResponseDefault.  # noqa: E501
-        :type data: InlineResponseDefaultData
-        :param status: The status of this InlineResponseDefault.  # noqa: E501
-        :type status: int
+        :type data: object
+        :param error: The error of this InlineResponseDefault.  # noqa: E501
+        :type error: InlineResponseDefaultError
         """
         self.openapi_types = {
-            'data': InlineResponseDefaultData,
-            'status': int
+            'data': object,
+            'error': InlineResponseDefaultError
         }
 
         self.attribute_map = {
             'data': 'data',
-            'status': 'status'
+            'error': 'error'
         }
 
         self._data = data
-        self._status = status
+        self._error = error
 
     @classmethod
     def from_dict(cls, dikt) -> 'InlineResponseDefault':
@@ -49,43 +49,43 @@ class InlineResponseDefault(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def data(self) -> InlineResponseDefaultData:
+    def data(self) -> object:
         """Gets the data of this InlineResponseDefault.
 
 
         :return: The data of this InlineResponseDefault.
-        :rtype: InlineResponseDefaultData
+        :rtype: object
         """
         return self._data
 
     @data.setter
-    def data(self, data: InlineResponseDefaultData):
+    def data(self, data: object):
         """Sets the data of this InlineResponseDefault.
 
 
         :param data: The data of this InlineResponseDefault.
-        :type data: InlineResponseDefaultData
+        :type data: object
         """
 
         self._data = data
 
     @property
-    def status(self) -> int:
-        """Gets the status of this InlineResponseDefault.
+    def error(self) -> InlineResponseDefaultError:
+        """Gets the error of this InlineResponseDefault.
 
 
-        :return: The status of this InlineResponseDefault.
-        :rtype: int
+        :return: The error of this InlineResponseDefault.
+        :rtype: InlineResponseDefaultError
         """
-        return self._status
+        return self._error
 
-    @status.setter
-    def status(self, status: int):
-        """Sets the status of this InlineResponseDefault.
+    @error.setter
+    def error(self, error: InlineResponseDefaultError):
+        """Sets the error of this InlineResponseDefault.
 
 
-        :param status: The status of this InlineResponseDefault.
-        :type status: int
+        :param error: The error of this InlineResponseDefault.
+        :type error: InlineResponseDefaultError
         """
 
-        self._status = status
+        self._error = error

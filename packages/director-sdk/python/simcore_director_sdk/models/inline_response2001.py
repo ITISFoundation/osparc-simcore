@@ -33,25 +33,25 @@ class InlineResponse2001(object):
     """
     openapi_types = {
         'data': 'list[SimcoreNode]',
-        'status': 'int'
+        'error': 'object'
     }
 
     attribute_map = {
         'data': 'data',
-        'status': 'status'
+        'error': 'error'
     }
 
-    def __init__(self, data=None, status=None):  # noqa: E501
+    def __init__(self, data=None, error=None):  # noqa: E501
         """InlineResponse2001 - a model defined in OpenAPI"""  # noqa: E501
 
         self._data = None
-        self._status = None
+        self._error = None
         self.discriminator = None
 
         if data is not None:
             self.data = data
-        if status is not None:
-            self.status = status
+        if error is not None:
+            self.error = error
 
     @property
     def data(self):
@@ -75,25 +75,25 @@ class InlineResponse2001(object):
         self._data = data
 
     @property
-    def status(self):
-        """Gets the status of this InlineResponse2001.  # noqa: E501
+    def error(self):
+        """Gets the error of this InlineResponse2001.  # noqa: E501
 
 
-        :return: The status of this InlineResponse2001.  # noqa: E501
-        :rtype: int
+        :return: The error of this InlineResponse2001.  # noqa: E501
+        :rtype: object
         """
-        return self._status
+        return self._error
 
-    @status.setter
-    def status(self, status):
-        """Sets the status of this InlineResponse2001.
+    @error.setter
+    def error(self, error):
+        """Sets the error of this InlineResponse2001.
 
 
-        :param status: The status of this InlineResponse2001.  # noqa: E501
-        :type: int
+        :param error: The error of this InlineResponse2001.  # noqa: E501
+        :type: object
         """
 
-        self._status = status
+        self._error = error
 
     def to_dict(self):
         """Returns the model properties as a dict"""

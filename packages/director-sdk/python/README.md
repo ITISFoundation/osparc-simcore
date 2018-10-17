@@ -87,7 +87,7 @@ Class | Method | HTTP request | Description
  - [InlineResponse201Data](docs/InlineResponse201Data.md)
  - [InlineResponse204](docs/InlineResponse204.md)
  - [InlineResponseDefault](docs/InlineResponseDefault.md)
- - [InlineResponseDefaultData](docs/InlineResponseDefaultData.md)
+ - [InlineResponseDefaultError](docs/InlineResponseDefaultError.md)
  - [SimcoreNode](docs/SimcoreNode.md)
 
 

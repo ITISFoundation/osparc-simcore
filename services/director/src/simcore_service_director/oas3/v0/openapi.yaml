@@ -101,9 +101,13 @@ paths:
                         example: 1dfcfdc
                         type: string
                     type: object
-                  status:
-                    example: 200
-                    type: integer
+                  error:
+                    default: null
+                    nullable: true
+                    type: object
+                required:
+                - data
+                - error
                 type: object
           description: Service information
         default:
@@ -112,6 +116,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -133,9 +141,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Unexpected error
       summary: Service health-check endpoint
@@ -198,9 +206,13 @@ paths:
                     - published_port
                     - service_uuid
                     type: object
-                  status:
-                    example: 200
-                    type: integer
+                  error:
+                    default: null
+                    nullable: true
+                    type: object
+                required:
+                - data
+                - error
                 type: object
           description: Succesfully created the service in the oSparc platform. Returns
             the location where the service runs.
@@ -210,6 +222,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -231,9 +247,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Malformed function call, missing field
         '401':
@@ -242,6 +258,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -263,9 +283,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Unauthorized access
         '404':
@@ -274,6 +294,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -295,9 +319,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Service not found
         '409':
@@ -306,6 +330,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -327,9 +355,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: A service with the same uuid already exists
         default:
@@ -338,6 +366,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -359,9 +391,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Unexpected error
       summary: Starts an interactive service in the oSparc platform and returns its
@@ -388,14 +420,16 @@ paths:
               schema:
                 properties:
                   data:
-                    default: 'null'
-                    example: 'null'
+                    default: null
                     nullable: true
-                    type: string
-                  status:
-                    default: 204
-                    example: 204
-                    type: integer
+                    type: object
+                  error:
+                    default: null
+                    nullable: true
+                    type: object
+                required:
+                - data
+                - error
                 type: object
           description: Succesfully stopped and removed the service from the oSparc
             platform
@@ -405,6 +439,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -426,9 +464,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Malformed function call, missing field
         '404':
@@ -437,6 +475,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -458,9 +500,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Service not found
         default:
@@ -469,6 +511,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -490,9 +536,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Unexpected error
       summary: Stops and removes an interactive service from the oSparc platform
@@ -518,14 +564,16 @@ paths:
               schema:
                 properties:
                   data:
-                    default: 'null'
-                    example: 'null'
+                    default: null
                     nullable: true
-                    type: string
-                  status:
-                    default: 204
-                    example: 204
-                    type: integer
+                    type: object
+                  error:
+                    default: null
+                    nullable: true
+                    type: object
+                required:
+                - data
+                - error
                 type: object
           description: OK service exists and runs
         '400':
@@ -534,6 +582,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -555,9 +607,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Malformed function call, missing field
         '404':
@@ -566,6 +618,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -587,9 +643,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Service not found
         default:
@@ -598,6 +654,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -619,9 +679,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Unexpected error
       summary: Succesfully returns if a service with the defined uuid is up and running
@@ -915,9 +975,13 @@ paths:
                       title: simcore node
                       type: object
                     type: array
-                  status:
-                    example: 200
-                    type: integer
+                  error:
+                    default: null
+                    nullable: true
+                    type: object
+                required:
+                - data
+                - error
                 type: object
           description: Success, returns the list of available services
         '401':
@@ -926,6 +990,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -947,9 +1015,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Unauthorized access
         default:
@@ -958,6 +1026,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -979,9 +1051,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Unexpected error
       summary: Lists available services in the oSparc platform
@@ -1280,9 +1352,13 @@ paths:
                       title: simcore node
                       type: object
                     type: array
-                  status:
-                    example: 200
-                    type: integer
+                  error:
+                    default: null
+                    nullable: true
+                    type: object
+                required:
+                - data
+                - error
                 type: object
           description: Success, returns the details of the service
         '401':
@@ -1291,6 +1367,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -1312,9 +1392,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Unauthorized access
         '404':
@@ -1323,6 +1403,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -1344,9 +1428,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Service not found
         default:
@@ -1355,6 +1439,10 @@ paths:
               schema:
                 properties:
                   data:
+                    default: null
+                    nullable: true
+                    type: object
+                  error:
                     properties:
                       errors:
                         items:
@@ -1376,9 +1464,9 @@ paths:
                     - status
                     - message
                     type: object
-                  status:
-                    example: 404
-                    type: integer
+                required:
+                - data
+                - error
                 type: object
           description: Unexpected error
       summary: Returns details of the selected service if available in the oSparc

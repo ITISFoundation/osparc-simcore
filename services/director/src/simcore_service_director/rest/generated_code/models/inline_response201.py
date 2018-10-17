@@ -16,26 +16,26 @@ class InlineResponse201(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: InlineResponse201Data=None, status: int=None):  # noqa: E501
+    def __init__(self, data: InlineResponse201Data=None, error: object=None):  # noqa: E501
         """InlineResponse201 - a model defined in OpenAPI
 
         :param data: The data of this InlineResponse201.  # noqa: E501
         :type data: InlineResponse201Data
-        :param status: The status of this InlineResponse201.  # noqa: E501
-        :type status: int
+        :param error: The error of this InlineResponse201.  # noqa: E501
+        :type error: object
         """
         self.openapi_types = {
             'data': InlineResponse201Data,
-            'status': int
+            'error': object
         }
 
         self.attribute_map = {
             'data': 'data',
-            'status': 'status'
+            'error': 'error'
         }
 
         self._data = data
-        self._status = status
+        self._error = error
 
     @classmethod
     def from_dict(cls, dikt) -> 'InlineResponse201':
@@ -70,22 +70,22 @@ class InlineResponse201(Model):
         self._data = data
 
     @property
-    def status(self) -> int:
-        """Gets the status of this InlineResponse201.
+    def error(self) -> object:
+        """Gets the error of this InlineResponse201.
 
 
-        :return: The status of this InlineResponse201.
-        :rtype: int
+        :return: The error of this InlineResponse201.
+        :rtype: object
         """
-        return self._status
+        return self._error
 
-    @status.setter
-    def status(self, status: int):
-        """Sets the status of this InlineResponse201.
+    @error.setter
+    def error(self, error: object):
+        """Sets the error of this InlineResponse201.
 
 
-        :param status: The status of this InlineResponse201.
-        :type status: int
+        :param error: The error of this InlineResponse201.
+        :type error: object
         """
 
-        self._status = status
+        self._error = error

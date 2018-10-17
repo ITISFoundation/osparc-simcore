@@ -1,4 +1,4 @@
-# InlineResponseDefaultData
+# InlineResponseDefaultError
 
 ## Properties
 Name | Type | Description | Notes

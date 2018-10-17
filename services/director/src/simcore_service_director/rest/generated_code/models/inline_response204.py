@@ -15,26 +15,26 @@ class InlineResponse204(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: str='null', status: int=204):  # noqa: E501
+    def __init__(self, data: object=None, error: object=None):  # noqa: E501
         """InlineResponse204 - a model defined in OpenAPI
 
         :param data: The data of this InlineResponse204.  # noqa: E501
-        :type data: str
-        :param status: The status of this InlineResponse204.  # noqa: E501
-        :type status: int
+        :type data: object
+        :param error: The error of this InlineResponse204.  # noqa: E501
+        :type error: object
         """
         self.openapi_types = {
-            'data': str,
-            'status': int
+            'data': object,
+            'error': object
         }
 
         self.attribute_map = {
             'data': 'data',
-            'status': 'status'
+            'error': 'error'
         }
 
         self._data = data
-        self._status = status
+        self._error = error
 
     @classmethod
     def from_dict(cls, dikt) -> 'InlineResponse204':
@@ -48,43 +48,43 @@ class InlineResponse204(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def data(self) -> str:
+    def data(self) -> object:
         """Gets the data of this InlineResponse204.
 
 
         :return: The data of this InlineResponse204.
-        :rtype: str
+        :rtype: object
         """
         return self._data
 
     @data.setter
-    def data(self, data: str):
+    def data(self, data: object):
         """Sets the data of this InlineResponse204.
 
 
         :param data: The data of this InlineResponse204.
-        :type data: str
+        :type data: object
         """
 
         self._data = data
 
     @property
-    def status(self) -> int:
-        """Gets the status of this InlineResponse204.
+    def error(self) -> object:
+        """Gets the error of this InlineResponse204.
 
 
-        :return: The status of this InlineResponse204.
-        :rtype: int
+        :return: The error of this InlineResponse204.
+        :rtype: object
         """
-        return self._status
+        return self._error
 
-    @status.setter
-    def status(self, status: int):
-        """Sets the status of this InlineResponse204.
+    @error.setter
+    def error(self, error: object):
+        """Sets the error of this InlineResponse204.
 
 
-        :param status: The status of this InlineResponse204.
-        :type status: int
+        :param error: The error of this InlineResponse204.
+        :type error: object
         """
 
-        self._status = status
+        self._error = error
