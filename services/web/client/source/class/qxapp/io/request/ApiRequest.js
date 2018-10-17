@@ -6,9 +6,9 @@ qx.Class.define("qxapp.io.request.ApiRequest", {
   extend: qx.io.request.Xhr,
 
   construct: function(url, method) {
-    const prefix = qxapp.io.rest.AbstractResource.API;
+    const baseURL = qxapp.io.rest.AbstractResource.API;
 
-    this.base(arguments, prefix+url, method);
+    this.base(arguments, baseURL+url, method);
     this.set({
       accept: "application/json"
     });

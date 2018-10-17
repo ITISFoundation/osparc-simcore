@@ -110,6 +110,7 @@ def setup(app):
 
     # Once user is identified, an identity string is created for that user
     identity_policy = SessionIdentityPolicy()
+    # TODO: create basic/bearer authentication instead of cookies
 
     # FIXME: cannot guarantee correct config key for db"s engine!
     authorization_policy = DBAuthorizationPolicy(app, "db_engine")
