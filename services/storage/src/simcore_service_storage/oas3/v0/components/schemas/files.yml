@@ -1,0 +1,41 @@
+FileMetaDataEnveloped:
+  type: object
+  required:
+    - data
+    - error
+  properties:
+    data:
+      $ref: '#/FileMetaData'
+      nullable: true
+      default: null
+    error:
+      $ref: "./error.yml#/ErrorType"
+      nullable: true
+      default: null
+
+# TODO: Rename with suffix *Type
+FileMetaData:
+  type: object
+  properties:
+    filename:
+      type: string
+    version:
+      type: string
+    last_accessed:
+      type: number
+    owner:
+      type: string
+      format: uuid
+    storage_location:
+      type: string
+  example:
+    filename: 'test.txt'
+    version: '1.0'
+    last_accessed: 123.122
+    owner: 3e065979-578a-41cb-886f-fc029fae1e93
+    storage_location: simcore.s3
+
+FileMetaDataArray:
+  type: array
+  items:
+    $ref: '#/FileMetaData'
