@@ -2,7 +2,7 @@ import json
 import uuid
 
 import pytest
-from aiohttp import web_exceptions, web
+from aiohttp import web_exceptions
 from simcore_service_director import config, resources, rest
 
 from helpers import json_schema_validator
