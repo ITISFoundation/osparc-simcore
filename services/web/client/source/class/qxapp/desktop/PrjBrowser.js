@@ -6,6 +6,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   construct: function() {
     this.base(arguments, new qx.ui.layout.VBox());
 
+    this.__createControls();
+
     this.__createProjectList();
     this.__createTemplateList();
   },
@@ -19,6 +21,39 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     __list: null,
     __controller2: null,
     __list2: null,
+
+    __createControls: function() {
+      let controlsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+      let newPrjBtn = new qx.ui.form.Button(this.tr("New Project"));
+      newPrjBtn.addListener("execute", function() {
+        this.__newPrjBtnClkd();
+      }, this);
+      controlsLayout.add(newPrjBtn);
+
+      this.add(controlsLayout);
+    },
+
+    __newPrjBtnClkd: function() {
+      let win = new qx.ui.window.Window(this.tr("Create New Project")).set({
+        layout: new qx.ui.layout.Canvas(),
+        contentPadding: 0,
+        showMinimize: false,
+        showMaximize: false,
+        minWidth: 500
+      });
+
+      let newProjectDlg = new qxapp.component.widget.NewProjectDlg();
+      win.add(newProjectDlg, {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+      });
+
+      win.center();
+      win.open();
+    },
 
     __createProjectList: function() {
       // layout
