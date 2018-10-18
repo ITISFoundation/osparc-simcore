@@ -48,16 +48,11 @@ LABEL io.simcore.key=${SERVICE_KEY} \
         org.label-schema.schema-version="1.0" \
         org.label-schema.build-date="${BUILD_DATE}" \
         org.label-schema.vcs-ref="${VCS_REF}"
-# ----------------------------------------------------------------
-# install simcore-sdk
-COPY --chown=jovyan:users packages/simcore-sdk /packages/simcore-sdk
-COPY --chown=jovyan:users packages/s3wrapper /packages/s3wrapper
-RUN pip install --upgrade pip && \
-    pip install /packages/simcore-sdk &&\
-    pip install /packages/s3wrapper
+
 # ----------------------------------------------------------------
 # configure notebook
-RUN pip install jupyter_contrib_nbextensions && \
+RUN pip install --upgrade pip && \
+    pip install jupyter_contrib_nbextensions && \
     jupyter contrib nbextensions install --user && \
     jupyter nbextension enable hide_input/main && \
     jupyter nbextension enable init_cell/main
@@ -65,16 +60,23 @@ RUN pip install jupyter_contrib_nbextensions && \
 # prepare for booting
 COPY --chown=jovyan:users services/dy-jupyter/docker /docker
 
+ENV NOTEBOOK_URL="work/notebook.ipynb"
 # ----------------------------------------------------------------
-# put demo file
-COPY --chown=jovyan:users services/dy-jupyter/demo /home/jovyan/demo
-
 FROM base AS development
+VOLUME /packages
+VOLUME /home/jovyan/devel
+VOLUME /home/jovyan/work
 ENV CREATE_DUMMY_TABLE=1
 ENV USE_CASE_CONFIG_FILE="devel/port_config.json"
-COPY --chown=jovyan:users services/dy-jupyter/devel /home/jovyan/devel
-RUN pip install -r /home/jovyan/devel/requirements.txt
-CMD [ "/bin/sh", "/docker/boot.sh" ]
 
+CMD [ "/bin/bash", "/docker/boot.sh" ]
+
+# ----------------------------------------------------------------
 FROM base AS production
-ENTRYPOINT [ "/bin/sh", "/docker/boot.sh" ]
+# env to automatically open the notebook
+COPY --chown=jovyan:users packages/simcore-sdk /packages/simcore-sdk
+COPY --chown=jovyan:users packages/s3wrapper /packages/s3wrapper
+COPY --chown=jovyan:users services/dy-jupyter/work /home/jovyan/work
+RUN pip install /packages/simcore-sdk &&\
+    pip install /packages/s3wrapper
+ENTRYPOINT [ "/bin/bash", "/docker/boot.sh" ]

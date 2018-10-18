@@ -13,5 +13,6 @@ services:
         SERVICE_VERSION: '{"tag": "${SERVICES_VERSION}"}'
         BUILD_DATE: ${BUILD_DATE}
         VCS_REF: ${VCS_REF}
+    
     ports:
       - '8888:8888'
