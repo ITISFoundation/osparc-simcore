@@ -1,0 +1,204 @@
+openapi: 3.0.0
+info:
+  description: API definition for simcore-service-storage service
+  version: 0.1.0
+  title: simcore-service-storage API
+  contact:
+    name: IT'IS Foundation
+    email: support@simcore.io
+  license:
+    name: MIT
+    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
+servers:
+  - description: Development server
+    url: 'http://{host}:{port}/v0'
+    variables:
+      host:
+        default: 'localhost'
+      port:
+        default: '8001'
+  - description: Production server
+    url: https://storage:{port}/v0'
+    variables:
+      port:
+        default: '8080'
+tags:
+- name: admins
+  description: Secured Admin-only calls
+- name: tests
+  description: Operations available for testing
+- name: users
+  description: Operations available to regular users
+
+paths:
+  /:
+    get:
+      tags:
+        - users
+      summary: Service health-check endpoint
+      description: Some general information on the API and state of the service behind
+      operationId: health_check
+      responses:
+        "200":
+          description: Service information
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/health_check.yml#/HealthCheckEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yml#/ErrorEnveloped'
+  /check/{action}:
+    post:
+      tags:
+        - tests
+      summary: Test checkpoint to ask server to fail or echo back the transmitted data
+      parameters:
+        - in: query
+          name: data
+          schema:
+            type: string
+        - in: path
+          name: action
+          schema:
+            type: string
+            default: 'echo'
+            enum: ['fail', 'echo']
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/fake.yml#/FakeType'
+      responses:
+        '200':
+          description: Echoes response based on action
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/fake.yml#/FakeEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yml#/ErrorEnveloped'
+
+  /files/metadata:
+    get:
+      summary: Get Files Metadata
+      operationId: get_files_metadata
+      responses:
+        '200':
+          description: 'list of file meta-datas'
+          content:
+            application/json:
+              schema:
+                $ref: 'components/schemas/files.yml#FileMetaDataArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  /files/{fileId}/metadata:
+    get:
+      summary: Get File Metadata
+      operationId: get_file_metadata
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/FileMetaData_200'
+    patch:
+      summary: Update File Metadata
+      operationId: update_file_meta_data
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        $ref: '#/components/requestBodies/FileMetaDataBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/FileMetaData_200'
+
+  /files/{fileId}:
+    get:
+      summary: Donwload File
+      operationId: download_file
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/FileMetaData_200'
+    put:
+      summary: Upload File
+      operationId: upload_file
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        $ref: '#/components/requestBodies/FileMetaDataBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/FileMetaData_200'
+    delete:
+      summary: Delte File
+      operationId: delete_file
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: ''
+
+components:
+  responses:
+    # TODO:Envelope objects are still not well/easily defined. See discriminators
+    OK_NoContent_204:
+      description: everything is OK, but there is no content to return
+      content:
+        application/json:
+          schema:
+            $ref: 'components/schemas/log_message.yml#LogMessageEnveloped'
+
+    DefaultErrorResponse:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: 'components/schemas/error.yml#/ErrorEnveloped'
+
+    FileMetaData_200:
+      description: 'Returns file metadata'
+      content:
+        application/json:
+          schema:
+            $ref: 'components/schemas/files.yml#FileMetaData'
+  requestBodies:
+    FileMetaDataBody:
+        content:
+          application/json:
+            schema:
+              $ref: 'components/schemas/files.yml#FileMetaData'
