@@ -6,7 +6,7 @@
             "label": "ECGs",
             "desc": "these are computed data out of a pipeline",
             "type": "file-url",
-            "value": "link.SIMCORE_NODE_UUID.in_1",
+            "value": "link.SIMCORE_NODE_UUID.FILENAME_ID",
             "settings": {
                 "value":"null"
             },
@@ -17,9 +17,23 @@
             "label": "all results 1Hz",
             "desc": "computed data out of a pipeline",
             "type": "file-url",
-            "value": "link.SIMCORE_NODE_UUID.in_2"
+            "value": "link.SIMCORE_NODE_UUID.FILENAME_ID"
         }
     ],
-    "outputs": [        
+    "outputs": [
+        {
+            "key": "output_1",
+            "label": "Output 1",
+            "desc": "The output 1",
+            "type": "file-url",
+            "value": "null"
+        },
+        {
+            "key": "output_2",
+            "label": "Output 2",
+            "desc": "The output 2",
+            "type": "file-url",
+            "value": "null"
+        }
     ]
 }
