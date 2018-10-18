@@ -1,2 +1,3 @@
-pandas==0.22.0
-plotly==2.6.0
+pandas~=0.22
+plotly~=2.6
+jupyterthemes
