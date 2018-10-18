@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
@@ -8,13 +9,16 @@ from typing import Dict, List
 
 import attr
 import execnet
-import time
+
+import asyncio
 
 from .models import FileMetaData
 
 FileMetaDataVec = List[FileMetaData]
 
 CURRENT_DIR = Path(__file__).resolve().parent
+
+
 
 def call_python_2(module, function, args, python_exec: Path):
     """ calls a module::function from python2 with the arguments list
@@ -57,7 +61,7 @@ class DatcoreWrapper:
         #TODO: guarantee that python2_exec is a valid
         self._py2_call = partial(call_python_2_script, python_exec=python2_exec)
 
-        self.pool =  ThreadPoolExecutor(1)
+        self.executor =  ThreadPoolExecutor(1)
 
 
     def list_files(self, regex = "", sortby = "")->FileMetaDataVec: #pylint: disable=W0613
@@ -209,8 +213,14 @@ class DatcoreWrapper:
             channel.send(None)
             """.format(self.api_token, self.api_secret, dataset, local_path, json_meta)
 
-        # TODO: use this https://pymotw.com/3/asyncio/executors.html
-        fut = self.pool.submit(self._py2_call, script)
-        while not fut.done():
-            time.sleep(0.1)
-        #return self._py2_call(script)
+        return self._py2_call(script)
+
+    # TODO: Decorate this nicely and use the app event loop
+    async def upload_file_async(self, dataset: str, local_path: str, meta_data: FileMetaData):
+        loop = asyncio.get_event_loop()
+        blocking_task = loop.run_in_executor(self.executor, self.upload_file, dataset, local_path, meta_data)
+        _completed, _pending = await asyncio.wait([blocking_task])
+        return
+
+    async def upload_file_async_wrapper(self, dataset: str, local_path: str, meta_data: FileMetaData):
+        await self.upload_file_async(dataset, local_path, meta_data)

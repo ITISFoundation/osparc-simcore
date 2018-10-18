@@ -152,6 +152,7 @@ async def test_dsm_datcore(postgres_service, s3_client, python27_exec, datcore_t
     data = await dsm.list_files(user_id=user_id, location="datcore")
     assert len(data) == 1
 
+@pytest.mark.travis
 async def test_dsm_s3_to_datcore(postgres_service, s3_client, mock_files_factory, python27_exec, datcore_testbucket):
     tmp_file = mock_files_factory(1)[0]
 
@@ -168,7 +169,6 @@ async def test_dsm_s3_to_datcore(postgres_service, s3_client, mock_files_factory
 
     # given the fmd, upload to datcore
     tmp_file2 = tmp_file + ".fordatcore"
-    print(tmp_file2)
     user_id = 0
     down_url = await dsm.download_link(user_id, fmd, "simcore.s3" )
     urllib.request.urlretrieve(down_url, tmp_file2)

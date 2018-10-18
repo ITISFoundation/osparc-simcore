@@ -131,7 +131,7 @@ class DataStorageManager:
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
-        dc.upload_file(datcore_bucket, local_file_path, fmd)
+        await dc.upload_file_async(datcore_bucket, local_file_path, fmd)
 
     async def _get_datcore_tokens(self, user_id: int)->Tuple[str, str]:
         # actually we have to query the master db
