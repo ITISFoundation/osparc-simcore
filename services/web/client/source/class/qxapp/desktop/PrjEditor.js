@@ -1,4 +1,6 @@
 /* global window */
+
+/* eslint newline-per-chained-call: 0 */
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,
 
