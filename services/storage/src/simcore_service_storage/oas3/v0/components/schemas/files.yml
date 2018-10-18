@@ -44,8 +44,8 @@ FileMetaData:
     user_name:
       type: string
   example:
-    file_uuid: 'simcore.s3/simcore-testing/105/10000/3'
-    location_id: "e64afba3-4f10-4f90-9862-94ab043a2e4e"
+    file_uuid: 'e64afba3-4f10-4f90-9862-94ab043a2e4e'
+    location_id: "0"
     location_name: "simcore.s3"
     bucket_name: "simcore-testing"
     object_name: "105/10000/3"

@@ -22,7 +22,7 @@ async def pg_engine(app: web.Application):
         engine = await create_engine(user=cfg["user"],
             database=cfg["database"],
             host=cfg["host"],
-            password=["password"])
+            password=cfg["password"])
     except Exception: # pylint: disable=W0703
         log.exception("Could not create engine")
 

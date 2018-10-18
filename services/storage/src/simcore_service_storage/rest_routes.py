@@ -40,6 +40,13 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     operation_id = specs.paths[path].operations['get'].operation_id
     routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
 
+    path, handle = '/{location_id}/files/metadata', handlers.get_files_metadata
+    operation_id = specs.paths[path].operations['get'].operation_id
+    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+
+    path, handle = '/{location_id}/files/{fileId}/metadata', handlers.get_file_metadata
+    operation_id = specs.paths[path].operations['get'].operation_id
+    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
 
     return routes
 

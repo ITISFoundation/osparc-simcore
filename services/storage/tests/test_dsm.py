@@ -93,7 +93,7 @@ def _create_file_on_s3(postgres_url, s3_client, tmp_file):
 
     d = {   'object_name' : os.path.join(str(project_id), str(node_id), str(file_id)),
             'bucket_name' : bucket_name,
-            'file_id' : str(file_id),
+            'file_id' : file_id,
             'file_name' : filename,
             'user_id' : "42",
             'user_name' : "starbucks",

@@ -198,10 +198,10 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
         idx =  randrange(len(nodes))
         node = nodes[idx]
         node_id = idx + 10000
-        file_id = str(uuid.uuid4())
+        file_uuid = str(uuid.uuid4())
         file_name = str(counter)
         object_name = os.path.join(str(project_id), str(node_id), str(counter))
-        file_uuid = os.path.join(location, bucket_name, object_name)
+        file_id = os.path.join(location, bucket_name, object_name)
 
         assert s3_client.upload_file(bucket_name, object_name, _file)
 

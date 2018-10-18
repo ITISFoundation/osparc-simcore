@@ -6,6 +6,7 @@ from typing import List, Tuple
 
 import attr
 import sqlalchemy as sa
+from sqlalchemy.sql import and_
 from aiopg.sa import create_engine
 
 from s3wrapper.s3_client import S3Client
@@ -71,6 +72,14 @@ class DataStorageManager:
 
         return [simcore_s3, datcore]
 
+    def location_from_id(self, location_id : str):
+        if location_id == "0":
+            return "simcore.s3"
+        elif location_id == "1":
+            return "datcore"
+
+
+
     async def list_files(self, user_id: str, location: str, regex: str="", sortby: str="") -> FileMetaDataVec:
         """ Returns a list of file paths
 
@@ -109,6 +118,22 @@ class DataStorageManager:
             return filtered_data
 
         return data
+
+    async def list_file(self, user_id: str, location: str, file_uuid: str) -> FileMetaData:
+        if location == "simcore.s3":
+            async with create_engine(self.db_endpoint) as engine:
+                async with engine.acquire() as conn:
+                    query = sa.select([file_meta_data]).where(and_(file_meta_data.c.user_id == user_id,
+                    file_meta_data.c.file_uuid == file_uuid))
+                    async for row in conn.execute(query):
+                        result_dict = dict(zip(row._result_proxy.keys, row._row))
+                        d = FileMetaData(**result_dict)
+                        return d
+        elif location == "datcore":
+            api_token, api_secret = await self._get_datcore_tokens(user_id)
+            dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
+            raise NotImplementedError
+
 
     async def delete_file(self, user_id: str, location: str, fmd: FileMetaData):
         """ Deletes a file given its fmd and location

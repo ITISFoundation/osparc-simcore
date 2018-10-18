@@ -99,13 +99,18 @@ paths:
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
-  /{location}/files/metadata:
+  /{location_id}/files/metadata:
     get:
       summary: Get Files Metadata
       operationId: get_files_metadata
       parameters:
-        - name: location
+        - name: location_id
           in : path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
           required: true
           schema:
             type: string
@@ -119,7 +124,7 @@ paths:
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
-  /{location}/files/{fileId}/metadata:
+  /{location_id}/files/{fileId}/metadata:
     get:
       summary: Get File Metadata
       operationId: get_file_metadata
@@ -129,9 +134,13 @@ paths:
         required: true
         schema:
           type: string
-          format: uuid
-      - name: location
+      - name: location_id
         in : path
+        required: true
+        schema:
+          type: string
+      - name: user_id
+        in: query
         required: true
         schema:
           type: string
@@ -147,8 +156,7 @@ paths:
         required: true
         schema:
           type: string
-          format: uuid
-      - name: location
+      - name: location_id
         in : path
         required: true
         schema:

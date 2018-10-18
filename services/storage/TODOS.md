@@ -21,3 +21,7 @@
 - [ ] sync db with minio
 - [ ]
 - [ ] server rest
+
+
+- [ ] Fix and finalize meta data structure
+- [ ] uuid unmarshalling?
