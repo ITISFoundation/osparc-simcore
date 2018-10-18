@@ -14,16 +14,26 @@ from aiohttp import web
 from simcore_service_storage.settings import APP_CONFIG_KEY
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.session import setup_session
+from simcore_service_storage.db import setup_db
+from simcore_service_storage.middlewares import dsm_middleware
 
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client):
+def client(loop, aiohttp_unused_port, aiohttp_client, python27_exec, postgres_service, minio_service):
     app = web.Application()
 
-    server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
-    # fake main
-    app[APP_CONFIG_KEY] = { 'main': server_kwargs } # Fake config
+    server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost', 'python2' : python27_exec }
 
+    postgres_kwargs = postgres_service
+
+    s3_kwargs = minio_service
+
+    # fake main
+    app[APP_CONFIG_KEY] = { 'main': server_kwargs, 'postgres' : postgres_kwargs, "s3" : s3_kwargs } # Fake config
+
+    app.middlewares.append(dsm_middleware)
+
+    setup_db(app)
     setup_session(app)
     setup_rest(app)
 
@@ -36,14 +46,27 @@ async def test_health_check(client):
     resp = await client.get("/v0/")
     assert resp.status == 200
 
-    envelope = await resp.json()
-    data, error = [envelope[k] for k in ('data', 'error')]
+    payload = await resp.json()
+    data, error = tuple( payload.get(k) for k in ('data', 'error') )
 
     assert data
     assert not error
 
     assert data['name'] == 'simcore_service_storage'
     assert data['status'] == 'SERVICE_RUNNING'
+
+
+async def test_locations(client):
+    resp = await client.get("/v0/locations")
+
+    payload = await resp.json()
+    assert resp.status == 200, str(payload)
+
+    data, error = tuple( payload.get(k) for k in ('data', 'error') )
+
+    assert len(data) == 2
+    assert not error
+
 
 async def test_action_check(client):
     QUERY = 'mguidon'
@@ -58,10 +81,10 @@ async def test_action_check(client):
     }
 
     resp = await client.post("/v0/check/{}?data={}".format(ACTION, QUERY), json=FAKE)
-    envelope = await resp.json()
-    data, error = [envelope[k] for k in ('data', 'error')]
+    payload = await resp.json()
+    data, error = tuple( payload.get(k) for k in ('data', 'error') )
 
-    assert resp.status == 200, str(envelope)
+    assert resp.status == 200, str(payload)
     assert data
     assert not error
 

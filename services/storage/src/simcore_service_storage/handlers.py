@@ -8,6 +8,10 @@ from . import __version__
 from .rest_models import FileMetaDataSchema
 from .session import get_session
 
+from .dsm import DataStorageManager
+from .settings import RQT_DSM_KEY
+
+
 #FIXME: W0613: Unused argument 'request' (unused-argument)
 #pylint: disable=W0613
 
@@ -59,6 +63,27 @@ async def check_action(request: web.Request):
         }
     }
     return output
+
+async def get_storage_locations(request: web.Request):
+    params, query, body = await extract_and_validate(request)
+
+    assert not params, "params %s" % params
+    assert not query, "query %s" % query
+    assert not body, "body %s" % body
+
+    dsm = request[RQT_DSM_KEY]
+
+    assert dsm
+
+    locs = dsm.locations()
+
+    envelope = {
+        'error': None,
+        'data': locs
+        }
+    return envelope
+
+
 
 async def get_files_metadata(request: web.Request):
     data1 = {

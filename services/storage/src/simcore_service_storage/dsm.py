@@ -57,6 +57,20 @@ class DataStorageManager:
     s3_client: S3Client
     python27_exec: Path
 
+    def locations(self):
+        # TODO: so far this is hardcoded
+        simcore_s3 = {
+        "name" : "simcore.s3",
+        "id" : 0
+        }
+
+        datcore = {
+        "name" : "datcore",
+        "id"   : 1
+        }
+
+        return [simcore_s3, datcore]
+
     async def list_files(self, user_id: int, location: str, regex: str="", sortby: str="") -> FileMetaDataVec:
         """ Returns a list of file paths
 

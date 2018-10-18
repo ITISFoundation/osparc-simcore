@@ -100,7 +100,27 @@ def postgres_service(docker_services, docker_ip):
         pause=0.1,
     )
 
-    return url
+    postgres_service = {
+        'user' : USER,
+        'password' : PASS,
+        'database' : DATABASE,
+        'host' : docker_ip,
+        'port' : docker_services.port_for('postgres', 5432)
+    }
+
+    return postgres_service
+
+@pytest.fixture(scope='session')
+def postgres_service_url(postgres_service, docker_services, docker_ip):
+    postgres_service_url = 'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
+        user = USER,
+        password = PASS,
+        database = DATABASE,
+        host=docker_ip,
+        port=docker_services.port_for('postgres', 5432),
+    )
+
+    return postgres_service_url
 
 @pytest.fixture(scope='session')
 def minio_service(docker_services, docker_ip):
@@ -147,9 +167,9 @@ def mock_files_factory(tmpdir_factory):
 
 
 @pytest.fixture(scope="function")
-def dsm_mockup_db(postgres_service, s3_client, mock_files_factory):
+def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
     # db
-    utils.create_tables(url=postgres_service)
+    utils.create_tables(url=postgres_service_url)
 
     # s3 client
     bucket_name = BUCKET_NAME
@@ -202,7 +222,7 @@ def dsm_mockup_db(postgres_service, s3_client, mock_files_factory):
         data[object_name] = FileMetaData(**d)
 
 
-        utils.insert_metadata(postgres_service, object_name, bucket_name, file_id, file_name, user_id,
+        utils.insert_metadata(postgres_service_url, object_name, bucket_name, file_id, file_name, user_id,
             user, location, project_id, project, node_id, node)
 
 
@@ -217,7 +237,7 @@ def dsm_mockup_db(postgres_service, s3_client, mock_files_factory):
     s3_client.remove_bucket(bucket_name, delete_contents=True)
 
     # db
-    utils.drop_tables(url=postgres_service)
+    utils.drop_tables(url=postgres_service_url)
 
 @pytest.fixture(scope="function")
 def datcore_testbucket(python27_exec, mock_files_factory):

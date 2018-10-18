@@ -17,23 +17,46 @@ FileMetaDataEnveloped:
 FileMetaData:
   type: object
   properties:
-    filename:
+    file_uuid:
       type: string
-    version:
+    location_id:
       type: string
-    last_accessed:
-      type: number
-    owner:
+    location:
       type: string
-      format: uuid
-    storage_location:
+    bucket_name:
+      type: string
+    object_name:
+      type: string
+    project_id:
+      type: string
+    project_name:
+      type: string
+    node_id:
+      type: string
+    node_name:
+      type: string
+    file_id:
+      type: string
+    file_name:
+      type: string
+    user_id:
+      type: string
+    user_name:
       type: string
   example:
-    filename: 'test.txt'
-    version: '1.0'
-    last_accessed: 123.122
-    owner: 3e065979-578a-41cb-886f-fc029fae1e93
-    storage_location: simcore.s3
+    file_uuid: 'simcore.s3/simcore-testing/105/10000/3'
+    location_id: "e64afba3-4f10-4f90-9862-94ab043a2e4e"
+    location_name: "simcore.s3"
+    bucket_name: "simcore-testing"
+    object_name: "105/10000/3"
+    project_id: "105"
+    project_name: "futurology"
+    node_id: "10000"
+    node_name: "alpha"
+    file_id: "3"
+    file_name: "example.txt"
+    user_id: "12"
+    user_name: "dennis"
 
 FileMetaDataArray:
   type: array

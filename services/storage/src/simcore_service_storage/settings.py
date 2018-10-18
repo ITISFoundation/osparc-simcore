@@ -53,7 +53,7 @@ RSC_CONFIG_DIR_KEY  = "data"
 RSC_CONFIG_SCHEMA_KEY = RSC_CONFIG_DIR_KEY + "/config-schema-v1.json"
 
 # RQT=request
-
+RQT_DSM_KEY = "DSM"
 
 # RSP=response
 

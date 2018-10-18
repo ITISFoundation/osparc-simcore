@@ -85,11 +85,30 @@ paths:
             application/json:
               schema:
                 $ref: './components/schemas/error.yml#/ErrorEnveloped'
+  /locations:
+    get:
+      summary: Get available storage locations
+      operationId : get_storage_locations
+      responses:
+        '200':
+          description: 'List of availabe storage locations'
+          content:
+            application/json:
+              schema:
+                $ref: 'components/schemas/locations.yml#FileLocationArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
 
-  /files/metadata:
+  /{location}/files/metadata:
     get:
       summary: Get Files Metadata
       operationId: get_files_metadata
+      parameters:
+        - name: location
+          in : path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: 'list of file meta-datas'
@@ -100,7 +119,7 @@ paths:
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
-  /files/{fileId}/metadata:
+  /{location}/files/{fileId}/metadata:
     get:
       summary: Get File Metadata
       operationId: get_file_metadata
@@ -111,6 +130,11 @@ paths:
         schema:
           type: string
           format: uuid
+      - name: location
+        in : path
+        required: true
+        schema:
+          type: string
       responses:
         '200':
           $ref: '#/components/responses/FileMetaData_200'
@@ -124,13 +148,18 @@ paths:
         schema:
           type: string
           format: uuid
+      - name: location
+        in : path
+        required: true
+        schema:
+          type: string
       requestBody:
         $ref: '#/components/requestBodies/FileMetaDataBody'
       responses:
         '200':
           $ref: '#/components/responses/FileMetaData_200'
 
-  /files/{fileId}:
+  /{location}/files/{fileId}:
     get:
       summary: Donwload File
       operationId: download_file
@@ -141,6 +170,11 @@ paths:
         schema:
           type: string
           format: uuid
+      - name: location
+        in : path
+        required: true
+        schema:
+          type: string
       responses:
         '200':
           $ref: '#/components/responses/FileMetaData_200'
@@ -154,6 +188,11 @@ paths:
         schema:
           type: string
           format: uuid
+      - name: location
+        in : path
+        required: true
+        schema:
+          type: string
       requestBody:
         $ref: '#/components/requestBodies/FileMetaDataBody'
       responses:
@@ -169,6 +208,11 @@ paths:
         schema:
           type: string
           format: uuid
+      - name: location
+        in : path
+        required: true
+        schema:
+          type: string
       responses:
         '204':
           description: ''
