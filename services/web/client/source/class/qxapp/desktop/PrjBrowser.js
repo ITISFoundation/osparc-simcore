@@ -152,6 +152,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
      * Delegates appearance and binding of each project item
      */
     __setDelegate: function(projectController) {
+      const thumbnailWidth = 246;
+      const thumbnailHeight = 144;
       let delegate = {
         // Item's Layout
         configureItem: function(item) {
@@ -162,8 +164,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             allowGrowY: false
           });
           item.getChildControl("icon").set({
-            height: 96,
-            width: 176
+            height: thumbnailHeight,
+            width: thumbnailWidth
           });
         },
         // Item's data binding
@@ -175,7 +177,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           }, item, id);
           controller.bindProperty("thumbnail", "icon", {
             converter: function(data) {
-              return data === null ? "https://placeimg.com/171/96/tech/grayscale/?random.jpg" : data;
+              return data === null ? "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/tech/grayscale/?random.jpg" : data;
             }
           }, item, id);
         }
