@@ -2,11 +2,10 @@
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function(projectUuid) {
+  construct: function(projectModel) {
     this.base(arguments, "horizontal");
 
-    let project = this.__projectDocument = this.__getProjectDocument(projectUuid);
-    this.setProjectId(project.getUuid());
+    this.setProjectModel(projectModel);
 
     let mainPanel = this.__mainPanel = new qxapp.desktop.mainPanel.MainPanel().set({
       minWidth: 1000
@@ -25,8 +24,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   },
 
   properties: {
-    projectId: {
-      check: "String",
+    projectModel: {
+      check: "qxapp.data.model.ProjectModel",
       nullable: false
     },
 
@@ -51,13 +50,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __extraView: null,
     __loggerView: null,
     __settingsView: null,
-    __transDeco: null,
-    __splitter: null,
-    __projectDocument: null,
     __currentNodeId: null,
 
     initDefault: function() {
-      let project = this.__projectDocument;
+      let project = this.getProjectModel();
 
       let treeView = this.__treeView = new qxapp.component.widget.TreeTool(project.getName(), project.getWorkbenchModel());
       this.__sidePanel.setTopView(treeView);
@@ -98,11 +94,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__stopPipeline();
       }, this);
 
-      this.__projectDocument.getWorkbenchModel().addListener("WorkbenchModelChanged", function() {
+      this.getProjectModel().getWorkbenchModel().addListener("WorkbenchModelChanged", function() {
         this.__workbenchModelChanged();
       }, this);
 
-      this.__projectDocument.getWorkbenchModel().addListener("ShowInLogger", e => {
+      this.getProjectModel().getWorkbenchModel().addListener("ShowInLogger", e => {
         const data = e.getData();
         const nodeLabel = data.nodeLabel;
         const msg = data.msg;
@@ -151,11 +147,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__treeView.nodeSelected(nodeId);
 
       if (nodeId === "root") {
-        const workbenchModel = this.__projectDocument.getWorkbenchModel();
+        const workbenchModel = this.getProjectModel().getWorkbenchModel();
         this.__workbenchView.loadModel(workbenchModel);
         this.showInMainView(this.__workbenchView, nodeId);
       } else {
-        let nodeModel = this.__projectDocument.getWorkbenchModel().getNodeModel(nodeId);
+        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
 
         let widget;
         if (nodeModel.isContainer()) {
@@ -187,7 +183,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     showInMainView: function(widget, nodeId) {
       this.__mainPanel.setMainView(widget);
-      let nodePath = this.__projectDocument.getWorkbenchModel().getPathWithId(nodeId);
+      let nodePath = this.getProjectModel().getWorkbenchModel().getPathWithId(nodeId);
       this.fireDataEvent("ChangeMainViewCaption", nodePath);
     },
 
@@ -197,18 +193,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     getLogger: function() {
       return this.__loggerView;
-    },
-
-    __getProjectDocument: function(projectId) {
-      let project = null;
-      if (projectId) {
-        let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
-        projectData.id = String(projectId);
-        project = new qxapp.data.model.ProjectModel(projectData);
-      } else {
-        project = new qxapp.data.model.ProjectModel();
-      }
-      return project;
     },
 
     __startPipeline: function() {
@@ -243,7 +227,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__pipelineId = null;
       const saveContainers = false;
       const savePosition = false;
-      let currentPipeline = this.__projectDocument.getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
+      let currentPipeline = this.getProjectModel().getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
       console.log(currentPipeline);
       let req = new qx.io.request.Xhr();
       let data = {};
@@ -354,7 +338,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     serializeProjectDocument: function() {
-      console.log("serializeProject", this.__projectDocument.serializeProject());
+      console.log("serializeProject", this.getProjectModel().serializeProject());
     }
   }
 });
