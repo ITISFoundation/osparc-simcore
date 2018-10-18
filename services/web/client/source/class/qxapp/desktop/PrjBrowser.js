@@ -44,6 +44,15 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       });
 
       let newProjectDlg = new qxapp.component.widget.NewProjectDlg();
+      newProjectDlg.addListener("CreatePrj", e => {
+        const data = e.getData();
+        const newPrj = {
+          name: data.prjTitle,
+          description: data.prjDescription
+        };
+        this.__startBlankProject(newPrj);
+        win.close();
+      }, this);
       win.add(newProjectDlg, {
         top: 0,
         right: 0,
@@ -92,6 +101,18 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         };
         this.fireDataEvent("StartProject", data);
       }, this);
+    },
+
+    __startBlankProject: function(newPrj) {
+      let blankProject = this.__getProjectModel();
+      blankProject.set({
+        name: newPrj.name,
+        description: newPrj.description
+      });
+      const data = {
+        projectModel: blankProject
+      };
+      this.fireDataEvent("StartProject", data);
     },
 
     __createTemplateList: function() {
