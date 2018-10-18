@@ -774,6 +774,24 @@ qx.Class.define("qxapp.dev.fake.Data", {
     },
 
     getObjectList: function() {
+      const objects = [{
+        "file_uuid": "simcore.s3/simcore-testing/105/10000/3",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10000/3",
+        "project_id": 105,
+        "project_name": "futurology",
+        "node_id": 10000,
+        "node_name": "alpha",
+        "file_id": "3",
+        "file_name": "hallo",
+        "user_id": 13,
+        "user_name": "dennis"
+      }];
+      return objects;
+    },
+
+    getObjectListOld: function() {
       const objects = [
         {
           "path": "simcore0/file0",

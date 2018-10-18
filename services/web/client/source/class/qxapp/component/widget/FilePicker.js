@@ -31,8 +31,8 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       }
     }, this);
 
-    let tree = this.__mainTree = this._createChildControlImpl("treeMenu");
-    tree.addListener("changeSelection", this.__selectionChanged, this);
+    let tree = this.__tree = this._createChildControlImpl("treeMenu");
+    tree.getSelection().addListener("change", this.__selectionChanged, this);
 
     let selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
     selectBtn.setEnabled(false);
@@ -47,7 +47,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       }
     }, this);
 
-    this.__reloadTree();
+    this.buildTree();
 
     this.__createConnections(node);
   },
@@ -58,7 +58,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
   },
 
   members: {
-    __mainTree: null,
+    __tree: null,
     __selectBtn: null,
     __currentUserId: "ODEI-UUID",
 
@@ -70,7 +70,9 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
           this._add(control);
           break;
         case "treeMenu":
-          control = new qx.ui.tree.Tree();
+          control = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+            openMode: "none"
+          });
           this._add(control, {
             flex: 1
           });
@@ -88,14 +90,82 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       return control || this.base(arguments, id);
     },
 
-    __reloadTree: function() {
-      this.__mainTree.resetRoot();
+    buildTree: function() {
+      const files = this.__getObjLists();
+      let data = {
+        label: this.__currentUserId,
+        children: this.__convertModel(files),
+        nodeId: this.__currentUserId
+      };
+      let newModel = qx.data.marshal.Json.createModel(data, true);
+      let oldModel = this.__tree.getModel();
+      if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
+        this.__tree.setModel(newModel);
+      }
+    },
 
-      let root = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), this.__currentUserId);
-      root.setOpen(true);
-      this.__mainTree.setRoot(root);
+    __convertModel: function(files) {
+      let children = [];
+      for (let i=0; i<files.length; i++) {
+        const file = files[i];
+        let fileInTree = {
+          label: file["location"],
+          children: [{
+            label: file["bucket_name"],
+            children: []
+          }]
+        };
+        let bucketChildren = fileInTree.children[0].children;
+        let splitted = file["object_name"].split("/");
+        if (file["location"] === "simcore.s3") {
+          // simcore files
+          if (splitted.length === 2) {
+            // user file
+            bucketChildren.push({
+              label: file["user_name"],
+              children: [{
+                label: file["file_name"],
+                fileId: file["file_uuid"]
+              }]
+            });
+            children.push(fileInTree);
+          } else if (splitted.length === 3) {
+            // node file
+            bucketChildren.push({
+              label: file["project_name"],
+              children: [{
+                label: file["node_name"],
+                children: [{
+                  label: file["file_name"],
+                  fileId: file["file_uuid"]
+                }]
+              }]
+            });
+            children.push(fileInTree);
+          }
+        } else {
+          // other files
+          bucketChildren.push({
+            label: file["file_name"],
+            fileId: file["file_uuid"]
+          });
+        }
+      }
+      return children;
+    },
 
-      this.__getObjLists();
+    __getObjLists: function() {
+      const slotName = "listObjects";
+      let socket = qxapp.wrappers.WebSocket.getInstance();
+      socket.removeSlot(slotName);
+      socket.on(slotName, function(data) {
+        console.log(slotName, data);
+      }, this);
+      socket.emit(slotName);
+
+      let data = qxapp.dev.fake.Data.getObjectList();
+      console.log("Fake", slotName, data);
+      return data;
     },
 
     __createConnections: function(node) {
@@ -106,28 +176,8 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
           store: "s3-z43",
           path: itemPath
         };
-        // node.setProgress(100);
         this.fireEvent("Finished");
       }, this);
-    },
-
-    __getObjLists: function() {
-      const slotName = "listObjects";
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-      socket.removeSlot(slotName);
-      socket.on(slotName, function(data) {
-        console.log(slotName, data);
-        for (let i=0; i<data.length; i++) {
-          this.__addTreeItem(data[i]);
-        }
-      }, this);
-      if (!socket.getSocket().connected) {
-        let data = qxapp.dev.fake.Data.getObjectList();
-        for (let i=0; i<data.length; i++) {
-          this.__addTreeItem(data[i]);
-        }
-      }
-      socket.emit(slotName);
     },
 
     __alreadyExists: function(parentTree, itemName) {
@@ -138,83 +188,6 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
         }
       }
       return null;
-    },
-
-    __addTreeItem: function(data) {
-      let splitted = data.path.split("/");
-      let parentFolder = this.__mainTree.getRoot();
-      for (let i=0; i<splitted.length-1; i++) {
-        let parentPath = splitted.slice(0, i);
-        const folderName = splitted[i];
-        let folderPath = {
-          path: parentPath.concat(folderName).join("/")
-        };
-        if (this.__alreadyExists(parentFolder, folderName)) {
-          parentFolder = this.__alreadyExists(parentFolder, folderName);
-        } else {
-          let newFolder = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), folderName, folderPath);
-          parentFolder.add(newFolder);
-          parentFolder = newFolder;
-        }
-      }
-
-      const fileName = splitted[splitted.length-1];
-      if (!this.__alreadyExists(parentFolder, fileName)) {
-        let treeItem = this.__configureTreeItem(new qx.ui.tree.TreeFile(), fileName, data);
-        parentFolder.add(treeItem);
-      }
-    },
-
-    __configureTreeItem: function(treeItem, label, extraInfo) {
-      // A left-justified icon
-      treeItem.addWidget(new qx.ui.core.Spacer(16, 16));
-
-      // Here's our indentation and tree-lines
-      treeItem.addSpacer();
-
-      if (treeItem instanceof qx.ui.tree.TreeFolder) {
-        treeItem.addOpenButton();
-      }
-
-      // The standard tree icon follows
-      treeItem.addIcon();
-
-      // The label
-      treeItem.addLabel(label);
-
-      // All else should be right justified
-      treeItem.addWidget(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      if (treeItem instanceof qx.ui.tree.TreeFile) {
-        // Add a file size, date and mode
-        const formattedSize = qxapp.utils.Utils.formatBytes(extraInfo.size);
-        let text = new qx.ui.basic.Label(formattedSize);
-        text.setWidth(80);
-        treeItem.addWidget(text);
-
-        text = new qx.ui.basic.Label((new Date(extraInfo.lastModified)).toUTCString());
-        text.setWidth(200);
-        treeItem.addWidget(text);
-
-        // Listen to "Double Click" key
-        treeItem.addListener("dblclick", function(mouseEvent) {
-          this.__itemSelected();
-        }, this);
-      }
-
-      if (extraInfo) {
-        treeItem.path = extraInfo.path;
-      }
-
-      if (treeItem instanceof qx.ui.tree.TreeFile) {
-        treeItem.isDir = false;
-      } else if (treeItem instanceof qx.ui.tree.TreeFolder) {
-        treeItem.isDir = true;
-      }
-
-      return treeItem;
     },
 
     // Request to the server an upload URL.
@@ -260,22 +233,23 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
           hBox.destroy();
-          this.__reloadTree();
+          this.buildTree();
         }
       };
     },
 
     __selectionChanged: function() {
-      let selectedItem = this.__mainTree.getSelection();
-      this.__selectBtn.setEnabled("path" in selectedItem[0]);
+      let selection = this.__tree.getSelection();
+      let selectedItem = selection.toArray()[0];
+      this.__selectBtn.setEnabled("fileId" in selectedItem);
     },
 
     __itemSelected: function() {
-      let selectedItem = this.__mainTree.getSelection();
-      if ("path" in selectedItem[0]) {
+      let selection = this.__tree.getSelection();
+      let selectedItem = selection.toArray()[0];
+      if ("fileId" in selectedItem) {
         const data = {
-          itemPath: selectedItem[0].path,
-          isDirectory: selectedItem[0].isDir
+          itemPath: selectedItem["fileId"]["file_uuid"]
         };
         this.fireDataEvent("ItemSelected", data);
       }
