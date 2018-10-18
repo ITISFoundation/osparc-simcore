@@ -1,4 +1,5 @@
-FROM masu.speag.com/simcore/services/jupyter-base-notebook:1.4.0 AS common
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE} AS common
 LABEL maintainer="sanderegg"
 
 # install ffmpeg --------------------------------------------------------------
