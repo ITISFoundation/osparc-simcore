@@ -9,6 +9,7 @@ required:
   # the validator does not appreciate when required is missing here... and
   # sadly does not throw any meaningful error about it... so for now I put this...
   - getItemList
+  - getItem
 properties:
   getItemList:
     description: all the items in the list
