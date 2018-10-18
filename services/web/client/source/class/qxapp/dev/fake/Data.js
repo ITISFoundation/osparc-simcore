@@ -186,7 +186,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
       };
     },
 
-    getProjectList: function() {
+    getUserProjectList: function() {
       return [
         {
           projectUuid: "07640335-a91f-468c-ab69-a374fa82078d",
@@ -426,7 +426,13 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "Container2"
             }
           }
-        }, {
+        }
+      ];
+    },
+
+    getPublicProjectList: function() {
+      return [
+        {
           projectUuid: "345a37ab-5346-4983-951a-19ba2ef9ca0f",
           name: "LF Simulator",
           description: "LF Simulator",
@@ -776,6 +782,12 @@ qx.Class.define("qxapp.dev.fake.Data", {
           }
         }
       ];
+    },
+
+    getProjectList: function() {
+      let userList = this.getUserProjectList();
+      let publicList = this.getPublicProjectList();
+      return userList.concat(publicList);
     },
 
     getProjectData: function(projectUuid) {

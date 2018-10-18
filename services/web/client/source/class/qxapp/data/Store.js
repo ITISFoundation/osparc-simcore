@@ -55,6 +55,14 @@ qx.Class.define("qxapp.data.Store", {
       */
     },
 
+    getUserProjectList: function() {
+      return qxapp.dev.fake.Data.getUserProjectList();
+    },
+
+    getPublicProjectList: function() {
+      return qxapp.dev.fake.Data.getPublicProjectList();
+    },
+
     getProjectList: function() {
       return qxapp.dev.fake.Data.getProjectList();
     },
