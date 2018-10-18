@@ -185,6 +185,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showInMainView: function(widget, nodeId) {
+      if (this.__mainPanel.isPropertyInitialized("mainView")) {
+        let previousWidget = this.__mainPanel.getMainView();
+        widget.addListener("Finished", function() {
+          this.__mainPanel.setMainView(previousWidget);
+        }, this);
+      }
+
       this.__mainPanel.setMainView(widget);
       let nodePath = this.__projectDocument.getWorkbenchModel().getPathWithId(nodeId);
       this.fireDataEvent("ChangeMainViewCaption", nodePath);
