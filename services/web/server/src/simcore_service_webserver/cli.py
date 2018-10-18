@@ -55,8 +55,6 @@ def main(args=None):
     setup(parser)
     config = parse(args, parser)
 
-    import pdb; pdb.set_trace()
-
     # TODO: improve keys!
     log_level = config["main"]["log_level"]
     logging.basicConfig(level=getattr(logging, log_level))
