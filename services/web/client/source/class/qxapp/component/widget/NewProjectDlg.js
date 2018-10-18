@@ -35,17 +35,17 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
 
       prjFormLayout.add(new qx.ui.core.Spacer(5));
 
-      let list = new qx.ui.form.List().set({
+      let templatesList = new qx.ui.form.List().set({
         minHeight: 200
       });
-      list.add(new qx.ui.form.ListItem(this.tr("Blank Project")));
-      list.add(new qx.ui.form.ListItem(this.tr("EM General")));
-      list.add(new qx.ui.form.ListItem(this.tr("EM-Neuro")));
-      list.add(new qx.ui.form.ListItem(this.tr("EM-Thermal")));
-      list.add(new qx.ui.form.ListItem(this.tr("Antennas")));
-      list.add(new qx.ui.form.ListItem(this.tr("Acoustics")));
+      templatesList.add(new qx.ui.form.ListItem(this.tr("Blank Project")));
+      templatesList.add(new qx.ui.form.ListItem(this.tr("EM General")));
+      templatesList.add(new qx.ui.form.ListItem(this.tr("EM-Neuro")));
+      templatesList.add(new qx.ui.form.ListItem(this.tr("EM-Thermal")));
+      templatesList.add(new qx.ui.form.ListItem(this.tr("Antennas")));
+      templatesList.add(new qx.ui.form.ListItem(this.tr("Acoustics")));
       prjFormLayout.add(new qx.ui.basic.Label(this.tr("Categories / Templates")));
-      prjFormLayout.add(list, {
+      prjFormLayout.add(templatesList, {
         flex: 1
       });
 
