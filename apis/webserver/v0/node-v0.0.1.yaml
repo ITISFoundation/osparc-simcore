@@ -67,18 +67,20 @@ paths:
          content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/request'
-                  - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/request'
+                type: object
+                # oneOf:
+                #   - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/request'
+                #   - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/request'
       responses:
         default:
           description: node type specific api call according to the node type presented
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/response'
-                  - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/response'
+                type: object
+                # oneOf:
+                #   - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/response'
+                #   - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/response'
 
   /node/{nodeInstanceUUID}/iframe:
     get:
@@ -122,8 +124,8 @@ components:
           type: object
         apiCalls:
           type: object
-          oneOf:
-              - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties'
+          # oneOf:
+          #     - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties'
     outputApiCall:
       type: object
       properties:
