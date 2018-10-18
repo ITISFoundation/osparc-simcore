@@ -28,31 +28,11 @@ ENV SIMCORE_NODE_UUID="-1" \
     POSTGRES_PASSWORD="-1" \
     POSTGRES_DB="-1"
 # ----------------------------------------------------------------
-# set up oSparc labels
-ARG SERVICE_KEY
-ARG SERVICE_VERSION
-ARG SERVICE_NAME
-ARG BUILD_DATE
-ARG VCS_REF
-
-LABEL io.simcore.key=${SERVICE_KEY} \
-        io.simcore.tag=${SERVICE_VERSION} \
-        io.simcore.name=${SERVICE_NAME} \
-        io.simcore.description='{"description": "Jupyter notebook"}' \
-        io.simcore.contact='{"contact": "anderegg@itis.swiss"}' \
-        io.simcore.authors='{"authors": [{"name": "sanderegg", "email": "anderegg@itis.swiss", "affiliation": "ITIS Foundation"}]}' \
-        io.simcore.inputs='{"inputs": [{"key": "input_1", "label": "input 1", "desc": "file input", "type": "file-url", "value": "null"}]}' \
-        io.simcore.outputs='{"outputs": [{"key": "output_1", "label": "output 1", "desc": "file output", "type": "file-url", "value": "null"}]}' \
-        io.simcore.viewer='{"viewer":{"ip":null, "port":null}}' \
-        simcore.service.settings='[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]' \
-        org.label-schema.schema-version="1.0" \
-        org.label-schema.build-date="${BUILD_DATE}" \
-        org.label-schema.vcs-ref="${VCS_REF}"
-
-# ----------------------------------------------------------------
 # configure notebook
 RUN pip install --upgrade pip && \
     pip install jupyter_contrib_nbextensions && \
+    pip install jupyterthemes && \
+    jt -t oceans16 && \
     jupyter contrib nbextensions install --user && \
     jupyter nbextension enable hide_input/main && \
     jupyter nbextension enable init_cell/main
@@ -73,9 +53,10 @@ CMD [ "/bin/bash", "/docker/boot.sh" ]
 
 # ----------------------------------------------------------------
 FROM base AS production
-# env to automatically open the notebook
+# install simcore packages
 COPY --chown=jovyan:users packages/simcore-sdk /packages/simcore-sdk
 COPY --chown=jovyan:users packages/s3wrapper /packages/s3wrapper
+# copy the default notebook
 COPY --chown=jovyan:users services/dy-jupyter/work /home/jovyan/work
 RUN pip install /packages/simcore-sdk &&\
     pip install /packages/s3wrapper

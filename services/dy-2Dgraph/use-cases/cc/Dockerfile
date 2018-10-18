@@ -8,10 +8,9 @@ RUN apt-get update && \
     ffmpeg
 USER $NB_USER
 
-# install requirements, apply theme -------------------------------------------
+# install requirements --------------------------------------------------------
 COPY --chown=jovyan:users cc/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && \    
-    jt -t oceans16
+RUN pip install --no-cache-dir -r requirements.txt
 # prepare for booting ---------------------------------------------------------
 COPY --chown=jovyan:users docker /docker
 # set of arguments to copy the right notebook ---------------------------------
@@ -26,6 +25,7 @@ VOLUME /home/jovyan/notebook
 ENV USE_CASE_CONFIG_FILE="node_configuration_file.json"
 ENV INIT_OPTIONS="5000 200 20 tab"
 ENV CREATE_DUMMY_TABLE=1
+# switch off the default entrypoint
 ENTRYPOINT []
 CMD [ "/bin/bash", "/docker/boot.sh" ]
 # -----------------------------------------------------------------------------

@@ -1,10 +1,9 @@
 FROM masu.speag.com/simcore/services/jupyter-base-notebook:1.4.0 AS common
 LABEL maintainer="sanderegg"
 
-# install requirements, apply themes
+# install requirements --------------------------------------------------------
 COPY --chown=jovyan:users kember/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && \
-    jt -t oceans16
+RUN pip install --no-cache-dir -r requirements.txt
 
 # prepare for booting ---------------------------------------------------------
 COPY --chown=jovyan:users docker /docker
@@ -20,6 +19,7 @@ VOLUME /home/jovyan/notebook
 ENV USE_CASE_CONFIG_FILE="node_configuration_file.json"
 ENV INIT_OPTIONS="100 6000 20 space"
 ENV CREATE_DUMMY_TABLE=1
+# switch off the default entrypoint
 ENTRYPOINT []
 CMD [ "/bin/bash", "/docker/boot.sh" ]
 # -----------------------------------------------------------------------------
