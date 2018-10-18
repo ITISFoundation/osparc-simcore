@@ -96,7 +96,19 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
 
       let createBtn = new qx.ui.form.Button(this.tr("Create"));
       createBtn.addListener("execute", function() {
-        console.log("CreatePrj");
+        const title = projectTitle.getValue();
+        const desc = description.getValue();
+        const sele = templatesList.getSelection();
+        let templ = "";
+        if (sele && sele.length > 0) {
+          templ = sele[0].getLabel().getMessageId();
+        }
+        const data = {
+          prjTitle: title,
+          prjDescription: desc,
+          prjTemplate: templ
+        };
+        this.fireDataEvent("CreatePrj", data);
       }, this);
       prjFormLayout.add(createBtn);
 
