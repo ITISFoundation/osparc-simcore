@@ -1,3 +1,4 @@
+import argparse
 import json
 import sys
 import tempfile
@@ -50,8 +51,8 @@ def create_dummy_table(number_of_rows, number_of_columns):
     df = pd.DataFrame(fullmatrix)
     return df
 
-def create_dummy(json_configuration_file_path):
-    with open(json_configuration_file_path) as file_pointer:
+def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number_of_columns: int, number_of_files: int, separator: str ="\t"):
+    with json_configuration_file_path.open() as file_pointer:
         json_configuration = file_pointer.read()
     
     # set up db
@@ -66,10 +67,7 @@ def create_dummy(json_configuration_file_path):
     configuration = json.loads(json_configuration)
         
 
-    # create a dummy table
-    number_of_rows = 5000
-    number_of_columns = 200
-    number_of_files = 20
+    # create a dummy table    
     s3 = init_s3()
     # push the file to the S3 for each input item
     for input_item in configuration["inputs"]:
@@ -80,7 +78,7 @@ def create_dummy(json_configuration_file_path):
             # create dummy file containing a table
             df = create_dummy_table(number_of_rows, number_of_columns)
             with open(temp_file.name, "w") as file_pointer:
-                df.to_csv(path_or_buf=file_pointer, sep="\t", header=False, index=False)        
+                df.to_csv(path_or_buf=file_pointer, sep=separator, header=False, index=False)        
 
         # upload to S3
         if input_item["type"] == "file-url":
@@ -106,5 +104,23 @@ def create_dummy(json_configuration_file_path):
     # print the node uuid so that it can be set as env variable from outside
     print(node_uuid)
 
-if __name__ == "__main__":    
-    create_dummy(sys.argv[1])
+
+parser = argparse.ArgumentParser(description="Initialise an oSparc database/S3 with fake data for development.")
+parser.add_argument("portconfig", help="The path to the port configuration file (json format)", type=Path)
+parser.add_argument("rows", help="The number of rows in each table", type=int)
+parser.add_argument("columns", help="The number of columns in each table", type=int)
+parser.add_argument("files", help="The number of tables in case of folder-url type", type=int)
+parser.add_argument("separator", help="The value separator to be used, for example tab or space or any single character", type=str)
+args = sys.argv[1:]
+options = parser.parse_args(args)
+if "tab" in options.separator:
+    separator = "\t"
+elif "space" in options.separator:
+    separator = " "
+else:
+    separator = options.separator
+create_dummy(options.portconfig, 
+    number_of_rows=options.rows, 
+    number_of_columns=options.columns, 
+    number_of_files=options.files, 
+    separator=separator)
