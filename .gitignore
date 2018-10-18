@@ -86,6 +86,7 @@ celerybeat-schedule
 .env
 
 # virtualenv
+.venv27
 .venv
 venv/
 ENV/
@@ -136,3 +137,6 @@ pytest.ini
 # backup files
 *~
 *.bak
+
+# pylint-profile output
+prof/
