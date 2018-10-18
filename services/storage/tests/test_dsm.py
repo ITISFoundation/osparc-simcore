@@ -87,21 +87,22 @@ def _create_file_on_s3(postgres_url, s3_client, tmp_file):
 
     # create file and upload
     filename = os.path.basename(tmp_file)
-    project_id = 22
-    node_id = 1006
-    file_id = uuid.uuid4()
+    project_id = "22"
+    node_id = "1006"
+    file_id = str(uuid.uuid4())
 
     d = {   'object_name' : os.path.join(str(project_id), str(node_id), str(file_id)),
             'bucket_name' : bucket_name,
             'file_id' : str(file_id),
             'file_name' : filename,
-            'user_id' : 42,
+            'user_id' : "42",
             'user_name' : "starbucks",
             'location' : "simcore.s3",
             'project_id' : project_id,
             'project_name' : "battlestar",
             'node_id' : node_id,
-            'node_name' : "this is the name of the node"
+            'node_name' : "this is the name of the node",
+            'file_uuid' : str(uuid.uuid4())
         }
 
     fmd = FileMetaData(**d)
@@ -139,7 +140,7 @@ def test_datcore_fixture(datcore_testbucket):
 async def test_dsm_datcore(postgres_service_url, s3_client, python27_exec, datcore_testbucket):
     utils.create_tables(url=postgres_service_url)
     dsm = DataStorageManager(postgres_service_url, s3_client, python27_exec)
-    user_id = 0
+    user_id = "0"
     data = await dsm.list_files(user_id=user_id, location="datcore")
     # the fixture creates two files
     assert len(data) == 2
@@ -169,7 +170,7 @@ async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_fac
 
     # given the fmd, upload to datcore
     tmp_file2 = tmp_file + ".fordatcore"
-    user_id = 0
+    user_id = "0"
     down_url = await dsm.download_link(user_id, fmd, "simcore.s3" )
     urllib.request.urlretrieve(down_url, tmp_file2)
     assert filecmp.cmp(tmp_file2, tmp_file)
@@ -186,7 +187,7 @@ async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_fac
 async def test_dsm_datcore_to_s3(postgres_service_url, s3_client, python27_exec, mock_files_factory, datcore_testbucket):
     utils.create_tables(url=postgres_service_url)
     dsm = DataStorageManager(postgres_service_url, s3_client, python27_exec)
-    user_id = 0
+    user_id = "0"
     data = await dsm.list_files(user_id=user_id, location="datcore")
     assert len(data)
 

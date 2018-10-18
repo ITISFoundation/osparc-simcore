@@ -15,23 +15,25 @@ metadata = sa.MetaData()
 # File meta data
 file_meta_data = sa.Table(
     "file_meta_data", metadata,
-    sa.Column("object_name", sa.String, primary_key=True),
-    sa.Column("bucket_name", sa.String),
-    sa.Column("file_id", sa.String), #uuid
-    sa.Column("file_name", sa.String),
-    sa.Column("user_id", sa.Integer),
-    sa.Column("user_name", sa.String),
+    sa.Column("file_uuid", sa.String, primary_key=True),
+    sa.Column("location_id", sa.String),
     sa.Column("location", sa.String),
-    sa.Column("project_id", sa.Integer),
+    sa.Column("bucket_name", sa.String),
+    sa.Column("object_name", sa.String),
+    sa.Column("project_id", sa.String),
     sa.Column("project_name", sa.String),
-    sa.Column("node_id", sa.Integer),
+    sa.Column("node_id", sa.String),
     sa.Column("node_name", sa.String),
+    sa.Column("file_id", sa.String),
+    sa.Column("file_name", sa.String),
+    sa.Column("user_id", sa.String),
+    sa.Column("user_name", sa.String),
 )
 
 @attr.s(auto_attribs=True)
 class FileMetaData:
     """ This is a proposal, probably no everything is needed.
-
+        It is actually an overkill
 
         for simcore.s3:
             bucket_name = "simcore", probably fixed
@@ -53,17 +55,18 @@ class FileMetaData:
 
             # dat core allows to attach metadata to files --> see datcore.py
 
-        TODO: use attrs for this!
         """
     #pylint: disable=W0613
-    object_name: str
-    bucket_name: str =""
-    file_id: str =""
-    file_name: str=""
-    user_id: int=-1
-    user_name: str=""
+    file_uuid: str=""
+    location_id: str=""
     location: str=""
-    project_id: int=-1
+    bucket_name: str=""
+    object_name: str=""
+    project_id: str=""
     project_name: str=""
-    node_id: int=-1
+    node_id: str=""
     node_name: str=""
+    file_id: str=""
+    file_name: str=""
+    user_id: str=""
+    user_name: str=""

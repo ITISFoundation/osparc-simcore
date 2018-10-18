@@ -71,7 +71,7 @@ class DataStorageManager:
 
         return [simcore_s3, datcore]
 
-    async def list_files(self, user_id: int, location: str, regex: str="", sortby: str="") -> FileMetaDataVec:
+    async def list_files(self, user_id: str, location: str, regex: str="", sortby: str="") -> FileMetaDataVec:
         """ Returns a list of file paths
 
             Works for simcore.s3 and datcore
@@ -110,7 +110,7 @@ class DataStorageManager:
 
         return data
 
-    async def delete_file(self, user_id: int, location: str, fmd: FileMetaData):
+    async def delete_file(self, user_id: str, location: str, fmd: FileMetaData):
         """ Deletes a file given its fmd and location
 
             Additionally requires a user_id for 3rd party auth
@@ -141,13 +141,13 @@ class DataStorageManager:
             dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
             return dc.delete_file(fmd)
 
-    async def upload_file_to_datcore(self, user_id: int, local_file_path: str, datcore_bucket: str, fmd: FileMetaData = None): # pylint: disable=W0613
+    async def upload_file_to_datcore(self, user_id: str, local_file_path: str, datcore_bucket: str, fmd: FileMetaData = None): # pylint: disable=W0613
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
         await dc.upload_file_async(datcore_bucket, local_file_path, fmd)
 
-    async def _get_datcore_tokens(self, user_id: int)->Tuple[str, str]:
+    async def _get_datcore_tokens(self, user_id: str)->Tuple[str, str]:
         # actually we have to query the master db
         async with create_engine(self.db_endpoint) as engine:
             # FIXME: load from app[APP_DB_ENGINE_KEY]
@@ -167,7 +167,7 @@ class DataStorageManager:
                 await conn.execute(ins)
                 return self.s3_client.create_presigned_put_url(fmd.bucket_name, fmd.object_name)
 
-    async def download_link(self, user_id: int, fmd: FileMetaData, location: str)->str:
+    async def download_link(self, user_id: str, fmd: FileMetaData, location: str)->str:
         link = None
         if location == "simcore.s3":
             link = self.s3_client.create_presigned_get_url(fmd.bucket_name, fmd.object_name)

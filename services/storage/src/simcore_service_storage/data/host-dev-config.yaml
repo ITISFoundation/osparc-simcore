@@ -1,5 +1,5 @@
 main:
-  #disable_services: ['postgres', 's3']
+  disable_services: ['postgres', 's3']
   host: 127.0.0.1
   log_level: INFO
   port: 8080

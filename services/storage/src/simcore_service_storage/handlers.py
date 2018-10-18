@@ -84,7 +84,6 @@ async def get_storage_locations(request: web.Request):
     return envelope
 
 
-
 async def get_files_metadata(request: web.Request):
     data1 = {
         'filename' : "a.txt",

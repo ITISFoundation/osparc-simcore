@@ -190,10 +190,10 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
     data = {}
     for _file in files:
         idx = randrange(len(users))
-        user = users[idx]
+        user_name = users[idx]
         user_id = idx + 10
         idx =  randrange(len(projects))
-        project = projects[idx]
+        project_name = projects[idx]
         project_id = idx + 100
         idx =  randrange(len(nodes))
         node = nodes[idx]
@@ -201,29 +201,31 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
         file_id = str(uuid.uuid4())
         file_name = str(counter)
         object_name = os.path.join(str(project_id), str(node_id), str(counter))
+        file_uuid = os.path.join(location, bucket_name, object_name)
+
         assert s3_client.upload_file(bucket_name, object_name, _file)
 
-
-        d = { 'object_name' : object_name,
+        d = { 'file_uuid' : file_uuid,
+              'location_id' : "0",
+              'location' : location,
               'bucket_name' : bucket_name,
+              'object_name' : object_name,
+              'project_id' : str(project_id),
+              'project_name' : project_name,
+              'node_id' : str(node_id),
+              'node_name' : node,
               'file_id' : file_id,
               'file_name' : file_name,
-              'user_id' : user_id,
-              'user_name' : user,
-              'location' : location,
-              'project_id' : project_id,
-              'project_name' : project,
-              'node_id' : node_id,
-              'node_name' : node
-             }
+              'user_id' : str(user_id),
+              'user_name' : user_name
+            }
 
         counter = counter + 1
 
         data[object_name] = FileMetaData(**d)
 
 
-        utils.insert_metadata(postgres_service_url, object_name, bucket_name, file_id, file_name, user_id,
-            user, location, project_id, project, node_id, node)
+        utils.insert_metadata(postgres_service_url, data[object_name])
 
 
     total_count = 0

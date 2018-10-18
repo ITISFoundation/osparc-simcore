@@ -4,7 +4,7 @@ import requests
 import sqlalchemy as sa
 
 import simcore_storage_sdk
-from simcore_service_storage.models import file_meta_data
+from simcore_service_storage.models import file_meta_data, FileMetaData
 
 DATABASE = 'aio_login_tests'
 USER = 'admin'
@@ -65,31 +65,23 @@ def drop_tables(url, engine=None):
 
     meta.drop_all(bind=engine, tables=[file_meta_data])
 
-def insert_metadata(url: str,
-        object_name: str,
-        bucket_name: str,
-        file_id: str,
-        file_name: str,
-        user_id: int,
-        user_name: str,
-        location: str,
-        project_id: int,
-        project_name: str,
-        node_id: int,
-        node_name: str):
+def insert_metadata(url: str, fmd: FileMetaData):
     #FIXME: E1120:No value for argument 'dml' in method call
     # pylint: disable=E1120
-    ins = file_meta_data.insert().values(object_name=object_name,
-        bucket_name=bucket_name,
-        file_id=file_id,
-        file_name=file_name,
-        user_id=user_id,
-        user_name=user_name,
-        location=location,
-        project_id=project_id,
-        project_name=project_name,
-        node_id=node_id,
-        node_name=node_name)
+    ins = file_meta_data.insert().values(
+        file_uuid = fmd.file_uuid,
+        location_id = fmd.location_id,
+        location = fmd.location,
+        bucket_name = fmd.bucket_name,
+        object_name = fmd.object_name,
+        project_id = fmd.project_id,
+        project_name = fmd.project_name,
+        node_id = fmd.node_id,
+        node_name = fmd.node_name,
+        file_id = fmd.file_id,
+        file_name = fmd.file_name,
+        user_id = fmd.user_id,
+        user_name= fmd.user_name)
 
     engine = sa.create_engine(url)
     conn = engine.connect()
