@@ -123,4 +123,4 @@ create_dummy(options.portconfig,
     number_of_rows=options.rows, 
     number_of_columns=options.columns, 
     number_of_files=options.files, 
-    separator=separator)
+    sep=separator)
