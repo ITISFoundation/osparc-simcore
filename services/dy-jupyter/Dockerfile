@@ -48,6 +48,7 @@ VOLUME /home/jovyan/devel
 VOLUME /home/jovyan/work
 ENV CREATE_DUMMY_TABLE=1
 ENV USE_CASE_CONFIG_FILE="devel/port_config.json"
+ENV INIT_OPTIONS="100 12 23 space"
 
 CMD [ "/bin/bash", "/docker/boot.sh" ]
 

@@ -7,7 +7,7 @@ then
     pushd /packages/s3wrapper; pip install -r requirements-dev.txt; popd
 
     echo "Creating dummy tables ... using ${USE_CASE_CONFIG_FILE}"
-    result="$(python devel/initialise_dummy_platorm.py ${USE_CASE_CONFIG_FILE})"
+    result="$(python devel/initialise_dummy_platorm.py ${USE_CASE_CONFIG_FILE} ${INIT_OPTIONS})"
     echo "Received result node uuid of $result"
     export SIMCORE_NODE_UUID="$result"
 fi
