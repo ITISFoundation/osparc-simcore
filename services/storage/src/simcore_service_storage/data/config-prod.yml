@@ -1,0 +1,10 @@
+## Runtime configuration for the simcore_service_storage application.
+##
+version: '1.0'
+main:
+  logging: WARN
+  host: ${HOSTNAME:-0.0.0.0}
+  port: ${PORT:-8888}
+  debug: False
+services:
+  ## Here goes the configuration of service client-sdks 
