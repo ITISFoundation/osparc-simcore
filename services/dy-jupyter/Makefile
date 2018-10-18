@@ -49,4 +49,3 @@ down:
 push_service_images:
 	${DOCKER} login masu.speag.com
 	${DOCKER} push masu.speag.com/simcore/services/dynamic/jupyter-base-notebook:${SERVICES_VERSION}
-	${DOCKER} push masu.speag.com/simcore/services/dynamic/jupyter-scipy-notebook:${SERVICES_VERSION}
