@@ -5,6 +5,10 @@ title: node output list api
 description: nodes using the list representation for the output
   must be able to handle the following requests
 type: object
+required: 
+  # the validator does not appreciate when required is missing here... and
+  # sadly does not throw any meaningful error about it... so for now I put this...
+  - getItemList
 properties:
   getItemList:
     description: all the items in the list
