@@ -4,7 +4,7 @@ import pytest
 from openapi_spec_validator import validate_spec
 from openapi_spec_validator.exceptions import OpenAPIValidationError
 
-from utils import is_json_schema, read_schema
+from utils import is_json_schema, read_schema, is_openapi_schema
 
 _API_DIR = Path(__file__).parent.parent
 
@@ -42,25 +42,24 @@ def add_namespace_for_converted_schemas(schema_specs):
     
 def validate_individual_schemas(list_of_paths: list):
     for spec_file_path in list_of_paths:        
-        # skip full specs
-        if "openapi.yaml" in spec_file_path.name:
-            continue
         # only consider schemas in a /schemas/ subfolder
         if "schemas" in str(spec_file_path):
             specs = read_schema(spec_file_path)
             if is_json_schema(specs):
                 continue
 
-            # correct local references
-            correct_schema_local_references(specs)
-
-            if str(spec_file_path).endswith("-converted.yaml"):
-                # this is a json to openapi converted file
-                specs = add_namespace_for_converted_schemas(specs)
-            fake_openapi_headers = _FAKE_OPEN_API_HEADERS
-            fake_openapi_headers["components"]["schemas"] = specs
+            if not is_openapi_schema(specs):
+                # this is probably only part of a openapi specs
+                # correct local references
+                correct_schema_local_references(specs)
+                if str(spec_file_path).endswith("-converted.yaml"):
+                    # this is a json to openapi converted file
+                    specs = add_namespace_for_converted_schemas(specs)
+                fake_openapi_headers = _FAKE_OPEN_API_HEADERS
+                fake_openapi_headers["components"]["schemas"] = specs
+                specs = fake_openapi_headers
             try:
-                validate_spec(fake_openapi_headers, spec_url=spec_file_path.as_uri())
+                validate_spec(specs, spec_url=spec_file_path.as_uri())
             except OpenAPIValidationError as err:
                 pytest.fail(err.message)
 

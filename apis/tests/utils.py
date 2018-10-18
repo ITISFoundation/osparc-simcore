@@ -17,3 +17,8 @@ def is_json_schema(specs: dict) -> bool:
     if "$schema" in specs:
         return True
     return False
+
+def is_openapi_schema(specs: dict) -> bool:
+    if "openapi" in specs:
+        return True
+    return False
