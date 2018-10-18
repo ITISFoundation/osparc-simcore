@@ -12,7 +12,7 @@ from openapi_spec_validator.exceptions import OpenAPIValidationError
 import simcore_service_director
 
 
-API_VERSIONS = ('v1', )
+API_VERSIONS = ('v0', )
 
 @pytest.fixture
 def spec_basepath():
