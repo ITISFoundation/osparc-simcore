@@ -51,7 +51,7 @@ def create_dummy_table(number_of_rows, number_of_columns):
     df = pd.DataFrame(fullmatrix)
     return df
 
-def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number_of_columns: int, number_of_files: int, separator: str ="\t"):
+def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number_of_columns: int, number_of_files: int, sep: str ="\t"):
     with json_configuration_file_path.open() as file_pointer:
         json_configuration = file_pointer.read()
     
@@ -78,7 +78,7 @@ def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number
             # create dummy file containing a table
             df = create_dummy_table(number_of_rows, number_of_columns)
             with open(temp_file.name, "w") as file_pointer:
-                df.to_csv(path_or_buf=file_pointer, sep=separator, header=False, index=False)        
+                df.to_csv(path_or_buf=file_pointer, sep=sep, header=False, index=False)        
 
         # upload to S3
         if input_item["type"] == "file-url":
