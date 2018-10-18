@@ -19,7 +19,7 @@ endif
 export SERVICES_VERSION=1.4.0
 export VCS_REF=$(shell git rev-parse --short HEAD) 
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-export REGISTRY_KEY=masu.speag.com/simcore/services/
+export REGISTRY_KEY=masu.speag.com/simcore/services/dynamic/
 
 all:
 	@echo 'run `make build` to build'
@@ -48,5 +48,5 @@ down:
 
 push_service_images:
 	${DOCKER} login masu.speag.com
-	${DOCKER} push masu.speag.com/simcore/services/jupyter-base-notebook:${SERVICES_VERSION}
-	${DOCKER} push masu.speag.com/simcore/services/jupyter-scipy-notebook:${SERVICES_VERSION}
+	${DOCKER} push masu.speag.com/simcore/services/dynamic/jupyter-base-notebook:${SERVICES_VERSION}
+	${DOCKER} push masu.speag.com/simcore/services/dynamic/jupyter-scipy-notebook:${SERVICES_VERSION}

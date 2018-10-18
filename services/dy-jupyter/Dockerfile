@@ -35,12 +35,12 @@ ARG SERVICE_NAME
 ARG BUILD_DATE
 ARG VCS_REF
 
-LABEL io.simcore.key='{"key": "${SERVICE_KEY}"}' \
-        io.simcore.tag='{"tag": "${SERVICE_VERSION}"}' \
-        io.simcore.name='{"name": "${SERVICE_NAME}"}' \
+LABEL io.simcore.key=${SERVICE_KEY} \
+        io.simcore.tag=${SERVICE_VERSION} \
+        io.simcore.name=${SERVICE_NAME} \
         io.simcore.description='{"description": "Jupyter notebook"}' \
         io.simcore.contact='{"contact": "anderegg@itis.swiss"}' \
-        io.simcore.authors='{"authors": [{"name": "sanderegg", "email": ""anderegg@itis.swiss"", "affiliation": "ITIS Foundation"}]}' \
+        io.simcore.authors='{"authors": [{"name": "sanderegg", "email": "anderegg@itis.swiss", "affiliation": "ITIS Foundation"}]}' \
         io.simcore.inputs='{"inputs": [{"key": "input_1", "label": "input 1", "desc": "file input", "type": "file-url", "value": "null"}]}' \
         io.simcore.outputs='{"outputs": [{"key": "output_1", "label": "output 1", "desc": "file output", "type": "file-url", "value": "null"}]}' \
         io.simcore.viewer='{"viewer":{"ip":null, "port":null}}' \

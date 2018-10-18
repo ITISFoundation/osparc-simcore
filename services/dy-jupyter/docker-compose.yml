@@ -8,27 +8,10 @@ services:
       target: production
       args: 
         BASE_IMAGE: jupyter/base-notebook
-        SERVICE_NAME: jupyter-base-notebook
-        SERVICE_KEY: simcore/services/jupyter-base-notebook
-        SERVICE_VERSION: ${SERVICES_VERSION}
+        SERVICE_NAME: '{"name": "jupyter-base-notebook"}'
+        SERVICE_KEY: '{"key": "simcore/services/dynamic/jupyter-base-notebook"}'
+        SERVICE_VERSION: '{"tag": "${SERVICES_VERSION}"}'
         BUILD_DATE: ${BUILD_DATE}
         VCS_REF: ${VCS_REF}
     ports:
       - '8888:8888'
-#--------------------------------------------------------------------
-  jupyter-scipy-notebook:
-    image: ${REGISTRY_KEY}jupyter-scipy-notebook:${SERVICES_VERSION}
-    build:
-      context: ../../
-      dockerfile: services/dy-jupyter/Dockerfile
-      target: production
-      args: 
-        BASE_IMAGE: jupyter/scipy-notebook
-        SERVICE_NAME: jupyter-scipy-notebook
-        SERVICE_KEY: simcore/services/jupyter-scipy-notebook
-        SERVICE_VERSION: ${SERVICES_VERSION}
-        BUILD_DATE: ${BUILD_DATE}
-        VCS_REF: ${VCS_REF}
-    ports:
-      - '8889:8888'
-  
