@@ -787,6 +787,35 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "file_name": "hallo",
         "user_id": 13,
         "user_name": "dennis"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/105/10000/4",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10000/4",
+        "project_id": 105,
+        "project_name": "futurology",
+        "node_id": 10000,
+        "node_name": "alpha",
+        "file_id": "3",
+        "file_name": "hallo 2",
+        "user_id": 13,
+        "user_name": "dennis"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/13/5",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "13/5",
+        "file_id": "5",
+        "file_name": "My file 1",
+        "user_id": 13,
+        "user_name": "dennis"
+      }, {
+        "file_uuid": "datcore/my_datcore/6",
+        "location": "datcore",
+        "bucket_name": "my_datcore",
+        "object_name": "6",
+        "file_id": "3",
+        "file_name": "DatCore file 1"
       }];
       return objects;
     },
