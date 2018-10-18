@@ -23,8 +23,8 @@ def decode_link(encoded_link):
     other_port_key = ".".join(link[2:])
     return other_node_uuid, other_port_key
 
-def encode_link(node_uuid, port_key):
-    return config.LINK_PREFIX + str(node_uuid) + "." + port_key
+def encode_link(node_uuid: str, link_value: str):
+    return config.LINK_PREFIX + str(node_uuid) + "." + link_value
 
 class DataItem(_DataItem):
     """This class encapsulate a Data Item and provide accessors functions"""
@@ -91,9 +91,9 @@ class DataItem(_DataItem):
                 raise exceptions.InvalidItemTypeError(self.type, value)
             node_uuid = os.environ.get('SIMCORE_NODE_UUID', default="undefined")
             log.debug("file path %s will be uploaded to s3", value)
-            filemanager.upload_file_to_s3(node_uuid=node_uuid, node_key=self.key, file_path=file_path)
+            filemanager.upload_file_to_s3(node_uuid=node_uuid, node_key=file_path.name, file_path=file_path)
             log.debug("file path %s uploaded to s3 from node %s and key %s", value, node_uuid, self.key)
-            new_value = encode_link(node_uuid=node_uuid, port_key=self.key)
+            new_value = encode_link(node_uuid=node_uuid, link_value=file_path.name)
 
         elif self.type in config.TYPE_TO_S3_FOLDER_LIST:
             folder_path = Path(new_value)
@@ -101,9 +101,9 @@ class DataItem(_DataItem):
                 raise exceptions.InvalidItemTypeError(self.type, value)
             node_uuid = os.environ.get('SIMCORE_NODE_UUID', default="undefined")
             log.debug("folder %s will be uploaded to s3", value)
-            filemanager.upload_folder_to_s3(node_uuid=node_uuid, node_key=self.key, folder_path=folder_path)
+            filemanager.upload_folder_to_s3(node_uuid=node_uuid, node_key=folder_path.name, folder_path=folder_path)
             log.debug("folder %s uploaded to s3 from node %s and key %s", value, node_uuid, self.key)
-            new_value = encode_link(node_uuid=node_uuid, port_key=self.key)
+            new_value = encode_link(node_uuid=node_uuid, link_value=folder_path.name)
 
         data_dct["value"] = new_value
         data_dct["timestamp"] = datetime.datetime.utcnow().isoformat()
@@ -116,19 +116,20 @@ class DataItem(_DataItem):
 
 
     def __get_value_from_link(self):
-        node_uuid, port_key = decode_link(self.value)
+        node_uuid, s3_object_name = decode_link(self.value)
 
         if self.type in config.TYPE_TO_S3_FILE_LIST:
             # try to fetch from S3 as a file
             log.debug("Fetch file from S3 %s", self.value)
-            return filemanager.download_file_from_S3(node_uuid=node_uuid,
-                                                    node_key=port_key,
-                                                    file_name=self.key)
+            return filemanager.download_file_from_S3(node_uuid=node_uuid,            
+                                                    s3_object_name=s3_object_name,
+                                                    node_key=self.key,
+                                                    file_name=s3_object_name)
         if self.type in config.TYPE_TO_S3_FOLDER_LIST:
             # try to fetch from S3 as a folder
             log.debug("Fetch folder from S3 %s", self.value)
             return filemanager.download_folder_from_s3(node_uuid=node_uuid,
-                                                        node_key=port_key,
+                                                        node_key=s3_object_name,
                                                         folder_name=self.key)
 
         # try to fetch link from database node
@@ -138,4 +139,4 @@ class DataItem(_DataItem):
 
         other_nodeports = self.get_node_from_uuid_cb(node_uuid) #pylint: disable=not-callable
         log.debug("Received node from DB %s, now returning value", other_nodeports)
-        return other_nodeports.get(port_key)
+        return other_nodeports.get(s3_object_name)
