@@ -94,64 +94,14 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       const files = this.__getObjLists();
       let data = {
         label: this.__currentUserId,
-        children: this.__convertModel(files),
-        nodeId: this.__currentUserId
+        children: qxapp.data.Converters.fromDSMToVirtualTreeModel(files)
       };
+      console.log(data);
       let newModel = qx.data.marshal.Json.createModel(data, true);
       let oldModel = this.__tree.getModel();
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
         this.__tree.setModel(newModel);
       }
-    },
-
-    __convertModel: function(files) {
-      let children = [];
-      for (let i=0; i<files.length; i++) {
-        const file = files[i];
-        let fileInTree = {
-          label: file["location"],
-          children: [{
-            label: file["bucket_name"],
-            children: []
-          }]
-        };
-        let bucketChildren = fileInTree.children[0].children;
-        let splitted = file["object_name"].split("/");
-        if (file["location"] === "simcore.s3") {
-          // simcore files
-          if (splitted.length === 2) {
-            // user file
-            bucketChildren.push({
-              label: file["user_name"],
-              children: [{
-                label: file["file_name"],
-                fileId: file["file_uuid"]
-              }]
-            });
-            children.push(fileInTree);
-          } else if (splitted.length === 3) {
-            // node file
-            bucketChildren.push({
-              label: file["project_name"],
-              children: [{
-                label: file["node_name"],
-                children: [{
-                  label: file["file_name"],
-                  fileId: file["file_uuid"]
-                }]
-              }]
-            });
-            children.push(fileInTree);
-          }
-        } else {
-          // other files
-          bucketChildren.push({
-            label: file["file_name"],
-            fileId: file["file_uuid"]
-          });
-        }
-      }
-      return children;
     },
 
     __getObjLists: function() {
@@ -178,16 +128,6 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
         };
         this.fireEvent("Finished");
       }, this);
-    },
-
-    __alreadyExists: function(parentTree, itemName) {
-      for (let i=0; i<parentTree.getChildren().length; i++) {
-        let treeExsItem = parentTree.getChildren()[i];
-        if (treeExsItem.getLabel() === itemName) {
-          return treeExsItem;
-        }
-      }
-      return null;
     },
 
     // Request to the server an upload URL.
@@ -241,7 +181,11 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
     __selectionChanged: function() {
       let selection = this.__tree.getSelection();
       let selectedItem = selection.toArray()[0];
-      this.__selectBtn.setEnabled("fileId" in selectedItem);
+      let enabled = false;
+      if (selectedItem["set"+qx.lang.String.firstUp("fileId")]) {
+        enabled = true;
+      }
+      this.__selectBtn.setEnabled(enabled);
     },
 
     __itemSelected: function() {
