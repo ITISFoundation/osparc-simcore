@@ -6,7 +6,7 @@ aiohttp-security==0.2.0
 aiopg[sa]==0.14.0
 aio-pika==2.9.0
 urllib3==1.21.1
-attr
+attrs
 celery==4.1.0
 kombu==4.1.0
 minio==4.0.0

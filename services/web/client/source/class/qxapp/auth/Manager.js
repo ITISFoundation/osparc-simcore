@@ -46,7 +46,7 @@ qx.Class.define("qxapp.auth.Manager", {
       return this.__auth !== null && this.__auth instanceof qx.io.request.authentication.Basic;
     },
 
-    login: function(email, pass, callback, context) {
+    login: function(email, pass, successCbk, failCbk, context) {
       //---------------------------------------------------------------------------
       // FIXME: temporarily will allow any user until issue #162 is resolved and/or python server has active API
       // if (!qx.core.Environment.get("dev.enableFakeSrv")) {
@@ -58,7 +58,7 @@ qx.Class.define("qxapp.auth.Manager", {
 
       let request = new qxapp.io.request.ApiRequest("/auth/login", "POST");
       request.set({
-        authentication: new qx.io.request.authentication.Basic(email, pass), // FIXME: remove from here
+        // authentication: new qx.io.request.authentication.Basic(email, pass), // FIXME: remove from here
         requestData: {
           "email": email,
           "password": pass
@@ -67,39 +67,15 @@ qx.Class.define("qxapp.auth.Manager", {
 
       request.addListener("success", function(e) {
         const {
-          data,
-          error
+          data
         } = e.getTarget().getResponse();
 
-        let msg = "Login failed";
-        let success = false;
-
-        if (error) {
-          // TODO: call isntead callback for "statusError"!
-          msg = this.composeMessage(error.logs) || msg; // This should never happen?
-          success = false;
-        } else {
-          // TODO: validate data against specs
-          this.setToken(data.token);
-          msg = "Login succeeded";
-          success = true;
-        }
-        callback.call(context, success, msg);
+        // TODO: validate data against specs???
+        this.setToken(data.token);
+        successCbk.call(context, data.message);
       }, this);
 
-      request.addListener("fail", function(e) {
-        const {
-          error
-        } = e.getTarget().getResponse();
-
-        let msg = "Unable to login";
-        let success = false;
-        if (error) {
-          msg = this.composeMessage(error.logs) || "Login failed";
-          success = false;
-        }
-        callback.call(context, success, msg);
-      }, this);
+      this.__bindDefaultFailCallback(request, failCbk, context);
 
       request.send();
     },
@@ -118,33 +94,50 @@ qx.Class.define("qxapp.auth.Manager", {
       callback.call(context, success, msg);
     },
 
-    register: function(userData, callback, context) {
+    register: function(userData, successCbk, failCbk, context) {
       console.debug("Registering user ...");
 
-      // TODO: request server
-      let success = true;
-      let msg = "User has been registered. A confirmation email has been sent to you.";
-      callback.call(context, success, msg);
+      let request = new qxapp.io.request.ApiRequest("/auth/register", "POST");
+      request.set({
+        requestData: userData
+      });
+
+      this.__bindDefaultSuccessCallback(request, successCbk, context);
+      this.__bindDefaultFailCallback(request, failCbk, context);
+
+      request.send();
     },
 
-    composeMessage: function(logs) {
-      // Composes a message out of logs array
-      let msg = "";
-      if (logs) {
-        // TODO: improve error logging
-        for (let i = 0; i < logs.length; ++i) {
-          const log = logs[i];
-          if (log.level == "ERROR") {
-            msg = log.message;
-            break;
-          } else {
-            console.debug(logs[i]);
+
+
+    __bindDefaultSuccessCallback: function(request, successCbk, context) {
+      request.addListener("success", function(e) {
+        const {
+          data
+        } = e.getTarget().getResponse();
+
+        // TODO: validate data against specs???
+        successCbk.call(context, data);
+      }, this);
+    },
+
+    __bindDefaultFailCallback: function(request, failCbk, context) {
+      request.addListener("fail", function(e) {
+        const {
+          error
+        } = e.getTarget().getResponse();
+
+        let msg = "";
+        if (error) {
+          for (var i=0; i<error.errors.length; i++) {
+            msg = msg + error.errors[i].message + " ";
           }
         }
-      }
-      console.debug(msg);
-      return msg;
+
+        failCbk.call(context, msg);
+      }, this);
     }
+
 
   }
 });

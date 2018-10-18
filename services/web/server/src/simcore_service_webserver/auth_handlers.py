@@ -37,6 +37,7 @@ async def register(request: web.Request):
     assert not query
     assert body
 
+
     if body.password != body.confirm:
         raise web.HTTPConflict(reason="Passwords do not match", content_type='application/json')
 
@@ -59,6 +60,7 @@ async def register(request: web.Request):
     #form.errors.append()
 
     # output
+    log.info("User %s registered", body.email)
     return attr.asdict(LogMessageType(level="INFO", message="Confirmation email sent", logger="user"))
 
 
@@ -99,6 +101,7 @@ async def login(request: web.Request):
         message="{} has logged in".format(identity),
         logger="user")).as_dict())
 
+    log.info("User %s logged in", identity)
     # TODO: check new_session(request) issue!
     await remember(request, response, identity)
     return response
@@ -122,6 +125,8 @@ async def logout(request: web.Request):
         logger="user")).as_dict())
 
     await forget(request, response)
+
+    log.info("User %s logged out", identity)
     return response
 
 
