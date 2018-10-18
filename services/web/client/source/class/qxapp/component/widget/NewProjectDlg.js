@@ -49,7 +49,52 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
         flex: 1
       });
 
-      let createBtn = new qx.ui.form.Button("Create");
+      prjFormLayout.add(new qx.ui.core.Spacer(5));
+
+      let creditCardLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      let planList = new qx.ui.form.List().set({
+        height: 50
+      });
+      planList.add(new qx.ui.form.ListItem(this.tr("Monthly Subscription")));
+      planList.add(new qx.ui.form.ListItem(this.tr("Yearly Subscription")));
+      creditCardLayout.add(new qx.ui.basic.Label(this.tr("Plan")));
+      creditCardLayout.add(planList);
+
+      let ccDataLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      let ccIcon = new qx.ui.basic.Atom().set({
+        icon: "@FontAwesome5Solid/credit-card/24"
+      });
+      let ccNumber = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Credit Card Number")
+      });
+      let expDate = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Exp. Date"),
+        width: 100
+      });
+      ccDataLayout.add(ccIcon);
+      ccDataLayout.add(ccNumber, {
+        flex: 1
+      });
+      ccDataLayout.add(expDate);
+      creditCardLayout.add(ccDataLayout);
+
+      creditCardLayout.setVisibility("excluded");
+
+      let privateCB = new qx.ui.form.CheckBox(this.tr("Private"));
+      privateCB.addListener("changeValue", function(e) {
+        const showCC = e.getData();
+        if (showCC) {
+          creditCardLayout.setVisibility("visible");
+        } else {
+          creditCardLayout.setVisibility("excluded");
+        }
+      }, this);
+      prjFormLayout.add(privateCB);
+      prjFormLayout.add(creditCardLayout);
+
+      prjFormLayout.add(new qx.ui.core.Spacer(5));
+
+      let createBtn = new qx.ui.form.Button(this.tr("Create"));
       createBtn.addListener("execute", function() {
         console.log("CreatePrj");
       }, this);
