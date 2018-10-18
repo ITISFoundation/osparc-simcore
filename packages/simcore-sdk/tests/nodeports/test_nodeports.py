@@ -70,8 +70,8 @@ def test_port_value_accessors_s3(special_nodeports_configuration, bucket, item_t
     # this triggers an upload to S3 + configuration change
     PORTS.outputs[item_key].set(item_value)
     # this is the link to S3 storage
-    assert PORTS.outputs[item_key].value == ".".join(["link", os.environ["SIMCORE_NODE_UUID"], item_key])
-    # this triggers a download from S3 to a location in /tempdir/simcorefiles/item_key or /tempdir/simcorefiles/item_key/item_key.simcore
+    assert PORTS.outputs[item_key].value == ".".join(["link", os.environ["SIMCORE_NODE_UUID"], Path(item_value).name])
+    # this triggers a download from S3 to a location in /tempdir/simcorefiles/item_key
     converted_value = PORTS.outputs[item_key].get()
     assert isinstance(converted_value, node_config.TYPE_TO_PYTHON_TYPE_MAP[item_type]["type"])
 
