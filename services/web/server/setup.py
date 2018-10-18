@@ -32,8 +32,9 @@ setup(
     include_package_data=True,
     package_data={
         '': [
-            'config/*.yaml',
-            'oas3/v1/*.yaml'
+            'config/*.y*ml',
+            'oas3/**/*.yaml',
+            'oas3/**/**/schemas/*.y*ml',
             ]
     },
     entry_points={
