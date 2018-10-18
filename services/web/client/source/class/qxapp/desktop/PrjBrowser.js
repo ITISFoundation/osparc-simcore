@@ -55,6 +55,16 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       win.open();
     },
 
+    __getProjectModel: function(projectId) {
+      let project = new qxapp.data.model.ProjectModel();
+      if (projectId) {
+        let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
+        projectData.id = String(projectId);
+        project = new qxapp.data.model.ProjectModel(projectData);
+      }
+      return project;
+    },
+
     __createProjectList: function() {
       // layout
       let prjLst = this.__list = new qx.ui.form.List();
@@ -78,8 +88,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       prjCtr.getSelection().addListener("change", e => {
         const selectedItem = e.getTarget().toArray()[0];
         const data = {
-          name: selectedItem.getName(),
-          projectUuid: selectedItem.getProjectUuid()
+          projectModel: this.__getProjectModel(selectedItem.getProjectUuid())
         };
         this.fireDataEvent("StartProject", data);
       }, this);
@@ -107,8 +116,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       prjCtr.getSelection().addListener("change", e => {
         const selectedItem = e.getTarget().toArray()[0];
         const data = {
-          name: selectedItem.getName(),
-          projectUuid: selectedItem.getProjectUuid()
+          projectModel: this.__getProjectModel(selectedItem.getProjectUuid())
         };
         this.fireDataEvent("StartProject", data);
       }, this);

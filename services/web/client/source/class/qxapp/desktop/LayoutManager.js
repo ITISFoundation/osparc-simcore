@@ -37,17 +37,15 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     this.__prjBrowser.addListener("StartProject", e => {
       const data = e.getData();
-      const projectUuid = data.projectUuid;
-      const projectName = data.name;
+      const projectModel = data.projectModel;
       if (this.__prjEditor) {
         this.__prjStack.remove(this.__prjEditor);
       }
-      let projectModel = this.__getProjectModel(projectUuid);
       this.__prjEditor = new qxapp.desktop.PrjEditor(projectModel);
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
       this.__navBar.setMainViewCaption([{
-        "root": projectName
+        "root": projectModel.getName()
       }]);
 
       this.__prjEditor.addListener("ChangeMainViewCaption", function(ev) {
@@ -69,16 +67,6 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       let navBar = new qxapp.desktop.NavigationBar();
       navBar.setMainViewCaption("Dashboard");
       return navBar;
-    },
-
-    __getProjectModel: function(projectId) {
-      let project = new qxapp.data.model.ProjectModel();
-      if (projectId) {
-        let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
-        projectData.id = String(projectId);
-        project = new qxapp.data.model.ProjectModel(projectData);
-      }
-      return project;
     },
 
     __nodeCheck: function() {
