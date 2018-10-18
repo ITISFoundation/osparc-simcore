@@ -8,8 +8,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
     this.__createControls();
 
-    this.__createProjectList();
-    this.__createTemplateList();
+    this.__createUserProjectList();
+    this.__createPublicProjectList();
   },
 
   events: {
@@ -74,7 +74,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       return project;
     },
 
-    __createProjectList: function() {
+    __createUserProjectList: function() {
       // layout
       let prjLst = this.__list = new qx.ui.form.List();
       prjLst.set({
@@ -87,7 +87,9 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
       // controller
 
-      let prjCtr = this.__controller = new qx.data.controller.List(this.__getProjectArray(), prjLst, "name"
+      let userPrjList = qxapp.data.Store.getInstance().getUserProjectList();
+      let userPrjArray = this.__getProjectArray(userPrjList);
+      let prjCtr = this.__controller = new qx.data.controller.List(userPrjArray, prjLst, "name"
       );
       this.__setDelegate(prjCtr);
       // FIXME: selection does not work if model is not passed in the constructor!!!!
@@ -115,7 +117,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       this.fireDataEvent("StartProject", data);
     },
 
-    __createTemplateList: function() {
+    __createPublicProjectList: function() {
       // layout
       let prjLst = this.__list2 = new qx.ui.form.List();
       prjLst.set({
@@ -127,8 +129,9 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       this.add(prjLst);
 
       // controller
-
-      let prjCtr = this.__controller2 = new qx.data.controller.List(this.__getTemplateArray(), prjLst, "name");
+      let publicPrjList = qxapp.data.Store.getInstance().getPublicProjectList();
+      let publicPrjArray = this.__getProjectArray(publicPrjList);
+      let prjCtr = this.__controller2 = new qx.data.controller.List(publicPrjArray, prjLst, "name");
       this.__setDelegate(prjCtr);
       // FIXME: selection does not work if model is not passed in the constructor!!!!
       // prjCtr.setModel();
@@ -179,9 +182,9 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       projectController.setDelegate(delegate);
     },
 
-    __getProjectArray: function() {
+    __getProjectArray: function(prjList) {
       return new qx.data.Array(
-        qxapp.data.Store.getInstance().getProjectList()
+        prjList
           .map(
             (p, i) => qx.data.marshal.Json.createModel({
               name: p.name,
@@ -191,18 +194,6 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             })
           )
       );
-    },
-
-    __getTemplateArray: function() {
-      let data = this.__getProjectArray();
-      data.insertAt(0, qx.data.marshal.Json.createModel({
-        name: this.tr("New Project"),
-        thumbnail: "@MaterialIcons/create/40",
-        projectUuid: null,
-        created: null
-      }));
-      return data;
     }
-
-  } // statics
+  }
 });
