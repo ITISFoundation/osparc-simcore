@@ -94,7 +94,7 @@ def create_dummy(json_configuration_file_path):
         if "FILENAME_ID" in input_item["value"]:
             input_item["value"] = input_item["value"].replace("FILENAME_ID", Path(temp_file.name).name)
         if "FOLDER_NAME_ID" in input_item["value"]:
-            input_item["value"] = input_item["value"].replace("FOLDER_NAME_ID", Path(temp_file.name).name)
+            input_item["value"] = input_item["value"].replace("FOLDER_NAME_ID", Path(temp_file.name).parent.name)
 
     Path(temp_file.name).unlink()
 
