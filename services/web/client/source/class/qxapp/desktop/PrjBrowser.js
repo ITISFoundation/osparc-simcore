@@ -25,7 +25,10 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     __createControls: function() {
       let controlsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      let newPrjBtn = new qx.ui.form.Button(this.tr("New Project"));
+      let newPrjBtn = new qx.ui.form.Button(this.tr("New Project")).set({
+        width: 150,
+        height: 50
+      });
       newPrjBtn.addListener("execute", function() {
         this.__newPrjBtnClkd();
       }, this);
@@ -86,7 +89,6 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       this.add(prjLst);
 
       // controller
-
       let userPrjList = qxapp.data.Store.getInstance().getUserProjectList();
       let userPrjArray = this.__getProjectArray(userPrjList);
       let prjCtr = this.__controller = new qx.data.controller.List(userPrjArray, prjLst, "name"
@@ -190,7 +192,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               name: p.name,
               thumbnail: p.thumbnail,
               projectUuid: p.projectUuid,
-              created: p.creationDate
+              created: p.creationDate,
+              collaborators: p.collaborators
             })
           )
       );
