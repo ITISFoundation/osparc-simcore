@@ -17,18 +17,18 @@ log = logging.getLogger(__name__)
 # FIXME: W0603: Using the global statement (global-statement)
 #pylint: disable=global-statement
 # TODO: temporary while DB is not ready
-dummy_database = {
+DUMMY_DATABASE = {
     'admin@simcore.io': {'email': 'admin@simcore.io', 'password': 'mysecret', 'confirmed': True, 'role': 'ADMIN' },
 }
 
 # maps token with user
-dummy_active_tokens = { }
+DUMMY_TOKENS = { }
 
 
 # TODO: middleware to envelop errors
 
 async def register(request: web.Request):
-    global dummy_database
+    global DUMMY_DATABASE
 
     # input
     params, query, body = await extract_and_validate(request)
@@ -40,10 +40,10 @@ async def register(request: web.Request):
     if body.password != body.confirm:
         raise web.HTTPConflict(reason="Passwords do not match", content_type='application/json')
 
-    if body.email in dummy_database:
+    if body.email in DUMMY_DATABASE:
         raise web.HTTPUnprocessableEntity(reason="User already registered", content_type='application/json')
 
-    dummy_database[body.email] = {
+    DUMMY_DATABASE[body.email] = {
         'email': body.email,
         'password': body.password,
         'confirmed': True, # TODO:
@@ -64,7 +64,7 @@ async def register(request: web.Request):
 
 
 async def login(request: web.Request):
-    global dummy_active_tokens
+    global DUMMY_TOKENS
 
     # 1. Receive email and password through a /login endpoint.
     params, query, body = await extract_and_validate(request)
@@ -76,10 +76,10 @@ async def login(request: web.Request):
     # Authentication: users identity is verified
 
     # 2. Check the email and password hash against the database.
-    if body.email not in dummy_database:
+    if body.email not in DUMMY_DATABASE:
         raise web.HTTPUnprocessableEntity(reason="Invalid user or password", content_type='application/json')
 
-    user = dummy_database[body.email]
+    user = DUMMY_DATABASE[body.email]
     if user['password'] != body.password:
         raise web.HTTPUnprocessableEntity(reason="Invalid user or password", content_type='application/json')
 
@@ -91,7 +91,7 @@ async def login(request: web.Request):
     # Currently identity is stored in session and the latter stored in an encrypted cookie
     identity = user['email'] # TODO: create token as identity? can set expiration!?
 
-    dummy_active_tokens[identity] = user['email']
+    DUMMY_TOKENS[identity] = user['email']
 
 
     response = web.json_response(EnvelopeFactory(data = LogMessageType(
@@ -105,7 +105,7 @@ async def login(request: web.Request):
 
 
 async def logout(request: web.Request):
-    global dummy_active_tokens
+    global DUMMY_TOKENS
     params, query, body = await extract_and_validate(request)
 
     assert not params
@@ -114,7 +114,7 @@ async def logout(request: web.Request):
 
     identity = await authorized_userid(request)
 
-    dummy_active_tokens.pop(identity, None)
+    DUMMY_TOKENS.pop(identity, None)
 
     response = web.json_response(EnvelopeFactory(data = LogMessageType(
         level="DEBUG",

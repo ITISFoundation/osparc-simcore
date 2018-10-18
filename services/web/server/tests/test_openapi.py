@@ -3,7 +3,7 @@ import yaml
 from openapi_spec_validator import validate_spec  # , openapi_v3_spec_validator
 from openapi_spec_validator.exceptions import OpenAPIValidationError
 
-from simcore_service_webserver.resources import RSC_OPENAPI_DIR_KEY, resources
+from simcore_service_webserver.resources import resources
 
 API_VERSIONS = ("v0", "v1")
 OPENAPI_MAIN = "oas3/{}/openapi.yaml"
