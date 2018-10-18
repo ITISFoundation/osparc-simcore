@@ -191,12 +191,10 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
     __itemSelected: function() {
       let selection = this.__tree.getSelection();
       let selectedItem = selection.toArray()[0];
-      if ("fileId" in selectedItem) {
-        const data = {
-          itemPath: selectedItem["fileId"]["file_uuid"]
-        };
-        this.fireDataEvent("ItemSelected", data);
-      }
+      const data = {
+        itemPath: selectedItem.getFileId()
+      };
+      this.fireDataEvent("ItemSelected", data);
     }
   }
 });
