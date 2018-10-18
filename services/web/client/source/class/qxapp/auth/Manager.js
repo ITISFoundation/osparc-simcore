@@ -5,6 +5,7 @@
  *  - Keeps state of current application
  *  - Keeps authentication header for future requests to the backend
 */
+/* eslint no-warning-comments: "off" */
 qx.Class.define("qxapp.auth.Manager", {
   extend: qx.core.Object,
   type: "singleton",
@@ -27,23 +28,13 @@ qx.Class.define("qxapp.auth.Manager", {
   */
 
   members: {
-    __auth: null,
-
-    setToken: function(token) {
-      // Keeps token for future requests
-      const auth = new qx.io.request.authentication.Basic(token, null);
-      this.__auth = auth;
-    },
-
-    resetToken: function() {
-      this.__auth = null;
-    },
 
     isLoggedIn: function() {
       // TODO: how to store this localy?? See http://www.qooxdoo.org/devel/pages/data_binding/stores.html#offline-store
       // TODO: check if expired??
       // TODO: request server if token is still valid (e.g. expired, etc)
-      return this.__auth !== null && this.__auth instanceof qx.io.request.authentication.Basic;
+      const auth = qxapp.auth.Data.getInstance().getAuth();
+      return auth !== null && auth instanceof qx.io.request.authentication.Basic;
     },
 
     login: function(email, pass, successCbk, failCbk, context) {
@@ -58,7 +49,7 @@ qx.Class.define("qxapp.auth.Manager", {
 
       let request = new qxapp.io.request.ApiRequest("/auth/login", "POST");
       request.set({
-        // authentication: new qx.io.request.authentication.Basic(email, pass), // FIXME: remove from here
+        authentication: new qx.io.request.authentication.Basic(email, pass),
         requestData: {
           "email": email,
           "password": pass
@@ -71,7 +62,8 @@ qx.Class.define("qxapp.auth.Manager", {
         } = e.getTarget().getResponse();
 
         // TODO: validate data against specs???
-        this.setToken(data.token);
+        // TODO: activate tokens!?
+        this.__loginUser(email, data.token || "fake token");
         successCbk.call(context, data.message);
       }, this);
 
@@ -81,7 +73,7 @@ qx.Class.define("qxapp.auth.Manager", {
     },
 
     logout: function() {
-      this.resetToken();
+      this.__logoutUser();
       this.fireEvent("logout");
     },
 
@@ -108,7 +100,15 @@ qx.Class.define("qxapp.auth.Manager", {
       request.send();
     },
 
+    __loginUser: function(email, token) {
+      qxapp.auth.Data.getInstance().setToken(token);
+      qxapp.auth.Data.getInstance().setEmail(email);
+    },
 
+    __logoutUser: function() {
+      qxapp.auth.Data.getInstance().resetToken();
+      qxapp.auth.Data.getInstance().resetEmail();
+    },
 
     __bindDefaultSuccessCallback: function(request, successCbk, context) {
       request.addListener("success", function(e) {
@@ -137,7 +137,5 @@ qx.Class.define("qxapp.auth.Manager", {
         failCbk.call(context, msg);
       }, this);
     }
-
-
   }
 });

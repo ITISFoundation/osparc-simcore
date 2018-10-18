@@ -59,26 +59,31 @@ qx.Class.define("qxapp.Preferences", {
       const iconUrl = qxapp.dev.Placeholders.getIcon("ion-ios-settings", 32);
       let page = this.__createPage("General", iconUrl);
 
+      const userEmail = qxapp.auth.Data.getInstance().getEmail();
+
       // content
       let username = new qx.ui.form.TextField().set({
-        value: "bizzy",
-        placeholder: "User Name"
+        value: userEmail.split("@")[0],
+        placeholder: "User Name",
+        readOnly: true
       });
       page.add(username);
 
-      let fullname = new qx.ui.form.TextField().set({
-        placeholder: "Full Name"
-      });
+      // let fullname = new qx.ui.form.TextField().set({
+      //   placeholder: "Full Name"
+      // });
 
-      page.add(fullname);
+      // page.add(fullname);
 
       let email = new qx.ui.form.TextField().set({
-        placeholder: "Email"
+        value: userEmail,
+        placeholder: "Email",
+        readOnly: true
       });
       page.add(email);
 
       let img = new qx.ui.basic.Image().set({
-        source: qxapp.utils.Avatar.getUrl(email.getValue() || "bizzy@itis.ethz.ch", 200)
+        source: qxapp.utils.Avatar.getUrl(email.getValue(), 200)
       });
       page.add(img);
 
@@ -90,19 +95,19 @@ qx.Class.define("qxapp.Preferences", {
       let page = this.__createPage("Security", iconUrl);
 
       // content
-      page.add(new qx.ui.form.PasswordField().set({
-        placeholder: "Password"
-      }));
+      // page.add(new qx.ui.form.PasswordField().set({
+      //   placeholder: "Password"
+      // }));
 
-      page.add(new qx.ui.form.PasswordField().set({
-        placeholder: "Re-type Password"
-      }));
+      // page.add(new qx.ui.form.PasswordField().set({
+      //   placeholder: "Re-type Password"
+      // }));
 
       page.add(new qx.ui.basic.Atom("<h3>DAT-CORE</h3>").set({
         rich: true
       }));
 
-      let tokens = new qx.ui.form.TextField();
+      let tokens = new qx.ui.form.PasswordField();
       tokens.set({
         placeholder: "Personal Access Token"
       });
