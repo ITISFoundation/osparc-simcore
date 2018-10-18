@@ -1,0 +1,224 @@
+openapi: 3.0.2
+servers: []
+
+info:
+  description: OSparc Upload API
+  version: "0.0.1"
+  title: OSparc Upload REST API
+  contact:
+    name: Tobias Oetiker
+    email: tobi@itis.swiss
+  license:
+    name: MIT
+    url: 'https://opensource.org/licenses/MIT'
+
+tags:
+  - name: multi-part upload
+    description: |
+      The REST API is modeled after the S3 multi part upload service
+      which makes this very simple to implement on the server side
+      especially if you have an S3 like [minio.io](https://www.minio.io/).
+
+paths:
+  /upload/start:
+    post:
+      tags:
+        - upload
+      summary: start an upload
+      operationId: uploadStart
+      description: Start or resume an upload
+      requestBody:
+        description: the properties of the File Object
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: big-date.bin
+                size: 1000000000000
+                lastModified: 15294862961234
+              required:
+                - name
+                - size
+                - lastModified
+              properties:
+                name:
+                  type: string
+                  description: file name
+                size:
+                  type: integer
+                  format: int64
+                  description: file size in bytes
+                lastModified:
+                  type: integer
+                  format: int64
+                  description: last file modification in milliseconds since 1970-01-01
+
+      responses:
+        '200':
+          description: |
+            Meta information about the upload. If a pending upload has matched
+            the information given in the fileMetaData the response will contain
+            information about the already uploaded chunks of data.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  uploadId: EXAMPLEJZ6e0YupT2h66iePQCc9IEbYbD...
+                  partsPresent:
+                    - partNumber: 1
+                      size: 1024
+                      eTag: 7778aef83f66abc1fa1e8477f296d394
+                    - partNumber: 3
+                      size: 1024
+                      eTag: 8234979234987eafff384
+                required:
+                  - uploadId
+                  - partsPresent
+                properties:
+                  uploadId:
+                    type: string
+                  partsPresent:
+                    type: array
+                    minItems: 0
+                    items:
+                      type: object
+                      properties:
+                        partNumber:
+                          type: integer
+                          format: int64
+                        size:
+                          type: integer
+                          format: int64
+                        eTag:
+                          type: string
+                      required:
+                        - partNumber
+                        - size
+                        - eTag
+        '405':
+          description: Request was not formed as expected
+
+  /upload/part:
+    post:
+      tags:
+        - upload
+      summary: upload a data block
+      operationId: uploadPart
+      description: Upload a block of data
+      parameters:
+        - name: X-Upload-Id
+          in: header
+          required: true
+          description: which upload does this belong to
+          example: EXAMPLEJZ6e0YupT2h66iePQCc9IEbYbD
+          schema:
+            type: string
+        - name: X-Upload-Part-Number
+          in: header
+          required: true
+          description: which part of the upload is this ?
+          example: 22
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: a raw block of data ... not encoded
+        example: big-bad-binary-data
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: confirmation for the successful part upload
+
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - eTag
+                  - size
+                properties:
+                  eTag:
+                    description: Entity Tag of the part just uploaded
+                    type: string
+                  size:
+                    type: integer
+                    format: int64
+                example:
+                  eTag: 7e10e7d25dc4581d89b9285be5f384fd
+                  size: 9388854884884884
+        '404':
+          description: No Such Upload
+  /upload/complete:
+    post:
+      tags:
+        - upload
+      summary: complete upload process
+      operationId: uploadComplete
+      description: Complete upload process
+      requestBody:
+        description: a list of uploaded parts to be assembled into a file
+        content:
+          application/json:
+            schema:
+              type: array
+              # minItems: 1
+              example:
+                - partNumber: 1
+                  eTag: 7e10e7d25dc4581d89b9285be5f384fd
+                - partNumber: 2
+                  eTag: 1c10d25dc4581d89b9285be5f334fec5
+              items:
+                type: object
+                properties:
+                  partNumber:
+                    type: integer
+                    format: int64
+                  eTag:
+                    type: string
+                required:
+                  - partNumber
+                  - eTag
+      responses:
+          '201':
+            description: new file has been created
+            headers:
+              ETag:
+                description: Entity Tag of the newly created file
+                schema:
+                  type: string
+                  example: 1c10d25dc4581d89b9285be5f334fec5
+          '404':
+            description: No Such Upload
+
+
+  /upload/abort:
+    post:
+      tags:
+        - upload
+      summary: abort the pending upload
+      operationId: uploadAbort
+      description: Abort a pending multi part upload
+      requestBody:
+        description: cancel a pending upload
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                uploadId: EXAMPLEJZ6e0YupT2h66iePQCc9IEbYbD
+              required:
+                - uploadId
+              properties:
+                uploadId:
+                  type: string
+      responses:
+        '200':
+          description: upload canceled
+        '404':
+          description: upload does not exist
