@@ -34,7 +34,8 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
     name: {
       check: "String",
       nullable: false,
-      init: "New Project"
+      init: "New Project",
+      apply : "__applyName"
     },
 
     description: {
@@ -80,6 +81,10 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
   },
 
   members: {
+    __applyName: function(newName) {
+      this.getWorkbenchModel().setProjectName(newName);
+    },
+
     serializeProject: function() {
       this.setLastChangeDate(new Date());
 
