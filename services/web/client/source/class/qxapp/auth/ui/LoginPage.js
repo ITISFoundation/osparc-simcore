@@ -61,7 +61,11 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
 
       let loginBtn = new qx.ui.form.Button(this.tr("Log In"));
       loginBtn.addListener("execute", function() {
-        if (this.__form.validate()) {
+        this.__login();
+      }, this);
+      // Listen to "Enter" key
+      this.addListener("keypress", function(keyEvent) {
+        if (keyEvent.getKeyIdentifier() === "Enter") {
           this.__login();
         }
       }, this);
@@ -115,6 +119,10 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
     },
 
     __login: function() {
+      if (!this.__form.validate()) {
+        return;
+      }
+
       const email = this.__form.getItems().email;
       const pass = this.__form.getItems().password;
 
