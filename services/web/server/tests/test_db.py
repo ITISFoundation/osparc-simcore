@@ -2,20 +2,12 @@ import logging
 
 import sqlalchemy as sa
 
-from simcore_service_webserver.main import init_app
-from simcore_service_webserver.settings import (
-    read_and_validate
-)
-
-from simcore_service_webserver.db.core import (
-    create_aiopg,
-    dispose_aiopg,
-    APP_ENGINE_KEY
-)
-from simcore_service_webserver.db.model import (
-    users
-)
-
+from simcore_service_webserver.application import create_application
+from simcore_service_webserver.application_keys import APP_DB_ENGINE_KEY
+from simcore_service_webserver.db.core import (create_aiopg,
+                                               dispose_aiopg)
+from simcore_service_webserver.db.model import users
+from simcore_service_webserver.cli_config import read_and_validate
 
 log = logging.getLogger(__name__)
 
@@ -31,13 +23,13 @@ async def test_basic_db_workflow(mock_services, server_test_configfile):
 
     # init app from config file
     config = read_and_validate( server_test_configfile )
-    app = init_app(config)
+    app = create_application(config)
 
     # emulates app startup (see app.on_startup in setup_db)
     await create_aiopg(app)
 
-    assert APP_ENGINE_KEY in app
-    engine = app[APP_ENGINE_KEY]
+    assert APP_DB_ENGINE_KEY in app
+    engine = app[APP_DB_ENGINE_KEY]
 
     # pylint: disable=E1111, E1120
     async with engine.acquire() as connection:
