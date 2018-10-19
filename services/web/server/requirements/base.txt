@@ -1,11 +1,12 @@
 # List of packages for setup.install_requires
 #   Outsourced here so can be installed in base-stage of the web/Dockerfile
 aiohttp==3.3.2
-aiohttp_apiset>=0.9.3
 aiohttp_session[secure]==2.5.1
 aiohttp-security==0.2.0
 aiopg[sa]==0.14.0
 aio-pika==2.9.0
+urllib3==1.21.1
+attrs
 celery==4.1.0
 kombu==4.1.0
 minio==4.0.0
@@ -18,3 +19,5 @@ requests==2.19.0
 sqlalchemy==1.2.9
 tenacity==4.12.0
 trafaret-config==2.0.1
+semantic_version
+# TODO: find a way to keep this automatically sorted

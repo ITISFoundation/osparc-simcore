@@ -57,6 +57,13 @@ class TestUsersApi(unittest.TestCase):
         """
         pass
 
+    def test_services_by_key_version_get(self):
+        """Test case for services_by_key_version_get
+
+        Returns details of the selected service if available in the oSparc platform  # noqa: E501
+        """
+        pass
+
     def test_services_get(self):
         """Test case for services_get
 

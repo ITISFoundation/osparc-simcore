@@ -1,6 +1,6 @@
 /* global window */
 
-qx.Class.define("qxapp.components.AvailableServices", {
+qx.Class.define("qxapp.component.AvailableServices", {
   extend: qx.ui.container.Composite,
 
   include: [qx.locale.MTranslation],

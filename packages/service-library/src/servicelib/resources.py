@@ -45,3 +45,18 @@ class ResourcesFacade:
     def get_distribution(self):
         """ Returns distribution info object """
         return pkg_resources.get_distribution(self.distribution_name)
+
+
+
+# TODO: create abc
+@attr.s(auto_attribs=True)
+class FileResource:
+    """
+        TODO: lazy evaluation of attribs
+    """
+    name: str
+
+
+class PackageResources:
+    def get_configfile(self, name: str) -> FileResource:
+        raise NotImplementedError("Should be implemented in subclass")

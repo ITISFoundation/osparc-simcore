@@ -19,8 +19,6 @@ from aiohttp_apiset.swagger.operations import OperationIdMapping
 
 from .. import handlers
 from .models.base_model_ import Model
-from .models.error import Error
-from .models.error_enveloped import ErrorEnveloped
 
 log = logging.getLogger(__name__)
 
@@ -33,16 +31,14 @@ async def __handle_errors(request, handler):
     except ValidationError as ex:
         # aiohttp apiset errors
         log.exception("error happened in handling route")
-        error = Error(status=ex.status, message=ex.to_tree())
-        error_enveloped = ErrorEnveloped(data=error, status=ex.status_code)
-        error_dict = error_enveloped.to_dict()
-        return web.json_response(error_dict, status=ex.status)
+        error = dict(status=ex.status, message=ex.to_tree())
+        error_enveloped = dict(error=error)        
+        return web.json_response(error_enveloped, status=ex.status)
     except web.HTTPError as ex:
         log.exception("error happened in handling route")
-        error = Error(status=ex.status, message=str(ex.reason))
-        error_enveloped = ErrorEnveloped(data=error, status=ex.status_code)
-        error_dict = error_enveloped.to_dict()
-        return web.json_response(error_dict, status=ex.status)
+        error = dict(status=ex.status, message=str(ex.reason))
+        error_enveloped = dict(data=error)        
+        return web.json_response(error_enveloped, status=ex.status)
 
 
 def create_web_app(base_folder, spec_file, additional_middlewares = None):
@@ -78,8 +74,8 @@ def create_web_app(base_folder, spec_file, additional_middlewares = None):
     router.include(
         spec=Path(base_folder / spec_file),
         operationId_mapping=opmap,
-        name='v1',  # name to access in swagger-ui,
-        basePath="/v1" # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
+        name='v0',  # name to access in swagger-ui,
+        basePath="/v0" # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
     )
 
     return app

@@ -1,4 +1,4 @@
-""" Implements interfaces in BaseOpenAPIRequest and BaseOpenAPIResponse for aiohttp
+""" Implements BaseOpenAPIRequest and BaseOpenAPIResponse interfaces for aiohttp
 
 """
 import logging
@@ -8,9 +8,8 @@ from aiohttp import web
 from openapi_core.wrappers.base import BaseOpenAPIRequest, BaseOpenAPIResponse
 from werkzeug.datastructures import ImmutableMultiDict
 
-# TODO: add typing
 log = logging.getLogger(__name__)
-TIMEOUT = 5
+
 CAPTURES = re.compile(r'\(\?P<([_a-zA-Z][_a-zA-Z0-9]+)>(.[^)]+)\)')
 PARAMETERS_KEYS = ('path', 'query', 'header', 'cookie')
 

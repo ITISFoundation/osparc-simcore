@@ -1,0 +1,52 @@
+version: '3.6'
+services:
+  jupyter-base-notebook:
+    image: jupyter-base-notebook-dev
+    build:
+      target: development
+    environment: 
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - USE_CASE_CONFIG_FILE=devel/port_config.json      
+      - INIT_OPTIONS=10 60 2 space
+    depends_on:
+      - postgres
+      - minio
+    ports:
+      - '8888:8888'
+    volumes: 
+      - ../../packages/:/packages
+      - ./devel:/home/jovyan/devel
+      - ./work:/home/jovyan/work
+ 
+#--------------------------------------------------------------------
+  postgres:
+    image: postgres:10
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+  #--------------------------------------------------------------------
+  adminer:
+    image: adminer
+    ports:
+      - 18080:8080
+    depends_on:
+      - postgres
+  #--------------------------------------------------------------------
+  minio:
+    image: minio/minio
+    environment:
+      - MINIO_ACCESS_KEY=${S3_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${S3_SECRET_KEY}
+    ports:
+      - "9001:9000"
+    command: server /data

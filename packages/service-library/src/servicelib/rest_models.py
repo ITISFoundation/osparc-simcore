@@ -1,4 +1,4 @@
-""" RestAPI common models
+""" RestAPI common schema models and classes
 
 """
 import attr

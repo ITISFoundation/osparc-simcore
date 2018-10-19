@@ -1,15 +1,3 @@
-<!-- Thank you for your contribution!
-
- - Add **WIP-** prefix in title if it is still work in progress (i.e. should not be merged but is ready to start reviewing it)
- - Use [waffle.io] keywords in title/descriptions to trigger bot actions:
-   - close, closes, close, closes, closed, fix, fixes, fixed, resolve, resolves, resolved #[issueNumber]
-   - connect to, connects to, connected to, connect, connects, connected #[issueNumber]
-   - parent of, parent to, parent #[issueNumber]
-   - child of, child to, child #[issueNumber]
-   - blocks, block, required by, needed by, dependency of #[issueNumber]
-   - blocked by, required, require, needs, need, depends on #[issueNumber]
--->
-
 ## What do these changes do?
 
 <!-- Please give a short brief about these changes. -->
@@ -17,11 +5,14 @@
 
 ## Related issue number
 
-<!-- Are there any issues opened that will be resolved by merging this change?
+<!--
+ - Add **WIP-** prefix in title if it is still work in progress (i.e. should not be merged but is ready to start reviewing it)
 
- - add mentions of the user or team responsible for reviewing proposed changes
- - and user/team to .github/CODEOWNERS to automatically assign reviewers
+ - Use [waffle.io] keywords in title/descriptions to trigger bot actions:
+   - close, closes, close, closes, closed, fix, fixes, fixed, resolve, resolves, resolved #[issueNumber]
+   - connect to, connects to, connected to, connect, connects, connected #[issueNumber]
 -->
+
 
 ## Checklist
 

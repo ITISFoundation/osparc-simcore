@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.components.UserMenu", {
+qx.Class.define("qxapp.component.UserMenu", {
   extend: qx.ui.container.Composite,
 
   include : [qx.locale.MTranslation],

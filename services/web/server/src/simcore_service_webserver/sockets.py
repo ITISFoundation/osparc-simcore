@@ -28,22 +28,6 @@ def connect(sid, environ):
     interactive_services_manager.session_connect(sid)
     return True
 
-
-@SIO.on("getInteractiveServices")
-async def get_interactive_services_handler(sid, data):
-    # pylint: disable=C0103
-    # pylint: disable=W0613
-    log.debug("client %s gets interactive services", sid)
-    try:
-        result = await interactive_services_manager.retrieve_list_of_services()
-        await SIO.emit("getInteractiveServices", data=result, room=sid)
-    #TODO: see how we handle errors back to the frontend
-    except IOError:
-        log.exception("Error emitting retrieved services")
-    except Exception:
-        log.exception("Error while retrieving interactive services")
-
-
 @SIO.on("startDynamic")
 async def start_dynamic_service(sid, data):
     log.debug("client %s starts dynamic service %s", sid, data)

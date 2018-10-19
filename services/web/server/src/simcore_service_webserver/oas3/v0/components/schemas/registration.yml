@@ -1,0 +1,36 @@
+RegistrationEnveloped:
+  type: object
+  required:
+    - data
+    - error
+  properties:
+    data:
+      $ref: '#/RegistrationType'
+      nullable: true
+      default: null
+    error:
+      $ref: "./error.yml#/ErrorType"
+      nullable: true
+      default: null
+
+
+RegistrationType:
+  type: object
+  properties:
+    email:
+      type: string
+      #FIXME:  'error': {'logs': [], 'errors': [{'code': 'OpenAPISchemaError', 'message': 'Unsupported email format unmarshalling', 'resource': None, 'field': None}], 'status': 400}}
+      #format: email
+    password:
+      type: string
+      # TODO:   File "/home/crespo/devp/osparc-simcore/.venv/lib/python3.6/site-packages/openapi_core/schema/schemas/models.py", line 182, in _unmarshal_string
+      # formatter = self.STRING_FORMAT_CAST_CALLABLE_GETTER[schema_format]
+      # KeyError: <SchemaFormat.PASSWORD: 'password'>
+      #format: password
+    confirm:
+      type: string
+      #format: password
+  example:
+    email: foo@mymail.com
+    password: 'my secret'
+    confim: 'my secret'

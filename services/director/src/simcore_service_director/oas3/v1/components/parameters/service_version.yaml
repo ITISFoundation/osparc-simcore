@@ -1,8 +1,0 @@
-ServiceVersion:
-  in: query
-  name: service_tag
-  description: The tag/version of the service
-  required: false
-  schema:
-    type: string
-    example: "1.4"

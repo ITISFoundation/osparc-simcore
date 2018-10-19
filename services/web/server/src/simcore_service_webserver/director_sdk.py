@@ -27,14 +27,14 @@ log = logging.getLogger(__file__)
 #    version needs to be given by simcore_director_sdk!!!
 #
 #
-# notice that app['config']['service']['director'] returns this config
+# notice that app[APP_CONFIG_KEY]['service']['director'] returns this config
 #
 # OR cache per session?
 #
 
 _DIRECTOR_HOST = os.environ.get("DIRECTOR_HOST", "0.0.0.0")
 _DIRECTOR_PORT = os.environ.get("DIRECTOR_PORT", "8001")
-_DIRECTOR_PATH = "v1"
+_DIRECTOR_PATH = "v0"
 
 def get_director():
     configuration = simcore_director_sdk.Configuration()

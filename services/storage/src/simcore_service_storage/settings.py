@@ -7,7 +7,7 @@ to all of them.
 """
 import logging
 
-from servicelib import constants
+from servicelib import application_keys
 
 from .__version__ import get_version_object
 from .settings_schema import CONFIG_SCHEMA #pylint: disable=W0611
@@ -38,8 +38,8 @@ API_URL_VERSION = "v{:.0f}".format(API_MAJOR_VERSION)
 #
 
 # APP=application
-APP_CONFIG_KEY = constants.APP_CONFIG_KEY
-APP_OAS_KEY = constants.APP_OAS_KEY
+APP_CONFIG_KEY = application_keys.APP_CONFIG_KEY
+APP_OPENAPI_SPECS_KEY = application_keys.APP_OPENAPI_SPECS_KEY
 
 APP_DB_ENGINE_KEY  = 'db_engine'
 APP_DB_SESSION_KEY = 'db_session'

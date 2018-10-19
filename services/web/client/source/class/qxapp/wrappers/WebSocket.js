@@ -124,7 +124,7 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
         socketIOPath
       ]);
 
-      dynLoader.addListenerOnce("ready", function(e) {
+      dynLoader.addListenerOnce("ready", e => {
         console.log(socketIOPath + " loaded");
         this.setLibReady(true);
 

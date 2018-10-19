@@ -4,7 +4,9 @@
 
 -e ../../../packages/s3wrapper/
 -e ../../../packages/simcore-sdk/
+-e ../../../packages/service-library/
 -e ../../../packages/director-sdk/python
 
-aiohttp-devtools==0.10.1
-autopep8>=1.3.5
+aiohttp-devtools
+autopep8
+rope

@@ -5,7 +5,6 @@
 # pylint: disable=C0103
 import logging
 
-import async_timeout
 from aiohttp import web
 from simcore_director_sdk.rest import ApiException
 
@@ -15,19 +14,9 @@ log = logging.getLogger(__file__)
 
 registry_routes = web.RouteTableDef()
 
-async def async_request(method, session, url, data=None, timeout=10):
-    async with async_timeout.timeout(timeout):
-        if method == "GET":
-            async with session.get(url) as response:
-                return await response.json()
-        elif method == "POST":
-            async with session.post(url, json=data) as response:
-                return await response.json()
 
-
-
-@registry_routes.get("/get_computational_services")
-async def get_computational_services(request):
+@registry_routes.get("/get_services")
+async def get_services(request):
     """
     ---
     description: This end-point returns a list of computational services.
@@ -45,7 +34,7 @@ async def get_computational_services(request):
 
     try:
         director = director_sdk.get_director()
-        services = await director.services_get(service_type="computational")
+        services = await director.services_get()
         return web.json_response(services.to_dict())
     except ApiException as exc:
         log.exception("Api Error while accessing director")

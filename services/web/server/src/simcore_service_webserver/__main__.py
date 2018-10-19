@@ -1,27 +1,15 @@
+""" Main application entry point
+
+ `python -m simcore_service_storage ...`
+
+Why does this file exist, and why __main__? For more info, read:
+
+- https://www.python.org/dev/peps/pep-0338/
+- https://docs.python.org/3/using/cmdline.html#cmdoption-m
+"""
 import sys
-import warnings
-import logging
 
-warnings.filterwarnings("ignore")
-
-from . import cli
-from . import settings
-from .main import run
-
-def main(argv=None):
-    logging.basicConfig(level=logging.DEBUG)
-
-    if argv is None:
-        argv = sys.argv[1:]
-
-    ap = cli.add_options()
-    options = cli.parse_options(argv, ap)
-    config = settings.config_from_options(options)
-
-    log_level = config.get("app",{}).get("log_level", "DEBUG")
-    logging.basicConfig( level=getattr(logging, log_level) )
-
-    run(config)
+from simcore_service_webserver.cli import main
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    sys.exit(main())

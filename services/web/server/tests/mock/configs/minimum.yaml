@@ -1,7 +1,7 @@
 # This config is used for testing on the host
 ---
 version: "1.0"
-app:
+main:
   host: 127.0.0.1
   port: 8080
   client_outdir: client/source-output
