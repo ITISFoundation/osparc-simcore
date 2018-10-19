@@ -82,7 +82,9 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
 
   members: {
     __applyName: function(newName) {
-      this.getWorkbenchModel().setProjectName(newName);
+      if (this.isPropertyInitialized("workbenchModel")) {
+        this.getWorkbenchModel().setProjectName(newName);
+      }
     },
 
     serializeProject: function() {
