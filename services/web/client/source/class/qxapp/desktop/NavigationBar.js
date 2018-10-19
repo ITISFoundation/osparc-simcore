@@ -105,7 +105,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     __showMainViewCaptionAsText: function(newLabel) {
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
       let mainViewCaption = this.__mainViewCaption = new qx.ui.basic.Label(newLabel).set({
-        font: navBarLabelFont
+        font: navBarLabelFont,
+        minWidth: 150
       });
       this.__mainViewCaptionLayout.add(mainViewCaption);
     },

@@ -4,12 +4,41 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
-    this.base(arguments, new qx.ui.layout.VBox());
+    this.base(arguments, new qx.ui.layout.HBox());
 
-    this.__createControls();
+    let leftSpacer = new qx.ui.core.Spacer(150);
+    let mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    let rightSpacer = new qx.ui.core.Spacer(150);
 
-    this.__createUserProjectList();
-    this.__createPublicProjectList();
+    this.add(leftSpacer);
+    this.add(mainView, {
+      flex: 1
+    });
+    this.add(rightSpacer);
+
+    let controlsLayout = this.__createControls();
+
+    const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
+    let myPrjsLabel = this.__mainViewCaption = new qx.ui.basic.Label(this.tr("My Projects")).set({
+      font: navBarLabelFont,
+      minWidth: 150
+    });
+    let userProjectList = this.__list = this.__createUserProjectList();
+
+    let pubPrjsLabel = this.__mainViewCaption = new qx.ui.basic.Label(this.tr("Popular Projects")).set({
+      font: navBarLabelFont,
+      minWidth: 150
+    });
+    let publicProjectList = this.__list2 = this.__createPublicProjectList();
+
+    mainView.add(new qx.ui.core.Spacer(null, 10));
+    mainView.add(controlsLayout);
+    mainView.add(new qx.ui.core.Spacer(null, 10));
+    mainView.add(myPrjsLabel);
+    mainView.add(userProjectList);
+    mainView.add(new qx.ui.core.Spacer(null, 10));
+    mainView.add(pubPrjsLabel);
+    mainView.add(publicProjectList);
   },
 
   events: {
@@ -34,7 +63,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }, this);
       controlsLayout.add(newPrjBtn);
 
-      this.add(controlsLayout);
+      return controlsLayout;
     },
 
     __newPrjBtnClkd: function() {
@@ -67,6 +96,18 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       win.open();
     },
 
+    __startBlankProject: function(newPrj) {
+      let blankProject = this.__getProjectModel();
+      blankProject.set({
+        name: newPrj.name,
+        description: newPrj.description
+      });
+      const data = {
+        projectModel: blankProject
+      };
+      this.fireDataEvent("StartProject", data);
+    },
+
     __getProjectModel: function(projectId) {
       let project = new qxapp.data.model.ProjectModel();
       if (projectId) {
@@ -79,14 +120,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
     __createUserProjectList: function() {
       // layout
-      let prjLst = this.__list = new qx.ui.form.List();
+      let prjLst = new qx.ui.form.List();
       prjLst.set({
         orientation: "horizontal",
         spacing: 10,
-        allowGrowY: false
+        height: 230
       });
-
-      this.add(prjLst);
 
       // controller
       let userPrjList = qxapp.data.Store.getInstance().getUserProjectList();
@@ -104,30 +143,18 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         };
         this.fireDataEvent("StartProject", data);
       }, this);
-    },
 
-    __startBlankProject: function(newPrj) {
-      let blankProject = this.__getProjectModel();
-      blankProject.set({
-        name: newPrj.name,
-        description: newPrj.description
-      });
-      const data = {
-        projectModel: blankProject
-      };
-      this.fireDataEvent("StartProject", data);
+      return prjLst;
     },
 
     __createPublicProjectList: function() {
       // layout
-      let prjLst = this.__list2 = new qx.ui.form.List();
+      let prjLst = new qx.ui.form.List();
       prjLst.set({
         orientation: "horizontal",
         spacing: 10,
-        allowGrowY: false
+        height: 230
       });
-
-      this.add(prjLst);
 
       // controller
       let publicPrjList = qxapp.data.Store.getInstance().getPublicProjectList();
@@ -145,6 +172,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         };
         this.fireDataEvent("StartProject", data);
       }, this);
+
+      return prjLst;
     },
 
     /**
@@ -186,6 +215,10 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           }, item, id);
         },
         configureItem : function(item) {
+          item.set({
+            paddingTop: 5,
+            paddingBottom: 5
+          });
           item.getChildControl("icon").set({
             width: thumbnailWidth,
             height: thumbnailHeight
