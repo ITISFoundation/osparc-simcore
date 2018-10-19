@@ -31,7 +31,7 @@ async def get_services(request):
             description: invalid HTTP Method
     """
     log.debug(request)
-
+    print("HELLO!!!")
     try:
         director = director_sdk.get_director()
         services = await director.services_get()
