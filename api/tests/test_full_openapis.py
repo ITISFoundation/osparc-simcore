@@ -1,12 +1,9 @@
-from pathlib import Path
-
 import pytest
 from openapi_spec_validator import validate_spec
 from openapi_spec_validator.exceptions import OpenAPIValidationError
 
 from utils import is_openapi_schema, read_schema
 
-_API_DIR = Path(__file__).parent.parent
 
 def validate_openapi_spec(list_of_paths):
     for spec_file_path in list_of_paths:
@@ -17,8 +14,8 @@ def validate_openapi_spec(list_of_paths):
             except OpenAPIValidationError as err:
                 pytest.fail("Error validating {file}:\n{error}".format(file=spec_file_path, error=err.message))
 
-def test_valid_openapi_specs():
+def test_valid_openapi_specs(api_specs_dir):
     # get all the openapi complete specs
-    validate_openapi_spec(_API_DIR.rglob("*.json"))
-    validate_openapi_spec(_API_DIR.rglob("*.yaml"))
-    validate_openapi_spec(_API_DIR.rglob("*.yml"))
+    validate_openapi_spec(api_specs_dir.rglob("*.json"))
+    validate_openapi_spec(api_specs_dir.rglob("*.yaml"))
+    validate_openapi_spec(api_specs_dir.rglob("*.yml"))

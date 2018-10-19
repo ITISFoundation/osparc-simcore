@@ -1,19 +1,16 @@
-from pathlib import Path
-
 import pytest
 from openapi_spec_validator import validate_spec
 from openapi_spec_validator.exceptions import OpenAPIValidationError
 
 from utils import is_json_schema, read_schema, is_openapi_schema
 
-_API_DIR = Path(__file__).parent.parent
 
 _FAKE_OPEN_API_HEADERS = {
         "openapi": "3.0.0",
         "info":{
             "title": "An include file to define sortable attributes",
             "version": "1.0.0"
-        },        
+        },
         "paths": {},
         "components": {
             "parameters":{},
@@ -39,9 +36,9 @@ def add_namespace_for_converted_schemas(schema_specs):
         "FakeName": schema_specs
         }
     return fake_schema_specs
-    
+
 def validate_individual_schemas(list_of_paths: list):
-    for spec_file_path in list_of_paths:        
+    for spec_file_path in list_of_paths:
         # only consider schemas in a /schemas/ subfolder
         if "schemas" in str(spec_file_path):
             specs = read_schema(spec_file_path)
@@ -63,7 +60,7 @@ def validate_individual_schemas(list_of_paths: list):
             except OpenAPIValidationError as err:
                 pytest.fail(err.message)
 
-def test_valid_individual_openapi_schemas_specs():
-    validate_individual_schemas(_API_DIR.rglob("*.json"))
-    validate_individual_schemas(_API_DIR.rglob("*.yaml"))
-    validate_individual_schemas(_API_DIR.rglob("*.yml"))
+def test_valid_individual_openapi_schemas_specs(api_specs_dir):
+    validate_individual_schemas(api_specs_dir.rglob("*.json"))
+    validate_individual_schemas(api_specs_dir.rglob("*.yaml"))
+    validate_individual_schemas(api_specs_dir.rglob("*.yml"))

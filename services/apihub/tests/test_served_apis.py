@@ -1,3 +1,8 @@
+# pylint: disable=unused-argument
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-variable
+# pylint: disable=broad-except
+
 import io
 import logging
 from pathlib import Path
@@ -8,20 +13,17 @@ import yaml
 from aiohttp import ClientSession
 from openapi_spec_validator import validate_spec
 from openapi_spec_validator.exceptions import OpenAPIValidationError
-
 from requests_html import HTMLSession
-
-# from urllib.parse import urlparse
-
+from yarl import URL
 
 log = logging.getLogger(__name__)
 
-_ROOT_DIR = Path(__file__).parent.parent.parent.parent
 
 def verify_links(session, links):
     for link in links:
-        if "/tests/" in str(link):
+        if not "/specs/" in str(link):
             continue
+
         r = session.get(link)
         assert r.status_code == 200
 
@@ -59,33 +61,31 @@ def test_served_openapis_valid(apihub):
     links = r.html.absolute_links
     verify_links(session, links)
 
-async def test_create_specs(simcore_apis_dir, apihub):
 
-    print(simcore_apis_dir)
-    # TODO: list all services with api
-    url = apihub + "/apis/director/v0/openapi.yaml"
+async def test_create_specs(osparc_simcore_api_specs, apihub):
+    # TODO: ideally every iteration is a new test (check parametrization)
 
-    async with ClientSession() as session:
-        async with session.get(url) as resp:
-            txt = await resp.text()
-            with io.StringIO(txt) as f:
-                spec_dict = yaml.safe_load(f)
+    for service, version, openapi_path, url_path in osparc_simcore_api_specs:
+        url = URL(apihub).join(url_path)  #api/specs/${service}/${version}/openapi.yaml
 
-            spec = openapi_core.create_spec(spec_dict, spec_url=url)
-            return spec
+        msg = "%s, "*5 % (url, service, version, openapi_path, url_path)
 
+        # TODO: list all services with api
+        async with ClientSession() as session:
+            async with session.get(url) as resp:
+                txt = await resp.text()
 
-#default_handlers = {
-#    '<all_urls>': UrlHandler('http', 'https', 'file'),
-#    'http': UrlHandler('http'),
-#    'https': UrlHandler('https'),
-#    'file': UrlHandler('file'),
-#}
+                assert resp.status == 200, msg
 
-#def validate_spec_url_factory(validator_callable, handlers):
-#    def validate(url):
-#        result = parse.urlparse(url)
-#        handler = handlers[result.scheme]
-#        spec = handler(url)
-#        return validator_callable(spec, spec_url=url)
-#    return validate
+                with io.StringIO(txt) as f:
+                    spec_dict = yaml.safe_load(f)
+
+                with io.open(openapi_path) as f:
+                    spec_dict_local = yaml.safe_load(f)
+
+                assert spec_dict == spec_dict_local, msg
+
+                try:
+                    spec = openapi_core.create_spec(spec_dict, spec_url=url)
+                except Exception as err:
+                    pytest.fail("%s - %s" % (err, msg) )

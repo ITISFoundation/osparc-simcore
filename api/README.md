@@ -15,19 +15,19 @@ The oSparc platform uses the following standards:
 ## Folder structure
 
 ```bash
-/apis/                                  # base folder
-/apis/director/                         # service name folder (e.g. for director service)
-/apis/director/v0/                      # service version (v0 for development, then v1, v2... only major)
-/apis/director/v0/openapi.yaml          # openapi specifications in YAML
-/apis/director/v0/schemas/              # schemas only used by the director API
-/apis/director/v0/schemas/services.yaml # openapi encoded service only schema
+/api/specs/                                  # base folder
+/api/specs/director/                         # service name folder (e.g. for director service)
+/api/specs/director/v0/                      # service version (v0 for development, then v1, v2... only major)
+/api/specs/director/v0/openapi.yaml          # openapi specifications in YAML
+/api/specs/director/v0/schemas/              # schemas only used by the director API
+/api/specs/director/v0/schemas/services.yaml # openapi encoded service only schema
 
-/apis/shared/                           # shared apis/schemas base folder
-/apis/shared/schemas/                   # sub folder for schemas
-/apis/shared/schemas/health_check.yaml  # openapi encoded shared schema
-/apis/shared/schemas/node-meta.json     # jsonschema encoded shared schema
-/apis/shared/schemas/v1/error.yaml      # openapi encoded shaared schema for version 1
-/apis/shared/schemas/v2/error.yaml      # openapi encoded shaared schema for version 2
+/api/specs/shared/                           # shared api/specs/schemas base folder
+/api/specs/shared/schemas/                   # sub folder for schemas
+/api/specs/shared/schemas/health_check.yaml  # openapi encoded shared schema
+/api/specs/shared/schemas/node-meta.json     # jsonschema encoded shared schema
+/api/specs/shared/schemas/v1/error.yaml      # openapi encoded shaared schema for version 1
+/api/specs/shared/schemas/v2/error.yaml      # openapi encoded shaared schema for version 2
 
 /tests/                                 # python tests folder to check schemas validity
 /tests/requirements.txt                 # requirements for python tests

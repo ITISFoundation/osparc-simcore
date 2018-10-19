@@ -5,7 +5,6 @@ from jsonschema import SchemaError, ValidationError, validate
 
 from utils import read_schema, is_json_schema
 
-_API_DIR = Path(__file__).parent.parent
 
 def validate_individual_schemas(list_of_paths):
     for spec_file_path in list_of_paths:
@@ -17,15 +16,15 @@ def validate_individual_schemas(list_of_paths):
                 validate(dummy_instance, specs_dict)
             except SchemaError as err:
                 # this is not good
-                pytest.fail(err.message)            
+                pytest.fail(err.message)
             except ValidationError:
                 # this is good
                 continue
             else:
                 # this is also not good and bad from the validator...
-                pytest.fail("Expecting an instance validation error if the schema in {file} was correct".format(file=spec_file_path))            
+                pytest.fail("Expecting an instance validation error if the schema in {file} was correct".format(file=spec_file_path))
 
-def test_valid_individual_json_schemas_specs():
-    validate_individual_schemas(_API_DIR.rglob("*.json"))
-    validate_individual_schemas(_API_DIR.rglob("*.yaml"))
-    validate_individual_schemas(_API_DIR.rglob("*.yml"))
+def test_valid_individual_json_schemas_specs(api_specs_dir):
+    validate_individual_schemas(api_specs_dir.rglob("*.json"))
+    validate_individual_schemas(api_specs_dir.rglob("*.yaml"))
+    validate_individual_schemas(api_specs_dir.rglob("*.yml"))
