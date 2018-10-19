@@ -10,6 +10,7 @@ from .dsm import DataStorageManager
 from .rest_models import FileMetaDataSchema
 from .session import get_session
 from .settings import RQT_DSM_KEY
+from .models import FileMetaData
 
 #FIXME: W0613: Unused argument 'request' (unused-argument)
 #pylint: disable=W0613
@@ -126,6 +127,7 @@ async def get_file_metadata(request: web.Request):
     location = dsm.location_from_id(location_id)
     user_id = query["user_id"]
     file_uuid = params["fileId"]
+
     data = await dsm.list_file(user_id=user_id, location=location, file_uuid=file_uuid)
 
     data_as_dict = None
@@ -140,78 +142,102 @@ async def get_file_metadata(request: web.Request):
     return envelope
 
 
-
 async def update_file_meta_data(request: web.Request):
+    params, query, body = await extract_and_validate(request)
 
-    path_params, query_params, body = await extract_and_validate(request)
+    assert params, "params %s" % params
+    assert query, "query %s" % query
+    assert not body, "body %s" % body
 
-    assert path_params
-    assert not query_params
-    assert not body
+    assert params["location_id"]
+    assert params["fileId"]
+    assert query["user_id"]
+    dsm = request[RQT_DSM_KEY]
 
-    fileId = path_params['fileId']
+    location_id = params["location_id"]
+    location = dsm.location_from_id(location_id)
+    user_id = query["user_id"]
+    file_uuid = params["fileId"]
 
-    data = {
-        'filename' : "a.txt",
-        'version': '1.0',
-        'last_access' : 1234.2,
-        'owner' : 'c8da5f29-6906-4d0f-80b1-0dc643d6303d',
-        'storage_location' : 'simcore.s3'
-    }
-    return data
+    return
 
 async def download_file(request: web.Request):
+    params, query, body = await extract_and_validate(request)
 
-    path_params, query_params, body = await extract_and_validate(request)
+    assert params, "params %s" % params
+    assert query, "query %s" % query
+    assert not body, "body %s" % body
 
-    assert path_params
-    assert not query_params
-    assert not body
+    assert params["location_id"]
+    assert params["fileId"]
+    assert query["user_id"]
+    dsm = request[RQT_DSM_KEY]
 
-    fileId = path_params['fileId']
+    location_id = params["location_id"]
+    location = dsm.location_from_id(location_id)
+    user_id = query["user_id"]
+    file_uuid = params["fileId"]
 
-    data = {
-        'filename' : "a.txt",
-        'version': '1.0',
-        'last_access' : 1234.2,
-        'owner' : 'c8da5f29-6906-4d0f-80b1-0dc643d6303d',
-        'storage_location' : 'simcore.s3'
-    }
-    return data
+    link = await dsm.download_link(user_id=user_id, location=location, file_uuid=file_uuid)
+
+    data = { "link:" : link }
+    envelope = {
+        'error': None,
+        'data': data
+        }
+
+    return envelope
 
 async def upload_file(request: web.Request):
+    params, query, body = await extract_and_validate(request)
 
-    path_params, query_params, body = await extract_and_validate(request)
+    assert params, "params %s" % params
+    assert query, "query %s" % query
+    assert not body, "body %s" % body
 
-    assert path_params
-    assert not query_params
-    assert not body
+    assert params["location_id"]
+    assert params["fileId"]
+    assert query["user_id"]
+    dsm = request[RQT_DSM_KEY]
 
-    fileId = path_params['fileId']
+    location_id = params["location_id"]
+    location = dsm.location_from_id(location_id)
+    user_id = query["user_id"]
+    file_uuid = params["fileId"]
 
-    data = {
-        'filename' : "a.txt",
-        'version': '1.0',
-        'last_access' : 1234.2,
-        'owner' : 'c8da5f29-6906-4d0f-80b1-0dc643d6303d',
-        'storage_location' : 'simcore.s3'
-    }
-    return data
+    #fmd = FileMetaData()
+    link = await dsm.download_link(user_id=user_id, location=location, file_uuid=file_uuid)
+
+    data = { "link:" : link }
+    envelope = {
+        'error': None,
+        'data': data
+        }
+
+    return envelope
 
 async def delete_file(request: web.Request):
-    path_params, query_params, body = await extract_and_validate(request)
+    params, query, body = await extract_and_validate(request)
 
-    assert path_params
-    assert not query_params
-    assert not body
+    assert params, "params %s" % params
+    assert query, "query %s" % query
+    assert not body, "body %s" % body
 
-    fileId = path_params['fileId']
+    assert params["location_id"]
+    assert params["fileId"]
+    assert query["user_id"]
+    dsm = request[RQT_DSM_KEY]
 
-    data = {
-        'filename' : "a.txt",
-        'version': '1.0',
-        'last_access' : 1234.2,
-        'owner' : 'c8da5f29-6906-4d0f-80b1-0dc643d6303d',
-        'storage_location' : 'simcore.s3'
-    }
-    return data
+    location_id = params["location_id"]
+    location = dsm.location_from_id(location_id)
+    user_id = query["user_id"]
+    file_uuid = params["fileId"]
+
+    data = await dsm.delete_file(user_id=user_id, location=location, file_uuid=file_uuid)
+
+    envelope = {
+        'error': None,
+        'data': None
+        }
+
+    return envelope

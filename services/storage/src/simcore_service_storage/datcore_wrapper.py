@@ -94,17 +94,16 @@ class DatcoreWrapper:
                 bucket_name = ""
                 object_name = file_name
 
+            file_uuid = os.path.join("datcore", bucket_name, object_name)
             # at the moment, no metadata there
-            fmd = FileMetaData(bucket_name=bucket_name, file_name=file_name, object_name=object_name)
+            fmd = FileMetaData(bucket_name=bucket_name, file_name=file_name, object_name=object_name,
+                file_uuid=file_uuid)
             data.append(fmd)
 
         return data
 
-    def delete_file(self, fmd):
+    def delete_file(self, dataset: str, filename: str):
         # the object can be found in dataset/filename <-> bucket_name/object_name
-        dataset = fmd.bucket_name
-        file_name = fmd.object_name
-
         script = """
             from datcore import DatcoreClient
 
@@ -119,14 +118,11 @@ class DatcoreWrapper:
                 d_client.delete_file(ds, "{3}")
 
             channel.send(None)
-            """.format(self.api_token, self.api_secret, dataset, file_name)
+            """.format(self.api_token, self.api_secret, dataset, filename)
 
         return self._py2_call(script)
 
-    def download_link(self, fmd):
-        dataset = fmd.bucket_name
-        file_name = fmd.object_name
-
+    def download_link(self, dataset: str, filename: str):
         script = """
             from datcore import DatcoreClient
 
@@ -142,7 +138,7 @@ class DatcoreWrapper:
                 url = d_client.download_link(ds, "{3}")
 
             channel.send(url)
-            """.format(self.api_token, self.api_secret, dataset, file_name)
+            """.format(self.api_token, self.api_secret, dataset, filename)
 
         return self._py2_call(script)
 

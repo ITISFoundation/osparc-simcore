@@ -21,6 +21,7 @@
 - [ ] sync db with minio
 - [ ]
 - [ ] server rest
+- [ ] scu user has always access to s3
 
 
 - [ ] Fix and finalize meta data structure

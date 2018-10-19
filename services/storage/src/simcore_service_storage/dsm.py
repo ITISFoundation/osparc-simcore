@@ -12,7 +12,7 @@ from aiopg.sa import create_engine
 from s3wrapper.s3_client import S3Client
 
 from .datcore_wrapper import DatcoreWrapper
-from .models import FileMetaData, file_meta_data
+from .models import FileMetaData, file_meta_data, _parse_datcore, _parse_simcore, _locations, _location_from_id
 
 #pylint: disable=W0212
 #FIXME: W0212:Access to a protected member _result_proxy of a client class
@@ -22,6 +22,8 @@ from .models import FileMetaData, file_meta_data
 
 
 FileMetaDataVec = List[FileMetaData]
+
+
 
 @attr.s(auto_attribs=True)
 class DataStorageManager:
@@ -59,26 +61,10 @@ class DataStorageManager:
     python27_exec: Path
 
     def locations(self):
-        # TODO: so far this is hardcoded
-        simcore_s3 = {
-        "name" : "simcore.s3",
-        "id" : 0
-        }
-
-        datcore = {
-        "name" : "datcore",
-        "id"   : 1
-        }
-
-        return [simcore_s3, datcore]
+        return _locations()
 
     def location_from_id(self, location_id : str):
-        if location_id == "0":
-            return "simcore.s3"
-        elif location_id == "1":
-            return "datcore"
-
-
+        return _location_from_id(location_id)
 
     async def list_files(self, user_id: str, location: str, regex: str="", sortby: str="") -> FileMetaDataVec:
         """ Returns a list of file paths
@@ -135,7 +121,7 @@ class DataStorageManager:
             raise NotImplementedError
 
 
-    async def delete_file(self, user_id: str, location: str, fmd: FileMetaData):
+    async def delete_file(self, user_id: str, location: str, file_uuid: str):
         """ Deletes a file given its fmd and location
 
             Additionally requires a user_id for 3rd party auth
@@ -147,24 +133,23 @@ class DataStorageManager:
             For datcore we need the full path
         """
         if location == "simcore.s3":
-            file_id = fmd.file_id
             async with create_engine(self.db_endpoint) as engine:
                 async with engine.acquire() as conn:
-                    query = sa.select([file_meta_data]).where(file_meta_data.c.file_id == file_id)
+                    query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
                     async for row in conn.execute(query):
                         result_dict = dict(zip(row._result_proxy.keys, row._row))
                         d = FileMetaData(**result_dict)
                         # make sure this is the current user
                         if d.user_id == user_id:
-                            # threaded please
                             if self.s3_client.remove_objects(d.bucket_name, [d.object_name]):
-                                stmt = file_meta_data.delete().where(file_meta_data.c.file_id == file_id)
+                                stmt = file_meta_data.delete().where(file_meta_data.c.file_uuid == file_uuid)
                                 await conn.execute(stmt)
 
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
             dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
-            return dc.delete_file(fmd)
+            dataset, filename = _parse_datcore(file_uuid)
+            return dc.delete_file(dataset=dataset, filename=filename)
 
     async def upload_file_to_datcore(self, user_id: str, local_file_path: str, datcore_bucket: str, fmd: FileMetaData = None): # pylint: disable=W0613
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
@@ -185,19 +170,25 @@ class DataStorageManager:
                 return (api_token, api_secret)
 
 
-    async def upload_link(self, fmd : FileMetaData):
+    async def upload_link(self, user_id: str, file_uuid: str):
         async with create_engine(self.db_endpoint) as engine:
             async with engine.acquire() as conn:
+                fmd = FileMetaData()
+                fmd.simcore_from_uuid(file_uuid)
+                fmd.user_id = user_id
                 ins = file_meta_data.insert().values(**vars(fmd))
                 await conn.execute(ins)
-                return self.s3_client.create_presigned_put_url(fmd.bucket_name, fmd.object_name)
+                bucket_name, object_name = _parse_simcore(file_uuid)
+                return self.s3_client.create_presigned_put_url(bucket_name, object_name)
 
-    async def download_link(self, user_id: str, fmd: FileMetaData, location: str)->str:
+    async def download_link(self, user_id: str, location: str, file_uuid: str)->str:
         link = None
         if location == "simcore.s3":
-            link = self.s3_client.create_presigned_get_url(fmd.bucket_name, fmd.object_name)
+            bucket_name, object_name = _parse_simcore(file_uuid)
+            link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
             dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
-            link = dc.download_link(fmd)
+            dataset, filename = _parse_datcore(file_uuid)
+            link = dc.download_link(dataset=dataset, filename=filename)
         return link

@@ -1,8 +1,10 @@
 """ Database models
 
 """
-import sqlalchemy as sa
+from typing import Tuple
+
 import attr
+import sqlalchemy as sa
 
 #FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
 #from sqlalchemy.dialects.postgresql import UUID
@@ -29,6 +31,50 @@ file_meta_data = sa.Table(
     sa.Column("user_id", sa.String),
     sa.Column("user_name", sa.String),
 )
+
+
+def _parse_simcore(file_uuid: str) -> Tuple[str, str]:
+    # we should have simcore.s3/simcore/12/123123123/111.txt
+
+    object_name = "invalid"
+    bucket_name = "invalid"
+
+    parts = file_uuid.split("/")
+
+    if len(parts) > 2:
+        bucket_name = parts[1]
+        object_name = "/".join(parts[2:])
+
+    return bucket_name, object_name
+
+def _parse_datcore(file_uuid: str) -> Tuple[str, str]:
+    # we should have datcore/boom/12/123123123/111.txt
+    return _parse_simcore(file_uuid)
+
+def _locations():
+    # TODO: so far this is hardcoded
+    simcore_s3 = {
+    "name" : "simcore.s3",
+    "id" : 0
+    }
+    datcore = {
+    "name" : "datcore",
+    "id"   : 1
+    }
+    return [simcore_s3, datcore]
+
+def _location_from_id(location_id : str) ->str:
+    if location_id == "0":
+        return "simcore.s3"
+    elif location_id == "1":
+        return "datcore"
+
+def _location_from_str(location : str) ->str:
+    if location == "simcore.s3":
+        return "0"
+    elif location == "datcore":
+        return "1"
+
 
 @attr.s(auto_attribs=True)
 class FileMetaData:
@@ -70,3 +116,16 @@ class FileMetaData:
     file_name: str=""
     user_id: str=""
     user_name: str=""
+
+    def simcore_from_uuid(self, file_uuid: str):
+        parts = file_uuid.split("/")
+        assert len(parts) > 3
+        if len(parts) > 3:
+            self.location = parts[0]
+            self.location_id = _location_from_str(self.location)
+            self.bucket_name = parts[1]
+            self.object_name = "/".join(parts[2:])
+            self.file_name = parts[-1]
+            self.file_id = parts[-1]
+            self.project_id = parts[2]
+            self.node_id = parts[3]

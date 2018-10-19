@@ -50,7 +50,6 @@ async def test_dsm_s3(dsm_mockup_db, postgres_service_url, s3_client, python27_e
     #    json.dump(data_as_dict, _f)
 
 
-
     # Get files from bob from the project biology
     bob_id = 0
     for _id in id_name_map.keys():
@@ -69,7 +68,7 @@ async def test_dsm_s3(dsm_mockup_db, postgres_service_url, s3_client, python27_e
     assert len(data) == len(bobs_files)
 
     for d in data:
-        await dsm.delete_file(user_id=d.user_id, location="simcore.s3", fmd=d)
+        await dsm.delete_file(user_id=d.user_id, location="simcore.s3", file_uuid=d.file_uuid)
 
     # now we should have less items
     new_size = 0
@@ -89,7 +88,8 @@ def _create_file_on_s3(postgres_url, s3_client, tmp_file):
     filename = os.path.basename(tmp_file)
     project_id = "22"
     node_id = "1006"
-    file_id = str(uuid.uuid4())
+    file_id = filename
+    file_uuid = os.path.join("simcore.s3", "simcore-testing", str(project_id), str(node_id), str(file_id))
 
     d = {   'object_name' : os.path.join(str(project_id), str(node_id), str(file_id)),
             'bucket_name' : bucket_name,
@@ -102,11 +102,10 @@ def _create_file_on_s3(postgres_url, s3_client, tmp_file):
             'project_name' : "battlestar",
             'node_id' : node_id,
             'node_name' : "this is the name of the node",
-            'file_uuid' : str(uuid.uuid4())
+            'file_uuid' : file_uuid
         }
 
     fmd = FileMetaData(**d)
-    ## TODO: acutally upload the file gettin a upload link
     return fmd
 
 async def test_links_s3(postgres_service_url, s3_client, mock_files_factory, python27_exec):
@@ -115,7 +114,7 @@ async def test_links_s3(postgres_service_url, s3_client, mock_files_factory, pyt
 
     dsm = DataStorageManager(postgres_service_url, s3_client, python27_exec)
 
-    up_url = await dsm.upload_link(fmd)
+    up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
     with io.open(tmp_file, 'rb') as fp:
         d = fp.read()
         req = urllib.request.Request(up_url, data=d, method='PUT')
@@ -124,7 +123,7 @@ async def test_links_s3(postgres_service_url, s3_client, mock_files_factory, pyt
 
     tmp_file2 = tmp_file + ".rec"
     user_id = 0
-    down_url = await dsm.download_link(user_id, fmd, "simcore.s3")
+    down_url = await dsm.download_link(user_id, "simcore.s3", fmd.file_uuid)
 
     urllib.request.urlretrieve(down_url, tmp_file2)
 
@@ -148,7 +147,7 @@ async def test_dsm_datcore(postgres_service_url, s3_client, python27_exec, datco
     # delete the first one
     fmd_to_delete = data[0]
     print("Deleting", fmd_to_delete.bucket_name, fmd_to_delete.object_name)
-    await dsm.delete_file(user_id, "datcore", fmd_to_delete)
+    await dsm.delete_file(user_id, "datcore", fmd_to_delete.file_uuid)
 
     data = await dsm.list_files(user_id=user_id, location="datcore")
     assert len(data) == 1
@@ -161,7 +160,7 @@ async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_fac
 
     dsm = DataStorageManager(postgres_service_url, s3_client, python27_exec)
 
-    up_url = await dsm.upload_link(fmd)
+    up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
     with io.open(tmp_file, 'rb') as fp:
         d = fp.read()
         req = urllib.request.Request(up_url, data=d, method='PUT')
@@ -171,7 +170,7 @@ async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_fac
     # given the fmd, upload to datcore
     tmp_file2 = tmp_file + ".fordatcore"
     user_id = "0"
-    down_url = await dsm.download_link(user_id, fmd, "simcore.s3" )
+    down_url = await dsm.download_link(user_id, "simcore.s3", fmd.file_uuid)
     urllib.request.urlretrieve(down_url, tmp_file2)
     assert filecmp.cmp(tmp_file2, tmp_file)
     # now we have the file locally, upload the file
@@ -192,7 +191,7 @@ async def test_dsm_datcore_to_s3(postgres_service_url, s3_client, python27_exec,
     assert len(data)
 
     fmd_to_get = data[0]
-    url = await dsm.download_link(user_id, fmd_to_get, "datcore")
+    url = await dsm.download_link(user_id, "datcore", fmd_to_get.file_uuid)
 
     tmp_file = mock_files_factory(1)[0]
     tmp_file2 = tmp_file + ".fromdatcore"
