@@ -1,0 +1,28 @@
+LoginEnveloped:
+  type: object
+  required:
+    - data
+    - error
+  properties:
+    data:
+      $ref: '#/LoginFormType'
+      nullable: true
+      default: null
+    error:
+      $ref: "./error.yml#/ErrorType"
+      nullable: true
+      default: null
+
+
+LoginFormType:
+  type: object
+  properties:
+    email:
+      type: string
+      #FIXME: format: email
+    password:
+      type: string
+      #FIXME: format: password
+  example:
+    email: foo@mymail.com
+    password: 'my secret'

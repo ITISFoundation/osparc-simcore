@@ -17,35 +17,19 @@ References:
 [1]:https://github.com/aio-libs/aiohttp-demos/blob/master/docs/preparations.rst#environment
 """
 import logging
-import sys
 import pathlib
+import sys
 
 from passlib.hash import sha256_crypt
-from sqlalchemy import (
-    MetaData,
-)
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_fixed,
-    before_sleep_log
-)
+from sqlalchemy import MetaData
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
-from simcore_service_webserver.db.utils import (
-    DNS,
-    acquire_engine,
-    acquire_admin_engine
-)
+from simcore_service_webserver.cli_config import read_and_validate
+from simcore_service_webserver.db.model import permissions, users
+from simcore_service_webserver.db.utils import (DNS, acquire_admin_engine,
+                                                acquire_engine)
 
-from simcore_service_webserver.db.model import (
-    permissions,
-    users
-)
-from simcore_service_webserver.settings import (
-    read_and_validate
-)
-
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 CURRENT_DIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
