@@ -3,10 +3,11 @@
     Miscelaneous of functions and classes to build rest API sub-module
 """
 import json
-from typing import Dict
+from typing import Dict, Tuple
 
 import attr
 from aiohttp import web
+from openapi_core.extensions.models.factories import Model as BodyModel
 
 from .application_keys import APP_OPENAPI_SPECS_KEY
 #pylint: disable=W0611
@@ -15,8 +16,18 @@ from .openapi_validation import (COOKIE_KEY, HEADER_KEY, PATH_KEY, QUERY_KEY,
 from .rest_models import ErrorItemType, ErrorType
 
 
-def unwrap_envelope(payload):
-    return tuple( payload[k] for k in ('data', 'error') )
+def unwrap_envelope(payload: Dict) -> Tuple:
+    return tuple( payload.get(k) for k in ('data', 'error') )
+
+def body_to_dict(body: BodyModel) -> Dict:
+    # openapi_core.extensions.models.factories.Model -> dict
+    dikt = {}
+    for k,v in body.__dict__.items():
+        if hasattr(v, '__dict__'):
+            v = body_to_dict(v)
+        dikt[k] = v
+    return dikt
+
 
 class EnvelopeFactory:
     """

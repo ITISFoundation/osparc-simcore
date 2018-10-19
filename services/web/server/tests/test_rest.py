@@ -61,32 +61,32 @@ async def test_check_health(client):
     resp = await client.get("/v0/")
     assert resp.status == 200
 
-    envelope = await resp.json()
-    data, error = [envelope[k] for k in ('data', 'error')]
+    payload = await resp.json()
+    data, error = tuple(payload.get(k) for k in ('data', 'error'))
 
     assert data
     assert not error
 
-    assert data['name'] == 'simcore-director-service'
+    assert data['name'] == 'simcore_service_webserver'
     assert data['status'] == 'SERVICE_RUNNING'
 
 async def test_check_action(client):
-    QUERY = 'mguidon'
+    QUERY = 'value'
     ACTION = 'echo'
     FAKE = {
         'path_value': 'one',
         'query_value': 'two',
         'body_value': {
-            'a': 33,
-            'b': 45
+            'a': 'foo',
+            'b': '45'
         }
     }
 
     resp = await client.post("/v0/check/{}?data={}".format(ACTION, QUERY), json=FAKE)
-    envelope = await resp.json()
-    data, error = [envelope[k] for k in ('data', 'error')]
+    payload = await resp.json()
+    data, error = tuple(payload.get(k) for k in ('data', 'error'))
 
-    assert resp.status == 200, str(envelope)
+    assert resp.status == 200, str(payload)
     assert data
     assert not error
 
@@ -94,7 +94,7 @@ async def test_check_action(client):
 
     assert data['path_value'] == ACTION
     assert data['query_value'] == QUERY
-    #assert data['body_value'] == FAKE['body_value']
+    assert data['body_value'] == FAKE
 
 
 

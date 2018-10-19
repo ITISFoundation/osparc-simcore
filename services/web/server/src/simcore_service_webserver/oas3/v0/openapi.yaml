@@ -160,10 +160,6 @@ components:
     # TODO:Envelope objects are still not well/easily defined. See discriminators
     OK_NoContent_204:
       description: everything is OK, but there is no content to return
-      content:
-        application/json:
-          schema:
-            $ref: 'components/schemas/log_message.yml#LogMessageEnveloped'
 
     DefaultErrorResponse:
       description: Unexpected error

@@ -5,7 +5,7 @@ from openapi_spec_validator.exceptions import OpenAPIValidationError
 
 from simcore_service_webserver.resources import resources
 
-API_VERSIONS = ("v0", "v1")
+API_VERSIONS = ("v0", )
 OPENAPI_MAIN = "oas3/{}/openapi.yaml"
 
 @pytest.mark.parametrize('version', API_VERSIONS)

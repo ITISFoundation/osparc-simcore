@@ -1,10 +1,11 @@
 #!/bin/bash
 #
-# Installs all python services in workspace's virtual environment
+# Installs all python services in workspace's virtual environment and adds write permissions to the group
 #
 # - Expects a python virtual environment at $ROOTDIR/.venv that can be built using make .venv at $ROOTDIR
 # - Temporary solution to issue #227 (or PR#220) since it  will create all .egg folders
-
+# - This workaround is only for LINUX and must be applied once manually before running docker-compose in development mode
+#
 
 BASEDIR=$(dirname "$0")
 ROOTDIR=$BASEDIR/..
