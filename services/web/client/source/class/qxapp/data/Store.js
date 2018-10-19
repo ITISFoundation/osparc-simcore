@@ -356,8 +356,8 @@ qx.Class.define("qxapp.data.Store", {
 
     getBuiltInServices: function() {
       let builtInServices = {
-        "service/dynamic/itis/FilePicker-0.0.0": {
-          key: "service/dynamic/itis/FilePicker",
+        "service/dynamic/itis/file-picker-0.0.0": {
+          key: "service/dynamic/itis/file-picker",
           version: "0.0.0",
           type: "dynamic",
           name: "File Picker",
@@ -373,12 +373,6 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "File",
               description: "Chosen File",
-              type: "data:*/*"
-            },
-            outDir: {
-              displayOrder: 1,
-              label: "Folder",
-              description: "Chosen Folder",
               type: "data:*/*"
             }
           }

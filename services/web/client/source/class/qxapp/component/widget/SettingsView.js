@@ -64,8 +64,8 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
     __inputNodesLayout: null,
     __mainLayout: null,
     __nodesUI: null,
-    __startInteractive: null,
-    __openFoler: null,
+    __buttonsLayout: null,
+    __openFolder: null,
 
     __initTitle: function() {
       let box = new qx.ui.layout.HBox();
@@ -98,13 +98,9 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
         spacing: 10,
         alignX: "right"
       });
-      let buttonsLayout = new qx.ui.container.Composite(box);
+      let buttonsLayout = this.__buttonsLayout = new qx.ui.container.Composite(box);
 
-      let startInteractive = this.__startInteractive = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/sign-in-alt/32"
-      });
-
-      let openFolder = this.__openFoler = new qx.ui.form.Button().set({
+      let openFolder = this.__openFolder = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/folder-open/32"
       });
       openFolder.addListener("execute", function() {
@@ -129,7 +125,6 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
         win.open();
       }, this);
 
-      buttonsLayout.add(startInteractive);
       buttonsLayout.add(openFolder);
       this.__mainLayout.add(buttonsLayout);
     },
@@ -240,14 +235,19 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
       this.__clearInputPortsUIs();
       this.__createInputPortsUIs(nodeModel);
 
-      let viewerButton = nodeModel.getViewerButton();
-      if (viewerButton) {
-        nodeModel.addListenerOnce("ShowViewer", e => {
-          const data = e.getData();
-          this.fireDataEvent("ShowViewer", data);
+      this.__buttonsLayout.removeAll();
+      let iFrameButton = nodeModel.getIFrameButton();
+      if (iFrameButton) {
+        iFrameButton.addListener("execute", e => {
+          this.fireDataEvent("ShowViewer", {
+            url: nodeModel.getServiceUrl(),
+            name: nodeModel.getLabel(),
+            nodeId: nodeModel.getNodeId()
+          });
         }, this);
-        this.__startInteractive = viewerButton;
+        this.__buttonsLayout.add(iFrameButton);
       }
+      this.__buttonsLayout.add(this.__openFolder);
     }
   }
 });

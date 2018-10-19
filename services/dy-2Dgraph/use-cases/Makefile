@@ -8,9 +8,10 @@ export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
 
-export SERVICES_VERSION=1.0.1
+export SERVICES_VERSION=1.1.0
 export VCS_REF=$(shell git rev-parse --short HEAD) 
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+export BASE_IMAGE=masu.speag.com/simcore/services/dynamic/jupyter-base-notebook:1.4.0
 
 all:
 	@echo 'run `make build-devel` to build your dev environment'

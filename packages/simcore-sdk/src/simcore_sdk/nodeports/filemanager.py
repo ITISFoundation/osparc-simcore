@@ -50,13 +50,13 @@ def download_folder_from_s3(node_uuid, node_key, folder_name):
     return folder_path
 
 
-def download_file_from_S3(node_uuid, node_key, file_name):
-    log.debug("Trying to download from S3: node uuid %s, key %s, file name %s", node_uuid, node_key, file_name)
-    s3_object_url =  __encode_s3_url(node_uuid=node_uuid, node_key=node_key)
+def download_file_from_S3(node_uuid: str, s3_object_name: str, node_key: str, file_name: str):
+    log.debug("Trying to download from S3: node uuid %s, s3 object %s, key %s, file name %s", node_uuid, s3_object_name, node_key, file_name)
+    s3_object_url =  __encode_s3_url(node_uuid=node_uuid, node_key=s3_object_name)
     s3 = S3Settings()
 
     # here we add an extension to circumvent an error when downloading the file under Windows OS
-    file_path = Path(_INTERNAL_DIR, file_name, file_name)
+    file_path = Path(_INTERNAL_DIR, node_key, file_name)
     if file_path.suffix == "":
         file_path = file_path.with_suffix(".simcore")
     if file_path.exists():
@@ -75,7 +75,7 @@ def __upload_to_s3(s3_client, s3_bucket, s3_object_name, file_path):
 
     log.debug('Uploaded to s3 %s/%s from %s successfully', s3_bucket, s3_object_name, file_path)
 
-def upload_file_to_s3(node_uuid, node_key, file_path):
+def upload_file_to_s3(node_uuid: str, node_key: str, file_path: str):
     log.debug("Trying to upload file to S3: node uuid %s, key %s, file path %s", node_uuid, node_key, file_path)
     s3_object_url =  __encode_s3_url(node_uuid=node_uuid, node_key=node_key)
     s3 = S3Settings()

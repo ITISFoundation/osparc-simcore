@@ -78,10 +78,10 @@ def test_invalid_value_type():
 @pytest.mark.parametrize("item_type, item_value_to_set, expected_value", [
     ("integer", 26, "26"),
     ("number", -746.4748, "-746.4748"),
-    ("file-url", __file__, "link.undefined.a key"),
+    ("file-url", __file__, "link.undefined.{key}".format(key=Path(__file__).name)),
     ("bool", False, "False"),    
     ("string", "test-string", "test-string"),
-    ("folder-url", str(Path(__file__).parent), "link.undefined.a key")
+    ("folder-url", str(Path(__file__).parent), "link.undefined.{key}".format(key=Path(__file__).parent.name))
 ])
 def test_set_new_value(bucket, item_type, item_value_to_set, expected_value): # pylint: disable=W0613
     import mock
