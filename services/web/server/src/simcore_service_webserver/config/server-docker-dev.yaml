@@ -1,12 +1,13 @@
 # Runs insides a container
 ---
 version: "1.0"
-app:
+main:
   host: 0.0.0.0
   port: 8080
   client_outdir: ${SIMCORE_WEB_OUTDIR}
   log_level: DEBUG
   testing: True
+  disable_services: [director, postgres, rabbit, s3]
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
