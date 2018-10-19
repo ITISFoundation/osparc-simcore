@@ -208,7 +208,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           }, item, id);
           controller.bindProperty("created", "created", {
             converter: function(data) {
-              let date = new Date(data);
+              // FIXME
+              // let date = new Date(data);
               // return new Date(data);
               return "Created on: " + data;
             }
