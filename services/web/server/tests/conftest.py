@@ -1,16 +1,13 @@
-"""
-
-    pytest-docker https://github.com/AndreLouisCaron/pytest-docker
-"""
-import collections
 # pylint: disable=unused-argument
 # pylint: disable=unused-import
 # pylint: disable=bare-except
 # pylint: disable=W0621
+
+import collections
 import logging
 import os
-import pathlib
 import sys
+from pathlib import Path
 
 import pytest
 import yaml
@@ -22,7 +19,7 @@ from simcore_service_webserver.db.utils import (DNS, acquire_admin_engine,
                                                 acquire_engine)
 
 log = logging.getLogger(__name__)
-CURRENT_DIR = pathlib.Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
 
 
 def _is_db_service_responsive(**pg_config):
@@ -36,7 +33,23 @@ def _is_db_service_responsive(**pg_config):
     return True
 
 
-# extends pytest-docker -------------------------------------------------------
+# -------------------------------------------------------
+
+@pytest.fixture(scope='session')
+def here():
+    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+@pytest.fixture(scope='session')
+def package_dir(here):
+    dirpath = Path(simcore_service_webserver.__file__).resolve().parent
+    assert dirpath.exists()
+    return dirpath
+
+@pytest.fixture(scope='session')
+def osparc_simcore_root_dir(here):
+    root_dir = here.parent.parent.parent.parent
+    assert root_dir.exists(), "Is this service within osparc-simcore repo?"
+    return root_dir
 
 @pytest.fixture(scope='session')
 def package_paths(pytestconfig):
@@ -58,7 +71,6 @@ def package_paths(pytestconfig):
         assert path.exists(), "Invalid path in %s" % key
 
     return collections.namedtuple("PackagePaths", paths.keys())(**paths)
-
 
 @pytest.fixture(scope='session')
 def docker_compose_file(package_paths):
