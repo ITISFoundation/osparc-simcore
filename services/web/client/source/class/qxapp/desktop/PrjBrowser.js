@@ -177,7 +177,9 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           }, item, id);
           controller.bindProperty("thumbnail", "icon", {
             converter: function(data) {
-              return data === null ? "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/tech/grayscale/?random.jpg" : data;
+              let thumbnailUrl = data === null ? "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/tech/grayscale/?random.jpg" : data;
+              thumbnailUrl = thumbnailUrl.replace("https://placeimg.com/171/96/", "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/");
+              return thumbnailUrl;
             }
           }, item, id);
         }
