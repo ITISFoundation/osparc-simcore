@@ -125,7 +125,7 @@ paths:
             format: int64
       requestBody:
         description: a raw block of data ... not encoded
-        example: big-bad-binary-data
+        # example: big-bad-binary-data
         content:
           application/octet-stream:
             schema:
