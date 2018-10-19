@@ -12,29 +12,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
   statics: {
     getNodeMap: function() {
       return {
-        "service/dynamic/itis/file-picker-0.0.0":{
-          key: "service/dynamic/itis/file-picker",
-          version: "0.0.0",
-          type: "dynamic",
-          name: "filepicker service",
-          description: "dummy file picker",
-          authors: [
-            {
-              name: "Odei Maiz",
-              email: "maiz@itis.ethz.ch"
-            }
-          ],
-          contact: "maiz@itis.ethz.ch",
-          inputs: {},
-          outputs: {
-            outFile: {
-              displayOrder: 0,
-              label: "File",
-              description: "Chosen File",
-              type: "data:*/*"
-            }
-          }
-        },
         "service/computational/itis/sleeper-0.0.0":{
           key: "service/computational/itis/sleeper",
           version: "0.0.0",
@@ -797,6 +774,53 @@ qx.Class.define("qxapp.dev.fake.Data", {
     },
 
     getObjectList: function() {
+      const objects = [{
+        "file_uuid": "simcore.s3/simcore-testing/105/10000/3",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10000/3",
+        "project_id": 105,
+        "project_name": "futurology",
+        "node_id": 10000,
+        "node_name": "alpha",
+        "file_id": "3",
+        "file_name": "hallo",
+        "user_id": 13,
+        "user_name": "dennis"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/105/10000/4",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10000/4",
+        "project_id": 105,
+        "project_name": "futurology",
+        "node_id": 10000,
+        "node_name": "alpha",
+        "file_id": "3",
+        "file_name": "hallo 2",
+        "user_id": 13,
+        "user_name": "dennis"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/13/5",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "13/5",
+        "file_id": "5",
+        "file_name": "My file 1",
+        "user_id": 13,
+        "user_name": "dennis"
+      }, {
+        "file_uuid": "datcore/my_datcore/6",
+        "location": "datcore",
+        "bucket_name": "my_datcore",
+        "object_name": "6",
+        "file_id": "3",
+        "file_name": "DatCore file 1"
+      }];
+      return objects;
+    },
+
+    getObjectListOld: function() {
       const objects = [
         {
           "path": "simcore0/file0",
