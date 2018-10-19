@@ -3,6 +3,7 @@
 """
 import copy
 import logging
+import os
 
 from aiohttp import web
 
@@ -10,8 +11,8 @@ from servicelib import openapi
 from servicelib.rest_middlewares import envelope_middleware, error_middleware
 
 from . import rest_routes
-from .resources import resources
 from .application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
+from .resources import resources
 from .resources_keys import RSC_OPENAPI_ROOTFILE_KEY
 
 log = logging.getLogger(__name__)
@@ -33,12 +34,14 @@ def setup(app: web.Application):
             # FIXME: host/port in host side!  Consider
             #  - server running inside container. use environ set by container to find port maps maps (see portainer)
             #  - server running in host
+            in_container = "IS_CONTAINER_CONTEXT" in os.environ
+
             devserver = specs.servers[0]
 
             host, port = app_config['host'], app_config['port']
 
             devserver.variables['host'].default = host
-            devserver.variables['port'].default = port
+            devserver.variables['port'].default = 9081 if in_container else port  # TODO: fix. Retrieve mapped port!
 
             HOSTNAMES = ('127.0.0.1', 'localhost')
             if host in HOSTNAMES:

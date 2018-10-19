@@ -17,6 +17,11 @@ servers:
         default: 'localhost'
       port:
         default: '8001'
+  - description: Development server 2
+    url: http://{host}:9081/v0
+    variables:
+      host:
+        default: 'localhost'
   - description: Production server
     url: https://webserver:{port}/v0
     variables:
