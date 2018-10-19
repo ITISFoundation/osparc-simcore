@@ -95,7 +95,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: 'components/schemas/locations.yml#FileLocationArray'
+                $ref: './components/schemas/locations.yml#FileLocationArray'
         default:
           description: Unexpected error
           content:
@@ -124,7 +124,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: 'components/schemas/files.yml#FileMetaDataArray'
+                $ref: './components/schemas/files.yml#FileMetaDataArray'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
@@ -254,25 +254,25 @@ components:
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/error.yml#/ErrorEnveloped'
+            $ref: './components/schemas/error.yml#/ErrorEnveloped'
 
     FileMetaData_200:
       description: 'Returns file metadata'
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/files.yml#FileMetaData'
+            $ref: './components/schemas/files.yml#FileMetaData'
 
     PresignedLink_200:
       description: 'Returns presigned link'
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/responses.yml#PresignedLink'
+            $ref: './components/schemas/responses.yml#PresignedLink'
 
   requestBodies:
     FileMetaDataBody:
         content:
           application/json:
             schema:
-              $ref: 'components/schemas/files.yml#FileMetaData'
+              $ref: './components/schemas/files.yml#FileMetaData'
