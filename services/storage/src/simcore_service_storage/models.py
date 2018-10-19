@@ -30,6 +30,7 @@ file_meta_data = sa.Table(
     sa.Column("file_name", sa.String),
     sa.Column("user_id", sa.String),
     sa.Column("user_name", sa.String),
+    sa.Column("state", sa.String())
 )
 
 
@@ -81,25 +82,26 @@ class FileMetaData:
     """ This is a proposal, probably no everything is needed.
         It is actually an overkill
 
-        for simcore.s3:
-            bucket_name = "simcore", probably fixed
-            object_name = proj_id/node_id/file_name ? can also be a uuid because we still have the filename?
-            file_id = unique identifier
-            file_name = the acutal filename (this may be different from what we store in s3)
-            user_id = unique id of the owner of the file --> maps to the user database
-            user_name = name of the owner
-            location = "simcore.s3" for now, there might be more to come
-            project_id = the project that owns this file --> might become a list
-            project_name = name of the poject --> userful for frontend to display folders
-            node_id = the node_id within the project, again, might be a list?
-            node_name = the name of the node (might be useful for searching previously used files given the name of a service)
+        file_name       : display name for a file
+        file_id         : storage name
+        location_id     : storage location
+        location_name   : storage location display name (currently used as part of the file_uuid)
+        project_id      : project_id
+        projec_name     : project display name
+        node_id         : node id
+        node_name       : display_name
+        bucket_name     : name of the bucket
+        object_name     : s3 object name = folder/folder/filename.ending
+        user_id         : user_id
+        user_name       : user_name
 
-        for datcore:
-            bucket_name = dataset_name
-            object_name = filename (including potentially a collection if they still support that)
-            file_name = filename
+        file_uuid       : unique identifier for a file:
 
-            # dat core allows to attach metadata to files --> see datcore.py
+            location_name/bucket_name/project_id/node_id/file_id = location_name/bucket_name/object_name
+
+            TODO: location_name should be location_id
+
+        state:  on of OK, UPLOADING, DELETED
 
         """
     #pylint: disable=W0613

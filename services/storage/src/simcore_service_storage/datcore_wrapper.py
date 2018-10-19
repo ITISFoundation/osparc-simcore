@@ -18,6 +18,7 @@ FileMetaDataVec = List[FileMetaData]
 CURRENT_DIR = Path(__file__).resolve().parent
 
 
+#TODO: Use async callbacks for retreival of progress and pass via rabbit to server
 
 def call_python_2(module, function, args, python_exec: Path):
     """ calls a module::function from python2 with the arguments list
