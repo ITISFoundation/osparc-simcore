@@ -823,7 +823,7 @@ qx.Class.define("qxapp.data.Store", {
     getServices: function() {
       let req = new qx.io.request.Xhr();
       req.set({
-        url: "/get_services",
+        url: "/v0/services",
         method: "GET"
       });
 

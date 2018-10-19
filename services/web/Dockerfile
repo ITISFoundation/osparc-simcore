@@ -66,7 +66,7 @@ FROM build as development
 ARG HOST_GID_ARG=1000
 
 # install test 3rd party packages to accelerate runtime installs
-COPY --chown=scu:scu services/web/server/requirements/tests.txt requirements-tests.txt
+COPY --chown=scu:scu services/web/server/tests/requirements.txt requirements-tests.txt
 RUN $PIP install --no-cache-dir -r requirements-tests.txt
 
 # in dev mode we give access to `scu` to host's mapped volumes
