@@ -4,20 +4,21 @@
 # W0612:Unused variable
 # TODO: W0613:Unused argument ...
 # pylint: disable=W0613
+import os
+from urllib.parse import quote
+
 import pytest
+from aiohttp import web
 
 import simcore_storage_sdk
 import utils
-from simcore_storage_sdk import HealthInfo
-
-from aiohttp import web
-from simcore_service_storage.settings import APP_CONFIG_KEY
-from simcore_service_storage.rest import setup_rest
-from simcore_service_storage.session import setup_session
 from simcore_service_storage.db import setup_db
 from simcore_service_storage.middlewares import dsm_middleware
+from simcore_service_storage.rest import setup_rest
+from simcore_service_storage.session import setup_session
+from simcore_service_storage.settings import APP_CONFIG_KEY
+from simcore_storage_sdk import HealthInfo
 
-from urllib.parse import quote
 
 def parse_db(dsm_mockup_db):
     id_name_map = {}
@@ -131,9 +132,41 @@ async def test_upload_link(client, dsm_mockup_db):
         assert not error
         assert data
 
+@pytest.mark.travis
+async def test_copy(client, dsm_mockup_db, datcore_testbucket):
+    # copy N files
+    N = 2
+    counter = 0
+    for d in dsm_mockup_db.keys():
+        fmd = dsm_mockup_db[d]
+        source_uuid = fmd.file_uuid
+        datcore_uuid = os.path.join("datcore", datcore_testbucket, fmd.file_name)
+        resp = await client.put("/v0/1/files/{}?user_id={}&extra_source={}".format(quote(datcore_uuid, safe=''),
+            fmd.user_id, quote(source_uuid)))
+        payload = await resp.json()
+        assert resp.status == 200, str(payload)
+
+        data, error = tuple( payload.get(k) for k in ('data', 'error') )
+        print(data)
+        assert not error
+        assert data
+
+        counter = counter + 1
+        if counter == N:
+            break
+
+    # list files for every user
+    user_id = "0"
+    resp = await client.get("/v0/1/files/metadata?user_id={}".format(user_id))
+    payload = await resp.json()
+    assert resp.status == 200, str(payload)
+
+    data, error = tuple( payload.get(k) for k in ('data', 'error') )
+    assert not error
+    assert len(data) == 2 + N + 1
+
 async def test_delete_file(client, dsm_mockup_db):
     id_file_count, _id_name_map = parse_db(dsm_mockup_db)
-
 
     for d in dsm_mockup_db.keys():
         fmd = dsm_mockup_db[d]

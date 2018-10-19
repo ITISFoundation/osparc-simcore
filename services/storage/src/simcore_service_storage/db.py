@@ -1,9 +1,9 @@
 import logging
-from .settings import APP_CONFIG_KEY
-from aiopg.sa import create_engine
-from aiohttp import web
 
-from .settings import APP_DB_ENGINE_KEY, APP_DB_SESSION_KEY
+from aiohttp import web
+from aiopg.sa import create_engine
+
+from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DB_SESSION_KEY
 
 log = logging.getLogger(__name__)
 

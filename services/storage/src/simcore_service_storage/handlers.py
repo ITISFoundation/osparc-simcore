@@ -7,10 +7,10 @@ from servicelib.rest_utils import extract_and_validate
 
 from . import __version__
 from .dsm import DataStorageManager
+from .models import FileMetaData
 from .rest_models import FileMetaDataSchema
 from .session import get_session
 from .settings import RQT_DSM_KEY
-from .models import FileMetaData
 
 #FIXME: W0613: Unused argument 'request' (unused-argument)
 #pylint: disable=W0613
@@ -205,14 +205,24 @@ async def upload_file(request: web.Request):
     user_id = query["user_id"]
     file_uuid = params["fileId"]
 
-    #fmd = FileMetaData()
-    link = await dsm.download_link(user_id=user_id, location=location, file_uuid=file_uuid)
+    if query["extra_source"]:
+        source_uuid = query["extra_source"]
+        link = await dsm.copy_file(user_id=user_id, location=location,
+            file_uuid=file_uuid, source_uuid=source_uuid)
 
-    data = { "link:" : link }
-    envelope = {
-        'error': None,
-        'data': data
-        }
+        data = { "link:" : link }
+        envelope = {
+            'error': None,
+            'data': data
+            }
+    else:
+        link = await dsm.download_link(user_id=user_id, location=location, file_uuid=file_uuid)
+
+        data = { "link:" : link }
+        envelope = {
+            'error': None,
+            'data': data
+            }
 
     return envelope
 

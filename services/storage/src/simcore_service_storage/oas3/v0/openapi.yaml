@@ -195,7 +195,7 @@ paths:
         '200':
           $ref: '#/components/responses/PresignedLink_200'
     put:
-      summary: Upload File
+      summary: Returns upload link or performs copy operation to datcore
       operationId: upload_file
       parameters:
       - name: fileId
@@ -211,6 +211,11 @@ paths:
       - name: user_id
         in: query
         required: true
+        schema:
+          type: string
+      - name: extra_source
+        in : query
+        required: false
         schema:
           type: string
       responses:

@@ -199,3 +199,29 @@ async def test_dsm_datcore_to_s3(postgres_service_url, s3_client, python27_exec,
     urllib.request.urlretrieve(url, tmp_file2)
 
     assert filecmp.cmp(tmp_file2, tmp_file)
+
+@pytest.mark.travis
+async def test_copy_datcore(postgres_service_url, s3_client, python27_exec, mock_files_factory, datcore_testbucket):
+    utils.create_tables(url=postgres_service_url)
+
+    # create temporary file and upload to s3
+    tmp_file = mock_files_factory(1)[0]
+    fmd = _create_file_on_s3(postgres_service_url, s3_client, tmp_file)
+    dsm = DataStorageManager(postgres_service_url, s3_client, python27_exec)
+
+    up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
+    with io.open(tmp_file, 'rb') as fp:
+        d = fp.read()
+        req = urllib.request.Request(up_url, data=d, method='PUT')
+        with urllib.request.urlopen(req) as _f:
+            pass
+
+    #now copy to datcore
+    user_id = "0"
+    dat_core_uuid = os.path.join("datcore", datcore_testbucket, fmd.file_name)
+    await dsm.copy_file(user_id=user_id, location="datcore", file_uuid=dat_core_uuid, source_uuid=fmd.file_uuid)
+
+    data = await dsm.list_files(user_id=user_id, location="datcore")
+
+    # there should now be 3 files
+    assert len(data) == 3

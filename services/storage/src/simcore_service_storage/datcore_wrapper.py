@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import time
@@ -9,8 +10,6 @@ from typing import Dict, List
 
 import attr
 import execnet
-
-import asyncio
 
 from .models import FileMetaData
 

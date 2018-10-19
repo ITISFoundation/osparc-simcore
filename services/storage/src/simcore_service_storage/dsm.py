@@ -1,18 +1,23 @@
 import os
 import re
+import shutil
+import tempfile
 from operator import itemgetter
 from pathlib import Path
 from typing import List, Tuple
 
+import aiofiles
+import aiohttp
 import attr
 import sqlalchemy as sa
-from sqlalchemy.sql import and_
 from aiopg.sa import create_engine
+from sqlalchemy.sql import and_
 
 from s3wrapper.s3_client import S3Client
 
 from .datcore_wrapper import DatcoreWrapper
-from .models import FileMetaData, file_meta_data, _parse_datcore, _parse_simcore, _locations, _location_from_id
+from .models import (FileMetaData, _location_from_id, _locations,
+                     _parse_datcore, _parse_simcore, file_meta_data)
 
 #pylint: disable=W0212
 #FIXME: W0212:Access to a protected member _result_proxy of a client class
@@ -180,6 +185,27 @@ class DataStorageManager:
                 await conn.execute(ins)
                 bucket_name, object_name = _parse_simcore(file_uuid)
                 return self.s3_client.create_presigned_put_url(bucket_name, object_name)
+
+    async def copy_file(self, user_id: str, location: str, file_uuid: str, source_uuid: str):
+        if location == "datcore":
+            # source is s3, get link
+            bucket_name, object_name = _parse_simcore(source_uuid)
+            datcore_bucket, file_path = _parse_datcore(file_uuid)
+            filename = file_path.split("/")[-1]
+            tmp_dirpath = tempfile.mkdtemp()
+            local_file_path = os.path.join(tmp_dirpath,filename)
+            url = self.s3_client.create_presigned_get_url(bucket_name, object_name)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    if resp.status == 200:
+                        f = await aiofiles.open(local_file_path, mode='wb')
+                        await f.write(await resp.read())
+                        await f.close()
+                        # and then upload
+                        await self.upload_file_to_datcore(user_id=user_id, local_file_path=local_file_path,
+                            datcore_bucket=datcore_bucket)
+
+            shutil.rmtree(tmp_dirpath)
 
     async def download_link(self, user_id: str, location: str, file_uuid: str)->str:
         link = None
