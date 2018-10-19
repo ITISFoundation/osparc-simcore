@@ -1,0 +1,29 @@
+{
+    "version":"0.1",
+    "inputs": [
+        {
+            "key": "input_1",
+            "label": "input 1",
+            "desc": "input 1",
+            "type": "file-url",
+            "value": "link.SIMCORE_NODE_UUID.FILENAME_ID",
+            "settings": {
+                "value":"null"
+            },
+            "widget":"stuff"
+        }
+    ],
+    "outputs": [
+        {
+            "key": "output_1",
+            "label": "output 1",
+            "desc": "this is the output number 1",
+            "type": "file-url",
+            "value": "null",
+            "settings": {
+                "value":"null"
+            },
+            "widget":"stuff"
+        }
+    ]
+}
