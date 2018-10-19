@@ -38,14 +38,7 @@ qx.Class.define("qxapp.auth.Manager", {
     },
 
     login: function(email, pass, successCbk, failCbk, context) {
-      //---------------------------------------------------------------------------
-      // FIXME: temporarily will allow any user until issue #162 is resolved and/or python server has active API
-      // if (!qx.core.Environment.get("dev.enableFakeSrv")) {
-      //  this.setToken("fake-token");
-      //  callback.call(context, true);
-      //  return;
-      // }
-      //---------------------------------------------------------------------------
+      // TODO: consider qx.promise instead of having two callbacks and a context might be nicer to work with
 
       let request = new qxapp.io.request.ApiRequest("/auth/login", "POST");
       request.set({
