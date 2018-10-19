@@ -29,8 +29,8 @@ file_meta_data = sa.Table(
     sa.Column("file_id", sa.String),
     sa.Column("file_name", sa.String),
     sa.Column("user_id", sa.String),
-    sa.Column("user_name", sa.String),
-    sa.Column("state", sa.String())
+    sa.Column("user_name", sa.String)
+#    sa.Column("state", sa.String())
 )
 
 
@@ -104,7 +104,6 @@ class FileMetaData:
         state:  on of OK, UPLOADING, DELETED
 
         """
-    #pylint: disable=W0613
     file_uuid: str=""
     location_id: str=""
     location: str=""

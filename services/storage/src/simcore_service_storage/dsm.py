@@ -59,7 +59,6 @@ class DataStorageManager:
 
             https://blog.minio.io/part-5-5-publish-minio-events-via-postgresql-50f6cc7a7346
             https://docs.minio.io/docs/minio-bucket-notification-guide.html
-
     """
     db_endpoint: str
     s3_client: S3Client
