@@ -5,7 +5,7 @@ from setuptools import (
 
 INSTALL_REQUIRES = [
     'networkx==2.1',
-    'psycopg2==2.7.4',
+    'psycopg2-binary==2.7.4',
     'sqlalchemy==1.2.9',
     'tenacity==4.12.0',
     'trafaret-config==2.0.1'

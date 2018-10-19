@@ -72,7 +72,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       nullable: true
     },
 
-    viewerButton: {
+    iFrameButton: {
       check: "qx.ui.form.Button",
       init: null
     }
@@ -246,6 +246,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       let metaData = this.__metaData;
       if (metaData.type == "dynamic") {
         const slotName = "startDynamic";
+        let button = new qx.ui.form.Button().set({
+          icon: "@FontAwesome5Solid/sign-in-alt/32"
+        });
+        button.setEnabled(false);
+        this.setIFrameButton(button);
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
           const {
@@ -266,19 +271,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             const entryPoint = entryPointD ? ("/" + entryPointD) : "";
             const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
             this.setServiceUrl(srvUrl);
-            let button = new qx.ui.form.Button().set({
-              icon: "@FontAwesome5Solid/play-circle/32"
-            });
-            this.set({
-              viewerButton: button
-            });
-            button.addListener("execute", e => {
-              this.fireDataEvent("ShowViewer", {
-                url: srvUrl,
-                name: this.getLabel(),
-                nodeId: this.getNodeId()
-              });
-            }, this);
+            this.getIFrameButton().setEnabled(true);
             const msg = "Service ready on " + srvUrl;
             const msgData = {
               nodeLabel: this.getLabel(),

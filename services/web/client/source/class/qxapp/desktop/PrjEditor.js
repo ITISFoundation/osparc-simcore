@@ -125,9 +125,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         const name = data.name;
         // const nodeId = data.nodeId;
 
-        let iframe = this.__createIFrame(url, name);
-        // this.showInMainView(iframe, nodeId);
-        this.__mainPanel.setMainView(iframe);
+        let iFrame = this.__createIFrame(url);
+        this.__addWidgetToMainView(iFrame);
 
         // Workaround for updating inputs
         if (name === "3d-viewer") {
@@ -186,6 +185,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showInMainView: function(widget, nodeId) {
+      if (this.__mainPanel.isPropertyInitialized("mainView")) {
+        let previousWidget = this.__mainPanel.getMainView();
+        widget.addListener("Finished", function() {
+          this.__mainPanel.setMainView(previousWidget);
+        }, this);
+      }
+
       this.__mainPanel.setMainView(widget);
       let nodePath = this.__projectDocument.getWorkbenchModel().getPathWithId(nodeId);
       this.fireDataEvent("ChangeMainViewCaption", nodePath);
@@ -328,29 +334,36 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
     },
 
-    __createIFrame: function(url, name) {
-      console.log("Accessing:", url);
-      let win = new qx.ui.window.Window(name);
-      win.setShowMinimize(false);
-      win.setLayout(new qx.ui.layout.VBox(5));
-      let iframe = new qx.ui.embed.Iframe().set({
-        width: 1050,
-        height: 700,
-        minWidth: 600,
-        minHeight: 500,
-        source: url,
-        decorator : null
+    __createIFrame: function(url) {
+      let iFrame = new qx.ui.embed.Iframe().set({
+        source: url
       });
-      win.add(iframe, {
-        flex: 1
-      });
-      win.moveTo(150, 150);
+      return iFrame;
+    },
 
-      win.addListener("dblclick", e => {
-        e.stopPropagation();
+    __addWidgetToMainView: function(widget) {
+      let widgetContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+
+      widgetContainer.add(widget, {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
       });
 
-      return win;
+      let closeBtn = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/window-close/24",
+        zIndex: widget.getZIndex() + 1
+      });
+      widgetContainer.add(closeBtn, {
+        right: 0,
+        top: 0
+      });
+      let previousWidget = this.__mainPanel.getMainView();
+      closeBtn.addListener("execute", function() {
+        this.__mainPanel.setMainView(previousWidget);
+      }, this);
+      this.__mainPanel.setMainView(widgetContainer);
     },
 
     serializeProjectDocument: function() {

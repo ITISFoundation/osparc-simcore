@@ -4,9 +4,6 @@ services:
     image: services_cc-0d-viewer-dev
     build:
       target: development
-      args:
-        JSON_CONFIGURATION: cc_single_cell.json
-        JSON_CONFIGURATION_FOLDER: cc-single-cell
     environment: 
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
@@ -16,10 +13,13 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - USE_CASE_CONFIG_FILE=devel-config/port_config.json
+      - INIT_OPTIONS=5000 200 20 tab
     volumes: 
-      - ./cc/cc-single-cell/cc_single_cell.ipynb:/home/jovyan/cc_single_cell.ipynb
-      - ../../../packages/simcore-sdk/src:/home/jovyan/packages/packages/simcore-sdk/src
-      - ../../../packages/s3wrapper/src:/home/jovyan/packages/packages/s3wrapper/src
+      - ./devel:/home/jovyan/devel
+      - ./cc/cc-single-cell/notebook:/home/jovyan/notebook
+      - ./cc/cc-single-cell/devel-config:/home/jovyan/devel-config
+      - ../../../packages:/packages
     depends_on:
       - postgres
       - minio
@@ -27,10 +27,7 @@ services:
   cc-1d:
     image: services_cc-1d-viewer-dev
     build:
-      target: development
-      args:
-        JSON_CONFIGURATION: cc_config-oned.json
-        JSON_CONFIGURATION_FOLDER: cc-oned
+      target: development      
     environment: 
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
@@ -40,21 +37,21 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - USE_CASE_CONFIG_FILE=devel-config/port_config.json
+      - INIT_OPTIONS=5000 200 20 tab
+    volumes: 
+      - ./devel:/home/jovyan/devel
+      - ./cc/cc-oned/notebook:/home/jovyan/notebook
+      - ./cc/cc-oned/devel-config:/home/jovyan/devel-config
+      - ../../../packages:/packages
     depends_on:
       - postgres
-      - minio
-    volumes: 
-      - ./cc/cc-oned/cc_oned.ipynb:/home/jovyan/cc_oned.ipynb
-      - ../../../packages/simcore-sdk/src:/home/jovyan/packages/packages/simcore-sdk/src
-      - ../../../packages/s3wrapper/src:/home/jovyan/packages/packages/s3wrapper/src
+      - minio    
   #--------------------------------------------------------------------
   cc-2d:
     image: services_cc-2d-viewer-dev
     build:
       target: development
-      args:
-        JSON_CONFIGURATION: cc_config-twod.json
-        JSON_CONFIGURATION_FOLDER: cc-twod
     environment: 
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
@@ -64,20 +61,21 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - USE_CASE_CONFIG_FILE=devel-config/port_config.json
+      - INIT_OPTIONS=5000 200 20 tab
+    volumes: 
+      - ./devel:/home/jovyan/devel
+      - ./cc/cc-twod/notebook:/home/jovyan/notebook
+      - ./cc/cc-twod/devel-config:/home/jovyan/devel-config
+      - ../../../packages:/packages
     depends_on:
       - postgres
       - minio
-    volumes: 
-      - ./cc/cc-twod/cc_2d.ipynb:/home/jovyan/cc_2d.ipynb
-      - ../../../packages/simcore-sdk/src:/home/jovyan/packages/packages/simcore-sdk/src
-      - ../../../packages/s3wrapper/src:/home/jovyan/packages/packages/s3wrapper/src
   #--------------------------------------------------------------------
   kember:
     image: services_kember-viewer-dev
     build:
       target: development
-      args:
-        JSON_CONFIGURATION: kember_config.json        
     environment: 
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
@@ -87,13 +85,16 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - USE_CASE_CONFIG_FILE=devel-config/port_config.json
+      - INIT_OPTIONS=100 6000 20 space
+    volumes: 
+      - ./devel:/home/jovyan/devel
+      - ./kember/notebook:/home/jovyan/notebook
+      - ./kember/devel-config:/home/jovyan/devel-config
+      - ../../../packages:/packages
     depends_on:
       - postgres
       - minio
-    volumes: 
-      - ./kember/kember.ipynb:/home/jovyan/kember.ipynb
-      - ../../../packages/simcore-sdk/src:/home/jovyan/packages/packages/simcore-sdk/src
-      - ../../../packages/s3wrapper/src:/home/jovyan/packages/packages/s3wrapper/src
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10
