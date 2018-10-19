@@ -1,3 +1,4 @@
+import argparse
 import json
 import sys
 import tempfile
@@ -50,10 +51,11 @@ def create_dummy_table(number_of_rows, number_of_columns):
     df = pd.DataFrame(fullmatrix)
     return df
 
-def create_dummy(json_configuration_file_path):
-    with open(json_configuration_file_path) as file_pointer:
+def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number_of_columns: int, number_of_files: int, sep: str ="\t"):
+    with json_configuration_file_path.open() as file_pointer:
         json_configuration = file_pointer.read()
     
+    # set up db
     db = init_db()
     new_Pipeline = ComputationalPipeline()
     db.session.add(new_Pipeline)
@@ -63,45 +65,62 @@ def create_dummy(json_configuration_file_path):
     # correct configuration with node uuid
     json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", node_uuid)
     configuration = json.loads(json_configuration)
+        
+
+    # create a dummy table    
+    s3 = init_s3()
+    # push the file to the S3 for each input item
+    for input_item in configuration["inputs"]:
+        if input_item["type"] == "file-url" or input_item["type"] == "folder-url":
+            # create a dummy file filled with dummy data
+            temp_file = tempfile.NamedTemporaryFile(suffix=".csv")
+            temp_file.close()
+            # create dummy file containing a table
+            df = create_dummy_table(number_of_rows, number_of_columns)
+            with open(temp_file.name, "w") as file_pointer:
+                df.to_csv(path_or_buf=file_pointer, sep=sep, header=False, index=False)        
+
+        # upload to S3
+        if input_item["type"] == "file-url":
+            s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, Path(temp_file.name).name)
+            s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
+        elif input_item["type"] == "folder-url":
+            for i in range(number_of_files):
+                s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, Path(temp_file.name).parent.name, str(i) + ".dat")
+                s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
+        # update configuration
+        if "FILENAME_ID" in input_item["value"]:
+            input_item["value"] = input_item["value"].replace("FILENAME_ID", Path(temp_file.name).name)
+        if "FOLDER_NAME_ID" in input_item["value"]:
+            input_item["value"] = input_item["value"].replace("FOLDER_NAME_ID", Path(temp_file.name).parent.name)
+
+    Path(temp_file.name).unlink()
+
     # now create the node in the db with links to S3
     new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, input=configuration["inputs"], output=configuration["outputs"])
     db.session.add(new_Node)
     db.session.commit()
 
-    # create a dummy file filled with dummy data
-    temp_file = tempfile.NamedTemporaryFile()
-    temp_file.close()
-
-    # create a dummy table
-    number_of_rows = 100
-    number_of_columns = 6000
-    number_of_files = 20
-    s3 = init_s3()
-    # push the file to the S3 for each input item
-    for input_item in configuration["inputs"]:
-        if input_item["type"] == "file-url":
-            # there is a file available to upload from
-            df = create_dummy_table(number_of_rows, number_of_columns)
-            # serialize to the file
-            with open(temp_file.name, "w") as file_pointer:
-                df.to_csv(path_or_buf=file_pointer, sep=" ", header=False, index=False)        
-            
-            s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"])
-            s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
-        elif input_item["type"] == "folder-url":
-            for i in range(number_of_files):
-                df = create_dummy_table(number_of_rows, number_of_columns)
-                # serialize to the file
-                with open(temp_file.name, "w") as file_pointer:
-                    df.to_csv(path_or_buf=file_pointer, sep=" ", header=False, index=False)        
-                
-                s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"], str(i) + ".dat")
-                s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
-
-    Path(temp_file.name).unlink()
-
     # print the node uuid so that it can be set as env variable from outside
     print(node_uuid)
 
-if __name__ == "__main__":    
-    create_dummy(sys.argv[1])
+
+parser = argparse.ArgumentParser(description="Initialise an oSparc database/S3 with fake data for development.")
+parser.add_argument("portconfig", help="The path to the port configuration file (json format)", type=Path)
+parser.add_argument("rows", help="The number of rows in each table", type=int)
+parser.add_argument("columns", help="The number of columns in each table", type=int)
+parser.add_argument("files", help="The number of tables in case of folder-url type", type=int)
+parser.add_argument("separator", help="The value separator to be used, for example tab or space or any single character", type=str)
+args = sys.argv[1:]
+options = parser.parse_args(args)
+if "tab" in options.separator:
+    separator = "\t"
+elif "space" in options.separator:
+    separator = " "
+else:
+    separator = options.separator
+create_dummy(options.portconfig, 
+    number_of_rows=options.rows, 
+    number_of_columns=options.columns, 
+    number_of_files=options.files, 
+    sep=separator)
