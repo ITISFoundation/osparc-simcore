@@ -7,7 +7,7 @@ main:
   client_outdir: ${SIMCORE_WEB_OUTDIR}
   log_level: DEBUG
   testing: True
-  disable_services: [director, postgres, rabbit, s3]
+  # disable_services: [director, postgres, rabbit, s3]
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
