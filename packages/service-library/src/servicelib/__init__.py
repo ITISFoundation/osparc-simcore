@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
+""" osparc's service core library
 
-"""Top-level package for Core service library."""
+"""
 
 __version__ = '0.1.0'

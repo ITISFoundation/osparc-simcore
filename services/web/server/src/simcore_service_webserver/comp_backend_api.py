@@ -10,18 +10,18 @@ import datetime
 import logging
 
 import async_timeout
-from aiohttp import web, web_exceptions
-
-
 import sqlalchemy.exc
-from s3wrapper.s3_client import S3Client
-from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
-                                                ComputationalTask)
+from aiohttp import web, web_exceptions
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from s3wrapper.s3_client import S3Client
+from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
+                                                ComputationalTask)
+
 from . import api_converter
 from .comp_backend_worker import celery
+from .application_keys import APP_CONFIG_KEY
 
 # TODO: this should be coordinated with postgres options from config/server.yaml
 #from simcore_sdk.config.db import Config as DbConfig
@@ -46,7 +46,7 @@ async def init_database(_app):
     RETRY_COUNT = 20
 
     # db config
-    db_config = _app["config"]["postgres"]
+    db_config = _app[APP_CONFIG_KEY]["postgres"]
     endpoint = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(**db_config)
 
     db_engine = create_engine(endpoint,
@@ -101,7 +101,7 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
             # add it to the list
             if is_node_computational and node_uuid not in dag_adjacency_list:
                 dag_adjacency_list[node_uuid] = []
-            
+
             # check for links
             if not isinstance(input_data, dict):
                 continue
@@ -141,7 +141,7 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
             task = await api_converter.convert_task_to_old_version(task)
         #     continue
 
-        
+
 
         tasks[node_uuid] = task
 
@@ -185,7 +185,7 @@ async def start_pipeline(request):
     request_data = await request.json()
 
     log.debug("Client calls start_pipeline with %s", request_data)
-    _app = request.app["config"]
+    _app = request.app[APP_CONFIG_KEY]
     log.debug("Parse pipeline %s", _app)
     dag_adjacency_list, tasks, io_files = await _parse_pipeline(request_data["workbench"])
     log.debug("Pipeline parsed")

@@ -7,43 +7,65 @@
     is used to build it.
 """
 import logging
-import pathlib
+from pathlib import Path
 
 from aiohttp import web
+
+from .application_keys import APP_CONFIG_KEY
 
 log = logging.getLogger(__file__)
 
 
-async def index(request):
+def get_client_outdir(app: web.Application) -> Path:
+    cfg = app[APP_CONFIG_KEY]["main"]
+
+    client_dir = Path(cfg["client_outdir"]).expanduser()
+    if not client_dir.exists():
+        txt = reason = "Front-end application is not available"
+        if cfg["testing"]:
+            reason = "Invalid client source path: %s" % client_dir
+        raise web.HTTPServiceUnavailable(reason=reason, text=txt)
+    return client_dir
+
+async def index(request: web.Request):
     """
         Serves boot application under index
     """
     log.debug("index.request:\n %s", request)
 
-    client_dir = pathlib.Path(request.app["config"]["app"]["client_outdir"])
-    index_path = client_dir / "index.html"
-    with open(index_path) as ofh:
+    index_path = get_client_outdir(request.app) / "index.html"
+    with index_path.open() as ofh:
         return web.Response(text=ofh.read(), content_type="text/html")
 
-
-def setup_statics(app):
+def setup_statics(app: web.Application):
     log.debug("Setting up %s ...", __name__)
 
-    outdir = pathlib.Path( app["config"]["app"]["client_outdir"] )
 
-    if not outdir.exists():
-        # FIXME: This error is silent to let tests pass
-        log.error("Client application is not ready. Invalid path %s", outdir)
+    # TODO: Should serving front-end ria be configurable?
+    # Front-end Rich Interface Application (RIA)
+    try:
+        outdir = get_client_outdir(app)
+
+        # Checks integrity of RIA source before serving
+        EXPECTED_FOLDERS = ('qxapp', 'resource', 'transpiled')
+        folders = [x for x in outdir.iterdir() if x.is_dir()]
+
+        for name in EXPECTED_FOLDERS:
+            got = [path.name for path in folders]
+            if name not in got:
+                raise web.HTTPServiceUnavailable(
+                    reason="Invalid front-end source-output folders. Expected %s, got %s" %(EXPECTED_FOLDERS, got),
+                    text ="Front-end application is not available"
+                )
+
+        # TODO: map ui to /ui or create an alias!?
+        app.router.add_get("/", index)
+
+        # NOTE: source-output and build-output have both the same subfolder structure
+        # TODO: check whether this can be done at oncen
+        for path in folders:
+            app.router.add_static('/' + path.name, path)
+
+    except web.HTTPServiceUnavailable as ex:
+        log.exception(ex.text)
         return
-
-    # RIA qx-application
-    app.router.add_get("/", index)
-
-    # TODO: check whether this can be done at once
-    # NOTE: source-output and build-output have both the same subfolder structure
-    for name in ("qxapp", "transpiled", "resource"):
-        folderpath =  outdir / name
-        if folderpath.exists():
-            app.router.add_static('/' + name, folderpath)
-        else:
-            log.error("Missing client folder %s", folderpath)

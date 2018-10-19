@@ -14,6 +14,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
   */
 
   members: {
+    __email: null,
 
     // overrides base
     _buildPage: function() {
@@ -27,12 +28,13 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
         placeholder: this.tr("Introduce your email")
       });
       this.add(email);
+      this.__email = email;
 
-      let uname = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr("Introduce a user name")
-      });
-      this.add(uname);
+      // let uname = new qx.ui.form.TextField().set({
+      //   required: true,
+      //   placeholder: this.tr("Introduce a user name")
+      // });
+      // this.add(uname);
 
       let pass1 = new qx.ui.form.PasswordField().set({
         required: true,
@@ -47,13 +49,13 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
       this.add(pass2);
 
       // interaction
-      email.addListener("changeValue", function(e) {
-        // Auto-guess
-        if (uname.getValue()=== null) {
-          let data = e.getData().split("@")[0];
-          uname.setValue(qx.lang.String.capitalize(qx.lang.String.clean(data)));
-        }
-      }, this);
+      // email.addListener("changeValue", function(e) {
+      //   // Auto-guess
+      //   if (uname.getValue()=== null) {
+      //     let data = e.getData().split("@")[0];
+      //     uname.setValue(qx.lang.String.capitalize(qx.lang.String.clean(data)));
+      //   }
+      // }, this);
 
       // validation
       manager.add(email, qx.util.Validate.email());
@@ -98,8 +100,8 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
         if (valid) {
           this.__submit({
             email: email.getValue(),
-            username: uname.getValue(),
-            pass: pass1.getValue()
+            password: pass1.getValue(),
+            confirm: pass2.getValue()
           });
         }
       }, this);
@@ -115,12 +117,22 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
       console.debug("Registering new user");
 
       let manager = qxapp.auth.Manager.getInstance();
-      manager.register(userData, function(success, msg) {
-        if (success) {
-          this.fireDataEvent("done", msg);
-        }
-        // TODO: if fails, flash reason (e.g. username already exists)
-      }, this);
+
+      let successFun = function(log) {
+        // TODO: add flash
+        this.fireDataEvent("done", log.message);
+      };
+
+      let failFun = function(msg) {
+        msg = msg || this.tr("Cannot register user");
+
+        // Flashes via email
+        this.__email.set({
+          invalidMessage: msg,
+          valid: false
+        });
+      };
+      manager.register(userData, successFun, failFun, this);
     }
 
   }

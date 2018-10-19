@@ -1,0 +1,33 @@
+version: '1.0'
+# TODO rename as main
+main:
+  client_outdir: ~/devp/osparc-simcore/services/web/client/source-output
+  host: 127.0.0.1
+  log_level: INFO
+  port: 8080
+  testing: true
+  disable_services: [director, postgres, rabbit, s3]
+# TODO add section service
+director:
+  host: director
+  port: 8001
+postgres:
+  database: simcoredb
+  endpoint: postgres:5432
+  host: postgres
+  maxsize: 5
+  minsize: 1
+  password: simcore
+  port: 5432
+  user: simcore
+rabbit:
+  channels:
+    log: comp.backend.channels.log
+    progress: comp.backend.channels.progress
+  password: simcore
+  user: simcore
+s3:
+  access_key: 'Q3AM3UQ867SPQQA43P2F'
+  bucket_name: simcore
+  endpoint: play.minio.io:9000
+  secret_key: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'

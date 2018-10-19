@@ -73,15 +73,17 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     this.add(new qx.ui.toolbar.Separator());
 
-    const dummyUser="bizzy";
-    let userLbl = new qx.ui.basic.Label("@" + dummyUser).set({
+    const userEmail = qxapp.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
+
+    let userLbl = new qx.ui.basic.Label(userEmail.split("@")[0]).set({
       minWidth: 20
     });
     this.add(userLbl);
 
     let userBtn = this.__createUserBtn();
     userBtn.set(commonBtnSettings);
-    userBtn.setIcon(qxapp.utils.Avatar.getUrl(dummyUser + "@itis.ethz.ch", NAVIGATION_BUTTON_HEIGHT));
+
+    userBtn.setIcon(qxapp.utils.Avatar.getUrl(userEmail, NAVIGATION_BUTTON_HEIGHT));
     this.add(userBtn);
   },
 

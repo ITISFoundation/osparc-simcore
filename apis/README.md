@@ -78,8 +78,8 @@ The current python-based packages use the aiohttp-apiset library to create route
 
 ### Python: in development and should be available soon
 
-Using the library [openapi-core](https://github.com/p1c2u/openapi-core) the library is able to download the api at starting point.
-The [apihub service](../services/apihub) serves the apis and schemas to the internal parts of the oSparc platform.
+- Using the library [openapi-core](https://github.com/p1c2u/openapi-core) the library is able to download the api at starting point.
+- The [apihub service](../services/apihub) serves the apis and schemas to the internal parts of the oSparc platform.
 
 ## references
 

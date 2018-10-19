@@ -1,7 +1,7 @@
 # osparc-simcore platform
 
 [![Build Status](https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master)](https://travis-ci.org/ITISFoundation/osparc-simcore)
-[![Waffle.io - Columns and their card count](https://badge.waffle.io/ITISFoundation/osparc-simcore.svg?columns=all)](https://waffle.io/ITISFoundation/osparc-simcore) 
+[![Waffle.io - Columns and their card count](https://badge.waffle.io/ITISFoundation/osparc-simcore.svg?columns=all)](https://waffle.io/ITISFoundation/osparc-simcore)
 
 ## Overview
 
@@ -10,15 +10,23 @@
 
 ```bash
   git clone git@github.com:ITISFoundation/osparc-simcore.git
-  cd osparc-simcore
 
-  # build service images
+  # Set environment variable by copying & editing `.env` file
+  cd osparc-simcore
+  cp .env-devel .env
+
+  # builds
   make build
 
-  # deploy
+  # starts
   make up
 
-  # to stop deployed services
+  # open browser in:
+  #  localhost:9081 - simcore front-end site
+  #
+  xdg-open http://localhost:9081/
+
+  # stops
   make down
 ```
 
