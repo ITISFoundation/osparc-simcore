@@ -5,12 +5,8 @@ TODO: add more strict checks with re
 import logging
 
 import trafaret as T
-
-from simcore_sdk.config import (
-    db,
-    rabbit,
-    s3
-)
+from servicelib import application_keys #pylint:disable=unused-import
+from simcore_sdk.config import db, rabbit, s3
 
 log = logging.getLogger(__name__)
 
