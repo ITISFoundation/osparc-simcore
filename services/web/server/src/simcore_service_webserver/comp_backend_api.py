@@ -87,11 +87,15 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
     tasks = dict()
     io_files = []
 
-    for node_uuid, node_data in pipeline_data.items():
-        node_key = node_data["key"]
-        node_version = node_data["version"]
-        node_inputs = node_data["inputs"]
-        node_outputs = node_data["outputs"]
+    for key, value in pipeline_data.items():
+        if not all(k in value for k in ("key", "version", "inputs", "outputs")):
+            log.debug("skipping workbench entry containing %s:%s", key, value)
+            continue
+        node_uuid = key
+        node_key = value["key"]
+        node_version = value["version"]
+        node_inputs = value["inputs"]
+        node_outputs = value["outputs"]
         log.debug("node %s:%s has inputs: \n%s\n outputs: \n%s", node_key, node_version, node_inputs, node_outputs)
         #TODO: we should validate all these things before processing...
 
@@ -121,7 +125,7 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
                 if output_data["store"] == "s3-z43":
                     current_filename_on_s3 = output_data["path"]
                     if current_filename_on_s3:
-                        new_filename = node_uuid + "/" + output_key # in_1
+                        new_filename = key + "/" + output_key # in_1
                         # copy the file
                         io_files.append({ "from" : current_filename_on_s3, "to" : new_filename })
 
@@ -145,7 +149,7 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
         log.debug("storing task in node is %s: %s", node_uuid, task)
         tasks[node_uuid] = task
         log.debug("task stored")
-
+    log.debug("converted all tasks: \nadjacency list: %s\ntasks: %s\nio_files: %s", dag_adjacency_list, tasks, io_files)
     return dag_adjacency_list, tasks, io_files
 
 async def _transfer_data(app, pipeline_id, io_files):
