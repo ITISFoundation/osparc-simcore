@@ -20,7 +20,7 @@ class UserStatus(enum.Enum):
     ACTIVE = "active"
     BANNED = "banned"
 
-class UserRole(enum.OrderedEnum):
+class UserRole(enum.IntEnum):
     """
         TODO: based on the user role, one can define pemissions
         to perform certain tasks
@@ -64,7 +64,7 @@ users = sa.Table("users", metadata,
         nullable=False,
         default=UserRole.USER),
     sa.Column("created_at", sa.DateTime(), nullable=False,default=datetime.utcnow),
-    sa.Column("created_ip", sa.String(), nullable=False),
+    sa.Column("created_ip", sa.String(), nullable=True),
 
     #
     sa.PrimaryKeyConstraint("id", name="user_pkey"),

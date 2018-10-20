@@ -1,6 +1,8 @@
 
 from functools import wraps
 
+from aiohttp_security.api import has_permission, login_required
+
 
 def args_adapter(func):
     """
@@ -24,5 +26,6 @@ def args_adapter(func):
 
 
 __all__ = (
-    'args_adapter'
+    'args_adapter',
+    'login_required', 'has_permission' # decorators
 )

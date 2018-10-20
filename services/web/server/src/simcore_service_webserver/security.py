@@ -8,18 +8,19 @@
 # pylint: disable=unused-import
 import logging
 
-from aiohttp import web
-from aiopg.sa import Engine
 import aiohttp_security
 import sqlalchemy as sa
-from aiohttp_security import (SessionIdentityPolicy, authorized_userid, forget,
-                              permits, remember)
+from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
+from aiohttp_security.api import (authorized_userid, forget, has_permission,
+                                  is_anonymous, login_required, remember)
+from aiohttp_security.session_identity import SessionIdentityPolicy
+from aiopg.sa import Engine
 from passlib.hash import sha256_crypt
 
-from .db_model import UserRole, UserStatus, users
+from .db_models import UserRole, UserStatus, users
 from .session import setup_session
-from .settings.application_keys import APP_DB_ENGINE_KEY
+from .application_keys import APP_DB_ENGINE_KEY
 
 log = logging.getLogger(__file__)
 
@@ -46,8 +47,10 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
             where = sa.and_(users.c.user_login_key == identity,
                             users.c.status != UserStatus.BANNED)
             query = users.count().where(where)
-            ret = await conn.scalar(query)
-            return identity if ret else None
+            #ret = await conn.scalar(query)
+            ret = await conn.execute(query)
+            user = await ret.fetchone()
+            return user["id"] if user else None
 
     async def permits(self, identity: str, permission: UserRole, context=None):
         """ Check user's permissions
@@ -115,5 +118,6 @@ setup_security = setup
 __all__ = (
     'setup_security',
     'generate_password_hash', 'check_credentials',
-    'authorized_userid', 'forget', 'permits', 'remember'
+    'authorized_userid', 'forget', 'remember', 'is_anonymous',
+    'login_required', 'has_permission' # decorators
 )
