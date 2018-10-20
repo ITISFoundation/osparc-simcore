@@ -142,8 +142,9 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
         #     continue
 
 
-
+        log.debug("storing task in node is %s: %s", node_uuid, task)
         tasks[node_uuid] = task
+        log.debug("task stored")
 
     return dag_adjacency_list, tasks, io_files
 
@@ -187,8 +188,8 @@ async def start_pipeline(request):
     log.debug("Client calls start_pipeline with %s", request_data)
     _app = request.app[APP_CONFIG_KEY]
     log.debug("Parse pipeline %s", _app)
-    dag_adjacency_list, tasks, io_files = await _parse_pipeline(request_data["workbench"])
-    log.debug("Pipeline parsed")
+    dag_adjacency_list, tasks, io_files = await _parse_pipeline(request_data)
+    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s\n io_files %s", str(dag_adjacency_list), str(tasks), str(io_files))
     try:
         # create the new pipeline in db
         pipeline = ComputationalPipeline(dag_adjacency_list=dag_adjacency_list, state=0)
