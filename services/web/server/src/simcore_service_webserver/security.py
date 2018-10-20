@@ -1,48 +1,42 @@
-""" Authentication and authorization
+""" Security subsystem.
 
+    - Responsible of authentication and authorization
 
-    See https://aiohttp-security.readthedocs.io/en/latest/
+    Based on https://aiohttp-security.readthedocs.io/en/latest/
 """
 # pylint: disable=assignment-from-no-return
 # pylint: disable=unused-import
 import logging
 
+from aiohttp import web
+from aiopg.sa import Engine
 import aiohttp_security
 import sqlalchemy as sa
 from aiohttp_security import (SessionIdentityPolicy, authorized_userid, forget,
                               permits, remember)
 from aiohttp_security.abc import AbstractAuthorizationPolicy
-
-from .settings.application_keys import APP_DB_ENGINE_KEY
 from passlib.hash import sha256_crypt
 
-from .db_model import users, UserStatus, UserRole
+from .db_model import UserRole, UserStatus, users
 from .session import setup_session
+from .settings.application_keys import APP_DB_ENGINE_KEY
 
 log = logging.getLogger(__file__)
 
 
 class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
-    PRIORITY = list(e.value for e in UserRole)
-
-    def __init__(self, app):
-        self._app = app   # Lazy getter since db is initialized
+    def __init__(self, app: web.Application):
+        self._app = app
 
     @property
-    def engine(self):
+    def engine(self) -> Engine:
+         # Lazy getter since db is not available upon construction
+
+         # TODO: what if db is not available?
         return self._app[APP_DB_ENGINE_KEY]
 
-    @classmethod
-    def _is_authorized(cls, user_role: UserRole, permission: str):
-        """ For the moment, the authorization is based on the level
-            of priority provided by the user's role
-        """
-        # TODO: should go in the db!
-        is_authorized = cls.PRIORITY.index(permission) <= cls.PRIORITY.index(user_role.value)
-        return is_authorized
-
-    async def authorized_userid(self, identity):
-        """Retrieve authorized user id.
+    async def authorized_userid(self, identity: str):
+        """ Retrieve authorized user id.
 
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
@@ -55,19 +49,15 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
             ret = await conn.scalar(query)
             return identity if ret else None
 
-    async def permits(self, identity: str, permission: str, context=None):
-        """Check user's permissions
+    async def permits(self, identity: str, permission: UserRole, context=None):
+        """ Check user's permissions
 
         Return True if the identity is allowed the permission in the
         current context, else return False.
         """
         log.debug("context: %s", context)
 
-        if identity is None:
-            return False
-
-        if permission not in self.PRIORITY:
-            log.error("Undefined permission %s", permission)
+        if identity is None or permission is None:
             return False
 
         async with self.engine.acquire() as conn:
@@ -79,7 +69,8 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
             user = await ret.fetchone()
 
             if user is not None:
-                return self._is_authorized(user['role'], permission)
+                return permission <= user['role']
+
                 #user_id = user["id"]
                 #  where = model.permissions.c.user_id == user_id
                 #  query = model.permissions.select().where(where)
@@ -92,7 +83,7 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
             return False
 
 
-async def check_credentials(engine, email, password):
+async def check_credentials(engine: Engine, email: str, password: str) -> bool:
     async with engine.acquire() as conn:
         where = sa.and_(users.c.user_login_key == email,
                         users.c.status != UserStatus.BANNED)
@@ -109,10 +100,6 @@ generate_password_hash = sha256_crypt.hash
 
 def setup(app):
     log.debug("Setting up %s ...", __name__)
-
-    # TODO: create dependency mechanism and compute setup order
-    setup_session(app)
-
 
     # Once user is identified, an identity string is created for that user
     identity_policy = SessionIdentityPolicy()

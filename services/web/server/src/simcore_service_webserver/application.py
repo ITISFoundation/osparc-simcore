@@ -6,12 +6,13 @@ import logging
 from aiohttp import web
 
 from .db import setup_db
+from .session import setup_session
 from .security import setup_security
 from .rest import setup_rest
 from .statics import setup_statics
 from .computational_backend import setup_computational_backend
 from .sockets import setup_sio
-from .application_keys import APP_CONFIG_KEY
+from .settings.application_keys import APP_CONFIG_KEY
 
 
 log = logging.getLogger(__name__)
@@ -25,7 +26,9 @@ def create_application(config):
     app = web.Application()
     app[APP_CONFIG_KEY] = config
 
+    # TODO: create dependency mechanism and compute setup order
     setup_db(app)
+    setup_session(app)
     setup_security(app)
     setup_computational_backend(app)
     setup_statics(app)

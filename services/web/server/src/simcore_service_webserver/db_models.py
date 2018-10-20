@@ -8,6 +8,7 @@ from datetime import datetime
 
 import sqlalchemy as sa
 
+# ENUM TYPES ----------------------------------------------------------------
 
 class UserStatus(enum.Enum):
     """
@@ -19,7 +20,7 @@ class UserStatus(enum.Enum):
     ACTIVE = "active"
     BANNED = "banned"
 
-class UserRole(enum.Enum):
+class UserRole(enum.OrderedEnum):
     """
         TODO: based on the user role, one can define pemissions
         to perform certain tasks
@@ -29,10 +30,10 @@ class UserRole(enum.Enum):
         moderator: adds permissions ...???
         admin: full access
     """
-    ANONYMOUS = "anonymous",
-    USER = "user",
-    MODERATOR = "moderator",
-    ADMIN = "admin"
+    ANONYMOUS = 0,
+    USER = 1,
+    MODERATOR = 2,
+    ADMIN = 100
 
 
 class ConfirmationAction(enum.Enum):
@@ -65,7 +66,7 @@ users = sa.Table("users", metadata,
     sa.Column("created_at", sa.DateTime(), nullable=False,default=datetime.utcnow),
     sa.Column("created_ip", sa.String(), nullable=False),
 
-    # indices
+    #
     sa.PrimaryKeyConstraint("id", name="user_pkey"),
     sa.UniqueConstraint("email", name="user_login_key"),
 )
@@ -84,12 +85,13 @@ confirmations = sa.Table("confirmations", metadata,
 
     #
     sa.PrimaryKeyConstraint("code", name="confirmation_code"),
-    sa.ForeignKeyConstraint(["user_id"], [user.c.id],
+    sa.ForeignKeyConstraint(["user_id"], [users.c.id],
                             name="user_confirmation_fkey",
                             ondelete="CASCADE"),
  )
 
 
+# NOTE: this is another way of of defining keys ...
 tokens = sa.Table("tokens", metadata,
     sa.Column("id", sa.Integer, nullable=False, primary_key=True),
     sa.Column("user_id", sa.Integer, sa.ForeignKey("user.user_id"), nullable=False),
@@ -97,6 +99,8 @@ tokens = sa.Table("tokens", metadata,
     sa.Column("data", sa.JSON, nullable=False)
 )
 
+
+# TODO: roles table that maps every role with allowed tasks e.g. read/write,...??
 
 __all__ = (
     "UserStatus", "UserRole", "ConfirmationAction",
