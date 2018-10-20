@@ -38,7 +38,6 @@ def app_cfg(here):
         cfg = yaml.safe_load(f)
     return cfg
 
-
 @pytest.fixture(scope="session")
 def postgres_db(app_cfg):
     # Configures db and initializes tables
@@ -52,11 +51,8 @@ def postgres_db(app_cfg):
 
     yield engine
 
-    import pdb; pdb.set_trace()
-
     metadata.drop_all(engine)
     engine.dispose()
-
 
 @pytest.fixture(scope="session")
 def fake_users_db(postgres_db):
@@ -83,7 +79,6 @@ def fake_users_db(postgres_db):
 
     return data
 
-
 @pytest.fixture
 def server(loop, aiohttp_server, fake_users_db, app_cfg):
     app = web.Application()
@@ -97,7 +92,6 @@ def server(loop, aiohttp_server, fake_users_db, app_cfg):
     setup_security(app)
 
     async def _check(request):
-        import pdb; pdb.set_trace()
         is_logged = not await is_anonymous(request)
         return web.json_response({
             'message': 'hoi there',
@@ -105,7 +99,6 @@ def server(loop, aiohttp_server, fake_users_db, app_cfg):
         })
 
     async def _login(request):
-        import pdb; pdb.set_trace()
         body = await request.json()
 
         engine = request.app[APP_DB_ENGINE_KEY]
@@ -114,31 +107,28 @@ def server(loop, aiohttp_server, fake_users_db, app_cfg):
             raise web.HTTPUnauthorized(content_type='application/json')
 
         response = web.HTTPNoContent(content_type='application/json')
-        remember(request, response, body.get('email'))
+        await remember(request, response, body.get('email'))
         raise response
 
 
     @login_required
     async def _who(request):
-        import pdb; pdb.set_trace()
-
         user_id = await authorized_userid(request)
 
         engine = request.app[APP_DB_ENGINE_KEY]
         async with engine.acquire() as cnx:
-            query = users.select().where(users.c.user_id == user_id)
+            query = users.select().where(users.c.id == user_id)
             ret = await cnx.execute(query)
             user = await ret.fetchone()
 
         # returns
-        return web.json_response(data={ k:user[k]
-            for k in ["name", "email", "status", "role", "reated_at", "created_ip"] } )
+        return web.json_response(data={ k:str(user.get(k))
+            for k in ["name", "email", "status", "role", "created_at", "created_ip"] } )
 
     @login_required
     async def _logout(request):
-        import pdb; pdb.set_trace()
         response = web.HTTPNoContent(content_type='application/json')
-        forget(request, response)
+        await forget(request, response)
         raise response
 
 
@@ -147,9 +137,8 @@ def server(loop, aiohttp_server, fake_users_db, app_cfg):
     app.router.add_get("/me", _who, name="me")
     app.router.add_get("/logout", _logout, name="logout")
 
-    server = loop.run_until_complete( aiohttp_server(app))
+    server = loop.run_until_complete(aiohttp_server(app))
     return server
-
 
 @pytest.fixture
 def clients(loop, aiohttp_client, server, fake_users_db):
@@ -158,11 +147,10 @@ def clients(loop, aiohttp_client, server, fake_users_db):
 
     return pcrespov, bizzy
 
-
 async def test_it(clients, fake_users_db):
     pcrespov, bizzy = clients
 
-    import pdb; pdb.set_trace()
+    # PCRESPOV --------------------------------------
     resp = await pcrespov.get("/")
     payload = await resp.json()
 
@@ -170,14 +158,12 @@ async def test_it(clients, fake_users_db):
     assert payload.get("message") == "hoi there"
     assert not payload["is_logged"]
 
-    import pdb; pdb.set_trace()
     resp = await pcrespov.post("/login", json={
         'email': 'pcrespov@foo.com',
         'password': 'secret'
     })
     assert resp.status == 204
 
-    import pdb; pdb.set_trace()
     resp = await pcrespov.get("/")
     payload = await resp.json()
 
@@ -186,20 +172,24 @@ async def test_it(clients, fake_users_db):
 
     resp = await pcrespov.get("/me")
     payload = await resp.json()
-
     print(payload)
     assert payload['email'] == 'pcrespov@foo.com'
 
 
-    import pdb; pdb.set_trace()
-    assert resp.status == 200
-    assert payload.get("message") == "hoi there"
-    assert not payload["is_logged"]
-
-
-
+    # BIZZY ---------------------------------
     resp = await bizzy.get("/")
     payload = await resp.json()
     assert resp.status == 200
     assert payload.get("message") == "hoi there"
     assert not payload["is_logged"]
+
+    resp = await bizzy.get("/me")
+    assert resp.status == 401
+
+
+    #
+    resp = await pcrespov.get("/logout")
+    assert resp.status == 204
+
+    resp = await pcrespov.get("/me")
+    assert resp.status == 401

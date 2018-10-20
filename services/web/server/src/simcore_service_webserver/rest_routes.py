@@ -48,8 +48,8 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     path, handle = '/auth/logout', auth_handlers.logout
     operation_id = specs.paths[path].operations['get'].operation_id
     routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
-    
-    # temp fix for running pipelines
+
+    # FIXME: temp fix for running pipelines
     path, handle = '/services', registry_api.get_services
     routes.append(web.get(BASEPATH+path, handle))
     path, handle = '/start_pipeline', comp_backend_api.start_pipeline

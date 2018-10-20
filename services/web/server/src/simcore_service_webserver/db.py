@@ -4,9 +4,9 @@ import logging
 from aiohttp import web
 from aiopg.sa import create_engine
 
+from .application_keys import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY,
+                               APP_DB_SESSION_KEY)
 from .comp_backend_api import init_database as _init_db
-from .settings.application_keys import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY,
-                                        APP_DB_SESSION_KEY)
 
 # FIXME: _init_db is temporary here so database gets properly initialized
 
@@ -15,6 +15,7 @@ THIS_SERVICE_NAME = 'postgres'
 RETRY_WAIT_SECS = 2
 RETRY_COUNT = 20
 CONNECT_TIMEOUT_SECS = 30
+DNS = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
 log = logging.getLogger(__name__)
 
@@ -63,6 +64,10 @@ def setup_db(app: web.Application):
 
     # app is created at this point but not yet started
     log.debug("Setting up %s [service: %s] ...", __name__, THIS_SERVICE_NAME)
+
+    # ensures keys exist
+    app[APP_DB_ENGINE_KEY] = None
+    app[APP_DB_SESSION_KEY] = None
 
     # async connection to db
     app.on_startup.append(_init_db) # TODO: review how is this disposed

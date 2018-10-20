@@ -63,8 +63,6 @@ async def register(request: web.Request):
     log.info("User %s registered", body.email)
     return attr.asdict(LogMessageType(level="INFO", message="Confirmation email sent", logger="user"))
 
-
-
 async def login(request: web.Request):
     global DUMMY_TOKENS
 

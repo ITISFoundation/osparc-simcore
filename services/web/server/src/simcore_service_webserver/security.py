@@ -8,18 +8,19 @@
 # pylint: disable=unused-import
 import logging
 
-from aiohttp import web
-from aiopg.sa import Engine
 import aiohttp_security
 import sqlalchemy as sa
-from aiohttp_security import (SessionIdentityPolicy, authorized_userid, forget,
-                              permits, remember)
+from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
+from aiohttp_security.api import (authorized_userid, forget, has_permission,
+                                  is_anonymous, login_required, remember)
+from aiohttp_security.session_identity import SessionIdentityPolicy
+from aiopg.sa import Engine
 from passlib.hash import sha256_crypt
 
-from .db_model import UserRole, UserStatus, users
+from .db_models import UserRole, UserStatus, users
 from .session import setup_session
-from .settings.application_keys import APP_DB_ENGINE_KEY
+from .application_keys import APP_DB_ENGINE_KEY
 
 log = logging.getLogger(__file__)
 
@@ -43,11 +44,14 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
         """
         # pylint: disable=E1120
         async with self.engine.acquire() as conn:
-            where = sa.and_(users.c.user_login_key == identity,
+            # TODO: why users.c.user_login_key!=users.c.email
+            query = users.select().where(
+                    sa.and_(users.c.email == identity,
                             users.c.status != UserStatus.BANNED)
-            query = users.count().where(where)
-            ret = await conn.scalar(query)
-            return identity if ret else None
+            )
+            ret = await conn.execute(query)
+            user = await ret.fetchone()
+            return user["id"] if user else None
 
     async def permits(self, identity: str, permission: UserRole, context=None):
         """ Check user's permissions
@@ -61,33 +65,22 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
             return False
 
         async with self.engine.acquire() as conn:
-
-            where = sa.and_(users.c.user_login_key == identity,
-                            users.c.status != UserStatus.BANNED)
-            query = users.select().where(where)
+            query = users.select().where(
+                sa.and_(users.c.email == identity,
+                users.c.status != UserStatus.BANNED)
+            )
             ret = await conn.execute(query)
             user = await ret.fetchone()
-
             if user is not None:
                 return permission <= user['role']
-
-                #user_id = user["id"]
-                #  where = model.permissions.c.user_id == user_id
-                #  query = model.permissions.select().where(where)
-                #  ret = await conn.execute(query)
-                #  result = await ret.fetchall()
-                #  if ret is not None:
-                #      for record in result:
-                #          if record.perm_name == permission:
-                #              return True
-            return False
-
+        return False
 
 async def check_credentials(engine: Engine, email: str, password: str) -> bool:
     async with engine.acquire() as conn:
-        where = sa.and_(users.c.user_login_key == email,
-                        users.c.status != UserStatus.BANNED)
-        query = users.select().where(where)
+        query = users.select().where(
+            sa.and_(users.c.email == email,
+            users.c.status != UserStatus.BANNED)
+        )
         ret = await conn.execute(query)
         user = await ret.fetchone()
         if user is not None:
@@ -115,5 +108,6 @@ setup_security = setup
 __all__ = (
     'setup_security',
     'generate_password_hash', 'check_credentials',
-    'authorized_userid', 'forget', 'permits', 'remember'
+    'authorized_userid', 'forget', 'remember', 'is_anonymous',
+    'login_required', 'has_permission' # decorators
 )
