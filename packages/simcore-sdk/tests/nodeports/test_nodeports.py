@@ -297,3 +297,53 @@ def test_changing_outputs_error(default_nodeports_configuration): # pylint: disa
     with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
         PORTS.outputs[0] = new_output
     assert "Trying to modify read-only object" in str(excinfo.value)
+
+def test_get_file_follows_previous_node(special_nodeports_configuration, s3_client, bucket, tmpdir):
+    previous_node_config = helpers.get_empty_config()  #pylint: disable=E1101
+    dummy_file_name = "some_file.ext"
+    previous_node_config["outputs"].append({
+        "key": "output_123",
+        "label": "output 123",
+        "desc": "some output data",
+        "type": "file-url",
+        "value": "link.SIMCORE_NODE_UUID.{file}".format(file=dummy_file_name),
+        "timestamp": "2018-05-22T19:33:53.511Z"
+    })
+
+    current_node_config = helpers.get_empty_config()  #pylint: disable=E1101
+    current_node_config["inputs"].append({
+        "key": "in_15",
+        "label": "additional data",
+        "desc": "here some additional data",
+        "type": "file-url",
+        "value": "link.SIMCORE_NODE_UUID.output_123",
+        "timestamp": "2018-05-22T19:34:53.511Z"
+    })
+    # create the initial configuration
+    _, session, pipeline_id, node_uuid, other_node_uuids = special_nodeports_configuration(current_node_config, [previous_node_config])
+    assert len(other_node_uuids) == 1
+    # update the link to the previous node with the correct uuid
+    current_node_config["inputs"][0]["value"] = "link.{nodeuuid}.output_123".format(nodeuuid=other_node_uuids[0])
+    helpers.update_configuration(session, pipeline_id, node_uuid, current_node_config) #pylint: disable=E1101
+    from simcore_sdk.nodeports.nodeports import PORTS
+    assert len(PORTS.inputs) == 1
+    assert PORTS.inputs[0].key == current_node_config["inputs"][0]["key"]
+    assert PORTS.inputs[0].label == current_node_config["inputs"][0]["label"]
+    assert PORTS.inputs[0].desc == current_node_config["inputs"][0]["desc"]
+    assert PORTS.inputs[0].type == current_node_config["inputs"][0]["type"]
+    assert PORTS.inputs[0].value == current_node_config["inputs"][0]["value"]
+    assert PORTS.inputs[0].timestamp == current_node_config["inputs"][0]["timestamp"]
+
+    # upload some dummy file
+    file_path = Path(tmpdir, dummy_file_name)
+    file_path.write_text("test text")
+    s3_object_name = Path(str(pipeline_id), str(other_node_uuids[0]), dummy_file_name).as_posix()
+    s3_client.upload_file(bucket, str(s3_object_name), str(file_path))
+
+    file_path = PORTS.inputs[0].get()
+    assert Path(file_path).exists()
+    assert Path(file_path).read_text() == "test text"
+
+    file_path2 = PORTS.get("in_15")
+    assert Path(file_path2).exists()
+    assert Path(file_path2).read_text() == "test text"
