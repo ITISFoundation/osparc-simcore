@@ -297,3 +297,18 @@ def test_changing_outputs_error(default_nodeports_configuration): # pylint: disa
     with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
         PORTS.outputs[0] = new_output
     assert "Trying to modify read-only object" in str(excinfo.value)
+
+def test_get_file_follows_previous_node(special_nodeports_configuration):
+    special_config = helpers.get_empty_config() #pylint: disable=E1101
+    item_key = "out_blah"
+    special_configuration["inputs"].append({
+        "key": "in_15",
+        "label": "additional data",
+        "desc": "here some additional data",
+        "type": "file-url",
+        "value": "15",
+        "timestamp": "2018-05-22T19:34:53.511Z"
+    })
+    
+    special_nodeports_configuration(special_config)
+    from simcore_sdk.nodeports.nodeports import PORTS
