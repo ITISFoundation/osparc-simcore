@@ -115,7 +115,7 @@ class DataItem(_DataItem):
 
 
 
-    def __get_value_from_link(self):
+    def __get_value_from_link(self):    # pylint: disable=R1710
         node_uuid, s3_object_name = decode_link(self.value)
 
         try: 
@@ -127,7 +127,7 @@ class DataItem(_DataItem):
                                                             s3_object_name=s3_object_name,
                                                             node_key=self.key,
                                                             file_name=s3_object_name)
-            elif self.type in config.TYPE_TO_S3_FOLDER_LIST:
+            if self.type in config.TYPE_TO_S3_FOLDER_LIST:
                 # try to fetch from S3 as a folder
                 log.debug("Fetch folder from S3 %s", self.value)
                 return filemanager.download_folder_from_s3(node_uuid=node_uuid,
