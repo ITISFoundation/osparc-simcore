@@ -30,7 +30,7 @@ def _create_new_pipeline(engine, session):
 
     return new_Pipeline.pipeline_id
 
-def _set_configuration(engine, session, pipeline_id, json_configuration: str):
+def _set_configuration(engine, session, pipeline_id, json_configuration: str):  # pylint:disable=unused-argument
     node_uuid = uuid.uuid4()
     json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", str(node_uuid))
     configuration = json.loads(json_configuration)
@@ -56,7 +56,7 @@ def default_nodeports_configuration(engine, session):
 
 @pytest.fixture()
 def special_nodeports_configuration(engine, session):
-    def create_special_config(node_configuration: dict, other_node_configurations: list = []):
+    def create_special_config(node_configuration: dict, other_node_configurations: list = []):  # pylint: disable=dangerous-default-value
         pipeline_id = _create_new_pipeline(engine, session)
         # configure current node
         node_uuid = _set_configuration(engine, session, pipeline_id, json.dumps(node_configuration))
