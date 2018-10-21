@@ -121,7 +121,7 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
         for output_key, output_data in node_outputs.items():
             if not isinstance(output_data, dict):
                 continue
-            if "store" in output_data and "path" in output_data:
+            if all(k in output_data for k in ("store", "path")):
                 if output_data["store"] == "s3-z43":
                     current_filename_on_s3 = output_data["path"]
                     if current_filename_on_s3:
@@ -140,7 +140,7 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
         }
 
         # currently here a special case to handle the built-in file manager that should not be set as a task
-        if str(node_key).count("FilePicker") == 0:
+        if str(node_key).count("file-picker") == 0:
             # TODO: SAN This is temporary. As soon as the services are converted this should be removed.
             task = await api_converter.convert_task_to_old_version(task)
         #     continue
