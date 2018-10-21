@@ -2,6 +2,7 @@
 #pylint: disable=W0212
 #pylint: disable=C0111
 import pytest
+import helpers
 from pathlib import Path
 from simcore_sdk.nodeports import config as node_config
 
@@ -25,7 +26,6 @@ def test_access_with_key(default_nodeports_configuration): # pylint: disable=W06
     ("string", ""),
 ])
 def test_port_value_accessors_no_s3(special_nodeports_configuration, item_type, item_value): # pylint: disable=W0613, W0621
-    import helpers
     special_config = helpers.get_empty_config() #pylint: disable=E1101
     special_config["outputs"].append({
         "key": "out_15",
@@ -50,7 +50,7 @@ def test_port_value_accessors_no_s3(special_nodeports_configuration, item_type, 
     ("folder-url", str(Path(__file__).parent))
 ])
 def test_port_value_accessors_s3(special_nodeports_configuration, bucket, item_type, item_value): # pylint: disable=W0613, W0621
-    import helpers
+    
     import os
     import tempfile
     special_config = helpers.get_empty_config() #pylint: disable=E1101
@@ -80,7 +80,6 @@ def test_port_value_accessors_s3(special_nodeports_configuration, bucket, item_t
     assert PORTS.outputs[item_key].get().startswith(converted_value_to_check_for)
 
 def test_file_integrity(special_nodeports_configuration, bucket): # pylint: disable=W0613, W0621
-    import helpers
     special_config = helpers.get_empty_config() #pylint: disable=E1101
     item_key = "out_blah"
     special_config["outputs"].append({
@@ -104,7 +103,6 @@ def test_file_integrity(special_nodeports_configuration, bucket): # pylint: disa
     assert filecmp.cmp(__file__, downloaded_file_path, shallow=False)
 
 def test_folder_integrity(special_nodeports_configuration, bucket): # pylint: disable=W0613, W0621
-    import helpers
     special_config = helpers.get_empty_config() #pylint: disable=E1101
     item_key = "out_blah"
     special_config["outputs"].append({
@@ -136,7 +134,6 @@ def test_folder_integrity(special_nodeports_configuration, bucket): # pylint: di
 
 @pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
 def test_adding_new_ports(special_nodeports_configuration):
-    import helpers
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
     engine, session, pipeline_id, node_uuid = special_nodeports_configuration(special_configuration) #pylint: disable=W0612
     from simcore_sdk.nodeports.nodeports import PORTS
@@ -193,7 +190,6 @@ def test_adding_new_ports(special_nodeports_configuration):
 
 @pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
 def test_removing_ports(special_nodeports_configuration):
-    import helpers    
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
     # add inputs
     special_configuration["inputs"].append({
