@@ -10,7 +10,9 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       qx.locale.Date.getTimeFormat("short")
     );
 
-    let layout = new qx.ui.layout.VBox();
+    let layout = new qx.ui.layout.VBox().set({
+      alignY: "middle"
+    });
     this._setLayout(layout);
   },
 

@@ -112,7 +112,6 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       let project = new qxapp.data.model.ProjectModel();
       if (projectId) {
         let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
-        projectData.id = String(projectId);
         project = new qxapp.data.model.ProjectModel(projectData);
       }
       return project;
@@ -124,7 +123,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       prjLst.set({
         orientation: "horizontal",
         spacing: 10,
-        height: 230
+        height: 245,
+        alignY: "middle"
       });
 
       // controller
