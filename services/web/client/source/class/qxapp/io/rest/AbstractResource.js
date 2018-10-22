@@ -6,7 +6,7 @@ qx.Class.define("qxapp.io.rest.AbstractResource", {
   type: "abstract",
 
   statics: {
-    API: "api/v1.0",
+    API: "/v0",
     AUTHENTICATION: null,
 
     setAutheticationHeader: function(usernameOrToken, password=null) {

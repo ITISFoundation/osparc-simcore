@@ -12,7 +12,7 @@ from servicelib.rest_middlewares import envelope_middleware, error_middleware
 
 from . import rest_routes
 from .resources import resources
-from .settings import APP_CONFIG_KEY, APP_OAS_KEY, RSC_OPENAPI_ROOTFILE_KEY
+from .settings import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY, RSC_OPENAPI_ROOTFILE_KEY
 
 log = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ def setup(app: web.Application):
     # be initialized
     # TODO: What if many specs to expose? v0, v1, v2 ... perhaps a dict instead?
     # TODO: should freeze specs here??
-    app[APP_OAS_KEY] = api_specs # validated openapi specs
+    app[APP_OPENAPI_SPECS_KEY] = api_specs # validated openapi specs
 
     #Injects rest middlewares in the application
     app.middlewares.append(error_middleware)

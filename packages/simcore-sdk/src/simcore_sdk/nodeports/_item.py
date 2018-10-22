@@ -115,28 +115,36 @@ class DataItem(_DataItem):
 
 
 
-    def __get_value_from_link(self):
+    def __get_value_from_link(self):    # pylint: disable=R1710
         node_uuid, s3_object_name = decode_link(self.value)
 
-        if self.type in config.TYPE_TO_S3_FILE_LIST:
-            # try to fetch from S3 as a file
-            log.debug("Fetch file from S3 %s", self.value)
-            return filemanager.download_file_from_S3(node_uuid=node_uuid,            
-                                                    s3_object_name=s3_object_name,
-                                                    node_key=self.key,
-                                                    file_name=s3_object_name)
-        if self.type in config.TYPE_TO_S3_FOLDER_LIST:
-            # try to fetch from S3 as a folder
-            log.debug("Fetch folder from S3 %s", self.value)
-            return filemanager.download_folder_from_s3(node_uuid=node_uuid,
-                                                        node_key=s3_object_name,
-                                                        folder_name=self.key)
+        try: 
+            if self.type in config.TYPE_TO_S3_FILE_LIST:
+                # try to fetch from S3 as a file
+                log.debug("Fetch file from S3 %s", self.value)
+                
+                return filemanager.download_file_from_S3(node_uuid=node_uuid,            
+                                                            s3_object_name=s3_object_name,
+                                                            node_key=self.key,
+                                                            file_name=s3_object_name)
+            if self.type in config.TYPE_TO_S3_FOLDER_LIST:
+                # try to fetch from S3 as a folder
+                log.debug("Fetch folder from S3 %s", self.value)
+                return filemanager.download_folder_from_s3(node_uuid=node_uuid,
+                                                            node_key=s3_object_name,
+                                                            folder_name=self.key)
+        except exceptions.S3InvalidPathError as err:
+            # the file was not found, maybe it is written as node_uuid.port_key instead of node_uuid.s3_object_name?
+            log.info("The file/folder was not found on S3, maybe it is written as node_uuid.port_key instead of node_uuid.s3_object?")
+            log.info("Trying now to follow node_uuid.port_key instead...")
+            try:
+                # try to fetch link from database node
+                log.debug("Fetch value from other node %s", self.value)
+                if not self.get_node_from_uuid_cb:
+                    raise exceptions.NodeportsException("callback to get other node information is not set")
 
-        # try to fetch link from database node
-        log.debug("Fetch value from other node %s", self.value)
-        if not self.get_node_from_uuid_cb:
-            raise exceptions.NodeportsException("callback to get other node information is not set")
-
-        other_nodeports = self.get_node_from_uuid_cb(node_uuid) #pylint: disable=not-callable
-        log.debug("Received node from DB %s, now returning value", other_nodeports)
-        return other_nodeports.get(s3_object_name)
+                other_nodeports = self.get_node_from_uuid_cb(node_uuid) #pylint: disable=not-callable
+                log.debug("Received node from DB %s, now returning value", other_nodeports)
+                return other_nodeports.get(s3_object_name)
+            except Exception:                
+                raise err from None
