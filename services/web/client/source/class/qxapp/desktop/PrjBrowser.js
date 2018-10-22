@@ -119,18 +119,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
     __createUserProjectList: function() {
       // layout
-      let prjLst = new qx.ui.form.List();
-      prjLst.set({
-        orientation: "horizontal",
-        spacing: 10,
-        height: 245,
-        alignY: "middle"
-      });
+      let prjLst = this.__cretePrjListLayout();
 
       // controller
       let userPrjList = qxapp.data.Store.getInstance().getUserProjectList();
-      let userPrjArray = this.__getProjectArray(userPrjList);
-      let prjCtr = this.__controller = new qx.data.controller.List(userPrjArray, prjLst, "name");
+      let userPrjArrayModel = this.__getProjectArrayModel(userPrjList);
+      let prjCtr = this.__controller = new qx.data.controller.List(userPrjArrayModel, prjLst, "name");
       let delegate = this.__getDelegate();
       prjCtr.setDelegate(delegate);
       // FIXME: selection does not work if model is not passed in the constructor!!!!
@@ -150,17 +144,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
     __createPublicProjectList: function() {
       // layout
-      let prjLst = new qx.ui.form.List();
-      prjLst.set({
-        orientation: "horizontal",
-        spacing: 10,
-        height: 230
-      });
+      let prjLst = this.__cretePrjListLayout();
 
       // controller
       let publicPrjList = qxapp.data.Store.getInstance().getPublicProjectList();
-      let publicPrjArray = this.__getProjectArray(publicPrjList);
-      let prjCtr = this.__controller2 = new qx.data.controller.List(publicPrjArray, prjLst, "name");
+      let publicPrjArrayModel = this.__getProjectArrayModel(publicPrjList);
+      let prjCtr = this.__controller2 = new qx.data.controller.List(publicPrjArrayModel, prjLst, "name");
       let delegate = this.__getDelegate();
       prjCtr.setDelegate(delegate);
       // FIXME: selection does not work if model is not passed in the constructor!!!!
@@ -176,6 +165,15 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }, this);
 
       return prjLst;
+    },
+
+    __cretePrjListLayout: function() {
+      return new qx.ui.form.List().set({
+        orientation: "horizontal",
+        spacing: 10,
+        height: 245,
+        alignY: "middle"
+      });
     },
 
     /**
@@ -232,7 +230,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       return delegate;
     },
 
-    __getProjectArray: function(prjList) {
+    __getProjectArrayModel: function(prjList) {
       return new qx.data.Array(
         prjList
           .map(
