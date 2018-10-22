@@ -242,7 +242,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       data = currentPipeline;
       data["pipeline_mockup_id"] = qxapp.utils.Utils.uuidv4();
       req.set({
-        url: "/start_pipeline",
+        url: "/v0/start_pipeline",
         method: "POST",
         requestData: qx.util.Serializer.toJson(data)
       });
@@ -265,7 +265,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let data = {};
       data["pipeline_id"] = this.__pipelineId;
       req.set({
-        url: "/stop_pipeline",
+        url: "/v0/stop_pipeline",
         method: "POST",
         requestData: qx.util.Serializer.toJson(data)
       });

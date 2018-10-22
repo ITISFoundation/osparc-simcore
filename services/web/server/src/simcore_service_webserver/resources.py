@@ -1,38 +1,29 @@
-""" Safe access to all data resources distributed with this package
+""" Access to data resources installed within this package
 
-See https://setuptools.readthedocs.io/en/latest/pkg_resources.html
 """
-import pathlib
-import pkg_resources
-import functools
+from servicelib.resources import ResourcesFacade
 
+# pylint: disable=unused-import
+from .resources_keys import (RSC_CONFIG_DIR_KEY,
+                                     RSC_OPENAPI_DIR_KEY)
+
+resources = ResourcesFacade(
+    package_name=__name__,
+    distribution_name="simcore-service-webserver",
+    config_folder='config',
+)
+
+
+__all__ = (
+    'resources',
+    'RSC_CONFIG_DIR_KEY',
+    'RSC_OPENAPI_DIR_KEY'
+)
+
+
+#TODO: from servicelib import resources
 
 # resources names
-RESOURCE_OPENAPI = "oas3"
-RESOURCE_CONFIG  = "config"
-
-"""
- List of pkg_resources functions *bound* to current package with the following signature
-
-   function(resource_name)
-
- Note that resource names must be /-separated paths and
- cannot be absolute (i.e. no leading /) or contain relative names like "..".
- Do not use os.path routines to manipulate resource paths, as they are not filesystem paths.
-
- Resources are read/only files/folders
-"""
-exists  = functools.partial(pkg_resources.resource_exists, __name__)
-stream  = functools.partial(pkg_resources.resource_stream, __name__)
-listdir = functools.partial(pkg_resources.resource_listdir, __name__)
-isdir = functools.partial(pkg_resources.resource_isdir, __name__)
-
-
-def get_path(resource_name):
-    """ Returns a path to a resource
-
-        WARNING: existence of file is not guaranteed. Use resources.exists
-        WARNING: resource files are supposed to be used as read-only!
-    """
-    resource_path = pathlib.Path( pkg_resources.resource_filename(__name__, resource_name) )
-    return resource_path
+# TODO: import all RSC_* within .settings.constants!
+#RESOURCE_OPENAPI = "oas3"
+#RESOURCE_CONFIG  = "config"
