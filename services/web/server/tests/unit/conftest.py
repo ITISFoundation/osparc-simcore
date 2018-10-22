@@ -12,7 +12,6 @@ from pathlib import Path
 import pytest
 import yaml
 
-import init_db
 import simcore_service_webserver
 from simcore_service_webserver.cli_config import read_and_validate
 
