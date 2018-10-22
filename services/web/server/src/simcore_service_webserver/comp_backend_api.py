@@ -87,11 +87,15 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
     tasks = dict()
     io_files = []
 
-    for node_uuid, node_data in pipeline_data.items():
-        node_key = node_data["key"]
-        node_version = node_data["version"]
-        node_inputs = node_data["inputs"]
-        node_outputs = node_data["outputs"]
+    for key, value in pipeline_data.items():
+        if not all(k in value for k in ("key", "version", "inputs", "outputs")):
+            log.debug("skipping workbench entry containing %s:%s", key, value)
+            continue
+        node_uuid = key
+        node_key = value["key"]
+        node_version = value["version"]
+        node_inputs = value["inputs"]
+        node_outputs = value["outputs"]
         log.debug("node %s:%s has inputs: \n%s\n outputs: \n%s", node_key, node_version, node_inputs, node_outputs)
         #TODO: we should validate all these things before processing...
 
@@ -117,11 +121,11 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
         for output_key, output_data in node_outputs.items():
             if not isinstance(output_data, dict):
                 continue
-            if "store" in output_data and "path" in output_data:
+            if all(k in output_data for k in ("store", "path")):
                 if output_data["store"] == "s3-z43":
                     current_filename_on_s3 = output_data["path"]
                     if current_filename_on_s3:
-                        new_filename = node_uuid + "/" + output_key # in_1
+                        new_filename = key + "/" + output_key # in_1
                         # copy the file
                         io_files.append({ "from" : current_filename_on_s3, "to" : new_filename })
 
@@ -136,15 +140,16 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
         }
 
         # currently here a special case to handle the built-in file manager that should not be set as a task
-        if str(node_key).count("FilePicker") == 0:
+        if str(node_key).count("file-picker") == 0:
             # TODO: SAN This is temporary. As soon as the services are converted this should be removed.
             task = await api_converter.convert_task_to_old_version(task)
         #     continue
 
 
-
+        log.debug("storing task in node is %s: %s", node_uuid, task)
         tasks[node_uuid] = task
-
+        log.debug("task stored")
+    log.debug("converted all tasks: \nadjacency list: %s\ntasks: %s\nio_files: %s", dag_adjacency_list, tasks, io_files)
     return dag_adjacency_list, tasks, io_files
 
 async def _transfer_data(app, pipeline_id, io_files):
@@ -187,8 +192,8 @@ async def start_pipeline(request):
     log.debug("Client calls start_pipeline with %s", request_data)
     _app = request.app[APP_CONFIG_KEY]
     log.debug("Parse pipeline %s", _app)
-    dag_adjacency_list, tasks, io_files = await _parse_pipeline(request_data["workbench"])
-    log.debug("Pipeline parsed")
+    dag_adjacency_list, tasks, io_files = await _parse_pipeline(request_data)
+    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s\n io_files %s", str(dag_adjacency_list), str(tasks), str(io_files))
     try:
         # create the new pipeline in db
         pipeline = ComputationalPipeline(dag_adjacency_list=dag_adjacency_list, state=0)
