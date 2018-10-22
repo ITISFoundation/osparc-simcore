@@ -108,11 +108,11 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       this.fireDataEvent("StartProject", data);
     },
 
-    __getProjectModel: function(projectId) {
+    __getProjectModel: function(projectId, fromTemplate = false) {
       let project = new qxapp.data.model.ProjectModel();
       if (projectId) {
         let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
-        project = new qxapp.data.model.ProjectModel(projectData);
+        project = new qxapp.data.model.ProjectModel(projectData, fromTemplate);
       }
       return project;
     },
@@ -133,10 +133,10 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       prjCtr.addListener("dblclick", e => {
         if ("projectUuid" in e.getData()) {
           const prjUuid = e.getData().projectUuid;
-          let projectModel = this.__getProjectModel(prjUuid);
+          const fromTemplate = false;
+          let projectModel = this.__getProjectModel(prjUuid, fromTemplate);
           const data = {
-            projectModel: projectModel,
-            fromTemplate: false
+            projectModel: projectModel
           };
           this.fireDataEvent("StartProject", data);
         }
@@ -161,10 +161,10 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       prjCtr.addListener("dblclick", e => {
         if ("projectUuid" in e.getData()) {
           const prjUuid = e.getData().projectUuid;
-          let projectModel = this.__getProjectModel(prjUuid);
+          const fromTemplate = true;
+          let projectModel = this.__getProjectModel(prjUuid, fromTemplate);
           const data = {
-            projectModel: projectModel,
-            fromTemplate: true
+            projectModel: projectModel
           };
           this.fireDataEvent("StartProject", data);
         }
