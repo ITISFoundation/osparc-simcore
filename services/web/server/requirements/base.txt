@@ -6,6 +6,8 @@ aiohttp-security==0.2.0
 aiopg[sa]==0.14.0
 aio-pika==2.9.0
 aiohttp_jinja2==1.1.0
+aiosmtplib
+asyncpg
 urllib3==1.21.1
 attrs==18.2.0
 celery==4.1.0

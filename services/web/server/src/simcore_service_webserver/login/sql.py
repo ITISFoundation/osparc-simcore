@@ -5,20 +5,20 @@ log = getLogger(__name__)
 LOG_TPL = '%s <--%s'
 
 
-def find_one(conn, table, filter, fields=None):
-    sql, values = find_one_sql(table, filter, fields)
+def find_one(conn, table, filter_, fields=None):
+    sql, values = find_one_sql(table, filter_, fields)
     log.debug(LOG_TPL, sql, values)
     return conn.fetchrow(sql, *values)
 
 
-def find_one_sql(table, filter, fields=None):
+def find_one_sql(table, filter_, fields=None):
     '''
     >>> find_one_sql('tbl', {'foo': 10, 'bar': 'baz'})
     ('SELECT * FROM tbl WHERE bar=$1 AND foo=$2', ['baz', 10])
     >>> find_one_sql('tbl', {'id': 10}, fields=['foo', 'bar'])
     ('SELECT foo, bar FROM tbl WHERE id=$1', [10])
     '''
-    keys, values = _split_dict(filter)
+    keys, values = _split_dict(filter_)
     fields = ', '.join(fields) if fields else '*'
     where = _pairs(keys)
     sql = 'SELECT {} FROM {} WHERE {}'.format(fields, table, where)
@@ -51,18 +51,18 @@ def insert_sql(table, data, returning='id'):
     return sql, values
 
 
-def update(conn, table, filter, updates):
-    sql, values = update_sql(table, filter, updates)
+def update(conn, table, filter_, updates):
+    sql, values = update_sql(table, filter_, updates)
     log.debug(LOG_TPL, sql, values)
     return conn.execute(sql, *values)
 
 
-def update_sql(table, filter, updates):
+def update_sql(table, filter_, updates):
     '''
     >>> update_sql('tbl', {'foo': 'a', 'bar': 1}, {'bar': 2, 'baz': 'b'})
     ('UPDATE tbl SET bar=$1, baz=$2 WHERE bar=$3 AND foo=$4', [2, 'b', 1, 'a'])
     '''
-    where_keys, where_vals = _split_dict(filter)
+    where_keys, where_vals = _split_dict(filter_)
     up_keys, up_vals = _split_dict(updates)
     changes = _pairs(up_keys, sep=', ')
     where = _pairs(where_keys, start=len(up_keys) + 1)
@@ -71,18 +71,18 @@ def update_sql(table, filter, updates):
     return sql, up_vals + where_vals
 
 
-def delete(conn, table, filter):
-    sql, values = delete_sql(table, filter)
+def delete(conn, table, filter_):
+    sql, values = delete_sql(table, filter_)
     log.debug(LOG_TPL, sql, values)
     return conn.execute(sql, *values)
 
 
-def delete_sql(table, filter):
+def delete_sql(table, filter_):
     '''
     >>> delete_sql('tbl', {'foo': 10, 'bar': 'baz'})
     ('DELETE FROM tbl WHERE bar=$1 AND foo=$2', ['baz', 10])
     '''
-    keys, values = _split_dict(filter)
+    keys, values = _split_dict(filter_)
     where = _pairs(keys)
     sql = 'DELETE FROM {} WHERE {}'.format(table, where)
     return sql, values

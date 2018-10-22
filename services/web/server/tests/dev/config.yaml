@@ -31,8 +31,8 @@ s3:
   secret_key: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
 smtp:
   sender: 'OSPARC support <support@osparc.io>',
-  host: ${SMTP_HOST},
-  port: ${SMTP_PORT},
+  host: mail.foo.com,
+  port: 25,
   tls: False,
   username: None,
   password: None

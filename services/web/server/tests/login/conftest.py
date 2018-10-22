@@ -10,7 +10,7 @@ import sys
 import yaml
 from pathlib import Path
 
-from simcore_service_webserver.application import create_app
+from simcore_service_webserver.application import create_application
 import simcore_service_webserver.utils
 
 @pytest.fixture(scope="session")
@@ -29,7 +29,7 @@ def app_cfg(here, aiohttp_unused_port):
 
 @pytest.fixture
 def server(loop, aiohttp_server, app_cfg, monkeypatch):
-    app = create_app(app_cfg)
+    app = create_application(app_cfg)
     path_mail(monkeypatch)
     server = loop.run_until_complete(aiohttp_server(app,
         port =app_cfg["main"]["port"],

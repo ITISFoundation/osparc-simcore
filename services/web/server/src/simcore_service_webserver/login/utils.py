@@ -5,12 +5,10 @@ from email.mime.text import MIMEText
 from logging import getLogger
 from os.path import join
 
+import aiosmtplib
 import passlib.hash
 from aiohttp.web import HTTPFound
 from aiohttp_jinja2 import render_string
-from aiohttp_session import get_session
-
-import aiosmtplib
 
 from .cfg import cfg
 
@@ -26,9 +24,9 @@ def check_password(password, password_hash):
     return passlib.hash.sha256_crypt.verify(password, password_hash)
 
 
-def get_random_string(min, max=None):
-    max = max or min
-    size = random.randint(min, max)
+def get_random_string(min_len, max_len=None):
+    max_len = max_len or min_len
+    size = random.randint(min_len, max_len)
     return ''.join(random.choice(CHARS) for x in range(size))
 
 
@@ -55,35 +53,6 @@ def is_confirmation_expired(confirmation):
     return age > lifetime
 
 
-async def get_cur_user_id(request):
-    session = await get_session(request)
-
-    user_id = session.get(cfg.SESSION_USER_KEY)
-    while user_id:
-        if not isinstance(user_id, str):
-            log.error('Wrong type of user_id in session')
-            break
-
-        user_id = cfg.STORAGE.user_id_from_string(user_id)
-        if not user_id:
-            break
-
-        return user_id
-
-    if cfg.SESSION_USER_KEY in session:
-        del session['user']
-
-
-async def get_cur_user(request):
-    user_id = await get_cur_user_id(request)
-    if user_id:
-        user = await cfg.STORAGE.get_user({'id': user_id})
-        if not user:
-            session = await get_session(request)
-            del session['user']
-        return user
-
-
 def url_for(urlname, *args, **kwargs):
     if str(urlname).startswith(('/', 'http://', 'https://')):
         return urlname
@@ -92,16 +61,6 @@ def url_for(urlname, *args, **kwargs):
 
 def redirect(urlname, *args, **kwargs):
     return HTTPFound(url_for(urlname, *args, **kwargs))
-
-
-def social_url(request):
-    def create(provider):
-        url = url_for('auth_social', provider=provider)
-        back_url = request.query.get(cfg.BACK_URL_QS_KEY)
-        if back_url:
-            url = url.with_query({cfg.BACK_URL_QS_KEY: back_url})
-        return url
-    return create
 
 
 def get_client_ip(request):

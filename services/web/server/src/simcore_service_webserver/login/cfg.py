@@ -3,25 +3,18 @@ DEFAULTS = {
     'COMMON_THEME': 'templates/common',
     'PASSWORD_LEN': (6, 30),
     'LOGIN_REDIRECT': '/',
-    'LOGOUT_REDIRECT': 'auth_login',
+    'LOGOUT_REDIRECT': '/',
     'REGISTRATION_CONFIRMATION_REQUIRED': False, # TODO: activate when
 
     'ADMIN_EMAILS': [],
-    'CSRF_SECRET': REQUIRED,
     'BACK_URL_QS_KEY': 'back_to',
-    'SESSION_USER_KEY': 'user',
-    'REQUEST_USER_KEY': 'user',
 
-    'SESSION_FLASH_KEY': 'flash',
-    'REQUEST_FLASH_INCOMING_KEY': 'flash_incoming',
-    'REQUEST_FLASH_OUTGOING_KEY': 'flash_outgoing',
-    'FLASH_QUEUE_LIMIT': 10,
 
     # TODO: add in configuration file as environ!
     'SMTP_SENDER': None,
     'SMTP_HOST': REQUIRED,
     'SMTP_PORT': REQUIRED,
-    'SMTP_TLS': True,
+    'SMTP_TLS': False,
     'SMTP_USERNAME': None,
     'SMTP_PASSWORD': None,
 

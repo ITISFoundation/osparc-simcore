@@ -1,3 +1,9 @@
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 from utils import NewUser, parse_link
 from simcore_service_webserver.login.cfg import cfg
 

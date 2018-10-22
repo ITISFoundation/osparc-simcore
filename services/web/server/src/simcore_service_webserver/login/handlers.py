@@ -84,11 +84,11 @@ async def login(request: web.Request):
 
     user = await db.get_user({'email': email})
     if not user:
-        raise web.HTTPUnprocessableEntity(reason=cfg.MSG_UNKNOWN_EMAIL,
+        raise web.HTTPUnauthorized(reason=cfg.MSG_UNKNOWN_EMAIL,
                 content_type='application/json')
 
     if not check_password(password, user['password']):
-        raise web.HTTPUnprocessableEntity(reason=cfg.MSG_WRONG_PASSWORD,
+        raise web.HTTPUnauthorized(reason=cfg.MSG_WRONG_PASSWORD,
                 content_type='application/json')
 
     if user['status'] == UserStatus.BANNED:
@@ -323,10 +323,12 @@ async def validate_registration(email: str, password: str, confirm: str, db: Asy
 
     # If the email field is missing, return a 400 - HTTPBadRequest
     if email is None or password is None:
-        raise web.HTTPBadRequest(reason="Email or password fields are missing", content_type='application/json')
+        raise web.HTTPBadRequest(reason="Email and password required", 
+                                    content_type='application/json')
 
     if password != confirm:
-        raise web.HTTPConflict(reason="Passwords do not match", content_type='application/json')
+        raise web.HTTPConflict(reason="Passwords do not match",
+                               content_type='application/json')
 
     # TODO: If the email field isn’t a valid email, return a 422 - HTTPUnprocessableEntity
     #TODO: If the password field is too short, return a 422 - HTTPUnprocessableEntity
@@ -343,6 +345,7 @@ async def validate_registration(email: str, password: str, confirm: str, db: Asy
                 return
 
         # If the email is already taken, return a 409 - HTTPConflict
-        raise web.HTTPConflict(reason=cfg.MSG_EMAIL_EXISTS, content_type='application/json')
+        raise web.HTTPConflict(reason=cfg.MSG_EMAIL_EXISTS,
+                               content_type='application/json')
 
     log.debug("Registration data validated")

@@ -5,15 +5,15 @@ import logging
 
 from aiohttp import web
 
-from .db import setup_db
-from .session import setup_session
-from .security import setup_security
-from .rest import setup_rest
-from .statics import setup_statics
 from .computational_backend import setup_computational_backend
-from .sockets import setup_sio
+from .db import setup_db
+from .login import setup_login
+from .rest import setup_rest
+from .security import setup_security
+from .session import setup_session
 from .settings.application_keys import APP_CONFIG_KEY
-
+from .sockets import setup_sio
+from .statics import setup_statics
 
 log = logging.getLogger(__name__)
 
@@ -34,13 +34,13 @@ def create_application(config):
     setup_statics(app)
     setup_sio(app)
     setup_rest(app)
+    setup_login(app)
 
     return app
 
 def run_service(config):
     """ Runs service
 
-    NOTICE it is sync!
     """
     log.debug("Serving app ... ")
 
