@@ -10,7 +10,10 @@ from aiohttp import web
 
 from servicelib import openapi
 
-from . import auth_handlers, rest_handlers, registry_api, comp_backend_api
+from .login import handlers as auth_handlers
+#from .login import fake_handlers as login_handlers
+
+from . import rest_handlers, registry_api, comp_backend_api
 from .application_keys import APP_OPENAPI_SPECS_KEY
 
 log = logging.getLogger(__name__)
