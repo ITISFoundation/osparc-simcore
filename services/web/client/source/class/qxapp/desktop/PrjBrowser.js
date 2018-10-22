@@ -225,10 +225,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           }, item, id);
           controller.bindProperty("created", "created", {
             converter: function(data) {
-              // FIXME
-              // let date = new Date(data);
-              // return new Date(data);
-              return "Created on: " + data;
+              return new Date(data);
             }
           }, item, id);
         },
@@ -255,7 +252,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               name: p.name,
               thumbnail: p.thumbnail,
               projectUuid: p.projectUuid,
-              created: p.creationDate,
+              created: Date(p.creationDate),
               owner: p.owner
             })
           )

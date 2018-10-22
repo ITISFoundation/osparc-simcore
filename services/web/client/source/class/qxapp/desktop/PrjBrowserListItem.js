@@ -36,8 +36,7 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
     },
 
     created: {
-      // check : "Date",
-      check : "String",
+      check : "Date",
       apply : "_applyCreated",
       nullable : true
     }
@@ -79,7 +78,7 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
           this._addAt(control);
           break;
         case "created":
-          control = new qx.ui.basic.Label(this.getCreated()).set({
+          control = new qx.ui.basic.Label().set({
             rich: true,
             allowGrowY: false
           });
@@ -107,8 +106,8 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
 
     _applyCreated: function(value, old) {
       let label = this.getChildControl("created");
-      // label.setValue(this._dateFormat.format(value));
-      label.setValue(value);
+      const dateStr = this._dateFormat.format(value);
+      label.setValue("Created on: <b>" + dateStr + "</b>");
     },
 
     destruct : function() {
