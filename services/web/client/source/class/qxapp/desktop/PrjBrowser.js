@@ -127,16 +127,19 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       let prjCtr = this.__controller = new qx.data.controller.List(userPrjArrayModel, prjLst, "name");
       let delegate = this.__getDelegate();
       prjCtr.setDelegate(delegate);
-      // FIXME: selection does not work if model is not passed in the constructor!!!!
+      // FIXME: getSelection does not work if model is not passed in the constructor!!!!
       // prjCtr.setModel();
 
-      // Monitors change in selection
-      prjCtr.getSelection().addListener("change", e => {
-        const selectedItem = e.getTarget().toArray()[0];
-        const data = {
-          projectModel: this.__getProjectModel(selectedItem.getProjectUuid())
-        };
-        this.fireDataEvent("StartProject", data);
+      prjCtr.addListener("dblclick", e => {
+        if ("projectUuid" in e.getData()) {
+          const prjUuid = e.getData().projectUuid;
+          let projectModel = this.__getProjectModel(prjUuid);
+          const data = {
+            projectModel: projectModel,
+            fromTemplate: false
+          };
+          this.fireDataEvent("StartProject", data);
+        }
       }, this);
 
       return prjLst;
@@ -152,16 +155,19 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       let prjCtr = this.__controller2 = new qx.data.controller.List(publicPrjArrayModel, prjLst, "name");
       let delegate = this.__getDelegate();
       prjCtr.setDelegate(delegate);
-      // FIXME: selection does not work if model is not passed in the constructor!!!!
+      // FIXME: getSelection does not work if model is not passed in the constructor!!!!
       // prjCtr.setModel();
 
-      // Monitors change in selection
-      prjCtr.getSelection().addListener("change", e => {
-        const selectedItem = e.getTarget().toArray()[0];
-        const data = {
-          projectModel: this.__getProjectModel(selectedItem.getProjectUuid())
-        };
-        this.fireDataEvent("StartProject", data);
+      prjCtr.addListener("dblclick", e => {
+        if ("projectUuid" in e.getData()) {
+          const prjUuid = e.getData().projectUuid;
+          let projectModel = this.__getProjectModel(prjUuid);
+          const data = {
+            projectModel: projectModel,
+            fromTemplate: true
+          };
+          this.fireDataEvent("StartProject", data);
+        }
       }, this);
 
       return prjLst;
@@ -189,6 +195,17 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         },
         // Item's data binding
         bindItem: function(controller, item, id) {
+          let listItem = controller.getModel().toArray()[id];
+          const prjUuid = listItem.getProjectUuid();
+          if (!item.hasListener("dblclick")) {
+            item.addListener("dblclick", function(e) {
+              const data = {
+                projectUuid: prjUuid
+              };
+              controller.fireDataEvent("dblclick", data);
+            }, this);
+          }
+
           controller.bindProperty("thumbnail", "icon", {
             converter: function(data) {
               let thumbnailUrl = data === null ? "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/tech/grayscale/?random.jpg" : data;
