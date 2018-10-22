@@ -6,8 +6,7 @@ from aiohttp import web
 from servicelib.rest_utils import extract_and_validate
 
 from . import __version__
-from .dsm import DataStorageManager
-from .models import FileMetaData
+
 from .rest_models import FileMetaDataSchema
 from .session import get_session
 from .settings import RQT_DSM_KEY

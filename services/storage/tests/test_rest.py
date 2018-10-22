@@ -17,7 +17,7 @@ from simcore_service_storage.middlewares import dsm_middleware
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.session import setup_session
 from simcore_service_storage.settings import APP_CONFIG_KEY
-from simcore_storage_sdk import HealthInfo
+#from simcore_storage_sdk import HealthInfo
 
 
 def parse_db(dsm_mockup_db):

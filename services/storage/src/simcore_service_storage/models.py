@@ -65,16 +65,22 @@ def _locations():
     return [simcore_s3, datcore]
 
 def _location_from_id(location_id : str) ->str:
+    loc_str = "undefinded"
     if location_id == "0":
-        return "simcore.s3"
+        loc_str = "simcore.s3"
     elif location_id == "1":
-        return "datcore"
+        loc_str = "datcore"
+   
+    return loc_str
 
 def _location_from_str(location : str) ->str:
+    intstr = "undefined"
     if location == "simcore.s3":
-        return "0"
+        intstr = "0"
     elif location == "datcore":
-        return "1"
+        intstr = "1"
+    
+    return intstr
 
 
 @attr.s(auto_attribs=True)
@@ -130,3 +136,4 @@ class FileMetaData:
             self.file_id = parts[-1]
             self.project_id = parts[2]
             self.node_id = parts[3]
+            self.file_uuid = file_uuid

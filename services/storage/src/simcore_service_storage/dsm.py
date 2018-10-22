@@ -121,7 +121,7 @@ class DataStorageManager:
                         return d
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
-            dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
+            _dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
             raise NotImplementedError
 
 
