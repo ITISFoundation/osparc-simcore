@@ -56,6 +56,7 @@ DEFAULTS = {
 }
 
 
+# pylint: disable=W0231
 class Cfg(dict):
     '''
     Settings storage witch suports both, dict and dot notations
@@ -106,6 +107,7 @@ class Cfg(dict):
         self.defaults = defaults
         self.configured = False
 
+    # pylint: disable=E0202
     def __getitem__(self, name):
         if not self.configured:
             raise RuntimeError('Settings are not configured yet')
