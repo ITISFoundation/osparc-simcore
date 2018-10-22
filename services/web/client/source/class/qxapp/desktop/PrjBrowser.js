@@ -131,7 +131,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       let userPrjList = qxapp.data.Store.getInstance().getUserProjectList();
       let userPrjArray = this.__getProjectArray(userPrjList);
       let prjCtr = this.__controller = new qx.data.controller.List(userPrjArray, prjLst, "name");
-      this.__setDelegate(prjCtr);
+      let delegate = this.__getDelegate();
+      prjCtr.setDelegate(delegate);
       // FIXME: selection does not work if model is not passed in the constructor!!!!
       // prjCtr.setModel();
 
@@ -160,7 +161,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       let publicPrjList = qxapp.data.Store.getInstance().getPublicProjectList();
       let publicPrjArray = this.__getProjectArray(publicPrjList);
       let prjCtr = this.__controller2 = new qx.data.controller.List(publicPrjArray, prjLst, "name");
-      this.__setDelegate(prjCtr);
+      let delegate = this.__getDelegate();
+      prjCtr.setDelegate(delegate);
       // FIXME: selection does not work if model is not passed in the constructor!!!!
       // prjCtr.setModel();
 
@@ -179,7 +181,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     /**
      * Delegates appearance and binding of each project item
      */
-    __setDelegate: function(projectController) {
+    __getDelegate: function() {
       const thumbnailWidth = 246;
       const thumbnailHeight = 144;
       let delegate = {
@@ -227,7 +229,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         }
       };
 
-      projectController.setDelegate(delegate);
+      return delegate;
     },
 
     __getProjectArray: function(prjList) {
