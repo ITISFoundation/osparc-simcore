@@ -833,13 +833,8 @@ qx.Class.define("qxapp.data.Store", {
       req.addListener("success", e => {
         let requ = e.getTarget();
         const {
-          data,
-          error
+          data
         } = requ.getResponse();
-        if (error) {
-          console.error("Error retrieving services: ", error);
-          return;
-        }
         const listOfRepositories = data;
         let services = Object.assign({}, this.getBuiltInServices());
         for (const key in listOfRepositories) {
@@ -855,12 +850,10 @@ qx.Class.define("qxapp.data.Store", {
       }, this);
 
       req.addListener("fail", e => {
-        let requ = e.getTarget();
         const {
-          data,
           error
-        } = requ.getResponse();
-        console.log("getServices failed", data, error);
+        } = e.getTarget().getResponse();
+        console.log("getServices failed", error);
         let services = this.getFakeServices();
         if (this.__servicesCache === null) {
           this.__servicesCache = {};
