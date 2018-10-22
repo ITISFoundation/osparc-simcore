@@ -9,6 +9,7 @@
 import logging
 
 import aiohttp_security
+import passlib
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
@@ -16,11 +17,10 @@ from aiohttp_security.api import (authorized_userid, forget, has_permission,
                                   is_anonymous, login_required, remember)
 from aiohttp_security.session_identity import SessionIdentityPolicy
 from aiopg.sa import Engine
-from passlib.hash import sha256_crypt
 
+from .application_keys import APP_DB_ENGINE_KEY
 from .db_models import UserRole, UserStatus, users
 from .session import setup_session
-from .application_keys import APP_DB_ENGINE_KEY
 
 log = logging.getLogger(__file__)
 
@@ -84,12 +84,14 @@ async def check_credentials(engine: Engine, email: str, password: str) -> bool:
         ret = await conn.execute(query)
         user = await ret.fetchone()
         if user is not None:
-            return sha256_crypt.verify(password, user['password_hash'] )
+            return check_password(password, user['password_hash'] )
     return False
 
+def encrypt_password(password):
+    return passlib.hash.sha256_crypt.encrypt(password, rounds=1000)
 
-generate_password_hash = sha256_crypt.hash
-
+def check_password(password, password_hash):
+    return passlib.hash.sha256_crypt.verify(password, password_hash)
 
 def setup(app):
     log.debug("Setting up %s ...", __name__)
@@ -101,8 +103,8 @@ def setup(app):
     authorization_policy = DBAuthorizationPolicy(app)
     aiohttp_security.setup(app, identity_policy, authorization_policy)
 
-
-# alias
+# aliases
+generate_password_hash = encrypt_password
 setup_security = setup
 
 __all__ = (

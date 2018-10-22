@@ -103,6 +103,8 @@ paths:
             application/json:
               schema:
                 $ref: 'components/schemas/log_message.yml#/LogMessageEnveloped'
+        '400':
+            $ref: '#/components/responses/DataError_BadRequest_400'
         '409':
             $ref: '#/components/responses/DataError_Conflict_409'
         '422':
