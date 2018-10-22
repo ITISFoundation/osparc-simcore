@@ -829,12 +829,7 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getServices: function() {
-      let req = new qx.io.request.Xhr();
-      req.set({
-        url: "/v0/services",
-        method: "GET"
-      });
-
+      let req = new qxapp.io.request.ApiRequest("/services", "GET");
       req.addListener("success", e => {
         let requ = e.getTarget();
         const {

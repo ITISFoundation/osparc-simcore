@@ -237,13 +237,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       const savePosition = false;
       let currentPipeline = this.getProjectModel().getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
       console.log(currentPipeline);
-      let req = new qx.io.request.Xhr();
+      let req = new qxapp.io.request.ApiRequest("/start_pipeline", "POST");
       let data = {};
       data = currentPipeline;
       data["pipeline_mockup_id"] = qxapp.utils.Utils.uuidv4();
       req.set({
-        url: "/v0/start_pipeline",
-        method: "POST",
         requestData: qx.util.Serializer.toJson(data)
       });
       req.addListener("success", this.__onPipelinesubmitted, this);
@@ -261,12 +259,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __stopPipeline: function() {
-      let req = new qx.io.request.Xhr();
+      let req = new qxapp.io.request.ApiRequest("/stop_pipeline", "POST");
       let data = {};
       data["pipeline_id"] = this.__pipelineId;
       req.set({
-        url: "/v0/stop_pipeline",
-        method: "POST",
         requestData: qx.util.Serializer.toJson(data)
       });
       req.addListener("success", this.__onPipelineStopped, this);
