@@ -96,7 +96,10 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
         label: this.__currentUserId,
         children: qxapp.data.Converters.fromDSMToVirtualTreeModel(files)
       };
-      console.log(data);
+      this.__setTreeData(data);
+    },
+
+    __setTreeData: function(data) {
       let newModel = qx.data.marshal.Json.createModel(data, true);
       let oldModel = this.__tree.getModel();
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
