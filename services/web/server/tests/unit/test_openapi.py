@@ -29,7 +29,6 @@ def test_openapi_specs(version):
     #    pytest.fail(errors)
 
 
-
 @pytest.mark.skip(reason="Temporarly disabled")
 @pytest.mark.parametrize('version', API_VERSIONS)
 def test_server_specs(version):
