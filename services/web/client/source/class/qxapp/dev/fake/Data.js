@@ -170,9 +170,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
           name: "Sample Project",
           description: "A little fake project without actual backend",
           notes: "# title\nThere be dragons inside",
-          owner: "UUID-OF-TOBI",
+          owner: "TOBI",
           collaborators: {
-            "UUID-OF-PEDRO": [
+            "PEDRO": [
               "read",
               "write"
             ]
@@ -260,9 +260,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
           name: "Sample Project II",
           description: "An empty project",
           notes: "# title\nThere be dragons inside",
-          owner: "UUID-OF-TOBI",
+          owner: "TOBI",
           collaborators: {
-            "UUID-OF-PEDRO": [
+            "PEDRO": [
               "read",
               "write"
             ]
@@ -324,9 +324,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
           name: "Macros",
           description: "Project containing nested custom macros",
           notes: "# title\nBlah",
-          owner: "UUID-OF-ODEI",
+          owner: "ODEI",
           collaborators: {
-            "UUID-OF-ODEI": [
+            "ODEI": [
               "read",
               "write"
             ]
@@ -414,9 +414,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
           name: "LF Simulator",
           description: "LF Simulator",
           notes: "",
-          owner: "UUID-OF-ODEI",
+          owner: "ODEI",
           collaborators: {
-            "UUID-OF-ODEI": [
+            "ODEI": [
               "read",
               "write"
             ]
@@ -576,9 +576,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
           name: "LF Simulator expanded",
           description: "LF Simulator expanded",
           notes: "",
-          owner: "UUID-OF-ODEI",
+          owner: "ODEI",
           collaborators: {
-            "UUID-OF-ODEI": [
+            "ODEI": [
               "read",
               "write"
             ]
@@ -1252,9 +1252,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
         name: "Colleen Clancy template",
         description: "Template for the Colleen Clancy template",
         notes: "# title\nSingle Cell",
-        owner: "UUID-OF-CC",
+        owner: "CC",
         collaborators: {
-          "UUID-OF-PEDRO": [
+          "PEDRO": [
             "read",
             "write"
           ]
