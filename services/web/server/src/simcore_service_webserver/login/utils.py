@@ -55,11 +55,6 @@ def is_confirmation_expired(confirmation):
     return age > lifetime
 
 
-async def authorize_user(request, user):
-    session = await get_session(request)
-    session[cfg.SESSION_USER_KEY] = cfg.STORAGE.user_session_id(user)
-
-
 async def get_cur_user_id(request):
     session = await get_session(request)
 
