@@ -90,6 +90,15 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       return control || this.base(arguments, id);
     },
 
+    __clearTree: function() {
+      let data = {
+        label: "My Documents",
+        children: []
+      };
+      let emptyModel = qx.data.marshal.Json.createModel(data, true);
+      this.__tree.setModel(emptyModel);
+    },
+
     buildTree: function() {
       const files = this.__getObjLists();
       let data = {
@@ -105,6 +114,24 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
         this.__tree.setModel(newModel);
       }
+    },
+
+    __addTreeData: function(data) {
+      let newModelToAdd = qx.data.marshal.Json.createModel(data, true);
+      let currentModel = this.__tree.getModel();
+      currentModel.getChildren().append(newModelToAdd);
+      this.__tree.setModel(currentModel);
+    },
+
+    __getMyDocs: function() {
+      this.__clearTree();
+      let store = qxapp.data.Store.getInstance();
+      store.addListener("MyDocuments", e => {
+        const files = e.getData();
+        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+        this.__addTreeData(newChildren);
+      }, this);
+      store.getMyDocuments();
     },
 
     __getObjLists: function() {
