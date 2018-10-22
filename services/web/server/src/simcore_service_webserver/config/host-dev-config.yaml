@@ -26,6 +26,13 @@ rabbit:
     progress: comp.backend.channels.progress
   password: simcore
   user: simcore
+smtp:
+  sender: 'OSPARC support <support@osparc.io>',
+  host: mail.foo.com,
+  port: 25,
+  tls: False,
+  username: None,
+  password: None
 s3:
   access_key: 'Q3AM3UQ867SPQQA43P2F'
   bucket_name: simcore

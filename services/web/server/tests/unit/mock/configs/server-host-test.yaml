@@ -30,4 +30,11 @@ s3:
   bucket_name: simcore
   endpoint: localhost:9000
   secret_key: '12345678'
+smtp:
+  sender: 'OSPARC support <support@osparc.io>',
+  host: mail.foo.com,
+  port: 25,
+  tls: False,
+  username: None,
+  password: None
 ...

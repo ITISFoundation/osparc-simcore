@@ -23,6 +23,7 @@ APP_SESSION_SECRET_KEY = __name__ + '.session_secret'
 
 APP_DB_ENGINE_KEY      = __name__ + '.db_engine'
 APP_DB_SESSION_KEY     = __name__ + '.db_session'
+APP_DB_POOL_KEY        = __name__ + '.db_pool'
 
 # RQT=request
 

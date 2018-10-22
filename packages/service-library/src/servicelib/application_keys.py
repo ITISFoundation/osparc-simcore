@@ -13,21 +13,6 @@ import warnings
 warnings.warn("Use servicelib.settings.application_keys instead",
     DeprecationWarning)
 
-# APP=application
-APP_CONFIG_KEY         = __name__ + '.config'
-APP_OPENAPI_SPECS_KEY  = __name__ + '.openapi_specs'
-APP_SESSION_SECRET_KEY = __name__ + '.session_secret'
-
-APP_DB_ENGINE_KEY      = __name__ + '.db_engine'
-APP_DB_SESSION_KEY     = __name__ + '.db_session'
-
-
-# TODO:
-# TODO: freeze contants so they are not rewritable?
-# RQT=request
-
-# RSP=response
-
-# TODO: gurantee all keys are unique
-# TODO: facilitate key generation
-# TODO: can be classified easily
+#pylint: disable=W0401
+#pylint: disable=W0614
+from .settings.application_keys import *

@@ -15,6 +15,8 @@ THIS_SERVICE_NAME = 'postgres'
 RETRY_WAIT_SECS = 2
 RETRY_COUNT = 20
 CONNECT_TIMEOUT_SECS = 30
+
+# TODO: in sync with config
 DNS = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
 log = logging.getLogger(__name__)
