@@ -39,6 +39,29 @@ qx.Class.define("qxapp.data.Converters", {
       }
     },
 
+    fromS3ToVirtualTreeModel: function(files) {
+      let children = [];
+      for (let i=0; i<files.length; i++) {
+        const file = files[i];
+        let fileInTree = {
+          label: file["location"],
+          children: [{
+            label: file["bucket_name"],
+            children: []
+          }]
+        };
+        let bucketChildren = fileInTree.children[0].children;
+        if (file["location"] === "simcore.sandbox") {
+          bucketChildren.push({
+            label: file["object_name"],
+            fileId: file["file_uuid"]
+          });
+          this.mergeChildren(children, fileInTree);
+        }
+      }
+      return children;
+    },
+
     fromDSMToVirtualTreeModel: function(files) {
       let children = [];
       for (let i=0; i<files.length; i++) {
