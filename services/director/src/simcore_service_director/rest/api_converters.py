@@ -14,7 +14,7 @@ def __convert_port_from_old_api(ports, add_default_value):
         if add_default_value and old_port["value"]:
             new_port["defaultValue"] = old_port["value"]
 
-        new_ports[old_port["key"]] = new_port
+        new_ports[str(old_port["key"]).split(".")[0]] = new_port
     return new_ports
 
 def convert_service_from_old_api(service):
