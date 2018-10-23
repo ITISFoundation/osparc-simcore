@@ -40,6 +40,6 @@ for node_input in PORTS.inputs:
                 print("unzipped {file} in {path}\n".format(file=str(local_path), path=str(_INPUT_PATH)))
             else:
                 log.debug("Start moving %s to input path %s", local_path, _INPUT_PATH)
-                shutil.move(str(local_path), str(_INPUT_PATH / local_path.name) + ".vtk")
+                shutil.move(str(local_path), str(_INPUT_PATH / local_path.name))
                 log.debug("Move completed")
                 print("moved {file} in {path}\n".format(file=str(local_path), path=str(_INPUT_PATH)))
