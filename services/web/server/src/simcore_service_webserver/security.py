@@ -9,7 +9,7 @@
 import logging
 
 import aiohttp_security
-import passlib
+import passlib.hash
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
