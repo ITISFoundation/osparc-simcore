@@ -1160,6 +1160,13 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "object_name": "103/10003/dfgh",
         "file_name": "dfgh",
         "size": 7675509
+      }, {
+        "file_uuid": "simcore/Large.jpg",
+        "location": "simcore.sandbox",
+        "bucket_name": "simcore",
+        "object_name": "Large.jpg",
+        "file_name": "dfgh",
+        "size": 342456230
       }];
       return objects;
     },
