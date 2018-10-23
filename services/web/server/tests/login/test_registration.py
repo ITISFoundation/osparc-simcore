@@ -43,7 +43,7 @@ async def test_registration_with_expired_confirmation(client, monkeypatch):
 
     async with NewUser({'status': 'confirmation'}) as user:
         confirmation = await db.create_confirmation(user, 'registration')
-        r = await client.post(url, data={
+        r = await client.post(url, json={
             'email': user['email'],
             'password': user['raw_password'],
             'confirm': user['raw_password'],
@@ -57,7 +57,7 @@ async def test_registration_without_confirmation(client, monkeypatch):
     monkeypatch.setitem(cfg, 'REGISTRATION_CONFIRMATION_REQUIRED', False)
     db = cfg.STORAGE
     url = client.app.router['auth_register'].url_for()
-    r = await client.post(url, data={
+    r = await client.post(url, json={
         'email': EMAIL,
         'password': PASSWORD,
         'confirm': PASSWORD
@@ -72,7 +72,7 @@ async def test_registration_without_confirmation(client, monkeypatch):
 async def test_registration_with_confirmation(client, capsys):
     db = cfg.STORAGE
     url = client.app.router['auth_register'].url_for()
-    r = await client.post(url, data={
+    r = await client.post(url, json={
         'email': EMAIL,
         'password': PASSWORD,
         'confirm': PASSWORD

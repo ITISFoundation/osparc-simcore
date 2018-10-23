@@ -14,7 +14,7 @@ EMAIL, PASSWORD = 'tester@test.com', 'password'
 
 async def test_login_with_unknown_email(client):
     url = client.app.router['auth_login'].url_for()
-    r = await client.post(url, data={
+    r = await client.post(url, json={
         'email': 'unknown@email.com',
         'password': 'wrong.'
     })
@@ -29,7 +29,7 @@ async def test_login_with_wrong_password(client):
     assert cfg.MSG_WRONG_PASSWORD not in await r.text()
 
     async with NewUser() as user:
-        r = await client.post(url, data={
+        r = await client.post(url, json={
             'email': user['email'],
             'password': 'wrong.',
         })
@@ -44,7 +44,7 @@ async def test_login_banned_user(client):
     assert cfg.MSG_USER_BANNED not in await r.text()
 
     async with NewUser({'status': 'banned'}) as user:
-        r = await client.post(url, data={
+        r = await client.post(url, json={
             'email': user['email'],
             'password': user['raw_password']
         })
@@ -59,7 +59,7 @@ async def test_login_inactive_user(client):
     assert cfg.MSG_ACTIVATION_REQUIRED not in await r.text()
 
     async with NewUser({'status': 'confirmation'}) as user:
-        r = await client.post(url, data={
+        r = await client.post(url, json={
             'email': user['email'],
             'password': user['raw_password']
         })
@@ -72,13 +72,13 @@ async def test_login_successfully(client):
     url = client.app.router['auth_login'].url_for()
     r = await client.get(url)
     async with NewUser() as user:
-        r = await client.post(url, data={
+        r = await client.post(url, json={
             'email': user['email'],
             'password': user['raw_password']
         })
     assert r.status == 200
     data, error = unwrap_envelope(await r.json())
-    
+
     assert not error
     assert data
     assert cfg.MSG_LOGGED_IN in data.message
