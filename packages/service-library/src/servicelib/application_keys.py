@@ -8,11 +8,23 @@ All keys are constants with a unique name convention:
 
  See https://aiohttp.readthedocs.io/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
 """
-import warnings
 
-warnings.warn("Use servicelib.settings.application_keys instead",
-    DeprecationWarning)
+# REQUIREMENTS:
+# - guarantees all keys are unique
+# TODO: facilitate key generation
+# TODO: hierarchical classification
+# TODO: should be read-only (frozen?)
 
-#pylint: disable=W0401
-#pylint: disable=W0614
-from .settings.application_keys import *
+
+# APP=application
+APP_CONFIG_KEY         = __name__ + '.config'
+APP_OPENAPI_SPECS_KEY  = __name__ + '.openapi_specs'
+APP_SESSION_SECRET_KEY = __name__ + '.session_secret'
+
+APP_DB_ENGINE_KEY      = __name__ + '.db_engine'
+APP_DB_SESSION_KEY     = __name__ + '.db_session'
+APP_DB_POOL_KEY        = __name__ + '.db_pool'
+
+# RQT=request
+
+# RSP=response
