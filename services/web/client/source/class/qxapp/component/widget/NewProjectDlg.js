@@ -41,7 +41,6 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
       templatesList.add(new qx.ui.form.ListItem(this.tr("Blank Project")));
       templatesList.add(new qx.ui.form.ListItem(this.tr("EM General")));
       templatesList.add(new qx.ui.form.ListItem(this.tr("EM-Neuro")));
-      templatesList.add(new qx.ui.form.ListItem(this.tr("EM-Thermal")));
       templatesList.add(new qx.ui.form.ListItem(this.tr("Antennas")));
       prjFormLayout.add(new qx.ui.basic.Label(this.tr("Categories / Templates")));
       prjFormLayout.add(templatesList, {
