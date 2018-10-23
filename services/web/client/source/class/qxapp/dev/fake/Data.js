@@ -1146,6 +1146,27 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "file_name": "96",
         "user_id": "10",
         "user_name": "alice"
+      }, {
+        "file_uuid": "simcore/106/10002/95",
+        "location": "simcore.sandbox",
+        "bucket_name": "simcore",
+        "object_name": "106/10002/789",
+        "file_name": "789",
+        "size": 17224423
+      }, {
+        "file_uuid": "simcore/103/10003/96",
+        "location": "simcore.sandbox",
+        "bucket_name": "simcore",
+        "object_name": "103/10003/dfgh",
+        "file_name": "dfgh",
+        "size": 7675509
+      }, {
+        "file_uuid": "simcore/Large.jpg",
+        "location": "simcore.sandbox",
+        "bucket_name": "simcore",
+        "object_name": "Large.jpg",
+        "file_name": "dfgh",
+        "size": 342456230
       }];
       return objects;
     },
