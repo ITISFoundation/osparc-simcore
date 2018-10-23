@@ -55,12 +55,6 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     this.add(new qx.ui.toolbar.Separator());
 
-    let pubPrjsBtn = new qx.ui.form.Button(this.tr("Public Projects"));
-    pubPrjsBtn.set(commonBtnSettings);
-    this.add(pubPrjsBtn);
-
-    this.add(new qx.ui.toolbar.Separator());
-
     let forumBtn = new qx.ui.form.Button(this.tr("Forum"));
     forumBtn.set(commonBtnSettings);
     this.add(forumBtn);
@@ -107,7 +101,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     __showMainViewCaptionAsText: function(newLabel) {
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
       let mainViewCaption = this.__mainViewCaption = new qx.ui.basic.Label(newLabel).set({
-        font: navBarLabelFont
+        font: navBarLabelFont,
+        minWidth: 150
       });
       this.__mainViewCaptionLayout.add(mainViewCaption);
     },
