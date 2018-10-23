@@ -9,6 +9,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       layout: new qx.ui.layout.VBox()
     });
 
+    this.__servicesPreload();
     this.__nodeCheck();
 
     this.__navBar = this.__createNavigationBar();
@@ -91,6 +92,11 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
         }
       });
       nodeCheck.send();
+    },
+
+    __servicesPreload: function() {
+      let store = qxapp.data.Store.getInstance();
+      store.getServices();
     }
   }
 });
