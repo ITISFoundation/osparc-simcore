@@ -29,9 +29,9 @@ s3:
   secret_key: ${S3_SECRET_KEY}
   bucket_name: ${S3_BUCKET_NAME}
 smtp:
-  sender: 'OSPARC support <support@osparc.io>',
-  host: ${SMTP_HOST},
-  port: ${SMTP_PORT},
+  sender: 'OSPARC support <support@osparc.io>'
+  host: ${SMTP_HOST}
+  port: ${SMTP_PORT}
   tls: False,
   username: None,
   password: None
