@@ -11,7 +11,7 @@ from aiohttp import web
 from servicelib import openapi
 
 from .login import handlers as auth_handlers
-#from .login import fake_handlers as login_handlers
+#from .login import fake_handlers as auth_handlers
 
 from . import rest_handlers, registry_api, comp_backend_api
 from .application_keys import APP_OPENAPI_SPECS_KEY

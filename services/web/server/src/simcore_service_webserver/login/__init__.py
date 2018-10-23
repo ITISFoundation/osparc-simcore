@@ -17,9 +17,11 @@ from .storage import AsyncpgStorage
 APP_LOGIN_CONFIG = __name__ + ".config"
 CFG_LOGIN_STORAGE = __name__ + ".storage"
 
+
 async def pg_pool(app: web.Application):
+
     smtp_config = app[APP_CONFIG_KEY]['smtp']
-    config = {"SMPT_%s" % k.upper(): v for k, v in smtp_config.items()}
+    config = {"SMTP_%s" % k.upper(): v for k, v in smtp_config.items()}
 
     config = (config or {}).copy()
     config['APP'] = app

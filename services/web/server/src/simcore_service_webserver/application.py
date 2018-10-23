@@ -19,7 +19,7 @@ from .statics import setup_statics
 log = logging.getLogger(__name__)
 
 
-def create_application(config):
+def create_application(config: dict):
     """
         Initializes service
     """
@@ -40,7 +40,7 @@ def create_application(config):
 
     return app
 
-def run_service(config):
+def run_service(config: dict):
     """ Runs service
 
     """

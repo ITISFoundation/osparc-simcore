@@ -7,6 +7,10 @@
 
 import pytest
 import subprocess
+import os
+import re
+
+from pathlib import Path
 
 from simcore_service_webserver.cli import main
 
@@ -27,3 +31,17 @@ def test_main(here): # pylint: disable=unused-variable
         main("--help".split())
 
     assert excinfo.value.code == 0
+
+def test_no_pdbs_in_place(package_dir):
+    # TODO: add also test_dir excluding this function!?
+    # TODO: it can be commented!
+    MATCH = re.compile(r'pdb.set_trace()')
+    EXCLUDE = ["__pycache__", ".git"]
+    for root, dirs, files in os.walk(package_dir):
+        for name in files:
+            if name.endswith(".py"):
+                pypth = (Path(root) / name)
+                code = pypth.read_text()
+                found = MATCH.findall(code)
+                assert not found, "pbd.set_trace found in %s" % pypth
+        dirs[:] = [d for d in dirs if d not in EXCLUDE]

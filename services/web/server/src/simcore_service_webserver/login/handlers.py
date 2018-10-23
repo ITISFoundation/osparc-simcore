@@ -18,6 +18,10 @@ from .utils import (common_themed, get_client_ip, is_confirmation_allowed,
 log = logging.getLogger(__name__)
 
 
+# FIXME: with asyncpg need to user NAMES
+CONFIRMATION_PENDING, ACTIVE, BANNED = [getattr(UserStatus, att).name for att in 'CONFIRMATION_PENDING ACTIVE BANNED'.split()]
+ANONYMOUS, USER, MODERATOR, ADMIN = [getattr(UserRole, att).name for att in 'ANONYMOUS USER MODERATOR ADMIN'.split()]
+
 
 # Handlers & tails ------------------------------------------------------
 
@@ -37,9 +41,9 @@ async def register(request: web.Request):
         'name': username,
         'email': email,
         'password_hash': encrypt_password(password),
-        'status': UserStatus.CONFIRMATION_PENDING if cfg.REGISTRATION_CONFIRMATION_REQUIRED
-                    else UserStatus.ACTIVE,
-        'role':  UserRole.USER,
+        'status': CONFIRMATION_PENDING if cfg.REGISTRATION_CONFIRMATION_REQUIRED
+                    else ACTIVE,
+        'role':  USER,
         'created_ip': get_client_ip(request),
     })
 
@@ -87,20 +91,20 @@ async def login(request: web.Request):
         raise web.HTTPUnauthorized(reason=cfg.MSG_UNKNOWN_EMAIL,
                 content_type='application/json')
 
-    if not check_password(password, user['password']):
+    if not check_password(password, user['password_hash']):
         raise web.HTTPUnauthorized(reason=cfg.MSG_WRONG_PASSWORD,
                 content_type='application/json')
 
-    if user['status'] == UserStatus.BANNED:
+    if user['status'] == BANNED:
         raise web.HTTPUnauthorized(reason=cfg.MSG_USER_BANNED,
                 content_type='application/json')
 
-    elif user['status'] == UserStatus.CONFIRMATION_PENDING:
+    elif user['status'] == CONFIRMATION_PENDING:
         raise web.HTTPUnauthorized(reason=cfg.MSG_ACTIVATION_REQUIRED,
                 content_type='application/json')
     else:
-        assert user['status'] == UserStatus.ACTIVE
-        assert user['email'] == email
+        assert user['status'] == ACTIVE, "db corrupted. Invalid status"
+        assert user['email'] == email, "db corrupted. Invalid email"
 
     identity = user['email']
     response = web.json_response(data={
@@ -135,15 +139,15 @@ async def reset_password(request: web.Request):
         raise web.HTTPUnprocessableEntity(reason=cfg.MSG_UNKNOWN_EMAIL,
                 content_type='application/json')
 
-    if user['status'] == UserStatus.BANNED:
-        raise web.HTTPUnauthorized(reason=cfg.MSG_USER_BANNED,
+    if user['status'] == BANNED:
+        raise web.HTTPUnauthorized(reason=cfg.MSG_USER_BANNED.name,
                 content_type='application/json')
 
-    elif user['status'] == UserStatus.CONFIRMATION_PENDING:
+    elif user['status'] == CONFIRMATION_PENDING:
         raise web.HTTPUnauthorized(reason=cfg.MSG_ACTIVATION_REQUIRED,
                 content_type='application/json')
 
-    assert user['status'] == UserStatus.ACTIVE
+    assert user['status'] == ACTIVE
     assert user['email'] == email
 
     if not await is_confirmation_allowed(user, action='reset_password'):
@@ -187,7 +191,7 @@ async def _reset_password_allowed(request: web.Request, confirmation):
     assert user
 
     await db.update_user(
-        user, {'password': encrypt_password(new_password)})
+        user, {'password_hash': encrypt_password(new_password)})
     await db.delete_confirmation(confirmation)
 
     # TODO redirect!
@@ -251,11 +255,11 @@ async def change_password(request: web.Request):
     cur_password = body.password
     new_password = body.new_password
 
-    if not check_password(cur_password, user['password']):
+    if not check_password(cur_password, user['password_hash']):
         raise web.HTTPUnprocessableEntity(reason=cfg.MSG_WRONG_PASSWORD,
                 content_type='application/json')
 
-    await db.update_user(user, {'password': encrypt_password(new_password)})
+    await db.update_user(user, {'password_hash': encrypt_password(new_password)})
 
     # TODO: inform activity via email. Somebody has changed your password!
     response = flash_response(cfg.MSG_PASSWORD_CHANGED)
@@ -279,7 +283,7 @@ async def confirmation_hdl(request: web.Request):
         action = confirmation['action']
         if action == 'registration':
             user = await db.get_user({'id': confirmation['user_id']})
-            await db.update_user(user, {'status': UserStatus.ACTIVE})
+            await db.update_user(user, {'status': ACTIVE})
             #response = flash_response(cfg.MSG_ACTIVATED + cfg.MSG_LOGGED_IN)
             #await authorize_user(request, response, user["email"])
             await db.delete_confirmation(confirmation)
@@ -323,7 +327,7 @@ async def validate_registration(email: str, password: str, confirm: str, db: Asy
 
     # If the email field is missing, return a 400 - HTTPBadRequest
     if email is None or password is None:
-        raise web.HTTPBadRequest(reason="Email and password required", 
+        raise web.HTTPBadRequest(reason="Email and password required",
                                     content_type='application/json')
 
     if password != confirm:
@@ -336,7 +340,7 @@ async def validate_registration(email: str, password: str, confirm: str, db: Asy
     user = await db.get_user({'email': email})
     if user:
         # Resets pending confirmation if re-registers?
-        if user['status'] == UserStatus.CONFIRMATION_PENDING:
+        if user['status'] == CONFIRMATION_PENDING:
             _confirmation = await db.get_confirmation({'user': user, 'action': 'registration'})
 
             if is_confirmation_expired(_confirmation):
