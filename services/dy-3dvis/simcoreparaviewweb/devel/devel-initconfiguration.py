@@ -1,5 +1,5 @@
+import argparse
 import json
-import os
 import sys
 import uuid
 from pathlib import Path
@@ -42,10 +42,11 @@ def init_s3():
     s3 = S3Settings()
     return s3
 
-def create_dummy(json_configuration_file_path):
-    with open(json_configuration_file_path) as file_pointer:
+def create_dummy(json_configuration_file_path: Path):
+    with json_configuration_file_path.open() as file_pointer:
         json_configuration = file_pointer.read()
     
+    # set up db
     db = init_db()
     new_Pipeline = ComputationalPipeline()
     db.session.add(new_Pipeline)
@@ -55,7 +56,7 @@ def create_dummy(json_configuration_file_path):
     # correct configuration with node uuid
     json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", node_uuid)
     configuration = json.loads(json_configuration)
-    
+        
 
     # init s3
     s3 = init_s3()
@@ -75,12 +76,10 @@ def create_dummy(json_configuration_file_path):
             input_item["value"] = ".".join(["link", node_uuid, str(filename)])  
             uploaded_files.append(available_files[0])
         elif input_item["type"] == "folder-url":
-            for f in available_files:
-                #i = available_files.index(f)
-                s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"], str(filename))
-                #configuration["inputs"]["key"] = input_item["key"]
-                s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), f)
-
+            assert True
+        # update configuration
+        if "FILENAME_ID" in input_item["value"]:
+            input_item["value"] = input_item["value"].replace("FILENAME_ID", str(filename))
 
     # now create the node in the db with links to S3
     new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, input=configuration["inputs"], output=configuration["outputs"])
