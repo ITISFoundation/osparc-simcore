@@ -51,9 +51,18 @@ qx.Class.define("qxapp.data.Converters", {
           }]
         };
         let bucketChildren = fileInTree.children[0].children;
+        let splitted = file["object_name"].split("/");
         if (file["location"] === "simcore.sandbox") {
+          for (let j=0; j<splitted.length-1; j++) {
+            const newDir = {
+              label: splitted[j],
+              children: []
+            };
+            bucketChildren.push(newDir);
+            bucketChildren = bucketChildren[0].children;
+          }
           bucketChildren.push({
-            label: file["object_name"],
+            label: splitted[splitted.length-1],
             fileId: file["file_uuid"]
           });
           this.mergeChildren(children, fileInTree);
