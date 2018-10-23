@@ -410,6 +410,199 @@ qx.Class.define("qxapp.dev.fake.Data", {
     getPublicProjectList: function() {
       return [
         {
+          "projectUuid": "61d5829d-426a-49a8-8292-c701530e6e35",
+          "name": "Colleen Clancy use cases",
+          "description": "All use cases: 0D, 1D, 2D",
+          "notes": "Empty",
+          "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
+          "owner": "Colleen Clancy",
+          "collaborators": {},
+          "creationDate": "2018-10-23T09:13:13.360Z",
+          "lastChangeDate": "2018-10-23T09:33:41.858Z",
+          "workbench": {
+            "0b42c964-195d-4674-b758-946151cae351": {
+              "label": "File Picker",
+              "inputs": {},
+              "inputNodes": [],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 108,
+                "y": 131
+              },
+              "key": "service/dynamic/itis/file-picker",
+              "version": "0.0.0"
+            },
+            "5986cf64-9f81-409d-998c-c1f04de67f8b": {
+              "label": "DBP-Clancy-Rabbit-Single-Cell solver v 0.0.2",
+              "inputs": {
+                "Na": 0,
+                "Kr": 0,
+                "BCL": 200,
+                "NBeats": 5,
+                "Ligand": 0,
+                "cAMKII": "WT",
+                "initial_WTstates": {
+                  "nodeUuid": "0b42c964-195d-4674-b758-946151cae351",
+                  "output": "outFile"
+                }
+              },
+              "inputNodes": [
+                "0b42c964-195d-4674-b758-946151cae351"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 393,
+                "y": 131
+              },
+              "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
+              "version": "0.0.1"
+            },
+            "00336089-9984-43e7-9fda-cf9625e59986": {
+              "label": "cc-0d-viewer",
+              "inputs": {
+                "vm_1Hz": {
+                  "nodeUuid": "5986cf64-9f81-409d-998c-c1f04de67f8b",
+                  "output": "vm_1Hz"
+                },
+                "all_results_1Hz": {
+                  "nodeUuid": "5986cf64-9f81-409d-998c-c1f04de67f8b",
+                  "output": "allresult_1Hz"
+                }
+              },
+              "inputNodes": [
+                "5986cf64-9f81-409d-998c-c1f04de67f8b"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 681,
+                "y": 131
+              },
+              "key": "simcore/services/dynamic/cc-0d-viewer",
+              "version": "1.1.0"
+            },
+            "418bd484-905b-4212-8108-c7cfab4f241e": {
+              "label": "File Picker",
+              "inputs": {},
+              "inputNodes": [],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 100,
+                "y": 429
+              },
+              "key": "service/dynamic/itis/file-picker",
+              "version": "0.0.0"
+            },
+            "5e548936-ee08-43f3-ab01-a58e7c49a946": {
+              "label": "DBP-Clancy-Rabbit-1-D solver v 0.0.1",
+              "inputs": {
+                "Na": 0,
+                "Kr": 0,
+                "BCL": 10,
+                "NBeats": 1,
+                "Ligand": 0,
+                "cAMKII": "WT",
+                "tw": 5,
+                "tl": 200,
+                "homogeneity": "heterogeneous",
+                "initial_WTstates": {
+                  "nodeUuid": "418bd484-905b-4212-8108-c7cfab4f241e",
+                  "output": "outFile"
+                }
+              },
+              "inputNodes": [
+                "418bd484-905b-4212-8108-c7cfab4f241e"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 363,
+                "y": 346
+              },
+              "key": "simcore/services/comp/ucdavis/cardiac-oned",
+              "version": "0.0.1"
+            },
+            "c3e872c0-b105-40ce-8d33-7d501a694550": {
+              "label": "DBP-Clancy-Rabbit-2-D solver v 0.0.1",
+              "inputs": {
+                "Na": 0,
+                "Kr": 0,
+                "BCL": 10,
+                "Ligand": 0,
+                "cAMKII": "WT",
+                "tw": 5,
+                "tl": 200,
+                "homogeneity": "heterogeneous",
+                "initial_WTstates": {
+                  "nodeUuid": "418bd484-905b-4212-8108-c7cfab4f241e",
+                  "output": "outFile"
+                },
+                "fiber": {
+                  "nodeUuid": "5e548936-ee08-43f3-ab01-a58e7c49a946",
+                  "output": "fiber"
+                }
+              },
+              "inputNodes": [
+                "418bd484-905b-4212-8108-c7cfab4f241e",
+                "5e548936-ee08-43f3-ab01-a58e7c49a946"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 603,
+                "y": 517
+              },
+              "key": "simcore/services/comp/ucdavis/cardiac-twod",
+              "version": "0.0.1"
+            },
+            "c354690d-c9c4-47f5-a089-cc4e2eec30b3": {
+              "label": "cc-1d-viewer",
+              "inputs": {
+                "ECGs": "null",
+                "y_1D": "null"
+              },
+              "inputNodes": [
+                "5e548936-ee08-43f3-ab01-a58e7c49a946"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 844,
+                "y": 348
+              },
+              "key": "simcore/services/dynamic/cc-1d-viewer",
+              "version": "1.1.0"
+            },
+            "ef9404ef-324f-46b7-825c-6f0f614c54ef": {
+              "label": "cc-2d-viewer",
+              "inputs": {
+                "ap": "null"
+              },
+              "inputNodes": [
+                "c3e872c0-b105-40ce-8d33-7d501a694550"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 850,
+                "y": 517
+              },
+              "key": "simcore/services/dynamic/cc-2d-viewer",
+              "version": "1.1.0"
+            }
+          }
+        }, {
           projectUuid: "345a37ab-5346-4983-951a-19ba2ef9ca0f",
           name: "LF Simulator",
           description: "LF Simulator",
