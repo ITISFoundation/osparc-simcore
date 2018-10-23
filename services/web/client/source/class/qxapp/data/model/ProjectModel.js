@@ -1,16 +1,17 @@
 qx.Class.define("qxapp.data.model.ProjectModel", {
   extend: qx.core.Object,
 
-  construct: function(prjData) {
+  construct: function(prjData, fromTemplate) {
     this.base(arguments);
 
     if (prjData) {
       this.set({
-        uuid: prjData.projectUuid || this.getUuid(),
+        uuid: fromTemplate ? qxapp.utils.Utils.uuidv4() : prjData.projectUuid || this.getUuid(),
         name: prjData.name || this.getName(),
         description: prjData.description || this.getDescription(),
         notes: prjData.notes || this.getNotes(),
         thumbnail: prjData.thumbnail || this.getThumbnail(),
+        owner: prjData.owner || this.getOwner(),
         collaborators: prjData.collaborators || this.getCollaborators(),
         creationDate: new Date(prjData.creationDate) || this.getCreationDate(),
         lastChangeDate: new Date(prjData.lastChangeDate) || this.getLastChangeDate()
@@ -34,7 +35,8 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
     name: {
       check: "String",
       nullable: false,
-      init: "New Project"
+      init: "New Project",
+      apply : "__applyName"
     },
 
     description: {
@@ -53,6 +55,12 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
       check: "String",
       nullable: true,
       init: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round"
+    },
+
+    owner: {
+      check: "String",
+      nullable: true,
+      init: ""
     },
 
     collaborators: {
@@ -80,6 +88,12 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
   },
 
   members: {
+    __applyName: function(newName) {
+      if (this.isPropertyInitialized("workbenchModel")) {
+        this.getWorkbenchModel().setProjectName(newName);
+      }
+    },
+
     serializeProject: function() {
       this.setLastChangeDate(new Date());
 
