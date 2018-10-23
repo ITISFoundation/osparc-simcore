@@ -28,12 +28,12 @@ def create_configfile_schema():
     })
 
     _SMTP_SERVER = T.Dict({
-    'sender': 'OSPARC support <crespo@itis.swiss>',
-    'SMTP_HOST': 'mail.speag.com',
+    T.Key('sender', default='OSPARC support <crespo@itis.swiss>'): T.String(), # FIXME: email format
+    'SMTP_HOST': T.String(),
     'SMTP_PORT': T.Int(),
     T.Key('SMTP_TLS', default=False): T.Bool(),
     T.Key('SMTP_USERNAME', default=None): T.String(),
-    T.Key('SMTP_PASSWORD', default=None): None
+    T.Key('SMTP_PASSWORD', default=None): T.String()
     })
 
     # TODO: add support for versioning.

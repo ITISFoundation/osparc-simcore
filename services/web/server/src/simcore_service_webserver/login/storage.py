@@ -62,12 +62,3 @@ class AsyncpgStorage:
         async with self.pool.acquire() as conn:
             await sql.delete(conn, self.confirm_tbl,
                              {'code': confirmation['code']})
-
-    def user_id_from_string(self, id_str):
-        try:
-            return int(id_str)
-        except ValueError as ex:
-            log.error('Can\'t convert string into id', exc_info=ex)
-
-    def user_session_id(self, user):
-        return str(user['id'])

@@ -30,9 +30,9 @@ class UserRole(enum.IntEnum):
         moderator: adds permissions ...???
         admin: full access
     """
-    ANONYMOUS = 0,
-    USER = 1,
-    MODERATOR = 2,
+    ANONYMOUS = 0
+    USER = 1
+    MODERATOR = 2
     ADMIN = 100
 
 

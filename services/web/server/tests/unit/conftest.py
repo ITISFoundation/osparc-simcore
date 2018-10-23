@@ -29,50 +29,36 @@ def package_dir(here):
 
 @pytest.fixture(scope='session')
 def osparc_simcore_root_dir(here):
-    root_dir = here.parent.parent.parent.parent
+    root_dir = here.parent.parent.parent.parent.parent
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
+    assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
     return root_dir
 
 @pytest.fixture(scope='session')
-def package_paths(pytestconfig, here):
-    # Intentionally not using resource paths so we have an alternative
-    # way to retrieve paths to test resource logic itself
-    package_root = here.parent
-    src_folder = package_root / "src"
-    test_folder = package_root / "tests"
-    mock_folder = test_folder / "mock"
-
-    paths={}
-    paths["ROOT_FOLDER"] = package_root
-    paths["SRC_FOLDER"] = src_folder
-    paths["PACKAGE_FOLDER"] = src_folder / simcore_service_webserver.__name__
-    paths["TEST_FOLDER"] = test_folder
-    paths["MOCK_FOLDER"] = mock_folder
-
-    for key, path in paths.items():
-        assert path.exists(), "Invalid path in %s" % key
-
-    return collections.namedtuple("PackagePaths", paths.keys())(**paths)
+def mock_dir(here):
+    dirpath = here / "mock"
+    assert dirpath.exists()
+    return dirpath
 
 @pytest.fixture(scope='session')
-def docker_compose_file(package_paths):
+def docker_compose_file(mock_dir):
     """
       Path to docker-compose configuration files used for testing
 
       - fixture defined in pytest-docker
     """
-    fpath = package_paths.MOCK_FOLDER / 'docker-compose.yml'
+    fpath = mock_dir / 'docker-compose.yml'
     assert fpath.exists()
     return str(fpath)
 
 @pytest.fixture(scope="session")
-def server_test_configfile(package_paths):
-    fpath = package_paths.MOCK_FOLDER / "configs/server-host-test.yaml"
+def server_test_configfile(mock_dir):
+    fpath = mock_dir / "configs/server-host-test.yaml"
     assert fpath.exists()
     return fpath
 
 @pytest.fixture(scope="session")
-def light_test_configfile(package_paths):
-    fpath = package_paths.MOCK_FOLDER / "configs/light-test.yaml"
+def light_test_configfile(mock_dir):
+    fpath = mock_dir / "configs/light-test.yaml"
     assert fpath.exists()
     return fpath
