@@ -882,12 +882,15 @@ qx.Class.define("qxapp.data.Store", {
       socket.removeSlot(slotName);
       socket.on(slotName, function(data) {
         console.log(slotName, data);
+        this.fireDataEvent("S3PublicDocuments", data);
       }, this);
       socket.emit(slotName);
 
-      let data = qxapp.dev.fake.Data.getObjectList();
-      console.log("Fake", slotName, data);
-      return data;
+      if (!socket.getSocket().connected) {
+        let data = qxapp.dev.fake.Data.getObjectList();
+        console.log("Fake", slotName, data);
+        this.fireDataEvent("S3PublicDocuments", data);
+      }
     },
 
     getMyDocuments: function() {
