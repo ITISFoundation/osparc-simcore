@@ -868,6 +868,20 @@ qx.Class.define("qxapp.data.Store", {
       req.send();
     },
 
+    getS3SandboxFiles: function() {
+      const slotName = "listObjects";
+      let socket = qxapp.wrappers.WebSocket.getInstance();
+      socket.removeSlot(slotName);
+      socket.on(slotName, function(data) {
+        console.log(slotName, data);
+      }, this);
+      socket.emit(slotName);
+
+      let data = qxapp.dev.fake.Data.getObjectList();
+      console.log("Fake", slotName, data);
+      return data;
+    },
+
     getMyDocuments: function() {
       let reqLoc = new qxapp.io.request.ApiRequest("/storage/locations", "GET");
 
@@ -878,7 +892,7 @@ qx.Class.define("qxapp.data.Store", {
         const locations = dataLoc["locations"];
         for (let i=0; i<locations.length; i++) {
           const locationId = locations[i];
-          const endPoint = "/storage/" + locationId + "files";
+          const endPoint = "/storage/locations/" + locationId + "/files";
           let reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
 
           reqFiles.addListener("success", eFiles => {
