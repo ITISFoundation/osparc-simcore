@@ -61,10 +61,14 @@ qx.Class.define("qxapp.data.Converters", {
             bucketChildren.push(newDir);
             bucketChildren = bucketChildren[0].children;
           }
-          bucketChildren.push({
+          let fileInfo = {
             label: splitted[splitted.length-1],
             fileId: file["file_uuid"]
-          });
+          };
+          if ("size" in file) {
+            fileInfo["size"] = file["size"];
+          }
+          bucketChildren.push(fileInfo);
           this.mergeChildren(children, fileInTree);
         }
       }
