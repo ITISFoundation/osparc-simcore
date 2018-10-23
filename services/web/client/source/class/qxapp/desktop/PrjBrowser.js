@@ -127,19 +127,6 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       let prjCtr = this.__controller = new qx.data.controller.List(userPrjArrayModel, prjLst, "name");
       let delegate = this.__getDelegate();
       prjCtr.setDelegate(delegate);
-      /* prjLst.getSelection().addListener("change", function(e) {
-        let item = prjLst.getSelection().getItem(0);
-        if (item) {
-          const prjUuid = item.getModel();
-          const fromTemplate = true;
-          let projectModel = this.__getProjectModel(prjUuid, fromTemplate);
-          const data = {
-            projectModel: projectModel
-          };
-          this.fireDataEvent("StartProject", data);
-        }
-      }, this); */
-
       return prjLst;
     },
 
