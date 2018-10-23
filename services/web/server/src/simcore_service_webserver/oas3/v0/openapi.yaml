@@ -18,7 +18,7 @@ servers:
       port:
         default: '8001'
   - description: Production server
-    url: {public_url}/v0
+    url: '{public_url}/v0'
     variables:
       public_url:
         default: 'https://simcore.io'

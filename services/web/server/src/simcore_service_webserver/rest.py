@@ -48,6 +48,7 @@ def setup(app: web.Application):
                 new_server.variables['host'].default = HOSTNAMES[(HOSTNAMES.index(host)+1) % 2]
                 specs.servers.append(new_server)
 
+        # TODO: consider case of many public_url and effect of reverse proxy
         if 'public_url' in app_config:  # Corresponds to ${OSPARC_PUBLIC_URL}
             for server in specs.servers:
                 if 'public_url' in server.variables:
