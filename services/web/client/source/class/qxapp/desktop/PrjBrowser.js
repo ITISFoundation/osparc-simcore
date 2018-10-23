@@ -127,20 +127,18 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       let prjCtr = this.__controller = new qx.data.controller.List(userPrjArrayModel, prjLst, "name");
       let delegate = this.__getDelegate();
       prjCtr.setDelegate(delegate);
-      // FIXME: getSelection does not work if model is not passed in the constructor!!!!
-      // prjCtr.setModel();
-
-      prjCtr.addListener("dblclick", e => {
-        if ("projectUuid" in e.getData()) {
-          const prjUuid = e.getData().projectUuid;
-          const fromTemplate = false;
+      /* prjLst.getSelection().addListener("change", function(e) {
+        let item = prjLst.getSelection().getItem(0);
+        if (item) {
+          const prjUuid = item.getModel();
+          const fromTemplate = true;
           let projectModel = this.__getProjectModel(prjUuid, fromTemplate);
           const data = {
             projectModel: projectModel
           };
           this.fireDataEvent("StartProject", data);
         }
-      }, this);
+      }, this); */
 
       return prjLst;
     },
@@ -155,20 +153,10 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       let prjCtr = this.__controller2 = new qx.data.controller.List(publicPrjArrayModel, prjLst, "name");
       let delegate = this.__getDelegate();
       prjCtr.setDelegate(delegate);
-      // FIXME: getSelection does not work if model is not passed in the constructor!!!!
-      // prjCtr.setModel();
 
-      prjCtr.addListener("dblclick", e => {
-        if ("projectUuid" in e.getData()) {
-          const prjUuid = e.getData().projectUuid;
-          const fromTemplate = true;
-          let projectModel = this.__getProjectModel(prjUuid, fromTemplate);
-          const data = {
-            projectModel: projectModel
-          };
-          this.fireDataEvent("StartProject", data);
-        }
-      }, this);
+
+
+
 
       return prjLst;
     },
@@ -178,7 +166,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         orientation: "horizontal",
         spacing: 10,
         height: 245,
-        alignY: "middle"
+        alignY: "middle",
+        appearance: "pb-list"
       });
     },
 
@@ -188,27 +177,28 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     __getDelegate: function() {
       const thumbnailWidth = 246;
       const thumbnailHeight = 144;
+      let that = this;
+      let getProjectModel = this.__getProjectModel;
       let delegate = {
         // Item's Layout
         createItem: function() {
-          return new qxapp.desktop.PrjBrowserListItem();
+          let item = new qxapp.desktop.PrjBrowserListItem();
+          item.addListener("tap", e => {
+            const prjUuid = item.getModel();
+            const fromTemplate = true;
+            let projectModel = getProjectModel(prjUuid, fromTemplate);
+            const data = {
+              projectModel: projectModel
+            };
+            that.fireDataEvent("StartProject", data);
+          });
+          return item;
         },
         // Item's data binding
         bindItem: function(controller, item, id) {
-          let listItem = controller.getModel().toArray()[id];
-          const prjUuid = listItem.getProjectUuid();
-          if (!item.hasListener("dblclick")) {
-            item.addListener("dblclick", function(e) {
-              const data = {
-                projectUuid: prjUuid
-              };
-              controller.fireDataEvent("dblclick", data);
-            }, this);
-          }
-
           controller.bindProperty("thumbnail", "icon", {
             converter: function(data) {
-              let thumbnailUrl = data === null ? "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/tech/grayscale/?random.jpg" : data;
+              let thumbnailUrl = data === null ? "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/tech/grayscale/?"+Math.random()+"random.jpg" : data;
               thumbnailUrl = thumbnailUrl.replace("https://placeimg.com/171/96/", "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/");
               return thumbnailUrl;
             }
@@ -228,12 +218,13 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               return new Date(data);
             }
           }, item, id);
+          controller.bindProperty("projectUuid", "model", {
+            converter: function(data) {
+              return data;
+            }
+          }, item, id);
         },
         configureItem : function(item) {
-          item.set({
-            paddingTop: 5,
-            paddingBottom: 5
-          });
           item.getChildControl("icon").set({
             width: thumbnailWidth,
             height: thumbnailHeight

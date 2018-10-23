@@ -1,5 +1,7 @@
 qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
   extend: qx.ui.core.Widget,
+  implement : [qx.ui.form.IModel],
+  include : [qx.ui.form.MModelProperty],
 
   construct: function() {
     this.base(arguments);
@@ -14,9 +16,23 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       alignY: "middle"
     });
     this._setLayout(layout);
+
+    this.addListener("pointerover", this._onPointerOver, this);
+    this.addListener("pointerout", this._onPointerOut, this);
+  },
+
+  events:
+  {
+    /** (Fired by {@link qx.ui.form.List}) */
+    "action" : "qx.event.type.Event"
   },
 
   properties: {
+    appearance :
+    {
+      refine : true,
+      init : "pb-listitem"
+    },
     icon: {
       check: "String",
       apply : "_applyIcon",
@@ -109,10 +125,37 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       const dateStr = this._dateFormat.format(value);
       label.setValue("Created on: <b>" + dateStr + "</b>");
     },
+    // overridden
+    /**
+     * @lint ignoreReferenceField(_forwardStates)
+     */
+    _forwardStates :
+    {
+      focused : true,
+      hovered : true,
+      selected : true,
+      dragover : true
+    },
 
-    destruct : function() {
-      this._dateFormat.dispose();
-      this._dateFormat = null;
+    /**
+     * Event handler for the pointer over event.
+     */
+    _onPointerOver : function() {
+      this.addState("hovered");
+    },
+
+
+    /**
+     * Event handler for the pointer out event.
+     */
+    _onPointerOut : function() {
+      this.removeState("hovered");
     }
+  },
+  destruct : function() {
+    this._dateFormat.dispose();
+    this._dateFormat = null;
+    this.removeListener("pointerover", this._onPointerOver, this);
+    this.removeListener("pointerout", this._onPointerOut, this);
   }
 });
