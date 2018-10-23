@@ -130,7 +130,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
 
       store.addListener("S3PublicDocuments", e => {
         const files = e.getData();
-        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+        const newChildren = qxapp.data.Converters.fromS3ToVirtualTreeModel(files);
         this.__addTreeData(newChildren);
       }, this);
       store.getS3SandboxFiles();
