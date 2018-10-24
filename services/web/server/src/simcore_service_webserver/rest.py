@@ -35,7 +35,6 @@ def setup(app: web.Application):
             #  - server running inside container. use environ set by container to find port maps maps (see portainer)
             #  - server running in host
             in_container = "IS_CONTAINER_CONTEXT" in os.environ
-
             devserver = specs.servers[0]
 
             host, port = app_config['host'], app_config['port']
@@ -48,6 +47,13 @@ def setup(app: web.Application):
                 new_server = copy.deepcopy(devserver)
                 new_server.variables['host'].default = HOSTNAMES[(HOSTNAMES.index(host)+1) % 2]
                 specs.servers.append(new_server)
+
+        # TODO: consider case of many public_url and effect of reverse proxy
+        if 'public_url' in app_config:  # Corresponds to ${OSPARC_PUBLIC_URL}
+            for server in specs.servers:
+                if 'public_url' in server.variables:
+                    server.variables['public_url'].default = app_config['public_url']
+
 
         # NOTE: after setup app-keys are all defined, but they might be set to None when they cannot
         # be initialized
