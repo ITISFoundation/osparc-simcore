@@ -11,6 +11,7 @@ from . import exceptions, config
 
 INTERACTIVE_SERVICES_PREFIX = 'simcore/services/dynamic/'
 COMPUTATIONAL_SERVICES_PREFIX = 'simcore/services/comp/'
+DEPENDENCIES_LABEL_KEY = 'io.simcore.dependencies'
 _SESSION = Session()
 _logger = logging.getLogger(__name__)
 
@@ -42,7 +43,15 @@ def retrieve_list_of_images_in_repo(repository_name):
     _logger.info("retrieved list of images in %s: %s",repository_name, result_json)
     return result_json
 
-def list_interactive_service_dependencies(service_key):
+def list_interactive_service_dependencies(service_key, service_tag):
+    image_labels = retrieve_labels_of_image(service_key, service_tag)
+    dependency_keys = []
+    if DEPENDENCIES_LABEL_KEY in image_labels:
+        dependencies = json.loads(image_labels[DEPENDENCIES_LABEL_KEY])
+        for dependency in dependencies:
+            dependency_keys.append(dependency['key'])
+    return dependency_keys
+    '''
     #TODO: dependencies should be explicitely listed in the main service labels... this is currently not good.
     prefix = INTERACTIVE_SERVICES_PREFIX
     # check if the service has a dependency
@@ -61,6 +70,7 @@ def list_interactive_service_dependencies(service_key):
                 continue
             dependencies.append(repo)
     return dependencies
+    '''
 
 def retrieve_labels_of_image(image, tag):
     request_result = __registry_request(image + '/manifests/' + tag)
