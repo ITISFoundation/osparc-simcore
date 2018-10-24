@@ -10,6 +10,15 @@ DATA_ITEM_KEYS = ["key",
                 "type",
                 "value",
                 "timestamp"]
+
+# True if required, defined by JSON schema
+SCHEMA_ITEM_KEYS = {"key":True,
+                    "label":True,
+                    "description":True,
+                    "type":True,
+                    "fileToKeyMap":False,
+                    "defaultValue":False,
+                    "widget":False}
 # allowed types
 TYPE_TO_PYTHON_TYPE_MAP = {"integer":{"type":int, "converter":int},
                             "number":{"type":float, "converter":float},
