@@ -23,6 +23,7 @@ services:
         io.simcore.key: '{"key": "simcore/services/dynamic/modeler"}'
         io.simcore.outputs: '{"outputs": []}'
         io.simcore.tag: '{"tag": "0.0.1"}'
+        io.simcore.dependencies: '[{"key": "simcore/services/dynamic/modeler/xrpc-worker", "tag": "1.9"}]'
         io.simcore.name: '{"name": "modeler"}'
         io.simcore.description: '{"description": "Modeler viewer"}'
         io.simcore.contact: '{"contact": "anderegg@itis.ethz.ch"}'
