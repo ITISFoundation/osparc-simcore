@@ -237,6 +237,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
 
       node.addListener("NodeMoving", function() {
         this.__updateLinks(node);
+        this.__updatePosition(node);
       }, this);
 
       node.addListener("appear", function() {
@@ -512,6 +513,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       let node1Id = from.nodeUuid;
       let node2Id = to.nodeUuid;
       this.__createLink(node1Id, node2Id, linkId);
+    },
+
+    __updatePosition: function(node) {
+      const cBounds = node.getCurrentBounds();
+      let nodeModel = this.getWorkbenchModel().getNodeModel(node.getNodeId());
+      nodeModel.setPosition(cBounds.left, cBounds.top);
     },
 
     __updateLinks: function(node) {
