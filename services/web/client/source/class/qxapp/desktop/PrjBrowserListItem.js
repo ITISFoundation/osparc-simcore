@@ -59,7 +59,7 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
   },
 
   members: {
-    _dateFormat : null,
+    _dateFormat: null,
 
     // overridden
     _createChildControlImpl: function(id) {
@@ -125,12 +125,8 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       const dateStr = this._dateFormat.format(value);
       label.setValue("Created on: <b>" + dateStr + "</b>");
     },
-    // overridden
-    /**
-     * @lint ignoreReferenceField(_forwardStates)
-     */
-    _forwardStates :
-    {
+    // eslint-disable-next-line qx-rules/no-refs-in-members
+    _forwardStates: {
       focused : true,
       hovered : true,
       selected : true,
@@ -140,7 +136,7 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
     /**
      * Event handler for the pointer over event.
      */
-    _onPointerOver : function() {
+    _onPointerOver: function() {
       this.addState("hovered");
     },
 
