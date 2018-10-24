@@ -64,8 +64,8 @@ ENTRYPOINT [ "/bin/bash", "scripts/boot.sh" ]
 #------------------------------------------
 FROM common AS production
 # install simcore packages
-COPY --chown=jovyan:users packages/simcore-sdk /home/root/packages/simcore-sdk
-COPY --chown=jovyan:users packages/s3wrapper /home/root/packages/s3wrapper
+COPY packages/simcore-sdk /home/root/packages/simcore-sdk
+COPY packages/s3wrapper /home/root/packages/s3wrapper
 # copy the default notebook
 RUN pip install /packages/simcore-sdk &&\
     pip install /packages/s3wrapper
