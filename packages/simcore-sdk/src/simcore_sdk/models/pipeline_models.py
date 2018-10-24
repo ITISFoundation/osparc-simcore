@@ -44,9 +44,10 @@ class ComputationalTask(Base):
     job_id = Column(String)
     # internal id (better for debugging, nodes from 1 to N)
     internal_id = Column(Integer)
-
-    input = Column(JSON)
-    output = Column(JSON)
+    
+    schema = Column(JSON)
+    inputs = Column(JSON)
+    outputs = Column(JSON)
     image = Column(JSON)
     state = Column(Integer, default=UNKNOWN)
 
