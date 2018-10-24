@@ -257,10 +257,6 @@ def __get_repos_from_key(service_key):
     log.info("entries %s", list_of_images)
     if not list_of_images[service_key]:
         raise exceptions.ServiceNotAvailableError(service_key)
-    # look for dependencies
-    dependent_repositories = registry_proxy.list_interactive_service_dependencies(service_key)
-    for repo in dependent_repositories:
-        list_of_images[repo] = registry_proxy.retrieve_list_of_images_in_repo(repo)
 
     log.debug("Service %s has the following list of images available: %s", service_key, list_of_images)
 
