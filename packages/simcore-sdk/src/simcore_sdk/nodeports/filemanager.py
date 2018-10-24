@@ -21,8 +21,15 @@ class S3Settings:
         self.client.create_bucket(self.bucket)
         log.debug("Initialised S3 connection")
 
-@tenacity.retry(stop=tenacity.stop_after_attempt(3) or tenacity.stop_after_delay(10))
+@tenacity.retry(retry=tenacity.retry_if_exception_type(exceptions.S3TransferError),
+            reraise=True, 
+            stop=tenacity.stop_after_attempt(3) or tenacity.stop_after_delay(10),
+            before_sleep=tenacity.before_sleep_log(log, logging.DEBUG))
 def __download_fromS3(s3_client, s3_bucket, s3_object_name, file_path):
+    log.debug('Checking if object exists in S3 %s/%s', s3_bucket, s3_object_name)
+    if not s3_client.exists_object(s3_bucket, s3_object_name, True):
+        raise exceptions.S3InvalidPathError(s3_bucket, s3_object_name)
+
     log.debug('Downloading from  S3 %s/%s to %s', s3_bucket, s3_object_name, file_path)
     success = s3_client.download_file(s3_bucket, s3_object_name, file_path)
     if not success:
@@ -66,7 +73,10 @@ def download_file_from_S3(node_uuid: str, s3_object_name: str, node_key: str, fi
     __download_fromS3(s3.client, s3.bucket, s3_object_url, str(file_path))
     return file_path
 
-@tenacity.retry(stop=tenacity.stop_after_attempt(3) or tenacity.stop_after_delay(10))
+@tenacity.retry(retry=tenacity.retry_if_exception_type(exceptions.S3TransferError),
+            reraise=True, 
+            stop=tenacity.stop_after_attempt(3) or tenacity.stop_after_delay(10),
+            before_sleep=tenacity.before_sleep_log(log, logging.DEBUG))
 def __upload_to_s3(s3_client, s3_bucket, s3_object_name, file_path):
     log.debug('Uploading to S3 %s/%s from %s', s3_bucket, s3_object_name, file_path)
     success = s3_client.upload_file(s3_bucket, s3_object_name, file_path)

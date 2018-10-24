@@ -19,26 +19,26 @@ def docker_compose_file(pytestconfig): # pylint:disable=unused-argument
     return my_path
 
 
-def set_configuration(engine, session, json_configuration):
-    node_uuid = uuid.uuid4()
-    json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", str(node_uuid))
-    configuration = json.loads(json_configuration)
-
+def _create_new_pipeline(engine, session):
     # prepare database with default configuration
     Base.metadata.create_all(engine)
     new_Pipeline = ComputationalPipeline()
     session.add(new_Pipeline)
     session.commit()
 
-    new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, input=configuration["inputs"], output=configuration["outputs"])
+    os.environ["SIMCORE_PIPELINE_ID"]=str(new_Pipeline.pipeline_id)
+
+    return new_Pipeline.pipeline_id
+
+def _set_configuration(session, pipeline_id, json_configuration: str):
+    node_uuid = uuid.uuid4()
+    json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", str(node_uuid))
+    configuration = json.loads(json_configuration)
+
+    new_Node = ComputationalTask(pipeline_id=pipeline_id, node_id=node_uuid, input=configuration["inputs"], output=configuration["outputs"])
     session.add(new_Node)
     session.commit()    
-
-    # set up access to database
-    os.environ["SIMCORE_NODE_UUID"]=str(node_uuid)
-    os.environ["SIMCORE_PIPELINE_ID"]=str(new_Pipeline.pipeline_id)    
-
-    return engine, session, new_Pipeline.pipeline_id, node_uuid
+    return node_uuid
 
 @pytest.fixture()
 def default_nodeports_configuration(engine, session):
@@ -49,11 +49,22 @@ def default_nodeports_configuration(engine, session):
     with open(default_config_path) as config_file:
         json_configuration = config_file.read()
     
-    return set_configuration(engine, session, json_configuration)
+    pipeline_id = _create_new_pipeline(engine, session)
+    node_uuid = _set_configuration(session, pipeline_id, json_configuration)
+    os.environ["SIMCORE_NODE_UUID"]=str(node_uuid)
+    return engine, session, pipeline_id, node_uuid
 
 @pytest.fixture()
 def special_nodeports_configuration(engine, session):
-    def create_special_config(configuration):
-        return set_configuration(engine, session, json.dumps(configuration))
+    def create_special_config(node_configuration: dict, other_node_configurations: list = []):  # pylint: disable=dangerous-default-value
+        pipeline_id = _create_new_pipeline(engine, session)
+        # configure current node
+        node_uuid = _set_configuration(session, pipeline_id, json.dumps(node_configuration))
+        os.environ["SIMCORE_NODE_UUID"]=str(node_uuid)
+        # add other nodes
+        other_node_uuids = []
+        for other_node_config in other_node_configurations:
+            other_node_uuids.append(_set_configuration(session, pipeline_id, json.dumps(other_node_config)))
+        return engine, session, pipeline_id, node_uuid, other_node_uuids
         
     return create_special_config

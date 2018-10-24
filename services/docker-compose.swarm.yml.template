@@ -58,6 +58,7 @@ services:
     environment:
       - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8001
+      - OSPARC_PUBLIC_URL=http://osparc01.itis.ethz.ch:9081
       - POSTGRES_ENDPOINT=masu.speag.com:5432
       - POSTGRES_USER=scu
       - POSTGRES_PASSWORD=<enter pwd>
