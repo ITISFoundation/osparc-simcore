@@ -11,7 +11,7 @@ from . import exceptions, config
 
 INTERACTIVE_SERVICES_PREFIX = 'simcore/services/dynamic/'
 COMPUTATIONAL_SERVICES_PREFIX = 'simcore/services/comp/'
-DEPENDENCIES_LABEL_KEY = 'io.simcore.dependencies'
+DEPENDENCIES_LABEL_KEY = 'simcore.service.dependencies'
 _SESSION = Session()
 _logger = logging.getLogger(__name__)
 
