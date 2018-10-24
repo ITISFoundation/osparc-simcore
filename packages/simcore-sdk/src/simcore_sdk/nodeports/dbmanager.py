@@ -33,14 +33,13 @@ class _NodeModelEncoder(json.JSONEncoder):
         log.debug("Encoding object: %s", o)
         if isinstance(o, NodeModel):
             log.debug("Encoding Node object")
-            return {"version": "0.1", #TODO: SAN this will need to be correctly read
-                    "inputs": o.input,
-                    "outputs": o.output
+            return {
+                    "version": "0.1",
+                    "schema": o.schema,
+                    "inputs": o.inputs,
+                    "outputs": o.outputs
                     }
-            # return {"version": o.tag,
-            #         "inputs": o.inputs,
-            #         "outputs": o.outputs
-            #         }
+            
         log.debug("Encoding object using defaults")
         return json.JSONEncoder.default(self, o)
 
@@ -52,7 +51,7 @@ class DBManager:
         log.debug("Reading from database for node uuid %s", node_uuid)
         try:
             #TODO: SAN the call to first must be replaced by one() as soon as the pipeline ID issue is resolved
-            return self._db.session.query(NodeModel).filter(NodeModel.node_id==node_uuid).first()
+            return self._db.session.query(NodeModel).filter(NodeModel.node_id == node_uuid).first()
         except exc.NoResultFound:
             log.exception("the node id %s was not found", node_uuid)
         except exc.MultipleResultsFound:

@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 import sys
 import uuid
 
@@ -19,7 +20,7 @@ def docker_compose_file(pytestconfig): # pylint:disable=unused-argument
     return my_path
 
 
-def _create_new_pipeline(engine, session):
+def _create_new_pipeline(engine, session)->str:
     # prepare database with default configuration
     Base.metadata.create_all(engine)
     new_Pipeline = ComputationalPipeline()
@@ -30,24 +31,27 @@ def _create_new_pipeline(engine, session):
 
     return new_Pipeline.pipeline_id
 
-def _set_configuration(session, pipeline_id, json_configuration: str):
+def _set_configuration(session, pipeline_id: str, json_configuration: str):
     node_uuid = uuid.uuid4()
     json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", str(node_uuid))
     configuration = json.loads(json_configuration)
 
-    new_Node = ComputationalTask(pipeline_id=pipeline_id, node_id=node_uuid, input=configuration["inputs"], output=configuration["outputs"])
+    new_Node = ComputationalTask(pipeline_id=pipeline_id, node_id=node_uuid, schema=configuration["schema"], inputs=configuration["inputs"], outputs=configuration["outputs"])
     session.add(new_Node)
     session.commit()    
     return node_uuid
 
+@pytest.fixture
+def here()->Path:
+    return Path(__file__).parent
+
 @pytest.fixture()
-def default_nodeports_configuration(engine, session):
+def default_nodeports_configuration(engine, session, here): #pylint: disable=W0621
     """initialise nodeports with default configuration file
     """
     # prepare database with default configuration
-    default_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), r"test_config.json")
-    with open(default_config_path) as config_file:
-        json_configuration = config_file.read()
+    default_config_path = Path(here, r"test_config.json")
+    json_configuration = default_config_path.read_text()
     
     pipeline_id = _create_new_pipeline(engine, session)
     node_uuid = _set_configuration(session, pipeline_id, json_configuration)

@@ -10,14 +10,17 @@
                 "defaultValue": null,
                 "fileToKeyMap": {
                     "input1.txt":"in_1"
-                }
+                },
+                "widget": null
             },
             "in_5":{
                 "displayOrder": 2,
                 "label": "some number",
-                "desc": "numbering things",
+                "description": "numbering things",
                 "type": "integer",
-                "defaultValue": "666"
+                "defaultValue": 666,
+                "fileToKeyMap":{},
+                "widget": null
             }
         },
         "outputs" : {
@@ -26,14 +29,18 @@
                 "label": "some boolean output",
                 "description": "could be true or false...",
                 "type": "boolean",
-                "defaultValue": null
+                "defaultValue": null,
+                "fileToKeyMap":{},
+                "widget": null
             },
             "out_2": {
                 "displayOrder":1,
                 "label": "some file output",
                 "description": "could be anything...",
                 "type": "data:*/*",
-                "defaultValue": null
+                "defaultValue": null,
+                "fileToKeyMap":{},
+                "widget": null
             }
         }
     },
@@ -41,11 +48,10 @@
         "in_1": {
             "nodeUuid":"456465-45ffd",
             "output": "outFile"
-        },
-        "in_5": 42        
+        }
     },
     "outputs": {
-        "out_1": "False",
+        "out_1": false,
         "out_2": {
             "store":"z43-s3",
             "path": "/simcore/outputControllerOut.dat"

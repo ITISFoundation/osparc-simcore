@@ -6,7 +6,7 @@ import helpers
 from pathlib import Path
 from simcore_sdk.nodeports import config as node_config
 
-def test_access_with_key(default_nodeports_configuration): # pylint: disable=W0613, W0621
+def test_access_with_key(default_nodeports_configuration): # pylint: disable=W0613, W0621    
     from simcore_sdk.nodeports.nodeports import PORTS
 
     assert PORTS.inputs["in_1"] == PORTS.inputs[0]
@@ -265,7 +265,7 @@ def test_changing_inputs_error(default_nodeports_configuration): # pylint: disab
     assert "Trying to modify read-only object" in str(excinfo.value)
 
 
-    from simcore_sdk.nodeports._item import DataItem
+    from simcore_sdk.nodeports._data_item import DataItem
     new_input = DataItem(key="dummy_1", 
                          label="new label", 
                          desc="new description", 
@@ -286,7 +286,7 @@ def test_changing_outputs_error(default_nodeports_configuration): # pylint: disa
     assert "Trying to modify read-only object" in str(excinfo.value)
 
 
-    from simcore_sdk.nodeports._item import DataItem
+    from simcore_sdk.nodeports._data_item import DataItem
     new_output = DataItem(key="dummy_1", 
                           label="new label", 
                           desc="new description", 
