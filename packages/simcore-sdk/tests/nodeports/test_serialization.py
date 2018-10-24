@@ -59,7 +59,6 @@ def test_noinputsoutputs(special_nodeports_configuration):
     import helpers
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
     special_nodeports_configuration(special_configuration)
-    import pdb; pdb.set_trace()
     from simcore_sdk.nodeports.nodeports import PORTS
     from simcore_sdk.nodeports import exceptions
 
