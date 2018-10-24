@@ -25,6 +25,7 @@ def create_configfile_schema():
     _APP_SCHEMA = T.Dict({
         "host": T.IP,
         "port": T.Int(),
+        T.Key("public_url", optional=True): T.String(),  # full url seen by front-end
         "client_outdir": T.String(),
         "log_level": T.Enum("DEBUG", "WARNING", "INFO", "ERROR", "CRITICAL", "FATAL", "NOTSET"),
         "testing": T.Bool(),
