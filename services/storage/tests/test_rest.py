@@ -89,6 +89,19 @@ async def test_s3_files_metadata(client, dsm_mockup_db):
         assert not error
         assert len(data) == id_file_count[_id]
 
+    # list files fileterd by uuid
+    for d in dsm_mockup_db.keys():
+        fmd = dsm_mockup_db[d]
+        uuid_filter = os.path.join(fmd.project_id, fmd.node_id)
+        resp = await client.get("/v0/locations/0/files/metadata?user_id={}&uuid_filter={}".format(fmd.user_id, quote(uuid_filter, safe='')))
+        payload = await resp.json()
+        assert resp.status == 200, str(payload)
+
+        data, error = tuple( payload.get(k) for k in ('data', 'error') )
+        assert not error
+        for d in data:
+            assert os.path.join(d['project_id'], d['node_id']) == uuid_filter
+
 async def test_s3_file_metadata(client, dsm_mockup_db):
     # go through all files and get them
     for d in dsm_mockup_db.keys():

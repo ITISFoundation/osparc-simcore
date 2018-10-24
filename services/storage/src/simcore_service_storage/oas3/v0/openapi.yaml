@@ -118,6 +118,11 @@ paths:
           required: true
           schema:
             type: string
+        - name: uuid_filter
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: 'list of file meta-datas'

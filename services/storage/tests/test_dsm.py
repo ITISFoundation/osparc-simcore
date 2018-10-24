@@ -59,13 +59,21 @@ async def test_dsm_s3(dsm_mockup_db, postgres_service_url, s3_client, python27_e
     assert not bob_id == 0
 
     data = await dsm.list_files(user_id=bob_id, location="simcore.s3", regex="biology")
-    bobs_files = []
+    bobs_bio_files = []
     for d in dsm_mockup_db.keys():
         md = dsm_mockup_db[d]
         if md.user_id == bob_id and md.project_name == "biology":
-            bobs_files.append(d)
+            bobs_bio_files.append(md)
 
-    assert len(data) == len(bobs_files)
+    assert len(data) # bad luck with the randomizer
+    assert len(data) == len(bobs_bio_files)
+
+
+    # among bobs bio files, filter by project/node, take first one
+
+    uuid_filter = os.path.join(bobs_bio_files[0].project_id, bobs_bio_files[0].node_id)
+    filtered_data = await dsm.list_files(user_id=bob_id, location="simcore.s3", uuid_filter=str(uuid_filter))
+    assert filtered_data[0] == bobs_bio_files[0]
 
     for d in data:
         await dsm.delete_file(user_id=d.user_id, location="simcore.s3", file_uuid=d.file_uuid)
@@ -76,7 +84,7 @@ async def test_dsm_s3(dsm_mockup_db, postgres_service_url, s3_client, python27_e
         data = await dsm.list_files(user_id=_id, location="simcore.s3")
         new_size = new_size + len(data)
 
-    assert len(dsm_mockup_db) == new_size + len(bobs_files)
+    assert len(dsm_mockup_db) == new_size + len(bobs_bio_files)
 
 def _create_file_on_s3(postgres_url, s3_client, tmp_file):
     utils.create_tables(url=postgres_url)

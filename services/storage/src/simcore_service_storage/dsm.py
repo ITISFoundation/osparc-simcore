@@ -72,14 +72,18 @@ class DataStorageManager:
     def location_from_id(self, location_id : str):
         return _location_from_id(location_id)
 
-    async def list_files(self, user_id: str, location: str, regex: str="", sortby: str="") -> FileMetaDataVec:
+    async def list_files(self, user_id: str, location: str, uuid_filter: str ="", regex: str="", sortby: str="") -> FileMetaDataVec:
         """ Returns a list of file paths
 
             Works for simcore.s3 and datcore
 
+            Can filter on uuid: useful to filter on project_id/node_id
+
             Can filter upon regular expression (for now only on key: value pairs of the FileMetaData)
 
             Can sort results by key [assumes that sortby is actually a key in the FileMetaData]
+
+            order is: sort by key, filter by uuid or regex
         """
         data = []
         if location == "simcore.s3":
@@ -97,6 +101,16 @@ class DataStorageManager:
 
         if sortby:
             data = sorted(data, key=itemgetter(sortby))
+
+
+        if uuid_filter:
+            _query = re.compile(uuid_filter, re.IGNORECASE)
+            filtered_data = []
+            for d in data:
+                if _query.search(d.file_uuid):
+                    filtered_data.append(d)
+
+            return filtered_data
 
         if regex:
             _query = re.compile(regex, re.IGNORECASE)
