@@ -1,3 +1,4 @@
+/* eslint "qx-rules/no-refs-in-members": "warn" */
 qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
   extend: qx.ui.core.Widget,
   implement : [qx.ui.form.IModel],
@@ -125,7 +126,6 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       const dateStr = this._dateFormat.format(value);
       label.setValue("Created on: <b>" + dateStr + "</b>");
     },
-    // eslint-disable-next-line qx-rules/no-refs-in-members
     _forwardStates: {
       focused : true,
       hovered : true,
