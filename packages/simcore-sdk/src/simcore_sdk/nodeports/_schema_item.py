@@ -14,7 +14,7 @@ class SchemaItem(_SchemaItem):
             if key not in kwargs:
                 if required:
                     raise exceptions.InvalidProtocolError(kwargs, "key \"%s\" is missing" % (str(key)))
-                new_kargs[key] = None
+                # new_kargs[key] = None
             else:
                 new_kargs[key] = kwargs[key]
 

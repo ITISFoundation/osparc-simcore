@@ -3,68 +3,94 @@
 """
 import logging
 from simcore_sdk.nodeports import exceptions, dbmanager, serialization
-from simcore_sdk.nodeports._itemslist import DataItemsList
+from simcore_sdk.nodeports._data_items_list import DataItemsList
+from simcore_sdk.nodeports._schema_items_list import SchemaItemsList
+from simcore_sdk.nodeports._items_list import ItemsList
 
 
 log = logging.getLogger(__name__)
+
+def _check_payload_schema(payloads, schemas):
+    if len(payloads) != len(schemas):
+        if len(payloads) > len(schemas):
+            raise exceptions.InvalidProtocolError(None, msg="More payload than schemas!")
+
 
 #pylint: disable=C0111
 class Nodeports:
     """This class allow the client to access the inputs and outputs assigned to the node."""
     _version = "0.1"
-    def __init__(self, version, inputs=None, outputs=None):
-        log.debug("Initialising Nodeports object with version %s, inputs %s and outputs %s", version, inputs, outputs)
+    def __init__(self, version: str, input_schemas: SchemaItemsList=None, output_schemas: SchemaItemsList=None, 
+                                    input_payloads: DataItemsList=None, outputs_payloads: DataItemsList=None):
+        log.debug("Initialising Nodeports object with version %s, inputs %s and outputs %s", version, input_payloads, outputs_payloads)
         if self._version != version:
             raise exceptions.WrongProtocolVersionError(self._version, version)
 
+
+        
+
+        if not input_schemas:
+            input_schemas = SchemaItemsList()
+        self._input_schemas = input_schemas
+        if not output_schemas:
+            output_schemas = SchemaItemsList()
+        self._output_schemas = output_schemas
+
         # inputs are per definition read-only
-        if inputs is None:
-            inputs = DataItemsList()
-        self.__inputs = inputs
-        self.__inputs.read_only = True
-        self.__inputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
+        if input_payloads is None:
+            input_payloads = DataItemsList()
+        self._inputs_payloads = input_payloads
+        _check_payload_schema(self._inputs_payloads, self._input_schemas)
+
+        self._inputs_payloads.read_only = True
+        self._inputs_payloads.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
 
         # outputs are currently read-only as we do not allow dynamic change of
         # number of outputs or changing their type or so for now.
-        if outputs is None:
-            outputs = DataItemsList()
-        self.__outputs = outputs
-        self.__outputs.read_only = True
-        self.__outputs.change_notifier = self.save_to_json
-        self.__outputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
+        if outputs_payloads is None:
+            outputs_payloads = DataItemsList()
+        self._outputs_payloads = outputs_payloads
+        _check_payload_schema(self._outputs_payloads, self._output_schemas)
+        self._outputs_payloads.read_only = True
+        self._outputs_payloads.change_notifier = self.save_to_json
+        self._outputs_payloads.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
+
+
+        self._inputs = ItemsList(self._input_schemas, self._inputs_payloads)
+        self._outputs = ItemsList(self._output_schemas, self._outputs_payloads)
 
         self.db_mgr = None
         self.autoread = False
         self.autowrite = False
 
-        log.debug("Initialised Nodeports object with version %s, inputs %s and outputs %s", version, inputs, outputs)
+        log.debug("Initialised Nodeports object with version %s, inputs %s and outputs %s", version, input_payloads, outputs_payloads)
 
     @property
-    def inputs(self):
+    def inputs(self) -> ItemsList:
         log.debug("Getting inputs with autoread: %s", self.autoread)
         if self.autoread:
             self.update_from_json()
-        return self.__inputs
+        return self._inputs
 
     @inputs.setter
     def inputs(self, value):
         # this is forbidden
         log.debug("Setting inputs with %s", value)
-        raise exceptions.ReadOnlyError(self.__inputs)
+        raise exceptions.ReadOnlyError(self._inputs)
         #self.__inputs = value
 
     @property
-    def outputs(self):
+    def outputs(self) -> ItemsList:
         log.debug("Getting outputs with autoread: %s", self.autoread)
         if self.autoread:
             self.update_from_json()
-        return self.__outputs
+        return self._outputs
 
     @outputs.setter
     def outputs(self, value):
         # this is forbidden
         log.debug("Setting outputs with %s", value)
-        raise exceptions.ReadOnlyError(self.__outputs)
+        raise exceptions.ReadOnlyError(self._outputs)
         #self.__outputs = value
 
     def get(self, item_key: str):
@@ -90,11 +116,15 @@ class Nodeports:
         log.debug("Updating json configuration")
         if not self.db_mgr:
             raise exceptions.NodeportsException("db manager is not initialised")
-        change_notifier = self.__outputs.change_notifier
+        change_notifier = self._outputs_payloads.change_notifier
         updated_nodeports = serialization.create_from_json(self.db_mgr)
-        self.__inputs = updated_nodeports.inputs
-        self.__outputs = updated_nodeports.outputs
-        self.__outputs.change_notifier = change_notifier
+        self._input_schemas = updated_nodeports._input_schemas
+        self._output_schemas = updated_nodeports._output_schemas
+        self._inputs_payloads = updated_nodeports._inputs_payloads
+        self._outputs_payloads = updated_nodeports._outputs_payloads
+        self._outputs_payloads.change_notifier = change_notifier
+        self._inputs = ItemsList(self._input_schemas, self._inputs_payloads)
+        self._outputs = ItemsList(self._output_schemas, self._outputs_payloads)
         log.debug("Updated json configuration")
 
     def save_to_json(self):

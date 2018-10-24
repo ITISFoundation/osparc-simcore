@@ -7,8 +7,8 @@ import dateutil.parser
 import pytest
 import mock
 
-from simcore_sdk.nodeports._item import DataItem
-from simcore_sdk.nodeports._itemslist import DataItemsList
+from simcore_sdk.nodeports._data_item import DataItem
+from simcore_sdk.nodeports._data_items_list import DataItemsList
 
 
 def create_item(key, item_type, item_value, timestamp=None):
@@ -27,25 +27,6 @@ def test_default_list():
     assert not itemslist
     assert not itemslist.read_only
     assert itemslist.change_notifier is None
-
-def test_reject_items_with_same_key():
-    from simcore_sdk.nodeports import exceptions
-    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
-        DataItemsList([create_item("1", "integer", "333"), create_item("1", "integer", "444"), create_item("3", "integer", "333")])
-
-    itemslist = DataItemsList()
-    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
-        itemslist.insert(0, create_item("4", "integer", "333"))
-        itemslist.insert(0, create_item("5", "integer", "333"))
-        itemslist.insert(0, create_item("5", "integer", "333"))
-
-    itemslist = DataItemsList([create_item("1", "integer", "333"), create_item("2", "integer", "444"), create_item("3", "integer", "333")])
-    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
-        itemslist[1] = create_item("1", "integer", "333")
-
-    with pytest.raises(AttributeError, message="Expecting AttributeError"):
-        itemslist[1].key = "1"
-
 
 def test_adding_removing_items():
     itemslist = DataItemsList([create_item("1", "integer", "333"), create_item("2", "integer", "333"), create_item("3", "integer", "333")])

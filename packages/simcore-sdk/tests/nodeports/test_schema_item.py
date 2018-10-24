@@ -4,7 +4,7 @@ from simcore_sdk.nodeports import exceptions
 from simcore_sdk.nodeports._schema_item import SchemaItem
 
 def test_default_item():
-    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError") as excinfo:
+    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
         item = SchemaItem() #pylint: disable=W0612
 
 def test_check_item_required_fields(): #pylint: disable=W0612
