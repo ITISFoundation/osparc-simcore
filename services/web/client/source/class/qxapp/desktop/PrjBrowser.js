@@ -125,7 +125,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       let userPrjList = qxapp.data.Store.getInstance().getUserProjectList();
       let userPrjArrayModel = this.__getProjectArrayModel(userPrjList);
       let prjCtr = this.__controller = new qx.data.controller.List(userPrjArrayModel, prjLst, "name");
-      let delegate = this.__getDelegate();
+      const fromTemplate = false;
+      let delegate = this.__getDelegate(fromTemplate);
       prjCtr.setDelegate(delegate);
       return prjLst;
     },
@@ -138,13 +139,9 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       let publicPrjList = qxapp.data.Store.getInstance().getPublicProjectList();
       let publicPrjArrayModel = this.__getProjectArrayModel(publicPrjList);
       let prjCtr = this.__controller2 = new qx.data.controller.List(publicPrjArrayModel, prjLst, "name");
-      let delegate = this.__getDelegate();
+      const fromTemplate = true;
+      let delegate = this.__getDelegate(fromTemplate);
       prjCtr.setDelegate(delegate);
-
-
-
-
-
       return prjLst;
     },
 
@@ -161,7 +158,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     /**
      * Delegates appearance and binding of each project item
      */
-    __getDelegate: function() {
+    __getDelegate: function(fromTemplate) {
       const thumbnailWidth = 246;
       const thumbnailHeight = 144;
       let that = this;
@@ -170,9 +167,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         // Item's Layout
         createItem: function() {
           let item = new qxapp.desktop.PrjBrowserListItem();
-          item.addListener("tap", e => {
+          item.addListener("dbltap", e => {
             const prjUuid = item.getModel();
-            const fromTemplate = true;
             let projectModel = getProjectModel(prjUuid, fromTemplate);
             const data = {
               projectModel: projectModel
@@ -185,8 +181,10 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         bindItem: function(controller, item, id) {
           controller.bindProperty("thumbnail", "icon", {
             converter: function(data) {
-              let thumbnailUrl = data === null ? "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/tech/grayscale/?"+Math.random()+"random.jpg" : data;
-              thumbnailUrl = thumbnailUrl.replace("https://placeimg.com/171/96/", "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/");
+              // let thumbnailUrl = data === null ? "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/tech/grayscale/?"+Math.random()+"random.jpg" : data;
+              // thumbnailUrl = thumbnailUrl.replace("https://placeimg.com/171/96/", "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/");
+              const nThumbnails = 5;
+              let thumbnailUrl = "qxapp/thumbnail"+ (Math.floor(Math.random()*nThumbnails)) +".png";
               return thumbnailUrl;
             }
           }, item, id);
@@ -214,7 +212,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         configureItem : function(item) {
           item.getChildControl("icon").set({
             width: thumbnailWidth,
-            height: thumbnailHeight
+            height: thumbnailHeight,
+            scale: true
           });
         }
       };

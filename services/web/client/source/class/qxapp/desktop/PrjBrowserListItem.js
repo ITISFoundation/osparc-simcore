@@ -59,7 +59,7 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
     }
   },
 
-  members: {
+  members: { // eslint-disable-line qx-rules/no-refs-in-members
     _dateFormat: null,
 
     // overridden

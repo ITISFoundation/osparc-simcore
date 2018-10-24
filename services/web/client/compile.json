@@ -47,6 +47,9 @@
       },
       {
         "uri" : "resource/workbench/svg*.js"
+      },
+      {
+        "uri" : "resource/qxapp/*.png"
       }
     ]
   },
