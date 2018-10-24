@@ -19,7 +19,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
         return {
           decorator: null,
           padding: [0, 0]
-        }
+        };
       }
     },
     "pb-listitem": {
@@ -27,10 +27,10 @@ qx.Theme.define("qxapp.theme.Appearance", {
         let backgroundColor = "material-button-background";
 
         if (states.hovered) {
-          backgroundColor = "material-button-background-hovered"
+          backgroundColor = "material-button-background-hovered";
         }
         if (states.selected) {
-          backgroundColor = "material-button-background-pressed"
+          backgroundColor = "material-button-background-pressed";
         }
         return {
           backgroundColor: backgroundColor
