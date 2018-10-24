@@ -51,26 +51,6 @@ def list_interactive_service_dependencies(service_key, service_tag):
         for dependency in dependencies:
             dependency_keys.append(dependency['key'])
     return dependency_keys
-    '''
-    #TODO: dependencies should be explicitely listed in the main service labels... this is currently not good.
-    prefix = INTERACTIVE_SERVICES_PREFIX
-    # check if the service has a dependency
-    service_name_suffixes = str(service_key)[len(prefix):]
-    try:
-        service_name_suffixes.index("/")
-    except ValueError:
-        return list()
-    # ok let's get the dependencies
-    dependencies = []
-    repos = __retrieve_list_of_repositories()
-    service_name = get_service_first_name(service_key)
-    for repo in repos:
-        if get_service_first_name(repo) == service_name:
-            if repo == service_key:
-                continue
-            dependencies.append(repo)
-    return dependencies
-    '''
 
 def retrieve_labels_of_image(image, tag):
     request_result = __registry_request(image + '/manifests/' + tag)
