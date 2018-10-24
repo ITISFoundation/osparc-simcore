@@ -23,11 +23,11 @@ SCHEMA_ITEM_KEYS = {"key":True,
                     "widget":False}
 # allowed types
 TYPE_TO_PYTHON_TYPE_MAP = {"integer":{"type":int, "converter":int},
-                            "number":{"type":float, "converter":float},                            
+                            "number":{"type":float, "converter":float},
                             "boolean":{"type":bool, "converter":strtobool},
-                            "string":{"type":str, "converter":str},
-                            "data:":{"type":str, "converter":str}
+                            "string":{"type":str, "converter":str}
                             }
+FILE_TYPE_PREFIX = "data:"
 # S3 stored information
 TYPE_TO_S3_FILE_LIST = ["file-url"]
 TYPE_TO_S3_FOLDER_LIST = ["folder-url"]
