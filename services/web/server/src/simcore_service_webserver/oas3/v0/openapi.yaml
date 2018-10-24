@@ -21,7 +21,7 @@ servers:
     url: '{public_url}/v0'
     variables:
       public_url:
-        default: 'https://simcore.io'
+        default: 'https://osparc.io'
 tags:
 - name: admins
   description: Secured Admin-only calls
