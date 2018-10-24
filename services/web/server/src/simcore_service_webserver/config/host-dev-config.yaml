@@ -5,6 +5,7 @@ main:
   host: 127.0.0.1
   log_level: INFO
   port: 8080
+  public_url: http://localhost:8080
   testing: true
   disable_services: [director, postgres, rabbit, s3]
 # TODO add section service

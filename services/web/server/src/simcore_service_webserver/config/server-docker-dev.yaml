@@ -4,6 +4,7 @@ version: "1.0"
 main:
   host: 0.0.0.0
   port: 8080
+  public_url: ${OSPARC_PUBLIC_URL}
   client_outdir: ${SIMCORE_WEB_OUTDIR}
   log_level: DEBUG
   testing: True
