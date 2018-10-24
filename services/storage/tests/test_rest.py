@@ -1,23 +1,16 @@
+# pylint: disable=R0913
 # pylint: disable=W0621
-# TODO: W0611:Unused import ...
-# pylint: disable=W0611
-# W0612:Unused variable
-# TODO: W0613:Unused argument ...
-# pylint: disable=W0613
 import os
 from urllib.parse import quote
 
 import pytest
 from aiohttp import web
 
-import simcore_storage_sdk
-import utils
 from simcore_service_storage.db import setup_db
 from simcore_service_storage.middlewares import dsm_middleware
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.session import setup_session
 from simcore_service_storage.settings import APP_CONFIG_KEY
-#from simcore_storage_sdk import HealthInfo
 
 
 def parse_db(dsm_mockup_db):
@@ -116,7 +109,6 @@ async def test_download_link(client, dsm_mockup_db):
         assert resp.status == 200, str(payload)
 
         data, error = tuple( payload.get(k) for k in ('data', 'error') )
-        print(data)
         assert not error
         assert data
 
@@ -128,7 +120,6 @@ async def test_upload_link(client, dsm_mockup_db):
         assert resp.status == 200, str(payload)
 
         data, error = tuple( payload.get(k) for k in ('data', 'error') )
-        print(data)
         assert not error
         assert data
 
@@ -147,7 +138,6 @@ async def test_copy(client, dsm_mockup_db, datcore_testbucket):
         assert resp.status == 200, str(payload)
 
         data, error = tuple( payload.get(k) for k in ('data', 'error') )
-        print(data)
         assert not error
         assert data
 
@@ -163,7 +153,7 @@ async def test_copy(client, dsm_mockup_db, datcore_testbucket):
 
     data, error = tuple( payload.get(k) for k in ('data', 'error') )
     assert not error
-    assert len(data) == 2 + N + 1
+    assert len(data) == 2 + N
 
 async def test_delete_file(client, dsm_mockup_db):
     id_file_count, _id_name_map = parse_db(dsm_mockup_db)

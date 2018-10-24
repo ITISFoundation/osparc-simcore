@@ -2,10 +2,11 @@
 
 """
 from pathlib import Path
+
 from servicelib.resources import ResourcesFacade
 
-from .settings import RSC_CONFIG_DIR_KEY, RSC_OPENAPI_DIR_KEY #pylint: disable=unused-import
-from .settings import OAS_ROOT_FILE
+from .settings import (OAS_ROOT_FILE,  # pylint: disable=unused-import
+                       RSC_CONFIG_DIR_KEY, RSC_OPENAPI_DIR_KEY)
 
 resources = ResourcesFacade(
     package_name=__name__,

@@ -1,11 +1,9 @@
 from aiohttp.web import middleware
 
-from .settings import RQT_DSM_KEY, APP_CONFIG_KEY
-
-from .dsm import DataStorageManager
-
 from s3wrapper.s3_client import S3Client
 
+from .dsm import DataStorageManager
+from .settings import APP_CONFIG_KEY, RQT_DSM_KEY
 
 
 @middleware

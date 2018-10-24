@@ -4,7 +4,7 @@ import requests
 import sqlalchemy as sa
 
 import simcore_storage_sdk
-from simcore_service_storage.models import file_meta_data, FileMetaData
+from simcore_service_storage.models import FileMetaData, file_meta_data
 
 DATABASE = 'aio_login_tests'
 USER = 'admin'

@@ -70,7 +70,7 @@ def _location_from_id(location_id : str) ->str:
         loc_str = "simcore.s3"
     elif location_id == "1":
         loc_str = "datcore"
-   
+
     return loc_str
 
 def _location_from_str(location : str) ->str:
@@ -79,7 +79,7 @@ def _location_from_str(location : str) ->str:
         intstr = "0"
     elif location == "datcore":
         intstr = "1"
-    
+
     return intstr
 
 

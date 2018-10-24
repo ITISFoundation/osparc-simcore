@@ -1,4 +1,5 @@
 import trafaret as T
+
 from simcore_sdk.config import db, s3
 
 ## Config file schema

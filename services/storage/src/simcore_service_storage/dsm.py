@@ -64,9 +64,11 @@ class DataStorageManager:
     s3_client: S3Client
     python27_exec: Path
 
+    # pylint: disable=R0201
     def locations(self):
         return _locations()
 
+    # pylint: disable=R0201
     def location_from_id(self, location_id : str):
         return _location_from_id(location_id)
 
@@ -90,8 +92,8 @@ class DataStorageManager:
                         data.append(d)
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
-            dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
-            return dc.list_files(regex, sortby)
+            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec)
+            return await dcw.list_files(regex, sortby)
 
         if sortby:
             data = sorted(data, key=itemgetter(sortby))
@@ -111,6 +113,7 @@ class DataStorageManager:
 
     async def list_file(self, user_id: str, location: str, file_uuid: str) -> FileMetaData:
         if location == "simcore.s3":
+            # TODO: get engine from outside
             async with create_engine(self.db_endpoint) as engine:
                 async with engine.acquire() as conn:
                     query = sa.select([file_meta_data]).where(and_(file_meta_data.c.user_id == user_id,
@@ -121,7 +124,7 @@ class DataStorageManager:
                         return d
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
-            _dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
+            _dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec)
             raise NotImplementedError
 
 
@@ -136,6 +139,7 @@ class DataStorageManager:
             For simcore.s3 we can use the file_id
             For datcore we need the full path
         """
+        # TODO: const strings
         if location == "simcore.s3":
             async with create_engine(self.db_endpoint) as engine:
                 async with engine.acquire() as conn:
@@ -151,15 +155,16 @@ class DataStorageManager:
 
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
-            dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
+            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec)
             dataset, filename = _parse_datcore(file_uuid)
-            return dc.delete_file(dataset=dataset, filename=filename)
+#            return await dcw.delete_file(dataset=dataset, filename=filename)
+            return await dcw.delete_file(dataset, filename)
 
     async def upload_file_to_datcore(self, user_id: str, local_file_path: str, datcore_bucket: str, fmd: FileMetaData = None): # pylint: disable=W0613
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
         api_token, api_secret = await self._get_datcore_tokens(user_id)
-        dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
-        await dc.upload_file_async(datcore_bucket, local_file_path, fmd)
+        dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec)
+        await dcw.upload_file(datcore_bucket, local_file_path, fmd)
 
     async def _get_datcore_tokens(self, user_id: str)->Tuple[str, str]:
         # actually we have to query the master db
@@ -213,7 +218,7 @@ class DataStorageManager:
             link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
-            dc = DatcoreWrapper(api_token, api_secret, self.python27_exec)
+            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec)
             dataset, filename = _parse_datcore(file_uuid)
-            link = dc.download_link(dataset=dataset, filename=filename)
+            link = await dcw.download_link(dataset, filename)
         return link

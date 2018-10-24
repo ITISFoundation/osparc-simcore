@@ -10,7 +10,7 @@ import logging
 from servicelib import application_keys
 
 from .__version__ import get_version_object
-from .settings_schema import CONFIG_SCHEMA #pylint: disable=W0611
+from .settings_schema import CONFIG_SCHEMA  # pylint: disable=W0611
 
 log = logging.getLogger(__name__)
 

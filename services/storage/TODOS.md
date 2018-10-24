@@ -15,7 +15,7 @@
 
 **MAG***
 
-- [] async wrapper for all datcore funcions
+- [x] async wrapper for all datcore funcions
 - [ ] configure minio to send notifcation when upload/deletion completed
 - [ ] server rest
 - [ ] scu user should always access to s3 ( or do we always pass the user_id)

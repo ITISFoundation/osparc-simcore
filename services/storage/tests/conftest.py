@@ -4,6 +4,7 @@
 # pylint: disable=W0613
 #
 # pylint: disable=W0621
+import asyncio
 import os
 import subprocess
 import sys
@@ -243,19 +244,28 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
     utils.drop_tables(url=postgres_service_url)
 
 @pytest.fixture(scope="function")
-def datcore_testbucket(python27_exec, mock_files_factory):
+async def datcore_testbucket(loop, python27_exec, mock_files_factory):
     # TODO: what if I do not have an app to the the config from?
     api_token = os.environ.get("BF_API_KEY", "none")
     api_secret = os.environ.get("BF_API_SECRET", "none")
 
-    dc = DatcoreWrapper(api_token, api_secret, python27_exec)
+    dcw = DatcoreWrapper(api_token, api_secret, python27_exec)
 
-    dc.create_test_dataset(BUCKET_NAME)
+    await dcw.create_test_dataset(BUCKET_NAME)
 
     tmp_files = mock_files_factory(2)
     for f in tmp_files:
-        dc.upload_file(BUCKET_NAME, os.path.normpath(f), meta_data=None)
+        await dcw.upload_file(BUCKET_NAME, os.path.normpath(f))
+
+    ready = False
+    counter = 0
+    while not ready and counter<5:
+        data = await dcw.list_files()
+        ready = len(data) == 2
+        await asyncio.sleep(10)
+        counter = counter + 1
+
 
     yield BUCKET_NAME
 
-    dc.delete_test_dataset(BUCKET_NAME)
+    await dcw.delete_test_dataset(BUCKET_NAME)

@@ -1,12 +1,11 @@
 import asyncio
 import json
 import os
-
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
 from textwrap import dedent
-from typing import  List
+from typing import List
 
 import attr
 import execnet
@@ -48,6 +47,18 @@ def call_python_2_script(script: str, python_exec: Path):
     channel = gw.remote_exec(script)
     return channel.receive()
 
+def make_async(func):
+    async def async_wrapper(*args, **kwargs):
+        pool = ThreadPoolExecutor(max_workers=3)
+
+        loop = asyncio.get_event_loop()
+        blocking_task = loop.run_in_executor(pool, func, *args, **kwargs)
+        _completed, _pending = await asyncio.wait([blocking_task])
+        results = [t.result() for t in _completed]
+        # TODO: does this always work?
+        return results[0]
+    return async_wrapper
+
 class DatcoreWrapper:
     """ Wrapper to call the python2 api from datcore
 
@@ -63,7 +74,7 @@ class DatcoreWrapper:
 
         self.executor =  ThreadPoolExecutor(1)
 
-
+    @make_async
     def list_files(self, regex = "", sortby = "")->FileMetaDataVec: #pylint: disable=W0613
         # FIXME: W0613:Unused argument 'regex', sortby!!!
         script = """
@@ -102,6 +113,7 @@ class DatcoreWrapper:
 
         return data
 
+    @make_async
     def delete_file(self, dataset: str, filename: str):
         # the object can be found in dataset/filename <-> bucket_name/object_name
         script = """
@@ -122,6 +134,7 @@ class DatcoreWrapper:
 
         return self._py2_call(script)
 
+    @make_async
     def download_link(self, dataset: str, filename: str):
         script = """
             from datcore import DatcoreClient
@@ -142,6 +155,7 @@ class DatcoreWrapper:
 
         return self._py2_call(script)
 
+    @make_async
     def create_test_dataset(self, dataset):
         script = """
             from datcore import DatcoreClient
@@ -164,6 +178,7 @@ class DatcoreWrapper:
 
         return self._py2_call(script)
 
+    @make_async
     def delete_test_dataset(self, dataset):
         script = """
             from datcore import DatcoreClient
@@ -183,7 +198,8 @@ class DatcoreWrapper:
 
         return self._py2_call(script)
 
-    def upload_file(self, dataset: str, local_path: str, meta_data: FileMetaData):
+    @make_async
+    def upload_file(self, dataset: str, local_path: str, meta_data: FileMetaData = None):
         json_meta = ""
         if meta_data:
             json_meta = json.dumps(attr.asdict(meta_data))
@@ -210,13 +226,3 @@ class DatcoreWrapper:
             """.format(self.api_token, self.api_secret, dataset, local_path, json_meta)
 
         return self._py2_call(script)
-
-    # TODO: Decorate this nicely and use the app event loop
-    async def upload_file_async(self, dataset: str, local_path: str, meta_data: FileMetaData):
-        loop = asyncio.get_event_loop()
-        blocking_task = loop.run_in_executor(self.executor, self.upload_file, dataset, local_path, meta_data)
-        _completed, _pending = await asyncio.wait([blocking_task])
-        return
-
-    async def upload_file_async_wrapper(self, dataset: str, local_path: str, meta_data: FileMetaData):
-        await self.upload_file_async(dataset, local_path, meta_data)
