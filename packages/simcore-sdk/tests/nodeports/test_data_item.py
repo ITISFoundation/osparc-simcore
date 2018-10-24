@@ -25,4 +25,3 @@ def test_default_item(item_value):
     item = DataItem(key="one key", value=item_value)
     assert item.key == "one key"
     assert item.value == item_value
-    assert item.new_data_cb is None    
