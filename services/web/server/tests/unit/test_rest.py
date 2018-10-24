@@ -14,11 +14,12 @@ import pytest
 import yaml
 from aiohttp import web
 
+from servicelib.response_utils import unwrap_envelope
 from simcore_service_webserver import resources, rest
 from simcore_service_webserver.application_keys import (APP_CONFIG_KEY,
-                                                          APP_OPENAPI_SPECS_KEY)
-from simcore_service_webserver.security import setup_security
+                                                        APP_OPENAPI_SPECS_KEY)
 from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.security import setup_security
 
 logging.basicConfig(level=logging.INFO)
 
@@ -186,7 +187,3 @@ async def test_auth_login(client, caplog):
     assert not error
     assert data # logs
     assert all( k in data for k in ('level', 'logger', 'message') )
-
-# utils
-def unwrap_envelope(payload):
-    return tuple( payload.get(k) for k in ('data', 'error') )
