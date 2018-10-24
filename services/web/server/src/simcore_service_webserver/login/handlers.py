@@ -9,7 +9,8 @@ from servicelib.rest_utils import extract_and_validate
 from ..db_models import UserRole, UserStatus, ConfirmationAction
 from ..security import (authorized_userid, check_password, encrypt_password,
                         forget, login_required, remember)
-from .cfg import cfg
+from .cfg import cfg # FIXME: do not use singletons!
+from . import get_storage
 from .storage import AsyncpgStorage
 from .utils import (common_themed, get_client_ip, is_confirmation_allowed,
                     is_confirmation_expired, make_confirmation_link,
@@ -32,7 +33,7 @@ async def register(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
     # see https://aiohttp.readthedocs.io/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
-    db = cfg.STORAGE # FIXME: this should go in reuqest.app['db']
+    db = get_storage(request.app)
     email = body.email
     username = email.split('@')[0]
     password = body.password
@@ -87,7 +88,7 @@ async def register(request: web.Request):
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
-    db = cfg.STORAGE
+    db = get_storage(request.app)
     email = body.email
     password = body.password
 
@@ -137,7 +138,7 @@ async def reset_password(request: web.Request):
     """
     _, _, body = await extract_and_validate(request)
 
-    db = cfg.STORAGE
+    db = get_storage(request.app)
     email = body.email
 
     user = await db.get_user({'email': email})
@@ -189,7 +190,7 @@ async def _reset_password_allowed(request: web.Request, confirmation):
     """
     _, _, body = await extract_and_validate(request)
 
-    db = cfg.STORAGE
+    db = get_storage(request.app)
     new_password = body.password
 
     # TODO validate good password
@@ -210,11 +211,11 @@ async def _reset_password_allowed(request: web.Request, confirmation):
 async def change_email(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
-    db = cfg.STORAGE
+    db = get_storage(request.app)
     email = body.new_email
 
     # TODO: add in request storage. Insert in login_required decorator
-    user = await get_current_user(request)
+    user = await _get_current_user(request, db)
     assert user, "Cannot identify user"
 
     # TODO: validate new email!!!
@@ -250,10 +251,10 @@ async def change_email(request: web.Request):
 
 @login_required
 async def change_password(request: web.Request):
-    db = cfg.STORAGE
+    db = get_storage(request.app)
 
     # TODO: add in request storage. Insert in login_required decorator
-    user = await get_current_user(request)
+    user = await _get_current_user(request, db)
     assert user, "Cannot identify user"
 
     _, _, body = await extract_and_validate(request)
@@ -277,7 +278,7 @@ async def email_confirmation(request: web.Request):
     """
     params, _, _ = await extract_and_validate(request)
 
-    db = cfg.STORAGE
+    db = get_storage(request.app)
     code = params['code']
 
     confirmation = await db.get_confirmation({'code': code})
@@ -321,10 +322,10 @@ def flash_response(msg: str, level: str="INFO"):
     })
     return response
 
-async def get_current_user(request: web.Request):
+async def _get_current_user(request: web.Request, db: AsyncpgStorage):
     # TODO: add in request storage. Insert in login_required decorator
     user_id = await authorized_userid(request)
-    user = await cfg.STORAGE.get_user({'id': user_id})
+    user = await db.get_user({'id': user_id})
     return user
 
 async def validate_registration(email: str, password: str, confirm: str, db: AsyncpgStorage):
