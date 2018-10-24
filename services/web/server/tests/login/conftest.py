@@ -96,7 +96,7 @@ def postgres_db(app_cfg, postgres_service): # NOTE: if postgres_services started
     engine.dispose()
 
 @pytest.fixture
-def server(loop, aiohttp_server, app_cfg, monkeypatch, aiohttp_unused_port, postgres_db):
+def server(loop, aiohttp_server, app_cfg, monkeypatch, aiohttp_unused_port, postgres_db): #pylint: disable=R0913
     port = app_cfg["main"]["port"] = aiohttp_unused_port()
 
     app = create_application(app_cfg)

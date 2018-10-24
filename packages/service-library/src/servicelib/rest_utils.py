@@ -3,7 +3,7 @@
     Miscelaneous of functions and classes to build rest API sub-module
 """
 import json
-from typing import Dict, Tuple
+from typing import Dict
 
 import attr
 from aiohttp import web
