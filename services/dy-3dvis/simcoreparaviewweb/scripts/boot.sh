@@ -17,7 +17,7 @@ then
     # TODO: host name shall be defined dynamically instead of stupidely hard-coded
     host_name="localhost"    
 else
-    host_name="osparc01.speag.com"    
+    host_name="osparc01.itis.ethz.ch"    
 fi
 
 echo "modifying apache configuration..."
