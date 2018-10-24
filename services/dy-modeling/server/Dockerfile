@@ -48,7 +48,7 @@ CMD ["nodemon", "-L", "start"]
 #---------------------Production------------------
 FROM common AS production
 WORKDIR /home/node/
-COPY --from=dy-modeling_client:latest /home/node/qxapp/build-output source-output
+COPY --from=dy-modeling_client:latest /home/scu/client/build-output source-output
 COPY source /home/node/source
 RUN npm install -y
 
