@@ -20,9 +20,9 @@ services:
         VCS_REF: 
         BUILD_DATE:
       labels: 
-        io.simcore.key: '{"key": "simcore/services/dynamic/modeler"}'
+        io.simcore.key: '{"key": "simcore/services/dynamic/modeler/webserver"}'
         io.simcore.outputs: '{"outputs": []}'
-        io.simcore.tag: '{"tag": "0.0.1"}'
+        io.simcore.tag: '{"tag": "${MODELER_VERSION}"}'
         io.simcore.dependencies: '[{"key": "simcore/services/dynamic/modeler/xrpc-worker", "tag": "1.9"}]'
         io.simcore.name: '{"name": "modeler"}'
         io.simcore.description: '{"description": "Modeler viewer"}'
