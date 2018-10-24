@@ -9,35 +9,12 @@ from aiohttp import web
 from servicelib.response_utils import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login import get_storage
-from simcore_service_webserver.login.cfg import cfg
-from utils import NewUser, parse_link
+from simcore_service_webserver.login.cfg import cfg # TODO: remove this by get_storage
+from utils_login import NewUser, parse_link
+from utils_assert import assert_error, assert_status
 
 EMAIL, PASSWORD = 'tester@test.com', 'password'
 
-
-async def assert_status(response: web.Response, expected_cls:web.HTTPException):
-    data, error = unwrap_envelope(await response.json())
-    assert response.status == expected_cls.status_code, (data, error)
-    assert data
-    assert not error
-    return data, error
-
-
-async def assert_error(response: web.Response, expected_cls:web.HTTPException, expected_msg: str=None):
-    data, error = unwrap_envelope(await response.json())
-
-    assert not data
-    assert error
-
-    assert len(error['errors']) == 1
-
-    err = error['errors'][0]
-    if expected_msg:
-        assert expected_msg in err['message']
-    assert expected_cls.__name__  == err['code']
-    return data, error
-
-# TESTS ---------------------------------------------------------------------
 
 async def test_regitration_availibility(client):
     url = client.app.router['auth_register'].url_for()
@@ -138,5 +115,4 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
 
 
 if __name__ == '__main__':
-    import pytest
     pytest.main([__file__, '--maxfail=1'])

@@ -9,10 +9,9 @@ from aiohttp import web
 from servicelib.response_utils import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login.cfg import cfg
-from utils import NewUser
+from utils_login import NewUser
 
 EMAIL, PASSWORD = 'tester@test.com', 'password'
-
 
 
 async def test_login_with_unknown_email(client):
