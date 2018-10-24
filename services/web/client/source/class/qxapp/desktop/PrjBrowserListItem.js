@@ -58,7 +58,7 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
     }
   },
 
-  members: {
+  members: { // eslint-disable-line qx-rules/no-refs-in-members
     _dateFormat: null,
 
     // overridden
@@ -125,7 +125,7 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       const dateStr = this._dateFormat.format(value);
       label.setValue("Created on: <b>" + dateStr + "</b>");
     },
-    // eslint-disable-next-line qx-rules/no-refs-in-members
+
     _forwardStates: {
       focused : true,
       hovered : true,
