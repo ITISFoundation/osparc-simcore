@@ -22,7 +22,7 @@ def _check_type(item_type, value):
 
 class Item():
     def __init__(self, schema:SchemaItem, data:DataItem):
-        if not schema or not data:
+        if not schema:
             raise exceptions.InvalidProtocolError(None, msg="empty schema or payload")
         self._schema = schema
         self._data = data
