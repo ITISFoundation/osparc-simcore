@@ -4,13 +4,22 @@
 VERSION := $(shell uname -a)
 # SAN this is a hack so that docker-compose works in the linux virtual environment under Windows
 ifneq (,$(findstring Microsoft,$(VERSION)))
+$(info    detected WSL)
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 export RUN_DOCKER_ENGINE_ROOT=1
 # Windows does not have these things defined... but they are needed to execute a local swarm
 export DOCKER_GID=1042
 export HOST_GID=1000
+else ifeq ($(OS), Windows_NT)
+$(info    detected Powershell/CMD)
+export DOCKER_COMPOSE=docker-compose.exe
+export DOCKER=docker.exe
+export RUN_DOCKER_ENGINE_ROOT=1
+export DOCKER_GID=1042
+export HOST_GID=1000
 else
+$(info    detected native linux)
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 export RUN_DOCKER_ENGINE_ROOT=0
@@ -111,6 +120,8 @@ PLATFORM_VERSION=3.13
 
 push_platform_images:
 	${DOCKER} login masu.speag.com
+	${DOCKER} tag services_apihub:latest masu.speag.com/simcore/workbench/apihub:${PLATFORM_VERSION}
+	${DOCKER} push masu.speag.com/simcore/workbench/apihub:${PLATFORM_VERSION}
 	${DOCKER} tag services_webserver:latest masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
 	${DOCKER} push masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
 	${DOCKER} tag services_sidecar:latest masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}

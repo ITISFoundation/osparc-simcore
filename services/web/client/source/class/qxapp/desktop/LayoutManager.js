@@ -9,6 +9,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       layout: new qx.ui.layout.VBox()
     });
 
+    this.__servicesPreload();
     this.__nodeCheck();
 
     this.__navBar = this.__createNavigationBar();
@@ -37,16 +38,15 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     this.__prjBrowser.addListener("StartProject", e => {
       const data = e.getData();
-      const projectUuid = data.projectUuid;
-      const projectName = data.name;
+      const projectModel = data.projectModel;
       if (this.__prjEditor) {
         this.__prjStack.remove(this.__prjEditor);
       }
-      this.__prjEditor = new qxapp.desktop.PrjEditor(projectUuid);
+      this.__prjEditor = new qxapp.desktop.PrjEditor(projectModel);
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
       this.__navBar.setMainViewCaption([{
-        "root": projectName
+        "root": projectModel.getName()
       }]);
 
       this.__prjEditor.addListener("ChangeMainViewCaption", function(ev) {
@@ -92,6 +92,11 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
         }
       });
       nodeCheck.send();
+    },
+
+    __servicesPreload: function() {
+      let store = qxapp.data.Store.getInstance();
+      store.getServices();
     }
   }
 });

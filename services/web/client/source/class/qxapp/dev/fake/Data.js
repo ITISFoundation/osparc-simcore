@@ -163,16 +163,16 @@ qx.Class.define("qxapp.dev.fake.Data", {
       };
     },
 
-    getProjectList: function() {
+    getUserProjectList: function() {
       return [
         {
           projectUuid: "07640335-a91f-468c-ab69-a374fa82078d",
           name: "Sample Project",
           description: "A little fake project without actual backend",
           notes: "# title\nThere be dragons inside",
-          owner: "UUID-OF-TOBI",
+          owner: "TOBI",
           collaborators: {
-            "UUID-OF-PEDRO": [
+            "PEDRO": [
               "read",
               "write"
             ]
@@ -260,9 +260,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
           name: "Sample Project II",
           description: "An empty project",
           notes: "# title\nThere be dragons inside",
-          owner: "UUID-OF-TOBI",
+          owner: "TOBI",
           collaborators: {
-            "UUID-OF-PEDRO": [
+            "PEDRO": [
               "read",
               "write"
             ]
@@ -324,9 +324,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
           name: "Macros",
           description: "Project containing nested custom macros",
           notes: "# title\nBlah",
-          owner: "UUID-OF-ODEI",
+          owner: "ODEI",
           collaborators: {
-            "UUID-OF-ODEI": [
+            "ODEI": [
               "read",
               "write"
             ]
@@ -403,13 +403,450 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "Container2"
             }
           }
+        }
+      ];
+    },
+
+    getPublicProjectList: function() {
+      return [
+        {
+          "projectUuid": "f8000108-2744-41e9-a1a7-f7d4f3a8f26b",
+          "name": "Colleen Clancy use cases",
+          "description": "All use cases: 0D, 1D, 2D",
+          "notes": "Empty",
+          "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
+          "owner": "Colleen Clancy",
+          "collaborators": {},
+          "creationDate": "2018-10-23T09:13:13.360Z",
+          "lastChangeDate": "2018-10-23T09:33:41.858Z",
+          "workbench": {
+            "0b42c964-195d-4674-b758-946151cae351": {
+              "label": "File Picker 0D",
+              "inputs": {},
+              "inputNodes": [],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 100,
+                "y": 150
+              },
+              "key": "service/dynamic/itis/file-picker",
+              "version": "0.0.0"
+            },
+            "418bd484-905b-4212-8108-c7cfab4f241e": {
+              "label": "File Picker 1&2 D",
+              "inputs": {},
+              "inputNodes": [],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 100,
+                "y": 400
+              },
+              "key": "service/dynamic/itis/file-picker",
+              "version": "0.0.0"
+            },
+            "Container0D": {
+              label: "CC 0D",
+              inputs: {},
+              outputs: {},
+              inputNodes: [
+                "0b42c964-195d-4674-b758-946151cae351"
+              ],
+              outputNode: false,
+              position: {
+                x: 400,
+                y: 50
+              }
+            },
+            "Container1D": {
+              label: "CC 1D",
+              inputs: {},
+              outputs: {},
+              inputNodes: [
+                "418bd484-905b-4212-8108-c7cfab4f241e"
+              ],
+              outputNode: false,
+              position: {
+                x: 400,
+                y: 300
+              }
+            },
+            "Container2D": {
+              label: "CC 2D",
+              inputs: {},
+              outputs: {},
+              inputNodes: [
+                "418bd484-905b-4212-8108-c7cfab4f241e",
+                "Container1D"
+              ],
+              outputNode: false,
+              position: {
+                x: 700,
+                y: 500
+              }
+            },
+            "5986cf64-9f81-409d-998c-c1f04de67f8b": {
+              "label": "DBP-Clancy-Rabbit-Single-Cell solver v 0.0.2",
+              "inputs": {
+                "Na": 0,
+                "Kr": 0,
+                "BCL": 200,
+                "NBeats": 5,
+                "Ligand": 0,
+                "cAMKII": "WT",
+                "initial_WTstates": {
+                  "nodeUuid": "0b42c964-195d-4674-b758-946151cae351",
+                  "output": "outFile"
+                }
+              },
+              "inputNodes": [
+                "0b42c964-195d-4674-b758-946151cae351"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": "Container0D",
+              "position": {
+                "x": 300,
+                "y": 400
+              },
+              "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
+              "version": "0.0.1"
+            },
+            "00336089-9984-43e7-9fda-cf9625e59986": {
+              "label": "cc-0d-viewer",
+              "inputs": {
+                "vm_1Hz": {
+                  "nodeUuid": "5986cf64-9f81-409d-998c-c1f04de67f8b",
+                  "output": "vm_1Hz"
+                },
+                "all_results_1Hz": {
+                  "nodeUuid": "5986cf64-9f81-409d-998c-c1f04de67f8b",
+                  "output": "allresult_1Hz"
+                }
+              },
+              "inputNodes": [
+                "5986cf64-9f81-409d-998c-c1f04de67f8b"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": "Container0D",
+              "position": {
+                "x": 600,
+                "y": 200
+              },
+              "key": "simcore/services/dynamic/cc-0d-viewer",
+              "version": "1.1.0"
+            },
+            "5e548936-ee08-43f3-ab01-a58e7c49a946": {
+              "label": "DBP-Clancy-Rabbit-1-D solver v 0.0.1",
+              "inputs": {
+                "Na": 0,
+                "Kr": 0,
+                "BCL": 10,
+                "NBeats": 1,
+                "Ligand": 0,
+                "cAMKII": "WT",
+                "tw": 5,
+                "tl": 200,
+                "homogeneity": "heterogeneous",
+                "initial_WTstates": {
+                  "nodeUuid": "418bd484-905b-4212-8108-c7cfab4f241e",
+                  "output": "outFile"
+                }
+              },
+              "inputNodes": [
+                "418bd484-905b-4212-8108-c7cfab4f241e"
+              ],
+              "outputNode": true,
+              "outputs": {},
+              "parent": "Container1D",
+              "position": {
+                "x": 300,
+                "y": 400
+              },
+              "key": "simcore/services/comp/ucdavis/cardiac-oned",
+              "version": "0.0.1"
+            },
+            "c3e872c0-b105-40ce-8d33-7d501a694550": {
+              "label": "DBP-Clancy-Rabbit-2-D solver v 0.0.1",
+              "inputs": {
+                "Na": 0,
+                "Kr": 0,
+                "BCL": 10,
+                "Ligand": 0,
+                "cAMKII": "WT",
+                "tw": 5,
+                "tl": 200,
+                "homogeneity": "heterogeneous",
+                "initial_WTstates": {
+                  "nodeUuid": "418bd484-905b-4212-8108-c7cfab4f241e",
+                  "output": "outFile"
+                },
+                "fiber": {
+                  "nodeUuid": "5e548936-ee08-43f3-ab01-a58e7c49a946",
+                  "output": "fiber"
+                }
+              },
+              "inputNodes": [
+                "418bd484-905b-4212-8108-c7cfab4f241e",
+                "Container1"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": "Container2D",
+              "position": {
+                "x": 300,
+                "y": 400
+              },
+              "key": "simcore/services/comp/ucdavis/cardiac-twod",
+              "version": "0.0.1"
+            },
+            "c354690d-c9c4-47f5-a089-cc4e2eec30b3": {
+              "label": "cc-1d-viewer",
+              "inputs": {
+                "ECGs": "null",
+                "y_1D": "null"
+              },
+              "inputNodes": [
+                "5e548936-ee08-43f3-ab01-a58e7c49a946"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": "Container1D",
+              "position": {
+                "x": 600,
+                "y": 200
+              },
+              "key": "simcore/services/dynamic/cc-1d-viewer",
+              "version": "1.1.0"
+            },
+            "ef9404ef-324f-46b7-825c-6f0f614c54ef": {
+              "label": "cc-2d-viewer",
+              "inputs": {
+                "ap": "null"
+              },
+              "inputNodes": [
+                "c3e872c0-b105-40ce-8d33-7d501a694550"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": "Container2D",
+              "position": {
+                "x": 600,
+                "y": 200
+              },
+              "key": "simcore/services/dynamic/cc-2d-viewer",
+              "version": "1.1.0"
+            }
+          }
+        }, {
+          "projectUuid": "61d5829d-426a-49a8-8292-c701530e6e35",
+          "name": "Colleen Clancy use cases expanded",
+          "description": "All use cases: 0D, 1D, 2D",
+          "notes": "Empty",
+          "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
+          "owner": "Colleen Clancy",
+          "collaborators": {},
+          "creationDate": "2018-10-23T09:13:13.360Z",
+          "lastChangeDate": "2018-10-23T09:33:41.858Z",
+          "workbench": {
+            "0b42c964-195d-4674-b758-946151cae351": {
+              "label": "File Picker",
+              "inputs": {},
+              "inputNodes": [],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 108,
+                "y": 131
+              },
+              "key": "service/dynamic/itis/file-picker",
+              "version": "0.0.0"
+            },
+            "5986cf64-9f81-409d-998c-c1f04de67f8b": {
+              "label": "DBP-Clancy-Rabbit-Single-Cell solver v 0.0.2",
+              "inputs": {
+                "Na": 0,
+                "Kr": 0,
+                "BCL": 200,
+                "NBeats": 5,
+                "Ligand": 0,
+                "cAMKII": "WT",
+                "initial_WTstates": {
+                  "nodeUuid": "0b42c964-195d-4674-b758-946151cae351",
+                  "output": "outFile"
+                }
+              },
+              "inputNodes": [
+                "0b42c964-195d-4674-b758-946151cae351"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 393,
+                "y": 131
+              },
+              "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
+              "version": "0.0.1"
+            },
+            "00336089-9984-43e7-9fda-cf9625e59986": {
+              "label": "cc-0d-viewer",
+              "inputs": {
+                "vm_1Hz": {
+                  "nodeUuid": "5986cf64-9f81-409d-998c-c1f04de67f8b",
+                  "output": "vm_1Hz"
+                },
+                "all_results_1Hz": {
+                  "nodeUuid": "5986cf64-9f81-409d-998c-c1f04de67f8b",
+                  "output": "allresult_1Hz"
+                }
+              },
+              "inputNodes": [
+                "5986cf64-9f81-409d-998c-c1f04de67f8b"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 681,
+                "y": 131
+              },
+              "key": "simcore/services/dynamic/cc-0d-viewer",
+              "version": "1.1.0"
+            },
+            "418bd484-905b-4212-8108-c7cfab4f241e": {
+              "label": "File Picker",
+              "inputs": {},
+              "inputNodes": [],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 100,
+                "y": 429
+              },
+              "key": "service/dynamic/itis/file-picker",
+              "version": "0.0.0"
+            },
+            "5e548936-ee08-43f3-ab01-a58e7c49a946": {
+              "label": "DBP-Clancy-Rabbit-1-D solver v 0.0.1",
+              "inputs": {
+                "Na": 0,
+                "Kr": 0,
+                "BCL": 10,
+                "NBeats": 1,
+                "Ligand": 0,
+                "cAMKII": "WT",
+                "tw": 5,
+                "tl": 200,
+                "homogeneity": "heterogeneous",
+                "initial_WTstates": {
+                  "nodeUuid": "418bd484-905b-4212-8108-c7cfab4f241e",
+                  "output": "outFile"
+                }
+              },
+              "inputNodes": [
+                "418bd484-905b-4212-8108-c7cfab4f241e"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 363,
+                "y": 346
+              },
+              "key": "simcore/services/comp/ucdavis/cardiac-oned",
+              "version": "0.0.1"
+            },
+            "c3e872c0-b105-40ce-8d33-7d501a694550": {
+              "label": "DBP-Clancy-Rabbit-2-D solver v 0.0.1",
+              "inputs": {
+                "Na": 0,
+                "Kr": 0,
+                "BCL": 10,
+                "Ligand": 0,
+                "cAMKII": "WT",
+                "tw": 5,
+                "tl": 200,
+                "homogeneity": "heterogeneous",
+                "initial_WTstates": {
+                  "nodeUuid": "418bd484-905b-4212-8108-c7cfab4f241e",
+                  "output": "outFile"
+                },
+                "fiber": {
+                  "nodeUuid": "5e548936-ee08-43f3-ab01-a58e7c49a946",
+                  "output": "fiber"
+                }
+              },
+              "inputNodes": [
+                "418bd484-905b-4212-8108-c7cfab4f241e",
+                "5e548936-ee08-43f3-ab01-a58e7c49a946"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 603,
+                "y": 517
+              },
+              "key": "simcore/services/comp/ucdavis/cardiac-twod",
+              "version": "0.0.1"
+            },
+            "c354690d-c9c4-47f5-a089-cc4e2eec30b3": {
+              "label": "cc-1d-viewer",
+              "inputs": {
+                "ECGs": "null",
+                "y_1D": "null"
+              },
+              "inputNodes": [
+                "5e548936-ee08-43f3-ab01-a58e7c49a946"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 844,
+                "y": 348
+              },
+              "key": "simcore/services/dynamic/cc-1d-viewer",
+              "version": "1.1.0"
+            },
+            "ef9404ef-324f-46b7-825c-6f0f614c54ef": {
+              "label": "cc-2d-viewer",
+              "inputs": {
+                "ap": "null"
+              },
+              "inputNodes": [
+                "c3e872c0-b105-40ce-8d33-7d501a694550"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 850,
+                "y": 517
+              },
+              "key": "simcore/services/dynamic/cc-2d-viewer",
+              "version": "1.1.0"
+            }
+          }
         }, {
           projectUuid: "345a37ab-5346-4983-951a-19ba2ef9ca0f",
           name: "LF Simulator",
           description: "LF Simulator",
           notes: "",
-          owner: "UUID-OF-ODEI",
-          collaborators: {},
+          owner: "ODEI",
+          collaborators: {
+            "ODEI": [
+              "read",
+              "write"
+            ]
+          },
           creationDate: "2018-07-08T16:01:00Z",
           lastChangeDate: "2018-07-09T16:02:22Z",
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?8.jpg",
@@ -565,8 +1002,13 @@ qx.Class.define("qxapp.dev.fake.Data", {
           name: "LF Simulator expanded",
           description: "LF Simulator expanded",
           notes: "",
-          owner: "UUID-OF-ODEI",
-          collaborators: {},
+          owner: "ODEI",
+          collaborators: {
+            "ODEI": [
+              "read",
+              "write"
+            ]
+          },
           creationDate: "2018-08-31T12:44:03Z",
           lastChangeDate: "2018-08-31T13:21:24Z",
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?3.jpg",
@@ -755,6 +1197,12 @@ qx.Class.define("qxapp.dev.fake.Data", {
       ];
     },
 
+    getProjectList: function() {
+      let userList = this.getUserProjectList();
+      let publicList = this.getPublicProjectList();
+      return userList.concat(publicList);
+    },
+
     getProjectData: function(projectUuid) {
       const projectList = this.getProjectList();
       for (let i = 0; i < projectList.length; i++) {
@@ -775,47 +1223,376 @@ qx.Class.define("qxapp.dev.fake.Data", {
 
     getObjectList: function() {
       const objects = [{
-        "file_uuid": "simcore.s3/simcore-testing/105/10000/3",
+        "file_uuid": "simcore.s3/simcore-testing/103/10003/8",
+        "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "105/10000/3",
-        "project_id": 105,
-        "project_name": "futurology",
-        "node_id": 10000,
+        "object_name": "103/10003/8",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_id": "8",
+        "file_name": "8",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/103/10001/11",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10001/11",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_id": "11",
+        "file_name": "11",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/102/10001/18",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10001/18",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_id": "18",
+        "file_name": "18",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/101/10003/26",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "101/10003/26",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_id": "26",
+        "file_name": "26",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/102/10003/27",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10003/27",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_id": "27",
+        "file_name": "27",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/106/10002/29",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10002/29",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_id": "29",
+        "file_name": "29",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/102/10002/32",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10002/32",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_id": "32",
+        "file_name": "32",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/104/10000/40",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10000/40",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10000",
         "node_name": "alpha",
-        "file_id": "3",
-        "file_name": "hallo",
-        "user_id": 13,
-        "user_name": "dennis"
+        "file_id": "40",
+        "file_name": "40",
+        "user_id": "10",
+        "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/105/10000/4",
+        "file_uuid": "simcore.s3/simcore-testing/101/10002/41",
+        "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "105/10000/4",
-        "project_id": 105,
-        "project_name": "futurology",
-        "node_id": 10000,
+        "object_name": "101/10002/41",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_id": "41",
+        "file_name": "41",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/101/10000/51",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "101/10000/51",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10000",
         "node_name": "alpha",
-        "file_id": "3",
-        "file_name": "hallo 2",
-        "user_id": 13,
-        "user_name": "dennis"
+        "file_id": "51",
+        "file_name": "51",
+        "user_id": "10",
+        "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/13/5",
+        "file_uuid": "simcore.s3/simcore-testing/102/10002/52",
+        "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "13/5",
-        "file_id": "5",
-        "file_name": "My file 1",
-        "user_id": 13,
-        "user_name": "dennis"
+        "object_name": "102/10002/52",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_id": "52",
+        "file_name": "52",
+        "user_id": "10",
+        "user_name": "alice"
       }, {
-        "file_uuid": "datcore/my_datcore/6",
-        "location": "datcore",
-        "bucket_name": "my_datcore",
-        "object_name": "6",
-        "file_id": "3",
-        "file_name": "DatCore file 1"
+        "file_uuid": "simcore.s3/simcore-testing/105/10001/55",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10001/55",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_id": "55",
+        "file_name": "55",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/106/10001/56",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10001/56",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_id": "56",
+        "file_name": "56",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/106/10001/57",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10001/57",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_id": "57",
+        "file_name": "57",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/103/10001/60",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10001/60",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_id": "60",
+        "file_name": "60",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/105/10001/61",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10001/61",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_id": "61",
+        "file_name": "61",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/102/10002/64",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10002/64",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_id": "64",
+        "file_name": "64",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/100/10002/70",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "100/10002/70",
+        "project_id": "100",
+        "project_name": "astronomy",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_id": "70",
+        "file_name": "70",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/104/10002/71",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10002/71",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_id": "71",
+        "file_name": "71",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/106/10003/72",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10003/72",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_id": "72",
+        "file_name": "72",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/101/10003/76",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "101/10003/76",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_id": "76",
+        "file_name": "76",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/104/10003/79",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10003/79",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_id": "79",
+        "file_name": "79",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/102/10002/86",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10002/86",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_id": "86",
+        "file_name": "86",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/106/10002/95",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10002/95",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_id": "95",
+        "file_name": "95",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore.s3/simcore-testing/103/10003/96",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10003/96",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_id": "96",
+        "file_name": "96",
+        "user_id": "10",
+        "user_name": "alice"
+      }, {
+        "file_uuid": "simcore/106/10002/95",
+        "location": "simcore.sandbox",
+        "bucket_name": "simcore",
+        "object_name": "106/10002/789",
+        "file_name": "789",
+        "size": 17224423
+      }, {
+        "file_uuid": "simcore/103/10003/96",
+        "location": "simcore.sandbox",
+        "bucket_name": "simcore",
+        "object_name": "103/10003/dfgh",
+        "file_name": "dfgh",
+        "size": 7675509
+      }, {
+        "file_uuid": "simcore/Large.jpg",
+        "location": "simcore.sandbox",
+        "bucket_name": "simcore",
+        "object_name": "Large.jpg",
+        "file_name": "dfgh",
+        "size": 342456230
       }];
       return objects;
     },
@@ -922,9 +1699,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
         name: "Colleen Clancy template",
         description: "Template for the Colleen Clancy template",
         notes: "# title\nSingle Cell",
-        owner: "UUID-OF-CC",
+        owner: "CC",
         collaborators: {
-          "UUID-OF-PEDRO": [
+          "PEDRO": [
             "read",
             "write"
           ]
