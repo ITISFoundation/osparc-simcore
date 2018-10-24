@@ -83,11 +83,13 @@ async def list_S3_objects(sid, data):
 
     objects = s3_client.list_objects_v2(_config.bucket_name)
     data_out = []
+    location = "simcore.sandbox"
     for obj in objects:
         obj_info = {}
-        obj_info["path"] = obj.bucket_name + "/" + obj.object_name
-        # FIXME: @maiz: this does not work, please review
-        #obj_info["lastModified"] = obj.last_modified.isoformat()
+        obj_info["file_uuid"] = obj.bucket_name + "/" + obj.object_name
+        obj_info["location"] = location
+        obj_info["bucket_name"] = obj.bucket_name
+        obj_info["object_name"] = obj.object_name
         obj_info["size"] = obj.size
         data_out.append(obj_info)
     try:

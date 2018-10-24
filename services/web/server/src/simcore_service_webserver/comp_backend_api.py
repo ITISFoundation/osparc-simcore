@@ -8,6 +8,7 @@
 import asyncio
 import datetime
 import logging
+from pathlib import Path
 
 import async_timeout
 import sqlalchemy.exc
@@ -20,8 +21,8 @@ from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 
 from . import api_converter
-from .comp_backend_worker import celery
 from .application_keys import APP_CONFIG_KEY
+from .comp_backend_worker import celery
 
 # TODO: this should be coordinated with postgres options from config/server.yaml
 #from simcore_sdk.config.db import Config as DbConfig
@@ -118,14 +119,14 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
                     if node_uuid not in dag_adjacency_list[input_node_uuid] and is_node_computational:
                         dag_adjacency_list[input_node_uuid].append(node_uuid)
 
-        for output_key, output_data in node_outputs.items():
+        for _, output_data in node_outputs.items():
             if not isinstance(output_data, dict):
                 continue
             if all(k in output_data for k in ("store", "path")):
                 if output_data["store"] == "s3-z43":
                     current_filename_on_s3 = output_data["path"]
                     if current_filename_on_s3:
-                        new_filename = key + "/" + output_key # in_1
+                        new_filename = key + "/" + Path(current_filename_on_s3).name
                         # copy the file
                         io_files.append({ "from" : current_filename_on_s3, "to" : new_filename })
 
