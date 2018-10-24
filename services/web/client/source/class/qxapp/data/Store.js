@@ -862,6 +862,61 @@ qx.Class.define("qxapp.data.Store", {
         this.fireDataEvent("servicesRegistered", services);
       }, this);
       req.send();
+    },
+
+    getS3SandboxFiles: function() {
+      const slotName = "listObjects";
+      let socket = qxapp.wrappers.WebSocket.getInstance();
+      socket.removeSlot(slotName);
+      socket.on(slotName, function(data) {
+        console.log(slotName, data);
+        this.fireDataEvent("S3PublicDocuments", data);
+      }, this);
+      socket.emit(slotName);
+
+      if (!socket.getSocket().connected) {
+        let data = qxapp.dev.fake.Data.getObjectList();
+        console.log("Fake", slotName, data);
+        this.fireDataEvent("S3PublicDocuments", data);
+      }
+    },
+
+    getMyDocuments: function() {
+      let reqLoc = new qxapp.io.request.ApiRequest("/storage/locations", "GET");
+
+      reqLoc.addListener("success", eLoc => {
+        const {
+          dataLoc
+        } = eLoc.getTarget().getResponse();
+        const locations = dataLoc["locations"];
+        for (let i=0; i<locations.length; i++) {
+          const locationId = locations[i];
+          const endPoint = "/storage/locations/" + locationId + "/files";
+          let reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
+
+          reqFiles.addListener("success", eFiles => {
+            const {
+              dataFiles
+            } = eFiles.getTarget().getResponse();
+            const files = dataFiles["files"];
+            this.fireDataEvent("MyDocuments", files);
+          }, this);
+
+          reqFiles.addListener("fail", e => {
+            const {
+              error
+            } = e.getTarget().getResponse();
+            console.log("Failed getting Storage Locations", error);
+          });
+        }
+      }, this);
+
+      reqLoc.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        console.log("Failed getting Storage Locations", error);
+      });
     }
   }
 });

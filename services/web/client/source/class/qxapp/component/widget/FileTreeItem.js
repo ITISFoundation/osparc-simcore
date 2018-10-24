@@ -12,16 +12,23 @@
 
    Authors:
      * Tobias Oetiker (oetiker)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.component.widget.NodeTreeItem", {
+qx.Class.define("qxapp.component.widget.FileTreeItem", {
   extend : qx.ui.tree.VirtualTreeItem,
 
   properties : {
-    nodeId : {
+    fileId : {
       check : "String",
-      event: "changeNodeId",
+      event: "changeFileId",
+      nullable : true
+    },
+
+    size : {
+      check : "String",
+      event: "changeSize",
       nullable : true
     }
   },
@@ -44,10 +51,21 @@ qx.Class.define("qxapp.component.widget.NodeTreeItem", {
       });
 
       // Add a NodeId
-      var nodeIdWidget = new qx.ui.basic.Label();
-      this.bind("nodeId", nodeIdWidget, "value");
-      nodeIdWidget.setMaxWidth(250);
-      this.addWidget(nodeIdWidget);
+      var fileIdWidget = new qx.ui.basic.Label();
+      this.bind("fileId", fileIdWidget, "value");
+      fileIdWidget.setMaxWidth(250);
+      this.addWidget(fileIdWidget);
+
+      // All else should be right justified
+      this.addWidget(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      // Add a NodeId
+      var sizeWidget = new qx.ui.basic.Label();
+      this.bind("size", sizeWidget, "value");
+      sizeWidget.setMaxWidth(250);
+      this.addWidget(sizeWidget);
     }
   }
 });
