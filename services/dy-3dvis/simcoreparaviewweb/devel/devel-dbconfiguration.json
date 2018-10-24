@@ -6,14 +6,14 @@
             "label": "some 3D dataset",
             "desc": "A mesh, volume data",
             "type": "file-url",
-            "value": "link.SIMCORE_NODE_UUID.in_1"
+            "value": "link.SIMCORE_NODE_UUID.FILENAME_ID"
         },
         {
             "key": "in_2",
             "label": "some 3D dataset",
             "desc": "A mesh, volume data",
             "type": "file-url",
-            "value": "link.SIMCORE_NODE_UUID.in_2"
+            "value": "link.SIMCORE_NODE_UUID.FILENAME_ID"
         }
     ],
     "outputs": [        
