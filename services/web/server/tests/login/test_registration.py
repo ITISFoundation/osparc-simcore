@@ -65,7 +65,6 @@ async def test_registration_without_confirmation(client, monkeypatch):
     monkeypatch.setitem(cfg, 'REGISTRATION_CONFIRMATION_REQUIRED', False)
     db = get_storage(client.app)
     url = client.app.router['auth_register'].url_for()
-
     r = await client.post(url, json={
         'email': EMAIL,
         'password': PASSWORD,
@@ -84,7 +83,6 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
     monkeypatch.setitem(cfg, 'REGISTRATION_CONFIRMATION_REQUIRED', True)
     db = get_storage(client.app)
     url = client.app.router['auth_register'].url_for()
-
     r = await client.post(url, json={
         'email': EMAIL,
         'password': PASSWORD,
