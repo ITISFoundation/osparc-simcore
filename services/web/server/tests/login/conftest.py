@@ -5,6 +5,7 @@
 # pylint:disable=redefined-outer-name
 
 
+import os
 import sys
 from pathlib import Path
 
@@ -16,7 +17,7 @@ import yaml
 import simcore_service_webserver.utils
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.db import DNS
-from simcore_service_webserver.db_models import metadata, users, confirmations
+from simcore_service_webserver.db_models import confirmations, metadata, users
 from simcore_service_webserver.settings import CONFIG_SCHEMA
 
 
@@ -33,14 +34,59 @@ def app_cfg(here):
     cfg_dict = trafaret_config.read_and_validate(cfg_path, CONFIG_SCHEMA)
     return cfg_dict
 
-@pytest.fixture
-def postgres_db(app_cfg):
-    # Configures db and initializes tables
-    # uses syncrounous engine for that
+@pytest.fixture(scope='session')
+def docker_compose_file(here, app_cfg):
+    """ Overrides pytest-docker fixture
+    """
+    old = os.environ.copy()
 
+    cfg = app_cfg["postgres"]
+
+    # docker-compose reads these environs
+    os.environ['TEST_POSTGRES_DB']=cfg['database']
+    os.environ['TEST_POSTGRES_USER']=cfg['user']
+    os.environ['TEST_POSTGRES_PASSWORD']=cfg['password']
+
+    dc_path = here / 'docker-compose.yml'
+
+    assert dc_path.exists()
+    yield str(dc_path)
+
+    os.environ = old
+
+@pytest.fixture(scope='session')
+def postgres_service(docker_services, docker_ip, app_cfg):
+    cfg = app_cfg["postgres"]
+    cfg['host'] = docker_ip
+    cfg['port'] = docker_services.port_for('postgres', 5432)
+
+    url = DNS.format(**cfg)
+
+    # Wait until service is responsive.
+    docker_services.wait_until_responsive(
+        check=lambda: is_postgres_responsive(url),
+        timeout=30.0,
+        pause=0.1,
+    )
+
+    return url
+
+@pytest.fixture
+def postgres_db(app_cfg, postgres_service): # NOTE: if postgres_services started manually, comment
+    """
+        For debugging, postgres_service can be started manually as
+            docker-compose -f docker-compose.debug.yml up
+
+        In that case, comment postgres_service)
+    """
     cfg = app_cfg["postgres"]
     url = DNS.format(**cfg)
 
+    # NOTE: Comment this to avoid postgres_service
+    url = postgres_service
+
+    # Configures db and initializes tables
+    # Uses syncrounous engine for that
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
     metadata.create_all(bind=engine, tables=[users, confirmations], checkfirst=True)
 
@@ -64,9 +110,21 @@ def client(loop, aiohttp_client, server):
     return client
 
 
-# helpers ----
+
+
+# helpers ---------------
 def path_mail(monkeypatch):
     async def send_mail(*args):
         print('=== EMAIL TO: {}\n=== SUBJECT: {}\n=== BODY:\n{}'.format(*args))
 
     monkeypatch.setattr(simcore_service_webserver.login.utils, 'send_mail', send_mail)
+
+def is_postgres_responsive(url):
+    """Check if something responds to ``url`` """
+    try:
+        engine = sa.create_engine(url)
+        conn = engine.connect()
+        conn.close()
+    except sa.exc.OperationalError:
+        return False
+    return True
