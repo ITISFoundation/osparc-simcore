@@ -7,7 +7,7 @@ async def assert_status(response: web.Response, expected_cls:web.HTTPException, 
     data, error = unwrap_envelope(await response.json())
     assert response.status == expected_cls.status_code, (data, error)
 
-    if isinstance(expected_cls, web.HTTPError):
+    if issubclass(expected_cls, web.HTTPError):
         do_assert_error(data, error, expected_cls, expected_msg)
     else:
         assert data

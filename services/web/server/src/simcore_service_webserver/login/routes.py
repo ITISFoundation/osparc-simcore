@@ -28,20 +28,24 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     # TODO: routing will be done automatically using operation_id/tags, etc...
 
     # auth --
-    path, handle = '/auth/register', auth_handlers.register
+    path, handler = '/auth/register', auth_handlers.register
     operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(BASEPATH+path, handle, name=operation_id) )
+    routes.append( web.post(BASEPATH+path, handler, name=operation_id) )
 
-    path, handle = '/auth/login', auth_handlers.login
+    path, handler = '/auth/login', auth_handlers.login
     operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(BASEPATH+path, handle, name=operation_id) )
+    routes.append( web.post(BASEPATH+path, handler, name=operation_id) )
 
-    path, handle = '/auth/logout', auth_handlers.logout
+    path, handler = '/auth/logout', auth_handlers.logout
     operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+    routes.append( web.get(BASEPATH+path, handler, name=operation_id) )
 
-    path, handle = '/auth/confirmation/{code}', auth_handlers.email_confirmation
+    path, handler = '/auth/confirmation/{code}', auth_handlers.email_confirmation
     operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+    routes.append( web.get(BASEPATH+path, handler, name=operation_id) )
+
+    path, handler = '/auth/change-email', auth_handlers.change_email
+    operation_id = specs.paths[path].operations['post'].operation_id
+    routes.append( web.post(BASEPATH+path, handler, name=operation_id) )
 
     return routes

@@ -32,15 +32,16 @@ async def create_user(data=None):
     return user
 
 async def log_client_in(client, user_data=None):
-    # register
+    # creates user directly in db
     user = await create_user(user_data)
+
     # login
     url = client.app.router['auth_login'].url_for()
-    r = await client.post(url, data={
+    r = await client.post(url, json={
         'email': user['email'],
         'password': user['raw_password'],
     })
-    assert_status(r, web.HTTPOk, cfg.MSG_LOGGED_IN)
+    await assert_status(r, web.HTTPOk, cfg.MSG_LOGGED_IN)
     return user
 
 

@@ -218,6 +218,9 @@ async def change_email(request: web.Request):
     user = await _get_current_user(request, db)
     assert user, "Cannot identify user"
 
+    if user['email'] == email:
+        return flash_response("Email changed")
+
     # TODO: validate new email!!!
 
     # Reset if previously requested
