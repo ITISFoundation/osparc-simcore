@@ -167,7 +167,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         // Item's Layout
         createItem: function() {
           let item = new qxapp.desktop.PrjBrowserListItem();
-          item.addListener("tap", e => {
+          item.addListener("dbltap", e => {
             const prjUuid = item.getModel();
             let projectModel = getProjectModel(prjUuid, fromTemplate);
             const data = {
