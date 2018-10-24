@@ -6,6 +6,7 @@ from simcore_service_webserver.login.utils import (encrypt_password,
                                                    get_random_string)
 
 
+
 class NewUser:
     def __init__(self, params=None):
         self.params = params
@@ -38,6 +39,7 @@ async def create_user(data=None):
 
 def unwrap_envelope(payload):
     return tuple(payload.get(k) for k in ('data', 'error'))
+
 
 def parse_link(text):
     link = text.split('<a href="')[1].split('"')[0]

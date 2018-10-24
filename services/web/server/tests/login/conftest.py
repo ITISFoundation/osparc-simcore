@@ -16,7 +16,7 @@ import yaml
 import simcore_service_webserver.utils
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.db import DNS
-from simcore_service_webserver.db_models import metadata, users
+from simcore_service_webserver.db_models import metadata, users, confirmations
 from simcore_service_webserver.settings import CONFIG_SCHEMA
 
 
@@ -33,7 +33,7 @@ def app_cfg(here):
     cfg_dict = trafaret_config.read_and_validate(cfg_path, CONFIG_SCHEMA)
     return cfg_dict
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def postgres_db(app_cfg):
     # Configures db and initializes tables
     # uses syncrounous engine for that
@@ -42,7 +42,7 @@ def postgres_db(app_cfg):
     url = DNS.format(**cfg)
 
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
-    metadata.create_all(bind=engine, tables=[users,], checkfirst=True)
+    metadata.create_all(bind=engine, tables=[users, confirmations], checkfirst=True)
 
     yield engine
 

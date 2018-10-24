@@ -6,7 +6,7 @@ from aiohttp import web
 from servicelib.rest_models import LogMessageType
 from servicelib.rest_utils import extract_and_validate
 
-from ..db_models import UserRole, UserStatus
+from ..db_models import UserRole, UserStatus, ConfirmationAction
 from ..security import (authorized_userid, check_password, encrypt_password,
                         forget, login_required, remember)
 from .cfg import cfg
@@ -19,9 +19,12 @@ log = logging.getLogger(__name__)
 
 
 # FIXME: with asyncpg need to user NAMES
-CONFIRMATION_PENDING, ACTIVE, BANNED = [getattr(UserStatus, att).name for att in 'CONFIRMATION_PENDING ACTIVE BANNED'.split()]
-ANONYMOUS, USER, MODERATOR, ADMIN = [getattr(UserRole, att).name for att in 'ANONYMOUS USER MODERATOR ADMIN'.split()]
-
+CONFIRMATION_PENDING, ACTIVE, BANNED = [getattr(UserStatus, att).name
+                                for att in 'CONFIRMATION_PENDING ACTIVE BANNED'.split()]
+ANONYMOUS, USER, MODERATOR, ADMIN = [getattr(UserRole, att).name
+                                for att in 'ANONYMOUS USER MODERATOR ADMIN'.split()]
+REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = [getattr(ConfirmationAction, att).name
+                                for att in 'REGISTRATION RESET_PASSWORD CHANGE_EMAIL'.split()]
 
 # Handlers & tails ------------------------------------------------------
 
@@ -47,19 +50,21 @@ async def register(request: web.Request):
         'created_ip': get_client_ip(request),
     })
 
-    flash_msg = LogMessageType(
+    flash_msg =  attr.asdict(LogMessageType(
         "You are registered successfully! To activate your account, please, "
-        "click on the verification link in the email we sent you.", "INFO")
+        "click on the verification link in the email we sent you.", "INFO"))
 
     if not cfg.REGISTRATION_CONFIRMATION_REQUIRED:
-        response = web.json_response({
-            'error': None,
-            'data': flash_msg
+        # user is logged in
+        identity = body.email
+        response = web.json_response(data={
+            'data': attr.asdict(LogMessageType(cfg.MSG_LOGGED_IN, "INFO")),
+            'error': None
         })
-        await remember(request, response, body.email)
+        await remember(request, response, identity)
         return response
 
-    confirmation_ = await db.create_confirmation(user, 'registration')
+    confirmation_ = await db.create_confirmation(user, REGISTRATION)
     link = await make_confirmation_link(request, confirmation_)
     try:
         await render_and_send_mail(
@@ -77,7 +82,7 @@ async def register(request: web.Request):
         await db.delete_user(user)
         raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL)
 
-    return attr.asdict(flash_msg)
+    return flash_msg
 
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
@@ -106,6 +111,7 @@ async def login(request: web.Request):
         assert user['status'] == ACTIVE, "db corrupted. Invalid status"
         assert user['email'] == email, "db corrupted. Invalid email"
 
+    # user logs in
     identity = user['email']
     response = web.json_response(data={
         'data': attr.asdict(LogMessageType(cfg.MSG_LOGGED_IN, "INFO")),
@@ -150,12 +156,12 @@ async def reset_password(request: web.Request):
     assert user['status'] == ACTIVE
     assert user['email'] == email
 
-    if not await is_confirmation_allowed(user, action='reset_password'):
+    if not await is_confirmation_allowed(user, action=RESET_PASSWORD):
         raise web.HTTPUnauthorized(reason=cfg.MSG_OFTEN_RESET_PASSWORD,
                 content_type='application/json')
 
 
-    confirmation_ = await db.create_confirmation(user, action='reset_password')
+    confirmation_ = await db.create_confirmation(user, action=RESET_PASSWORD)
     link = await make_confirmation_link(request, confirmation_)
     try:
         await render_and_send_mail(
@@ -172,9 +178,9 @@ async def reset_password(request: web.Request):
         await db.delete_confirmation(confirmation_)
         raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL)
 
-    flash_msg = LogMessageType("To reset your password, please, follow "
-        "the link in the email we sent you", "INFO")
-    return attr.asdict(flash_msg)
+    flash_msg = attr.asdict(LogMessageType("To reset your password, please, follow "
+        "the link in the email we sent you", "INFO"))
+    return flash_msg
 
 async def _reset_password_allowed(request: web.Request, confirmation):
     """ Continues rest process after email after confirmation
@@ -216,13 +222,13 @@ async def change_email(request: web.Request):
     # Reset if previously requested
     confirmation = await db.get_confirmation({
         'user': user,
-        'action': 'change_email'}
+        'action': CHANGE_EMAIL}
     )
     if confirmation:
         await db.delete_confirmation(confirmation)
 
     # create new confirmation
-    confirmation = await db.create_confirmation(user, 'change_email', email)
+    confirmation = await db.create_confirmation(user, CHANGE_EMAIL, email)
     link = await make_confirmation_link(request, confirmation)
     try:
         await render_and_send_mail(
@@ -281,7 +287,7 @@ async def confirmation_hdl(request: web.Request):
 
     if confirmation:
         action = confirmation['action']
-        if action == 'registration':
+        if action == REGISTRATION:
             user = await db.get_user({'id': confirmation['user_id']})
             await db.update_user(user, {'status': ACTIVE})
             #response = flash_response(cfg.MSG_ACTIVATED + cfg.MSG_LOGGED_IN)
@@ -291,11 +297,11 @@ async def confirmation_hdl(request: web.Request):
             # TODO redirect to main page!
 
 
-        elif action == 'reset_password':
+        elif action == RESET_PASSWORD:
             # NOTE: user is NOT logged in!
             await _reset_password_allowed(request, confirmation)
 
-        elif action == 'change_email':
+        elif action == CHANGE_EMAIL:
             user = await db.get_user({'id': confirmation['user_id']})
             await db.update_user(user, {'email': confirmation['out']})
             await db.delete_confirmation(confirmation)
@@ -341,7 +347,7 @@ async def validate_registration(email: str, password: str, confirm: str, db: Asy
     if user:
         # Resets pending confirmation if re-registers?
         if user['status'] == CONFIRMATION_PENDING:
-            _confirmation = await db.get_confirmation({'user': user, 'action': 'registration'})
+            _confirmation = await db.get_confirmation({'user': user, 'action': REGISTRATION})
 
             if is_confirmation_expired(_confirmation):
                 await db.delete_confirmation(_confirmation)
