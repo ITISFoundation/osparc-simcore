@@ -67,8 +67,8 @@ FROM common AS production
 COPY packages/simcore-sdk /home/root/packages/simcore-sdk
 COPY packages/s3wrapper /home/root/packages/s3wrapper
 # copy the default notebook
-RUN pip install /packages/simcore-sdk &&\
-    pip install /packages/s3wrapper
+RUN pip install /home/root/packages/simcore-sdk &&\
+    pip install /home/root/packages/s3wrapper
 # copy script to get the inputs inside the local file system
 COPY services/dy-3dvis/simcoreparaviewweb/src /home/root/src
 ENTRYPOINT [ "/bin/bash", "scripts/boot.sh" ]
