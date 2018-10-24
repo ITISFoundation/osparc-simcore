@@ -14,7 +14,7 @@ from .security import setup_security
 from .session import setup_session
 from .sockets import setup_sio
 from .statics import setup_statics
-
+from .render import setup_render
 
 log = logging.getLogger(__name__)
 
@@ -28,8 +28,11 @@ def create_application(config: dict):
     app = web.Application()
     app[APP_CONFIG_KEY] = config
 
+    # TODO: debug = config['main']['testing']
+
     # TODO: create dependency mechanism and compute setup order
     setup_db(app)
+    setup_render(app)
     setup_session(app)
     setup_security(app)
     setup_computational_backend(app)

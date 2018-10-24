@@ -37,10 +37,6 @@ async def create_user(data=None):
     return user
 
 
-def unwrap_envelope(payload):
-    return tuple(payload.get(k) for k in ('data', 'error'))
-
-
 def parse_link(text):
     link = text.split('<a href="')[1].split('"')[0]
     assert '/auth/confirmation/' in link

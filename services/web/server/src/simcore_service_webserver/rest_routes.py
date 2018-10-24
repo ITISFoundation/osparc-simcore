@@ -52,6 +52,11 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     operation_id = specs.paths[path].operations['get'].operation_id
     routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
 
+    path, handle = '/auth/confirmation/{code}', auth_handlers.email_confirmation
+    operation_id = specs.paths[path].operations['get'].operation_id
+    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+
+
     # FIXME: temp fix for running pipelines
     path, handle = '/services', registry_api.get_services
     routes.append(web.get(BASEPATH+path, handle))

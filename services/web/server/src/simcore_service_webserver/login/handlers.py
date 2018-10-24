@@ -271,7 +271,7 @@ async def change_password(request: web.Request):
     response = flash_response(cfg.MSG_PASSWORD_CHANGED)
     return response
 
-async def confirmation_hdl(request: web.Request):
+async def email_confirmation(request: web.Request):
     """ Handled access from a link sent to user by email
 
     """

@@ -3,13 +3,14 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
-from utils import NewUser, parse_link, unwrap_envelope
+import pytest
 from aiohttp import web
-from simcore_service_webserver.login.cfg import cfg
-from simcore_service_webserver.login import get_storage
-from simcore_service_webserver.db_models import UserStatus, ConfirmationAction
 
+from servicelib.response_utils import unwrap_envelope
+from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
+from simcore_service_webserver.login import get_storage
+from simcore_service_webserver.login.cfg import cfg
+from utils import NewUser, parse_link
 
 EMAIL, PASSWORD = 'tester@test.com', 'password'
 
@@ -64,6 +65,7 @@ async def test_registration_with_existing_email(client):
         })
     await assert_error(r, web.HTTPConflict, cfg.MSG_EMAIL_EXISTS)
 
+@pytest.mark.skip("TODO: Feature still not implemented")
 async def test_registration_with_expired_confirmation(client, monkeypatch):
     monkeypatch.setitem(cfg, 'REGISTRATION_CONFIRMATION_REQUIRED', True)
     monkeypatch.setitem(cfg, 'REGISTRATION_CONFIRMATION_LIFETIME', -1)
@@ -81,7 +83,6 @@ async def test_registration_with_expired_confirmation(client, monkeypatch):
         await db.delete_confirmation(confirmation)
 
     await assert_error(r, web.HTTPConflict, cfg.MSG_EMAIL_EXISTS)
-
 
 async def test_registration_without_confirmation(client, monkeypatch):
     monkeypatch.setitem(cfg, 'REGISTRATION_CONFIRMATION_REQUIRED', False)
@@ -101,7 +102,6 @@ async def test_registration_without_confirmation(client, monkeypatch):
     user = await db.get_user({'email': EMAIL})
     assert user
     await db.delete_user(user)
-
 
 async def test_registration_with_confirmation(client, capsys, monkeypatch):
     monkeypatch.setitem(cfg, 'REGISTRATION_CONFIRMATION_REQUIRED', True)
@@ -125,6 +125,7 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
     out, err = capsys.readouterr()
     link = parse_link(out)
     r = await client.get(link)
+
     data, error = unwrap_envelope(await r.json())
 
     assert r.status == web.HTTPNoContent.status_code, (data, error)

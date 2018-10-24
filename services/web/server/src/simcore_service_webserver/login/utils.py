@@ -10,6 +10,7 @@ import passlib.hash
 from aiohttp.web import HTTPFound
 from aiohttp_jinja2 import render_string
 
+from ..resources import resources
 from .cfg import cfg
 
 CHARS = string.ascii_uppercase + string.ascii_lowercase + string.digits
@@ -104,13 +105,13 @@ async def send_mail(recipient, subject, body):
 
 
 async def render_and_send_mail(request, to, template, context=None):
-    page = render_string(template, request, context)
+    page = render_string(str(template), request, context)
     subject, body = page.split('\n', 1)
     await send_mail(to, subject.strip(), body)
 
 
 def themed(template):
-    return join(cfg.THEME, template)
+    return resources.get_path(join(cfg.THEME, template))
 
 def common_themed(template):
-    return join(cfg.COMMON_THEME, template)
+    return resources.get_path(join(cfg.COMMON_THEME, template))

@@ -155,7 +155,7 @@ paths:
           required: true
           schema:
             type: string
-            format: uuid
+            #format: uuid
       responses:
         default:
           $ref: '#/components/responses/OK_NoContent_204'
