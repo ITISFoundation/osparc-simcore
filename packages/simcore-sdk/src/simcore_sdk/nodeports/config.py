@@ -1,7 +1,6 @@
 """Takes care of the configurations.
 """
 import logging
-from distutils.util import strtobool # pylint: disable=no-name-in-module
 
 NODE_KEYS = {"version":True,
 "schema":True,
@@ -24,7 +23,7 @@ SCHEMA_ITEM_KEYS = {"key":True,
 # allowed types
 TYPE_TO_PYTHON_TYPE_MAP = {"integer":{"type":int, "converter":int},
                             "number":{"type":float, "converter":float},
-                            "boolean":{"type":bool, "converter":strtobool},
+                            "boolean":{"type":bool, "converter":bool},
                             "string":{"type":str, "converter":str}
                             }
 FILE_TYPE_PREFIX = "data:"

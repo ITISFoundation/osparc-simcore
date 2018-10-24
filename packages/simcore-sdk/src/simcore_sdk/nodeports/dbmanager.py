@@ -25,7 +25,7 @@ def save_node_to_json(node):
 
 def create_node_from_json(json_config):
     node_configuration = json.loads(json_config)
-    node = NodeModel(input=node_configuration["inputs"], output=node_configuration["outputs"])
+    node = NodeModel(schema=node_configuration["schema"], inputs=node_configuration["inputs"], outputs=node_configuration["outputs"])
     return node
 
 class _NodeModelEncoder(json.JSONEncoder):
@@ -72,12 +72,15 @@ class DBManager:
         updated_node = create_node_from_json(json_configuration)
         node = self.__get_node_from_db(node_uuid=os.environ.get('SIMCORE_NODE_UUID'))
 
-        if node.input != updated_node.input:
-            node.input = updated_node.input
-            flag_modified(node, "input")
-        if node.output != updated_node.output:
-            node.output = updated_node.output
-            flag_modified(node, "output")
+        if node.schema != updated_node.schema:
+            node.schema = updated_node.schema
+            flag_modified(node, "schema")
+        if node.inputs != updated_node.inputs:
+            node.inputs = updated_node.inputs
+            flag_modified(node, "inputs")
+        if node.outputs != updated_node.outputs:
+            node.outputs = updated_node.outputs
+            flag_modified(node, "outputs")
 
         # node.inputs = updated_node.inputs
         # node.outputs = updated_node.outputs

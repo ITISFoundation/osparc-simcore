@@ -53,7 +53,7 @@ class Item():
         log.debug("Getting item %s", self.key)
         if self.type not in config.TYPE_TO_PYTHON_TYPE_MAP and not str(self.type).startswith(config.FILE_TYPE_PREFIX):
             raise exceptions.InvalidProtocolError(self.type)
-        if not self.value:
+        if self.value is None:
             log.debug("Got empty data item")
             return None
         log.debug("Got data item with value %s", self.value)
@@ -64,8 +64,8 @@ class Item():
         if data_items_utils.is_value_on_store(self.value):
             return self.__get_value_from_store(self.value)
         # the value is not a link, let's directly convert it to the right type
-        return self.value
-        # return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["type"](config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value))
+        # return self.value
+        return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["type"](config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value))
     
     def set(self, value):
         """sets the data to the underlying port

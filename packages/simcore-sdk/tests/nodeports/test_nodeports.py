@@ -9,9 +9,9 @@ from simcore_sdk.nodeports import config as node_config
 def test_access_with_key(default_nodeports_configuration): # pylint: disable=W0613, W0621    
     from simcore_sdk.nodeports.nodeports import PORTS
 
-    assert PORTS.inputs["in_1"] == PORTS.inputs[0]
-    assert PORTS.inputs["in_5"] == PORTS.inputs[1]
-    assert PORTS.outputs["out_1"] == PORTS.outputs[0]
+    assert PORTS.inputs["in_1"].key == PORTS.inputs[0].key
+    assert PORTS.inputs["in_5"].value == PORTS.inputs[1].value
+    assert PORTS.outputs["out_1"].description == PORTS.outputs[0].description
 
 @pytest.mark.parametrize("item_type, item_value", [
     ("integer", 26),
@@ -20,49 +20,44 @@ def test_access_with_key(default_nodeports_configuration): # pylint: disable=W06
     ("number", -746.4748),
     ("number", 0.0),
     ("number", 4566.11235),
-    ("bool", False),    
-    ("bool", True),
+    ("boolean", False),    
+    ("boolean", True),
     ("string", "test-string"),
     ("string", ""),
 ])
 def test_port_value_accessors_no_s3(special_nodeports_configuration, item_type, item_value): # pylint: disable=W0613, W0621
     special_config = helpers.get_empty_config() #pylint: disable=E1101
-    special_config["outputs"].append({
-        "key": "out_15",
+    special_config["schema"]["outputs"].update({
+        "out_15":{
         "label": "additional data",
-        "desc": "here some additional data",
-        "type": item_type,
-        "value": "null",
-        "timestamp": "2018-05-22T19:34:53.511Z"
-    })
+        "description": "here some additional data",
+        "displayOrder":2,
+        "type": item_type}})
+    special_config["outputs"].update({"out_15":None})
     special_nodeports_configuration(special_config)
     from simcore_sdk.nodeports.nodeports import PORTS
     assert PORTS.outputs["out_15"].get() is None
-
     PORTS.outputs["out_15"].set(item_value)
-    assert PORTS.outputs["out_15"].value == str(item_value)
+    assert PORTS.outputs["out_15"].value == item_value
     converted_value = PORTS.outputs["out_15"].get()
     assert isinstance(converted_value, node_config.TYPE_TO_PYTHON_TYPE_MAP[item_type]["type"])
     assert converted_value == item_value
 
 @pytest.mark.parametrize("item_type, item_value", [
-    ("file-url", __file__),
-    ("folder-url", str(Path(__file__).parent))
+    ("data:*/*", __file__)
 ])
 def test_port_value_accessors_s3(special_nodeports_configuration, bucket, item_type, item_value): # pylint: disable=W0613, W0621
-    
     import os
     import tempfile
     special_config = helpers.get_empty_config() #pylint: disable=E1101
     item_key = "out_blah"
-    special_config["outputs"].append({
-        "key": item_key,
+    special_config["schema"]["outputs"].update({
+        item_key:{
         "label": "additional data",
-        "desc": "here some additional data",
-        "type": item_type,
-        "value": "null",
-        "timestamp": "2018-05-22T19:34:53.511Z"
-    })
+        "description": "here some additional data",
+        "displayOrder":2,
+        "type": item_type}})
+    special_config["outputs"].update({item_key:None})
     special_nodeports_configuration(special_config)
     from simcore_sdk.nodeports.nodeports import PORTS
     assert PORTS.outputs[item_key].get() is None # check emptyness
@@ -70,14 +65,14 @@ def test_port_value_accessors_s3(special_nodeports_configuration, bucket, item_t
     # this triggers an upload to S3 + configuration change
     PORTS.outputs[item_key].set(item_value)
     # this is the link to S3 storage
-    assert PORTS.outputs[item_key].value == ".".join(["link", os.environ["SIMCORE_NODE_UUID"], Path(item_value).name])
+    assert PORTS.outputs[item_key].value == {"store":"s3-z43", "path":Path(os.environ["SIMCORE_PIPELINE_ID"], os.environ["SIMCORE_NODE_UUID"], Path(item_value).name).as_posix()}  
     # this triggers a download from S3 to a location in /tempdir/simcorefiles/item_key
     converted_value = PORTS.outputs[item_key].get()
-    assert isinstance(converted_value, node_config.TYPE_TO_PYTHON_TYPE_MAP[item_type]["type"])
+    assert isinstance(converted_value, Path)
 
     assert Path(converted_value).exists()
     converted_value_to_check_for = str(Path(tempfile.gettempdir(), "simcorefiles", item_key))
-    assert PORTS.outputs[item_key].get().startswith(converted_value_to_check_for)
+    assert str(PORTS.outputs[item_key].get()).startswith(converted_value_to_check_for)
 
 def test_file_integrity(special_nodeports_configuration, bucket): # pylint: disable=W0613, W0621
     special_config = helpers.get_empty_config() #pylint: disable=E1101

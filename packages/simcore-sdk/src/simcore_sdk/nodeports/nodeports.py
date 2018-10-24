@@ -26,9 +26,6 @@ class Nodeports:
         if self._version != version:
             raise exceptions.WrongProtocolVersionError(self._version, version)
 
-
-        
-
         if not input_schemas:
             input_schemas = SchemaItemsList()
         self._input_schemas = input_schemas
@@ -36,28 +33,22 @@ class Nodeports:
             output_schemas = SchemaItemsList()
         self._output_schemas = output_schemas
 
-        # inputs are per definition read-only
         if input_payloads is None:
             input_payloads = DataItemsList()
         self._inputs_payloads = input_payloads
         _check_payload_schema(self._inputs_payloads, self._input_schemas)
 
-        self._inputs_payloads.read_only = True
-        self._inputs_payloads.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
-
-        # outputs are currently read-only as we do not allow dynamic change of
-        # number of outputs or changing their type or so for now.
         if outputs_payloads is None:
             outputs_payloads = DataItemsList()
         self._outputs_payloads = outputs_payloads
         _check_payload_schema(self._outputs_payloads, self._output_schemas)
-        self._outputs_payloads.read_only = True
-        self._outputs_payloads.change_notifier = self.save_to_json
-        self._outputs_payloads.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
 
 
         self._inputs = ItemsList(self._input_schemas, self._inputs_payloads)
         self._outputs = ItemsList(self._output_schemas, self._outputs_payloads)
+        self._inputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
+        self._outputs.change_notifier = self.save_to_json
+        self._outputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
 
         self.db_mgr = None
         self.autoread = False
@@ -116,15 +107,17 @@ class Nodeports:
         log.debug("Updating json configuration")
         if not self.db_mgr:
             raise exceptions.NodeportsException("db manager is not initialised")
-        change_notifier = self._outputs_payloads.change_notifier
         updated_nodeports = serialization.create_from_json(self.db_mgr)
         self._input_schemas = updated_nodeports._input_schemas
         self._output_schemas = updated_nodeports._output_schemas
         self._inputs_payloads = updated_nodeports._inputs_payloads
         self._outputs_payloads = updated_nodeports._outputs_payloads
-        self._outputs_payloads.change_notifier = change_notifier
+
         self._inputs = ItemsList(self._input_schemas, self._inputs_payloads)
         self._outputs = ItemsList(self._output_schemas, self._outputs_payloads)
+        self._inputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
+        self._outputs.change_notifier = self.save_to_json
+        self._outputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
         log.debug("Updated json configuration")
 
     def save_to_json(self):
