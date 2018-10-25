@@ -20,6 +20,7 @@ services:
           - node.platform.os == linux
           - node.role == manager
     environment:
+      - OSPARC_PUBLIC_URL=http://osparc01.itis.ethz.ch:9081
       - POSTGRES_ENDPOINT=postgres
       - POSTGRES_USER=simcore
       - POSTGRES_PASSWORD=simcore
