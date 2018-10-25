@@ -9,7 +9,12 @@ import aiopg.sa
 import attr
 import psycopg2
 import sqlalchemy as sa
+import logging
+import warnings
 
+log = logging.getLogger(__name__)
+
+warnings.warn("DO NOT USER, STILL UNDER DEVELOPMENT")
 
 @attr.s(auto_attribs=True)
 class AiopgExecutor:
@@ -21,10 +26,12 @@ class AiopgExecutor:
     """
     engine: aiopg.sa.engine.Engine
     statement: str=None
+    dsn: str=None # Data Source Name
 
     @property
     def sa_engine(self):
-        return sa.create_engine(self.engine.dsn,
+        return sa.create_engine(
+            self.dsn,
             strategy="mock",
             executor=self._compile
         )
@@ -35,21 +42,24 @@ class AiopgExecutor:
 
     async def execute(self):
         async with self.engine.acquire() as conn:
+            log.debug(self.statement)
+            import pdb; pdb.set_trace()
+
             resp = await conn.execute(self.statement)
             return resp
 
 
 
 
-async def create_all(engine: aiopg.sa.engine.Engine, metadata: sa.MetaData, **kargs):
-    executor = AiopgExecutor(engine)
-    metadata.create_all(executor.sa_engine, **kargs)
+async def create_all(engine: aiopg.sa.engine.Engine, metadata: sa.MetaData, dsn: str):
+    executor = AiopgExecutor(engine, dsn=dsn)
+    metadata.create_all(executor.sa_engine, checkfirst=True)
     await executor.execute()
 
 
-async def drop_all(engine: aiopg.sa.engine.Engine, metadata: sa.MetaData, **kargs):
+async def drop_all(engine: aiopg.sa.engine.Engine, metadata: sa.MetaData):
     executor = AiopgExecutor(engine)
-    metadata.drop_all(executor.sa_engine, **kargs)
+    metadata.drop_all(executor.sa_engine, checkfirst=True)
     await executor.execute()
 
 

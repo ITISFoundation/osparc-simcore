@@ -11,7 +11,7 @@ from aiohttp import web
 import asyncpg
 
 from ..application_keys import APP_CONFIG_KEY, APP_DB_POOL_KEY
-from ..db import DNS
+from ..db import DSN
 from .cfg import cfg
 from .storage import AsyncpgStorage
 
@@ -30,7 +30,7 @@ async def pg_pool(app: web.Application):
     config['APP'] = app
 
     db_config = app[APP_CONFIG_KEY]['postgres']
-    app[APP_DB_POOL_KEY] = await asyncpg.create_pool(dsn=DNS.format(**db_config), loop=app.loop)
+    app[APP_DB_POOL_KEY] = await asyncpg.create_pool(dsn=DSN.format(**db_config), loop=app.loop)
 
     # FIXME: replace by CFG_LOGIN_STORAGE
     config['STORAGE'] = AsyncpgStorage(app[APP_DB_POOL_KEY])

@@ -16,7 +16,7 @@ import yaml
 
 import simcore_service_webserver.utils
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.db import DNS
+from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, metadata, users
 from simcore_service_webserver.settings import CONFIG_SCHEMA
 
@@ -60,7 +60,7 @@ def postgres_service(docker_services, docker_ip, app_cfg):
     cfg['host'] = docker_ip
     cfg['port'] = docker_services.port_for('postgres', 5432)
 
-    url = DNS.format(**cfg)
+    url = DSN.format(**cfg)
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
@@ -80,7 +80,7 @@ def postgres_db(app_cfg, postgres_service): # NOTE: if postgres_services started
         In that case, comment postgres_service)
     """
     cfg = app_cfg["postgres"]
-    url = DNS.format(**cfg)
+    url = DSN.format(**cfg)
 
     # NOTE: Comment this to avoid postgres_service
     url = postgres_service

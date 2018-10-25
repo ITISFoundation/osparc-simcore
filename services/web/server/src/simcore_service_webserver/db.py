@@ -7,21 +7,22 @@ FIXME: _init_db is temporary here so database gets properly initialized
 import logging
 
 import aiopg.sa
+import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import create_engine
-from tenacity import retry, stop_after_attempt, wait_fixed, before_sleep_log
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from servicelib.aiopg_utils import DBAPIError, create_all, drop_all
 
 from .application_keys import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY,
                                APP_DB_SESSION_KEY)
 from .comp_backend_api import init_database as _init_db
-
+from .db_models import metadata
 
 # SETTINGS ----------------------------------------------------
 THIS_MODULE_NAME  = __name__.split(".")[-1]
 THIS_SERVICE_NAME = 'postgres'
-DNS = "postgresql://{user}:{password}@{host}:{port}/{database}" # TODO: in sync with config
+DSN = "postgresql://{user}:{password}@{host}:{port}/{database}" # Data Source Name. TODO: sync with config
 
 RETRY_WAIT_SECS = 2
 RETRY_COUNT = 20
@@ -34,11 +35,11 @@ log = logging.getLogger(__name__)
 
 @retry( wait=wait_fixed(RETRY_WAIT_SECS),
         stop=stop_after_attempt(RETRY_COUNT),
-        before_sleep=before_sleep_log(log, logging.DEBUG) )
-async def __create_tables(engine: aiopg.sa.engine.Engine):
+        before_sleep=before_sleep_log(log, logging.INFO) )
+async def __create_tables(**params):
     # TODO: move _init_db.metadata here!?
-    from .db_models import metadata as tables_metadata
-    create_all(engine, tables_metadata, checkfirst=True)
+    sa_engine = sa.create_engine(DSN.format(**params))
+    metadata.create_all(sa_engine)
 
 async def pg_engine(app: web.Application):
 
@@ -50,7 +51,7 @@ async def pg_engine(app: web.Application):
 
         # TODO: get keys from __name__ (see notes in servicelib.application_keys)
         if app[APP_CONFIG_KEY]["main"][THIS_MODULE_NAME]["init_tables"]:
-            __create_tables(engine)
+            await __create_tables(**params)
 
     except DBAPIError:
         log.exception("Could not create engine")

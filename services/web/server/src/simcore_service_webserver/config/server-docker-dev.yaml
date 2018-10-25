@@ -10,7 +10,7 @@ main:
   testing: True
   # disable_services: [director, postgres, rabbit, s3]
   db:
-    init_tables: False
+    init_tables: True
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
@@ -36,7 +36,7 @@ smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: ${SMTP_HOST}
   port: ${SMTP_PORT}
-  tls: False,
-  username: None,
+  tls: False
+  username: None
   password: None
 ...

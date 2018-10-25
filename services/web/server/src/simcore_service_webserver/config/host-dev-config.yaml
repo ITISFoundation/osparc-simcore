@@ -6,7 +6,7 @@ main:
   port: 8080
   public_url: http://localhost:8080
   testing: true
-  disable_services: [director, postgres, rabbit, s3]
+  disable_services: []
   db:
     init_tables: True
 director:
@@ -15,7 +15,7 @@ director:
 postgres:
   database: simcoredb
   endpoint: postgres:5432
-  host: postgres
+  host: localhost
   maxsize: 5
   minsize: 1
   password: simcore

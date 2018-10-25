@@ -74,7 +74,7 @@ users = sa.Table("users", metadata,
 
 confirmations = sa.Table("confirmations", metadata,
     sa.Column("code", sa.Text),
-    sa.Column("user_id", sa.Integer),
+    sa.Column("user_id", sa.BigInteger),
     sa.Column("action",
         sa.Enum(ConfirmationAction),
         nullable=False,
@@ -93,10 +93,11 @@ confirmations = sa.Table("confirmations", metadata,
 
 # NOTE: this is another way of of defining keys ...
 tokens = sa.Table("tokens", metadata,
-    sa.Column("id", sa.Integer, nullable=False, primary_key=True),
-    sa.Column("user_id", sa.Integer, sa.ForeignKey("user.user_id"), nullable=False),
-    sa.Column("service", sa.String, nullable=False),
-    sa.Column("data", sa.JSON, nullable=False)
+    sa.Column("token_id", sa.BigInteger, nullable=False, primary_key=True),
+    sa.Column("user_id", sa.BigInteger, sa.ForeignKey(users.c.id), nullable=False),
+    sa.Column("token_service", sa.String, nullable=False),
+    sa.Column("token_data", sa.JSON, nullable=False),
+
 )
 
 
