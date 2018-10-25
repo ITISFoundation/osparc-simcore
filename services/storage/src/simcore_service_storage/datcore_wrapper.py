@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial
+from functools import partial, wraps
 from pathlib import Path
 from textwrap import dedent
 from typing import List
@@ -48,11 +48,9 @@ def call_python_2_script(script: str, python_exec: Path):
     return channel.receive()
 
 def make_async(func):
-    async def async_wrapper(*args, **kwargs):
-        pool = ThreadPoolExecutor(max_workers=3)
-
-        loop = asyncio.get_event_loop()
-        blocking_task = loop.run_in_executor(pool, func, *args, **kwargs)
+    @wraps(func)
+    async def async_wrapper(self, *args, **kwargs):
+        blocking_task = self.loop.run_in_executor(self.pool, func, self, *args, **kwargs)
         _completed, _pending = await asyncio.wait([blocking_task])
         results = [t.result() for t in _completed]
         # TODO: does this always work?
@@ -65,14 +63,17 @@ class DatcoreWrapper:
         Assumes that python 2 is installed in a virtual env
 
     """
-    def __init__(self, api_token: str, api_secret: str, python2_exec: Path):
+    # pylint: disable=R0913
+    # Too many arguments
+    def __init__(self, api_token: str, api_secret: str, python2_exec: Path, loop: object, pool: ThreadPoolExecutor):
         self.api_token = api_token
         self.api_secret = api_secret
 
+        self.loop = loop
+        self.pool = pool
         #TODO: guarantee that python2_exec is a valid
         self._py2_call = partial(call_python_2_script, python_exec=python2_exec)
 
-        self.executor =  ThreadPoolExecutor(1)
 
     @make_async
     def list_files(self, regex = "", sortby = "")->FileMetaDataVec: #pylint: disable=W0613

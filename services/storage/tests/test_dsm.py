@@ -24,7 +24,7 @@ from utils import BUCKET_NAME
 def test_mockup(dsm_mockup_db):
     assert len(dsm_mockup_db)==100
 
-async def test_dsm_s3(dsm_mockup_db, postgres_engine, s3_client, python27_exec):
+async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
     id_name_map = {}
     id_file_count = {}
     for d in dsm_mockup_db.keys():
@@ -35,7 +35,7 @@ async def test_dsm_s3(dsm_mockup_db, postgres_engine, s3_client, python27_exec):
         else:
             id_file_count[md.user_id] = id_file_count[md.user_id] + 1
 
-    dsm = DataStorageManager(s3_client, python27_exec, postgres_engine)
+    dsm = dsm_fixture
 
     # list files for every user
     for _id in id_file_count:
@@ -116,11 +116,11 @@ def _create_file_on_s3(postgres_url, s3_client, tmp_file):
     fmd = FileMetaData(**d)
     return fmd
 
-async def test_links_s3(postgres_service_url, postgres_engine, s3_client, mock_files_factory, python27_exec):
+async def test_links_s3(postgres_service_url, s3_client, mock_files_factory, dsm_fixture):
     tmp_file = mock_files_factory(1)[0]
     fmd = _create_file_on_s3(postgres_service_url, s3_client, tmp_file)
 
-    dsm = DataStorageManager(s3_client, python27_exec, postgres_engine)
+    dsm = dsm_fixture
 
     up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
     with io.open(tmp_file, 'rb') as fp:
@@ -144,9 +144,9 @@ def test_datcore_fixture(datcore_testbucket):
     print(datcore_testbucket)
 
 @pytest.mark.travis
-async def test_dsm_datcore(postgres_service_url, postgres_engine, s3_client, python27_exec, datcore_testbucket):
+async def test_dsm_datcore(postgres_service_url, dsm_fixture, datcore_testbucket):
     utils.create_tables(url=postgres_service_url)
-    dsm = DataStorageManager(s3_client, python27_exec, postgres_engine)
+    dsm = dsm_fixture
     user_id = "0"
     data = await dsm.list_files(user_id=user_id, location="datcore")
     # the fixture creates two files
@@ -160,13 +160,15 @@ async def test_dsm_datcore(postgres_service_url, postgres_engine, s3_client, pyt
     data = await dsm.list_files(user_id=user_id, location="datcore")
     assert len(data) == 1
 
+# pylint: disable=R0913
+# Too many arguments
 @pytest.mark.travis
-async def test_dsm_s3_to_datcore(postgres_service_url, postgres_engine, s3_client, mock_files_factory, python27_exec, datcore_testbucket):
+async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_factory, dsm_fixture, datcore_testbucket):
     tmp_file = mock_files_factory(1)[0]
 
     fmd = _create_file_on_s3(postgres_service_url, s3_client, tmp_file)
 
-    dsm = DataStorageManager(s3_client, python27_exec, postgres_engine)
+    dsm = dsm_fixture
 
     up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
     with io.open(tmp_file, 'rb') as fp:
@@ -189,11 +191,12 @@ async def test_dsm_s3_to_datcore(postgres_service_url, postgres_engine, s3_clien
     # there should now be 3 files
     assert len(data) == 3
 
-
+# pylint: disable=R0913
+# Too many arguments
 @pytest.mark.travis
-async def test_dsm_datcore_to_s3(postgres_service_url, postgres_engine, s3_client, python27_exec, mock_files_factory, datcore_testbucket):
+async def test_dsm_datcore_to_s3(postgres_service_url, dsm_fixture, mock_files_factory, datcore_testbucket):
     utils.create_tables(url=postgres_service_url)
-    dsm = DataStorageManager(s3_client, python27_exec, postgres_engine)
+    dsm = dsm_fixture
     user_id = "0"
     data = await dsm.list_files(user_id=user_id, location="datcore")
     assert len(data)
@@ -208,14 +211,16 @@ async def test_dsm_datcore_to_s3(postgres_service_url, postgres_engine, s3_clien
 
     assert filecmp.cmp(tmp_file2, tmp_file)
 
+# pylint: disable=R0913
+# Too many arguments
 @pytest.mark.travis
-async def test_copy_datcore(postgres_service_url, postgres_engine, s3_client, python27_exec, mock_files_factory, datcore_testbucket):
+async def test_copy_datcore(postgres_service_url, s3_client, dsm_fixture, mock_files_factory, datcore_testbucket):
     utils.create_tables(url=postgres_service_url)
 
     # create temporary file and upload to s3
     tmp_file = mock_files_factory(1)[0]
     fmd = _create_file_on_s3(postgres_service_url, s3_client, tmp_file)
-    dsm = DataStorageManager(s3_client, python27_exec, postgres_engine)
+    dsm = dsm_fixture
 
     up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
     with io.open(tmp_file, 'rb') as fp:

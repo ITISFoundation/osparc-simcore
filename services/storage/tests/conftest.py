@@ -10,6 +10,7 @@ import subprocess
 import sys
 import uuid
 from collections import namedtuple
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
 
@@ -19,6 +20,7 @@ from aiopg.sa import create_engine
 import simcore_service_storage
 import utils
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
+from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import FileMetaData
 from utils import ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER
 
@@ -261,7 +263,8 @@ async def datcore_testbucket(loop, python27_exec, mock_files_factory):
     api_token = os.environ.get("BF_API_KEY", "none")
     api_secret = os.environ.get("BF_API_SECRET", "none")
 
-    dcw = DatcoreWrapper(api_token, api_secret, python27_exec)
+    pool = ThreadPoolExecutor(2)
+    dcw = DatcoreWrapper(api_token, api_secret, python27_exec, loop, pool)
 
     await dcw.create_test_dataset(BUCKET_NAME)
 
@@ -281,3 +284,9 @@ async def datcore_testbucket(loop, python27_exec, mock_files_factory):
     yield BUCKET_NAME
 
     await dcw.delete_test_dataset(BUCKET_NAME)
+
+@pytest.fixture(scope="function")
+def dsm_fixture(s3_client, python27_exec, postgres_engine, loop):
+    pool = ThreadPoolExecutor(3)
+    dsm_fixture = DataStorageManager(s3_client, python27_exec, postgres_engine, loop, pool)
+    return dsm_fixture

@@ -10,6 +10,7 @@ _APP_SCHEMA = T.Dict({
     "log_level": T.Enum("DEBUG", "WARNING", "INFO", "ERROR", "CRITICAL", "FATAL", "NOTSET"),
     "testing": T.Bool(),
     "python2": T.String(),
+    "max_workers" : T.Int(),
     T.Key("test_datcore", optional=True): T.Dict({
         "api_token": T.String(),
         "api_secret": T.String()

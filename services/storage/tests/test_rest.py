@@ -7,6 +7,7 @@ import pytest
 from aiohttp import web
 
 from simcore_service_storage.db import setup_db
+from simcore_service_storage.dsm import setup_dsm
 from simcore_service_storage.middlewares import dsm_middleware
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.session import setup_session
@@ -30,11 +31,14 @@ def parse_db(dsm_mockup_db):
 def client(loop, aiohttp_unused_port, aiohttp_client, python27_exec, postgres_service, minio_service):
     app = web.Application()
 
-    server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost', 'python2' : python27_exec }
+    max_workers = 4
+
+    server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost', 'python2' : python27_exec, "max_workers" : max_workers }
 
     postgres_kwargs = postgres_service
 
     s3_kwargs = minio_service
+
 
     # fake main
     app[APP_CONFIG_KEY] = { 'main': server_kwargs, 'postgres' : postgres_kwargs, "s3" : s3_kwargs } # Fake config
@@ -44,6 +48,7 @@ def client(loop, aiohttp_unused_port, aiohttp_client, python27_exec, postgres_se
     setup_db(app)
     setup_session(app)
     setup_rest(app)
+    setup_dsm(app)
 
     assert "SECRET_KEY" in app[APP_CONFIG_KEY]
 

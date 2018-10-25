@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from operator import itemgetter
 from pathlib import Path
 from typing import List, Tuple
@@ -10,6 +11,7 @@ import aiofiles
 import aiohttp
 import attr
 import sqlalchemy as sa
+from aiohttp import web
 from aiopg.sa import Engine
 from sqlalchemy.sql import and_
 
@@ -18,6 +20,7 @@ from s3wrapper.s3_client import S3Client
 from .datcore_wrapper import DatcoreWrapper
 from .models import (FileMetaData, _location_from_id, _locations,
                      _parse_datcore, _parse_simcore, file_meta_data)
+from .settings import APP_CONFIG_KEY, APP_DSM_THREADPOOL
 
 #pylint: disable=W0212
 #FIXME: W0212:Access to a protected member _result_proxy of a client class
@@ -28,6 +31,14 @@ from .models import (FileMetaData, _location_from_id, _locations,
 
 FileMetaDataVec = List[FileMetaData]
 
+def setup_dsm(app: web.Application):
+    cfg = app[APP_CONFIG_KEY]
+    main_cfg = cfg["main"]
+
+    max_workers = main_cfg["max_workers"]
+    pool = ThreadPoolExecutor(max_workers=max_workers)
+
+    app[APP_DSM_THREADPOOL] = pool
 
 
 @attr.s(auto_attribs=True)
@@ -63,6 +74,8 @@ class DataStorageManager:
     s3_client: S3Client
     python27_exec: Path
     engine: Engine
+    loop: object
+    pool: ThreadPoolExecutor
 
     # pylint: disable=R0201
     def locations(self):
@@ -97,7 +110,7 @@ class DataStorageManager:
                     data.append(d)
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec)
+            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
             return await dcw.list_files(regex, sortby)
 
         if sortby:
@@ -138,7 +151,7 @@ class DataStorageManager:
                     return d
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
-            _dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec)
+            _dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
             raise NotImplementedError
 
 
@@ -168,7 +181,7 @@ class DataStorageManager:
 
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec)
+            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
             dataset, filename = _parse_datcore(file_uuid)
 #            return await dcw.delete_file(dataset=dataset, filename=filename)
             return await dcw.delete_file(dataset, filename)
@@ -176,7 +189,7 @@ class DataStorageManager:
     async def upload_file_to_datcore(self, user_id: str, local_file_path: str, datcore_bucket: str, fmd: FileMetaData = None): # pylint: disable=W0613
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
         api_token, api_secret = await self._get_datcore_tokens(user_id)
-        dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec)
+        dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
         await dcw.upload_file(datcore_bucket, local_file_path, fmd)
 
     async def _get_datcore_tokens(self, user_id: str)->Tuple[str, str]:
@@ -228,7 +241,7 @@ class DataStorageManager:
             link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec)
+            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
             dataset, filename = _parse_datcore(file_uuid)
             link = await dcw.download_link(dataset, filename)
         return link
