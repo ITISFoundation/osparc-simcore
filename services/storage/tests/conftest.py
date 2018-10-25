@@ -257,6 +257,11 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
     # db
     utils.drop_tables(url=postgres_service_url)
 
+# This is weird, somehow the default loop gives problems with pytest asyncio, so lets override it
+@pytest.fixture
+def loop(event_loop):
+    return event_loop
+
 @pytest.fixture(scope="function")
 async def datcore_testbucket(loop, python27_exec, mock_files_factory):
     # TODO: what if I do not have an app to the the config from?
