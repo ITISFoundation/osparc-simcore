@@ -19,6 +19,7 @@ from .comp_backend_api import init_database as _init_db
 
 
 # SETTINGS ----------------------------------------------------
+THIS_MODULE_NAME  = __name__.split(".")[-1]
 THIS_SERVICE_NAME = 'postgres'
 DNS = "postgresql://{user}:{password}@{host}:{port}/{database}" # TODO: in sync with config
 
@@ -35,6 +36,7 @@ log = logging.getLogger(__name__)
         stop=stop_after_attempt(RETRY_COUNT),
         before_sleep=before_sleep_log(log, logging.DEBUG) )
 async def __create_tables(engine: aiopg.sa.engine.Engine):
+    # TODO: move _init_db.metadata here!?
     from .db_models import metadata as tables_metadata
     create_all(engine, tables_metadata, checkfirst=True)
 
@@ -47,7 +49,7 @@ async def pg_engine(app: web.Application):
         engine = await create_engine(**params)
 
         # TODO: get keys from __name__ (see notes in servicelib.application_keys)
-        if app[APP_CONFIG_KEY]["main"]["db"]["init_tables"]:
+        if app[APP_CONFIG_KEY]["main"][THIS_MODULE_NAME]["init_tables"]:
             __create_tables(engine)
 
     except DBAPIError:
