@@ -10,7 +10,7 @@ import aiofiles
 import aiohttp
 import attr
 import sqlalchemy as sa
-from aiopg.sa import create_engine
+from aiopg.sa import Engine
 from sqlalchemy.sql import and_
 
 from s3wrapper.s3_client import S3Client
@@ -60,9 +60,9 @@ class DataStorageManager:
             https://blog.minio.io/part-5-5-publish-minio-events-via-postgresql-50f6cc7a7346
             https://docs.minio.io/docs/minio-bucket-notification-guide.html
     """
-    db_endpoint: str
     s3_client: S3Client
     python27_exec: Path
+    engine: Engine
 
     # pylint: disable=R0201
     def locations(self):
@@ -72,6 +72,8 @@ class DataStorageManager:
     def location_from_id(self, location_id : str):
         return _location_from_id(location_id)
 
+    # pylint: disable=R0913
+    # too-many-arguments
     async def list_files(self, user_id: str, location: str, uuid_filter: str ="", regex: str="", sortby: str="") -> FileMetaDataVec:
         """ Returns a list of file paths
 
@@ -87,13 +89,12 @@ class DataStorageManager:
         """
         data = []
         if location == "simcore.s3":
-            async with create_engine(self.db_endpoint) as engine:
-                async with engine.acquire() as conn:
-                    query = sa.select([file_meta_data]).where(file_meta_data.c.user_id == user_id)
-                    async for row in conn.execute(query):
-                        result_dict = dict(zip(row._result_proxy.keys, row._row))
-                        d = FileMetaData(**result_dict)
-                        data.append(d)
+            async with self.engine.acquire() as conn:
+                query = sa.select([file_meta_data]).where(file_meta_data.c.user_id == user_id)
+                async for row in conn.execute(query):
+                    result_dict = dict(zip(row._result_proxy.keys, row._row))
+                    d = FileMetaData(**result_dict)
+                    data.append(d)
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
             dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec)
@@ -128,14 +129,13 @@ class DataStorageManager:
     async def list_file(self, user_id: str, location: str, file_uuid: str) -> FileMetaData:
         if location == "simcore.s3":
             # TODO: get engine from outside
-            async with create_engine(self.db_endpoint) as engine:
-                async with engine.acquire() as conn:
-                    query = sa.select([file_meta_data]).where(and_(file_meta_data.c.user_id == user_id,
-                    file_meta_data.c.file_uuid == file_uuid))
-                    async for row in conn.execute(query):
-                        result_dict = dict(zip(row._result_proxy.keys, row._row))
-                        d = FileMetaData(**result_dict)
-                        return d
+            async with self.engine.acquire() as conn:
+                query = sa.select([file_meta_data]).where(and_(file_meta_data.c.user_id == user_id,
+                file_meta_data.c.file_uuid == file_uuid))
+                async for row in conn.execute(query):
+                    result_dict = dict(zip(row._result_proxy.keys, row._row))
+                    d = FileMetaData(**result_dict)
+                    return d
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
             _dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec)
@@ -155,17 +155,16 @@ class DataStorageManager:
         """
         # TODO: const strings
         if location == "simcore.s3":
-            async with create_engine(self.db_endpoint) as engine:
-                async with engine.acquire() as conn:
-                    query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
-                    async for row in conn.execute(query):
-                        result_dict = dict(zip(row._result_proxy.keys, row._row))
-                        d = FileMetaData(**result_dict)
-                        # make sure this is the current user
-                        if d.user_id == user_id:
-                            if self.s3_client.remove_objects(d.bucket_name, [d.object_name]):
-                                stmt = file_meta_data.delete().where(file_meta_data.c.file_uuid == file_uuid)
-                                await conn.execute(stmt)
+            async with self.engine.acquire() as conn:
+                query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
+                async for row in conn.execute(query):
+                    result_dict = dict(zip(row._result_proxy.keys, row._row))
+                    d = FileMetaData(**result_dict)
+                    # make sure this is the current user
+                    if d.user_id == user_id:
+                        if self.s3_client.remove_objects(d.bucket_name, [d.object_name]):
+                            stmt = file_meta_data.delete().where(file_meta_data.c.file_uuid == file_uuid)
+                            await conn.execute(stmt)
 
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
@@ -182,27 +181,24 @@ class DataStorageManager:
 
     async def _get_datcore_tokens(self, user_id: str)->Tuple[str, str]:
         # actually we have to query the master db
-        async with create_engine(self.db_endpoint) as engine:
-            # FIXME: load from app[APP_DB_ENGINE_KEY]
-            async with engine.acquire() as conn:
-                query = sa.select([file_meta_data]).where(file_meta_data.c.user_id == user_id)
-                _fmd = await conn.execute(query)
-                # FIXME: load from app[APP_CONFIG_KEY]["test_datcore"]
-                api_token = os.environ.get("BF_API_KEY", "none")
-                api_secret = os.environ.get("BF_API_SECRET", "none")
-                return (api_token, api_secret)
+        async with self.engine.acquire() as conn:
+            query = sa.select([file_meta_data]).where(file_meta_data.c.user_id == user_id)
+            _fmd = await conn.execute(query)
+            # FIXME: load from app[APP_CONFIG_KEY]["test_datcore"]
+            api_token = os.environ.get("BF_API_KEY", "none")
+            api_secret = os.environ.get("BF_API_SECRET", "none")
+            return (api_token, api_secret)
 
 
     async def upload_link(self, user_id: str, file_uuid: str):
-        async with create_engine(self.db_endpoint) as engine:
-            async with engine.acquire() as conn:
-                fmd = FileMetaData()
-                fmd.simcore_from_uuid(file_uuid)
-                fmd.user_id = user_id
-                ins = file_meta_data.insert().values(**vars(fmd))
-                await conn.execute(ins)
-                bucket_name, object_name = _parse_simcore(file_uuid)
-                return self.s3_client.create_presigned_put_url(bucket_name, object_name)
+        async with self.engine.acquire() as conn:
+            fmd = FileMetaData()
+            fmd.simcore_from_uuid(file_uuid)
+            fmd.user_id = user_id
+            ins = file_meta_data.insert().values(**vars(fmd))
+            await conn.execute(ins)
+            bucket_name, object_name = _parse_simcore(file_uuid)
+            return self.s3_client.create_presigned_put_url(bucket_name, object_name)
 
     async def copy_file(self, user_id: str, location: str, file_uuid: str, source_uuid: str):
         if location == "datcore":

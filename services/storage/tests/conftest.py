@@ -14,6 +14,7 @@ from pathlib import Path
 from random import randrange
 
 import pytest
+from aiopg.sa import create_engine
 
 import simcore_service_storage
 import utils
@@ -122,6 +123,17 @@ def postgres_service_url(postgres_service, docker_services, docker_ip):
     )
 
     return postgres_service_url
+
+@pytest.fixture(scope='function')
+async def postgres_engine(loop, postgres_service_url):
+    postgres_engine = await create_engine(postgres_service_url)
+
+    yield postgres_engine
+
+    if postgres_engine:
+        postgres_engine.close()
+        await postgres_engine.wait_closed()
+
 
 @pytest.fixture(scope='session')
 def minio_service(docker_services, docker_ip):

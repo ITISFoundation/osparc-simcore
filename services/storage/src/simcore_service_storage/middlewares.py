@@ -3,21 +3,21 @@ from aiohttp.web import middleware
 from s3wrapper.s3_client import S3Client
 
 from .dsm import DataStorageManager
-from .settings import APP_CONFIG_KEY, RQT_DSM_KEY
+from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY, RQT_DSM_KEY
 
 
 @middleware
 async def dsm_middleware(request, handler):
     cfg = request.app[APP_CONFIG_KEY]
 
-    db_cfg = cfg["postgres"]
+    # db_cfg = cfg["postgres"]
 
-    db_endpoint = 'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
-            database=db_cfg["database"],
-            user=db_cfg["user"],
-            password=db_cfg["password"],
-            host=db_cfg["host"],
-            port=db_cfg["port"])
+    # db_endpoint = 'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
+    #         database=db_cfg["database"],
+    #         user=db_cfg["user"],
+    #         password=db_cfg["password"],
+    #         host=db_cfg["host"],
+    #         port=db_cfg["port"])
 
 
     s3_cfg = cfg["s3"]
@@ -29,7 +29,10 @@ async def dsm_middleware(request, handler):
 
     main_cfg = cfg["main"]
     python27_exec = main_cfg["python2"]
-    dsm = DataStorageManager(db_endpoint, s3_client, python27_exec)
+
+    engine = request.app.get(APP_DB_ENGINE_KEY)
+
+    dsm = DataStorageManager(s3_client, python27_exec, engine)
 
     request[RQT_DSM_KEY] = dsm
     try:
