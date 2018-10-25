@@ -1,12 +1,12 @@
 #pylint: disable=C0111
-import datetime
+from pathlib import Path
 
 import pytest
-from pathlib import Path
+
 from simcore_sdk.nodeports import config, exceptions
 from simcore_sdk.nodeports._data_item import DataItem
-from simcore_sdk.nodeports._schema_item import SchemaItem
 from simcore_sdk.nodeports._item import Item
+from simcore_sdk.nodeports._schema_item import SchemaItem
 
 
 def create_item(item_type, item_value):
@@ -88,4 +88,3 @@ def test_set_new_invalid_value(bucket, item_type, item_value_to_set): # pylint: 
     with pytest.raises(exceptions.InvalidItemTypeError, message="Expecting InvalidItemTypeError") as excinfo:
         item.set(item_value_to_set)
     assert "Invalid item type" in str(excinfo.value)
-    

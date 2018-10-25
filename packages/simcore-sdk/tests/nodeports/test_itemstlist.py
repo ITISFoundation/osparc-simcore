@@ -1,16 +1,11 @@
 #pylint: disable=C0111
-import datetime
-import time
-
-import dateutil.parser
-
-import pytest
 import mock
+import pytest
 
-from simcore_sdk.nodeports._item import Item
-from simcore_sdk.nodeports._items_list import ItemsList
 from simcore_sdk.nodeports._data_item import DataItem
 from simcore_sdk.nodeports._data_items_list import DataItemsList
+from simcore_sdk.nodeports._item import Item
+from simcore_sdk.nodeports._items_list import ItemsList
 from simcore_sdk.nodeports._schema_item import SchemaItem
 from simcore_sdk.nodeports._schema_items_list import SchemaItemsList
 
@@ -66,4 +61,3 @@ def test_modifying_items_triggers_cb(): #pylint: disable=C0103
     mock_method.reset_mock()
     itemslist[0].set(234)
     mock_method.assert_called_once()
-    

@@ -16,10 +16,11 @@ def _check_payload_schema(payloads, schemas):
             raise exceptions.InvalidProtocolError(None, msg="More payload than schemas!")
 
 
-#pylint: disable=C0111
+#pylint: disable=C0111, R0902
 class Nodeports:
     """This class allow the client to access the inputs and outputs assigned to the node."""
     _version = "0.1"
+    #pylint: disable=R0913
     def __init__(self, version: str, input_schemas: SchemaItemsList=None, output_schemas: SchemaItemsList=None, 
                                     input_payloads: DataItemsList=None, outputs_payloads: DataItemsList=None):
         log.debug("Initialising Nodeports object with version %s, inputs %s and outputs %s", version, input_payloads, outputs_payloads)
@@ -108,6 +109,8 @@ class Nodeports:
         if not self.db_mgr:
             raise exceptions.NodeportsException("db manager is not initialised")
         updated_nodeports = serialization.create_from_json(self.db_mgr)
+        # copy from updated nodeports
+        # pylint: disable=W0212
         self._input_schemas = updated_nodeports._input_schemas
         self._output_schemas = updated_nodeports._output_schemas
         self._inputs_payloads = updated_nodeports._inputs_payloads

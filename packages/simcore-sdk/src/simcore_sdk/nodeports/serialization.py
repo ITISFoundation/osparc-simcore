@@ -2,7 +2,7 @@
 import json
 import logging
 
-from simcore_sdk.nodeports import config, exceptions, nodeports
+from simcore_sdk.nodeports import config, exceptions, nodeports #pylint: disable=R0401
 from simcore_sdk.nodeports._data_item import DataItem
 from simcore_sdk.nodeports._schema_item import SchemaItem
 from simcore_sdk.nodeports._data_items_list import DataItemsList

@@ -78,7 +78,7 @@ class Item():
         possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
         log.debug("possible types are for value %s are %s", value, possible_types)
         if not self.type in possible_types:
-            if not str(self.type).startswith(config.FILE_TYPE_PREFIX) or not (isinstance(value, Path) or isinstance(value, str)):
+            if not str(self.type).startswith(config.FILE_TYPE_PREFIX) or not isinstance(value, (Path, str)):
                 raise exceptions.InvalidItemTypeError(self.type, value)
 
         # upload to S3 if file
