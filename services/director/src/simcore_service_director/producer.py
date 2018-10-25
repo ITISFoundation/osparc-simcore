@@ -263,9 +263,12 @@ def __get_repos_from_key(service_key):
     return list_of_images
 
 def __get_dependant_repos(service_key, service_tag):
+    list_of_images = __get_repos_from_key(service_key)
+    tag = __find_service_tag(list_of_images, service_key, 'Unkonwn name', service_tag)
+
     list_of_images = {}
     # look for dependencies
-    dependent_repositories = registry_proxy.list_interactive_service_dependencies(service_key, service_tag)
+    dependent_repositories = registry_proxy.list_interactive_service_dependencies(service_key, tag)
     for repo in dependent_repositories:
         list_of_images[repo] = registry_proxy.retrieve_list_of_images_in_repo(repo)
     return list_of_images
