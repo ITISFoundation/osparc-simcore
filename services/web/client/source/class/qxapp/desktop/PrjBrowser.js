@@ -64,7 +64,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
     newPrjBtnClkd: function() {
       let win = new qx.ui.window.Window(this.tr("Create New Project")).set({
-        layout: new qx.ui.layout.Canvas(),
+        layout: new qx.ui.layout.Grow(),
         contentPadding: 0,
         showMinimize: false,
         showMaximize: false,
