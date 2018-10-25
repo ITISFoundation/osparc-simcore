@@ -1,5 +1,4 @@
 version: '1.0'
-# TODO rename as main
 main:
   client_outdir: ~/devp/osparc-simcore/services/web/client/source-output
   host: 127.0.0.1
@@ -8,7 +7,8 @@ main:
   public_url: http://localhost:8080
   testing: true
   disable_services: [director, postgres, rabbit, s3]
-# TODO add section service
+  db:
+    init_tables: True
 director:
   host: director
   port: 8001

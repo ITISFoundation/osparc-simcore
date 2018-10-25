@@ -8,6 +8,8 @@ main:
   client_outdir: ${SIMCORE_WEB_OUTDIR}
   log_level: INFO
   testing: False
+  db:
+    init_tables: True
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}

@@ -6,6 +6,8 @@ main:
   port: 8080
   testing: true
   disable_services: ['rabbit', 'director', 's3']
+  db:
+    init_tables: False
 director:
   host: director
   port: 8001

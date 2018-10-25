@@ -9,6 +9,8 @@ main:
   log_level: DEBUG
   testing: True
   # disable_services: [director, postgres, rabbit, s3]
+  db:
+    init_tables: False
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
