@@ -108,7 +108,10 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
 
     _applyIcon: function(value, old) {
       let icon = this.getChildControl("icon");
-      icon.setSource(value);
+      icon.set({
+        source: value,
+        paddingTop: value && value.match(/^@/) ? 30 : 0
+      });
     },
 
     _applyPrjTitle: function(value, old) {
@@ -123,8 +126,12 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
 
     _applyCreated: function(value, old) {
       let label = this.getChildControl("created");
-      const dateStr = this._dateFormat.format(value);
-      label.setValue("Created on: <b>" + dateStr + "</b>");
+      if (value) {
+        const dateStr = this._dateFormat.format(value);
+        label.setValue("Created on: <b>" + dateStr + "</b>");
+      } else {
+        label.resetValue();
+      }
     },
     _forwardStates: {
       focused : true,

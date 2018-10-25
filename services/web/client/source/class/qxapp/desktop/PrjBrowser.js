@@ -16,7 +16,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     });
     this.add(rightSpacer);
 
-    let controlsLayout = this.__createControls();
+    // let controlsLayout = this.__createControls();
 
     const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
     let myPrjsLabel = this.__mainViewCaption = new qx.ui.basic.Label(this.tr("My Projects")).set({
@@ -32,8 +32,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     let publicProjectList = this.__list2 = this.__createPublicProjectList();
 
     mainView.add(new qx.ui.core.Spacer(null, 10));
-    mainView.add(controlsLayout);
-    mainView.add(new qx.ui.core.Spacer(null, 10));
+    //mainView.add(controlsLayout);
+    //mainView.add(new qx.ui.core.Spacer(null, 10));
     mainView.add(myPrjsLabel);
     mainView.add(userProjectList);
     mainView.add(new qx.ui.core.Spacer(null, 10));
@@ -72,11 +72,13 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         contentPadding: 0,
         showMinimize: false,
         showMaximize: false,
-        minWidth: 500
+        minWidth: 500,
+        centerOnAppear: true,
+        autoDestroy: true
       });
 
       let newProjectDlg = new qxapp.component.widget.NewProjectDlg();
-      newProjectDlg.addListener("CreatePrj", e => {
+      newProjectDlg.addListenerOnce("CreatePrj", e => {
         const data = e.getData();
         const newPrj = {
           name: data.prjTitle,
@@ -85,14 +87,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         this.__startBlankProject(newPrj);
         win.close();
       }, this);
-      win.add(newProjectDlg, {
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0
-      });
-
-      win.center();
+      win.add(newProjectDlg);
       win.open();
     },
 
@@ -124,6 +119,13 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       // controller
       let userPrjList = qxapp.data.Store.getInstance().getUserProjectList();
       let userPrjArrayModel = this.__getProjectArrayModel(userPrjList);
+      userPrjArrayModel.unshift(qx.data.marshal.Json.createModel({
+        name: this.tr("New Project"),
+        thumbnail: "@FontAwesome5Solid/plus-circle/80",
+        projectUuid: null,
+        created: null,
+        owner: null
+      }));
       let prjCtr = this.__controller = new qx.data.controller.List(userPrjArrayModel, prjLst, "name");
       const fromTemplate = false;
       let delegate = this.__getDelegate(fromTemplate);
@@ -169,11 +171,15 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           let item = new qxapp.desktop.PrjBrowserListItem();
           item.addListener("dbltap", e => {
             const prjUuid = item.getModel();
-            let projectModel = getProjectModel(prjUuid, fromTemplate);
-            const data = {
-              projectModel: projectModel
-            };
-            that.fireDataEvent("StartProject", data);
+            if (prjUuid) {
+              let projectModel = getProjectModel(prjUuid, fromTemplate);
+              const data = {
+                projectModel: projectModel
+              };
+              that.fireDataEvent("StartProject", data);
+            } else {
+              that.__newPrjBtnClkd();
+            }
           });
           return item;
         },
@@ -184,7 +190,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               // let thumbnailUrl = data === null ? "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/tech/grayscale/?"+Math.random()+"random.jpg" : data;
               // thumbnailUrl = thumbnailUrl.replace("https://placeimg.com/171/96/", "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/");
               const nThumbnails = 5;
-              let thumbnailUrl = "qxapp/thumbnail"+ (Math.floor(Math.random()*nThumbnails)) +".png";
+              let thumbnailUrl = data ? data : "qxapp/thumbnail"+ (Math.floor(Math.random()*nThumbnails)) +".png";
               return thumbnailUrl;
             }
           }, item, id);
@@ -195,12 +201,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           }, item, id);
           controller.bindProperty("owner", "creator", {
             converter: function(data, model, source, target) {
-              return "Created by: <b>" + data + "</b>";
+              return data ? "Created by: <b>" + data + "</b>" : null;
             }
           }, item, id);
           controller.bindProperty("created", "created", {
             converter: function(data) {
-              return new Date(data);
+              return data ? new Date(data) : null;
             }
           }, item, id);
           controller.bindProperty("projectUuid", "model", {
@@ -210,7 +216,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           }, item, id);
         },
         configureItem : function(item) {
-          item.getChildControl("icon").set({
+          let icon = item.getChildControl("icon").set({
             width: thumbnailWidth,
             height: thumbnailHeight,
             scale: true

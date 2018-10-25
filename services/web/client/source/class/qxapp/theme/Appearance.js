@@ -22,20 +22,6 @@ qx.Theme.define("qxapp.theme.Appearance", {
         };
       }
     },
-    "pb-listitem": {
-      style: function(states) {
-        let backgroundColor = "material-button-background";
-
-        if (states.hovered) {
-          backgroundColor = "material-button-background-hovered";
-        }
-        if (states.selected) {
-          backgroundColor = "material-button-background-pressed";
-        }
-        return {
-          backgroundColor: backgroundColor
-        };
-      }
-    }
+    "pb-listitem": "material-button"
   }
 });
