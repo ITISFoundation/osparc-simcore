@@ -186,7 +186,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               // let thumbnailUrl = data === null ? "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/tech/grayscale/?"+Math.random()+"random.jpg" : data;
               // thumbnailUrl = thumbnailUrl.replace("https://placeimg.com/171/96/", "https://placeimg.com/"+thumbnailWidth+"/"+thumbnailHeight+"/");
               const nThumbnails = 5;
-              let thumbnailUrl = data ? data : "qxapp/thumbnail"+ (Math.floor(Math.random()*nThumbnails)) +".png";
+              let thumbnailUrl = data.match(/^@/) ? data : "qxapp/thumbnail"+ (Math.floor(Math.random()*nThumbnails)) +".png";
               return thumbnailUrl;
             }
           }, item, id);
