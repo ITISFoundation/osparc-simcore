@@ -4,6 +4,7 @@ main:
   host: 127.0.0.1
   log_level: DEBUG
   port: 8080
+  public_url: http://localhost:9081
   testing: true
   disable_services: []
 director:
