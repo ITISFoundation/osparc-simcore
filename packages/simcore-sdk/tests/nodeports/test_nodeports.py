@@ -13,6 +13,17 @@ def test_access_with_key(default_nodeports_configuration): # pylint: disable=W06
     assert PORTS.inputs["in_5"].value == PORTS.inputs[1].value
     assert PORTS.outputs["out_1"].description == PORTS.outputs[0].description
 
+def create_special_configuration(special_nodeports_configuration, item_key, item_type):
+    special_config = helpers.get_empty_config() #pylint: disable=E1101
+    special_config["schema"]["outputs"].update({
+        item_key:{
+        "label": "additional data",
+        "description": "here some additional data",
+        "displayOrder":2,
+        "type": item_type}})
+    special_config["outputs"].update({item_key:None})
+    special_nodeports_configuration(special_config)
+
 @pytest.mark.parametrize("item_type, item_value", [
     ("integer", 26),
     ("integer", 0),
@@ -26,20 +37,13 @@ def test_access_with_key(default_nodeports_configuration): # pylint: disable=W06
     ("string", ""),
 ])
 def test_port_value_accessors_no_s3(special_nodeports_configuration, item_type, item_value): # pylint: disable=W0613, W0621
-    special_config = helpers.get_empty_config() #pylint: disable=E1101
-    special_config["schema"]["outputs"].update({
-        "out_15":{
-        "label": "additional data",
-        "description": "here some additional data",
-        "displayOrder":2,
-        "type": item_type}})
-    special_config["outputs"].update({"out_15":None})
-    special_nodeports_configuration(special_config)
+    item_key = "out_15"
+    create_special_configuration(special_nodeports_configuration, item_key, item_type)
     from simcore_sdk.nodeports.nodeports import PORTS
-    assert PORTS.outputs["out_15"].get() is None
-    PORTS.outputs["out_15"].set(item_value)
-    assert PORTS.outputs["out_15"].value == item_value
-    converted_value = PORTS.outputs["out_15"].get()
+    assert PORTS.outputs[item_key].get() is None
+    PORTS.outputs[item_key].set(item_value)
+    assert PORTS.outputs[item_key].value == item_value
+    converted_value = PORTS.outputs[item_key].get()
     assert isinstance(converted_value, node_config.TYPE_TO_PYTHON_TYPE_MAP[item_type]["type"])
     assert converted_value == item_value
 
@@ -47,18 +51,10 @@ def test_port_value_accessors_no_s3(special_nodeports_configuration, item_type, 
     ("data:*/*", __file__)
 ])
 def test_port_value_accessors_s3(special_nodeports_configuration, bucket, item_type, item_value): # pylint: disable=W0613, W0621
+    item_key = "out_blah"
+    create_special_configuration(special_nodeports_configuration, item_key, item_type)
     import os
     import tempfile
-    special_config = helpers.get_empty_config() #pylint: disable=E1101
-    item_key = "out_blah"
-    special_config["schema"]["outputs"].update({
-        item_key:{
-        "label": "additional data",
-        "description": "here some additional data",
-        "displayOrder":2,
-        "type": item_type}})
-    special_config["outputs"].update({item_key:None})
-    special_nodeports_configuration(special_config)
     from simcore_sdk.nodeports.nodeports import PORTS
     assert PORTS.outputs[item_key].get() is None # check emptyness
 
@@ -74,271 +70,189 @@ def test_port_value_accessors_s3(special_nodeports_configuration, bucket, item_t
     converted_value_to_check_for = str(Path(tempfile.gettempdir(), "simcorefiles", item_key))
     assert str(PORTS.outputs[item_key].get()).startswith(converted_value_to_check_for)
 
-def test_file_integrity(special_nodeports_configuration, bucket): # pylint: disable=W0613, W0621
-    special_config = helpers.get_empty_config() #pylint: disable=E1101
+@pytest.mark.parametrize("item_type, item_value", [
+    ("data:*/*", __file__)
+])
+def test_file_integrity(special_nodeports_configuration, bucket, item_type, item_value): # pylint: disable=W0613, W0621
     item_key = "out_blah"
-    special_config["outputs"].append({
-        "key": item_key,
-        "label": "additional data",
-        "desc": "here some additional data",
-        "type": "file-url",
-        "value": "null",
-        "timestamp": "2018-05-22T19:34:53.511Z"
-    })
-    special_nodeports_configuration(special_config)
+    create_special_configuration(special_nodeports_configuration, item_key, item_type)
     from simcore_sdk.nodeports.nodeports import PORTS
     assert PORTS.outputs[item_key].get() is None # check emptyness
 
     # this triggers an upload to S3 + configuration change
-    PORTS.outputs[item_key].set(__file__)
+    PORTS.outputs[item_key].set(item_value)
 
     downloaded_file_path = PORTS.outputs[item_key].get()
     import filecmp
     filecmp.clear_cache()
-    assert filecmp.cmp(__file__, downloaded_file_path, shallow=False)
+    assert filecmp.cmp(item_value, downloaded_file_path, shallow=False)
 
-def test_folder_integrity(special_nodeports_configuration, bucket): # pylint: disable=W0613, W0621
-    special_config = helpers.get_empty_config() #pylint: disable=E1101
-    item_key = "out_blah"
-    special_config["outputs"].append({
-        "key": item_key,
-        "label": "additional data",
-        "desc": "here some additional data",
-        "type": "folder-url",
-        "value": "null",
-        "timestamp": "2018-05-22T19:34:53.511Z"
-    })
-    special_nodeports_configuration(special_config)
-    from simcore_sdk.nodeports.nodeports import PORTS
-    assert PORTS.outputs[item_key].get() is None # check emptyness
-
-    # this triggers an upload to S3 + configuration change
-    original_path = str(Path(__file__).parent)
-    PORTS.outputs[item_key].set(original_path)
-    downloaded_folder_path = PORTS.outputs[item_key].get()
-
-    original_files = [f for f in Path(original_path).glob("*") if f.is_file()]
-    downloaded_files = list(Path(downloaded_folder_path).glob("*"))
-
-    assert len(original_files) == len(downloaded_files)
-
-    import filecmp
-    for i in range(len(original_files)):
-        assert filecmp.cmp(original_files[i], downloaded_files[i])
-    
-
-@pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
+# @pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
 def test_adding_new_ports(special_nodeports_configuration):
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
-    engine, session, pipeline_id, node_uuid = special_nodeports_configuration(special_configuration) #pylint: disable=W0612
+    engine, session, pipeline_id, node_uuid, _ = special_nodeports_configuration(special_configuration) #pylint: disable=W0612
     from simcore_sdk.nodeports.nodeports import PORTS
     # check empty configuration
     assert not PORTS.inputs
     assert not PORTS.outputs
 
     # replace the configuration now, add an input
-    special_configuration["inputs"].append({
-        "key": "in_15",
+    special_configuration["schema"]["inputs"].update({
+        "in_15":{
         "label": "additional data",
-        "desc": "here some additional data",
-        "type": "integer",
-        "value": "15",
-        "timestamp": "2018-05-22T19:34:53.511Z"
-    })
+        "description": "here some additional data",
+        "displayOrder":2,
+        "type": "integer"}})
+    special_configuration["inputs"].update({"in_15":15})
     helpers.update_configuration(session, pipeline_id, node_uuid, special_configuration) #pylint: disable=E1101
 
     assert len(PORTS.inputs) == 1
     assert PORTS.inputs[0].key == "in_15"
     assert PORTS.inputs[0].label == "additional data"
-    assert PORTS.inputs[0].desc == "here some additional data"
+    assert PORTS.inputs[0].description == "here some additional data"
     assert PORTS.inputs[0].type == "integer"
-    assert PORTS.inputs[0].value == "15"
-    assert PORTS.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
+    assert PORTS.inputs[0].value == 15
 
     # # replace the configuration now, add an output
-    special_configuration["outputs"].append({
-        "key": "out_15",
+    special_configuration["schema"]["outputs"].update({
+        "out_15":{
         "label": "output data",
-        "desc": "a cool output",
-        "type": "bool",
-        "value": "null",
-        "timestamp": "2018-05-22T19:34:53.511Z"
-    })
+        "description": "a cool output",
+        "displayOrder":2,
+        "type": "boolean"}})
+    special_configuration["outputs"].update({"in_15":None})
     helpers.update_configuration(session, pipeline_id, node_uuid, special_configuration) #pylint: disable=E1101
 
     # # no change on inputs
     assert len(PORTS.inputs) == 1
     assert PORTS.inputs[0].key == "in_15"
     assert PORTS.inputs[0].label == "additional data"
-    assert PORTS.inputs[0].desc == "here some additional data"
+    assert PORTS.inputs[0].description == "here some additional data"
     assert PORTS.inputs[0].type == "integer"
-    assert PORTS.inputs[0].value == "15"
-    assert PORTS.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
+    assert PORTS.inputs[0].value == 15
     # # new output
     assert len(PORTS.outputs) == 1
     assert PORTS.outputs[0].key == "out_15"
     assert PORTS.outputs[0].label == "output data"
-    assert PORTS.outputs[0].desc == "a cool output"
-    assert PORTS.outputs[0].type == "bool"
-    assert PORTS.outputs[0].value == "null"
-    assert PORTS.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
+    assert PORTS.outputs[0].description == "a cool output"
+    assert PORTS.outputs[0].type == "boolean"
+    assert PORTS.outputs[0].value == None
 
-@pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
+# @pytest.mark.skip(reason="SAN: this does not pass on travis but does on my workstation")
 def test_removing_ports(special_nodeports_configuration):
     special_configuration = helpers.get_empty_config() #pylint: disable=E1101
     # add inputs
-    special_configuration["inputs"].append({
-        "key": "in_15",
+    special_configuration["schema"]["inputs"].update({
+        "in_15":{
         "label": "additional data",
-        "desc": "here some additional data",
-        "type": "integer",
-        "value": "15",
-        "timestamp": "2018-05-22T19:34:53.511Z"
-    })
-    special_configuration["inputs"].append({
-        "key": "in_17",
+        "description": "here some additional data",
+        "displayOrder":2,
+        "type": "integer"}})
+    special_configuration["inputs"].update({"in_15":15})
+    special_configuration["schema"]["inputs"].update({
+        "in_17":{
         "label": "additional data",
-        "desc": "here some additional data",
-        "type": "integer",
-        "value": "15",
-        "timestamp": "2018-05-22T19:34:53.511Z"
-    })
-    special_configuration["outputs"].append({
-        "key": "out_15",
+        "description": "here some additional data",
+        "displayOrder":2,
+        "type": "integer"}})
+    special_configuration["inputs"].update({"in_17":15})
+    special_configuration["schema"]["outputs"].update({
+        "out_15":{
         "label": "additional data",
-        "desc": "here some additional data",
-        "type": "integer",
-        "value": "15",
-        "timestamp": "2018-05-22T19:34:53.511Z"
-    })
-    special_configuration["outputs"].append({
-        "key": "out_17",
+        "description": "here some additional data",
+        "displayOrder":2,
+        "type": "integer"}})
+    special_configuration["outputs"].update({"out_15":15})
+    special_configuration["schema"]["outputs"].update({
+        "out_17":{
         "label": "additional data",
-        "desc": "here some additional data",
-        "type": "integer",
-        "value": "15",
-        "timestamp": "2018-05-22T19:34:53.511Z"
-    })
+        "description": "here some additional data",
+        "displayOrder":2,
+        "type": "integer"}})
+    special_configuration["outputs"].update({"out_17":15})
 
-    engine, session, pipeline_id, node_uuid = special_nodeports_configuration(special_configuration) #pylint: disable=W0612
+    engine, session, pipeline_id, node_uuid, _ = special_nodeports_configuration(special_configuration) #pylint: disable=W0612
     from simcore_sdk.nodeports.nodeports import PORTS
     assert len(PORTS.inputs) == 2
     assert len(PORTS.outputs) == 2
     # let's remove the first input
-    del special_configuration["inputs"][0]
+    del special_configuration["schema"]["inputs"]["in_15"]
+    del special_configuration["inputs"]["in_15"]
     helpers.update_configuration(session, pipeline_id, node_uuid, special_configuration) #pylint: disable=E1101
     assert len(PORTS.inputs) == 1
     assert len(PORTS.outputs) == 2
 
     assert PORTS.inputs[0].key == "in_17"
     assert PORTS.inputs[0].label == "additional data"
-    assert PORTS.inputs[0].desc == "here some additional data"
+    assert PORTS.inputs[0].description == "here some additional data"
     assert PORTS.inputs[0].type == "integer"
-    assert PORTS.inputs[0].value == "15"
-    assert PORTS.inputs[0].timestamp == "2018-05-22T19:34:53.511Z"
+    assert PORTS.inputs[0].value == 15
 
     # let's do the same for the second output
-    del special_configuration["outputs"][1]
+    del special_configuration["schema"]["outputs"]["out_17"]
+    del special_configuration["outputs"]["out_17"]
     helpers.update_configuration(session, pipeline_id, node_uuid, special_configuration) #pylint: disable=E1101
     assert len(PORTS.inputs) == 1
     assert len(PORTS.outputs) == 1
 
     assert PORTS.outputs[0].key == "out_15"
     assert PORTS.outputs[0].label == "additional data"
-    assert PORTS.outputs[0].desc == "here some additional data"
+    assert PORTS.outputs[0].description == "here some additional data"
     assert PORTS.outputs[0].type == "integer"
-    assert PORTS.outputs[0].value == "15"
-    assert PORTS.outputs[0].timestamp == "2018-05-22T19:34:53.511Z"
-
-def test_changing_inputs_error(default_nodeports_configuration): # pylint: disable=W0613
-    from simcore_sdk.nodeports.nodeports import PORTS
-    from simcore_sdk.nodeports.nodeports import DataItemsList
-    from simcore_sdk.nodeports import exceptions
-
-    with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
-        PORTS.inputs = DataItemsList()
-    assert "Trying to modify read-only object" in str(excinfo.value)
-
-
-    from simcore_sdk.nodeports._data_item import DataItem
-    new_input = DataItem(key="dummy_1", 
-                         label="new label", 
-                         desc="new description", 
-                         type="integer", 
-                         value="233", 
-                         timestamp="2018-06-04T09:46:43:343")
-    with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
-        PORTS.inputs[1] = new_input
-    assert "Trying to modify read-only object" in str(excinfo.value)
-
-def test_changing_outputs_error(default_nodeports_configuration): # pylint: disable=W0613
-    from simcore_sdk.nodeports.nodeports import PORTS
-    from simcore_sdk.nodeports.nodeports import DataItemsList
-    from simcore_sdk.nodeports import exceptions
-
-    with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
-        PORTS.outputs = DataItemsList()
-    assert "Trying to modify read-only object" in str(excinfo.value)
-
-
-    from simcore_sdk.nodeports._data_item import DataItem
-    new_output = DataItem(key="dummy_1", 
-                          label="new label", 
-                          desc="new description", 
-                          type="integer", 
-                          value="233", 
-                          timestamp="2018-06-04T09:46:43:343")
-     
-    with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
-        PORTS.outputs[0] = new_output
-    assert "Trying to modify read-only object" in str(excinfo.value)
+    assert PORTS.outputs[0].value == 15
 
 def test_get_file_follows_previous_node(special_nodeports_configuration, s3_client, bucket, tmpdir):
-    previous_node_config = helpers.get_empty_config()  #pylint: disable=E1101
+    # create some file on S3
     dummy_file_name = "some_file.ext"
-    previous_node_config["outputs"].append({
-        "key": "output_123",
-        "label": "output 123",
-        "desc": "some output data",
-        "type": "file-url",
-        "value": "link.SIMCORE_NODE_UUID.{file}".format(file=dummy_file_name),
-        "timestamp": "2018-05-22T19:33:53.511Z"
-    })
+    file_path = Path(tmpdir, dummy_file_name)
+    file_path.write_text("test text")    
+
+
+    previous_node_config = helpers.get_empty_config()  #pylint: disable=E1101    
+    previous_node_config["schema"]["outputs"].update({
+        "output_123":{
+        "label": "additional data",
+        "description": "here some additional data",
+        "displayOrder":2,
+        "type": "data:*/*"}})
+    previous_node_config["outputs"].update({"output_123":{"store":"s3-z43", "path":"{file}".format(file=Path("SIMCORE_PIPELINE_ID", "SIMCORE_NODE_UUID",dummy_file_name))}})
 
     current_node_config = helpers.get_empty_config()  #pylint: disable=E1101
-    current_node_config["inputs"].append({
-        "key": "in_15",
+    current_node_config["schema"]["inputs"].update({
+        "in_15":{
         "label": "additional data",
-        "desc": "here some additional data",
-        "type": "file-url",
-        "value": "link.SIMCORE_NODE_UUID.output_123",
-        "timestamp": "2018-05-22T19:34:53.511Z"
-    })
+        "description": "here some additional data",
+        "displayOrder":2,
+        "type": "data:*/*"}})
+    current_node_config["inputs"].update({"in_15":{"nodeUuid":"SIMCORE_NODE_UUID", "output":"output_123"}})
     # create the initial configuration
-    _, session, pipeline_id, node_uuid, other_node_uuids = special_nodeports_configuration(current_node_config, [previous_node_config])
+    _, session, pipeline_id, node_uuid, other_node_uuids = special_nodeports_configuration(current_node_config, [previous_node_config])    
     assert len(other_node_uuids) == 1
     # update the link to the previous node with the correct uuid
-    current_node_config["inputs"][0]["value"] = "link.{nodeuuid}.output_123".format(nodeuuid=other_node_uuids[0])
+    current_node_config["inputs"]["in_15"]["nodeUuid"] = str(other_node_uuids[0])
     helpers.update_configuration(session, pipeline_id, node_uuid, current_node_config) #pylint: disable=E1101
+    # update the previous node with the actual file path
+    s3_object_name = Path(str(pipeline_id), str(other_node_uuids[0]), dummy_file_name).as_posix()
+    previous_node_config["outputs"]["output_123"]["path"] = s3_object_name
+    helpers.update_configuration(session, pipeline_id, other_node_uuids[0], previous_node_config) #pylint: disable=E1101
+
     from simcore_sdk.nodeports.nodeports import PORTS
     assert len(PORTS.inputs) == 1
-    assert PORTS.inputs[0].key == current_node_config["inputs"][0]["key"]
-    assert PORTS.inputs[0].label == current_node_config["inputs"][0]["label"]
-    assert PORTS.inputs[0].desc == current_node_config["inputs"][0]["desc"]
-    assert PORTS.inputs[0].type == current_node_config["inputs"][0]["type"]
-    assert PORTS.inputs[0].value == current_node_config["inputs"][0]["value"]
-    assert PORTS.inputs[0].timestamp == current_node_config["inputs"][0]["timestamp"]
+    assert PORTS.inputs[0].key == "in_15"
+    assert PORTS.inputs["in_15"].label == current_node_config["schema"]["inputs"]["in_15"]["label"]
+    assert PORTS.inputs["in_15"].description == current_node_config["schema"]["inputs"]["in_15"]["description"]
+    assert PORTS.inputs["in_15"].type == current_node_config["schema"]["inputs"]["in_15"]["type"]
+    assert PORTS.inputs["in_15"].value == current_node_config["inputs"]["in_15"]
 
     # upload some dummy file
-    file_path = Path(tmpdir, dummy_file_name)
-    file_path.write_text("test text")
-    s3_object_name = Path(str(pipeline_id), str(other_node_uuids[0]), dummy_file_name).as_posix()
     s3_client.upload_file(bucket, str(s3_object_name), str(file_path))
 
     file_path = PORTS.inputs[0].get()
     assert Path(file_path).exists()
+    assert file_path.name == dummy_file_name
     assert Path(file_path).read_text() == "test text"
 
     file_path2 = PORTS.get("in_15")
     assert Path(file_path2).exists()
+    assert file_path2.name == dummy_file_name
     assert Path(file_path2).read_text() == "test text"
