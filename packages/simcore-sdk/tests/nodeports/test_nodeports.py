@@ -201,12 +201,54 @@ def test_removing_ports(special_nodeports_configuration):
     assert PORTS.outputs[0].type == "integer"
     assert PORTS.outputs[0].value == 15
 
-def test_get_file_follows_previous_node(special_nodeports_configuration, s3_client, bucket, tmpdir):
-    # create some file on S3
-    dummy_file_name = "some_file.ext"
-    file_path = Path(tmpdir, dummy_file_name)
-    file_path.write_text("test text")    
+@pytest.mark.parametrize("item_type, item_value", [
+    ("integer", 26),
+    ("integer", 0),
+    ("integer", -52),
+    ("number", -746.4748),
+    ("number", 0.0),
+    ("number", 4566.11235),
+    ("boolean", False),    
+    ("boolean", True),
+    ("string", "test-string"),
+    ("string", ""),
+])
+def test_get_value_previous_node(special_nodeports_configuration, item_type, item_value):
+    previous_node_config = helpers.get_empty_config()  #pylint: disable=E1101    
+    previous_node_config["schema"]["outputs"].update({
+        "output_123":{
+        "label": "additional data",
+        "description": "here some additional data",
+        "displayOrder":2,
+        "type": item_type}})
+    previous_node_config["outputs"].update({"output_123":item_value}) 
 
+    current_node_config = helpers.get_empty_config()  #pylint: disable=E1101
+    current_node_config["schema"]["inputs"].update({
+        "in_15":{
+        "label": "additional data",
+        "description": "here some additional data",
+        "displayOrder":2,
+        "type": item_type}})
+    current_node_config["inputs"].update({"in_15":{"nodeUuid":"SIMCORE_NODE_UUID", "output":"output_123"}})   
+    _, session, pipeline_id, node_uuid, other_node_uuids = special_nodeports_configuration(current_node_config, [previous_node_config])    
+    assert len(other_node_uuids) == 1
+    current_node_config["inputs"]["in_15"]["nodeUuid"] = str(other_node_uuids[0])
+    helpers.update_configuration(session, pipeline_id, node_uuid, current_node_config) #pylint: disable=E1101
+
+    from simcore_sdk.nodeports.nodeports import PORTS
+    assert len(PORTS.inputs) == 1
+    assert PORTS.inputs[0].key == "in_15"
+    assert PORTS.inputs["in_15"].label == current_node_config["schema"]["inputs"]["in_15"]["label"]
+    assert PORTS.inputs["in_15"].description == current_node_config["schema"]["inputs"]["in_15"]["description"]
+    assert PORTS.inputs["in_15"].type == current_node_config["schema"]["inputs"]["in_15"]["type"]
+    assert PORTS.inputs["in_15"].type == item_type
+    assert PORTS.inputs["in_15"].value == current_node_config["inputs"]["in_15"]
+
+    assert PORTS.inputs["in_15"].get() == item_value
+
+def test_get_file_follows_previous_node(special_nodeports_configuration, s3_client, bucket, tmpdir):
+    dummy_file_name = "some_file.ext"
 
     previous_node_config = helpers.get_empty_config()  #pylint: disable=E1101    
     previous_node_config["schema"]["outputs"].update({
@@ -236,6 +278,11 @@ def test_get_file_follows_previous_node(special_nodeports_configuration, s3_clie
     previous_node_config["outputs"]["output_123"]["path"] = s3_object_name
     helpers.update_configuration(session, pipeline_id, other_node_uuids[0], previous_node_config) #pylint: disable=E1101
 
+    # update to S3
+    file_path = Path(tmpdir, dummy_file_name)
+    file_path.write_text("test text")    
+    s3_client.upload_file(bucket, str(s3_object_name), str(file_path))
+
     from simcore_sdk.nodeports.nodeports import PORTS
     assert len(PORTS.inputs) == 1
     assert PORTS.inputs[0].key == "in_15"
@@ -243,9 +290,6 @@ def test_get_file_follows_previous_node(special_nodeports_configuration, s3_clie
     assert PORTS.inputs["in_15"].description == current_node_config["schema"]["inputs"]["in_15"]["description"]
     assert PORTS.inputs["in_15"].type == current_node_config["schema"]["inputs"]["in_15"]["type"]
     assert PORTS.inputs["in_15"].value == current_node_config["inputs"]["in_15"]
-
-    # upload some dummy file
-    s3_client.upload_file(bucket, str(s3_object_name), str(file_path))
 
     file_path = PORTS.inputs[0].get()
     assert Path(file_path).exists()
