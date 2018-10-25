@@ -16,8 +16,6 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     });
     this.add(rightSpacer);
 
-    // let controlsLayout = this.__createControls();
-
     const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
     let myPrjsLabel = this.__mainViewCaption = new qx.ui.basic.Label(this.tr("My Projects")).set({
       font: navBarLabelFont,
@@ -32,8 +30,6 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     let publicProjectList = this.__list2 = this.__createPublicProjectList();
 
     mainView.add(new qx.ui.core.Spacer(null, 10));
-    //mainView.add(controlsLayout);
-    //mainView.add(new qx.ui.core.Spacer(null, 10));
     mainView.add(myPrjsLabel);
     mainView.add(userProjectList);
     mainView.add(new qx.ui.core.Spacer(null, 10));
@@ -66,7 +62,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       return controlsLayout;
     },
 
-    __newPrjBtnClkd: function() {
+    newPrjBtnClkd: function() {
       let win = new qx.ui.window.Window(this.tr("Create New Project")).set({
         layout: new qx.ui.layout.Canvas(),
         contentPadding: 0,
@@ -178,7 +174,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               };
               that.fireDataEvent("StartProject", data);
             } else {
-              that.__newPrjBtnClkd();
+              that.newPrjBtnClkd();
             }
           });
           return item;
@@ -216,7 +212,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           }, item, id);
         },
         configureItem : function(item) {
-          let icon = item.getChildControl("icon").set({
+          item.getChildControl("icon").set({
             width: thumbnailWidth,
             height: thumbnailHeight,
             scale: true
