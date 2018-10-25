@@ -35,7 +35,7 @@ LABEL org.label-schema.schema-version="1.0" \
     org.label-schema.vcs-url="https://github.com/ITISFoundation/osparc-simcore" \
     org.label-schema.vcs-ref=${VCS_REF} \
     org.label-schema.vendor="IT'IS foundation"
-LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 9090}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "env", "type": "string", "value": ["CS_S4L_HOSTNAME=xrpc-worker_%service_uuid%"]}]'
+LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 9090}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "env", "type": "string", "value": ["CS_S4L_HOSTNAME=modeler_xrpc-worker_%service_uuid%"]}]'
 
 #--------------------Development------------------
 FROM common AS development
