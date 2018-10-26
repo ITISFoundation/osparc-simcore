@@ -67,7 +67,7 @@ class Nodeports:
         raise exceptions.ReadOnlyError(self.__outputs)
         #self.__outputs = value
 
-    def get(self, item_key):
+    def get(self, item_key: str):
         try:
             return self.inputs[item_key].get()
         except exceptions.UnboundPortError:
@@ -75,6 +75,15 @@ class Nodeports:
             pass
         # if this fails it will raise an exception
         return self.outputs[item_key].get()
+    
+    def set(self, item_key: str, item_value):
+        try:
+            self.inputs[item_key].set(item_value)
+        except exceptions.UnboundPortError:
+            # not available try outputs
+            pass
+        # if this fails it will raise an exception
+        return self.outputs[item_key].set(item_value)
 
 
     def update_from_json(self):

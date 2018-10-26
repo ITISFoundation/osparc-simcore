@@ -90,13 +90,28 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       return control || this.base(arguments, id);
     },
 
-    buildTree: function() {
-      const files = this.__getObjLists();
+    __clearTree: function() {
       let data = {
-        label: this.__currentUserId,
-        children: qxapp.data.Converters.fromDSMToVirtualTreeModel(files)
+        label: "My Documents",
+        children: []
       };
-      console.log(data);
+      let emptyModel = qx.data.marshal.Json.createModel(data, true);
+      this.__tree.setModel(emptyModel);
+      this.__tree.setDelegate({
+        createItem: () => new qxapp.component.widget.FileTreeItem(),
+        bindItem: (c, item, id) => {
+          c.bindDefaultProperties(item, id);
+          c.bindProperty("fileId", "fileId", null, item, id);
+          c.bindProperty("size", "size", null, item, id);
+        }
+      });
+    },
+
+    buildTree: function() {
+      this.__getFiles();
+    },
+
+    __setTreeData: function(data) {
       let newModel = qx.data.marshal.Json.createModel(data, true);
       let oldModel = this.__tree.getModel();
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
@@ -104,18 +119,29 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       }
     },
 
-    __getObjLists: function() {
-      const slotName = "listObjects";
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-      socket.removeSlot(slotName);
-      socket.on(slotName, function(data) {
-        console.log(slotName, data);
-      }, this);
-      socket.emit(slotName);
+    __addTreeData: function(data) {
+      let newModelToAdd = qx.data.marshal.Json.createModel(data, true);
+      let currentModel = this.__tree.getModel();
+      currentModel.getChildren().append(newModelToAdd);
+      this.__tree.setModel(currentModel);
+    },
 
-      let data = qxapp.dev.fake.Data.getObjectList();
-      console.log("Fake", slotName, data);
-      return data;
+    __getFiles: function() {
+      this.__clearTree();
+      let store = qxapp.data.Store.getInstance();
+      store.addListener("MyDocuments", e => {
+        const files = e.getData();
+        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+        this.__addTreeData(newChildren);
+      }, this);
+      store.getMyDocuments();
+
+      store.addListener("S3PublicDocuments", e => {
+        const files = e.getData();
+        const newChildren = qxapp.data.Converters.fromS3ToVirtualTreeModel(files);
+        this.__addTreeData(newChildren);
+      }, this);
+      store.getS3SandboxFiles();
     },
 
     __createConnections: function(node) {

@@ -17,16 +17,11 @@ servers:
         default: 'localhost'
       port:
         default: '8001'
-  - description: Development server 2
-    url: http://{host}:9081/v0
-    variables:
-      host:
-        default: 'localhost'
   - description: Production server
-    url: https://webserver:{port}/v0
+    url: '{public_url}/v0'
     variables:
-      port:
-        default: '9081'
+      public_url:
+        default: 'https://osparc.io'
 tags:
 - name: admins
   description: Secured Admin-only calls

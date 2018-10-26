@@ -56,3 +56,11 @@ class S3TransferError(NodeportsException):
         if not msg:
             msg = "Error while transferring to/from S3 storage"
         super(S3TransferError, self).__init__(msg)
+
+class S3InvalidPathError(NodeportsException):
+    """S3 transfer error"""
+    def __init__(self, s3_bucket, s3_object_name):
+        msg = "No object in S3 storage at {bucket}/{object}".format(bucket=s3_bucket, object=s3_object_name)
+        super(S3InvalidPathError, self).__init__(msg)
+        self.bucket = s3_bucket
+        self.object_name = s3_object_name
