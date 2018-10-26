@@ -43,8 +43,7 @@ qx.Class.define("qxapp.component.EntityList", {
     let removeBtn = new qx.ui.form.Button(this.tr("Remove entity"));
     removeBtn.set({
       width: 100,
-      height: 30,
-      textColor: "black"
+      height: 30
     });
     removeBtn.addListener("execute", this.__removeEntityPressed.bind(this));
 
