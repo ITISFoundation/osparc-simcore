@@ -68,7 +68,7 @@ async def test_health_check(client):
     assert data['name'] == 'simcore_service_storage'
     assert data['status'] == 'SERVICE_RUNNING'
 
-
+@pytest.mark.travis
 async def test_locations(client):
     user_id = "0"
 
