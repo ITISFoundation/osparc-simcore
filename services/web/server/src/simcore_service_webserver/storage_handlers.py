@@ -2,19 +2,25 @@ from aiohttp import web
 
 from servicelib.rest_utils import extract_and_validate
 
+from .security import authorized_userid, login_required
+
 from . import __version__
 
 # TODO: Implement redirects with client sdk or aiohttp client
 
+@login_required
 async def get_storage_locations(request: web.Request):
-    params, query, body = await extract_and_validate(request)
+   # params, query, body = await extract_and_validate(request)
 
-    assert not params, "params %s" % params
-    assert not query, "query %s" % query
-    assert not body, "body %s" % body
+    #resp = await client.get("/v0/storage/locations")
+    #payload = await resp.json()
+    #return payload
 
-
-    # call endpoint in storage with user_id
+    #user_id = await authorized_userid(request)
+    #async with aiohttp.ClientSession() as session:
+    #    async with session.get('http://httpbin.org/get') as resp:
+    #        print(resp.status)
+    #        print(await resp.text())
 
     locs = [ { "name": "bla", "id" : 0 }]
 

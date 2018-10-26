@@ -29,7 +29,7 @@ pushd $ROOTDIR/services/storage
 pip3 install -r requirements/dev.txt
 popd
 
-pushd $WORKDIR/services/storage
+pushd $ROOTDIR/services/storage
 pip3 install -r requirements/dev.txt
 popd
 

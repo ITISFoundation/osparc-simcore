@@ -5,6 +5,7 @@ import pytest
 from aiohttp import web
 
 from simcore_service_webserver.application_keys import APP_CONFIG_KEY
+from simcore_service_webserver.storage import setup_storage
 from simcore_service_webserver.rest import setup_rest
 
 
@@ -17,6 +18,7 @@ def client(loop, aiohttp_unused_port, aiohttp_client):
     app[APP_CONFIG_KEY] = { 'main': server_kwargs} # Fake config
 
     setup_rest(app)
+    setup_storage(app)
 
     cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
     return cli

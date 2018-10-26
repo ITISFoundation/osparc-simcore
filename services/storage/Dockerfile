@@ -44,6 +44,7 @@ FROM base as build
 RUN apk add --no-cache \
       postgresql-dev \
       gcc \
+      g++ \
       libc-dev \
       libffi-dev \
       python2 \
@@ -77,7 +78,7 @@ FROM build as development
 ARG HOST_GID_ARG=1000
 
 # install test 3rd party packages to accelerate runtime installs
-COPY --chown=scu:scu services/storage/requirements/tests.txt requirements-tests.txt
+COPY --chown=scu:scu services/storage/tests/requirements.txt requirements-tests.txt
 RUN $PIP install --no-cache-dir -r requirements-tests.txt
 
 # in dev mode we give access to `scu` to host's mapped volumes

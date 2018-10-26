@@ -19,7 +19,7 @@ TIMEOUT_IN_SECS = 2
 RESOURCE_KEY_OPENAPI = "oas3/v0"
 
 
-DEFAULT_CONFIG='config-prod.yaml'
+DEFAULT_CONFIG='config-prod.yml'
 
 ## BUILD ------------------------
 #  - Settings revealed at build/installation time

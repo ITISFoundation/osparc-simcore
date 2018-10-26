@@ -57,9 +57,6 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     routes.append(web.post(BASEPATH+path, handle))
 
 
-    # storage
-    routes.extend(storage_routes.create(specs))
-
     return routes
 
 

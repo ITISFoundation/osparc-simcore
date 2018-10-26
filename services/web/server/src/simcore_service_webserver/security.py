@@ -10,7 +10,7 @@ import logging
 import aiohttp_security
 import sqlalchemy as sa
 from aiohttp_security import (SessionIdentityPolicy, authorized_userid, forget,
-                              permits, remember)
+                              permits, remember, login_required)
 from aiohttp_security.abc import AbstractAuthorizationPolicy
 from passlib.hash import sha256_crypt
 
@@ -123,5 +123,6 @@ setup_security = setup
 __all__ = (
     'setup_security',
     'generate_password_hash', 'check_credentials',
-    'authorized_userid', 'forget', 'permits', 'remember'
+    'authorized_userid', 'forget', 'permits', 'remember',
+    'login_required'
 )
