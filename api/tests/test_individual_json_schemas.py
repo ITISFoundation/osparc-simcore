@@ -2,11 +2,11 @@ import pytest
 from pathlib import Path
 from jsonschema import SchemaError, ValidationError, validate
 
-from utils import read_schema, is_json_schema, list_files_in_api_specs
+from utils import load_specs, is_json_schema, list_files_in_api_specs
 
 
 def validate_individual_schemas(spec_file_path: Path):
-    specs_dict = read_schema(spec_file_path)
+    specs_dict = load_specs(spec_file_path)
     if is_json_schema(specs_dict):
         # it seems it is a json schema file
         try:

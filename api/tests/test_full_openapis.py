@@ -3,11 +3,11 @@ from pathlib import Path
 from openapi_spec_validator import validate_spec
 from openapi_spec_validator.exceptions import OpenAPIValidationError
 
-from utils import is_openapi_schema, read_schema, list_files_in_api_specs
+from utils import is_openapi_schema, load_specs, list_files_in_api_specs
 
 
 def validate_openapi_spec(spec_file_path: Path):
-    specs = read_schema(spec_file_path)
+    specs = load_specs(spec_file_path)
     if is_openapi_schema(specs):
         try:
             validate_spec(specs, spec_url=spec_file_path.as_uri())
