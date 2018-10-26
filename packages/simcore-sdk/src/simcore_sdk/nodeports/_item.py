@@ -1,12 +1,16 @@
 import logging
 import os
+import shutil
+import tempfile
 from pathlib import Path
 
-from . import config, exceptions, data_items_utils, filemanager
+from . import config, data_items_utils, exceptions, filemanager
 from ._data_item import DataItem
 from ._schema_item import SchemaItem
 
 log = logging.getLogger(__name__)
+
+_INTERNAL_DIR = Path(tempfile.gettempdir(), "simcorefiles")
 
 def _check_type(item_type, value):
     if not value:
@@ -16,9 +20,12 @@ def _check_type(item_type, value):
     
     possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
     if not item_type in possible_types:
-        if str(item_type).startswith(config.FILE_TYPE_PREFIX) and data_items_utils.is_value_on_store(value):
+        if _is_file_type(item_type) and data_items_utils.is_value_on_store(value):
             return
         raise exceptions.InvalidItemTypeError(item_type, value)
+
+def _is_file_type(item_type):
+    return str(item_type).startswith(config.FILE_TYPE_PREFIX)
 
 class Item():
     def __init__(self, schema:SchemaItem, data:DataItem):
@@ -51,7 +58,7 @@ class Item():
             returns the converted value or None if no value is defined
         """
         log.debug("Getting item %s", self.key)
-        if self.type not in config.TYPE_TO_PYTHON_TYPE_MAP and not str(self.type).startswith(config.FILE_TYPE_PREFIX):
+        if self.type not in config.TYPE_TO_PYTHON_TYPE_MAP and not _is_file_type(self.type):
             raise exceptions.InvalidProtocolError(self.type)
         if self.value is None:
             log.debug("Got empty data item")
@@ -59,12 +66,21 @@ class Item():
         log.debug("Got data item with value %s", self.value)
 
         if data_items_utils.is_value_link(self.value):
-            return self.__get_value_from_link(self.value)
-            # return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["type"](self.__get_value_from_link())
+            value = self.__get_value_from_link(self.value)
+            if _is_file_type(self.type):
+                # move the file to the right location
+                file_name = Path(value).name
+                file_path = _create_file_path(self.key, file_name)
+                if file_path.exists():
+                    file_path.unlink()
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(value), str(file_path))
+                value = file_path
+            return value
+
         if data_items_utils.is_value_on_store(self.value):
             return self.__get_value_from_store(self.value)
         # the value is not a link, let's directly convert it to the right type
-        # return self.value
         return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["type"](config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value))
     
     def set(self, value):
@@ -78,11 +94,11 @@ class Item():
         possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
         log.debug("possible types are for value %s are %s", value, possible_types)
         if not self.type in possible_types:
-            if not str(self.type).startswith(config.FILE_TYPE_PREFIX) or not isinstance(value, (Path, str)):
+            if not _is_file_type(self.type) or not isinstance(value, (Path, str)):
                 raise exceptions.InvalidItemTypeError(self.type, value)
 
         # upload to S3 if file
-        if str(self.type).startswith(config.FILE_TYPE_PREFIX):
+        if _is_file_type(self.type):
             file_path = Path(value)
             if not file_path.exists() or not file_path.is_file():
                 raise exceptions.InvalidItemTypeError(self.type, value)
@@ -122,8 +138,10 @@ class Item():
         if self._schema.fileToKeyMap:
             file_name = next(iter(self._schema.fileToKeyMap))
 
+        file_path = _create_file_path(self.key, file_name)
         return filemanager.download_file_from_S3(store=store,            
                                                 s3_object_name=s3_path,
-                                                node_key=self.key,
-                                                file_name=file_name)
-        
+                                                file_path=file_path)
+
+def _create_file_path(key, name):
+    return Path(_INTERNAL_DIR, key, name)

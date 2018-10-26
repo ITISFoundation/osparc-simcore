@@ -1,6 +1,7 @@
 
 import filecmp
 import json
+import tempfile
 from pathlib import Path
 
 #pylint: disable=W0212
@@ -69,7 +70,7 @@ def test_default_configuration(default_nodeports_configuration, test_configurati
     ("string", "test-string", str),
     ("string", "", str)
 ])
-def test_port_value_accessors_no_s3(special_configuration, item_type, item_value, item_pytype): # pylint: disable=W0613, W0621
+def test_port_value_accessors(special_configuration, item_type, item_value, item_pytype): # pylint: disable=W0613, W0621
     item_key = "some key"
     config_dict, _, _ = special_configuration(inputs=[(item_key, item_type, item_value)], outputs=[(item_key, item_type, None)])
     from simcore_sdk.nodeports.nodeports import PORTS
@@ -89,27 +90,25 @@ def test_port_value_accessors_no_s3(special_configuration, item_type, item_value
     ("data:text/*", __file__, Path, {"store":"s3-z43", "path":__file__}),
     ("data:text/py", __file__, Path, {"store":"s3-z43", "path":__file__}),
 ])
-def test_port_value_accessors_s3(special_configuration, bucket, item_type, item_value, item_pytype, config_value): # pylint: disable=W0613, W0621
-    item_key = "out_blah"
-    config_dict, pipeline_id, node_uuid = special_configuration(inputs=[(item_key, item_type, config_value)], outputs=[(item_key, item_type, None)])
-    import tempfile
+def test_port_file_accessors(special_configuration, item_type, item_value, item_pytype, config_value): # pylint: disable=W0613, W0621
+    config_dict, pipeline_id, node_uuid = special_configuration(inputs=[("in_1", item_type, config_value)], outputs=[("out_34", item_type, None)])
     from simcore_sdk.nodeports.nodeports import PORTS
     check_config_valid(PORTS, config_dict)
     
-    assert PORTS.outputs[item_key].get() is None # check emptyness
+    assert PORTS.outputs["out_34"].get() is None # check emptyness
     with pytest.raises(exceptions.S3InvalidPathError, message="Expecting S3InvalidPathError"):
-        PORTS.inputs[item_key].get()
+        PORTS.inputs["in_1"].get()
 
     # this triggers an upload to S3 + configuration change
-    PORTS.outputs[item_key].set(item_value)
+    PORTS.outputs["out_34"].set(item_value)
     # this is the link to S3 storage
-    assert PORTS.outputs[item_key].value == {"store":"s3-z43", "path":Path(str(pipeline_id), str(node_uuid), Path(item_value).name).as_posix()}  
+    assert PORTS.outputs["out_34"].value == {"store":"s3-z43", "path":Path(str(pipeline_id), str(node_uuid), Path(item_value).name).as_posix()}  
     # this triggers a download from S3 to a location in /tempdir/simcorefiles/item_key
-    assert isinstance(PORTS.outputs[item_key].get(), item_pytype)
-    assert PORTS.outputs[item_key].get().exists()
-    assert str(PORTS.outputs[item_key].get()).startswith(str(Path(tempfile.gettempdir(), "simcorefiles", item_key)))
+    assert isinstance(PORTS.outputs["out_34"].get(), item_pytype)
+    assert PORTS.outputs["out_34"].get().exists()
+    assert str(PORTS.outputs["out_34"].get()).startswith(str(Path(tempfile.gettempdir(), "simcorefiles", "out_34")))
     filecmp.clear_cache()
-    assert filecmp.cmp(item_value, PORTS.outputs[item_key].get())
+    assert filecmp.cmp(item_value, PORTS.outputs["out_34"].get())
 
 def test_adding_new_ports(special_configuration, session):
     config_dict, pipeline_id, node_uuid = special_configuration()
@@ -192,7 +191,9 @@ def test_get_file_from_previous_node(special_2nodes_configuration, node_link, st
 
     file_path = PORTS.inputs["in_15"].get()
     assert isinstance(file_path, item_pytype)
+    assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_15", Path(item_value).name)
     assert file_path.exists()
+    filecmp.clear_cache()
     assert filecmp.cmp(file_path, item_value)
 
 # def test_file_mapping()

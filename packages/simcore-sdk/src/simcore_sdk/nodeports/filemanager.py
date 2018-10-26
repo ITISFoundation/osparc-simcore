@@ -9,7 +9,7 @@ from simcore_sdk.config.s3 import Config as s3_config
 from simcore_sdk.nodeports import exceptions
 
 log = logging.getLogger(__name__)
-_INTERNAL_DIR = Path(tempfile.gettempdir(), "simcorefiles")
+
 
 class S3Settings:
     def __init__(self):
@@ -37,22 +37,19 @@ def __download_fromS3(s3_client, s3_bucket, s3_object_name, file_path):
 
     log.debug('Downloaded from bucket %s, object %s to %s successfully', s3_bucket, s3_object_name, file_path)
 
-def download_file_from_S3(store: str, s3_object_name: str, node_key: str, file_name: str):
-    log.debug("Trying to download from S3: store %s, s3 object %s, key %s, file name %s", store, s3_object_name, node_key, file_name)
+def download_file_from_S3(store: str, s3_object_name: str, file_path: Path):
+    log.debug("Trying to download from S3: store %s, s3 object %s, file name %s", store, s3_object_name, file_path)
     s3 = S3Settings()
 
     if "s3-z43" in store:
         s3_object_url = Path(s3_object_name).as_posix()
         parts_ = Path(s3_object_name).parts
+        # sometimes the path contains the bucket name. this needs to be removed.
         if len(parts_)>2 and "".join(parts_[1]) == s3.bucket:
             s3_object_url = "".join(parts_[2:])
 
-        # here we add an extension to circumvent an error when downloading the file under Windows OS
-        file_path = Path(_INTERNAL_DIR, node_key, file_name)
-        if file_path.suffix == "":
-            file_path = file_path.with_suffix(".simcore")
-        if file_path.exists():
-            # remove the file
+        # remove an already existing file if present
+        if file_path.exists():            
             file_path.unlink()
 
         __download_fromS3(s3.client, s3.bucket, s3_object_url, str(file_path))
