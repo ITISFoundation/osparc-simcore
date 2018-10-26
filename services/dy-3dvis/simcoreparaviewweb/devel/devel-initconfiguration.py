@@ -62,28 +62,21 @@ def create_dummy(json_configuration_file_path):
 
     uploaded_files = []
     # push the file to the S3 for each input item
-    for input_item in configuration["inputs"]:
+    for key,input_item in configuration["schema"].items():
         available_files = [x for x in TEST_DATA_PATH.iterdir() if x.is_file() and x not in uploaded_files]
         if not available_files:
             # it could be correct so just stop here
             break
-        if input_item["type"] == "file-url":
+        if input_item["type"] == "data:*/*":
             filename = available_files[0].name
             s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, str(filename))
             s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), str(available_files[0]))
-            input_item["key"] = str(filename)  
-            input_item["value"] = ".".join(["link", node_uuid, str(filename)])  
+            # add to the payload
+            configuration["inputs"][key] = {"store":"s3-z43", "path":s3_object_name.as_posix()}
             uploaded_files.append(available_files[0])
-        elif input_item["type"] == "folder-url":
-            for f in available_files:
-                #i = available_files.index(f)
-                s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"], str(filename))
-                #configuration["inputs"]["key"] = input_item["key"]
-                s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), f)
-
 
     # now create the node in the db with links to S3
-    new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, input=configuration["inputs"], output=configuration["outputs"])
+    new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, schema=configuration["schema"], inputs=configuration["inputs"], outputs=configuration["outputs"])
     db.session.add(new_Node)
     db.session.commit()
 
