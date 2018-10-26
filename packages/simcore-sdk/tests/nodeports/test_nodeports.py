@@ -196,4 +196,20 @@ def test_get_file_from_previous_node(special_2nodes_configuration, node_link, st
     filecmp.clear_cache()
     assert filecmp.cmp(file_path, item_value)
 
-# def test_file_mapping()
+@pytest.mark.parametrize("item_type, item_value, item_alias, item_pytype", [
+    ("data:*/*", __file__, "some funky name.txt", Path),
+    ("data:text/*", __file__, "some funky name without extension", Path),
+    ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
+])
+def test_file_mapping(special_configuration, store_link, session, item_type, item_value, item_alias, item_pytype):
+    config_dict, pipeline_id, node_uuid = special_configuration(inputs=[("in_1", item_type, store_link(item_value))], outputs=[("out_1", item_type, None)])
+    from simcore_sdk.nodeports.nodeports import PORTS
+    check_config_valid(PORTS, config_dict)
+    # add a filetokeymap
+    config_dict["schema"]["inputs"]["in_1"]["fileToKeyMap"] = {item_alias:"in_1"}
+    helpers.update_configuration(session, pipeline_id, node_uuid, config_dict) #pylint: disable=E1101
+    check_config_valid(PORTS, config_dict)
+
+    file_path = PORTS.inputs["in_1"].get()
+    assert isinstance(file_path, item_pytype)
+    assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_1", item_alias)
