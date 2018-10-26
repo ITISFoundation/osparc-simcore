@@ -1,23 +1,22 @@
  #pylint: disable=W0621
 import json
-import os
 import sys
 import uuid
 from pathlib import Path
 from typing import Any, List, Tuple
 
 import pytest
-
+from simcore_sdk.nodeports import config
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "helpers"))
+sys.path.append(str(Path(__file__).parent / "helpers"))
 
 pytest_plugins = ["tests.fixtures.postgres", "tests.fixtures.minio-fix"]
 
 @pytest.fixture(scope='session')
 def here()->Path:
-    return Path(__file__).parent
+    yield Path(__file__).parent
 
 @pytest.fixture(scope='session')
 def docker_compose_file(pytestconfig, here): # pylint:disable=unused-argument
@@ -26,11 +25,11 @@ def docker_compose_file(pytestconfig, here): # pylint:disable=unused-argument
 
 @pytest.fixture
 def default_configuration_file(here):
-    return here / "config" / "default_config.json"
+    yield here / "config" / "default_config.json"
 
 @pytest.fixture
 def empty_configuration_file(here):
-    return here / "config" / "empty_config.json"
+    yield here / "config" / "empty_config.json"
 
 @pytest.fixture()
 def default_configuration(engine, session, default_configuration_file):
@@ -39,8 +38,10 @@ def default_configuration(engine, session, default_configuration_file):
     
     pipeline_id = _create_new_pipeline(engine, session)
     node_uuid = _set_configuration(session, pipeline_id, json_configuration)
-    os.environ["SIMCORE_NODE_UUID"]=str(node_uuid)
-    return engine, session, pipeline_id, node_uuid
+    config_dict = json.loads(json_configuration)
+    config.NODE_UUID = str(node_uuid)
+    config.PROJECT_ID = str(pipeline_id)
+    yield config_dict
 
 @pytest.fixture()
 def node_link():
@@ -66,7 +67,8 @@ def special_configuration(engine, session, empty_configuration_file: Path):
 
         pipeline_id = _create_new_pipeline(engine, session)
         node_uuid = _set_configuration(session, pipeline_id, json.dumps(config_dict))
-        os.environ["SIMCORE_NODE_UUID"]=str(node_uuid)
+        config.NODE_UUID = str(node_uuid)
+        config.PROJECT_ID = str(pipeline_id)
         return config_dict, pipeline_id, node_uuid
     yield create_config
 
@@ -91,8 +93,8 @@ def special_2nodes_configuration(engine, session, empty_configuration_file: Path
         str_config = str_config.replace("TEST_NODE_UUID", str(previous_node_uuid))
         config_dict = json.loads(str_config)
         node_uuid = _set_configuration(session, pipeline_id, str_config)
-        # set env
-        os.environ["SIMCORE_NODE_UUID"]=str(node_uuid)
+        config.NODE_UUID = str(node_uuid)
+        config.PROJECT_ID = str(pipeline_id)
         return config_dict, pipeline_id, node_uuid
     yield create_config
 
@@ -102,9 +104,6 @@ def _create_new_pipeline(engine, session)->str:
     new_Pipeline = ComputationalPipeline()
     session.add(new_Pipeline)
     session.commit()
-
-    os.environ["SIMCORE_PIPELINE_ID"]=str(new_Pipeline.pipeline_id)
-
     return new_Pipeline.pipeline_id
 
 def _set_configuration(session, pipeline_id: str, json_configuration: str):

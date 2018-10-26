@@ -1,6 +1,5 @@
 
 import filecmp
-import json
 import tempfile
 from pathlib import Path
 
@@ -11,8 +10,7 @@ from pathlib import Path
 import pytest
 
 import helpers
-from simcore_sdk.nodeports import exceptions
-
+from simcore_sdk.nodeports import exceptions, config
 
 def check_port_valid(ports, config_dict: dict, port_type:str, key_name: str, key):
     assert getattr(ports, port_type)[key].key == key_name
@@ -54,10 +52,9 @@ def check_config_valid(ports, config_dict: dict):
     check_ports_valid(ports, config_dict, "inputs")
     check_ports_valid(ports, config_dict, "outputs")
 
-def test_default_configuration(default_configuration, default_configuration_file): # pylint: disable=W0613, W0621    
+def test_default_configuration(default_configuration): # pylint: disable=W0613, W0621    
+    config_dict = default_configuration    
     from simcore_sdk.nodeports.nodeports import PORTS
-    
-    config_dict = json.loads(default_configuration_file.read_text())
     check_config_valid(PORTS, config_dict)
 
 def test_invalid_ports(special_configuration):
@@ -107,7 +104,7 @@ def test_port_value_accessors(special_configuration, item_type, item_value, item
     ("data:text/*", __file__, Path, {"store":"s3-z43", "path":__file__}),
     ("data:text/py", __file__, Path, {"store":"s3-z43", "path":__file__}),
 ])
-def test_port_file_accessors(special_configuration, item_type, item_value, item_pytype, config_value): # pylint: disable=W0613, W0621
+def test_port_file_accessors(special_configuration, s3_client, bucket, item_type, item_value, item_pytype, config_value): # pylint: disable=W0613, W0621
     config_dict, pipeline_id, node_uuid = special_configuration(inputs=[("in_1", item_type, config_value)], outputs=[("out_34", item_type, None)])
     from simcore_sdk.nodeports.nodeports import PORTS
     check_config_valid(PORTS, config_dict)

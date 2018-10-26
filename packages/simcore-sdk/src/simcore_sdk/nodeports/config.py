@@ -1,6 +1,9 @@
 """Takes care of the configurations.
 """
 import logging
+import os
+NODE_UUID = os.environ.get("SIMCORE_NODE_UUID", default="undefined")
+PROJECT_ID = os.environ.get("SIMCORE_PIPELINE_ID", default="undefined")
 
 NODE_KEYS = {"version":True,
 "schema":True,
@@ -27,11 +30,6 @@ TYPE_TO_PYTHON_TYPE_MAP = {"integer":{"type":int, "converter":int},
                             "string":{"type":str, "converter":str}
                             }
 FILE_TYPE_PREFIX = "data:"
-# S3 stored information
-TYPE_TO_S3_FILE_LIST = ["file-url"]
-TYPE_TO_S3_FOLDER_LIST = ["folder-url"]
-
-LINK_PREFIX = "link."
 
 # nodeports is a library for accessing data linked to the node
 # in that sense it should not log stuff unless the application code wants it to be so.

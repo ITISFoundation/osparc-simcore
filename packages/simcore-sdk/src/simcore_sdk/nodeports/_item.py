@@ -1,5 +1,4 @@
 import logging
-import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -102,10 +101,10 @@ class Item():
             file_path = Path(value)
             if not file_path.exists() or not file_path.is_file():
                 raise exceptions.InvalidItemTypeError(self.type, value)
-            pipeline_id = os.environ.get('SIMCORE_PIPELINE_ID', default="undefined")
-            node_uuid = os.environ.get('SIMCORE_NODE_UUID', default="undefined")
+            project_id = config.PROJECT_ID
+            node_uuid = config.NODE_UUID
             log.debug("file path %s will be uploaded to s3", value)
-            s3_object = Path(pipeline_id, node_uuid, file_path.name).as_posix()
+            s3_object = Path(project_id, node_uuid, file_path.name).as_posix()
             filemanager.upload_file_to_s3(store="s3-z43", s3_object=s3_object, file_path=file_path)
             log.debug("file path %s uploaded to s3 in %s", value, s3_object)
             value = data_items_utils.encode_store("s3-z43", s3_object)

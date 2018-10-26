@@ -1,14 +1,14 @@
-import os
 import json
 import logging
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import exc
 from sqlalchemy.orm.attributes import flag_modified
 
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.models.pipeline_models import ComputationalTask as NodeModel
+from . import config
 
 log = logging.getLogger(__name__)
 
@@ -50,18 +50,15 @@ class DBManager:
     def __get_node_from_db(self, node_uuid):
         log.debug("Reading from database for node uuid %s", node_uuid)
         try:
-            #TODO: SAN the call to first must be replaced by one() as soon as the pipeline ID issue is resolved
-            return self._db.session.query(NodeModel).filter(NodeModel.node_id == node_uuid).first()
+            return self._db.session.query(NodeModel).filter(and_(NodeModel.node_id == node_uuid, NodeModel.pipeline_id == config.PROJECT_ID)).one()
         except exc.NoResultFound:
             log.exception("the node id %s was not found", node_uuid)
         except exc.MultipleResultsFound:
             log.exception("the node id %s is not unique", node_uuid)
 
-    def __get_configuration_from_db(self, node_uuid=None, set_pipeline_id=False):
+    def __get_configuration_from_db(self, node_uuid=None):
         log.debug("Reading from database")
         node = self.__get_node_from_db(node_uuid)
-        if set_pipeline_id:
-            os.environ["SIMCORE_PIPELINE_ID"]=str(node.pipeline_id)
         node_json_config = save_node_to_json(node)
         log.debug("Found and converted to json")
         return node_json_config
@@ -70,7 +67,7 @@ class DBManager:
         log.debug("Writing to database")
 
         updated_node = create_node_from_json(json_configuration)
-        node = self.__get_node_from_db(node_uuid=os.environ.get('SIMCORE_NODE_UUID'))
+        node = self.__get_node_from_db(node_uuid=config.NODE_UUID)
 
         if node.schema != updated_node.schema:
             node.schema = updated_node.schema
@@ -99,7 +96,7 @@ class DBManager:
             string -- a json containing the ports configuration
         """
         log.debug("Getting ports configuration")
-        return self.__get_configuration_from_db(node_uuid=os.environ.get('SIMCORE_NODE_UUID'), set_pipeline_id=True)
+        return self.__get_configuration_from_db(node_uuid=config.NODE_UUID)
 
     def get_ports_configuration_from_node_uuid(self, node_uuid):
         """returns the json configuration of a node with a specific node uuid in the same pipeline
