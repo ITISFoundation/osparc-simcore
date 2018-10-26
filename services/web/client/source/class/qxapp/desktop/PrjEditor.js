@@ -226,9 +226,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     showScreenshotInExtraView: function(name) {
       let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_"+name+".png").set({
-        maxHeight: 250,
-        maxWidth: 500,
-        scale: true
+        scale: true,
+        allowShrinkX: true,
+        allowShrinkY: true
       });
       this.__sidePanel.setMidView(imageWidget);
     },
