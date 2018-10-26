@@ -136,12 +136,9 @@ def converted_specs_testdir(api_specs_dir, all_api_specs_tails, tmpdir_factory):
 def test_valid_individual_openapi_specs(api_specs_tail, converted_specs_testdir):
     # NOTE: api_specs_tail is a parametrized **fixture**
     #
-    # NOTE: to debug see 'Captured stdout call' to see the converted file
-    #
     api_specs_path = converted_specs_testdir / api_specs_tail
-    print("DEBUG: code ", str(api_specs_path))
     try:
         specs = load_specs(api_specs_path)
         validate_spec(specs, spec_url=api_specs_path.as_uri())
     except OpenAPIValidationError as err:
-        pytest.fail(err.message)
+        pytest.fail("Failed validating {}:\n{}".format(api_specs_path, err.message))
