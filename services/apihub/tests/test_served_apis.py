@@ -66,7 +66,7 @@ async def test_create_specs(osparc_simcore_api_specs, apihub):
     # TODO: ideally every iteration is a new test (check parametrization)
 
     for service, version, openapi_path, url_path in osparc_simcore_api_specs:
-        url = URL(apihub).join(url_path)  #api/specs/${service}/${version}/openapi.yaml
+        url = URL(apihub).join( URL(url_path) )  #api/specs/${service}/${version}/openapi.yaml
 
         msg = "%s, "*5 % (url, service, version, openapi_path, url_path)
 
@@ -86,6 +86,6 @@ async def test_create_specs(osparc_simcore_api_specs, apihub):
                 assert spec_dict == spec_dict_local, msg
 
                 try:
-                    spec = openapi_core.create_spec(spec_dict, spec_url=url)
+                    spec = openapi_core.create_spec(spec_dict, spec_url=str(url))
                 except Exception as err:
                     pytest.fail("%s - %s" % (err, msg) )

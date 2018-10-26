@@ -23,7 +23,7 @@ def test_valid_individual_json_schemas_specs(spec_file_path):
             validate(dummy_instance, specs_dict)
         except SchemaError as err:
             # this is not good
-            pytest.fail( "Failed validating %s: \n %s " % (spec_file_path, err.message) )
+            pytest.fail("Failed validating %s: \n %s " % (spec_file_path, err.message))
         except ValidationError:
             # this is good
             return
