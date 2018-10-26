@@ -43,14 +43,13 @@ def test_default_json_decoding(default_nodeports_configuration):
             "path": "/simcore/outputControllerOut.dat"
         }
 
-def test_default_json_encoding(default_nodeports_configuration, here): 
+def test_default_json_encoding(default_nodeports_configuration, test_configuration_file): 
     from simcore_sdk.nodeports.nodeports import PORTS
     from simcore_sdk.nodeports.serialization import _NodeportsEncoder
     import json
 
     json_data = json.dumps(PORTS, cls=_NodeportsEncoder)
-    default_config_path = Path(here, r"test_config.json")
-    original_json_data = default_config_path.read_text()
+    original_json_data = test_configuration_file.read_text()
     
     assert json.loads(json_data) == json.loads(original_json_data)
 
