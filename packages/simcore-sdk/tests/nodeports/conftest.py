@@ -47,7 +47,7 @@ def here()->Path:
     return Path(__file__).parent
 
 @pytest.fixture
-def test_configuration_file(here):
+def default_configuration_file(here):
     return here / "config" / "default_config.json"
 
 @pytest.fixture
@@ -55,9 +55,9 @@ def empty_configuration_file(here):
     return here / "config" / "empty_config.json"
 
 @pytest.fixture()
-def default_nodeports_configuration(engine, session, test_configuration_file):
+def default_configuration(engine, session, default_configuration_file):
     # prepare database with default configuration
-    json_configuration = test_configuration_file.read_text()
+    json_configuration = default_configuration_file.read_text()
     
     pipeline_id = _create_new_pipeline(engine, session)
     node_uuid = _set_configuration(session, pipeline_id, json_configuration)
@@ -65,7 +65,7 @@ def default_nodeports_configuration(engine, session, test_configuration_file):
     return engine, session, pipeline_id, node_uuid
 
 
-def assign_config(config_dict:dict, port_type:str, entries: List[Tuple[str, str, Any]]):
+def _assign_config(config_dict:dict, port_type:str, entries: List[Tuple[str, str, Any]]):
     if entries is None:
         return
     for entry in entries:
@@ -86,8 +86,8 @@ def assign_config(config_dict:dict, port_type:str, entries: List[Tuple[str, str,
 def special_configuration(engine, session, empty_configuration_file: Path):
     def create_config(inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None):
         config_dict = json.loads(empty_configuration_file.read_text())
-        assign_config(config_dict, "inputs", inputs)
-        assign_config(config_dict, "outputs", outputs)
+        _assign_config(config_dict, "inputs", inputs)
+        _assign_config(config_dict, "outputs", outputs)
 
         pipeline_id = _create_new_pipeline(engine, session)
         node_uuid = _set_configuration(session, pipeline_id, json.dumps(config_dict))
@@ -103,14 +103,14 @@ def special_2nodes_configuration(engine, session, empty_configuration_file: Path
 
         # create previous node
         previous_config_dict = json.loads(empty_configuration_file.read_text())
-        assign_config(previous_config_dict, "inputs", prev_node_inputs)
-        assign_config(previous_config_dict, "outputs", prev_node_outputs)
+        _assign_config(previous_config_dict, "inputs", prev_node_inputs)
+        _assign_config(previous_config_dict, "outputs", prev_node_outputs)
         previous_node_uuid = _set_configuration(session, pipeline_id, json.dumps(previous_config_dict))
 
         # create current node
         config_dict = json.loads(empty_configuration_file.read_text())
-        assign_config(config_dict, "inputs", inputs)
-        assign_config(config_dict, "outputs", outputs)
+        _assign_config(config_dict, "inputs", inputs)
+        _assign_config(config_dict, "outputs", outputs)
         # configure links if necessary
         str_config = json.dumps(config_dict)
         str_config = str_config.replace("TEST_NODE_UUID", str(previous_node_uuid))

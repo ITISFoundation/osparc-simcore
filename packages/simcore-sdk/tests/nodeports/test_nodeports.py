@@ -6,6 +6,8 @@ from pathlib import Path
 
 #pylint: disable=W0212
 #pylint: disable=C0111
+#pylint: disable=R0913
+#pylint: disable=W0104
 import pytest
 
 import helpers
@@ -52,11 +54,26 @@ def check_config_valid(ports, config_dict: dict):
     check_ports_valid(ports, config_dict, "inputs")
     check_ports_valid(ports, config_dict, "outputs")
 
-def test_default_configuration(default_nodeports_configuration, test_configuration_file): # pylint: disable=W0613, W0621    
+def test_default_configuration(default_configuration, default_configuration_file): # pylint: disable=W0613, W0621    
     from simcore_sdk.nodeports.nodeports import PORTS
     
-    config_dict = json.loads(test_configuration_file.read_text())
+    config_dict = json.loads(default_configuration_file.read_text())
     check_config_valid(PORTS, config_dict)
+
+def test_invalid_ports(special_configuration):
+    config_dict = special_configuration()
+    from simcore_sdk.nodeports.nodeports import PORTS
+    check_config_valid(PORTS, config_dict)
+
+    assert not PORTS.inputs
+    assert not PORTS.outputs
+
+    with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError") as excinfo:
+        PORTS.inputs[0]
+
+    with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError") as excinfo:
+        PORTS.outputs[0]
+
 
 @pytest.mark.parametrize("item_type, item_value, item_pytype", [
     ("integer", 26, int),
