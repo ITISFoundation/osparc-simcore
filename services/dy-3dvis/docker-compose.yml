@@ -3,7 +3,8 @@ services:
   simcore-paraviewweb:
     image: masu.speag.com/simcore/services/dynamic/3d-viewer:${SERVICES_VERSION}
     build:
-      context: simcoreparaviewweb
+      context: ../../
+      dockerfile: services/dy-3dvis/simcoreparaviewweb/Dockerfile
       target: production
       args: 
         PORT: 8777

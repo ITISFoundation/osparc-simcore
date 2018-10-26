@@ -5,6 +5,8 @@ echo "current directory is ${PWD}"
 
 if [[ -v CREATE_DUMMY_TABLE ]];
 then
+    pushd /home/root/packages/simcore-sdk; pip install -r requirements-dev.txt; popd
+    pushd /home/root/packages/s3wrapper; pip install -r requirements-dev.txt; popd
     # in dev mode, data located in mounted volume /test-data are uploaded to the S3 server
     # also a fake configuration is set in the DB to simulate the osparc platform
     echo "development mode, creating dummy tables..."
@@ -15,7 +17,7 @@ then
     # TODO: host name shall be defined dynamically instead of stupidely hard-coded
     host_name="localhost"    
 else
-    host_name="osparc01.speag.com"    
+    host_name="osparc01.itis.ethz.ch"    
 fi
 
 echo "modifying apache configuration..."

@@ -18,8 +18,8 @@ services:
       - minio
     volumes: 
       - ./simcoreparaviewweb/src:/home/root/src
-      - ../../packages/simcore-sdk/src:/home/root/packages/packages/simcore-sdk/src
-      - ../../packages/s3wrapper/src:/home/root/packages/packages/s3wrapper/src
+      - ./simcoreparaviewweb/devel:/home/root/devel
+      - ../../packages:/home/root/packages
       - ./test-data:/home/root/test-data
   postgres:
     image: postgres:10

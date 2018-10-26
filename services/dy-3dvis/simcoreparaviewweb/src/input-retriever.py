@@ -27,6 +27,8 @@ if not _INPUT_PATH.exists():
     log.debug("Created input folder at %s", _INPUT_PATH)
 # get all files in the local system and copy them to the input folder
 for node_input in PORTS.inputs:
+    if not node_input:
+        continue
     if node_input.type in ("file-url", "folder-url"):
         log.debug("Start downloading path %s", node_input.value)
         local_path = Path(node_input.get())
@@ -40,6 +42,6 @@ for node_input in PORTS.inputs:
                 print("unzipped {file} in {path}\n".format(file=str(local_path), path=str(_INPUT_PATH)))
             else:
                 log.debug("Start moving %s to input path %s", local_path, _INPUT_PATH)
-                shutil.move(str(local_path), str(_INPUT_PATH / local_path.name) + ".vtk")
+                shutil.move(str(local_path), str(_INPUT_PATH / local_path.name))
                 log.debug("Move completed")
                 print("moved {file} in {path}\n".format(file=str(local_path), path=str(_INPUT_PATH)))

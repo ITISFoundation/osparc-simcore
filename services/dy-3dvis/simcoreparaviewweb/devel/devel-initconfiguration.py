@@ -42,8 +42,8 @@ def init_s3():
     s3 = S3Settings()
     return s3
 
-def create_dummy(json_configuration_file_path):
-    with open(json_configuration_file_path) as file_pointer:
+def create_dummy(json_configuration_file_path: Path):
+    with json_configuration_file_path.open() as file_pointer:
         json_configuration = file_pointer.read()
     
     db = init_db()
@@ -56,7 +56,6 @@ def create_dummy(json_configuration_file_path):
     json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", node_uuid)
     configuration = json.loads(json_configuration)
     
-
     # init s3
     s3 = init_s3()
 
@@ -65,6 +64,7 @@ def create_dummy(json_configuration_file_path):
     for key,input_item in configuration["schema"].items():
         available_files = [x for x in TEST_DATA_PATH.iterdir() if x.is_file() and x not in uploaded_files]
         if not available_files:
+            input_item["value"] = None
             # it could be correct so just stop here
             break
         if input_item["type"] == "data:*/*":
@@ -84,4 +84,4 @@ def create_dummy(json_configuration_file_path):
     print(node_uuid)
 
 if __name__ == "__main__":    
-    create_dummy(sys.argv[1])
+    create_dummy(Path(sys.argv[1]))
