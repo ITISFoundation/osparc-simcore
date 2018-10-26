@@ -89,6 +89,12 @@ paths:
     get:
       summary: Get available storage locations
       operationId : get_storage_locations
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: 'List of availabe storage locations'

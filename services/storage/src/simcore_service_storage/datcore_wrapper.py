@@ -227,3 +227,22 @@ class DatcoreWrapper:
             """.format(self.api_token, self.api_secret, dataset, local_path, json_meta)
 
         return self._py2_call(script)
+
+    @make_async
+    def ping(self):
+        script = """
+            from datcore import DatcoreClient
+
+            api_token = "{0}"
+            api_secret = "{1}"
+
+            d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
+                host='https://api.blackfynn.io')
+
+            profile = d_client.profile()
+            if profile:
+                channel.send(True)
+            channel.send(False)
+            """.format(self.api_token, self.api_secret)
+
+        return self._py2_call(script)

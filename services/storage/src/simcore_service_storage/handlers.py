@@ -66,14 +66,16 @@ async def get_storage_locations(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
     assert not params, "params %s" % params
-    assert not query, "query %s" % query
+    assert query, "query %s" % query
     assert not body, "body %s" % body
 
+    assert query["user_id"]
+    user_id = query["user_id"]
     dsm = request[RQT_DSM_KEY]
 
     assert dsm
 
-    locs = dsm.locations()
+    locs = await dsm.locations(user_id=user_id)
 
     envelope = {
         'error': None,

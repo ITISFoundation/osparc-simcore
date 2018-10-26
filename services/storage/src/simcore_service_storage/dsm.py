@@ -18,7 +18,7 @@ from sqlalchemy.sql import and_
 from s3wrapper.s3_client import S3Client
 
 from .datcore_wrapper import DatcoreWrapper
-from .models import (FileMetaData, _location_from_id, _locations,
+from .models import (FileMetaData, _location_from_id,
                      _parse_datcore, _parse_simcore, file_meta_data)
 from .settings import APP_CONFIG_KEY, APP_DSM_THREADPOOL
 
@@ -78,12 +78,37 @@ class DataStorageManager:
     pool: ThreadPoolExecutor
 
     # pylint: disable=R0201
-    def locations(self):
-        return _locations()
+    async def locations(self, user_id: str):
+        locs = []
+        simcore_s3 = {
+            "name" : "simcore.s3",
+            "id" : 0
+        }
+        locs.append(simcore_s3)
+
+        ping_ok = await self.ping_datcore(user_id=user_id)
+        if ping_ok:
+            datcore = {
+            "name" : "datcore",
+            "id"   : 1
+            }
+            locs.append(datcore)
+
+        return locs
 
     # pylint: disable=R0201
     def location_from_id(self, location_id : str):
         return _location_from_id(location_id)
+
+    async def ping_datcore(self, user_id: str):
+        api_token, api_secret = await self._get_datcore_tokens(user_id)
+        if api_token:
+            dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
+            profile = await dcw.ping()
+            if profile:
+                return True
+
+        return False
 
     # pylint: disable=R0913
     # too-many-arguments
@@ -194,10 +219,11 @@ class DataStorageManager:
 
     async def _get_datcore_tokens(self, user_id: str)->Tuple[str, str]:
         # actually we have to query the master db
-        async with self.engine.acquire() as conn:
-            query = sa.select([file_meta_data]).where(file_meta_data.c.user_id == user_id)
-            _fmd = await conn.execute(query)
+        async with self.engine.acquire() as _conn:
+            #query = sa.select([file_meta_data]).where(file_meta_data.c.user_id == user_id)
+            #_fmd = await conn.execute(query)
             # FIXME: load from app[APP_CONFIG_KEY]["test_datcore"]
+            _aa = user_id
             api_token = os.environ.get("BF_API_KEY", "none")
             api_secret = os.environ.get("BF_API_SECRET", "none")
             return (api_token, api_secret)

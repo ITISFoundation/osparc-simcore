@@ -70,7 +70,9 @@ async def test_health_check(client):
 
 
 async def test_locations(client):
-    resp = await client.get("/v0/locations")
+    user_id = "0"
+
+    resp = await client.get("/v0/locations?user_id={}".format(user_id))
 
     payload = await resp.json()
     assert resp.status == 200, str(payload)
