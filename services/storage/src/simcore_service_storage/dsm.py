@@ -231,8 +231,22 @@ class DataStorageManager:
                         # and then upload
                         await self.upload_file_to_datcore(user_id=user_id, local_file_path=local_file_path,
                             datcore_bucket=datcore_bucket)
-
             shutil.rmtree(tmp_dirpath)
+        elif location == "simcore.s3":
+            # source is s3, location is s3
+            to_bucket_name, to_object_name = _parse_simcore(file_uuid)
+            from_bucket, from_object_name = _parse_simcore(source_uuid)
+            from_bucket_object_name = os.path.join(from_bucket, from_object_name)
+            # FIXME: This is not async!
+            self.s3_client.copy_object(to_bucket_name, to_object_name, from_bucket_object_name)
+            # update db
+            async with self.engine.acquire() as conn:
+                fmd = FileMetaData()
+                fmd.simcore_from_uuid(file_uuid)
+                fmd.user_id = user_id
+                ins = file_meta_data.insert().values(**vars(fmd))
+                await conn.execute(ins)
+
 
     async def download_link(self, user_id: str, location: str, file_uuid: str)->str:
         link = None

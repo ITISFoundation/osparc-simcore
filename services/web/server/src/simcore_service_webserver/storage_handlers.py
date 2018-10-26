@@ -12,6 +12,9 @@ async def get_storage_locations(request: web.Request):
     assert not query, "query %s" % query
     assert not body, "body %s" % body
 
+
+    # call endpoint in storage with user_id
+
     locs = [ { "name": "bla", "id" : 0 }]
 
     envelope = {

@@ -42,6 +42,7 @@ def create_tables(url, engine=None):
     if not engine:
         engine = sa.create_engine(url)
 
+    meta.drop_all(bind=engine, tables=[file_meta_data])
     meta.create_all(bind=engine, tables=[file_meta_data])
 
 @contextmanager
