@@ -80,16 +80,18 @@ class DatcoreWrapper:
         # FIXME: W0613:Unused argument 'regex', sortby!!!
         script = """
             from datcore import DatcoreClient
+            try:
+                api_token = "%s"
+                api_secret = "%s"
 
-            api_token = "%s"
-            api_secret = "%s"
+                d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
+                    host='https://api.blackfynn.io')
 
-            d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
-                host='https://api.blackfynn.io')
+                files = d_client.list_files()
 
-            files = d_client.list_files()
-
-            channel.send(files)
+                channel.send(files)
+            except Exception as e:
+                channel.send([])
 
             """%(self.api_token, self.api_secret)
 
@@ -122,15 +124,18 @@ class DatcoreWrapper:
 
             api_token = "{0}"
             api_secret = "{1}"
+            try:
+                d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
+                    host='https://api.blackfynn.io')
 
-            d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
-                host='https://api.blackfynn.io')
+                ds = d_client.get_dataset("{2}")
+                if ds is not None:
+                    d_client.delete_file(ds, "{3}")
 
-            ds = d_client.get_dataset("{2}")
-            if ds is not None:
-                d_client.delete_file(ds, "{3}")
+                channel.send(True)
 
-            channel.send(None)
+            except Exception as e:
+                channel.send(False)
             """.format(self.api_token, self.api_secret, dataset, filename)
 
         return self._py2_call(script)
@@ -142,16 +147,19 @@ class DatcoreWrapper:
 
             api_token = "{0}"
             api_secret = "{1}"
+            try:
+                d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
+                    host='https://api.blackfynn.io')
 
-            d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
-                host='https://api.blackfynn.io')
+                ds = d_client.get_dataset("{2}")
+                url = ""
+                if ds is not None:
+                    url = d_client.download_link(ds, "{3}")
 
-            ds = d_client.get_dataset("{2}")
-            url = ""
-            if ds is not None:
-                url = d_client.download_link(ds, "{3}")
+                channel.send(url)
 
-            channel.send(url)
+            except Exception as e:
+                channel.send("")
             """.format(self.api_token, self.api_secret, dataset, filename)
 
         return self._py2_call(script)
@@ -163,18 +171,19 @@ class DatcoreWrapper:
 
             api_token = "{0}"
             api_secret = "{1}"
+            try:
+                d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
+                    host='https://api.blackfynn.io')
 
-            d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
-                host='https://api.blackfynn.io')
+                ds = d_client.get_dataset("{2}")
+                if ds is not None:
+                    d_client.delete_files(ds)
+                else:
+                    d_client.create_dataset("{2}")
 
-            ds = d_client.get_dataset("{2}")
-            if ds is not None:
-                d_client.delete_files(ds)
-            else:
-                d_client.create_dataset("{2}")
-
-
-            channel.send(None)
+                channel.send(None)
+            except Exception as e:
+                channel.send(False)
             """.format(self.api_token, self.api_secret, dataset)
 
         return self._py2_call(script)
@@ -186,15 +195,18 @@ class DatcoreWrapper:
 
             api_token = "{0}"
             api_secret = "{1}"
+            try:
+                d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
+                    host='https://api.blackfynn.io')
 
-            d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
-                host='https://api.blackfynn.io')
+                ds = d_client.get_dataset("{2}")
+                if ds is not None:
+                    d_client.delete_files(ds)
 
-            ds = d_client.get_dataset("{2}")
-            if ds is not None:
-                d_client.delete_files(ds)
+                channel.send(True)
+            except Exception as e:
+                channel.send(False)
 
-            channel.send(None)
             """.format(self.api_token, self.api_secret, dataset)
 
         return self._py2_call(script)
@@ -212,18 +224,24 @@ class DatcoreWrapper:
             api_token = "{0}"
             api_secret = "{1}"
 
-            d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
-                host='https://api.blackfynn.io')
+            try:
+                d_client = DatcoreClient(api_token=api_token, api_secret=api_secret,
+                    host='https://api.blackfynn.io')
 
-            ds = d_client.get_dataset("{2}")
+                ds = d_client.get_dataset("{2}")
 
-            str_meta = '{4}'
-            if str_meta :
-                meta_data = json.loads(str_meta)
-                d_client.upload_file(ds, "{3}", meta_data)
-            else:
-                d_client.upload_file(ds, "{3}")
-            channel.send(None)
+                str_meta = '{4}'
+                if str_meta :
+                    meta_data = json.loads(str_meta)
+                    d_client.upload_file(ds, "{3}", meta_data)
+                else:
+                    d_client.upload_file(ds, "{3}")
+
+                channel.send(True)
+
+            except Exception as e:
+                channel.send(False)
+
             """.format(self.api_token, self.api_secret, dataset, local_path, json_meta)
 
         return self._py2_call(script)
@@ -244,7 +262,7 @@ class DatcoreWrapper:
                 ok = profile is not None
                 channel.send(ok)
 
-            except UnauthorizedException:
+            except Exception as e:
                 channel.send(False)
 
             """.format(self.api_token, self.api_secret)
