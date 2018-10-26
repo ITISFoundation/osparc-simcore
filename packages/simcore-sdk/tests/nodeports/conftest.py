@@ -31,13 +31,19 @@ def default_configuration_file(here):
 def empty_configuration_file(here):
     yield here / "config" / "empty_config.json"
 
+@pytest.fixture(scope='module')
+def postgres(engine, session):
+    # prepare database with default configuration
+    Base.metadata.create_all(engine)
+    yield session
+
 @pytest.fixture()
-def default_configuration(engine, session, default_configuration_file):
+def default_configuration(postgres, default_configuration_file):
     # prepare database with default configuration
     json_configuration = default_configuration_file.read_text()
     
-    pipeline_id = _create_new_pipeline(engine, session)
-    node_uuid = _set_configuration(session, pipeline_id, json_configuration)
+    pipeline_id = _create_new_pipeline(postgres)
+    node_uuid = _set_configuration(postgres, pipeline_id, json_configuration)
     config_dict = json.loads(json_configuration)
     config.NODE_UUID = str(node_uuid)
     config.PROJECT_ID = str(pipeline_id)
@@ -59,30 +65,30 @@ def store_link(s3_client, bucket):
     yield create_store_link
 
 @pytest.fixture()
-def special_configuration(engine, session, empty_configuration_file: Path):
+def special_configuration(postgres, empty_configuration_file: Path):
     def create_config(inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None):
         config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(config_dict, "inputs", inputs)
         _assign_config(config_dict, "outputs", outputs)
 
-        pipeline_id = _create_new_pipeline(engine, session)
-        node_uuid = _set_configuration(session, pipeline_id, json.dumps(config_dict))
+        pipeline_id = _create_new_pipeline(postgres)
+        node_uuid = _set_configuration(postgres, pipeline_id, json.dumps(config_dict))
         config.NODE_UUID = str(node_uuid)
         config.PROJECT_ID = str(pipeline_id)
         return config_dict, pipeline_id, node_uuid
     yield create_config
 
 @pytest.fixture()
-def special_2nodes_configuration(engine, session, empty_configuration_file: Path):
+def special_2nodes_configuration(postgres, empty_configuration_file: Path):
     def create_config(prev_node_inputs: List[Tuple[str, str, Any]] =None, prev_node_outputs: List[Tuple[str, str, Any]] =None,
                     inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None):
-        pipeline_id = _create_new_pipeline(engine, session)
+        pipeline_id = _create_new_pipeline(postgres)
 
         # create previous node
         previous_config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(previous_config_dict, "inputs", prev_node_inputs)
         _assign_config(previous_config_dict, "outputs", prev_node_outputs)
-        previous_node_uuid = _set_configuration(session, pipeline_id, json.dumps(previous_config_dict))
+        previous_node_uuid = _set_configuration(postgres, pipeline_id, json.dumps(previous_config_dict))
 
         # create current node
         config_dict = json.loads(empty_configuration_file.read_text())
@@ -92,15 +98,13 @@ def special_2nodes_configuration(engine, session, empty_configuration_file: Path
         str_config = json.dumps(config_dict)
         str_config = str_config.replace("TEST_NODE_UUID", str(previous_node_uuid))
         config_dict = json.loads(str_config)
-        node_uuid = _set_configuration(session, pipeline_id, str_config)
+        node_uuid = _set_configuration(postgres, pipeline_id, str_config)
         config.NODE_UUID = str(node_uuid)
         config.PROJECT_ID = str(pipeline_id)
         return config_dict, pipeline_id, node_uuid
     yield create_config
 
-def _create_new_pipeline(engine, session)->str:
-    # prepare database with default configuration
-    Base.metadata.create_all(engine)
+def _create_new_pipeline(session)->str:    
     new_Pipeline = ComputationalPipeline()
     session.add(new_Pipeline)
     session.commit()
