@@ -57,7 +57,7 @@ qx.Class.define("qxapp.auth.Manager", {
         // TODO: validate data against specs???
         // TODO: activate tokens!?
         this.__loginUser(email, data.token || "fake token");
-        successCbk.call(context, data.message);
+        successCbk.call(context, data);
       }, this);
 
       this.__bindDefaultFailCallback(request, failCbk, context);
@@ -110,6 +110,7 @@ qx.Class.define("qxapp.auth.Manager", {
         } = e.getTarget().getResponse();
 
         // TODO: validate data against specs???
+        // FIXME: Data is an object
         successCbk.call(context, data);
       }, this);
     },
@@ -126,7 +127,7 @@ qx.Class.define("qxapp.auth.Manager", {
             msg = msg + error.errors[i].message + " ";
           }
         }
-
+        // FIXME: Data is an object
         failCbk.call(context, msg);
       }, this);
     }
