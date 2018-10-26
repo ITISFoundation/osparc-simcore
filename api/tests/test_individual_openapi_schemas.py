@@ -1,15 +1,26 @@
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
+import json
+import os
+import shutil
 from pathlib import Path
 
 import pytest
+import yaml
 from openapi_spec_validator import validate_spec
 from openapi_spec_validator.exceptions import OpenAPIValidationError
 
-from utils import is_json_schema, is_openapi_schema, read_schema, list_files_in_api_specs
-
+from utils import (dump_specs, is_json_schema, is_openapi_schema,
+                   list_files_in_api_specs, load_specs, specs_folder)
 
 # Conventions
 _REQUIRED_FIELDS = ["error", "data"]
 CONVERTED_SUFFIX = "-converted.yaml"
+_FAKE_SCHEMA_NAME = "FakeSchema"
 
 _FAKE_OPEN_API_HEADERS = {
         "openapi": "3.0.0",
@@ -24,58 +35,113 @@ _FAKE_OPEN_API_HEADERS = {
         }
     }
 
-def correct_schema_local_references(schema_specs):
-    for key, value in schema_specs.items():
-        if isinstance(value, dict):
-            correct_schema_local_references(value)
-        elif "$ref" in key:
-            ref = str(value)
-            # FIXME: fails with circular links!
-            # e.g. log.yml/#Error -> error.yml/#Log -> log.yaml/components/schemas/
-            if ref.startswith("#/"):
-                # correct the reference
-                new_ref = ref.replace("#/", "#/components/schemas/")
-                schema_specs[key] = new_ref
-
-def add_namespace_for_converted_schemas(schema_specs):
+def add_namespace_for_converted_schemas(schema_specs: dict):
     # schemas converted from jsonschema do not have an overarching namespace.
     # the openapi validator does not like this
     # we use the jsonschema title to create a fake namespace
     fake_schema_specs = {
-        "FakeName": schema_specs
+        _FAKE_SCHEMA_NAME: schema_specs
         }
     return fake_schema_specs
 
-def validate_individual_schema(spec_file_path):
-    # only consider schemas in a /schemas/ subfolder
-    if "schemas" in str(spec_file_path):
-        specs = read_schema(spec_file_path)
-        if is_json_schema(specs):
-            return
+def change_references_to_schemas(filepath: Path, specs: dict):
+    from os.path import relpath, isabs, join, abspath , exists
 
-        if not is_openapi_schema(specs):
-            # this is probably only part of a openapi specs
-            # correct local references
-            correct_schema_local_references(specs)
-            if spec_file_path.name.endswith(CONVERTED_SUFFIX):
-                # this is a json to openapi converted file
+    filedir = filepath.parent
+
+    for key, value in specs.items():
+        if isinstance(value, dict):
+            # navigate specs
+            change_references_to_schemas(filepath, value)
+
+        elif key=="$ref":
+            # Ensures value = "file_ref#section_ref"
+            value = str(value)
+            if value.startswith('#'):
+                value = str(filepath) + value
+            elif '#' not in value:
+                value = value + "# "
+
+
+            file_ref, section_ref = value.split("#")
+
+            if not isabs(file_ref):
+                file_ref =  str(filedir / file_ref)
+
+            file_ref = abspath(file_ref) # resolves
+            assert exists(file_ref), file_ref
+
+            if 'schemas' in file_ref: # reference to a schema file (i.e. inside a schemas folder)
+                if not section_ref.startswith('/components/schemas/'): # not updated!
+                    section_ref = "/components/schemas/" + section_ref.lstrip('/').strip()
+                    if file_ref.endswith(CONVERTED_SUFFIX): # fake name used in converted schemas
+                        section_ref += _FAKE_SCHEMA_NAME
+
+                    file_ref = "./" + relpath(file_ref, filedir) if not filepath.samefile(file_ref) else ""
+                    specs[key] =  file_ref + "#" + section_ref
+
+
+
+@pytest.fixture("session")
+def converted_specs_testdir(api_specs_dir, all_api_specs_tails, tmpdir_factory):
+    """
+        - All api_specs files are copied into tmpdir
+        - All openapi files under schemas/ folders are processed into valid openapi specs
+        - All references to these files are replaced from
+            $ref: ... /schemas/some_file.yaml#Reference
+        to
+            $ref: ... /schemas/some_file.yaml#/components/reference/Reference
+
+    """
+    basedir = api_specs_dir
+    testdir = Path( tmpdir_factory.mktemp("converted-specs") )
+
+    print(testdir)
+
+    for tail in all_api_specs_tails:
+
+        # directory with converted specs
+        os.makedirs(testdir/tail.parent, exist_ok=True)
+
+        specs = load_specs(basedir/tail)
+
+        if "schemas" in str(tail) and  \
+           not is_openapi_schema(specs) and \
+           not is_json_schema(specs):
+
+            # convert to valid openapi
+            if tail.name.endswith(CONVERTED_SUFFIX):
                 specs = add_namespace_for_converted_schemas(specs)
 
-            fake_openapi_headers = _FAKE_OPEN_API_HEADERS
-            fake_openapi_headers["components"]["schemas"] = specs
-            specs = fake_openapi_headers
-        try:
-            validate_spec(specs, spec_url=spec_file_path.as_uri())
-        except OpenAPIValidationError as err:
-            pytest.fail(err.message)
+            new_specs = _FAKE_OPEN_API_HEADERS
+            new_specs["components"]["schemas"] = specs
+
+            # change references
+            change_references_to_schemas(basedir/tail, new_specs)
+            dump_specs(new_specs, testdir/tail)
+
+        elif is_openapi_schema(specs):
+            new_specs = specs
+            # change references
+            change_references_to_schemas(basedir/tail, new_specs)
+            dump_specs(new_specs, testdir/tail)
+        else:
+            shutil.copy2(basedir/tail, testdir/tail)
+
+    return testdir
 
 
 # TESTS ----------------------------------------------------------
-# NOTE: parametrizing tests per file makes more visible which file failed
-# NOTE: to debug use the wildcard and select problematic file, e.g. list_files_in_api_specs("*log_message.y*ml"))
 
-@pytest.mark.parametrize("spec_file_path",
-                        list_files_in_api_specs("*.json") +
-                        list_files_in_api_specs("*.y*ml"))
-def test_valid_individual_openapi_specs(spec_file_path):
-    validate_individual_schema(Path(spec_file_path))
+def test_valid_individual_openapi_specs(api_specs_tail, converted_specs_testdir):
+    # NOTE: api_specs_tail is a parametrized **fixture**
+    #
+    # NOTE: to debug see 'Captured stdout call' to see the converted file
+    #
+    api_specs_path = converted_specs_testdir / api_specs_tail
+    print("DEBUG: code ", str(api_specs_path))
+    try:
+        specs = load_specs(api_specs_path)
+        validate_spec(specs, spec_url=api_specs_path.as_uri())
+    except OpenAPIValidationError as err:
+        pytest.fail(err.message)
