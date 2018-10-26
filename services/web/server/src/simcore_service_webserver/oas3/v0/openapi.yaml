@@ -237,7 +237,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/FileMetaData_200'
-  /locations/{location_id}/files/{fileId}:
+  /storage/locations/{location_id}/files/{fileId}:
     get:
       summary: Returns download link for requested file
       operationId: download_file

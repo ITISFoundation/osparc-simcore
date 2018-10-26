@@ -4,6 +4,7 @@ from servicelib.rest_utils import extract_and_validate
 
 from . import __version__
 
+# TODO: Implement redirects with client sdk or aiohttp client
 
 async def get_storage_locations(request: web.Request):
     params, query, body = await extract_and_validate(request)
@@ -23,3 +24,38 @@ async def get_storage_locations(request: web.Request):
         }
 
     return envelope
+
+async def get_files_metadata(request: web.Request):
+    params, query, body = await extract_and_validate(request)
+    # get user_id, add to query and pass to storage
+    raise NotImplementedError
+
+async def get_file_metadata(request: web.Request):
+    params, query, body = await extract_and_validate(request)
+
+    # get user_id, add to query and pass to storage
+    raise NotImplementedError
+
+async def update_file_meta_data(request: web.Request):
+    params, query, body = await extract_and_validate(request)
+
+    # get user_id, add to query and pass to storage
+    raise NotImplementedError
+
+async def download_file(request: web.Request):
+    params, query, body = await extract_and_validate(request)
+
+    # get user_id, add to query and pass to storage
+    raise NotImplementedError
+
+async def upload_file(request: web.Request):
+    params, query, body = await extract_and_validate(request)
+
+    # get user_id, add to query and pass to storage
+    raise NotImplementedError
+
+async def delete_file(request: web.Request):
+    params, query, body = await extract_and_validate(request)
+
+    # get user_id, add to query and pass to storage
+    raise NotImplementedError
