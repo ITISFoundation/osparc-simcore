@@ -119,8 +119,8 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
       let manager = qxapp.auth.Manager.getInstance();
 
       let successFun = function(log) {
-        // TODO: add flash
         this.fireDataEvent("done", log.message);
+        qxapp.component.widget.FlashMessenger.getInstance().log(log);
       };
 
       let failFun = function(msg) {
