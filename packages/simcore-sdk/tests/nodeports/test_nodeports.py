@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 import helpers
-from simcore_sdk.nodeports import exceptions, config
+from simcore_sdk.nodeports import exceptions
 
 def check_port_valid(ports, config_dict: dict, port_type:str, key_name: str, key):
     assert getattr(ports, port_type)[key].key == key_name
