@@ -61,17 +61,17 @@ def test_default_configuration(default_configuration, default_configuration_file
     check_config_valid(PORTS, config_dict)
 
 def test_invalid_ports(special_configuration):
-    config_dict = special_configuration()
+    config_dict, _, _ = special_configuration()
     from simcore_sdk.nodeports.nodeports import PORTS
     check_config_valid(PORTS, config_dict)
 
     assert not PORTS.inputs
     assert not PORTS.outputs
 
-    with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError") as excinfo:
+    with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError"):
         PORTS.inputs[0]
 
-    with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError") as excinfo:
+    with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError"):
         PORTS.outputs[0]
 
 
