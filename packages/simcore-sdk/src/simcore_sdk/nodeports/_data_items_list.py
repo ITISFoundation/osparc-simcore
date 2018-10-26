@@ -24,8 +24,6 @@ class DataItemsList(MutableMapping):
             raise TypeError
         if isinstance(key, int):
             key = self._store.keys()[key]
-        if not key in self._store:
-            raise exceptions.UnboundPortError(key)
         
         self._store[key] = value
 
