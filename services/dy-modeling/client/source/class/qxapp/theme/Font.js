@@ -9,7 +9,7 @@
 ************************************************************************ */
 
 qx.Theme.define("qxapp.theme.Font", {
-  extend : qx.theme.indigo.Font,
+  extend : osparc.theme.osparcdark.Font,
 
   fonts: {}
 });
