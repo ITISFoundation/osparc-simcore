@@ -2,7 +2,7 @@ from aiohttp import web
 
 from servicelib.rest_utils import extract_and_validate
 
-from .security import authorized_userid, login_required
+from .security import login_required #authorized_userid
 
 from . import __version__
 
@@ -10,7 +10,7 @@ from . import __version__
 
 @login_required
 async def get_storage_locations(request: web.Request):
-   # params, query, body = await extract_and_validate(request)
+    _params, _query, _body = await extract_and_validate(request)
 
     #resp = await client.get("/v0/storage/locations")
     #payload = await resp.json()

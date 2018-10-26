@@ -23,6 +23,8 @@ def client(loop, aiohttp_unused_port, aiohttp_client):
     cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
     return cli
 
+# FIXME: this requires auth
+@pytest.mark.travis
 async def test_locations(client):
     resp = await client.get("/v0/storage/locations")
 
