@@ -124,33 +124,22 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       this.__clearTree();
       let store = qxapp.data.Store.getInstance();
 
-      if (!store.hasListener("MyDocuments")) {
-        store.addListener("MyDocuments", e => {
-          const files = e.getData();
-          const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-          this.__addTreeData(newChildren);
-        }, this);
-      }
+      [
+        "MyDocuments",
+        "S3PublicDocuments",
+        "FakeFiles"
+      ].forEach(eventName => {
+        if (!store.hasListener(eventName)) {
+          store.addListener(eventName, e => {
+            const files = e.getData();
+            const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+            this.__addTreeData(newChildren);
+          }, this);
+        }
+      }, this);
+
       store.getMyDocuments();
-
-      if (!store.hasListener("S3PublicDocuments")) {
-        store.addListener("S3PublicDocuments", e => {
-          const files = e.getData();
-          // const newChildren = qxapp.data.Converters.fromS3ToVirtualTreeModel(files);
-          const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-          this.__addTreeData(newChildren);
-        }, this);
-      }
       store.getS3SandboxFiles();
-
-      if (!store.hasListener("FakeFiles")) {
-        store.addListener("FakeFiles", e => {
-          const files = e.getData();
-          // const newChildren = qxapp.data.Converters.fromS3ToVirtualTreeModel(files);
-          const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-          this.__addTreeData(newChildren);
-        }, this);
-      }
       store.getFakeFiles();
     },
 
