@@ -4,7 +4,12 @@ qx.Class.define("qxapp.data.Store", {
   type : "singleton",
 
   events: {
-    "servicesRegistered": "qx.event.type.Event"
+    "servicesRegistered": "qx.event.type.Event",
+    "S3PublicDocuments": "qx.event.type.Event",
+    "MyDocuments": "qx.event.type.Event",
+    "PresginedLink": "qx.event.type.Event",
+    "DeleteFile": "qx.event.type.Event",
+    "FakeFiles": "qx.event.type.Event"
   },
 
   statics: {
@@ -864,6 +869,12 @@ qx.Class.define("qxapp.data.Store", {
       req.send();
     },
 
+    getFakeFiles: function() {
+      let data = qxapp.dev.fake.Data.getObjectList();
+      console.log("Fake Files", data);
+      this.fireDataEvent("FakeFiles", data);
+    },
+
     getS3SandboxFiles: function() {
       const slotName = "listObjects";
       let socket = qxapp.wrappers.WebSocket.getInstance();
@@ -873,15 +884,10 @@ qx.Class.define("qxapp.data.Store", {
         this.fireDataEvent("S3PublicDocuments", data);
       }, this);
       socket.emit(slotName);
-
-      if (!socket.getSocket().connected) {
-        let data = qxapp.dev.fake.Data.getObjectList();
-        console.log("Fake", slotName, data);
-        this.fireDataEvent("S3PublicDocuments", data);
-      }
     },
 
     getMyDocuments: function() {
+      // Get available storage locations
       let reqLoc = new qxapp.io.request.ApiRequest("/storage/locations", "GET");
 
       reqLoc.addListener("success", eLoc => {
@@ -891,7 +897,8 @@ qx.Class.define("qxapp.data.Store", {
         const locations = dataLoc["locations"];
         for (let i=0; i<locations.length; i++) {
           const locationId = locations[i];
-          const endPoint = "/storage/locations/" + locationId + "/files";
+          // Get list of file meta data
+          const endPoint = "/storage/locations/" + locationId + "/files/metadata";
           let reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
 
           reqFiles.addListener("success", eFiles => {
@@ -906,7 +913,7 @@ qx.Class.define("qxapp.data.Store", {
             const {
               error
             } = e.getTarget().getResponse();
-            console.log("Failed getting Storage Locations", error);
+            console.log("Failed getting Files list", error);
           });
         }
       }, this);
@@ -916,6 +923,53 @@ qx.Class.define("qxapp.data.Store", {
           error
         } = e.getTarget().getResponse();
         console.log("Failed getting Storage Locations", error);
+      });
+    },
+
+    getPresginedLink: function(download = true, locationId, fileUuid) {
+      // GET: Returns download link for requested file
+      // POST: Returns upload link or performs copy operation to datcore
+      const endPoint = "/storage/locations/" + locationId + "/files/" + fileUuid;
+      const method = download ? "GET" : "POST";
+      let req = new qxapp.io.request.ApiRequest(endPoint, method);
+
+      req.addListener("success", e => {
+        const {
+          presginedLink
+        } = e.getTarget().getResponse();
+        const presginedLinkData = {
+          presginedLink: presginedLink,
+          locationId: locationId,
+          fileUuid: fileUuid
+        };
+        this.fireDataEvent("PresginedLink", presginedLinkData);
+      }, this);
+
+      req.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        console.log("Failed getting Presgined Link", error);
+      });
+    },
+
+    deleteFile: function(locationId, fileUuid) {
+      // Deletes File
+      const endPoint = "/storage/locations/" + locationId + "/files/" + fileUuid;
+      let req = new qxapp.io.request.ApiRequest(endPoint, "DELETE");
+
+      req.addListener("success", e => {
+        const {
+          data
+        } = e.getTarget().getResponse();
+        this.fireDataEvent("DeleteFile", data);
+      }, this);
+
+      req.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        console.log("Failed getting Presgined Link", error);
       });
     }
   }
