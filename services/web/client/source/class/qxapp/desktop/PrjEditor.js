@@ -175,6 +175,31 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.__workbenchView.loadModel(nodeModel);
         }
       }
+
+      // SHow screenshots in the ExtraView
+      if (nodeId === "root") {
+        this.showScreenshotInExtraView("workbench");
+      } else {
+        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
+        if (nodeModel.isContainer()) {
+          this.showScreenshotInExtraView("container");
+        } else {
+          let nodeKey = nodeModel.getMetaData().key;
+          if (nodeKey.includes("file-picker")) {
+            this.showScreenshotInExtraView("file-picker");
+          } else if (nodeKey.includes("modeler")) {
+            this.showScreenshotInExtraView("modeler");
+          } else if (nodeKey.includes("3d-viewer")) {
+            this.showScreenshotInExtraView("postpro");
+          } else if (nodeKey.includes("viewer")) {
+            this.showScreenshotInExtraView("notebook");
+          } else if (nodeKey.includes("jupyter")) {
+            this.showScreenshotInExtraView("notebook");
+          } else {
+            this.showScreenshotInExtraView("form");
+          }
+        }
+      }
     },
 
     __workbenchModelChanged: function() {
@@ -197,6 +222,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     showInExtraView: function(widget) {
       this.__sidePanel.setMidView(widget);
+    },
+
+    showScreenshotInExtraView: function(name) {
+      let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_"+name+".png").set({
+        scale: true,
+        allowShrinkX: true,
+        allowShrinkY: true
+      });
+      this.__sidePanel.setMidView(imageWidget);
     },
 
     getLogger: function() {

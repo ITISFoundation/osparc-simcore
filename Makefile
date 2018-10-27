@@ -116,7 +116,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.16
+PLATFORM_VERSION=3.17
 
 push_platform_images:
 	${DOCKER} login masu.speag.com
