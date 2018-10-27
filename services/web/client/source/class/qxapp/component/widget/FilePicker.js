@@ -90,7 +90,20 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       return control || this.base(arguments, id);
     },
 
+    buildTree: function() {
+      this.__getFiles();
+    },
+
+    __addTreeData: function(data) {
+      let newModelToAdd = qx.data.marshal.Json.createModel(data, true);
+      let currentModel = this.__tree.getModel();
+      currentModel.getChildren().append(newModelToAdd);
+      this.__tree.setModel(currentModel);
+    },
+
     __clearTree: function() {
+      // Is not reseting the model
+      this.__tree.resetModel();
       let data = {
         label: "My Documents",
         children: []
@@ -107,41 +120,38 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       });
     },
 
-    buildTree: function() {
-      this.__getFiles();
-    },
-
-    __setTreeData: function(data) {
-      let newModel = qx.data.marshal.Json.createModel(data, true);
-      let oldModel = this.__tree.getModel();
-      if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
-        this.__tree.setModel(newModel);
-      }
-    },
-
-    __addTreeData: function(data) {
-      let newModelToAdd = qx.data.marshal.Json.createModel(data, true);
-      let currentModel = this.__tree.getModel();
-      currentModel.getChildren().append(newModelToAdd);
-      this.__tree.setModel(currentModel);
-    },
-
     __getFiles: function() {
       this.__clearTree();
       let store = qxapp.data.Store.getInstance();
-      store.addListener("MyDocuments", e => {
-        const files = e.getData();
-        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-        this.__addTreeData(newChildren);
-      }, this);
+
+      if (!store.hasListener("MyDocuments")) {
+        store.addListener("MyDocuments", e => {
+          const files = e.getData();
+          const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+          this.__addTreeData(newChildren);
+        }, this);
+      }
       store.getMyDocuments();
 
-      store.addListener("S3PublicDocuments", e => {
-        const files = e.getData();
-        const newChildren = qxapp.data.Converters.fromS3ToVirtualTreeModel(files);
-        this.__addTreeData(newChildren);
-      }, this);
+      if (!store.hasListener("S3PublicDocuments")) {
+        store.addListener("S3PublicDocuments", e => {
+          const files = e.getData();
+          // const newChildren = qxapp.data.Converters.fromS3ToVirtualTreeModel(files);
+          const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+          this.__addTreeData(newChildren);
+        }, this);
+      }
       store.getS3SandboxFiles();
+
+      if (!store.hasListener("FakeFiles")) {
+        store.addListener("FakeFiles", e => {
+          const files = e.getData();
+          // const newChildren = qxapp.data.Converters.fromS3ToVirtualTreeModel(files);
+          const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+          this.__addTreeData(newChildren);
+        }, this);
+      }
+      store.getFakeFiles();
     },
 
     __createConnections: function(node) {
