@@ -82,7 +82,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     }, this);
 
     // Listen to "Double Click" key
-    this.__list.addListener("dblclick", function(mouseEvent) {
+    this.__list.addListener("dbltap", e => {
       this.__onAddService();
     }, this);
 
