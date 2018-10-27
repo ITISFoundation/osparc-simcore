@@ -14,17 +14,26 @@
     }
   ],
   "defaultTarget": "source",
+  "locales": ["en"],
+  "lint-check": true,
 
   "applications": [
     {
       "class": "qxapp.Application",
       "theme": "qxapp.theme.Theme",
-      "name": "qxapp"
+      "name": "qxapp",
+      "include": [
+        "qx.theme.Indigo",
+        "qx.theme.Modern",
+        "qx.theme.Simple",
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load"
+      ]
     }
   ],
 
   "libraries": [
-    "../node_modules/qooxdoo-sdk/framework",
+    "../qooxdoo-sdk/framework",
     "."
   ],
 
