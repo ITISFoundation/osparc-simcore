@@ -46,6 +46,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
           c.bindProperty("fileId", "fileId", null, item, id);
+          c.bindProperty("path", "path", null, item, id);
           c.bindProperty("size", "size", null, item, id);
         }
       });
