@@ -95,7 +95,8 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
     },
 
     __getFiles: function() {
-      qxapp.utils.FilesTreePopulator.populateMyDocuments(this.__tree);
+      let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__tree);
+      filesTreePopulator.populateMyDocuments();
     },
 
     __createConnections: function(node) {

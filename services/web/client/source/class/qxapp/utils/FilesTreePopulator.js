@@ -1,13 +1,18 @@
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.utils.FilesTreePopulator", {
-  type: "static",
+  extend: qx.core.Object,
 
-  statics:
-  {
-    populateMyDocuments: function(tree) {
+  construct: function(tree) {
+    this.__tree = tree;
+  },
+
+  members: {
+    __tree: null,
+
+    populateMyDocuments: function() {
       const treeName = "My Documents";
-      this.__clearTree(tree, treeName);
+      this.__clearTree(treeName);
       let store = qxapp.data.Store.getInstance();
 
       [
@@ -15,13 +20,11 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
         "S3PublicDocuments",
         "FakeFiles"
       ].forEach(eventName => {
-        if (!store.hasListener(eventName)) {
-          store.addListener(eventName, e => {
-            const files = e.getData();
-            const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-            this.__addTreeData(tree, newChildren);
-          }, this);
-        }
+        store.addListenerOnce(eventName, e => {
+          const files = e.getData();
+          const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+          this.__addTreeData(newChildren);
+        }, this);
       }, this);
 
       store.getMyDocuments();
@@ -29,16 +32,16 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       store.getFakeFiles();
     },
 
-    __clearTree: function(tree, treeName) {
+    __clearTree: function(treeName) {
       // FIXME: It is not reseting the model
-      tree.resetModel();
+      this.__tree.resetModel();
       let data = {
         label: treeName,
         children: []
       };
       let emptyModel = qx.data.marshal.Json.createModel(data, true);
-      tree.setModel(emptyModel);
-      tree.setDelegate({
+      this.__tree.setModel(emptyModel);
+      this.__tree.setDelegate({
         createItem: () => new qxapp.component.widget.FileTreeItem(),
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
@@ -48,11 +51,11 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       });
     },
 
-    __addTreeData: function(tree, data) {
+    __addTreeData: function(data) {
       let newModelToAdd = qx.data.marshal.Json.createModel(data, true);
-      let currentModel = tree.getModel();
+      let currentModel = this.__tree.getModel();
       currentModel.getChildren().append(newModelToAdd);
-      tree.setModel(currentModel);
+      this.__tree.setModel(currentModel);
     }
   }
 });
