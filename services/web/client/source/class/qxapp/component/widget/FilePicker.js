@@ -94,53 +94,8 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       this.__getFiles();
     },
 
-    __addTreeData: function(data) {
-      let newModelToAdd = qx.data.marshal.Json.createModel(data, true);
-      let currentModel = this.__tree.getModel();
-      currentModel.getChildren().append(newModelToAdd);
-      this.__tree.setModel(currentModel);
-    },
-
-    __clearTree: function() {
-      // Is not reseting the model
-      this.__tree.resetModel();
-      let data = {
-        label: "My Documents",
-        children: []
-      };
-      let emptyModel = qx.data.marshal.Json.createModel(data, true);
-      this.__tree.setModel(emptyModel);
-      this.__tree.setDelegate({
-        createItem: () => new qxapp.component.widget.FileTreeItem(),
-        bindItem: (c, item, id) => {
-          c.bindDefaultProperties(item, id);
-          c.bindProperty("fileId", "fileId", null, item, id);
-          c.bindProperty("size", "size", null, item, id);
-        }
-      });
-    },
-
     __getFiles: function() {
-      this.__clearTree();
-      let store = qxapp.data.Store.getInstance();
-
-      [
-        "MyDocuments",
-        "S3PublicDocuments",
-        "FakeFiles"
-      ].forEach(eventName => {
-        if (!store.hasListener(eventName)) {
-          store.addListener(eventName, e => {
-            const files = e.getData();
-            const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-            this.__addTreeData(newChildren);
-          }, this);
-        }
-      }, this);
-
-      store.getMyDocuments();
-      store.getS3SandboxFiles();
-      store.getFakeFiles();
+      qxapp.utils.FilesTreePopulator.populateMyDocuments(this.__tree);
     },
 
     __createConnections: function(node) {
