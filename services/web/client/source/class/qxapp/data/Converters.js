@@ -96,7 +96,6 @@ qx.Class.define("qxapp.data.Converters", {
           }
           let fileInfo = {
             label: splitted[splitted.length-1],
-            path: bucketItem.path +"/"+ splitted[splitted.length-1],
             fileId: file["file_uuid"]
           };
           bucketItem.children.push(fileInfo);
