@@ -159,13 +159,18 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       };
     },
 
+    __isFile: function(item) {
+      let isFile = false;
+      if (item["set"+qx.lang.String.firstUp("fileId")]) {
+        isFile = true;
+      }
+      return isFile;
+    },
+
     __selectionChanged: function() {
       let selection = this.__tree.getSelection();
       let selectedItem = selection.toArray()[0];
-      let enabled = false;
-      if (selectedItem["set"+qx.lang.String.firstUp("fileId")]) {
-        enabled = true;
-      }
+      let enabled = this.__isFile(selectedItem):
       this.__selectBtn.setEnabled(enabled);
     },
 
