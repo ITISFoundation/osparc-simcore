@@ -9,7 +9,7 @@
 ************************************************************************ */
 
 qx.Theme.define("qxapp.theme.Decoration", {
-  extend: qx.theme.indigo.Decoration,
+  extend: osparc.theme.osparcdark.Decoration,
 
   decorations: {}
 });

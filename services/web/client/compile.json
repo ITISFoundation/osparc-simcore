@@ -20,7 +20,7 @@
   "applications": [
     {
       "class": "qxapp.Application",
-      "theme": "osparc.theme.OSparcDark",
+      "theme": "qxapp.theme.Theme",
       "name": "qxapp",
       "include": [
         "qx.theme.Indigo",
@@ -47,6 +47,9 @@
       },
       {
         "uri" : "resource/workbench/svg*.js"
+      },
+      {
+        "uri" : "resource/qxapp/*.png"
       }
     ]
   },
