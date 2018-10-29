@@ -22,7 +22,7 @@ def storage_server(loop, aiohttp_server, app_cfg):
     cfg = app_cfg["storage"]
     
     app = web.Application()
-    def _get_locs(request: web.Request):
+    async def _get_locs(request: web.Request):
         params, query, body = await extract_and_validate(request)
         
         assert params is None, params
