@@ -10,10 +10,15 @@ then
     # in dev mode, data located in mounted volume /test-data are uploaded to the S3 server
     # also a fake configuration is set in the DB to simulate the osparc platform
     echo "development mode, creating dummy tables..."
+    # in style: pipelineid,nodeuuid
     result="$(python3 devel/devel-initconfiguration.py ${USE_CASE_CONFIG_FILE})";
-    echo "Received result node uuid of $result";
+    echo "Received result of $result";
+    IFS=, read -a array <<< "$result"; 
+    echo "Received result pipeline id of ${array[0]}";
+    echo "Received result node uuid of ${array[1]}";
     # the fake SIMCORE_NODE_UUID is exported to be available to the service
-    export SIMCORE_NODE_UUID="$result";
+    export SIMCORE_PIPELINE_ID="${array[0]}";
+    export SIMCORE_NODE_UUID="${array[1]}";
     # TODO: host name shall be defined dynamically instead of stupidely hard-coded
     host_name="localhost"    
 else
