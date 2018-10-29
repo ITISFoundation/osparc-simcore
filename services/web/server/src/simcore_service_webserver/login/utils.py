@@ -1,3 +1,4 @@
+import pprint
 import random
 import string
 from datetime import datetime, timedelta
@@ -79,7 +80,6 @@ async def send_mail(recipient, subject, body):
         port=cfg.SMTP_PORT,
         use_tls=cfg.SMTP_TLS,
     )
-
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject
     msg['From'] = cfg.SMTP_SENDER

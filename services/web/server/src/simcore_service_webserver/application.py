@@ -1,6 +1,7 @@
 """ Main application
 
 """
+import json
 import logging
 
 from aiohttp import web
@@ -9,12 +10,12 @@ from .application_keys import APP_CONFIG_KEY
 from .computational_backend import setup_computational_backend
 from .db import setup_db
 from .login import setup_login
+from .render import setup_render
 from .rest import setup_rest
 from .security import setup_security
 from .session import setup_session
 from .sockets import setup_sio
 from .statics import setup_statics
-from .render import setup_render
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +29,10 @@ def create_application(config: dict):
     app = web.Application()
     app[APP_CONFIG_KEY] = config
 
-    # TODO: debug = config['main']['testing']
+    if config['main'].get('testing'):
+        log.debug("Config:\n%s",
+            json.dumps(config, indent=2, sort_keys=True))
+
 
     # TODO: create dependency mechanism and compute setup order
     setup_db(app)

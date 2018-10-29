@@ -29,7 +29,7 @@ def package_dir(here):
 
 @pytest.fixture(scope='session')
 def osparc_simcore_root_dir(here):
-    root_dir = here.parent.parent.parent.parent.parent
+    root_dir = here.parent.parent.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
     assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
     return root_dir

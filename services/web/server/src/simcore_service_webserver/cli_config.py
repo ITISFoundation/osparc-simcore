@@ -46,7 +46,7 @@ def config_from_options(options, schema, vars=None): # pylint: disable=W0622
             if resources.exists(resource_name):
                 options.config = resources.get_path(resource_name)
 
-    log.debug("loading %s", options.config)
+    log.debug("Loading '%s'", options.config)
 
     return commandline.config_from_options(options, trafaret=schema, vars=vars)
 
