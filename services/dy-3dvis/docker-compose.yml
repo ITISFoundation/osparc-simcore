@@ -14,7 +14,7 @@ services:
         io.simcore.description: '{"description": "Paraview Web-based Visualizer"}'
         io.simcore.contact: '{"contact": "anderegg@itis.ethz.ch"}'
         io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email": "anderegg@itis.ethz.ch", "affiliation": "ITIS Foundation"}]}'
-        io.simcore.inputs: '{"inputs": {"A":{"displayOrder":1, "label": "some 3D dataset", "description": "A mesh, volume data", "type": "data:*/*"}, "B":{"displayOrder":2, "label": "some 3D dataset", "description": "A mesh, volume data", "type": "file-url", "value": "null"}}}'
+        io.simcore.inputs: '{"inputs": {"A":{"displayOrder":1, "label": "some 3D dataset", "description": "A mesh, volume data", "type": "data:*/*"}, "B":{"displayOrder":2, "label": "some 3D dataset", "description": "A mesh, volume data", "type": "data:*/*"}}}'
         io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
         simcore.service.settings: '[{"name": "ports", "type": "int", "value": 80}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
         simcore.service.bootsettings: '[{"name": "entry_point", "type": "string", "value": "visualizer"}, {"name": "published_host", "type": "string", "value": "setport"}]'
