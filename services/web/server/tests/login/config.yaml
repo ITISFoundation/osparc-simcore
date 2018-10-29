@@ -4,23 +4,22 @@ main:
   host: 127.0.0.1
   log_level: DEBUG
   port: 8080
-  public_url: http://localhost:9081
   testing: true
-  disable_services: []
+  disable_services: ['rabbit', 'director', 's3']
   db:
     init_tables: False
 director:
   host: director
   port: 8001
 postgres:
-  database: simcoredb
-  endpoint: postgres:5432
-  host: postgres
+  database: test
+  user: admin
+  password: admin
+  host: localhost
+  port: 5432
   maxsize: 5
   minsize: 1
-  password: simcore
-  port: 5432
-  user: simcore
+  endpoint: postgres:5432
 rabbit:
   channels:
     log: comp.backend.channels.log
@@ -37,5 +36,5 @@ smtp:
   host: mail.foo.com
   port: 25
   tls: False
-  username: Null
-  password: Null
+  username: None,
+  password: None

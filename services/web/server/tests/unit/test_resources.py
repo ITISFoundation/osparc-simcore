@@ -15,9 +15,9 @@ from simcore_service_webserver.resources import (RSC_CONFIG_DIR_KEY,
 log = logging.getLogger(__name__)
 
 @pytest.fixture
-def app_resources(package_paths):
+def app_resources(package_dir):
     resource_names = []
-    base = package_paths.PACKAGE_FOLDER
+    base = package_dir
     for name in (RSC_CONFIG_DIR_KEY, RSC_OPENAPI_DIR_KEY):
         folder = base / name
         resource_names += [ str(p.relative_to(base)) for p in folder.rglob("*.y*ml") ]

@@ -71,6 +71,8 @@ services:
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
     depends_on:
       - webclient
   #--------------------------------------------------------------------

@@ -14,11 +14,12 @@ import pytest
 import yaml
 from aiohttp import web
 
+from servicelib.response_utils import unwrap_envelope
 from simcore_service_webserver import resources, rest
 from simcore_service_webserver.application_keys import (APP_CONFIG_KEY,
-                                                          APP_OPENAPI_SPECS_KEY)
-from simcore_service_webserver.security import setup_security
+                                                        APP_OPENAPI_SPECS_KEY)
 from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.security import setup_security
 
 logging.basicConfig(level=logging.INFO)
 
@@ -54,8 +55,7 @@ def client(loop, aiohttp_unused_port, aiohttp_client):
     cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
     return cli
 
-
-
+# ------------------------------------------
 
 async def test_check_health(client):
     resp = await client.get("/v0/")
@@ -96,8 +96,7 @@ async def test_check_action(client):
     assert data['query_value'] == QUERY
     assert data['body_value'] == FAKE
 
-
-
+@pytest.mark.skip(reason="DEV: Dummy login")
 async def test_auth_register(client, caplog):
     caplog.set_level(logging.ERROR, logger='openapi_spec_validator')
     caplog.set_level(logging.ERROR, logger='openapi_core')
@@ -125,6 +124,7 @@ async def test_auth_register(client, caplog):
     level = getattr(logging, data.get('level', "INFO"))
     client_log.log(level, msg=data['message'])
 
+@pytest.mark.skip(reason="DEV: Dummy login")
 async def test_auth_login(client, caplog):
 
     log_filter = logging.Filter(name='simcore_service_webserver')
@@ -187,10 +187,3 @@ async def test_auth_login(client, caplog):
     assert not error
     assert data # logs
     assert all( k in data for k in ('level', 'logger', 'message') )
-
-
-
-# utils
-
-def unwrap_envelope(payload):
-    return tuple( payload.get(k) for k in ('data', 'error') )

@@ -8,8 +8,8 @@ from aiohttp import web
 
 from servicelib.rest_utils import EnvelopeFactory, extract_and_validate
 
-from .rest_models import LogMessageType
-from .security import authorized_userid, forget, remember
+from ..rest_models import LogMessageType
+from ..security import authorized_userid, forget, remember
 
 log = logging.getLogger(__name__)
 
@@ -63,8 +63,6 @@ async def register(request: web.Request):
     log.info("User %s registered", body.email)
     return attr.asdict(LogMessageType(level="INFO", message="Confirmation email sent", logger="user"))
 
-
-
 async def login(request: web.Request):
     global DUMMY_TOKENS
 
@@ -105,7 +103,6 @@ async def login(request: web.Request):
     # TODO: check new_session(request) issue!
     await remember(request, response, identity)
     return response
-
 
 async def logout(request: web.Request):
     global DUMMY_TOKENS

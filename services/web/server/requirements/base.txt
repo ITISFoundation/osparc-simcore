@@ -1,23 +1,27 @@
 # List of packages for setup.install_requires
 #   Outsourced here so can be installed in base-stage of the web/Dockerfile
+psycopg2-binary==2.7.5
 aiohttp==3.3.2
 aiohttp_session[secure]==2.5.1
 aiohttp-security==0.2.0
-aiopg[sa]==0.14.0
+aiopg[sa]
 aio-pika==2.9.0
+aiohttp_jinja2==1.1.0
+aiosmtplib
+asyncpg
 urllib3==1.21.1
-attrs
-celery==4.1.0
-kombu==4.1.0
+attrs==18.2.0
+celery==4.1.1
+kombu==4.2.0
 minio==4.0.0
 networkx==2.1
 passlib==1.7.1
-# See http://initd.org/psycopg/docs/install.html#binary-install-from-pypi
-# psycopg2-binary~=2.7
 python-socketio==1.9.0
 requests==2.19.0
 sqlalchemy==1.2.9
 tenacity==4.12.0
 trafaret-config==2.0.1
-semantic_version
-# TODO: find a way to keep this automatically sorted
+semantic_version==2.6.0
+jinja_app_loader==1.0.2
+
+# TODO: use pipreqs/piptree to cleanup this list
