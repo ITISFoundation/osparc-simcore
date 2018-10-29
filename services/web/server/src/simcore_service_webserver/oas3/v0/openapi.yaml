@@ -11,17 +11,25 @@ info:
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 servers:
   - description: Development server
-    url: http://{host}:{port}/v0
+    url: http://{host}:{port}/{basePath}
     variables:
       host:
         default: 'localhost'
       port:
         default: '8001'
+      basePath:
+        enum:
+          - v0
+        default: v0
   - description: Production server
-    url: '{public_url}/v0'
+    url: '{publicUrl}/{basePath}'
     variables:
-      public_url:
+      publicUrl:
         default: 'https://osparc.io'
+      basePath:
+        enum:
+          - v0
+        default: v0
 tags:
 - name: admins
   description: Secured Admin-only calls
