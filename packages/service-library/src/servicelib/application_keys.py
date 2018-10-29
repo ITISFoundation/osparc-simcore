@@ -9,15 +9,15 @@ All keys are constants with a unique name convention:
  See https://aiohttp.readthedocs.io/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
 """
 
-_PREFIX = "simcore.app."
+_PREFIX = __name__
 
 # APP=application
-APP_CONFIG_KEY         = _PREFIX + 'config'
-APP_OPENAPI_SPECS_KEY  = _PREFIX + 'openapi_specs'
-APP_SESSION_SECRET_KEY = _PREFIX + 'session_secret'
+APP_CONFIG_KEY         = _PREFIX + '.config'
+APP_OPENAPI_SPECS_KEY  = _PREFIX + '.openapi_specs'
+APP_SESSION_SECRET_KEY = _PREFIX + '.session_secret'
 
-APP_DB_ENGINE_KEY      = _PREFIX + 'db_engine'
-APP_DB_SESSION_KEY     = _PREFIX + 'db_session'
+APP_DB_ENGINE_KEY      = _PREFIX + '.db_engine'
+APP_DB_SESSION_KEY     = _PREFIX + '.db_session'
 
 
 # TODO:
