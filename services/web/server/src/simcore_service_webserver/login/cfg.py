@@ -6,10 +6,6 @@ DEFAULTS = {
     'LOGOUT_REDIRECT': '/',
     'REGISTRATION_CONFIRMATION_REQUIRED': False, # TODO: activate when
 
-    'ADMIN_EMAILS': [],
-    'BACK_URL_QS_KEY': 'back_to',
-
-
     # TODO: add in configuration file as environ!
     'SMTP_SENDER': None,
     'SMTP_HOST': REQUIRED,
