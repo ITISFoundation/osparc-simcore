@@ -257,13 +257,20 @@ def __get_repos_from_key(service_key):
     log.info("entries %s", list_of_images)
     if not list_of_images[service_key]:
         raise exceptions.ServiceNotAvailableError(service_key)
-    # look for dependencies
-    dependent_repositories = registry_proxy.list_interactive_service_dependencies(service_key)
-    for repo in dependent_repositories:
-        list_of_images[repo] = registry_proxy.retrieve_list_of_images_in_repo(repo)
 
     log.debug("Service %s has the following list of images available: %s", service_key, list_of_images)
 
+    return list_of_images
+
+def __get_dependant_repos(service_key, service_tag):
+    list_of_images = __get_repos_from_key(service_key)
+    tag = __find_service_tag(list_of_images, service_key, 'Unkonwn name', service_tag)
+
+    list_of_images = {}
+    # look for dependencies
+    dependent_repositories = registry_proxy.list_interactive_service_dependencies(service_key, tag)
+    for repo in dependent_repositories:
+        list_of_images[repo] = registry_proxy.retrieve_list_of_images_in_repo(repo)
     return list_of_images
 
 def __find_service_tag(list_of_images, docker_image_path, service_name, service_tag):
@@ -371,8 +378,11 @@ def start_service(service_key, service_tag, service_uuid):
     # first check the uuid is available
     docker_client = __get_docker_client()
     __check_service_uuid_available(docker_client, service_uuid)
-    # find the service dependencies
+
     list_of_images = __get_repos_from_key(service_key)
+    # find the service dependencies
+    list_of_dependencies = __get_dependant_repos(service_key, service_tag)
+    list_of_images.update(list_of_dependencies)
 
     # create services
     __login_docker_registry(docker_client)

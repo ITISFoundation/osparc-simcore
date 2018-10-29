@@ -9,4 +9,4 @@ VOLUME /srv/http
 
 FROM base as production
 
-COPY apis /srv/http/apis
+COPY api/specs /srv/http/api/specs

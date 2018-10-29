@@ -96,7 +96,7 @@ before_test:
 	${DOCKER_COMPOSE} -f packages/simcore-sdk/tests/docker-compose.yml build
 
 run_test:
-	pytest -v apis/tests
+	pytest -v api/tests
 	pytest -v services/apihub/tests
 	pytest --cov=pytest_docker -v packages/pytest_docker/tests
 	pytest --cov=s3wrapper -v packages/s3wrapper/tests
@@ -116,7 +116,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.13
+PLATFORM_VERSION=3.17
 
 push_platform_images:
 	${DOCKER} login masu.speag.com
