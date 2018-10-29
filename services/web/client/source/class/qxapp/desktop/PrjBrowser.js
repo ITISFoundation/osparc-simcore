@@ -47,21 +47,6 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     __controller2: null,
     __list2: null,
 
-    __createControls: function() {
-      let controlsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-
-      let newPrjBtn = new qx.ui.form.Button(this.tr("New Project")).set({
-        width: 150,
-        height: 50
-      });
-      newPrjBtn.addListener("execute", function() {
-        this.__newPrjBtnClkd();
-      }, this);
-      controlsLayout.add(newPrjBtn);
-
-      return controlsLayout;
-    },
-
     newPrjBtnClkd: function() {
       let win = new qx.ui.window.Window(this.tr("Create New Project")).set({
         layout: new qx.ui.layout.Grow(),
