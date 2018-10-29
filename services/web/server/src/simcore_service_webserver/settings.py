@@ -12,8 +12,14 @@ log = logging.getLogger(__name__)
 
 
 def create_configfile_schema():
-    # TODO: import from director
+    # TODO: import from director-sdk
     _DIRECTOR_SCHEMA = T.Dict({
+        "host": T.String(),
+        "port": T.Int()
+    })
+
+   # TODO: import from storage-sdk
+    _STORAGE_SCHEMA = T.Dict({
         "host": T.String(),
         "port": T.Int()
     })
@@ -56,7 +62,8 @@ def create_configfile_schema():
         T.Key("director"): _DIRECTOR_SCHEMA,
         T.Key("postgres"): db.CONFIG_SCHEMA,
         T.Key("rabbit"): rabbit.CONFIG_SCHEMA,
-        T.Key("s3"): s3.CONFIG_SCHEMA
+        T.Key("s3"): s3.CONFIG_SCHEMA,
+        T.Key("storage"): _STORAGE_SCHEMA,
     })
 
 

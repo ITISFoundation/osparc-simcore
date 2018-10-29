@@ -56,6 +56,8 @@ services:
     environment:
       - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8001
+      - STORAGE_HOST=storage
+      - STORAGE_PORT=11111
       - OSPARC_PUBLIC_URL=${OSPARC_PUBLIC_URL}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}

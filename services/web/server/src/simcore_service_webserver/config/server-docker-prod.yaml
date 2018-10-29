@@ -38,4 +38,7 @@ smtp:
   tls: False
   username: Null
   password: Null
+storage:
+  host: ${STORAGE_HOST}
+  port: ${STORAGE_PORT}
 ...
