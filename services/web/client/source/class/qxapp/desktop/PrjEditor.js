@@ -117,6 +117,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }, this);
       });
 
+      this.__treeView.addListener("NodeLabelChanged", function(e) {
+        const data = e.getData();
+        const nodeId = data.nodeId;
+        const newLabel = data.newLabel;
+
+        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
+        nodeModel.setLabel(newLabel);
+      }, this);
+
       this.__settingsView.addListener("ShowViewer", e => {
         const data = e.getData();
         const url = data.url;
