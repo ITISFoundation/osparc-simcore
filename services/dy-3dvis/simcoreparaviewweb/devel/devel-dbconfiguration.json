@@ -11,7 +11,7 @@
             "in_2": {
                 "displayOrder": 1,
                 "label": "some 3D dataset",
-                "desc": "A mesh, volume data",
+                "description": "A mesh, volume data",
                 "type": "data:*/*"
             }
         },
