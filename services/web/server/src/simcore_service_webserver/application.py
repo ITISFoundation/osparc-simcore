@@ -43,9 +43,10 @@ def create_application(config: dict):
     setup_computational_backend(app)
     setup_statics(app)
     setup_sio(app)
-    setup_rest(app)
-    setup_storage(app)
+    setup_rest(app) # FIXME: all submodules that inject routes, need to be after rest setup
     setup_login(app)
+    setup_storage(app)
+
 
     return app
 

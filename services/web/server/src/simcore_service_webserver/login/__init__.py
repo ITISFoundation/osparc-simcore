@@ -6,19 +6,19 @@ This submodule is a modification of aiohttp-login
 """
 import logging
 
+import asyncpg
 from aiohttp import web
 
-import asyncpg
-
-from ..application_keys import APP_CONFIG_KEY, APP_DB_POOL_KEY
+from . import routes as login_routes
+from ..application_keys import (APP_CONFIG_KEY, APP_DB_POOL_KEY,
+                                APP_OPENAPI_SPECS_KEY)
 from ..db import DSN
 from .cfg import cfg
+from .keys import APP_LOGIN_CONFIG, CFG_LOGIN_STORAGE, get_storage
 from .storage import AsyncpgStorage
 
 log = logging.getLogger(__name__)
 
-APP_LOGIN_CONFIG = __name__ + ".config"
-CFG_LOGIN_STORAGE = __name__ + ".storage"
 
 
 async def pg_pool(app: web.Application):
@@ -49,11 +49,15 @@ async def pg_pool(app: web.Application):
 
 def setup(app: web.Application):
     log.debug("Setting up %s ...", __name__)
+
+    specs = app[APP_OPENAPI_SPECS_KEY] # validated openapi specs
+
+    routes = login_routes.create(specs)
+    app.router.add_routes(routes)
+
     app.on_startup.append(pg_pool)
 
 
-def get_storage(app: web.Application):
-    return app[APP_LOGIN_CONFIG]['STORAGE']
 
 # alias
 setup_login = setup

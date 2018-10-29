@@ -12,7 +12,6 @@ from servicelib import openapi
 
 from . import comp_backend_api, registry_api, rest_handlers
 from .application_keys import APP_OPENAPI_SPECS_KEY
-from .login import routes as auth_routes
 
 log = logging.getLogger(__name__)
 
@@ -35,10 +34,6 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     path, handle = '/check/{action}', rest_handlers.check_action
     operation_id = specs.paths[path].operations['post'].operation_id
     routes.append( web.post(BASEPATH+path, handle, name=operation_id) )
-
-
-    # auth --
-    routes.extend( auth_routes.create(specs) )
 
 
     # FIXME: temp fix for running pipelines
