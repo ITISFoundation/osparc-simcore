@@ -5,17 +5,17 @@ import logging
 import aiohttp_jinja2
 from aiohttp import web
 
-#import jinja2
+#import jinja2 TODO: check
 import jinja_app_loader
 
-from email.mime.text import MIMEText
-import aiosmtplib
+# TODO: move login/utils.py email functionality here!
+#from email.mime.text import MIMEText 
+#import aiosmtplib
 
 from .resources import resources
 
 log = logging.getLogger(__name__)
 
-# TODO: move login/utils.py email functionality here!
 
 
 def setup(app: web.Application, debug: bool=False):
