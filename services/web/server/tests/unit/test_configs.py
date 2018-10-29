@@ -76,7 +76,7 @@ def test_config_files(configfile, container_environ):
         cmd = ["-c", configfile]
         config = parse(cmd, parser)
 
-        for key, value in config:
+        for key, value in config.items():
             assert value!='None', "Use instead Null in {} for {}".format(configfile, key)
 
         # adds some defaults checks here

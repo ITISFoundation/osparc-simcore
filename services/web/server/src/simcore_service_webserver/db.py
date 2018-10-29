@@ -11,7 +11,7 @@ from aiohttp import web
 from aiopg.sa import create_engine
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
-from servicelib.aiopg_utils import DBAPIError, create_all, drop_all
+from servicelib.aiopg_utils import DBAPIError
 
 from .application_keys import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY,
                                APP_DB_SESSION_KEY)
@@ -115,8 +115,6 @@ def setup(app: web.Application):
 
 # alias ---
 setup_db = setup
-create_all = create_all
-drop_all = drop_all
 
 __all__ = (
     'setup_db',
