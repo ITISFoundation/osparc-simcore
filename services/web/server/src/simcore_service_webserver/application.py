@@ -10,7 +10,7 @@ from .application_keys import APP_CONFIG_KEY
 from .computational_backend import setup_computational_backend
 from .db import setup_db
 from .login import setup_login
-from .render import setup_render
+from .email import setup_email
 from .rest import setup_rest
 from .security import setup_security
 from .session import setup_session
@@ -36,9 +36,9 @@ def create_application(config: dict):
 
     # TODO: create dependency mechanism and compute setup order
     setup_db(app)
-    setup_render(app)
     setup_session(app)
     setup_security(app)
+    setup_email(app)
     setup_computational_backend(app)
     setup_statics(app)
     setup_sio(app)

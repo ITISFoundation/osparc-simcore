@@ -73,6 +73,7 @@ def get_client_ip(request):
 
 
 async def send_mail(recipient, subject, body):
+    # TODO: move to email submodule
     smtp_args = dict(
         loop=cfg.APP.loop,
         hostname=cfg.SMTP_HOST,

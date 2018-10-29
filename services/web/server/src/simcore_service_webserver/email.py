@@ -1,3 +1,5 @@
+""" Submodule that renders and sends emails
+"""
 import logging
 
 import aiohttp_jinja2
@@ -6,9 +8,15 @@ from aiohttp import web
 #import jinja2
 import jinja_app_loader
 
+from email.mime.text import MIMEText
+import aiosmtplib
+
 from .resources import resources
 
 log = logging.getLogger(__name__)
+
+# TODO: move login/utils.py email functionality here!
+
 
 def setup(app: web.Application, debug: bool=False):
     log.debug("Setting up %s ...", __name__)
@@ -21,12 +29,13 @@ def setup(app: web.Application, debug: bool=False):
         loader=jinja_app_loader.Loader(), #jinja2.FileSystemLoader(tmpl_dir)
         auto_reload=debug
     )
+
     return env
 
 # alias
-setup_render = setup
+setup_email = setup
 
 
 __all__ = (
-    'setup_render'
+    'setup_email'
 )
