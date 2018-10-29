@@ -92,8 +92,24 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
 
       prjFormLayout.add(new qx.ui.core.Spacer(5));
 
-      let createBtn = new qx.ui.form.Button(this.tr("Create"));
-      createBtn.addListener("execute", function() {
+      // create the form manager
+      let manager = new qx.ui.form.validation.Manager();
+      // create a async validator function
+      let projectTitleValidator = new qx.ui.form.validation.AsyncValidator(
+        function(validator, value) {
+          if (value === null || value.length === 0) {
+            validator.setValid(false, "Project title is required");
+          } else {
+            validator.setValid(true);
+          }
+        }
+      );
+      manager.add(projectTitle, projectTitleValidator);
+
+      manager.addListener("complete", function() {
+        if (!manager.getValid()) {
+          return;
+        }
         const title = projectTitle.getValue();
         const desc = description.getValue();
         const sele = templatesList.getSelection();
@@ -107,6 +123,11 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
           prjTemplate: templ
         };
         this.fireDataEvent("CreatePrj", data);
+      }, this);
+
+      let createBtn = new qx.ui.form.Button(this.tr("Create"));
+      createBtn.addListener("execute", function() {
+        manager.validate();
       }, this);
       prjFormLayout.add(createBtn);
 
