@@ -7,9 +7,14 @@ from typing import Dict, Tuple
 
 import attr
 from aiohttp import web
+from functools import partial
 
 from .rest_models import LogMessageType
 
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 ENVELOPE_KEYS = ('data', 'error')
 
@@ -18,10 +23,13 @@ ENVELOPE_KEYS = ('data', 'error')
 def unwrap_envelope(payload: Dict) -> Tuple:
     return tuple(payload.get(k) for k in ENVELOPE_KEYS) if payload else (None, None)
 
-
 #def wrap_envelope(*, data=None, error=None) -> Dict:
 #    raise NotImplementedError("")
 #    # TODO should convert data, error to dicts!
+
+
+# uses ujson if available
+json_response = partial(web.json_response, dumps=json.dumps)
 
 
 def log_response(msg: str, level: str) -> web.Response:
@@ -31,7 +39,7 @@ def log_response(msg: str, level: str) -> web.Response:
     """
     # TODO: link more with real logger
     msg = LogMessageType(msg, level)
-    response = web.json_response(data={
+    response = json_response(data={
         'data': attr.asdict(msg),
         'error': None
     })
