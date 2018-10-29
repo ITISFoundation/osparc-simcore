@@ -36,6 +36,6 @@ smtp:
   host: ${SMTP_HOST}
   port: ${SMTP_PORT}
   tls: False
-  username: None
-  password: None
+  username: Null
+  password: Null
 ...

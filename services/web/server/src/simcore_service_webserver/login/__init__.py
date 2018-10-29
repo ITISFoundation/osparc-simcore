@@ -24,7 +24,15 @@ CFG_LOGIN_STORAGE = __name__ + ".storage"
 async def pg_pool(app: web.Application):
 
     smtp_config = app[APP_CONFIG_KEY]['smtp']
-    config = {"SMTP_%s" % k.upper(): v for k, v in smtp_config.items()}
+    config = {"SMTP_{}".format(k.upper()): v for k, v in smtp_config.items()}
+    #'SMTP_SENDER': None,
+    #'SMTP_HOST': REQUIRED,
+    #'SMTP_PORT': REQUIRED,
+    #'SMTP_TLS': False,
+    #'SMTP_USERNAME': None,
+    #'SMTP_PASSWORD': None,
+
+    config['REGISTRATION_CONFIRMATION_REQUIRED'] = True
 
     config = (config or {}).copy()
     config['APP'] = app

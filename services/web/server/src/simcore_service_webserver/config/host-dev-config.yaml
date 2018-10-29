@@ -32,8 +32,8 @@ smtp:
   host: mail.foo.com
   port: 25
   tls: False
-  username: None
-  password: None
+  username: Null
+  password: Null
 s3:
   access_key: 'Q3AM3UQ867SPQQA43P2F'
   bucket_name: simcore

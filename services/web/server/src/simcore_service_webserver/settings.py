@@ -42,8 +42,8 @@ def create_configfile_schema():
     'host': T.String(),
     'port': T.Int(),
     T.Key('tls', default=False): T.Bool(),
-    T.Key('username', default=None): T.String(),
-    T.Key('password', default=None): T.String()
+    T.Key('username', default=None): T.Or(T.String, T.Null),
+    T.Key('password', default=None): T.Or(T.String, T.Null)
     })
 
     # TODO: add support for versioning.

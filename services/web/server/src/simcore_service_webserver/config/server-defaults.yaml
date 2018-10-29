@@ -37,5 +37,5 @@ smtp:
   host: mail.foo.com
   port: 25
   tls: False
-  username: None
-  password: None
+  username: Null
+  password: Null
