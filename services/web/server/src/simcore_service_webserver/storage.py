@@ -1,23 +1,19 @@
 ''' Subsystem that communicates with the storage service '''
 
 import logging
-from typing import Dict
 
 from aiohttp import web
 
 from . import storage_routes
-from .application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
+from .application_keys import APP_OPENAPI_SPECS_KEY
+from .storage_settings import get_config
 
 # SETTINGS ----------------------------------------------------
 THIS_MODULE_NAME = __name__.split(".")[-1]
-THIS_SERVICE_NAME = 'storage'
 
 # --------------------------------------------------------------
 
 log = logging.getLogger(__name__)
-
-def get_config(app: web.Application) -> Dict:
-    return app[APP_CONFIG_KEY][THIS_SERVICE_NAME]
 
 def setup(app: web.Application):
     log.debug("Setting up %s ...", __name__)

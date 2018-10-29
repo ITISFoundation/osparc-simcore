@@ -7,7 +7,7 @@ from servicelib.rest_utils import extract_and_validate
 
 from .db_models import UserRole
 from .login.decorators import login_required, restricted_to
-from .storage import get_storage_config
+from .storage_settings import get_config
 
 # TODO: retrieve from db tokens
 
@@ -18,7 +18,7 @@ async def _storage_get(request: web.Request, url_path: str):
 
     await extract_and_validate(request)
 
-    cfg = get_storage_config(request.app)
+    cfg = get_config(request.app)
     urlbase = URL.build(scheme='http', host=cfg['host'], port=cfg['port'])
 
     userid = request[RQT_USERID_KEY]
