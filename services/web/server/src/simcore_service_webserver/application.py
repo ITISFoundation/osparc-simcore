@@ -11,8 +11,8 @@ from .rest import setup_rest
 from .statics import setup_statics
 from .computational_backend import setup_computational_backend
 from .sockets import setup_sio
+from .storage import setup_storage
 from .application_keys import APP_CONFIG_KEY
-
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ def create_application(config):
     setup_statics(app)
     setup_sio(app)
     setup_rest(app)
+    setup_storage(app)
 
     return app
 

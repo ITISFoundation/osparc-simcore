@@ -16,8 +16,7 @@ import argparse
 import logging
 import sys
 
-from . import cli_config
-from . import application
+from . import application, cli_config
 
 log = logging.getLogger(__name__)
 

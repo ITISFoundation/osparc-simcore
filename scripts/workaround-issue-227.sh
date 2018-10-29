@@ -29,6 +29,10 @@ pushd $ROOTDIR/services/storage
 pip3 install -r requirements/dev.txt
 popd
 
+pushd $ROOTDIR/services/storage
+pip3 install -r requirements/dev.txt
+popd
+
 #for package_dir in setup_dirs; do
 #  pushd package_dir
 #  pip3 install -r requirements/dev.txt

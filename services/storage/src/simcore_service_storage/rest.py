@@ -12,7 +12,8 @@ from servicelib.rest_middlewares import envelope_middleware, error_middleware
 
 from . import rest_routes
 from .resources import resources
-from .settings import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY, RSC_OPENAPI_ROOTFILE_KEY
+from .settings import (APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY,
+                       RSC_OPENAPI_ROOTFILE_KEY)
 
 log = logging.getLogger(__name__)
 

@@ -12,9 +12,9 @@ then
   pip install -r requirements/dev.txt
   pip list
 
-  cd $HOME/  
-  simcore-service-storage --config config-dev.yaml
+  cd $HOME/
+  simcore-service-storage --config config-dev.yml
 else
   echo "Booting in production mode ..."
-  simcore-service-storage --config config-prod.yaml
+  simcore-service-storage --config config-prod.yml
 fi
