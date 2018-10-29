@@ -6,7 +6,6 @@ FIXME: _init_db is temporary here so database gets properly initialized
 
 import logging
 
-import aiopg.sa
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import create_engine
