@@ -8,7 +8,7 @@ from . import __version__
 
 # TODO: Implement redirects with client sdk or aiohttp client
 
-@login_required
+#@login_required
 async def get_storage_locations(request: web.Request):
     _params, _query, _body = await extract_and_validate(request)
 

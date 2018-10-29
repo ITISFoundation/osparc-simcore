@@ -1,5 +1,6 @@
-# W0621: Redefining name ... from outer scope
-# pylint: disable=W0621
+# pylint:disable=unused-import
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
 
 import pytest
 from aiohttp import web
