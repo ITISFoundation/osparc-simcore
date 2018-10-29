@@ -19,10 +19,6 @@ then
     # the fake SIMCORE_NODE_UUID is exported to be available to the service
     export SIMCORE_PIPELINE_ID="${array[0]}";
     export SIMCORE_NODE_UUID="${array[1]}";
-    # TODO: host name shall be defined dynamically instead of stupidely hard-coded
-    host_name="localhost"    
-else
-    host_name="osparc01.itis.ethz.ch"    
 fi
 
 echo "modifying apache configuration..."
@@ -36,14 +32,20 @@ service apache2 restart
 
 if [[ -v CREATE_DUMMY_TABLE ]];
 then
-    # in dev mode we know already what the port is
-    server_port=${SERVER_PORT}
+    # in dev mode we know already what the host/port are
+    host_name=${HOST_NAME}
+    server_port=${SERVER_PORT}    
 else
-    # the service waits until the calling client transfers the service externally published port
+    # the service waits until the calling client transfers the service externally published port/hostname
     # this is currently necessary due to some unknown reason with regard to how paraviewweb 
     # visualizer is started (see below)
-    echo "Waiting for server port to be defined"
-    server_port="$(python3 src/getport.py)";
+    echo "Waiting for server hostname/port to be defined"
+    host_port="$(python3 src/getport.py)";
+    IFS=, read -a array <<< "$host_port"; 
+    echo "Received result pipeline id of ${array[0]}";
+    echo "Received result node uuid of ${array[1]}";
+    host_name=${array[0]}
+    server_port=${array[1]}
 fi
 
 

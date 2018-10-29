@@ -35,14 +35,17 @@ ENV SIMCORE_NODE_UUID="-1" \
     POSTGRES_USER="-1" \
     POSTGRES_PASSWORD="-1" \
     POSTGRES_DB="-1"
+
+# special paraview variables
+ENV SERVER_PORT="-1"  \
+    HOST_NAME="-1"
 # update pip
 RUN pip3 install --upgrade pip
 
 # copy scripts
 COPY services/dy-3dvis/simcoreparaviewweb/scripts /home/root/scripts
 COPY services/dy-3dvis/simcoreparaviewweb/config /home/root/config
-ARG PORT
-ENV SERVER_PORT=$PORT
+
 RUN chmod +x scripts/boot.sh
 # apply apache config changer script
 RUN chmod +x scripts/apachePatch.sh

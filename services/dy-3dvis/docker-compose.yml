@@ -6,8 +6,6 @@ services:
       context: ../../
       dockerfile: services/dy-3dvis/simcoreparaviewweb/Dockerfile
       target: production
-      args: 
-        PORT: 8777
       labels: 
         io.simcore.key: '{"key": "simcore/services/dynamic/3d-viewer"}'
         io.simcore.outputs: '{"outputs": []}'
@@ -19,7 +17,7 @@ services:
         io.simcore.inputs: '{"inputs": {"A":{"displayOrder":1, "label": "some 3D dataset", "description": "A mesh, volume data", "type": "data:*/*"}, "B":{"displayOrder":2, "label": "some 3D dataset", "description": "A mesh, volume data", "type": "file-url", "value": "null"}}}'
         io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
         simcore.service.settings: '[{"name": "ports", "type": "int", "value": 80}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
-        simcore.service.bootsettings: '[{"name": "entry_point", "type": "string", "value": "visualizer"}, {"name": "published_port", "type": "string", "value": "setport"}]'
+        simcore.service.bootsettings: '[{"name": "entry_point", "type": "string", "value": "visualizer"}, {"name": "published_host", "type": "string", "value": "setport"}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"

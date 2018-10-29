@@ -13,6 +13,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
       - TEST_DATA_PATH=/home/root/test-data
+      - SERVER_PORT=${SERVER_PORT}
+      - HOST_NAME=${HOST_NAME}
     depends_on:
       - postgres
       - minio
