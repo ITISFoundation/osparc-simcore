@@ -11,7 +11,7 @@ from ..security import (authorized_userid, check_password, encrypt_password,
                         forget, remember)
 from .cfg import cfg  # FIXME: do not use singletons!
 from .decorators import login_required
-from .keys import get_storage
+from .settings import get_storage
 from .storage import AsyncpgStorage
 from .utils import (common_themed, get_client_ip, is_confirmation_allowed,
                     is_confirmation_expired, make_confirmation_link,

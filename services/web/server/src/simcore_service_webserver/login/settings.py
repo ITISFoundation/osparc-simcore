@@ -6,4 +6,4 @@ CFG_LOGIN_STORAGE = __name__ + ".storage"
 
 
 def get_storage(app: web.Application):
-    return app[APP_LOGIN_CONFIG]['STORAGE']
+    return app[APP_LOGIN_CONFIG][CFG_LOGIN_STORAGE]
