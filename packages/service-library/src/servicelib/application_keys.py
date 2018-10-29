@@ -29,5 +29,4 @@ APP_DB_POOL_KEY        = __name__ + '.db_pool'
 
 # RSP=response
 
-
 # TODO: tool to convert dotted __name__ to section in dict
