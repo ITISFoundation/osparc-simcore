@@ -1,43 +1,47 @@
+import aiohttp
 from aiohttp import web
+from yarl import URL
 
+from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_utils import extract_and_validate
 
-from .login.decorators import login_required, restricted_to
 from .db_models import UserRole
-from servicelib.request_keys import RQT_USERID_KEY
+from .login.decorators import login_required, restricted_to
+from .storage import get_storage_config
 
-from . import __version__
+# TODO: retrieve from db tokens
 
-# TODO: Implement redirects with client sdk or aiohttp client
+
+
+async def _storage_get(request: web.Request, url_path: str):
+    # TODO: Implement redirects with client sdk or aiohttp client
+
+    await extract_and_validate(request)
+
+    cfg = get_storage_config(request.app)
+    urlbase = URL.build(scheme='http', host=cfg['host'], port=cfg['port'])
+
+    userid = request[RQT_USERID_KEY]
+    url = urlbase.with_path(url_path).with_query(user_id=userid)
+
+    async with aiohttp.ClientSession() as session: # TODO: check if should keep webserver->storage session? 
+        async with session.get(url, ssl=False) as resp:
+            payload = await resp.json()
+            return payload
+
 
 @login_required
 async def get_storage_locations(request: web.Request):
-    _params, _query, _body = await extract_and_validate(request)
+    await extract_and_validate(request)
 
-    userid = request[RQT_USERID_KEY]
-    print("this is the user id", userid)
-
-    # TODO: retrieve from db tokens
-
-    #resp = await client.get("/v0/storage/locations/")
-    #payload = await resp.json()
-    #return payload
-
-    #user_id = await authorized_userid(request)
-    #async with aiohttp.ClientSession() as session:
-    #    async with session.get('http/get') as resp:
-    #        print(resp.status)
-    #        print(await resp.text())
-
-    locs = [ { "name": "bla", "id" : 0 }]
+    locs = [{"name": "bla", "id": 0}]
 
     envelope = {
         'error': None,
         'data': locs
-        }
+    }
 
     return envelope
-
 
 @login_required
 async def get_files_metadata(request: web.Request):
