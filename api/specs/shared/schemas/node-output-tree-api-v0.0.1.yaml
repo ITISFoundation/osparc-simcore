@@ -1,8 +1,8 @@
 $schema: http://json-schema.org/draft-07/schema#
-$id: https://simcore.io/api/specs/shared/schemas/node-output-list-api-v0.0.1.yaml
+$id: https://simcore.io/api/specs/shared/schemas/node-output-tree-api-v0.0.1.yaml
 
-title: node output list api
-description: nodes using the list representation for the output
+title: node output tree api
+description: nodes using the tree representation for the output
   must be able to handle the following requests
 type: object
 required:
@@ -12,23 +12,20 @@ required:
   - getItem
 properties:
   getItemList:
-    description: all the items in the list
+    description: a list of items making up one level of the tree
     type: object
     properties:
       request:
-        description: oa3 json schema description of the request structure
+        summary: oa3 json schema description of the request structure.
+        description: |
+          If no `rootKey` is specified, the first level of the tree is returned.
+          The `filter` will return any items matching the filter string as well as any
+          folder items containing matching items further down the tree.
         type: object
-        required:
-          - start
-          - count
         properties:
-          start:
-            type: integer
-          count:
-            type: integer
-          filter:
+          rootKey:
             type: string
-          orderBy:
+          filter:
             type: string
       response:
         type: array
@@ -39,16 +36,18 @@ properties:
               type: string
             label:
               type: string
+            folder:
+              type: boolean
   getItem:
-      description: get details about an item in the list
-      type: object
-      properties:
-        request:
-          type: object
-          required:
-            - key
-          properties:
-            key:
-              type: string
-        response:
-          type: object
+    description: get details about an item in the list
+    type: object
+    properties:
+      request:
+        type: object
+        required:
+          - key
+        properties:
+          key:
+            type: string
+      response:
+        type: object
