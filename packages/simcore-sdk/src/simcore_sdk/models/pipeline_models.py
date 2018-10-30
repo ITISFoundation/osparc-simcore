@@ -1,5 +1,7 @@
+import uuid
+
 import networkx as nx
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, JSON
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -13,7 +15,7 @@ FAILED = 4
 class ComputationalPipeline(Base):
     __tablename__ = 'comp_pipeline'
 
-    project_id = Column(String, primary_key=True)
+    project_id = Column(String, primary_key=True, default=str(uuid.uuid4()))
     dag_adjacency_list = Column(JSON)
     state = Column(String, default=UNKNOWN)
 
