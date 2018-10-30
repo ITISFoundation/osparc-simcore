@@ -19,7 +19,7 @@
             "output_2": {
                 "label": "Output 2",
                 "displayOrder": 1,
-                "desc": "The output 2",
+                "description": "The output 2",
                 "type": "data:*/*"
             }
         }
