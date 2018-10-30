@@ -18,6 +18,11 @@ qx.Class.define("qxapp.desktop.mainPanel.MainPanel", {
       allowGrowY: true
     });
 
+    this.__mainViewStack = new qx.ui.container.Stack();
+    this.__mainView.add(this.__mainViewStack, {
+      flex: 1
+    });
+
     this._add(hBox, {
       flex: 1
     });
@@ -34,13 +39,17 @@ qx.Class.define("qxapp.desktop.mainPanel.MainPanel", {
 
   members: {
     __mainView: null,
+    __mainViewStack: null,
     __controlsBar: null,
 
     __applyMainView: function(newWidget) {
-      this.__mainView.removeAll();
-      this.__mainView.add(newWidget, {
-        flex: 1
-      });
+      let stack = this.__mainViewStack;
+      let iFrameIdx = stack.indexOf(newWidget);
+      if (iFrameIdx === -1) {
+        stack.add(newWidget);
+        iFrameIdx = stack.getChildren().length - 1;
+      }
+      stack.setSelection([stack.getChildren()[iFrameIdx]]);
     },
 
     getControls: function() {
