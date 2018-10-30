@@ -42,13 +42,13 @@ def download_file_from_S3(store: str, s3_object_name: str, file_path: Path):
 
     if "s3-z43" in store:
         s3_object_url = Path(s3_object_name).as_posix()
-        parts_ = Path(s3_object_name).parts
         # sometimes the path contains the bucket name. this needs to be removed.
-        if len(parts_)>2 and "".join(parts_[1]) == s3.bucket:
-            s3_object_url = "".join(parts_[2:])
+        log.debug("s3 object %s, bucket %s", s3_object_url, s3.bucket)
+        if str(s3_object_url).startswith(s3.bucket):
+            s3_object_url = "".join(Path(s3_object_url).parts[1:])
 
         # remove an already existing file if present
-        if file_path.exists():            
+        if file_path.exists():
             file_path.unlink()
 
         __download_fromS3(s3.client, s3.bucket, s3_object_url, str(file_path))
