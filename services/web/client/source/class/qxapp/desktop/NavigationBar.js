@@ -56,6 +56,9 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     this.add(new qx.ui.toolbar.Separator());
 
     let forumBtn = new qx.ui.form.Button(this.tr("Forum"));
+    forumBtn.addListener("execute", function() {
+      window.open("https://forum.zmt.swiss/");
+    }, this);
     forumBtn.set(commonBtnSettings);
     this.add(forumBtn);
 

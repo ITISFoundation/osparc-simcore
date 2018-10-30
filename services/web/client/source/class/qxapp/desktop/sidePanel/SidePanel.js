@@ -11,12 +11,15 @@ qx.Class.define("qxapp.desktop.sidePanel.SidePanel", {
     let bottomView = new qx.ui.core.Widget();
 
     this._add(topView, {
+      height: "33%",
       flex: 1
     });
     this._add(midView, {
+      height: "33%",
       flex: 1
     });
     this._add(bottomView, {
+      height: "33%",
       flex: 1
     });
   },
@@ -60,7 +63,8 @@ qx.Class.define("qxapp.desktop.sidePanel.SidePanel", {
       if (this._indexOf(newWidget) !== indexOf) {
         this._removeAt(indexOf);
         this._addAt(newWidget, indexOf, {
-          height: "33%"
+          height: "33%",
+          flex: 1
         });
       }
     }
