@@ -13,6 +13,13 @@
                 "label": "input 2",
                 "description": "input 2",
                 "type": "data:*/*"
+            },
+            "input_3": {
+                "displayOrder":2,
+                "label": "input 3",
+                "description": "input 3",
+                "type": "string",
+                "defaultValue":"I'm a string"
             }
         },
         "outputs": {
@@ -21,6 +28,12 @@
                 "label": "output 1",
                 "description": "this is the output number 1",
                 "type": "data:*/*"
+            },
+            "output_2": {
+                "displayOrder": 0,
+                "label": "output 1",
+                "description": "this is the output number 1",
+                "type": "number"
             }
         }
     },
