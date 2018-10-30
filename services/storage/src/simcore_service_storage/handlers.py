@@ -69,6 +69,8 @@ async def check_action(request: web.Request):
     return output
 
 async def get_storage_locations(request: web.Request):
+    log.info("CHECK LOCATION PATH %s",request.path)
+
     params, query, body = await extract_and_validate(request)
 
     assert not params, "params %s" % params

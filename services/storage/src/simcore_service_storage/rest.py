@@ -52,7 +52,12 @@ def _setup_servers_specs(specs: openapi.Spec, app_config: Dict) -> openapi.Spec:
                 new_server.variables['port'].default = port
                 specs.servers.append(new_server)
 
-        log.info("Number of servers allowed %s", len(specs.servers))
+        for s in specs.servers:
+            if 'host' in s.variables.keys():
+                log.info("SERVER SPEC %s:%s", s.variables['host'].default, s.variables['port'].default)
+            else:
+                log.info("SERVER SPEC storage :%s", s.variables['port'].default)
+
 
     return specs
 
