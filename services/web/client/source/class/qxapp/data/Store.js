@@ -86,6 +86,155 @@ qx.Class.define("qxapp.data.Store", {
       return metaData;
     },
 
+    getItemList: function(nodeInstanceUUID, outputKey) {
+      console.log("getItemList for", nodeInstanceUUID, outputKey);
+      switch (outputKey) {
+        case "materialDB": {
+          return [
+            {
+              key: "Air-UUID",
+              label: "Air"
+            }, {
+              key: "Brain-UUID",
+              label: "Brain"
+            }, {
+              key: "Eye-UUID",
+              label: "Eye"
+            }
+          ];
+        }
+      }
+      return [];
+    },
+
+    getItem: function(nodeInstanceUUID, outputKey, itemUuid) {
+      console.log("getItem for", nodeInstanceUUID, outputKey, itemUuid);
+      switch (outputKey) {
+        case "materialDB": {
+          switch (itemUuid) {
+            case "Air-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1.16409
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermitivity": {
+                  displayOrder: 4,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                }
+              }
+            }
+            case "Brain-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1045.5
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0.234007
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermitivity": {
+                  displayOrder: 4,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                }
+              }
+            }
+            case "Eye-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1050.5
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0.62
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermitivity": {
+                  displayOrder: 4,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                }
+              }
+            }
+          }
+        }
+      }
+      return {};
+    },
+
     getList: function(nodeImageId) {
       switch (nodeImageId) {
         // case "service/dynamic/itis/s4l/Modeler-0.0.0": {
@@ -415,7 +564,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "MaterialDB",
               description: "MaterialDB Live link",
-              type: "data:application/s4l-api/materialDB"
+              type: "node-output-list-api-v0.0.1"
             }
           }
         },
