@@ -261,7 +261,10 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
       }
       this.__buttonsLayout.add(this.__openFolder);
 
-      if (nodeModel.getIFrame() !== null) {
+      if (nodeModel.getIFrame() === null) {
+        this.__iFrameStack.setVisibility("excluded");
+      } else {
+        this.__iFrameStack.setVisibility("visible");
         let stack = this.__iFrameStack;
         let iFrameIdx = stack.indexOf(nodeModel.getIFrame());
         if (iFrameIdx === -1) {
