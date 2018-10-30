@@ -102,4 +102,4 @@ ENV DEBUG 0
 ENV RUN_DOCKER_ENGINE_ROOT=0
 USER root
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD ./boot.sh
+CMD ["/bin/sh", "./boot.sh"]
