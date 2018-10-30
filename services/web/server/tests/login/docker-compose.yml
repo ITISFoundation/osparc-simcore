@@ -1,0 +1,11 @@
+version: '3.4'
+services:
+  postgres:
+    image: postgres:10
+    restart: always
+    environment:
+      POSTGRES_DB: ${TEST_POSTGRES_DB}
+      POSTGRES_USER: ${TEST_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD}
+    ports:
+      - '5432:5432'

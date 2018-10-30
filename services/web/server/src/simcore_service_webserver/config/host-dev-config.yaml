@@ -1,5 +1,4 @@
 version: '1.0'
-# TODO rename as main
 main:
   client_outdir: ~/devp/osparc-simcore/services/web/client/source-output
   host: 127.0.0.1
@@ -7,15 +6,16 @@ main:
   port: 8080
   public_url: http://localhost:8080
   testing: true
-  disable_services: [director, postgres, rabbit, s3]
-# TODO add section service
+  disable_services: []
+  db:
+    init_tables: True
 director:
   host: director
   port: 8001
 postgres:
   database: simcoredb
   endpoint: postgres:5432
-  host: postgres
+  host: localhost
   maxsize: 5
   minsize: 1
   password: simcore
@@ -27,6 +27,13 @@ rabbit:
     progress: comp.backend.channels.progress
   password: simcore
   user: simcore
+smtp:
+  sender: 'OSPARC support <support@osparc.io>'
+  host: mail.foo.com
+  port: 25
+  tls: False
+  username: Null
+  password: Null
 s3:
   access_key: 'Q3AM3UQ867SPQQA43P2F'
   bucket_name: simcore

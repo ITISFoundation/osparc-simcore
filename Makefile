@@ -101,7 +101,8 @@ run_test:
 	pytest --cov=pytest_docker -v packages/pytest_docker/tests
 	pytest --cov=s3wrapper -v packages/s3wrapper/tests
 	pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
-	pytest --cov=simcore_service_webserver -v services/web/server/tests
+	pytest --cov=simcore_service_webserver -v services/web/server/tests/unit
+	pytest --cov=simcore_service_webserver -v services/web/server/tests/login
 	pytest --cov=simcore_service_director -v services/director/tests
 	pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
 
@@ -116,7 +117,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.17
+PLATFORM_VERSION=3.18
 
 push_platform_images:
 	${DOCKER} login masu.speag.com

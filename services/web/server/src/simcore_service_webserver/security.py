@@ -1,127 +1,115 @@
-""" Authentication and authorization
+""" Security subsystem.
 
+    - Responsible of authentication and authorization
 
-    See https://aiohttp-security.readthedocs.io/en/latest/
+    Based on https://aiohttp-security.readthedocs.io/en/latest/
 """
 # pylint: disable=assignment-from-no-return
 # pylint: disable=unused-import
 import logging
 
 import aiohttp_security
+import passlib.hash
 import sqlalchemy as sa
-from aiohttp_security import (SessionIdentityPolicy, authorized_userid, forget,
-                              permits, remember)
+from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
-from passlib.hash import sha256_crypt
+from aiohttp_security.api import (authorized_userid, forget, has_permission,
+                                  is_anonymous, login_required, remember)
+from aiohttp_security.session_identity import SessionIdentityPolicy
+from aiopg.sa import Engine
 
-from .db import model
+from .application_keys import APP_DB_ENGINE_KEY
+from .db_models import UserRole, UserStatus, users
 from .session import setup_session
 
 log = logging.getLogger(__file__)
 
 
 class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
-    def __init__(self, app, db_engine_key):
-        # Lazy getter
+    def __init__(self, app: web.Application):
         self._app = app
-        self._dbkey = db_engine_key
 
     @property
-    def dbengine(self):
-        return self._app[self._dbkey]
+    def engine(self) -> Engine:
+         # Lazy getter since db is not available upon construction
 
-    async def authorized_userid(self, identity):
-        """Retrieve authorized user id.
+         # TODO: what if db is not available?
+        return self._app[APP_DB_ENGINE_KEY]
+
+    async def authorized_userid(self, identity: str):
+        """ Retrieve authorized user id.
 
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        # FIXME: temporary solution!
-        return identity
+        # pylint: disable=E1120
+        async with self.engine.acquire() as conn:
+            # TODO: why users.c.user_login_key!=users.c.email
+            query = users.select().where(
+                    sa.and_(users.c.email == identity,
+                            users.c.status != UserStatus.BANNED)
+            )
+            ret = await conn.execute(query)
+            user = await ret.fetchone()
+            return user["id"] if user else None
 
-        # # pylint: disable=E1120
-        # async with self.dbengine.acquire() as conn:
-        #     where = sa.and_(model.users.c.login == identity,
-        #                     sa.not_(model.users.c.disabled))
-        #     query = model.users.count().where(where)
-        #     ret = await conn.scalar(query)
-        #     if ret:
-        #         return identity
-        #     return None
-
-    async def permits(self, identity, permission, context=None):
-        """Check user model.permissions.
+    async def permits(self, identity: str, permission: UserRole, context=None):
+        """ Check user's permissions
 
         Return True if the identity is allowed the permission in the
         current context, else return False.
         """
-        # FIXME: temporary solution!
-        return True
+        log.debug("context: %s", context)
 
-        # log.debug("context: %s", context)
-        # if identity is None:
-        #     return False
+        if identity is None or permission is None:
+            return False
 
-        # async with self.dbengine.acquire() as conn:
-        #     where = sa.and_(model.users.c.login == identity,
-        #                     sa.not_(model.users.c.disabled))
-        #     query = model.users.select().where(where)
-        #     ret = await conn.execute(query)
-        #     user = await ret.fetchone()
-        #     if user is not None:
-        #         user_id = user[0]
-        #         is_superuser = user[3]
-        #         if is_superuser:
-        #             return True
+        async with self.engine.acquire() as conn:
+            query = users.select().where(
+                sa.and_(users.c.email == identity,
+                users.c.status != UserStatus.BANNED)
+            )
+            ret = await conn.execute(query)
+            user = await ret.fetchone()
+            if user is not None:
+                return permission <= user['role']
+        return False
 
-        #         where = model.permissions.c.user_id == user_id
-        #         query = model.permissions.select().where(where)
-        #         ret = await conn.execute(query)
-        #         result = await ret.fetchall()
-        #         if ret is not None:
-        #             for record in result:
-        #                 if record.perm_name == permission:
-        #                     return True
-
-        #     return False
-
-
-async def check_credentials(db_engine, username, password):
-    async with db_engine.acquire() as conn:
-        where = sa.and_(model.users.c.login == username,
-                        sa.not_(model.users.c.disabled))
-        query = model.users.select().where(where)
+async def check_credentials(engine: Engine, email: str, password: str) -> bool:
+    async with engine.acquire() as conn:
+        query = users.select().where(
+            sa.and_(users.c.email == email,
+            users.c.status != UserStatus.BANNED)
+        )
         ret = await conn.execute(query)
         user = await ret.fetchone()
         if user is not None:
-            _hash = user[2]  # password
-            return sha256_crypt.verify(password, _hash)
+            return check_password(password, user['password_hash'] )
     return False
 
+def encrypt_password(password):
+    return passlib.hash.sha256_crypt.encrypt(password, rounds=1000)
 
-generate_password_hash = sha256_crypt.hash
-
+def check_password(password, password_hash):
+    return passlib.hash.sha256_crypt.verify(password, password_hash)
 
 def setup(app):
     log.debug("Setting up %s ...", __name__)
 
-    # TODO: create dependency mechanism and compute setup order
-    setup_session(app)
-
     # Once user is identified, an identity string is created for that user
     identity_policy = SessionIdentityPolicy()
-    # TODO: create basic/bearer authentication instead of cookies
+    # TODO: create basic/bearer authentication policy based on tokens instead of cookies!!
 
-    # FIXME: cannot guarantee correct config key for db"s engine!
-    authorization_policy = DBAuthorizationPolicy(app, "db_engine")
+    authorization_policy = DBAuthorizationPolicy(app)
     aiohttp_security.setup(app, identity_policy, authorization_policy)
 
-
-# alias
+# aliases
+generate_password_hash = encrypt_password
 setup_security = setup
 
 __all__ = (
     'setup_security',
     'generate_password_hash', 'check_credentials',
-    'authorized_userid', 'forget', 'permits', 'remember'
+    'authorized_userid', 'forget', 'remember', 'is_anonymous',
+    'login_required', 'has_permission' # decorators
 )
