@@ -45,12 +45,14 @@ class _NodeModelEncoder(json.JSONEncoder):
 
 class DBManager:
     def __init__(self):
-        self._db = DbSettings()
+        self._db = DbSettings()        
+        node = self._db.session.query(NodeModel).filter(NodeModel.node_id == config.NODE_UUID).one()
+        config.PROJECT_ID = node.project_id
 
     def __get_node_from_db(self, node_uuid):
         log.debug("Reading from database for node uuid %s", node_uuid)
         try:
-            return self._db.session.query(NodeModel).filter(and_(NodeModel.node_id == node_uuid, NodeModel.project_id == config.PROJECT_ID)).one()
+            return self._db.session.query(NodeModel).filter(NodeModel.node_id == node_uuid).one()
         except exc.NoResultFound:
             log.exception("the node id %s was not found", node_uuid)
         except exc.MultipleResultsFound:
