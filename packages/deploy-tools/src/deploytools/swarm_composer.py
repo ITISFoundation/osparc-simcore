@@ -97,7 +97,7 @@ def create_deploy(outdir: Path):
     merged = merge_docker_compose(prod, tools)
 
     dc_deploy = resolve_deploy(merged, exclude=["webclient"])
-    fpath = output_dir() / "docker-compose.yml"
+    fpath = outdir / "docker-compose.yml"
     dump_to_file(dc_deploy, fpath)
 
     # dc_devel = merge(dc_deploy, docker_compose(".devel"))
