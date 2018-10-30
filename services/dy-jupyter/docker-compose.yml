@@ -10,14 +10,14 @@ services:
         BASE_IMAGE: jupyter/base-notebook
       labels:
         io.simcore.key: '{"key": "simcore/services/dynamic/jupyter-base-notebook"}'        
-        io.simcore.tag: '{"tag": "${SERVICES_VERSION}"}'
+        io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
+        io.simcore.type: '{"type": "dynamic"}'
         io.simcore.name: '{"name": "jupyter-base-notebook"}'
         io.simcore.description: '{"description": "Jupyter notebook"}'
-        io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
         io.simcore.authors: '{"authors": [{"name": "sanderegg", "email": "anderegg@itis.swiss", "affiliation": "ITIS Foundation"}]}'
-        io.simcore.inputs: '{"inputs": [{"key": "input_1", "label": "input 1", "desc": "file input", "type": "file-url", "value": "null"}]}'
-        io.simcore.outputs: '{"outputs": [{"key": "output_1", "label": "output 1", "desc": "file output", "type": "file-url", "value": "null"}]}'
-        io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
+        io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
+        io.simcore.inputs: '{"inputs": {"input_1":{"label": "input 1", "displayOrder":0, "description": "Input 1", "type": "data:*/*"}, "input_2":{"label": "input 2", "displayOrder":1, "description": "Input 2", "type": "data:*/*"}}}'
+        io.simcore.outputs: '{"outputs": {"output_1":{"label": "output 1", "displayOrder":0, "description": "Output 1", "type": "data:*/*"}, "output_2":{"label": "output 2", "displayOrder":1, "description": "Output 2", "type": "data:*/*"}}}'
         simcore.service.settings: '[{"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
