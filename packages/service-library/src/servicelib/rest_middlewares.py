@@ -18,7 +18,7 @@ def is_enveloped(payload):
             return is_enveloped(json.loads(payload))
         except Exception: #pylint: disable=W0703
             return False
-    return isinstance(payload, dict) and set(payload.keys()) == {'data', 'error'}
+    return isinstance(payload, dict) and  any( k in payload.keys() for k in ('data', 'error') )
 
 
 
