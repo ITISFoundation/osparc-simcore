@@ -7,6 +7,8 @@ main:
   public_url: http://localhost:9081
   testing: true
   disable_services: []
+  db:
+    init_tables: False
 director:
   host: director
   port: 8001
@@ -30,3 +32,10 @@ s3:
   bucket_name: simcore
   endpoint: play.minio.io:9000
   secret_key: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
+smtp:
+  sender: 'OSPARC support <support@osparc.io>'
+  host: mail.foo.com
+  port: 25
+  tls: False
+  username: Null
+  password: Null
