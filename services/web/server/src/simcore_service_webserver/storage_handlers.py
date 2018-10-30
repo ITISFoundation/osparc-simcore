@@ -1,4 +1,3 @@
-import aiohttp
 from aiohttp import web
 from yarl import URL
 
@@ -48,7 +47,7 @@ async def get_file_metadata(request: web.Request):
 
 
 @login_required
-async def update_file_meta_data(request: web.Request):
+async def update_file_meta_data(_request: web.Request):
     raise NotImplementedError
     # payload = await _request_storage(request, 'PATCH')
     # return payload
