@@ -7,14 +7,13 @@ from servicelib.rest_utils import extract_and_validate
 
 from .db_models import UserRole
 from .login.decorators import login_required, restricted_to
-from .storage_settings import get_config
+from .storage_settings import get_config, get_client_session
 
 # TODO: retrieve from db tokens
 
 
 
-async def _storage_get(request: web.Request):
-    # TODO: Implement redirects with client sdk or aiohttp client
+async def _request_storage(request: web.Request, method: str):
     url_path = request.rel_url.path.replace("storage/", "")
     await extract_and_validate(request)
 
@@ -24,71 +23,50 @@ async def _storage_get(request: web.Request):
     userid = request[RQT_USERID_KEY]
     url = urlbase.with_path(url_path).with_query(user_id=userid)
 
-    async with aiohttp.ClientSession() as session: # TODO: check if should keep webserver->storage session?
-        async with session.get(url, ssl=False) as resp:
-            payload = await resp.json()
-            return payload
+    session = get_client_session(request.app)
+    async with session.request(method.upper(), url, ssl=False) as resp:
+        payload = await resp.json()
+        return payload
 
 
 @login_required
 async def get_storage_locations(request: web.Request):
-    payload = await _storage_get(request)
-
+    payload = await _request_storage(request, 'GET')
     return payload
 
-    # await extract_and_validate(request)
-#
-    # locs = [{"name": "bla", "id": 0}]
-#
-    # envelope = {
-    #     'error': None,
-    #     'data': locs
-    # }
-#
-    # return envelope
 
 @login_required
 async def get_files_metadata(request: web.Request):
-    _params, _query, _body = await extract_and_validate(request)
-    # get user_id, add to query and pass to storage
-    raise NotImplementedError
+    payload = await _request_storage(request, 'GET')
+    return payload
 
 
 @login_required
 async def get_file_metadata(request: web.Request):
-    _params, _query, _body = await extract_and_validate(request)
-
-    # get user_id, add to query and pass to storage
-    raise NotImplementedError
+    payload = await _request_storage(request, 'GET')
+    return payload
 
 
 @login_required
 async def update_file_meta_data(request: web.Request):
-    _params, _query, _body = await extract_and_validate(request)
-
-    # get user_id, add to query and pass to storage
     raise NotImplementedError
+    # payload = await _request_storage(request, 'PATCH')
+    # return payload
 
 
 @login_required
 async def download_file(request: web.Request):
-    _params, _query, _body = await extract_and_validate(request)
-
-    # get user_id, add to query and pass to storage
-    raise NotImplementedError
+    payload = await _request_storage(request, 'GET')
+    return payload
 
 
 @login_required
 async def upload_file(request: web.Request):
-    _params, _query, _body = await extract_and_validate(request)
-
-    # get user_id, add to query and pass to storage
-    raise NotImplementedError
+    payload = await _request_storage(request, 'PUT')
+    return payload
 
 
 @restricted_to(UserRole.MODERATOR)
 async def delete_file(request: web.Request):
-    _params, _query, _body = await extract_and_validate(request)
-
-    # get user_id, add to query and pass to storage
-    raise NotImplementedError
+    payload = await _request_storage(request, 'DELETE')
+    return payload
