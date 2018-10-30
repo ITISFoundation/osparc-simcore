@@ -69,6 +69,20 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
         const port = ports[portKey];
         if (port.type.includes("api")) {
           console.log("Provide widget for ", port.type);
+          if (port.type === "node-output-list-api-v0.0.1") {
+            let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+              openMode: "none"
+            });
+            const itemList = qxapp.data.Store.getInstance().getItemList(this.getNodeModel().getNodeId(), portKey);
+            const children = qxapp.data.Converters.fromAPIListToVirtualTreeModel(itemList);
+            let data = {
+              label: port.label,
+              children: children
+            };
+            let model = qx.data.marshal.Json.createModel(data, true);
+            tree.setModel(model);
+            this._add(tree);
+          }
         } else {
           let toolTip = new qx.ui.tooltip.ToolTip(port.description);
           let portLabel = new qx.ui.basic.Label(port.label).set({
