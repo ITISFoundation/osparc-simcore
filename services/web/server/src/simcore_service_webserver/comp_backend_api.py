@@ -9,7 +9,6 @@ import asyncio
 import datetime
 import logging
 
-import async_timeout
 import sqlalchemy.exc
 from aiohttp import web, web_exceptions
 from sqlalchemy import create_engine, and_
