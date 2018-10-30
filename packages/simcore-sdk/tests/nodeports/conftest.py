@@ -105,7 +105,7 @@ def special_2nodes_configuration(postgres, empty_configuration_file: Path):
     yield create_config
 
 def _create_new_pipeline(session)->str:    
-    new_Pipeline = ComputationalPipeline()
+    new_Pipeline = ComputationalPipeline(project_id=str(uuid.uuid4()))
     session.add(new_Pipeline)
     session.commit()
     return new_Pipeline.project_id
