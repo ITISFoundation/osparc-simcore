@@ -1,6 +1,7 @@
 # Order is important. The last matching pattern has the most precedence.
 
 # files and folders recursively
+/api/                    @sanderegg, @pcrespov
 /docs/                   @pcrespov
 /services/computation    @mguidon
 /services/dy*            @sanderegg

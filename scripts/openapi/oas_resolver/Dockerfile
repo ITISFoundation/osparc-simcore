@@ -1,6 +1,6 @@
 # Usage:
 # docker build . -t oas_resolver
-# docker run -v /path/to/apis:/input -v /path/to/compiled/file:/output oas_resolver /input/path/to/openapi.yaml output_file.yaml
+# docker run -v /path/to/api:/input -v /path/to/compiled/file:/output oas_resolver /input/path/to/openapi.yaml output_file.yaml
 FROM python:3.6-alpine
 
 LABEL maintainer=sanderegg
