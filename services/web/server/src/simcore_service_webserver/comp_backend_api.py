@@ -15,7 +15,6 @@ from aiohttp import web, web_exceptions
 from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 
-from s3wrapper.s3_client import S3Client
 from simcore_director_sdk.rest import ApiException
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
