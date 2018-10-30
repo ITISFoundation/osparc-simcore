@@ -69,18 +69,18 @@ def create_dummy(json_configuration_file_path: Path):
             break
         if input_item["type"] == "data:*/*":
             filename = available_files[0].name
-            s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, str(filename))
+            s3_object_name = Path(str(new_Pipeline.project_id), node_uuid, str(filename))
             s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), str(available_files[0]))
             # add to the payload
             configuration["inputs"][key] = {"store":"s3-z43", "path":s3_object_name.as_posix()}
             uploaded_files.append(available_files[0])
 
     # now create the node in the db with links to S3
-    new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, schema=configuration["schema"], inputs=configuration["inputs"], outputs=configuration["outputs"])
+    new_Node = ComputationalTask(project_id=new_Pipeline.project_id, node_id=node_uuid, schema=configuration["schema"], inputs=configuration["inputs"], outputs=configuration["outputs"])
     db.session.add(new_Node)
     db.session.commit()
     # print the node uuid so that it can be set as env variable from outside
-    print("{pipelineid},{nodeuuid}".format(pipelineid=str(new_Node.pipeline_id), nodeuuid=node_uuid))
+    print("{pipelineid},{nodeuuid}".format(pipelineid=str(new_Node.project_id), nodeuuid=node_uuid))
 
 if __name__ == "__main__":    
     create_dummy(Path(sys.argv[1]))

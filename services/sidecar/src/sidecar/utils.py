@@ -40,7 +40,7 @@ def find_entry_point(g):
 def is_node_ready(task, graph, _session, _logger):
     tasks = _session.query(ComputationalTask).filter(and_(
         ComputationalTask.node_id.in_(list(graph.predecessors(task.node_id))),
-        ComputationalTask.pipeline_id==task.pipeline_id)).all()
+        ComputationalTask.project_id==task.project_id)).all()
     _logger.debug("TASK %s ready? Checking ..", task.internal_id)
     for dep_task in tasks:
         job_id = dep_task.job_id

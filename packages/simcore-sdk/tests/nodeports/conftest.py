@@ -42,11 +42,11 @@ def default_configuration(postgres, default_configuration_file):
     # prepare database with default configuration
     json_configuration = default_configuration_file.read_text()
     
-    pipeline_id = _create_new_pipeline(postgres)
-    node_uuid = _set_configuration(postgres, pipeline_id, json_configuration)
+    project_id = _create_new_pipeline(postgres)
+    node_uuid = _set_configuration(postgres, project_id, json_configuration)
     config_dict = json.loads(json_configuration)
     config.NODE_UUID = str(node_uuid)
-    config.PROJECT_ID = str(pipeline_id)
+    config.PROJECT_ID = str(project_id)
     yield config_dict
 
 @pytest.fixture()
@@ -71,24 +71,24 @@ def special_configuration(postgres, empty_configuration_file: Path):
         _assign_config(config_dict, "inputs", inputs)
         _assign_config(config_dict, "outputs", outputs)
 
-        pipeline_id = _create_new_pipeline(postgres)
-        node_uuid = _set_configuration(postgres, pipeline_id, json.dumps(config_dict))
+        project_id = _create_new_pipeline(postgres)
+        node_uuid = _set_configuration(postgres, project_id, json.dumps(config_dict))
         config.NODE_UUID = str(node_uuid)
-        config.PROJECT_ID = str(pipeline_id)
-        return config_dict, pipeline_id, node_uuid
+        config.PROJECT_ID = str(project_id)
+        return config_dict, project_id, node_uuid
     yield create_config
 
 @pytest.fixture()
 def special_2nodes_configuration(postgres, empty_configuration_file: Path):
     def create_config(prev_node_inputs: List[Tuple[str, str, Any]] =None, prev_node_outputs: List[Tuple[str, str, Any]] =None,
                     inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None):
-        pipeline_id = _create_new_pipeline(postgres)
+        project_id = _create_new_pipeline(postgres)
 
         # create previous node
         previous_config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(previous_config_dict, "inputs", prev_node_inputs)
         _assign_config(previous_config_dict, "outputs", prev_node_outputs)
-        previous_node_uuid = _set_configuration(postgres, pipeline_id, json.dumps(previous_config_dict))
+        previous_node_uuid = _set_configuration(postgres, project_id, json.dumps(previous_config_dict))
 
         # create current node
         config_dict = json.loads(empty_configuration_file.read_text())
@@ -98,24 +98,24 @@ def special_2nodes_configuration(postgres, empty_configuration_file: Path):
         str_config = json.dumps(config_dict)
         str_config = str_config.replace("TEST_NODE_UUID", str(previous_node_uuid))
         config_dict = json.loads(str_config)
-        node_uuid = _set_configuration(postgres, pipeline_id, str_config)
+        node_uuid = _set_configuration(postgres, project_id, str_config)
         config.NODE_UUID = str(node_uuid)
-        config.PROJECT_ID = str(pipeline_id)
-        return config_dict, pipeline_id, node_uuid
+        config.PROJECT_ID = str(project_id)
+        return config_dict, project_id, node_uuid
     yield create_config
 
 def _create_new_pipeline(session)->str:    
     new_Pipeline = ComputationalPipeline()
     session.add(new_Pipeline)
     session.commit()
-    return new_Pipeline.pipeline_id
+    return new_Pipeline.project_id
 
-def _set_configuration(session, pipeline_id: str, json_configuration: str):
+def _set_configuration(session, project_id: str, json_configuration: str):
     node_uuid = uuid.uuid4()
     json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", str(node_uuid))
     configuration = json.loads(json_configuration)
 
-    new_Node = ComputationalTask(pipeline_id=pipeline_id, node_id=node_uuid, schema=configuration["schema"], inputs=configuration["inputs"], outputs=configuration["outputs"])
+    new_Node = ComputationalTask(project_id=project_id, node_id=node_uuid, schema=configuration["schema"], inputs=configuration["inputs"], outputs=configuration["outputs"])
     session.add(new_Node)
     session.commit()    
     return node_uuid

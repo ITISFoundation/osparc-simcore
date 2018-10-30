@@ -50,7 +50,7 @@ class DBManager:
     def __get_node_from_db(self, node_uuid):
         log.debug("Reading from database for node uuid %s", node_uuid)
         try:
-            return self._db.session.query(NodeModel).filter(and_(NodeModel.node_id == node_uuid, NodeModel.pipeline_id == config.PROJECT_ID)).one()
+            return self._db.session.query(NodeModel).filter(and_(NodeModel.node_id == node_uuid, NodeModel.project_id == config.PROJECT_ID)).one()
         except exc.NoResultFound:
             log.exception("the node id %s was not found", node_uuid)
         except exc.MultipleResultsFound:

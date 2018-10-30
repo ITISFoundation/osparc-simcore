@@ -8,12 +8,11 @@
 import asyncio
 import datetime
 import logging
-from pathlib import Path
 
 import async_timeout
 import sqlalchemy.exc
 from aiohttp import web, web_exceptions
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 
 from s3wrapper.s3_client import S3Client
@@ -99,7 +98,7 @@ async def _build_adjacency_list(node_uuid:str, node_schema, node_inputs:dict, pi
     if node_inputs is None or node_schema is None:
         return dag_adjacency_list
 
-    for input_key, input_data in node_inputs.items():
+    for _, input_data in node_inputs.items():
         if input_data is None:
             continue
         is_node_computational = (node_schema.type == "computational")
@@ -154,8 +153,8 @@ async def _parse_pipeline(pipeline_data:dict): # pylint: disable=R0912
             node_schema = {"inputs":node_details.inputs, "outputs":node_details.outputs}
         task = {
             "schema":node_schema,
-            "input":node_inputs,
-            "output":node_outputs,
+            "inputs":node_inputs,
+            "outputs":node_outputs,
             "image":{
                 "name":node_key,
                 "tag":node_version
@@ -166,6 +165,50 @@ async def _parse_pipeline(pipeline_data:dict): # pylint: disable=R0912
         tasks[node_uuid] = task
         log.debug("task stored")
     return dag_adjacency_list, tasks
+
+async def _set_adjacency_in_pipeline_db(project_id, dag_adjacency_list):
+    try:
+        pipeline = db_session.query(ComputationalPipeline).filter(ComputationalPipeline.project_id==project_id).one()            
+        log.debug("Pipeline object found")
+        pipeline.state = 0
+    except sqlalchemy.orm.exc.NoResultFound:
+        # let's create one then
+        pipeline = ComputationalPipeline(project_id=project_id, dag_adjacency_list=dag_adjacency_list, state=0)    
+        log.debug("Pipeline object created")
+        db_session.add(pipeline)
+    except sqlalchemy.orm.exc.MultipleResultsFound:
+        log.exception("the computation pipeline %s is not unique", project_id)
+        raise
+
+async def _set_tasks_in_tasks_db(project_id, tasks):    
+    tasks_db = db_session.query(ComputationalTask).filter(ComputationalTask.project_id==project_id).all()
+    # delete tasks that were deleted from the db
+    for task_db in tasks_db:
+        if not task_db.node_id in tasks:
+            db_session.delete(task_db)
+    internal_id = 1
+    for node_id in tasks:
+        task = tasks[node_id]
+        try:
+            comp_task = db_session.query(ComputationalTask).filter(and_(ComputationalTask.project_id==project_id, ComputationalTask.node_id==node_id)).one()
+            comp_task.image = task["image"]
+            comp_task.schema = task["schema"]
+            comp_task.inputs = task["inputs"]
+            comp_task.outputs = task["outputs"]
+            comp_task.submit = datetime.datetime.utcnow()
+        except sqlalchemy.orm.exc.NoResultFound:
+            comp_task = ComputationalTask( \
+                project_id=project_id,
+                node_id=node_id,
+                internal_id=internal_id,
+                image=task["image"],
+                schema=task["schema"],
+                inputs=task["inputs"],
+                outputs=task["outputs"],
+                submit=datetime.datetime.utcnow()
+                )
+            internal_id = internal_id+1
+            db_session.add(comp_task)
 
 # pylint:disable=too-many-branches, too-many-statements
 @comp_backend_routes.post("/start_pipeline")
@@ -199,42 +242,19 @@ async def start_pipeline(request):
 
     log.debug("Client calls start_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
     dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data)
-    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))
+    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))    
     try:
-        # create the new pipeline in db
-        pipeline = ComputationalPipeline(dag_adjacency_list=dag_adjacency_list, state=0)
-        log.debug("Pipeline object created")
-        db_session.add(pipeline)
-        log.debug("Pipeline object added")
-        db_session.flush()
-        log.debug("Pipeline flushed")
-        pipeline_id = pipeline.pipeline_id
-
-        # create the tasks in db
-        pipeline_name = "request_data"
-        internal_id = 1
-        for node_id in tasks:
-            task = tasks[node_id]
-            new_task = ComputationalTask( \
-                pipeline_id=pipeline_id,
-                node_id=node_id,
-                internal_id=internal_id,
-                image=task["image"],
-                schema=task["schema"],
-                inputs=task["input"],
-                outputs=task["output"],
-                submit=datetime.datetime.utcnow()
-                )
-            internal_id = internal_id+1
-            db_session.add(new_task)
+        await _set_adjacency_in_pipeline_db(project_id, dag_adjacency_list)
+        await _set_tasks_in_tasks_db(project_id, tasks)
         db_session.commit()
         # commit the tasks to celery
-        task = celery.send_task("comp.task", args=(pipeline_id,), kwargs={})
+        _ = celery.send_task("comp.task", args=(project_id,), kwargs={})
         log.debug("Task commited")
         # answer the client
+        pipeline_name = "request_data"
         response = {
         "pipeline_name":pipeline_name,
-        "pipeline_id":str(pipeline_id)
+        "project_id": project_id
         }
         log.debug("END OF ROUTINE. Response %s", response)
         return web.json_response(response, status=201)

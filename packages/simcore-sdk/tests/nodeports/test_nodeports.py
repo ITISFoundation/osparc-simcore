@@ -105,7 +105,7 @@ def test_port_value_accessors(special_configuration, item_type, item_value, item
     ("data:text/py", __file__, Path, {"store":"s3-z43", "path":__file__}),
 ])
 def test_port_file_accessors(special_configuration, s3_client, bucket, item_type, item_value, item_pytype, config_value): # pylint: disable=W0613, W0621
-    config_dict, pipeline_id, node_uuid = special_configuration(inputs=[("in_1", item_type, config_value)], outputs=[("out_34", item_type, None)])
+    config_dict, project_id, node_uuid = special_configuration(inputs=[("in_1", item_type, config_value)], outputs=[("out_34", item_type, None)])
     from simcore_sdk.nodeports.nodeports import PORTS
     check_config_valid(PORTS, config_dict)
     
@@ -116,7 +116,7 @@ def test_port_file_accessors(special_configuration, s3_client, bucket, item_type
     # this triggers an upload to S3 + configuration change
     PORTS.outputs["out_34"].set(item_value)
     # this is the link to S3 storage
-    assert PORTS.outputs["out_34"].value == {"store":"s3-z43", "path":Path(str(pipeline_id), str(node_uuid), Path(item_value).name).as_posix()}  
+    assert PORTS.outputs["out_34"].value == {"store":"s3-z43", "path":Path(str(project_id), str(node_uuid), Path(item_value).name).as_posix()}  
     # this triggers a download from S3 to a location in /tempdir/simcorefiles/item_key
     assert isinstance(PORTS.outputs["out_34"].get(), item_pytype)
     assert PORTS.outputs["out_34"].get().exists()
@@ -125,7 +125,7 @@ def test_port_file_accessors(special_configuration, s3_client, bucket, item_type
     assert filecmp.cmp(item_value, PORTS.outputs["out_34"].get())
 
 def test_adding_new_ports(special_configuration, session):
-    config_dict, pipeline_id, node_uuid = special_configuration()
+    config_dict, project_id, node_uuid = special_configuration()
     from simcore_sdk.nodeports.nodeports import PORTS
     check_config_valid(PORTS, config_dict)
     # check empty configuration
@@ -140,7 +140,7 @@ def test_adding_new_ports(special_configuration, session):
         "displayOrder":2,
         "type": "integer"}})
     config_dict["inputs"].update({"in_15":15})
-    helpers.update_configuration(session, pipeline_id, node_uuid, config_dict) #pylint: disable=E1101
+    helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
 
     # # replace the configuration now, add an output
@@ -150,11 +150,11 @@ def test_adding_new_ports(special_configuration, session):
         "description": "a cool output",
         "displayOrder":2,
         "type": "boolean"}})    
-    helpers.update_configuration(session, pipeline_id, node_uuid, config_dict) #pylint: disable=E1101
+    helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
 
 def test_removing_ports(special_configuration, session):
-    config_dict, pipeline_id, node_uuid = special_configuration(inputs=[("in_14", "integer", 15), 
+    config_dict, project_id, node_uuid = special_configuration(inputs=[("in_14", "integer", 15), 
                                                                         ("in_17", "boolean", False)],
                                                                 outputs=[("out_123", "string", "blahblah"),
                                                                         ("out_2", "number", -12.3)]) #pylint: disable=W0612
@@ -163,12 +163,12 @@ def test_removing_ports(special_configuration, session):
     # let's remove the first input
     del config_dict["schema"]["inputs"]["in_14"]
     del config_dict["inputs"]["in_14"]
-    helpers.update_configuration(session, pipeline_id, node_uuid, config_dict) #pylint: disable=E1101
+    helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
     # let's do the same for the second output
     del config_dict["schema"]["outputs"]["out_2"]
     del config_dict["outputs"]["out_2"]
-    helpers.update_configuration(session, pipeline_id, node_uuid, config_dict) #pylint: disable=E1101
+    helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
 
 @pytest.mark.parametrize("item_type, item_value, item_pytype", [
@@ -216,12 +216,12 @@ def test_get_file_from_previous_node(special_2nodes_configuration, node_link, st
     ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
 ])
 def test_file_mapping(special_configuration, store_link, session, item_type, item_value, item_alias, item_pytype):
-    config_dict, pipeline_id, node_uuid = special_configuration(inputs=[("in_1", item_type, store_link(item_value))], outputs=[("out_1", item_type, None)])
+    config_dict, project_id, node_uuid = special_configuration(inputs=[("in_1", item_type, store_link(item_value))], outputs=[("out_1", item_type, None)])
     from simcore_sdk.nodeports.nodeports import PORTS
     check_config_valid(PORTS, config_dict)
     # add a filetokeymap
     config_dict["schema"]["inputs"]["in_1"]["fileToKeyMap"] = {item_alias:"in_1"}
-    helpers.update_configuration(session, pipeline_id, node_uuid, config_dict) #pylint: disable=E1101
+    helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
 
     file_path = PORTS.inputs["in_1"].get()

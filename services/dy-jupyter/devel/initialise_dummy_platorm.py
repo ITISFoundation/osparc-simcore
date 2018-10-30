@@ -81,7 +81,7 @@ def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number
                 df.to_csv(path_or_buf=file_pointer, sep=sep, header=False, index=False)        
 
             # upload to S3
-            s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, Path(temp_file.name).name)
+            s3_object_name = Path(str(new_Pipeline.project_id), node_uuid, Path(temp_file.name).name)
             s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
             # add to the payload
             configuration["inputs"][key] = {"store":"s3-z43", "path":s3_object_name.as_posix()}
@@ -89,11 +89,11 @@ def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number
     Path(temp_file.name).unlink()
 
     # now create the node in the db with links to S3
-    new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, schema=configuration["schema"], inputs=configuration["inputs"], outputs=configuration["outputs"])
+    new_Node = ComputationalTask(project_id=new_Pipeline.project_id, node_id=node_uuid, schema=configuration["schema"], inputs=configuration["inputs"], outputs=configuration["outputs"])
     db.session.add(new_Node)
     db.session.commit()
     # print the node uuid so that it can be set as env variable from outside
-    print("{pipelineid},{nodeuuid}".format(pipelineid=str(new_Node.pipeline_id), nodeuuid=node_uuid))
+    print("{pipelineid},{nodeuuid}".format(pipelineid=str(new_Node.project_id), nodeuuid=node_uuid))
 
 parser = argparse.ArgumentParser(description="Initialise an oSparc database/S3 with fake data for development.")
 parser.add_argument("portconfig", help="The path to the port configuration file (json format)", type=Path)
