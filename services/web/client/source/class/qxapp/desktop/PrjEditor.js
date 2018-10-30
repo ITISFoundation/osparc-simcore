@@ -73,8 +73,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.showInMainView(workbenchView, "root");
 
       let settingsView = this.__settingsView = new qxapp.component.widget.SettingsView().set({
-        minHeight: 200,
-        maxHeight: 500
+        minHeight: 200
       });
       settingsView.setWorkbenchModel(project.getWorkbenchModel());
     },
