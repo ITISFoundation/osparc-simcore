@@ -48,10 +48,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __mainPanel: null,
     __sidePanel: null,
     __workbenchView: null,
-    __settingsView: null,
     __treeView: null,
     __extraView: null,
     __loggerView: null,
+    __settingsView: null,
     __currentNodeId: null,
 
     initDefault: function() {
