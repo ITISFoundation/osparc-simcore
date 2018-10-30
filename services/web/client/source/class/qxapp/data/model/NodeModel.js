@@ -252,6 +252,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       if (metaData.type == "dynamic") {
         const slotName = "startDynamic";
 
+        this.setIFrame(new qx.ui.embed.Iframe());
+
         let button = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/sign-in-alt/32"
         });
@@ -277,10 +279,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             const entryPoint = entryPointD ? ("/" + entryPointD) : "";
             const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
 
-            let iFrame = new qx.ui.embed.Iframe().set({
-              source: srvUrl
-            });
-            this.setIFrame(iFrame);
+            this.getIFrame().setSource(srvUrl);
 
             this.setServiceUrl(srvUrl);
             this.getIFrameButton().setEnabled(true);
