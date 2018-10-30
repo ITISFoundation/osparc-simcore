@@ -17,10 +17,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from s3wrapper.s3_client import S3Client
+from simcore_director_sdk.rest import ApiException
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 
-from . import api_converter
+from . import director_sdk
 from .application_keys import APP_CONFIG_KEY
 from .comp_backend_worker import celery
 
@@ -83,55 +84,76 @@ async def async_request(method, session, url, data=None, timeout=10):
                 return await response.json()
         # TODO: else raise ValueError method not implemented?
 
-async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
+async def _get_node_details(node_key, node_version):
+    if "file-picker" in node_key:
+        return None
+    try:
+        services_enveloped = await director_sdk.get_director().services_by_key_version_get(node_key, node_version)
+        node_details = services_enveloped.data[0]
+        return node_details        
+    except ApiException as err:
+        log.exception("Error could not find service %s:%s", node_key, node_version)
+        raise web_exceptions.HTTPNotFound(reason=str(err))
+
+async def _build_adjacency_list(node_uuid:str, node_schema, node_inputs:dict, pipeline_data:dict, dag_adjacency_list:dict):
+    if node_inputs is None or node_schema is None:
+        return dag_adjacency_list
+
+    for input_key, input_data in node_inputs.items():
+        if input_data is None:
+            continue
+        is_node_computational = (node_schema.type == "computational")
+        # add it to the list
+        if is_node_computational and node_uuid not in dag_adjacency_list:
+            dag_adjacency_list[node_uuid] = []
+
+        # check for links
+        if isinstance(input_data, dict) and all(k in input_data for k in ("nodeUuid", "output")):
+            log.debug("decoding link %s", input_data)
+            input_node_uuid = input_data["nodeUuid"]
+            input_node_details = await _get_node_details(pipeline_data[input_node_uuid]["key"], pipeline_data[input_node_uuid]["version"])
+            log.debug("input node details %s", input_node_details)
+            if input_node_details is None:
+                continue
+            is_predecessor_computational = (input_node_details.type == "computational")
+            if is_predecessor_computational:
+                if input_node_uuid not in dag_adjacency_list:
+                    dag_adjacency_list[input_node_uuid] = []
+                if node_uuid not in dag_adjacency_list[input_node_uuid] and is_node_computational:
+                    dag_adjacency_list[input_node_uuid].append(node_uuid)
+    return dag_adjacency_list
+    
+async def _parse_pipeline(pipeline_data:dict): # pylint: disable=R0912
     dag_adjacency_list = dict()
     tasks = dict()
-    io_files = []
 
-    for key, value in pipeline_data.items():
-        if not all(k in value for k in ("key", "version", "inputs", "outputs")):
-            log.debug("skipping workbench entry containing %s:%s", key, value)
+    #TODO: we should validate all these things before processing...
+    for node_uuid, value in pipeline_data.items():
+        if not all(k in value for k in ("key", "version")):
+            log.debug("skipping workbench entry containing %s:%s", node_uuid, value)
             continue
-        node_uuid = key
         node_key = value["key"]
         node_version = value["version"]
-        node_inputs = value["inputs"]
-        node_outputs = value["outputs"]
+
+        # get the task data        
+        node_inputs = None
+        if "inputs" in value:
+            node_inputs = value["inputs"]
+        node_outputs = None
+        if "outputs" in value:
+            node_outputs = value["outputs"]
         log.debug("node %s:%s has inputs: \n%s\n outputs: \n%s", node_key, node_version, node_inputs, node_outputs)
-        #TODO: we should validate all these things before processing...
-
-        # build computational adjacency list for sidecar
-        for input_data in node_inputs.values():
-            is_node_computational = (str(node_key).count("/comp/") > 0)
-            # add it to the list
-            if is_node_computational and node_uuid not in dag_adjacency_list:
-                dag_adjacency_list[node_uuid] = []
-
-            # check for links
-            if not isinstance(input_data, dict):
-                continue
-            if "nodeUuid" in input_data and "output" in input_data:
-                input_node_uuid = input_data["nodeUuid"]
-                is_predecessor_computational = (pipeline_data[input_node_uuid]["key"].count("/comp/") > 0)
-                if is_predecessor_computational:
-                    if input_node_uuid not in dag_adjacency_list:
-                        dag_adjacency_list[input_node_uuid] = []
-                    if node_uuid not in dag_adjacency_list[input_node_uuid] and is_node_computational:
-                        dag_adjacency_list[input_node_uuid].append(node_uuid)
-
-        for _, output_data in node_outputs.items():
-            if not isinstance(output_data, dict):
-                continue
-            if all(k in output_data for k in ("store", "path")):
-                if output_data["store"] == "s3-z43":
-                    current_filename_on_s3 = output_data["path"]
-                    if current_filename_on_s3:
-                        new_filename = key + "/" + Path(current_filename_on_s3).name
-                        # copy the file
-                        io_files.append({ "from" : current_filename_on_s3, "to" : new_filename })
+        node_details = await _get_node_details(node_key, node_version)
+        log.debug("node %s:%s has schema:\n %s",node_key, node_version, node_details)
+        dag_adjacency_list = await _build_adjacency_list(node_uuid, node_details, node_inputs, pipeline_data, dag_adjacency_list)
+        log.debug("node %s:%s list updated:\n %s",node_key, node_version, dag_adjacency_list)
 
         # create the task
+        node_schema = None
+        if not node_details is None:
+            node_schema = {"inputs":node_details.inputs, "outputs":node_details.outputs}
         task = {
+            "schema":node_schema,
             "input":node_inputs,
             "output":node_outputs,
             "image":{
@@ -140,30 +162,10 @@ async def _parse_pipeline(pipeline_data): # pylint: disable=R0912
             }
         }
 
-        # currently here a special case to handle the built-in file manager that should not be set as a task
-        if str(node_key).count("file-picker") == 0:
-            # TODO: SAN This is temporary. As soon as the services are converted this should be removed.
-            task = await api_converter.convert_task_to_old_version(task)
-        #     continue
-
-
-        log.debug("storing task in node is %s: %s", node_uuid, task)
+        log.debug("storing task for node %s: %s", node_uuid, task)
         tasks[node_uuid] = task
         log.debug("task stored")
-    log.debug("converted all tasks: \nadjacency list: %s\ntasks: %s\nio_files: %s", dag_adjacency_list, tasks, io_files)
-    return dag_adjacency_list, tasks, io_files
-
-async def _transfer_data(app, pipeline_id, io_files):
-    if io_files:
-        _config = app["s3"]
-
-        s3_client = S3Client(endpoint=_config['endpoint'], access_key=_config['access_key'], secret_key=_config['secret_key'])
-        for io_file in io_files:
-            _from = io_file["from"]
-            _to = str(pipeline_id) + "/" + io_file["to"]
-            log.debug("COPYING from %s to %s", _from, _to )
-            #TODO: make async?
-            s3_client.copy_object(_config['bucket_name'], _to, _from)
+    return dag_adjacency_list, tasks
 
 # pylint:disable=too-many-branches, too-many-statements
 @comp_backend_routes.post("/start_pipeline")
@@ -190,11 +192,14 @@ async def start_pipeline(request):
         await init_database(request.app)
     request_data = await request.json()
 
-    log.debug("Client calls start_pipeline with %s", request_data)
+    # retrieve the data
+    project_id = request_data["project_id"]
+    pipeline_data = request_data["workbench"]
     _app = request.app[APP_CONFIG_KEY]
-    log.debug("Parse pipeline %s", _app)
-    dag_adjacency_list, tasks, io_files = await _parse_pipeline(request_data)
-    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s\n io_files %s", str(dag_adjacency_list), str(tasks), str(io_files))
+
+    log.debug("Client calls start_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
+    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data)
+    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))
     try:
         # create the new pipeline in db
         pipeline = ComputationalPipeline(dag_adjacency_list=dag_adjacency_list, state=0)
@@ -205,8 +210,6 @@ async def start_pipeline(request):
         log.debug("Pipeline flushed")
         pipeline_id = pipeline.pipeline_id
 
-        # now we know the id, lets copy over data
-        await _transfer_data(_app, pipeline_id, io_files)
         # create the tasks in db
         pipeline_name = "request_data"
         internal_id = 1
@@ -217,8 +220,9 @@ async def start_pipeline(request):
                 node_id=node_id,
                 internal_id=internal_id,
                 image=task["image"],
-                input=task["input"],
-                output=task["output"],
+                schema=task["schema"],
+                inputs=task["input"],
+                outputs=task["output"],
                 submit=datetime.datetime.utcnow()
                 )
             internal_id = internal_id+1
