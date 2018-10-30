@@ -23,9 +23,7 @@ matrix:
       services:
         - docker
 
-      cache:
-        directories:
-          - '.cache/pip'
+      cache: pip
 
       before_install:
         - python --version
