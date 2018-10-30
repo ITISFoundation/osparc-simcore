@@ -125,6 +125,19 @@ qx.Class.define("qxapp.data.Converters", {
       }
 
       return children;
+    },
+
+    fromAPIListToVirtualTreeModel: function(listItems) {
+      let children = [];
+      for (let i=0; i<listItems.length; i++) {
+        const listItem = listItems[i];
+        let item = {
+          key: listItem["key"],
+          label: listItem["label"]
+        };
+        children.push(item);
+      }
+      return children;
     }
   }
 });
