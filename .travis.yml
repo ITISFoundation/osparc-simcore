@@ -46,7 +46,7 @@ matrix:
         - pip3 install packages/director-sdk/python
         - pushd services/web/server; pip3 install -r requirements/ci.txt; popd
         - pushd services/storage; pip3 install -r requirements/dev.txt; popd
-        - pip3 install -r apis/tests/requirements.txt
+        - pip3 install -r api/tests/requirements.txt
         - pip3 install -r services/apihub/tests/requirements.txt
 
       before_script:
