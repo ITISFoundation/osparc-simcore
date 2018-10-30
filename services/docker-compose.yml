@@ -140,7 +140,7 @@ services:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
     ports:
-      - "11111:11111"
+      - "11111:8080"
     environment:
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -153,6 +153,8 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - RUN_DOCKER_ENGINE_ROOT=${RUN_DOCKER_ENGINE_ROOT}
+      - BF_API_SECRET={BF_API_SECRET}
+      - BF_API_KEY={BF_API_KEY}
     depends_on:
       - minio
       - postgres

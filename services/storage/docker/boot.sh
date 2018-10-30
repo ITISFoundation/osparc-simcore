@@ -13,8 +13,8 @@ then
   pip list
 
   cd $HOME/
-  simcore-service-storage --config config-dev.yml
+  simcore-service-storage --config docker-dev-config.yaml
 else
   echo "Booting in production mode ..."
-  simcore-service-storage --config config-prod.yml
+  simcore-service-storage --config docker-prod-config.yaml
 fi

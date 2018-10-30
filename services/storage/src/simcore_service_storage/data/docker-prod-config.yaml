@@ -4,7 +4,6 @@ main:
   log_level: INFO
   port: 8080
   testing: true
-  max_workers: 8
   python2: ${VENV2}
   test_datcore:
      api_token: ${BF_API_KEY}

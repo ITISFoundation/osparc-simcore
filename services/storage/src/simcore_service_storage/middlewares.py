@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from aiohttp.web import middleware
 
 from s3wrapper.s3_client import S3Client
@@ -9,6 +11,7 @@ from .settings import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DSM_THREADPOOL,
 
 @middleware
 async def dsm_middleware(request, handler):
+    # TODO: move below code to application level into dsm setup
     cfg = request.app[APP_CONFIG_KEY]
 
     s3_cfg = cfg["s3"]
@@ -19,7 +22,7 @@ async def dsm_middleware(request, handler):
     s3_client = S3Client(s3_endpoint, s3_access_key, s3_secret_key)
 
     main_cfg = cfg["main"]
-    python27_exec = main_cfg["python2"]
+    python27_exec = Path(main_cfg["python2"]) / "bin" / "python"
 
     engine = request.app.get(APP_DB_ENGINE_KEY)
     loop = request.app.loop
