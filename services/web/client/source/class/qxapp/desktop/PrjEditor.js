@@ -274,7 +274,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let req = new qxapp.io.request.ApiRequest("/start_pipeline", "POST");
       let data = {};
       data["workbench"] = currentPipeline;
-      data["pipeline_id"] = this.getProjectModel().getUuid();
+      data["project_id"] = this.getProjectModel().getUuid();
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
