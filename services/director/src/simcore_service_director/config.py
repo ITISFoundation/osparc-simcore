@@ -9,7 +9,7 @@ logging.basicConfig(
     format='%(levelname)s:%(name)s-%(lineno)d: %(message)s'
     )
 
-CONVERT_OLD_API = True
+CONVERT_OLD_API = False
 API_VERSION = "v0"
 
 REGISTRY_AUTH = os.environ.get("REGISTRY_AUTH", False) in ["true", "True"]
