@@ -1,0 +1,218 @@
+openapi: 3.0.0
+info:
+  description: API definition for simcore-service-webserver service
+  version: 0.1.0
+  title: simcore-service-webserver API
+  contact:
+    name: IT'IS Foundation
+    email: support@simcore.io
+  license:
+    name: MIT
+    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
+servers:
+  - description: Development server
+    url: http://{host}:{port}/v0
+    variables:
+      host:
+        default: 'localhost'
+      port:
+        default: '8001'
+  - description: Production server
+    url: https://webserver:{port}/v0
+    variables:
+      port:
+        default: '9081'
+tags:
+- name: admins
+  description: Secured Admin-only calls
+- name: tests
+  description: Operations available for testing
+- name: users
+  description: Operations available to regular users
+paths:
+  /:
+    get:
+      tags:
+        - users
+      summary: Service health-check endpoint
+      description: Some general information on the API and state of the service behind
+      operationId: check_health
+      responses:
+        "200":
+          description: Service information
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/health_check.yaml#/HealthCheckEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /check/{action}:
+    post:
+      tags:
+        - tests
+      summary: Test checkpoint to ask server to fail or echo back the transmitted data
+      operationId: check_action
+      parameters:
+        - in: query
+          name: data
+          schema:
+            type: string
+        - in: path
+          name: action
+          schema:
+            type: string
+            default: 'echo'
+            enum: ['fail', 'echo']
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/fake.yaml#/FakeType'
+      responses:
+        '200':
+          description: Echoes response based on action
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/fake.yaml#/FakeEnveloped'
+        default:
+          description: 'Returns enveloped payload w/ or w/o data'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/fake.yaml#/FakeEnveloped'
+  /auth/register:
+    post:
+      operationId: auth_register
+      requestBody:
+        description: user registration
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/registration.yaml#/RegistrationType'
+        required: true
+      responses:
+        '200':
+          description: User has been succesfully registered.
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        '409':
+            $ref: '#/components/responses/DataError_Conflict_409'
+        '422':
+            $ref: '#/components/responses/DataError_UnprocessableEntity_422'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /auth/login:
+    post:
+      operationId: auth_login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/login.yaml#/LoginFormType'
+      responses:
+        '200':
+          description: Succesfully logged in
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        '401':
+          $ref: '#/components/responses/AuthError_Unauthorized_401'
+        '422':
+            $ref: '#/components/responses/DataError_UnprocessableEntity_422'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /auth/logout:
+    get:
+      responses:
+        '200':
+          description: Succesfully logged out
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  #/auth/reset-password:
+  #/auth/change-email:
+  #/auth/change-password:
+  /auth/confirmation/{code}:
+    get:
+      operationId: auth_confirmation
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        default:
+          $ref: '#/components/responses/OK_NoContent_204'
+
+
+
+components:
+  responses:
+    # TODO:Envelope objects are still not well/easily defined. See discriminators
+    OK_NoContent_204:
+      description: everything is OK, but there is no content to return
+
+    DefaultErrorResponse:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+
+    DataError_BadRequest_400:
+      description: requested information is incomplete or malformed
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+
+    DataError_UnprocessableEntity_422:
+      description: requested information is ok but invalid
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+
+    DataError_NotFound_404:
+      description: everything is okay, but the resource doesnt exist
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+
+    DataError_Conflict_409:
+      description: a confict of data exists, even with valid information
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+
+    AuthError_Unauthorized_401:
+      description: access token isnt provided or is invalid
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+
+    AuthError_Forbidden_403:
+      description: an access token is valid, but requires more privileges
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+
+    InternalServerError_500:
+      description: server throws an error, completely unexpected
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
