@@ -44,7 +44,6 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
     this.__initTitle();
     this.__initSettings();
     this.__initButtons();
-    this.__initIFrameStack();
   },
 
   events: {
@@ -64,10 +63,9 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
   },
 
   members: {
+    __settingsBox: null,
     __inputNodesLayout: null,
     __mainLayout: null,
-    __settingsBox: null,
-    __iFrameStack: null,
     __nodesUI: null,
     __buttonsLayout: null,
     __openFolder: null,
@@ -132,13 +130,6 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
 
       buttonsLayout.add(openFolder);
       this.__mainLayout.add(buttonsLayout);
-    },
-
-    __initIFrameStack: function() {
-      let iFrameStack = this.__iFrameStack = new qx.ui.container.Stack();
-      this.__mainLayout.add(iFrameStack, {
-        flex: 1
-      });
     },
 
     __getNodeUI: function(id) {
@@ -240,12 +231,12 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
     },
 
     __applyNode: function(nodeModel, oldNode, propertyName) {
-      this.__clearInputPortsUIs();
-      this.__createInputPortsUIs(nodeModel);
-
       this.__settingsBox.removeAll();
       this.__settingsBox.add(nodeModel.getPropsWidget());
       this.__createDragDropMechanism(nodeModel.getPropsWidget());
+
+      this.__clearInputPortsUIs();
+      this.__createInputPortsUIs(nodeModel);
 
       this.__buttonsLayout.removeAll();
       let iFrameButton = nodeModel.getIFrameButton();
@@ -260,16 +251,6 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
         this.__buttonsLayout.add(iFrameButton);
       }
       this.__buttonsLayout.add(this.__openFolder);
-
-      if (nodeModel.getIFrame() !== null) {
-        let stack = this.__iFrameStack;
-        let iFrameIdx = stack.indexOf(nodeModel.getIFrame());
-        if (iFrameIdx === -1) {
-          stack.add(nodeModel.getIFrame());
-          iFrameIdx = stack.getChildren().length - 1;
-        }
-        stack.setSelection([stack.getChildren()[iFrameIdx]]);
-      }
     }
   }
 });
