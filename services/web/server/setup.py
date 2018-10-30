@@ -19,7 +19,6 @@ def list_packages(*parts):
 
 #-----------------------------------------------------------------
 
-
 INSTALL_REQUIRES = list_packages("requirements", "base.txt")
 TESTS_REQUIRE = list_packages("tests", "requirements.txt")
 
@@ -37,6 +36,7 @@ setup(
             'config/*.y*ml',
             'oas3/**/*.yaml',
             'oas3/**/**/schemas/*.y*ml',
+            'templates/**/*.html',
             ]
     },
     entry_points={

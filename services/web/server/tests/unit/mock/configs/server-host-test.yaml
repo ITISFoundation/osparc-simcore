@@ -1,0 +1,40 @@
+# This config is used for testing on the host
+---
+version: "1.0"
+main:
+  host: 127.0.0.1
+  port: 8080
+  client_outdir: ../../../client/source-output
+  log_level: DEBUG
+  testing: True
+director:
+  host: localhost
+  port: 8001
+postgres:
+  database: test_db
+  user: test_user
+  password: test_pass
+  host: localhost
+  port: ${POSTGRES_PORT}
+  # DEPRECATE OR add postgresql+psycopg2:// otherwise will fail sqlalchemy.exc.ArgumentError: Could not parse rfc1738 URL from string 'localhost:5432'
+  endpoint: localhost:5432
+rabbit:
+  host: ${RABBIT_HOST}
+  password: simcore
+  user: simcore
+  channels:
+    log: comp.backend.channels.log
+    progress: comp.backend.channels.progress
+s3:
+  access_key: '12345678'
+  bucket_name: simcore
+  endpoint: localhost:9000
+  secret_key: '12345678'
+smtp:
+  sender: 'OSPARC support <support@osparc.io>'
+  host: mail.foo.com
+  port: 25
+  tls: False
+  username: None
+  password: None
+...
