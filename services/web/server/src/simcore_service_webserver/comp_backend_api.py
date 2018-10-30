@@ -71,36 +71,37 @@ async def init_database(_app):
             log.warning("%s: %s", str(err), msg)
             print("oops " + msg)
 
-
-async def async_request(method, session, url, data=None, timeout=10):
-    async with async_timeout.timeout(timeout):
-        if method == "GET":
-            async with session.get(url) as response:
-                return await response.json()
-        elif method == "POST":
-            async with session.post(url, json=data) as response:
-                return await response.json()
-        # TODO: else raise ValueError method not implemented?
-
-async def _get_node_details(node_key, node_version):
+async def _get_node_details(node_key:str, node_version:str)->dict:
     if "file-picker" in node_key:
-        return None
+        # create a fake file-picker schema here!!
+        fake_node_details = {"inputs":{},
+                        "outputs":{
+                            "outFile":{
+                                "label":"the output",
+                                "displayOrder":0,
+                                "description":"a file",
+                                "type":"data:*/*"
+                            }
+                        },
+                        "type":"dynamic"
+            }
+        return fake_node_details
     try:
         services_enveloped = await director_sdk.get_director().services_by_key_version_get(node_key, node_version)
-        node_details = services_enveloped.data[0]
+        node_details = services_enveloped.data[0].to_dict()
         return node_details        
     except ApiException as err:
         log.exception("Error could not find service %s:%s", node_key, node_version)
         raise web_exceptions.HTTPNotFound(reason=str(err))
 
-async def _build_adjacency_list(node_uuid:str, node_schema, node_inputs:dict, pipeline_data:dict, dag_adjacency_list:dict):
+async def _build_adjacency_list(node_uuid:str, node_schema:dict, node_inputs:dict, pipeline_data:dict, dag_adjacency_list:dict)->dict:
     if node_inputs is None or node_schema is None:
         return dag_adjacency_list
 
     for _, input_data in node_inputs.items():
         if input_data is None:
             continue
-        is_node_computational = (node_schema.type == "computational")
+        is_node_computational = (node_schema["type"] == "computational")
         # add it to the list
         if is_node_computational and node_uuid not in dag_adjacency_list:
             dag_adjacency_list[node_uuid] = []
@@ -113,7 +114,7 @@ async def _build_adjacency_list(node_uuid:str, node_schema, node_inputs:dict, pi
             log.debug("input node details %s", input_node_details)
             if input_node_details is None:
                 continue
-            is_predecessor_computational = (input_node_details.type == "computational")
+            is_predecessor_computational = (input_node_details["type"] == "computational")
             if is_predecessor_computational:
                 if input_node_uuid not in dag_adjacency_list:
                     dag_adjacency_list[input_node_uuid] = []
@@ -149,7 +150,7 @@ async def _parse_pipeline(pipeline_data:dict): # pylint: disable=R0912
         # create the task
         node_schema = None
         if not node_details is None:
-            node_schema = {"inputs":node_details.inputs, "outputs":node_details.outputs}
+            node_schema = {"inputs":node_details["inputs"], "outputs":node_details["outputs"]}
         task = {
             "schema":node_schema,
             "inputs":node_inputs,
