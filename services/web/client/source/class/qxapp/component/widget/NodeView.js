@@ -1,6 +1,6 @@
 const PORT_INPUTS_WIDTH = 300;
 
-qx.Class.define("qxapp.component.widget.SettingsView", {
+qx.Class.define("qxapp.component.widget.NodeView", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
