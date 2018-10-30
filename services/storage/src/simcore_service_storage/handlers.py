@@ -1,3 +1,4 @@
+import logging
 import time
 
 import attr
@@ -10,6 +11,9 @@ from .rest_models import FileMetaDataSchema
 from .session import get_session
 from .settings import RQT_DSM_KEY
 
+log = logging.getLogger(__name__)
+
+
 #FIXME: W0613: Unused argument 'request' (unused-argument)
 #pylint: disable=W0613
 
@@ -20,6 +24,8 @@ file_schema  = FileMetaDataSchema()
 files_schema = FileMetaDataSchema(many=True)
 
 async def check_health(request: web.Request):
+    log.info("CHECK HEALTH INCOMING PATH %s",request.path)
+
     params, query, body = await extract_and_validate(request)
 
     assert not params

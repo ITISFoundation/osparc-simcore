@@ -22,8 +22,6 @@ log = logging.getLogger(__name__)
 
 
 def setup(_parser):
-    _parser.add_argument('names', metavar='NAME', nargs=argparse.ZERO_OR_MORE,
-                    help="A name of something.")
     cli_config.add_cli_options(_parser)
     return _parser
 
@@ -50,6 +48,7 @@ def main(args=None):
 
     log_level = config["main"]["log_level"]
     logging.basicConfig(level=getattr(logging, log_level))
+    print("hello, iam")
 
     application.run(config)
 
