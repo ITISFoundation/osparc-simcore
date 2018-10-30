@@ -17,24 +17,24 @@ from servicelib.rest_utils import extract_and_validate
 
 
 # TODO: create a fake storage service here
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def storage_server(loop, aiohttp_server, app_cfg):
     cfg = app_cfg["storage"]
-    
+
     app = web.Application()
     async def _get_locs(request: web.Request):
-        params, query, body = await extract_and_validate(request)
-        
-        assert params is None, params
-        assert query, query
-        assert body, body
+        assert not request.has_body
+
+        query = request.query
+        assert query
+        assert "user_id" in query
 
         assert query["user_id"], "Expected user id"
         return web.json_response({
-            'data': [query, ]
+            'data': [{"user_id": int(query["user_id"])}, ]
         })
 
-    app.router.add_get("/v0/storage/locations/", _get_locs)
+    app.router.add_get("/v0/locations", _get_locs)
     assert cfg['host']=='localhost'
 
     server = loop.run_until_complete(aiohttp_server(app, port= cfg['port']))
@@ -51,7 +51,6 @@ async def test_storage_locations(client, storage_server):
         print("Logged user:", user) # TODO: can use in the test
 
         resp = await client.get(url)
-
         payload = await resp.json()
         assert resp.status == 200, str(payload)
 
@@ -60,5 +59,4 @@ async def test_storage_locations(client, storage_server):
         assert len(data) == 1
         assert not error
 
-        assert data[0]['user_id'] == user['user_id']
-
+        assert data[0]['user_id'] == user['id']

@@ -13,9 +13,9 @@ from .storage_settings import get_config
 
 
 
-async def _storage_get(request: web.Request, url_path: str):
+async def _storage_get(request: web.Request):
     # TODO: Implement redirects with client sdk or aiohttp client
-
+    url_path = request.rel_url.path.replace("storage/", "")
     await extract_and_validate(request)
 
     cfg = get_config(request.app)
@@ -24,7 +24,7 @@ async def _storage_get(request: web.Request, url_path: str):
     userid = request[RQT_USERID_KEY]
     url = urlbase.with_path(url_path).with_query(user_id=userid)
 
-    async with aiohttp.ClientSession() as session: # TODO: check if should keep webserver->storage session? 
+    async with aiohttp.ClientSession() as session: # TODO: check if should keep webserver->storage session?
         async with session.get(url, ssl=False) as resp:
             payload = await resp.json()
             return payload
@@ -32,16 +32,20 @@ async def _storage_get(request: web.Request, url_path: str):
 
 @login_required
 async def get_storage_locations(request: web.Request):
-    await extract_and_validate(request)
+    payload = await _storage_get(request)
 
-    locs = [{"name": "bla", "id": 0}]
+    return payload
 
-    envelope = {
-        'error': None,
-        'data': locs
-    }
-
-    return envelope
+    # await extract_and_validate(request)
+#
+    # locs = [{"name": "bla", "id": 0}]
+#
+    # envelope = {
+    #     'error': None,
+    #     'data': locs
+    # }
+#
+    # return envelope
 
 @login_required
 async def get_files_metadata(request: web.Request):
