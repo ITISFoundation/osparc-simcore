@@ -41,7 +41,7 @@ async def pg_pool(app: web.Application):
     db_config = app[APP_CONFIG_KEY]['postgres']
     app[APP_DB_POOL_KEY] = await asyncpg.create_pool(dsn=DSN.format(**db_config), loop=app.loop)
 
-    config[CFG_LOGIN_STORAGE] = AsyncpgStorage(app[APP_DB_POOL_KEY])
+    config[CFG_LOGIN_STORAGE] = AsyncpgStorage(app[APP_DB_POOL_KEY]) #NOTE: this key belongs to cfg, not settings!
     cfg.configure(config)
 
     app[APP_LOGIN_CONFIG] = cfg

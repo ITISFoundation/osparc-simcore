@@ -226,7 +226,6 @@ paths:
                 $ref: './components/schemas/files.yml#FileMetaDataArray'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-
   /storage/locations/{location_id}/files/{fileId}/metadata:
     get:
       summary: Get File Metadata

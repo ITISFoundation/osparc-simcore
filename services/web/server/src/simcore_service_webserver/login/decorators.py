@@ -13,7 +13,7 @@ from ..db_models import UserRole
 @asyncio.coroutine
 def user_to_request(handler):
     """ Handler decorator that injects in request, current authorized user ID
-    
+
     """
     @wraps(handler)
     async def wrapped(*args, **kwargs):
@@ -31,14 +31,14 @@ def login_required(handler):
 
     Keeps userid in request[RQT_USERID_KEY]
     """
-    @user_to_request
     @wraps(handler)
     async def wrapped(*args, **kwargs):
         request = get_request(*args, **kwargs)
-        userid = request[RQT_USERID_KEY]
+        userid = await authorized_userid(request)
         if userid is None:
             raise web.HTTPUnauthorized
 
+        request[RQT_USERID_KEY] = userid
         ret = await handler(*args, **kwargs)
         return ret
     return wrapped
@@ -58,18 +58,19 @@ def restricted_to(
     Keeps userid in request[RQT_USERID_KEY]
     """
     def wrapper(handler):
-        @user_to_request
         @wraps(handler)
-        def wrapped(*args, **kwargs):
+        async def wrapped(*args, **kwargs):
             request = get_request(*args, **kwargs)
-            userid = request[RQT_USERID_KEY]
+            userid = await authorized_userid(request)
             if userid is None:
                 raise web.HTTPUnauthorized
 
-            allowed = yield from permits(request, permission, context)
+            allowed = await permits(request, permission, context)
             if not allowed:
                 raise web.HTTPForbidden
-            ret = yield from handler(*args, **kwargs)
+
+            request[RQT_USERID_KEY] = userid
+            ret = await handler(*args, **kwargs)
             return ret
 
         return wrapped
