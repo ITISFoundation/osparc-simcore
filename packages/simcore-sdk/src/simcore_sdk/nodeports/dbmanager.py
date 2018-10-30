@@ -1,7 +1,7 @@
 import json
 import logging
 
-from sqlalchemy import create_engine, and_
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import exc
 from sqlalchemy.orm.attributes import flag_modified
