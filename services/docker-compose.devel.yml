@@ -6,7 +6,7 @@ services:
     build:
       target: development
     volumes:
-      - '../apis:/srv/http/apis'
+      - '../api:/srv/http/api'
   #--------------------------------------------------------------------
   director:
     image: services_director:dev
