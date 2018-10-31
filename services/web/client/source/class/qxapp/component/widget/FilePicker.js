@@ -136,6 +136,27 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
 
     // Request to the server an upload URL.
     __retrieveURLAndUpload: function(file) {
+      let store = qxapp.data.Store.getInstance();
+      store.addListenerOnce("PresginedLink", e => {
+        const presginedLinkData = e.getData();
+        // presginedLinkData.locationId;
+        // presginedLinkData.fileUuid;
+        console.log(presginedLinkData);
+        console.log(file);
+        // const url = data["url"];
+        this.__uploadFile(file, presginedLinkData.presginedLink);
+      }, this);
+      const download = false;
+      const locationId = 0;
+      const location = "simcore.s3";
+      const bucketName = "simcore";
+      const projectId = this.getProjectId();
+      const nodeId = this.getNodeModel().getNodeId();
+      const fileId = file.name;
+      const fileUuid = location +"/"+ bucketName +"/"+ projectId +"/"+ nodeId +"/"+ fileId;
+      store.getPresginedLink(download, locationId, fileUuid);
+
+      /*
       let socket = qxapp.wrappers.WebSocket.getInstance();
 
       const slotName = "presignedUrl";
@@ -149,6 +170,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
         fileName: file.name
       };
       socket.emit(slotName, data);
+      */
     },
 
     // Use XMLHttpRequest to upload the file to S3.

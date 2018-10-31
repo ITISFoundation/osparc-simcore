@@ -931,16 +931,18 @@ qx.Class.define("qxapp.data.Store", {
     getPresginedLink: function(download = true, locationId, fileUuid) {
       // GET: Returns download link for requested file
       // POST: Returns upload link or performs copy operation to datcore
-      const endPoint = "/storage/locations/" + locationId + "/files/" + fileUuid;
-      const method = download ? "GET" : "POST";
+      let res = encodeURIComponent(fileUuid);
+      const endPoint = "/storage/locations/" + locationId + "/files/" + res;
+      // const endPoint = "/storage/locations/" + locationId + "/files/" + fileUuid;
+      const method = download ? "GET" : "PUT";
       let req = new qxapp.io.request.ApiRequest(endPoint, method);
 
       req.addListener("success", e => {
         const {
-          presginedLink
+          data
         } = e.getTarget().getResponse();
         const presginedLinkData = {
-          presginedLink: presginedLink,
+          presginedLink: data,
           locationId: locationId,
           fileUuid: fileUuid
         };
