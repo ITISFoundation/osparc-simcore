@@ -9,23 +9,24 @@ All keys are constants with a unique name convention:
  See https://aiohttp.readthedocs.io/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
 """
 
-_PREFIX = __name__
+# REQUIREMENTS:
+# - guarantees all keys are unique
+# TODO: facilitate key generation
+# TODO: hierarchical classification
+# TODO: should be read-only (frozen?)
+
 
 # APP=application
-APP_CONFIG_KEY         = _PREFIX + '.config'
-APP_OPENAPI_SPECS_KEY  = _PREFIX + '.openapi_specs'
-APP_SESSION_SECRET_KEY = _PREFIX + '.session_secret'
+APP_CONFIG_KEY         = __name__ + '.config'
+APP_OPENAPI_SPECS_KEY  = __name__ + '.openapi_specs'
+APP_SESSION_SECRET_KEY = __name__ + '.session_secret'
 
-APP_DB_ENGINE_KEY      = _PREFIX + '.db_engine'
-APP_DB_SESSION_KEY     = _PREFIX + '.db_session'
+APP_DB_ENGINE_KEY      = __name__ + '.db_engine'
+APP_DB_SESSION_KEY     = __name__ + '.db_session'
+APP_DB_POOL_KEY        = __name__ + '.db_pool'
 
-
-# TODO:
-# TODO: freeze contants so they are not rewritable?
 # RQT=request
 
 # RSP=response
 
-# TODO: gurantee all keys are unique
-# TODO: facilitate key generation
-# TODO: can be classified easily
+# TODO: tool to convert dotted __name__ to section in dict

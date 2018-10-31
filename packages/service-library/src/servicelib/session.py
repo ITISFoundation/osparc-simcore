@@ -21,6 +21,7 @@ import base64
 import logging
 
 import aiohttp_session
+from aiohttp import web
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography import fernet
 
@@ -29,12 +30,14 @@ from .application_keys import APP_SESSION_SECRET_KEY
 log = logging.getLogger(__file__)
 
 
-def setup(app):
+def setup(app: web.Application):
     """
         Inits and registers a session middleware in aiohttp.web.Application
 
     """
     log.debug("Setting up %s ...", __name__)
+
+    # TODO: Ensure called only once per application
 
     secret_key = app.get(APP_SESSION_SECRET_KEY)
     if secret_key is None:

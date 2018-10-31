@@ -10,7 +10,9 @@ from aiohttp import web
 
 from servicelib import openapi
 
-from . import auth_handlers, rest_handlers, registry_api, comp_backend_api
+from .login import routes as auth_routes
+
+from . import rest_handlers, registry_api, comp_backend_api
 from .application_keys import APP_OPENAPI_SPECS_KEY
 
 log = logging.getLogger(__name__)
@@ -37,19 +39,10 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
 
 
     # auth --
-    path, handle = '/auth/register', auth_handlers.register
-    operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(BASEPATH+path, handle, name=operation_id) )
+    routes.extend( auth_routes.create(specs) )
 
-    path, handle = '/auth/login', auth_handlers.login
-    operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(BASEPATH+path, handle, name=operation_id) )
 
-    path, handle = '/auth/logout', auth_handlers.logout
-    operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
-    
-    # temp fix for running pipelines
+    # FIXME: temp fix for running pipelines
     path, handle = '/services', registry_api.get_services
     routes.append(web.get(BASEPATH+path, handle))
     path, handle = '/start_pipeline', comp_backend_api.start_pipeline
