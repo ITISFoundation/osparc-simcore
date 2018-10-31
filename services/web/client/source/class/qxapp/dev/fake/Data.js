@@ -341,7 +341,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
               "label": "Kember cardiac model",
               "inputs": {
                 "dt": 0.01,
-                "T": 1000
+                "T": 1000,
+                "forcing_factor": 0.0
               },
               "inputNodes": [],
               "outputNode": false,
@@ -352,7 +353,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "y": 450
               },
               "key": "simcore/services/comp/kember/cardiac",
-              "version": "0.0.1"
+              "version": "0.0.2"
             },
             "6cffe7a9-6758-4be6-9988-ec190f4c1d4f": {
               "label": "kember-viewer",
