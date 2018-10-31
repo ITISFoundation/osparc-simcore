@@ -8,6 +8,9 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
     let filePickerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(filePickerLayout);
 
+    let tree = this.__tree = this._createChildControlImpl("treeMenu");
+    tree.getSelection().addListener("change", this.__selectionChanged, this);
+
     // Create a button
     let input = new qx.html.Input("file", {
       display: "none"
@@ -30,9 +33,6 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
         this.__retrieveURLAndUpload(files[i]);
       }
     }, this);
-
-    let tree = this.__tree = this._createChildControlImpl("treeMenu");
-    tree.getSelection().addListener("change", this.__selectionChanged, this);
 
     let selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
     selectBtn.setEnabled(false);

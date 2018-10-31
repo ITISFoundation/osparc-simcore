@@ -891,22 +891,20 @@ qx.Class.define("qxapp.data.Store", {
       let reqLoc = new qxapp.io.request.ApiRequest("/storage/locations", "GET");
 
       reqLoc.addListener("success", eLoc => {
-        const {
-          dataLoc
-        } = eLoc.getTarget().getResponse();
-        const locations = dataLoc["locations"];
+        const locations = eLoc.getTarget().getResponse()
+          .data;
         for (let i=0; i<locations.length; i++) {
-          const locationId = locations[i];
+          const locationId = locations[i]["id"];
           // Get list of file meta data
           const endPoint = "/storage/locations/" + locationId + "/files/metadata";
           let reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
 
           reqFiles.addListener("success", eFiles => {
-            const {
-              dataFiles
-            } = eFiles.getTarget().getResponse();
-            const files = dataFiles["files"];
-            this.fireDataEvent("MyDocuments", files);
+            const files = eFiles.getTarget().getResponse()
+              .data;
+            if (files && files.length>0) {
+              this.fireDataEvent("MyDocuments", files);
+            }
           }, this);
 
           reqFiles.addListener("fail", e => {
@@ -915,6 +913,8 @@ qx.Class.define("qxapp.data.Store", {
             } = e.getTarget().getResponse();
             console.log("Failed getting Files list", error);
           });
+
+          reqFiles.send();
         }
       }, this);
 
@@ -924,6 +924,8 @@ qx.Class.define("qxapp.data.Store", {
         } = e.getTarget().getResponse();
         console.log("Failed getting Storage Locations", error);
       });
+
+      reqLoc.send();
     },
 
     getPresginedLink: function(download = true, locationId, fileUuid) {
@@ -951,6 +953,8 @@ qx.Class.define("qxapp.data.Store", {
         } = e.getTarget().getResponse();
         console.log("Failed getting Presgined Link", error);
       });
+
+      req.send();
     },
 
     deleteFile: function(locationId, fileUuid) {
@@ -971,6 +975,8 @@ qx.Class.define("qxapp.data.Store", {
         } = e.getTarget().getResponse();
         console.log("Failed getting Presgined Link", error);
       });
+
+      req.send();
     }
   }
 });
