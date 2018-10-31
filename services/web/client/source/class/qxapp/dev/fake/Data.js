@@ -256,67 +256,124 @@ qx.Class.define("qxapp.dev.fake.Data", {
             }
           }
         }, {
-          projectUuid: "9bcf8feb-c1b1-41b6-b201-639cd6ccdba8",
-          name: "Sample Project II",
-          description: "An empty project",
-          notes: "# title\nThere be dragons inside",
-          owner: "TOBI",
-          collaborators: {
-            "PEDRO": [
-              "read",
-              "write"
-            ]
-          },
-          creationDate: "2018-07-08T16:01:00Z",
-          lastChangeDate: "2018-07-09T16:02:22Z",
-          thumbnail: "https://placeimg.com/171/96/tech/grayscale/?1.jpg",
-          workbench: {
-            "eb51440a-04bd-4847-b457-86c83400abf5": {
-              key: "service/dynamic/itis/s4l/MaterialDB",
-              version: "0.0.0",
-              position: {
-                x: 50,
-                y: 50
-              }
+          "projectUuid": "89a92ea1-ce5e-488e-9fd8-933a263c6219",
+          "name": "3 pipelines",
+          "description": "Empty",
+          "notes": "Empty",
+          "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?25.jpg",
+          "owner": "MANUEL",
+          "collaborators": {},
+          "creationDate": "2018-10-31T12:11:53.179Z",
+          "lastChangeDate": "2018-10-31T12:24:32.660Z",
+          "workbench": {
+            "2e8acead-a59a-42d9-9185-946d428d70b3": {
+              "label": "File Picker EM",
+              "inputs": {},
+              "inputNodes": [],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 150,
+                "y": 150
+              },
+              "key": "service/dynamic/itis/file-picker",
+              "version": "0.0.0"
             },
-            "bc466582-9240-4d97-9f9e-197b5f3a354b": {
-              key: "service/dynamic/itis/s4l/Modeler",
-              version: "0.0.0",
-              position: {
-                x: 50,
-                y: 400
-              }
-            },
-            "e5ab3634-875f-4459-ab3f-00c91457ff49": {
-              key: "service/dynamic/itis/s4l/Simulator/LF/Setup",
-              version: "0.0.0",
-              inputs: {},
-              position: {
-                x: 400,
-                y: 150
-              }
-            },
-            "b7cd1659-d366-465b-b712-851b469ba654": {
-              key: "service/dynamic/itis/s4l/Simulator/LF/Materials",
-              version: "0.0.0",
-              inputs: {
-                modeler: {
-                  nodeUuid: "bc466582-9240-4d97-9f9e-197b5f3a354b",
-                  output: "modeler"
+            "8d603045-bfe8-4822-906c-590fa69c1d13": {
+              "label": "isolve-emlf",
+              "inputs": {
+                "in_1": {
+                  "nodeUuid": "2e8acead-a59a-42d9-9185-946d428d70b3",
+                  "output": "outFile"
                 },
-                materialDB: {
-                  nodeUuid: "eb51440a-04bd-4847-b457-86c83400abf5",
-                  output: "materialDB"
+                "NRanks": 1
+              },
+              "inputNodes": [
+                "2e8acead-a59a-42d9-9185-946d428d70b3"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 450,
+                "y": 150
+              },
+              "key": "simcore/services/comp/itis/isolve-emlf",
+              "version": "0.0.1"
+            },
+            "08116c6d-2c9e-4939-9c2b-67fe0ae65dc9": {
+              "label": "File Picker Neuron",
+              "inputs": {},
+              "inputNodes": [],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 150,
+                "y": 300
+              },
+              "key": "service/dynamic/itis/file-picker",
+              "version": "0.0.0"
+            },
+            "1a4aafff-88c7-4e7e-89cc-fe374cfe64ea": {
+              "label": "neuron-isolve",
+              "inputs": {
+                "in_1": {
+                  "nodeUuid": "08116c6d-2c9e-4939-9c2b-67fe0ae65dc9",
+                  "output": "outFile"
                 }
               },
-              inputNodes: [
-                "bc466582-9240-4d97-9f9e-197b5f3a354b",
-                "eb51440a-04bd-4847-b457-86c83400abf5"
+              "inputNodes": [
+                "08116c6d-2c9e-4939-9c2b-67fe0ae65dc9"
               ],
-              position: {
-                x: 400,
-                y: 250
-              }
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 450,
+                "y": 300
+              },
+              "key": "simcore/services/comp/itis/neuron-isolve",
+              "version": "0.0.1"
+            },
+            "d2d8028c-be3f-473d-a74f-161a286a00ed": {
+              "label": "Kember cardiac model",
+              "inputs": {
+                "dt": 0.01,
+                "T": 1000
+              },
+              "inputNodes": [],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 150,
+                "y": 450
+              },
+              "key": "simcore/services/comp/kember/cardiac",
+              "version": "0.0.1"
+            },
+            "6cffe7a9-6758-4be6-9988-ec190f4c1d4f": {
+              "label": "kember-viewer",
+              "inputs": {
+                "outputController": {
+                  "nodeUuid": "d2d8028c-be3f-473d-a74f-161a286a00ed",
+                  "output": "outputController"
+                }
+              },
+              "inputNodes": [
+                "d2d8028c-be3f-473d-a74f-161a286a00ed"
+              ],
+              "outputNode": false,
+              "outputs": {},
+              "parent": null,
+              "position": {
+                "x": 450,
+                "y": 450
+              },
+              "key": "simcore/services/dynamic/kember-viewer",
+              "version": "1.1.0"
             }
           }
         }, {
