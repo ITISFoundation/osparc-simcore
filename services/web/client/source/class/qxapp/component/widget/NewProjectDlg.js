@@ -38,10 +38,12 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
       let templatesList = new qx.ui.form.List().set({
         minHeight: 200
       });
-      templatesList.add(new qx.ui.form.ListItem(this.tr("Blank Project")));
+      let blankItem = new qx.ui.form.ListItem(this.tr("Blank Project"));
+      templatesList.add(blankItem);
       templatesList.add(new qx.ui.form.ListItem(this.tr("EM General")));
       templatesList.add(new qx.ui.form.ListItem(this.tr("EM-Neuro")));
       templatesList.add(new qx.ui.form.ListItem(this.tr("EM-Thermal")));
+      templatesList.setSelection([blankItem]);
       prjFormLayout.add(new qx.ui.basic.Label(this.tr("Categories / Templates")));
       prjFormLayout.add(templatesList, {
         flex: 1
@@ -92,8 +94,24 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
 
       prjFormLayout.add(new qx.ui.core.Spacer(5));
 
-      let createBtn = new qx.ui.form.Button(this.tr("Create"));
-      createBtn.addListener("execute", function() {
+      // create the form manager
+      let manager = new qx.ui.form.validation.Manager();
+      // create a async validator function
+      let projectTitleValidator = new qx.ui.form.validation.AsyncValidator(
+        function(validator, value) {
+          if (value === null || value.length === 0) {
+            validator.setValid(false, "Project title is required");
+          } else {
+            validator.setValid(true);
+          }
+        }
+      );
+      manager.add(projectTitle, projectTitleValidator);
+
+      manager.addListener("complete", function() {
+        if (!manager.getValid()) {
+          return;
+        }
         const title = projectTitle.getValue();
         const desc = description.getValue();
         const sele = templatesList.getSelection();
@@ -107,6 +125,11 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
           prjTemplate: templ
         };
         this.fireDataEvent("CreatePrj", data);
+      }, this);
+
+      let createBtn = new qx.ui.form.Button(this.tr("Create"));
+      createBtn.addListener("execute", function() {
+        manager.validate();
       }, this);
       prjFormLayout.add(createBtn);
 
