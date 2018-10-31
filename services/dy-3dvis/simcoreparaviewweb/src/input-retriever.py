@@ -35,6 +35,8 @@ for node_input in PORTS.inputs:
     
     log.debug("Start downloading path %s", node_input.value)
     local_path = node_input.get()
+    if local_path is None:
+        continue
     log.debug("Completed download of %s in local path %s", node_input.value, local_path)
     if local_path.exists():
         if zipfile.is_zipfile(str(local_path)):
