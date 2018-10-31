@@ -127,7 +127,7 @@ qx.Class.define("qxapp.data.Converters", {
       return children;
     },
 
-    fromAPIListToVirtualTreeModel: function(listItems) {
+    fromAPIListToVirtualTreeModel: function(listItems, showLeavesAsDirs = false) {
       let children = [];
       for (let i=0; i<listItems.length; i++) {
         const listItem = listItems[i];
@@ -135,6 +135,9 @@ qx.Class.define("qxapp.data.Converters", {
           key: listItem["key"],
           label: listItem["label"]
         };
+        if (showLeavesAsDirs) {
+          item["children"] = [];
+        }
         children.push(item);
       }
       return children;
