@@ -2,10 +2,11 @@
 
     - Responsible of authentication and authorization
 
+    
+    See login/decorators.py 
     Based on https://aiohttp-security.readthedocs.io/en/latest/
 """
 # pylint: disable=assignment-from-no-return
-# pylint: disable=unused-import
 import logging
 
 import aiohttp_security
@@ -13,14 +14,13 @@ import passlib.hash
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
-from aiohttp_security.api import (authorized_userid, forget, has_permission,
-                                  is_anonymous, login_required, remember)
+from aiohttp_security.api import (authorized_userid, forget, is_anonymous,
+                                  remember)
 from aiohttp_security.session_identity import SessionIdentityPolicy
 from aiopg.sa import Engine
 
 from .application_keys import APP_DB_ENGINE_KEY
 from .db_models import UserRole, UserStatus, users
-from .session import setup_session
 
 log = logging.getLogger(__file__)
 
@@ -106,10 +106,13 @@ def setup(app):
 # aliases
 generate_password_hash = encrypt_password
 setup_security = setup
+forget = forget
+remember = remember
+is_anonymous = is_anonymous
+authorized_userid = authorized_userid
 
 __all__ = (
     'setup_security',
     'generate_password_hash', 'check_credentials',
-    'authorized_userid', 'forget', 'remember', 'is_anonymous',
-    'login_required', 'has_permission' # decorators
+    'authorized_userid', 'forget', 'remember', 'is_anonymous'
 )

@@ -38,3 +38,6 @@ smtp:
   tls: False
   username: None,
   password: None
+storage:
+  host: localhost
+  port: 11111

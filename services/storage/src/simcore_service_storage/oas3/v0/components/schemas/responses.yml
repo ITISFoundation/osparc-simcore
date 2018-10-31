@@ -1,11 +1,11 @@
-Envelope:
-  description: default envelope
+PresignedLinkEnveloped:
+  type: object
   required:
     - data
     - error
-  type: object
   properties:
     data:
+      $ref: '#/PresignedLink'
       nullable: true
       default: null
     error:
@@ -13,5 +13,10 @@ Envelope:
       nullable: true
       default: null
 
-
-# TODO: still not sure how to reuse this ...
+PresignedLink:
+  type: object
+  properties:
+    link:
+      type: string
+  example:
+    link: 'example_link'
