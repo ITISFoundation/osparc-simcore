@@ -9,6 +9,8 @@ main:
   log_level: DEBUG
   testing: True
   # disable_services: [director, postgres, rabbit, s3]
+  db:
+    init_tables: True
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
@@ -30,4 +32,11 @@ s3:
   access_key: ${S3_ACCESS_KEY}
   secret_key: ${S3_SECRET_KEY}
   bucket_name: ${S3_BUCKET_NAME}
+smtp:
+  sender: 'OSPARC support <support@osparc.io>'
+  host: ${SMTP_HOST}
+  port: ${SMTP_PORT}
+  tls: False
+  username: Null
+  password: Null
 ...
