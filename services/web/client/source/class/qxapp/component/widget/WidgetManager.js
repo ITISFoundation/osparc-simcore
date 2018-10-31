@@ -4,10 +4,10 @@ qx.Class.define("qxapp.component.widget.WidgetManager", {
   type: "singleton",
 
   members: {
-    getWidgetForNode: function(node) {
-      let nodeKey = node.getMetaData().key;
+    getWidgetForNode: function(nodeModel, projectId) {
+      let nodeKey = nodeModel.getMetaData().key;
       if (nodeKey.includes("file-picker")) {
-        let filePicker = new qxapp.component.widget.FilePicker(node);
+        let filePicker = new qxapp.component.widget.FilePicker(nodeModel, projectId);
         return filePicker;
       }
       return null;

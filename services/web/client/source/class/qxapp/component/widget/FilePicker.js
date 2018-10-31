@@ -2,7 +2,7 @@
 qx.Class.define("qxapp.component.widget.FilePicker", {
   extend: qx.ui.core.Widget,
 
-  construct: function(node) {
+  construct: function(nodeModel, projectId) {
     this.base(arguments);
 
     let filePickerLayout = new qx.ui.layout.VBox(10);
@@ -49,7 +49,21 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
 
     this.buildTree();
 
-    this.__createConnections(node);
+    this.__createConnections(nodeModel);
+
+    this.setNodeModel(nodeModel);
+    this.setProjectId(projectId);
+  },
+
+  properties: {
+    nodeModel: {
+      check: "qxapp.data.model.NodeModel"
+    },
+
+    projectId: {
+      check: "String",
+      init: ""
+    }
   },
 
   events: {
@@ -97,12 +111,21 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
     __getFiles: function() {
       let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__tree);
       filesTreePopulator.populateMyDocuments();
+
+      let that = this;
+      let delegate = this.__tree.getDelegate();
+      delegate["configureItem"] = function(item) {
+        item.addListener("dbltap", e => {
+          that.__itemSelected(); // eslint-disable-line no-underscore-dangle
+        }, that);
+      };
+      this.__tree.setDelegate(delegate);
     },
 
-    __createConnections: function(node) {
+    __createConnections: function(nodeModel) {
       this.addListener("ItemSelected", function(data) {
         const itemPath = data.getData().itemPath;
-        let outputs = node.getOutputs();
+        let outputs = nodeModel.getOutputs();
         outputs["outFile"].value = {
           store: "s3-z43",
           path: itemPath

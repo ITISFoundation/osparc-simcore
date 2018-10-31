@@ -169,7 +169,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.__settingsView.setNodeModel(nodeModel);
           if (nodeModel.getMetaData().type === "dynamic") {
             const widgetManager = qxapp.component.widget.WidgetManager.getInstance();
-            widget = widgetManager.getWidgetForNode(nodeModel);
+            widget = widgetManager.getWidgetForNode(nodeModel, this.getProjectModel().getUuid());
             if (!widget) {
               widget = this.__settingsView;
             }
