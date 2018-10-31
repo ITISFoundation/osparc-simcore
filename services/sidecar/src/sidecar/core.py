@@ -10,7 +10,6 @@ import pika
 from celery.states import SUCCESS as CSUCCESS
 from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
-from sqlalchemy.orm.attributes import flag_modified
 
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
