@@ -2,6 +2,7 @@
 ##
 ##    pip install --requirement=requirements.txt
 ##
+aiopg
 coveralls
 pytest
 pytest-aiohttp
