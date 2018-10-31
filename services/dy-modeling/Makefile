@@ -7,7 +7,7 @@ else
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
-
+export MODELER_VERSION=2.2.1
 all:
 	@echo 'run `make build-devel` to build your dev environment'
 	@echo 'run `make up-devel` to start your dev environment.'
@@ -35,7 +35,7 @@ down:
 	${DOCKER_COMPOSE} -f docker-compose.yml down
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml down
 
-MODELER_VERSION=2.1
+
 MODELER_MASU_REGISTRY_NAME=masu.speag.com/simcore/services/dynamic/modeler/webserver
 push_service_images:
 	${DOCKER} login masu.speag.com

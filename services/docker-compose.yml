@@ -1,5 +1,5 @@
 version: '3.4'
-services:  
+services:
   apihub:
     build:
       context: ../
@@ -71,6 +71,8 @@ services:
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
     depends_on:
       - webclient
   #--------------------------------------------------------------------
@@ -139,7 +141,7 @@ services:
     image: registry:2
     ports:
       - "5000:5000"
-    volumes: 
+    volumes:
       - registry:/var/lib/registry
     #--------------------------------------------------------------------
 volumes:

@@ -27,14 +27,16 @@ log = logging.getLogger(__name__)
 def create_default_parser():
     return argparse.ArgumentParser(description='Service to manage data storage in simcore.')
 
-def setup(parser):
+def setup_parser(parser):
     """ Adds all options to a parser"""
-    parser.add_argument('names', metavar='NAME', nargs=argparse.ZERO_OR_MORE,
-                    help="A name of something.")
+    #parser.add_argument('names', metavar='NAME', nargs=argparse.ZERO_OR_MORE,
+    #                help="A name of something.")
 
     add_cli_options(parser, CLI_DEFAULT_CONFIGFILE)
 
     # Add here more options ....
+
+    return parser
 
 def parse(args, parser):
     """ Parse options and returns a configuration object """
@@ -52,7 +54,7 @@ def parse(args, parser):
 def main(args=None):
     parser = argparse.ArgumentParser(description='Service to manage data storage in simcore.')
 
-    setup(parser)
+    setup_parser(parser)
     config = parse(args, parser)
 
     # TODO: improve keys!
