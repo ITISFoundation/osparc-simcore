@@ -56,7 +56,7 @@ class DockerSettings:
     # pylint: disable=too-many-instance-attributes
     def __init__(self):
         self._config = docker_config()
-        self.client = docker.from_env(version='auto')
+        self.client = docker.from_env()
         self.registry = self._config.registry
         self.registry_name = self._config.registry_name
         self.registry_user = self._config.user
