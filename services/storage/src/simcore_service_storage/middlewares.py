@@ -22,7 +22,7 @@ async def dsm_middleware(request, handler):
     s3_client = S3Client(s3_endpoint, s3_access_key, s3_secret_key)
 
     main_cfg = cfg["main"]
-    python27_exec = Path(main_cfg["python2"]) / "bin" / "python"
+    python27_exec = Path(main_cfg["python2"]) / "bin" / "python2"
 
     engine = request.app.get(APP_DB_ENGINE_KEY)
     loop = request.app.loop

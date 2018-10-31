@@ -111,6 +111,8 @@ async def get_files_metadata(request: web.Request):
     if query.get("uuid_filter"):
         uuid_filter = query["uuid_filter"]
 
+    log.info("list files %s %s %s", user_id, location, uuid_filter)
+
     data = await dsm.list_files(user_id=user_id, location=location, uuid_filter=uuid_filter)
 
     data_as_dict = []

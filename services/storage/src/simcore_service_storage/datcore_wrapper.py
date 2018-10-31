@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial, wraps
@@ -15,6 +16,7 @@ from .models import FileMetaData
 FileMetaDataVec = List[FileMetaData]
 
 CURRENT_DIR = Path(__file__).resolve().parent
+logger = logging.getLogger(__name__)
 
 
 #TODO: Use async callbacks for retreival of progress and pass via rabbit to server
@@ -95,7 +97,11 @@ class DatcoreWrapper:
 
             """%(self.api_token, self.api_secret)
 
+        logger.info("BEFORE PYCALL")
+
         files = self._py2_call(script)
+        logger.info("AFTER PYCALL")
+
         data = []
         for f in files:
             # extract bucket name, object name and filename

@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import shutil
@@ -18,8 +19,8 @@ from sqlalchemy.sql import and_
 from s3wrapper.s3_client import S3Client
 
 from .datcore_wrapper import DatcoreWrapper
-from .models import (FileMetaData, _location_from_id,
-                     _parse_datcore, _parse_simcore, file_meta_data)
+from .models import (FileMetaData, _location_from_id, _parse_datcore,
+                     _parse_simcore, file_meta_data)
 from .settings import APP_CONFIG_KEY, APP_DSM_THREADPOOL
 
 #pylint: disable=W0212
@@ -27,6 +28,8 @@ from .settings import APP_CONFIG_KEY, APP_DSM_THREADPOOL
 
 #pylint: disable=E1120
 ##FIXME: E1120:No value for argument 'dml' in method call
+
+logger = logging.getLogger(__name__)
 
 
 FileMetaDataVec = List[FileMetaData]
@@ -135,6 +138,7 @@ class DataStorageManager:
                     data.append(d)
         elif location == "datcore":
             api_token, api_secret = await self._get_datcore_tokens(user_id)
+            logger.info("Datcore query %s %s %s", api_token, api_secret, self.python27_exec)
             dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
             return await dcw.list_files(regex, sortby)
 

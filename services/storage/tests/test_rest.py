@@ -28,12 +28,12 @@ def parse_db(dsm_mockup_db):
     return id_file_count, id_name_map
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client, python27_exec, postgres_service, minio_service):
+def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postgres_service, minio_service):
     app = web.Application()
 
     max_workers = 4
 
-    server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost', 'python2' : python27_exec, "max_workers" : max_workers }
+    server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost', 'python2' : python27_path, "max_workers" : max_workers }
 
     postgres_kwargs = postgres_service
 
