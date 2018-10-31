@@ -28,8 +28,8 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       }, this);
 
       store.getMyDocuments();
-      store.getS3SandboxFiles();
-      store.getFakeFiles();
+      // store.getS3SandboxFiles();
+      // store.getFakeFiles();
     },
 
     __clearTree: function(treeName) {
