@@ -2,11 +2,13 @@
     data going to following nodes.
 """
 import logging
-from simcore_sdk.nodeports import exceptions, dbmanager, serialization
-from simcore_sdk.nodeports._data_items_list import DataItemsList
-from simcore_sdk.nodeports._schema_items_list import SchemaItemsList
-from simcore_sdk.nodeports._items_list import ItemsList
+from pathlib import Path
 
+from simcore_sdk.nodeports import (data_items_utils, dbmanager, exceptions,
+                                   serialization)
+from simcore_sdk.nodeports._data_items_list import DataItemsList
+from simcore_sdk.nodeports._items_list import ItemsList
+from simcore_sdk.nodeports._schema_items_list import SchemaItemsList
 
 log = logging.getLogger(__name__)
 
@@ -102,7 +104,15 @@ class Nodeports:
             pass
         # if this fails it will raise an exception
         return self.outputs[item_key].set(item_value)
-
+    
+    def set_file_by_keymap(self, item_value:Path):
+        for output in self.outputs:
+            if data_items_utils.is_file_type(output.type):
+                if output.fileToKeyMap:
+                    if item_value.name in output.fileToKeyMap:
+                        output.set(item_value)
+                        return
+        raise exceptions.PortNotFound(msg="output port for item {item} not found".format(item=str(item_value)))
 
     def update_from_json(self):
         log.debug("Updating json configuration")

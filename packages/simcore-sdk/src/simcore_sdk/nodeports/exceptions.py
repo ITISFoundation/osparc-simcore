@@ -71,3 +71,8 @@ class S3InvalidStore(NodeportsException):
         msg = "Invalid store used: {store}".format(store=s3_store)
         super(S3InvalidStore, self).__init__(msg)
         self.store = s3_store
+
+class PortNotFound(NodeportsException):
+    """Accessed key does not exist"""
+    def __init__(self, msg):
+        super(PortNotFound, self).__init__(msg)

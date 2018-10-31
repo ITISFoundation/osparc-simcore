@@ -8,9 +8,10 @@ from pathlib import Path
 #pylint: disable=R0913
 #pylint: disable=W0104
 import pytest
+from simcore_sdk.nodeports import exceptions
 
 import helpers
-from simcore_sdk.nodeports import exceptions
+
 
 def check_port_valid(ports, config_dict: dict, port_type:str, key_name: str, key):
     assert getattr(ports, port_type)[key].key == key_name
@@ -93,6 +94,9 @@ def test_port_value_accessors(special_configuration, item_type, item_value, item
     assert isinstance(PORTS.inputs[item_key].get(), item_pytype)
     assert PORTS.inputs[item_key].get() == item_value
     assert PORTS.outputs[item_key].get() is None
+
+    assert isinstance(PORTS.get(item_key), item_pytype)
+    assert PORTS.get(item_key) == item_value
 
     PORTS.outputs[item_key].set(item_value)
     assert PORTS.outputs[item_key].value == item_value
@@ -221,9 +225,17 @@ def test_file_mapping(special_configuration, store_link, session, item_type, ite
     check_config_valid(PORTS, config_dict)
     # add a filetokeymap
     config_dict["schema"]["inputs"]["in_1"]["fileToKeyMap"] = {item_alias:"in_1"}
+    config_dict["schema"]["outputs"]["out_1"]["fileToKeyMap"] = {item_alias:"out_1"}
     helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
 
     file_path = PORTS.inputs["in_1"].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_1", item_alias)
+
+    invalid_alias = Path("invalid_alias.fjfj")
+    with pytest.raises(exceptions.PortNotFound, message="Expecting PortNotFound"):
+        PORTS.set_file_by_keymap(invalid_alias)
+    
+    PORTS.set_file_by_keymap(file_path)
+    assert PORTS.outputs["out_1"].value == {"store":"s3-z43", "path":Path(str(project_id), str(node_uuid), Path(file_path).name).as_posix()}

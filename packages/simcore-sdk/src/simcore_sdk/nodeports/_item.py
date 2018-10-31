@@ -19,12 +19,9 @@ def _check_type(item_type, value):
     
     possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
     if not item_type in possible_types:
-        if _is_file_type(item_type) and data_items_utils.is_value_on_store(value):
+        if data_items_utils.is_file_type(item_type) and data_items_utils.is_value_on_store(value):
             return
         raise exceptions.InvalidItemTypeError(item_type, value)
-
-def _is_file_type(item_type):
-    return str(item_type).startswith(config.FILE_TYPE_PREFIX)
 
 class Item():
     def __init__(self, schema:SchemaItem, data:DataItem):
@@ -57,7 +54,7 @@ class Item():
             returns the converted value or None if no value is defined
         """
         log.debug("Getting item %s", self.key)
-        if self.type not in config.TYPE_TO_PYTHON_TYPE_MAP and not _is_file_type(self.type):
+        if self.type not in config.TYPE_TO_PYTHON_TYPE_MAP and not data_items_utils.is_file_type(self.type):
             raise exceptions.InvalidProtocolError(self.type)
         if self.value is None:
             log.debug("Got empty data item")
@@ -66,7 +63,7 @@ class Item():
 
         if data_items_utils.is_value_link(self.value):
             value = self.__get_value_from_link(self.value)
-            if _is_file_type(self.type):
+            if data_items_utils.is_file_type(self.type):
                 # move the file to the right location
                 file_name = Path(value).name
                 file_path = _create_file_path(self.key, file_name)
@@ -93,11 +90,11 @@ class Item():
         possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
         log.debug("possible types are for value %s are %s", value, possible_types)
         if not self.type in possible_types:
-            if not _is_file_type(self.type) or not isinstance(value, (Path, str)):
+            if not data_items_utils.is_file_type(self.type) or not isinstance(value, (Path, str)):
                 raise exceptions.InvalidItemTypeError(self.type, value)
 
         # upload to S3 if file
-        if _is_file_type(self.type):
+        if data_items_utils.is_file_type(self.type):
             file_path = Path(value)
             if not file_path.exists() or not file_path.is_file():
                 raise exceptions.InvalidItemTypeError(self.type, value)
