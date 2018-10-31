@@ -1250,6 +1250,253 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             }
           }
+        }, {
+          projectUuid: "1d4269a4-0fbc-4bf9-9eb3-11356a46c45a",
+          name: "Demo December",
+          description: "",
+          notes: "",
+          owner: "ODEI",
+          collaborators: {
+            "ODEI": [
+              "read",
+              "write"
+            ]
+          },
+          creationDate: "2018-07-08T16:01:00Z",
+          lastChangeDate: "2018-07-09T16:02:22Z",
+          thumbnail: "https://placeimg.com/171/96/tech/grayscale/?2.jpg",
+          workbench: {
+            "c104bb08-77b1-4157-b9f9-e9df7779df08": {
+              key: "service/dynamic/itis/s4l/Modeler",
+              version: "0.0.0",
+              label: "Modeler",
+              position: {
+                x: 50,
+                y: 300
+              }
+            },
+            "bf88496d-ddf8-476c-8d6c-24c716c2ae4c": {
+              key: "service/dynamic/itis/s4l/MaterialDB",
+              version: "0.0.0",
+              label: "Material DB",
+              position: {
+                x: 50,
+                y: 50
+              }
+            },
+            "89e185ca-dda1-4a45-8059-715f2cb17100": {
+              label: "LF Simulator Container",
+              position: {
+                x: 300,
+                y: 150
+              },
+              inputs: {},
+              outputs: {},
+              inputNodes: [
+                "bf88496d-ddf8-476c-8d6c-24c716c2ae4c",
+                "c104bb08-77b1-4157-b9f9-e9df7779df08"
+              ],
+              outputNode: false
+            },
+            "SetupId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Setup",
+              version: "0.0.0",
+              label: "LF Setup 1",
+              inputNodes: [],
+              outputNode: false,
+              position: {
+                x: 100,
+                y: 50
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
+            },
+            "MaterialsId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Materials",
+              version: "0.0.0",
+              label: "LF Materials 1",
+              inputNodes: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08",
+                "bf88496d-ddf8-476c-8d6c-24c716c2ae4c"
+              ],
+              outputNode: false,
+              position: {
+                x: 100,
+                y: 150
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
+            },
+            "BoundaryId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Boundary",
+              version: "0.0.0",
+              label: "LF Boundary 1",
+              inputNodes: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08"
+              ],
+              outputNode: false,
+              position: {
+                x: 100,
+                y: 250
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
+            },
+            "SensorsId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Sensors",
+              version: "0.0.0",
+              label: "LF Sensors 1",
+              inputNodes: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08"
+              ],
+              outputNode: true,
+              position: {
+                x: 100,
+                y: 350
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
+            },
+            "GridId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Grid",
+              version: "0.0.0",
+              label: "LF Grid 1",
+              inputNodes: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08"
+              ],
+              outputNode: false,
+              position: {
+                x: 100,
+                y: 450
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
+            },
+            "VoxelId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/Voxel",
+              version: "0.0.0",
+              label: "LF Voxel 1",
+              inputNodes: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08"
+              ],
+              outputNode: false,
+              position: {
+                x: 100,
+                y: 550
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
+            },
+            "SolverSettingsId": {
+              key: "service/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+              version: "0.0.0",
+              label: "LF SolverSett 1",
+              inputNodes: [],
+              outputNode: true,
+              position: {
+                x: 500,
+                y: 250
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
+            },
+            "4069bf2e-e2be-4799-ad1c-c53f0cb46e4e": {
+              key: "simcore/services/comp/itis/isolve-emlf",
+              version: "0.0.1",
+              label: "EM-LF Solver",
+              inputs: {
+                "in_1": {
+                  nodeUuid: "89e185ca-dda1-4a45-8059-715f2cb17100",
+                  output: "outFile"
+                }
+              },
+              inputNodes: [
+                "89e185ca-dda1-4a45-8059-715f2cb17100"
+              ],
+              position: {
+                x: 600,
+                y: 150
+              }
+            },
+            "96343608-610b-4951-89af-4b189e5e3861": {
+              label: "Neuron Simulator Container",
+              position: {
+                x: 500,
+                y: 450
+              },
+              inputs: {},
+              outputs: {},
+              inputNodes: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08",
+                "89e185ca-dda1-4a45-8059-715f2cb17100"
+              ],
+              outputNode: false
+            },
+            "SetupId2": {
+              key: "service/dynamic/itis/s4l/Simulator/Neuron/Setup",
+              version: "0.0.0",
+              label: "Neuron Setup",
+              inputNodes: [],
+              outputNode: false,
+              position: {
+                x: 100,
+                y: 50
+              },
+              parent: "96343608-610b-4951-89af-4b189e5e3861"
+            },
+            "MaterialsId2": {
+              key: "service/dynamic/itis/s4l/Simulator/Neuron/Materials",
+              version: "0.0.0",
+              label: "Neurons",
+              inputNodes: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08",
+                "bf88496d-ddf8-476c-8d6c-24c716c2ae4c"
+              ],
+              outputNode: false,
+              position: {
+                x: 100,
+                y: 150
+              },
+              parent: "96343608-610b-4951-89af-4b189e5e3861"
+            },
+            "SensorsId2": {
+              key: "service/dynamic/itis/s4l/Simulator/Neuron/Sensors",
+              version: "0.0.0",
+              label: "Neuron Sensors",
+              inputNodes: [
+                "c104bb08-77b1-4157-b9f9-e9df7779df08"
+              ],
+              outputNode: true,
+              position: {
+                x: 100,
+                y: 350
+              },
+              parent: "96343608-610b-4951-89af-4b189e5e3861"
+            },
+            "SolverSettingsId2": {
+              key: "service/dynamic/itis/s4l/Simulator/Neuron/SolverSettings",
+              version: "0.0.0",
+              label: "Neuron SolverSett",
+              inputNodes: [],
+              outputNode: true,
+              position: {
+                x: 500,
+                y: 250
+              },
+              parent: "96343608-610b-4951-89af-4b189e5e3861"
+            },
+            "da1ccae6-70cd-4c90-94a4-c43fab9b10f7": {
+              key: "simcore/services/comp/itis/neuron-isolve",
+              version: "0.0.1",
+              label: "Neuron Solver",
+              inputs: {
+                "in_1": {
+                  nodeUuid: "96343608-610b-4951-89af-4b189e5e3861",
+                  output: "outFile"
+                }
+              },
+              inputNodes: [
+                "96343608-610b-4951-89af-4b189e5e3861"
+              ],
+              position: {
+                x: 750,
+                y: 450
+              }
+            }
+          }
         }
       ];
     },
