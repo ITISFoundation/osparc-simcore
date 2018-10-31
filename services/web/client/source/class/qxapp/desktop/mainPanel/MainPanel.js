@@ -8,24 +8,14 @@ qx.Class.define("qxapp.desktop.mainPanel.MainPanel", {
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    // let optionsBar = this.__optionsBar = new qxapp.desktop.mainPanel.OptionsBar();
-    let mainView = new qx.ui.core.Widget();
     let controlsBar = this.__controlsBar = new qxapp.desktop.mainPanel.ControlsBar();
-    /*
-    optionsBar.set({
-      width: 60,
-      allowGrowX: false
-    });
-    */
     controlsBar.set({
       height: 60,
       allowGrowY: false
     });
 
-    let hBox = this.__hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-    // hBox.add(optionsBar);
-    hBox.add(mainView, {
-      flex: 1
+    let hBox = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+      allowGrowY: true
     });
 
     this._add(hBox, {
@@ -42,28 +32,17 @@ qx.Class.define("qxapp.desktop.mainPanel.MainPanel", {
     }
   },
 
-  events: {},
-
   members: {
-    __hBox: null,
-    // __optionsBar: null,
+    __mainView: null,
     __controlsBar: null,
 
     __applyMainView: function(newWidget) {
-      // const mainViewIndex = 1;
-      const mainViewIndex = 0;
-      if (this.__hBox._indexOf(newWidget) != mainViewIndex) {
-        this.__hBox._removeAt(mainViewIndex);
-        this.__hBox._addAt(newWidget, mainViewIndex, {
-          flex: 1
-        });
-      }
+      this.__mainView.removeAll();
+      this.__mainView.add(newWidget, {
+        flex: 1
+      });
     },
-    /*
-    getOptions: function() {
-      return this.__optionsBar;
-    },
-    */
+
     getControls: function() {
       return this.__controlsBar;
     }

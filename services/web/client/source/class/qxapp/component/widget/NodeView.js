@@ -1,6 +1,6 @@
 const PORT_INPUTS_WIDTH = 300;
 
-qx.Class.define("qxapp.component.widget.SettingsView", {
+qx.Class.define("qxapp.component.widget.NodeView", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
@@ -30,7 +30,10 @@ qx.Class.define("qxapp.component.widget.SettingsView", {
     let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     mainLayout.set({
       alignX: "center",
-      padding: 70
+      paddingTop: 20,
+      paddingRight: 30,
+      paddingBottom: 20,
+      paddingLeft: 30
     });
     this.add(mainLayout, {
       flex: 1
