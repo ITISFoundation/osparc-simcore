@@ -3,7 +3,7 @@
     Miscelaneous of functions and classes to build rest API sub-module
 """
 import json
-from typing import Dict, Tuple
+from typing import Dict
 
 import attr
 from aiohttp import web
@@ -15,9 +15,6 @@ from .openapi_validation import (COOKIE_KEY, HEADER_KEY, PATH_KEY, QUERY_KEY,
                                  validate_request)
 from .rest_models import ErrorItemType, ErrorType
 
-
-def unwrap_envelope(payload: Dict) -> Tuple:
-    return tuple( payload.get(k) for k in ('data', 'error') )
 
 def body_to_dict(body: BodyModel) -> Dict:
     # openapi_core.extensions.models.factories.Model -> dict

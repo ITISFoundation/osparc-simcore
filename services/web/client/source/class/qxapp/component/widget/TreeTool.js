@@ -16,10 +16,17 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
 
     this.__buildLayout();
     this.buildTree();
+
+    this.addListener("keypress", function(keyEvent) {
+      if (keyEvent.getKeyIdentifier() === "F2") {
+        this.__changeLabel();
+      }
+    }, this);
   },
 
   events: {
-    "NodeDoubleClicked": "qx.event.type.Data"
+    "NodeDoubleClicked": "qx.event.type.Data",
+    "NodeLabelChanged": "qx.event.type.Data"
   },
 
   properties: {
@@ -35,7 +42,6 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
 
   members: {
     __tree: null,
-    __selectedNodeId: null,
 
     __buildLayout: function() {
       let tree = this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
@@ -73,6 +79,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
           createItem: () => new qxapp.component.widget.NodeTreeItem(),
           bindItem: (c, item, id) => {
             c.bindDefaultProperties(item, id);
+            c.bindProperty("label", "label", null, item, id);
             c.bindProperty("nodeId", "nodeId", null, item, id);
           }
         });
@@ -118,6 +125,86 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
         this.__tree.openNodeAndParents(nodeInTree);
         this.__tree.setSelection(new qx.data.Array([nodeInTree]));
       }
+    },
+
+    __changeLabel: function() {
+      let treeSelection = this.__tree.getSelection();
+      if (treeSelection.length < 1) {
+        return;
+      }
+      let selectedItem = treeSelection.toArray()[0];
+      const selectedNodeId = selectedItem.getNodeId();
+      if (selectedNodeId === "root") {
+        return;
+      }
+
+      let nodeLabelEditor = this.__createNodeLabelEditor(selectedItem);
+      const bounds = this.getLayoutParent().getBounds();
+      nodeLabelEditor.moveTo(bounds.left+100, bounds.top+150);
+      nodeLabelEditor.open();
+    },
+
+    __createNodeLabelEditor : function(selectedItem) {
+      const oldLabel = selectedItem.getLabel();
+      const maxWidth = 350;
+      const minWidth = 100;
+      const labelWidth = Math.min(Math.max(parseInt(oldLabel.length*4), minWidth), maxWidth);
+      let labelEditorWin = new qx.ui.window.Window("Rename").set({
+        appearance: "window-small-cap",
+        layout: new qx.ui.layout.HBox(4),
+        padding: 2,
+        modal: true,
+        showMaximize: false,
+        showMinimize: false,
+        width: labelWidth
+      });
+
+      // Create a text field in which to edit the data
+      let labelEditor = new qx.ui.form.TextField(oldLabel).set({
+        allowGrowX: true,
+        minWidth: labelWidth
+      });
+      labelEditorWin.add(labelEditor, {
+        flex: 1
+      });
+
+      labelEditorWin.addListener("appear", e => {
+        labelEditor.focus();
+        labelEditor.setTextSelection(0, labelEditor.getValue().length);
+      }, this);
+
+      // Create the "Save" button to close the cell editor
+      let save = new qx.ui.form.Button("Save");
+      save.addListener("execute", function(e) {
+        const newLabel = labelEditor.getValue();
+        selectedItem.setLabel(newLabel);
+        const data = {
+          nodeId: selectedItem.getNodeId(),
+          newLabel: newLabel
+        };
+        this.fireDataEvent("NodeLabelChanged", data);
+
+        labelEditorWin.close();
+      }, this);
+      labelEditorWin.add(save);
+
+      // Let user press Enter from the cell editor text field to finish.
+      let command = new qx.ui.command.Command("Enter");
+      command.addListener("execute", e => {
+        save.execute();
+        command.dispose();
+        command = null;
+      });
+
+      // Let user press Enter from the cell editor text field to finish.
+      let commandEsc = new qx.ui.command.Command("Esc");
+      commandEsc.addListener("execute", e => {
+        labelEditorWin.close();
+        commandEsc.dispose();
+        commandEsc = null;
+      });
+
+      return labelEditorWin;
     }
   }
 });
