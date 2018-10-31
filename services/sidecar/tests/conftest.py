@@ -18,9 +18,9 @@ import pytest
 from aiopg.sa import create_engine
 
 import sidecar
-from simcore_service_storage.datcore_wrapper import DatcoreWrapper
-from simcore_service_storage.dsm import DataStorageManager
-from simcore_service_storage.models import FileMetaData
+# from simcore_service_storage.datcore_wrapper import DatcoreWrapper
+# from simcore_service_storage.dsm import DataStorageManager
+# from simcore_service_storage.models import FileMetaData
 
 import utils
 from utils import (ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, RABBIT_PWD,
