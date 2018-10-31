@@ -68,7 +68,7 @@ def python27_exec(osparc_simcore_root_dir, tmpdir_factory, here):
 
 @pytest.fixture(scope='session')
 def python27_path(python27_exec):
-    return python27_exec.parent.parent
+    return Path(python27_exec).parent.parent
     # Assumes already created with make .venv27
 
 @pytest.fixture(scope='session')
