@@ -72,9 +72,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let workbenchView = this.__workbenchView = new qxapp.component.workbench.WorkbenchView(project.getWorkbenchModel());
       this.showInMainView(workbenchView, "root");
 
-      let settingsView = this.__settingsView = new qxapp.component.widget.SettingsView().set({
-        minHeight: 200,
-        maxHeight: 500
+      let settingsView = this.__settingsView = new qxapp.component.widget.NodeView().set({
+        minHeight: 200
       });
       settingsView.setWorkbenchModel(project.getWorkbenchModel());
     },
@@ -116,6 +115,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.nodeSelected(nodeId);
         }, this);
       });
+
+      this.__treeView.addListener("NodeLabelChanged", function(e) {
+        const data = e.getData();
+        const nodeId = data.nodeId;
+        const newLabel = data.newLabel;
+
+        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
+        nodeModel.setLabel(newLabel);
+      }, this);
 
       this.__settingsView.addListener("ShowViewer", e => {
         const data = e.getData();
@@ -273,8 +281,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       console.log(currentPipeline);
       let req = new qxapp.io.request.ApiRequest("/start_pipeline", "POST");
       let data = {};
-      data = currentPipeline;
-      data["pipeline_mockup_id"] = qxapp.utils.Utils.uuidv4();
+      data["workbench"] = currentPipeline;
+      data["project_id"] = this.getProjectModel().getUuid();
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
