@@ -20,7 +20,7 @@ servers:
       basePath:
         default: 'v0'
   - description: Production server
-    url: http://storage:{port}/v0'
+    url: 'http://storage:{port}/v0'
     variables:
       port:
         default: '8080'
