@@ -89,20 +89,28 @@ qx.Class.define("qxapp.data.Store", {
     getItemList: function(nodeInstanceUUID, outputKey) {
       console.log("getItemList for", nodeInstanceUUID, outputKey);
       switch (outputKey) {
-        case "materialDB": {
-          return [
-            {
-              key: "Air-UUID",
-              label: "Air"
-            }, {
-              key: "Brain-UUID",
-              label: "Brain"
-            }, {
-              key: "Eye-UUID",
-              label: "Eye"
-            }
-          ];
-        }
+        case "modeler":
+          return [{
+            key: "MODEL1-UUID",
+            label: "Model 1"
+          }, {
+            key: "MODEL2-UUID",
+            label: "Model 2"
+          }, {
+            key: "MODEL3-UUID",
+            label: "Model 3"
+          }];
+        case "materialDB":
+          return [{
+            key: "Air-UUID",
+            label: "Air"
+          }, {
+            key: "Brain-UUID",
+            label: "Brain"
+          }, {
+            key: "Eye-UUID",
+            label: "Eye"
+          }];
       }
       return [];
     },
@@ -149,7 +157,7 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 1
                 }
-              }
+              };
             }
             case "Brain-UUID": {
               return {
@@ -188,7 +196,7 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 1
                 }
-              }
+              };
             }
             case "Eye-UUID": {
               return {
@@ -227,7 +235,7 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 1
                 }
-              }
+              };
             }
           }
         }
@@ -543,7 +551,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Modeler Live link",
-              type: "data:application/s4l-api/modeler"
+              type: "node-output-list-api-v0.0.1"
             }
           }
         },
