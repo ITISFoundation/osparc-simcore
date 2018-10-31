@@ -1,0 +1,33 @@
+version: '3.4'
+services:
+  postgres:
+    image: postgres:10
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sidecar_test}
+      POSTGRES_USER: ${POSTGRES_USER:-scu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scu}
+    ports:
+      - '5432:5432'
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 18080:8080
+    depends_on:
+      - postgres
+  minio:
+    image: minio/minio
+    environment:
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-12345678}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-12345678}
+    ports:
+      - "9001:9000"
+    command: server /data
+  rabbit:
+    image: rabbitmq:3-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-rabbit}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-carrot}
+    ports:
+      - "15672:15672"
