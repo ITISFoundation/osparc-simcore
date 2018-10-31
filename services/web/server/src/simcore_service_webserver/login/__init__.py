@@ -6,25 +6,25 @@ This submodule is a modification of aiohttp-login
 """
 import logging
 
+import asyncpg
 from aiohttp import web
 
-import asyncpg
-
-from ..application_keys import APP_CONFIG_KEY, APP_DB_POOL_KEY
-from ..db import DSN
+from . import routes as login_routes
+from ..application_keys import (APP_CONFIG_KEY, APP_DB_POOL_KEY,
+                                APP_OPENAPI_SPECS_KEY)
+from ..db import DSN # TODO: get_db_config
 from .cfg import cfg
+from .settings import APP_LOGIN_CONFIG, CFG_LOGIN_STORAGE, get_storage
 from .storage import AsyncpgStorage
 
 log = logging.getLogger(__name__)
-
-APP_LOGIN_CONFIG = __name__ + ".config"
-CFG_LOGIN_STORAGE = __name__ + ".storage"
 
 
 async def pg_pool(app: web.Application):
 
     smtp_config = app[APP_CONFIG_KEY]['smtp']
     config = {"SMTP_{}".format(k.upper()): v for k, v in smtp_config.items()}
+    # TODO: test keys!
     #'SMTP_SENDER': None,
     #'SMTP_HOST': REQUIRED,
     #'SMTP_PORT': REQUIRED,
@@ -37,11 +37,11 @@ async def pg_pool(app: web.Application):
     config = (config or {}).copy()
     config['APP'] = app
 
+    # TODO: guarantee set/getters
     db_config = app[APP_CONFIG_KEY]['postgres']
     app[APP_DB_POOL_KEY] = await asyncpg.create_pool(dsn=DSN.format(**db_config), loop=app.loop)
 
-    # FIXME: replace by CFG_LOGIN_STORAGE
-    config['STORAGE'] = AsyncpgStorage(app[APP_DB_POOL_KEY])
+    config[CFG_LOGIN_STORAGE] = AsyncpgStorage(app[APP_DB_POOL_KEY]) #NOTE: this key belongs to cfg, not settings!
     cfg.configure(config)
 
     app[APP_LOGIN_CONFIG] = cfg
@@ -49,11 +49,15 @@ async def pg_pool(app: web.Application):
 
 def setup(app: web.Application):
     log.debug("Setting up %s ...", __name__)
+
+    specs = app[APP_OPENAPI_SPECS_KEY] # validated openapi specs
+
+    routes = login_routes.create(specs)
+    app.router.add_routes(routes)
+
     app.on_startup.append(pg_pool)
 
 
-def get_storage(app: web.Application):
-    return app[APP_LOGIN_CONFIG]['STORAGE']
 
 # alias
 setup_login = setup
