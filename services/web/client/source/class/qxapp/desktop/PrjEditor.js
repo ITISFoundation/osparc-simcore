@@ -72,9 +72,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let workbenchView = this.__workbenchView = new qxapp.component.workbench.WorkbenchView(project.getWorkbenchModel());
       this.showInMainView(workbenchView, "root");
 
-      let settingsView = this.__settingsView = new qxapp.component.widget.SettingsView().set({
-        minHeight: 200,
-        maxHeight: 500
+      let settingsView = this.__settingsView = new qxapp.component.widget.NodeView().set({
+        minHeight: 200
       });
       settingsView.setWorkbenchModel(project.getWorkbenchModel());
     },
@@ -116,6 +115,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.nodeSelected(nodeId);
         }, this);
       });
+
+      this.__treeView.addListener("NodeLabelChanged", function(e) {
+        const data = e.getData();
+        const nodeId = data.nodeId;
+        const newLabel = data.newLabel;
+
+        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
+        nodeModel.setLabel(newLabel);
+      }, this);
 
       this.__settingsView.addListener("ShowViewer", e => {
         const data = e.getData();
