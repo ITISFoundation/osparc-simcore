@@ -253,7 +253,6 @@ class Sidecar:
         fut = self._executor.pool.submit(self._bg_job, log_file)
 
         try:
-            import pdb; pdb.set_trace()
             docker_image = self._docker.image_name + ":" + self._docker.image_tag
             self._docker.client.containers.run(docker_image, "run",
                  detach=False, remove=True,
