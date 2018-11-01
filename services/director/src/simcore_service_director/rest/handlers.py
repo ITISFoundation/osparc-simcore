@@ -6,7 +6,7 @@ from aiohttp import web_exceptions, web
 from simcore_service_director import (config, exceptions, producer,
                                       registry_proxy, resources)
 
-from . import (api_converters, node_validator)
+from . import (node_validator)
 
 log = logging.getLogger(__name__)
 
