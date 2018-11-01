@@ -170,6 +170,7 @@ async def _set_adjacency_in_pipeline_db(project_id, dag_adjacency_list):
         pipeline = db_session.query(ComputationalPipeline).filter(ComputationalPipeline.project_id==project_id).one()            
         log.debug("Pipeline object found")
         pipeline.state = 0
+        pipeline.dag_adjacency_list = dag_adjacency_list
     except sqlalchemy.orm.exc.NoResultFound:
         # let's create one then
         pipeline = ComputationalPipeline(project_id=project_id, dag_adjacency_list=dag_adjacency_list, state=0)    
@@ -190,6 +191,8 @@ async def _set_tasks_in_tasks_db(project_id, tasks):
         task = tasks[node_id]
         try:
             comp_task = db_session.query(ComputationalTask).filter(and_(ComputationalTask.project_id==project_id, ComputationalTask.node_id==node_id)).one()
+            comp_task.job_id = None
+            comp_task.state = 0
             comp_task.image = task["image"]
             comp_task.schema = task["schema"]
             comp_task.inputs = task["inputs"]
@@ -213,20 +216,6 @@ async def _set_tasks_in_tasks_db(project_id, tasks):
 @comp_backend_routes.post("/start_pipeline")
 async def start_pipeline(request):
     #pylint:disable=broad-except
-
-    """
-    ---
-    description: This end-point starts a computational pipeline.
-    tags:
-    - services management
-    produces:
-    - application/json
-    responses:
-        "200":
-            description: successful operation
-        "405":
-            description: invalid HTTP Method
-    """
     # FIXME: this should be implemented generaly using async lazy initialization of db_session??
     #pylint: disable=W0603
     global db_session
