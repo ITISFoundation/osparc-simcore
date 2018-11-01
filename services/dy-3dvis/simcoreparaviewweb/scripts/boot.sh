@@ -41,9 +41,10 @@ else
     # visualizer is started (see below)
     echo "Waiting for server hostname/port to be defined"
     host_port="$(python3 src/getport.py)";
+    echo "Received hostname/port: ${host_port}"
     IFS=, read -a array <<< "$host_port"; 
-    echo "Received result pipeline id of ${array[0]}";
-    echo "Received result node uuid of ${array[1]}";
+    echo "Host name decoded as ${array[0]}";
+    echo "Port decoded as ${array[1]}";
     host_name=${array[0]}
     server_port=${array[1]}
 fi
