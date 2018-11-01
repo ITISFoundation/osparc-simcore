@@ -87,6 +87,9 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         if (ctrl && Object.prototype.hasOwnProperty.call(ctrl, "link")) {
           data[portId] = ctrl.link;
         }
+        if (data[portId] === "null") {
+          data[portId] = null;
+        }
       }
       return data;
     },
