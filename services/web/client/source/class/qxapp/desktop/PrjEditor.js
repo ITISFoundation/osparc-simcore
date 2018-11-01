@@ -327,7 +327,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __onPipelinesubmitted: function(e) {
       let req = e.getTarget();
 
-      const pipelineId = req.getResponse().project_id;
+      const pipelineId = req.getResponse()["project_id"];
       this.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
