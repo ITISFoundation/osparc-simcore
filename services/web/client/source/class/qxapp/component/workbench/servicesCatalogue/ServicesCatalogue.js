@@ -121,7 +121,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     __updateCompatibleList: function() {
       let newData = [];
-      if (this.__contextNodeId !== null && this.__contextPort !== null) {
+      const checkComptibility = false;
+      if (checkComptibility && this.__contextNodeId !== null && this.__contextPort !== null) {
         for (let i = 0; i < this.__allServices.length; i++) {
           if (this.__contextPort.isInput === true) {
             let outputsMap = this.__allServices[i].outputs;
