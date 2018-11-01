@@ -278,11 +278,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       const saveContainers = false;
       const savePosition = false;
       let currentPipeline = this.getProjectModel().getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
-      console.log(currentPipeline);
       let req = new qxapp.io.request.ApiRequest("/start_pipeline", "POST");
       let data = {};
       data["workbench"] = currentPipeline;
       data["project_id"] = this.getProjectModel().getUuid();
+      console.log(data);
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
