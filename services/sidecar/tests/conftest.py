@@ -1,8 +1,5 @@
-# TODO: W0611:Unused import ...
-# pylint: disable=W0611
-# TODO: W0613:Unused argument ...
-# pylint: disable=W0613
-#
+# pylint: disable=unused-argument
+# pylint: disable=unused-import
 # pylint: disable=W0621
 import asyncio
 import os
