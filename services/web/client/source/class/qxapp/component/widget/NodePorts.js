@@ -11,12 +11,13 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       decorator: "main"
     });
 
-    let atom = new qx.ui.basic.Atom().set({
-      label: nodeModel.getLabel(),
-      center : true
+    const title16Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"]);
+    let label = new qx.ui.basic.Label(nodeModel.getLabel()).set({
+      font: title16Font,
+      alignX: "center",
+      alignY: "middle"
     });
-
-    this._add(atom);
+    this._add(label);
 
     this.setNodeModel(nodeModel);
   },
@@ -72,7 +73,9 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
           if (port.type === "node-output-list-api-v0.0.1") {
             let nodeOutputList = new qxapp.component.widget.nodeOutput.NodeOutputList(this.getNodeModel().getNodeId(), portKey, port);
             let widget = nodeOutputList.getOutputWidget();
-            this._add(widget);
+            this._add(widget, {
+              flex: 1
+            });
           }
         } else {
           let toolTip = new qx.ui.tooltip.ToolTip(port.description);

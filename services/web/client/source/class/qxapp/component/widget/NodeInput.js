@@ -13,9 +13,13 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
 
     let atom = new qx.ui.basic.Atom().set({
       label: nodeModel.getLabel(),
-      center : true,
+      center: true,
       draggable: true,
       droppable: true
+    });
+    const title16Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"]);
+    atom.getChildControl("label").set({
+      font: title16Font
     });
 
     this._add(atom, {
