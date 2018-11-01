@@ -724,6 +724,12 @@ qx.Class.define("qxapp.data.Store", {
               description: "Enable automatic update of dispersive materials",
               type: "boolean",
               defaultValue: false
+            },
+            mapper: {
+              displayOrder: 3,
+              label: "Material Settings",
+              description: "Maps Model entities into Materials",
+              type: "mapper"
             }
           },
           outputs: {
