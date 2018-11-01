@@ -7,7 +7,7 @@ import requests
 from pytest_docker import docker_ip, docker_services
 
 logging.basicConfig(level=logging.DEBUG)
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # pylint:disable=redefined-outer-name
 
@@ -20,7 +20,7 @@ def is_responsive(url):
     except requests.exceptions.RequestException as _e:
         pass
     return False
-    
+
 
 @pytest.mark.enable_travis
 def test_integration(docker_ip, docker_services):
@@ -42,4 +42,4 @@ def test_integration(docker_ip, docker_services):
     # Contact the service.
     response = requests.get(url)
     response.raise_for_status()
-    _LOGGER.debug(response.text)
+    log.debug(response.text)

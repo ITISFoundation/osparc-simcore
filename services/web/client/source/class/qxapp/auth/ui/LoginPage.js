@@ -61,7 +61,11 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
 
       let loginBtn = new qx.ui.form.Button(this.tr("Log In"));
       loginBtn.addListener("execute", function() {
-        if (this.__form.validate()) {
+        this.__login();
+      }, this);
+      // Listen to "Enter" key
+      this.addListener("keypress", function(keyEvent) {
+        if (keyEvent.getKeyIdentifier() === "Enter") {
           this.__login();
         }
       }, this);
@@ -115,28 +119,31 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
     },
 
     __login: function() {
+      if (!this.__form.validate()) {
+        return;
+      }
+
       const email = this.__form.getItems().email;
       const pass = this.__form.getItems().password;
 
       let manager = qxapp.auth.Manager.getInstance();
 
-      manager.login(email.getValue(), pass.getValue(), function(success, msg) {
-        // TODO: implement in flash message.
-        // TODO: should get more specific error message produced by server. eg. invalid or unregistered user, ...
-        if (success) {
-          this.fireDataEvent("done", msg);
-        } else {
-          if (msg===null) {
-            msg = this.tr("Invalid email or password");
-          }
-          [email, pass].forEach(item => {
-            item.set({
-              invalidMessage: msg,
-              valid: false
-            });
+      let successFun = function(log) {
+        this.fireDataEvent("done", log.message);
+      };
+
+      let failFun = function(msg) {
+        // TODO: can get field info from response here
+        msg = String(msg) || this.tr("Introduced an invalid email or password");
+        [email, pass].forEach(item => {
+          item.set({
+            invalidMessage: msg,
+            valid: false
           });
-        }
-      }, this);
+        });
+      };
+
+      manager.login(email.getValue(), pass.getValue(), successFun, failFun, this);
     },
 
     resetValues: function() {

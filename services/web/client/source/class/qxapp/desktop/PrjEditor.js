@@ -1,174 +1,397 @@
 /* global window */
+
+/* eslint newline-per-chained-call: 0 */
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function(projectId) {
+  construct: function(projectModel) {
     this.base(arguments, "horizontal");
 
-    let splitter = this.__splitter = this.getChildControl("splitter");
+    this.setProjectModel(projectModel);
 
-    const settingsWidth = this.__settingsWidth = 500;
-    let settingsView = this.__settingsView = new qxapp.components.workbench.SettingsView().set({
-      width: Math.round(0.75 * settingsWidth)
+    let mainPanel = this.__mainPanel = new qxapp.desktop.mainPanel.MainPanel().set({
+      minWidth: 1000
     });
-
-    let settingsBox = this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
+    let sidePanel = this.__sidePanel = new qxapp.desktop.sidePanel.SidePanel().set({
       minWidth: 0,
-      visibility: "excluded",
-      maxWidth: settingsWidth,
-      width: Math.round(0.75 * settingsWidth)
+      maxWidth: 800,
+      width: 600
     });
 
-    settingsBox.add(settingsView, {
-      top: 0,
-      right: 0
-    });
+    this.add(mainPanel, 1); // flex 1
+    this.add(sidePanel, 0); // flex 0
 
-    this.add(settingsBox, 0);
+    this.initDefault();
+    this.connectEvents();
+  },
 
-    settingsBox.addListener("changeWidth", e => {
-      let width = e.getData();
-      if (width != 0) {
-        settingsView.setWidth(width);
-      }
-    });
+  properties: {
+    projectModel: {
+      check: "qxapp.data.model.ProjectModel",
+      nullable: false
+    },
 
-    let workbenchData = this.__getProjectDocument(projectId);
-    let workbench = this.__workbench = new qxapp.components.workbench.Workbench(workbenchData);
-    this.add(workbench, 1);
+    canStart: {
+      nullable: false,
+      init: true,
+      check: "Boolean",
+      apply : "__applyCanStart"
+    }
+  },
 
-    workbench.addListenerOnce("appear", () => {
-      workbench.getContentElement().getDomElement()
-        .addEventListener("transitionend", () => {
-          [
-            settingsView,
-            splitter,
-            settingsBox,
-            workbench
-          ].forEach(w => {
-            w.resetDecorator();
-          });
-          if (settingsBox.getWidth() === 0) {
-            settingsBox.exclude();
-          }
-        });
-    });
-
-
-
-    this.showSettings(false);
-
-    this.__settingsView.addListener("SettingsEdited", function() {
-      this.showSettings(false);
-    }, this);
-
-    this.__settingsView.addListener("ShowViewer", function(e) {
-      let data = e.getData();
-      let viewerWin = this.__createBrowserWindow(data.url, data.name);
-
-      //  const metadata = e.getData().metadata;
-      //  const nodeId = e.getData().nodeId;
-      //  let url = "http://" + window.location.hostname + ":" + metadata.viewer.port;
-      //  let viewerWin = this.__createBrowserWindow(url, metadata.name);
-
-      this.__workbench.addWindowToDesktop(viewerWin);
-
-      // Workaround for updating inputs
-      if (data.name === "3d-viewer") {
-        let urlUpdate = data.url + "/retrieve";
-        let req = new qx.io.request.Xhr();
-        req.set({
-          url: urlUpdate,
-          method: "POST"
-        });
-        req.send();
-      }
-    }, this);
-
-    // this.__settingsView.addListener("NodeProgress", function(e) {
-    //  const nodeId = e.getData()[0];
-    //  const progress = e.getData()[1];
-    //  this.__workbench.updateProgress(nodeId, progress);
-    // }, this);
-
-    this.__workbench.addListener("NodeDoubleClicked", function(e) {
-      let node = e.getData();
-      this.__settingsView.setNode(node);
-      this.showSettings(true);
-    }, this);
-
-    this.__transDeco = new qx.ui.decoration.Decorator().set({
-      transitionProperty: ["left", "right", "width"],
-      transitionDuration: "0.3s",
-      transitionTimingFunction: "ease"
-    });
+  events: {
+    "ChangeMainViewCaption": "qx.event.type.Data"
   },
 
   members: {
-    __pane: null,
+    __pipelineId: null,
+    __mainPanel: null,
+    __sidePanel: null,
+    __workbenchView: null,
+    __treeView: null,
+    __extraView: null,
+    __loggerView: null,
     __settingsView: null,
-    __settingsBox: null,
-    __workbench: null,
-    __settingsWidth: null,
-    __transDeco: null,
-    __splitter: null,
-    __projectId: null,
+    __currentNodeId: null,
 
-    showSettings: function(showSettings) {
-      if (showSettings) {
-        this.__settingsBox.show();
-      }
-      qx.ui.core.queue.Manager.flush();
-      this.__settingsBox.set({
-        decorator: this.__transDeco,
-        width: showSettings ? Math.round(this.__settingsWidth * 0.75) : 0
+    initDefault: function() {
+      let project = this.getProjectModel();
+
+      let treeView = this.__treeView = new qxapp.component.widget.TreeTool(project.getName(), project.getWorkbenchModel());
+      this.__sidePanel.setTopView(treeView);
+
+      let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
+        minHeight: 200,
+        maxHeight: 500
       });
-      this.__settingsView.set({
-        decorator: this.__transDeco
+      this.__sidePanel.setMidView(extraView);
+
+      let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView();
+      this.__sidePanel.setBottomView(loggerView);
+
+      let workbenchView = this.__workbenchView = new qxapp.component.workbench.WorkbenchView(project.getWorkbenchModel());
+      this.showInMainView(workbenchView, "root");
+
+      let settingsView = this.__settingsView = new qxapp.component.widget.NodeView().set({
+        minHeight: 200
       });
-      this.__workbench.set({
-        decorator: this.__transDeco
-      });
-      this.__splitter.set({
-        decorator: this.__transDeco
-      });
+      settingsView.setWorkbenchModel(project.getWorkbenchModel());
     },
 
-    __getProjectDocument: function(projectId) {
-      let workbenchData = {};
-      if (projectId === null || projectId === undefined) {
-        projectId = qxapp.utils.Utils.uuidv4();
+    connectEvents: function() {
+      this.__mainPanel.getControls().addListener("SavePressed", function() {
+        this.serializeProjectDocument();
+      }, this);
+
+      this.__mainPanel.getControls().addListener("StartPipeline", function() {
+        if (this.getCanStart()) {
+          this.__startPipeline();
+        } else {
+          this.__workbenchView.getLogger().info("Can not start pipeline");
+        }
+      }, this);
+
+      this.__mainPanel.getControls().addListener("StopPipeline", function() {
+        this.__stopPipeline();
+      }, this);
+
+      this.getProjectModel().getWorkbenchModel().addListener("WorkbenchModelChanged", function() {
+        this.__workbenchModelChanged();
+      }, this);
+
+      this.getProjectModel().getWorkbenchModel().addListener("ShowInLogger", e => {
+        const data = e.getData();
+        const nodeLabel = data.nodeLabel;
+        const msg = data.msg;
+        this.getLogger().info(nodeLabel, msg);
+      }, this);
+
+      [
+        this.__treeView,
+        this.__workbenchView
+      ].forEach(wb => {
+        wb.addListener("NodeDoubleClicked", e => {
+          let nodeId = e.getData();
+          this.nodeSelected(nodeId);
+        }, this);
+      });
+
+      this.__treeView.addListener("NodeLabelChanged", function(e) {
+        const data = e.getData();
+        const nodeId = data.nodeId;
+        const newLabel = data.newLabel;
+
+        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
+        nodeModel.setLabel(newLabel);
+      }, this);
+
+      this.__settingsView.addListener("ShowViewer", e => {
+        const data = e.getData();
+        const url = data.url;
+        const name = data.name;
+        // const nodeId = data.nodeId;
+
+        let iFrame = this.__createIFrame(url);
+        this.__addWidgetToMainView(iFrame);
+
+        // Workaround for updating inputs
+        if (name === "3d-viewer") {
+          let urlUpdate = url + "/retrieve";
+          let req = new qx.io.request.Xhr();
+          req.set({
+            url: urlUpdate,
+            method: "POST"
+          });
+          req.send();
+        }
+      }, this);
+    },
+
+    nodeSelected: function(nodeId) {
+      if (!nodeId) {
+        return;
+      }
+
+      this.__currentNodeId = nodeId;
+      this.__treeView.nodeSelected(nodeId);
+
+      if (nodeId === "root") {
+        const workbenchModel = this.getProjectModel().getWorkbenchModel();
+        this.__workbenchView.loadModel(workbenchModel);
+        this.showInMainView(this.__workbenchView, nodeId);
       } else {
-        workbenchData = qxapp.data.Store.getInstance().getProjectList()[projectId].workbench;
-      }
-      this.__projectId = projectId;
+        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
 
-      return workbenchData;
+        let widget;
+        if (nodeModel.isContainer()) {
+          widget = this.__workbenchView;
+        } else {
+          this.__settingsView.setNodeModel(nodeModel);
+          if (nodeModel.getMetaData().type === "dynamic") {
+            const widgetManager = qxapp.component.widget.WidgetManager.getInstance();
+            widget = widgetManager.getWidgetForNode(nodeModel);
+            if (!widget) {
+              widget = this.__settingsView;
+            }
+          } else {
+            widget = this.__settingsView;
+          }
+        }
+        this.showInMainView(widget, nodeId);
+
+        if (nodeModel.isContainer()) {
+          this.__workbenchView.loadModel(nodeModel);
+        }
+      }
+
+      // SHow screenshots in the ExtraView
+      if (nodeId === "root") {
+        this.showScreenshotInExtraView("workbench");
+      } else {
+        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
+        if (nodeModel.isContainer()) {
+          this.showScreenshotInExtraView("container");
+        } else {
+          let nodeKey = nodeModel.getMetaData().key;
+          if (nodeKey.includes("file-picker")) {
+            this.showScreenshotInExtraView("file-picker");
+          } else if (nodeKey.includes("modeler")) {
+            this.showScreenshotInExtraView("modeler");
+          } else if (nodeKey.includes("3d-viewer")) {
+            this.showScreenshotInExtraView("postpro");
+          } else if (nodeKey.includes("viewer")) {
+            this.showScreenshotInExtraView("notebook");
+          } else if (nodeKey.includes("jupyter")) {
+            this.showScreenshotInExtraView("notebook");
+          } else {
+            this.showScreenshotInExtraView("form");
+          }
+        }
+      }
     },
 
-    __createBrowserWindow: function(url, name) {
-      console.log("Accessing:", url);
-      let win = new qx.ui.window.Window(name);
-      win.setShowMinimize(false);
-      win.setLayout(new qx.ui.layout.VBox(5));
-      let iframe = new qx.ui.embed.Iframe().set({
-        width: 1050,
-        height: 700,
-        minWidth: 600,
-        minHeight: 500,
-        source: url,
-        decorator : null
-      });
-      win.add(iframe, {
-        flex: 1
-      });
-      win.moveTo(150, 150);
+    __workbenchModelChanged: function() {
+      this.__treeView.buildTree();
+      this.__treeView.nodeSelected(this.__currentNodeId);
+    },
 
-      win.addListener("dblclick", function(e) {
-        e.stopPropagation();
+    showInMainView: function(widget, nodeId) {
+      if (this.__mainPanel.isPropertyInitialized("mainView")) {
+        let previousWidget = this.__mainPanel.getMainView();
+        widget.addListener("Finished", function() {
+          this.__mainPanel.setMainView(previousWidget);
+        }, this);
+      }
+
+      this.__mainPanel.setMainView(widget);
+      let nodePath = this.getProjectModel().getWorkbenchModel().getPathWithId(nodeId);
+      this.fireDataEvent("ChangeMainViewCaption", nodePath);
+    },
+
+    showInExtraView: function(widget) {
+      this.__sidePanel.setMidView(widget);
+    },
+
+    showScreenshotInExtraView: function(name) {
+      let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_"+name+".png").set({
+        scale: true,
+        allowShrinkX: true,
+        allowShrinkY: true
+      });
+      this.__sidePanel.setMidView(imageWidget);
+    },
+
+    getLogger: function() {
+      return this.__loggerView;
+    },
+
+    __startPipeline: function() {
+      // ui start pipeline
+      // this.clearProgressData();
+
+      let socket = qxapp.wrappers.WebSocket.getInstance();
+
+      // callback for incoming logs
+      const slotName = "logger";
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, function(data) {
+          let d = JSON.parse(data);
+          let node = d["Node"];
+          let msg = d["Message"];
+          this.__updateLogger(node, msg);
+        }, this);
+      }
+      socket.emit(slotName);
+
+      // callback for incoming progress
+      if (!socket.slotExists("progress")) {
+        socket.on("progress", function(data) {
+          let d = JSON.parse(data);
+          let node = d["Node"];
+          let progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
+          this.__workbenchView.updateProgress(node, progress);
+        }, this);
+      }
+
+      // post pipeline
+      this.__pipelineId = null;
+      const saveContainers = false;
+      const savePosition = false;
+      let currentPipeline = this.getProjectModel().getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
+      console.log(currentPipeline);
+      let req = new qxapp.io.request.ApiRequest("/start_pipeline", "POST");
+      let data = {};
+      data["workbench"] = currentPipeline;
+      data["project_id"] = this.getProjectModel().getUuid();
+      req.set({
+        requestData: qx.util.Serializer.toJson(data)
+      });
+      req.addListener("success", this.__onPipelinesubmitted, this);
+      req.addListener("error", e => {
+        this.setCanStart(true);
+        this.getLogger().error("Workbench", "Error submitting pipeline");
+      }, this);
+      req.addListener("fail", e => {
+        this.setCanStart(true);
+        this.getLogger().error("Workbench", "Failed submitting pipeline");
+      }, this);
+      req.send();
+
+      this.getLogger().info("Workbench", "Starting pipeline");
+    },
+
+    __stopPipeline: function() {
+      let req = new qxapp.io.request.ApiRequest("/stop_pipeline", "POST");
+      let data = {};
+      data["pipeline_id"] = this.__pipelineId;
+      req.set({
+        requestData: qx.util.Serializer.toJson(data)
+      });
+      req.addListener("success", this.__onPipelineStopped, this);
+      req.addListener("error", e => {
+        this.setCanStart(false);
+        this.getLogger().error("Workbench", "Error stopping pipeline");
+      }, this);
+      req.addListener("fail", e => {
+        this.setCanStart(false);
+        this.getLogger().error("Workbench", "Failed stopping pipeline");
+      }, this);
+      // req.send();
+
+      // temporary solution
+      this.setCanStart(true);
+
+      this.getLogger().info("Workbench", "Stopping pipeline. Not yet implemented");
+    },
+
+    __onPipelinesubmitted: function(e) {
+      let req = e.getTarget();
+
+      const pipelineId = req.getResponse().pipeline_id;
+      this.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
+      const notGood = [null, undefined, -1];
+      if (notGood.includes(pipelineId)) {
+        this.setCanStart(true);
+        this.__pipelineId = null;
+        this.getLogger().error("Workbench", "Submition failed");
+      } else {
+        this.setCanStart(false);
+        this.__pipelineId = pipelineId;
+        this.getLogger().info("Workbench", "Pipeline started");
+      }
+    },
+
+    __onPipelineStopped: function(e) {
+      this.__workbenchView.clearProgressData();
+
+      this.setCanStart(true);
+    },
+
+    __applyCanStart: function(value, old) {
+      this.__mainPanel.getControls().setCanStart(value);
+    },
+
+    __updateLogger: function(nodeId, msg) {
+      let node = this.__workbenchView.getNodeUI(nodeId);
+      if (node) {
+        this.getLogger().info(node.getCaption(), msg);
+      }
+    },
+
+    __createIFrame: function(url) {
+      let iFrame = new qx.ui.embed.Iframe().set({
+        source: url
+      });
+      return iFrame;
+    },
+
+    __addWidgetToMainView: function(widget) {
+      let widgetContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+
+      widgetContainer.add(widget, {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
       });
 
-      return win;
+      let closeBtn = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/window-close/24",
+        zIndex: widget.getZIndex() + 1
+      });
+      widgetContainer.add(closeBtn, {
+        right: 0,
+        top: 0
+      });
+      let previousWidget = this.__mainPanel.getMainView();
+      closeBtn.addListener("execute", function() {
+        this.__mainPanel.setMainView(previousWidget);
+      }, this);
+      this.__mainPanel.setMainView(widgetContainer);
+    },
+
+    serializeProjectDocument: function() {
+      console.log("serializeProject", this.getProjectModel().serializeProject());
     }
   }
 });

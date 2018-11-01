@@ -3,6 +3,15 @@
 # FIXME: remove explicit dns
 version: '3.4'
 services:
+  apihub:
+    image: masu.speag.com/simcore/apihub:3.9
+    deploy:
+      placement:
+       constraints:
+          - node.platform.os == linux
+    ports:
+      - '8043:8043'
+      
   director:
     image: masu.speag.com/simcore/workbench/director:3.9
     #image: services_director:latest
@@ -49,6 +58,7 @@ services:
     environment:
       - DIRECTOR_HOST=director
       - DIRECTOR_PORT=8001
+      - OSPARC_PUBLIC_URL=http://osparc01.itis.ethz.ch:9081
       - POSTGRES_ENDPOINT=masu.speag.com:5432
       - POSTGRES_USER=scu
       - POSTGRES_PASSWORD=<enter pwd>

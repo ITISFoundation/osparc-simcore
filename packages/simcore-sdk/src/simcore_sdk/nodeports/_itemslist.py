@@ -6,16 +6,16 @@ from collections import MutableSequence
 from simcore_sdk.nodeports import exceptions
 from simcore_sdk.nodeports._item import DataItem
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
-class DataItemsList(MutableSequence): 
+class DataItemsList(MutableSequence):
     """This class contains a list of Data Items."""
 
     def __init__(self, data=None, read_only=False, change_cb=None, get_node_from_node_uuid_cb=None):
-        _LOGGER.debug("Creating DataItemsList with %s", data)
+        log.debug("Creating DataItemsList with %s", data)
         if data is None:
             data = []
-        
+
         data_keys = set()
         for item in data:
             if not isinstance(item, DataItem):
@@ -29,14 +29,14 @@ class DataItemsList(MutableSequence):
 
         self.__change_notifier = change_cb
         self.__get_node_from_node_uuid_cb = get_node_from_node_uuid_cb
-        self.__assign_change_notifier_to_data()        
-    
+        self.__assign_change_notifier_to_data()
+
     @property
     def change_notifier(self):
         """Callback function to be set if client code wants notifications when
         an item is modified or replaced"""
         return self.__change_notifier
-    
+
     @change_notifier.setter
     def change_notifier(self, value):
         self.__change_notifier = value
@@ -52,16 +52,16 @@ class DataItemsList(MutableSequence):
         self.__assign_change_notifier_to_data()
 
     def __setitem__(self, index, value):
-        _LOGGER.debug("Setting item %s with %s", index, value)
+        log.debug("Setting item %s with %s", index, value)
         if self.read_only:
             raise exceptions.ReadOnlyError(self)
         if not isinstance(value, DataItem):
             raise TypeError
         if isinstance(index, str):
-            # it might be a key            
+            # it might be a key
             index = self.__find_index_from_key(index)
         if not index < len(self.__lst):
-            raise exceptions.UnboundPortError(index)    
+            raise exceptions.UnboundPortError(index)
         # check for uniqueness
         stored_index = self.__find_index_from_key(value.key)
         if stored_index != index:
@@ -70,32 +70,32 @@ class DataItemsList(MutableSequence):
         self.__lst[index] = value
         self.__assign_change_notifier_to_data()
         self.__notify_client()
-        
+
 
     def __notify_client(self):
         if self.change_notifier and callable(self.change_notifier):
             self.change_notifier() #pylint: disable=not-callable
 
     def __getitem__(self, index):
-        _LOGGER.debug("Getting item %s", index)
+        log.debug("Getting item %s", index)
         if isinstance(index, str):
             # it might be a key
-            index = self.__find_index_from_key(index)            
+            index = self.__find_index_from_key(index)
         if index < len(self.__lst):
             return self.__lst[index]
         raise exceptions.UnboundPortError(index)
 
-    def __len__(self):        
+    def __len__(self):
         return len(self.__lst)
 
     def __delitem__(self, index):
-        _LOGGER.debug("Deleting item %s", index)
+        log.debug("Deleting item %s", index)
         if self.read_only:
             raise exceptions.ReadOnlyError(self)
         del self.__lst[index]
 
     def insert(self, index, value):
-        _LOGGER.debug("Inserting item %s at %s", value, index)
+        log.debug("Inserting item %s at %s", value, index)
         if self.read_only:
             raise exceptions.ReadOnlyError(self)
         if not isinstance(value, DataItem):
@@ -110,7 +110,7 @@ class DataItemsList(MutableSequence):
     def __find_index_from_key(self, item_key):
         indices = [index for index in range(0, len(self.__lst)) if self.__lst[index].key == item_key]
         if not indices:
-            return len(self.__lst)            
+            return len(self.__lst)
         if len(indices) > 1:
             raise exceptions.InvalidProtocolError(indices)
         return indices[0]

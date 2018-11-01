@@ -9,7 +9,19 @@
 ************************************************************************ */
 
 qx.Theme.define("qxapp.theme.Appearance", {
-  extend: qx.theme.indigo.Appearance,
+  extend: osparc.theme.osparcdark.Appearance,
 
-  appearances: {}
+  appearances: {
+    "pb-list": {
+      include: "list",
+      alias:   "list",
+      style: function(states) {
+        return {
+          decorator: null,
+          padding: [0, 0]
+        };
+      }
+    },
+    "pb-listitem": "material-button"
+  }
 });
