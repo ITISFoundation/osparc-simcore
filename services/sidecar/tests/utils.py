@@ -77,9 +77,7 @@ def setup_sleepers(url):
     db_session.flush()
     project_id = pipeline.project_id
 
-    task_id_1 = 820
     node_id_1 = "e609a68c-d743-4a12-9745-f31734d1b911"
-    job_id_1 = "79da6b3a-d832-4ec0-b484-fc13e7a11af2"
     internal_id_1 = 1
 
     node_schema = {
@@ -132,9 +130,7 @@ def setup_sleepers(url):
     db_session.add(comp_task_1)
     db_session.commit()
 
-    task_id_2 = 821
     node_id_2 = "3e5103b3-8930-4025-846b-b8995460379e"
-    job_id_2 = "1c68fcb2-806a-40cb-a223-1c282279e51b"
     internal_id_2 = 2
 
     node_inputs_2 = {"in_1":{"nodeUuid": "e609a68c-d743-4a12-9745-f31734d1b911", "output":"out_1"}, "in_2":{"nodeUuid": "e609a68c-d743-4a12-9745-f31734d1b911", "output":"out_2"}}
