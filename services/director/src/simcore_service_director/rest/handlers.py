@@ -3,7 +3,7 @@ import logging
 import pkg_resources
 import yaml
 from aiohttp import web_exceptions, web
-from simcore_service_director import (config, exceptions, producer,
+from simcore_service_director import (exceptions, producer,
                                       registry_proxy, resources)
 
 from . import (node_validator)
