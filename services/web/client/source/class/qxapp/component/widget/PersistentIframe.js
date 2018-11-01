@@ -44,6 +44,7 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
   },
   members: {
     __iframe: null,
+    // override
     _createContentElement : function() {
       var iframe = this.__iframe = this.base(arguments);
       var standin = new qx.html.Element("div");
@@ -65,6 +66,7 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
       }, this);
       return standin;
     },
+    // override
     _getIframeElement: function() {
       return this.__iframe;
     }
