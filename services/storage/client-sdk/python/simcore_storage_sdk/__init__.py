@@ -26,8 +26,8 @@ from simcore_storage_sdk.api.users_api import UsersApi
 from simcore_storage_sdk.api_client import ApiClient
 from simcore_storage_sdk.configuration import Configuration
 # import models into sdk package
-from simcore_storage_sdk.models.inline_object import InlineObject
-from simcore_storage_sdk.models.inline_object1 import InlineObject1
+from simcore_storage_sdk.models.body import Body
+from simcore_storage_sdk.models.body1 import Body1
 from simcore_storage_sdk.models.inline_response200 import InlineResponse200
 from simcore_storage_sdk.models.inline_response2001 import InlineResponse2001
 from simcore_storage_sdk.models.inline_response2001_data import InlineResponse2001Data

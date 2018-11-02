@@ -48,8 +48,10 @@ class InlineResponse2001(object):
         self._error = None
         self.discriminator = None
 
-        self.data = data
-        self.error = error
+        if data is not None:
+            self.data = data
+        if error is not None:
+            self.error = error
 
     @property
     def data(self):
@@ -69,8 +71,6 @@ class InlineResponse2001(object):
         :param data: The data of this InlineResponse2001.  # noqa: E501
         :type: InlineResponse2001Data
         """
-        if data is None:
-            raise ValueError("Invalid value for `data`, must not be `None`")  # noqa: E501
 
         self._data = data
 
@@ -92,8 +92,6 @@ class InlineResponse2001(object):
         :param error: The error of this InlineResponse2001.  # noqa: E501
         :type: InlineResponse200Error
         """
-        if error is None:
-            raise ValueError("Invalid value for `error`, must not be `None`")  # noqa: E501
 
         self._error = error
 

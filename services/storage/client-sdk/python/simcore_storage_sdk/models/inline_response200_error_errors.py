@@ -54,10 +54,12 @@ class InlineResponse200ErrorErrors(object):
         self._resource = None
         self.discriminator = None
 
-        self.code = code
+        if code is not None:
+            self.code = code
         if field is not None:
             self.field = field
-        self.message = message
+        if message is not None:
+            self.message = message
         if resource is not None:
             self.resource = resource
 
@@ -81,8 +83,6 @@ class InlineResponse200ErrorErrors(object):
         :param code: The code of this InlineResponse200ErrorErrors.  # noqa: E501
         :type: str
         """
-        if code is None:
-            raise ValueError("Invalid value for `code`, must not be `None`")  # noqa: E501
 
         self._code = code
 
@@ -129,8 +129,6 @@ class InlineResponse200ErrorErrors(object):
         :param message: The message of this InlineResponse200ErrorErrors.  # noqa: E501
         :type: str
         """
-        if message is None:
-            raise ValueError("Invalid value for `message`, must not be `None`")  # noqa: E501
 
         self._message = message
 

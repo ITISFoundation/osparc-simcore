@@ -55,7 +55,8 @@ class InlineResponse200ErrorLogs(object):
             self.level = level
         if logger is not None:
             self.logger = logger
-        self.message = message
+        if message is not None:
+            self.message = message
 
     @property
     def level(self):
@@ -129,8 +130,6 @@ class InlineResponse200ErrorLogs(object):
         :param message: The message of this InlineResponse200ErrorLogs.  # noqa: E501
         :type: str
         """
-        if message is None:
-            raise ValueError("Invalid value for `message`, must not be `None`")  # noqa: E501
 
         self._message = message
 

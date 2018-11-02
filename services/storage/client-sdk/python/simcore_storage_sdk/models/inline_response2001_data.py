@@ -51,9 +51,12 @@ class InlineResponse2001Data(object):
         self._query_value = None
         self.discriminator = None
 
-        self.body_value = body_value
-        self.path_value = path_value
-        self.query_value = query_value
+        if body_value is not None:
+            self.body_value = body_value
+        if path_value is not None:
+            self.path_value = path_value
+        if query_value is not None:
+            self.query_value = query_value
 
     @property
     def body_value(self):
@@ -73,8 +76,6 @@ class InlineResponse2001Data(object):
         :param body_value: The body_value of this InlineResponse2001Data.  # noqa: E501
         :type: dict(str, str)
         """
-        if body_value is None:
-            raise ValueError("Invalid value for `body_value`, must not be `None`")  # noqa: E501
 
         self._body_value = body_value
 
@@ -96,8 +97,6 @@ class InlineResponse2001Data(object):
         :param path_value: The path_value of this InlineResponse2001Data.  # noqa: E501
         :type: str
         """
-        if path_value is None:
-            raise ValueError("Invalid value for `path_value`, must not be `None`")  # noqa: E501
 
         self._path_value = path_value
 
@@ -119,8 +118,6 @@ class InlineResponse2001Data(object):
         :param query_value: The query_value of this InlineResponse2001Data.  # noqa: E501
         :type: str
         """
-        if query_value is None:
-            raise ValueError("Invalid value for `query_value`, must not be `None`")  # noqa: E501
 
         self._query_value = query_value
 

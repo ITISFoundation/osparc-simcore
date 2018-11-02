@@ -570,7 +570,7 @@ class DefaultApi(object):
         :param async_req bool
         :param str file_id: (required)
         :param str location_id: (required)
-        :param InlineObject1 inline_object1:
+        :param Body1 body1:
         :return: InlineResponse2003
                  If the method is called asynchronously,
                  returns the request thread.
@@ -593,7 +593,7 @@ class DefaultApi(object):
         :param async_req bool
         :param str file_id: (required)
         :param str location_id: (required)
-        :param InlineObject1 inline_object1:
+        :param Body1 body1:
         :return: InlineResponse2003
                  If the method is called asynchronously,
                  returns the request thread.
@@ -601,7 +601,7 @@ class DefaultApi(object):
 
         local_var_params = locals()
 
-        all_params = ['file_id', 'location_id', 'inline_object1']  # noqa: E501
+        all_params = ['file_id', 'location_id', 'body1']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -640,8 +640,8 @@ class DefaultApi(object):
         local_var_files = {}
 
         body_params = None
-        if 'inline_object1' in local_var_params:
-            body_params = local_var_params['inline_object1']
+        if 'body1' in local_var_params:
+            body_params = local_var_params['body1']
         # HTTP header `Accept`
         header_params['Accept'] = self.api_client.select_header_accept(
             ['application/json'])  # noqa: E501
