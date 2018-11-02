@@ -705,6 +705,14 @@ qx.Class.define("qxapp.data.Store", {
             email: "maiz@itis.ethz.ch"
           }],
           contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultMaterials: {
+              displayOrder: 0,
+              label: "Default Material Settings",
+              description: "Default Material Settings",
+              type: "node-output-list-api-v0.0.1"
+            }
+          },
           inputs: {
             updateDispersive: {
               displayOrder: 0,
@@ -713,13 +721,27 @@ qx.Class.define("qxapp.data.Store", {
               type: "boolean",
               defaultValue: false
             },
-            mapper: {
+            modeler: {
               displayOrder: 1,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/s4l-api/modeler"
+            },
+            materialDB: {
+              displayOrder: 2,
+              label: "MaterialDB",
+              description: "Live Link to Material DB",
+              type: "data:application/s4l-api/materialDB"
+            },
+            mapper: {
+              displayOrder: 3,
               label: "Material Settings",
               description: "Maps Model entities into Materials",
-              type: "mapper"
-              // type: "data:application/s4l-api/modeler"
-              // type: "data:application/s4l-api/materialDB"
+              type: "mapper",
+              maps: {
+                branch: "service/demodec/dynamic/itis/s4l/MaterialDB",
+                leave: "service/demodec/dynamic/itis/s4l/Modeler"
+              }
             }
           },
           outputs: {
@@ -749,12 +771,14 @@ qx.Class.define("qxapp.data.Store", {
               description: "Live Link to Modeler",
               type: "data:application/s4l-api/modeler"
             },
-            boundarySetting: {
+            mapper: {
               displayOrder: 1,
-              label: "BoundarySetting",
-              description: "Boundary Settings",
-              type: "number",
-              defaultValue: 3
+              label: "Boundary Conditions",
+              description: "Maps Model entities into Boundary Conditions",
+              type: "mapper",
+              maps: {
+                leave: "service/demodec/dynamic/itis/s4l/Modeler"
+              }
             }
           },
           outputs: {
@@ -777,6 +801,14 @@ qx.Class.define("qxapp.data.Store", {
             email: "maiz@itis.ethz.ch"
           }],
           contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultBoundaries: {
+              displayOrder: 0,
+              label: "Default Boundary Settings",
+              description: "Default Boundary Settings",
+              type: "node-output-list-api-v0.0.1"
+            }
+          },
           inputs: {
             modeler: {
               displayOrder: 0,

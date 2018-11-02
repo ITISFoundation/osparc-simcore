@@ -1116,9 +1116,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "ed4c85a8-c20f-4acd-8e1e-5161301e2f3d": {
               key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
-              inputs: {
-                "boundarySetting": 3
-              },
               inputNodes: [
                 "17a932a0-f401-4571-9c55-b579f5050d37"
               ],
