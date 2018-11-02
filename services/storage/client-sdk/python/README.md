@@ -67,7 +67,7 @@ except ApiException as e:
 
 ## Documentation for API Endpoints
 
-All URIs are relative to *http://{host}:{port}/v0*
+All URIs are relative to *http://localhost:11111/v0*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
@@ -84,8 +84,8 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
- - [Body](docs/Body.md)
- - [Body1](docs/Body1.md)
+ - [InlineObject](docs/InlineObject.md)
+ - [InlineObject1](docs/InlineObject1.md)
  - [InlineResponse200](docs/InlineResponse200.md)
  - [InlineResponse2001](docs/InlineResponse2001.md)
  - [InlineResponse2001Data](docs/InlineResponse2001Data.md)

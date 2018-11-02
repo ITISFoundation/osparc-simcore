@@ -370,6 +370,7 @@ class DefaultApi(object):
         :param async_req bool
         :param str location_id: (required)
         :param str user_id: (required)
+        :param str uuid_filter:
         :return: list[InlineResponse2003]
                  If the method is called asynchronously,
                  returns the request thread.
@@ -392,6 +393,7 @@ class DefaultApi(object):
         :param async_req bool
         :param str location_id: (required)
         :param str user_id: (required)
+        :param str uuid_filter:
         :return: list[InlineResponse2003]
                  If the method is called asynchronously,
                  returns the request thread.
@@ -399,7 +401,7 @@ class DefaultApi(object):
 
         local_var_params = locals()
 
-        all_params = ['location_id', 'user_id']  # noqa: E501
+        all_params = ['location_id', 'user_id', 'uuid_filter']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -431,6 +433,8 @@ class DefaultApi(object):
         query_params = []
         if 'user_id' in local_var_params:
             query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
+        if 'uuid_filter' in local_var_params:
+            query_params.append(('uuid_filter', local_var_params['uuid_filter']))  # noqa: E501
 
         header_params = {}
 
@@ -461,35 +465,37 @@ class DefaultApi(object):
             _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats)
 
-    def get_storage_locations(self, **kwargs):  # noqa: E501
+    def get_storage_locations(self, user_id, **kwargs):  # noqa: E501
         """Get available storage locations  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.get_storage_locations(async_req=True)
+        >>> thread = api.get_storage_locations(user_id, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
+        :param str user_id: (required)
         :return: list[InlineResponse2002]
                  If the method is called asynchronously,
                  returns the request thread.
         """
         kwargs['_return_http_data_only'] = True
         if kwargs.get('async_req'):
-            return self.get_storage_locations_with_http_info(**kwargs)  # noqa: E501
+            return self.get_storage_locations_with_http_info(user_id, **kwargs)  # noqa: E501
         else:
-            (data) = self.get_storage_locations_with_http_info(**kwargs)  # noqa: E501
+            (data) = self.get_storage_locations_with_http_info(user_id, **kwargs)  # noqa: E501
             return data
 
-    def get_storage_locations_with_http_info(self, **kwargs):  # noqa: E501
+    def get_storage_locations_with_http_info(self, user_id, **kwargs):  # noqa: E501
         """Get available storage locations  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.get_storage_locations_with_http_info(async_req=True)
+        >>> thread = api.get_storage_locations_with_http_info(user_id, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
+        :param str user_id: (required)
         :return: list[InlineResponse2002]
                  If the method is called asynchronously,
                  returns the request thread.
@@ -497,7 +503,7 @@ class DefaultApi(object):
 
         local_var_params = locals()
 
-        all_params = []  # noqa: E501
+        all_params = ['user_id']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -511,12 +517,18 @@ class DefaultApi(object):
                 )
             local_var_params[key] = val
         del local_var_params['kwargs']
+        # verify the required parameter 'user_id' is set
+        if ('user_id' not in local_var_params or
+                local_var_params['user_id'] is None):
+            raise ValueError("Missing the required parameter `user_id` when calling `get_storage_locations`")  # noqa: E501
 
         collection_formats = {}
 
         path_params = {}
 
         query_params = []
+        if 'user_id' in local_var_params:
+            query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
 
         header_params = {}
 
@@ -558,7 +570,7 @@ class DefaultApi(object):
         :param async_req bool
         :param str file_id: (required)
         :param str location_id: (required)
-        :param Body1 body1:
+        :param InlineObject1 inline_object1:
         :return: InlineResponse2003
                  If the method is called asynchronously,
                  returns the request thread.
@@ -581,7 +593,7 @@ class DefaultApi(object):
         :param async_req bool
         :param str file_id: (required)
         :param str location_id: (required)
-        :param Body1 body1:
+        :param InlineObject1 inline_object1:
         :return: InlineResponse2003
                  If the method is called asynchronously,
                  returns the request thread.
@@ -589,7 +601,7 @@ class DefaultApi(object):
 
         local_var_params = locals()
 
-        all_params = ['file_id', 'location_id', 'body1']  # noqa: E501
+        all_params = ['file_id', 'location_id', 'inline_object1']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -628,8 +640,8 @@ class DefaultApi(object):
         local_var_files = {}
 
         body_params = None
-        if 'body1' in local_var_params:
-            body_params = local_var_params['body1']
+        if 'inline_object1' in local_var_params:
+            body_params = local_var_params['inline_object1']
         # HTTP header `Accept`
         header_params['Accept'] = self.api_client.select_header_accept(
             ['application/json'])  # noqa: E501

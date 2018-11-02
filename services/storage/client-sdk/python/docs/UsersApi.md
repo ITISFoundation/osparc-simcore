@@ -1,6 +1,6 @@
 # simcore_storage_sdk.UsersApi
 
-All URIs are relative to *http://{host}:{port}/v0*
+All URIs are relative to *http://localhost:11111/v0*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------

@@ -630,6 +630,12 @@ paths:
   /locations:
     get:
       operationId: get_storage_locations
+      parameters:
+      - in: query
+        name: user_id
+        required: true
+        schema:
+          type: string
       responses:
         '200':
           content:
@@ -745,6 +751,11 @@ paths:
       - in: query
         name: user_id
         required: true
+        schema:
+          type: string
+      - in: query
+        name: uuid_filter
+        required: false
         schema:
           type: string
       responses:
@@ -1151,14 +1162,16 @@ paths:
       summary: Update File Metadata
 servers:
 - description: Development server
-  url: http://{host}:{port}/v0
+  url: http://{host}:{port}/{basePath}
   variables:
+    basePath:
+      default: v0
     host:
       default: localhost
     port:
-      default: '8001'
+      default: '11111'
 - description: Production server
-  url: https://storage:{port}/v0'
+  url: http://storage:{port}/v0
   variables:
     port:
       default: '8080'

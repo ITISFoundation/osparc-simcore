@@ -44,7 +44,7 @@ class TestsApi(object):
         :param async_req bool
         :param str action: (required)
         :param str data:
-        :param Body body:
+        :param InlineObject inline_object:
         :return: InlineResponse2001
                  If the method is called asynchronously,
                  returns the request thread.
@@ -67,7 +67,7 @@ class TestsApi(object):
         :param async_req bool
         :param str action: (required)
         :param str data:
-        :param Body body:
+        :param InlineObject inline_object:
         :return: InlineResponse2001
                  If the method is called asynchronously,
                  returns the request thread.
@@ -75,7 +75,7 @@ class TestsApi(object):
 
         local_var_params = locals()
 
-        all_params = ['action', 'data', 'body']  # noqa: E501
+        all_params = ['action', 'data', 'inline_object']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -110,8 +110,8 @@ class TestsApi(object):
         local_var_files = {}
 
         body_params = None
-        if 'body' in local_var_params:
-            body_params = local_var_params['body']
+        if 'inline_object' in local_var_params:
+            body_params = local_var_params['inline_object']
         # HTTP header `Accept`
         header_params['Accept'] = self.api_client.select_header_accept(
             ['application/json'])  # noqa: E501

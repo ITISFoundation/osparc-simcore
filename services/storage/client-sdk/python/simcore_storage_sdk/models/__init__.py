@@ -15,8 +15,8 @@
 from __future__ import absolute_import
 
 # import models into model package
-from simcore_storage_sdk.models.body import Body
-from simcore_storage_sdk.models.body1 import Body1
+from simcore_storage_sdk.models.inline_object import InlineObject
+from simcore_storage_sdk.models.inline_object1 import InlineObject1
 from simcore_storage_sdk.models.inline_response200 import InlineResponse200
 from simcore_storage_sdk.models.inline_response2001 import InlineResponse2001
 from simcore_storage_sdk.models.inline_response2001_data import InlineResponse2001Data

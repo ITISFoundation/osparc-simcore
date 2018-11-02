@@ -1,6 +1,6 @@
 # simcore_storage_sdk.DefaultApi
 
-All URIs are relative to *http://{host}:{port}/v0*
+All URIs are relative to *http://localhost:11111/v0*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
@@ -163,7 +163,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_files_metadata**
-> list[InlineResponse2003] get_files_metadata(location_id, user_id)
+> list[InlineResponse2003] get_files_metadata(location_id, user_id, uuid_filter=uuid_filter)
 
 Get Files Metadata
 
@@ -179,10 +179,11 @@ from pprint import pprint
 api_instance = simcore_storage_sdk.DefaultApi()
 location_id = 'location_id_example' # str | 
 user_id = 'user_id_example' # str | 
+uuid_filter = 'uuid_filter_example' # str |  (optional)
 
 try:
     # Get Files Metadata
-    api_response = api_instance.get_files_metadata(location_id, user_id)
+    api_response = api_instance.get_files_metadata(location_id, user_id, uuid_filter=uuid_filter)
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling DefaultApi->get_files_metadata: %s\n" % e)
@@ -194,6 +195,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **location_id** | **str**|  | 
  **user_id** | **str**|  | 
+ **uuid_filter** | **str**|  | [optional] 
 
 ### Return type
 
@@ -211,7 +213,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_storage_locations**
-> list[InlineResponse2002] get_storage_locations()
+> list[InlineResponse2002] get_storage_locations(user_id)
 
 Get available storage locations
 
@@ -225,17 +227,21 @@ from pprint import pprint
 
 # create an instance of the API class
 api_instance = simcore_storage_sdk.DefaultApi()
+user_id = 'user_id_example' # str | 
 
 try:
     # Get available storage locations
-    api_response = api_instance.get_storage_locations()
+    api_response = api_instance.get_storage_locations(user_id)
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling DefaultApi->get_storage_locations: %s\n" % e)
 ```
 
 ### Parameters
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **user_id** | **str**|  | 
 
 ### Return type
 
@@ -253,7 +259,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **update_file_meta_data**
-> InlineResponse2003 update_file_meta_data(file_id, location_id, body1=body1)
+> InlineResponse2003 update_file_meta_data(file_id, location_id, inline_object1=inline_object1)
 
 Update File Metadata
 
@@ -269,11 +275,11 @@ from pprint import pprint
 api_instance = simcore_storage_sdk.DefaultApi()
 file_id = 'file_id_example' # str | 
 location_id = 'location_id_example' # str | 
-body1 = simcore_storage_sdk.Body1() # Body1 |  (optional)
+inline_object1 = simcore_storage_sdk.InlineObject1() # InlineObject1 |  (optional)
 
 try:
     # Update File Metadata
-    api_response = api_instance.update_file_meta_data(file_id, location_id, body1=body1)
+    api_response = api_instance.update_file_meta_data(file_id, location_id, inline_object1=inline_object1)
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling DefaultApi->update_file_meta_data: %s\n" % e)
@@ -285,7 +291,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **file_id** | **str**|  | 
  **location_id** | **str**|  | 
- **body1** | [**Body1**](Body1.md)|  | [optional] 
+ **inline_object1** | [**InlineObject1**](InlineObject1.md)|  | [optional] 
 
 ### Return type
 

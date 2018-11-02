@@ -1,6 +1,6 @@
 # simcore_storage_sdk.TestsApi
 
-All URIs are relative to *http://{host}:{port}/v0*
+All URIs are relative to *http://localhost:11111/v0*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
@@ -8,7 +8,7 @@ Method | HTTP request | Description
 
 
 # **check_action_post**
-> InlineResponse2001 check_action_post(action, data=data, body=body)
+> InlineResponse2001 check_action_post(action, data=data, inline_object=inline_object)
 
 Test checkpoint to ask server to fail or echo back the transmitted data
 
@@ -24,11 +24,11 @@ from pprint import pprint
 api_instance = simcore_storage_sdk.TestsApi()
 action = 'echo' # str |  (default to 'echo')
 data = 'data_example' # str |  (optional)
-body = simcore_storage_sdk.Body() # Body |  (optional)
+inline_object = simcore_storage_sdk.InlineObject() # InlineObject |  (optional)
 
 try:
     # Test checkpoint to ask server to fail or echo back the transmitted data
-    api_response = api_instance.check_action_post(action, data=data, body=body)
+    api_response = api_instance.check_action_post(action, data=data, inline_object=inline_object)
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling TestsApi->check_action_post: %s\n" % e)
@@ -40,7 +40,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **action** | **str**|  | [default to &#39;echo&#39;]
  **data** | **str**|  | [optional] 
- **body** | [**Body**](Body.md)|  | [optional] 
+ **inline_object** | [**InlineObject**](InlineObject.md)|  | [optional] 
 
 ### Return type
 
