@@ -91,20 +91,17 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
             });
           }
         } else {
-          let toolTip = new qx.ui.tooltip.ToolTip(port.description);
-          let portLabel = new qx.ui.basic.Label(port.label).set({
-            draggable: true,
-            toolTip: toolTip,
-            textAlign: "right",
-            allowGrowX: true,
-            paddingRight: 20
-          });
-          this._add(portLabel);
-          this.__createUIPortConnections(portLabel, portKey);
+          let nodeOutputLabel = new qxapp.component.widget.inputs.NodeOutputLabel(this.getNodeModel(), port, portKey);
+          let widget = nodeOutputLabel.getOutputWidget();
+          nodeOutputLabel.addListener("PortDragStart", e => {
+            this.fireDataEvent("PortDragStart", e.getData());
+          }, this);
+          this._add(widget);
           let label = {
             isInput: isInput,
-            ui: portLabel
+            ui: widget
           };
+
           label.ui.isInput = isInput;
           if (isInput) {
             this.__inputPort["Input"] = label;
@@ -113,53 +110,6 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
           }
         }
       }
-    },
-
-    __createUIPortConnections: function(uiPort, portId) {
-      [
-        ["dragstart", "PortDragStart"]
-      ].forEach(eventPair => {
-        uiPort.addListener(eventPair[0], e => {
-          const eData = {
-            event: e,
-            nodeId: this.getNodeId(),
-            portId: portId
-          };
-          this.fireDataEvent(eventPair[1], eData);
-        }, this);
-      }, this);
-    },
-
-    getLinkPoint: function(port) {
-      if (port.isInput === true) {
-        console.log("Port should always be output");
-        return null;
-      }
-      let nodeBounds = this.getCurrentBounds();
-      if (nodeBounds === null) {
-        // not rendered yet
-        return null;
-      }
-      // It is always on the very left of the Desktop
-      let x = 0;
-      let y = nodeBounds.top + nodeBounds.height/2;
-      return [x, y];
-    },
-
-    getCurrentBounds: function() {
-      let bounds = this.getBounds();
-      let cel = this.getContentElement();
-      if (cel) {
-        let domeEle = cel.getDomElement();
-        if (domeEle) {
-          bounds.left = parseInt(domeEle.style.left);
-          bounds.top = parseInt(domeEle.style.top);
-        }
-      }
-      // NavigationBar height must be subtracted
-      // bounds.left = this.getContentLocation().left;
-      // bounds.top = this.getContentLocation().top;
-      return bounds;
     }
   }
 });
