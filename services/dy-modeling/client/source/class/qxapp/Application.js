@@ -76,8 +76,8 @@ qx.Class.define("qxapp.Application", {
       let docHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
 
       // initialize components
-      const menuBarHeight = 35;
-      const avaiBarHeight = 55;
+      let menuBarHeight = 35;
+      let avaiBarHeight = 55;
 
       this._menuBar = new qxapp.component.MenuBar(
         docWidth, menuBarHeight,
@@ -116,15 +116,25 @@ qx.Class.define("qxapp.Application", {
         backgroundColor: "white",
         allowGrowY: false
       });
-      toolBarcontainer.add(this._menuBar);
-      toolBarcontainer.add(this.__availableServicesBar);
-      // toolBarcontainer.add(this.__threeView);
+      const showMenuBar = false;
+      if (showMenuBar) {
+        toolBarcontainer.add(this._menuBar);
+      }
+      const showModelingTools = true;
+      if (showModelingTools) {
+        toolBarcontainer.add(this.__availableServicesBar);
+      }
       doc.add(toolBarcontainer);
 
-      doc.add(this._userMenu, {
-        right: 30
-      });
+      const showUserMenu = false;
+      if (showUserMenu) {
+        doc.add(this._userMenu, {
+          right: 30
+        });
+      }
 
+      menuBarHeight = showMenuBar ? menuBarHeight : 0;
+      avaiBarHeight = showModelingTools ? avaiBarHeight : 0;
       this.__entityList.moveTo(10, menuBarHeight + avaiBarHeight + 10);
       this.__entityList.open();
 
