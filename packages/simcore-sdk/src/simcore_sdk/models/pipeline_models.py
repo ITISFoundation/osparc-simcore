@@ -1,5 +1,7 @@
+import uuid
+
 import networkx as nx
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, JSON
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -13,7 +15,7 @@ FAILED = 4
 class ComputationalPipeline(Base):
     __tablename__ = 'comp_pipeline'
 
-    pipeline_id = Column(Integer, primary_key=True)
+    project_id = Column(String, primary_key=True, default=str(uuid.uuid4()))
     dag_adjacency_list = Column(JSON)
     state = Column(String, default=UNKNOWN)
 
@@ -37,16 +39,17 @@ class ComputationalTask(Base):
     __tablename__ = 'comp_tasks'
     # this task db id
     task_id = Column(Integer, primary_key=True)
-    pipeline_id = Column(Integer, ForeignKey('comp_pipeline.pipeline_id'))
+    project_id = Column(String, ForeignKey('comp_pipeline.project_id'))
     # dag node id
     node_id = Column(String)
     # celery task id
     job_id = Column(String)
     # internal id (better for debugging, nodes from 1 to N)
     internal_id = Column(Integer)
-
-    input = Column(JSON)
-    output = Column(JSON)
+    
+    schema = Column(JSON)
+    inputs = Column(JSON)
+    outputs = Column(JSON)
     image = Column(JSON)
     state = Column(Integer, default=UNKNOWN)
 

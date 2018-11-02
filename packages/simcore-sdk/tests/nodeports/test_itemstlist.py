@@ -1,122 +1,63 @@
 #pylint: disable=C0111
-import datetime
-import time
-
-import dateutil.parser
-
-import pytest
 import mock
+import pytest
 
-from simcore_sdk.nodeports._item import DataItem
-from simcore_sdk.nodeports._itemslist import DataItemsList
+from simcore_sdk.nodeports._data_item import DataItem
+from simcore_sdk.nodeports._data_items_list import DataItemsList
+from simcore_sdk.nodeports._item import Item
+from simcore_sdk.nodeports._items_list import ItemsList
+from simcore_sdk.nodeports._schema_item import SchemaItem
+from simcore_sdk.nodeports._schema_items_list import SchemaItemsList
 
 
-def create_item(key, item_type, item_value, timestamp=None):
-    if not timestamp:
-        timestamp = datetime.datetime.utcnow().isoformat()
-    return DataItem(key=key,
-                    label="a label",
-                    desc="a description",
-                    type=item_type,
-                    value=item_value,
-                    timestamp=timestamp)
+def create_item(key, item_type, item_value):
+    return Item(SchemaItem(key=key, 
+                    label="a label", 
+                    description="a description", 
+                    type=item_type, 
+                    displayOrder=2), 
+                DataItem(key=key, 
+                    value=item_value))
+
+def create_items_list(key_item_value_tuples):
+    schemas = SchemaItemsList({key:SchemaItem(key=key, label="a label", description="a description", type=item_type, displayOrder=2) for (key, item_type, _) in key_item_value_tuples})
+    payloads = DataItemsList({key:DataItem(key=key, value=item_value) for key,_,item_value in key_item_value_tuples})
+    return ItemsList(schemas, payloads)
+    
 
 def test_default_list():
-    itemslist = DataItemsList()
+    itemslist = ItemsList(SchemaItemsList(), DataItemsList())
 
-    assert not itemslist
-    assert not itemslist.read_only
-    assert itemslist.change_notifier is None
+    assert not itemslist    
+    assert not itemslist.change_notifier
+    assert not itemslist.get_node_from_node_uuid_cb
 
-def test_reject_items_with_same_key():
-    from simcore_sdk.nodeports import exceptions
-    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
-        DataItemsList([create_item("1", "integer", "333"), create_item("1", "integer", "444"), create_item("3", "integer", "333")])
-
-    itemslist = DataItemsList()
-    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
-        itemslist.insert(0, create_item("4", "integer", "333"))
-        itemslist.insert(0, create_item("5", "integer", "333"))
-        itemslist.insert(0, create_item("5", "integer", "333"))
-
-    itemslist = DataItemsList([create_item("1", "integer", "333"), create_item("2", "integer", "444"), create_item("3", "integer", "333")])
-    with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
-        itemslist[1] = create_item("1", "integer", "333")
-
-    with pytest.raises(AttributeError, message="Expecting AttributeError"):
-        itemslist[1].key = "1"
-
-
-def test_adding_removing_items():
-    itemslist = DataItemsList([create_item("1", "integer", "333"), create_item("2", "integer", "333"), create_item("3", "integer", "333")])
-
+def test_creating_list():
+    itemslist = create_items_list([("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)])
     assert len(itemslist) == 3
-    itemslist.insert(0, create_item("4", "integer", "333"))
-    itemslist.insert(0, create_item("5", "integer", "333"))
-    itemslist.insert(0, create_item("6", "integer", "333"))
-
-    del itemslist[1]
-    assert len(itemslist) == 5
 
 def test_accessing_by_key():
-    itemslist = DataItemsList([create_item("1", "integer", "333"), create_item("2", "integer", "333"), create_item("3", "integer", "333")])
-    for item in itemslist:
-        assert itemslist[item.key] == item
+    itemslist = create_items_list([("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)])
+    assert itemslist[0].key == "1"
+    assert itemslist["1"].key == "1"
+    assert itemslist[1].key == "2"
+    assert itemslist["2"].key == "2"
+    assert itemslist[2].key == "3"
+    assert itemslist["3"].key == "3"
 
 def test_access_by_wrong_key():
     from simcore_sdk.nodeports import exceptions
-    itemslist = DataItemsList([create_item("1", "integer", "333"), create_item("2", "integer", "333"), create_item("3", "integer", "333")], read_only=True)
+    itemslist = create_items_list([("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)])    
     with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError"):
         print(itemslist["fdoiht"])
-
-
-def test_adding_bad_items():
-    with pytest.raises(TypeError, message="Expecting TypeError"):
-        itemslist = DataItemsList([4, 54, "fdoiht"])
-    itemslist = DataItemsList()
-    assert not itemslist
-    with pytest.raises(TypeError, message="Expecting TypeError"):
-        itemslist.insert(0, 23)
-    with pytest.raises(TypeError, message="Expecting TypeError"):
-        itemslist.insert(0, 455)
-    with pytest.raises(TypeError, message="Expecting TypeError"):
-        itemslist.insert(0, "blahblah")
-
-def test_read_only():
-    from simcore_sdk.nodeports import exceptions
-    itemslist = DataItemsList([create_item("1", "integer", "333"), create_item("2", "integer", "333"), create_item("3", "integer", "333")], read_only=True)
-    assert len(itemslist) == 3
-
-    with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
-        itemslist.insert(0, create_item("10", "integer", "333"))
-    assert "Trying to modify read-only object" in str(excinfo.value)
-
-    with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
-        itemslist[1] = create_item("11", "integer", "222")
-    assert "Trying to modify read-only object" in str(excinfo.value)
-
-    with pytest.raises(exceptions.ReadOnlyError, message="Expecting ReadOnlyError") as excinfo:
-        del itemslist[1]
-    assert "Trying to modify read-only object" in str(excinfo.value)
-
 
 def test_modifying_items_triggers_cb(): #pylint: disable=C0103
     mock_method = mock.Mock()
 
-    itemslist = DataItemsList([create_item("1", "integer", "333"), create_item("2", "integer", "333"), create_item("3", "integer", "333")], change_cb=mock_method)
-    itemslist.insert(0, create_item("10", "integer", "333"))
-    mock_method.assert_called_once()
-    mock_method.reset_mock()
-    itemslist[0] = create_item("10", "integer", "4444")
+    itemslist = create_items_list([("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)])
+    itemslist.change_notifier = mock_method
+    itemslist[0].set(-123)
     mock_method.assert_called_once()
     mock_method.reset_mock()
     itemslist[0].set(234)
     mock_method.assert_called_once()
-
-def test_modifying_item_changes_timestamp(): #pylint: disable=C0103
-    itemslist = DataItemsList([create_item("1", "integer", "333"), create_item("2", "integer", "333"), create_item("3", "integer", "333")])
-    original_timestamp = dateutil.parser.parse(itemslist[0].timestamp)
-    time.sleep(0.1)
-    itemslist[0].set(47475)
-    new_timestamp = dateutil.parser.parse(itemslist[0].timestamp)
-    assert new_timestamp > original_timestamp

@@ -51,7 +51,7 @@ def create_dummy_table(number_of_rows, number_of_columns):
     df = pd.DataFrame(fullmatrix)
     return df
 
-def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number_of_columns: int, number_of_files: int, sep: str ="\t"):
+def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number_of_columns: int, number_of_files: int, sep: str ="\t"): #pylint: disable=W0613
     with json_configuration_file_path.open() as file_pointer:
         json_configuration = file_pointer.read()
     
@@ -67,11 +67,11 @@ def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number
     configuration = json.loads(json_configuration)
         
 
-    # create a dummy table    
+    # init s3
     s3 = init_s3()
     # push the file to the S3 for each input item
-    for input_item in configuration["inputs"]:
-        if input_item["type"] == "file-url" or input_item["type"] == "folder-url":
+    for key, input_item in configuration["schema"]["inputs"].items():
+        if str(input_item["type"]).startswith("data:"):
             # create a dummy file filled with dummy data
             temp_file = tempfile.NamedTemporaryFile(suffix=".csv")
             temp_file.close()
@@ -80,30 +80,20 @@ def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number
             with open(temp_file.name, "w") as file_pointer:
                 df.to_csv(path_or_buf=file_pointer, sep=sep, header=False, index=False)        
 
-        # upload to S3
-        if input_item["type"] == "file-url":
-            s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, Path(temp_file.name).name)
+            # upload to S3
+            s3_object_name = Path(str(new_Pipeline.project_id), node_uuid, Path(temp_file.name).name)
             s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
-        elif input_item["type"] == "folder-url":
-            for i in range(number_of_files):
-                s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, Path(temp_file.name).parent.name, str(i) + ".dat")
-                s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
-        # update configuration
-        if "FILENAME_ID" in input_item["value"]:
-            input_item["value"] = input_item["value"].replace("FILENAME_ID", Path(temp_file.name).name)
-        if "FOLDER_NAME_ID" in input_item["value"]:
-            input_item["value"] = input_item["value"].replace("FOLDER_NAME_ID", Path(temp_file.name).parent.name)
+            # add to the payload
+            configuration["inputs"][key] = {"store":"s3-z43", "path":s3_object_name.as_posix()}
 
     Path(temp_file.name).unlink()
 
     # now create the node in the db with links to S3
-    new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, input=configuration["inputs"], output=configuration["outputs"])
+    new_Node = ComputationalTask(project_id=new_Pipeline.project_id, node_id=node_uuid, schema=configuration["schema"], inputs=configuration["inputs"], outputs=configuration["outputs"])
     db.session.add(new_Node)
     db.session.commit()
-
     # print the node uuid so that it can be set as env variable from outside
-    print(node_uuid)
-
+    print("{pipelineid},{nodeuuid}".format(pipelineid=str(new_Node.project_id), nodeuuid=node_uuid))
 
 parser = argparse.ArgumentParser(description="Initialise an oSparc database/S3 with fake data for development.")
 parser.add_argument("portconfig", help="The path to the port configuration file (json format)", type=Path)
