@@ -91,7 +91,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     __initSettings: function() {
-      this.__settingsBox = new qx.ui.layout.VBox();
+      this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       this.__mainLayout.add(this.__settingsBox, {
         flex: 1
       });
