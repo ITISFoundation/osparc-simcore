@@ -245,7 +245,6 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
 
         data[object_name] = FileMetaData(**d)
 
-
         utils.insert_metadata(postgres_service_url, data[object_name])
 
 

@@ -21,14 +21,14 @@ services:
         BUILD_DATE:
       labels: 
         io.simcore.key: '{"key": "simcore/services/dynamic/modeler/webserver"}'
-        io.simcore.tag: '{"tag": "${MODELER_VERSION}"}'
+        io.simcore.version: '{"version": "${MODELER_VERSION}"}'
+        io.simcore.type: '{"type": "dynamic"}'
         io.simcore.name: '{"name": "modeler"}'
         io.simcore.description: '{"description": "Modeler viewer"}'
-        io.simcore.contact: '{"contact": "anderegg@itis.ethz.ch"}'
-        io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email": "anderegg@itis.ethz.ch", "affiliation": "ITIS Foundation"}]}'
-        io.simcore.inputs: '{"inputs": [{"key": "input_1", "label": "Entities in", "desc": "List of entities", "type": "file-url", "value": "null"}]}'
-        io.simcore.outputs: '{"outputs": [{"key": "output_1", "label": "Entities out", "desc": "List of entities", "type": "file-url", "value": "null"}]}'
-        io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
+        io.simcore.authors: '{"authors": [{"name": "sanderegg", "email": "anderegg@itis.swiss", "affiliation": "ITIS Foundation"}]}'
+        io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'        
+        io.simcore.inputs: '{"inputs": {"input_1":{"label": "Entities in", "displayOrder":0, "description": "List of entities", "type": "data:*/*"}}}'
+        io.simcore.outputs: '{"outputs": {"output_1":{"label": "Entities out", "displayOrder":1, "description": "List of entities", "type": "data:*/*"}}}'
         simcore.service.dependencies: '[{"key": "simcore/services/dynamic/modeler/xrpc-worker", "tag": "1.9"}]'
     ports:
       - '8080:9090'

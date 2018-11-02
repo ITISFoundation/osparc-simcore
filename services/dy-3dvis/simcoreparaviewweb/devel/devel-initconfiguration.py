@@ -42,8 +42,8 @@ def init_s3():
     s3 = S3Settings()
     return s3
 
-def create_dummy(json_configuration_file_path):
-    with open(json_configuration_file_path) as file_pointer:
+def create_dummy(json_configuration_file_path: Path):
+    with json_configuration_file_path.open() as file_pointer:
         json_configuration = file_pointer.read()
     
     db = init_db()
@@ -56,39 +56,31 @@ def create_dummy(json_configuration_file_path):
     json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", node_uuid)
     configuration = json.loads(json_configuration)
     
-
     # init s3
     s3 = init_s3()
 
     uploaded_files = []
     # push the file to the S3 for each input item
-    for input_item in configuration["inputs"]:
+    for key,input_item in configuration["schema"]["inputs"].items():
         available_files = [x for x in TEST_DATA_PATH.iterdir() if x.is_file() and x not in uploaded_files]
         if not available_files:
+            input_item["value"] = None
             # it could be correct so just stop here
             break
-        if input_item["type"] == "file-url":
+        if input_item["type"] == "data:*/*":
             filename = available_files[0].name
-            s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, str(filename))
+            s3_object_name = Path(str(new_Pipeline.project_id), node_uuid, str(filename))
             s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), str(available_files[0]))
-            input_item["key"] = str(filename)  
-            input_item["value"] = ".".join(["link", node_uuid, str(filename)])  
+            # add to the payload
+            configuration["inputs"][key] = {"store":"s3-z43", "path":s3_object_name.as_posix()}
             uploaded_files.append(available_files[0])
-        elif input_item["type"] == "folder-url":
-            for f in available_files:
-                #i = available_files.index(f)
-                s3_object_name = Path(str(new_Pipeline.pipeline_id), node_uuid, input_item["key"], str(filename))
-                #configuration["inputs"]["key"] = input_item["key"]
-                s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), f)
-
 
     # now create the node in the db with links to S3
-    new_Node = ComputationalTask(pipeline_id=new_Pipeline.pipeline_id, node_id=node_uuid, input=configuration["inputs"], output=configuration["outputs"])
+    new_Node = ComputationalTask(project_id=new_Pipeline.project_id, node_id=node_uuid, schema=configuration["schema"], inputs=configuration["inputs"], outputs=configuration["outputs"])
     db.session.add(new_Node)
     db.session.commit()
-
     # print the node uuid so that it can be set as env variable from outside
-    print(node_uuid)
+    print("{pipelineid},{nodeuuid}".format(pipelineid=str(new_Node.project_id), nodeuuid=node_uuid))
 
 if __name__ == "__main__":    
-    create_dummy(sys.argv[1])
+    create_dummy(Path(sys.argv[1]))

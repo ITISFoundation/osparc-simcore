@@ -72,7 +72,7 @@ class Sidecar:
                 log.debug('Fetch S3 %s', port_value)
                 #parse the link assuming it is link.id.file.ending
                 _parts = port_value.split(".")
-                object_name = os.path.join(str(self._task.pipeline_id), _parts[1], ".".join(_parts[2:]))
+                object_name = os.path.join(str(self._task.project_id), _parts[1], ".".join(_parts[2:]))
                 input_file = os.path.join(self._executor.in_dir, port_name)
                 log.debug('Downloading from  S3 %s/%s', self._s3.bucket, object_name)
                 success = False
@@ -96,7 +96,7 @@ class Sidecar:
                 _session = self._db.Session()
                 try:
                     other_task =_session.query(ComputationalTask).filter(and_(ComputationalTask.node_id==other_node_id,
-                                    ComputationalTask.pipeline_id==self._task.pipeline_id)).one()
+                                    ComputationalTask.project_id==self._task.project_id)).one()
                 except exc.SQLAlchemyError:
                     log.exception("Could not find other task")
                     _session.rollback()
@@ -123,7 +123,7 @@ class Sidecar:
             as port['key']. Both end up in /input/ of the container
         """
         _input = self._task.input
-        log.debug('Input parsing for %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
+        log.debug('Input parsing for %s and node %s from container', self._task.project_id, self._task.internal_id)
         log.debug(_input)
 
         input_ports = dict()
@@ -252,7 +252,7 @@ class Sidecar:
                             rel_name = os.path.relpath(root, directory)
                             name = rel_name + "/" + name
 
-                        object_name = str(self._task.pipeline_id) + "/" + self._task.node_id + "/" + name
+                        object_name = str(self._task.project_id) + "/" + self._task.node_id + "/" + name
                         success = False
                         ntry = 3
                         trial = 0
@@ -274,7 +274,7 @@ class Sidecar:
             for root, _dirs, files in os.walk(directory):
                 for name in files:
                     filepath = os.path.join(root, name)
-                    object_name = str(self._task.pipeline_id) + "/" + self._task.node_id + "/log/" + name
+                    object_name = str(self._task.project_id) + "/" + self._task.node_id + "/log/" + name
                     if not self._s3.client.upload_file(self._s3.bucket, object_name, filepath):
                         log.error("Error uploading file to S3")
 
@@ -293,13 +293,13 @@ class Sidecar:
 
 
     def preprocess(self):
-        log.debug('Pre-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
+        log.debug('Pre-Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
         self._create_shared_folders()
         self._process_task_inputs()
         self._pull_image()
 
     def process(self):
-        log.debug('Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
+        log.debug('Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
 
         self._executor.run_pool = True
 
@@ -330,7 +330,7 @@ class Sidecar:
         while not fut.done():
             time.sleep(0.1)
 
-        log.debug('DONE Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
+        log.debug('DONE Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
 
     def run(self):
         connection = pika.BlockingConnection(self._pika.parameters)
@@ -359,7 +359,7 @@ class Sidecar:
 
 
     def postprocess(self):
-        #log.debug('Post-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
+        #log.debug('Post-Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
 
         self._process_task_output()
         self._process_task_log()
@@ -369,7 +369,7 @@ class Sidecar:
         try:
             _session.add(self._task)
             _session.commit()
-           # log.debug('DONE Post-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
+           # log.debug('DONE Post-Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
 
         except exc.SQLAlchemyError:
             log.exception("Could not update job from postprocessing")
@@ -377,15 +377,15 @@ class Sidecar:
         finally:
             _session.close()
 
-    def inspect(self, celery_task, pipeline_id, node_id):
-        log.debug("ENTERING inspect pipeline:node %s: %s", pipeline_id, node_id)
+    def inspect(self, celery_task, project_id, node_id):
+        log.debug("ENTERING inspect pipeline:node %s: %s", project_id, node_id)
 
         next_task_nodes = []
         do_run = False
 
         try:
             _session = self._db.Session()
-            _pipeline =_session.query(ComputationalPipeline).filter_by(pipeline_id=pipeline_id).one()
+            _pipeline =_session.query(ComputationalPipeline).filter_by(project_id=project_id).one()
 
             graph = _pipeline.execution_graph
             if node_id:
@@ -393,7 +393,7 @@ class Sidecar:
                 # find the for the current node_id, skip if there is already a job_id around
                 # pylint: disable=assignment-from-no-return
                 query =_session.query(ComputationalTask).filter(and_(ComputationalTask.node_id==node_id,
-                    ComputationalTask.pipeline_id==pipeline_id, ComputationalTask.job_id==None))
+                    ComputationalTask.project_id==project_id, ComputationalTask.job_id==None))
                 # Use SELECT FOR UPDATE TO lock the row
                 query.with_for_update()
                 task = query.one()
@@ -417,7 +417,7 @@ class Sidecar:
                     _session.commit()
 
                     task =_session.query(ComputationalTask).filter(
-                        and_(ComputationalTask.node_id==node_id,ComputationalTask.pipeline_id==pipeline_id)).one()
+                        and_(ComputationalTask.node_id==node_id,ComputationalTask.project_id==project_id)).one()
 
                     if task.job_id != celery_task.request.id:
                         # somebody else was faster
@@ -459,14 +459,14 @@ class Sidecar:
 # FIXME: this should be moved into tasks.py and need a main.py as well!
 SIDECAR = Sidecar()
 @celery.task(name='comp.task', bind=True)
-def pipeline(self, pipeline_id, node_id=None):
+def pipeline(self, project_id, node_id=None):
     log.debug("ENTERING run")
     next_task_nodes = []
     try:
-        next_task_nodes = SIDECAR.inspect(self, pipeline_id, node_id)
+        next_task_nodes = SIDECAR.inspect(self, project_id, node_id)
     #pylint:disable=broad-except
     except Exception:
         log.exception("Uncaught exception")
 
     for _node_id in next_task_nodes:
-        _task = celery.send_task('comp.task', args=(pipeline_id, _node_id), kwargs={})
+        _task = celery.send_task('comp.task', args=(project_id, _node_id), kwargs={})

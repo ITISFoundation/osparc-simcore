@@ -1,51 +1,50 @@
-"""This module contains an item representing a node port"""
-
-import collections
-import datetime
 import logging
-import os
+import shutil
+import tempfile
 from pathlib import Path
 
-from simcore_sdk.nodeports import config, exceptions, filemanager
+from . import config, data_items_utils, exceptions, filemanager
+from ._data_item import DataItem
+from ._schema_item import SchemaItem
 
 log = logging.getLogger(__name__)
 
-_DataItem = collections.namedtuple("_DataItem", config.DATA_ITEM_KEYS)
+_INTERNAL_DIR = Path(tempfile.gettempdir(), "simcorefiles")
 
-def is_value_link(value):
-    return isinstance(value, str) and value.startswith(config.LINK_PREFIX)
+def _check_type(item_type, value):
+    if not value:
+        return
+    if data_items_utils.is_value_link(value):
+        return
+    
+    possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
+    if not item_type in possible_types:
+        if data_items_utils.is_file_type(item_type) and data_items_utils.is_value_on_store(value):
+            return
+        raise exceptions.InvalidItemTypeError(item_type, value)
 
-def decode_link(encoded_link):
-    link = encoded_link.split(".")
-    if len(link) < 3:
-        raise exceptions.InvalidProtocolError(encoded_link, "Invalid link definition: " + str(encoded_link))
-    other_node_uuid = link[1]
-    other_port_key = ".".join(link[2:])
-    return other_node_uuid, other_port_key
-
-def encode_link(node_uuid: str, link_value: str):
-    return config.LINK_PREFIX + str(node_uuid) + "." + link_value
-
-class DataItem(_DataItem):
-    """This class encapsulate a Data Item and provide accessors functions"""
-    def __new__(cls, **kwargs):
-        new_kargs = dict.fromkeys(config.DATA_ITEM_KEYS)
-        new_kargs['timestamp'] = datetime.datetime.now().isoformat()
-        for key in config.DATA_ITEM_KEYS:
-            if key not in kwargs:
-                if key != "timestamp":
-                    raise exceptions.InvalidProtocolError(kwargs, "key \"%s\" is missing" % (str(key)))
-            else:
-                new_kargs[key] = kwargs[key]
-
-        log.debug("Creating new data item with %s", new_kargs)
-        self = super(DataItem, cls).__new__(cls, **new_kargs)
-        return self
-
-    def __init__(self, **_kwargs):
-        super(DataItem, self).__init__()
+class Item():
+    def __init__(self, schema:SchemaItem, data:DataItem):
+        if not schema:
+            raise exceptions.InvalidProtocolError(None, msg="empty schema or payload")
+        self._schema = schema
+        self._data = data
         self.new_data_cb = None
         self.get_node_from_uuid_cb = None
+
+        _check_type(self.type, self.value)
+
+    def __getattr__(self, name):
+        if hasattr(self._schema, name):
+            return getattr(self._schema, name)
+        if hasattr(self._data, name):
+            return getattr(self._data, name)
+
+        if "value" in name and not self._data:
+            if hasattr(self._schema, "defaultValue"):
+                return getattr(self._schema, "defaultValue")
+            return None
+        raise AttributeError
 
     def get(self):
         """returns the data converted to the underlying type.
@@ -54,97 +53,91 @@ class DataItem(_DataItem):
             Can throw ValueError if the conversion fails.
             returns the converted value or None if no value is defined
         """
-        log.debug("Getting data item")
-        if self.type not in config.TYPE_TO_PYTHON_TYPE_MAP:
+        log.debug("Getting item %s", self.key)
+        if self.type not in config.TYPE_TO_PYTHON_TYPE_MAP and not data_items_utils.is_file_type(self.type):
             raise exceptions.InvalidProtocolError(self.type)
-        if self.value == "null":
+        if self.value is None:
             log.debug("Got empty data item")
             return None
         log.debug("Got data item with value %s", self.value)
 
-        if is_value_link(self.value):
-            return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["type"](self.__get_value_from_link())
+        if data_items_utils.is_value_link(self.value):
+            value = self.__get_value_from_link(self.value)
+            if data_items_utils.is_file_type(self.type):
+                # move the file to the right location
+                file_name = Path(value).name
+                file_path = _create_file_path(self.key, file_name)
+                if file_path.exists():
+                    file_path.unlink()
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(value), str(file_path))
+                value = file_path
+            return value
+
+        if data_items_utils.is_value_on_store(self.value):
+            return self.__get_value_from_store(self.value)
         # the value is not a link, let's directly convert it to the right type
         return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["type"](config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value))
-
+    
     def set(self, value):
         """sets the data to the underlying port
 
         Arguments:
             value {any type} -- must be convertible to a string, or an exception will be thrown.
         """
-        log.info("Setting data item with value %s", value)
-        # let's create a new data if necessary
-        data_dct = self._asdict()
+        log.info("Setting data item with value %s", value)        
         # try to guess the type and check the type set fits this (there can be more than one possibility, e.g. string)
         possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
         log.debug("possible types are for value %s are %s", value, possible_types)
         if not self.type in possible_types:
-            raise exceptions.InvalidItemTypeError(self.type, value)
+            if not data_items_utils.is_file_type(self.type) or not isinstance(value, (Path, str)):
+                raise exceptions.InvalidItemTypeError(self.type, value)
 
-        # convert to string now
-        new_value = str(value)
-
-        if self.type in config.TYPE_TO_S3_FILE_LIST:
-            file_path = Path(new_value)
+        # upload to S3 if file
+        if data_items_utils.is_file_type(self.type):
+            file_path = Path(value)
             if not file_path.exists() or not file_path.is_file():
                 raise exceptions.InvalidItemTypeError(self.type, value)
-            node_uuid = os.environ.get('SIMCORE_NODE_UUID', default="undefined")
+            project_id = config.PROJECT_ID
+            node_uuid = config.NODE_UUID
             log.debug("file path %s will be uploaded to s3", value)
-            filemanager.upload_file_to_s3(node_uuid=node_uuid, node_key=file_path.name, file_path=file_path)
-            log.debug("file path %s uploaded to s3 from node %s and key %s", value, node_uuid, self.key)
-            new_value = encode_link(node_uuid=node_uuid, link_value=file_path.name)
+            s3_object = Path(project_id, node_uuid, file_path.name).as_posix()
+            filemanager.upload_file_to_s3(store="s3-z43", s3_object=s3_object, file_path=file_path)
+            log.debug("file path %s uploaded to s3 in %s", value, s3_object)
+            value = data_items_utils.encode_store("s3-z43", s3_object)
 
-        elif self.type in config.TYPE_TO_S3_FOLDER_LIST:
-            folder_path = Path(new_value)
-            if not folder_path.exists() or not folder_path.is_dir():
-                raise exceptions.InvalidItemTypeError(self.type, value)
-            node_uuid = os.environ.get('SIMCORE_NODE_UUID', default="undefined")
-            log.debug("folder %s will be uploaded to s3", value)
-            filemanager.upload_folder_to_s3(node_uuid=node_uuid, node_key=folder_path.name, folder_path=folder_path)
-            log.debug("folder %s uploaded to s3 from node %s and key %s", value, node_uuid, self.key)
-            new_value = encode_link(node_uuid=node_uuid, link_value=folder_path.name)
-
-        data_dct["value"] = new_value
-        data_dct["timestamp"] = datetime.datetime.utcnow().isoformat()
-        new_data = DataItem(**data_dct)
+        # update the DB
+        # let's create a new data if necessary
+        new_data = DataItem(key=self.key, value=value)
         if self.new_data_cb:
             log.debug("calling new data callback to update database")
             self.new_data_cb(new_data) #pylint: disable=not-callable
             log.debug("database updated")
+    
+    def __get_value_from_link(self, value):    # pylint: disable=R1710
+        log.debug("Getting value %s", value)
+        node_uuid, port_key = data_items_utils.decode_link(value)
+        if not self.get_node_from_uuid_cb:
+            raise exceptions.NodeportsException("callback to get other node information is not set")
+        # create a node ports for the other node
+        other_nodeports = self.get_node_from_uuid_cb(node_uuid) #pylint: disable=not-callable
+        # get the port value through that guy
+        log.debug("Received node from DB %s, now returning value", other_nodeports)
+        return other_nodeports.get(port_key)
 
+    def __get_value_from_store(self, value):
+        log.debug("Getting value from storage %s", value)
+        store, s3_path = data_items_utils.decode_store(value)
+        log.debug("Fetch file from S3 %s", self.value)
+        file_name = Path(s3_path).name
+        # if a file alias is present use it
+        if self._schema.fileToKeyMap:
+            file_name = next(iter(self._schema.fileToKeyMap))
 
+        file_path = _create_file_path(self.key, file_name)
+        return filemanager.download_file_from_S3(store=store,            
+                                                s3_object_name=s3_path,
+                                                file_path=file_path)
 
-    def __get_value_from_link(self):    # pylint: disable=R1710
-        node_uuid, s3_object_name = decode_link(self.value)
-
-        try: 
-            if self.type in config.TYPE_TO_S3_FILE_LIST:
-                # try to fetch from S3 as a file
-                log.debug("Fetch file from S3 %s", self.value)
-                
-                return filemanager.download_file_from_S3(node_uuid=node_uuid,            
-                                                            s3_object_name=s3_object_name,
-                                                            node_key=self.key,
-                                                            file_name=s3_object_name)
-            if self.type in config.TYPE_TO_S3_FOLDER_LIST:
-                # try to fetch from S3 as a folder
-                log.debug("Fetch folder from S3 %s", self.value)
-                return filemanager.download_folder_from_s3(node_uuid=node_uuid,
-                                                            node_key=s3_object_name,
-                                                            folder_name=self.key)
-        except exceptions.S3InvalidPathError as err:
-            # the file was not found, maybe it is written as node_uuid.port_key instead of node_uuid.s3_object_name?
-            log.info("The file/folder was not found on S3, maybe it is written as node_uuid.port_key instead of node_uuid.s3_object?")
-            log.info("Trying now to follow node_uuid.port_key instead...")
-            try:
-                # try to fetch link from database node
-                log.debug("Fetch value from other node %s", self.value)
-                if not self.get_node_from_uuid_cb:
-                    raise exceptions.NodeportsException("callback to get other node information is not set")
-
-                other_nodeports = self.get_node_from_uuid_cb(node_uuid) #pylint: disable=not-callable
-                log.debug("Received node from DB %s, now returning value", other_nodeports)
-                return other_nodeports.get(s3_object_name)
-            except Exception:                
-                raise err from None
+def _create_file_path(key, name):
+    return Path(_INTERNAL_DIR, key, name)
