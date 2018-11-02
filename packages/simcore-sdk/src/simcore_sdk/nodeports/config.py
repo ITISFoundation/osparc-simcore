@@ -1,28 +1,35 @@
 """Takes care of the configurations.
 """
 import logging
-from distutils.util import strtobool # pylint: disable=no-name-in-module
+import os
+NODE_UUID = os.environ.get("SIMCORE_NODE_UUID", default="undefined")
+PROJECT_ID = os.environ.get("SIMCORE_PIPELINE_ID", default="undefined")
+
+NODE_KEYS = {"version":True,
+"schema":True,
+"inputs":True,
+"outputs":True}
 
 # defined by JSON schema
-DATA_ITEM_KEYS = ["key",
-                "label",
-                "desc",
-                "type",
-                "value",
-                "timestamp"]
+DATA_ITEM_KEYS = {"key":True,
+                "value":True}
+
+# True if required, defined by JSON schema
+SCHEMA_ITEM_KEYS = {"key":True,
+                    "label":True,
+                    "description":True,
+                    "type":True,
+                    "displayOrder":True,
+                    "fileToKeyMap":False,
+                    "defaultValue":False,
+                    "widget":False}
 # allowed types
 TYPE_TO_PYTHON_TYPE_MAP = {"integer":{"type":int, "converter":int},
                             "number":{"type":float, "converter":float},
-                            "file-url":{"type":str, "converter":str},
-                            "bool":{"type":bool, "converter":strtobool},
-                            "string":{"type":str, "converter":str},
-                            "folder-url":{"type":str, "converter":str}
+                            "boolean":{"type":bool, "converter":bool},
+                            "string":{"type":str, "converter":str}
                             }
-# S3 stored information
-TYPE_TO_S3_FILE_LIST = ["file-url"]
-TYPE_TO_S3_FOLDER_LIST = ["folder-url"]
-
-LINK_PREFIX = "link."
+FILE_TYPE_PREFIX = "data:"
 
 # nodeports is a library for accessing data linked to the node
 # in that sense it should not log stuff unless the application code wants it to be so.

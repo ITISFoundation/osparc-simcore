@@ -1,0 +1,60 @@
+{
+    "version":"0.1",
+    "schema": {
+        "inputs": {
+            "in_1":{
+                "displayOrder": 0,
+                "label": "computational data",
+                "description": "these are computed data out of a pipeline",
+                "type": "data:*/*",
+                "defaultValue": null,
+                "fileToKeyMap": {
+                    "input1.txt":"in_1"
+                },
+                "widget": null
+            },
+            "in_5":{
+                "displayOrder": 2,
+                "label": "some number",
+                "description": "numbering things",
+                "type": "integer",
+                "defaultValue": 666,
+                "fileToKeyMap":{},
+                "widget": null
+            }
+        },
+        "outputs" : {
+            "out_1": {
+                "displayOrder":0,
+                "label": "some boolean output",
+                "description": "could be true or false...",
+                "type": "boolean",
+                "defaultValue": null,
+                "fileToKeyMap":{},
+                "widget": null
+            },
+            "out_2": {
+                "displayOrder":1,
+                "label": "some file output",
+                "description": "could be anything...",
+                "type": "data:*/*",
+                "defaultValue": null,
+                "fileToKeyMap":{},
+                "widget": null
+            }
+        }
+    },
+    "inputs": {        
+        "in_1": {
+            "nodeUuid":"456465-45ffd",
+            "output": "outFile"
+        }
+    },
+    "outputs": {
+        "out_1": false,
+        "out_2": {
+            "store":"z43-s3",
+            "path": "/simcore/outputControllerOut.dat"
+        }
+    }
+}
