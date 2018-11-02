@@ -21,7 +21,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             const from = e.getRelatedTarget();
             const to = e.getCurrentTarget();
             compatible = true;
-            console.log(from, to);
+            console.log(from.getModel(), to.getModel());
           }
           if (!compatible) {
             e.preventDefault();
@@ -31,7 +31,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
           if (e.supportsType("osparc-mapping")) {
             const from = e.getRelatedTarget();
             const to = e.getCurrentTarget();
-            console.log("Map", from.path, "to", to.path);
+            console.log("Map", from.getModel(), "to", to.getModel());
           }
         });
       }

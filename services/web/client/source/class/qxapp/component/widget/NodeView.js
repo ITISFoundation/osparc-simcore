@@ -212,8 +212,8 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }, this);
     },
 
-    __createInputPortsUI: function(inputNodeModel) {
-      let nodePorts = new qxapp.component.widget.NodePorts(inputNodeModel);
+    __createInputPortsUI: function(inputNodeModel, inInputModel = true) {
+      let nodePorts = new qxapp.component.widget.NodePorts(inputNodeModel, inInputModel);
       nodePorts.populateNodeLayout();
       this.__createDragDropMechanism(nodePorts);
       this.__inputNodesLayout.add(nodePorts, {
@@ -223,6 +223,12 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     __createInputPortsUIs: function(nodeModel) {
+      // Add the default inputs if any
+      if (Object.keys(this.getNodeModel().getInputsDefault()).length > 0) {
+        this.__createInputPortsUI(this.getNodeModel(), false);
+      }
+
+      // Add the representations for the inputs
       const inputNodes = nodeModel.getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
         let inputNodeModel = this.getWorkbenchModel().getNodeModel(inputNodes[i]);

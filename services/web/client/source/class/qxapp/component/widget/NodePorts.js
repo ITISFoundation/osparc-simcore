@@ -7,14 +7,15 @@
 
 /**
  *  Creates the widget that represents an input node.
- * It shows create a VBox with widgets representing each of the output ports of the node.
+ * It creates a VBox with widgets representing each of the output ports of the node.
+ * It can also create widget for representing default inputs (isInputModel = false).
  *
  */
 
 qx.Class.define("qxapp.component.widget.NodePorts", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeModel) {
+  construct: function(nodeModel, isInputModel = true) {
     this.base();
 
     let nodeInputLayout = new qx.ui.layout.VBox(10);
@@ -32,10 +33,17 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     });
     this._add(label);
 
+    this.setIsInputModel(isInputModel);
     this.setNodeModel(nodeModel);
   },
 
   properties: {
+    isInputModel: {
+      check: "Boolean",
+      init: true,
+      nullable: false
+    },
+
     nodeModel: {
       check: "qxapp.data.model.NodeModel",
       nullable: false
@@ -62,8 +70,11 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       const metaData = this.getNodeModel().getMetaData();
       this.__inputPort = {};
       this.__outputPort = {};
-      // this.__createUIPorts(true, metaData.inputs);
-      this.__createUIPorts(false, metaData.outputs);
+      if (this.getIsInputModel()) {
+        this.__createUIPorts(false, metaData.outputs);
+      } else if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
+        this.__createUIPorts(false, metaData.inputsDefault);
+      }
     },
 
     getInputPort: function() {
@@ -82,10 +93,15 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       for (const portKey in ports) {
         const port = ports[portKey];
         if (port.type.includes("api")) {
-          console.log("Provide widget for ", port.type);
-          if (port.type === "node-output-list-api-v0.0.1") {
-            let nodeOutputList = new qxapp.component.widget.nodeOutput.NodeOutputList(this.getNodeModel().getNodeId(), portKey, port);
-            let widget = nodeOutputList.getOutputWidget();
+          let widget = null;
+          switch (port.type) {
+            case "node-output-list-api-v0.0.1": {
+              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputList(this.getNodeModel(), port, portKey);
+              widget = nodeOutputList.getOutputWidget();
+              break;
+            }
+          }
+          if (widget !== null) {
             this._add(widget, {
               flex: 1
             });

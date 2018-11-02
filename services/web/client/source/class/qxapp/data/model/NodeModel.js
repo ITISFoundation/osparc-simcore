@@ -7,6 +7,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     this.__metaData = {};
     this.__innerNodes = {};
     this.__inputNodes = [];
+    this.__inputsDefault = {};
     this.__outputs = {};
 
     this.set({
@@ -108,6 +109,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __innerNodes: null,
     __inputNodes: null,
     __settingsForm: null,
+    __inputsDefault: null,
     __outputs: null,
     __posX: null,
     __posY: null,
@@ -125,6 +127,14 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         return this.getPropsWidget().getValues();
       }
       return {};
+    },
+
+    __addInputsDefault: function(inputsDefault) {
+      this.__inputsDefault = inputsDefault;
+    },
+
+    getInputsDefault: function() {
+      return this.__inputsDefault;
     },
 
     getOutputs: function() {
@@ -199,16 +209,34 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
+    /**
+     * Remove those inputs that can't be respresented in the settings form
+     * (Those are needed for creating connections between nodes)
+     *
+     */
+    __removeNonSettingInputs: function(inputs) {
+      let filteredInputs = JSON.parse(JSON.stringify(inputs));
+      if (Object.prototype.hasOwnProperty.call(filteredInputs, "mapper")) {
+        let inputsMapper = new qxapp.component.widget.InputsMapper(this.getLabel());
+        this.setInputsMapper(inputsMapper);
+        delete filteredInputs["mapper"];
+      }
+      for (const inputId in filteredInputs) {
+        let input = filteredInputs[inputId];
+        if (input.type.includes("data:application/s4l-api/")) {
+          delete filteredInputs[inputId];
+        }
+      }
+      return filteredInputs;
+    },
+
     __addSettings: function(inputs) {
       if (inputs === null) {
         return;
       }
-      if (Object.prototype.hasOwnProperty.call(inputs, "mapper")) {
-        let inputsMapper = new qxapp.component.widget.InputsMapper(this.getLabel());
-        this.setInputsMapper(inputsMapper);
-        delete inputs["mapper"];
-      }
-      let form = this.__settingsForm = new qxapp.component.form.Auto(inputs);
+
+      let filteredInputs = this.__removeNonSettingInputs(inputs);
+      let form = this.__settingsForm = new qxapp.component.form.Auto(filteredInputs);
       form.addListener("linkAdded", e => {
         let changedField = e.getData();
         this.getPropsWidget().linkAdded(changedField);

@@ -786,6 +786,14 @@ qx.Class.define("qxapp.data.Store", {
             email: "maiz@itis.ethz.ch"
           }],
           contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultBoundaries: {
+              displayOrder: 0,
+              label: "Default Boundary Settings",
+              description: "Default Boundary Settings",
+              type: "node-output-list-api-v0.0.1"
+            }
+          },
           inputs: {
             modeler: {
               displayOrder: 0,
@@ -823,14 +831,6 @@ qx.Class.define("qxapp.data.Store", {
             email: "maiz@itis.ethz.ch"
           }],
           contact: "maiz@itis.ethz.ch",
-          inputsDefault: {
-            defaultBoundaries: {
-              displayOrder: 0,
-              label: "Default Boundary Settings",
-              description: "Default Boundary Settings",
-              type: "node-output-list-api-v0.0.1"
-            }
-          },
           inputs: {
             modeler: {
               displayOrder: 0,
