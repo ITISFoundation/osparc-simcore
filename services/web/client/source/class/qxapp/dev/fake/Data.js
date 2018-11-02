@@ -1371,9 +1371,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
               version: "0.0.0",
               label: "LF SolverSett 1",
               inputNodes: [],
-              outputNode: true,
               position: {
-                x: 500,
+                x: 400,
                 y: 250
               },
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
@@ -1384,17 +1383,19 @@ qx.Class.define("qxapp.dev.fake.Data", {
               label: "EM-LF Solver",
               inputs: {
                 "in_1": {
-                  nodeUuid: "89e185ca-dda1-4a45-8059-715f2cb17100",
+                  nodeUuid: "SolverSettingsId",
                   output: "outFile"
                 }
               },
               inputNodes: [
-                "89e185ca-dda1-4a45-8059-715f2cb17100"
+                "SolverSettingsId"
               ],
+              outputNode: true,
               position: {
-                x: 600,
-                y: 150
-              }
+                x: 650,
+                y: 250
+              },
+              parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "96343608-610b-4951-89af-4b189e5e3861": {
               label: "Neuron Simulator Container",
@@ -1430,7 +1431,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "c104bb08-77b1-4157-b9f9-e9df7779df08",
                 "bf88496d-ddf8-476c-8d6c-24c716c2ae4c"
               ],
-              outputNode: false,
+              outputNode: true,
               position: {
                 x: 100,
                 y: 150
@@ -1458,7 +1459,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               inputNodes: [],
               outputNode: true,
               position: {
-                x: 500,
+                x: 400,
                 y: 250
               },
               parent: "96343608-610b-4951-89af-4b189e5e3861"
@@ -1469,17 +1470,18 @@ qx.Class.define("qxapp.dev.fake.Data", {
               label: "Neuron Solver",
               inputs: {
                 "in_1": {
-                  nodeUuid: "96343608-610b-4951-89af-4b189e5e3861",
+                  nodeUuid: "SolverSettingsId2",
                   output: "outFile"
                 }
               },
               inputNodes: [
-                "96343608-610b-4951-89af-4b189e5e3861"
+                "SolverSettingsId2"
               ],
               position: {
-                x: 750,
-                y: 450
-              }
+                x: 650,
+                y: 250
+              },
+              parent: "96343608-610b-4951-89af-4b189e5e3861"
             }
           }
         }
