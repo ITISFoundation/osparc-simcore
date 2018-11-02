@@ -78,6 +78,9 @@ qx.Class.define("qxapp.Application", {
       // initialize components
       let menuBarHeight = 35;
       let avaiBarHeight = 55;
+      const showMenuBar = false;
+      const showUserMenu = false;
+      const showModelingTools = true;
 
       this._menuBar = new qxapp.component.MenuBar(
         docWidth, menuBarHeight,
@@ -85,7 +88,7 @@ qx.Class.define("qxapp.Application", {
           .getBackground(), this._appModel.getColors().getMenuBar()
           .getFont());
 
-      this._userMenu = new qxapp.component.UserMenu(
+      let userMenu = new qxapp.component.UserMenu(
         this._appModel,
         this._appModel.getColors().getMenuBar()
           .getBackground(), this._appModel.getColors().getMenuBar()
@@ -116,19 +119,17 @@ qx.Class.define("qxapp.Application", {
         backgroundColor: "white",
         allowGrowY: false
       });
-      const showMenuBar = false;
+
       if (showMenuBar) {
         toolBarcontainer.add(this._menuBar);
       }
-      const showModelingTools = true;
       if (showModelingTools) {
         toolBarcontainer.add(this.__availableServicesBar);
       }
       doc.add(toolBarcontainer);
 
-      const showUserMenu = false;
       if (showUserMenu) {
-        doc.add(this._userMenu, {
+        doc.add(userMenu, {
           right: 30
         });
       }
