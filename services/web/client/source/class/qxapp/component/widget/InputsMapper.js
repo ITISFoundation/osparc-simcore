@@ -48,7 +48,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
   members: {
     __tree: null,
 
-    getOutputWidget: function() {
+    getWidget: function() {
       return this.__tree;
     }
   }
