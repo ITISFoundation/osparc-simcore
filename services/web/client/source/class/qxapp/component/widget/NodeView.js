@@ -91,8 +91,10 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     __initSettings: function() {
-      this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Grow());
-      this.__mainLayout.add(this.__settingsBox);
+      this.__settingsBox = new qx.ui.layout.VBox();
+      this.__mainLayout.add(this.__settingsBox, {
+        flex: 1
+      });
     },
 
     __initButtons: function() {
@@ -234,6 +236,12 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__settingsBox.removeAll();
       this.__settingsBox.add(nodeModel.getPropsWidget());
       this.__createDragDropMechanism(nodeModel.getPropsWidget());
+
+      if (nodeModel.getInputsMapper()) {
+        this.__settingsBox.add(nodeModel.getInputsMapper().getWidget(), {
+          flex: 1
+        });
+      }
 
       this.__clearInputPortsUIs();
       this.__createInputPortsUIs(nodeModel);

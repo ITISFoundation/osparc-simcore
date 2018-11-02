@@ -56,6 +56,12 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       check: "qxapp.component.form.renderer.PropForm"
     },
 
+    inputsMapper: {
+      check: "qxapp.component.widget.InputsMapper",
+      init: null,
+      nullable: true
+    },
+
     parentNodeId: {
       check: "String",
       nullable: true
@@ -181,6 +187,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __addSettings: function(inputs) {
       if (inputs === null) {
         return;
+      }
+      if (Object.prototype.hasOwnProperty.call(inputs, "mapper")) {
+        let inputsMapper = new qxapp.component.widget.InputsMapper(this.getLabel());
+        this.setInputsMapper(inputsMapper);
+        delete inputs["mapper"];
       }
       let form = this.__settingsForm = new qxapp.component.form.Auto(inputs);
       form.addListener("linkAdded", e => {
