@@ -21,16 +21,16 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       let store = qxapp.data.Store.getInstance();
       let metaData = this.__metaData = store.getNodeMetaData(key, version);
       if (metaData) {
-        this.__startInteractiveNode();
+        if (metaData.name) {
+          this.setLabel(metaData.name);
+        }
         if (metaData.inputs) {
           this.__addSettings(metaData.inputs);
         }
         if (metaData.outputs) {
           this.__addOutputs(metaData.outputs);
         }
-        if (metaData.name) {
-          this.setLabel(metaData.name);
-        }
+        this.__startInteractiveNode();
       }
     }
   },
