@@ -1,7 +1,0 @@
-{
-    "packageName":"simcore_webserver_sdk",
-    "projectName":"simcore-webserver-sdk",
-    "packageVersion":"1.0.0",
-    "packageUrl":"https://github.com/ITISFoundation/osparc-simcore/tree/master/packages/webserver-sdk/python",
-    "library":"asyncio"
-}
