@@ -21,7 +21,7 @@ def is_responsive(dbname, user, password, host, port):
 
 # pylint:disable=redefined-outer-name
 @pytest.fixture(scope="module")
-def engine(docker_ip, docker_services, request): 
+def engine(docker_ip, docker_services): 
     dbname = 'test'
     user = 'user'
     password = 'pwd'
@@ -51,20 +51,17 @@ def engine(docker_ip, docker_services, request):
     os.environ["POSTGRES_USER"]="user"
     os.environ["POSTGRES_PASSWORD"]="pwd"
     os.environ["POSTGRES_DB"]="test"
-
-    def fin():
-        engine.dispose()
-    request.addfinalizer(fin)
-    return engine
+    yield engine
+    # cleanup
+    engine.dispose()
+    
 
 # pylint:disable=redefined-outer-name
 @pytest.fixture(scope="module")
-def session(engine, request):
+def session(engine):
     Session = sessionmaker(engine)
     session = Session()
 
-    def fin():
-        session.close()
-
-    request.addfinalizer(fin)
-    return session
+    yield session
+    #cleanup
+    session.close()

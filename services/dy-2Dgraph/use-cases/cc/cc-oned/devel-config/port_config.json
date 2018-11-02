@@ -1,39 +1,35 @@
 {
     "version":"0.1",
-    "inputs": [
-        {
-            "key": "in_1",
-            "label": "ECGs",
-            "desc": "these are computed data out of a pipeline",
-            "type": "file-url",
-            "value": "link.SIMCORE_NODE_UUID.FILENAME_ID",
-            "settings": {
-                "value":"null"
+    "schema": {
+        "inputs": {
+            "in_1": {                
+                "label": "ECGs",
+                "displayOrder":0,
+                "description": "these are computed data out of a pipeline",
+                "type": "data:*/*"
             },
-            "widget":"stuff"
+            "in_2": {                
+                "label": "all results 1Hz",
+                "displayOrder":1,
+                "description": "computed data out of a pipeline",
+                "type": "data:*/*"
+            }
         },
-        {
-            "key": "in_2",
-            "label": "all results 1Hz",
-            "desc": "computed data out of a pipeline",
-            "type": "file-url",
-            "value": "link.SIMCORE_NODE_UUID.FILENAME_ID"
+        "outputs": {
+            "output_1": {
+                "label": "Output 1",
+                "displayOrder":0,
+                "description": "The output 1",
+                "type": "data:*/*"
+            },
+            "output_2": {                
+                "label": "Output 2",
+                "displayOrder":1,
+                "description": "The output 2",
+                "type": "data:*/*"
+            }
         }
-    ],
-    "outputs": [
-        {
-            "key": "output_1",
-            "label": "Output 1",
-            "desc": "The output 1",
-            "type": "file-url",
-            "value": "null"
-        },
-        {
-            "key": "output_2",
-            "label": "Output 2",
-            "desc": "The output 2",
-            "type": "file-url",
-            "value": "null"
-        }
-    ]
+    },
+    "inputs": {},
+    "outputs": {}
 }
