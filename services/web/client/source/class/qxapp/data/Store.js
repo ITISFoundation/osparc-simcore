@@ -86,9 +86,31 @@ qx.Class.define("qxapp.data.Store", {
       return metaData;
     },
 
-    getItemList: function(nodeInstanceUUID, outputKey) {
-      console.log("getItemList for", nodeInstanceUUID, outputKey);
-      switch (outputKey) {
+    getItemList: function(nodeInstanceUUID, portKey) {
+      console.log("getItemList for", nodeInstanceUUID, portKey);
+      switch (portKey) {
+        case "defaultMaterials":
+          return [{
+            key: "Dielectric-UUID",
+            label: "Dielectric"
+          }, {
+            key: "PEC-UUID",
+            label: "PEC"
+          }, {
+            key: "PMC-UUID",
+            label: "PMC"
+          }];
+        case "defaultBoundaries":
+          return [{
+            key: "Dirichlet-UUID",
+            label: "Dirichlet"
+          }, {
+            key: "Neumann-UUID",
+            label: "Neumann"
+          }, {
+            key: "Flux-UUID",
+            label: "Flux"
+          }];
         case "modeler":
           return [{
             key: "MODEL1-UUID",
@@ -115,9 +137,9 @@ qx.Class.define("qxapp.data.Store", {
       return [];
     },
 
-    getItem: function(nodeInstanceUUID, outputKey, itemUuid) {
-      console.log("getItem for", nodeInstanceUUID, outputKey, itemUuid);
-      switch (outputKey) {
+    getItem: function(nodeInstanceUUID, portKey, itemUuid) {
+      console.log("getItem for", nodeInstanceUUID, portKey, itemUuid);
+      switch (portKey) {
         case "materialDB": {
           switch (itemUuid) {
             case "Air-UUID": {
