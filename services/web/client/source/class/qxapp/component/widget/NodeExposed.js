@@ -1,3 +1,16 @@
+/* ************************************************************************
+   Copyright: 2018 ITIS Foundation
+   License:   MIT
+   Authors:   Odei Maiz <maiz@itis.swiss>
+   Utf8Check: äöü
+************************************************************************ */
+
+/**
+ *  Creates the widget that represents what needs to be exposed
+ * to outsise the container.
+ *
+ */
+
 qx.Class.define("qxapp.component.widget.NodeExposed", {
   extend: qx.ui.core.Widget,
 

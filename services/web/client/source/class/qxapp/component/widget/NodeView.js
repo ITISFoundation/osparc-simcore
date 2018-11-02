@@ -1,3 +1,16 @@
+/* ************************************************************************
+   Copyright: 2018 ITIS Foundation
+   License:   MIT
+   Authors:   Odei Maiz <maiz@itis.swiss>
+   Utf8Check: äöü
+************************************************************************ */
+
+/**
+ *  Node Main view
+ * - On the left side shows the default inputs if any and also what the input nodes offer
+ * - In the center the content of the node: settings, mapper, iframe...
+ */
+
 const PORT_INPUTS_WIDTH = 300;
 
 qx.Class.define("qxapp.component.widget.NodeView", {

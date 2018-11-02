@@ -1,3 +1,16 @@
+/* ************************************************************************
+   Copyright: 2018 ITIS Foundation
+   License:   MIT
+   Authors:   Odei Maiz <maiz@itis.swiss>
+   Utf8Check: äöü
+************************************************************************ */
+
+/**
+ *  Creates the widget that represents an input node.
+ * It shows nothing more than the name of the input node in the middle of a box.
+ *
+ */
+
 qx.Class.define("qxapp.component.widget.NodeInput", {
   extend: qx.ui.core.Widget,
 

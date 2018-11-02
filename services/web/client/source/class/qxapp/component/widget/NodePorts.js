@@ -1,3 +1,16 @@
+/* ************************************************************************
+   Copyright: 2018 ITIS Foundation
+   License:   MIT
+   Authors:   Odei Maiz <maiz@itis.swiss>
+   Utf8Check: äöü
+************************************************************************ */
+
+/**
+ *  Creates the widget that represents an input node.
+ * It shows create a VBox with widgets representing each of the output ports of the node.
+ *
+ */
+
 qx.Class.define("qxapp.component.widget.NodePorts", {
   extend: qx.ui.core.Widget,
 
