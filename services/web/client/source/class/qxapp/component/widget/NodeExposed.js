@@ -69,7 +69,6 @@ qx.Class.define("qxapp.component.widget.NodeExposed", {
       this.__inputPort = {};
       this.__outputPort = {};
       this.__createUIPorts(true, metaData.inputs);
-      // this.__createUIPorts(false, metaData.outputs);
     },
 
     getInputPort: function() {
