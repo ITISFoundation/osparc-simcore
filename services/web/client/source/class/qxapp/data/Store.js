@@ -706,30 +706,20 @@ qx.Class.define("qxapp.data.Store", {
           }],
           contact: "maiz@itis.ethz.ch",
           inputs: {
-            modeler: {
-              displayOrder: 0,
-              label: "Modeler",
-              description: "Live Link to Modeler",
-              type: "data:application/s4l-api/modeler"
-            },
-            materialDB: {
-              displayOrder: 1,
-              label: "MaterialDB",
-              description: "Live Link to Material DB",
-              type: "data:application/s4l-api/materialDB"
-            },
             updateDispersive: {
-              displayOrder: 2,
+              displayOrder: 0,
               label: "UpdateDispersive",
               description: "Enable automatic update of dispersive materials",
               type: "boolean",
               defaultValue: false
             },
             mapper: {
-              displayOrder: 3,
+              displayOrder: 1,
               label: "Material Settings",
               description: "Maps Model entities into Materials",
               type: "mapper"
+              // type: "data:application/s4l-api/modeler"
+              // type: "data:application/s4l-api/materialDB"
             }
           },
           outputs: {

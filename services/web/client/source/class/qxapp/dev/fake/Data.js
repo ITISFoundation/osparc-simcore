@@ -1102,14 +1102,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
               inputs: {
-                modeler: {
-                  nodeUuid: "17a932a0-f401-4571-9c55-b579f5050d37",
-                  output: "modeler"
-                },
-                materialDB: {
-                  nodeUuid: "8870a55b-680d-41b4-b40c-c928cceb7d2a",
-                  output: "materialDB"
-                },
                 "updateDispersive": false
               },
               inputNodes: [
@@ -1125,12 +1117,11 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
               inputs: {
-                modeler: {
-                  nodeUuid: "17a932a0-f401-4571-9c55-b579f5050d37",
-                  output: "modeler"
-                },
                 "boundarySetting": 3
               },
+              inputNodes: [
+                "17a932a0-f401-4571-9c55-b579f5050d37"
+              ],
               position: {
                 x: 351,
                 y: 242
@@ -1140,10 +1131,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/dynamic/itis/s4l/Simulator/LF/Sensors",
               version: "0.0.0",
               inputs: {
-                modeler: {
-                  nodeUuid: "17a932a0-f401-4571-9c55-b579f5050d37",
-                  output: "modeler"
-                },
                 "sensorSetting": 4
               },
               inputNodes: [
@@ -1158,7 +1145,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
               inputs: {
-                modeler: {
+                "modeler": {
                   nodeUuid: "17a932a0-f401-4571-9c55-b579f5050d37",
                   output: "modeler"
                 },
