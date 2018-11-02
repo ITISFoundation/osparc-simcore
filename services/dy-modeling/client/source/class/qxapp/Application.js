@@ -177,6 +177,17 @@ qx.Class.define("qxapp.Application", {
       return this._appModel.getUsers().toArray()[activeUserId].getName();
     },
 
+    loadModel: function(modelName) {
+      if (!this._socket.slotExists("importModelScene")) {
+        this._socket.on("importModelScene", function(val) {
+          if (val.type === "importModelScene") {
+            this.__threeView.importSceneFromBuffer(val.value);
+          }
+        }, this);
+      }
+      this._socket.emit("importModel", modelName);
+    },
+
     _initSignals: function() {
       // Menu bar
       this._menuBar.addListener("fileNewPressed", function(e) {
@@ -208,14 +219,7 @@ qx.Class.define("qxapp.Application", {
 
       this._menuBar.addListener("fileLoadModelPressed", function(e) {
         let selectedModel = e.getData();
-        if (!this._socket.slotExists("importModelScene")) {
-          this._socket.on("importModelScene", function(val) {
-            if (val.type === "importModelScene") {
-              this.__threeView.importSceneFromBuffer(val.value);
-            }
-          }, this);
-        }
-        this._socket.emit("importModel", selectedModel);
+        this.loadModel(selectedModel);
       }, this);
 
       this._menuBar.addListener("editPreferencesPressed", function(e) {
