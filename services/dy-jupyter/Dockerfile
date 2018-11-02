@@ -19,6 +19,7 @@ USER $NB_USER
 # ----------------------------------------------------------------
 # set up oSparc env variables
 ENV SIMCORE_NODE_UUID="-1" \
+    SIMCORE_PIPELINE_ID="-1" \
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
     S3_SECRET_KEY="-1" \

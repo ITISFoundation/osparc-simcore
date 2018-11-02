@@ -1,14 +1,21 @@
-VERSION := $(shell cat /proc/version)
+VERSION := $(shell uname -a)
 # SAN this is a hack so that docker-compose works in the linux virtual environment under Windows
 ifneq (,$(findstring Microsoft,$(VERSION)))
+$(info    detected WSL)
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
+else ifeq ($(OS), Windows_NT)
+$(info    detected Powershell/CMD)
+export DOCKER_COMPOSE=docker-compose.exe
+export DOCKER=docker.exe
 else
+$(info    detected native linux)
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
 
-export SERVICES_VERSION=1.0.2
+
+export SERVICES_VERSION=1.0.4
 export VCS_REF=$(shell git rev-parse --short HEAD) 
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 

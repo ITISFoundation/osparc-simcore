@@ -1,7 +1,7 @@
 # Common third party packages
 # Please keep alphabetical order
 celery==4.1.0
-docker==3.3.0
+docker==3.5.0
 kombu==4.1.0
 minio==4.0.0
 networkx==2.1
