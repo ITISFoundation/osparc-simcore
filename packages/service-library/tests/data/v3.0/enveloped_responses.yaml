@@ -1,0 +1,111 @@
+openapi: "3.0.0"
+info:
+  title: Minimal valid OpenAPI specification
+  version: "0.1"
+paths:
+  /dict:
+    get:
+      operationId: get_dict
+  /attobj:
+    get:
+      operationId: get_attobj
+  /envelope:
+    get:
+      operationId: get_envelope
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvelopedData"
+  /list:
+    get:
+      operationId: get_list
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvelopedData"
+  /string:
+    get:
+      operationId: get_string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvelopedString"
+  /number:
+    get:
+      operationId: get_string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvelopedNumber"
+
+  /mixed:
+    get:
+      operationId: get_mixed
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvelopedArrayObjects"
+
+components:
+  schemas:
+    EnvelopedArrayObjects:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        error:
+          $ref: '#/components/schema/Error'
+    EnvelopedNumber:
+      type: object
+      properties:
+        data:
+          type: number
+        error:
+          $ref: '#/components/schema/Error'
+    EnvelopedString:
+      type: object
+      properties:
+        data:
+          type: string
+        error:
+          $ref: '#/components/schema/Error'
+    EnvelopedData:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Data'
+        error:
+          $ref: '#/components/schema/Error'
+    EnvelopedDataArray:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Data'
+        error:
+          $ref: '#/components/schema/Error'
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+    Data:
+      type: object
+      properties:
+        x:
+          type: integer
+        y:
+          type: string

@@ -9,6 +9,7 @@ from aiohttp import web
 from openapi_core import shortcuts
 from openapi_core.schema.specs.models import Spec as OpenApiSpec
 from openapi_core.validation.request.validators import RequestValidator
+from openapi_core.validation.response.validators import ResponseValidator
 
 from .openapi_wrappers import (PARAMETERS_KEYS, AiohttpOpenAPIRequest,
                                AiohttpOpenAPIResponse)
@@ -58,7 +59,13 @@ async def validate_data(spec: OpenApiSpec, request, response: web.Response):
         req = request
 
     res = await AiohttpOpenAPIResponse.create(response)
-    return shortcuts.validate_data(spec, req, res)
+
+    validator = ResponseValidator(spec)
+    result = validator.validate(req, res)
+
+    result.raise_for_errors()
+
+    return result.data
 
 
 __all__ = (
