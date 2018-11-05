@@ -14,17 +14,20 @@ from .rest_utils import EnvelopeFactory
 
 log = logging.getLogger(__name__)
 
+class Encoder(json.JSONEncoder):
+    def default(self, o): #pylint: disable=E0202
+        if attr.has(o.__class__):
+            return attr.asdict(o)
+        return json.JSONEncoder.default(self, o)
+
 
 def jsonify(payload):
-    return json.dumps(payload)
-    #if attr.has(data.__class__):
-    #json_data = attr.asdict(data)
+    return json.dumps(payload, cls=Encoder)
 
 
 def is_api_request(request: web.Request, api_version: str) -> bool:
     basepath = "/" + api_version.lstrip("/")
     return request.path.startswith(basepath)
-
 
 
 def error_middleware_factory(api_version="v0"):
