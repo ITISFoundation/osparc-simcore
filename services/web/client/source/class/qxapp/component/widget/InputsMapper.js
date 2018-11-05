@@ -1,4 +1,4 @@
-/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__addTreeBranch", "__willBeBranch", "__willBeLeave", "__tree"] }] */
+/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__willBeBranch", "__willBeLeaf", "__tree"] }] */
 
 qx.Class.define("qxapp.component.widget.InputsMapper", {
   extend: qx.ui.core.Widget,
@@ -27,7 +27,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             const from = e.getRelatedTarget();
             if (Object.prototype.hasOwnProperty.call(from, "nodeKey")) {
               const fromKey = from["nodeKey"];
-              if (that.__willBeBranch(fromKey) || that.__willBeLeave(fromKey)) {
+              if (that.__willBeBranch(fromKey) || that.__willBeLeaf(fromKey)) {
                 compatible = true;
               }
             }
@@ -108,11 +108,11 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
       return isDefault || isBranch;
     },
 
-    __willBeLeave: function(candidate) {
+    __willBeLeaf: function(candidate) {
       let isLeave = false;
       const maps = this.getMapper().maps;
-      if (Object.prototype.hasOwnProperty.call(maps, "leave")) {
-        if (maps["leave"] === candidate) {
+      if (Object.prototype.hasOwnProperty.call(maps, "leaf")) {
+        if (maps["leaf"] === candidate) {
           isLeave = true;
         }
       }

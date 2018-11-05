@@ -806,7 +806,7 @@ qx.Class.define("qxapp.data.Store", {
               type: "mapper",
               maps: {
                 branch: "service/demodec/dynamic/itis/s4l/MaterialDB",
-                leave: "service/demodec/dynamic/itis/s4l/Modeler"
+                leaf: "service/demodec/dynamic/itis/s4l/Modeler"
               }
             }
           },
@@ -851,7 +851,7 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps Model entities into Boundary Conditions",
               type: "mapper",
               maps: {
-                leave: "service/demodec/dynamic/itis/s4l/Modeler"
+                leaf: "service/demodec/dynamic/itis/s4l/Modeler"
               }
             }
           },
