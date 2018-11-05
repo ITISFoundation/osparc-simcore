@@ -160,7 +160,7 @@ qx.Class.define("qxapp.data.Store", {
                 },
                 "electricRelativePermitivity": {
                   displayOrder: 2,
-                  label: "Electric Relative Permeability",
+                  label: "Electric Relative Permittivity",
                   unit: "",
                   type: "number",
                   defaultValue: 1
@@ -172,7 +172,7 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 0
                 },
-                "magneticRelativePermitivity": {
+                "magneticRelativePermeability": {
                   displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
@@ -199,7 +199,7 @@ qx.Class.define("qxapp.data.Store", {
                 },
                 "electricRelativePermitivity": {
                   displayOrder: 2,
-                  label: "Electric Relative Permeability",
+                  label: "Electric Relative Permittivity",
                   unit: "",
                   type: "number",
                   defaultValue: 1
@@ -211,7 +211,7 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 0
                 },
-                "magneticRelativePermitivity": {
+                "magneticRelativePermeability": {
                   displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
@@ -238,7 +238,7 @@ qx.Class.define("qxapp.data.Store", {
                 },
                 "electricRelativePermitivity": {
                   displayOrder: 2,
-                  label: "Electric Relative Permeability",
+                  label: "Electric Relative Permittivity",
                   unit: "",
                   type: "number",
                   defaultValue: 1
@@ -250,12 +250,56 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 0
                 },
-                "magneticRelativePermitivity": {
+                "magneticRelativePermeability": {
                   displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
                   type: "number",
                   defaultValue: 1
+                }
+              };
+            }
+          }
+        }
+        // eslint-disable-next-line no-fallthrough
+        case "defaultMaterials": {
+          switch (itemUuid) {
+            case "Dielectric-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1.205
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permittivity",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticRelativePermeability": {
+                  displayOrder: 3,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 4,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
                 }
               };
             }
@@ -312,7 +356,7 @@ qx.Class.define("qxapp.data.Store", {
                 },
                 "electricRelativePermitivity": {
                   displayOrder: 2,
-                  label: "Electric Relative Permeability",
+                  label: "Electric Relative Permittivity",
                   unit: "",
                   type: "number",
                   defaultValue: 1
@@ -324,7 +368,7 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 0
                 },
-                "magneticRelativePermitivity": {
+                "magneticRelativePermeability": {
                   displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
@@ -352,7 +396,7 @@ qx.Class.define("qxapp.data.Store", {
                 },
                 "electricRelativePermitivity": {
                   displayOrder: 2,
-                  label: "Electric Relative Permeability",
+                  label: "Electric Relative Permittivity",
                   unit: "",
                   type: "number",
                   defaultValue: 1
@@ -364,7 +408,7 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 0
                 },
-                "magneticRelativePermitivity": {
+                "magneticRelativePermeability": {
                   displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
@@ -392,7 +436,7 @@ qx.Class.define("qxapp.data.Store", {
                 },
                 "electricRelativePermitivity": {
                   displayOrder: 2,
-                  label: "Electric Relative Permeability",
+                  label: "Electric Relative Permittivity",
                   unit: "",
                   type: "number",
                   defaultValue: 1
@@ -404,7 +448,7 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 0
                 },
-                "magneticRelativePermitivity": {
+                "magneticRelativePermeability": {
                   displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
@@ -445,7 +489,7 @@ qx.Class.define("qxapp.data.Store", {
                 },
                 "electricRelativePermitivity": {
                   displayOrder: 2,
-                  label: "Electric Relative Permeability",
+                  label: "Electric Relative Permittivity",
                   unit: "",
                   type: "number",
                   defaultValue: 1
@@ -457,7 +501,7 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 0
                 },
-                "magneticRelativePermitivity": {
+                "magneticRelativePermeability": {
                   displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
