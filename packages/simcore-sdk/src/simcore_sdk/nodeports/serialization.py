@@ -2,11 +2,11 @@
 import json
 import logging
 
-from simcore_sdk.nodeports import nodeports #pylint: disable=cyclic-import
-from simcore_sdk.nodeports._itemslist import DataItemsList
-from simcore_sdk.nodeports._item import DataItem
-from simcore_sdk.nodeports import exceptions
-from simcore_sdk.nodeports import config
+from simcore_sdk.nodeports import config, exceptions, nodeports #pylint: disable=R0401
+from simcore_sdk.nodeports._data_item import DataItem
+from simcore_sdk.nodeports._schema_item import SchemaItem
+from simcore_sdk.nodeports._data_items_list import DataItemsList
+from simcore_sdk.nodeports._schema_items_list import SchemaItemsList
 
 log = logging.getLogger(__name__)
 
@@ -30,8 +30,8 @@ def create_from_json(db_mgr, auto_read=False, auto_write=False):
     log.debug("Creating Nodeports object with io object: %s, auto read %s and auto write %s", db_mgr, auto_read, auto_write)
     if not db_mgr:
         raise exceptions.NodeportsException("io object empty, this is not allowed")
-
-    nodeports_obj = json.loads(db_mgr.get_ports_configuration(), object_hook=nodeports_decoder)
+    nodeports_dict = json.loads(db_mgr.get_ports_configuration())
+    nodeports_obj = __decodeNodePorts(nodeports_dict)
     nodeports_obj.db_mgr = db_mgr
     nodeports_obj.autoread = auto_read
     nodeports_obj.autowrite = auto_write
@@ -42,7 +42,8 @@ def create_nodeports_from_uuid(db_mgr, node_uuid):
     log.debug("Creating Nodeports object from node uuid: %s", node_uuid)
     if not db_mgr:
         raise exceptions.NodeportsException("Invalid call to create nodeports from uuid")
-    nodeports_obj = json.loads(db_mgr.get_ports_configuration_from_node_uuid(node_uuid), object_hook=nodeports_decoder)
+    nodeports_dict = json.loads(db_mgr.get_ports_configuration_from_node_uuid(node_uuid))
+    nodeports_obj = __decodeNodePorts(nodeports_dict)
     log.debug("Created Nodeports object")
     return nodeports_obj
 
@@ -74,40 +75,41 @@ class _NodeportsEncoder(json.JSONEncoder):
             log.debug("Encoding Nodeports object")
             return {
                 "version": o._version, # pylint: disable=W0212
-                "inputs": o.inputs, # pylint: disable=W0212
-                "outputs": o.outputs # pylint: disable=W0212
+                "schema": {"inputs": o._input_schemas, "outputs": o._output_schemas},  # pylint: disable=W0212
+                "inputs": o._inputs_payloads, # pylint: disable=W0212
+                "outputs": o._outputs_payloads # pylint: disable=W0212
             }
+        if isinstance(o, SchemaItemsList):
+            log.debug("Encoding SchemaItemsList object")
+            items = {
+                key:{
+                    item_key:item_value for item_key, item_value in item._asdict().items() if item_key != "key"
+                } for key, item in o.items()
+            }            
+            return items
         if isinstance(o, DataItemsList):
             log.debug("Encoding DataItemsList object")
-            items = [data_item._asdict() for data_item in o]
+            items = {key:item.value for key, item in o.items()}            
             return items
         log.debug("Encoding object using defaults")
         return json.JSONEncoder.default(self, o)
 
-def nodeports_decoder(dct):
-    """JSON decoder for Nodeports objects.
+def __decodeNodePorts(dct):
+    if not all(k in dct for k in config.NODE_KEYS.keys()):
+        raise exceptions.InvalidProtocolError(dct)
+    # decode schema
+    schema = dct["schema"]
+    if not all(k in schema for k in ("inputs", "outputs")):
+        raise exceptions.InvalidProtocolError(dct, "invalid schemas")
+    decoded_input_schema = SchemaItemsList({key:SchemaItem(key=key, **value) for key, value in schema["inputs"].items()})
+    decoded_output_schema = SchemaItemsList({key:SchemaItem(key=key, **value) for key, value in schema["outputs"].items()})
+    # decode payload
+    decoded_input_payload = DataItemsList({key:DataItem(key=key, value=value) for key, value in dct["inputs"].items()})
+    decoded_output_payload = DataItemsList({key:DataItem(key=key, value=value) for key, value in dct["outputs"].items()})
 
-    Arguments:
-        dct {dictionary} -- represents json configuration of a Nodeports object
-
-    Raises:
-        exceptions.InvalidProtocolError -- if the protocol is not recognized
-
-    Returns:
-        Nodeports,DataItemsList,DataItem -- objects necessary for a complete JSON decoding
-    """
-    log.debug(dct)
-    if "version" in dct and "inputs" in dct and "outputs" in dct:
-        log.debug("Decoding Nodeports json: %s", dct)
-        return nodeports.Nodeports(dct["version"], DataItemsList(dct["inputs"]), DataItemsList(dct["outputs"]))
-
-    # check for dataitem
-    #TODO: SAN this is not good. decoding objects going bottom/up seems strange
-    for key in config.DATA_ITEM_KEYS:
-        if key == "timestamp": # optional
-            continue
-        if key not in dct:
-            return dct
-            #raise exceptions.InvalidProtocolError(dct, "key \"%s\" is missing" % (str(key)))
-    log.debug("Decoding Data items json: %s", dct)
-    return DataItem(**dct)
+    return nodeports.Nodeports(dct["version"],
+                                SchemaItemsList(decoded_input_schema),
+                                SchemaItemsList(decoded_output_schema),
+                                DataItemsList(decoded_input_payload),
+                                DataItemsList(decoded_output_payload))
+    

@@ -184,12 +184,12 @@ def __get_docker_image_published_ports(service_id):
 def __pass_port_to_service(service, port, service_boot_parameters_labels):
     for param in service_boot_parameters_labels:
         __check_setting_correctness(param)
-        if param['name'] == 'published_port':
+        if param['name'] == 'published_host':
             # time.sleep(5)
             route = param['value']
-            log.debug("Service needs to get published port %s using route %s", port, route)
-            service_url = "http://" + str(service.name) + "/" + route
-            query_string = {"port":str(port)}
+            log.debug("Service needs to get published host %s:%s using route %s", config.PUBLISHED_HOST_NAME, port, route)
+            service_url = "http://" + str(service.name) + "/" + route            
+            query_string = {"hostname":str(config.PUBLISHED_HOST_NAME), "port":str(port)}
             log.debug("creating request %s and query %s", service_url, query_string)
             response = requests.post(service_url, data=query_string)
             log.debug("query response: %s", response)
