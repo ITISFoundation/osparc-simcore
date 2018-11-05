@@ -15,6 +15,7 @@ from servicelib.openapi import OpenAPIError
 from servicelib.rest_middlewares import envelope_middleware
 from servicelib.rest_routing import (create_routes_from_map,
                                      create_routes_from_namespace)
+from servicelib.response_utils import is_enveloped, unwrap_envelope
 from utils import Handlers
 
 
@@ -23,7 +24,6 @@ def specs(here):
     assert openapi_path.exists()
     specs = openapi.create_specs(openapi_path)
     return specs
-
 
 def test_create_routes_from_map(specs):
     handlers = Handlers()
@@ -64,6 +64,7 @@ def client(loop, aiohttp_client, specs):
     # routes
     handlers = Handlers()
     routes = create_routes_from_namespace(specs, handlers)
+
     app.router.add_routes(routes)
 
     # validators
@@ -75,6 +76,27 @@ def client(loop, aiohttp_client, specs):
     app.middlewares.append(envelope_middleware)
 
     return loop.run_until_complete(aiohttp_client(app))
+
+
+
+@pytest.mark.parametrize("path,expected_data", [
+    ("/dict", Handlers().get_dict(None)),
+    ("/envelope", Handlers().get_envelope(None)['data']),
+    ("/list", Handlers().get_list(None)),
+    ("/attrobj", Handlers().get_attobj(None)),
+    ("/string", Handlers().get_string(None)),
+    ("/number", Handlers().get_number(None)),
+    ("/mixed", Handlers().get_mixed(None))
+])
+async def test_envelope_middleware(path, expected_data, client):
+    response = await client.get(path)
+    payload = await response.json()
+
+    assert is_enveloped(payload)
+
+    data, error = unwrap_envelope(payload)
+    assert not error
+    assert data == expected_data
 
 
 
@@ -95,8 +117,7 @@ async def test_response_validators(path, client):
     req = get_reqinfo(client.server, path)
     try:
         payload = await validate_data(specs, req, response)
-        assert "error" in payload
-        assert "data" in payload
+        assert is_enveloped(payload)
     except OpenAPIError as err:
         pytest.fail(err)
 
