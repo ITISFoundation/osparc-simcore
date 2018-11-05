@@ -3,8 +3,8 @@
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **float** |  | [optional] 
-**name** | **str** |  | [optional] 
+**data** | [**list[InlineResponse2002Data]**](InlineResponse2002Data.md) |  | [optional] 
+**error** | [**InlineResponse200Error**](InlineResponse200Error.md) |  | [optional] 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

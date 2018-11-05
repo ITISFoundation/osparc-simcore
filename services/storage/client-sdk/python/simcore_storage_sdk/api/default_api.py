@@ -261,7 +261,7 @@ class DefaultApi(object):
         :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
-        :return: InlineResponse2003
+        :return: InlineResponse2003Data
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -284,7 +284,7 @@ class DefaultApi(object):
         :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
-        :return: InlineResponse2003
+        :return: InlineResponse2003Data
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -351,7 +351,7 @@ class DefaultApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='InlineResponse2003',  # noqa: E501
+            response_type='InlineResponse2003Data',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -371,7 +371,7 @@ class DefaultApi(object):
         :param str location_id: (required)
         :param str user_id: (required)
         :param str uuid_filter:
-        :return: list[InlineResponse2003]
+        :return: InlineResponse2003
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -394,7 +394,7 @@ class DefaultApi(object):
         :param str location_id: (required)
         :param str user_id: (required)
         :param str uuid_filter:
-        :return: list[InlineResponse2003]
+        :return: InlineResponse2003
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -457,7 +457,7 @@ class DefaultApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='list[InlineResponse2003]',  # noqa: E501
+            response_type='InlineResponse2003',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -475,7 +475,7 @@ class DefaultApi(object):
 
         :param async_req bool
         :param str user_id: (required)
-        :return: list[InlineResponse2002]
+        :return: InlineResponse2002
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -496,7 +496,7 @@ class DefaultApi(object):
 
         :param async_req bool
         :param str user_id: (required)
-        :return: list[InlineResponse2002]
+        :return: InlineResponse2002
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -551,7 +551,7 @@ class DefaultApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='list[InlineResponse2002]',  # noqa: E501
+            response_type='InlineResponse2002',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -571,7 +571,7 @@ class DefaultApi(object):
         :param str file_id: (required)
         :param str location_id: (required)
         :param Body1 body1:
-        :return: InlineResponse2003
+        :return: InlineResponse2003Data
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -594,7 +594,7 @@ class DefaultApi(object):
         :param str file_id: (required)
         :param str location_id: (required)
         :param Body1 body1:
-        :return: InlineResponse2003
+        :return: InlineResponse2003Data
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -661,7 +661,7 @@ class DefaultApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='InlineResponse2003',  # noqa: E501
+            response_type='InlineResponse2003Data',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501

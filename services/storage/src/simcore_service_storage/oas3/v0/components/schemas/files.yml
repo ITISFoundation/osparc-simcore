@@ -5,7 +5,7 @@ FileMetaDataEnveloped:
     - error
   properties:
     data:
-      $ref: '#/FileMetaData'
+      $ref: '#/FileMetaDataArray'
       nullable: true
       default: null
     error:

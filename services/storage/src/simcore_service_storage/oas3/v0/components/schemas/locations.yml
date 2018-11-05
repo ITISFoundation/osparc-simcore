@@ -5,7 +5,7 @@ FileLocationEnveloped:
     - error
   properties:
     data:
-      $ref: '#/FileLocation'
+      $ref: '#/FileLocationArray'
       nullable: true
       default: null
     error:

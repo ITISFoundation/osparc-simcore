@@ -32,68 +32,68 @@ class InlineResponse2002(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        'id': 'float',
-        'name': 'str'
+        'data': 'list[InlineResponse2002Data]',
+        'error': 'InlineResponse200Error'
     }
 
     attribute_map = {
-        'id': 'id',
-        'name': 'name'
+        'data': 'data',
+        'error': 'error'
     }
 
-    def __init__(self, id=None, name=None):  # noqa: E501
+    def __init__(self, data=None, error=None):  # noqa: E501
         """InlineResponse2002 - a model defined in OpenAPI"""  # noqa: E501
 
-        self._id = None
-        self._name = None
+        self._data = None
+        self._error = None
         self.discriminator = None
 
-        if id is not None:
-            self.id = id
-        if name is not None:
-            self.name = name
+        if data is not None:
+            self.data = data
+        if error is not None:
+            self.error = error
 
     @property
-    def id(self):
-        """Gets the id of this InlineResponse2002.  # noqa: E501
+    def data(self):
+        """Gets the data of this InlineResponse2002.  # noqa: E501
 
 
-        :return: The id of this InlineResponse2002.  # noqa: E501
-        :rtype: float
+        :return: The data of this InlineResponse2002.  # noqa: E501
+        :rtype: list[InlineResponse2002Data]
         """
-        return self._id
+        return self._data
 
-    @id.setter
-    def id(self, id):
-        """Sets the id of this InlineResponse2002.
+    @data.setter
+    def data(self, data):
+        """Sets the data of this InlineResponse2002.
 
 
-        :param id: The id of this InlineResponse2002.  # noqa: E501
-        :type: float
+        :param data: The data of this InlineResponse2002.  # noqa: E501
+        :type: list[InlineResponse2002Data]
         """
 
-        self._id = id
+        self._data = data
 
     @property
-    def name(self):
-        """Gets the name of this InlineResponse2002.  # noqa: E501
+    def error(self):
+        """Gets the error of this InlineResponse2002.  # noqa: E501
 
 
-        :return: The name of this InlineResponse2002.  # noqa: E501
-        :rtype: str
+        :return: The error of this InlineResponse2002.  # noqa: E501
+        :rtype: InlineResponse200Error
         """
-        return self._name
+        return self._error
 
-    @name.setter
-    def name(self, name):
-        """Sets the name of this InlineResponse2002.
+    @error.setter
+    def error(self, error):
+        """Sets the error of this InlineResponse2002.
 
 
-        :param name: The name of this InlineResponse2002.  # noqa: E501
-        :type: str
+        :param error: The error of this InlineResponse2002.  # noqa: E501
+        :type: InlineResponse200Error
         """
 
-        self._name = name
+        self._error = error
 
     def to_dict(self):
         """Returns the model properties as a dict"""

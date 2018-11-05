@@ -113,7 +113,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_file_metadata**
-> InlineResponse2003 get_file_metadata(file_id, location_id, user_id)
+> InlineResponse2003Data get_file_metadata(file_id, location_id, user_id)
 
 Get File Metadata
 
@@ -149,7 +149,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**InlineResponse2003**](InlineResponse2003.md)
+[**InlineResponse2003Data**](InlineResponse2003Data.md)
 
 ### Authorization
 
@@ -163,7 +163,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_files_metadata**
-> list[InlineResponse2003] get_files_metadata(location_id, user_id, uuid_filter=uuid_filter)
+> InlineResponse2003 get_files_metadata(location_id, user_id, uuid_filter=uuid_filter)
 
 Get Files Metadata
 
@@ -199,7 +199,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**list[InlineResponse2003]**](InlineResponse2003.md)
+[**InlineResponse2003**](InlineResponse2003.md)
 
 ### Authorization
 
@@ -213,7 +213,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_storage_locations**
-> list[InlineResponse2002] get_storage_locations(user_id)
+> InlineResponse2002 get_storage_locations(user_id)
 
 Get available storage locations
 
@@ -245,7 +245,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**list[InlineResponse2002]**](InlineResponse2002.md)
+[**InlineResponse2002**](InlineResponse2002.md)
 
 ### Authorization
 
@@ -259,7 +259,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **update_file_meta_data**
-> InlineResponse2003 update_file_meta_data(file_id, location_id, body1=body1)
+> InlineResponse2003Data update_file_meta_data(file_id, location_id, body1=body1)
 
 Update File Metadata
 
@@ -295,7 +295,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**InlineResponse2003**](InlineResponse2003.md)
+[**InlineResponse2003Data**](InlineResponse2003Data.md)
 
 ### Authorization
 

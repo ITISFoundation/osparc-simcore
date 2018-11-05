@@ -103,7 +103,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/locations.yml#FileLocationArray'
+                $ref: './components/schemas/locations.yml#FileLocationEnveloped'
         default:
           description: Unexpected error
           content:
@@ -137,7 +137,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/files.yml#FileMetaDataArray'
+                $ref: './components/schemas/files.yml#FileMetaDataEnveloped'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
