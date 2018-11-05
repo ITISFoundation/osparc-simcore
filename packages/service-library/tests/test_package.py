@@ -22,7 +22,7 @@ def test_run_pylint(pylintrc, package_dir):
     try:
         assert subprocess.check_call(cmd.split()) == 0
     except subprocess.CalledProcessError as err:
-        pytest.fail("Linting errors: %d " % err.returncode)
+        pytest.fail("Linting error. Linter existed with code %d" % err.returncode)
 
 def test_no_pdbs_in_place(package_dir):
     # TODO: add also test_dir excluding this function!?
