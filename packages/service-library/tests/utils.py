@@ -6,10 +6,11 @@ import attr
 from aiohttp import web
 
 
-@attr.s()
+@attr.s(auto_attribs=True)
 class Data:
     x: int=3
     y: str="foo"
+
 
 class Handlers:
     def get_dict(self, request: web.Request):
@@ -33,5 +34,5 @@ class Handlers:
         return 3
 
     def get_mixed(self, request: web.Request):
-        data = [ {'x':3, 'y':"3", 'z':[Data(3, "3"), ]} ]*3
+        data = [ {'x':3, 'y':"3", 'z':[Data(1, "3"), ]} ]*3
         return data

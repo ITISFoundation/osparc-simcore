@@ -4,11 +4,9 @@ from typing import Dict, List
 
 from aiohttp import web
 
-from openapi import Spec
-
+from .openapi import Spec
 
 logger = logging.getLogger(__name__)
-
 
 
 def create_routes_from_map(specs: Spec, handlers_map: Dict) -> List[web.RouteDef]:

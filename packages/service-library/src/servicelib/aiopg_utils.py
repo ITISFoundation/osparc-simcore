@@ -12,7 +12,7 @@ import sqlalchemy as sa
 import logging
 import warnings
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 warnings.warn("DO NOT USER, STILL UNDER DEVELOPMENT")
 
@@ -42,7 +42,7 @@ class AiopgExecutor:
 
     async def execute(self):
         async with self.engine.acquire() as conn:
-            log.debug(self.statement)
+            logger.debug(self.statement)
             resp = await conn.execute(self.statement)
             return resp
 
