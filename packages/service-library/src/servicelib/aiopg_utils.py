@@ -43,8 +43,6 @@ class AiopgExecutor:
     async def execute(self):
         async with self.engine.acquire() as conn:
             log.debug(self.statement)
-            import pdb; pdb.set_trace()
-
             resp = await conn.execute(self.statement)
             return resp
 
