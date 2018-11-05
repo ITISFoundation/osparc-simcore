@@ -32,11 +32,9 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
           let compatible = false;
           if (e.supportsType("osparc-mapping")) {
             const from = e.getRelatedTarget();
-            if (Object.prototype.hasOwnProperty.call(from, "nodeKey")) {
-              const fromKey = from["nodeKey"];
-              if (that.__willBeBranch(fromKey) || that.__willBeLeaf(fromKey)) {
-                compatible = true;
-              }
+            const fromKey = from.getNodeKey();
+            if (that.__willBeBranch(fromKey) || that.__willBeLeaf(fromKey)) {
+              compatible = true;
             }
           }
           if (!compatible) {
@@ -46,33 +44,31 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
         item.addListener("drop", e => {
           if (e.supportsType("osparc-mapping")) {
             const from = e.getRelatedTarget();
-            if (Object.prototype.hasOwnProperty.call(from, "nodeKey")) {
-              const fromNodeKey = from["nodeKey"];
-              const fromPortKey = from["portKey"];
-              const willBeBranch = that.__willBeBranch(fromNodeKey);
-              let data = {
-                key: from.getModel(),
-                label: from.getLabel()
-              };
-              if (willBeBranch) {
-                data["children"] = [];
-              }
-              let newItem = qx.data.marshal.Json.createModel(data, true);
-              newItem["nodeKey"] = fromNodeKey;
-              newItem["portKey"] = fromPortKey;
-              const to = e.getCurrentTarget().getModel();
-              to.getChildren().push(newItem);
-              if (willBeBranch) {
-                const nodeInstanceUUID = null;
-                const itemProps = qxapp.data.Store.getInstance().getItem(nodeInstanceUUID, fromPortKey, newItem.getKey());
-                if (itemProps) {
-                  let form = new qxapp.component.form.Auto(itemProps);
-                  let propsWidget = new qxapp.component.form.renderer.PropForm(form);
-                  newItem["propsWidget"] = propsWidget;
-                }
-              }
-              tree.focus();
+            const fromNodeKey = from.getNodeKey();
+            const fromPortKey = from.getPortKey();
+            const willBeBranch = that.__willBeBranch(fromNodeKey);
+            let data = {
+              key: from.getModel(),
+              label: from.getLabel()
+            };
+            if (willBeBranch) {
+              data["children"] = [];
             }
+            let newItem = qx.data.marshal.Json.createModel(data, true);
+            newItem["nodeKey"] = fromNodeKey;
+            newItem["portKey"] = fromPortKey;
+            const to = e.getCurrentTarget().getModel();
+            to.getChildren().push(newItem);
+            if (willBeBranch) {
+              const nodeInstanceUUID = null;
+              const itemProps = qxapp.data.Store.getInstance().getItem(nodeInstanceUUID, fromPortKey, newItem.getKey());
+              if (itemProps) {
+                let form = new qxapp.component.form.Auto(itemProps);
+                let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+                newItem["propsWidget"] = propsWidget;
+              }
+            }
+            tree.focus();
           }
         });
       }
