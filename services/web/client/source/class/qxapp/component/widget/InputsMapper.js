@@ -18,6 +18,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
     this._add(tree, {
       flex: 1
     });
+    tree.getSelection().addListener("change", this.__onTreeSelectionChanged, this);
 
     let that = this;
     tree.setDelegate({
@@ -70,6 +71,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
                   newItem["propsWidget"] = propsWidget;
                 }
               }
+              tree.focus();
             }
           }
         });
