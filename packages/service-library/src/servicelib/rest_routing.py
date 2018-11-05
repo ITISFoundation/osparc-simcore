@@ -1,7 +1,6 @@
 import inspect
 import logging
 from typing import Dict, List
-
 from aiohttp import web
 
 from .openapi import Spec
@@ -13,9 +12,22 @@ def create_routes_from_map(specs: Spec, handlers_map: Dict) -> List[web.RouteDef
     """
         handlers_map[operation_id] == handler
     """
-    logger.debug(specs, handlers_map)
-    # TODO: key operation_id or other???
-    return list()
+    # TODO: key operation_id or other ask key-map???
+    routes = []
+    _handlers_map = handlers_map.copy()
+
+    for url, path in specs.paths.items():
+        for method, operation in path.operations.items():
+            handler = _handlers_map.pop(operation.operation_id, None)
+            if handler:
+                routes.append( web.route(method.upper(), url, handler, name=operation.operation_id) )
+            else:
+                logger.debug("Could not map %s %s %s", url, method.upper(), operation.operation_id)
+
+
+    #assert _handlers_map, "Not all handlers are assigned?"
+
+    return routes
 
 
 

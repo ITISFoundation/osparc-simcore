@@ -43,7 +43,7 @@ paths:
                 $ref: "#/components/schemas/EnvelopedString"
   /number:
     get:
-      operationId: get_string
+      operationId: get_number
       responses:
         default:
           description: "default desc"

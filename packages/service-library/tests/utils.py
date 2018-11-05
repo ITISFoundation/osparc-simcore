@@ -21,8 +21,7 @@ class Handlers:
         return {"error": None, "data": data}
 
     def get_list(self, request: web.Request):
-        data = [ {'x':3, 'y':"3"} ]*3
-        return {"error": None, "data": data}
+        return [ {'x':3, 'y':"3"} ]*3
 
     def get_attobj(self, request: web.Request):
         return Data(3, "3")
@@ -34,5 +33,5 @@ class Handlers:
         return 3
 
     def get_mixed(self, request: web.Request):
-        data = [ {'x':3, 'y':"3", 'z':[Data(1, "3"), ]} ]*3
+        data = [ {'x':3, 'y':"3", 'z':[Data(1, "3"), ]*2} ]*3
         return data
