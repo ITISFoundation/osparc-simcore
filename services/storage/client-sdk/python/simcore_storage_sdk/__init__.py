@@ -18,8 +18,6 @@ from __future__ import absolute_import
 __version__ = "0.1.0"
 
 # import apis into sdk package
-from simcore_storage_sdk.api.default_api import DefaultApi
-from simcore_storage_sdk.api.tests_api import TestsApi
 from simcore_storage_sdk.api.users_api import UsersApi
 
 # import ApiClient
@@ -36,6 +34,8 @@ from simcore_storage_sdk.models.inline_response2002_data import InlineResponse20
 from simcore_storage_sdk.models.inline_response2003 import InlineResponse2003
 from simcore_storage_sdk.models.inline_response2003_data import InlineResponse2003Data
 from simcore_storage_sdk.models.inline_response2004 import InlineResponse2004
+from simcore_storage_sdk.models.inline_response2004_data import InlineResponse2004Data
+from simcore_storage_sdk.models.inline_response2005 import InlineResponse2005
 from simcore_storage_sdk.models.inline_response200_data import InlineResponse200Data
 from simcore_storage_sdk.models.inline_response200_error import InlineResponse200Error
 from simcore_storage_sdk.models.inline_response200_error_errors import InlineResponse200ErrorErrors

@@ -5,7 +5,7 @@ FileMetaDataEnveloped:
     - error
   properties:
     data:
-      $ref: '#/FileMetaDataArray'
+      $ref: '#/FileMetaData'
       nullable: true
       default: null
     error:
@@ -57,8 +57,3 @@ FileMetaData:
     file_name: "example.txt"
     user_id: "12"
     user_name: "dennis"
-
-FileMetaDataArray:
-  type: array
-  items:
-    $ref: '#/FileMetaData'

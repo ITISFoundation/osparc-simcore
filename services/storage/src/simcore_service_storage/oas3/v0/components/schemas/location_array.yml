@@ -1,0 +1,19 @@
+FileLocationArrayEnveloped:
+  type: object
+  required:
+    - data
+    - error
+  properties:
+    data:
+      $ref: '#/FileLocationArray'
+      nullable: true
+      default: null
+    error:
+      $ref: "./error.yml#/ErrorType"
+      nullable: true
+      default: null
+
+FileLocationArray:
+  type: array
+  items:
+    $ref: './location.yml#/FileLocation'

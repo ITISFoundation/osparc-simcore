@@ -8,7 +8,6 @@ Method | HTTP request | Description
 [**download_file**](DefaultApi.md#download_file) | **GET** /locations/{location_id}/files/{fileId} | Returns download link for requested file
 [**get_file_metadata**](DefaultApi.md#get_file_metadata) | **GET** /locations/{location_id}/files/{fileId}/metadata | Get File Metadata
 [**get_files_metadata**](DefaultApi.md#get_files_metadata) | **GET** /locations/{location_id}/files/metadata | Get Files Metadata
-[**get_storage_locations**](DefaultApi.md#get_storage_locations) | **GET** /locations | Get available storage locations
 [**update_file_meta_data**](DefaultApi.md#update_file_meta_data) | **PATCH** /locations/{location_id}/files/{fileId}/metadata | Update File Metadata
 [**upload_file**](DefaultApi.md#upload_file) | **PUT** /locations/{location_id}/files/{fileId} | Returns upload link or performs copy operation to datcore
 
@@ -58,7 +57,7 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: Not defined
+ - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -113,7 +112,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_file_metadata**
-> InlineResponse2003Data get_file_metadata(file_id, location_id, user_id)
+> InlineResponse2005 get_file_metadata(file_id, location_id, user_id)
 
 Get File Metadata
 
@@ -149,7 +148,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**InlineResponse2003Data**](InlineResponse2003Data.md)
+[**InlineResponse2005**](InlineResponse2005.md)
 
 ### Authorization
 
@@ -212,54 +211,8 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **get_storage_locations**
-> InlineResponse2002 get_storage_locations(user_id)
-
-Get available storage locations
-
-### Example
-```python
-from __future__ import print_function
-import time
-import simcore_storage_sdk
-from simcore_storage_sdk.rest import ApiException
-from pprint import pprint
-
-# create an instance of the API class
-api_instance = simcore_storage_sdk.DefaultApi()
-user_id = 'user_id_example' # str | 
-
-try:
-    # Get available storage locations
-    api_response = api_instance.get_storage_locations(user_id)
-    pprint(api_response)
-except ApiException as e:
-    print("Exception when calling DefaultApi->get_storage_locations: %s\n" % e)
-```
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **user_id** | **str**|  | 
-
-### Return type
-
-[**InlineResponse2002**](InlineResponse2002.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **update_file_meta_data**
-> InlineResponse2003Data update_file_meta_data(file_id, location_id, body1=body1)
+> InlineResponse2005 update_file_meta_data(file_id, location_id, body1=body1)
 
 Update File Metadata
 
@@ -295,7 +248,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**InlineResponse2003Data**](InlineResponse2003Data.md)
+[**InlineResponse2005**](InlineResponse2005.md)
 
 ### Authorization
 

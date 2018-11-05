@@ -52,16 +52,17 @@ from simcore_storage_sdk.rest import ApiException
 from pprint import pprint
 
 # create an instance of the API class
-api_instance = simcore_storage_sdk.DefaultApi(simcore_storage_sdk.ApiClient(configuration))
-file_id = 'file_id_example' # str | 
-location_id = 'location_id_example' # str | 
-user_id = 'user_id_example' # str | 
+api_instance = simcore_storage_sdk.UsersApi(simcore_storage_sdk.ApiClient(configuration))
+action = 'echo' # str |  (default to 'echo')
+data = 'data_example' # str |  (optional)
+body = simcore_storage_sdk.Body() # Body |  (optional)
 
 try:
-    # Deletes File
-    api_instance.delete_file(file_id, location_id, user_id)
+    # Test checkpoint to ask server to fail or echo back the transmitted data
+    api_response = api_instance.check_action_post(action, data=data, body=body)
+    pprint(api_response)
 except ApiException as e:
-    print("Exception when calling DefaultApi->delete_file: %s\n" % e)
+    print("Exception when calling UsersApi->check_action_post: %s\n" % e)
 
 ```
 
@@ -71,15 +72,15 @@ All URIs are relative to *http://{host}:{port}/{basePath}*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*DefaultApi* | [**delete_file**](docs/DefaultApi.md#delete_file) | **DELETE** /locations/{location_id}/files/{fileId} | Deletes File
-*DefaultApi* | [**download_file**](docs/DefaultApi.md#download_file) | **GET** /locations/{location_id}/files/{fileId} | Returns download link for requested file
-*DefaultApi* | [**get_file_metadata**](docs/DefaultApi.md#get_file_metadata) | **GET** /locations/{location_id}/files/{fileId}/metadata | Get File Metadata
-*DefaultApi* | [**get_files_metadata**](docs/DefaultApi.md#get_files_metadata) | **GET** /locations/{location_id}/files/metadata | Get Files Metadata
-*DefaultApi* | [**get_storage_locations**](docs/DefaultApi.md#get_storage_locations) | **GET** /locations | Get available storage locations
-*DefaultApi* | [**update_file_meta_data**](docs/DefaultApi.md#update_file_meta_data) | **PATCH** /locations/{location_id}/files/{fileId}/metadata | Update File Metadata
-*DefaultApi* | [**upload_file**](docs/DefaultApi.md#upload_file) | **PUT** /locations/{location_id}/files/{fileId} | Returns upload link or performs copy operation to datcore
-*TestsApi* | [**check_action_post**](docs/TestsApi.md#check_action_post) | **POST** /check/{action} | Test checkpoint to ask server to fail or echo back the transmitted data
+*UsersApi* | [**check_action_post**](docs/UsersApi.md#check_action_post) | **POST** /check/{action} | Test checkpoint to ask server to fail or echo back the transmitted data
+*UsersApi* | [**delete_file**](docs/UsersApi.md#delete_file) | **DELETE** /locations/{location_id}/files/{fileId} | Deletes File
+*UsersApi* | [**download_file**](docs/UsersApi.md#download_file) | **GET** /locations/{location_id}/files/{fileId} | Returns download link for requested file
+*UsersApi* | [**get_file_metadata**](docs/UsersApi.md#get_file_metadata) | **GET** /locations/{location_id}/files/{fileId}/metadata | Get File Metadata
+*UsersApi* | [**get_files_metadata**](docs/UsersApi.md#get_files_metadata) | **GET** /locations/{location_id}/files/metadata | Get Files Metadata
+*UsersApi* | [**get_storage_locations**](docs/UsersApi.md#get_storage_locations) | **GET** /locations | Get available storage locations
 *UsersApi* | [**health_check**](docs/UsersApi.md#health_check) | **GET** / | Service health-check endpoint
+*UsersApi* | [**update_file_meta_data**](docs/UsersApi.md#update_file_meta_data) | **PATCH** /locations/{location_id}/files/{fileId}/metadata | Update File Metadata
+*UsersApi* | [**upload_file**](docs/UsersApi.md#upload_file) | **PUT** /locations/{location_id}/files/{fileId} | Returns upload link or performs copy operation to datcore
 
 
 ## Documentation For Models
@@ -94,6 +95,8 @@ Class | Method | HTTP request | Description
  - [InlineResponse2003](docs/InlineResponse2003.md)
  - [InlineResponse2003Data](docs/InlineResponse2003Data.md)
  - [InlineResponse2004](docs/InlineResponse2004.md)
+ - [InlineResponse2004Data](docs/InlineResponse2004Data.md)
+ - [InlineResponse2005](docs/InlineResponse2005.md)
  - [InlineResponse200Data](docs/InlineResponse200Data.md)
  - [InlineResponse200Error](docs/InlineResponse200Error.md)
  - [InlineResponse200ErrorErrors](docs/InlineResponse200ErrorErrors.md)

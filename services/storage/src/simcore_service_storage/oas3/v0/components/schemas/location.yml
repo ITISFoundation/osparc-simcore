@@ -5,7 +5,7 @@ FileLocationEnveloped:
     - error
   properties:
     data:
-      $ref: '#/FileLocationArray'
+      $ref: '#/FileLocation'
       nullable: true
       default: null
     error:
@@ -23,8 +23,3 @@ FileLocation:
   example:
     filename: 'simcore.s3'
     id: 0
-
-FileLocationArray:
-  type: array
-  items:
-    $ref: '#/FileLocation'
