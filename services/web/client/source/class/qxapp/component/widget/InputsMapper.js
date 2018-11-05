@@ -6,11 +6,17 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
   construct: function(nodeModel, mapper) {
     this.base();
 
+    let widgetLayout = new qx.ui.layout.VBox(5);
+    this._setLayout(widgetLayout);
+
     this.setNodeModel(nodeModel);
     this.setMapper(mapper);
 
     let tree = this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
       openMode: "none"
+    });
+    this._add(tree, {
+      flex: 1
     });
 
     let that = this;
@@ -92,10 +98,6 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
   members: {
     __tree: null,
 
-    getWidget: function() {
-      return this.__tree;
-    },
-
     __willBeBranch: function(candidate) {
       let isBranch = false;
       const maps = this.getMapper().maps;
@@ -117,6 +119,21 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
         }
       }
       return isLeave;
+    },
+
+    __onTreeSelectionChanged: function() {
+      // remove all but the tree
+      while (this._getChildren().length > 1) {
+        this._removeAt(1);
+      }
+      let selectedItems = this.__tree.getSelection();
+      if (selectedItems.length < 1) {
+        return;
+      }
+      let selectedItem = selectedItems.toArray()[0];
+      if (Object.prototype.hasOwnProperty.call(selectedItem, "propsWidget")) {
+        this._add(selectedItem["propsWidget"]);
+      }
     }
   }
 });

@@ -257,7 +257,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__createDragDropMechanism(nodeModel.getPropsWidget());
 
       if (nodeModel.getInputsMapper()) {
-        this.__settingsBox.add(nodeModel.getInputsMapper().getWidget(), {
+        this.__settingsBox.add(nodeModel.getInputsMapper(), {
           flex: 1
         });
       }

@@ -73,7 +73,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     inputsMapper: {
-      check: "qxapp.component.widget.InputsMapper",
+      check: "qx.ui.core.Widget",
       init: null,
       nullable: true
     },
