@@ -239,7 +239,6 @@ async def upload_file(request: web.Request):
                     "link":link
                 }
             }
-    log.info("return value: %s", envelope)
 
     return envelope
 
