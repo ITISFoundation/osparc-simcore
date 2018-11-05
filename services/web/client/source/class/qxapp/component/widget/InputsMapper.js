@@ -22,19 +22,32 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
 
     let that = this;
     tree.setDelegate({
+      createItem: () => new qxapp.component.widget.inputs.NodeOutputListItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         // c.bindProperty("key", "key", null, item, id);
+        c.bindProperty("isDir", "isDir", null, item, id);
+        c.bindProperty("isRoot", "isRoot", null, item, id);
       },
       configureItem: item => {
-        item.setDroppable(true);
+        item.set({
+          droppable: true
+        });
         item.addListener("dragover", e => {
+          item.set({
+            droppable: item.getIsDir()
+          });
           let compatible = false;
           if (e.supportsType("osparc-mapping")) {
             const from = e.getRelatedTarget();
+            const to = e.getCurrentTarget();
             const fromKey = from.getNodeKey();
-            if (that.__willBeBranch(fromKey) || that.__willBeLeaf(fromKey)) {
-              compatible = true;
+            if (to.getIsRoot()) {
+              // root
+              compatible = from.getIsDir() && that.__willBeBranch(fromKey);
+            } else {
+              // non root
+              compatible = to.getIsDir() && !from.getIsDir() && that.__willBeLeaf(fromKey);
             }
           }
           if (!compatible) {
@@ -46,17 +59,18 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             const from = e.getRelatedTarget();
             const fromNodeKey = from.getNodeKey();
             const fromPortKey = from.getPortKey();
-            const willBeBranch = that.__willBeBranch(fromNodeKey);
             let data = {
               key: from.getModel(),
-              label: from.getLabel()
+              label: from.getLabel(),
+              nodeKey: from.getNodeKey(),
+              portKey: from.getPortKey(),
+              isDir: from.getIsDir()
             };
+            const willBeBranch = that.__willBeBranch(fromNodeKey);
             if (willBeBranch) {
               data["children"] = [];
             }
             let newItem = qx.data.marshal.Json.createModel(data, true);
-            newItem["nodeKey"] = fromNodeKey;
-            newItem["portKey"] = fromPortKey;
             const to = e.getCurrentTarget().getModel();
             to.getChildren().push(newItem);
             if (willBeBranch) {
@@ -76,6 +90,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
 
     let data = {
       label: nodeModel.getLabel(),
+      isRoot: true,
       children: []
     };
     let model = qx.data.marshal.Json.createModel(data, true);

@@ -12,6 +12,12 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListItem", {
       init: true
     },
 
+    isRoot: {
+      check: "Boolean",
+      nullable: false,
+      init: false
+    },
+
     nodeKey: {
       check: "String",
       nullable: false
