@@ -1,3 +1,5 @@
+/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__addTreeBranch", "__willBeBranch", "__willBeLeave", "__tree"] }] */
+
 qx.Class.define("qxapp.component.widget.InputsMapper", {
   extend: qx.ui.core.Widget,
 
@@ -15,7 +17,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
     tree.setDelegate({
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
-        c.bindProperty("key", "model", null, item, id);
+        // c.bindProperty("key", "key", null, item, id);
       },
       configureItem: item => {
         item.setDroppable(true);
@@ -25,9 +27,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             const from = e.getRelatedTarget();
             if (Object.prototype.hasOwnProperty.call(from, "nodeKey")) {
               const fromKey = from["nodeKey"];
-              const maps = that.getMapper().maps;
-              if (Object.values(maps).includes(fromKey) ||
-                fromKey === that.getNodeModel().getKey()) {
+              if (that.__willBeBranch(fromKey) || that.__willBeLeave(fromKey)) {
                 compatible = true;
               }
             }
@@ -39,9 +39,31 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
         item.addListener("drop", e => {
           if (e.supportsType("osparc-mapping")) {
             const from = e.getRelatedTarget();
-            const to = e.getCurrentTarget();
-            if (Object.prototype.hasOwnProperty.call(from, "portKey")) {
-              console.log("Map", from.getModel(), "to", to.getModel());
+            if (Object.prototype.hasOwnProperty.call(from, "nodeKey")) {
+              const fromNodeKey = from["nodeKey"];
+              const fromPortKey = from["portKey"];
+              const willBeBranch = that.__willBeBranch(fromNodeKey);
+              let data = {
+                key: from.getModel(),
+                label: from.getLabel()
+              };
+              if (willBeBranch) {
+                data["children"] = [];
+              }
+              let newItem = qx.data.marshal.Json.createModel(data, true);
+              newItem["nodeKey"] = fromNodeKey;
+              newItem["portKey"] = fromPortKey;
+              const to = e.getCurrentTarget().getModel();
+              to.getChildren().push(newItem);
+              if (willBeBranch) {
+                const nodeInstanceUUID = null;
+                const itemProps = qxapp.data.Store.getInstance().getItem(nodeInstanceUUID, fromPortKey, newItem.getKey());
+                if (itemProps) {
+                  let form = new qxapp.component.form.Auto(itemProps);
+                  let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+                  newItem["propsWidget"] = propsWidget;
+                }
+              }
             }
           }
         });
@@ -72,6 +94,29 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
 
     getWidget: function() {
       return this.__tree;
+    },
+
+    __willBeBranch: function(candidate) {
+      let isBranch = false;
+      const maps = this.getMapper().maps;
+      if (Object.prototype.hasOwnProperty.call(maps, "branch")) {
+        if (maps["branch"] === candidate) {
+          isBranch = true;
+        }
+      }
+      const isDefault = candidate === this.getNodeModel().getKey();
+      return isDefault || isBranch;
+    },
+
+    __willBeLeave: function(candidate) {
+      let isLeave = false;
+      const maps = this.getMapper().maps;
+      if (Object.prototype.hasOwnProperty.call(maps, "leave")) {
+        if (maps["leave"] === candidate) {
+          isLeave = true;
+        }
+      }
+      return isLeave;
     }
   }
 });
