@@ -1,13 +1,17 @@
 qx.Class.define("qxapp.component.widget.InputsMapper", {
   extend: qx.ui.core.Widget,
 
-  construct: function(label) {
+  construct: function(nodeModel, mapper) {
     this.base();
+
+    this.setNodeModel(nodeModel);
+    this.setMapper(mapper);
 
     let tree = this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
       openMode: "none"
     });
 
+    let that = this;
     tree.setDelegate({
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
@@ -19,9 +23,14 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
           let compatible = false;
           if (e.supportsType("osparc-mapping")) {
             const from = e.getRelatedTarget();
-            const to = e.getCurrentTarget();
-            compatible = true;
-            console.log(from.getModel(), to.getModel());
+            if (Object.prototype.hasOwnProperty.call(from, "nodeKey")) {
+              const fromKey = from["nodeKey"];
+              const maps = that.getMapper().maps;
+              if (Object.values(maps).includes(fromKey) ||
+                fromKey === that.getNodeModel().getKey()) {
+                compatible = true;
+              }
+            }
           }
           if (!compatible) {
             e.preventDefault();
@@ -31,18 +40,31 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
           if (e.supportsType("osparc-mapping")) {
             const from = e.getRelatedTarget();
             const to = e.getCurrentTarget();
-            console.log("Map", from.getModel(), "to", to.getModel());
+            if (Object.prototype.hasOwnProperty.call(from, "portKey")) {
+              console.log("Map", from.getModel(), "to", to.getModel());
+            }
           }
         });
       }
     });
 
     let data = {
-      label: label,
+      label: nodeModel.getLabel(),
       children: []
     };
     let model = qx.data.marshal.Json.createModel(data, true);
     tree.setModel(model);
+  },
+
+  properties: {
+    nodeModel: {
+      check: "qxapp.data.model.NodeModel",
+      nullable: false
+    },
+
+    mapper: {
+      nullable: false
+    }
   },
 
   members: {
