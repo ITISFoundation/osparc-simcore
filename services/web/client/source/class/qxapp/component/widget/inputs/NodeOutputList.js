@@ -11,14 +11,18 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputList", {
     });
 
     tree.setDelegate({
+      createItem: () => new qxapp.component.widget.inputs.NodeOutputListItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         c.bindProperty("key", "model", null, item, id);
       },
       configureItem: item => {
-        item["nodeKey"] = nodeModel.getKey();
-        item["portKey"] = portKey;
-        item.setDraggable(true);
+        item.set({
+          isDir: !portKey.includes("modeler"),
+          nodeKey: nodeModel.getKey(),
+          portKey: portKey,
+          draggable: true
+        });
         item.addListener("dragstart", e => {
           // Register supported actions
           e.addAction("copy");
