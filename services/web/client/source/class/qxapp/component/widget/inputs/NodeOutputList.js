@@ -16,6 +16,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputList", {
         c.bindProperty("key", "model", null, item, id);
       },
       configureItem: item => {
+        item["nodeKey"] = nodeModel.getKey();
+        item["portKey"] = portKey;
         item.setDraggable(true);
         item.addListener("dragstart", e => {
           // Register supported actions
