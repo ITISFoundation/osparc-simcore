@@ -216,16 +216,21 @@ qx.Class.define("qxapp.data.model.NodeModel", {
      */
     __removeNonSettingInputs: function(inputs) {
       let filteredInputs = JSON.parse(JSON.stringify(inputs));
-      if (Object.prototype.hasOwnProperty.call(filteredInputs, "mapper")) {
-        let inputsMapper = new qxapp.component.widget.InputsMapper(this.getLabel());
-        this.setInputsMapper(inputsMapper);
-        delete filteredInputs["mapper"];
-      }
       for (const inputId in filteredInputs) {
         let input = filteredInputs[inputId];
         if (input.type.includes("data:application/s4l-api/")) {
           delete filteredInputs[inputId];
         }
+      }
+      return filteredInputs;
+    },
+
+    __addMapper: function(inputs) {
+      let filteredInputs = JSON.parse(JSON.stringify(inputs));
+      if (Object.prototype.hasOwnProperty.call(filteredInputs, "mapper")) {
+        let inputsMapper = new qxapp.component.widget.InputsMapper(this, filteredInputs["mapper"]);
+        this.setInputsMapper(inputsMapper);
+        delete filteredInputs["mapper"];
       }
       return filteredInputs;
     },
@@ -236,6 +241,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
 
       let filteredInputs = this.__removeNonSettingInputs(inputs);
+      filteredInputs = this.__addMapper(filteredInputs);
       let form = this.__settingsForm = new qxapp.component.form.Auto(filteredInputs);
       form.addListener("linkAdded", e => {
         let changedField = e.getData();
