@@ -110,7 +110,9 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __inputNodes: null,
     __settingsForm: null,
     __inputsDefault: null,
+    __inputsDefaultWidget: null,
     __outputs: null,
+    __outputWidget: null,
     __posX: null,
     __posY: null,
 
@@ -127,10 +129,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         return this.getPropsWidget().getValues();
       }
       return {};
-    },
-
-    __addInputsDefault: function(inputsDefault) {
-      this.__inputsDefault = inputsDefault;
     },
 
     getInputsDefault: function() {
@@ -209,6 +207,17 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
+    getInputsDefaultWidget: function() {
+      return this.__inputsDefaultWidget;
+    },
+
+    __addInputsDefaultWidgets: function() {
+      const isInputModel = false;
+      let nodePorts = new qxapp.component.widget.NodePorts(this, isInputModel);
+      nodePorts.populateNodeLayout();
+      this.__inputsDefaultWidget = nodePorts;
+    },
+
     /**
      * Remove those inputs that can't be respresented in the settings form
      * (Those are needed for creating connections between nodes)
@@ -263,6 +272,23 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }, this);
     },
 
+    getOutputWidget: function() {
+      return this.__outputWidget;
+    },
+
+    __addOutputWidget: function() {
+      const isInputModel = true;
+      let nodePorts = new qxapp.component.widget.NodePorts(this, isInputModel);
+      nodePorts.populateNodeLayout();
+      this.__outputWidget = nodePorts;
+    },
+
+    __addInputsDefault: function(inputsDefault) {
+      this.__inputsDefault = inputsDefault;
+
+      this.__addInputsDefaultWidgets();
+    },
+
     __addInputs: function(inputs) {
       if (inputs === null) {
         return;
@@ -275,6 +301,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     __addOutputs: function(outputs) {
       this.__outputs = outputs;
+
+      this.__addOutputWidget();
     },
 
     setInputData: function(nodeData) {

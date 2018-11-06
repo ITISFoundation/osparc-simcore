@@ -213,12 +213,18 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     __createInputPortsUI: function(inputNodeModel, isInputModel = true) {
-      let nodePorts = new qxapp.component.widget.NodePorts(inputNodeModel, isInputModel);
-      nodePorts.populateNodeLayout();
-      this.__createDragDropMechanism(nodePorts);
-      this.__inputNodesLayout.add(nodePorts, {
-        flex: 1
-      });
+      let nodePorts = null;
+      if (isInputModel) {
+        nodePorts = inputNodeModel.getOutputWidget();
+      } else {
+        nodePorts = inputNodeModel.getInputsDefaultWidget();
+      }
+      if (nodePorts) {
+        this.__createDragDropMechanism(nodePorts);
+        this.__inputNodesLayout.add(nodePorts, {
+          flex: 1
+        });
+      }
       return nodePorts;
     },
 
