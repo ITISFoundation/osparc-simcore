@@ -3,22 +3,21 @@ services:
   simcore-paraviewweb:
     image: masu.speag.com/simcore/services/dynamic/3d-viewer:${SERVICES_VERSION}
     build:
-      context: simcoreparaviewweb
+      context: ../../
+      dockerfile: services/dy-3dvis/simcoreparaviewweb/Dockerfile
       target: production
-      args: 
-        PORT: 8777
       labels: 
         io.simcore.key: '{"key": "simcore/services/dynamic/3d-viewer"}'
-        io.simcore.outputs: '{"outputs": []}'
-        io.simcore.tag: '{"tag": "${SERVICES_VERSION}"}'
+        io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
+        io.simcore.type: '{"type": "dynamic"}'
         io.simcore.name: '{"name": "3d-viewer"}'
         io.simcore.description: '{"description": "Paraview Web-based Visualizer"}'
-        io.simcore.contact: '{"contact": "anderegg@itis.ethz.ch"}'
-        io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email": "anderegg@itis.ethz.ch", "affiliation": "ITIS Foundation"}]}'
-        io.simcore.inputs: '{"inputs": [{"key": "A", "label": "some 3D dataset", "desc": "A mesh, volume data", "type": "file-url", "value": "null"}, {"key": "B", "label": "some 3D dataset", "desc": "A mesh, volume data", "type": "file-url", "value": "null"}]}'
-        io.simcore.viewer: '{"viewer":{"ip":null, "port":null}}'
+        io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email": "anderegg@itis.swiss.ch", "affiliation": "ITIS Foundation"}]}'
+        io.simcore.contact: '{"contact": "anderegg@itis.swiss.ch"}'
+        io.simcore.inputs: '{"inputs": {"A":{"displayOrder":1, "label": "some 3D dataset", "description": "A mesh, volume data", "type": "data:*/*"}, "B":{"displayOrder":2, "label": "some 3D dataset", "description": "A mesh, volume data", "type": "data:*/*"}}}'
+        io.simcore.outputs: '{"outputs": {}}'
         simcore.service.settings: '[{"name": "ports", "type": "int", "value": 80}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
-        simcore.service.bootsettings: '[{"name": "entry_point", "type": "string", "value": "visualizer"}, {"name": "published_port", "type": "string", "value": "setport"}]'
+        simcore.service.bootsettings: '[{"name": "entry_point", "type": "string", "value": "visualizer"}, {"name": "published_host", "type": "string", "value": "setport"}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"

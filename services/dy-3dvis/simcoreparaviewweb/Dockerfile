@@ -1,37 +1,31 @@
+# apply patch to visualizer
 FROM node:8.12.0 AS visualizer
 WORKDIR /home/node
 RUN git clone --branch v3.1.6 https://github.com/Kitware/visualizer.git
 WORKDIR /home/node/visualizer
-COPY rebrand-osparc/to-be-copied .
-COPY rebrand-osparc/rebrand-osparc.patch rebrand-osparc.patch
+COPY services/dy-3dvis/simcoreparaviewweb/rebrand-osparc/to-be-copied .
+COPY services/dy-3dvis/simcoreparaviewweb/rebrand-osparc/rebrand-osparc.patch rebrand-osparc.patch
 RUN git apply rebrand-osparc.patch && \
     npm install && \
     npm run build:release && \
     npm link && \
     cp src/*.png dist
-
-
+# ----------------------------------------------------------------
+# build visualizer service
 FROM kitware/paraviewweb:pvw-visualizer-osmesa-master  AS common
 
 LABEL maintainer="sanderegg"
-
 ENV PARAVIEW_INPUT_PATH="/data"
 
-# install git
+# install git, pip
 RUN apt-get update && \
     apt-get install -y \
-    git python3-pip
-
+    python3-pip
+# get the patched visualizer
 COPY --from=visualizer /home/node/visualizer/dist /opt/paraview/install/share/paraview-5.5/web/visualizer/www
-# define user
-#TODO: check with @crespo if this is correct
-# RUN useradd -m -U -u 8004 scu
-# ENV HOME /home/scu
-# WORKDIR /home/scu
-# USER scu
 WORKDIR /home/root
-# set the necessary env for accessing S3/DB
-#TODO: should be done with secrets
+# ----------------------------------------------------------------
+# set up oSparc env variables
 ENV SIMCORE_NODE_UUID="-1" \
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
@@ -42,52 +36,42 @@ ENV SIMCORE_NODE_UUID="-1" \
     POSTGRES_PASSWORD="-1" \
     POSTGRES_DB="-1"
 
-#TODO: will be replaced when pip installs is available
-# install python requirements for simcore-sdk/s3wrapper
-COPY requirements.txt .
+# special paraview variables
+ENV SERVER_PORT="-1"  \
+    HOST_NAME="-1"
+# update pip
 RUN pip3 install --upgrade pip
-RUN pip3 install --no-cache-dir -r requirements.txt
-# set python path
-ENV PYTHONPATH="/home/root/packages/packages/simcore-sdk/src:/home/root/packages/packages/s3wrapper/src"
 
-# copy start script
-ARG PORT
-ENV SERVER_PORT=$PORT
-COPY scripts/boot.sh scripts/boot.sh
+# copy scripts
+COPY services/dy-3dvis/simcoreparaviewweb/scripts /home/root/scripts
+COPY services/dy-3dvis/simcoreparaviewweb/config /home/root/config
+
 RUN chmod +x scripts/boot.sh
-# copy apache config changer script
-COPY config/apache.conf config/apache.conf
-COPY scripts/apachePatch.sh scripts/apachePatch.sh
+# apply apache config changer script
 RUN chmod +x scripts/apachePatch.sh
 RUN mkdir /home/root/trigger && \
     chmod 777 /home/root/trigger
-# copy paraview launcher modifier script
-COPY scripts/visualizer_launcher_patch.sh scripts/visualizer_launcher_patch.sh
+# apply paraview launcher modifier script
 RUN chmod +x scripts/visualizer_launcher_patch.sh
-COPY config/visualizer_config.json config/visualizer_config.json
 #------------------------------------------
 FROM common as development
+VOLUME /home/root/src
+VOLUME /home/root/devel
+VOLUME /home/root/packages
+VOLUME /home/root/test-data
 ENV CREATE_DUMMY_TABLE 1
 ENV USE_CASE_CONFIG_FILE="devel/devel-dbconfiguration.json"
 ENV TEST_DATA_PATH="/test-data"
-COPY devel/devel-dbconfiguration.json devel/devel-dbconfiguration.json
-COPY devel/devel-initconfiguration.py devel/devel-initconfiguration.py
 # Need to use entrypoint as base image's entrypoint must be overriden
 ENTRYPOINT [ "/bin/bash", "scripts/boot.sh" ]
 #------------------------------------------
 FROM common AS production
-#TODO: will be replaced by pip installs when available
-# download and install the simcore_sdk package
-RUN mkdir packages && \
-    cd packages && \
-    git init && \
-    git remote add origin -f https://github.com/ITISFoundation/osparc-simcore.git && \
-    git config core.sparsecheckout true && \
-    echo "packages/simcore-sdk/src/simcore_sdk/*" >> .git/info/sparse-checkout && \
-    echo "packages/s3wrapper/src/s3wrapper/*" >> .git/info/sparse-checkout && \
-    git pull --depth=1 origin master
+# install simcore packages
+COPY packages/simcore-sdk /home/root/packages/simcore-sdk
+COPY packages/s3wrapper /home/root/packages/s3wrapper
+# copy the default notebook
+RUN pip install /home/root/packages/simcore-sdk &&\
+    pip install /home/root/packages/s3wrapper
 # copy script to get the inputs inside the local file system
-COPY src/input-retriever.py src/input-retriever.py
-COPY src/getport.py src/getport.py
-COPY src/setport.py src/setport.py
+COPY services/dy-3dvis/simcoreparaviewweb/src /home/root/src
 ENTRYPOINT [ "/bin/bash", "scripts/boot.sh" ]
