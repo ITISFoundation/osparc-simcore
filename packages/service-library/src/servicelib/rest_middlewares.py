@@ -1,7 +1,7 @@
-""" Middlewares for rest-api submodule
+""" rest - middlewares for error, enveloping and validation
+
 
 """
-
 import json
 import logging
 
@@ -12,7 +12,9 @@ from .response_utils import is_enveloped, wrap_as_envelope
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 from .rest_utils import EnvelopeFactory
 
+
 log = logging.getLogger(__name__)
+
 
 class DataEncoder(json.JSONEncoder):
     def default(self, o): #pylint: disable=E0202

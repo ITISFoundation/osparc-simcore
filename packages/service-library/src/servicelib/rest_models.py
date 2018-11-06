@@ -1,10 +1,15 @@
-""" RestAPI common schema models and classes
+
+""" rest - common schema models and classes
+
+UNDER DEVELOPMENT
 
 """
 import attr
 import typing
+import warnings
 
-# TODO: wARNING!!! Common types Versioning? What if one model changes???
+
+warnings.warn("DO NOT USE IN PRODUCTION, STILL UNDER DEVELOPMENT")
 
 # NOTE: using these, optional and required fields are always transmitted!
 # NOTE: make some attrs nullable by default!?

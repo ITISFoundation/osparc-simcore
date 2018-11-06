@@ -33,7 +33,6 @@ async def validate_request(request: web.Request, spec: OpenApiSpec):
 
     return result.parameters, result.body, result.errors
 
-
 async def validate_parameters(spec: OpenApiSpec, request: web.Request):
     req = await AiohttpOpenAPIRequest.create(request)
     return shortcuts.validate_parameters(spec, req)
@@ -41,6 +40,9 @@ async def validate_parameters(spec: OpenApiSpec, request: web.Request):
 async def validate_body(spec: OpenApiSpec, request: web.Request):
     req = await AiohttpOpenAPIRequest.create(request)
     return shortcuts.validate_body(spec, req)
+
+
+
 
 async def validate_data(spec: OpenApiSpec, request, response: web.Response):
 

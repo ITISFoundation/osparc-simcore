@@ -17,8 +17,7 @@ from servicelib.openapi_validation import (AiohttpOpenAPIResponse,
 from servicelib.response_utils import is_enveloped, unwrap_envelope
 from servicelib.rest_middlewares import (envelope_middleware_factory,
                                          error_middleware_factory)
-from servicelib.rest_routing import (create_routes_from_map,
-                                     create_routes_from_namespace)
+from servicelib.rest_routing import create_routes_from_namespace
 from utils import Handlers
 
 
@@ -76,6 +75,8 @@ def get_reqinfo(server, path):
 async def test_response_validators(path, client):
     response = await client.get(path)
     payload = await response.json()
+
+    assert is_enveloped(payload)
 
     data, error = unwrap_envelope(payload)
     assert not error

@@ -14,7 +14,7 @@ import warnings
 
 logger = logging.getLogger(__name__)
 
-warnings.warn("DO NOT USER, STILL UNDER DEVELOPMENT")
+warnings.warn("DO NOT USE IN PRODUCTION, STILL UNDER DEVELOPMENT")
 
 @attr.s(auto_attribs=True)
 class AiopgExecutor:

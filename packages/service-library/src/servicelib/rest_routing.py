@@ -1,3 +1,8 @@
+""" rest - routes mapping based on oaspecs
+
+
+"""
+
 import inspect
 import logging
 from typing import Dict, List
