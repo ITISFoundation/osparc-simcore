@@ -124,7 +124,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
           let removed = branches.remove(selectedItem);
           if (!removed) {
             // leaf
-            let br = branches.toArray()
+            let br = branches.toArray();
             for (let i=0; i<br.length; i++) {
               let branch = br[i];
               removed = branch.getChildren().remove(selectedItem);
