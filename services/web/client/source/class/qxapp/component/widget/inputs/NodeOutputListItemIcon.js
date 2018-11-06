@@ -16,7 +16,9 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListItemIcon", {
       let control;
       switch (id) {
         case "icon":
-          control = new qx.ui.basic.Image(this.getIcon());
+          control = new qx.ui.basic.Image(this.getIcon()).set({
+            alignX: "center"
+          });
           this._add(control);
           break;
         case "label":
