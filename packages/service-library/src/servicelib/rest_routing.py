@@ -36,4 +36,6 @@ def create_routes_from_namespace(specs: Spec, handlers_nsp) -> List[web.RouteDef
 
 
     available_handlers = dict(inspect.getmembers(handlers_nsp, inspect.ismethod))
+
+    import pdb; pdb.set_trace()
     return create_routes_from_map(specs, available_handlers)
