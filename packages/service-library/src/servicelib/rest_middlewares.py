@@ -14,7 +14,7 @@ from .rest_validators import OpenApiValidator
 DEFAULT_API_VERSION = "v0"
 
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def is_api_request(request: web.Request, api_version: str) -> bool:
@@ -22,7 +22,7 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return request.path.startswith(base_path)
 
 
-def error_middleware_factory(api_version: str=DEFAULT_API_VERSION):
+def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
     @web.middleware
     async def _middleware(request: web.Request, handler):
         """
@@ -47,7 +47,7 @@ def error_middleware_factory(api_version: str=DEFAULT_API_VERSION):
                 error = ErrorType(
                     errors=[ErrorItemType.from_error(err), ],
                     status=err.status,
-                    logs=[LogMessageType(message=err.reason, level="ERROR"),]
+                    logs=[LogMessageType(message=err.reason, level="ERROR"), ]
                 )
                 err.text = EnvelopeFactory(error=error).as_text()
 
@@ -58,23 +58,23 @@ def error_middleware_factory(api_version: str=DEFAULT_API_VERSION):
                 ex.text = EnvelopeFactory(error=ex.text).as_text()
             raise
         except web.HTTPRedirection as ex:
-            log.debug("Redirection %s", ex)
+            logger.debug("Redirection %s", ex)
             raise
-        except Exception as err:  #pylint: disable=W0703
+        except Exception as err:  # pylint: disable=W0703
             # TODO: send info only in debug mode
             error = ErrorType(
                 errors=[ErrorItemType.from_error(err), ],
                 status=web.HTTPInternalServerError.status_code
             )
             raise web.HTTPInternalServerError(
-                    reason="Internal server error",
-                    text=EnvelopeFactory(error=error).as_text(),
-                    content_type=JSON_CONTENT_TYPE,
-                )
+                reason="Internal server error",
+                text=EnvelopeFactory(error=error).as_text(),
+                content_type=JSON_CONTENT_TYPE,
+            )
     return _middleware
 
 
-def validate_middleware_factory(api_version: str=DEFAULT_API_VERSION):
+def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
     @web.middleware
     async def _middleware(request: web.Request, handler):
         """
@@ -84,7 +84,9 @@ def validate_middleware_factory(api_version: str=DEFAULT_API_VERSION):
         if not is_api_request(request, api_version):
             return await handler(request)
 
-        RQ_VALIDATED_DATA_KEYS = ("validated-path", "validated-query", "validated-body")
+        # TODO: move this outside!
+        RQ_VALIDATED_DATA_KEYS = (
+            "validated-path", "validated-query", "validated-body")
 
         try:
             validator = OpenApiValidator.create(request.app, api_version)
@@ -107,7 +109,8 @@ def validate_middleware_factory(api_version: str=DEFAULT_API_VERSION):
 
     return _middleware
 
-def envelope_middleware_factory(api_version: str=DEFAULT_API_VERSION):
+
+def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
     @web.middleware
     async def _middleware(request: web.Request, handler):
         """
@@ -127,10 +130,10 @@ def envelope_middleware_factory(api_version: str=DEFAULT_API_VERSION):
     return _middleware
 
 
+def append_rest_middlewares(app: web.Application, api_version: str = DEFAULT_API_VERSION):
+    """ Helper that appends rest-middlewares in the correct order
 
-
-def append_middlewares(app: web.Application, api_version: str=DEFAULT_API_VERSION):
-    """ Helpe to append in the correct order rest-middlewares """
+    """
     app.middlewares.append(error_middleware_factory(api_version))
     app.middlewares.append(validate_middleware_factory(api_version))
     app.middlewares.append(envelope_middleware_factory(api_version))

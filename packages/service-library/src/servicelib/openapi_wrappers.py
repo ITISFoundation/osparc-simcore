@@ -118,8 +118,11 @@ class AiohttpOpenAPIResponse(BaseOpenAPIResponse):
         return AiohttpOpenAPIResponse(response, text)
 
     @property
-    def data(self) -> str:
+    def body(self) -> str:
         return self._text
+
+    # BUG: not part of BaseOpenAPIResponse but used in openapi-core
+    data = body
 
     @property
     def status_code(self) -> int:
