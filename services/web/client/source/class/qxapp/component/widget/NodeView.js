@@ -212,8 +212,8 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }, this);
     },
 
-    __createInputPortsUI: function(inputNodeModel, inInputModel = true) {
-      let nodePorts = new qxapp.component.widget.NodePorts(inputNodeModel, inInputModel);
+    __createInputPortsUI: function(inputNodeModel, isInputModel = true) {
+      let nodePorts = new qxapp.component.widget.NodePorts(inputNodeModel, isInputModel);
       nodePorts.populateNodeLayout();
       this.__createDragDropMechanism(nodePorts);
       this.__inputNodesLayout.add(nodePorts, {
