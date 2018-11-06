@@ -1142,10 +1142,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
               inputs: {
-                "modeler": {
-                  nodeUuid: "17a932a0-f401-4571-9c55-b579f5050d37",
-                  output: "modeler"
-                },
                 "materialSetting": {
                   nodeUuid: "ac80863e-e4ef-48c0-804b-d9296f1f3563",
                   output: "materialSetting"
@@ -1198,10 +1194,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
               version: "0.0.0",
               inputs: {
-                modeler: {
-                  nodeUuid: "17a932a0-f401-4571-9c55-b579f5050d37",
-                  output: "modeler"
-                },
                 "gridSetting": {
                   nodeUuid: "c3ab33a7-4ead-4302-9867-5b194a4f45ec",
                   output: "gridSetting"
