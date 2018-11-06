@@ -40,6 +40,7 @@ def client(loop, aiohttp_client, specs):
     return loop.run_until_complete(aiohttp_client(app))
 
 @pytest.mark.parametrize("path,expected_data", [
+    ("/health", Handlers.get('health')),
     ("/dict", Handlers.get('dict')),
     ("/envelope", Handlers.get('envelope')['data']),
     ("/list", Handlers.get('list')),
@@ -57,3 +58,16 @@ async def test_envelope_middleware(path, expected_data, client):
     data, error = unwrap_envelope(payload)
     assert not error
     assert data == expected_data
+
+
+async def test_404_not_known(client):
+    # see FIXME: in validate_middleware_factory
+    response = await client.get("/some-invalid-address")
+    payload = await response.json()
+
+    assert response.status == 404, payload
+    assert is_enveloped(payload)
+
+    data, error = unwrap_envelope(payload)
+    assert error
+    assert not data

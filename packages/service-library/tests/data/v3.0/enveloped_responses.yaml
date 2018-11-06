@@ -3,6 +3,17 @@ info:
   title: Minimal valid OpenAPI specification
   version: "0.1"
 paths:
+  /health:
+    get:
+      operationId: get_health
+      responses:
+        "200":
+          description: "health check in separate file"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckEnveloped'
+                #$ref: './components/schemas/health_check.yaml#/HealthCheckEnveloped'
   /dict:
     get:
       operationId: get_dict
@@ -126,6 +137,36 @@ components:
           type: string
         field:
           type: string
+    # inline version of components/schemas/health_check.yaml ---------
+    HealthCheckEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/HealthCheckType"
+        error:
+          type: object
+          nullable: true
+          default: null
+    HealthCheckType:
+      type: object
+      properties:
+        name:
+          type: string
+          example: director service
+        status:
+          type: string
+          example: SERVICE_RUNNING
+        api_version:
+          type: string
+          example: 1.0.0-dev
+        version:
+          type: string
+          example: 1dfcfdc
+
+# RESPONSES -------------------------------------------------------
   responses:
     EnvelopedDataResponse:
       description: foo

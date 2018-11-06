@@ -30,6 +30,6 @@ def test_create_routes_from_namespace(specs):
     handlers = Handlers()
     routes = create_routes_from_namespace(specs, handlers)
 
-    assert len(routes) == 7
+    assert len(routes) == len(specs.paths)
     for rdef in routes:
         assert rdef.method == "GET"

@@ -8,7 +8,7 @@ import attr
 from aiohttp import web
 
 from .rest_models import LogMessageType
-from .rest_codecs import jsonify
+from .rest_codecs import jsonify, json
 from .rest_models import ErrorItemType, ErrorType
 
 ENVELOPE_KEYS = ('data', 'error')
@@ -17,10 +17,18 @@ JSON_CONTENT_TYPE = 'application/json'
 def is_enveloped_from_map(payload: Mapping) -> bool:
     return all(k in ENVELOPE_KEYS for k in payload.keys())
 
+def is_enveloped_from_text(text: str) -> bool:
+    try:
+        payload = json.loads(text)
+    except json.decoder.JSONDecodeError:
+        return False
+    return is_enveloped_from_map(payload)
 
 def is_enveloped(payload) -> bool:
     if isinstance(payload, Mapping):
         return is_enveloped_from_map(payload)
+    if isinstance(payload, str):
+        return is_enveloped_from_text(text=payload)
     return False
 
 def wrap_as_envelope(data=None, error=None, as_null=True):
@@ -54,15 +62,10 @@ def create_data_response(data) -> web.Response:
 
         response = web.json_response(payload, dumps=jsonify)
     except (TypeError, ValueError) as err:
-        # TODO: assumes openapi error model!!!
-        error = ErrorType(
-            errors=[ErrorItemType.from_error(err), ],
-            status=web.HTTPInternalServerError.status_code
-        )
-        response = web.HTTPInternalServerError(
-            reason = str(err),
-            text= jsonify(attr.asdict(error)),
-            content_type=JSON_CONTENT_TYPE
+        response = create_error_response(
+            [err,],
+            str(err),
+            web.HTTPInternalServerError
         )
     return response
 
@@ -71,18 +74,21 @@ def create_error_response(
         errors: List[Exception],
         reason: Optional[str]=None,
         error_cls: Optional[web.HTTPError]=None ) -> web.HTTPError:
-
+    # TODO: guarantee no throw!
     if error_cls is None:
         error_cls = web.HTTPInternalServerError
 
+    # TODO: assumes openapi error model!!!
     error = ErrorType(
         errors=[ErrorItemType.from_error(err) for err in errors],
         status=error_cls.status_code
     )
-    # WARNING: this is NOT enveloped!?
+
+    payload = wrap_as_envelope(error=attr.asdict(error))
+
     response = error_cls(
         reason=reason,
-        text=jsonify(attr.asdict(error)),
+        text=jsonify(payload),
         content_type=JSON_CONTENT_TYPE
     )
 

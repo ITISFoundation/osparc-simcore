@@ -44,6 +44,7 @@ def client(loop, aiohttp_client, specs):
 
 
 @pytest.mark.parametrize("path", [
+    "/health",
     "/dict",
     "/envelope",
     "/list",
@@ -62,6 +63,21 @@ async def test_validate_handlers(path, client):
     assert not error
     assert data
 
+
+# @pytest.mark.parametrize("path", [
+#     "/health_wrong",
+# ])
+# async def test_invalid_response(path, client):
+#     response = await client.get(path)
+#     payload = await response.json()
+
+#     assert is_enveloped(payload)
+
+#     data, error = unwrap_envelope(payload)
+#     assert error
+#     assert not data
+
+#     assert error["errors"][0]["code"] == 'InvalidMediaTypeValue', str(error)
 
 # TODO: dev tests ...
 #from servicelib.openapi_validation import (AiohttpOpenAPIResponse,

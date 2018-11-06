@@ -5,9 +5,11 @@
 import logging
 
 from aiohttp import web
+from openapi_core.schema.exceptions import OpenAPIError
 
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
-from .rest_responses import create_data_response, is_enveloped, JSON_CONTENT_TYPE
+from .rest_responses import (JSON_CONTENT_TYPE, create_data_response,
+                             create_error_response, is_enveloped_from_text)
 from .rest_utils import EnvelopeFactory
 from .rest_validators import OpenApiValidator
 
@@ -43,7 +45,7 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
             if not err.content_type == JSON_CONTENT_TYPE:
                 err.content_type = JSON_CONTENT_TYPE
 
-            if not err.text or not is_enveloped(err.text):
+            if not err.text or not is_enveloped_from_text(err.text):
                 error = ErrorType(
                     errors=[ErrorItemType.from_error(err), ],
                     status=err.status,
@@ -54,23 +56,21 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
             raise
         except web.HTTPSuccessful as ex:
             ex.content_type = JSON_CONTENT_TYPE
-            if ex.text and not is_enveloped(ex.text):
+            if ex.text and not is_enveloped_from_text(ex.text):
                 ex.text = EnvelopeFactory(error=ex.text).as_text()
             raise
         except web.HTTPRedirection as ex:
             logger.debug("Redirection %s", ex)
             raise
         except Exception as err:  # pylint: disable=W0703
-            # TODO: send info only in debug mode
-            error = ErrorType(
-                errors=[ErrorItemType.from_error(err), ],
-                status=web.HTTPInternalServerError.status_code
-            )
-            raise web.HTTPInternalServerError(
-                reason="Internal server error",
-                text=EnvelopeFactory(error=error).as_text(),
-                content_type=JSON_CONTENT_TYPE,
-            )
+            # TODO: send info + trace nly in debug mode
+            logger.exception("Unexpected exception on server side")
+            exc = create_error_response(
+                    [err,],
+                    "Unexpected Server error",
+                    web.HTTPInternalServerError
+                )
+            raise exc
     return _middleware
 
 
@@ -90,20 +90,29 @@ def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
 
         try:
             validator = OpenApiValidator.create(request.app, api_version)
-            path, query, body = await validator.check_request(request)
 
-            # TODO: simplify!!!!
-            # Injects validated
-            request["validated-path"] = path
-            request["validated-query"] = query
-            request["validated-body"] = body
+            # FIXME: if request is HTTPNotFound, it still goes through middlewares and then validator.check_request fails!!!
+            try:
+                path, query, body = await validator.check_request(request)
+
+                # TODO: simplify!!!!
+                # Injects validated
+                request["validated-path"] = path
+                request["validated-query"] = query
+                request["validated-body"] = body
+            except OpenAPIError:
+                raise
+            except Exception: # pylint: disable=W0703
+                pass
 
             response = await handler(request)
+
+            # FIXME:  openapi-core fails to validate response when specs are in separate files!
             validator.check_response(response)
 
         finally:
             for k in RQ_VALIDATED_DATA_KEYS:
-                request.pop(k)
+                request.pop(k, None)
 
         return response
 
@@ -135,5 +144,7 @@ def append_rest_middlewares(app: web.Application, api_version: str = DEFAULT_API
 
     """
     app.middlewares.append(error_middleware_factory(api_version))
-    app.middlewares.append(validate_middleware_factory(api_version))
+    # FIXME:  openapi-core fails to validate response when specs are in separate files!
+    # FIXME: disabled so webserver and storage do not get this issue
+    #app.middlewares.append(validate_middleware_factory(api_version))
     app.middlewares.append(envelope_middleware_factory(api_version))

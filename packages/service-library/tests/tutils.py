@@ -15,6 +15,25 @@ class Data:
 
 
 class Handlers:
+
+    async def get_health_wrong(self, request: web.Request):
+        out = {
+            'name':__name__.split('.')[0],
+            'version': "1.0",
+            'status': 'SERVICE_RUNNING',
+            'invalid_entry': 125
+        }
+        return out
+
+    async def get_health(self, request: web.Request):
+        out = {
+            'name':__name__.split('.')[0],
+            'version': "1.0",
+            'status': 'SERVICE_RUNNING',
+            'api_version': "1.0"
+        }
+        return out
+
     async def get_dict(self, request: web.Request):
         return {'x':3, 'y':"3"}
 
