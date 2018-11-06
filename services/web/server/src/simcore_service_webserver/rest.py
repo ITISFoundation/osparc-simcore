@@ -9,12 +9,14 @@ from typing import Dict
 from aiohttp import web
 
 from servicelib import openapi
-from servicelib.rest_middlewares import envelope_middleware, error_middleware
+from servicelib.rest_middlewares import (envelope_middleware_factory,
+                                         error_middleware_factory)
 
 from . import rest_routes
 from .application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 from .resources import resources
 from .resources_keys import RSC_OPENAPI_ROOTFILE_KEY
+from .rest_settings import get_base_path
 
 log = logging.getLogger(__name__)
 
@@ -92,8 +94,10 @@ def setup(app: web.Application):
         # setup rest submodules
         rest_routes.setup(app)
 
-        app.middlewares.append(error_middleware)
-        app.middlewares.append(envelope_middleware)
+        base_path = get_base_path(specs)
+        app.middlewares.append(error_middleware_factory(base_path))
+        app.middlewares.append(envelope_middleware_factory(base_path))
+
 
     except openapi.OpenAPIError:
         # TODO: protocol when some parts are unavailable because of failure
