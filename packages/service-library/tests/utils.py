@@ -41,10 +41,10 @@ class Handlers:
 
 
     @classmethod
-    def get(cls, suffix):
+    def get(cls, suffix, process=True):
         handlers = cls()
         coro = getattr(handlers, "get_"+suffix)
         loop = asyncio.get_event_loop()
         data = loop.run_until_complete(coro(None))
 
-        return json.loads(json.dumps(data, cls=DataEncoder))
+        return json.loads(json.dumps(data, cls=DataEncoder)) if process else data

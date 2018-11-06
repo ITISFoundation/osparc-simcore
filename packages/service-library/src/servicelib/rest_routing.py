@@ -1,6 +1,10 @@
 """ rest - routes mapping based on oaspecs
 
 
+
+TODO: filtering on spec-paths or handle functions
+TODO: check signature of handler functions
+TODO: options to check mapping completness
 """
 
 import inspect

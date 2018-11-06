@@ -69,6 +69,18 @@ async def validate_data(spec: OpenApiSpec, request, response: web.Response):
 
     return result.data
 
+async def validate_response(spec: OpenApiSpec, request: web.Request, response: web.Response):
+    """
+      Validates server response against openapi specs
+
+      Raises exceptions OpenAPIError, OpenAPIMappingError
+    """
+    validator = ResponseValidator(spec)
+
+    req = await AiohttpOpenAPIRequest.create(request)
+    res = AiohttpOpenAPIResponse(response, response.text) # FIXME:ONLY IN SERVER side. Async in client!
+    result = validator.validate(req, res)
+    result.raise_for_errors()
 
 
 __all__ = (

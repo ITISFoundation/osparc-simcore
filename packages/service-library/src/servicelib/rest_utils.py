@@ -76,12 +76,5 @@ async def extract_and_validate(request: web.Request):
     return params[PATH_KEY], params[QUERY_KEY], body
 
 
-# async def validate_response(request: web.Request, response: web.Response):
-#     """
-#         Validates against specs
-
-#         Raises exception if response does not comply with validation
-#     """
-
 
 #  TODO: fix __all__

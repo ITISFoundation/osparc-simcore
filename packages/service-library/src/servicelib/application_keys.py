@@ -25,10 +25,6 @@ APP_DB_ENGINE_KEY      = __name__ + '.db_engine'
 APP_DB_SESSION_KEY     = __name__ + '.db_session'
 APP_DB_POOL_KEY        = __name__ + '.db_pool'
 
-
-APP_REST_REQUEST_VALIDATOR_KEY  = __name__ + '.rest_request_validator'
-APP_REST_RESPONSE_VALIDATOR_KEY = __name__ + '.rest_response_validator'
-
 # RQT=request
 
 # RSP=response
