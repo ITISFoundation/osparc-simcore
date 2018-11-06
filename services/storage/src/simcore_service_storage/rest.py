@@ -8,8 +8,7 @@ from typing import Dict
 from aiohttp import web
 
 from servicelib import openapi
-from servicelib.rest_middlewares import (envelope_middleware_factory,
-                                         error_middleware_factory)
+from servicelib.rest_middlewares import append_rest_middlewares
 
 
 from . import rest_routes
@@ -80,8 +79,7 @@ def setup(app: web.Application):
     #Injects rest middlewares in the application
 
     base_path = get_base_path(api_specs)
-    app.middlewares.append(error_middleware_factory(base_path))
-    app.middlewares.append(envelope_middleware_factory(base_path))
+    append_rest_middlewares(app, base_path)
 
     rest_routes.setup(app)
 

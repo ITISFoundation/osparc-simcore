@@ -7,10 +7,8 @@ import os
 from typing import Dict
 
 from aiohttp import web
-
 from servicelib import openapi
-from servicelib.rest_middlewares import (envelope_middleware_factory,
-                                         error_middleware_factory)
+from servicelib.rest_middlewares import append_rest_middlewares
 
 from . import rest_routes
 from .application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
@@ -95,9 +93,7 @@ def setup(app: web.Application):
         rest_routes.setup(app)
 
         base_path = get_base_path(specs)
-        app.middlewares.append(error_middleware_factory(base_path))
-        app.middlewares.append(envelope_middleware_factory(base_path))
-
+        append_rest_middlewares(app, base_path)
 
     except openapi.OpenAPIError:
         # TODO: protocol when some parts are unavailable because of failure
