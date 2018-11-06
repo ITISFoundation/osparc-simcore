@@ -91,16 +91,20 @@ qx.Class.define("qxapp.data.Store", {
         case "defaultNeuromanModels":
           return [{
             key: "Yoon-sun-UUID",
-            label: "Yoon-sun"
+            label: "Yoon-sun",
+            thumbnail: "qxapp/thumbnail0.png"
           }, {
             key: "Yoon-sun-Light-UUID",
-            label: "Yoon-sun-Light"
+            label: "Yoon-sun Light",
+            thumbnail: "qxapp/thumbnail1.png"
           }, {
             key: "Rat-UUID",
-            label: "Rat"
+            label: "Rat",
+            thumbnail: "qxapp/thumbnail2.png"
           }, {
             key: "Rat-Light-UUID",
-            label: "Rat-Light"
+            label: "Rat Light",
+            thumbnail: "qxapp/thumbnail3.png"
           }];
         case "defaultMaterials":
           return [{
@@ -633,7 +637,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Neuroman models",
               description: "Neuroman models",
-              type: "node-output-list-api-v0.0.1"
+              type: "node-output-list-icon-api-v0.0.1"
             }
           },
           inputs: {
