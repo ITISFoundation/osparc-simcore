@@ -31,7 +31,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           this.__addInputsDefault(metaData.inputsDefault);
         }
         if (Object.prototype.hasOwnProperty.call(metaData, "inputs")) {
-          this.__addSettings(metaData.inputs);
+          this.__addInputs(metaData.inputs);
         }
         if (Object.prototype.hasOwnProperty.call(metaData, "outputs")) {
           this.__addOutputs(metaData.outputs);
@@ -235,14 +235,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return filteredInputs;
     },
 
-    __addSettings: function(inputs) {
-      if (inputs === null) {
-        return;
-      }
-
-      let filteredInputs = this.__removeNonSettingInputs(inputs);
-      filteredInputs = this.__addMapper(filteredInputs);
-      let form = this.__settingsForm = new qxapp.component.form.Auto(filteredInputs);
+    __addSetttings: function(inputs) {
+      let form = this.__settingsForm = new qxapp.component.form.Auto(inputs);
       form.addListener("linkAdded", e => {
         let changedField = e.getData();
         this.getPropsWidget().linkAdded(changedField);
@@ -258,6 +252,16 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         let changedField = e.getData();
         this.__settingsForm.removeLink(changedField);
       }, this);
+    },
+
+    __addInputs: function(inputs) {
+      if (inputs === null) {
+        return;
+      }
+
+      let filteredInputs = this.__removeNonSettingInputs(inputs);
+      filteredInputs = this.__addMapper(filteredInputs);
+      this.__addSetttings(filteredInputs);
     },
 
     __addOutputs: function(outputs) {
