@@ -2,4 +2,4 @@
 version: '3.4'
 services:
   webclient:
-    command: compile
+    command: /bin/bash -c "echo 'built with qx' && cat build-output/version.txt"
