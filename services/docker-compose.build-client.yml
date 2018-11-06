@@ -1,0 +1,5 @@
+# work around the swarm problem with combining commands
+version: '3.4'
+services:
+  webclient:
+    command: compile

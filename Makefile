@@ -18,7 +18,7 @@ export DOCKER=docker.exe
 export RUN_DOCKER_ENGINE_ROOT=1
 export DOCKER_GID=1042
 export HOST_GID=1000
-else ifeq ($(OS), Darwin)
+else ifneq (,$(findstring Darwin,$(VERSION)))
 $(info    detected OSX)
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
@@ -63,11 +63,11 @@ rebuild:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
 
 up:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml up
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.build-client.yml -f services/docker-compose.tools.yml up
 
 up-swarm:
 	${DOCKER} swarm init
-	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml  -c services/docker-compose.tools.yml services
+	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml  -c services/docker-compose.tools.yml -c services/docker-compose.build-client.yml services
 
 up-swarm-devel:
 	${DOCKER} swarm init
