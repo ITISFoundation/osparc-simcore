@@ -18,13 +18,18 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
         c.bindDefaultProperties(item, id);
         c.bindProperty("key", "model", null, item, id);
         c.bindProperty("thumbnail", "icon", null, item, id);
+        c.bindProperty("label", "label", {
+          converter: function(data, model, source, target) {
+            return "<b>" + data + "</b>";
+          }
+        }, item, id);
       },
       configureItem: item => {
         let icon = item.getChildControl("icon");
         icon.set({
-          // width: 246,
-          height: 144,
-          scale: true
+          scale: true,
+          width: 246,
+          height: 144
         });
         item.addListener("dragstart", e => {
           // Register supported actions
