@@ -12,8 +12,6 @@ from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
 
 sys.path.append(str(Path(__file__).parent / "helpers"))
 
-pytest_plugins = ["tests.fixtures.postgres", "tests.fixtures.minio-fix"]
-
 @pytest.fixture(scope='session')
 def here()->Path:
     yield Path(__file__).parent
