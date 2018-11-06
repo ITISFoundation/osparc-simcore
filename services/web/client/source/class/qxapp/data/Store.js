@@ -90,11 +90,11 @@ qx.Class.define("qxapp.data.Store", {
       switch (portKey) {
         case "defaultNeuromanModels":
           return [{
-            key: "YoonSun-UUID",
-            label: "YoonSun"
+            key: "Yoon-sun-UUID",
+            label: "Yoon-sun"
           }, {
-            key: "YoonSun-Light-UUID",
-            label: "YoonSun-Light"
+            key: "Yoon-sun-Light-UUID",
+            label: "Yoon-sun-Light"
           }, {
             key: "Rat-UUID",
             label: "Rat"
