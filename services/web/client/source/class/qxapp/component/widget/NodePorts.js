@@ -6,7 +6,7 @@
 ************************************************************************ */
 
 /**
- *  Creates the widget that represents an input node.
+ *  Creates the widget that represents the output of an input node.
  * It creates a VBox with widgets representing each of the output ports of the node.
  * It can also create widget for representing default inputs (isInputModel = false).
  *

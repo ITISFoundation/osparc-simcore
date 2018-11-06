@@ -88,6 +88,20 @@ qx.Class.define("qxapp.data.Store", {
 
     getItemList: function(nodeInstanceUUID, portKey) {
       switch (portKey) {
+        case "defaultNeuromanModels":
+          return [{
+            key: "YoonSun-UUID",
+            label: "YoonSun"
+          }, {
+            key: "YoonSun-Light-UUID",
+            label: "YoonSun-Light"
+          }, {
+            key: "Rat-UUID",
+            label: "Rat"
+          }, {
+            key: "Rat-Light-UUID",
+            label: "Rat-Light"
+          }];
         case "defaultMaterials":
           return [{
             key: "Dielectric-UUID",
@@ -595,6 +609,42 @@ qx.Class.define("qxapp.data.Store", {
               label: "File",
               description: "Chosen File",
               type: "data:*/*"
+            }
+          }
+        },
+        "service/demodec/dynamic/itis/s4l/Neuroman-0.0.0": {
+          key: "service/demodec/dynamic/itis/s4l/Neuroman",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "Neuroman",
+          description: "Neuroman",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultNeuromanModels: {
+              displayOrder: 0,
+              label: "Neuronam models",
+              description: "Neuronam models",
+              type: "node-output-list-api-v0.0.1"
+            }
+          },
+          inputs: {
+            inModel: {
+              displayOrder: 0,
+              label: "Input model",
+              description: "Model to be loaded",
+              type: "data:application/hdf5"
+            }
+          },
+          outputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Modeler Live link",
+              type: "node-output-list-api-v0.0.1"
             }
           }
         },
