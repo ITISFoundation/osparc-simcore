@@ -1,3 +1,16 @@
+/* ************************************************************************
+   Copyright: 2018 ITIS Foundation
+   License:   MIT
+   Authors:   Odei Maiz <maiz@itis.swiss>
+   Utf8Check: äöü
+************************************************************************ */
+
+/**
+ *  Node Main view
+ * - On the left side shows the default inputs if any and also what the input nodes offer
+ * - In the center the content of the node: settings, mapper, iframe...
+ */
+
 const PORT_INPUTS_WIDTH = 300;
 
 qx.Class.define("qxapp.component.widget.NodeView", {
@@ -91,8 +104,10 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     },
 
     __initSettings: function() {
-      this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.Grow());
-      this.__mainLayout.add(this.__settingsBox);
+      this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      this.__mainLayout.add(this.__settingsBox, {
+        flex: 1
+      });
     },
 
     __initButtons: function() {
@@ -197,17 +212,29 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }, this);
     },
 
-    __createInputPortsUI: function(inputNodeModel) {
-      let nodePorts = new qxapp.component.widget.NodePorts(inputNodeModel);
-      nodePorts.populateNodeLayout();
-      this.__createDragDropMechanism(nodePorts);
-      this.__inputNodesLayout.add(nodePorts, {
-        flex: 1
-      });
+    __createInputPortsUI: function(inputNodeModel, isInputModel = true) {
+      let nodePorts = null;
+      if (isInputModel) {
+        nodePorts = inputNodeModel.getOutputWidget();
+      } else {
+        nodePorts = inputNodeModel.getInputsDefaultWidget();
+      }
+      if (nodePorts) {
+        this.__createDragDropMechanism(nodePorts);
+        this.__inputNodesLayout.add(nodePorts, {
+          flex: 1
+        });
+      }
       return nodePorts;
     },
 
     __createInputPortsUIs: function(nodeModel) {
+      // Add the default inputs if any
+      if (Object.keys(this.getNodeModel().getInputsDefault()).length > 0) {
+        this.__createInputPortsUI(this.getNodeModel(), false);
+      }
+
+      // Add the representations for the inputs
       const inputNodes = nodeModel.getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
         let inputNodeModel = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
@@ -234,6 +261,12 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__settingsBox.removeAll();
       this.__settingsBox.add(nodeModel.getPropsWidget());
       this.__createDragDropMechanism(nodeModel.getPropsWidget());
+
+      if (nodeModel.getInputsMapper()) {
+        this.__settingsBox.add(nodeModel.getInputsMapper(), {
+          flex: 1
+        });
+      }
 
       this.__clearInputPortsUIs();
       this.__createInputPortsUIs(nodeModel);

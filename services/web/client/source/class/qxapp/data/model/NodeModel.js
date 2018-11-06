@@ -7,6 +7,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     this.__metaData = {};
     this.__innerNodes = {};
     this.__inputNodes = [];
+    this.__inputsDefault = {};
     this.__outputs = {};
 
     this.set({
@@ -16,26 +17,41 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     if (key && version) {
       // not container
       this.set({
+        key: key,
+        version: version,
         nodeImageId: key + "-" + version
       });
       let store = qxapp.data.Store.getInstance();
       let metaData = this.__metaData = store.getNodeMetaData(key, version);
       if (metaData) {
-        this.__startInteractiveNode();
-        if (metaData.inputs) {
-          this.__addSettings(metaData.inputs);
-        }
-        if (metaData.outputs) {
-          this.__addOutputs(metaData.outputs);
-        }
-        if (metaData.name) {
+        if (Object.prototype.hasOwnProperty.call(metaData, "name")) {
           this.setLabel(metaData.name);
         }
+        if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
+          this.__addInputsDefault(metaData.inputsDefault);
+        }
+        if (Object.prototype.hasOwnProperty.call(metaData, "inputs")) {
+          this.__addInputs(metaData.inputs);
+        }
+        if (Object.prototype.hasOwnProperty.call(metaData, "outputs")) {
+          this.__addOutputs(metaData.outputs);
+        }
+        this.__startInteractiveNode();
       }
     }
   },
 
   properties: {
+    key: {
+      check: "String",
+      nullable: false
+    },
+
+    version: {
+      check: "String",
+      nullable: false
+    },
+
     nodeId: {
       check: "String",
       nullable: false
@@ -54,6 +70,12 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     propsWidget: {
       check: "qxapp.component.form.renderer.PropForm"
+    },
+
+    inputsMapper: {
+      check: "qx.ui.core.Widget",
+      init: null,
+      nullable: true
     },
 
     parentNodeId: {
@@ -87,7 +109,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __innerNodes: null,
     __inputNodes: null,
     __settingsForm: null,
+    __inputsDefault: null,
+    __inputsDefaultWidget: null,
     __outputs: null,
+    __outputWidget: null,
     __posX: null,
     __posY: null,
 
@@ -106,6 +131,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return {};
     },
 
+    getInputsDefault: function() {
+      return this.__inputsDefault;
+    },
+
     getOutputs: function() {
       return this.__outputs;
     },
@@ -113,7 +142,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     getOutputValues: function() {
       let output = {};
       for (const outputId in this.__outputs) {
-        if ("value" in this.__outputs[outputId]) {
+        if (Object.prototype.hasOwnProperty.call(this.__outputs[outputId], "value")) {
           output[outputId] = this.__outputs[outputId].value;
         }
       }
@@ -178,10 +207,53 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
-    __addSettings: function(inputs) {
-      if (inputs === null) {
-        return;
+    getInputsDefaultWidget: function() {
+      return this.__inputsDefaultWidget;
+    },
+
+    __addInputsDefaultWidgets: function() {
+      const isInputModel = false;
+      let nodePorts = new qxapp.component.widget.NodePorts(this, isInputModel);
+      nodePorts.populateNodeLayout();
+      this.__inputsDefaultWidget = nodePorts;
+    },
+
+    /**
+     * Remove those inputs that can't be respresented in the settings form
+     * (Those are needed for creating connections between nodes)
+     *
+     */
+    __removeNonSettingInputs: function(inputs) {
+      let filteredInputs = JSON.parse(JSON.stringify(inputs));
+      for (const inputId in filteredInputs) {
+        let input = filteredInputs[inputId];
+        if (input.type.includes("data:application/s4l-api/")) {
+          delete filteredInputs[inputId];
+        }
       }
+      return filteredInputs;
+    },
+
+
+    /**
+     * Add mapper widget if any
+     *
+     */
+    __addMapper: function(inputs) {
+      let filteredInputs = JSON.parse(JSON.stringify(inputs));
+      if (Object.prototype.hasOwnProperty.call(filteredInputs, "mapper")) {
+        let inputsMapper = new qxapp.component.widget.InputsMapper(this, filteredInputs["mapper"]);
+        this.setInputsMapper(inputsMapper);
+        delete filteredInputs["mapper"];
+      }
+      return filteredInputs;
+    },
+
+    /**
+     * Add settings widget with those inputs that can be represented in a form
+     *
+     */
+    __addSetttings: function(inputs) {
       let form = this.__settingsForm = new qxapp.component.form.Auto(inputs);
       form.addListener("linkAdded", e => {
         let changedField = e.getData();
@@ -200,8 +272,37 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }, this);
     },
 
+    getOutputWidget: function() {
+      return this.__outputWidget;
+    },
+
+    __addOutputWidget: function() {
+      const isInputModel = true;
+      let nodePorts = new qxapp.component.widget.NodePorts(this, isInputModel);
+      nodePorts.populateNodeLayout();
+      this.__outputWidget = nodePorts;
+    },
+
+    __addInputsDefault: function(inputsDefault) {
+      this.__inputsDefault = inputsDefault;
+
+      this.__addInputsDefaultWidgets();
+    },
+
+    __addInputs: function(inputs) {
+      if (inputs === null) {
+        return;
+      }
+
+      let filteredInputs = this.__removeNonSettingInputs(inputs);
+      filteredInputs = this.__addMapper(filteredInputs);
+      this.__addSetttings(filteredInputs);
+    },
+
     __addOutputs: function(outputs) {
       this.__outputs = outputs;
+
+      this.__addOutputWidget();
     },
 
     setInputData: function(nodeData) {
@@ -211,7 +312,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     setOutputData: function(nodeData) {
-      if ("outputs" in nodeData) {
+      if (Object.prototype.hasOwnProperty.call(nodeData, "outputs")) {
         for (const outputKey in nodeData.outputs) {
           this.__outputs[outputKey].value = nodeData.outputs[outputKey];
         }
