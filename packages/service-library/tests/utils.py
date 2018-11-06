@@ -35,7 +35,7 @@ class Handlers:
         return 3
 
     async def get_mixed(self, request: web.Request):
-        data = [{'x': 3, 'y': "3", 'z': [self.get_attobj(request)]*2}]*3
+        data = [{'x': 3, 'y': "3", 'z': [Data(3, "3")]*2}]*3
         return data
 
 
@@ -44,6 +44,7 @@ class Handlers:
     def get(cls, suffix):
         handlers = cls()
         coro = getattr(handlers, "get_"+suffix)
-        data = asyncio.run( coro(None) )
+        loop = asyncio.get_event_loop()
+        data = loop.run_until_complete(coro(None))
 
         return json.loads(json.dumps(data, cls=DataEncoder))

@@ -17,25 +17,24 @@ log = logging.getLogger(__name__)
 class DataEncoder(json.JSONEncoder):
     def default(self, o): #pylint: disable=E0202
         if attr.has(o.__class__):
-            return attr.asdict(o)        
+            return attr.asdict(o)
         return json.JSONEncoder.default(self, o)
 
 def jsonify(payload):
     return json.dumps(payload, cls=DataEncoder)
 
 
-def is_api_request(request: web.Request, api_version: str) -> bool:
-    basepath = "/" + api_version.lstrip("/")
-    return request.path.startswith(basepath)
+def is_api_request(request: web.Request, api_basepath: str) -> bool:
+    return request.path.startswith(api_basepath)
 
 
-def error_middleware_factory(api_version="v0"):
+def error_middleware_factory(api_basepath: str="/v0"):
     @web.middleware
     async def _middleware(request: web.Request, handler):
         """
             Ensure all error raised are properly enveloped and json responses
         """
-        if not is_api_request(request, api_version):
+        if not is_api_request(request, api_basepath):
             return await handler(request)
 
         # FIXME: review when to send info to client and when not!
@@ -81,7 +80,7 @@ def error_middleware_factory(api_version="v0"):
     return _middleware
 
 
-def envelope_middleware_factory(api_version: str="v0"):
+def envelope_middleware_factory(api_version: str="/v0"):
     @web.middleware
     async def _middleware(request: web.Request, handler):
         """

@@ -34,8 +34,7 @@ def create_routes_from_map(specs: Spec, handlers_map: Dict) -> List[web.RouteDef
 def create_routes_from_namespace(specs: Spec, handlers_nsp) -> List[web.RouteDef]:
     #TODO: if handlers_nsp is an instance, or a pakcage
 
-
+    # TODO: add some kind of filter??
     available_handlers = dict(inspect.getmembers(handlers_nsp, inspect.ismethod))
 
-    import pdb; pdb.set_trace()
     return create_routes_from_map(specs, available_handlers)
