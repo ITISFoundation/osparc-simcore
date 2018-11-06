@@ -2,14 +2,13 @@
 
 FIXME: these are prototype! do not use in production
 """
-
-import json  # TODO: add ujson
 from typing import Dict, Mapping, Tuple
 
 import attr
 from aiohttp import web
 
 from .rest_models import LogMessageType
+
 
 ENVELOPE_KEYS = ('data', 'error')
 

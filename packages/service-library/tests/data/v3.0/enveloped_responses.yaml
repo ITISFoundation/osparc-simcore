@@ -30,7 +30,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EnvelopedData"
+                $ref: "#/components/schemas/EnvelopedDataArray"
   /string:
     get:
       operationId: get_string
@@ -72,6 +72,8 @@ components:
           type: array
           items:
             type: object
+            additionalProperties:
+              type: string
         error:
           $ref: "#/components/schemas/Error"
     EnvelopedNumber:
@@ -114,6 +116,7 @@ components:
           type: string
     Error:
       type: object
+      nullable: true
       properties:
         code:
           type: string

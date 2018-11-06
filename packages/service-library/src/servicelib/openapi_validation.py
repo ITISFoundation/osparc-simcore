@@ -68,6 +68,7 @@ async def validate_data(spec: OpenApiSpec, request, response: web.Response):
     return result.data
 
 
+
 __all__ = (
     'validate_request',
     'validate_data'
