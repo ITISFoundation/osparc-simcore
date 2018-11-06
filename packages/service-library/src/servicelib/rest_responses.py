@@ -2,7 +2,7 @@
 
 FIXME: these are prototype! do not use in production
 """
-from typing import Dict, Mapping, Tuple
+from typing import Dict, Mapping, Tuple, Optional, List
 
 import attr
 from aiohttp import web
@@ -42,6 +42,7 @@ def unwrap_envelope(payload: Dict) -> Tuple:
     return tuple(payload.get(k) for k in ENVELOPE_KEYS) if payload else (None, None)
 
 
+# RESPONSES FACTORIES -------------------------------
 
 def create_data_response(data) -> web.Response:
     response = None
@@ -66,7 +67,29 @@ def create_data_response(data) -> web.Response:
     return response
 
 
-def log_response(msg: str, level: str) -> web.Response:
+def create_error_response(
+        errors: List[Exception],
+        reason: Optional[str]=None,
+        error_cls: Optional[web.HTTPError]=None ) -> web.HTTPError:
+
+    if error_cls is None:
+        error_cls = web.HTTPInternalServerError
+
+    error = ErrorType(
+        errors=[ErrorItemType.from_error(err) for err in errors],
+        status=error_cls.status_code
+    )
+    # WARNING: this is NOT enveloped!?
+    response = error_cls(
+        reason=reason,
+        text=jsonify(attr.asdict(error)),
+        content_type=JSON_CONTENT_TYPE
+    )
+
+    return response
+
+
+def create_log_response(msg: str, level: str) -> web.Response:
     """ Produces an enveloped response with a log message
 
     Analogous to  aiohttp's web.json_response
@@ -78,9 +101,3 @@ def log_response(msg: str, level: str) -> web.Response:
         'error': None
     })
     return response
-
-
-__all__ = (
-    'unwrap_envelope',
-    'log_response'
-)

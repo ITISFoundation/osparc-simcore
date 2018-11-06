@@ -9,22 +9,26 @@ from aiohttp import web
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 from .rest_responses import create_data_response, is_enveloped, JSON_CONTENT_TYPE
 from .rest_utils import EnvelopeFactory
+from .rest_validators import OpenApiValidator
+
+DEFAULT_API_VERSION = "v0"
 
 
 log = logging.getLogger(__name__)
 
 
-def is_api_request(request: web.Request, api_basepath: str) -> bool:
-    return request.path.startswith(api_basepath)
+def is_api_request(request: web.Request, api_version: str) -> bool:
+    base_path = "/" + api_version.lstrip("/")
+    return request.path.startswith(base_path)
 
 
-def error_middleware_factory(api_basepath: str="/v0"):
+def error_middleware_factory(api_version: str=DEFAULT_API_VERSION):
     @web.middleware
     async def _middleware(request: web.Request, handler):
         """
             Ensure all error raised are properly enveloped and json responses
         """
-        if not is_api_request(request, api_basepath):
+        if not is_api_request(request, api_version):
             return await handler(request)
 
         # FIXME: review when to send info to client and when not!
@@ -70,7 +74,40 @@ def error_middleware_factory(api_basepath: str="/v0"):
     return _middleware
 
 
-def envelope_middleware_factory(api_version: str="/v0"):
+def validate_middleware_factory(api_version: str=DEFAULT_API_VERSION):
+    @web.middleware
+    async def _middleware(request: web.Request, handler):
+        """
+            Validates requests against openapi specs and extracts body, params, etc ...
+            Validate response against openapi specs
+        """
+        if not is_api_request(request, api_version):
+            return await handler(request)
+
+        RQ_VALIDATED_DATA_KEYS = ("validated-path", "validated-query", "validated-body")
+
+        try:
+            validator = OpenApiValidator.create(request.app, api_version)
+            path, query, body = await validator.check_request(request)
+
+            # TODO: simplify!!!!
+            # Injects validated
+            request["validated-path"] = path
+            request["validated-query"] = query
+            request["validated-body"] = body
+
+            response = await handler(request)
+            validator.check_response(response)
+
+        finally:
+            for k in RQ_VALIDATED_DATA_KEYS:
+                request.pop(k)
+
+        return response
+
+    return _middleware
+
+def envelope_middleware_factory(api_version: str=DEFAULT_API_VERSION):
     @web.middleware
     async def _middleware(request: web.Request, handler):
         """
@@ -88,3 +125,12 @@ def envelope_middleware_factory(api_version: str="/v0"):
             response = resp
         return response
     return _middleware
+
+
+
+
+def append_middlewares(app: web.Application, api_version: str=DEFAULT_API_VERSION):
+    """ Helpe to append in the correct order rest-middlewares """
+    app.middlewares.append(error_middleware_factory(api_version))
+    app.middlewares.append(validate_middleware_factory(api_version))
+    app.middlewares.append(envelope_middleware_factory(api_version))
