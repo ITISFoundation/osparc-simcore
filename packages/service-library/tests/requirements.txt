@@ -1,3 +1,4 @@
 pytest
 pytest-runner
 pytest-aiohttp
+pytest-cov
