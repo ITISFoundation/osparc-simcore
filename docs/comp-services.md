@@ -22,7 +22,7 @@ All nodes are described with the following data structure:
 
 ```json
 {
-  "pipeline_id" : uid,
+  "project_id" : uid,
   "node_id" : uid,
   "image" : {
     "name" : dockerregistry.module.name
@@ -73,7 +73,7 @@ Two tables are created, one to represent the dag and one to represent every node
 Every link to an node A is represented as follows:
 
 ``
-pipeline_id.nodeA_id.key
+project_id.nodeA_id.key
 ``
 
 This handles the case of files and values.

@@ -42,6 +42,7 @@ services:
       - S3_ACCESS_KEY=<enter access key>
       - S3_SECRET_KEY=<enter secret key>
       - S3_BUCKET_NAME=simcore
+      - PUBLISHED_HOST_NAME=${PUBLISHED_HOST_NAME}
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
 

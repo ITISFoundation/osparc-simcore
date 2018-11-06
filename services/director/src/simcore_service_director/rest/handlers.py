@@ -3,10 +3,10 @@ import logging
 import pkg_resources
 import yaml
 from aiohttp import web_exceptions, web
-from simcore_service_director import (config, exceptions, producer,
+from simcore_service_director import (exceptions, producer,
                                       registry_proxy, resources)
 
-from . import (api_converters, node_validator)
+from . import (node_validator)
 
 log = logging.getLogger(__name__)
 
@@ -41,8 +41,6 @@ async def services_by_key_version_get(request, service_key, service_version):  #
     log.debug("Client does services_get request %s with service_key %s, service_version %s", request, service_key, service_version)
     try:
         services = [registry_proxy.get_service_details(service_key, service_version)]
-        if config.CONVERT_OLD_API:
-            services = [api_converters.convert_service_from_old_api(x) for x in services]
         return web.json_response(data=dict(data=services))
     except exceptions.ServiceNotAvailableError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
@@ -53,9 +51,6 @@ async def services_by_key_version_get(request, service_key, service_version):  #
 
 def _list_services(list_service_fct):    
     services = list_service_fct()
-    
-    if config.CONVERT_OLD_API:
-        services = [api_converters.convert_service_from_old_api(x) for x in services if not node_validator.is_service_valid(x)]
     services = node_validator.validate_nodes(services)
     return services
 

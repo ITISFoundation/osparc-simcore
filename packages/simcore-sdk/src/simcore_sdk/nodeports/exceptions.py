@@ -64,3 +64,15 @@ class S3InvalidPathError(NodeportsException):
         super(S3InvalidPathError, self).__init__(msg)
         self.bucket = s3_bucket
         self.object_name = s3_object_name
+
+class S3InvalidStore(NodeportsException):
+    """S3 transfer error"""
+    def __init__(self, s3_store):
+        msg = "Invalid store used: {store}".format(store=s3_store)
+        super(S3InvalidStore, self).__init__(msg)
+        self.store = s3_store
+
+class PortNotFound(NodeportsException):
+    """Accessed key does not exist"""
+    def __init__(self, msg):
+        super(PortNotFound, self).__init__(msg)

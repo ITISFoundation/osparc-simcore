@@ -1,29 +1,42 @@
 {
     "version":"0.1",
-    "inputs": [
-        {
-            "key": "input_1",
-            "label": "input 1",
-            "desc": "input 1",
-            "type": "file-url",
-            "value": "link.SIMCORE_NODE_UUID.FILENAME_ID",
-            "settings": {
-                "value":"null"
+    "schema": {
+        "inputs": {
+            "input_1": {
+                "displayOrder":0,
+                "label": "input 1",
+                "description": "input 1",
+                "type": "data:*/*"
             },
-            "widget":"stuff"
-        }
-    ],
-    "outputs": [
-        {
-            "key": "output_1",
-            "label": "output 1",
-            "desc": "this is the output number 1",
-            "type": "file-url",
-            "value": "null",
-            "settings": {
-                "value":"null"
+            "input_2": {
+                "displayOrder":1,
+                "label": "input 2",
+                "description": "input 2",
+                "type": "data:*/*"
             },
-            "widget":"stuff"
+            "input_3": {
+                "displayOrder":2,
+                "label": "input 3",
+                "description": "input 3",
+                "type": "string",
+                "defaultValue":"I'm a string"
+            }
+        },
+        "outputs": {
+            "output_1": {
+                "displayOrder": 0,
+                "label": "output 1",
+                "description": "this is the output number 1",
+                "type": "data:*/*"
+            },
+            "output_2": {
+                "displayOrder": 0,
+                "label": "output 1",
+                "description": "this is the output number 1",
+                "type": "number"
+            }
         }
-    ]
+    },
+    "inputs":{},
+    "outputs":{}
 }

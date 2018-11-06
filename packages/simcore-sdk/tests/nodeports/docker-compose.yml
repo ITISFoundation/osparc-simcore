@@ -18,3 +18,10 @@ services:
     ports:
       - "9000:9000"
     command: server /data
+  # monitors databases
+  adminer:
+    image: adminer
+    ports:
+      - 18080:8080
+    depends_on:
+      - postgres

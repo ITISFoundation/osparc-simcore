@@ -231,7 +231,18 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     removeInputNode: function(inputNodeId) {
       const index = this.__inputNodes.indexOf(inputNodeId);
       if (index > -1) {
+        // remove node connection
         this.__inputNodes.splice(index, 1);
+
+        // remove port connections
+        let inputs = this.getInputValues();
+        for (const portId in inputs) {
+          if (Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
+            if (inputs[portId]["nodeUuid"] === inputNodeId) {
+              this.__settingsForm.removeLink(portId);
+            }
+          }
+        }
         return true;
       }
       return false;
