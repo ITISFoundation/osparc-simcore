@@ -18,6 +18,13 @@ export DOCKER=docker.exe
 export RUN_DOCKER_ENGINE_ROOT=1
 export DOCKER_GID=1042
 export HOST_GID=1000
+else ifeq ($(OS), Darwin)
+$(info    detected OSX)
+export DOCKER_COMPOSE=docker-compose
+export DOCKER=docker
+export RUN_DOCKER_ENGINE_ROOT=1
+export DOCKER_GID=1042
+export HOST_GID=1000
 else
 $(info    detected native linux)
 export DOCKER_COMPOSE=docker-compose
