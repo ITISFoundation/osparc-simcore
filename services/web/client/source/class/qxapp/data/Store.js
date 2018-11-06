@@ -631,8 +631,8 @@ qx.Class.define("qxapp.data.Store", {
           inputsDefault: {
             defaultNeuromanModels: {
               displayOrder: 0,
-              label: "Neuronam models",
-              description: "Neuronam models",
+              label: "Neuroman models",
+              description: "Neuroman models",
               type: "node-output-list-api-v0.0.1"
             }
           },
