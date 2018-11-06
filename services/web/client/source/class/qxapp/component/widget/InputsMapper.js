@@ -71,8 +71,9 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
               data["children"] = [];
             }
             let newItem = qx.data.marshal.Json.createModel(data, true);
-            const to = e.getCurrentTarget().getModel();
-            to.getChildren().push(newItem);
+            const to = e.getCurrentTarget();
+            to.getModel().getChildren()
+              .push(newItem);
             if (willBeBranch) {
               const nodeInstanceUUID = null;
               const itemProps = qxapp.data.Store.getInstance().getItem(nodeInstanceUUID, fromPortKey, newItem.getKey());
@@ -82,6 +83,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
                 newItem["propsWidget"] = propsWidget;
               }
             }
+            to.setOpen(true);
             tree.focus();
           }
         });
