@@ -146,6 +146,11 @@ qx.Class.define("qxapp.data.Store", {
             key: "Eye-UUID",
             label: "Eye"
           }];
+        case "defaultStimulationSelectivity":
+          return [{
+            key: "StSeSubgroup-UUID",
+            label: "Subgroup"
+          }];
       }
       return [];
     },
@@ -645,6 +650,51 @@ qx.Class.define("qxapp.data.Store", {
               label: "Modeler",
               description: "Modeler Live link",
               type: "node-output-list-api-v0.0.1"
+            }
+          }
+        },
+        "service/demodec/dynamic/itis/s4l/StimulationSelectivity-0.0.0": {
+          key: "service/demodec/dynamic/itis/s4l/StimulationSelectivity",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "Stimulation Selectivity Evaluator",
+          description: "Evalutes Stimulation Selectivity",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultStimulationSelectivity: {
+              displayOrder: 0,
+              label: "Subgroups",
+              description: "Subgroups",
+              type: "node-output-list-api-v0.0.1"
+            }
+          },
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/s4l-api/modeler"
+            },
+            mapper: {
+              displayOrder: 1,
+              label: "Subgroups",
+              description: "Maps Model entities into Subgroups",
+              type: "mapper",
+              maps: {
+                leaf: "service/demodec/dynamic/itis/s4l/Modeler"
+              }
+            }
+          },
+          outputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Stimulation factor",
+              description: "Stimulation factor",
+              type: "number"
             }
           }
         },
