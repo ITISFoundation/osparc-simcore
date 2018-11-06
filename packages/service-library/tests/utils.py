@@ -6,7 +6,7 @@ import json
 
 import attr
 from aiohttp import web
-from servicelib.rest_middlewares import DataEncoder
+from servicelib.rest_codecs import DataEncoder
 
 @attr.s(auto_attribs=True)
 class Data:

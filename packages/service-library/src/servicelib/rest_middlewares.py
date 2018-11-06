@@ -2,28 +2,16 @@
 
 
 """
-import json
 import logging
 
 from aiohttp import web
-import attr
 
-from .response_utils import is_enveloped, wrap_as_envelope
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
+from .rest_responses import create_data_response, is_enveloped, JSON_CONTENT_TYPE
 from .rest_utils import EnvelopeFactory
 
 
 log = logging.getLogger(__name__)
-
-
-class DataEncoder(json.JSONEncoder):
-    def default(self, o): #pylint: disable=E0202
-        if attr.has(o.__class__):
-            return attr.asdict(o)
-        return json.JSONEncoder.default(self, o)
-
-def jsonify(payload):
-    return json.dumps(payload, cls=DataEncoder)
 
 
 def is_api_request(request: web.Request, api_basepath: str) -> bool:
@@ -48,8 +36,8 @@ def error_middleware_factory(api_basepath: str="/v0"):
             if not err.reason:
                 err.reason = "Unexpected error"
 
-            if not err.content_type == 'application/json':
-                err.content_type = 'application/json'
+            if not err.content_type == JSON_CONTENT_TYPE:
+                err.content_type = JSON_CONTENT_TYPE
 
             if not err.text or not is_enveloped(err.text):
                 error = ErrorType(
@@ -61,7 +49,7 @@ def error_middleware_factory(api_basepath: str="/v0"):
 
             raise
         except web.HTTPSuccessful as ex:
-            ex.content_type = 'application/json'
+            ex.content_type = JSON_CONTENT_TYPE
             if ex.text and not is_enveloped(ex.text):
                 ex.text = EnvelopeFactory(error=ex.text).as_text()
             raise
@@ -77,7 +65,7 @@ def error_middleware_factory(api_basepath: str="/v0"):
             raise web.HTTPInternalServerError(
                     reason="Internal server error",
                     text=EnvelopeFactory(error=error).as_text(),
-                    content_type='application/json',
+                    content_type=JSON_CONTENT_TYPE,
                 )
     return _middleware
 
@@ -86,7 +74,7 @@ def envelope_middleware_factory(api_version: str="/v0"):
     @web.middleware
     async def _middleware(request: web.Request, handler):
         """
-            Ensures all responses are enveloped as {'data': .. , 'error', ...} as json
+            Ensures all responses are enveloped as {'data': .. , 'error', ...} in json
         """
         if not is_api_request(request, api_version):
             return await handler(request)
@@ -94,25 +82,7 @@ def envelope_middleware_factory(api_version: str="/v0"):
         resp = await handler(request)
 
         if not isinstance(resp, web.Response):
-            data = resp
-            try:
-                if not is_enveloped(data):
-                    payload = wrap_as_envelope(data)
-                else:
-                    payload = data
-                response = web.json_response(payload, dumps=jsonify)
-
-            except (TypeError, ValueError) as err:
-                # TODO: assumes openapi error model!!!
-                error = ErrorType(
-                    errors=[ErrorItemType.from_error(err), ],
-                    status=web.HTTPInternalServerError.status_code
-                )
-                response = web.HTTPInternalServerError(
-                    reason = str(err),
-                    text=EnvelopeFactory(error=error).as_text(),
-                    content_type='application/json'
-                )
+            response = create_data_response(data=resp)
         else:
             # Enforced by user. Should check it is json?
             response = resp

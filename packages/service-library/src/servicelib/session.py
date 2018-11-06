@@ -17,6 +17,8 @@
     TODO: check storing JSON-ed data into redis-service, keeping into cookie only redis key (random UUID). Pros/cons analysis.
 """
 
+# TODO: drawback: forces all services to have session. Add as an extra module [session]
+
 import base64
 import logging
 

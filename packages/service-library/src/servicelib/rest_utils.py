@@ -10,12 +10,11 @@ import attr
 from aiohttp import web
 from openapi_core.extensions.models.factories import Model as BodyModel
 
-from rest_oas import get_specs
-
 #pylint: disable=W0611
 from .openapi_validation import (COOKIE_KEY, HEADER_KEY, PATH_KEY, QUERY_KEY,
                                  validate_request)
 from .rest_models import ErrorItemType, ErrorType
+from .rest_oas import get_specs
 
 
 def body_to_dict(body: BodyModel) -> Dict:
@@ -77,12 +76,12 @@ async def extract_and_validate(request: web.Request):
     return params[PATH_KEY], params[QUERY_KEY], body
 
 
-async def validate_response(request: web.Request, response: web.Response):
-    """
-        Validates against specs
+# async def validate_response(request: web.Request, response: web.Response):
+#     """
+#         Validates against specs
 
-        Raises exception if response does not comply with validation
-    """
+#         Raises exception if response does not comply with validation
+#     """
 
 
 #  TODO: fix __all__

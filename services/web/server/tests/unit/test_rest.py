@@ -14,7 +14,7 @@ import pytest
 import yaml
 from aiohttp import web
 
-from servicelib.response_utils import unwrap_envelope
+from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import resources, rest
 from simcore_service_webserver.application_keys import (APP_CONFIG_KEY,
                                                         APP_OPENAPI_SPECS_KEY)
@@ -191,7 +191,7 @@ async def test_auth_login(client, caplog):
 @pytest.mark.skip(reason="SAN: this must be added to ensure easier transition")
 async def test_start_pipeline(client):
 
-    resp = await client.post("/start_pipeline", 
+    resp = await client.post("/start_pipeline",
             json={
                 "project_id":"asdfsk-sdfsdgsd-sdfsfd-sdfsd",
                 "workbench":{

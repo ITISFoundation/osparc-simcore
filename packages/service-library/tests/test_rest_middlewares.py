@@ -7,7 +7,7 @@ from aiohttp import web
 import json
 from servicelib import openapi
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
-from servicelib.response_utils import is_enveloped, unwrap_envelope
+from servicelib.rest_responses import is_enveloped, unwrap_envelope
 from servicelib.rest_middlewares import envelope_middleware_factory, error_middleware_factory
 from servicelib.rest_routing import create_routes_from_namespace
 from utils import Handlers
