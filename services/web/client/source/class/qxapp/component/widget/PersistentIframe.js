@@ -18,16 +18,14 @@
 
 
 qx.Class.define("qxapp.component.widget.PersistentIframe", {
-  extend: "qx.ui.embed.Iframe",
+  extend: qx.ui.embed.Iframe,
   /**
    *
    * @param source {String} URL for the iframe content
    * @param poolEl {Element?} Dom node for attaching the iframe
    */
   construct: function(source, el) {
-    if (el === null) {
-      this.setIframePoolEl(el);
-    }
+    this.setIframePoolElement(el||qx.dom.Node.getBodyElement(window));
     this.base(arguments, source);
   },
   properties :
@@ -38,37 +36,68 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
     iframePoolElement :
     {
       check : "Element",
-      apply : "_applyIframePoolElement",
-      init : window.documentElement
+      apply : "_applyIframePoolElement"
     }
   },
   members: {
     __iframe: null,
     // override
     _createContentElement : function() {
-      var iframe = this.__iframe = this.base(arguments);
-      var standin = new qx.html.Element("div");
-      iframe.insertInto(this.getIframePoolEl());
-      this.addListener("move", function(e) {
-        var pos = e.getData();
+      let iframe = this.__iframe = this.base(arguments);
+      let standin = new qx.html.Element("div");
+      let syncPos = function syncPos() {
+        let iframeParentPos = qx.bom.element.Location.get(qx.bom.element.Location.getOffsetParent(iframe.getDomElement()),'scroll');
+        let divPos = qx.bom.element.Location.get(standin.getDomElement(),'scroll');
+        let divSize = qx.bom.element.Dimension.getSize(standin.getDomElement());
         iframe.setStyles({
-          top: pos.top,
-          left: pos.left,
-          width: pos.width,
-          height: pos.height
+          top: (divPos.top - iframeParentPos.top) + "px",
+          left: (divPos.left - iframeParentPos.left) + "px",
+          width: divSize.width + "px",
+          height: divSize.height + "px"
         });
-      }, this);
-      this.addListener("changeVisibility", function(e) {
+      };
+      standin.addListenerOnce("appear", e => {
+        qx.dom.Element.insertEnd(iframe.getDomElement(), this.getIframePoolElement());
+      });
+      standin.addListener("appear", e => {
+        iframe.setStyles({
+          position: "absolute",
+          zIndex: 100
+        });
+        syncPos();
+      });
+      standin.addListener("disappear",e =>{
+        iframe.setStyles({
+          zIndex: -10000
+        });
+      });
+      standin.addListener("move", e => syncPos);
+      standin.addListener("changeVisibility", e => {
         var visibility = e.getData()[0];
-        iframe.setStles({
-          display: visibility == "visible" ? "inline":"none"
-        });
-      }, this);
+        if (visibility == "none"){
+          iframe.setStyles({
+            zIndex: -10000
+          });
+        }
+        else {
+          syncPos();
+        }
+      });
       return standin;
+    },
+    _applyIframePoolElement: function(newValue, oldValue) {
+      if (this.__iframe && newValue !== oldValue) {
+        this.__iframe.insertInto(newValue);
+      }
     },
     // override
     _getIframeElement: function() {
       return this.__iframe;
     }
+  },
+  destruct: function() {
+    this.__iframe.exclude();
+    this.__iframe.dispose();
+    this.__iframe = undefined;
   }
 });
