@@ -19,7 +19,7 @@ FileLocation:
     name:
       type: string
     id:
-      type: number
+      type: integer
   example:
     filename: 'simcore.s3'
     id: 0
