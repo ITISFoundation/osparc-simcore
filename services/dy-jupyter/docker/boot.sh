@@ -8,8 +8,13 @@ then
 
     echo "Creating dummy tables ... using ${USE_CASE_CONFIG_FILE}"
     result="$(python devel/initialise_dummy_platorm.py ${USE_CASE_CONFIG_FILE} ${INIT_OPTIONS})"
-    echo "Received result node uuid of $result"
-    export SIMCORE_NODE_UUID="$result"
+    echo "Received result of $result";
+    IFS=, read -a array <<< "$result"; 
+    echo "Received result pipeline id of ${array[0]}";
+    echo "Received result node uuid of ${array[1]}";
+    # the fake SIMCORE_NODE_UUID is exported to be available to the service
+    export SIMCORE_PIPELINE_ID="${array[0]}";
+    export SIMCORE_NODE_UUID="${array[1]}";
 fi
 
 jupyter trust ${NOTEBOOK_URL}

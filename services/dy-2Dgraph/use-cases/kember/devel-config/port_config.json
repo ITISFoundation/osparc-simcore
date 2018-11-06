@@ -1,29 +1,29 @@
 {
     "version":"0.1",
-    "inputs": [
-        {
-            "key": "in_1",
-            "label": "computational data",
-            "desc": "these are computed data out of a pipeline",
-            "type": "file-url",
-            "value": "link.SIMCORE_NODE_UUID.FILENAME_ID",
-            "timestamp": "2018-05-23T15:34:53.511Z"
-        }
-    ],
-    "outputs": [  
-        {
-            "key": "output_1",
-            "label": "Output 1",
-            "desc": "The output 1",
-            "type": "file-url",
-            "value": "null"
+    "schema": {
+        "inputs": {
+            "in_1": {
+                "displayOrder":0,
+                "label": "computational data",
+                "description": "these are computed data out of a pipeline",
+                "type": "data:*/*"
+            }
         },
-        {
-            "key": "output_2",
-            "label": "Output 2",
-            "desc": "The output 2",
-            "type": "file-url",
-            "value": "null"
-        }      
-    ]
+        "outputs": {
+            "output_1": {
+                "displayOrder": 0,
+                "label": "output 1",
+                "description": "this is the output number 1",
+                "type": "data:*/*"
+            },
+            "output_2": {
+                "displayOrder": 1,
+                "label": "output 2",
+                "description": "this is the output number 2",
+                "type": "data:*/*"
+            }
+        }
+    },
+    "inputs":{},
+    "outputs":{}    
 }

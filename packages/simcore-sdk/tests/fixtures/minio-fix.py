@@ -45,14 +45,13 @@ def s3_client(docker_ip, docker_services): # pylint:disable=redefined-outer-name
     os.environ["S3_ACCESS_KEY"] = "s3access"
     os.environ["S3_SECRET_KEY"] = "s3secret"
     secure = False
-    return S3Client(endpoint, access_key, secret_key, secure)
+    yield S3Client(endpoint, access_key, secret_key, secure)
 
 @pytest.fixture()
-def bucket(s3_client, request): # pylint: disable=W0621
+def bucket(s3_client): # pylint: disable=W0621
     os.environ["S3_BUCKET_NAME"] = "simcore-test"
     bucket_name = "simcore-test"
     s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
-    def fin():
-        s3_client.remove_bucket(bucket_name, delete_contents=True)
-    request.addfinalizer(fin)
-    return bucket_name
+    yield bucket_name
+
+    s3_client.remove_bucket(bucket_name, delete_contents=True)
