@@ -42,19 +42,19 @@ def api_client(cfg):
 
 async def test_health_check(api:UsersApi):
     res = await api.health_check()
-    print(res)
+    print("health check:", res)
     assert not res.error    
     assert res.data
 
 async def test_get_locations(api:UsersApi):
     res = await api.get_storage_locations(user_id=user_id)
-    print(res)
+    print("get locations:", res)
     assert not res.error
     assert res.data
 
 async def test_upload_file(api:UsersApi):
     res = await api.upload_file(location_id=location_id, user_id=user_id, file_id=file_uuid)
-    print(res)
+    print("upload files:", res)
     assert not res.error
     assert res.data
     assert res.data.link
@@ -68,7 +68,7 @@ async def test_upload_file(api:UsersApi):
 
 async def test_download_file(api:UsersApi):
     res = await api.download_file(location_id=location_id, user_id=user_id, file_id=file_uuid)
-    print(res)
+    print("download file:", res)
     assert not res.error
     assert res.data
     assert res.data.link
@@ -82,18 +82,18 @@ async def test_download_file(api:UsersApi):
 
 async def test_delete_file(api:UsersApi):
     res = await api.delete_file(location_id=location_id, user_id=user_id, file_id=file_uuid)
-    print(res)
+    print("delete file:", res)
     assert not res
 
 async def test_get_files_metada(api:UsersApi):
     res = await api.get_files_metadata(location_id=location_id, user_id=user_id)
-    print(res)
+    print("get files metadata:", res)
     assert not res.error
     assert res.data
 
 async def test_get_file_metada(api:UsersApi):
     res = await api.get_file_metadata(user_id=user_id, location_id=location_id, file_id=file_uuid)
-    print(res)
+    print("get file metadata", res)
     assert not res.error
     assert res.data
 
