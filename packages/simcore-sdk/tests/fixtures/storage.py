@@ -14,6 +14,7 @@ def is_responsive(config):
         api = UsersApi(client)        
         loop = asyncio.get_event_loop()
         loop.run_until_complete(api.health_check())
+        del client.rest_client
         return True
     except Exception:  #pylint: disable=W0703
         logging.exception("Connection to storage failed")
@@ -49,7 +50,7 @@ def storage_client(docker_ip, docker_services):
     
     yield client
     # cleanup
-
+    del client.rest_client
 
 @pytest.fixture
 def storage_users_api(storage_client):

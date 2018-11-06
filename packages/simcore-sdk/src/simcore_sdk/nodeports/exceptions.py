@@ -50,6 +50,17 @@ class InvalidProtocolError(NodeportsException):
         super(InvalidProtocolError, self).__init__(msg)
         self.dct = dct
 
+class StorageInvalidCall(NodeportsException):
+    """S3 transfer error"""
+    def __init__(self, msg):
+        super(StorageInvalidCall, self).__init__(msg)
+
+class StorageServerIssue(NodeportsException):
+    """S3 transfer error"""
+    def __init__(self, msg):
+        super(StorageServerIssue, self).__init__(msg)
+        
+
 class S3TransferError(NodeportsException):
     """S3 transfer error"""
     def __init__(self, msg=None):

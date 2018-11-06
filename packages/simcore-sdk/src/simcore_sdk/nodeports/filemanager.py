@@ -5,12 +5,11 @@ from pathlib import Path
 import aiofiles
 import aiohttp
 import async_timeout
-
-from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
-from simcore_service_storage_sdk.rest import ApiException
 from yarl import URL
 
 from simcore_sdk.nodeports import config, exceptions
+from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
+from simcore_service_storage_sdk.rest import ApiException
 
 log = logging.getLogger(__name__)
 
@@ -30,6 +29,18 @@ def api_client():
         yield client
     except ApiException:
         log.exception(msg="connection to storage service failed")
+    del client.rest_client
+
+def _handle_api_exception(store:str, err: ApiException):
+    if err.status > 399 and err.status < 500:
+        # something invalid
+        raise exceptions.StorageInvalidCall(err)
+    elif err.status > 499:
+        # something went bad inside the storage server
+        raise exceptions.StorageServerIssue(err)
+    else:
+        raise exceptions.StorageConnectionError(store, err)
+    
 
 async def _get_location_id_from_location_name(store:str, api:UsersApi):
     try:
@@ -40,7 +51,7 @@ async def _get_location_id_from_location_name(store:str, api:UsersApi):
         # location id not found
         raise exceptions.S3InvalidStore(store)
     except ApiException as err:
-        raise exceptions.StorageConnectionError(err)
+        _handle_api_exception(store, err)
     if resp.error:
         raise exceptions.StorageConnectionError(store, resp.error.to_str())
     
@@ -57,7 +68,7 @@ async def _get_link(store:str, location_id:int, file_id:str, apifct):
         log.debug("Got link %s", resp.data.link)
         return resp.data.link
     except ApiException as err:
-        raise exceptions.StorageConnectionError(store, err)
+        _handle_api_exception(store, err)
 
 async def _get_download_link(store:str, location_id:int, file_id:str, api:UsersApi):
     return await _get_link(store, location_id, file_id, api.download_file)
@@ -129,4 +140,4 @@ async def upload_file_to_s3(store:str, s3_object:str, file_path:Path):
                 await _upload_file_to_link(session, upload_link, file_path)                
                 return s3_object
 
-    raise exceptions.S3InvalidPathError(store,s3_object)
+    raise exceptions.S3InvalidPathError(store, s3_object)
