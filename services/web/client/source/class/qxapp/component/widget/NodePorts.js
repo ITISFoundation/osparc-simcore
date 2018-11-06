@@ -100,6 +100,11 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
               widget = nodeOutputList.getOutputWidget();
               break;
             }
+            case "node-output-list-icon-api-v0.0.1": {
+              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputListIcon(this.getNodeModel(), port, portKey);
+              widget = nodeOutputList.getOutputWidget();
+              break;
+            }
           }
           if (widget !== null) {
             this._add(widget, {
