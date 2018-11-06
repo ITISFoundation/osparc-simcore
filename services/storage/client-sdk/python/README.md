@@ -23,7 +23,7 @@ pip install git+https://github.com/GIT_USER_ID/GIT_REPO_ID.git
 
 Then import the package:
 ```python
-import simcore_storage_sdk 
+import simcore_service_storage_sdk 
 ```
 
 ### Setuptools
@@ -37,7 +37,7 @@ python setup.py install --user
 
 Then import the package:
 ```python
-import simcore_storage_sdk
+import simcore_service_storage_sdk
 ```
 
 ## Getting Started
@@ -47,15 +47,15 @@ Please follow the [installation procedure](#installation--usage) and then run th
 ```python
 from __future__ import print_function
 import time
-import simcore_storage_sdk
-from simcore_storage_sdk.rest import ApiException
+import simcore_service_storage_sdk
+from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
 
 # create an instance of the API class
-api_instance = simcore_storage_sdk.UsersApi(simcore_storage_sdk.ApiClient(configuration))
+api_instance = simcore_service_storage_sdk.UsersApi(simcore_service_storage_sdk.ApiClient(configuration))
 action = 'echo' # str |  (default to 'echo')
 data = 'data_example' # str |  (optional)
-body = simcore_storage_sdk.Body() # Body |  (optional)
+body = simcore_service_storage_sdk.Body() # Body |  (optional)
 
 try:
     # Test checkpoint to ask server to fail or echo back the transmitted data

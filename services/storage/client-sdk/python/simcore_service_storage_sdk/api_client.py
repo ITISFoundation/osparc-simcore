@@ -23,9 +23,9 @@ import tempfile
 import six
 from six.moves.urllib.parse import quote
 
-from simcore_storage_sdk.configuration import Configuration
-import simcore_storage_sdk.models
-from simcore_storage_sdk import rest
+from simcore_service_storage_sdk.configuration import Configuration
+import simcore_service_storage_sdk.models
+from simcore_service_storage_sdk import rest
 
 
 class ApiClient(object):
@@ -258,7 +258,7 @@ class ApiClient(object):
             if klass in self.NATIVE_TYPES_MAPPING:
                 klass = self.NATIVE_TYPES_MAPPING[klass]
             else:
-                klass = getattr(simcore_storage_sdk.models, klass)
+                klass = getattr(simcore_service_storage_sdk.models, klass)
 
         if klass in self.PRIMITIVE_TYPES:
             return self.__deserialize_primitive(data, klass)

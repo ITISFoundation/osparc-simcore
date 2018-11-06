@@ -10,8 +10,8 @@ import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
-from simcore_storage_sdk import ApiClient, Configuration, UsersApi
-from simcore_storage_sdk.rest import ApiException
+from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
+from simcore_service_storage_sdk.rest import ApiException
 
 temporary_file = tempfile.NamedTemporaryFile(delete=False)
 temporary_file.close()

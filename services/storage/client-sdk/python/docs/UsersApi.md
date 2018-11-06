@@ -1,4 +1,4 @@
-# simcore_storage_sdk.UsersApi
+# simcore_service_storage_sdk.UsersApi
 
 All URIs are relative to *http://{host}:{port}/{basePath}*
 
@@ -24,15 +24,15 @@ Test checkpoint to ask server to fail or echo back the transmitted data
 ```python
 from __future__ import print_function
 import time
-import simcore_storage_sdk
-from simcore_storage_sdk.rest import ApiException
+import simcore_service_storage_sdk
+from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
 
 # create an instance of the API class
-api_instance = simcore_storage_sdk.UsersApi()
+api_instance = simcore_service_storage_sdk.UsersApi()
 action = 'echo' # str |  (default to 'echo')
 data = 'data_example' # str |  (optional)
-body = simcore_storage_sdk.Body() # Body |  (optional)
+body = simcore_service_storage_sdk.Body() # Body |  (optional)
 
 try:
     # Test checkpoint to ask server to fail or echo back the transmitted data
@@ -74,12 +74,12 @@ Deletes File
 ```python
 from __future__ import print_function
 import time
-import simcore_storage_sdk
-from simcore_storage_sdk.rest import ApiException
+import simcore_service_storage_sdk
+from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
 
 # create an instance of the API class
-api_instance = simcore_storage_sdk.UsersApi()
+api_instance = simcore_service_storage_sdk.UsersApi()
 file_id = 'file_id_example' # str | 
 location_id = 'location_id_example' # str | 
 user_id = 'user_id_example' # str | 
@@ -123,12 +123,12 @@ Returns download link for requested file
 ```python
 from __future__ import print_function
 import time
-import simcore_storage_sdk
-from simcore_storage_sdk.rest import ApiException
+import simcore_service_storage_sdk
+from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
 
 # create an instance of the API class
-api_instance = simcore_storage_sdk.UsersApi()
+api_instance = simcore_service_storage_sdk.UsersApi()
 file_id = 'file_id_example' # str | 
 location_id = 'location_id_example' # str | 
 user_id = 'user_id_example' # str | 
@@ -173,12 +173,12 @@ Get File Metadata
 ```python
 from __future__ import print_function
 import time
-import simcore_storage_sdk
-from simcore_storage_sdk.rest import ApiException
+import simcore_service_storage_sdk
+from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
 
 # create an instance of the API class
-api_instance = simcore_storage_sdk.UsersApi()
+api_instance = simcore_service_storage_sdk.UsersApi()
 file_id = 'file_id_example' # str | 
 location_id = 'location_id_example' # str | 
 user_id = 'user_id_example' # str | 
@@ -223,12 +223,12 @@ Get Files Metadata
 ```python
 from __future__ import print_function
 import time
-import simcore_storage_sdk
-from simcore_storage_sdk.rest import ApiException
+import simcore_service_storage_sdk
+from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
 
 # create an instance of the API class
-api_instance = simcore_storage_sdk.UsersApi()
+api_instance = simcore_service_storage_sdk.UsersApi()
 location_id = 'location_id_example' # str | 
 user_id = 'user_id_example' # str | 
 uuid_filter = 'uuid_filter_example' # str |  (optional)
@@ -273,12 +273,12 @@ Get available storage locations
 ```python
 from __future__ import print_function
 import time
-import simcore_storage_sdk
-from simcore_storage_sdk.rest import ApiException
+import simcore_service_storage_sdk
+from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
 
 # create an instance of the API class
-api_instance = simcore_storage_sdk.UsersApi()
+api_instance = simcore_service_storage_sdk.UsersApi()
 user_id = 'user_id_example' # str | 
 
 try:
@@ -321,12 +321,12 @@ Some general information on the API and state of the service behind
 ```python
 from __future__ import print_function
 import time
-import simcore_storage_sdk
-from simcore_storage_sdk.rest import ApiException
+import simcore_service_storage_sdk
+from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
 
 # create an instance of the API class
-api_instance = simcore_storage_sdk.UsersApi()
+api_instance = simcore_service_storage_sdk.UsersApi()
 
 try:
     # Service health-check endpoint
@@ -363,15 +363,15 @@ Update File Metadata
 ```python
 from __future__ import print_function
 import time
-import simcore_storage_sdk
-from simcore_storage_sdk.rest import ApiException
+import simcore_service_storage_sdk
+from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
 
 # create an instance of the API class
-api_instance = simcore_storage_sdk.UsersApi()
+api_instance = simcore_service_storage_sdk.UsersApi()
 file_id = 'file_id_example' # str | 
 location_id = 'location_id_example' # str | 
-body1 = simcore_storage_sdk.Body1() # Body1 |  (optional)
+body1 = simcore_service_storage_sdk.Body1() # Body1 |  (optional)
 
 try:
     # Update File Metadata
@@ -413,12 +413,12 @@ Returns upload link or performs copy operation to datcore
 ```python
 from __future__ import print_function
 import time
-import simcore_storage_sdk
-from simcore_storage_sdk.rest import ApiException
+import simcore_service_storage_sdk
+from simcore_service_storage_sdk.rest import ApiException
 from pprint import pprint
 
 # create an instance of the API class
-api_instance = simcore_storage_sdk.UsersApi()
+api_instance = simcore_service_storage_sdk.UsersApi()
 file_id = 'file_id_example' # str | 
 location_id = 'location_id_example' # str | 
 user_id = 'user_id_example' # str | 

@@ -15,9 +15,9 @@ from __future__ import absolute_import
 
 import unittest
 
-import simcore_storage_sdk
-from simcore_storage_sdk.models.inline_response2002_data import InlineResponse2002Data  # noqa: E501
-from simcore_storage_sdk.rest import ApiException
+import simcore_service_storage_sdk
+from simcore_service_storage_sdk.models.inline_response2002_data import InlineResponse2002Data  # noqa: E501
+from simcore_service_storage_sdk.rest import ApiException
 
 
 class TestInlineResponse2002Data(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestInlineResponse2002Data(unittest.TestCase):
     def testInlineResponse2002Data(self):
         """Test InlineResponse2002Data"""
         # FIXME: construct object with mandatory attributes with example values
-        # model = simcore_storage_sdk.models.inline_response2002_data.InlineResponse2002Data()  # noqa: E501
+        # model = simcore_service_storage_sdk.models.inline_response2002_data.InlineResponse2002Data()  # noqa: E501
         pass
 
 

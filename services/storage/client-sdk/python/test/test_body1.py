@@ -15,9 +15,9 @@ from __future__ import absolute_import
 
 import unittest
 
-import simcore_storage_sdk
-from simcore_storage_sdk.models.body1 import Body1  # noqa: E501
-from simcore_storage_sdk.rest import ApiException
+import simcore_service_storage_sdk
+from simcore_service_storage_sdk.models.body1 import Body1  # noqa: E501
+from simcore_service_storage_sdk.rest import ApiException
 
 
 class TestBody1(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestBody1(unittest.TestCase):
     def testBody1(self):
         """Test Body1"""
         # FIXME: construct object with mandatory attributes with example values
-        # model = simcore_storage_sdk.models.body1.Body1()  # noqa: E501
+        # model = simcore_service_storage_sdk.models.body1.Body1()  # noqa: E501
         pass
 
 

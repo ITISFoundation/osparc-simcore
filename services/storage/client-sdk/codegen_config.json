@@ -1,5 +1,5 @@
 {
-    "packageName":"simcore_storage_sdk",
+    "packageName":"simcore_service_storage_sdk",
     "projectName":"simcore-service-storage-sdk",
     "projectDescription":"Data storage manager service client's SDK",
     "packageVersion":"0.1.0",
