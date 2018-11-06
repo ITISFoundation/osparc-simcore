@@ -1,3 +1,16 @@
+/* ************************************************************************
+   Copyright: 2018 ITIS Foundation
+   License:   MIT
+   Authors:   Odei Maiz <maiz@itis.swiss>
+   Utf8Check: äöü
+************************************************************************ */
+
+/**
+ *  Creates the widget that represents what needs to be exposed
+ * to outsise the container.
+ *
+ */
+
 qx.Class.define("qxapp.component.widget.NodeExposed", {
   extend: qx.ui.core.Widget,
 
@@ -56,7 +69,6 @@ qx.Class.define("qxapp.component.widget.NodeExposed", {
       this.__inputPort = {};
       this.__outputPort = {};
       this.__createUIPorts(true, metaData.inputs);
-      // this.__createUIPorts(false, metaData.outputs);
     },
 
     getInputPort: function() {

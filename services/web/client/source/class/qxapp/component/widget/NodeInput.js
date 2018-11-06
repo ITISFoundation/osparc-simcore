@@ -1,3 +1,16 @@
+/* ************************************************************************
+   Copyright: 2018 ITIS Foundation
+   License:   MIT
+   Authors:   Odei Maiz <maiz@itis.swiss>
+   Utf8Check: äöü
+************************************************************************ */
+
+/**
+ *  Creates the widget that represents an input node.
+ * It shows nothing more than the name of the input node in the middle of a box.
+ *
+ */
+
 qx.Class.define("qxapp.component.widget.NodeInput", {
   extend: qx.ui.core.Widget,
 
@@ -13,9 +26,13 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
 
     let atom = new qx.ui.basic.Atom().set({
       label: nodeModel.getLabel(),
-      center : true,
+      center: true,
       draggable: true,
       droppable: true
+    });
+    const title16Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"]);
+    atom.getChildControl("label").set({
+      font: title16Font
     });
 
     this._add(atom, {
