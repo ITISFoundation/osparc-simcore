@@ -27,7 +27,7 @@ ErrorType:
       description: log messages
       type: array
       items:
-        $ref: './log_message.yml#/LogMessageType'
+        $ref: './log_message.yaml#/LogMessageType'
     errors:
       description: errors metadata
       type: array
