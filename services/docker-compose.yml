@@ -46,9 +46,7 @@ services:
       context: ./web/client/
       dockerfile: Dockerfile
       target: build
-    # when running in devel mode the command from docker-compose.yml and docker-compose.devel.yml
-    # get appended (I guess docker compose sees command as an array to be appended)
-    # command: /bin/bash -c "echo 'built with qx' && cat build-output/version.txt"
+    command: /bin/bash -c "echo 'built with qx' && cat build-output/version.txt"
   webserver:
     build:
       context: ../
