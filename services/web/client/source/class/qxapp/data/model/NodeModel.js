@@ -225,6 +225,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return filteredInputs;
     },
 
+
+    /**
+     * Add mapper widget if any
+     *
+     */
     __addMapper: function(inputs) {
       let filteredInputs = JSON.parse(JSON.stringify(inputs));
       if (Object.prototype.hasOwnProperty.call(filteredInputs, "mapper")) {
@@ -235,6 +240,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return filteredInputs;
     },
 
+    /**
+     * Add settings widget with those inputs that can be represented in a form
+     *
+     */
     __addSetttings: function(inputs) {
       let form = this.__settingsForm = new qxapp.component.form.Auto(inputs);
       form.addListener("linkAdded", e => {
