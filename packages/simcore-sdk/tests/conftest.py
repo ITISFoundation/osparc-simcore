@@ -2,7 +2,7 @@ import pytest
 import os
 # pylint:disable=unused-argument
 
-pytest_plugins = ["tests.fixtures.postgres", "tests.fixtures.minio-fix"]
+pytest_plugins = ["tests.fixtures.postgres", "tests.fixtures.minio-fix", "tests.fixtures.storage"]
 
 @pytest.fixture(scope='session')
 def docker_compose_file(pytestconfig):
