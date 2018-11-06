@@ -46,8 +46,8 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
       let iframe = this.__iframe = this.base(arguments);
       let standin = new qx.html.Element("div");
       let syncPos = function syncPos() {
-        let iframeParentPos = qx.bom.element.Location.get(qx.bom.element.Location.getOffsetParent(iframe.getDomElement()),'scroll');
-        let divPos = qx.bom.element.Location.get(standin.getDomElement(),'scroll');
+        let iframeParentPos = qx.bom.element.Location.get(qx.bom.element.Location.getOffsetParent(iframe.getDomElement()), "scroll");
+        let divPos = qx.bom.element.Location.get(standin.getDomElement(), "scroll");
         let divSize = qx.bom.element.Dimension.getSize(standin.getDomElement());
         iframe.setStyles({
           top: (divPos.top - iframeParentPos.top) + "px",
@@ -66,7 +66,7 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
         });
         syncPos();
       });
-      standin.addListener("disappear",e =>{
+      standin.addListener("disappear", e => {
         iframe.setStyles({
           zIndex: -10000
         });
@@ -74,12 +74,11 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
       standin.addListener("move", e => syncPos);
       standin.addListener("changeVisibility", e => {
         var visibility = e.getData()[0];
-        if (visibility == "none"){
+        if (visibility == "none") {
           iframe.setStyles({
             zIndex: -10000
           });
-        }
-        else {
+        } else {
           syncPos();
         }
       });
@@ -87,7 +86,7 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
     },
     _applyIframePoolElement: function(newValue, oldValue) {
       if (this.__iframe && newValue !== oldValue) {
-        this.__iframe.insertInto(newValue);
+        qx.dom.Element.insertEnd(this.__iframe.getDomElement(), newValue);
       }
     },
     // override
