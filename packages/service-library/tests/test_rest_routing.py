@@ -1,11 +1,11 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-import pytest
 
+import pytest
 from servicelib import openapi
 from servicelib.rest_routing import (create_routes_from_map,
                                      create_routes_from_namespace)
-from utils import Handlers
+from tutils import Handlers
 
 
 @pytest.fixture
@@ -14,7 +14,6 @@ def specs(here):
     assert openapi_path.exists()
     specs = openapi.create_specs(openapi_path)
     return specs
-
 
 
 def test_create_routes_from_map(specs):

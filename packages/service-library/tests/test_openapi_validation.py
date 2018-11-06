@@ -1,24 +1,15 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-import collections
-
 import pytest
 from aiohttp import web
-from yarl import URL
-
 from servicelib import openapi
-from servicelib.application_keys import (APP_OPENAPI_SPECS_KEY)
-from servicelib.openapi import OpenAPIError, OpenAPIMappingError
-from servicelib.openapi_validation import (AiohttpOpenAPIResponse,
-                                           RequestValidator, ResponseValidator,
-                                           validate_data, validate_response)
+from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.rest_middlewares import (envelope_middleware_factory,
-                                        validate_middleware_factory,
-                                         error_middleware_factory)
-from servicelib.rest_responses import (create_data_response, is_enveloped,
-                                       unwrap_envelope)
+                                         error_middleware_factory,
+                                         validate_middleware_factory)
+from servicelib.rest_responses import is_enveloped, unwrap_envelope
 from servicelib.rest_routing import create_routes_from_namespace
-from utils import Handlers
+from tutils import Handlers
 
 
 @pytest.fixture
@@ -73,8 +64,11 @@ async def test_validate_handlers(path, client):
 
 
 # TODO: dev tests ...
+#from servicelib.openapi_validation import (AiohttpOpenAPIResponse,
+#                                           RequestValidator, ResponseValidator,
+#                                           validate_data, validate_response)
 #
-#
+# from servicelib.rest_responses import create_data_response
 #def get_reqinfo(server, path):
 #    baseurl = URL.build(scheme=server.scheme, host=server.host, port=server.port)
 #    url = baseurl.with_path(path)
