@@ -99,19 +99,42 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
     tree.setModel(model);
 
     this.addListener("keypress", function(keyEvent) {
-      if (keyEvent.getKeyIdentifier() === "F2") {
-        let treeSelection = this.__tree.getSelection();
-        if (treeSelection.length < 1) {
-          return;
+      let treeSelection = this.__tree.getSelection();
+      if (treeSelection.length < 1) {
+        return;
+      }
+      let selectedItem = treeSelection.toArray()[0];
+      if (selectedItem.getIsRoot && selectedItem.getIsRoot()) {
+        return;
+      }
+      switch (keyEvent.getKeyIdentifier()) {
+        case "F2": {
+          let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
+          treeItemRenamer.addListener("LabelChanged", e => {
+            let newLabel = e.getData()["newLabel"];
+            selectedItem.setLabel(newLabel);
+          }, this);
+          treeItemRenamer.center();
+          treeItemRenamer.open();
+          break;
         }
-        let selectedItem = treeSelection.toArray()[0];
-        let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
-        treeItemRenamer.addListener("LabelChanged", e => {
-          let newLabel = e.getData()["newLabel"];
-          selectedItem.setLabel(newLabel);
-        }, this);
-        treeItemRenamer.center();
-        treeItemRenamer.open();
+        case "Delete": {
+          let branches = this.__tree.getModel().getChildren();
+          // branch
+          let removed = branches.remove(selectedItem);
+          if (!removed) {
+            // leaf
+            let br = branches.toArray()
+            for (let i=0; i<br.length; i++) {
+              let branch = br[i];
+              removed = branch.getChildren().remove(selectedItem);
+              if (removed) {
+                break;
+              }
+            }
+          }
+          break;
+        }
       }
     }, this);
   },
