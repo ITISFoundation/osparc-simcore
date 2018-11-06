@@ -1142,18 +1142,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
               inputs: {
-                "materialSetting": {
-                  nodeUuid: "ac80863e-e4ef-48c0-804b-d9296f1f3563",
-                  output: "materialSetting"
-                },
-                "boundarySetting": {
-                  nodeUuid: "ed4c85a8-c20f-4acd-8e1e-5161301e2f3d",
-                  output: "boundarySetting"
-                },
-                "sensorSetting": {
-                  nodeUuid: "36d70cf2-ef36-4052-988d-d32b3456b786",
-                  output: "sensorSetting"
-                },
                 "gridSetting": 5
               },
               inputNodes: [
@@ -1171,14 +1159,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
               version: "0.0.0",
               inputs: {
-                "setupSetting": {
-                  nodeUuid: "83bc4123-ebe4-4f5f-8770-b1584d6cf95f",
-                  output: "setupSetting"
-                },
-                "voxelSetting": {
-                  nodeUuid: "b37bea52-bb29-482a-9540-bc11c7dc779c",
-                  output: "voxelSetting"
-                },
                 "solverSetting": 7
               },
               inputNodes: [
@@ -1194,10 +1174,6 @@ qx.Class.define("qxapp.dev.fake.Data", {
               key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
               version: "0.0.0",
               inputs: {
-                "gridSetting": {
-                  nodeUuid: "c3ab33a7-4ead-4302-9867-5b194a4f45ec",
-                  output: "gridSetting"
-                },
                 "voxelSetting": 6
               },
               inputNodes: [

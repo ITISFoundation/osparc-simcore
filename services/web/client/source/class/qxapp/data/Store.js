@@ -87,7 +87,6 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getItemList: function(nodeInstanceUUID, portKey) {
-      console.log("getItemList for", nodeInstanceUUID, portKey);
       switch (portKey) {
         case "defaultMaterials":
           return [{
@@ -138,7 +137,6 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getItem: function(nodeInstanceUUID, portKey, itemUuid) {
-      console.log("getItem for", nodeInstanceUUID, portKey, itemUuid);
       switch (portKey) {
         case "materialDB": {
           switch (itemUuid) {
