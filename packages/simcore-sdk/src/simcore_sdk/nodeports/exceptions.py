@@ -72,6 +72,13 @@ class S3InvalidStore(NodeportsException):
         super(S3InvalidStore, self).__init__(msg)
         self.store = s3_store
 
+class StorageConnectionError(NodeportsException):
+    """S3 transfer error"""
+    def __init__(self, s3_store, additional_msg=None):
+        msg = "Connection to store {store} failed: {yamsg}".format(store=s3_store, yamsg=additional_msg)
+        super(StorageConnectionError, self).__init__(msg)
+        self.store = s3_store
+
 class PortNotFound(NodeportsException):
     """Accessed key does not exist"""
     def __init__(self, msg):
