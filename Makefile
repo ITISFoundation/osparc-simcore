@@ -61,7 +61,7 @@ up-devel: file-watcher
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml up
 
 up-webclient-devel: file-watcher
-	${DOCKER} stop $(shell ${DOCKER} ps --filter=name=services_webclient -q)
+	-${DOCKER} service rm services_webclient
 	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
 
 build:
