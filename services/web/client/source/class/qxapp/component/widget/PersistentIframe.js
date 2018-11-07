@@ -16,82 +16,145 @@
  *
  */
 
-
 qx.Class.define("qxapp.component.widget.PersistentIframe", {
-  extend: qx.ui.embed.Iframe,
+  extend: qx.ui.embed.AbstractIframe,
   /**
    *
    * @param source {String} URL for the iframe content
    * @param poolEl {Element?} Dom node for attaching the iframe
    */
   construct: function(source, el) {
-    this.setIframePoolElement(el||qx.dom.Node.getBodyElement(window));
     this.base(arguments, source);
   },
   properties :
   {
     /**
-     * Source URL of the iframe.
+     * Show a Maximize Button
      */
-    iframePoolElement :
-    {
-      check : "Element",
-      apply : "_applyIframePoolElement"
+    showMaximize: {
+      check: "boolean",
+      init: false,
+      apply: "_applyShowMaximize"
     }
+  },
+  events: {
+    /** Fired if the iframe is restored from a minimized or maximized state */
+    "restore" : "qx.event.type.Event",
+    /** Fired if the iframe is maximized */
+    "maximize" : "qx.event.type.Event"
   },
   members: {
     __iframe: null,
+    __actionButton: null,
     // override
     _createContentElement : function() {
-      let iframe = this.__iframe = this.base(arguments);
+      let iframe = this.__iframe = new qx.ui.embed.Iframe(this.getSource());
+      iframe.addListener("load", e => {
+        this.fireEvent("load");
+      });
+      iframe.addListener("navigate", e => {
+        this.fireDataEvent("navigate", e.getData());
+      });
+
       let standin = new qx.html.Element("div");
-      let syncPos = function syncPos() {
-        let iframeParentPos = qx.bom.element.Location.get(qx.bom.element.Location.getOffsetParent(iframe.getDomElement()), "scroll");
-        let divPos = qx.bom.element.Location.get(standin.getDomElement(), "scroll");
-        let divSize = qx.bom.element.Dimension.getSize(standin.getDomElement());
-        iframe.setStyles({
-          top: (divPos.top - iframeParentPos.top) + "px",
-          left: (divPos.left - iframeParentPos.left) + "px",
-          width: divSize.width + "px",
-          height: divSize.height + "px"
-        });
-      };
-      standin.addListenerOnce("appear", e => {
-        qx.dom.Element.insertEnd(iframe.getDomElement(), this.getIframePoolElement());
+      let appRoot = this.getApplicationRoot();
+      appRoot.add(iframe);
+      let actionButton = this.__actionButton = new qx.ui.form.Button(null, osparc.theme.osparcdark.Image.URLS["window-maximize"]).set({
+        // backgroundColor: null,
+        // decorator: null
       });
-      standin.addListener("appear", e => {
-        iframe.setStyles({
-          position: "absolute",
-          zIndex: 100
-        });
-        syncPos();
+      appRoot.add(actionButton);
+      actionButton.addListener("execute", e => {
+        if (this.hasState("maximized")) {
+          this.fireEvent("restore");
+          this.removeState("maximized");
+          actionButton.setIcon(osparc.theme.osparcdark.Image.URLS["window-maximize"]);
+        } else {
+          this.fireEvent("maximize");
+          this.addState("maximized");
+          actionButton.setIcon(osparc.theme.osparcdark.Image.URLS["window-restore"]);
+        }
       });
-      standin.addListener("disappear", e => {
-        iframe.setStyles({
+      appRoot.add(actionButton);
+      this.addListener("appear", e => {
+        iframe.set({
+          zIndex: 1000
+        });
+        actionButton.set({
+          zIndex: 1001
+        });
+        actionButton.show();
+        this.__syncIframePos();
+      });
+      this.addListener("disappear", e => {
+        iframe.set({
           zIndex: -10000
         });
+        actionButton.hide();
       });
-      standin.addListener("move", e => syncPos);
-      standin.addListener("changeVisibility", e => {
+      this.addListener("move", e => {
+        // got to let the new layout render first or we don't see it
+        qx.event.Timer.once(this.__syncIframePos, this, 0);
+      });
+      this.addListener("resize", e => {
+        // got to let the new layout render first or we don't see it
+        qx.event.Timer.once(this.__syncIframePos, this, 0);
+      });
+      this.addListener("changeVisibility", e => {
         var visibility = e.getData()[0];
         if (visibility == "none") {
-          iframe.setStyles({
+          iframe.set({
             zIndex: -10000
           });
         } else {
-          syncPos();
+          this.__syncIframePos();
         }
       });
       return standin;
     },
-    _applyIframePoolElement: function(newValue, oldValue) {
-      if (this.__iframe && newValue !== oldValue) {
-        qx.dom.Element.insertEnd(this.__iframe.getDomElement(), newValue);
-      }
+    __syncIframePos: function() {
+      let iframeParentPos = qx.bom.element.Location.get(qx.bom.element.Location.getOffsetParent(this.__iframe.getContentElement().getDomElement()), "scroll");
+      let divPos = qx.bom.element.Location.get(this.getContentElement().getDomElement(), "scroll");
+      let divSize = qx.bom.element.Dimension.getSize(this.getContentElement().getDomElement());
+      this.__iframe.setLayoutProperties({
+        top: divPos.top - iframeParentPos.top,
+        left: (divPos.left - iframeParentPos.left)
+      });
+      this.__iframe.set({
+        width: (divSize.width),
+        height: (divSize.height)
+      });
+      this.__actionButton.setLayoutProperties({
+        top: (divPos.top - iframeParentPos.top),
+        right: (iframeParentPos.right - iframeParentPos.left - divSize.width)
+      });
+    },
+    _applyShowMaximize: function(newValue, oldValue) {
+      this._maximizeBtn.show();
+    },
+    _applySource: function(newValue) {
+      this.__iframe.setSource(newValue);
     },
     // override
     _getIframeElement: function() {
-      return this.__iframe;
+      return this.__iframe._getIframeElement(); // eslint-disable-line no-underscore-dangle
+    },
+    /**
+     * Cover the iframe with a transparent blocker div element. This prevents
+     * pointer or key events to be handled by the iframe. To release the blocker
+     * use {@link #release}.
+     *
+     */
+    block : function() {
+      this.__iframe.block();
+    },
+
+    /**
+     * Release the blocker set by {@link #block}.
+     *
+     */
+    release : function() {
+      this.__iframe.release();
     }
   },
   destruct: function() {
