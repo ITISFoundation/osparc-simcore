@@ -51,7 +51,7 @@ all:
 clean:
 	@git clean -dxf -e .vscode/
 
-build-devel: file-watcher
+build-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build
 
 rebuild-devel:
@@ -59,6 +59,10 @@ rebuild-devel:
 
 up-devel: file-watcher
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml up
+
+up-webclient-devel: file-watcher
+	${DOCKER} pause $(shell ${DOCKER} ps --filter=name=services_webclient -q)
+	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
 
 build:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
@@ -76,12 +80,11 @@ up-swarm:
 up-swarm-devel: file-watcher
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.deploy.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ; ${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services; rm $(TEMPCOMPOSE).tmp-compose.yml
-	make file-watcher
 
 ifeq ($(WINDOWS_MODE),ON)
 file-watcher:
 	pip install docker-windows-volume-watcher
-	docker-volume-watcher "*client*" &
+	docker-volume-watcher "*" "*\\web\\client*" &
 else
 file-watcher:
 	true
@@ -176,4 +179,4 @@ push_platform_images:
 
 
 
-.PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher
+.PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel
