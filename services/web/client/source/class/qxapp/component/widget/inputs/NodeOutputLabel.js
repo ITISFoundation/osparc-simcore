@@ -8,14 +8,13 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
 
     let toolTip = new qx.ui.tooltip.ToolTip(port.description);
     let portLabel = this.__portLabel = new qx.ui.basic.Label(port.label).set({
-      draggable: true,
       toolTip: toolTip,
       textAlign: "right",
       allowGrowX: true,
       paddingRight: 20
     });
 
-    this.__createUIPortConnections(portLabel, portKey);
+    this.__createDragMechanism(portLabel, portKey);
   },
 
   properties: {
@@ -25,25 +24,19 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     }
   },
 
-  events: {
-    "PortDragStart": "qx.event.type.Data"
-  },
-
   members: {
     __portLabel: null,
 
-    __createUIPortConnections: function(uiPort, portId) {
-      [
-        ["dragstart", "PortDragStart"]
-      ].forEach(eventPair => {
-        uiPort.addListener(eventPair[0], e => {
-          const eData = {
-            event: e,
-            nodeId: this.getNodeModel().getNodeId(),
-            portId: portId
-          };
-          this.fireDataEvent(eventPair[1], eData);
-        }, this);
+    __createDragMechanism: function(uiPort, portKey) {
+      uiPort.setDraggable(true);
+      uiPort.nodeId = this.getNodeModel().getNodeId();
+      uiPort.portId = portKey;
+
+      uiPort.addListener("dragstart", e => {
+        // Register supported actions
+        e.addAction("copy");
+        // Register supported types
+        e.addType("osparc-port-link");
       }, this);
     },
 

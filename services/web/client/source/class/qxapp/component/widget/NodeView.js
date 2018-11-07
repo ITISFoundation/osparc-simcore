@@ -160,58 +160,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       return qxapp.data.Store.getInstance().arePortsCompatible(node1, port1, node2, port2);
     },
 
-    __createDragDropMechanism: function(portUI) {
-      portUI.addListener("PortDragStart", e => {
-        let data = e.getData();
-        let event = data.event;
-        let dragNodeId = data.nodeId;
-        let dragPortId = data.portId;
-
-        // Register supported actions
-        event.addAction("copy");
-
-        // Register supported types
-        event.addType("osparc-port-link");
-        let dragData = {
-          dragNodeId: dragNodeId,
-          dragPortId: dragPortId
-        };
-        event.addData("osparc-port-link", dragData);
-      }, this);
-
-      portUI.addListener("PortDragOver", e => {
-        let data = e.getData();
-        let event = data.event;
-        // let dropNodeId = data.nodeId;
-        let dropNodeId = this.getNodeModel().getNodeId();
-        let dropPortId = data.portId;
-
-        let compatible = false;
-        if (event.supportsType("osparc-port-link")) {
-          const dragNodeId = event.getData("osparc-port-link").dragNodeId;
-          const dragPortId = event.getData("osparc-port-link").dragPortId;
-          compatible = this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId);
-        }
-
-        if (!compatible) {
-          event.preventDefault();
-        }
-      }, this);
-
-      portUI.addListener("PortDrop", e => {
-        let data = e.getData();
-        let event = data.event;
-        // let dropNodeId = data.nodeId;
-        let dropPortId = data.portId;
-
-        if (event.supportsType("osparc-port-link")) {
-          let dragNodeId = event.getData("osparc-port-link").dragNodeId;
-          let dragPortId = event.getData("osparc-port-link").dragPortId;
-          this.getNodeModel().addPortLink(dropPortId, dragNodeId, dragPortId);
-        }
-      }, this);
-    },
-
     __createInputPortsUI: function(inputNodeModel, isInputModel = true) {
       let nodePorts = null;
       if (isInputModel) {
@@ -220,7 +168,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
         nodePorts = inputNodeModel.getInputsDefaultWidget();
       }
       if (nodePorts) {
-        this.__createDragDropMechanism(nodePorts);
         this.__inputNodesLayout.add(nodePorts, {
           flex: 1
         });
@@ -260,7 +207,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     __applyNode: function(nodeModel, oldNode, propertyName) {
       this.__settingsBox.removeAll();
       this.__settingsBox.add(nodeModel.getPropsWidget());
-      this.__createDragDropMechanism(nodeModel.getPropsWidget());
 
       if (nodeModel.getInputsMapper()) {
         this.__settingsBox.add(nodeModel.getInputsMapper(), {
