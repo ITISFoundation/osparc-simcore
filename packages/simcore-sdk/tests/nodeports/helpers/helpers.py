@@ -1,7 +1,6 @@
 #pylint: disable=C0111
 import json
 import logging
-import uuid
 from pathlib import Path
 
 from simcore_sdk.models.pipeline_models import ComputationalTask

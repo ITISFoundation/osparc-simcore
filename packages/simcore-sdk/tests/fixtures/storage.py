@@ -1,5 +1,4 @@
 #pylint: disable=W0621
-import asyncio
 import logging
 
 import pytest
@@ -7,7 +6,6 @@ import requests
 from pytest_docker import docker_ip, docker_services  # pylint:disable=W0611
 
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
-from simcore_service_storage_sdk.rest import ApiException
 
 log = logging.getLogger(__name__)
 
