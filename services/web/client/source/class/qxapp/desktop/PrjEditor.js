@@ -51,7 +51,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __treeView: null,
     __extraView: null,
     __loggerView: null,
-    __settingsView: null,
+    __nodeView: null,
     __currentNodeId: null,
 
     initDefault: function() {
@@ -72,10 +72,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let workbenchView = this.__workbenchView = new qxapp.component.workbench.WorkbenchView(project.getWorkbenchModel());
       this.showInMainView(workbenchView, "root");
 
-      let settingsView = this.__settingsView = new qxapp.component.widget.NodeView().set({
+      let nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({
         minHeight: 200
       });
-      settingsView.setWorkbenchModel(project.getWorkbenchModel());
+      nodeView.setWorkbenchModel(project.getWorkbenchModel());
     },
 
     connectEvents: function() {
@@ -166,15 +166,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         if (nodeModel.isContainer()) {
           widget = this.__workbenchView;
         } else {
-          this.__settingsView.setNodeModel(nodeModel);
+          this.__nodeView.setNodeModel(nodeModel);
           if (nodeModel.getMetaData().type === "dynamic") {
             const widgetManager = qxapp.component.widget.WidgetManager.getInstance();
             widget = widgetManager.getWidgetForNode(nodeModel);
             if (!widget) {
-              widget = this.__settingsView;
+              widget = this.__nodeView;
             }
           } else {
-            widget = this.__settingsView;
+            widget = this.__nodeView;
           }
         }
         this.showInMainView(widget, nodeId);
