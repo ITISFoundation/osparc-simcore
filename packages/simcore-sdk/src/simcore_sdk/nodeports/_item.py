@@ -46,7 +46,7 @@ class Item():
             return None
         raise AttributeError
 
-    def get(self):
+    async def get(self):
         """returns the data converted to the underlying type.
 
             Can throw InvalidPtrotocolError if the underling type is unknown.
@@ -62,7 +62,7 @@ class Item():
         log.debug("Got data item with value %s", self.value)
 
         if data_items_utils.is_value_link(self.value):
-            value = self.__get_value_from_link(self.value)
+            value = await self.__get_value_from_link(self.value)
             if data_items_utils.is_file_type(self.type):
                 # move the file to the right location
                 file_name = Path(value).name
@@ -75,11 +75,11 @@ class Item():
             return value
 
         if data_items_utils.is_value_on_store(self.value):
-            return self.__get_value_from_store(self.value)
+            return await self.__get_value_from_store(self.value)
         # the value is not a link, let's directly convert it to the right type
         return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["type"](config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value))
     
-    def set(self, value):
+    async def set(self, value):
         """sets the data to the underlying port
 
         Arguments:
@@ -98,13 +98,12 @@ class Item():
             file_path = Path(value)
             if not file_path.exists() or not file_path.is_file():
                 raise exceptions.InvalidItemTypeError(self.type, value)
-            project_id = config.PROJECT_ID
-            node_uuid = config.NODE_UUID
             log.debug("file path %s will be uploaded to s3", value)
-            s3_object = Path(project_id, node_uuid, file_path.name).as_posix()
-            filemanager.upload_file_to_s3(store="s3-z43", s3_object=s3_object, file_path=file_path)
+            store = config.STORE
+            s3_object = data_items_utils.encode_file_id(file_path, store=store, bucket=config.BUCKET, project_id=config.PROJECT_ID, node_id=config.NODE_UUID)
+            await filemanager.upload_file_to_s3(store=store, s3_object=s3_object, file_path=file_path)
             log.debug("file path %s uploaded to s3 in %s", value, s3_object)
-            value = data_items_utils.encode_store("s3-z43", s3_object)
+            value = data_items_utils.encode_store(store, s3_object)
 
         # update the DB
         # let's create a new data if necessary
@@ -114,7 +113,7 @@ class Item():
             self.new_data_cb(new_data) #pylint: disable=not-callable
             log.debug("database updated")
     
-    def __get_value_from_link(self, value):    # pylint: disable=R1710
+    async def __get_value_from_link(self, value):    # pylint: disable=R1710
         log.debug("Getting value %s", value)
         node_uuid, port_key = data_items_utils.decode_link(value)
         if not self.get_node_from_uuid_cb:
@@ -125,7 +124,7 @@ class Item():
         log.debug("Received node from DB %s, now returning value", other_nodeports)
         return other_nodeports.get(port_key)
 
-    def __get_value_from_store(self, value):
+    async def __get_value_from_store(self, value):
         log.debug("Getting value from storage %s", value)
         store, s3_path = data_items_utils.decode_store(value)
         log.debug("Fetch file from S3 %s", self.value)
@@ -135,8 +134,8 @@ class Item():
             file_name = next(iter(self._schema.fileToKeyMap))
 
         file_path = _create_file_path(self.key, file_name)
-        return filemanager.download_file_from_S3(store=store,            
-                                                s3_object_name=s3_path,
+        return await filemanager.download_file_from_S3(store=store,            
+                                                s3_object=s3_path,
                                                 file_path=file_path)
 
 def _create_file_path(key, name):
