@@ -49,8 +49,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       flex: 1
     });
 
-    this.__nodesUI = [];
-
     this.__initTitle();
     this.__initSettings();
     this.__initButtons();
@@ -73,10 +71,9 @@ qx.Class.define("qxapp.component.widget.NodeView", {
   },
 
   members: {
-    __settingsBox: null,
-    __inputNodesLayout: null,
     __mainLayout: null,
-    __nodesUI: null,
+    __inputNodesLayout: null,
+    __settingsBox: null,
     __buttonsLayout: null,
     __openFolder: null,
 
@@ -142,15 +139,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
 
       buttonsLayout.add(openFolder);
       this.__mainLayout.add(buttonsLayout);
-    },
-
-    __getNodeUI: function(id) {
-      for (let i = 0; i < this.__nodesUI.length; i++) {
-        if (this.__nodesUI[i].getNodeUI() === id) {
-          return this.__nodesUI[i];
-        }
-      }
-      return null;
     },
 
     __arePortsCompatible: function(node1, port1, node2, port2) {
@@ -241,8 +229,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
             this.__createInputPortsUI(exposedInnerNode);
           }
         } else {
-          let inputLabel = this.__createInputPortsUI(inputNodeModel);
-          this.__nodesUI.push(inputLabel);
+          this.__createInputPortsUI(inputNodeModel);
         }
       }
     },
@@ -277,15 +264,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__buttonsLayout.removeAll();
       let restartIFrameButton = nodeModel.getRestartIFrameButton();
       if (restartIFrameButton) {
-        /*
-        restartIFrameButton.addListener("execute", e => {
-          this.fireDataEvent("ShowViewer", {
-            url: nodeModel.getServiceUrl(),
-            name: nodeModel.getLabel(),
-            nodeId: nodeModel.getNodeId()
-          });
-        }, this);
-        */
         this.__buttonsLayout.add(restartIFrameButton);
       }
       this.__buttonsLayout.add(this.__openFolder);
