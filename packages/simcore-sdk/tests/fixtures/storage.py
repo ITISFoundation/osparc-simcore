@@ -33,8 +33,14 @@ def storage(docker_ip, docker_services):
         pause=1.0,
     )
     
-    yield
+    yield url
     # cleanup
     
-# @pytest.fixture()    
-# async def storage_client(storage)
+@pytest.fixture()    
+async def storage_api(storage):
+    config = Configuration()
+    config.host = "{}/{}".format(storage, "v0")
+    client = ApiClient(config)
+    api = UsersApi(client)
+    yield api
+    

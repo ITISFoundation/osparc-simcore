@@ -64,7 +64,7 @@ async def _get_link(store:str, location_id:int, file_id:str, apifct):
         if resp.error:
             raise exceptions.S3TransferError("Error getting link: {}".format(resp.error.to_str()))
         if not resp.data.link:
-            raise exceptions.S3InvalidPathError(store, file_id)
+            raise exceptions.S3InvalidPathError(file_id)
         log.debug("Got link %s", resp.data.link)
         return resp.data.link
     except ApiException as err:
@@ -76,10 +76,15 @@ async def _get_download_link(store:str, location_id:int, file_id:str, api:UsersA
 async def _get_upload_link(store:str, location_id:int, file_id:str, api:UsersApi):
     return await _get_link(store, location_id, file_id, api.upload_file)
 
-async def _download_link_to_file(session:aiohttp.ClientSession, url:URL, file_path:Path):
+async def _download_link_to_file(session:aiohttp.ClientSession, url:URL, file_path:Path, store: str, s3_object: str):
     log.debug("Downloading from %s to %s", url, file_path)
     with async_timeout.timeout(10):
         async with session.get(url) as response:
+            if response.status == 404:
+                raise exceptions.S3InvalidPathError(s3_object)
+            if response.status != 200:
+                raise exceptions.S3TransferError("Error when downloading {} from {} using {}".format(s3_object, store, url))
+            file_path.parent.mkdir(exist_ok=True)
             with file_path.open('wb') as f_handle:
                 while True:
                     chunk = await response.content.read(1024)
@@ -120,10 +125,10 @@ async def download_file_from_S3(store: str, s3_object: str, file_path: Path):
             if file_path.exists():
                 file_path.unlink()    
             async with aiohttp.ClientSession() as session:
-                await _download_link_to_file(session, download_link, file_path)
+                await _download_link_to_file(session, download_link, file_path, store, s3_object)
             return file_path
 
-    raise exceptions.S3InvalidPathError(store, s3_object)
+    raise exceptions.S3InvalidPathError(s3_object)
 
 async def upload_file_to_s3(store:str, s3_object:str, file_path:Path):
     log.debug("Trying to upload file to S3: store %s, s3ovject %s, file path %s", store, s3_object, file_path)
@@ -140,4 +145,4 @@ async def upload_file_to_s3(store:str, s3_object:str, file_path:Path):
                 await _upload_file_to_link(session, upload_link, file_path)                
                 return s3_object
 
-    raise exceptions.S3InvalidPathError(store, s3_object)
+    raise exceptions.S3InvalidPathError(s3_object)

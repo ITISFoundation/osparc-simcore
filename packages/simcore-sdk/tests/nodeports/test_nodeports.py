@@ -203,12 +203,12 @@ async def test_get_value_from_previous_node(special_2nodes_configuration, node_l
     ("data:text/*", __file__, Path),
     ("data:text/py", __file__, Path),
 ])
-async def test_get_file_from_previous_node(special_2nodes_configuration, storage, node_link, store_link, item_type, item_value, item_pytype):
-    config_dict, _, _ = special_2nodes_configuration(prev_node_outputs=[("output_123", item_type, store_link(item_value))],
-                                                    inputs=[("in_15", item_type, node_link("output_123"))])
+async def test_get_file_from_previous_node(special_2nodes_configuration, project_id, node_uuid, filemanager_cfg, node_link, store_link, item_type, item_value, item_pytype):
+    config_dict, _, _ = special_2nodes_configuration(prev_node_outputs=[("output_123", item_type, store_link(item_value, project_id, node_uuid))],
+                                                    inputs=[("in_15", item_type, node_link("output_123"))], 
+                                                    project_id=project_id, previous_node_id=node_uuid, node_id="sdkljhsdkjsdh")
     from simcore_sdk.nodeports.nodeports import PORTS
     check_config_valid(PORTS, config_dict)
-
     file_path = await PORTS.inputs["in_15"].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_15", Path(item_value).name)
@@ -221,8 +221,8 @@ async def test_get_file_from_previous_node(special_2nodes_configuration, storage
     ("data:text/*", __file__, "some funky name without extension", Path),
     ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
 ])
-async def test_file_mapping(special_configuration, filemanager_cfg, store_link, session, item_type, item_value, item_alias, item_pytype):
-    config_dict, project_id, node_uuid = special_configuration(inputs=[("in_1", item_type, store_link(item_value))], outputs=[("out_1", item_type, None)])
+async def test_file_mapping(special_configuration, project_id, node_uuid, filemanager_cfg, s3_simcore_location, bucket, store_link, session, item_type, item_value, item_alias, item_pytype):
+    config_dict, project_id, node_uuid = special_configuration(inputs=[("in_1", item_type, store_link(item_value, project_id, node_uuid))], outputs=[("out_1", item_type, None)], project_id=project_id, node_id=node_uuid)
     from simcore_sdk.nodeports.nodeports import PORTS
     check_config_valid(PORTS, config_dict)
     # add a filetokeymap
@@ -230,7 +230,6 @@ async def test_file_mapping(special_configuration, filemanager_cfg, store_link, 
     config_dict["schema"]["outputs"]["out_1"]["fileToKeyMap"] = {item_alias:"out_1"}
     helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
-    import pdb; pdb.set_trace()
     file_path = await PORTS.inputs["in_1"].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_1", item_alias)
@@ -240,4 +239,5 @@ async def test_file_mapping(special_configuration, filemanager_cfg, store_link, 
         await PORTS.set_file_by_keymap(invalid_alias)
     
     await PORTS.set_file_by_keymap(file_path)
-    assert PORTS.outputs["out_1"].value == {"store":"s3-z43", "path":Path(str(project_id), str(node_uuid), Path(file_path).name).as_posix()}
+    file_id = helpers.file_uuid(s3_simcore_location, bucket, file_path, project_id, node_uuid)
+    assert PORTS.outputs["out_1"].value == {"store":s3_simcore_location, "path": file_id}

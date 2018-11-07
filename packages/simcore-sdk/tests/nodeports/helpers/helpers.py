@@ -33,8 +33,6 @@ def get_empty_config():
 
 SIMCORE_STORE = "simcore.s3"
 
-def file_uuid(store:str, bucket:str, file_path:Path):
-    project = uuid.uuid4()
-    node = uuid.uuid4()
-    file_id = "{}/{}/{}/{}/{}".format(store, bucket, project, node, Path(file_path).name)
+def file_uuid(store:str, bucket:str, file_path:Path, project_id:str, node_uuid:str):
+    file_id = "{}/{}/{}/{}/{}".format(store, bucket, project_id, node_uuid, Path(file_path).name)
     return file_id

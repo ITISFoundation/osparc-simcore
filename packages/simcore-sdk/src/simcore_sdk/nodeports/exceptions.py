@@ -70,10 +70,9 @@ class S3TransferError(NodeportsException):
 
 class S3InvalidPathError(NodeportsException):
     """S3 transfer error"""
-    def __init__(self, s3_bucket, s3_object_name):
-        msg = "No object in S3 storage at {bucket}/{object}".format(bucket=s3_bucket, object=s3_object_name)
+    def __init__(self, s3_object_name):
+        msg = "No object in S3 storage at {object}".format(object=s3_object_name)
         super(S3InvalidPathError, self).__init__(msg)
-        self.bucket = s3_bucket
         self.object_name = s3_object_name
 
 class S3InvalidStore(NodeportsException):
