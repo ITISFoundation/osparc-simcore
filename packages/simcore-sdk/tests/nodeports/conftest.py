@@ -1,9 +1,9 @@
  #pylint: disable=W0621
 import json
 import os
+import socket
 import sys
 import uuid
-import socket
 from pathlib import Path
 from typing import Any, List, Tuple
 
@@ -12,12 +12,12 @@ import pytest
 import requests
 import tenacity
 
+from helpers import helpers
 from s3wrapper.s3_client import S3Client
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 from simcore_sdk.nodeports import config
 
-sys.path.append(str(Path(__file__).parent / "helpers"))
 
 @tenacity.retry(wait=tenacity.wait_fixed(2), stop=tenacity.stop_after_delay(10))
 def _minio_is_responsive(url, code=403):
@@ -58,6 +58,30 @@ def external_minio():
     yield minio_config
     # teard down
     container.remove(force=True)
+
+@pytest.fixture
+def user_id()->str:
+    yield "testuser"
+
+@pytest.fixture
+def s3_simcore_location() ->str:
+    yield helpers.SIMCORE_STORE
+
+@pytest.fixture
+def filemanager_cfg(user_id, docker_services, bucket, s3_simcore_location):
+    config.USER_ID = user_id
+    config.STORAGE_HOST = "localhost"
+    config.STORAGE_PORT = docker_services.port_for('storage', 8080)
+    config.STORAGE_VERSION = "v0"
+    config.BUCKET = bucket
+    config.STORE = s3_simcore_location
+    yield
+
+@pytest.fixture
+def file_uuid(bucket):
+    def create(store:str, file_path:Path):  
+        return helpers.file_uuid(bucket, store, file_path)              
+    yield create
 
 @pytest.fixture(scope='session')
 def here()->Path:
@@ -105,6 +129,10 @@ def default_configuration(postgres, default_configuration_file):
     config.NODE_UUID = str(node_uuid)
     config.PROJECT_ID = str(project_id)
     yield config_dict
+    # teardown
+    postgres.query(ComputationalTask).delete()
+    postgres.query(ComputationalPipeline).delete()
+    postgres.commit()
 
 @pytest.fixture()
 def node_link():
@@ -121,21 +149,24 @@ def store_link(s3_client, bucket):
         return {"store":"s3-z43", "path":Path(file_path).name}
     yield create_store_link
 
-@pytest.fixture()
+@pytest.fixture(scope="function")
 def special_configuration(postgres, empty_configuration_file: Path):
     def create_config(inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None):
         config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(config_dict, "inputs", inputs)
         _assign_config(config_dict, "outputs", outputs)
-
         project_id = _create_new_pipeline(postgres)
         node_uuid = _set_configuration(postgres, project_id, json.dumps(config_dict))
         config.NODE_UUID = str(node_uuid)
         config.PROJECT_ID = str(project_id)
         return config_dict, project_id, node_uuid
     yield create_config
+    # teardown
+    postgres.query(ComputationalTask).delete()
+    postgres.query(ComputationalPipeline).delete()
+    postgres.commit()
 
-@pytest.fixture()
+@pytest.fixture(scope="function")
 def special_2nodes_configuration(postgres, empty_configuration_file: Path):
     def create_config(prev_node_inputs: List[Tuple[str, str, Any]] =None, prev_node_outputs: List[Tuple[str, str, Any]] =None,
                     inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None):
@@ -160,6 +191,10 @@ def special_2nodes_configuration(postgres, empty_configuration_file: Path):
         config.PROJECT_ID = str(project_id)
         return config_dict, project_id, node_uuid
     yield create_config
+    # teardown
+    postgres.query(ComputationalTask).delete()
+    postgres.query(ComputationalPipeline).delete()
+    postgres.commit()
 
 def _create_new_pipeline(session)->str:    
     new_Pipeline = ComputationalPipeline(project_id=str(uuid.uuid4()))
