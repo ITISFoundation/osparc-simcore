@@ -76,19 +76,24 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
         }
       });
       appRoot.add(actionButton);
-      this.addListener("appear", e => {
+      standin.addListener("appear", e => {
         iframe.set({
           zIndex: 1000
         });
         actionButton.set({
           zIndex: 1001
         });
-        actionButton.show();
+        actionButton.set({
+          zIndex: 1010
+        });
         this.__syncIframePos();
       });
-      this.addListener("disappear", e => {
+      standin.addListener("disappear", e => {
         iframe.set({
-          zIndex: -10000
+          zIndex: -1000
+        });
+        actionButton.set({
+          zIndex: -1000
         });
         actionButton.hide();
       });
