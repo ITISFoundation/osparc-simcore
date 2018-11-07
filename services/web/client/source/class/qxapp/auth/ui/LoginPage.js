@@ -47,11 +47,13 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
       email.setPlaceholder(this.tr("Your email address"));
       email.setRequired(true);
       this.add(email);
+      email.getContentElement().setAttribute("autocomplete", "username");
       this.__form.add(email, "", qx.util.Validate.email(), "email", null);
 
       let pass = new qx.ui.form.PasswordField();
       pass.setPlaceholder(this.tr("Your password"));
       pass.setRequired(true);
+      pass.getContentElement().setAttribute("autocomplete", "current-password");
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
@@ -130,6 +132,9 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
 
       let successFun = function(log) {
         this.fireDataEvent("done", log.message);
+        // we don't need the form any more, so remove it
+        // and thus tell the password manager to save the content
+        this._form.dispose();
       };
 
       let failFun = function(msg) {
