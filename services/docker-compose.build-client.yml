@@ -1,5 +1,0 @@
-# work around the swarm problem with combining commands
-version: '3.4'
-services:
-  webclient:
-    command: /bin/bash -c "echo 'built with qx' && cat build-output/version.txt"
