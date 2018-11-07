@@ -206,7 +206,7 @@ async def test_get_value_from_previous_node(special_2nodes_configuration, node_l
 async def test_get_file_from_previous_node(special_2nodes_configuration, project_id, node_uuid, filemanager_cfg, node_link, store_link, item_type, item_value, item_pytype):
     config_dict, _, _ = special_2nodes_configuration(prev_node_outputs=[("output_123", item_type, store_link(item_value, project_id, node_uuid))],
                                                     inputs=[("in_15", item_type, node_link("output_123"))], 
-                                                    project_id=project_id, previous_node_id=node_uuid, node_id="sdkljhsdkjsdh")
+                                                    project_id=project_id, previous_node_id=node_uuid)
     from simcore_sdk.nodeports.nodeports import PORTS
     check_config_valid(PORTS, config_dict)
     file_path = await PORTS.inputs["in_15"].get()

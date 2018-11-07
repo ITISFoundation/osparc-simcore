@@ -166,8 +166,8 @@ def store_link(s3_client, bucket, file_uuid, s3_simcore_location):
     yield create_store_link
 
 @pytest.fixture(scope="function")
-def special_configuration(postgres, empty_configuration_file: Path):
-    def create_config(inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None, project_id:str =None, node_id:str = None):
+def special_configuration(postgres, empty_configuration_file: Path, project_id, node_uuid):
+    def create_config(inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None, project_id:str =project_id, node_id:str = node_uuid):
         config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(config_dict, "inputs", inputs)
         _assign_config(config_dict, "outputs", outputs)
@@ -183,10 +183,10 @@ def special_configuration(postgres, empty_configuration_file: Path):
     postgres.commit()
 
 @pytest.fixture(scope="function")
-def special_2nodes_configuration(postgres, empty_configuration_file: Path):
+def special_2nodes_configuration(postgres, empty_configuration_file: Path, project_id, node_uuid):
     def create_config(prev_node_inputs: List[Tuple[str, str, Any]] =None, prev_node_outputs: List[Tuple[str, str, Any]] =None,
                     inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None, 
-                    project_id:str =None, previous_node_id:str = None, node_id:str = None):
+                    project_id:str =project_id, previous_node_id:str = node_uuid, node_id:str = "asdasdadsa"):
         _create_new_pipeline(postgres, project_id)
 
         # create previous node
