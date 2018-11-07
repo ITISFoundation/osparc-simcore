@@ -122,7 +122,7 @@ class Item():
         other_nodeports = self.get_node_from_uuid_cb(node_uuid) #pylint: disable=not-callable
         # get the port value through that guy
         log.debug("Received node from DB %s, now returning value", other_nodeports)
-        return other_nodeports.get(port_key)
+        return await other_nodeports.get(port_key)
 
     async def __get_value_from_store(self, value):
         log.debug("Getting value from storage %s", value)
