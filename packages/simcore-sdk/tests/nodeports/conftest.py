@@ -80,7 +80,7 @@ def filemanager_cfg(user_id, docker_services, bucket, s3_simcore_location):
 @pytest.fixture
 def file_uuid(bucket):
     def create(store:str, file_path:Path):  
-        return helpers.file_uuid(bucket, store, file_path)              
+        return helpers.file_uuid(store, bucket, file_path)              
     yield create
 
 @pytest.fixture(scope='session')

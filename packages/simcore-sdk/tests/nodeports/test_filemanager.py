@@ -1,9 +1,11 @@
 #pylint: disable=W0613, W0621
-import pytest
-from pathlib import Path
-import uuid
 import filecmp
-from simcore_sdk.nodeports import filemanager, exceptions
+from pathlib import Path
+
+import pytest
+
+from simcore_sdk.nodeports import exceptions, filemanager
+
 
 @pytest.mark.asyncio
 async def test_valid_upload_download(tmpdir, bucket, storage_users_api, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
@@ -68,4 +70,3 @@ async def test_invalid_store(tmpdir, bucket, storage_users_api, filemanager_cfg,
     download_file_path = Path(tmpdir) / "somedownloaded file.txdt"
     with pytest.raises(exceptions.S3InvalidStore):
         await filemanager.download_file_from_S3(store, file_id, download_file_path)
-    
