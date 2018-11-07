@@ -51,15 +51,14 @@ all:
 clean:
 	@git clean -dxf -e .vscode/
 
-build-devel:
+build-devel: file-watcher
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build
 
 rebuild-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
 
-up-devel:
+up-devel: file-watcher
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml up
-	make file-watcher
 
 build:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
@@ -74,7 +73,7 @@ up-swarm:
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.deploy.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ; ${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services; rm $(TEMPCOMPOSE).tmp-compose.yml
 
-up-swarm-devel:
+up-swarm-devel: file-watcher
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.deploy.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ; ${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services; rm $(TEMPCOMPOSE).tmp-compose.yml
 	make file-watcher
@@ -82,7 +81,7 @@ up-swarm-devel:
 ifeq ($(WINDOWS_MODE),ON)
 file-watcher:
 	pip install docker-windows-volume-watcher
-	docker-volume-watcher "*client*"
+	docker-volume-watcher "*client*" &
 else
 file-watcher:
 	true
