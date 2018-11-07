@@ -62,18 +62,9 @@ up-swarm:
 	${DOCKER} swarm init
 	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml  -c services/docker-compose.tools.yml services
 
-up-swarm-devel: file-watcher
+up-swarm-devel:
 	${DOCKER} swarm init
 	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.devel.yml -c services/docker-compose.deploy.devel.yml  -c services/docker-compose.tools.yml services
-
-ifeq ($(WINDOWS_MODE),ON)
-file-watcher:
-	pip install docker-windows-volume-watcher
-	docker-volume-watcher "*" "*\\web\\client*" &
-else
-file-watcher:
-	true
-endif
 
 down:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml  -f services/docker-compose.tools.yml down
@@ -164,4 +155,4 @@ push_platform_images:
 
 
 
-.PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel
+.PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images
