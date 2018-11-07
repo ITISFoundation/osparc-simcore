@@ -10,6 +10,9 @@ STORAGE_HOST = os.environ.get("STORAGE_HOST", default="localhost")
 STORAGE_PORT = os.environ.get("STORAGE_PORT", default="12345")
 STORAGE_VERSION = os.environ.get("STORAGE_VERSION", default="v10")
 
+STORE = "simcore.s3"
+BUCKET = "simcore"
+
 NODE_KEYS = {"version":True,
 "schema":True,
 "inputs":True,
