@@ -645,7 +645,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Input model",
               description: "Model to be loaded",
-              type: "file-url"
+              type: "data:*/*"
             }
           },
           outputs: {
