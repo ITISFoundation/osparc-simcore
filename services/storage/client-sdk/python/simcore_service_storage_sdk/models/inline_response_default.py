@@ -48,8 +48,7 @@ class InlineResponseDefault(object):
         self._error = None
         self.discriminator = None
 
-        if data is not None:
-            self.data = data
+        self.data = data
         if error is not None:
             self.error = error
 
