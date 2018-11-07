@@ -375,6 +375,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         }, this);
         button.setEnabled(false);
         this.setRestartIFrameButton(button);
+        const loadingUrl = "qxapp/loading/loader.html";
+        this.setIFrame(new qxapp.component.widget.PersistentIframe(loadingUrl));
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
           const {
@@ -395,14 +397,15 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             const entryPoint = entryPointD ? ("/" + entryPointD) : "";
             const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
             this.setServiceUrl(srvUrl);
-            this.setIFrame(new qxapp.component.widget.PersistentIframe(srvUrl));
-            this.getRestartIFrameButton().setEnabled(true);
             const msg = "Service ready on " + srvUrl;
             const msgData = {
               nodeLabel: this.getLabel(),
               msg: msg
             };
             this.fireDataEvent("ShowInLogger", msgData);
+
+            this.getIFrame().setSource(srvUrl);
+            this.getRestartIFrameButton().setEnabled(true);
 
             // HACK: Workaround for fetching inputs in Visualizer
             if (this.getKey() === "3d-viewer") {
