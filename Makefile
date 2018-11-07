@@ -80,7 +80,7 @@ up-swarm-devel: file-watcher
 ifeq ($(WINDOWS_MODE),ON)
 file-watcher:
 	pip install docker-windows-volume-watcher
-	docker-volume-watcher "*webclient*"  -e "*.git*" "*build*"
+	docker-volume-watcher "*client*"
 else
 file-watcher:
 	true
