@@ -3,7 +3,6 @@
 # TODO: add flavours by combinging docker-compose files. Namely development, test and production.
 VERSION := $(shell uname -a)
 # SAN this is a hack so that docker-compose works in the linux virtual environment under Windows
-WINDOWS_MODE=OFF
 ifneq (,$(findstring Microsoft,$(VERSION)))
 $(info    detected WSL)
 export DOCKER_COMPOSE=docker-compose
@@ -19,14 +18,6 @@ export DOCKER=docker.exe
 export RUN_DOCKER_ENGINE_ROOT=1
 export DOCKER_GID=1042
 export HOST_GID=1000
-WINDOWS_MODE=ON
-else ifneq (,$(findstring Darwin,$(VERSION)))
-$(info    detected OSX)
-export DOCKER_COMPOSE=docker-compose
-export DOCKER=docker
-export RUN_DOCKER_ENGINE_ROOT=1
-export DOCKER_GID=1042
-export HOST_GID=1000
 else
 $(info    detected native linux)
 export DOCKER_COMPOSE=docker-compose
@@ -38,8 +29,6 @@ export HOST_GID=1000
 endif
 
 PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*-sdk/python*" -not -path "*generated_code*" -not -path "*datcore.py"))
-
-TEMPCOMPOSE := $(shell mktemp)
 
 export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
@@ -57,12 +46,8 @@ build-devel:
 rebuild-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
 
-up-devel: file-watcher
+up-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml up
-
-up-webclient-devel: file-watcher
-	${DOCKER} pause $(shell ${DOCKER} ps --filter=name=services_webclient -q)
-	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
 
 build:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
@@ -75,11 +60,11 @@ up:
 
 up-swarm:
 	${DOCKER} swarm init
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.deploy.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ; ${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services; rm $(TEMPCOMPOSE).tmp-compose.yml
+	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml  -c services/docker-compose.tools.yml services
 
 up-swarm-devel: file-watcher
 	${DOCKER} swarm init
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.deploy.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ; ${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services; rm $(TEMPCOMPOSE).tmp-compose.yml
+	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.devel.yml -c services/docker-compose.deploy.devel.yml  -c services/docker-compose.tools.yml services
 
 ifeq ($(WINDOWS_MODE),ON)
 file-watcher:
@@ -91,7 +76,7 @@ file-watcher:
 endif
 
 down:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml down
+	${DOCKER_COMPOSE} -f services/docker-compose.yml  -f services/docker-compose.tools.yml down
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml down
 
 down-swarm:
