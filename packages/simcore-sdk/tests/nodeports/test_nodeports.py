@@ -10,7 +10,7 @@ from pathlib import Path
 #pylint: disable=unused-argument
 import pytest
 
-from helpers import helpers #pylint: disable no-name-in-module
+from helpers import helpers #pylint: disable=no-name-in-module
 from simcore_sdk.nodeports import exceptions
 
 
