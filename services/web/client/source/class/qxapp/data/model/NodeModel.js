@@ -359,6 +359,13 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return (index > -1);
     },
 
+    __restartIFrame: function() {
+      if (this.getServiceUrl() !== null && this.getIFrame() !== null) {
+        this.getIFrame().resetSource();
+        this.getIFrame().setSource(this.getServiceUrl());
+      }
+    },
+
     __startInteractiveNode: function() {
       let metaData = this.__metaData;
       if (metaData.type == "dynamic") {
@@ -367,11 +374,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           icon: "@FontAwesome5Solid/redo-alt/32"
         });
         button.addListener("execute", e => {
-          if (this.getServiceUrl() !== null &&
-            this.getIFrame() !== null) {
-            this.getIFrame().resetSource();
-            this.getIFrame().setSource(this.getServiceUrl());
-          }
+          this.__restartIFrame();
         }, this);
         button.setEnabled(false);
         this.setRestartIFrameButton(button);
@@ -404,8 +407,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             };
             this.fireDataEvent("ShowInLogger", msgData);
 
-            this.getIFrame().setSource(srvUrl);
             this.getRestartIFrameButton().setEnabled(true);
+            this.__restartIFrame();
 
             // HACK: Workaround for fetching inputs in Visualizer
             if (this.getKey() === "3d-viewer") {
