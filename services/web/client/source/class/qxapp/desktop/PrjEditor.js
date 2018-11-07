@@ -125,25 +125,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         nodeModel.setLabel(newLabel);
       }, this);
 
-      this.__settingsView.addListener("ShowViewer", e => {
-        const data = e.getData();
-        const url = data.url;
-        const name = data.name;
-        // const nodeId = data.nodeId;
-
-        let iFrame = this.__createIFrame(url);
-        this.__addWidgetToMainView(iFrame);
-
-        // Workaround for updating inputs
-        if (name === "3d-viewer") {
-          let urlUpdate = url + "/retrieve";
-          let req = new qx.io.request.Xhr();
-          req.set({
-            url: urlUpdate,
-            method: "POST"
-          });
-          req.send();
-        }
+      this.__nodeView.addListener("ShowViewer", e => {
+        console.log("PlaceHolder for maximizing");
       }, this);
     },
 

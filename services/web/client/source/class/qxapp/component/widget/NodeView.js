@@ -265,20 +265,28 @@ qx.Class.define("qxapp.component.widget.NodeView", {
         });
       }
 
+      if (nodeModel.getIFrame()) {
+        this.__settingsBox.add(nodeModel.getIFrame(), {
+          flex: 1
+        });
+      }
+
       this.__clearInputPortsUIs();
       this.__createInputPortsUIs(nodeModel);
 
       this.__buttonsLayout.removeAll();
-      let iFrameButton = nodeModel.getIFrameButton();
-      if (iFrameButton) {
-        iFrameButton.addListener("execute", e => {
+      let restartIFrameButton = nodeModel.getRestartIFrameButton();
+      if (restartIFrameButton) {
+        /*
+        restartIFrameButton.addListener("execute", e => {
           this.fireDataEvent("ShowViewer", {
             url: nodeModel.getServiceUrl(),
             name: nodeModel.getLabel(),
             nodeId: nodeModel.getNodeId()
           });
         }, this);
-        this.__buttonsLayout.add(iFrameButton);
+        */
+        this.__buttonsLayout.add(restartIFrameButton);
       }
       this.__buttonsLayout.add(this.__openFolder);
     }
