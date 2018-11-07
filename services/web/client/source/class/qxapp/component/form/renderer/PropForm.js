@@ -146,7 +146,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     },
 
     __createDropMechanism: function(uiElement, portId) {
-      if (this.getNodeModel()) {
+      if (this.isPropertyInitialized("nodeModel")) {
         uiElement.setDroppable(true);
         uiElement.nodeId = this.getNodeModel().getNodeId();
         uiElement.portId = portId;
