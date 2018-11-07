@@ -359,9 +359,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __createIFrame: function(url) {
-      let iFrame = new qx.ui.embed.Iframe().set({
-        source: url
-      });
+      let iFrame = new qxapp.component.widget.PersistentIframe(url);
       return iFrame;
     },
 
