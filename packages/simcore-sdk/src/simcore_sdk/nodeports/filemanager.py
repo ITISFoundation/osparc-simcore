@@ -103,10 +103,11 @@ async def _file_sender(file_path:Path):
 
 async def _upload_file_to_link(session: aiohttp.ClientSession, url: URL, file_path: Path):
     log.debug("Uploading from %s to %s", file_path, url)
-    # async with session.post(url, data=_file_sender(file_path)) as resp:
+
     async with session.put(url, data=file_path.open('rb')) as resp:
         if resp.status > 299:
-            raise exceptions.S3TransferError("Could not upload file {}".format(file_path))
+            response_text = await resp.text()
+            raise exceptions.S3TransferError("Could not upload file {}:{}".format(file_path, response_text))
         
 
 async def download_file_from_S3(store: str, s3_object: str, file_path: Path):
