@@ -76,8 +76,11 @@ qx.Class.define("qxapp.Application", {
       let docHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
 
       // initialize components
-      const menuBarHeight = 35;
-      const avaiBarHeight = 55;
+      let menuBarHeight = 35;
+      let avaiBarHeight = 55;
+      const showMenuBar = false;
+      const showUserMenu = false;
+      const showModelingTools = true;
 
       this._menuBar = new qxapp.component.MenuBar(
         docWidth, menuBarHeight,
@@ -85,7 +88,7 @@ qx.Class.define("qxapp.Application", {
           .getBackground(), this._appModel.getColors().getMenuBar()
           .getFont());
 
-      this._userMenu = new qxapp.component.UserMenu(
+      let userMenu = new qxapp.component.UserMenu(
         this._appModel,
         this._appModel.getColors().getMenuBar()
           .getBackground(), this._appModel.getColors().getMenuBar()
@@ -116,15 +119,23 @@ qx.Class.define("qxapp.Application", {
         backgroundColor: "white",
         allowGrowY: false
       });
-      toolBarcontainer.add(this._menuBar);
-      toolBarcontainer.add(this.__availableServicesBar);
-      // toolBarcontainer.add(this.__threeView);
+
+      if (showMenuBar) {
+        toolBarcontainer.add(this._menuBar);
+      }
+      if (showModelingTools) {
+        toolBarcontainer.add(this.__availableServicesBar);
+      }
       doc.add(toolBarcontainer);
 
-      doc.add(this._userMenu, {
-        right: 30
-      });
+      if (showUserMenu) {
+        doc.add(userMenu, {
+          right: 30
+        });
+      }
 
+      menuBarHeight = showMenuBar ? menuBarHeight : 0;
+      avaiBarHeight = showModelingTools ? avaiBarHeight : 0;
       this.__entityList.moveTo(10, menuBarHeight + avaiBarHeight + 10);
       this.__entityList.open();
 
@@ -177,6 +188,17 @@ qx.Class.define("qxapp.Application", {
       return this._appModel.getUsers().toArray()[activeUserId].getName();
     },
 
+    loadModel: function(modelName) {
+      if (!this._socket.slotExists("importModelScene")) {
+        this._socket.on("importModelScene", function(val) {
+          if (val.type === "importModelScene") {
+            this.__threeView.importSceneFromBuffer(val.value);
+          }
+        }, this);
+      }
+      this._socket.emit("importModel", modelName);
+    },
+
     _initSignals: function() {
       // Menu bar
       this._menuBar.addListener("fileNewPressed", function(e) {
@@ -208,14 +230,7 @@ qx.Class.define("qxapp.Application", {
 
       this._menuBar.addListener("fileLoadModelPressed", function(e) {
         let selectedModel = e.getData();
-        if (!this._socket.slotExists("importModelScene")) {
-          this._socket.on("importModelScene", function(val) {
-            if (val.type === "importModelScene") {
-              this.__threeView.importSceneFromBuffer(val.value);
-            }
-          }, this);
-        }
-        this._socket.emit("importModel", selectedModel);
+        this.loadModel(selectedModel);
       }, this);
 
       this._menuBar.addListener("editPreferencesPressed", function(e) {
