@@ -14,7 +14,7 @@ from openapi_core.validation.response.validators import ResponseValidator
 from .openapi_wrappers import (PARAMETERS_KEYS, AiohttpOpenAPIRequest,
                                AiohttpOpenAPIResponse)
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 #from openapi_core.wrappers.mock import MockRequest
 

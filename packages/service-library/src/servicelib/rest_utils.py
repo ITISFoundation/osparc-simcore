@@ -2,6 +2,8 @@
 
 UNDER DEVELOPMENT
 
+
+TODO: deprecate. Too general
 """
 import json
 from typing import Dict

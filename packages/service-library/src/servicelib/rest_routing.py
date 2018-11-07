@@ -2,9 +2,9 @@
 
 
 
-TODO: filtering on spec-paths or handle functions
-TODO: check signature of handler functions
-TODO: options to check mapping completness
+TODO: filtering predicates either on spec-paths or handle functions
+TODO: check signature of handler functions (see inspect.signature and check for annotations)
+TODO: tools to check mapping completeness
 """
 
 import inspect
