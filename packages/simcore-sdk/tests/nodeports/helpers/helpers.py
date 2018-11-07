@@ -36,5 +36,5 @@ SIMCORE_STORE = "simcore.s3"
 def file_uuid(store:str, bucket:str, file_path:Path):
     project = uuid.uuid4()
     node = uuid.uuid4()
-    file_id = "{}/{}/{}/{}/{}".format(store, bucket, project, node, file_path.name)
+    file_id = "{}/{}/{}/{}/{}".format(store, bucket, project, node, Path(file_path).name)
     return file_id

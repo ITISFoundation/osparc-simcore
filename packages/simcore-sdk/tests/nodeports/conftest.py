@@ -68,7 +68,7 @@ def s3_simcore_location() ->str:
     yield helpers.SIMCORE_STORE
 
 @pytest.fixture
-def filemanager_cfg(user_id, docker_services, bucket, s3_simcore_location):
+def filemanager_cfg(storage, user_id, docker_services, bucket, s3_simcore_location):
     config.USER_ID = user_id
     config.STORAGE_HOST = "localhost"
     config.STORAGE_PORT = docker_services.port_for('storage', 8080)
@@ -141,12 +141,13 @@ def node_link():
     yield create_node_link
 
 @pytest.fixture()
-def store_link(s3_client, bucket):
+def store_link(s3_client, bucket, file_uuid, s3_simcore_location):
     def create_store_link(file_path:Path):
         # upload the file to S3
         assert Path(file_path).exists()
-        s3_client.upload_file(bucket, Path(file_path).name, str(file_path))
-        return {"store":"s3-z43", "path":Path(file_path).name}
+        s3_object = file_uuid(s3_simcore_location, file_path)
+        s3_client.upload_file(bucket, s3_object, str(file_path))
+        return {"store":"simcore.s3", "path":Path(file_path).name}
     yield create_store_link
 
 @pytest.fixture(scope="function")

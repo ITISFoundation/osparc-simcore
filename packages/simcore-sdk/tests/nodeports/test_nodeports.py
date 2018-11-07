@@ -109,7 +109,7 @@ async def test_port_value_accessors(special_configuration, item_type, item_value
     ("data:text/py", __file__, Path, {"store":"simcore.s3", "path":__file__}),
 ])
 @pytest.mark.asyncio
-async def test_port_file_accessors(special_configuration, storage_client, filemanager_cfg, s3_simcore_location, bucket, item_type, item_value, item_pytype, config_value): # pylint: disable=W0613, W0621
+async def test_port_file_accessors(special_configuration, storage, filemanager_cfg, s3_simcore_location, bucket, item_type, item_value, item_pytype, config_value): # pylint: disable=W0613, W0621
     config_dict, project_id, node_uuid = special_configuration(inputs=[("in_1", item_type, config_value)], outputs=[("out_34", item_type, None)])
     from simcore_sdk.nodeports.nodeports import PORTS
     check_config_valid(PORTS, config_dict)
@@ -194,7 +194,8 @@ async def test_get_value_from_previous_node(special_2nodes_configuration, node_l
     from simcore_sdk.nodeports.nodeports import PORTS
     
     check_config_valid(PORTS, config_dict)
-    assert isinstance(await PORTS.inputs["in_15"].get(), item_pytype)
+    input_value = await PORTS.inputs["in_15"].get()
+    assert isinstance(input_value, item_pytype)
     assert await PORTS.inputs["in_15"].get() == item_value
 
 @pytest.mark.parametrize("item_type, item_value, item_pytype", [
@@ -202,7 +203,7 @@ async def test_get_value_from_previous_node(special_2nodes_configuration, node_l
     ("data:text/*", __file__, Path),
     ("data:text/py", __file__, Path),
 ])
-async def test_get_file_from_previous_node(special_2nodes_configuration, node_link, store_link, item_type, item_value, item_pytype):
+async def test_get_file_from_previous_node(special_2nodes_configuration, storage, node_link, store_link, item_type, item_value, item_pytype):
     config_dict, _, _ = special_2nodes_configuration(prev_node_outputs=[("output_123", item_type, store_link(item_value))],
                                                     inputs=[("in_15", item_type, node_link("output_123"))])
     from simcore_sdk.nodeports.nodeports import PORTS
@@ -220,7 +221,7 @@ async def test_get_file_from_previous_node(special_2nodes_configuration, node_li
     ("data:text/*", __file__, "some funky name without extension", Path),
     ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
 ])
-async def test_file_mapping(special_configuration, store_link, session, item_type, item_value, item_alias, item_pytype):
+async def test_file_mapping(special_configuration, filemanager_cfg, store_link, session, item_type, item_value, item_alias, item_pytype):
     config_dict, project_id, node_uuid = special_configuration(inputs=[("in_1", item_type, store_link(item_value))], outputs=[("out_1", item_type, None)])
     from simcore_sdk.nodeports.nodeports import PORTS
     check_config_valid(PORTS, config_dict)
@@ -229,7 +230,7 @@ async def test_file_mapping(special_configuration, store_link, session, item_typ
     config_dict["schema"]["outputs"]["out_1"]["fileToKeyMap"] = {item_alias:"out_1"}
     helpers.update_configuration(session, project_id, node_uuid, config_dict) #pylint: disable=E1101
     check_config_valid(PORTS, config_dict)
-
+    import pdb; pdb.set_trace()
     file_path = await PORTS.inputs["in_1"].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(tempfile.gettempdir(), "simcorefiles", "in_1", item_alias)

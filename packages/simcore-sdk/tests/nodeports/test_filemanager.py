@@ -8,7 +8,7 @@ from simcore_sdk.nodeports import exceptions, filemanager
 
 
 @pytest.mark.asyncio
-async def test_valid_upload_download(tmpdir, bucket, storage_users_api, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
+async def test_valid_upload_download(tmpdir, bucket, storage, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
@@ -27,7 +27,7 @@ async def test_valid_upload_download(tmpdir, bucket, storage_users_api, filemana
     assert filecmp.cmp(download_file_path, file_path)
     
 @pytest.mark.asyncio
-async def test_invalid_file_path(tmpdir, bucket, storage_users_api, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
+async def test_invalid_file_path(tmpdir, bucket, storage, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
@@ -42,7 +42,7 @@ async def test_invalid_file_path(tmpdir, bucket, storage_users_api, filemanager_
         await filemanager.download_file_from_S3(store, file_id, download_file_path)
 
 @pytest.mark.asyncio
-async def test_invalid_fileid(tmpdir, bucket, storage_users_api, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
+async def test_invalid_fileid(tmpdir, bucket, storage, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
@@ -57,7 +57,7 @@ async def test_invalid_fileid(tmpdir, bucket, storage_users_api, filemanager_cfg
         await filemanager.download_file_from_S3(store, file_id, download_file_path)
 
 @pytest.mark.asyncio
-async def test_invalid_store(tmpdir, bucket, storage_users_api, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
+async def test_invalid_store(tmpdir, bucket, storage, filemanager_cfg, user_id, file_uuid, s3_simcore_location):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
@@ -70,3 +70,7 @@ async def test_invalid_store(tmpdir, bucket, storage_users_api, filemanager_cfg,
     download_file_path = Path(tmpdir) / "somedownloaded file.txdt"
     with pytest.raises(exceptions.S3InvalidStore):
         await filemanager.download_file_from_S3(store, file_id, download_file_path)
+
+@pytest.mark.asyncio
+async def test_storage_sdk_client(storage):
+    pass
