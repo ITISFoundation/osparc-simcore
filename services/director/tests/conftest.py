@@ -22,5 +22,4 @@ def docker_compose_file(pytestconfig):
 def configure_registry_access(docker_registry):
     config.REGISTRY_URL = docker_registry
     config.REGISTRY_SSL = False
-    config.CONVERT_OLD_API = False
     registry_proxy.setup_registry_connection()

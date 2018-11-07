@@ -12,6 +12,7 @@
  */
 
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__ctrlMap"] }] */
+/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.component.form.renderer.PropForm", {
   extend : qx.ui.form.renderer.Single,
@@ -86,6 +87,10 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         let ctrl = this._form.getControl(portId);
         if (ctrl && Object.prototype.hasOwnProperty.call(ctrl, "link")) {
           data[portId] = ctrl.link;
+        }
+        // FIXME: "null" shoulb be a valid input
+        if (data[portId] === "null") {
+          data[portId] = null;
         }
       }
       return data;

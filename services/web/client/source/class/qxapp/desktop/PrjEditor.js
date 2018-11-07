@@ -278,11 +278,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       const saveContainers = false;
       const savePosition = false;
       let currentPipeline = this.getProjectModel().getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
-      console.log(currentPipeline);
       let req = new qxapp.io.request.ApiRequest("/start_pipeline", "POST");
       let data = {};
       data["workbench"] = currentPipeline;
       data["project_id"] = this.getProjectModel().getUuid();
+      console.log(data);
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
@@ -303,7 +303,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __stopPipeline: function() {
       let req = new qxapp.io.request.ApiRequest("/stop_pipeline", "POST");
       let data = {};
-      data["pipeline_id"] = this.__pipelineId;
+      data["project_id"] = this.getProjectModel().getUuid();
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
@@ -327,7 +327,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __onPipelinesubmitted: function(e) {
       let req = e.getTarget();
 
-      const pipelineId = req.getResponse().pipeline_id;
+      const pipelineId = req.getResponse()["project_id"];
       this.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {

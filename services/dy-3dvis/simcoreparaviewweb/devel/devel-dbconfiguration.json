@@ -1,21 +1,22 @@
 {
     "version":"0.1",
-    "inputs": [
-        {
-            "key": "in_1",
-            "label": "some 3D dataset",
-            "desc": "A mesh, volume data",
-            "type": "file-url",
-            "value": "link.SIMCORE_NODE_UUID.in_1"
+    "schema": {
+        "inputs":{
+            "in_1": {
+                "displayOrder": 0,
+                "label": "some 3D dataset",
+                "description": "A mesh, volume data",
+                "type": "data:*/*"
+            },
+            "in_2": {
+                "displayOrder": 1,
+                "label": "some 3D dataset",
+                "description": "A mesh, volume data",
+                "type": "data:*/*"
+            }
         },
-        {
-            "key": "in_2",
-            "label": "some 3D dataset",
-            "desc": "A mesh, volume data",
-            "type": "file-url",
-            "value": "link.SIMCORE_NODE_UUID.in_2"
-        }
-    ],
-    "outputs": [        
-    ]
+        "outputs":{}
+    },
+    "inputs": {},
+    "outputs": {}
 }

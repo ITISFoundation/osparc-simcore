@@ -197,7 +197,8 @@ def dsm_mockup_db(postgres_service, s3_client, mock_files_factory):
 
         data[object_name] = FileMetaData(**d)
 
-
+        #FIXME: don't know why this is necessary
+        #pylint: disable=E1101
         utils.insert_metadata(postgres_service, object_name, bucket_name, file_id, file_name, user_id,
             user, location, project_id, project, node_id, node)
 

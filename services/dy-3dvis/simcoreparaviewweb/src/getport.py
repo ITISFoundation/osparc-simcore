@@ -13,8 +13,10 @@ while not _INPUT_FILE.exists():
 log.debug("File %s appeared", _INPUT_FILE)
 
 with _INPUT_FILE.open() as fp:
-    server_port = fp.readline()
-log.debug("server port is: %s", server_port)
+    hostname_port = fp.readline()
+hostname = str(hostname_port).split(":")[0]
+port = str(hostname_port).split(":")[1]
+log.debug("host and port are: %s:%s", hostname, port)
 
 # output for shell
-print(server_port)
+print("{hostname},{port}".format(hostname=hostname, port=port))
