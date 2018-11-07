@@ -124,10 +124,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
         nodeModel.setLabel(newLabel);
       }, this);
-
-      this.__nodeView.addListener("ShowViewer", e => {
-        console.log("PlaceHolder for maximizing");
-      }, this);
     },
 
     nodeSelected: function(nodeId) {
