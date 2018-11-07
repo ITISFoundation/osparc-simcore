@@ -60,14 +60,14 @@ up:
 
 up-swarm:
 	${DOCKER} swarm init
-	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml  -c services/docker-compose.tools.yml services
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.deploy.yml -f services/docker-compose.tools.yml config 2>/dev/null | ${DOCKER} stack deploy -c- services
 
 up-swarm-devel:
 	${DOCKER} swarm init
-	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.devel.yml -c services/docker-compose.deploy.devel.yml  -c services/docker-compose.tools.yml services
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.deploy.devel.yml -f services/docker-compose.tools.yml config | ${DOCKER} stack deploy -c- services
 
 down:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml  -f services/docker-compose.tools.yml down
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml down
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml down
 
 down-swarm:
