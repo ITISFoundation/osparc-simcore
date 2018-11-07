@@ -43,14 +43,17 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     mainLayout.set({
       alignX: "center",
-      padding: 10
+      padding: 5
     });
     this.add(mainLayout, {
       flex: 1
     });
 
-    this.__initTitle();
     this.__initSettings();
+    let iFrameLayout = this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this.__mainLayout.add(iFrameLayout, {
+      flex: 1
+    });
     this.__initButtons();
   },
 
@@ -73,33 +76,14 @@ qx.Class.define("qxapp.component.widget.NodeView", {
   members: {
     __mainLayout: null,
     __inputNodesLayout: null,
-    __settingsBox: null,
+    __settingsLayout: null,
+    __iFrameLayout: null,
     __buttonsLayout: null,
     __openFolder: null,
 
-    __initTitle: function() {
-      let box = new qx.ui.layout.HBox();
-      box.set({
-        spacing: 10,
-        alignX: "right"
-      });
-      let titleBox = new qx.ui.container.Composite(box);
-
-      let settLabel = new qx.ui.basic.Label(this.tr("Settings"));
-      settLabel.set({
-        alignX: "center",
-        alignY: "middle"
-      });
-
-      titleBox.add(settLabel, {
-        width: "75%"
-      });
-      this.__mainLayout.add(titleBox);
-    },
-
     __initSettings: function() {
-      this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      this.__mainLayout.add(this.__settingsBox, {
+      this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      this.__mainLayout.add(this.__settingsLayout, {
         flex: 1
       });
     },
@@ -241,19 +225,54 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
     },
 
+    __addSettings: function(propsWidget) {
+      let box = new qx.ui.layout.HBox();
+      box.set({
+        spacing: 10,
+        alignX: "right"
+      });
+      let titleBox = new qx.ui.container.Composite(box);
+
+      let settLabel = new qx.ui.basic.Label(this.tr("Settings"));
+      settLabel.set({
+        alignX: "center",
+        alignY: "middle"
+      });
+
+      titleBox.add(settLabel, {
+        width: "75%"
+      });
+      this.__settingsLayout.add(titleBox);
+      this.__settingsLayout.add(propsWidget);
+    },
+
+    __maximizeIFrame: function(maximize) {
+      const othersStatus = maximize ? "excluded" : "visible";
+      this.__inputNodesLayout.setVisibility(othersStatus);
+      this.__settingsLayout.setVisibility(othersStatus);
+      this.__buttonsLayout.setVisibility(othersStatus);
+    },
+
     __applyNode: function(nodeModel, oldNode, propertyName) {
-      this.__settingsBox.removeAll();
-      this.__settingsBox.add(nodeModel.getPropsWidget());
+      this.__settingsLayout.removeAll();
+      this.__addSettings(nodeModel.getPropsWidget());
       this.__createDragDropMechanism(nodeModel.getPropsWidget());
 
       if (nodeModel.getInputsMapper()) {
-        this.__settingsBox.add(nodeModel.getInputsMapper(), {
+        this.__settingsLayout.add(nodeModel.getInputsMapper(), {
           flex: 1
         });
       }
 
+      this.__iFrameLayout.removeAll();
       if (nodeModel.getIFrame()) {
-        this.__settingsBox.add(nodeModel.getIFrame(), {
+        nodeModel.getIFrame().addListener("maximize", e => {
+          this.__maximizeIFrame(true);
+        }, this);
+        nodeModel.getIFrame().addListener("restore", e => {
+          this.__maximizeIFrame(false);
+        }, this);
+        this.__iFrameLayout.add(nodeModel.getIFrame(), {
           flex: 1
         });
       }
