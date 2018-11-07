@@ -1,9 +1,10 @@
 version: '3'
 services:
   storage:
-    # image: masu.speag.com/simcore/workbench/storage
+    #FIXME: this is a annoying dependency. mocking it would be helpful and ease testing...
+    image: masu.speag.com/simcore/workbench/storage:3.19
     restart: always
-    image: services_storage:latest
+    # image: services_storage:latest
     ports:
       - 11111:8080
     environment:
