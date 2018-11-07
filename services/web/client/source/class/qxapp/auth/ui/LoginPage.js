@@ -35,8 +35,6 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
 
     // overrides base
     _buildPage: function() {
-
-
       this.__form = new qx.ui.form.Form();
 
       let atm = new qx.ui.basic.Atom().set({
