@@ -72,6 +72,7 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
         });
       });
       standin.addListener("move", e => syncPos);
+      standin.addListener("resize", e => syncPos);
       standin.addListener("changeVisibility", e => {
         var visibility = e.getData()[0];
         if (visibility == "none") {
