@@ -36,6 +36,7 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - RUN_DOCKER_ENGINE_ROOT=${RUN_DOCKER_ENGINE_ROOT}
+      - PUBLISHED_HOST_NAME=${PUBLISHED_HOST_NAME}
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
   #--------------------------------------------------------------------

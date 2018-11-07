@@ -91,9 +91,249 @@ qx.Class.define("qxapp.data.Store", {
       return metaData;
     },
 
+    getItemList: function(nodeInstanceUUID, portKey) {
+      switch (portKey) {
+        case "defaultNeuromanModels":
+          return [{
+            key: "Yoon-sun-UUID",
+            label: "Yoon-sun"
+          }, {
+            key: "Yoon-sun-Light-UUID",
+            label: "Yoon-sun-Light"
+          }, {
+            key: "Rat-UUID",
+            label: "Rat"
+          }, {
+            key: "Rat-Light-UUID",
+            label: "Rat-Light"
+          }];
+        case "defaultMaterials":
+          return [{
+            key: "Dielectric-UUID",
+            label: "Dielectric"
+          }, {
+            key: "PEC-UUID",
+            label: "PEC"
+          }, {
+            key: "PMC-UUID",
+            label: "PMC"
+          }];
+        case "defaultBoundaries":
+          return [{
+            key: "Dirichlet-UUID",
+            label: "Dirichlet"
+          }, {
+            key: "Neumann-UUID",
+            label: "Neumann"
+          }, {
+            key: "Flux-UUID",
+            label: "Flux"
+          }];
+        case "modeler":
+          return [{
+            key: "MODEL1-UUID",
+            label: "Model 1"
+          }, {
+            key: "MODEL2-UUID",
+            label: "Model 2"
+          }, {
+            key: "MODEL3-UUID",
+            label: "Model 3"
+          }];
+        case "materialDB":
+          return [{
+            key: "Air-UUID",
+            label: "Air"
+          }, {
+            key: "Brain-UUID",
+            label: "Brain"
+          }, {
+            key: "Eye-UUID",
+            label: "Eye"
+          }];
+        case "defaultStimulationSelectivity":
+          return [{
+            key: "StSeSubgroup-UUID",
+            label: "Subgroup"
+          }];
+      }
+      return [];
+    },
+
+    getItem: function(nodeInstanceUUID, portKey, itemUuid) {
+      switch (portKey) {
+        case "materialDB": {
+          switch (itemUuid) {
+            case "Air-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1.16409
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permittivity",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermeability": {
+                  displayOrder: 4,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                }
+              };
+            }
+            case "Brain-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1045.5
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0.234007
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permittivity",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermeability": {
+                  displayOrder: 4,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                }
+              };
+            }
+            case "Eye-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1050.5
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0.62
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permittivity",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermeability": {
+                  displayOrder: 4,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                }
+              };
+            }
+          }
+        }
+        // eslint-disable-next-line no-fallthrough
+        case "defaultMaterials": {
+          switch (itemUuid) {
+            case "Dielectric-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1.205
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permittivity",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticRelativePermeability": {
+                  displayOrder: 3,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 4,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                }
+              };
+            }
+          }
+        }
+      }
+      return {};
+    },
+
     getList: function(nodeImageId) {
       switch (nodeImageId) {
-        // case "service/dynamic/itis/s4l/Modeler-0.0.0": {
+        // case "service/demodec/dynamic/itis/s4l/Modeler-0.0.0": {
         case "data:application/s4l-api/modeler": {
           return [
             {
@@ -115,7 +355,7 @@ qx.Class.define("qxapp.data.Store", {
             }
           ];
         }
-        // case "service/dynamic/itis/s4l/MaterialDB-0.0.0": {
+        // case "service/demodec/dynamic/itis/s4l/MaterialDB-0.0.0": {
         case "data:application/s4l-api/materialDB": {
           return [
             {
@@ -138,7 +378,7 @@ qx.Class.define("qxapp.data.Store", {
                 },
                 "electricRelativePermitivity": {
                   displayOrder: 2,
-                  label: "Electric Relative Permeability",
+                  label: "Electric Relative Permittivity",
                   unit: "",
                   type: "number",
                   defaultValue: 1
@@ -150,7 +390,7 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 0
                 },
-                "magneticRelativePermitivity": {
+                "magneticRelativePermeability": {
                   displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
@@ -178,7 +418,7 @@ qx.Class.define("qxapp.data.Store", {
                 },
                 "electricRelativePermitivity": {
                   displayOrder: 2,
-                  label: "Electric Relative Permeability",
+                  label: "Electric Relative Permittivity",
                   unit: "",
                   type: "number",
                   defaultValue: 1
@@ -190,7 +430,7 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 0
                 },
-                "magneticRelativePermitivity": {
+                "magneticRelativePermeability": {
                   displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
@@ -218,7 +458,7 @@ qx.Class.define("qxapp.data.Store", {
                 },
                 "electricRelativePermitivity": {
                   displayOrder: 2,
-                  label: "Electric Relative Permeability",
+                  label: "Electric Relative Permittivity",
                   unit: "",
                   type: "number",
                   defaultValue: 1
@@ -230,7 +470,7 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 0
                 },
-                "magneticRelativePermitivity": {
+                "magneticRelativePermeability": {
                   displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
@@ -241,7 +481,7 @@ qx.Class.define("qxapp.data.Store", {
             }
           ];
         }
-        case "service/dynamic/itis/s4l/Simulator/LF/Materials-0.0.0": {
+        case "service/demodec/dynamic/itis/s4l/Simulator/LF/Materials-0.0.0": {
           return [
             {
               name: "PEC",
@@ -271,7 +511,7 @@ qx.Class.define("qxapp.data.Store", {
                 },
                 "electricRelativePermitivity": {
                   displayOrder: 2,
-                  label: "Electric Relative Permeability",
+                  label: "Electric Relative Permittivity",
                   unit: "",
                   type: "number",
                   defaultValue: 1
@@ -283,7 +523,7 @@ qx.Class.define("qxapp.data.Store", {
                   type: "number",
                   defaultValue: 0
                 },
-                "magneticRelativePermitivity": {
+                "magneticRelativePermeability": {
                   displayOrder: 4,
                   label: "Magnetic Relative Permeability",
                   unit: "",
@@ -294,7 +534,7 @@ qx.Class.define("qxapp.data.Store", {
             }
           ];
         }
-        case "service/dynamic/itis/s4l/Simulator/LF/Boundary-0.0.0": {
+        case "service/demodec/dynamic/itis/s4l/Simulator/LF/Boundary-0.0.0": {
           return [
             {
               name: "Dirichlet",
@@ -382,8 +622,89 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Modeler-0.0.0": {
-          key: "service/dynamic/itis/s4l/Modeler",
+        "service/demodec/dynamic/itis/s4l/Neuroman-0.0.0": {
+          key: "service/demodec/dynamic/itis/s4l/Neuroman",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "Neuroman",
+          description: "Neuroman",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultNeuromanModels: {
+              displayOrder: 0,
+              label: "Neuroman models",
+              description: "Neuroman models",
+              type: "node-output-list-api-v0.0.1"
+            }
+          },
+          inputs: {
+            inModel: {
+              displayOrder: 0,
+              label: "Input model",
+              description: "Model to be loaded",
+              type: "data:application/hdf5"
+            }
+          },
+          outputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Modeler Live link",
+              type: "node-output-list-api-v0.0.1"
+            }
+          }
+        },
+        "service/demodec/dynamic/itis/s4l/StimulationSelectivity-0.0.0": {
+          key: "service/demodec/dynamic/itis/s4l/StimulationSelectivity",
+          version: "0.0.0",
+          type: "dynamic",
+          name: "Stimulation Selectivity Evaluator",
+          description: "Evalutes Stimulation Selectivity",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultStimulationSelectivity: {
+              displayOrder: 0,
+              label: "Subgroups",
+              description: "Subgroups",
+              type: "node-output-list-api-v0.0.1"
+            }
+          },
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/s4l-api/modeler"
+            },
+            mapper: {
+              displayOrder: 1,
+              label: "Subgroups",
+              description: "Maps Model entities into Subgroups",
+              type: "mapper",
+              maps: {
+                leaf: "service/demodec/dynamic/itis/s4l/Modeler"
+              }
+            }
+          },
+          outputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Stimulation factor",
+              description: "Stimulation factor",
+              type: "number"
+            }
+          }
+        },
+        "service/demodec/dynamic/itis/s4l/Modeler-0.0.0": {
+          key: "service/demodec/dynamic/itis/s4l/Modeler",
           version: "0.0.0",
           type: "dynamic",
           name: "Modeler",
@@ -399,12 +720,12 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Modeler Live link",
-              type: "data:application/s4l-api/modeler"
+              type: "node-output-list-api-v0.0.1"
             }
           }
         },
-        "service/dynamic/itis/s4l/MaterialDB-0.0.0": {
-          key: "service/dynamic/itis/s4l/MaterialDB",
+        "service/demodec/dynamic/itis/s4l/MaterialDB-0.0.0": {
+          key: "service/demodec/dynamic/itis/s4l/MaterialDB",
           version: "0.0.0",
           type: "dynamic",
           name: "MaterialDB",
@@ -420,7 +741,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "MaterialDB",
               description: "MaterialDB Live link",
-              type: "data:application/s4l-api/materialDB"
+              type: "node-output-list-api-v0.0.1"
             }
           }
         },
@@ -459,13 +780,13 @@ qx.Class.define("qxapp.data.Store", {
           },
           innerNodes: {
             "inner1": {
-              key: "service/dynamic/itis/s4l/Simulator/LF/Setup",
+              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
               version: "0.0.0",
               inputNodes: [],
               outputNode: false
             },
             "inner2": {
-              key: "service/dynamic/itis/s4l/Simulator/LF/Materials",
+              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
               inputNodes: [
                 "modeler",
@@ -474,7 +795,7 @@ qx.Class.define("qxapp.data.Store", {
               outputNode: false
             },
             "inner3": {
-              key: "service/dynamic/itis/s4l/Simulator/LF/Boundary",
+              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
               inputNodes: [
                 "modeler"
@@ -482,7 +803,7 @@ qx.Class.define("qxapp.data.Store", {
               outputNode: false
             },
             "inner4": {
-              key: "service/dynamic/itis/s4l/Simulator/LF/Sensors",
+              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
               version: "0.0.0",
               inputNodes: [
                 "modeler"
@@ -490,7 +811,7 @@ qx.Class.define("qxapp.data.Store", {
               outputNode: false
             },
             "inner5": {
-              key: "service/dynamic/itis/s4l/Simulator/LF/Grid",
+              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
               inputNodes: [
                 "modeler"
@@ -498,7 +819,7 @@ qx.Class.define("qxapp.data.Store", {
               outputNode: false
             },
             "inner6": {
-              key: "service/dynamic/itis/s4l/Simulator/LF/Voxel",
+              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
               version: "0.0.0",
               inputNodes: [
                 "modeler"
@@ -506,15 +827,15 @@ qx.Class.define("qxapp.data.Store", {
               outputNode: false
             },
             "inner7": {
-              key: "service/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
               version: "0.0.0",
               inputNodes: [],
               outputNode: true
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator/LF/Setup-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator/LF/Setup",
+        "service/demodec/dynamic/itis/s4l/Simulator/LF/Setup-0.0.0": {
+          key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
           version: "0.0.0",
           type: "computational",
           name: "LF Setup",
@@ -542,8 +863,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator/LF/Materials-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator/LF/Materials",
+        "service/demodec/dynamic/itis/s4l/Simulator/LF/Materials-0.0.0": {
+          key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
           version: "0.0.0",
           type: "dynamic",
           name: "LF Materials",
@@ -553,25 +874,43 @@ qx.Class.define("qxapp.data.Store", {
             email: "maiz@itis.ethz.ch"
           }],
           contact: "maiz@itis.ethz.ch",
-          inputs: {
-            modeler: {
+          inputsDefault: {
+            defaultMaterials: {
               displayOrder: 0,
+              label: "Default Material Settings",
+              description: "Default Material Settings",
+              type: "node-output-list-api-v0.0.1"
+            }
+          },
+          inputs: {
+            updateDispersive: {
+              displayOrder: 0,
+              label: "UpdateDispersive",
+              description: "Enable automatic update of dispersive materials",
+              type: "boolean",
+              defaultValue: false
+            },
+            modeler: {
+              displayOrder: 1,
               label: "Modeler",
               description: "Live Link to Modeler",
               type: "data:application/s4l-api/modeler"
             },
             materialDB: {
-              displayOrder: 1,
+              displayOrder: 2,
               label: "MaterialDB",
               description: "Live Link to Material DB",
               type: "data:application/s4l-api/materialDB"
             },
-            updateDispersive: {
-              displayOrder: 2,
-              label: "UpdateDispersive",
-              description: "Enable automatic update of dispersive materials",
-              type: "boolean",
-              defaultValue: false
+            mapper: {
+              displayOrder: 3,
+              label: "Material Settings",
+              description: "Maps Model entities into Materials",
+              type: "mapper",
+              maps: {
+                branch: "service/demodec/dynamic/itis/s4l/MaterialDB",
+                leaf: "service/demodec/dynamic/itis/s4l/Modeler"
+              }
             }
           },
           outputs: {
@@ -583,8 +922,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator/LF/Boundary-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator/LF/Boundary",
+        "service/demodec/dynamic/itis/s4l/Simulator/LF/Boundary-0.0.0": {
+          key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
           version: "0.0.0",
           type: "dynamic",
           name: "LF Boundary Conditions",
@@ -594,6 +933,14 @@ qx.Class.define("qxapp.data.Store", {
             email: "maiz@itis.ethz.ch"
           }],
           contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultBoundaries: {
+              displayOrder: 0,
+              label: "Default Boundary Settings",
+              description: "Default Boundary Settings",
+              type: "node-output-list-api-v0.0.1"
+            }
+          },
           inputs: {
             modeler: {
               displayOrder: 0,
@@ -601,12 +948,14 @@ qx.Class.define("qxapp.data.Store", {
               description: "Live Link to Modeler",
               type: "data:application/s4l-api/modeler"
             },
-            boundarySetting: {
+            mapper: {
               displayOrder: 1,
-              label: "BoundarySetting",
-              description: "Boundary Settings",
-              type: "number",
-              defaultValue: 3
+              label: "Boundary Conditions",
+              description: "Maps Model entities into Boundary Conditions",
+              type: "mapper",
+              maps: {
+                leaf: "service/demodec/dynamic/itis/s4l/Modeler"
+              }
             }
           },
           outputs: {
@@ -618,8 +967,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator/LF/Sensors-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator/LF/Sensors",
+        "service/demodec/dynamic/itis/s4l/Simulator/LF/Sensors-0.0.0": {
+          key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
           version: "0.0.0",
           type: "dynamic",
           name: "LF Sensors",
@@ -659,8 +1008,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator/LF/Grid-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator/LF/Grid",
+        "service/demodec/dynamic/itis/s4l/Simulator/LF/Grid-0.0.0": {
+          key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
           version: "0.0.0",
           type: "dynamic",
           name: "LF Grid",
@@ -712,8 +1061,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator/LF/Voxel-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator/LF/Voxel",
+        "service/demodec/dynamic/itis/s4l/Simulator/LF/Voxel-0.0.0": {
+          key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
           version: "0.0.0",
           type: "dynamic",
           name: "LF Voxels",
@@ -753,8 +1102,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "service/dynamic/itis/s4l/Simulator/LF/SolverSettings-0.0.0": {
-          key: "service/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+        "service/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings-0.0.0": {
+          key: "service/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
           version: "0.0.0",
           type: "dynamic",
           name: "LF Solver Settings",

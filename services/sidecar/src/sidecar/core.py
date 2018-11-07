@@ -3,17 +3,18 @@ import logging
 import os
 import time
 from pathlib import Path
+import shutil
 
 import docker
 import pika
 from celery.states import SUCCESS as CSUCCESS
 from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
-from sqlalchemy.orm.attributes import flag_modified
 
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
+from simcore_sdk.nodeports import config as nodeports_config
 
 from .utils import (DbSettings, DockerSettings, ExecutorSettings,
                     RabbitSettings, S3Settings, delete_contents,
@@ -52,55 +53,20 @@ class Sidecar:
 
     def _process_task_input(self, port, input_ports):
         # pylint: disable=too-many-branches
-
-        port_name = port['key']
-        port_value = port['value']
+        port_name = port.key
+        port_value = port.get()
         log.debug("PROCESSING %s %s", port_name, port_value)
         log.debug(type(port_value))
-        if isinstance(port_value, str) and port_value.startswith("link."):
-            if port['type'] == 'file-url':
-                log.debug('Fetch S3 %s', port_value)
-                #parse the link assuming it is link.id.file.ending
-                _parts = port_value.split(".")
-                object_name = os.path.join(str(self._task.pipeline_id), _parts[1], ".".join(_parts[2:]))
-                input_file = os.path.join(self._executor.in_dir, port_name)
-                log.debug('Downloading from  S3 %s/%s', self._s3.bucket, object_name)
-                success = False
-                ntry = 3
-                trial = 0
-                while not success and trial < ntry:
-                    log.debug('Downloading to %s trial %s from %s', input_file, trial, ntry)
-                    success = self._s3.client.download_file(self._s3.bucket, object_name, input_file)
-                    trial = trial + 1
-                if success:
-                    input_ports[port_name] = port_name
-                    log.debug("DONWLOAD successfull %s", port_name)
-                else:
-                    log.debug("ERROR, input port %s not found in S3", object_name)
-                    input_ports[port_name] = None
+        if str(port.type).startswith("data:"):
+            path = port_value
+            if not path is None:
+                input_ports[port_name] = str(port_value)
+                final_path = Path(self._executor.in_dir, port_name)
+                shutil.move(str(path), str(final_path))
+                log.debug("DONWLOAD successfull %s", port_name)
             else:
-                log.debug('Fetch DB %s', port_value)
-                other_node_id = port_value.split(".")[1]
-                other_output_port_id = port_value.split(".")[2]
-                other_task = None
-                _session = self._db.Session()
-                try:
-                    other_task =_session.query(ComputationalTask).filter(and_(ComputationalTask.node_id==other_node_id,
-                                    ComputationalTask.pipeline_id==self._task.pipeline_id)).one()
-                except exc.SQLAlchemyError:
-                    log.exception("Could not find other task")
-                    _session.rollback()
-                finally:
-                    _session.close()
-
-                if other_task is None:
-                    log.debug("ERROR, input port %s not found in db", port_value)
-                else:
-                    for oport in other_task.output:
-                        if oport['key'] == other_output_port_id:
-                            input_ports[port_name] = oport['value']
+                input_ports[port_name] = port_value    
         else:
-            log.debug('Non link data %s : %s', port_name, port_value)
             input_ports[port_name] = port_value
 
     def _process_task_inputs(self):
@@ -112,12 +78,11 @@ class Sidecar:
             The dictionary is dumped to input.json, files are dumped
             as port['key']. Both end up in /input/ of the container
         """
-        _input = self._task.input
-        log.debug('Input parsing for %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
-        log.debug(_input)
+        log.debug('Input parsing for %s and node %s from container', self._task.project_id, self._task.internal_id)
 
+        from simcore_sdk.nodeports.nodeports import PORTS         
         input_ports = dict()
-        for port in _input:
+        for port in PORTS.inputs:
             log.debug(port)
             self._process_task_input(port, input_ports)
 
@@ -207,6 +172,7 @@ class Sidecar:
             Files will be pushed to S3 with reference in db. output.json will be parsed
             and the db updated
         """
+        from simcore_sdk.nodeports.nodeports import PORTS     
         directory = self._executor.out_dir
         if not os.path.exists(directory):
             return
@@ -215,41 +181,19 @@ class Sidecar:
                 for name in files:
                     filepath = os.path.join(root, name)
                     # the name should match what is in the db!
-
                     if name == 'output.json':
                         log.debug("POSTRO FOUND output.json")
                         # parse and compare/update with the tasks output ports from db
                         output_ports = dict()
                         with open(filepath) as f:
                             output_ports = json.load(f)
-                            task_outputs = self._task.output
-                            for to in task_outputs:
-                                if to['key'] in output_ports.keys():
-                                    to['value'] = output_ports[to['key']]
-                                    log.debug("POSTRPO to['value]' becomes %s", output_ports[to['key']])
-                                    flag_modified(self._task, "output")
-                                    _session = self._db.Session()
-                                    try:
-                                        _session.commit()
-                                    except exc.SQLAlchemyError as e:
-                                        log.debug(e)
-                                        _session.rollback()
-                                    finally:
-                                        _session.close()
+                            task_outputs = PORTS.outputs
+                            for to in task_outputs:                                
+                                if to.key in output_ports.keys():
+                                    to.set(output_ports[to.key])                                    
                     else:
-                        # we want to keep the folder structure
-                        if not root == directory:
-                            rel_name = os.path.relpath(root, directory)
-                            name = rel_name + "/" + name
-
-                        object_name = str(self._task.pipeline_id) + "/" + self._task.node_id + "/" + name
-                        success = False
-                        ntry = 3
-                        trial = 0
-                        while not success and trial < ntry:
-                            log.debug("POSTRO pushes to S3 %s try %s from %s", object_name, trial, ntry)
-                            success = self._s3.client.upload_file(self._s3.bucket, object_name, filepath)
-                            trial = trial + 1
+                        port_key = name
+                        PORTS.outputs[port_key].set(Path(filepath))
 
         except (OSError, IOError) as _e:
             logging.exception("Could not process output")
@@ -264,20 +208,20 @@ class Sidecar:
             for root, _dirs, files in os.walk(directory):
                 for name in files:
                     filepath = os.path.join(root, name)
-                    object_name = str(self._task.pipeline_id) + "/" + self._task.node_id + "/log/" + name
+                    object_name = str(self._task.project_id) + "/" + self._task.node_id + "/log/" + name
                     if not self._s3.client.upload_file(self._s3.bucket, object_name, filepath):
                         log.error("Error uploading file to S3")
 
     def initialize(self, task):
         self._task = task
 
-        HOMEDIR = os.environ["HOME"]
+        HOMEDIR = str(Path.home())
 
         self._docker.image_name = self._docker.registry_name + "/" + task.image['name']
         self._docker.image_tag = task.image['tag']
         self._docker.env = []
 
-        tails = dict( (name, os.path.join(name, task.job_id)) for name in ("input", "output", "log") )
+        tails = dict( (name, Path(name, task.job_id).as_posix()) for name in ("input", "output", "log") )
 
         # volume paths for side-car container
         self._executor.in_dir = os.path.join(HOMEDIR, tails['input'])
@@ -287,14 +231,18 @@ class Sidecar:
         # volume paths for car container (w/o prefix)
         self._docker.env = ["{}_FOLDER=/{}".format(name.upper(), tail) for name, tail in tails.items()]
 
+        # config nodeports
+        nodeports_config.PROJECT_ID = task.project_id
+        nodeports_config.NODE_UUID = task.node_id        
+
     def preprocess(self):
-        log.debug('Pre-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
+        log.debug('Pre-Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
         self._create_shared_folders()
         self._process_task_inputs()
         self._pull_image()
 
     def process(self):
-        log.debug('Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
+        log.debug('Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
 
         self._executor.run_pool = True
 
@@ -325,7 +273,7 @@ class Sidecar:
         while not fut.done():
             time.sleep(0.1)
 
-        log.debug('DONE Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
+        log.debug('DONE Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
 
     def run(self):
         connection = pika.BlockingConnection(self._pika.parameters)
@@ -354,7 +302,7 @@ class Sidecar:
 
 
     def postprocess(self):
-        #log.debug('Post-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
+        #log.debug('Post-Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
 
         self._process_task_output()
         self._process_task_log()
@@ -364,7 +312,7 @@ class Sidecar:
         try:
             _session.add(self._task)
             _session.commit()
-           # log.debug('DONE Post-Processing Pipeline %s and node %s from container', self._task.pipeline_id, self._task.internal_id)
+           # log.debug('DONE Post-Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
 
         except exc.SQLAlchemyError:
             log.exception("Could not update job from postprocessing")
@@ -372,15 +320,15 @@ class Sidecar:
         finally:
             _session.close()
 
-    def inspect(self, celery_task, pipeline_id, node_id):
-        log.debug("ENTERING inspect pipeline:node %s: %s", pipeline_id, node_id)
-
+    def inspect(self, celery_task, project_id, node_id):
+        log.debug("ENTERING inspect pipeline:node %s: %s", project_id, node_id)
+        # import pdb; pdb.set_trace()
         next_task_nodes = []
         do_run = False
 
         try:
             _session = self._db.Session()
-            _pipeline =_session.query(ComputationalPipeline).filter_by(pipeline_id=pipeline_id).one()
+            _pipeline =_session.query(ComputationalPipeline).filter_by(project_id=project_id).one()
 
             graph = _pipeline.execution_graph
             if node_id:
@@ -388,7 +336,7 @@ class Sidecar:
                 # find the for the current node_id, skip if there is already a job_id around
                 # pylint: disable=assignment-from-no-return
                 query =_session.query(ComputationalTask).filter(and_(ComputationalTask.node_id==node_id,
-                    ComputationalTask.pipeline_id==pipeline_id, ComputationalTask.job_id==None))
+                    ComputationalTask.project_id==project_id, ComputationalTask.job_id==None))
                 # Use SELECT FOR UPDATE TO lock the row
                 query.with_for_update()
                 task = query.one()
@@ -412,7 +360,7 @@ class Sidecar:
                     _session.commit()
 
                     task =_session.query(ComputationalTask).filter(
-                        and_(ComputationalTask.node_id==node_id,ComputationalTask.pipeline_id==pipeline_id)).one()
+                        and_(ComputationalTask.node_id==node_id,ComputationalTask.project_id==project_id)).one()
 
                     if task.job_id != celery_task.request.id:
                         # somebody else was faster

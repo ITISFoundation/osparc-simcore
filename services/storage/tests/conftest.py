@@ -245,8 +245,10 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
 
         data[object_name] = FileMetaData(**d)
 
-
-        utils.insert_metadata(postgres_service_url, data[object_name])
+        #FIXME: don't know why this is necessary
+        #pylint: disable=E1101
+        utils.insert_metadata(postgres_service, object_name, bucket_name, file_id, file_name, user_id,
+            user, location, project_id, project, node_id, node)
 
 
     total_count = 0

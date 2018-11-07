@@ -1,7 +1,21 @@
+/* ************************************************************************
+   Copyright: 2018 ITIS Foundation
+   License:   MIT
+   Authors:   Odei Maiz <maiz@itis.swiss>
+   Utf8Check: äöü
+************************************************************************ */
+
+/**
+ *  Creates the widget that represents the output of an input node.
+ * It creates a VBox with widgets representing each of the output ports of the node.
+ * It can also create widget for representing default inputs (isInputModel = false).
+ *
+ */
+
 qx.Class.define("qxapp.component.widget.NodePorts", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeModel) {
+  construct: function(nodeModel, isInputModel = true) {
     this.base();
 
     let nodeInputLayout = new qx.ui.layout.VBox(10);
@@ -11,17 +25,25 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       decorator: "main"
     });
 
-    let atom = new qx.ui.basic.Atom().set({
-      label: nodeModel.getLabel(),
-      center : true
+    const title16Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"]);
+    let label = new qx.ui.basic.Label(nodeModel.getLabel()).set({
+      font: title16Font,
+      alignX: "center",
+      alignY: "middle"
     });
+    this._add(label);
 
-    this._add(atom);
-
+    this.setIsInputModel(isInputModel);
     this.setNodeModel(nodeModel);
   },
 
   properties: {
+    isInputModel: {
+      check: "Boolean",
+      init: true,
+      nullable: false
+    },
+
     nodeModel: {
       check: "qxapp.data.model.NodeModel",
       nullable: false
@@ -48,8 +70,11 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       const metaData = this.getNodeModel().getMetaData();
       this.__inputPort = {};
       this.__outputPort = {};
-      // this.__createUIPorts(true, metaData.inputs);
-      this.__createUIPorts(false, metaData.outputs);
+      if (this.getIsInputModel()) {
+        this.__createUIPorts(false, metaData.outputs);
+      } else if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
+        this.__createUIPorts(false, metaData.inputsDefault);
+      }
     },
 
     getInputPort: function() {
@@ -68,22 +93,31 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       for (const portKey in ports) {
         const port = ports[portKey];
         if (port.type.includes("api")) {
-          console.log("Provide widget for ", port.type);
+          let widget = null;
+          switch (port.type) {
+            case "node-output-list-api-v0.0.1": {
+              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputList(this.getNodeModel(), port, portKey);
+              widget = nodeOutputList.getOutputWidget();
+              break;
+            }
+          }
+          if (widget !== null) {
+            this._add(widget, {
+              flex: 1
+            });
+          }
         } else {
-          let toolTip = new qx.ui.tooltip.ToolTip(port.description);
-          let portLabel = new qx.ui.basic.Label(port.label).set({
-            draggable: true,
-            toolTip: toolTip,
-            textAlign: "right",
-            allowGrowX: true,
-            paddingRight: 20
-          });
-          this._add(portLabel);
-          this.__createUIPortConnections(portLabel, portKey);
+          let nodeOutputLabel = new qxapp.component.widget.inputs.NodeOutputLabel(this.getNodeModel(), port, portKey);
+          let widget = nodeOutputLabel.getOutputWidget();
+          nodeOutputLabel.addListener("PortDragStart", e => {
+            this.fireDataEvent("PortDragStart", e.getData());
+          }, this);
+          this._add(widget);
           let label = {
             isInput: isInput,
-            ui: portLabel
+            ui: widget
           };
+
           label.ui.isInput = isInput;
           if (isInput) {
             this.__inputPort["Input"] = label;
@@ -92,53 +126,6 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
           }
         }
       }
-    },
-
-    __createUIPortConnections: function(uiPort, portId) {
-      [
-        ["dragstart", "PortDragStart"]
-      ].forEach(eventPair => {
-        uiPort.addListener(eventPair[0], e => {
-          const eData = {
-            event: e,
-            nodeId: this.getNodeId(),
-            portId: portId
-          };
-          this.fireDataEvent(eventPair[1], eData);
-        }, this);
-      }, this);
-    },
-
-    getLinkPoint: function(port) {
-      if (port.isInput === true) {
-        console.log("Port should always be output");
-        return null;
-      }
-      let nodeBounds = this.getCurrentBounds();
-      if (nodeBounds === null) {
-        // not rendered yet
-        return null;
-      }
-      // It is always on the very left of the Desktop
-      let x = 0;
-      let y = nodeBounds.top + nodeBounds.height/2;
-      return [x, y];
-    },
-
-    getCurrentBounds: function() {
-      let bounds = this.getBounds();
-      let cel = this.getContentElement();
-      if (cel) {
-        let domeEle = cel.getDomElement();
-        if (domeEle) {
-          bounds.left = parseInt(domeEle.style.left);
-          bounds.top = parseInt(domeEle.style.top);
-        }
-      }
-      // NavigationBar height must be subtracted
-      // bounds.left = this.getContentLocation().left;
-      // bounds.top = this.getContentLocation().top;
-      return bounds;
     }
   }
 });
