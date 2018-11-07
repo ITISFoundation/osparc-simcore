@@ -57,8 +57,9 @@ build-devel:
 rebuild-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
 
-up-devel: file-watcher
+up-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml up
+	make file-watcher
 
 build:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
@@ -73,9 +74,10 @@ up-swarm:
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.deploy.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ; ${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services; rm $(TEMPCOMPOSE).tmp-compose.yml
 
-up-swarm-devel: file-watcher
+up-swarm-devel:
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.deploy.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ; ${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services; rm $(TEMPCOMPOSE).tmp-compose.yml
+	make file-watcher
 
 ifeq ($(WINDOWS_MODE),ON)
 file-watcher:
@@ -175,4 +177,4 @@ push_platform_images:
 
 
 
-.PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images
+.PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher
