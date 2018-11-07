@@ -44,8 +44,8 @@ class UsersApi(object):
         :param async_req bool
         :param str action: (required)
         :param str data:
-        :param Body body:
-        :return: InlineResponse2001
+        :param FakeType fake_type:
+        :return: FakeEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -67,15 +67,15 @@ class UsersApi(object):
         :param async_req bool
         :param str action: (required)
         :param str data:
-        :param Body body:
-        :return: InlineResponse2001
+        :param FakeType fake_type:
+        :return: FakeEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
 
         local_var_params = locals()
 
-        all_params = ['action', 'data', 'body']  # noqa: E501
+        all_params = ['action', 'data', 'fake_type']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -110,8 +110,8 @@ class UsersApi(object):
         local_var_files = {}
 
         body_params = None
-        if 'body' in local_var_params:
-            body_params = local_var_params['body']
+        if 'fake_type' in local_var_params:
+            body_params = local_var_params['fake_type']
         # HTTP header `Accept`
         header_params['Accept'] = self.api_client.select_header_accept(
             ['application/json'])  # noqa: E501
@@ -131,7 +131,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='InlineResponse2001',  # noqa: E501
+            response_type='FakeEnveloped',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -261,7 +261,7 @@ class UsersApi(object):
         :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
-        :return: InlineResponse2004
+        :return: PresignedLinkEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -284,7 +284,7 @@ class UsersApi(object):
         :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
-        :return: InlineResponse2004
+        :return: PresignedLinkEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -351,7 +351,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='InlineResponse2004',  # noqa: E501
+            response_type='PresignedLinkEnveloped',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -371,7 +371,7 @@ class UsersApi(object):
         :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
-        :return: InlineResponse2005
+        :return: FileMetaDataEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -394,7 +394,7 @@ class UsersApi(object):
         :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
-        :return: InlineResponse2005
+        :return: FileMetaDataEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -461,7 +461,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='InlineResponse2005',  # noqa: E501
+            response_type='FileMetaDataEnveloped',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -481,7 +481,7 @@ class UsersApi(object):
         :param str location_id: (required)
         :param str user_id: (required)
         :param str uuid_filter:
-        :return: InlineResponse2003
+        :return: FileMetaDataArrayEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -504,7 +504,7 @@ class UsersApi(object):
         :param str location_id: (required)
         :param str user_id: (required)
         :param str uuid_filter:
-        :return: InlineResponse2003
+        :return: FileMetaDataArrayEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -567,7 +567,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='InlineResponse2003',  # noqa: E501
+            response_type='FileMetaDataArrayEnveloped',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -585,7 +585,7 @@ class UsersApi(object):
 
         :param async_req bool
         :param str user_id: (required)
-        :return: InlineResponse2002
+        :return: FileLocationArrayEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -606,7 +606,7 @@ class UsersApi(object):
 
         :param async_req bool
         :param str user_id: (required)
-        :return: InlineResponse2002
+        :return: FileLocationArrayEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -661,7 +661,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='InlineResponse2002',  # noqa: E501
+            response_type='FileLocationArrayEnveloped',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -679,7 +679,7 @@ class UsersApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: InlineResponse200
+        :return: HealthCheckEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -700,7 +700,7 @@ class UsersApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: InlineResponse200
+        :return: HealthCheckEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -749,7 +749,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='InlineResponse200',  # noqa: E501
+            response_type='HealthCheckEnveloped',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -768,8 +768,8 @@ class UsersApi(object):
         :param async_req bool
         :param str file_id: (required)
         :param str location_id: (required)
-        :param Body1 body1:
-        :return: InlineResponse2005
+        :param FileMetaDataType file_meta_data_type:
+        :return: FileMetaDataEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -791,15 +791,15 @@ class UsersApi(object):
         :param async_req bool
         :param str file_id: (required)
         :param str location_id: (required)
-        :param Body1 body1:
-        :return: InlineResponse2005
+        :param FileMetaDataType file_meta_data_type:
+        :return: FileMetaDataEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
 
         local_var_params = locals()
 
-        all_params = ['file_id', 'location_id', 'body1']  # noqa: E501
+        all_params = ['file_id', 'location_id', 'file_meta_data_type']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -838,8 +838,8 @@ class UsersApi(object):
         local_var_files = {}
 
         body_params = None
-        if 'body1' in local_var_params:
-            body_params = local_var_params['body1']
+        if 'file_meta_data_type' in local_var_params:
+            body_params = local_var_params['file_meta_data_type']
         # HTTP header `Accept`
         header_params['Accept'] = self.api_client.select_header_accept(
             ['application/json'])  # noqa: E501
@@ -859,7 +859,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='InlineResponse2005',  # noqa: E501
+            response_type='FileMetaDataEnveloped',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501
@@ -880,7 +880,7 @@ class UsersApi(object):
         :param str location_id: (required)
         :param str user_id: (required)
         :param str extra_source:
-        :return: InlineResponse2004
+        :return: PresignedLinkEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -904,7 +904,7 @@ class UsersApi(object):
         :param str location_id: (required)
         :param str user_id: (required)
         :param str extra_source:
-        :return: InlineResponse2004
+        :return: PresignedLinkEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -973,7 +973,7 @@ class UsersApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='InlineResponse2004',  # noqa: E501
+            response_type='PresignedLinkEnveloped',  # noqa: E501
             auth_settings=auth_settings,
             async_req=local_var_params.get('async_req'),
             _return_http_data_only=local_var_params.get('_return_http_data_only'),  # noqa: E501

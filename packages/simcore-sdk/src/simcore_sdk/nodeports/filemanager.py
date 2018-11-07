@@ -46,8 +46,8 @@ async def _get_location_id_from_location_name(store:str, api:UsersApi):
     try:
         resp = await api.get_storage_locations(user_id=config.USER_ID)
         for location in resp.data:
-            if location.name == store:
-                return location.id
+            if location["name"] == store:
+                return location["id"]
         # location id not found
         raise exceptions.S3InvalidStore(store)
     except ApiException as err:

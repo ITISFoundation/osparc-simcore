@@ -55,11 +55,11 @@ from pprint import pprint
 api_instance = simcore_service_storage_sdk.UsersApi(simcore_service_storage_sdk.ApiClient(configuration))
 action = 'echo' # str |  (default to 'echo')
 data = 'data_example' # str |  (optional)
-body = simcore_service_storage_sdk.Body() # Body |  (optional)
+fake_type = simcore_service_storage_sdk.FakeType() # FakeType |  (optional)
 
 try:
     # Test checkpoint to ask server to fail or echo back the transmitted data
-    api_response = api_instance.check_action_post(action, data=data, body=body)
+    api_response = api_instance.check_action_post(action, data=data, fake_type=fake_type)
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling UsersApi->check_action_post: %s\n" % e)
@@ -68,7 +68,7 @@ except ApiException as e:
 
 ## Documentation for API Endpoints
 
-All URIs are relative to *http://{host}:{port}/{basePath}*
+All URIs are relative to *http://localhost:11111/v0*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
@@ -85,23 +85,23 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
- - [Body](docs/Body.md)
- - [Body1](docs/Body1.md)
- - [InlineResponse200](docs/InlineResponse200.md)
- - [InlineResponse2001](docs/InlineResponse2001.md)
- - [InlineResponse2001Data](docs/InlineResponse2001Data.md)
- - [InlineResponse2002](docs/InlineResponse2002.md)
- - [InlineResponse2002Data](docs/InlineResponse2002Data.md)
- - [InlineResponse2003](docs/InlineResponse2003.md)
- - [InlineResponse2003Data](docs/InlineResponse2003Data.md)
- - [InlineResponse2004](docs/InlineResponse2004.md)
- - [InlineResponse2004Data](docs/InlineResponse2004Data.md)
- - [InlineResponse2005](docs/InlineResponse2005.md)
- - [InlineResponse200Data](docs/InlineResponse200Data.md)
- - [InlineResponse200Error](docs/InlineResponse200Error.md)
- - [InlineResponse200ErrorErrors](docs/InlineResponse200ErrorErrors.md)
- - [InlineResponse200ErrorLogs](docs/InlineResponse200ErrorLogs.md)
- - [InlineResponseDefault](docs/InlineResponseDefault.md)
+ - [ErrorEnveloped](docs/ErrorEnveloped.md)
+ - [ErrorItemType](docs/ErrorItemType.md)
+ - [ErrorType](docs/ErrorType.md)
+ - [FakeEnveloped](docs/FakeEnveloped.md)
+ - [FakeType](docs/FakeType.md)
+ - [FileLocation](docs/FileLocation.md)
+ - [FileLocationArray](docs/FileLocationArray.md)
+ - [FileLocationArrayEnveloped](docs/FileLocationArrayEnveloped.md)
+ - [FileMetaDataArrayEnveloped](docs/FileMetaDataArrayEnveloped.md)
+ - [FileMetaDataArrayType](docs/FileMetaDataArrayType.md)
+ - [FileMetaDataEnveloped](docs/FileMetaDataEnveloped.md)
+ - [FileMetaDataType](docs/FileMetaDataType.md)
+ - [HealthCheckEnveloped](docs/HealthCheckEnveloped.md)
+ - [HealthCheckType](docs/HealthCheckType.md)
+ - [LogMessageType](docs/LogMessageType.md)
+ - [PresignedLinkEnveloped](docs/PresignedLinkEnveloped.md)
+ - [PresignedLinkType](docs/PresignedLinkType.md)
 
 
 ## Documentation For Authorization

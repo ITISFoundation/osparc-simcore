@@ -1,6 +1,6 @@
 # simcore_service_storage_sdk.UsersApi
 
-All URIs are relative to *http://{host}:{port}/{basePath}*
+All URIs are relative to *http://localhost:11111/v0*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
@@ -16,7 +16,7 @@ Method | HTTP request | Description
 
 
 # **check_action_post**
-> InlineResponse2001 check_action_post(action, data=data, body=body)
+> FakeEnveloped check_action_post(action, data=data, fake_type=fake_type)
 
 Test checkpoint to ask server to fail or echo back the transmitted data
 
@@ -32,11 +32,11 @@ from pprint import pprint
 api_instance = simcore_service_storage_sdk.UsersApi()
 action = 'echo' # str |  (default to 'echo')
 data = 'data_example' # str |  (optional)
-body = simcore_service_storage_sdk.Body() # Body |  (optional)
+fake_type = simcore_service_storage_sdk.FakeType() # FakeType |  (optional)
 
 try:
     # Test checkpoint to ask server to fail or echo back the transmitted data
-    api_response = api_instance.check_action_post(action, data=data, body=body)
+    api_response = api_instance.check_action_post(action, data=data, fake_type=fake_type)
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling UsersApi->check_action_post: %s\n" % e)
@@ -48,11 +48,11 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **action** | **str**|  | [default to &#39;echo&#39;]
  **data** | **str**|  | [optional] 
- **body** | [**Body**](Body.md)|  | [optional] 
+ **fake_type** | [**FakeType**](FakeType.md)|  | [optional] 
 
 ### Return type
 
-[**InlineResponse2001**](InlineResponse2001.md)
+[**FakeEnveloped**](FakeEnveloped.md)
 
 ### Authorization
 
@@ -115,7 +115,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **download_file**
-> InlineResponse2004 download_file(file_id, location_id, user_id)
+> PresignedLinkEnveloped download_file(file_id, location_id, user_id)
 
 Returns download link for requested file
 
@@ -151,7 +151,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**InlineResponse2004**](InlineResponse2004.md)
+[**PresignedLinkEnveloped**](PresignedLinkEnveloped.md)
 
 ### Authorization
 
@@ -165,7 +165,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_file_metadata**
-> InlineResponse2005 get_file_metadata(file_id, location_id, user_id)
+> FileMetaDataEnveloped get_file_metadata(file_id, location_id, user_id)
 
 Get File Metadata
 
@@ -201,7 +201,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**InlineResponse2005**](InlineResponse2005.md)
+[**FileMetaDataEnveloped**](FileMetaDataEnveloped.md)
 
 ### Authorization
 
@@ -215,7 +215,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_files_metadata**
-> InlineResponse2003 get_files_metadata(location_id, user_id, uuid_filter=uuid_filter)
+> FileMetaDataArrayEnveloped get_files_metadata(location_id, user_id, uuid_filter=uuid_filter)
 
 Get Files Metadata
 
@@ -251,7 +251,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**InlineResponse2003**](InlineResponse2003.md)
+[**FileMetaDataArrayEnveloped**](FileMetaDataArrayEnveloped.md)
 
 ### Authorization
 
@@ -265,7 +265,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_storage_locations**
-> InlineResponse2002 get_storage_locations(user_id)
+> FileLocationArrayEnveloped get_storage_locations(user_id)
 
 Get available storage locations
 
@@ -297,7 +297,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**InlineResponse2002**](InlineResponse2002.md)
+[**FileLocationArrayEnveloped**](FileLocationArrayEnveloped.md)
 
 ### Authorization
 
@@ -311,7 +311,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **health_check**
-> InlineResponse200 health_check()
+> HealthCheckEnveloped health_check()
 
 Service health-check endpoint
 
@@ -341,7 +341,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**InlineResponse200**](InlineResponse200.md)
+[**HealthCheckEnveloped**](HealthCheckEnveloped.md)
 
 ### Authorization
 
@@ -355,7 +355,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **update_file_meta_data**
-> InlineResponse2005 update_file_meta_data(file_id, location_id, body1=body1)
+> FileMetaDataEnveloped update_file_meta_data(file_id, location_id, file_meta_data_type=file_meta_data_type)
 
 Update File Metadata
 
@@ -371,11 +371,11 @@ from pprint import pprint
 api_instance = simcore_service_storage_sdk.UsersApi()
 file_id = 'file_id_example' # str | 
 location_id = 'location_id_example' # str | 
-body1 = simcore_service_storage_sdk.Body1() # Body1 |  (optional)
+file_meta_data_type = simcore_service_storage_sdk.FileMetaDataType() # FileMetaDataType |  (optional)
 
 try:
     # Update File Metadata
-    api_response = api_instance.update_file_meta_data(file_id, location_id, body1=body1)
+    api_response = api_instance.update_file_meta_data(file_id, location_id, file_meta_data_type=file_meta_data_type)
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling UsersApi->update_file_meta_data: %s\n" % e)
@@ -387,11 +387,11 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **file_id** | **str**|  | 
  **location_id** | **str**|  | 
- **body1** | [**Body1**](Body1.md)|  | [optional] 
+ **file_meta_data_type** | [**FileMetaDataType**](FileMetaDataType.md)|  | [optional] 
 
 ### Return type
 
-[**InlineResponse2005**](InlineResponse2005.md)
+[**FileMetaDataEnveloped**](FileMetaDataEnveloped.md)
 
 ### Authorization
 
@@ -405,7 +405,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **upload_file**
-> InlineResponse2004 upload_file(file_id, location_id, user_id, extra_source=extra_source)
+> PresignedLinkEnveloped upload_file(file_id, location_id, user_id, extra_source=extra_source)
 
 Returns upload link or performs copy operation to datcore
 
@@ -443,7 +443,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**InlineResponse2004**](InlineResponse2004.md)
+[**PresignedLinkEnveloped**](PresignedLinkEnveloped.md)
 
 ### Authorization
 

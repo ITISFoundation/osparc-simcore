@@ -1,19 +1,18 @@
-FileMetaDataArrayEnveloped:
-  type: object
-  required:
-    - data
-    - error
-  properties:
-    data:
-      $ref: '#/FileMetaDataArray'
-      nullable: true
-      default: null
-    error:
-      $ref: "./error.yml#/ErrorType"
-      nullable: true
-      default: null
+components:
+  schemas:
+    FileMetaDataArrayEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/FileMetaDataArrayType'
+        error:
+          nullable: true
+          default: null
 
-FileMetaDataArray:
-  type: array
-  items:
-    $ref: './file_meta_data.yml#/FileMetaData'
+    FileMetaDataArrayType:
+      type: array
+      items:
+        $ref: './file_meta_data.yml#/components/schemas/FileMetaDataType'
