@@ -9,7 +9,7 @@ PROXY_PATH_KEY = "proxyPath"
 #       due to a limitation of proxied services!!!!
 
 PROXY_MOUNTPOINT = r"/x"
-BACKEND_MOUNTPOINT = r"/{%s}"%SERVICE_ID_KEY
+BACKEND_MOUNTPOINT = r"/{%s}" % SERVICE_ID_KEY
 
 # /x/{serviceId}/{proxyPath:.*}
-URL_PATH = PROXY_MOUNTPOINT + BACKEND_MOUNTPOINT + r"/{%s:.*}"%PROXY_PATH_KEY
+URL_PATH = PROXY_MOUNTPOINT + BACKEND_MOUNTPOINT + r"/{%s:.*}" % PROXY_PATH_KEY

@@ -25,15 +25,16 @@ async def handler(request: web.Request, service_url: str, **_kwargs) -> web.Stre
     start = time.time()
     try:
         # FIXME: service_url should be service_endpoint or service_origins
-        target_url = URL(service_url).origin().with_path(request.path).with_query(request.query)
+        tarfind_url = URL(service_url).origin().with_path(
+            request.path).with_query(request.query)
         async with aiohttp.client.request(
-            request.method, target_url,
+            request.method, tarfind_url,
             headers=request.headers,
             chunked=CHUNK,
             # response_class=ReverseProxyResponse,
         ) as r:
             logger.debug('opened backend request in %d ms',
-                        ((time.time() - start) * 1000))
+                         ((time.time() - start) * 1000))
             response = aiohttp.web.StreamResponse(status=r.status,
                                                   headers=r.headers)
             await response.prepare(request)
@@ -45,13 +46,13 @@ async def handler(request: web.Request, service_url: str, **_kwargs) -> web.Stre
                 await response.write(chunk)
 
         logger.debug('finished sending content in %d ms',
-                    ((time.time() - start) * 1000,))
+                     ((time.time() - start) * 1000,))
         await response.write_eof()
         return response
     except Exception:
         logger.debug("reverse proxy %s", request, exec_info=True)
         raise web.HTTPServiceUnavailable(reason="Cannot talk to spawner",
-                                    content_type="application/json")
+                                         content_type="application/json")
 
-    #except web.HttpStatus as status:
+    # except web.HttpStatus as status:
     #    return status.as_response()

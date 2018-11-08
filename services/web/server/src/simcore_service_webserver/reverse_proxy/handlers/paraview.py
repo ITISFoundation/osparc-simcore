@@ -13,17 +13,16 @@ from aiohttp import client, web
 
 # TODO: find actual name in registry
 SUPPORTED_IMAGE_NAME = "paraview"
-SUPPORTED_IMAGE_TAG  = "==0.1.0"
+SUPPORTED_IMAGE_TAG = "==0.1.0"
 
 logger = logging.getLogger(__name__)
 
 
-
-async def handler(req: web.Request, service_url: str, mount_point:str, proxy_path: str) -> web.StreamResponse:
+async def handler(req: web.Request, service_url: str, mount_point: str, proxy_path: str) -> web.StreamResponse:
     assert req.path_qs.endswith(proxy_path)
     assert mount_point in req.path, "Expected /x/identifier as mount point, got %s" % req.path
 
-    #target_url = service_url + req.path_qs
+    #tarfind_url = service_url + req.path_qs
 
     reqH = req.headers.copy()
     if reqH['connection'] == 'Upgrade' and reqH['upgrade'] == 'websocket' and req.method == 'GET':
@@ -91,7 +90,7 @@ if __name__ == "__main__":
 
     def adapter(req: web.Request):
         proxy_path = req.match_info.get('proxyPath',
-            'no proxyPath placeholder defined')
+                                        'no proxyPath placeholder defined')
         return handler(req, BASE_URL, MOUNT_POINT, proxy_path)
 
     app = web.Application()

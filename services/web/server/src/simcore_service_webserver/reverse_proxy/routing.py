@@ -8,74 +8,79 @@
 TODO: add validation, get/set app config
 """
 import logging
-from functools import lru_cache
+from collections import OrderedDict
 from typing import Callable, Dict, Tuple
 
 import attr
 from aiohttp import web
 
 from .abc import ServiceResolutionPolicy
-from .settings import PROXY_PATH_KEY, SERVICE_ID_KEY
 from .handlers.default import handler as default_handler
+from .settings import PROXY_PATH_KEY, SERVICE_ID_KEY
 
 logger = logging.getLogger(__name__)
-
 
 
 @attr.s(auto_attribs=True)
 class Wrapper:
     """ Wraps policy class to provide additional:
-        - caching
-        - treat exceptions
+        - caches results
+        - translate exceptions
 
+    NOTE: wrapper.cache.clear()
     """
     encapsulated: ServiceResolutionPolicy
+    cache: Dict[str, Tuple[str, str]] = OrderedDict()
+    MAXSIZE = 128
 
-    # TODO: simplify!!!!!
-    # FIXME: Wrapper is not hashable and therefor self!
-    async def resolve(self, service_identifier) -> Tuple[str, str]:
+    async def resolve(self, service_identifier: str) -> Tuple[str, str]:
         """ To reset cache, use cli.resolve_service.cache_reset()
-        """
-        @lru_cache(maxsize=128)
-        async def run_cached(service_identifier):
-            try:
-                # TODO: deal with timeouts?
-                image_name = await self.encapsulated.get_image_name(service_identifier)
-                service_url  = await self.encapsulated.get_url(service_identifier)
-                return image_name, str(service_url)
-            except Exception: #pylint: disable=
-                logger.debug("Failed to resolve service", exc_info=True)
-                raise web.HTTPServiceUnavailable(reason="Cannot resolve service")
 
-        return (await run_cached(service_identifier))
+        """
+        if service_identifier in self.cache:
+            return self.cache[service_identifier]
+
+        try:
+            # TODO: deal with timeouts?
+            image_name = await self.encapsulated.get_image_name(service_identifier)
+            service_url = await self.encapsulated.find_url(service_identifier)
+            result = image_name, str(service_url)
+
+            if len(self.cache) == 128:
+                self.cache.popitem(False)
+            self.cache[service_identifier] = result
+            return result
+        except Exception:
+            logger.debug("Failed to resolve service", exc_info=True)
+            # TODO: translate exception into HTTPStatus
+            raise web.HTTPServiceUnavailable(
+                reason="Cannot resolve service")
 
 
 @attr.s(auto_attribs=True)
 class ReverseChooser:
-    resolver: Wrapper=attr.ib(converter=Wrapper, )
-    handlers: Dict=dict()
-
+    resolver: Wrapper = attr.ib(converter=Wrapper)
+    handlers: Dict = dict()
 
     def register_handler(self,
-                handler: Callable[..., web.StreamResponse], *,
-                image_name: str):
+                         handler: Callable[..., web.StreamResponse], *,
+                         image_name: str):
         self.handlers[image_name] = handler
 
     async def do_route(self, request: web.Request) -> web.Response:
         """ Resolves service and awaits
 
         """
-        cli = self.resolver # or self.resolver.encapsulated to remove caching
+        cli = self.resolver  # or self.resolver.encapsulated to remove caching
 
         service_identifier = request.match_info.get(SERVICE_ID_KEY)
         proxy_path = request.match_info.get(PROXY_PATH_KEY)
         mountpoint = request.path[:-len(proxy_path)].rstrip("/")
 
-        image_name, service_url = await cli.resolve(service_identifier)  #pylint: disable=E1101
+        image_name, service_url = await cli.resolve(service_identifier)  # pylint: disable=E1101
 
         # TODO: reset cache for given service_identifier when it is shutdown or reused
-        # To clear cache, use cli.resolve_service.cache_clear()
-
+        # To clear cache, use cli.cache.clear()
 
         # raise web.HTTPServiceUnavailable()
         # TODO: director might be non-responding

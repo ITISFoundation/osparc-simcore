@@ -12,15 +12,14 @@ from aiohttp import client, web
 
 # TODO: find actual name in registry
 SUPPORTED_IMAGE_NAME = "jupyter"
-SUPPORTED_IMAGE_TAG  = "==0.1.0"
+SUPPORTED_IMAGE_TAG = "==0.1.0"
 
 logger = logging.getLogger(__name__)
 
 
-
 async def handler(req: web.Request, service_url: str, **_kwargs) -> web.StreamResponse:
     # Resolved url pointing to backend jupyter service
-    target_url = service_url + req.path_qs
+    tarfind_url = service_url + req.path_qs
 
     reqH = req.headers.copy()
     if reqH['connection'] == 'Upgrade' and reqH['upgrade'] == 'websocket' and req.method == 'GET':
@@ -31,7 +30,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs) -> web.StreamRe
 
         client_session = aiohttp.ClientSession(cookies=req.cookies)
         async with client_session.ws_connect(
-            target_url,
+            tarfind_url,
         ) as ws_client:
             logger.info('##### WS_CLIENT %s', pprint.pformat(ws_client))
 
@@ -60,7 +59,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs) -> web.StreamRe
     else:
 
         async with client.request(
-            req.method, target_url,
+            req.method, tarfind_url,
             headers=reqH,
             allow_redirects=False,
             data=await req.read()

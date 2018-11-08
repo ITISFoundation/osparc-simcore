@@ -13,7 +13,6 @@ import logging
 
 from aiohttp import web
 
-
 from .abc import ServiceResolutionPolicy
 from .routing import ReverseChooser
 from .handlers import jupyter, paraview
@@ -23,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 MODULE_NAME = __name__.split(".")[-1]
 
+
 def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
     """Sets up reverse-proxy subsystem in the application (a la aiohttp)
 
@@ -31,21 +31,19 @@ def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
 
     chooser = ReverseChooser(resolver=service_resolver)
 
-    # Registers reverse proxy handlers per service type.
+    # Registers reverse proxy handlers customized for specific service types
     chooser.register_handler(jupyter.handler,
-        image_name=jupyter.SUPPORTED_IMAGE_NAME)
+                             image_name=jupyter.SUPPORTED_IMAGE_NAME)
 
     chooser.register_handler(paraview.handler,
-        image_name=paraview.SUPPORTED_IMAGE_NAME)
+                             image_name=paraview.SUPPORTED_IMAGE_NAME)
 
-    # TODO: add default handler in test mode?
+    # /x/{serviceId}/{proxyPath:.*}
+    app.router.add_route(method='*', path=URL_PATH,
+                         handler=chooser.do_route, name=MODULE_NAME)
 
-    # URL_PATH looks like:  /x/{serviceId}/{proxyPath:.*}
-    app.router.add_route(method='*', path=URL_PATH, handler=chooser.do_route, name=MODULE_NAME)
-
-    # chooser has same lifetime as application
+    # chooser has same lifetime as the application
     app[__name__] = {"chooser": chooser}
-
 
 
 # alias

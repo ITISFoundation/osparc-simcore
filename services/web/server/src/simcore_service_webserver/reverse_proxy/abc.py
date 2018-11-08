@@ -5,38 +5,32 @@ from yarl import URL
 
 from .settings import PROXY_MOUNTPOINT
 
+
 class ServiceResolutionPolicy(metaclass=abc.ABCMeta):
+    """ Implements an interface to identify and
+        resolve the location of a dynamic backend service
     """
-        Idenfitication of a running dyb service
-        Retrieves information about it
-    """
-    @property
-    def service_basepath(self):
-        """
-            All external services should be mounted here
-        """
-        # This is how we communicate to the external user
-        # where reverse_proxy is listening
-        return PROXY_MOUNTPOINT
-
-
+    base_mountpoint = PROXY_MOUNTPOINT
 
     @abc.abstractmethod
     async def get_image_name(self, service_identifier: str) -> str:
         """
-            Idenfies a type of service
+            Identifies a type of service. This normally corresponds
+            to the name of the docker image
         """
         pass
 
     @abc.abstractmethod
-    async def get_url(self, service_identifier: str) -> URL:
+    async def find_url(self, service_identifier: str) -> URL:
         """
-            Full service end-point url
+            Return the complete url (including the mountpoint) of
+            the service in the backend
 
-            Ex. 'http://127.0.0.1:58873/x/ae1q8/'
+            This access should be accesible by the proxy server
+
+            E.g. 'http://127.0.0.1:58873/x/ae1q8/'
         """
         pass
-
 
     # TODO: on_closed signal to notify sub-system that the service
     # has closed and can raise HTTPServiceAnavailable
