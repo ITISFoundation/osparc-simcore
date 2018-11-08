@@ -378,7 +378,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         }, this);
         button.setEnabled(false);
         this.setRestartIFrameButton(button);
-        const loadingUrl = "qxapp/loading/loader.html";
+        const loadingUrl = qx.util.ResourceManager.getInstance().toUri("qxapp/loading/loader.html");
         this.setIFrame(new qxapp.component.widget.PersistentIframe(loadingUrl));
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
