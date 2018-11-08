@@ -184,7 +184,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
 
         this.__settingsLayout.add(titleBox);
         this.__settingsLayout.add(propsWidget);
-        this.__createDragDropMechanism(propsWidget);
 
         this.__mainLayout.add(this.__settingsLayout);
       } else if (qx.ui.core.Widget.contains(this.__mainLayout, this.__settingsLayout)) {
