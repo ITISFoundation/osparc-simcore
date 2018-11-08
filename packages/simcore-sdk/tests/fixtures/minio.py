@@ -51,7 +51,7 @@ def external_minio()->Dict:
     _minio_is_responsive(url)
     
     # set up env variables
-    os.environ["S3_ENDPOINT"] = url
+    os.environ["S3_ENDPOINT"] = "{}:{}".format(minio_config["host"], minio_config["port"])
     os.environ["S3_ACCESS_KEY"] = minio_config["s3access"]
     os.environ["S3_SECRET_KEY"] = minio_config["s3secret"]
     log.info("env variables for accessing S3 set")
