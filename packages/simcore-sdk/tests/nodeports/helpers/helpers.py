@@ -1,5 +1,8 @@
 #pylint: disable=C0111
+import json
 import logging
+from pathlib import Path
+
 from simcore_sdk.models.pipeline_models import ComputationalTask
 
 log = logging.getLogger(__name__)
@@ -13,7 +16,7 @@ def update_configuration(session, project_id, node_uuid, new_configuration):
 
 
 def update_config_file(path, config):
-    import json
+    
     with open(path, "w") as json_file:
         json.dump(config, json_file)
 
@@ -25,3 +28,10 @@ def get_empty_config():
         "inputs": {},
         "outputs": {}
     }
+
+
+SIMCORE_STORE = "simcore.s3"
+
+def file_uuid(store:str, bucket:str, file_path:Path, project_id:str, node_uuid:str):
+    file_id = "{}/{}/{}/{}/{}".format(store, bucket, project_id, node_uuid, Path(file_path).name)
+    return file_id

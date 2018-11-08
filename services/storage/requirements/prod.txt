@@ -1,0 +1,8 @@
+
+# paths relative to location of setup.py
+.
+
+../..//packages/service-library
+../..//packages/s3wrapper/
+../..//packages/simcore-sdk/
+#../..//packages/director-sdk/python

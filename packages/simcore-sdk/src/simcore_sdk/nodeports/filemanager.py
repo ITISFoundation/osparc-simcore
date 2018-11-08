@@ -1,75 +1,148 @@
 import logging
+from contextlib import contextmanager
 from pathlib import Path
 
-import tenacity
+import aiofiles
+import aiohttp
+import async_timeout
+from yarl import URL
 
-from s3wrapper.s3_client import S3Client
-from simcore_sdk.config.s3 import Config as s3_config
-from simcore_sdk.nodeports import exceptions
+from simcore_sdk.nodeports import config, exceptions
+from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
+from simcore_service_storage_sdk.rest import ApiException
 
 log = logging.getLogger(__name__)
 
 
-class S3Settings:
-    def __init__(self):
-        log.debug("Initialise S3 connection")
-        self._config = s3_config()
-        self.client = S3Client(endpoint=self._config.endpoint,
-            access_key=self._config.access_key, secret_key=self._config.secret_key)
-        self.bucket = self._config.bucket_name
-        self.client.create_bucket(self.bucket)
-        log.debug("Initialised S3 connection")
 
-@tenacity.retry(retry=tenacity.retry_if_exception_type(exceptions.S3TransferError),
-            reraise=True, 
-            stop=tenacity.stop_after_attempt(3) or tenacity.stop_after_delay(10),
-            before_sleep=tenacity.before_sleep_log(log, logging.DEBUG))
-def __download_fromS3(s3_client, s3_bucket, s3_object_name, file_path):
-    log.debug('Checking if object exists in S3 %s/%s', s3_bucket, s3_object_name)
-    if not s3_client.exists_object(s3_bucket, s3_object_name, True):
-        raise exceptions.S3InvalidPathError(s3_bucket, s3_object_name)
+@contextmanager
+def api_client():
+    cfg = Configuration()
+    cfg.host = cfg.host.format(
+        host=config.STORAGE_HOST,
+        port=config.STORAGE_PORT,
+        basePath=config.STORAGE_VERSION
+    )
 
-    log.debug('Downloading from  S3 %s/%s to %s', s3_bucket, s3_object_name, file_path)
-    success = s3_client.download_file(s3_bucket, s3_object_name, file_path)
-    if not success:
-        raise exceptions.S3TransferError("could not retrieve file from %s/%s" %(s3_bucket, s3_object_name))
+    client = ApiClient(cfg)
+    try:
+        yield client
+    except ApiException:
+        log.exception(msg="connection to storage service failed")
+    del client.rest_client
 
-    log.debug('Downloaded from bucket %s, object %s to %s successfully', s3_bucket, s3_object_name, file_path)
+def _handle_api_exception(store:str, err: ApiException):
+    if err.status > 399 and err.status < 500:
+        # something invalid
+        raise exceptions.StorageInvalidCall(err)
+    elif err.status > 499:
+        # something went bad inside the storage server
+        raise exceptions.StorageServerIssue(err)
+    else:
+        raise exceptions.StorageConnectionError(store, err)
+    
 
-def download_file_from_S3(store: str, s3_object_name: str, file_path: Path):
-    log.debug("Trying to download from S3: store %s, s3 object %s, file name %s", store, s3_object_name, file_path)
-    s3 = S3Settings()
+async def _get_location_id_from_location_name(store:str, api:UsersApi):
+    try:
+        resp = await api.get_storage_locations(user_id=config.USER_ID)
+        for location in resp.data:
+            if location["name"] == store:
+                return location["id"]
+        # location id not found
+        raise exceptions.S3InvalidStore(store)
+    except ApiException as err:
+        _handle_api_exception(store, err)
+    if resp.error:
+        raise exceptions.StorageConnectionError(store, resp.error.to_str())
+    
 
-    if "s3-z43" in store:
-        s3_object_url = Path(s3_object_name).as_posix()
-        # sometimes the path contains the bucket name. this needs to be removed.
-        log.debug("s3 object %s, bucket %s", s3_object_url, s3.bucket)
-        if str(s3_object_url).startswith(s3.bucket):
-            s3_object_url = "".join(Path(s3_object_url).parts[1:])
+async def _get_link(store:str, location_id:int, file_id:str, apifct):
+    log.debug("Getting link from %s, %s, %s", store, location_id, file_id)
+    try:
+        resp = await apifct(location_id=location_id, user_id=config.USER_ID, file_id=file_id)
+        
+        if resp.error:
+            raise exceptions.S3TransferError("Error getting link: {}".format(resp.error.to_str()))
+        if not resp.data.link:
+            raise exceptions.S3InvalidPathError(file_id)
+        log.debug("Got link %s", resp.data.link)
+        return resp.data.link
+    except ApiException as err:
+        _handle_api_exception(store, err)
 
-        # remove an already existing file if present
-        if file_path.exists():
-            file_path.unlink()
+async def _get_download_link(store:str, location_id:int, file_id:str, api:UsersApi):
+    return await _get_link(store, location_id, file_id, api.download_file)
 
-        __download_fromS3(s3.client, s3.bucket, s3_object_url, str(file_path))
-        return file_path
+async def _get_upload_link(store:str, location_id:int, file_id:str, api:UsersApi):
+    return await _get_link(store, location_id, file_id, api.upload_file)
 
-    raise exceptions.S3InvalidStore(store)
+async def _download_link_to_file(session:aiohttp.ClientSession, url:URL, file_path:Path, store: str, s3_object: str):
+    log.debug("Downloading from %s to %s", url, file_path)
+    with async_timeout.timeout(10):
+        async with session.get(url) as response:
+            if response.status == 404:
+                raise exceptions.S3InvalidPathError(s3_object)
+            if response.status > 299:
+                raise exceptions.S3TransferError("Error when downloading {} from {} using {}".format(s3_object, store, url))
+            file_path.parent.mkdir(exist_ok=True)
+            async with aiofiles.open(file_path, 'wb') as file_pointer:
+                chunk = await response.content.read(1024)
+                while chunk:
+                    await file_pointer.write(chunk)
+                    chunk = await response.content.read(1024)
+            log.debug("Download complete")
+            return await response.release()
 
-@tenacity.retry(retry=tenacity.retry_if_exception_type(exceptions.S3TransferError),
-            reraise=True, 
-            stop=tenacity.stop_after_attempt(3) or tenacity.stop_after_delay(10),
-            before_sleep=tenacity.before_sleep_log(log, logging.DEBUG))
-def __upload_to_s3(s3_client, s3_bucket, s3_object_name, file_path):
-    log.debug('Uploading to S3 %s/%s from %s', s3_bucket, s3_object_name, file_path)
-    success = s3_client.upload_file(s3_bucket, s3_object_name, file_path)
-    if not success:
-        raise exceptions.S3TransferError("could not upload file %s to %s/%s" %(file_path, s3_bucket, s3_object_name))
+async def _file_sender(file_path:Path):
+    # with async_timeout.timeout(10):
+    async with aiofiles.open(file_path, 'rb') as file_pointer:
+        chunk = await file_pointer.read(1024)
+        while chunk:
+            yield chunk
+            chunk = await file_pointer.read(1024)
 
-    log.debug('Uploaded to s3 %s/%s from %s successfully', s3_bucket, s3_object_name, file_path)
+async def _upload_file_to_link(session: aiohttp.ClientSession, url: URL, file_path: Path):
+    log.debug("Uploading from %s to %s", file_path, url)
 
-def upload_file_to_s3(store:str, s3_object:str, file_path:Path):
+    async with session.put(url, data=file_path.open('rb')) as resp:
+        if resp.status > 299:
+            response_text = await resp.text()
+            raise exceptions.S3TransferError("Could not upload file {}:{}".format(file_path, response_text))
+        
+
+async def download_file_from_S3(store: str, s3_object: str, file_path: Path):
+    log.debug("Trying to download from S3: store %s, s3 object %s, file name %s", store, s3_object, file_path)
+    with api_client() as client:
+        api = UsersApi(client)
+        
+        location_id = await _get_location_id_from_location_name(store, api)
+        download_link = await _get_download_link(store, location_id, s3_object, api)
+
+        if download_link:
+            download_link = URL(download_link)
+            # remove an already existing file if present
+            # FIXME: if possible we should compare the files if the download needs to take place or not
+            if file_path.exists():
+                file_path.unlink()    
+            async with aiohttp.ClientSession() as session:
+                await _download_link_to_file(session, download_link, file_path, store, s3_object)
+            return file_path
+
+    raise exceptions.S3InvalidPathError(s3_object)
+
+async def upload_file_to_s3(store:str, s3_object:str, file_path:Path):
     log.debug("Trying to upload file to S3: store %s, s3ovject %s, file path %s", store, s3_object, file_path)
-    s3 = S3Settings()
-    __upload_to_s3(s3.client, s3.bucket, s3_object, file_path)
-    return s3_object
+    with api_client() as client:
+        api = UsersApi(client)
+        
+        location_id = await _get_location_id_from_location_name(store, api)
+        upload_link = await _get_upload_link(store, location_id, s3_object, api)
+
+        if upload_link:
+            upload_link = URL(upload_link)
+
+            async with aiohttp.ClientSession() as session:
+                await _upload_file_to_link(session, upload_link, file_path)                
+                return s3_object
+
+    raise exceptions.S3InvalidPathError(s3_object)

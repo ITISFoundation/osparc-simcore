@@ -87,30 +87,30 @@ class Nodeports:
         raise exceptions.ReadOnlyError(self._outputs)
         #self.__outputs = value
 
-    def get(self, item_key: str):
+    async def get(self, item_key: str):
         try:
-            return self.inputs[item_key].get()
+            return await self.inputs[item_key].get()
         except exceptions.UnboundPortError:
             # not available try outputs
             pass
         # if this fails it will raise an exception
-        return self.outputs[item_key].get()
+        return await self.outputs[item_key].get()
     
-    def set(self, item_key: str, item_value):
+    async def set(self, item_key: str, item_value):
         try:
-            self.inputs[item_key].set(item_value)
+            await self.inputs[item_key].set(item_value)
         except exceptions.UnboundPortError:
             # not available try outputs
             pass
         # if this fails it will raise an exception
-        return self.outputs[item_key].set(item_value)
+        return await self.outputs[item_key].set(item_value)
     
-    def set_file_by_keymap(self, item_value:Path):
+    async def set_file_by_keymap(self, item_value:Path):
         for output in self.outputs:
             if data_items_utils.is_file_type(output.type):
                 if output.fileToKeyMap:
                     if item_value.name in output.fileToKeyMap:
-                        output.set(item_value)
+                        await output.set(item_value)
                         return
         raise exceptions.PortNotFound(msg="output port for item {item} not found".format(item=str(item_value)))
 
