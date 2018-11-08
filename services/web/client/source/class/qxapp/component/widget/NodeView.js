@@ -263,11 +263,9 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__iFrameLayout.removeAll();
       if (iFrame) {
         iFrame.addListenerOnce("maximize", e => {
-          console.log(iFrame, "maximize");
           this.__maximizeIFrame(true);
         }, this);
         iFrame.addListenerOnce("restore", e => {
-          console.log(iFrame, "restore");
           this.__maximizeIFrame(false);
         }, this);
         this.__maximizeIFrame(iFrame.hasState("maximized"));
