@@ -33,7 +33,7 @@ def storage(bucket, engine, docker_ip, docker_services):
     keep_alive_timer.start()
     docker_services.wait_until_responsive(
         check=lambda: _is_responsive(endpoint, 404),
-        timeout=20.0*60.0,
+        timeout=30.0,
         pause=1.0,
     )
     keep_alive_timer.cancel()
@@ -41,11 +41,11 @@ def storage(bucket, engine, docker_ip, docker_services):
     yield endpoint
     # cleanup
     
-@pytest.fixture()    
-async def storage_api(storage):
-    config = Configuration()
-    config.host = "{}/{}".format(storage, "v0")
-    client = ApiClient(config)
-    api = UsersApi(client)
-    yield api
+# @pytest.fixture()    
+# async def storage_api(storage):
+#     config = Configuration()
+#     config.host = "{}/{}".format(storage, "v0")
+#     client = ApiClient(config)
+#     api = UsersApi(client)
+#     yield api
     
