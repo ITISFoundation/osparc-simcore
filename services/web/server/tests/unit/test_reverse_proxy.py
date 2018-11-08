@@ -14,11 +14,13 @@ from typing import Any
 import attr
 import pytest
 from aiohttp import web
+from aiohttp.client_reqrep import ClientResponse
 from yarl import URL
 
 from simcore_service_webserver.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.reverse_proxy import setup_reverse_proxy
 from simcore_service_webserver.reverse_proxy.abc import ServiceResolutionPolicy
+from simcore_service_webserver.reverse_proxy.settings import PROXY_MOUNTPOINT
 
 
 def create_backend_app(name, image, basepath):
@@ -43,7 +45,7 @@ def create_backend_app(name, image, basepath):
     return app
 
 def random_name(lenght=5):
-    return ''.join(random.choice([string.ascii_lowercase + string.digits for _ in range(lenght)]))
+    return ''.join( random.choice(string.ascii_lowercase + string.digits) for _ in range(lenght) )
 
 # FIXTURES ------------------
 
@@ -62,7 +64,7 @@ def spawner_server(loop, aiohttp_server):
         serviceid = req.match_info.get("serviceId")
 
         for mountpoint, item in registry.items():
-            if mountpoint.endswith(serviceid):
+            if item["info"]['id'] == serviceid:
                 return web.json_response( registry[mountpoint]["info"] )
 
         raise web.HTTPServiceUnavailable(
@@ -102,11 +104,10 @@ def spawner_server(loop, aiohttp_server):
 
     async def stop(req: web.Request):
         serviceid = req.match_info.get("serviceId")
-
-        info = {}
+        info = {"id": serviceid}
         # determines unique mountpoint
         for mountpoint, item in registry.items():
-            if mountpoint.endswith(serviceid):
+            if item["info"]['id'] == serviceid:
                 print("stopping %s ...", item["info"])
                 service = registry[mountpoint]["server"]
                 await service.close()
@@ -138,7 +139,7 @@ def reverse_proxy_server(loop, aiohttp_server, spawner_client):
     """
 
     @attr.s(auto_attribs=True)
-    def ServiceMonitor(ServiceResolutionPolicy):
+    class ServiceMonitor(ServiceResolutionPolicy):
         client: Any=None
 
         # override
@@ -164,22 +165,40 @@ def reverse_proxy_server(loop, aiohttp_server, spawner_client):
     setup_reverse_proxy(app, monitor)
     app["reverse_proxy.basepath"] = monitor.service_basepath
 
+    url = app.router["reverse_proxy"].url_for(serviceId="foo", proxyPath="bar") # <-- another way to "publish"
+    assert url == URL( app["reverse_proxy.basepath"] + "/foo/bar" )
+
     # adds api
     async def bypass(req: web.Request):
-        method = req.method
+        """ bypasses traffic to spawmer """
         # /services/{serviceId}?action=xxx  -> /services/{serviceId}/{action}
-        path = join(req.path, req.query.get("action", ""))
-        body = None
+        method, path, body = req.method, join(req.path, req.query.get("action", "")).rstrip("/"), None
         if method!="GET":
             body = await req.json()
             body["basepath"] = req.app["reverse_proxy.basepath"]
 
         cli = req.app["director.client"]
-        res = await cli.request(method, path, json=body)
-        return res
 
-    # API:
+        # mini-reverse proxy ----
+        res = await cli.request(method, path, json=body)
+        assert isinstance(res, ClientResponse), "NOTE: %s" % type(res)
+
+        response = web.StreamResponse(status=res.status,
+                                      headers=res.headers)
+        await response.prepare(req)
+        payload = await res.read()
+        await response.write_eof(payload)
+        return response
+        # -------------------------
+        # raise web.HTTPServiceUnavailable(reason="Cannot talk to spawner",
+        #                                  content_type="application/json")
+
+
+    # API: /services/{serviceId}?action=xxx
+    app.router.add_get("/services", bypass)
+    app.router.add_post("/services", bypass)
     app.router.add_get("/services/{serviceId}", bypass)
+
 
     return loop.run_until_complete(aiohttp_server(app))
 
@@ -239,5 +258,43 @@ async def test_spawner(spawner_client):
     assert len(data) == 0
 
 
+async def test_spawning_from_client(client):
+    """
+        client <-> reverse_proxy_server <-> spawner_server
+    """
 
-#def test_reverse_proxy(client):
+    # list
+    resp = await client.get("/services")
+    data = await resp.json()
+    assert resp.status == 200, data
+    assert len(data) == 0
+
+    # start
+    resp = await client.post("/services", params="action=start",
+        json={
+            "image": "A:latest"
+        }
+    )
+    data = await resp.json()
+    assert resp.status==200, data
+    assert data["mountpoint"].startswith(PROXY_MOUNTPOINT)
+    sid = data["id"]
+
+    # info
+    started = data
+    resp = await client.get("/services/%s" % sid)
+    info = await resp.json()
+    assert started == info
+
+    # list
+    resp = await client.get("/services")
+    data = await resp.json()
+    assert resp.status == 200, data
+    assert len(data) == 1
+    assert started == data[0]
+
+    # stop
+    resp = await client.get("/services/%s" % sid, params="action=stop")
+    data = await resp.json()
+    assert resp.status==200, data
+    assert sid == data["id"]
