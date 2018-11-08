@@ -442,6 +442,21 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
+    removeNode: function() {
+      this.__stopInteractiveNode();
+    },
+
+    __stopInteractiveNode: function() {
+      if (this.getMetaData().type == "dynamic") {
+        const slotName = "stopDynamic";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        let data = {
+          nodeId: this.getNodeId()
+        };
+        socket.emit(slotName, data);
+      }
+    },
+
     setPosition: function(x, y) {
       this.__posX = x;
       this.__posY = y;
