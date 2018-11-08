@@ -48,7 +48,9 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
     __actionButton: null,
     // override
     _createContentElement : function() {
-      let iframe = this.__iframe = new qx.ui.embed.Iframe(this.getSource());
+      let iframe = this.__iframe = new qx.ui.embed.Iframe(this.getSource()).set({
+        zIndex: 1000
+      });
       iframe.addListener("load", e => {
         this.fireEvent("load");
       });
@@ -58,44 +60,39 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
 
       let standin = new qx.html.Element("div");
       let appRoot = this.getApplicationRoot();
-      appRoot.add(iframe);
-      let actionButton = this.__actionButton = new qx.ui.form.Button(null, osparc.theme.osparcdark.Image.URLS["window-maximize"]).set({
-        // backgroundColor: null,
-        // decorator: null
+      appRoot.add(iframe, {
+        top:-10000
       });
-      appRoot.add(actionButton);
+      let actionButton = this.__actionButton = new qx.ui.form.Button(null, osparc.theme.osparcdark.Image.URLS["window-maximize"]+"/20").set({
+        zIndex: 1001,
+        backgroundColor: null,
+        decorator: null
+      });
+      appRoot.add(actionButton, {
+        top:-10000
+      });
       actionButton.addListener("execute", e => {
         if (this.hasState("maximized")) {
           this.fireEvent("restore");
           this.removeState("maximized");
-          actionButton.setIcon(osparc.theme.osparcdark.Image.URLS["window-maximize"]);
+          actionButton.setIcon(osparc.theme.osparcdark.Image.URLS["window-maximize"]+"/20");
         } else {
           this.fireEvent("maximize");
           this.addState("maximized");
-          actionButton.setIcon(osparc.theme.osparcdark.Image.URLS["window-restore"]);
+          actionButton.setIcon(osparc.theme.osparcdark.Image.URLS["window-restore"]+"/20");
         }
       });
       appRoot.add(actionButton);
       standin.addListener("appear", e => {
-        iframe.set({
-          zIndex: 1000
-        });
-        actionButton.set({
-          zIndex: 1001
-        });
-        actionButton.set({
-          zIndex: 1010
-        });
         this.__syncIframePos();
       });
       standin.addListener("disappear", e => {
-        iframe.set({
-          zIndex: -1000
+        iframe.setLayoutProperties({
+          top: -10000
         });
-        actionButton.set({
-          zIndex: -1000
+        actionButton.setLayoutProperties({
+          top: -10000
         });
-        actionButton.hide();
       });
       this.addListener("move", e => {
         // got to let the new layout render first or we don't see it
@@ -131,7 +128,7 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
       });
       this.__actionButton.setLayoutProperties({
         top: (divPos.top - iframeParentPos.top),
-        right: (iframeParentPos.right - iframeParentPos.left - divSize.width)
+        right: (iframeParentPos.right - iframeParentPos.left - divPos.right)
       });
     },
     _applyShowMaximize: function(newValue, oldValue) {
