@@ -37,8 +37,8 @@ async def test_invalid_file_path(tmpdir, bucket, storage, filemanager_cfg, user_
     with pytest.raises(FileNotFoundError):
         await filemanager.upload_file_to_s3(store, file_id, Path(tmpdir)/"some other file.txt")
 
-    download_file_path = Path(tmpdir) / "somedownloaded-<>\//\ file.txdt" #pylint: disable=anomalous-backslash-in-string
-    with pytest.raises(OSError):
+    download_file_path = Path(tmpdir) / "somedownloaded file.txdt"
+    with pytest.raises(exceptions.S3InvalidPathError):
         await filemanager.download_file_from_S3(store, file_id, download_file_path)
 
 @pytest.mark.asyncio
