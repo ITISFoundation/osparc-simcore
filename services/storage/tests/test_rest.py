@@ -10,8 +10,7 @@ from simcore_service_storage.db import setup_db
 from simcore_service_storage.dsm import setup_dsm
 from simcore_service_storage.middlewares import dsm_middleware
 from simcore_service_storage.rest import setup_rest
-from simcore_service_storage.s3 import (DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID,
-                                        SIMCORE_S3_STR)
+from simcore_service_storage.s3 import (SIMCORE_S3_ID)
 from simcore_service_storage.session import setup_session
 from simcore_service_storage.settings import APP_CONFIG_KEY
 

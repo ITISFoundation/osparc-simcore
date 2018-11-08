@@ -1,4 +1,4 @@
-import functools
+import asyncio
 import logging
 import os
 import shutil
@@ -16,7 +16,7 @@ from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.config.s3 import Config as s3_config
 from simcore_sdk.models.pipeline_models import SUCCESS, ComputationalTask
 
-import asyncio
+
 def wrap_async_call(fct: asyncio.coroutine):
     return asyncio.get_event_loop().run_until_complete(fct)
 

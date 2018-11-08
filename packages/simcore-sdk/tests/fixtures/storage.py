@@ -6,8 +6,6 @@ import pytest
 import requests
 from pytest_docker import docker_ip, docker_services  # pylint:disable=W0611
 
-from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
-
 log = logging.getLogger(__name__)
 
 def _fake_logger_while_building_storage():
@@ -40,12 +38,4 @@ def storage(bucket, engine, docker_ip, docker_services):
     
     yield endpoint
     # cleanup
-    
-# @pytest.fixture()    
-# async def storage_api(storage):
-#     config = Configuration()
-#     config.host = "{}/{}".format(storage, "v0")
-#     client = ApiClient(config)
-#     api = UsersApi(client)
-#     yield api
     
