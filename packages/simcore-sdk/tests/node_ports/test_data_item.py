@@ -1,8 +1,8 @@
 #pylint: disable=C0111
 
 import pytest
-from simcore_sdk.nodeports import exceptions
-from simcore_sdk.nodeports._data_item import DataItem
+from simcore_sdk.node_ports import exceptions
+from simcore_sdk.node_ports._data_item import DataItem
 
 
 @pytest.mark.parametrize("item_value", [

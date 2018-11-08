@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from simcore_sdk.nodeports import exceptions, filemanager
+from simcore_sdk.node_ports import exceptions, filemanager
 
 
 @pytest.mark.asyncio

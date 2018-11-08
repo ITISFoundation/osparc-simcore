@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from simcore_sdk.nodeports import config, exceptions
-from simcore_sdk.nodeports._data_item import DataItem
-from simcore_sdk.nodeports._item import Item
-from simcore_sdk.nodeports._schema_item import SchemaItem
+from simcore_sdk.node_ports import config, exceptions
+from simcore_sdk.node_ports._data_item import DataItem
+from simcore_sdk.node_ports._item import Item
+from simcore_sdk.node_ports._schema_item import SchemaItem
 
 
 def create_item(item_type, item_value):
