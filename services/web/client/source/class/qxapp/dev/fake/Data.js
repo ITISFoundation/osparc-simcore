@@ -12,8 +12,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
   statics: {
     getNodeMap: function() {
       return {
-        "service/computational/itis/sleeper-0.0.0":{
-          key: "service/computational/itis/sleeper",
+        "services/computational/itis/sleeper-0.0.0":{
+          key: "services/computational/itis/sleeper",
           version: "0.0.0",
           type: "computational",
           name: "sleeper service",
@@ -43,8 +43,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
             }
           }
         },
-        "service/computational/itis/tutti-0.0.0-alpha": {
-          key: "service/computational/itis/tutti",
+        "services/computational/itis/tutti-0.0.0-alpha": {
+          key: "services/computational/itis/tutti",
           version: "0.0.0-alpha",
           type: "computational",
           name: "a little test node",
@@ -182,7 +182,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?0.jpg",
           workbench: {
             "UUID1": {
-              key: "service/dynamic/itis/file-picker",
+              key: "services/dynamic/itis/file-picker",
               version: "0.0.0",
               outputs: {
                 outFile: {
@@ -196,7 +196,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "UUID2": {
-              key: "service/computational/itis/sleeper",
+              key: "services/computational/itis/sleeper",
               version: "0.0.0",
               inputs: {
                 inNumber: 3.5
@@ -210,7 +210,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "UUID3": {
-              key: "service/computational/itis/sleeper",
+              key: "services/computational/itis/sleeper",
               version: "0.0.0",
               inputs: {
                 inNumber: 3.5
@@ -224,7 +224,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "UUID4": {
-              key: "service/computational/itis/tutti",
+              key: "services/computational/itis/tutti",
               version: "0.0.0-alpha",
               inputs: {
                 inNumber: {
@@ -277,7 +277,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 150,
                 "y": 150
               },
-              "key": "service/dynamic/itis/file-picker",
+              "key": "services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "8d603045-bfe8-4822-906c-590fa69c1d13": {
@@ -313,7 +313,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 150,
                 "y": 300
               },
-              "key": "service/dynamic/itis/file-picker",
+              "key": "services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "1a4aafff-88c7-4e7e-89cc-fe374cfe64ea": {
@@ -394,7 +394,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?15.jpg",
           workbench: {
             "Sleeper1": {
-              key: "service/computational/itis/sleeper",
+              key: "services/computational/itis/sleeper",
               version: "0.0.0",
               label: "Sleeper 1",
               inputs: {
@@ -434,7 +434,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "Container1"
             },
             "Sleeper2": {
-              key: "service/computational/itis/sleeper",
+              key: "services/computational/itis/sleeper",
               version: "0.0.0",
               inputs: {
                 inNumber: 3
@@ -449,7 +449,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "Container1"
             },
             "Sleeper3": {
-              key: "service/computational/itis/sleeper",
+              key: "services/computational/itis/sleeper",
               version: "0.0.0",
               inputs: {
                 inNumber: 2
@@ -489,7 +489,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 100,
                 "y": 150
               },
-              "key": "service/dynamic/itis/file-picker",
+              "key": "services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "418bd484-905b-4212-8108-c7cfab4f241e": {
@@ -503,7 +503,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 100,
                 "y": 400
               },
-              "key": "service/dynamic/itis/file-picker",
+              "key": "services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "Container0D": {
@@ -722,7 +722,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 108,
                 "y": 131
               },
-              "key": "service/dynamic/itis/file-picker",
+              "key": "services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "5986cf64-9f81-409d-998c-c1f04de67f8b": {
@@ -788,7 +788,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 100,
                 "y": 429
               },
-              "key": "service/dynamic/itis/file-picker",
+              "key": "services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "5e548936-ee08-43f3-ab01-a58e7c49a946": {
@@ -910,7 +910,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?8.jpg",
           workbench: {
             "c104bb08-77b1-4157-b9f9-e9df7779df08": {
-              key: "service/demodec/dynamic/itis/s4l/Modeler",
+              key: "services/demodec/dynamic/itis/s4l/Modeler",
               version: "0.0.0",
               label: "Modeler 1",
               position: {
@@ -919,7 +919,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "bf88496d-ddf8-476c-8d6c-24c716c2ae4c": {
-              key: "service/demodec/dynamic/itis/s4l/MaterialDB",
+              key: "services/demodec/dynamic/itis/s4l/MaterialDB",
               version: "0.0.0",
               label: "Material DB 1",
               position: {
@@ -942,7 +942,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               outputNode: false
             },
             "SetupId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
               version: "0.0.0",
               label: "LF Setup 1",
               inputNodes: [],
@@ -954,7 +954,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "MaterialsId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
               label: "LF Materials 1",
               inputNodes: [
@@ -969,7 +969,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "BoundaryId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
               label: "LF Boundary 1",
               inputNodes: [
@@ -983,7 +983,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "SensorsId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
               version: "0.0.0",
               label: "LF Sensors 1",
               inputNodes: [
@@ -997,7 +997,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "GridId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
               label: "LF Grid 1",
               inputNodes: [
@@ -1011,7 +1011,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "VoxelId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
               version: "0.0.0",
               label: "LF Voxel 1",
               inputNodes: [
@@ -1025,7 +1025,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "SolverSettingsId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
               version: "0.0.0",
               label: "LF SolverSett 1",
               inputNodes: [],
@@ -1037,7 +1037,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "4069bf2e-e2be-4799-ad1c-c53f0cb46e4e": {
-              key: "service/computational/itis/Solver-LF",
+              key: "services/computational/itis/Solver-LF",
               version: "0.0.0",
               label: "LF Solver 1",
               inputs: {
@@ -1072,7 +1072,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?3.jpg",
           workbench: {
             "8870a55b-680d-41b4-b40c-c928cceb7d2a": {
-              key: "service/demodec/dynamic/itis/s4l/MaterialDB",
+              key: "services/demodec/dynamic/itis/s4l/MaterialDB",
               version: "0.0.0",
               position: {
                 x: 10,
@@ -1080,7 +1080,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "17a932a0-f401-4571-9c55-b579f5050d37": {
-              key: "service/demodec/dynamic/itis/s4l/Modeler",
+              key: "services/demodec/dynamic/itis/s4l/Modeler",
               version: "0.0.0",
               position: {
                 x: 7,
@@ -1088,7 +1088,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "83bc4123-ebe4-4f5f-8770-b1584d6cf95f": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
               version: "0.0.0",
               inputs: {
                 "frequency": 1000
@@ -1099,7 +1099,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "ac80863e-e4ef-48c0-804b-d9296f1f3563": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
               inputs: {
                 "updateDispersive": false
@@ -1114,7 +1114,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "ed4c85a8-c20f-4acd-8e1e-5161301e2f3d": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
               inputNodes: [
                 "17a932a0-f401-4571-9c55-b579f5050d37"
@@ -1125,7 +1125,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "36d70cf2-ef36-4052-988d-d32b3456b786": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
               version: "0.0.0",
               inputs: {
                 "sensorSetting": 4
@@ -1139,7 +1139,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "c3ab33a7-4ead-4302-9867-5b194a4f45ec": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
               inputs: {
                 "gridSetting": 5
@@ -1156,7 +1156,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "01e28708-46c4-474b-837b-479fd596e566": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
               version: "0.0.0",
               inputs: {
                 "solverSetting": 7
@@ -1171,7 +1171,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "b37bea52-bb29-482a-9540-bc11c7dc779c": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
               version: "0.0.0",
               inputs: {
                 "voxelSetting": 6
@@ -1186,7 +1186,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "2472a166-7a9e-4023-be12-465d2f6eee54": {
-              key: "service/computational/itis/Solver-LF",
+              key: "services/computational/itis/Solver-LF",
               version: "0.0.0",
               inputs: {
                 "inFile": {
@@ -1220,7 +1220,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?2.jpg",
           workbench: {
             "c104bb08-77b1-4157-b9f9-e9df7779df08": {
-              key: "service/demodec/dynamic/itis/s4l/Modeler",
+              key: "services/demodec/dynamic/itis/s4l/Modeler",
               version: "0.0.0",
               label: "Modeler",
               position: {
@@ -1229,7 +1229,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "bf88496d-ddf8-476c-8d6c-24c716c2ae4c": {
-              key: "service/demodec/dynamic/itis/s4l/MaterialDB",
+              key: "services/demodec/dynamic/itis/s4l/MaterialDB",
               version: "0.0.0",
               label: "Material DB",
               position: {
@@ -1252,7 +1252,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               outputNode: false
             },
             "SetupId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
               version: "0.0.0",
               label: "LF Setup 1",
               inputNodes: [],
@@ -1264,7 +1264,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "MaterialsId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
               label: "LF Materials 1",
               inputNodes: [
@@ -1279,7 +1279,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "BoundaryId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
               label: "LF Boundary 1",
               inputNodes: [
@@ -1293,7 +1293,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "SensorsId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
               version: "0.0.0",
               label: "LF Sensors 1",
               inputNodes: [
@@ -1307,7 +1307,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "GridId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
               label: "LF Grid 1",
               inputNodes: [
@@ -1321,7 +1321,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "VoxelId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
               version: "0.0.0",
               label: "LF Voxel 1",
               inputNodes: [
@@ -1335,7 +1335,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "SolverSettingsId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
               version: "0.0.0",
               label: "LF SolverSett 1",
               inputNodes: [],
@@ -1380,7 +1380,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               outputNode: false
             },
             "SetupId2": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup",
               version: "0.0.0",
               label: "Neuron Setup",
               inputNodes: [],
@@ -1392,7 +1392,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "96343608-610b-4951-89af-4b189e5e3861"
             },
             "MaterialsId2": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/Neuron/Materials",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/Neuron/Materials",
               version: "0.0.0",
               label: "Neurons",
               inputNodes: [
@@ -1407,7 +1407,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "96343608-610b-4951-89af-4b189e5e3861"
             },
             "SensorsId2": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors",
               version: "0.0.0",
               label: "Neuron Sensors",
               inputNodes: [
@@ -1421,7 +1421,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "96343608-610b-4951-89af-4b189e5e3861"
             },
             "SolverSettingsId2": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings",
               version: "0.0.0",
               label: "Neuron SolverSett",
               inputNodes: [],
@@ -1969,7 +1969,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         lastChangeDate: "2018-07-02T16:02:22Z",
         workbench: {
           "UUID5": {
-            key: "service/dynamic/itis/file-picker",
+            key: "services/dynamic/itis/file-picker",
             version: "0.0.0",
             inputs: {},
             outputs: {
