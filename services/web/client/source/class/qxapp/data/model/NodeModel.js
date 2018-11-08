@@ -359,11 +359,22 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return (index > -1);
     },
 
-    __restartIFrame: function() {
-      if (this.getServiceUrl() !== null && this.getIFrame() !== null) {
+    __restartIFrame: function(loadThis) {
+      if (this.getIFrame() === null) {
+        this.setIFrame(new qxapp.component.widget.PersistentIframe());
+      }
+      if (loadThis) {
+        this.getIFrame().resetSource();
+        this.getIFrame().setSource(loadThis);
+      } else if (this.getServiceUrl() !== null) {
         this.getIFrame().resetSource();
         this.getIFrame().setSource(this.getServiceUrl());
       }
+    },
+
+    __showLoadingIFrame: function() {
+      const loadingUrl = qx.util.ResourceManager.getInstance().toUri("qxapp/loading/loader.html");
+      this.__restartIFrame(loadingUrl);
     },
 
     __startInteractiveNode: function() {
@@ -378,8 +389,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         }, this);
         button.setEnabled(false);
         this.setRestartIFrameButton(button);
-        const loadingUrl = qx.util.ResourceManager.getInstance().toUri("qxapp/loading/loader.html");
-        this.setIFrame(new qxapp.component.widget.PersistentIframe(loadingUrl));
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
           const {
@@ -407,9 +416,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             };
             this.fireDataEvent("ShowInLogger", msgData);
 
-            this.getRestartIFrameButton().setEnabled(true);
-            this.__restartIFrame();
-
             // HACK: Workaround for fetching inputs in Visualizer
             if (this.getKey() === "3d-viewer") {
               let urlUpdate = this.getServiceUrl() + "/retrieve";
@@ -420,6 +426,9 @@ qx.Class.define("qxapp.data.model.NodeModel", {
               });
               req.send();
             }
+
+            this.getRestartIFrameButton().setEnabled(true);
+            this.__restartIFrame();
 
             console.log(this.getLabel(), msg);
           }
