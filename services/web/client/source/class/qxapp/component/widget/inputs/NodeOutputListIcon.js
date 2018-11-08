@@ -8,10 +8,10 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
 
     let list = this.__list = new qx.ui.list.List().set({
       labelPath: "label",
-      iconPath: "icon",
-      draggable: true
+      iconPath: "icon"
     });
 
+    let that = this;
     list.setDelegate({
       createItem: () => new qxapp.component.widget.inputs.NodeOutputListItemIcon(),
       bindItem: (c, item, id) => {
@@ -20,7 +20,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
         c.bindProperty("thumbnail", "icon", null, item, id);
         c.bindProperty("label", "label", {
           converter: function(data, model, source, target) {
-            return "<b>" + data + "</b>";
+            // return "<b>" + data + "</b>";
+            return data;
           }
         }, item, id);
       },
@@ -31,12 +32,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
           width: 246,
           height: 144
         });
-        item.addListener("dragstart", e => {
-          // Register supported actions
-          e.addAction("copy");
-          // Register supported types
-          e.addType("osparc-mapping");
-        });
+        that.__createDragMechanism(item); // eslint-disable-line no-underscore-dangle
       }
     });
 
@@ -55,6 +51,25 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
 
   members: {
     __list: null,
+
+    __createDragMechanism: function(item) {
+      item.setDraggable(true);
+      item.addListener("dragstart", e => {
+        // Register supported actions
+        e.addAction("copy");
+
+        // HACK
+        if (this.getNodeModel().getKey() === "service/demodec/dynamic/itis/s4l/Neuroman") {
+          // Register supported types
+          e.addType("osparc-port-link");
+          item.nodeId = this.getNodeModel().getNodeId();
+          item.portId = item.getLabel();
+        } else {
+          // Register supported types
+          e.addType("osparc-mapping");
+        }
+      }, this);
+    },
 
     getOutputWidget: function() {
       return this.__list;
