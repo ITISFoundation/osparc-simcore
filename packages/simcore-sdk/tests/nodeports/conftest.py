@@ -6,57 +6,14 @@ import uuid
 from pathlib import Path
 from typing import Any, List, Tuple
 
-import docker
 import pytest
-import requests
-import tenacity
-
+import yarl
 from helpers import helpers
-from s3wrapper.s3_client import S3Client
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 from simcore_sdk.nodeports import config
 
 
-@tenacity.retry(wait=tenacity.wait_fixed(2), stop=tenacity.stop_after_delay(10))
-def _minio_is_responsive(url, code=403):
-    """Check if something responds to ``url`` syncronously"""
-    try:
-        response = requests.get(url)
-        if response.status_code == code:
-            return True
-    except requests.exceptions.RequestException as _e:
-        pass
-
-    return False
-
-def _get_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # doesn't even have to be reachable
-        s.connect(('10.255.255.255', 1))
-        IP = s.getsockname()[0]
-    except Exception: #pylint: disable=W0703
-        IP = '127.0.0.1'
-    finally:
-        s.close()
-    return IP
-
-@pytest.fixture(scope="session")
-def external_minio():
-    client = docker.from_env()
-    minio_config = {"host":_get_ip(), "port":9005, "s3access":"s3access", "s3secret":"s3secret"}
-    container = client.containers.run("minio/minio", command="server /data", 
-                                        environment=["".join(["MINIO_ACCESS_KEY=", minio_config["s3access"]]), 
-                                                    "".join(["MINIO_SECRET_KEY=", minio_config["s3secret"]])], 
-                                        ports={'9000':minio_config["port"]},
-                                        detach=True)
-    url = "http://{}:{}".format(minio_config["host"], minio_config["port"])
-    _minio_is_responsive(url)
-    # return the host, port to minio
-    yield minio_config
-    # teard down
-    container.remove(force=True)
 
 @pytest.fixture
 def user_id()->str:
@@ -67,10 +24,11 @@ def s3_simcore_location() ->str:
     yield helpers.SIMCORE_STORE
 
 @pytest.fixture
-def filemanager_cfg(storage, user_id, docker_services, bucket, s3_simcore_location):
+def filemanager_cfg(storage, user_id, bucket, s3_simcore_location):
+    storage_endpoint = yarl.URL(storage)
     config.USER_ID = user_id
-    config.STORAGE_HOST = "localhost"
-    config.STORAGE_PORT = docker_services.port_for('storage', 8080)
+    config.STORAGE_HOST = storage_endpoint.host
+    config.STORAGE_PORT = storage_endpoint.port
     config.STORAGE_VERSION = "v0"
     config.BUCKET = bucket
     config.STORE = s3_simcore_location
@@ -99,21 +57,13 @@ def here()->Path:
     yield Path(__file__).parent
 
 @pytest.fixture(scope='session')
-def docker_compose_file(pytestconfig, here, external_minio): # pylint:disable=unused-argument
+def docker_compose_file(bucket, pytestconfig, here): # pylint:disable=unused-argument
     my_path = here /'docker-compose.yml'
-    minio_config = external_minio
-    s3_endpoint = "{}:{}".format(minio_config["host"], minio_config["port"])
-    os.environ["S3_ENDPOINT"] = s3_endpoint
-    os.environ["S3_ACCESS_KEY"] = minio_config["s3access"]
-    os.environ["S3_SECRET_KEY"] = minio_config["s3secret"]
 
     yield my_path
 
 
-@pytest.fixture(scope="module")
-def s3_client(external_minio): # pylint:disable=redefined-outer-name
-    s3_endpoint = "{}:{}".format(external_minio["host"], external_minio["port"])
-    yield S3Client(s3_endpoint, external_minio["s3access"], external_minio["s3secret"], False)
+
 
 @pytest.fixture
 def default_configuration_file(here):

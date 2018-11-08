@@ -20,18 +20,18 @@ def is_responsive(url, code=200):
     return False
 
 @pytest.fixture(scope="module")
-def storage(docker_ip, docker_services): 
+def storage(bucket, engine, docker_ip, docker_services): 
     host = docker_ip
     port = docker_services.port_for('storage', 8080)
-    url = "http://{}:{}".format(host, port)
+    endpoint = "http://{}:{}".format(host, port)
     # Wait until we can connect
     docker_services.wait_until_responsive(
-        check=lambda: is_responsive(url, 404),
-        timeout=30.0,
+        check=lambda: is_responsive(endpoint, 404),
+        timeout=20.0*60.0,
         pause=1.0,
     )
     
-    yield url
+    yield endpoint
     # cleanup
     
 @pytest.fixture()    
