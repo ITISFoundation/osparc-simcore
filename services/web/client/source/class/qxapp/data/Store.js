@@ -603,7 +603,7 @@ qx.Class.define("qxapp.data.Store", {
         "service/dynamic/itis/file-picker-0.0.0": {
           key: "service/dynamic/itis/file-picker",
           version: "0.0.0",
-          type: "dynamic",
+          type: "computational",
           name: "File Picker",
           description: "File Picker",
           authors: [{
@@ -660,7 +660,7 @@ qx.Class.define("qxapp.data.Store", {
         "service/demodec/dynamic/itis/s4l/StimulationSelectivity-0.0.0": {
           key: "service/demodec/dynamic/itis/s4l/StimulationSelectivity",
           version: "0.0.0",
-          type: "dynamic",
+          type: "computational",
           name: "Stimulation Selectivity Evaluator",
           description: "Evalutes Stimulation Selectivity",
           authors: [{
@@ -726,7 +726,7 @@ qx.Class.define("qxapp.data.Store", {
         "service/demodec/dynamic/itis/s4l/MaterialDB-0.0.0": {
           key: "service/demodec/dynamic/itis/s4l/MaterialDB",
           version: "0.0.0",
-          type: "dynamic",
+          type: "computational",
           name: "MaterialDB",
           description: "Material Database",
           authors: [{
@@ -865,7 +865,7 @@ qx.Class.define("qxapp.data.Store", {
         "service/demodec/dynamic/itis/s4l/Simulator/LF/Materials-0.0.0": {
           key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
           version: "0.0.0",
-          type: "dynamic",
+          type: "computational",
           name: "LF Materials",
           description: "LF Simulator Material Settings",
           authors: [{
@@ -924,7 +924,7 @@ qx.Class.define("qxapp.data.Store", {
         "service/demodec/dynamic/itis/s4l/Simulator/LF/Boundary-0.0.0": {
           key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
           version: "0.0.0",
-          type: "dynamic",
+          type: "computational",
           name: "LF Boundary Conditions",
           description: "LF Simulator Boundary Conditions",
           authors: [{
@@ -969,7 +969,7 @@ qx.Class.define("qxapp.data.Store", {
         "service/demodec/dynamic/itis/s4l/Simulator/LF/Sensors-0.0.0": {
           key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
           version: "0.0.0",
-          type: "dynamic",
+          type: "computational",
           name: "LF Sensors",
           description: "LF Simulator Sensors Settings",
           authors: [{
@@ -1010,7 +1010,7 @@ qx.Class.define("qxapp.data.Store", {
         "service/demodec/dynamic/itis/s4l/Simulator/LF/Grid-0.0.0": {
           key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
           version: "0.0.0",
-          type: "dynamic",
+          type: "computational",
           name: "LF Grid",
           description: "LF Simulator Grid Settings",
           authors: [{
@@ -1063,7 +1063,7 @@ qx.Class.define("qxapp.data.Store", {
         "service/demodec/dynamic/itis/s4l/Simulator/LF/Voxel-0.0.0": {
           key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
           version: "0.0.0",
-          type: "dynamic",
+          type: "computational",
           name: "LF Voxels",
           description: "LF Simulator Voxel Settings",
           authors: [{
@@ -1104,7 +1104,7 @@ qx.Class.define("qxapp.data.Store", {
         "service/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings-0.0.0": {
           key: "service/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
           version: "0.0.0",
-          type: "dynamic",
+          type: "computational",
           name: "LF Solver Settings",
           description: "LF Simulator Solver Settings",
           authors: [{
