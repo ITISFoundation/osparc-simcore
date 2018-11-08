@@ -18,6 +18,7 @@ TEST_REQUIRE = [
     'mock~=2.0',
     'pylint~=2.0',
     'pytest~=3.6',
+    'pytest-asyncio~=0.9',
     'pytest-cov~=2.5',
     'pytest-docker~=0.6',
     'requests~=2.19',
