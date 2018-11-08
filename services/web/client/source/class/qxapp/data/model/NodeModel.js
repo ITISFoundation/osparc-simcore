@@ -319,8 +319,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
-    addPortLink: function(fromNodeId, fromPortId, toPortId) {
-      this.__settingsForm.addLink(fromNodeId, fromPortId, toPortId);
+    addPortLink: function(toPortId, fromNodeId, fromPortId) {
+      this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
     },
 
     addInputNode: function(inputNodeId) {
