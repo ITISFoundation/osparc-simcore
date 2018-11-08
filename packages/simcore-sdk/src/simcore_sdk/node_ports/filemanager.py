@@ -18,12 +18,8 @@ log = logging.getLogger(__name__)
 
 @contextmanager
 def api_client():
-    cfg = Configuration()
-    cfg.host = cfg.host.format(
-        host=config.STORAGE_HOST,
-        port=config.STORAGE_PORT,
-        basePath=config.STORAGE_VERSION
-    )
+    cfg = Configuration()    
+    cfg.host = "http://{}".format(config.STORAGE_ENDPOINT)
 
     client = ApiClient(cfg)
     try:
