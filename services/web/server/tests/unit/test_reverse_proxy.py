@@ -180,7 +180,7 @@ def reverse_proxy_server(loop, aiohttp_server, spawner_client):
             req.path, req.query.get("action", "")).rstrip("/"), None
         if method != "GET":
             body = await req.json()
-            body["basepath"] = req.app["reverse_proxy.basepath"]
+            body["basepath"] = req.app["reverse_proxy.basemount"]
 
         cli = req.app["director.client"]
 
