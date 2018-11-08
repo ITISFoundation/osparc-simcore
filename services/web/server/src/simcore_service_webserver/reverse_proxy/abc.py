@@ -30,6 +30,11 @@ class ServiceResolutionPolicy(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     async def get_url(self, service_identifier: str) -> URL:
+        """
+            Full service end-point url
+
+            Ex. 'http://127.0.0.1:58873/x/ae1q8/'
+        """
         pass
 
 

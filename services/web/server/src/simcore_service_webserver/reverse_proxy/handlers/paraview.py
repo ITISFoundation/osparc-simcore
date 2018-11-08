@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 
-async def handler(req: web.Request, service_url: str, mount_point:str, proxy_path: str):
+async def handler(req: web.Request, service_url: str, mount_point:str, proxy_path: str) -> web.StreamResponse:
     assert req.path_qs.endswith(proxy_path)
     assert mount_point in req.path, "Expected /x/identifier as mount point, got %s" % req.path
 

@@ -13,21 +13,21 @@ import time
 import aiohttp
 from aiohttp import web
 
+from yarl import URL
 logger = logging.getLogger(__name__)
 
 
 CHUNK = 32768
 
 
-async def handler(self, request):
+async def handler(request: web.Request, service_url: str, **_kwargs) -> web.StreamResponse:
     # FIXME: Taken tmp from https://github.com/weargoggles/aioproxy/blob/master/aioproxy.py
     start = time.time()
     try:
-        host, port = await self.get_destination_details(request)
-        host_and_port = "%s:%d" % (host, port)
-
+        # FIXME: service_url should be service_endpoint or service_origins
+        target_url = URL(service_url).origin().with_path(request.path).with_query(request.query)
         async with aiohttp.client.request(
-            request.method, 'http://' + host_and_port + request.path,
+            request.method, target_url,
             headers=request.headers,
             chunked=CHUNK,
             # response_class=ReverseProxyResponse,
@@ -42,13 +42,14 @@ async def handler(self, request):
                 chunk = await content.read(CHUNK)
                 if not chunk:
                     break
-                response.write(chunk)
+                await response.write(chunk)
 
         logger.debug('finished sending content in %d ms',
                     ((time.time() - start) * 1000,))
         await response.write_eof()
         return response
     except Exception:
+        logger.debug("reverse proxy %s", request, exec_info=True)
         raise web.HTTPServiceUnavailable(reason="Cannot talk to spawner",
                                     content_type="application/json")
 

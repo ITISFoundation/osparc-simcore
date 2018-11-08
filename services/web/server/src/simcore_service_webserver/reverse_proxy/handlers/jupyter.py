@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 
-async def handler(req: web.Request, service_url: str):
+async def handler(req: web.Request, service_url: str, **_kwargs) -> web.StreamResponse:
     # Resolved url pointing to backend jupyter service
     target_url = service_url + req.path_qs
 

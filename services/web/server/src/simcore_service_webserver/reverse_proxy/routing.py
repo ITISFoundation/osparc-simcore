@@ -16,6 +16,7 @@ from aiohttp import web
 
 from .abc import ServiceResolutionPolicy
 from .settings import PROXY_PATH_KEY, SERVICE_ID_KEY
+from .handlers.default import handler as default_handler
 
 logger = logging.getLogger(__name__)
 
@@ -30,29 +31,33 @@ class Wrapper:
     """
     encapsulated: ServiceResolutionPolicy
 
-    @lru_cache(maxsize=128)
+    # TODO: simplify!!!!!
+    # FIXME: Wrapper is not hashable and therefor self!
     async def resolve(self, service_identifier) -> Tuple[str, str]:
         """ To reset cache, use cli.resolve_service.cache_reset()
-
         """
-        try:
-            # TODO: deal with timeouts?
-            image_name = await self.encapsulated.get_image_name(service_identifier)
-            service_url  = await self.encapsulated.get_url(service_identifier)
-        except Exception: #pylint: disable=
-            logger.debug("Failed to resolve service", exc_info=True)
-            raise web.HTTPServiceUnavailable(reason="Cannot resolve service")
+        @lru_cache(maxsize=128)
+        async def run_cached(service_identifier):
+            try:
+                # TODO: deal with timeouts?
+                image_name = await self.encapsulated.get_image_name(service_identifier)
+                service_url  = await self.encapsulated.get_url(service_identifier)
+                return image_name, str(service_url)
+            except Exception: #pylint: disable=
+                logger.debug("Failed to resolve service", exc_info=True)
+                raise web.HTTPServiceUnavailable(reason="Cannot resolve service")
 
-        return image_name, str(service_url)
+        return (await run_cached(service_identifier))
 
 
 @attr.s(auto_attribs=True)
 class ReverseChooser:
+    resolver: Wrapper=attr.ib(converter=Wrapper, )
     handlers: Dict=dict()
-    resolver: Wrapper = attr.Factory(Wrapper)
+
 
     def register_handler(self,
-                handler: Callable[[web.Request, str], web.Response], *,
+                handler: Callable[..., web.StreamResponse], *,
                 image_name: str):
         self.handlers[image_name] = handler
 
@@ -62,7 +67,10 @@ class ReverseChooser:
         """
         cli = self.resolver # or self.resolver.encapsulated to remove caching
 
-        service_identifier = request.path.match_info.get(SERVICE_ID_KEY)
+        service_identifier = request.match_info.get(SERVICE_ID_KEY)
+        proxy_path = request.match_info.get(PROXY_PATH_KEY)
+        mountpoint = request.path[:-len(proxy_path)].rstrip("/")
+
         image_name, service_url = await cli.resolve(service_identifier)  #pylint: disable=E1101
 
         # TODO: reset cache for given service_identifier when it is shutdown or reused
@@ -73,10 +81,6 @@ class ReverseChooser:
         # TODO: director might be non-responding
         # TODO: service might be down
 
-        handler = self.handlers.get(image_name, None)
-        if handler is not None:
-
-            _proxy_path = request.path.match_info.get(PROXY_PATH_KEY)
-            return (await handler(request, service_url))
-
-        raise web.HTTPNotImplemented(reason="No handler implemented for this type of service")
+        handler = self.handlers.get(image_name, default_handler)
+        response = await handler(request, service_url, mountpoint=mountpoint, proxy_path=proxy_path)
+        return response

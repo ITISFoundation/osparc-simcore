@@ -34,9 +34,9 @@ def create_backend_app(name, image, basepath):
             "image": image,
             "received": {
                 "method": request.method,
-                "url": request.url,
+                "url": str(request.url),
                 "body": body,
-                "proxy_path": request.match("proxy_path")
+                "proxy_path": request.match_info.get("proxy_path", "")
             }
         })
 
@@ -140,26 +140,26 @@ def reverse_proxy_server(loop, aiohttp_server, spawner_client):
 
     @attr.s(auto_attribs=True)
     class ServiceMonitor(ServiceResolutionPolicy):
-        client: Any=None
+        cli: Any=None
 
         # override
         async def get_image_name(self, service_identifier: str) -> str:
-            res = await client.get("/services/%s" % service_identifier)
+            res = await self.cli.get("/services/%s" % service_identifier)
             info = await res.json()
             return info["image"]
 
         # override
         async def get_url(self, service_identifier: str) -> URL:
-            res = await client.get("/services/%s" % service_identifier)
+            res = await self.cli.get("/services/%s" % service_identifier)
             info = await res.json()
-            return info["mountpoint"]
+            return info["url"]
 
 
     app = web.Application()
 
     # setup
     app["director.client"] = spawner_client
-    monitor = ServiceMonitor(client=app["director.client"])
+    monitor = ServiceMonitor(app["director.client"])
 
     # adds /x/ to router
     setup_reverse_proxy(app, monitor)
@@ -258,7 +258,7 @@ async def test_spawner(spawner_client):
     assert len(data) == 0
 
 
-async def test_spawning_from_client(client):
+async def test_spawner_from_client(client):
     """
         client <-> reverse_proxy_server <-> spawner_server
     """
@@ -298,3 +298,44 @@ async def test_spawning_from_client(client):
     data = await resp.json()
     assert resp.status==200, data
     assert sid == data["id"]
+
+
+async def test_spawned_from_client(client):
+    """
+        client <-> reverse_proxy_server <-> spawner_server
+                                        <-> spawned_servers
+    """
+
+    registry = {}
+    IMAGE = "A:latest"
+
+    # spawns 3 services: client <-> reverse_proxy_server <-> spawner_server
+    for _ in range(3):
+        resp = await client.post("/services", params="action=start",
+            json={
+                "image": IMAGE
+            }
+        )
+        data = await resp.json()
+        assert resp.status==200, data
+
+        sid = data["id"]
+        mountpoint = data["mountpoint"]
+        registry[sid] = mountpoint
+
+
+    # pings them: client <-> reverse_proxy_server <-> spawned_servers
+    for sid, mountpoint in registry.items():
+        resp = await client.get(mountpoint+"/ping")
+        assert resp.status==200
+
+        data = await resp.json()
+        assert data["name"] == sid
+        assert data["image"] == IMAGE
+        assert data["received"]["method"] == "GET"
+        assert data["received"]["proxy_path"] == "ping"
+
+        tail = client.app.router["reverse_proxy"].url_for(serviceId=sid, proxyPath="ping")
+        url = URL(data["received"]["url"])
+        assert  url.relative() == tail
+        assert not data["received"]["body"]
