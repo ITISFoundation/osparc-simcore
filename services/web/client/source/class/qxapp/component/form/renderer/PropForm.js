@@ -145,6 +145,10 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       }
     },
 
+    __arePortsCompatible: function(node1, port1, node2, port2) {
+      return qxapp.data.Store.getInstance().arePortsCompatible(node1, port1, node2, port2);
+    },
+
     __createDropMechanism: function(uiElement, portId) {
       if (this.isPropertyInitialized("nodeModel")) {
         uiElement.setDroppable(true);

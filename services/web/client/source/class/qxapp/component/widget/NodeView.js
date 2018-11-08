@@ -116,10 +116,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       buttonsLayout.add(openFolder);
     },
 
-    __arePortsCompatible: function(node1, port1, node2, port2) {
-      return qxapp.data.Store.getInstance().arePortsCompatible(node1, port1, node2, port2);
-    },
-
     __createInputPortsUI: function(inputNodeModel, isInputModel = true) {
       let nodePorts = null;
       if (isInputModel) {
