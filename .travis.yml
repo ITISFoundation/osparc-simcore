@@ -59,7 +59,7 @@ matrix:
 
       script:
         - make pylint
-        - make test
+        - travis_wait 60 make test
 
       after_success:
       - coveralls
