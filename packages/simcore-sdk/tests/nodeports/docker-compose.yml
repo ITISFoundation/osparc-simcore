@@ -1,12 +1,13 @@
 version: '3.6'
 services:
   storage:
-    build:
-      context: ../../../../
-      dockerfile: services/storage/Dockerfile
-      args:
-        - DOCKER_GID_ARG=1500
-      target: production        
+    # build:
+    #   context: ../../../../
+    #   dockerfile: services/storage/Dockerfile
+    #   args:
+    #     - DOCKER_GID_ARG=1500
+    #   target: production        
+    image: services_storage:latest
     ports:
       - 11111:8080
     environment:
