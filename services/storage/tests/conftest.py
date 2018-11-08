@@ -22,6 +22,8 @@ import utils
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import FileMetaData
+from simcore_service_storage.s3 import (DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID,
+                                        SIMCORE_S3_STR)
 from utils import ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER
 
 # fixtures -------------------------------------------------------
@@ -162,13 +164,14 @@ def minio_service(docker_services, docker_ip):
         'endpoint': '{ip}:{port}'.format(ip=docker_ip, port=docker_services.port_for('minio', 9000)),
         'access_key': ACCESS_KEY,
         'secret_key' : SECRET_KEY,
+        'bucket_name' : BUCKET_NAME,
         }
 
 @pytest.fixture(scope="module")
 def s3_client(minio_service):
     from s3wrapper.s3_client import S3Client
 
-    s3_client = S3Client(**minio_service)
+    s3_client = S3Client(endpoint=minio_service['endpoint'],access_key=minio_service["access_key"], secret_key=minio_service["secret_key"])
     return s3_client
 
 @pytest.fixture(scope="function")
@@ -199,7 +202,7 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
     users = [ 'alice', 'bob', 'chuck', 'dennis']
 
     projects = ['astronomy', 'biology', 'chemistry', 'dermatology', 'economics', 'futurology', 'geology']
-    location = "simcore.s3"
+    location = SIMCORE_S3_STR
 
     nodes = ['alpha', 'beta', 'gamma', 'delta']
 
@@ -217,7 +220,6 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
         idx =  randrange(len(nodes))
         node = nodes[idx]
         node_id = idx + 10000
-        file_uuid = str(uuid.uuid4())
         file_name = str(counter)
         object_name = Path(str(project_id), str(node_id), str(counter)).as_posix()
         file_uuid = Path(location, bucket_name, object_name).as_posix()
@@ -296,5 +298,5 @@ async def datcore_testbucket(loop, python27_exec, mock_files_factory):
 @pytest.fixture(scope="function")
 def dsm_fixture(s3_client, python27_exec, postgres_engine, loop):
     pool = ThreadPoolExecutor(3)
-    dsm_fixture = DataStorageManager(s3_client, python27_exec, postgres_engine, loop, pool)
+    dsm_fixture = DataStorageManager(s3_client, python27_exec, postgres_engine, loop, pool, BUCKET_NAME)
     return dsm_fixture

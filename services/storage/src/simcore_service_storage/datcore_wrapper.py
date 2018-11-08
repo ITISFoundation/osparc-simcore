@@ -12,6 +12,7 @@ import attr
 import execnet
 
 from .models import FileMetaData
+from .s3 import DATCORE_STR
 
 FileMetaDataVec = List[FileMetaData]
 
@@ -114,7 +115,7 @@ class DatcoreWrapper:
                 bucket_name = ""
                 object_name = file_name
 
-            file_uuid = os.path.join("datcore", bucket_name, object_name)
+            file_uuid = os.path.join(DATCORE_STR, bucket_name, object_name)
             # at the moment, no metadata there
             fmd = FileMetaData(bucket_name=bucket_name, file_name=file_name, object_name=object_name,
                 file_uuid=file_uuid)

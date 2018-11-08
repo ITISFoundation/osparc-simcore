@@ -79,7 +79,7 @@ paths:
                 $ref: './components/schemas/fake.yml#/components/schemas/FakeEnveloped'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  /locations:    
+  /locations:
     get:
       tags:
         - users
@@ -184,18 +184,13 @@ paths:
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
-  /locations/{location_id}/files/{fileId}:
+  /locations/{location_id}/files:
     get:
       tags:
         - users
-      summary: Returns download link for requested file
+      summary: Returns download link for file matching the query parameters
       operationId: download_file
       parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
       - name: location_id
         in : path
         required: true
@@ -204,6 +199,21 @@ paths:
       - name: user_id
         in: query
         required: true
+        schema:
+          type: string
+      - name: project_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: node_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: file_name
+        in: query
+        required: false
         schema:
           type: string
       responses:
@@ -217,11 +227,6 @@ paths:
       summary: Returns upload link or performs copy operation to datcore
       operationId: upload_file
       parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
       - name: location_id
         in : path
         required: true
@@ -230,6 +235,26 @@ paths:
       - name: user_id
         in: query
         required: true
+        schema:
+          type: string
+      - name: project_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: node_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: file_name
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: dataset
+        in: query
+        required: false
         schema:
           type: string
       - name: extra_source
@@ -248,11 +273,6 @@ paths:
       summary: Deletes File
       operationId: delete_file
       parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
       - name: location_id
         in : path
         required: true
@@ -263,11 +283,33 @@ paths:
         required: true
         schema:
           type: string
+      - name: project_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: node_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: file_name
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: dataset
+        in: query
+        required: false
+        schema:
+          type: string
       responses:
         '204':
           $ref: '#/components/responses/OK_NoContent_204'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+        '400':
+          description: Either `project_id` and `node_id` and `file_name` or `dataset` and `file_name` are required
 
 components:
   responses:
