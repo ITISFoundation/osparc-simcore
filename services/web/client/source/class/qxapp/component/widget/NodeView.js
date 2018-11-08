@@ -49,7 +49,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       flex: 1
     });
 
-    this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__initButtons();
