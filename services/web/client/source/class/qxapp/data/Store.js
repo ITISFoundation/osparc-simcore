@@ -92,19 +92,19 @@ qx.Class.define("qxapp.data.Store", {
           return [{
             key: "Yoon-sun-UUID",
             label: "Yoon-sun",
-            thumbnail: "qxapp/thumbnail0.png"
+            thumbnail: "qxapp/yoonsun.png"
           }, {
             key: "Yoon-sun-Light-UUID",
             label: "Yoon-sun Light",
-            thumbnail: "qxapp/thumbnail1.png"
+            thumbnail: "qxapp/yoonsun-light.png"
           }, {
             key: "Rat-UUID",
             label: "Rat",
-            thumbnail: "qxapp/thumbnail2.png"
+            thumbnail: "qxapp/rat.png"
           }, {
             key: "Rat-Light-UUID",
             label: "Rat Light",
-            thumbnail: "qxapp/thumbnail3.png"
+            thumbnail: "qxapp/rat-light.png"
           }];
         case "defaultMaterials":
           return [{
