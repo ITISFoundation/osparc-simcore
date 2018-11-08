@@ -94,7 +94,12 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       nullable: true
     },
 
-    iFrameButton: {
+    iFrame: {
+      check: "qxapp.component.widget.PersistentIframe",
+      init: null
+    },
+
+    restartIFrameButton: {
       check: "qx.ui.form.Button",
       init: null
     }
@@ -354,15 +359,36 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return (index > -1);
     },
 
+    __restartIFrame: function(loadThis) {
+      if (this.getIFrame() === null) {
+        this.setIFrame(new qxapp.component.widget.PersistentIframe());
+      }
+      if (loadThis) {
+        this.getIFrame().resetSource();
+        this.getIFrame().setSource(loadThis);
+      } else if (this.getServiceUrl() !== null) {
+        this.getIFrame().resetSource();
+        this.getIFrame().setSource(this.getServiceUrl());
+      }
+    },
+
+    __showLoadingIFrame: function() {
+      const loadingUrl = qx.util.ResourceManager.getInstance().toUri("qxapp/loading/loader.html");
+      this.__restartIFrame(loadingUrl);
+    },
+
     __startInteractiveNode: function() {
       let metaData = this.__metaData;
       if (metaData.type == "dynamic") {
         const slotName = "startDynamic";
         let button = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/sign-in-alt/32"
+          icon: "@FontAwesome5Solid/redo-alt/32"
         });
+        button.addListener("execute", e => {
+          this.__restartIFrame();
+        }, this);
         button.setEnabled(false);
-        this.setIFrameButton(button);
+        this.setRestartIFrameButton(button);
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
           const {
@@ -383,13 +409,27 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             const entryPoint = entryPointD ? ("/" + entryPointD) : "";
             const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
             this.setServiceUrl(srvUrl);
-            this.getIFrameButton().setEnabled(true);
             const msg = "Service ready on " + srvUrl;
             const msgData = {
               nodeLabel: this.getLabel(),
               msg: msg
             };
             this.fireDataEvent("ShowInLogger", msgData);
+
+            // HACK: Workaround for fetching inputs in Visualizer
+            if (this.getKey() === "3d-viewer") {
+              let urlUpdate = this.getServiceUrl() + "/retrieve";
+              let req = new qx.io.request.Xhr();
+              req.set({
+                url: urlUpdate,
+                method: "POST"
+              });
+              req.send();
+            }
+
+            this.getRestartIFrameButton().setEnabled(true);
+            this.__restartIFrame();
+
             console.log(this.getLabel(), msg);
           }
         }, this);

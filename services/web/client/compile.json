@@ -50,6 +50,9 @@
       },
       {
         "uri" : "resource/qxapp/*.png"
+      },
+      {
+        "uri" : "resource/qxapp/loading/*"
       }
     ]
   },
