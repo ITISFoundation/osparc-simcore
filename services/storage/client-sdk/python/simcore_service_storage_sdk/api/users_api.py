@@ -139,41 +139,47 @@ class UsersApi(object):
             _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats)
 
-    def delete_file(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
+    def delete_file(self, location_id, user_id, **kwargs):  # noqa: E501
         """Deletes File  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.delete_file(file_id, location_id, user_id, async_req=True)
+        >>> thread = api.delete_file(location_id, user_id, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
+        :param str project_id:
+        :param str node_id:
+        :param str file_name:
+        :param str dataset:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
         """
         kwargs['_return_http_data_only'] = True
         if kwargs.get('async_req'):
-            return self.delete_file_with_http_info(file_id, location_id, user_id, **kwargs)  # noqa: E501
+            return self.delete_file_with_http_info(location_id, user_id, **kwargs)  # noqa: E501
         else:
-            (data) = self.delete_file_with_http_info(file_id, location_id, user_id, **kwargs)  # noqa: E501
+            (data) = self.delete_file_with_http_info(location_id, user_id, **kwargs)  # noqa: E501
             return data
 
-    def delete_file_with_http_info(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
+    def delete_file_with_http_info(self, location_id, user_id, **kwargs):  # noqa: E501
         """Deletes File  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.delete_file_with_http_info(file_id, location_id, user_id, async_req=True)
+        >>> thread = api.delete_file_with_http_info(location_id, user_id, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
+        :param str project_id:
+        :param str node_id:
+        :param str file_name:
+        :param str dataset:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -181,7 +187,7 @@ class UsersApi(object):
 
         local_var_params = locals()
 
-        all_params = ['file_id', 'location_id', 'user_id']  # noqa: E501
+        all_params = ['location_id', 'user_id', 'project_id', 'node_id', 'file_name', 'dataset']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -195,10 +201,6 @@ class UsersApi(object):
                 )
             local_var_params[key] = val
         del local_var_params['kwargs']
-        # verify the required parameter 'file_id' is set
-        if ('file_id' not in local_var_params or
-                local_var_params['file_id'] is None):
-            raise ValueError("Missing the required parameter `file_id` when calling `delete_file`")  # noqa: E501
         # verify the required parameter 'location_id' is set
         if ('location_id' not in local_var_params or
                 local_var_params['location_id'] is None):
@@ -211,14 +213,20 @@ class UsersApi(object):
         collection_formats = {}
 
         path_params = {}
-        if 'file_id' in local_var_params:
-            path_params['fileId'] = local_var_params['file_id']  # noqa: E501
         if 'location_id' in local_var_params:
             path_params['location_id'] = local_var_params['location_id']  # noqa: E501
 
         query_params = []
         if 'user_id' in local_var_params:
             query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
+        if 'project_id' in local_var_params:
+            query_params.append(('project_id', local_var_params['project_id']))  # noqa: E501
+        if 'node_id' in local_var_params:
+            query_params.append(('node_id', local_var_params['node_id']))  # noqa: E501
+        if 'file_name' in local_var_params:
+            query_params.append(('file_name', local_var_params['file_name']))  # noqa: E501
+        if 'dataset' in local_var_params:
+            query_params.append(('dataset', local_var_params['dataset']))  # noqa: E501
 
         header_params = {}
 
@@ -234,7 +242,7 @@ class UsersApi(object):
         auth_settings = []  # noqa: E501
 
         return self.api_client.call_api(
-            '/locations/{location_id}/files/{fileId}', 'DELETE',
+            '/locations/{location_id}/files', 'DELETE',
             path_params,
             query_params,
             header_params,
@@ -249,41 +257,45 @@ class UsersApi(object):
             _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats)
 
-    def download_file(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
-        """Returns download link for requested file  # noqa: E501
+    def download_file(self, location_id, user_id, **kwargs):  # noqa: E501
+        """Returns download link for file matching the query parameters  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.download_file(file_id, location_id, user_id, async_req=True)
+        >>> thread = api.download_file(location_id, user_id, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
+        :param str project_id:
+        :param str node_id:
+        :param str file_name:
         :return: PresignedLinkEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
         """
         kwargs['_return_http_data_only'] = True
         if kwargs.get('async_req'):
-            return self.download_file_with_http_info(file_id, location_id, user_id, **kwargs)  # noqa: E501
+            return self.download_file_with_http_info(location_id, user_id, **kwargs)  # noqa: E501
         else:
-            (data) = self.download_file_with_http_info(file_id, location_id, user_id, **kwargs)  # noqa: E501
+            (data) = self.download_file_with_http_info(location_id, user_id, **kwargs)  # noqa: E501
             return data
 
-    def download_file_with_http_info(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
-        """Returns download link for requested file  # noqa: E501
+    def download_file_with_http_info(self, location_id, user_id, **kwargs):  # noqa: E501
+        """Returns download link for file matching the query parameters  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.download_file_with_http_info(file_id, location_id, user_id, async_req=True)
+        >>> thread = api.download_file_with_http_info(location_id, user_id, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
+        :param str project_id:
+        :param str node_id:
+        :param str file_name:
         :return: PresignedLinkEnveloped
                  If the method is called asynchronously,
                  returns the request thread.
@@ -291,7 +303,7 @@ class UsersApi(object):
 
         local_var_params = locals()
 
-        all_params = ['file_id', 'location_id', 'user_id']  # noqa: E501
+        all_params = ['location_id', 'user_id', 'project_id', 'node_id', 'file_name']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -305,10 +317,6 @@ class UsersApi(object):
                 )
             local_var_params[key] = val
         del local_var_params['kwargs']
-        # verify the required parameter 'file_id' is set
-        if ('file_id' not in local_var_params or
-                local_var_params['file_id'] is None):
-            raise ValueError("Missing the required parameter `file_id` when calling `download_file`")  # noqa: E501
         # verify the required parameter 'location_id' is set
         if ('location_id' not in local_var_params or
                 local_var_params['location_id'] is None):
@@ -321,14 +329,18 @@ class UsersApi(object):
         collection_formats = {}
 
         path_params = {}
-        if 'file_id' in local_var_params:
-            path_params['fileId'] = local_var_params['file_id']  # noqa: E501
         if 'location_id' in local_var_params:
             path_params['location_id'] = local_var_params['location_id']  # noqa: E501
 
         query_params = []
         if 'user_id' in local_var_params:
             query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
+        if 'project_id' in local_var_params:
+            query_params.append(('project_id', local_var_params['project_id']))  # noqa: E501
+        if 'node_id' in local_var_params:
+            query_params.append(('node_id', local_var_params['node_id']))  # noqa: E501
+        if 'file_name' in local_var_params:
+            query_params.append(('file_name', local_var_params['file_name']))  # noqa: E501
 
         header_params = {}
 
@@ -344,7 +356,7 @@ class UsersApi(object):
         auth_settings = []  # noqa: E501
 
         return self.api_client.call_api(
-            '/locations/{location_id}/files/{fileId}', 'GET',
+            '/locations/{location_id}/files', 'GET',
             path_params,
             query_params,
             header_params,
@@ -867,18 +879,21 @@ class UsersApi(object):
             _request_timeout=local_var_params.get('_request_timeout'),
             collection_formats=collection_formats)
 
-    def upload_file(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
+    def upload_file(self, location_id, user_id, **kwargs):  # noqa: E501
         """Returns upload link or performs copy operation to datcore  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.upload_file(file_id, location_id, user_id, async_req=True)
+        >>> thread = api.upload_file(location_id, user_id, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
+        :param str project_id:
+        :param str node_id:
+        :param str file_name:
+        :param str dataset:
         :param str extra_source:
         :return: PresignedLinkEnveloped
                  If the method is called asynchronously,
@@ -886,23 +901,26 @@ class UsersApi(object):
         """
         kwargs['_return_http_data_only'] = True
         if kwargs.get('async_req'):
-            return self.upload_file_with_http_info(file_id, location_id, user_id, **kwargs)  # noqa: E501
+            return self.upload_file_with_http_info(location_id, user_id, **kwargs)  # noqa: E501
         else:
-            (data) = self.upload_file_with_http_info(file_id, location_id, user_id, **kwargs)  # noqa: E501
+            (data) = self.upload_file_with_http_info(location_id, user_id, **kwargs)  # noqa: E501
             return data
 
-    def upload_file_with_http_info(self, file_id, location_id, user_id, **kwargs):  # noqa: E501
+    def upload_file_with_http_info(self, location_id, user_id, **kwargs):  # noqa: E501
         """Returns upload link or performs copy operation to datcore  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.upload_file_with_http_info(file_id, location_id, user_id, async_req=True)
+        >>> thread = api.upload_file_with_http_info(location_id, user_id, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
+        :param str project_id:
+        :param str node_id:
+        :param str file_name:
+        :param str dataset:
         :param str extra_source:
         :return: PresignedLinkEnveloped
                  If the method is called asynchronously,
@@ -911,7 +929,7 @@ class UsersApi(object):
 
         local_var_params = locals()
 
-        all_params = ['file_id', 'location_id', 'user_id', 'extra_source']  # noqa: E501
+        all_params = ['location_id', 'user_id', 'project_id', 'node_id', 'file_name', 'dataset', 'extra_source']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -925,10 +943,6 @@ class UsersApi(object):
                 )
             local_var_params[key] = val
         del local_var_params['kwargs']
-        # verify the required parameter 'file_id' is set
-        if ('file_id' not in local_var_params or
-                local_var_params['file_id'] is None):
-            raise ValueError("Missing the required parameter `file_id` when calling `upload_file`")  # noqa: E501
         # verify the required parameter 'location_id' is set
         if ('location_id' not in local_var_params or
                 local_var_params['location_id'] is None):
@@ -941,14 +955,20 @@ class UsersApi(object):
         collection_formats = {}
 
         path_params = {}
-        if 'file_id' in local_var_params:
-            path_params['fileId'] = local_var_params['file_id']  # noqa: E501
         if 'location_id' in local_var_params:
             path_params['location_id'] = local_var_params['location_id']  # noqa: E501
 
         query_params = []
         if 'user_id' in local_var_params:
             query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
+        if 'project_id' in local_var_params:
+            query_params.append(('project_id', local_var_params['project_id']))  # noqa: E501
+        if 'node_id' in local_var_params:
+            query_params.append(('node_id', local_var_params['node_id']))  # noqa: E501
+        if 'file_name' in local_var_params:
+            query_params.append(('file_name', local_var_params['file_name']))  # noqa: E501
+        if 'dataset' in local_var_params:
+            query_params.append(('dataset', local_var_params['dataset']))  # noqa: E501
         if 'extra_source' in local_var_params:
             query_params.append(('extra_source', local_var_params['extra_source']))  # noqa: E501
 
@@ -966,7 +986,7 @@ class UsersApi(object):
         auth_settings = []  # noqa: E501
 
         return self.api_client.call_api(
-            '/locations/{location_id}/files/{fileId}', 'PUT',
+            '/locations/{location_id}/files', 'PUT',
             path_params,
             query_params,
             header_params,

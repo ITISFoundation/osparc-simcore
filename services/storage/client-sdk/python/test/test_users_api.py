@@ -46,7 +46,7 @@ class TestUsersApi(unittest.TestCase):
     def test_download_file(self):
         """Test case for download_file
 
-        Returns download link for requested file  # noqa: E501
+        Returns download link for file matching the query parameters  # noqa: E501
         """
         pass
 

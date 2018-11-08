@@ -73,14 +73,14 @@ All URIs are relative to *http://localhost:11111/v0*
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *UsersApi* | [**check_action_post**](docs/UsersApi.md#check_action_post) | **POST** /check/{action} | Test checkpoint to ask server to fail or echo back the transmitted data
-*UsersApi* | [**delete_file**](docs/UsersApi.md#delete_file) | **DELETE** /locations/{location_id}/files/{fileId} | Deletes File
-*UsersApi* | [**download_file**](docs/UsersApi.md#download_file) | **GET** /locations/{location_id}/files/{fileId} | Returns download link for requested file
+*UsersApi* | [**delete_file**](docs/UsersApi.md#delete_file) | **DELETE** /locations/{location_id}/files | Deletes File
+*UsersApi* | [**download_file**](docs/UsersApi.md#download_file) | **GET** /locations/{location_id}/files | Returns download link for file matching the query parameters
 *UsersApi* | [**get_file_metadata**](docs/UsersApi.md#get_file_metadata) | **GET** /locations/{location_id}/files/{fileId}/metadata | Get File Metadata
 *UsersApi* | [**get_files_metadata**](docs/UsersApi.md#get_files_metadata) | **GET** /locations/{location_id}/files/metadata | Get Files Metadata
 *UsersApi* | [**get_storage_locations**](docs/UsersApi.md#get_storage_locations) | **GET** /locations | Get available storage locations
 *UsersApi* | [**health_check**](docs/UsersApi.md#health_check) | **GET** / | Service health-check endpoint
 *UsersApi* | [**update_file_meta_data**](docs/UsersApi.md#update_file_meta_data) | **PATCH** /locations/{location_id}/files/{fileId}/metadata | Update File Metadata
-*UsersApi* | [**upload_file**](docs/UsersApi.md#upload_file) | **PUT** /locations/{location_id}/files/{fileId} | Returns upload link or performs copy operation to datcore
+*UsersApi* | [**upload_file**](docs/UsersApi.md#upload_file) | **PUT** /locations/{location_id}/files | Returns upload link or performs copy operation to datcore
 
 
 ## Documentation For Models
