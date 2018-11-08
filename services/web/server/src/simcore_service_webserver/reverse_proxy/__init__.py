@@ -17,8 +17,10 @@ from aiohttp import web
 from .abc import ServiceResolutionPolicy
 from .routing import ReverseChooser
 from .handlers import jupyter, paraview
+from .settings import URL_PATH
 
 logger = logging.getLogger(__name__)
+
 
 
 def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
@@ -27,15 +29,7 @@ def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
     """
     logger.debug("Setting up %s ...", __name__)
 
-    URL_PATH = r"/x/{serviceId:\d+}/{proxyPath:.*}"
-    chooser = ReverseChooser(
-        resolver=service_resolver,
-        service_id_key="serviceId",
-        proxy_path_key="proxyPath"
-    )
-
-    assert chooser.proxy_path_key in URL_PATH
-    assert chooser.service_id_key in URL_PATH
+    chooser = ReverseChooser(resolver=service_resolver)
 
     # Registers reverse proxy handlers per service type.
     chooser.register_handler(jupyter.handler,
@@ -46,6 +40,7 @@ def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
 
     # TODO: add default handler in test mode?
 
+    # URL_PATH looks like:  /x/{serviceId}/{proxyPath:.*}
     app.router.add_routes('*', URL_PATH,  chooser.do_route)
 
     # chooser has same lifetime as application
