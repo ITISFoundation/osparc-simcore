@@ -204,7 +204,6 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
     nodes = ['alpha', 'beta', 'gamma', 'delta']
 
     N = 100
-
     files = mock_files_factory(count=N)
     counter = 0
     data = {}
@@ -220,8 +219,8 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
         node_id = idx + 10000
         file_uuid = str(uuid.uuid4())
         file_name = str(counter)
-        object_name = os.path.join(str(project_id), str(node_id), str(counter))
-        file_uuid = os.path.join(location, bucket_name, object_name)
+        object_name = Path(str(project_id), str(node_id), str(counter)).as_posix()
+        file_uuid = Path(location, bucket_name, object_name).as_posix()
         file_id = file_name
 
         assert s3_client.upload_file(bucket_name, object_name, _file)
@@ -245,7 +244,7 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
 
         data[object_name] = FileMetaData(**d)
 
-        utils.insert_metadata(postgres_service_url, data[object_name])
+        utils.insert_metadata(postgres_service_url, data[object_name]) #pylint: disable=no-member
 
 
     total_count = 0

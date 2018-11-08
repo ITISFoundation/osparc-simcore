@@ -84,12 +84,10 @@ async def get_storage_locations(request: web.Request):
     assert dsm
 
     locs = await dsm.locations(user_id=user_id)
-
-    envelope = {
+    return {
         'error': None,
         'data': locs
         }
-    return envelope
 
 
 async def get_files_metadata(request: web.Request):
@@ -195,10 +193,11 @@ async def download_file(request: web.Request):
 
     link = await dsm.download_link(user_id=user_id, location=location, file_uuid=file_uuid)
 
-    data = { "link:" : link }
     envelope = {
         'error': None,
-        'data': data
+        'data': {
+            "link": link
+        }
         }
 
     return envelope
@@ -225,18 +224,20 @@ async def upload_file(request: web.Request):
         link = await dsm.copy_file(user_id=user_id, location=location,
             file_uuid=file_uuid, source_uuid=source_uuid)
 
-        data = { "link:" : link }
         envelope = {
             'error': None,
-            'data': data
+            'data': {
+                "link": link
+            }
             }
     else:
-        link = await dsm.download_link(user_id=user_id, location=location, file_uuid=file_uuid)
+        link = await dsm.upload_link(user_id=user_id, file_uuid=file_uuid)
 
-        data = { "link:" : link }
         envelope = {
             'error': None,
-            'data': data
+            'data': {
+                    "link":link
+                }
             }
 
     return envelope

@@ -1,27 +1,69 @@
- #pylint: disable=W0621
+ #pylint: disable=W0621, unused-argument, too-many-arguments
 import json
-import sys
+import os
+import socket
 import uuid
 from pathlib import Path
 from typing import Any, List, Tuple
 
 import pytest
-from simcore_sdk.nodeports import config
+import yarl
+from helpers import helpers
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
+from simcore_sdk.nodeports import config
 
-sys.path.append(str(Path(__file__).parent / "helpers"))
 
-pytest_plugins = ["tests.fixtures.postgres", "tests.fixtures.minio-fix"]
+
+@pytest.fixture
+def user_id()->str:
+    yield "testuser"
+
+@pytest.fixture
+def s3_simcore_location() ->str:
+    yield helpers.SIMCORE_STORE
+
+@pytest.fixture
+def filemanager_cfg(storage, user_id, bucket, s3_simcore_location):
+    storage_endpoint = yarl.URL(storage)
+    config.USER_ID = user_id
+    config.STORAGE_HOST = storage_endpoint.host
+    config.STORAGE_PORT = storage_endpoint.port
+    config.STORAGE_VERSION = "v0"
+    config.BUCKET = bucket
+    config.STORE = s3_simcore_location
+    yield
+
+@pytest.fixture
+def project_id()->str:
+    return str(uuid.uuid4())
+
+@pytest.fixture
+def node_uuid()->str:
+    return str(uuid.uuid4())
+
+@pytest.fixture
+def file_uuid(bucket, project_id, node_uuid)->str:
+    def create(store:str, file_path:Path, project:str=None, node:str=None):  
+        if project is None:
+            project = project_id
+        if node is None:
+            node = node_uuid
+        return helpers.file_uuid(store, bucket, file_path, project, node)              
+    yield create
 
 @pytest.fixture(scope='session')
 def here()->Path:
     yield Path(__file__).parent
 
 @pytest.fixture(scope='session')
-def docker_compose_file(pytestconfig, here): # pylint:disable=unused-argument
+def docker_compose_file(bucket, pytestconfig, here): # pylint:disable=unused-argument
     my_path = here /'docker-compose.yml'
+
     yield my_path
+
+
+
 
 @pytest.fixture
 def default_configuration_file(here):
@@ -38,16 +80,20 @@ def postgres(engine, session):
     yield session
 
 @pytest.fixture()
-def default_configuration(postgres, default_configuration_file):
+def default_configuration(postgres, default_configuration_file, project_id, node_uuid):
     # prepare database with default configuration
     json_configuration = default_configuration_file.read_text()
     
-    project_id = _create_new_pipeline(postgres)
-    node_uuid = _set_configuration(postgres, project_id, json_configuration)
+    _create_new_pipeline(postgres, project_id)
+    _set_configuration(postgres, project_id, node_uuid, json_configuration)
     config_dict = json.loads(json_configuration)
     config.NODE_UUID = str(node_uuid)
     config.PROJECT_ID = str(project_id)
     yield config_dict
+    # teardown
+    postgres.query(ComputationalTask).delete()
+    postgres.query(ComputationalPipeline).delete()
+    postgres.commit()
 
 @pytest.fixture()
 def node_link():
@@ -56,39 +102,47 @@ def node_link():
     yield create_node_link
 
 @pytest.fixture()
-def store_link(s3_client, bucket):
-    def create_store_link(file_path:Path):
+def store_link(s3_client, bucket, file_uuid, s3_simcore_location):
+    def create_store_link(file_path:Path, project_id:str=None, node_id:str=None):
         # upload the file to S3
         assert Path(file_path).exists()
-        s3_client.upload_file(bucket, Path(file_path).name, str(file_path))
-        return {"store":"s3-z43", "path":Path(file_path).name}
+        file_id = file_uuid(s3_simcore_location, file_path, project_id, node_id)
+        # using the s3 client the path must be adapted
+        #TODO: use the storage sdk instead
+        s3_object = Path(project_id, node_id, Path(file_path).name).as_posix()
+        s3_client.upload_file(bucket, s3_object, str(file_path))
+        return {"store":s3_simcore_location, "path":file_id}
     yield create_store_link
 
-@pytest.fixture()
-def special_configuration(postgres, empty_configuration_file: Path):
-    def create_config(inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None):
+@pytest.fixture(scope="function")
+def special_configuration(postgres, empty_configuration_file: Path, project_id, node_uuid):
+    def create_config(inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None, project_id:str =project_id, node_id:str = node_uuid):
         config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(config_dict, "inputs", inputs)
         _assign_config(config_dict, "outputs", outputs)
-
-        project_id = _create_new_pipeline(postgres)
-        node_uuid = _set_configuration(postgres, project_id, json.dumps(config_dict))
+        project_id = _create_new_pipeline(postgres, project_id)
+        node_uuid = _set_configuration(postgres, project_id, node_id, json.dumps(config_dict))
         config.NODE_UUID = str(node_uuid)
         config.PROJECT_ID = str(project_id)
         return config_dict, project_id, node_uuid
     yield create_config
+    # teardown
+    postgres.query(ComputationalTask).delete()
+    postgres.query(ComputationalPipeline).delete()
+    postgres.commit()
 
-@pytest.fixture()
-def special_2nodes_configuration(postgres, empty_configuration_file: Path):
+@pytest.fixture(scope="function")
+def special_2nodes_configuration(postgres, empty_configuration_file: Path, project_id, node_uuid):
     def create_config(prev_node_inputs: List[Tuple[str, str, Any]] =None, prev_node_outputs: List[Tuple[str, str, Any]] =None,
-                    inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None):
-        project_id = _create_new_pipeline(postgres)
+                    inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None, 
+                    project_id:str =project_id, previous_node_id:str = node_uuid, node_id:str = "asdasdadsa"):
+        _create_new_pipeline(postgres, project_id)
 
         # create previous node
         previous_config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(previous_config_dict, "inputs", prev_node_inputs)
         _assign_config(previous_config_dict, "outputs", prev_node_outputs)
-        previous_node_uuid = _set_configuration(postgres, project_id, json.dumps(previous_config_dict))
+        previous_node_uuid = _set_configuration(postgres, project_id, previous_node_id, json.dumps(previous_config_dict))
 
         # create current node
         config_dict = json.loads(empty_configuration_file.read_text())
@@ -98,20 +152,24 @@ def special_2nodes_configuration(postgres, empty_configuration_file: Path):
         str_config = json.dumps(config_dict)
         str_config = str_config.replace("TEST_NODE_UUID", str(previous_node_uuid))
         config_dict = json.loads(str_config)
-        node_uuid = _set_configuration(postgres, project_id, str_config)
+        node_uuid = _set_configuration(postgres, project_id, node_id, str_config)
         config.NODE_UUID = str(node_uuid)
         config.PROJECT_ID = str(project_id)
         return config_dict, project_id, node_uuid
     yield create_config
+    # teardown
+    postgres.query(ComputationalTask).delete()
+    postgres.query(ComputationalPipeline).delete()
+    postgres.commit()
 
-def _create_new_pipeline(session)->str:    
-    new_Pipeline = ComputationalPipeline(project_id=str(uuid.uuid4()))
+def _create_new_pipeline(session, project:str)->str:    
+    new_Pipeline = ComputationalPipeline(project_id=project)
     session.add(new_Pipeline)
     session.commit()
     return new_Pipeline.project_id
 
-def _set_configuration(session, project_id: str, json_configuration: str):
-    node_uuid = uuid.uuid4()
+def _set_configuration(session, project_id: str, node_id:str, json_configuration: str):
+    node_uuid = node_id
     json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", str(node_uuid))
     configuration = json.loads(json_configuration)
 

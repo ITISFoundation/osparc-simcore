@@ -105,6 +105,7 @@ class DataStorageManager:
 
     async def ping_datcore(self, user_id: str):
         api_token, api_secret = await self._get_datcore_tokens(user_id)
+        logger.info("token: %s, secret %s", api_token, api_secret)
         if api_token:
             dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
             profile = await dcw.ping()
@@ -228,8 +229,12 @@ class DataStorageManager:
             #_fmd = await conn.execute(query)
             # FIXME: load from app[APP_CONFIG_KEY]["test_datcore"]
             _aa = user_id
-            api_token = os.environ.get("BF_API_KEY", "none")
-            api_secret = os.environ.get("BF_API_SECRET", "none")
+            api_token = os.environ.get("BF_API_KEY", "none").strip("\"'")
+            api_secret = os.environ.get("BF_API_SECRET", "none").strip("\"'")
+            #FIXME: SAN this is a hack to prevent crashes. should be fixed together with accessing the DB correctly
+            if api_token == "none":
+                return (None, None)
+
             return (api_token, api_secret)
 
 

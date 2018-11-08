@@ -50,6 +50,17 @@ class InvalidProtocolError(NodeportsException):
         super(InvalidProtocolError, self).__init__(msg)
         self.dct = dct
 
+class StorageInvalidCall(NodeportsException):
+    """S3 transfer error"""
+    def __init__(self, msg):
+        super(StorageInvalidCall, self).__init__(msg)
+
+class StorageServerIssue(NodeportsException):
+    """S3 transfer error"""
+    def __init__(self, msg):
+        super(StorageServerIssue, self).__init__(msg)
+        
+
 class S3TransferError(NodeportsException):
     """S3 transfer error"""
     def __init__(self, msg=None):
@@ -59,10 +70,9 @@ class S3TransferError(NodeportsException):
 
 class S3InvalidPathError(NodeportsException):
     """S3 transfer error"""
-    def __init__(self, s3_bucket, s3_object_name):
-        msg = "No object in S3 storage at {bucket}/{object}".format(bucket=s3_bucket, object=s3_object_name)
+    def __init__(self, s3_object_name):
+        msg = "No object in S3 storage at {object}".format(object=s3_object_name)
         super(S3InvalidPathError, self).__init__(msg)
-        self.bucket = s3_bucket
         self.object_name = s3_object_name
 
 class S3InvalidStore(NodeportsException):
@@ -70,6 +80,13 @@ class S3InvalidStore(NodeportsException):
     def __init__(self, s3_store):
         msg = "Invalid store used: {store}".format(store=s3_store)
         super(S3InvalidStore, self).__init__(msg)
+        self.store = s3_store
+
+class StorageConnectionError(NodeportsException):
+    """S3 transfer error"""
+    def __init__(self, s3_store, additional_msg=None):
+        msg = "Connection to store {store} failed: {yamsg}".format(store=s3_store, yamsg=additional_msg)
+        super(StorageConnectionError, self).__init__(msg)
         self.store = s3_store
 
 class PortNotFound(NodeportsException):
