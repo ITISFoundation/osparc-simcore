@@ -1,3 +1,8 @@
+""" Reverse-proxy customized for jupyter notebooks
+
+TODO: document
+"""
+
 import asyncio
 import logging
 import pprint

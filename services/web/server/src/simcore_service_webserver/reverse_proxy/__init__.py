@@ -21,7 +21,7 @@ from .settings import URL_PATH
 
 logger = logging.getLogger(__name__)
 
-
+MODULE_NAME = __name__.split(".")[-1]
 
 def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
     """Sets up reverse-proxy subsystem in the application (a la aiohttp)
@@ -41,7 +41,7 @@ def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
     # TODO: add default handler in test mode?
 
     # URL_PATH looks like:  /x/{serviceId}/{proxyPath:.*}
-    app.router.add_routes('*', URL_PATH,  chooser.do_route)
+    app.router.add_route(method='*', path=URL_PATH, handler=chooser.do_route, name=MODULE_NAME)
 
     # chooser has same lifetime as application
     app[__name__] = {"chooser": chooser}

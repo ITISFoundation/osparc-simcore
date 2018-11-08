@@ -1,3 +1,9 @@
+""" Reverse-proxy customized for paraview
+
+
+TODO: document
+"""
+
 import asyncio
 import logging
 import pprint
