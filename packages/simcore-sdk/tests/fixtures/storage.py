@@ -1,4 +1,4 @@
-#pylint: disable=W0621
+#pylint: disable=W0621, unused-argument
 import logging
 
 import pytest
