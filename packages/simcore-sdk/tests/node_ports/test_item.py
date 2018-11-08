@@ -1,6 +1,7 @@
 #pylint: disable=C0111
 from pathlib import Path
 
+import mock
 import pytest
 
 from simcore_sdk.node_ports import config, exceptions
@@ -66,8 +67,7 @@ async def test_invalid_value_type():
     ("boolean", False, False),    
     ("string", "test-string", "test-string")
 ])
-async def test_set_new_value(bucket, item_type, item_value_to_set, expected_value): # pylint: disable=W0613
-    import mock
+async def test_set_new_value(bucket, item_type, item_value_to_set, expected_value): # pylint: disable=W0613    
     mock_method = mock.Mock()
     item = create_item(item_type, None)
     item.new_data_cb = mock_method
