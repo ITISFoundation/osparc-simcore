@@ -8,7 +8,9 @@ INSTALL_REQUIRES = [
     'psycopg2-binary==2.7.4',
     'sqlalchemy==1.2.9',
     'tenacity==4.12.0',
-    'trafaret-config==2.0.1'
+    'trafaret-config==2.0.1',
+    'aiofiles~=0.4',
+    'aiohttp~=3.3'
 ]
 
 TEST_REQUIRE = [

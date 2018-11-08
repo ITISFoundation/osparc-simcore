@@ -1,6 +1,6 @@
 # paths relative to location of setup.py
 -e .
--e ../../packages/s3wrapper/
+-e ../storage/client-sdk/python/
 -e ../../packages/simcore-sdk/
 
 
