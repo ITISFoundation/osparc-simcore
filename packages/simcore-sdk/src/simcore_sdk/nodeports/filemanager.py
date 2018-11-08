@@ -84,7 +84,7 @@ async def _download_link_to_file(session:aiohttp.ClientSession, url:URL, file_pa
                 raise exceptions.S3InvalidPathError(s3_object)
             if response.status > 299:
                 raise exceptions.S3TransferError("Error when downloading {} from {} using {}".format(s3_object, store, url))
-            file_path.parent.mkdir(exist_ok=True)
+            file_path.parent.mkdir(parents=True, exist_ok=True)
             async with aiofiles.open(file_path, 'wb') as file_pointer:
                 chunk = await response.content.read(1024)
                 while chunk:
