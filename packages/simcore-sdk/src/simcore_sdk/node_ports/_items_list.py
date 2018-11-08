@@ -1,9 +1,10 @@
 import logging
 from collections import Sequence
+
 from . import exceptions
 from ._data_items_list import DataItemsList
-from ._schema_items_list import SchemaItemsList
 from ._item import Item
+from ._schema_items_list import SchemaItemsList
 
 log = logging.getLogger(__name__)
 

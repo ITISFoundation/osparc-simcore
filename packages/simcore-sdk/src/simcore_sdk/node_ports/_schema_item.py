@@ -1,7 +1,7 @@
 import collections
 import logging
 
-from simcore_sdk.nodeports import config, exceptions
+from . import config, exceptions
 
 log = logging.getLogger(__name__)
 

@@ -1,8 +1,9 @@
 import logging
 from collections import Mapping
 from typing import Dict
-from simcore_sdk.nodeports import exceptions
-from simcore_sdk.nodeports._schema_item import SchemaItem
+
+from . import exceptions
+from ._schema_item import SchemaItem
 
 log = logging.getLogger(__name__)
 

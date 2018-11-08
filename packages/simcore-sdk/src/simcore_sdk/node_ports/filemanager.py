@@ -7,9 +7,10 @@ import aiohttp
 import async_timeout
 from yarl import URL
 
-from simcore_sdk.nodeports import config, exceptions
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
 from simcore_service_storage_sdk.rest import ApiException
+
+from . import config, exceptions
 
 log = logging.getLogger(__name__)
 

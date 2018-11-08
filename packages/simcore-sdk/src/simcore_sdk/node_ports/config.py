@@ -2,6 +2,7 @@
 """
 import logging
 import os
+
 NODE_UUID = os.environ.get("SIMCORE_NODE_UUID", default="undefined")
 PROJECT_ID = os.environ.get("SIMCORE_PIPELINE_ID", default="undefined")
 USER_ID = os.environ.get("SIMCORE_USER_ID", default="undefined")
