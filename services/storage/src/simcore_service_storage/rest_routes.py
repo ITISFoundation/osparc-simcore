@@ -53,15 +53,15 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     # operation_id = specs.paths[path].operations['patch'].operation_id
     # routes.append( web.patch(BASEPATH+path, handle, name=operation_id) )
 
-    path, handle = '/locations/{location_id}/files/{fileId}', handlers.download_file
+    path, handle = '/locations/{location_id}/files', handlers.download_file
     operation_id = specs.paths[path].operations['get'].operation_id
     routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
 
-    path, handle = '/locations/{location_id}/files/{fileId}', handlers.delete_file
+    path, handle = '/locations/{location_id}/files', handlers.delete_file
     operation_id = specs.paths[path].operations['delete'].operation_id
     routes.append( web.delete(BASEPATH+path, handle, name=operation_id) )
 
-    path, handle = '/locations/{location_id}/files/{fileId}', handlers.upload_file
+    path, handle = '/locations/{location_id}/files', handlers.upload_file
     operation_id = specs.paths[path].operations['put'].operation_id
     routes.append( web.put(BASEPATH+path, handle, name=operation_id) )
 

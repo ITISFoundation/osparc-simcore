@@ -6,6 +6,8 @@ from typing import Tuple
 import attr
 import sqlalchemy as sa
 
+from .s3 import DATCORE_STR, SIMCORE_S3_STR
+
 #FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
 #from sqlalchemy.dialects.postgresql import UUID
 
@@ -55,11 +57,11 @@ def _parse_datcore(file_uuid: str) -> Tuple[str, str]:
 def _locations():
     # TODO: so far this is hardcoded
     simcore_s3 = {
-    "name" : "simcore.s3",
+    "name" : SIMCORE_S3_STR,
     "id" : 0
     }
     datcore = {
-    "name" : "datcore",
+    "name" : DATCORE_STR,
     "id"   : 1
     }
     return [simcore_s3, datcore]
@@ -67,17 +69,17 @@ def _locations():
 def _location_from_id(location_id : str) ->str:
     loc_str = "undefinded"
     if location_id == "0":
-        loc_str = "simcore.s3"
+        loc_str = SIMCORE_S3_STR
     elif location_id == "1":
-        loc_str = "datcore"
+        loc_str = DATCORE_STR
 
     return loc_str
 
 def _location_from_str(location : str) ->str:
     intstr = "undefined"
-    if location == "simcore.s3":
+    if location == SIMCORE_S3_STR:
         intstr = "0"
-    elif location == "datcore":
+    elif location == DATCORE_STR:
         intstr = "1"
 
     return intstr

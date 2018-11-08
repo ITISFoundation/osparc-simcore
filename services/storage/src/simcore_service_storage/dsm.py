@@ -6,7 +6,7 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from operator import itemgetter
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import aiofiles
 import aiohttp
@@ -21,6 +21,7 @@ from s3wrapper.s3_client import S3Client
 from .datcore_wrapper import DatcoreWrapper
 from .models import (FileMetaData, _location_from_id, _parse_datcore,
                      _parse_simcore, file_meta_data)
+from .s3 import DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from .settings import APP_CONFIG_KEY, APP_DSM_THREADPOOL
 
 #pylint: disable=W0212
@@ -79,21 +80,22 @@ class DataStorageManager:
     engine: Engine
     loop: object
     pool: ThreadPoolExecutor
+    s3_bucket: str
 
     # pylint: disable=R0201
     async def locations(self, user_id: str):
         locs = []
         simcore_s3 = {
-            "name" : "simcore.s3",
-            "id" : 0
+            "name" : SIMCORE_S3_STR,
+            "id" : SIMCORE_S3_ID
         }
         locs.append(simcore_s3)
 
         ping_ok = await self.ping_datcore(user_id=user_id)
         if ping_ok:
             datcore = {
-            "name" : "datcore",
-            "id"   : 1
+            "name" : DATCORE_STR,
+            "id"   : DATCORE_ID
             }
             locs.append(datcore)
 
@@ -102,6 +104,18 @@ class DataStorageManager:
     # pylint: disable=R0201
     def location_from_id(self, location_id : str):
         return _location_from_id(location_id)
+
+    def parse_query(self, location: str, query : Dict) -> str:
+        file_uuid: str = ""
+
+        if location == SIMCORE_S3_STR:
+            file_uuid = "/".join([SIMCORE_S3_STR, self.s3_bucket, query["project_id"], query["node_id"], query["file_name"]])
+        elif location == DATCORE_STR:
+            file_uuid = "/".join([DATCORE_STR, query["dataset"], query["file_name"]])
+
+        return file_uuid
+
+
 
     async def ping_datcore(self, user_id: str):
         api_token, api_secret = await self._get_datcore_tokens(user_id)
@@ -130,14 +144,14 @@ class DataStorageManager:
             order is: sort by key, filter by uuid or regex
         """
         data = []
-        if location == "simcore.s3":
+        if location == SIMCORE_S3_STR:
             async with self.engine.acquire() as conn:
                 query = sa.select([file_meta_data]).where(file_meta_data.c.user_id == user_id)
                 async for row in conn.execute(query):
                     result_dict = dict(zip(row._result_proxy.keys, row._row))
                     d = FileMetaData(**result_dict)
                     data.append(d)
-        elif location == "datcore":
+        elif location == DATCORE_STR:
             api_token, api_secret = await self._get_datcore_tokens(user_id)
             logger.info("Datcore query %s %s %s", api_token, api_secret, self.python27_exec)
             dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
@@ -170,7 +184,7 @@ class DataStorageManager:
         return data
 
     async def list_file(self, user_id: str, location: str, file_uuid: str) -> FileMetaData:
-        if location == "simcore.s3":
+        if location == SIMCORE_S3_STR:
             # TODO: get engine from outside
             async with self.engine.acquire() as conn:
                 query = sa.select([file_meta_data]).where(and_(file_meta_data.c.user_id == user_id,
@@ -179,7 +193,7 @@ class DataStorageManager:
                     result_dict = dict(zip(row._result_proxy.keys, row._row))
                     d = FileMetaData(**result_dict)
                     return d
-        elif location == "datcore":
+        elif location == DATCORE_STR:
             api_token, api_secret = await self._get_datcore_tokens(user_id)
             _dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
             raise NotImplementedError
@@ -197,7 +211,7 @@ class DataStorageManager:
             For datcore we need the full path
         """
         # TODO: const strings
-        if location == "simcore.s3":
+        if location == SIMCORE_S3_STR:
             async with self.engine.acquire() as conn:
                 query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
                 async for row in conn.execute(query):
@@ -209,7 +223,7 @@ class DataStorageManager:
                             stmt = file_meta_data.delete().where(file_meta_data.c.file_uuid == file_uuid)
                             await conn.execute(stmt)
 
-        elif location == "datcore":
+        elif location == DATCORE_STR:
             api_token, api_secret = await self._get_datcore_tokens(user_id)
             dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
             dataset, filename = _parse_datcore(file_uuid)
@@ -243,13 +257,18 @@ class DataStorageManager:
             fmd = FileMetaData()
             fmd.simcore_from_uuid(file_uuid)
             fmd.user_id = user_id
-            ins = file_meta_data.insert().values(**vars(fmd))
-            await conn.execute(ins)
+            query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
+            # if file already exists, we might want to update a time-stamp
+            rows = await conn.execute(query)
+            exists = await rows.scalar()
+            if exists is None:
+                ins = file_meta_data.insert().values(**vars(fmd))
+                await conn.execute(ins)
             bucket_name, object_name = _parse_simcore(file_uuid)
             return self.s3_client.create_presigned_put_url(bucket_name, object_name)
 
     async def copy_file(self, user_id: str, location: str, file_uuid: str, source_uuid: str):
-        if location == "datcore":
+        if location == DATCORE_STR:
             # source is s3, get link
             bucket_name, object_name = _parse_simcore(source_uuid)
             datcore_bucket, file_path = _parse_datcore(file_uuid)
@@ -267,7 +286,7 @@ class DataStorageManager:
                         await self.upload_file_to_datcore(user_id=user_id, local_file_path=local_file_path,
                             datcore_bucket=datcore_bucket)
             shutil.rmtree(tmp_dirpath)
-        elif location == "simcore.s3":
+        elif location == SIMCORE_S3_STR:
             # source is s3, location is s3
             to_bucket_name, to_object_name = _parse_simcore(file_uuid)
             from_bucket, from_object_name = _parse_simcore(source_uuid)
@@ -285,10 +304,10 @@ class DataStorageManager:
 
     async def download_link(self, user_id: str, location: str, file_uuid: str)->str:
         link = None
-        if location == "simcore.s3":
+        if location == SIMCORE_S3_STR:
             bucket_name, object_name = _parse_simcore(file_uuid)
             link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
-        elif location == "datcore":
+        elif location == DATCORE_STR:
             api_token, api_secret = await self._get_datcore_tokens(user_id)
             dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
             dataset, filename = _parse_datcore(file_uuid)

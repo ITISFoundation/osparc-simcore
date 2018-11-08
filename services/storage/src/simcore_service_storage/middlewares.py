@@ -18,6 +18,7 @@ async def dsm_middleware(request, handler):
     s3_access_key = s3_cfg["access_key"]
     s3_endpoint = s3_cfg["endpoint"]
     s3_secret_key = s3_cfg["secret_key"]
+    s3_bucket = s3_cfg["bucket_name"]
 
     s3_client = S3Client(s3_endpoint, s3_access_key, s3_secret_key)
 
@@ -27,7 +28,7 @@ async def dsm_middleware(request, handler):
     engine = request.app.get(APP_DB_ENGINE_KEY)
     loop = request.app.loop
     pool = request.app.get(APP_DSM_THREADPOOL)
-    dsm = DataStorageManager(s3_client, python27_exec, engine, loop, pool)
+    dsm = DataStorageManager(s3_client, python27_exec, engine, loop, pool, s3_bucket)
 
     request[RQT_DSM_KEY] = dsm
     try:
