@@ -42,7 +42,7 @@ def _get_ip()->str:
 def external_minio()->Dict:
     client = docker.from_env()
     minio_config = {"host":_get_ip(), "port":9001, "s3access":"s3access", "s3secret":"s3secret"}
-    container = client.containers.run("minio/minio", command="server /data", 
+    container = client.containers.run("minio/minio:latest", command="server /data", 
                                         environment=["".join(["MINIO_ACCESS_KEY=", minio_config["s3access"]]), 
                                                     "".join(["MINIO_SECRET_KEY=", minio_config["s3secret"]])], 
                                         ports={'9000':minio_config["port"]},
