@@ -20,7 +20,8 @@ TEST_REQUIRE = [
     'pytest~=3.6',
     'pytest-cov~=2.5',
     'pytest-docker~=0.6',
-    'requests~=2.19'
+    'requests~=2.19',
+    'docker~=3.5'
 ]
 
 setup(
