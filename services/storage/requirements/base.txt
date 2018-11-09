@@ -6,7 +6,7 @@ aiohttp-security==0.4.0
 aiopg[sa]==0.15.0
 aio-pika==4.3.1
 celery==4.2.1
-execnet
+execnet==1.5.0
 kombu==4.2.1
 marshmallow
 minio==4.0.6
