@@ -78,7 +78,9 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     propsWidget: {
-      check: "qxapp.component.form.renderer.PropForm"
+      check: "qxapp.component.form.renderer.PropForm",
+      init: null,
+      nullable: true
     },
 
     inputsMapper: {
