@@ -5,7 +5,7 @@
 aiopg
 coveralls==1.5.1
 pytest==3.10.0
-pytest-aiohttp
+pytest-aiohttp==0.3.0
 pytest-asyncio
 pytest-cov==2.6.0
 pytest-docker==0.6.1
