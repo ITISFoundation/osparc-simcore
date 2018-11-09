@@ -2,7 +2,7 @@
 #   Outsourced here so can be installed in base-stage of the web/Dockerfile
 coveralls==1.5.1
 faker
-openapi-core
+openapi-core==0.7.1
 openapi_spec_validator==0.2.4
 pylint~=2.0
 pytest-aiohttp
