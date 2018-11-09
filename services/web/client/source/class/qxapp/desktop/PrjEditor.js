@@ -146,12 +146,17 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           widget = this.__workbenchView;
         } else {
           this.__nodeView.setNodeModel(nodeModel);
+<<<<<<< HEAD
           if (nodeModel.getMetaData().type === "dynamic") {
             const widgetManager = qxapp.component.widget.WidgetManager.getInstance();
             widget = widgetManager.getWidgetForNode(nodeModel, this.getProjectModel().getUuid());
             if (!widget) {
               widget = this.__nodeView;
             }
+=======
+          if (nodeModel.getMetaData().key.includes("file-picker")) {
+            widget = new qxapp.component.widget.FilePicker(nodeModel);
+>>>>>>> master
           } else {
             widget = this.__nodeView;
           }

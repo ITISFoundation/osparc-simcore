@@ -17,17 +17,17 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     this.add(rightSpacer);
 
     const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-    let myPrjsLabel = this.__mainViewCaption = new qx.ui.basic.Label(this.tr("My Projects")).set({
+    let myPrjsLabel = new qx.ui.basic.Label(this.tr("My Projects")).set({
       font: navBarLabelFont,
       minWidth: 150
     });
-    let userProjectList = this.__list = this.__createUserProjectList();
+    let userProjectList = this.__createUserProjectList();
 
-    let pubPrjsLabel = this.__mainViewCaption = new qx.ui.basic.Label(this.tr("Popular Projects")).set({
+    let pubPrjsLabel = new qx.ui.basic.Label(this.tr("Popular Projects")).set({
       font: navBarLabelFont,
       minWidth: 150
     });
-    let publicProjectList = this.__list2 = this.__createPublicProjectList();
+    let publicProjectList = this.__createPublicProjectList();
 
     mainView.add(new qx.ui.core.Spacer(null, 10));
     mainView.add(myPrjsLabel);
@@ -42,11 +42,6 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   },
 
   members: {
-    __controller: null,
-    __list: null,
-    __controller2: null,
-    __list2: null,
-
     newPrjBtnClkd: function() {
       let win = new qx.ui.window.Window(this.tr("Create New Project")).set({
         layout: new qx.ui.layout.Grow(),
@@ -107,7 +102,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         created: null,
         owner: null
       }));
-      let prjCtr = this.__controller = new qx.data.controller.List(userPrjArrayModel, prjLst, "name");
+      let prjCtr = new qx.data.controller.List(userPrjArrayModel, prjLst, "name");
       const fromTemplate = false;
       let delegate = this.__getDelegate(fromTemplate);
       prjCtr.setDelegate(delegate);
@@ -121,7 +116,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       // controller
       let publicPrjList = qxapp.data.Store.getInstance().getPublicProjectList();
       let publicPrjArrayModel = this.__getProjectArrayModel(publicPrjList);
-      let prjCtr = this.__controller2 = new qx.data.controller.List(publicPrjArrayModel, prjLst, "name");
+      let prjCtr = new qx.data.controller.List(publicPrjArrayModel, prjLst, "name");
       const fromTemplate = true;
       let delegate = this.__getDelegate(fromTemplate);
       prjCtr.setDelegate(delegate);
