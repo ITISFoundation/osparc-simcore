@@ -20,7 +20,7 @@ python-socketio==2.0.0
 requests==2.20.1
 sqlalchemy==1.2.13
 tenacity==5.0.2
-trafaret-config==2.0.1
+trafaret-config==2.0.2
 semantic_version==2.6.0
 jinja_app_loader==1.0.2
 
