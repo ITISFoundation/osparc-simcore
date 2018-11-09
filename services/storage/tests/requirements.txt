@@ -2,7 +2,7 @@
 ##
 ##    pip install --requirement=requirements.txt
 ##
-coveralls
+coveralls==1.5.1
 pytest
 pytest-aiohttp
 pytest-cov
