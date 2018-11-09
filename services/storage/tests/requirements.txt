@@ -3,7 +3,7 @@
 ##    pip install --requirement=requirements.txt
 ##
 coveralls==1.5.1
-pytest
+pytest==3.10.0
 pytest-aiohttp
 pytest-cov
 pytest-docker
