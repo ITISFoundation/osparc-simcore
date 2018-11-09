@@ -92,7 +92,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       if (existingNodeModel) {
         return existingNodeModel;
       }
-      let nodeModel = new qxapp.data.model.NodeModel(key, version, uuid);
+      let nodeModel = new qxapp.data.model.NodeModel(this, key, version, uuid);
       nodeModel.populateNodeData(nodeData);
       nodeModel.addListener("ShowInLogger", e => {
         this.fireDataEvent("ShowInLogger", e.getData());

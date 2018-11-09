@@ -66,7 +66,9 @@ qx.Class.define("qxapp.component.form.Auto", {
   /**
      * @param structure {Array} form structure
      */
-  construct : function(content) {
+  construct : function(nodeModel, content) {
+    this.setNodeModel(nodeModel);
+
     this.base(arguments);
     this.__ctrlMap = {};
     this.__ctrlLinkMap = {};
@@ -84,6 +86,13 @@ qx.Class.define("qxapp.component.form.Auto", {
       }
     },
     this);
+  },
+
+  properties: {
+    nodeModel: {
+      check: "qxapp.data.model.NodeModel",
+      nullable: false
+    }
   },
 
   events : {
@@ -530,7 +539,12 @@ qx.Class.define("qxapp.component.form.Auto", {
         nodeUuid: fromNodeId,
         output: fromPortId
       };
-      this.getControlLink(toPortId).setValue("Linked to " + fromNodeId + ": " + fromPortId);
+
+      const workbenchModel = this.getNodeModel().getWorkbenchModel();
+      const fromNode = workbenchModel.getNodeModel(fromNodeId);
+      const fromNodeLabel = fromNode.getLabel(fromNodeId);
+      const fromPortLabel = fromNode.getOutput(fromPortId).label;
+      this.getControlLink(toPortId).setValue("Linked to " + fromNodeLabel + ": " + fromPortLabel);
 
       this.fireDataEvent("linkAdded", toPortId);
     },

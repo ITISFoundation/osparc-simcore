@@ -3,7 +3,9 @@
 qx.Class.define("qxapp.data.model.NodeModel", {
   extend: qx.core.Object,
 
-  construct: function(key, version, uuid) {
+  construct: function(workbenchModel, key, version, uuid) {
+    this.setWorkbenchModel(workbenchModel);
+
     this.base(arguments);
 
     this.__metaData = {};
@@ -44,6 +46,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
   },
 
   properties: {
+    workbenchModel: {
+      check: "qxapp.data.model.WorkbenchModel",
+      nullable: false
+    },
+
     key: {
       check: "String",
       nullable: false
@@ -140,6 +147,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     getInputsDefault: function() {
       return this.__inputsDefault;
+    },
+
+    getOutput: function(outputId) {
+      return this.__outputs[outputId];
     },
 
     getOutputs: function() {
@@ -261,7 +272,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
      *
      */
     __addSetttings: function(inputs) {
-      let form = this.__settingsForm = new qxapp.component.form.Auto(inputs);
+      let form = this.__settingsForm = new qxapp.component.form.Auto(this, inputs);
       form.addListener("linkAdded", e => {
         let changedField = e.getData();
         this.getPropsWidget().linkAdded(changedField);
