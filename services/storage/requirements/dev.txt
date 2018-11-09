@@ -16,7 +16,7 @@
 
 
 # code versioning
-bumpversion
+bumpversion==0.5.3
 # code formatting
 autopep8
 # code replament/rename
