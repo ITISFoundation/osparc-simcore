@@ -1482,7 +1482,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
 
     getObjectList: function() {
       const objects = [{
-        "file_uuid": "simcore.s3/fake-simcore-testing/103/10003/8",
+        "file_uuid": "fake-simcore-testing/103/10003/8",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1491,12 +1491,11 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "project_name": "dermatology",
         "node_id": "10003",
         "node_name": "delta",
-        "file_id": "8",
         "file_name": "8",
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/103/10001/11",
+        "file_uuid": "fake-simcore-testing/103/10001/11",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1510,7 +1509,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/102/10001/18",
+        "file_uuid": "fake-simcore-testing/102/10001/18",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1524,7 +1523,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/101/10003/26",
+        "file_uuid": "fake-simcore-testing/101/10003/26",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1538,7 +1537,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/102/10003/27",
+        "file_uuid": "fake-simcore-testing/102/10003/27",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1552,7 +1551,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/106/10002/29",
+        "file_uuid": "fake-simcore-testing/106/10002/29",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1566,7 +1565,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/102/10002/32",
+        "file_uuid": "fake-simcore-testing/102/10002/32",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1580,7 +1579,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/104/10000/40",
+        "file_uuid": "fake-simcore-testing/104/10000/40",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1594,7 +1593,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/101/10002/41",
+        "file_uuid": "fake-simcore-testing/101/10002/41",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1608,7 +1607,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/101/10000/51",
+        "file_uuid": "fake-simcore-testing/101/10000/51",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1622,7 +1621,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/102/10002/52",
+        "file_uuid": "fake-simcore-testing/102/10002/52",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1636,7 +1635,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/105/10001/55",
+        "file_uuid": "fake-simcore-testing/105/10001/55",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1650,7 +1649,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/106/10001/56",
+        "file_uuid": "fake-simcore-testing/106/10001/56",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1664,7 +1663,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/106/10001/57",
+        "file_uuid": "fake-simcore-testing/106/10001/57",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1678,7 +1677,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/103/10001/60",
+        "file_uuid": "fake-simcore-testing/103/10001/60",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1692,7 +1691,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/105/10001/61",
+        "file_uuid": "fake-simcore-testing/105/10001/61",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1706,7 +1705,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/102/10002/64",
+        "file_uuid": "fake-simcore-testing/102/10002/64",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1720,7 +1719,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/100/10002/70",
+        "file_uuid": "fake-simcore-testing/100/10002/70",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1734,7 +1733,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/104/10002/71",
+        "file_uuid": "fake-simcore-testing/104/10002/71",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1748,7 +1747,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/106/10003/72",
+        "file_uuid": "fake-simcore-testing/106/10003/72",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1762,7 +1761,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/101/10003/76",
+        "file_uuid": "fake-simcore-testing/101/10003/76",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1776,7 +1775,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/104/10003/79",
+        "file_uuid": "fake-simcore-testing/104/10003/79",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1790,7 +1789,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/102/10002/86",
+        "file_uuid": "fake-simcore-testing/102/10002/86",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1804,7 +1803,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/106/10002/95",
+        "file_uuid": "fake-simcore-testing/106/10002/95",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1818,7 +1817,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/fake-simcore-testing/103/10003/96",
+        "file_uuid": "fake-simcore-testing/103/10003/96",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "fake-simcore-testing",
@@ -1833,21 +1832,24 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_name": "alice"
       }, {
         "file_uuid": "fake-simcore/106/10002/789",
-        "location": "simcore.sandbox",
+        "location_id": "1",
+        "location": "datcore",
         "bucket_name": "fake-simcore",
         "object_name": "106/10002/789",
         "file_name": "789",
         "size": 17224423
       }, {
         "file_uuid": "fake-simcore/103/10003/dfgh",
-        "location": "simcore.sandbox",
+        "location_id": "1",
+        "location": "datcore",
         "bucket_name": "fake-simcore",
         "object_name": "103/10003/dfgh",
         "file_name": "dfgh",
         "size": 7675509
       }, {
         "file_uuid": "fake-simcore/Large.jpg",
-        "location": "simcore.sandbox",
+        "location_id": "1",
+        "location": "datcore",
         "bucket_name": "fake-simcore",
         "object_name": "Large.jpg",
         "file_name": "Large.jpg",
