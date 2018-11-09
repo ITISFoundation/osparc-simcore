@@ -58,7 +58,7 @@ matrix:
         - pip3 list
 
       script:
-        - make build
+        - docker-compose -f services/docker-compose.yml build storage
         - make pylint
         - make test
 
