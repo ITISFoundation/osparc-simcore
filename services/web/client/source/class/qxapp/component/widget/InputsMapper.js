@@ -22,7 +22,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
 
     let that = this;
     tree.setDelegate({
-      createItem: () => new qxapp.component.widget.inputs.NodeOutputListItem(),
+      createItem: () => new qxapp.component.widget.inputs.NodeOutputTreeItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         // c.bindProperty("key", "key", null, item, id);
