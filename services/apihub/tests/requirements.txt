@@ -5,6 +5,6 @@ openapi_spec_validator==0.2.4
 pytest==3.10.0
 pytest-cov==2.6.0
 pytest-docker==0.6.1
-requests~=2.18
+requests==2.20.1
 requests-html~=0.9
 openapi_core
