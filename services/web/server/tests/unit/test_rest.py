@@ -1,10 +1,7 @@
+# pylint:disable=unused-import
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
 
-# TODO: W0611:Unused import ...
-# pylint: disable=W0611
-# TODO: W0613:Unused argument ...
-# pylint: disable=W0613
-# W0621: Redefining name ... from outer scope
-# pylint: disable=W0621
 import logging
 import sys
 from pathlib import Path
@@ -14,7 +11,8 @@ import pytest
 import yaml
 from aiohttp import web
 
-from servicelib.response_utils import unwrap_envelope
+import simcore_service_webserver
+from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import resources, rest
 from simcore_service_webserver.application_keys import (APP_CONFIG_KEY,
                                                         APP_OPENAPI_SPECS_KEY)
@@ -31,8 +29,9 @@ def here():
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 @pytest.fixture
-def openapi_path(here):
-    spec_path = here.parent / 'src/simcore_service_webserver/oas3/v0/openapi.yaml'
+def openapi_path():
+    package_dir = Path(simcore_service_webserver.__file__).resolve().parent
+    spec_path = package_dir / 'oas3/v0/openapi.yaml'
     return spec_path
 
 @pytest.fixture
@@ -59,9 +58,9 @@ def client(loop, aiohttp_unused_port, aiohttp_client):
 
 async def test_check_health(client):
     resp = await client.get("/v0/")
-    assert resp.status == 200
-
     payload = await resp.json()
+
+    assert resp.status == 200, str(payload)
     data, error = tuple(payload.get(k) for k in ('data', 'error'))
 
     assert data
@@ -191,7 +190,7 @@ async def test_auth_login(client, caplog):
 @pytest.mark.skip(reason="SAN: this must be added to ensure easier transition")
 async def test_start_pipeline(client):
 
-    resp = await client.post("/start_pipeline", 
+    resp = await client.post("/start_pipeline",
             json={
                 "project_id":"asdfsk-sdfsdgsd-sdfsfd-sdfsd",
                 "workbench":{
