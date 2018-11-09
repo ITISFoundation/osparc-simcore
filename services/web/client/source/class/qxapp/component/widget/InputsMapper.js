@@ -78,7 +78,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
               const nodeInstanceUUID = null;
               const itemProps = qxapp.data.Store.getInstance().getItem(nodeInstanceUUID, fromPortKey, newItem.getKey());
               if (itemProps) {
-                let form = new qxapp.component.form.Auto(itemProps);
+                let form = new qxapp.component.form.Auto(itemProps, this.getNodeModel());
                 let propsWidget = new qxapp.component.form.renderer.PropForm(form);
                 newItem["propsWidget"] = propsWidget;
               }

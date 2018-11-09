@@ -66,8 +66,12 @@ qx.Class.define("qxapp.component.form.Auto", {
   /**
      * @param structure {Array} form structure
      */
-  construct : function(nodeModel, content) {
-    this.setNodeModel(nodeModel);
+  construct : function(content, nodeModel) {
+    if (nodeModel) {
+      this.setNodeModel(nodeModel);
+    } else {
+      this.setNodeModel(null);
+    }
 
     this.base(arguments);
     this.__ctrlMap = {};

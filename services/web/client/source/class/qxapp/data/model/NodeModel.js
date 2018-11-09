@@ -285,7 +285,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
      *
      */
     __addSetttings: function(inputs) {
-      let form = this.__settingsForm = new qxapp.component.form.Auto(this, inputs);
+      let form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
       form.addListener("linkAdded", e => {
         let changedField = e.getData();
         this.getPropsWidget().linkAdded(changedField);
