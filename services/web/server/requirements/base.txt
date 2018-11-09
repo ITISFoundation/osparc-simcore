@@ -18,7 +18,7 @@ networkx==2.1
 passlib==1.7.1
 python-socketio==1.9.0
 requests==2.20.1
-sqlalchemy==1.2.9
+sqlalchemy==1.2.13
 tenacity==5.0.2
 trafaret-config==2.0.1
 semantic_version==2.6.0
