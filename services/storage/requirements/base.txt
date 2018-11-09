@@ -7,7 +7,7 @@ aiopg[sa]==0.14.0
 aio-pika==2.9.0
 celery==4.2.1
 execnet
-kombu==4.1.0
+kombu==4.2.1
 marshmallow
 minio==4.0.6
 networkx==2.1
