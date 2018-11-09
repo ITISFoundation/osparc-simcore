@@ -1300,6 +1300,7 @@ qx.Class.define("qxapp.data.Store", {
           locationId: locationId,
           fileUuid: fileUuid
         };
+        console.log("PresginedLink", presginedLinkData);
         this.fireDataEvent("PresginedLink", presginedLinkData);
       }, this);
 
