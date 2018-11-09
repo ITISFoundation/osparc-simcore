@@ -5,5 +5,5 @@
 
 
 # extra dev tools
-autopep8
+autopep8==1.4.2
 pylint
