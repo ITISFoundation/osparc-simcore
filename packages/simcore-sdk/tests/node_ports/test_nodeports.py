@@ -86,6 +86,7 @@ def test_invalid_ports(special_configuration):
     ("string", "test-string", str),
     ("string", "", str)
 ])
+@pytest.mark.asyncio
 async def test_port_value_accessors(special_configuration, item_type, item_value, item_pytype): # pylint: disable=W0613, W0621
     item_key = "some key"
     config_dict, _, _ = special_configuration(inputs=[(item_key, item_type, item_value)], outputs=[(item_key, item_type, None)])
@@ -114,7 +115,6 @@ async def test_port_file_accessors(special_configuration, storage, filemanager_c
     config_dict, project_id, node_uuid = special_configuration(inputs=[("in_1", item_type, config_value)], outputs=[("out_34", item_type, None)])
     PORTS = node_ports.ports()
     check_config_valid(PORTS, config_dict)
-    
     assert await PORTS.outputs["out_34"].get() is None # check emptyness
     # with pytest.raises(exceptions.S3InvalidPathError, message="Expecting S3InvalidPathError"):
     #     await PORTS.inputs["in_1"].get()
@@ -189,6 +189,7 @@ def test_removing_ports(special_configuration, session):
     ("string", "test-string", str),
     ("string", "", str),
 ])
+@pytest.mark.asyncio
 async def test_get_value_from_previous_node(special_2nodes_configuration, node_link, item_type, item_value, item_pytype):
     config_dict, _, _ = special_2nodes_configuration(prev_node_outputs=[("output_123", item_type, item_value)],
                                                     inputs=[("in_15", item_type, node_link("output_123"))])
@@ -204,6 +205,7 @@ async def test_get_value_from_previous_node(special_2nodes_configuration, node_l
     ("data:text/*", __file__, Path),
     ("data:text/py", __file__, Path),
 ])
+@pytest.mark.asyncio
 async def test_get_file_from_previous_node(special_2nodes_configuration, project_id, node_uuid, filemanager_cfg, node_link, store_link, item_type, item_value, item_pytype):
     config_dict, _, _ = special_2nodes_configuration(prev_node_outputs=[("output_123", item_type, store_link(item_value, project_id, node_uuid))],
                                                     inputs=[("in_15", item_type, node_link("output_123"))], 
@@ -222,6 +224,7 @@ async def test_get_file_from_previous_node(special_2nodes_configuration, project
     ("data:text/*", __file__, "some funky name without extension", Path),
     ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
 ])
+@pytest.mark.asyncio
 async def test_file_mapping(special_configuration, project_id, node_uuid, filemanager_cfg, s3_simcore_location, bucket, store_link, session, item_type, item_value, item_alias, item_pytype):
     config_dict, project_id, node_uuid = special_configuration(inputs=[("in_1", item_type, store_link(item_value, project_id, node_uuid))], outputs=[("out_1", item_type, None)], project_id=project_id, node_id=node_uuid)
     PORTS = node_ports.ports()
