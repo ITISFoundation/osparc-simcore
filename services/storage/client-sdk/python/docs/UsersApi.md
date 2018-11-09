@@ -5,14 +5,14 @@ All URIs are relative to *http://localhost:11111/v0*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**check_action_post**](UsersApi.md#check_action_post) | **POST** /check/{action} | Test checkpoint to ask server to fail or echo back the transmitted data
-[**delete_file**](UsersApi.md#delete_file) | **DELETE** /locations/{location_id}/files | Deletes File
-[**download_file**](UsersApi.md#download_file) | **GET** /locations/{location_id}/files | Returns download link for file matching the query parameters
+[**delete_file**](UsersApi.md#delete_file) | **DELETE** /locations/{location_id}/files/{fileId} | Deletes File
+[**download_file**](UsersApi.md#download_file) | **GET** /locations/{location_id}/files/{fileId} | Returns download link for requested file
 [**get_file_metadata**](UsersApi.md#get_file_metadata) | **GET** /locations/{location_id}/files/{fileId}/metadata | Get File Metadata
 [**get_files_metadata**](UsersApi.md#get_files_metadata) | **GET** /locations/{location_id}/files/metadata | Get Files Metadata
 [**get_storage_locations**](UsersApi.md#get_storage_locations) | **GET** /locations | Get available storage locations
 [**health_check**](UsersApi.md#health_check) | **GET** / | Service health-check endpoint
 [**update_file_meta_data**](UsersApi.md#update_file_meta_data) | **PATCH** /locations/{location_id}/files/{fileId}/metadata | Update File Metadata
-[**upload_file**](UsersApi.md#upload_file) | **PUT** /locations/{location_id}/files | Returns upload link or performs copy operation to datcore
+[**upload_file**](UsersApi.md#upload_file) | **PUT** /locations/{location_id}/files/{fileId} | Returns upload link or performs copy operation to datcore
 
 
 # **check_action_post**
@@ -66,7 +66,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **delete_file**
-> delete_file(location_id, user_id, project_id=project_id, node_id=node_id, file_name=file_name, dataset=dataset)
+> delete_file(file_id, location_id, user_id)
 
 Deletes File
 
@@ -80,16 +80,13 @@ from pprint import pprint
 
 # create an instance of the API class
 api_instance = simcore_service_storage_sdk.UsersApi()
+file_id = 'file_id_example' # str | 
 location_id = 'location_id_example' # str | 
 user_id = 'user_id_example' # str | 
-project_id = 'project_id_example' # str |  (optional)
-node_id = 'node_id_example' # str |  (optional)
-file_name = 'file_name_example' # str |  (optional)
-dataset = 'dataset_example' # str |  (optional)
 
 try:
     # Deletes File
-    api_instance.delete_file(location_id, user_id, project_id=project_id, node_id=node_id, file_name=file_name, dataset=dataset)
+    api_instance.delete_file(file_id, location_id, user_id)
 except ApiException as e:
     print("Exception when calling UsersApi->delete_file: %s\n" % e)
 ```
@@ -98,12 +95,9 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+ **file_id** | **str**|  | 
  **location_id** | **str**|  | 
  **user_id** | **str**|  | 
- **project_id** | **str**|  | [optional] 
- **node_id** | **str**|  | [optional] 
- **file_name** | **str**|  | [optional] 
- **dataset** | **str**|  | [optional] 
 
 ### Return type
 
@@ -121,9 +115,9 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **download_file**
-> PresignedLinkEnveloped download_file(location_id, user_id, project_id=project_id, node_id=node_id, file_name=file_name)
+> PresignedLinkEnveloped download_file(file_id, location_id, user_id)
 
-Returns download link for file matching the query parameters
+Returns download link for requested file
 
 ### Example
 ```python
@@ -135,15 +129,13 @@ from pprint import pprint
 
 # create an instance of the API class
 api_instance = simcore_service_storage_sdk.UsersApi()
+file_id = 'file_id_example' # str | 
 location_id = 'location_id_example' # str | 
 user_id = 'user_id_example' # str | 
-project_id = 'project_id_example' # str |  (optional)
-node_id = 'node_id_example' # str |  (optional)
-file_name = 'file_name_example' # str |  (optional)
 
 try:
-    # Returns download link for file matching the query parameters
-    api_response = api_instance.download_file(location_id, user_id, project_id=project_id, node_id=node_id, file_name=file_name)
+    # Returns download link for requested file
+    api_response = api_instance.download_file(file_id, location_id, user_id)
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling UsersApi->download_file: %s\n" % e)
@@ -153,11 +145,9 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+ **file_id** | **str**|  | 
  **location_id** | **str**|  | 
  **user_id** | **str**|  | 
- **project_id** | **str**|  | [optional] 
- **node_id** | **str**|  | [optional] 
- **file_name** | **str**|  | [optional] 
 
 ### Return type
 
@@ -415,7 +405,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **upload_file**
-> PresignedLinkEnveloped upload_file(location_id, user_id, project_id=project_id, node_id=node_id, file_name=file_name, dataset=dataset, extra_source=extra_source)
+> PresignedLinkEnveloped upload_file(file_id, location_id, user_id, extra_source=extra_source)
 
 Returns upload link or performs copy operation to datcore
 
@@ -429,17 +419,14 @@ from pprint import pprint
 
 # create an instance of the API class
 api_instance = simcore_service_storage_sdk.UsersApi()
+file_id = 'file_id_example' # str | 
 location_id = 'location_id_example' # str | 
 user_id = 'user_id_example' # str | 
-project_id = 'project_id_example' # str |  (optional)
-node_id = 'node_id_example' # str |  (optional)
-file_name = 'file_name_example' # str |  (optional)
-dataset = 'dataset_example' # str |  (optional)
 extra_source = 'extra_source_example' # str |  (optional)
 
 try:
     # Returns upload link or performs copy operation to datcore
-    api_response = api_instance.upload_file(location_id, user_id, project_id=project_id, node_id=node_id, file_name=file_name, dataset=dataset, extra_source=extra_source)
+    api_response = api_instance.upload_file(file_id, location_id, user_id, extra_source=extra_source)
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling UsersApi->upload_file: %s\n" % e)
@@ -449,12 +436,9 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+ **file_id** | **str**|  | 
  **location_id** | **str**|  | 
  **user_id** | **str**|  | 
- **project_id** | **str**|  | [optional] 
- **node_id** | **str**|  | [optional] 
- **file_name** | **str**|  | [optional] 
- **dataset** | **str**|  | [optional] 
  **extra_source** | **str**|  | [optional] 
 
 ### Return type

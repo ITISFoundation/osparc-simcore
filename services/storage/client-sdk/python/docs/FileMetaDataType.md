@@ -12,7 +12,6 @@ Name | Type | Description | Notes
 **project_name** | **str** |  | [optional] 
 **node_id** | **str** |  | [optional] 
 **node_name** | **str** |  | [optional] 
-**file_id** | **str** |  | [optional] 
 **file_name** | **str** |  | [optional] 
 **user_id** | **str** |  | [optional] 
 **user_name** | **str** |  | [optional] 
