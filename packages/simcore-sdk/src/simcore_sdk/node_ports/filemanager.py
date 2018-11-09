@@ -19,8 +19,8 @@ log = logging.getLogger(__name__)
 @contextmanager
 def api_client():
     cfg = Configuration()    
-    cfg.host = "http://{}".format(config.STORAGE_ENDPOINT)
-
+    cfg.host = "http://{}/{}".format(config.STORAGE_ENDPOINT, config.STORAGE_VERSION)
+    log.debug("api connects using %s", cfg.host)
     client = ApiClient(cfg)
     try:
         yield client
