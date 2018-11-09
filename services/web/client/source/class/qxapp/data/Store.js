@@ -1255,6 +1255,7 @@ qx.Class.define("qxapp.data.Store", {
           reqFiles.addListener("success", eFiles => {
             const files = eFiles.getTarget().getResponse()
               .data;
+            console.log("My Files", files);
             if (files && files.length>0) {
               this.fireDataEvent("MyDocuments", files);
             }

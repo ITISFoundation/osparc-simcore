@@ -29,7 +29,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
 
       store.getMyDocuments();
       // store.getS3SandboxFiles();
-      // store.getFakeFiles();
+      store.getFakeFiles();
     },
 
     __clearTree: function(treeName) {

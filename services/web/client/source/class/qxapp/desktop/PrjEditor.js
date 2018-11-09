@@ -147,7 +147,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         } else {
           this.__nodeView.setNodeModel(nodeModel);
           if (nodeModel.getMetaData().key.includes("file-picker")) {
-            widget = new qxapp.component.widget.FilePicker(nodeModel);
+            widget = new qxapp.component.widget.FilePicker(nodeModel, this.getProjectModel().getUuid());
           } else {
             widget = this.__nodeView;
           }
