@@ -7,7 +7,7 @@ aiohttp-security==0.4.0
 aiopg[sa]==0.15.0
 aio-pika==4.3.1
 aiohttp_jinja2==1.1.0
-aiosmtplib
+aiosmtplib==1.0.3
 asyncpg
 urllib3==1.21.1
 attrs==18.2.0
