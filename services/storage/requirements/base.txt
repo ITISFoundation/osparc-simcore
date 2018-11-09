@@ -1,6 +1,6 @@
 # List of packages for setup.install_requires
 #   Outsourced here so can be installed in base-stage of the web/Dockerfile
-aiohttp==3.3.2
+aiohttp==3.4.4
 aiohttp_session[secure]==2.5.1
 aiohttp-security==0.2.0
 aiopg[sa]==0.14.0
