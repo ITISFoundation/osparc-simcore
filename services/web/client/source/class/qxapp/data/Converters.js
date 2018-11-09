@@ -141,6 +141,22 @@ qx.Class.define("qxapp.data.Converters", {
         children.push(item);
       }
       return children;
+    },
+
+    fromAPIListToVirtualListModel: function(listItems) {
+      let list = [];
+      for (let i=0; i<listItems.length; i++) {
+        const listItem = listItems[i];
+        let item = {
+          key: listItem["key"],
+          label: listItem["label"]
+        };
+        if (Object.prototype.hasOwnProperty.call(listItem, "thumbnail")) {
+          item["thumbnail"] = listItem["thumbnail"];
+        }
+        list.push(item);
+      }
+      return list;
     }
   }
 });

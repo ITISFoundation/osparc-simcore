@@ -1,3 +1,5 @@
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.data.model.NodeModel", {
   extend: qx.core.Object,
 
@@ -94,7 +96,12 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       nullable: true
     },
 
-    iFrameButton: {
+    iFrame: {
+      check: "qxapp.component.widget.PersistentIframe",
+      init: null
+    },
+
+    restartIFrameButton: {
       check: "qx.ui.form.Button",
       init: null
     }
@@ -264,7 +271,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("RemoveLink", e => {
         let changedField = e.getData();
@@ -319,8 +326,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
-    addPortLink: function(fromNodeId, fromPortId, toPortId) {
-      this.__settingsForm.addLink(fromNodeId, fromPortId, toPortId);
+    addPortLink: function(toPortId, fromNodeId, fromPortId) {
+      this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
     },
 
     addInputNode: function(inputNodeId) {
@@ -354,15 +361,37 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return (index > -1);
     },
 
+    __restartIFrame: function(loadThis) {
+      if (this.getIFrame() === null) {
+        this.setIFrame(new qxapp.component.widget.PersistentIframe());
+      }
+      if (loadThis) {
+        this.getIFrame().resetSource();
+        this.getIFrame().setSource(loadThis);
+      } else if (this.getServiceUrl() !== null) {
+        this.getIFrame().resetSource();
+        this.getIFrame().setSource(this.getServiceUrl());
+      }
+    },
+
+    __showLoadingIFrame: function() {
+      const loadingUrl = qx.util.ResourceManager.getInstance().toUri("qxapp/loading/loader.html");
+      this.__restartIFrame(loadingUrl);
+    },
+
     __startInteractiveNode: function() {
-      let metaData = this.__metaData;
+      let metaData = this.getMetaData();
       if (metaData.type == "dynamic") {
         const slotName = "startDynamic";
         let button = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/sign-in-alt/32"
+          icon: "@FontAwesome5Solid/redo-alt/32"
         });
+        button.addListener("execute", e => {
+          this.__restartIFrame();
+        }, this);
         button.setEnabled(false);
-        this.setIFrameButton(button);
+        this.setRestartIFrameButton(button);
+        this.__showLoadingIFrame();
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
           const {
@@ -383,19 +412,50 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             const entryPoint = entryPointD ? ("/" + entryPointD) : "";
             const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
             this.setServiceUrl(srvUrl);
-            this.getIFrameButton().setEnabled(true);
             const msg = "Service ready on " + srvUrl;
             const msgData = {
               nodeLabel: this.getLabel(),
               msg: msg
             };
             this.fireDataEvent("ShowInLogger", msgData);
-            console.log(this.getLabel(), msg);
+
+            // HACK: Workaround for fetching inputs in Visualizer
+            if (this.getKey() === "3d-viewer") {
+              let urlUpdate = this.getServiceUrl() + "/retrieve";
+              let req = new qx.io.request.Xhr();
+              req.set({
+                url: urlUpdate,
+                method: "POST"
+              });
+              req.send();
+            }
+
+            this.getRestartIFrameButton().setEnabled(true);
+            // FIXME: Apparently no all services are inmediately ready when they publish the port
+            const waitFor = 4000;
+            qx.event.Timer.once(e => {
+              this.__restartIFrame();
+            }, this, waitFor);
           }
         }, this);
         let data = {
           serviceKey: metaData.key,
           serviceVersion: metaData.version,
+          nodeId: this.getNodeId()
+        };
+        socket.emit(slotName, data);
+      }
+    },
+
+    removeNode: function() {
+      this.__stopInteractiveNode();
+    },
+
+    __stopInteractiveNode: function() {
+      if (this.getMetaData().type == "dynamic") {
+        const slotName = "stopDynamic";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        let data = {
           nodeId: this.getNodeId()
         };
         socket.emit(slotName, data);
