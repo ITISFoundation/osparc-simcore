@@ -6,4 +6,4 @@
 
 # extra dev tools
 autopep8==1.4.2
-pylint
+pylint==2.1.1
