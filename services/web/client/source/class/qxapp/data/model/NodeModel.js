@@ -211,13 +211,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.setInputData(nodeData);
         this.setOutputData(nodeData);
 
-        if (this.__inputsDefaultWidget) {
-          this.__inputsDefaultWidget.populatePortsData();
-        }
-        if (this.__outputWidget) {
-          this.__outputWidget.populatePortsData();
-        }
-
         if (nodeData.inputNodes) {
           this.__inputNodes = nodeData.inputNodes;
         }
@@ -229,6 +222,13 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         if (nodeData.position) {
           this.setPosition(nodeData.position.x, nodeData.position.y);
         }
+      }
+
+      if (this.__inputsDefaultWidget) {
+        this.__inputsDefaultWidget.populatePortsData();
+      }
+      if (this.__outputWidget) {
+        this.__outputWidget.populatePortsData();
       }
     },
 
