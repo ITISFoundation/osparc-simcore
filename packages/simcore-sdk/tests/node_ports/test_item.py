@@ -23,6 +23,7 @@ def test_default_item():
     with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
         Item(None, None)
 
+@pytest.mark.asyncio
 async def test_item():
     key = "my key"
     label = "my label"
@@ -44,17 +45,20 @@ async def test_item():
 
     assert await item.get() == item_value
 
+@pytest.mark.asyncio
 async def test_valid_type():
     for item_type in config.TYPE_TO_PYTHON_TYPE_MAP:
         item = create_item(item_type, None)
         assert await item.get() is None
 
+@pytest.mark.asyncio
 async def test_invalid_type():
     item = create_item("some wrong type", None)
     with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError") as excinfo:
         await item.get()
     assert "Invalid protocol used" in str(excinfo.value)
 
+@pytest.mark.asyncio
 async def test_invalid_value_type():
     #pylint: disable=W0612
     with pytest.raises(exceptions.InvalidItemTypeError, message="Expecting InvalidItemTypeError") as excinfo:
@@ -67,6 +71,7 @@ async def test_invalid_value_type():
     ("boolean", False, False),    
     ("string", "test-string", "test-string")
 ])
+@pytest.mark.asyncio
 async def test_set_new_value(bucket, item_type, item_value_to_set, expected_value): # pylint: disable=W0613    
     mock_method = mock.Mock()
     item = create_item(item_type, None)
@@ -82,6 +87,7 @@ async def test_set_new_value(bucket, item_type, item_value_to_set, expected_valu
     ("boolean", 123),
     ("string", True)
 ])
+@pytest.mark.asyncio
 async def test_set_new_invalid_value(bucket, item_type, item_value_to_set): # pylint: disable=W0613
     item = create_item(item_type, None)
     assert await item.get() is None

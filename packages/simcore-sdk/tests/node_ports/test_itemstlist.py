@@ -51,6 +51,7 @@ def test_access_by_wrong_key():
     with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError"):
         print(itemslist["fdoiht"])
 
+@pytest.mark.asyncio
 async def test_modifying_items_triggers_cb(): #pylint: disable=C0103
     mock_method = mock.Mock()
 
