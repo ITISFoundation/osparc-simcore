@@ -204,11 +204,18 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     populateNodeData: function(nodeData) {
       if (nodeData) {
+        if (nodeData.label) {
+          this.setLabel(nodeData.label);
+        }
+
         this.setInputData(nodeData);
         this.setOutputData(nodeData);
 
-        if (nodeData.position) {
-          this.setPosition(nodeData.position.x, nodeData.position.y);
+        if (this.__inputsDefaultWidget) {
+          this.__inputsDefaultWidget.populatePortsData();
+        }
+        if (this.__outputWidget) {
+          this.__outputWidget.populatePortsData();
         }
 
         if (nodeData.inputNodes) {
@@ -219,8 +226,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           this.setIsOutputNode(nodeData.outputNode);
         }
 
-        if (nodeData.label) {
-          this.setLabel(nodeData.label);
+        if (nodeData.position) {
+          this.setPosition(nodeData.position.x, nodeData.position.y);
         }
       }
     },
@@ -231,9 +238,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     __addInputsDefaultWidgets: function() {
       const isInputModel = false;
-      let nodePorts = new qxapp.component.widget.NodePorts(this, isInputModel);
-      nodePorts.populateNodeLayout();
-      this.__inputsDefaultWidget = nodePorts;
+      this.__inputsDefaultWidget = new qxapp.component.widget.NodePorts(this, isInputModel);
     },
 
     /**
@@ -296,9 +301,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     __addOutputWidget: function() {
       const isInputModel = true;
-      let nodePorts = new qxapp.component.widget.NodePorts(this, isInputModel);
-      nodePorts.populateNodeLayout();
-      this.__outputWidget = nodePorts;
+      this.__outputWidget = new qxapp.component.widget.NodePorts(this, isInputModel);
     },
 
     __addInputsDefault: function(inputsDefault) {

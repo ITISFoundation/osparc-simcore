@@ -62,7 +62,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       return this.getNodeModel().getMetaData();
     },
 
-    populateNodeLayout: function() {
+    populatePortsData: function() {
       const metaData = this.getNodeModel().getMetaData();
       this.__inputPort = {};
       this.__outputPort = {};
