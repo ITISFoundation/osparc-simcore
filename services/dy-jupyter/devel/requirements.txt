@@ -3,5 +3,5 @@ psycopg2-binary==2.7.5
 sqlalchemy==1.2.13
 tenacity==5.0.2
 tqdm==4.28.1
-numpy
+numpy==1.15.4
 pandas==0.23.4
