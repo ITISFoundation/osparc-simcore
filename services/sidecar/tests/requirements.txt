@@ -11,4 +11,4 @@ pytest-cov==2.6.0
 pytest-docker==0.6.1
 openapi_spec_validator==0.2.4
 pyyaml==3.13
-virtualenv
+virtualenv==16.1.0
