@@ -3,7 +3,7 @@
 coveralls==1.5.1
 faker
 openapi-core
-openapi_spec_validator
+openapi_spec_validator==0.2.4
 pylint~=2.0
 pytest-aiohttp
 pytest~=3.6
