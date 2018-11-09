@@ -1,6 +1,6 @@
 coveralls==1.5.1
 jsonschema~=2.6
-openapi_spec_validator
+openapi_spec_validator==0.2.4
 pytest-aiohttp
 pytest~=3.6
 pytest-cov~=2.5
