@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import requests
 import sqlalchemy as sa
 
-import simcore_storage_sdk
+import simcore_service_storage_sdk
 from simcore_service_storage.models import FileMetaData, file_meta_data
 
 DATABASE = 'aio_login_tests'
@@ -46,10 +46,10 @@ def create_tables(url, engine=None):
     meta.create_all(bind=engine, tables=[file_meta_data])
 
 @contextmanager
-def api_client(cfg: simcore_storage_sdk.Configuration) -> simcore_storage_sdk.ApiClient:
-    from simcore_storage_sdk.rest import ApiException
+def api_client(cfg: simcore_service_storage_sdk.Configuration) -> simcore_service_storage_sdk.ApiClient:
+    from simcore_service_storage_sdk.rest import ApiException
 
-    client = simcore_storage_sdk.ApiClient(cfg)
+    client = simcore_service_storage_sdk.ApiClient(cfg)
     try:
         yield client
     except ApiException as err:
@@ -79,7 +79,6 @@ def insert_metadata(url: str, fmd: FileMetaData):
         project_name = fmd.project_name,
         node_id = fmd.node_id,
         node_name = fmd.node_name,
-        file_id = fmd.file_id,
         file_name = fmd.file_name,
         user_id = fmd.user_id,
         user_name= fmd.user_name)

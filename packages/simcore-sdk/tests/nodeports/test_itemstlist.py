@@ -51,13 +51,13 @@ def test_access_by_wrong_key():
     with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError"):
         print(itemslist["fdoiht"])
 
-def test_modifying_items_triggers_cb(): #pylint: disable=C0103
+async def test_modifying_items_triggers_cb(): #pylint: disable=C0103
     mock_method = mock.Mock()
 
     itemslist = create_items_list([("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)])
     itemslist.change_notifier = mock_method
-    itemslist[0].set(-123)
+    await itemslist[0].set(-123)
     mock_method.assert_called_once()
     mock_method.reset_mock()
-    itemslist[0].set(234)
+    await itemslist[0].set(234)
     mock_method.assert_called_once()

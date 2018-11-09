@@ -4,6 +4,14 @@ import logging
 import os
 NODE_UUID = os.environ.get("SIMCORE_NODE_UUID", default="undefined")
 PROJECT_ID = os.environ.get("SIMCORE_PIPELINE_ID", default="undefined")
+USER_ID = os.environ.get("SIMCORE_USER_ID", default="undefined")
+
+STORAGE_HOST = os.environ.get("STORAGE_HOST", default="localhost")
+STORAGE_PORT = os.environ.get("STORAGE_PORT", default="12345")
+STORAGE_VERSION = os.environ.get("STORAGE_VERSION", default="v10")
+
+STORE = "simcore.s3"
+BUCKET = "simcore"
 
 NODE_KEYS = {"version":True,
 "schema":True,
