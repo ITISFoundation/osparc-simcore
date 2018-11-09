@@ -46,13 +46,9 @@ qx.Class.define("qxapp.data.Store", {
       return topLevelPort1.isInput !== topLevelPort2.isInput;
     },
 
-    arePortsCompatible: function(node1, port1, node2, port2) {
-      console.log("arePortsCompatible", node1, port1, node2, port2);
-      return true;
-      /*
-      return this.__matchPortType(port1.portType, port2.portType) &&
-        (port1.isInput !== port2.isInput);
-      */
+    arePortsCompatible: function(port1, port2) {
+      const arePortsCompatible = this.__matchPortType(port1.type, port2.type);
+      return arePortsCompatible;
     },
 
     getUserProjectList: function() {

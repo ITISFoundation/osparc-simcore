@@ -149,6 +149,14 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return this.__inputsDefault;
     },
 
+    getInput: function(outputId) {
+      return this.__inputs[outputId];
+    },
+
+    getInputs: function() {
+      return this.__inputs;
+    },
+
     getOutput: function(outputId) {
       return this.__outputs[outputId];
     },
@@ -287,7 +295,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this);
+      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbenchModel(), this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("RemoveLink", e => {
         let changedField = e.getData();
@@ -311,6 +319,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     __addInputs: function(inputs) {
+      this.__inputs = inputs;
+
       if (inputs === null) {
         return;
       }

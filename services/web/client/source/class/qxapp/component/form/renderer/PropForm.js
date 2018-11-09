@@ -21,9 +21,16 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
      *
      * @param vizWidget {Widget} visualization widget to embedd
      */
-  construct: function(form, nodeModel) {
+  construct: function(form, workbenchModel, nodeModel) {
+    if (workbenchModel) {
+      this.setWorkbenchModel(workbenchModel);
+    } else {
+      this.setWorkbenchModel(null);
+    }
     if (nodeModel) {
       this.setNodeModel(nodeModel);
+    } else {
+      this.setNodeModel(null);
     }
 
     this.base(arguments, form);
@@ -40,6 +47,10 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
   },
 
   properties: {
+    workbenchModel: {
+      check: "qxapp.data.model.WorkbenchModel"
+    },
+
     nodeModel: {
       check: "qxapp.data.model.NodeModel"
     }
@@ -145,8 +156,15 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       }
     },
 
-    __arePortsCompatible: function(node1, port1, node2, port2) {
-      return qxapp.data.Store.getInstance().arePortsCompatible(node1, port1, node2, port2);
+    __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
+      if (this.getWorkbenchModel()) {
+        const node1 = this.getWorkbenchModel().getNodeModel(node1Id);
+        const port1 = node1.getOutput(port1Id);
+        const node2 = this.getWorkbenchModel().getNodeModel(node2Id);
+        const port2 = node2.getInput(port2Id);
+        return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
+      }
+      return false;
     },
 
     __createDropMechanism: function(uiElement, portId) {
