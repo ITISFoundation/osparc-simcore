@@ -1,13 +1,18 @@
-""" RestAPI common schema models and classes
 
+""" rest - common schema models and classes
+
+UNDER DEVELOPMENT
 """
 import attr
 import typing
+import warnings
 
-# TODO: wARNING!!! Common types Versioning? What if one model changes???
+
+warnings.warn("DO NOT USE IN PRODUCTION, STILL UNDER DEVELOPMENT")
 
 # NOTE: using these, optional and required fields are always transmitted!
 # NOTE: make some attrs nullable by default!?
+
 
 @attr.s(auto_attribs=True)
 class LogMessageType:
@@ -25,11 +30,11 @@ class ErrorItemType:
 
     @classmethod
     def from_error(cls, err: BaseException):
-        item = cls( code = err.__class__.__name__,
-         message=str(err),
-         resource=None,
-         field=None
-        )
+        item = cls(code=err.__class__.__name__,
+                   message=str(err),
+                   resource=None,
+                   field=None
+                   )
         return item
 
 
