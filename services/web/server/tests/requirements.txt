@@ -5,7 +5,7 @@ faker
 openapi-core==0.7.1
 openapi_spec_validator==0.2.4
 pylint==2.1.1
-pytest-aiohttp
+pytest-aiohttp==0.3.0
 pytest==3.10.0
 pytest-cov==2.6.0
 pytest-docker==0.6.1
