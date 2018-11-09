@@ -8,7 +8,7 @@ aio-pika==4.3.1
 celery==4.2.1
 execnet==1.5.0
 kombu==4.2.1
-marshmallow
+marshmallow==2.16.3
 minio==4.0.6
 networkx==2.2
 passlib==1.7.1
