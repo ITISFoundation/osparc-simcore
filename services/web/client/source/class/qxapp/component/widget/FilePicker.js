@@ -141,10 +141,10 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
         const presginedLinkData = e.getData();
         // presginedLinkData.locationId;
         // presginedLinkData.fileUuid;
-        console.log(presginedLinkData);
         console.log(file);
-        // const url = data["url"];
-        this.__uploadFile(file, presginedLinkData.presginedLink);
+        if (presginedLinkData.presginedLink) {
+          this.__uploadFile(file, presginedLinkData.presginedLink);
+        }
       }, this);
       const download = false;
       const locationId = 0;
