@@ -3,7 +3,7 @@
 ##    pip install --requirement=requirements.txt
 ##
 aiopg
-coveralls
+coveralls==1.5.1
 pytest
 pytest-aiohttp
 pytest-asyncio
