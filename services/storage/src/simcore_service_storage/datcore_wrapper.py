@@ -98,10 +98,8 @@ class DatcoreWrapper:
 
             """%(self.api_token, self.api_secret)
 
-        logger.info("BEFORE PYCALL")
 
         files = self._py2_call(script)
-        logger.info("AFTER PYCALL")
 
         data = []
         for f in files:

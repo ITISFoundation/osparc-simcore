@@ -10,7 +10,6 @@ from simcore_service_storage.db import setup_db
 from simcore_service_storage.dsm import setup_dsm
 from simcore_service_storage.middlewares import dsm_middleware
 from simcore_service_storage.rest import setup_rest
-from simcore_service_storage.s3 import (SIMCORE_S3_ID)
 from simcore_service_storage.session import setup_session
 from simcore_service_storage.settings import APP_CONFIG_KEY
 
@@ -89,7 +88,7 @@ async def test_s3_files_metadata(client, dsm_mockup_db):
 
     # list files for every user
     for _id in id_file_count:
-        resp = await client.get("/v0/locations/{loc}/files/metadata?user_id={uid}".format(loc=SIMCORE_S3_ID,uid=_id))
+        resp = await client.get("/v0/locations/0/files/metadata?user_id={}".format(_id))
         payload = await resp.json()
         assert resp.status == 200, str(payload)
 
@@ -125,9 +124,7 @@ async def test_s3_file_metadata(client, dsm_mockup_db):
 async def test_download_link(client, dsm_mockup_db):
     for d in dsm_mockup_db.keys():
         fmd = dsm_mockup_db[d]
-        endpoint = "/v0/locations/{loc}/files?user_id={uid}&project_id={pid}&node_id={nid}&file_name={fn}".format(
-            loc=0, uid=fmd.user_id, pid=fmd.project_id, nid=fmd.node_id, fn=fmd.file_name)
-        resp = await client.get(endpoint)
+        resp = await client.get("/v0/locations/0/files/{}?user_id={}".format(quote(fmd.file_uuid, safe=''), fmd.user_id))
         payload = await resp.json()
         assert resp.status == 200, str(payload)
 
@@ -138,9 +135,7 @@ async def test_download_link(client, dsm_mockup_db):
 async def test_upload_link(client, dsm_mockup_db):
     for d in dsm_mockup_db.keys():
         fmd = dsm_mockup_db[d]
-        endpoint = "/v0/locations/{loc}/files?user_id={uid}&project_id={pid}&node_id={nid}&file_name={fn}".format(
-            loc=0, uid=fmd.user_id, pid=fmd.project_id, nid=fmd.node_id, fn=fmd.file_name)
-        resp = await client.put(endpoint)
+        resp = await client.put("/v0/locations/0/files/{}?user_id={}".format(quote(fmd.file_uuid, safe=''), fmd.user_id))
         payload = await resp.json()
         assert resp.status == 200, str(payload)
 
@@ -156,10 +151,9 @@ async def test_copy(client, dsm_mockup_db, datcore_testbucket):
     for d in dsm_mockup_db.keys():
         fmd = dsm_mockup_db[d]
         source_uuid = fmd.file_uuid
-
-        endpoint = "/v0/locations/{loc}/files?user_id={uid}&dataset={ds}&file_name={fn}&extra_source={es}".format(
-            loc=1, uid=fmd.user_id, ds=datcore_testbucket, fn=fmd.file_name, es=quote(source_uuid, safe=''))
-        resp = await client.put(endpoint)
+        datcore_uuid = os.path.join("datcore", datcore_testbucket, fmd.file_name)
+        resp = await client.put("/v0/locations/1/files/{}?user_id={}&extra_source={}".format(quote(datcore_uuid, safe=''),
+            fmd.user_id, quote(source_uuid)))
         payload = await resp.json()
         assert resp.status == 200, str(payload)
 
@@ -186,13 +180,7 @@ async def test_delete_file(client, dsm_mockup_db):
 
     for d in dsm_mockup_db.keys():
         fmd = dsm_mockup_db[d]
-
-        endpoint = "/v0/locations/{loc}/files?user_id={uid}&project_id={pid}&node_id={nid}&file_name={fn}".format(
-            loc=0, uid=fmd.user_id, pid=fmd.project_id, nid=fmd.node_id, fn=fmd.file_name)
-        resp = await client.delete(endpoint)
-
-        #resp = await client.delete("/v0/locations/0/files/{}?user_id={}".format(quote(fmd.file_uuid, safe=''), fmd.user_id))
-
+        resp = await client.delete("/v0/locations/0/files/{}?user_id={}".format(quote(fmd.file_uuid, safe=''), fmd.user_id))
         payload = await resp.json()
         assert resp.status == 200, str(payload)
 

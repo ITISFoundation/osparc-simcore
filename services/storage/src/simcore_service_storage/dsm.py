@@ -6,7 +6,7 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from operator import itemgetter
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import aiofiles
 import aiohttp
@@ -105,18 +105,6 @@ class DataStorageManager:
     def location_from_id(self, location_id : str):
         return _location_from_id(location_id)
 
-    def parse_query(self, location: str, query : Dict) -> str:
-        file_uuid: str = ""
-
-        if location == SIMCORE_S3_STR:
-            file_uuid = "/".join([SIMCORE_S3_STR, self.s3_bucket, query["project_id"], query["node_id"], query["file_name"]])
-        elif location == DATCORE_STR:
-            file_uuid = "/".join([DATCORE_STR, query["dataset"], query["file_name"]])
-
-        return file_uuid
-
-
-
     async def ping_datcore(self, user_id: str):
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         logger.info("token: %s, secret %s", api_token, api_secret)
@@ -207,7 +195,7 @@ class DataStorageManager:
             For internal storage, the db state should be updated upon completion via
             Notification mechanism
 
-            For simcore.s3 we can use the file_id
+            For simcore.s3 we can use the file_name
             For datcore we need the full path
         """
         # TODO: const strings

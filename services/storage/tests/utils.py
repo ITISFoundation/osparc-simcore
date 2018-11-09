@@ -79,7 +79,6 @@ def insert_metadata(url: str, fmd: FileMetaData):
         project_name = fmd.project_name,
         node_id = fmd.node_id,
         node_name = fmd.node_name,
-        file_id = fmd.file_id,
         file_name = fmd.file_name,
         user_id = fmd.user_id,
         user_name= fmd.user_name)

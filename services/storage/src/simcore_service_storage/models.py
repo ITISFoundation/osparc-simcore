@@ -28,7 +28,6 @@ file_meta_data = sa.Table(
     sa.Column("project_name", sa.String),
     sa.Column("node_id", sa.String),
     sa.Column("node_name", sa.String),
-    sa.Column("file_id", sa.String),
     sa.Column("file_name", sa.String),
     sa.Column("user_id", sa.String),
     sa.Column("user_name", sa.String)
@@ -91,7 +90,6 @@ class FileMetaData:
         It is actually an overkill
 
         file_name       : display name for a file
-        file_id         : storage name
         location_id     : storage location
         location_name   : storage location display name (currently used as part of the file_uuid)
         project_id      : project_id
@@ -105,7 +103,7 @@ class FileMetaData:
 
         file_uuid       : unique identifier for a file:
 
-            location_name/bucket_name/project_id/node_id/file_id = location_name/bucket_name/object_name
+            location_name/bucket_name/project_id/node_id/file_name = location_name/bucket_name/object_name
 
             TODO: location_name should be location_id
 
@@ -121,7 +119,6 @@ class FileMetaData:
     project_name: str=""
     node_id: str=""
     node_name: str=""
-    file_id: str=""
     file_name: str=""
     user_id: str=""
     user_name: str=""
@@ -135,7 +132,6 @@ class FileMetaData:
             self.bucket_name = parts[1]
             self.object_name = "/".join(parts[2:])
             self.file_name = parts[-1]
-            self.file_id = parts[-1]
             self.project_id = parts[2]
             self.node_id = parts[3]
             self.file_uuid = file_uuid

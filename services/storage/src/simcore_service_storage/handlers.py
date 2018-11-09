@@ -182,16 +182,15 @@ async def download_file(request: web.Request):
     assert not body, "body %s" % body
 
     assert params["location_id"]
+    assert params["fileId"]
     assert query["user_id"]
-
-
     dsm = request[RQT_DSM_KEY]
 
     location_id = params["location_id"]
     location = dsm.location_from_id(location_id)
     user_id = query["user_id"]
+    file_uuid = params["fileId"]
 
-    file_uuid = dsm.parse_query(location, query)
     link = await dsm.download_link(user_id=user_id, location=location, file_uuid=file_uuid)
 
     envelope = {
@@ -199,7 +198,7 @@ async def download_file(request: web.Request):
         'data': {
             "link": link
         }
-    }
+        }
 
     return envelope
 
@@ -211,15 +210,14 @@ async def upload_file(request: web.Request):
     assert not body, "body %s" % body
 
     assert params["location_id"]
+    assert params["fileId"]
     assert query["user_id"]
-
     dsm = request[RQT_DSM_KEY]
 
     location_id = params["location_id"]
     location = dsm.location_from_id(location_id)
     user_id = query["user_id"]
-
-    file_uuid = dsm.parse_query(location, query)
+    file_uuid = params["fileId"]
 
     if query.get("extra_source"):
         source_uuid = query["extra_source"]
@@ -252,16 +250,14 @@ async def delete_file(request: web.Request):
     assert not body, "body %s" % body
 
     assert params["location_id"]
-
+    assert params["fileId"]
     assert query["user_id"]
     dsm = request[RQT_DSM_KEY]
 
     location_id = params["location_id"]
     location = dsm.location_from_id(location_id)
-
     user_id = query["user_id"]
-
-    file_uuid = dsm.parse_query(location, query)
+    file_uuid = params["fileId"]
 
     data = await dsm.delete_file(user_id=user_id, location=location, file_uuid=file_uuid)
 
