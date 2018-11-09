@@ -20,4 +20,4 @@ bumpversion==0.5.3
 # code formatting
 autopep8==1.4.2
 # code replament/rename
-rope
+rope==0.11.0
