@@ -5,7 +5,7 @@ aiohttp_session[secure]==2.5.1
 aiohttp-security==0.2.0
 aiopg[sa]==0.14.0
 aio-pika==2.9.0
-celery==4.1.0
+celery==4.2.1
 execnet
 kombu==4.1.0
 marshmallow
