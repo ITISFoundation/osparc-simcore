@@ -7,5 +7,5 @@ minio==4.0.6
 networkx==2.1
 pika==0.10.0
 psycopg2==2.7.4
-sqlalchemy==1.2.9
+sqlalchemy==1.2.13
 tenacity==5.0.2
