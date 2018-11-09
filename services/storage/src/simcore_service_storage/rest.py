@@ -8,7 +8,8 @@ from typing import Dict
 from aiohttp import web
 
 from servicelib import openapi
-from servicelib.rest_middlewares import envelope_middleware, error_middleware
+from servicelib.rest_middlewares import append_rest_middlewares
+
 
 from . import rest_routes
 from .resources import resources
@@ -51,6 +52,12 @@ def create_apispecs(app_config: Dict) -> openapi.Spec:
         specs = None
     return specs
 
+
+def get_base_path(specs: openapi.Spec) ->str:
+    # TODO: guarantee this convention is true
+    return '/v' + specs.info.version.split('.')[0]
+
+
 def setup(app: web.Application):
     """Setup the rest API module in the application in aiohttp fashion. """
     log.debug("Setting up %s ...", __name__)
@@ -70,8 +77,9 @@ def setup(app: web.Application):
     app[APP_OPENAPI_SPECS_KEY] = api_specs # validated openapi specs
 
     #Injects rest middlewares in the application
-    app.middlewares.append(error_middleware)
-    app.middlewares.append(envelope_middleware)
+
+    base_path = get_base_path(api_specs)
+    append_rest_middlewares(app, base_path)
 
     rest_routes.setup(app)
 

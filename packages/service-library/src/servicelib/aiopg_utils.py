@@ -12,9 +12,9 @@ import sqlalchemy as sa
 import logging
 import warnings
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-warnings.warn("DO NOT USER, STILL UNDER DEVELOPMENT")
+warnings.warn("DO NOT USE IN PRODUCTION, STILL UNDER DEVELOPMENT")
 
 @attr.s(auto_attribs=True)
 class AiopgExecutor:
@@ -42,9 +42,7 @@ class AiopgExecutor:
 
     async def execute(self):
         async with self.engine.acquire() as conn:
-            log.debug(self.statement)
-            import pdb; pdb.set_trace()
-
+            logger.debug(self.statement)
             resp = await conn.execute(self.statement)
             return resp
 
