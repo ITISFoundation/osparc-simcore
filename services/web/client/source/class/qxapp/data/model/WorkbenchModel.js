@@ -216,8 +216,8 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
         // node especific
         if (!nodeModel.isContainer()) {
-          node.key = nodeModel.getMetaData().key;
-          node.version = nodeModel.getMetaData().version;
+          node.key = nodeModel.getKey();
+          node.version = nodeModel.getVersion();
         }
       }
       return workbench;
