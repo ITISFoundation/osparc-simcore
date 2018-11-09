@@ -7,6 +7,6 @@
 -e ../../../packages/service-library/
 -e ../../../packages/director-sdk/python
 
-aiohttp-devtools
+aiohttp-devtools==0.10.3
 autopep8==1.4.2
 rope==0.11.0
