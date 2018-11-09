@@ -2,7 +2,7 @@
 #   Outsourced here so can be installed in base-stage of the web/Dockerfile
 aiohttp==3.4.4
 aiohttp_session[secure]==2.7.0
-aiohttp-security==0.2.0
+aiohttp-security==0.4.0
 aiopg[sa]==0.14.0
 aio-pika==2.9.0
 celery==4.2.1
