@@ -10,5 +10,5 @@ pytest-asyncio
 pytest-cov==2.6.0
 pytest-docker
 openapi_spec_validator==0.2.4
-pyyaml
+pyyaml==3.13
 virtualenv
