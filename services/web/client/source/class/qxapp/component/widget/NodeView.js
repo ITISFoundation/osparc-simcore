@@ -43,19 +43,15 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     mainLayout.set({
       alignX: "center",
-      paddingTop: 20,
-      paddingRight: 30,
-      paddingBottom: 20,
-      paddingLeft: 30
+      padding: 5
     });
     this.add(mainLayout, {
       flex: 1
     });
 
-    this.__nodesUI = [];
-
-    this.__initTitle();
-    this.__initSettings();
+    this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__initButtons();
   },
 
@@ -76,39 +72,13 @@ qx.Class.define("qxapp.component.widget.NodeView", {
   },
 
   members: {
-    __settingsBox: null,
-    __inputNodesLayout: null,
     __mainLayout: null,
-    __nodesUI: null,
+    __inputNodesLayout: null,
+    __settingsLayout: null,
+    __mapperLayout: null,
+    __iFrameLayout: null,
     __buttonsLayout: null,
     __openFolder: null,
-
-    __initTitle: function() {
-      let box = new qx.ui.layout.HBox();
-      box.set({
-        spacing: 10,
-        alignX: "right"
-      });
-      let titleBox = new qx.ui.container.Composite(box);
-
-      let settLabel = new qx.ui.basic.Label(this.tr("Settings"));
-      settLabel.set({
-        alignX: "center",
-        alignY: "middle"
-      });
-
-      titleBox.add(settLabel, {
-        width: "75%"
-      });
-      this.__mainLayout.add(titleBox);
-    },
-
-    __initSettings: function() {
-      this.__settingsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      this.__mainLayout.add(this.__settingsBox, {
-        flex: 1
-      });
-    },
 
     __initButtons: function() {
       let box = new qx.ui.layout.HBox();
@@ -144,16 +114,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }, this);
 
       buttonsLayout.add(openFolder);
-      this.__mainLayout.add(buttonsLayout);
-    },
-
-    __getNodeUI: function(id) {
-      for (let i = 0; i < this.__nodesUI.length; i++) {
-        if (this.__nodesUI[i].getNodeUI() === id) {
-          return this.__nodesUI[i];
-        }
-      }
-      return null;
     },
 
     __arePortsCompatible: function(node1, port1, node2, port2) {
@@ -228,7 +188,9 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       return nodePorts;
     },
 
-    __createInputPortsUIs: function(nodeModel) {
+    __addInputPortsUIs: function(nodeModel) {
+      this.__clearInputPortsUIs();
+
       // Add the default inputs if any
       if (Object.keys(this.getNodeModel().getInputsDefault()).length > 0) {
         this.__createInputPortsUI(this.getNodeModel(), false);
@@ -244,8 +206,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
             this.__createInputPortsUI(exposedInnerNode);
           }
         } else {
-          let inputLabel = this.__createInputPortsUI(inputNodeModel);
-          this.__nodesUI.push(inputLabel);
+          this.__createInputPortsUI(inputNodeModel);
         }
       }
     },
@@ -257,33 +218,92 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       }
     },
 
-    __applyNode: function(nodeModel, oldNode, propertyName) {
-      this.__settingsBox.removeAll();
-      this.__settingsBox.add(nodeModel.getPropsWidget());
-      this.__createDragDropMechanism(nodeModel.getPropsWidget());
+    __addSettings: function(propsWidget) {
+      this.__settingsLayout.removeAll();
+      if (propsWidget) {
+        let box = new qx.ui.layout.HBox();
+        box.set({
+          spacing: 10,
+          alignX: "right"
+        });
+        let titleBox = new qx.ui.container.Composite(box);
+        let settLabel = new qx.ui.basic.Label(this.tr("Settings"));
+        settLabel.set({
+          alignX: "center"
+        });
+        titleBox.add(settLabel, {
+          width: "75%"
+        });
 
-      if (nodeModel.getInputsMapper()) {
-        this.__settingsBox.add(nodeModel.getInputsMapper(), {
+        this.__settingsLayout.add(titleBox);
+        this.__settingsLayout.add(propsWidget);
+        this.__createDragDropMechanism(propsWidget);
+
+        this.__mainLayout.add(this.__settingsLayout);
+      } else if (qx.ui.core.Widget.contains(this.__mainLayout, this.__settingsLayout)) {
+        this.__mainLayout.remove(this.__settingsLayout);
+      }
+    },
+
+    __addMapper: function(mapper) {
+      this.__mapperLayout.removeAll();
+      if (mapper) {
+        this.__mapperLayout.add(mapper, {
           flex: 1
         });
+        this.__mainLayout.add(this.__mapperLayout, {
+          flex: 1
+        });
+      } else if (qx.ui.core.Widget.contains(this.__mainLayout, this.__mapperLayout)) {
+        this.__mainLayout.remove(this.__mapperLayout);
       }
+    },
 
-      this.__clearInputPortsUIs();
-      this.__createInputPortsUIs(nodeModel);
-
-      this.__buttonsLayout.removeAll();
-      let iFrameButton = nodeModel.getIFrameButton();
-      if (iFrameButton) {
-        iFrameButton.addListener("execute", e => {
-          this.fireDataEvent("ShowViewer", {
-            url: nodeModel.getServiceUrl(),
-            name: nodeModel.getLabel(),
-            nodeId: nodeModel.getNodeId()
-          });
+    __addIFrame: function(iFrame) {
+      this.__iFrameLayout.removeAll();
+      if (iFrame) {
+        iFrame.addListenerOnce("maximize", e => {
+          this.__maximizeIFrame(true);
         }, this);
-        this.__buttonsLayout.add(iFrameButton);
+        iFrame.addListenerOnce("restore", e => {
+          this.__maximizeIFrame(false);
+        }, this);
+        this.__maximizeIFrame(iFrame.hasState("maximized"));
+        this.__iFrameLayout.add(iFrame, {
+          flex: 1
+        });
+        this.__mainLayout.add(this.__iFrameLayout, {
+          flex: 1
+        });
+      } else if (qx.ui.core.Widget.contains(this.__mainLayout, this.__iFrameLayout)) {
+        this.__mainLayout.remove(this.__iFrameLayout);
+      }
+    },
+
+    __maximizeIFrame: function(maximize) {
+      const othersStatus = maximize ? "excluded" : "visible";
+      this.__inputNodesLayout.setVisibility(othersStatus);
+      this.__settingsLayout.setVisibility(othersStatus);
+      this.__mapperLayout.setVisibility(othersStatus);
+      this.__buttonsLayout.setVisibility(othersStatus);
+    },
+
+    __addButtons: function(nodeModel) {
+      this.__buttonsLayout.removeAll();
+      let restartIFrameButton = nodeModel.getRestartIFrameButton();
+      if (restartIFrameButton) {
+        this.__buttonsLayout.add(restartIFrameButton);
       }
       this.__buttonsLayout.add(this.__openFolder);
+      this.__mainLayout.add(this.__buttonsLayout);
+    },
+
+    __applyNode: function(nodeModel, oldNode, propertyName) {
+      this.__addInputPortsUIs(nodeModel);
+      this.__addSettings(nodeModel.getPropsWidget());
+      this.__addMapper(nodeModel.getInputsMapper());
+      this.__addIFrame(nodeModel.getIFrame());
+      this.__addButtons(nodeModel);
     }
   }
 });

@@ -51,7 +51,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __treeView: null,
     __extraView: null,
     __loggerView: null,
-    __settingsView: null,
+    __nodeView: null,
     __currentNodeId: null,
 
     initDefault: function() {
@@ -72,10 +72,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let workbenchView = this.__workbenchView = new qxapp.component.workbench.WorkbenchView(project.getWorkbenchModel());
       this.showInMainView(workbenchView, "root");
 
-      let settingsView = this.__settingsView = new qxapp.component.widget.NodeView().set({
+      let nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({
         minHeight: 200
       });
-      settingsView.setWorkbenchModel(project.getWorkbenchModel());
+      nodeView.setWorkbenchModel(project.getWorkbenchModel());
     },
 
     connectEvents: function() {
@@ -124,27 +124,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
         nodeModel.setLabel(newLabel);
       }, this);
-
-      this.__settingsView.addListener("ShowViewer", e => {
-        const data = e.getData();
-        const url = data.url;
-        const name = data.name;
-        // const nodeId = data.nodeId;
-
-        let iFrame = this.__createIFrame(url);
-        this.__addWidgetToMainView(iFrame);
-
-        // Workaround for updating inputs
-        if (name === "3d-viewer") {
-          let urlUpdate = url + "/retrieve";
-          let req = new qx.io.request.Xhr();
-          req.set({
-            url: urlUpdate,
-            method: "POST"
-          });
-          req.send();
-        }
-      }, this);
     },
 
     nodeSelected: function(nodeId) {
@@ -166,15 +145,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         if (nodeModel.isContainer()) {
           widget = this.__workbenchView;
         } else {
-          this.__settingsView.setNodeModel(nodeModel);
+          this.__nodeView.setNodeModel(nodeModel);
           if (nodeModel.getMetaData().type === "dynamic") {
             const widgetManager = qxapp.component.widget.WidgetManager.getInstance();
             widget = widgetManager.getWidgetForNode(nodeModel);
             if (!widget) {
-              widget = this.__settingsView;
+              widget = this.__nodeView;
             }
           } else {
-            widget = this.__settingsView;
+            widget = this.__nodeView;
           }
         }
         this.showInMainView(widget, nodeId);
@@ -359,9 +338,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __createIFrame: function(url) {
-      let iFrame = new qx.ui.embed.Iframe().set({
-        source: url
-      });
+      let iFrame = new qxapp.component.widget.PersistentIframe(url);
       return iFrame;
     },
 
