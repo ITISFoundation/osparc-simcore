@@ -1,7 +1,7 @@
 -e .
 
 bumpversion==0.5.3
-coverage
+coverage==4.5.1
 
 pytest==3.4.2
 pytest-runner==2.11.1
