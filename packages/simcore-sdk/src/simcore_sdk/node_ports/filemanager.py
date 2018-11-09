@@ -54,25 +54,25 @@ async def _get_location_id_from_location_name(store:str, api:UsersApi):
         raise exceptions.StorageConnectionError(store, resp.error.to_str())
     
 
-async def _get_link(store:str, location_id:int, project_id:str, node_id:str, file_name:str, apifct):
-    log.debug("Getting link from %s for %s, %s, %s, %s", store, location_id, project_id, node_id, file_name)
+async def _get_link(store:str, location_id:int, file_id:str, apifct):
+    log.debug("Getting link from %s for %s", store, file_id)
     try:
-        resp = await apifct(location_id=location_id, user_id=config.USER_ID, project_id=project_id, node_id=node_id, file_name=file_name)
+        resp = await apifct(location_id=location_id, user_id=config.USER_ID, file_id=file_id)
         
         if resp.error:
             raise exceptions.S3TransferError("Error getting link: {}".format(resp.error.to_str()))
         if not resp.data.link:
-            raise exceptions.S3InvalidPathError("{}:{}/{}/{}".format(store, project_id, node_id, file_name))
+            raise exceptions.S3InvalidPathError(file_id)
         log.debug("Got link %s", resp.data.link)
         return resp.data.link
     except ApiException as err:
         _handle_api_exception(store, err)
 
-async def _get_download_link(store:str, location_id:int, project_id:str, node_id:str, file_name:str, api:UsersApi):
-    return await _get_link(store, location_id, project_id, node_id, file_name, api.download_file)
+async def _get_download_link(store:str, location_id:int, file_id:str, api:UsersApi):
+    return await _get_link(store, location_id, file_id, api.download_file)
 
-async def _get_upload_link(store:str, location_id:int, project_id:str, node_id:str, file_name:str, api:UsersApi):
-    return await _get_link(store, location_id, project_id, node_id, file_name, api.upload_file)
+async def _get_upload_link(store:str, location_id:int, file_id:str, api:UsersApi):
+    return await _get_link(store, location_id, file_id, api.upload_file)
 
 async def _download_link_to_file(session:aiohttp.ClientSession, url:URL, file_path:Path, store: str, s3_object: str):
     log.debug("Downloading from %s to %s", url, file_path)
@@ -107,18 +107,14 @@ async def _upload_file_to_link(session: aiohttp.ClientSession, url: URL, file_pa
             response_text = await resp.text()
             raise exceptions.S3TransferError("Could not upload file {}:{}".format(file_path, response_text))
         
-
-def _get_s3_object(store: str, project_id:str, node_id:str, s3_file_name:str) -> str:
-    return "{}:{}/{}/{}".format(store, project_id, node_id, s3_file_name)
-
-async def download_file(store: str, project_id:str, node_id:str, s3_file_name:str, local_file_path: Path):
-    log.debug("Trying to download: store %s, project id %s, node id %s, s3 filename %s, to local file name %s", 
-                    store, project_id, node_id, s3_file_name, local_file_path)
+async def download_file(store: str, s3_object:str, local_file_path: Path):
+    log.debug("Trying to download: store %s, s3 object %s, to local file name %s", 
+                    store, s3_object, local_file_path)
     with api_client() as client:
         api = UsersApi(client)
         
         location_id = await _get_location_id_from_location_name(store, api)
-        download_link = await _get_download_link(store, location_id, project_id, node_id, s3_file_name, api)
+        download_link = await _get_download_link(store, location_id, s3_object, api)
 
         if download_link:
             download_link = URL(download_link)
@@ -127,18 +123,18 @@ async def download_file(store: str, project_id:str, node_id:str, s3_file_name:st
             if local_file_path.exists():
                 local_file_path.unlink()    
             async with aiohttp.ClientSession() as session:
-                await _download_link_to_file(session, download_link, local_file_path, store, _get_s3_object(store, project_id, node_id, s3_file_name))
+                await _download_link_to_file(session, download_link, local_file_path, store, s3_object)
                 return
 
-    raise exceptions.S3InvalidPathError(_get_s3_object(store, project_id, node_id, s3_file_name))
+    raise exceptions.S3InvalidPathError(s3_object)
 
-async def upload_file(store:str, project_id:str, node_id:str, s3_file_name:str, local_file_path:Path):
-    log.debug("Trying to upload file to S3: store %s, s3ovject %s, file path %s", store, _get_s3_object(store, project_id, node_id, s3_file_name), local_file_path)
+async def upload_file(store:str, s3_object:str, local_file_path:Path):
+    log.debug("Trying to upload file to S3: store %s, s3object %s, file path %s", store, s3_object, local_file_path)
     with api_client() as client:
         api = UsersApi(client)
         
         location_id = await _get_location_id_from_location_name(store, api)
-        upload_link = await _get_upload_link(store, location_id, project_id, node_id, s3_file_name, api)
+        upload_link = await _get_upload_link(store, location_id, s3_object, api)
 
         if upload_link:
             upload_link = URL(upload_link)
@@ -147,4 +143,4 @@ async def upload_file(store:str, project_id:str, node_id:str, s3_file_name:str, 
                 await _upload_file_to_link(session, upload_link, local_file_path)
                 return
 
-    raise exceptions.S3InvalidPathError(_get_s3_object(store, project_id, node_id, s3_file_name))
+    raise exceptions.S3InvalidPathError(s3_object)

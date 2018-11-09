@@ -100,7 +100,7 @@ class Item():
                 raise exceptions.InvalidItemTypeError(self.type, value)
             log.debug("file path %s will be uploaded to s3", value)
             s3_object = data_items_utils.encode_file_id(file_path, store=config.STORE, bucket=config.BUCKET, project_id=config.PROJECT_ID, node_id=config.NODE_UUID)
-            await filemanager.upload_file(store=config.STORE, project_id=config.PROJECT_ID, node_id=config.NODE_UUID, s3_file_name=file_path.name, local_file_path=file_path)
+            await filemanager.upload_file(store=config.STORE, s3_object=s3_object, local_file_path=file_path)
             log.debug("file path %s uploaded", value)
             # FIXME: THIS is an issue now
             value = data_items_utils.encode_store(config.STORE, s3_object)
@@ -134,9 +134,7 @@ class Item():
             file_name = next(iter(self._schema.fileToKeyMap))
 
         file_path = data_items_utils.create_file_path(self.key, file_name)
-        # FIXME: maybe now so good
-        store,_,project_id,node_id,s3_file_name = data_items_utils.decode_file_id(s3_path)
-        await filemanager.download_file(store=store, project_id=project_id, node_id=node_id, s3_file_name=s3_file_name, local_file_path=file_path)
+        await filemanager.download_file(store=store, s3_object=s3_path, local_file_path=file_path)
         return file_path
 
 
