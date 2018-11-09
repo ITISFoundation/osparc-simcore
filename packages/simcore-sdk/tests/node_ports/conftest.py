@@ -24,7 +24,7 @@ def s3_simcore_location() ->str:
 @pytest.fixture
 def filemanager_cfg(storage, user_id, bucket, s3_simcore_location):
     storage_endpoint = yarl.URL(storage)
-    node_config.STORAGE_ENDPOINT = "{}:{}/v0".format(storage_endpoint.host, storage_endpoint.port)
+    node_config.STORAGE_ENDPOINT = "{}:{}".format(storage_endpoint.host, storage_endpoint.port)
     node_config.USER_ID = user_id    
     node_config.BUCKET = bucket
     node_config.STORE = s3_simcore_location
