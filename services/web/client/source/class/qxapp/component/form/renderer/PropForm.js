@@ -22,6 +22,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
      * @param vizWidget {Widget} visualization widget to embedd
      */
   construct: function(form, workbenchModel, nodeModel) {
+    // workbenchModel and nodeModel are necessary for creating links
     if (workbenchModel) {
       this.setWorkbenchModel(workbenchModel);
     } else {
@@ -48,11 +49,13 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
 
   properties: {
     workbenchModel: {
-      check: "qxapp.data.model.WorkbenchModel"
+      check: "qxapp.data.model.WorkbenchModel",
+      nullable: true
     },
 
     nodeModel: {
-      check: "qxapp.data.model.NodeModel"
+      check: "qxapp.data.model.NodeModel",
+      nullable: true
     }
   },
 
@@ -168,7 +171,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     },
 
     __createDropMechanism: function(uiElement, portId) {
-      if (this.isPropertyInitialized("nodeModel")) {
+      if (this.getNodeModel()) {
         uiElement.setDroppable(true);
         uiElement.nodeId = this.getNodeModel().getNodeId();
         uiElement.portId = portId;

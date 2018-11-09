@@ -67,6 +67,7 @@ qx.Class.define("qxapp.component.form.Auto", {
      * @param structure {Array} form structure
      */
   construct : function(content, nodeModel) {
+    // nodeModel is necessary for creating links
     if (nodeModel) {
       this.setNodeModel(nodeModel);
     } else {
@@ -95,7 +96,7 @@ qx.Class.define("qxapp.component.form.Auto", {
   properties: {
     nodeModel: {
       check: "qxapp.data.model.NodeModel",
-      nullable: false
+      nullable: true
     }
   },
 
@@ -547,8 +548,13 @@ qx.Class.define("qxapp.component.form.Auto", {
       const workbenchModel = this.getNodeModel().getWorkbenchModel();
       const fromNode = workbenchModel.getNodeModel(fromNodeId);
       const fromNodeLabel = fromNode.getLabel(fromNodeId);
-      const fromPortLabel = fromNode.getOutput(fromPortId).label;
-      this.getControlLink(toPortId).setValue("Linked to " + fromNodeLabel + ": " + fromPortLabel);
+      const port = fromNode.getOutput(fromPortId);
+      const fromPortLabel = port ? port.label : null;
+      if (fromNodeLabel && fromPortLabel) {
+        this.getControlLink(toPortId).setValue("Linked to " + fromNodeLabel + ": " + fromPortLabel);
+      } else {
+        this.getControlLink(toPortId).setValue("Linked to " + fromNodeId + ": " + fromPortId);
+      }
 
       this.fireDataEvent("linkAdded", toPortId);
     },
