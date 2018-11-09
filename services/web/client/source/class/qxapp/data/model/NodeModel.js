@@ -1,3 +1,5 @@
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.data.model.NodeModel", {
   extend: qx.core.Object,
 
@@ -269,7 +271,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("RemoveLink", e => {
         let changedField = e.getData();
@@ -324,8 +326,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
-    addPortLink: function(fromNodeId, fromPortId, toPortId) {
-      this.__settingsForm.addLink(fromNodeId, fromPortId, toPortId);
+    addPortLink: function(toPortId, fromNodeId, fromPortId) {
+      this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
     },
 
     addInputNode: function(inputNodeId) {
@@ -378,7 +380,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     __startInteractiveNode: function() {
-      let metaData = this.__metaData;
+      let metaData = this.getMetaData();
       if (metaData.type == "dynamic") {
         const slotName = "startDynamic";
         let button = new qx.ui.form.Button().set({
@@ -389,6 +391,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         }, this);
         button.setEnabled(false);
         this.setRestartIFrameButton(button);
+        this.__showLoadingIFrame();
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
           const {
@@ -428,14 +431,31 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             }
 
             this.getRestartIFrameButton().setEnabled(true);
-            this.__restartIFrame();
-
-            console.log(this.getLabel(), msg);
+            // FIXME: Apparently no all services are inmediately ready when they publish the port
+            const waitFor = 4000;
+            qx.event.Timer.once(e => {
+              this.__restartIFrame();
+            }, this, waitFor);
           }
         }, this);
         let data = {
           serviceKey: metaData.key,
           serviceVersion: metaData.version,
+          nodeId: this.getNodeId()
+        };
+        socket.emit(slotName, data);
+      }
+    },
+
+    removeNode: function() {
+      this.__stopInteractiveNode();
+    },
+
+    __stopInteractiveNode: function() {
+      if (this.getMetaData().type == "dynamic") {
+        const slotName = "stopDynamic";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        let data = {
           nodeId: this.getNodeId()
         };
         socket.emit(slotName, data);

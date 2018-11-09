@@ -154,17 +154,10 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       const nodeId = nodeModel.getNodeId();
       const exists = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
       if (exists) {
-        if (nodeModel.getMetaData().type == "dynamic") {
-          const slotName = "stopDynamic";
-          let socket = qxapp.wrappers.WebSocket.getInstance();
-          let data = {
-            nodeId: nodeModel.getNodeId()
-          };
-          socket.emit(slotName, data);
-        }
         delete this.__nodesTopLevel[nodeModel.getNodeId()];
         this.fireEvent("WorkbenchModelChanged");
       }
+      nodeModel.removeNode();
       return exists;
     },
 

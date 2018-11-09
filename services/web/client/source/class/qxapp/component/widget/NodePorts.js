@@ -50,10 +50,6 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     }
   },
 
-  events: {
-    "PortDragStart": "qx.event.type.Data"
-  },
-
   members: {
     __inputPort: null,
     __outputPort: null,
@@ -100,6 +96,11 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
               widget = nodeOutputList.getOutputWidget();
               break;
             }
+            case "node-output-list-icon-api-v0.0.1": {
+              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputListIcon(this.getNodeModel(), port, portKey);
+              widget = nodeOutputList.getOutputWidget();
+              break;
+            }
           }
           if (widget !== null) {
             this._add(widget, {
@@ -109,9 +110,6 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
         } else {
           let nodeOutputLabel = new qxapp.component.widget.inputs.NodeOutputLabel(this.getNodeModel(), port, portKey);
           let widget = nodeOutputLabel.getOutputWidget();
-          nodeOutputLabel.addListener("PortDragStart", e => {
-            this.fireDataEvent("PortDragStart", e.getData());
-          }, this);
           this._add(widget);
           let label = {
             isInput: isInput,
