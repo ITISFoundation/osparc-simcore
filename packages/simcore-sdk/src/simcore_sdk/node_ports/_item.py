@@ -136,8 +136,7 @@ class Item():
         file_path = data_items_utils.create_file_path(self.key, file_name)
         # FIXME: maybe now so good
         store,_,project_id,node_id,s3_file_name = data_items_utils.decode_file_id(s3_path)
-        return await filemanager.download_file(store=store,            
-                                                project_id=project_id, node_id=node_id, s3_file_name=s3_file_name,
-                                                local_file_path=file_path)
+        await filemanager.download_file(store=store, project_id=project_id, node_id=node_id, s3_file_name=s3_file_name, local_file_path=file_path)
+        return file_path
 
 
