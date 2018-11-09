@@ -1,3 +1,4 @@
+#pylint: disable=too-many-arguments
 import logging
 from contextlib import contextmanager
 from pathlib import Path
