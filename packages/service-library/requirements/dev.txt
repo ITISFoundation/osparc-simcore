@@ -1,6 +1,6 @@
 -e .
 
-bumpversion
+bumpversion==0.5.3
 coverage
 
 pytest==3.4.2
