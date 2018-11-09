@@ -2,7 +2,7 @@
 #   Outsourced here so can be installed in base-stage of the web/Dockerfile
 psycopg2-binary==2.7.5
 aiohttp==3.4.4
-aiohttp_session[secure]==2.5.1
+aiohttp_session[secure]==2.7.0
 aiohttp-security==0.2.0
 aiopg[sa]==0.15.0
 aio-pika==2.9.0
