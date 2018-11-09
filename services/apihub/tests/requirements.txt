@@ -1,4 +1,4 @@
-aiohttp
+aiohttp==3.4.4
 coveralls==1.5.1
 jsonschema~=2.6
 openapi_spec_validator==0.2.4
