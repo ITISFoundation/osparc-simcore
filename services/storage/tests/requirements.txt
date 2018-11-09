@@ -7,6 +7,6 @@ pytest
 pytest-aiohttp
 pytest-cov
 pytest-docker
-openapi_spec_validator
+openapi_spec_validator==0.2.4
 pyyaml
 virtualenv
