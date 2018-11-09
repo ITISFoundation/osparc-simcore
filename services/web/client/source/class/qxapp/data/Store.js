@@ -149,7 +149,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Modeler Live link",
-              type: "node-output-list-api-v0.0.1"
+              type: "node-output-tree-api-v0.0.1"
             }
           }
         },
@@ -169,7 +169,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Subgroups",
               description: "Subgroups",
-              type: "node-output-list-api-v0.0.1"
+              type: "node-output-tree-api-v0.0.1"
             }
           },
           inputs: {
@@ -215,7 +215,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Modeler Live link",
-              type: "node-output-list-api-v0.0.1"
+              type: "node-output-tree-api-v0.0.1"
             }
           }
         },
@@ -236,7 +236,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "MaterialDB",
               description: "MaterialDB Live link",
-              type: "node-output-list-api-v0.0.1"
+              type: "node-output-tree-api-v0.0.1"
             }
           }
         },
@@ -374,7 +374,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Default Material Settings",
               description: "Default Material Settings",
-              type: "node-output-list-api-v0.0.1"
+              type: "node-output-tree-api-v0.0.1"
             }
           },
           inputs: {
@@ -433,7 +433,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Default Boundary Settings",
               description: "Default Boundary Settings",
-              type: "node-output-list-api-v0.0.1"
+              type: "node-output-tree-api-v0.0.1"
             }
           },
           inputs: {
