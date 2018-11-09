@@ -7,7 +7,7 @@ coveralls==1.5.1
 pytest==3.10.0
 pytest-aiohttp
 pytest-asyncio
-pytest-cov
+pytest-cov==2.6.0
 pytest-docker
 openapi_spec_validator==0.2.4
 pyyaml
