@@ -12,14 +12,23 @@ log = logging.getLogger(__name__)
 
 
 def create_configfile_schema():
+
+    rest_schema = T.Dict({
+        "openapi_spec": T.Dict({
+            "version": T.String, # TODO: v0, v1, etc
+            "location": T.Or(T.String, T.URL)   # either path or url should contain version in it
+        })
+    })
+
+
     # TODO: import from director
-    _DIRECTOR_SCHEMA = T.Dict({
+    director_schema = T.Dict({
         "host": T.String(),
         "port": T.Int()
     })
 
     # should have per module?
-    _DB_SCHEMA = T.Dict({
+    db_schema = T.Dict({
         T.Key("init_tables", default=False): T.Bool()
     })
 
@@ -33,7 +42,7 @@ def create_configfile_schema():
         "log_level": T.Enum("DEBUG", "WARNING", "INFO", "ERROR", "CRITICAL", "FATAL", "NOTSET"), # TODO: auto-add all logging levels
         "testing": T.Bool(),
         T.Key("disable_services", default=[], optional=True): T.List(T.String()),
-        T.Key("db", optional=True): _DB_SCHEMA
+        T.Key("db", optional=True): db_schema
     })
 
 
@@ -53,10 +62,11 @@ def create_configfile_schema():
         "version": T.String(),
         T.Key("main"): _APP_SCHEMA,
         T.Key("smtp"): _SMTP_SERVER,
-        T.Key("director"): _DIRECTOR_SCHEMA,
+        T.Key("director"): director_schema,
         T.Key("postgres"): db.CONFIG_SCHEMA,
         T.Key("rabbit"): rabbit.CONFIG_SCHEMA,
-        T.Key("s3"): s3.CONFIG_SCHEMA
+        T.Key("s3"): s3.CONFIG_SCHEMA,
+        T.Key("rest"): rest
     })
 
 

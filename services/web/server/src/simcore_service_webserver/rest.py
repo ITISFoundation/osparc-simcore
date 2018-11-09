@@ -11,14 +11,19 @@ from servicelib import openapi
 from servicelib.rest_middlewares import append_rest_middlewares
 
 from . import rest_routes
-from .application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
+from .application_keys import APP_CONFIG_KEY
 from .resources import resources
 from .resources_keys import RSC_OPENAPI_ROOTFILE_KEY
 from .rest_settings import get_base_path
 
 log = logging.getLogger(__name__)
 
+# Settings ------------------------------------------
+THIS_MODULE = __name__.split()[-1]
+APP_OPENAPI_SPECS_KEY = "oas3"
 
+
+#-------------------------------
 def _get_server(servers, url):
     # Development server: http://{host}:{port}/{basePath}
     for server in servers:
@@ -68,14 +73,56 @@ def _setup_servers_specs(specs: openapi.Spec, app_config: Dict):
 
 
 
+from collections.abc import Sequence
+from yarl import URL
+from pathlib import Path
+from collections import OrderedDict
+
+from servicelib.openapi import create_openapi_specs
+from servicelib.rest_keys import APP_OPENAPI_SPECS_KEY
+
+
+
+
+
 
 def setup(app: web.Application):
     log.debug("Setting up %s ...", __name__)
 
-    # TODO: What if many specs to expose? v0, v1, v2 ...
-    openapi_path = resources.get_path(RSC_OPENAPI_ROOTFILE_KEY)
+    cfg = app[APP_CONFIG_KEY][THIS_MODULE]
+
+    keep = {}
+
+
+    # Load specs
+    oas_cfg = cfg["openapi-specs"]
+    if isinstance(oas_cfg, Sequence):
+
+        oas_cfg = cfg[0]
+
+
+
+    location = oas_cfg["location"]
+    version  = oas_cfg["version"]
+
+    specs = create_openapi_specs(location)
+
+
+
+
+    keep[APP_OPENAPI_SPECS_KEY] = OrderedDict()
+    keep[APP_OPENAPI_SPECS_KEY][version] = specs
+
+
+
+
+    app[THIS_MODULE_NAME] = keep
+
+
+
 
     try:
+        openapi_path = cfg["openapi-specs"]["path"]
         specs = openapi.create_specs(openapi_path)
 
         # sets servers variables to current server's config
@@ -88,6 +135,12 @@ def setup(app: web.Application):
         # TODO: What if many specs to expose? v0, v1, v2 ... perhaps a dict instead?
         # TODO: should freeze specs here??
         app[APP_OPENAPI_SPECS_KEY] = specs # validated openapi specs
+
+
+
+
+
+
 
         # setup rest submodules
         rest_routes.setup(app)

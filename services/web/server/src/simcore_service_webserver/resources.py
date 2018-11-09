@@ -4,8 +4,7 @@
 from servicelib.resources import ResourcesFacade
 
 # pylint: disable=unused-import
-from .resources_keys import (RSC_CONFIG_DIR_KEY,
-                                     RSC_OPENAPI_DIR_KEY)
+from .resources_keys import RSC_CONFIG_DIR_KEY
 
 resources = ResourcesFacade(
     package_name=__name__,
@@ -17,7 +16,6 @@ resources = ResourcesFacade(
 __all__ = (
     'resources',
     'RSC_CONFIG_DIR_KEY',
-    'RSC_OPENAPI_DIR_KEY'
 )
 
 

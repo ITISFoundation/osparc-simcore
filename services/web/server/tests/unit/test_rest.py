@@ -25,14 +25,10 @@ logging.basicConfig(level=logging.INFO)
 # TODO: reduce log from openapi_core loggers
 
 @pytest.fixture
-def here():
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-@pytest.fixture
-def openapi_path():
-    package_dir = Path(simcore_service_webserver.__file__).resolve().parent
-    spec_path = package_dir / 'oas3/v0/openapi.yaml'
-    return spec_path
+def openapi_path(api_specs_dir):
+    specs_path = api_specs_dir / 'oas3/v0/openapi.yaml'
+    assert specs_path.exits()
+    return specs_path
 
 @pytest.fixture
 def spec_dict(openapi_path):
