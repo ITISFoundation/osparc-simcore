@@ -198,6 +198,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "UUID2": {
               key: "services/computational/itis/sleeper",
               version: "0.0.0",
+              label: "Sleeper 1",
               inputs: {
                 inNumber: 3.5
               },
@@ -212,11 +213,12 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "UUID3": {
               key: "services/computational/itis/sleeper",
               version: "0.0.0",
+              label: "Sleeper 2",
               inputs: {
                 inNumber: 3.5
               },
               outputs: {
-                outNumber: 33
+                outNumber: 32
               },
               position: {
                 x: 10,
@@ -246,6 +248,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 }
               },
               inputNodes: [
+                "UUID2",
                 "UUID3",
                 "UUID1"
               ],
