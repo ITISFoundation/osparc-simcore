@@ -156,22 +156,6 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       // const fileUuid = location +"/"+ bucketName +"/"+ projectId +"/"+ nodeId +"/"+ fileId;
       const fileUuid = projectId +"/"+ nodeId +"/"+ fileId;
       store.getPresginedLink(download, locationId, fileUuid);
-
-      /*
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-
-      const slotName = "presignedUrl";
-      socket.removeSlot(slotName);
-      socket.on(slotName, function(data) {
-        const url = data["url"];
-        this.__uploadFile(file, url);
-      }, this);
-      const data = {
-        bucketName: qxapp.dev.fake.Data.getS3PublicBucketName(),
-        fileName: file.name
-      };
-      socket.emit(slotName, data);
-      */
     },
 
     // Use XMLHttpRequest to upload the file to S3.
