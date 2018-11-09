@@ -97,12 +97,11 @@ def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
     filename = os.path.basename(tmp_file)
     project_id = "22"
     node_id = "1006"
-    file_id = filename
-    file_uuid = os.path.join(SIMCORE_S3_STR, "simcore-testing", str(project_id), str(node_id), str(file_id))
+    file_name = filename
+    file_uuid = os.path.join(SIMCORE_S3_STR, "simcore-testing", str(project_id), str(node_id), str(file_name))
 
-    d = {   'object_name' : os.path.join(str(project_id), str(node_id), str(file_id)),
+    d = {   'object_name' : os.path.join(str(project_id), str(node_id), str(file_name)),
             'bucket_name' : bucket_name,
-            'file_id' : file_id,
             'file_name' : filename,
             'user_id' : "42",
             'user_name' : "starbucks",
@@ -164,7 +163,7 @@ async def test_copy_s3_s3(postgres_service_url, s3_client, mock_files_factory, d
 
     from_uuid = fmd.file_uuid
     new_project = "zoology"
-    to_uuid = os.path.join(SIMCORE_S3_STR, fmd.bucket_name, new_project, fmd.node_id, fmd.file_id)
+    to_uuid = os.path.join(SIMCORE_S3_STR, fmd.bucket_name, new_project, fmd.node_id, fmd.file_name)
     await dsm.copy_file(fmd.user_id, SIMCORE_S3_STR, to_uuid, from_uuid)
 
     data = await dsm.list_files(user_id=fmd.user_id, location=SIMCORE_S3_STR)

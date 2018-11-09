@@ -7,7 +7,7 @@ components:
         - error
       properties:
         data:
-          $ref: '#/components/schemas/FileMetaDataType'      
+          $ref: '#/components/schemas/FileMetaDataType'
         error:
           nullable: true
           default: null
@@ -33,8 +33,6 @@ components:
           type: string
         node_name:
           type: string
-        file_id:
-          type: string
         file_name:
           type: string
         user_id:
@@ -51,7 +49,6 @@ components:
         project_name: "futurology"
         node_id: "10000"
         node_name: "alpha"
-        file_id: "3"
         file_name: "example.txt"
         user_id: "12"
         user_name: "dennis"
