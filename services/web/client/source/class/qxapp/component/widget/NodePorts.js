@@ -62,7 +62,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       return this.getNodeModel().getMetaData();
     },
 
-    populateNodeLayout: function() {
+    populatePortsData: function() {
       const metaData = this.getNodeModel().getMetaData();
       this.__inputPort = {};
       this.__outputPort = {};
@@ -92,12 +92,18 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
           let widget = null;
           switch (port.type) {
             case "node-output-list-api-v0.0.1": {
-              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputList(this.getNodeModel(), port, portKey);
-              widget = nodeOutputList.getOutputWidget();
+              console.log("widget for ", port.type, " to be implemented");
+              // let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputList(this.getNodeModel(), port, portKey);
+              // widget = nodeOutputList.getOutputWidget();
               break;
             }
             case "node-output-list-icon-api-v0.0.1": {
               let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputListIcon(this.getNodeModel(), port, portKey);
+              widget = nodeOutputList.getOutputWidget();
+              break;
+            }
+            case "node-output-tree-api-v0.0.1": {
+              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputTree(this.getNodeModel(), port, portKey);
               widget = nodeOutputList.getOutputWidget();
               break;
             }
