@@ -51,7 +51,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __treeView: null,
     __extraView: null,
     __loggerView: null,
-    __settingsView: null,
+    __nodeView: null,
     __currentNodeId: null,
 
     initDefault: function() {
@@ -72,10 +72,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let workbenchView = this.__workbenchView = new qxapp.component.workbench.WorkbenchView(project.getWorkbenchModel());
       this.showInMainView(workbenchView, "root");
 
-      let settingsView = this.__settingsView = new qxapp.component.widget.NodeView().set({
+      let nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({
         minHeight: 200
       });
-      settingsView.setWorkbenchModel(project.getWorkbenchModel());
+      nodeView.setWorkbenchModel(project.getWorkbenchModel());
     },
 
     connectEvents: function() {
@@ -124,27 +124,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
         nodeModel.setLabel(newLabel);
       }, this);
-
-      this.__settingsView.addListener("ShowViewer", e => {
-        const data = e.getData();
-        const url = data.url;
-        const name = data.name;
-        // const nodeId = data.nodeId;
-
-        let iFrame = this.__createIFrame(url);
-        this.__addWidgetToMainView(iFrame);
-
-        // Workaround for updating inputs
-        if (name === "3d-viewer") {
-          let urlUpdate = url + "/retrieve";
-          let req = new qx.io.request.Xhr();
-          req.set({
-            url: urlUpdate,
-            method: "POST"
-          });
-          req.send();
-        }
-      }, this);
     },
 
     nodeSelected: function(nodeId) {
@@ -166,15 +145,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         if (nodeModel.isContainer()) {
           widget = this.__workbenchView;
         } else {
-          this.__settingsView.setNodeModel(nodeModel);
-          if (nodeModel.getMetaData().type === "dynamic") {
-            const widgetManager = qxapp.component.widget.WidgetManager.getInstance();
-            widget = widgetManager.getWidgetForNode(nodeModel);
-            if (!widget) {
-              widget = this.__settingsView;
-            }
+          this.__nodeView.setNodeModel(nodeModel);
+          if (nodeModel.getKey().includes("file-picker")) {
+            widget = new qxapp.component.widget.FilePicker(nodeModel);
           } else {
-            widget = this.__settingsView;
+            widget = this.__nodeView;
           }
         }
         this.showInMainView(widget, nodeId);
@@ -184,7 +159,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }
       }
 
-      // SHow screenshots in the ExtraView
+      // Show screenshots in the ExtraView
       if (nodeId === "root") {
         this.showScreenshotInExtraView("workbench");
       } else {
@@ -192,7 +167,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         if (nodeModel.isContainer()) {
           this.showScreenshotInExtraView("container");
         } else {
-          let nodeKey = nodeModel.getMetaData().key;
+          let nodeKey = nodeModel.getKey();
           if (nodeKey.includes("file-picker")) {
             this.showScreenshotInExtraView("file-picker");
           } else if (nodeKey.includes("modeler")) {
@@ -278,11 +253,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       const saveContainers = false;
       const savePosition = false;
       let currentPipeline = this.getProjectModel().getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
-      console.log(currentPipeline);
       let req = new qxapp.io.request.ApiRequest("/start_pipeline", "POST");
       let data = {};
       data["workbench"] = currentPipeline;
       data["project_id"] = this.getProjectModel().getUuid();
+      console.log(data);
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
@@ -303,7 +278,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __stopPipeline: function() {
       let req = new qxapp.io.request.ApiRequest("/stop_pipeline", "POST");
       let data = {};
-      data["pipeline_id"] = this.__pipelineId;
+      data["project_id"] = this.getProjectModel().getUuid();
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
@@ -327,7 +302,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __onPipelinesubmitted: function(e) {
       let req = e.getTarget();
 
-      const pipelineId = req.getResponse().pipeline_id;
+      const pipelineId = req.getResponse()["project_id"];
       this.getLogger().debug("Workbench", "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
@@ -359,9 +334,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __createIFrame: function(url) {
-      let iFrame = new qx.ui.embed.Iframe().set({
-        source: url
-      });
+      let iFrame = new qxapp.component.widget.PersistentIframe(url);
       return iFrame;
     },
 

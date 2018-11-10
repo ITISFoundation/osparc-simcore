@@ -1,105 +1,150 @@
-""" Middlewares for rest-api submodule
+""" rest - middlewares for error, enveloping and validation
+
 
 """
-
-import json
 import logging
 
 from aiohttp import web
+from openapi_core.schema.exceptions import OpenAPIError
 
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
+from .rest_responses import (JSON_CONTENT_TYPE, create_data_response,
+                             create_error_response, is_enveloped_from_text)
 from .rest_utils import EnvelopeFactory
+from .rest_validators import OpenApiValidator
 
-log = logging.getLogger(__name__)
+DEFAULT_API_VERSION = "v0"
 
-def is_enveloped(payload):
-    if isinstance(payload, str):
+
+logger = logging.getLogger(__name__)
+
+
+def is_api_request(request: web.Request, api_version: str) -> bool:
+    base_path = "/" + api_version.lstrip("/")
+    return request.path.startswith(base_path)
+
+
+def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
+    @web.middleware
+    async def _middleware(request: web.Request, handler):
+        """
+            Ensure all error raised are properly enveloped and json responses
+        """
+        if not is_api_request(request, api_version):
+            return await handler(request)
+
+        # FIXME: review when to send info to client and when not!
         try:
-            return is_enveloped(json.loads(payload))
-        except Exception: #pylint: disable=W0703
-            return False
-    return isinstance(payload, dict) and set(payload.keys()) == {'data', 'error'}
+            response = await handler(request)
+            return response
+        except web.HTTPError as err:
+            # TODO: differenciate between server/client error
+            if not err.reason:
+                err.reason = "Unexpected error"
+
+            if not err.content_type == JSON_CONTENT_TYPE:
+                err.content_type = JSON_CONTENT_TYPE
+
+            if not err.text or not is_enveloped_from_text(err.text):
+                error = ErrorType(
+                    errors=[ErrorItemType.from_error(err), ],
+                    status=err.status,
+                    logs=[LogMessageType(message=err.reason, level="ERROR"), ]
+                )
+                err.text = EnvelopeFactory(error=error).as_text()
+
+            raise
+        except web.HTTPSuccessful as ex:
+            ex.content_type = JSON_CONTENT_TYPE
+            if ex.text and not is_enveloped_from_text(ex.text):
+                ex.text = EnvelopeFactory(error=ex.text).as_text()
+            raise
+        except web.HTTPRedirection as ex:
+            logger.debug("Redirection %s", ex)
+            raise
+        except Exception as err:  # pylint: disable=W0703
+            # TODO: send info + trace nly in debug mode
+            logger.exception("Unexpected exception on server side")
+            exc = create_error_response(
+                    [err,],
+                    "Unexpected Server error",
+                    web.HTTPInternalServerError
+                )
+            raise exc
+    return _middleware
 
 
+def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
+    @web.middleware
+    async def _middleware(request: web.Request, handler):
+        """
+            Validates requests against openapi specs and extracts body, params, etc ...
+            Validate response against openapi specs
+        """
+        if not is_api_request(request, api_version):
+            return await handler(request)
 
-@web.middleware
-async def error_middleware(request: web.Request, handler):
-    """
-        Ensure all error raised are properly enveloped and json responses
-    """
-    # FIXME: bypass if not api. create decorator!?
-    if 'v0' not in request.path:
-        return await handler(request)
+        # TODO: move this outside!
+        RQ_VALIDATED_DATA_KEYS = (
+            "validated-path", "validated-query", "validated-body")
 
-    # FIXME: review when to send info to client and when not!
-    try:
-        response = await handler(request)
+        try:
+            validator = OpenApiValidator.create(request.app, api_version)
+
+            # FIXME: if request is HTTPNotFound, it still goes through middlewares and then validator.check_request fails!!!
+            try:
+                path, query, body = await validator.check_request(request)
+
+                # TODO: simplify!!!!
+                # Injects validated
+                request["validated-path"] = path
+                request["validated-query"] = query
+                request["validated-body"] = body
+            except OpenAPIError:
+                raise
+            except Exception: # pylint: disable=W0703
+                pass
+
+            response = await handler(request)
+
+            # FIXME:  openapi-core fails to validate response when specs are in separate files!
+            validator.check_response(response)
+
+        finally:
+            for k in RQ_VALIDATED_DATA_KEYS:
+                request.pop(k, None)
+
         return response
-    except web.HTTPError as err:
-        # TODO: differenciate between server/client error
-        if not err.reason:
-            err.reason = "Unexpected error"
 
-        if not err.content_type == 'application/json':
-            err.content_type = 'application/json'
+    return _middleware
 
-        if not err.text or not is_enveloped(err.text):
-            error = ErrorType(
-                errors=[ErrorItemType.from_error(err), ],
-                status=err.status,
-                logs=[LogMessageType(message=err.reason, level="ERROR"),]
-            )
-            err.text = EnvelopeFactory(error=error).as_text()
 
-        raise
-    except web.HTTPSuccessful as ex:
-        ex.content_type = 'application/json'
-        if ex.text and not is_enveloped(ex.text):
-            ex.text = EnvelopeFactory(error=ex.text).as_text()
-        raise
-    except web.HTTPRedirection as ex:
-        log.debug("Redirection %s", ex)
-        raise
-    except Exception as err:  #pylint: disable=W0703
-        # TODO: send info only in debug mode
-        error = ErrorType(
-            errors=[ErrorItemType.from_error(err), ],
-            status=web.HTTPInternalServerError.status_code
-        )
-        raise web.HTTPInternalServerError(
-                reason="Internal server error",
-                text=EnvelopeFactory(error=error).as_text(),
-                content_type='application/json',
-            )
+def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
+    @web.middleware
+    async def _middleware(request: web.Request, handler):
+        """
+            Ensures all responses are enveloped as {'data': .. , 'error', ...} in json
+        """
+        if not is_api_request(request, api_version):
+            return await handler(request)
 
-@web.middleware
-async def envelope_middleware(request: web.Request, handler):
+        resp = await handler(request)
+
+        if not isinstance(resp, web.Response):
+            response = create_data_response(data=resp)
+        else:
+            # Enforced by user. Should check it is json?
+            response = resp
+        return response
+    return _middleware
+
+
+def append_rest_middlewares(app: web.Application, api_version: str = DEFAULT_API_VERSION):
+    """ Helper that appends rest-middlewares in the correct order
+
     """
-        Ensures all responses are enveloped as {'data': .. , 'error', ...} as json
-    """
-    # FIXME: bypass if not api
-    if 'v0' not in request.path:
-        return await handler(request)
-
-    resp = await handler(request)
-
-    if not isinstance(resp, web.Response):
-        try:
-            if not is_enveloped(resp):
-                enveloped = EnvelopeFactory(data=resp).as_dict()
-                response = web.json_response(data=enveloped)
-            else:
-                response = web.json_response(data=resp)
-        except TypeError as err:
-            error = ErrorType(
-                errors=[ErrorItemType.from_error(err), ],
-                status=web.HTTPInternalServerError.status_code
-            )
-            web.HTTPInternalServerError(
-                reason = str(err),
-                text=EnvelopeFactory(error=error).as_text(),
-                content_type='application/json'
-            )
-    else:
-        response = resp
-    return response
+    app.middlewares.append(error_middleware_factory(api_version))
+    # FIXME:  openapi-core fails to validate response when specs are in separate files!
+    # FIXME: disabled so webserver and storage do not get this issue
+    #app.middlewares.append(validate_middleware_factory(api_version))
+    app.middlewares.append(envelope_middleware_factory(api_version))

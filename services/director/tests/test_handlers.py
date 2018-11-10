@@ -43,7 +43,6 @@ def _check_services(created_services, services, schema_version="v1"):
 
 @pytest.mark.asyncio
 async def test_services_get(docker_registry, push_services):
-    config.CONVERT_OLD_API = False
     fake_request = "fake request"
     # no registry defined
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting HTTP Internal Error as no registry URL is defined"):
@@ -117,41 +116,6 @@ async def test_v0_services_conversion_to_new(configure_registry_access, push_v0_
     services = services_enveloped["data"]
     # ensure old style services are not retrieved
     assert len(services) == 0
-
-    # check conversion
-    config.CONVERT_OLD_API = True
-    web_response = await rest.handlers.services_get(fake_request)
-    assert web_response.status == 200
-    assert web_response.content_type == "application/json"
-    services_enveloped = json.loads(web_response.text)
-    assert isinstance(services_enveloped["data"], list)
-    services = services_enveloped["data"]
-    _check_services(created_services, services, "v0")
-
-@pytest.mark.asyncio
-async def test_v1_services_with_old_conversion(configure_registry_access, push_services): #pylint: disable=W0613, W0621
-    fake_request = "fake request"
-    created_services = push_services(3,2)
-    assert len(created_services) == 5
-    # no conversion, shoult return the exact same services    
-    web_response = await rest.handlers.services_get(fake_request)
-    assert web_response.status == 200
-    assert web_response.content_type == "application/json"
-    services_enveloped = json.loads(web_response.text)    
-    assert isinstance(services_enveloped["data"], list)
-    services = services_enveloped["data"]
-    _check_services(created_services, services)
-
-    # with conversion enabled, should return no services
-    config.CONVERT_OLD_API = True
-    web_response = await rest.handlers.services_get(fake_request)
-    assert web_response.status == 200
-    assert web_response.content_type == "application/json"
-    services_enveloped = json.loads(web_response.text)    
-    assert isinstance(services_enveloped["data"], list)
-    services = services_enveloped["data"]
-    assert len(services) == 0
-
 
 @pytest.mark.asyncio
 async def test_services_by_key_version_get(configure_registry_access, push_services): #pylint: disable=W0613, W0621

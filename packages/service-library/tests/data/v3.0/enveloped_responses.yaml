@@ -1,0 +1,176 @@
+openapi: "3.0.0"
+info:
+  title: Minimal valid OpenAPI specification
+  version: "0.1"
+paths:
+  /health:
+    get:
+      operationId: get_health
+      responses:
+        "200":
+          description: "health check in separate file"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckEnveloped'
+                #$ref: './components/schemas/health_check.yaml#/HealthCheckEnveloped'
+  /dict:
+    get:
+      operationId: get_dict
+      responses:
+        default:
+          $ref: "#/components/responses/EnvelopedDataResponse"
+  /attobj:
+    get:
+      operationId: get_attobj
+      responses:
+        default:
+          $ref: "#/components/responses/EnvelopedDataResponse"
+  /envelope:
+    get:
+      operationId: get_envelope
+      responses:
+        default:
+          $ref: "#/components/responses/EnvelopedDataResponse"
+  /list:
+    get:
+      operationId: get_list
+      responses:
+        default:
+          description: "fake desc"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvelopedDataArray"
+  /string:
+    get:
+      operationId: get_string
+      responses:
+        default:
+          description: "default desc"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvelopedString"
+  /number:
+    get:
+      operationId: get_number
+      responses:
+        default:
+          description: "default desc"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvelopedNumber"
+
+  /mixed:
+    get:
+      operationId: get_mixed
+      responses:
+        default:
+          description: "default desc"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvelopedArrayObjects"
+
+components:
+  schemas:
+    EnvelopedArrayObjects:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: string
+        error:
+          $ref: "#/components/schemas/Error"
+    EnvelopedNumber:
+      type: object
+      properties:
+        data:
+          type: number
+        error:
+          $ref: "#/components/schemas/Error"
+    EnvelopedString:
+      type: object
+      properties:
+        data:
+          type: string
+        error:
+          $ref: "#/components/schemas/Error"
+    EnvelopedData:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Data"
+        error:
+          $ref: "#/components/schemas/Error"
+    EnvelopedDataArray:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Data"
+        error:
+          $ref: "#/components/schemas/Error"
+    # -----
+    Data:
+      type: object
+      properties:
+        x:
+          type: integer
+        y:
+          type: string
+    Error:
+      type: object
+      nullable: true
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        resource:
+          type: string
+        field:
+          type: string
+    # inline version of components/schemas/health_check.yaml ---------
+    HealthCheckEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/HealthCheckType"
+        error:
+          type: object
+          nullable: true
+          default: null
+    HealthCheckType:
+      type: object
+      properties:
+        name:
+          type: string
+          example: director service
+        status:
+          type: string
+          example: SERVICE_RUNNING
+        api_version:
+          type: string
+          example: 1.0.0-dev
+        version:
+          type: string
+          example: 1dfcfdc
+
+# RESPONSES -------------------------------------------------------
+  responses:
+    EnvelopedDataResponse:
+      description: foo
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/EnvelopedData"

@@ -1,12 +1,17 @@
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.data.model.NodeModel", {
   extend: qx.core.Object,
 
-  construct: function(key, version, uuid) {
+  construct: function(workbenchModel, key, version, uuid) {
+    this.setWorkbenchModel(workbenchModel);
+
     this.base(arguments);
 
     this.__metaData = {};
     this.__innerNodes = {};
     this.__inputNodes = [];
+    this.__inputsDefault = {};
     this.__outputs = {};
 
     this.set({
@@ -16,26 +21,46 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     if (key && version) {
       // not container
       this.set({
+        key: key,
+        version: version,
         nodeImageId: key + "-" + version
       });
       let store = qxapp.data.Store.getInstance();
       let metaData = this.__metaData = store.getNodeMetaData(key, version);
       if (metaData) {
-        this.__startInteractiveNode();
-        if (metaData.inputs) {
-          this.__addSettings(metaData.inputs);
-        }
-        if (metaData.outputs) {
-          this.__addOutputs(metaData.outputs);
-        }
-        if (metaData.name) {
+        if (Object.prototype.hasOwnProperty.call(metaData, "name")) {
           this.setLabel(metaData.name);
         }
+        if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
+          this.__addInputsDefault(metaData.inputsDefault);
+        }
+        if (Object.prototype.hasOwnProperty.call(metaData, "inputs")) {
+          this.__addInputs(metaData.inputs);
+        }
+        if (Object.prototype.hasOwnProperty.call(metaData, "outputs")) {
+          this.__addOutputs(metaData.outputs);
+        }
+        this.__startInteractiveNode();
       }
     }
   },
 
   properties: {
+    workbenchModel: {
+      check: "qxapp.data.model.WorkbenchModel",
+      nullable: false
+    },
+
+    key: {
+      check: "String",
+      nullable: false
+    },
+
+    version: {
+      check: "String",
+      nullable: false
+    },
+
     nodeId: {
       check: "String",
       nullable: false
@@ -53,7 +78,15 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     propsWidget: {
-      check: "qxapp.component.form.renderer.PropForm"
+      check: "qxapp.component.form.renderer.PropForm",
+      init: null,
+      nullable: true
+    },
+
+    inputsMapper: {
+      check: "qx.ui.core.Widget",
+      init: null,
+      nullable: true
     },
 
     parentNodeId: {
@@ -72,7 +105,12 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       nullable: true
     },
 
-    iFrameButton: {
+    iFrame: {
+      check: "qxapp.component.widget.PersistentIframe",
+      init: null
+    },
+
+    restartIFrameButton: {
       check: "qx.ui.form.Button",
       init: null
     }
@@ -87,7 +125,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __innerNodes: null,
     __inputNodes: null,
     __settingsForm: null,
+    __inputsDefault: null,
+    __inputsDefaultWidget: null,
     __outputs: null,
+    __outputWidget: null,
     __posX: null,
     __posY: null,
 
@@ -106,6 +147,22 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return {};
     },
 
+    getInputsDefault: function() {
+      return this.__inputsDefault;
+    },
+
+    getInput: function(outputId) {
+      return this.__inputs[outputId];
+    },
+
+    getInputs: function() {
+      return this.__inputs;
+    },
+
+    getOutput: function(outputId) {
+      return this.__outputs[outputId];
+    },
+
     getOutputs: function() {
       return this.__outputs;
     },
@@ -113,7 +170,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     getOutputValues: function() {
       let output = {};
       for (const outputId in this.__outputs) {
-        if ("value" in this.__outputs[outputId]) {
+        if (Object.prototype.hasOwnProperty.call(this.__outputs[outputId], "value")) {
           output[outputId] = this.__outputs[outputId].value;
         }
       }
@@ -157,12 +214,12 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     populateNodeData: function(nodeData) {
       if (nodeData) {
+        if (nodeData.label) {
+          this.setLabel(nodeData.label);
+        }
+
         this.setInputData(nodeData);
         this.setOutputData(nodeData);
-
-        if (nodeData.position) {
-          this.setPosition(nodeData.position.x, nodeData.position.y);
-        }
 
         if (nodeData.inputNodes) {
           this.__inputNodes = nodeData.inputNodes;
@@ -172,17 +229,65 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           this.setIsOutputNode(nodeData.outputNode);
         }
 
-        if (nodeData.label) {
-          this.setLabel(nodeData.label);
+        if (nodeData.position) {
+          this.setPosition(nodeData.position.x, nodeData.position.y);
         }
+      }
+
+      if (this.__inputsDefaultWidget) {
+        this.__inputsDefaultWidget.populatePortsData();
+      }
+      if (this.__outputWidget) {
+        this.__outputWidget.populatePortsData();
       }
     },
 
-    __addSettings: function(inputs) {
-      if (inputs === null) {
-        return;
+    getInputsDefaultWidget: function() {
+      return this.__inputsDefaultWidget;
+    },
+
+    __addInputsDefaultWidgets: function() {
+      const isInputModel = false;
+      this.__inputsDefaultWidget = new qxapp.component.widget.NodePorts(this, isInputModel);
+    },
+
+    /**
+     * Remove those inputs that can't be respresented in the settings form
+     * (Those are needed for creating connections between nodes)
+     *
+     */
+    __removeNonSettingInputs: function(inputs) {
+      let filteredInputs = JSON.parse(JSON.stringify(inputs));
+      for (const inputId in filteredInputs) {
+        let input = filteredInputs[inputId];
+        if (input.type.includes("data:application/s4l-api/")) {
+          delete filteredInputs[inputId];
+        }
       }
-      let form = this.__settingsForm = new qxapp.component.form.Auto(inputs);
+      return filteredInputs;
+    },
+
+
+    /**
+     * Add mapper widget if any
+     *
+     */
+    __addMapper: function(inputs) {
+      let filteredInputs = JSON.parse(JSON.stringify(inputs));
+      if (Object.prototype.hasOwnProperty.call(filteredInputs, "mapper")) {
+        let inputsMapper = new qxapp.component.widget.InputsMapper(this, filteredInputs["mapper"]);
+        this.setInputsMapper(inputsMapper);
+        delete filteredInputs["mapper"];
+      }
+      return filteredInputs;
+    },
+
+    /**
+     * Add settings widget with those inputs that can be represented in a form
+     *
+     */
+    __addSetttings: function(inputs) {
+      let form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
       form.addListener("linkAdded", e => {
         let changedField = e.getData();
         this.getPropsWidget().linkAdded(changedField);
@@ -192,7 +297,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbenchModel(), this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("RemoveLink", e => {
         let changedField = e.getData();
@@ -200,8 +305,37 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }, this);
     },
 
+    getOutputWidget: function() {
+      return this.__outputWidget;
+    },
+
+    __addOutputWidget: function() {
+      const isInputModel = true;
+      this.__outputWidget = new qxapp.component.widget.NodePorts(this, isInputModel);
+    },
+
+    __addInputsDefault: function(inputsDefault) {
+      this.__inputsDefault = inputsDefault;
+
+      this.__addInputsDefaultWidgets();
+    },
+
+    __addInputs: function(inputs) {
+      this.__inputs = inputs;
+
+      if (inputs === null) {
+        return;
+      }
+
+      let filteredInputs = this.__removeNonSettingInputs(inputs);
+      filteredInputs = this.__addMapper(filteredInputs);
+      this.__addSetttings(filteredInputs);
+    },
+
     __addOutputs: function(outputs) {
       this.__outputs = outputs;
+
+      this.__addOutputWidget();
     },
 
     setInputData: function(nodeData) {
@@ -211,15 +345,15 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     setOutputData: function(nodeData) {
-      if ("outputs" in nodeData) {
+      if (Object.prototype.hasOwnProperty.call(nodeData, "outputs")) {
         for (const outputKey in nodeData.outputs) {
           this.__outputs[outputKey].value = nodeData.outputs[outputKey];
         }
       }
     },
 
-    addPortLink: function(fromNodeId, fromPortId, toPortId) {
-      this.__settingsForm.addLink(fromNodeId, fromPortId, toPortId);
+    addPortLink: function(toPortId, fromNodeId, fromPortId) {
+      this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
     },
 
     addInputNode: function(inputNodeId) {
@@ -231,7 +365,18 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     removeInputNode: function(inputNodeId) {
       const index = this.__inputNodes.indexOf(inputNodeId);
       if (index > -1) {
+        // remove node connection
         this.__inputNodes.splice(index, 1);
+
+        // remove port connections
+        let inputs = this.getInputValues();
+        for (const portId in inputs) {
+          if (Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
+            if (inputs[portId]["nodeUuid"] === inputNodeId) {
+              this.__settingsForm.removeLink(portId);
+            }
+          }
+        }
         return true;
       }
       return false;
@@ -242,15 +387,37 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return (index > -1);
     },
 
+    __restartIFrame: function(loadThis) {
+      if (this.getIFrame() === null) {
+        this.setIFrame(new qxapp.component.widget.PersistentIframe());
+      }
+      if (loadThis) {
+        this.getIFrame().resetSource();
+        this.getIFrame().setSource(loadThis);
+      } else if (this.getServiceUrl() !== null) {
+        this.getIFrame().resetSource();
+        this.getIFrame().setSource(this.getServiceUrl());
+      }
+    },
+
+    __showLoadingIFrame: function() {
+      const loadingUrl = qx.util.ResourceManager.getInstance().toUri("qxapp/loading/loader.html");
+      this.__restartIFrame(loadingUrl);
+    },
+
     __startInteractiveNode: function() {
-      let metaData = this.__metaData;
+      let metaData = this.getMetaData();
       if (metaData.type == "dynamic") {
         const slotName = "startDynamic";
         let button = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/sign-in-alt/32"
+          icon: "@FontAwesome5Solid/redo-alt/32"
         });
+        button.addListener("execute", e => {
+          this.__restartIFrame();
+        }, this);
         button.setEnabled(false);
-        this.setIFrameButton(button);
+        this.setRestartIFrameButton(button);
+        this.__showLoadingIFrame();
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
           const {
@@ -271,19 +438,50 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             const entryPoint = entryPointD ? ("/" + entryPointD) : "";
             const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
             this.setServiceUrl(srvUrl);
-            this.getIFrameButton().setEnabled(true);
             const msg = "Service ready on " + srvUrl;
             const msgData = {
               nodeLabel: this.getLabel(),
               msg: msg
             };
             this.fireDataEvent("ShowInLogger", msgData);
-            console.log(this.getLabel(), msg);
+
+            // HACK: Workaround for fetching inputs in Visualizer
+            if (this.getKey() === "3d-viewer") {
+              let urlUpdate = this.getServiceUrl() + "/retrieve";
+              let req = new qx.io.request.Xhr();
+              req.set({
+                url: urlUpdate,
+                method: "POST"
+              });
+              req.send();
+            }
+
+            this.getRestartIFrameButton().setEnabled(true);
+            // FIXME: Apparently no all services are inmediately ready when they publish the port
+            const waitFor = 4000;
+            qx.event.Timer.once(e => {
+              this.__restartIFrame();
+            }, this, waitFor);
           }
         }, this);
         let data = {
           serviceKey: metaData.key,
           serviceVersion: metaData.version,
+          nodeId: this.getNodeId()
+        };
+        socket.emit(slotName, data);
+      }
+    },
+
+    removeNode: function() {
+      this.__stopInteractiveNode();
+    },
+
+    __stopInteractiveNode: function() {
+      if (this.getMetaData().type == "dynamic") {
+        const slotName = "stopDynamic";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        let data = {
           nodeId: this.getNodeId()
         };
         socket.emit(slotName, data);

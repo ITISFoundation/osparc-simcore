@@ -12,6 +12,7 @@
  */
 
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__ctrlMap"] }] */
+/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.component.form.renderer.PropForm", {
   extend : qx.ui.form.renderer.Single,
@@ -20,7 +21,19 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
      *
      * @param vizWidget {Widget} visualization widget to embedd
      */
-  construct: function(form) {
+  construct: function(form, workbenchModel, nodeModel) {
+    // workbenchModel and nodeModel are necessary for creating links
+    if (workbenchModel) {
+      this.setWorkbenchModel(workbenchModel);
+    } else {
+      this.setWorkbenchModel(null);
+    }
+    if (nodeModel) {
+      this.setNodeModel(nodeModel);
+    } else {
+      this.setNodeModel(null);
+    }
+
     this.base(arguments, form);
     let fl = this._getLayout();
     // have plenty of space for input, not for the labels
@@ -31,9 +44,19 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
   },
 
   events: {
-    "PortDragOver": "qx.event.type.Data",
-    "PortDrop": "qx.event.type.Data",
     "RemoveLink" : "qx.event.type.Data"
+  },
+
+  properties: {
+    workbenchModel: {
+      check: "qxapp.data.model.WorkbenchModel",
+      nullable: true
+    },
+
+    nodeModel: {
+      check: "qxapp.data.model.NodeModel",
+      nullable: true
+    }
   },
 
   members: {
@@ -73,10 +96,8 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             item: items[i]
           });
         }
-        label.setDroppable(true);
-        item.setDroppable(true);
-        this.__createUIPortConnections(label, item.key);
-        this.__createUIPortConnections(item, item.key);
+        this.__createDropMechanism(label, item.key);
+        this.__createDropMechanism(item, item.key);
       }
     },
 
@@ -86,6 +107,10 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
         let ctrl = this._form.getControl(portId);
         if (ctrl && Object.prototype.hasOwnProperty.call(ctrl, "link")) {
           data[portId] = ctrl.link;
+        }
+        // FIXME: "null" shoulb be a valid input
+        if (data[portId] === "null") {
+          data[portId] = null;
         }
       }
       return data;
@@ -134,20 +159,51 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       }
     },
 
-    __createUIPortConnections: function(uiElement, portId) {
-      [
-        ["dragover", "PortDragOver"],
-        ["drop", "PortDrop"]
-      ].forEach(eventPair => {
-        uiElement.addListener(eventPair[0], e => {
-          const eData = {
-            event: e,
-            // nodeId: nodeId,
-            portId: portId
-          };
-          this.fireDataEvent(eventPair[1], eData);
+    __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
+      if (this.getWorkbenchModel()) {
+        const node1 = this.getWorkbenchModel().getNodeModel(node1Id);
+        const port1 = node1.getOutput(port1Id);
+        const node2 = this.getWorkbenchModel().getNodeModel(node2Id);
+        const port2 = node2.getInput(port2Id);
+        return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
+      }
+      return false;
+    },
+
+    __createDropMechanism: function(uiElement, portId) {
+      if (this.getNodeModel()) {
+        uiElement.setDroppable(true);
+        uiElement.nodeId = this.getNodeModel().getNodeId();
+        uiElement.portId = portId;
+
+        uiElement.addListener("dragover", e => {
+          let compatible = false;
+          if (e.supportsType("osparc-port-link")) {
+            const from = e.getRelatedTarget();
+            let dragNodeId = from.nodeId;
+            let dragPortId = from.portId;
+            const to = e.getCurrentTarget();
+            let dropNodeId = to.nodeId;
+            let dropPortId = to.portId;
+            compatible = this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId);
+          }
+          if (!compatible) {
+            e.preventDefault();
+          }
         }, this);
-      }, this);
+
+        uiElement.addListener("drop", e => {
+          if (e.supportsType("osparc-port-link")) {
+            const from = e.getRelatedTarget();
+            let dragNodeId = from.nodeId;
+            let dragPortId = from.portId;
+            const to = e.getCurrentTarget();
+            // let dropNodeId = to.nodeId;
+            let dropPortId = to.portId;
+            this.getNodeModel().addPortLink(dropPortId, dragNodeId, dragPortId);
+          }
+        }, this);
+      }
     }
   }
 });
