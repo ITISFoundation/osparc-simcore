@@ -8,7 +8,6 @@ import trafaret_config.commandline as commandline
 
 from .resources_keys import RSC_CONFIG_DIR_KEY
 from .resources import resources
-from .settings import CONFIG_SCHEMA
 
 log = logging.getLogger(__name__)
 
@@ -57,10 +56,10 @@ def config_from_options(options, schema, vars=None): # pylint: disable=W0622
 
 
 
-
-
+# FIXME: should replace these functions and remove dependency
 
 def read_and_validate(filepath, vars=None): # pylint: disable=W0622
+    from .application_config import CONFIG_SCHEMA
     if vars is None:
         vars = os.environ
     # NOTE: vars=os.environ in signature freezes default to os.environ before it gets
@@ -75,5 +74,6 @@ def config_from_file(filepath) -> dict:
 
         Raises trafaret_config.ConfigError
     """
+    from .application_config import CONFIG_SCHEMA
     config = trafaret_config.read_and_validate(filepath, CONFIG_SCHEMA, vars=os.environ)
     return config

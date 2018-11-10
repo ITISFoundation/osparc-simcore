@@ -6,12 +6,12 @@ This submodule is a modification of aiohttp-login
 """
 import logging
 
-from aiohttp import web
-
 import asyncpg
+from aiohttp import web
 
 from ..application_keys import APP_CONFIG_KEY, APP_DB_POOL_KEY
 from ..db import DSN
+from ..email_config import CONFIG_SECTION_NAME
 from .cfg import cfg
 from .storage import AsyncpgStorage
 
@@ -23,7 +23,7 @@ CFG_LOGIN_STORAGE = __name__ + ".storage"
 
 async def pg_pool(app: web.Application):
 
-    smtp_config = app[APP_CONFIG_KEY]['smtp']
+    smtp_config = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     config = {"SMTP_{}".format(k.upper()): v for k, v in smtp_config.items()}
     #'SMTP_SENDER': None,
     #'SMTP_HOST': REQUIRED,
@@ -31,8 +31,6 @@ async def pg_pool(app: web.Application):
     #'SMTP_TLS': False,
     #'SMTP_USERNAME': None,
     #'SMTP_PASSWORD': None,
-
-    config['REGISTRATION_CONFIRMATION_REQUIRED'] = True
 
     config = (config or {}).copy()
     config['APP'] = app

@@ -8,19 +8,24 @@
 """
 import logging
 
-from .comp_backend_subscribe import SERVICE_NAME, subscribe
+from aiohttp import web
+
 from .application_keys import APP_CONFIG_KEY
+from .comp_backend_subscribe import subscribe
+from .computation_config import CONFIG_SECTION_NAME, SERVICE_NAME
 
 log = logging.getLogger(__file__)
 
 
-def setup_computational_backend(app):
+def setup(app: web.Application):
     log.debug("Setting up %s [service: %s] ...", __name__, SERVICE_NAME)
 
     disable_services = app[APP_CONFIG_KEY].get("main", {}).get("disable_services",[])
     if SERVICE_NAME in disable_services:
         log.warning("Service '%s' explicitly disabled in config", SERVICE_NAME)
         return
+
+    assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY]
 
     # subscribe to rabbit upon startup
     # TODO: REmoved temporarily!
@@ -29,3 +34,11 @@ def setup_computational_backend(app):
 
     # TODO: add function to "unsubscribe"
     # app.on_cleanup.append(unsubscribe)
+
+
+# alias
+setup_computation = setup
+
+__all__ = (
+    "setup_computation"
+)

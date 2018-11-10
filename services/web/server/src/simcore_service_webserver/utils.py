@@ -3,9 +3,8 @@
 """
 import os
 import sys
-from aiohttp.web import HTTPFound
 
-CDIR = os.path.dirname(sys.argv[0] if __name__ == '__main__' else __file__)
+from aiohttp.web import HTTPFound
 
 
 def import_with_retry(module_name, *extended_paths):

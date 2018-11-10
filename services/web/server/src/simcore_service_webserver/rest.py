@@ -4,16 +4,18 @@
 import copy
 import logging
 import os
+from collections import OrderedDict
+from collections.abc import Sequence
 from typing import Dict
 
 from aiohttp import web
+
 from servicelib import openapi
+from servicelib.openapi import create_openapi_specs
 from servicelib.rest_middlewares import append_rest_middlewares
 
 from . import rest_routes
 from .application_keys import APP_CONFIG_KEY
-from .resources import resources
-from .resources_keys import RSC_OPENAPI_ROOTFILE_KEY
 from .rest_settings import get_base_path
 
 log = logging.getLogger(__name__)
@@ -73,16 +75,6 @@ def _setup_servers_specs(specs: openapi.Spec, app_config: Dict):
 
 
 
-from collections.abc import Sequence
-from yarl import URL
-from pathlib import Path
-from collections import OrderedDict
-
-from servicelib.openapi import create_openapi_specs
-from servicelib.rest_keys import APP_OPENAPI_SPECS_KEY
-
-
-
 
 
 
@@ -116,7 +108,7 @@ def setup(app: web.Application):
 
 
 
-    app[THIS_MODULE_NAME] = keep
+    #app[THIS_MODULE_NAME] = keep
 
 
 

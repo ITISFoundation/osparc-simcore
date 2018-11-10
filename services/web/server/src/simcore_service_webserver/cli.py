@@ -16,10 +16,9 @@ import argparse
 import logging
 import sys
 
-from .cli_config import add_cli_options, config_from_options
-from .settings import CLI_DEFAULT_CONFIGFILE
 from .application import run_service
-from .settings import CONFIG_SCHEMA
+from .application_config import CLI_DEFAULT_CONFIGFILE, CONFIG_SCHEMA
+from .cli_config import add_cli_options, config_from_options
 
 log = logging.getLogger(__name__)
 

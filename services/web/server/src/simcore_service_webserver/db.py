@@ -17,6 +17,7 @@ from .application_keys import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY,
                                APP_DB_SESSION_KEY)
 from .comp_backend_api import init_database as _init_db
 from .db_models import metadata
+from .db_config import CONFIG_SECTION_NAME
 
 # SETTINGS ----------------------------------------------------
 THIS_MODULE_NAME  = __name__.split(".")[-1]
@@ -41,15 +42,14 @@ async def __create_tables(**params):
     metadata.create_all(sa_engine)
 
 async def pg_engine(app: web.Application):
-
     engine = None
     try:
-        cfg = app[APP_CONFIG_KEY][THIS_SERVICE_NAME]
-        params = {k:cfg[k] for k in 'database user password host port minsize maxsize'.split()}
+        cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+        params = {k:cfg["postgres"][k] for k in 'database user password host port minsize maxsize'.split()}
         engine = await create_engine(**params)
 
         # TODO: get keys from __name__ (see notes in servicelib.application_keys)
-        if app[APP_CONFIG_KEY]["main"][THIS_MODULE_NAME]["init_tables"]:
+        if cfg.get("init_tables"):
             await __create_tables(**params)
 
     except DBAPIError:

@@ -7,7 +7,7 @@ import logging
 from aiohttp import web
 
 from .application_keys import APP_CONFIG_KEY
-from .computational_backend import setup_computational_backend
+from .computation import setup_computation
 from .db import setup_db
 from .login import setup_login
 from .email import setup_email
@@ -39,7 +39,7 @@ def create_application(config: dict):
     setup_session(app)
     setup_security(app)
     setup_email(app)
-    setup_computational_backend(app)
+    setup_computation(app)
     setup_statics(app)
     setup_sio(app)
     setup_rest(app)
