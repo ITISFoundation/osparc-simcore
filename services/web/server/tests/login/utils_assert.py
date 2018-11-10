@@ -1,6 +1,6 @@
 from aiohttp import web
 
-from servicelib.response_utils import unwrap_envelope
+from servicelib.rest_responses import unwrap_envelope
 
 
 async def assert_status(response: web.Response, expected_cls:web.HTTPException, expected_msg: str=None):

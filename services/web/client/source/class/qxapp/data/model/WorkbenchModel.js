@@ -92,7 +92,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       if (existingNodeModel) {
         return existingNodeModel;
       }
-      let nodeModel = new qxapp.data.model.NodeModel(key, version, uuid);
+      let nodeModel = new qxapp.data.model.NodeModel(this, key, version, uuid);
       nodeModel.populateNodeData(nodeData);
       nodeModel.addListener("ShowInLogger", e => {
         this.fireDataEvent("ShowInLogger", e.getData());
@@ -154,17 +154,10 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       const nodeId = nodeModel.getNodeId();
       const exists = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
       if (exists) {
-        if (nodeModel.getMetaData().type == "dynamic") {
-          const slotName = "stopDynamic";
-          let socket = qxapp.wrappers.WebSocket.getInstance();
-          let data = {
-            nodeId: nodeModel.getNodeId()
-          };
-          socket.emit(slotName, data);
-        }
         delete this.__nodesTopLevel[nodeModel.getNodeId()];
         this.fireEvent("WorkbenchModelChanged");
       }
+      nodeModel.removeNode();
       return exists;
     },
 
@@ -223,8 +216,8 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
         // node especific
         if (!nodeModel.isContainer()) {
-          node.key = nodeModel.getMetaData().key;
-          node.version = nodeModel.getMetaData().version;
+          node.key = nodeModel.getKey();
+          node.version = nodeModel.getVersion();
         }
       }
       return workbench;

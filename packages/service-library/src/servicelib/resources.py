@@ -5,7 +5,7 @@ See https://setuptools.readthedocs.io/en/latest/pkg_resources.html
 import pathlib
 import pkg_resources
 from pathlib import Path
-#import typing
+from typing import TextIO
 import attr
 
 
@@ -21,16 +21,17 @@ class ResourcesFacade:
     distribution_name: str
     config_folder: str
 
-    def exists(self, resource_name: str):
+    def exists(self, resource_name: str) -> bool:
         return pkg_resources.resource_exists(self.package_name, resource_name)
 
-    def stream(self, resource_name: str):
+    def stream(self, resource_name: str) -> TextIO:
+        # TODO: check if read-only and if so, rename
         return pkg_resources.resource_stream(self.package_name, resource_name)
 
-    def listdir(self, resource_name: str):
+    def listdir(self, resource_name: str) -> str:
         return pkg_resources.resource_listdir(self.package_name, resource_name)
 
-    def isdir(self, resource_name: str):
+    def isdir(self, resource_name: str) -> str:
         return pkg_resources.resource_isdir(self.package_name, resource_name)
 
     def get_path(self, resource_name: str) -> Path:

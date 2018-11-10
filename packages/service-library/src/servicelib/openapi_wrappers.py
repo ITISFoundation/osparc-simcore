@@ -12,6 +12,7 @@ log = logging.getLogger(__name__)
 
 CAPTURES = re.compile(r'\(\?P<([_a-zA-Z][_a-zA-Z0-9]+)>(.[^)]+)\)')
 PARAMETERS_KEYS = ('path', 'query', 'header', 'cookie')
+PATH_KEY, QUERY_KEY, HEADER_KEY, COOKIE_KEY = PARAMETERS_KEYS
 
 class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
     wrappedcls = web.Request
@@ -109,16 +110,19 @@ class AiohttpOpenAPIResponse(BaseOpenAPIResponse):
 
     def __init__(self, response: web.Response, data: str):
         self._response = response
-        self._data = data
+        self._text = data
 
     @staticmethod
     async def create(response: web.Response):
-        data = await response.text()
-        return AiohttpOpenAPIResponse(response, data)
+        text = await response.text()
+        return AiohttpOpenAPIResponse(response, text)
 
     @property
-    def data(self) -> str:
-        return self._data
+    def body(self) -> str:
+        return self._text
+
+    # BUG: not part of BaseOpenAPIResponse but used in openapi-core
+    data = body
 
     @property
     def status_code(self) -> int:
