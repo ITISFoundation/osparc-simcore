@@ -66,7 +66,14 @@ qx.Class.define("qxapp.component.form.Auto", {
   /**
      * @param structure {Array} form structure
      */
-  construct : function(content) {
+  construct : function(content, nodeModel) {
+    // nodeModel is necessary for creating links
+    if (nodeModel) {
+      this.setNodeModel(nodeModel);
+    } else {
+      this.setNodeModel(null);
+    }
+
     this.base(arguments);
     this.__ctrlMap = {};
     this.__ctrlLinkMap = {};
@@ -84,6 +91,13 @@ qx.Class.define("qxapp.component.form.Auto", {
       }
     },
     this);
+  },
+
+  properties: {
+    nodeModel: {
+      check: "qxapp.data.model.NodeModel",
+      nullable: true
+    }
   },
 
   events : {
@@ -530,7 +544,17 @@ qx.Class.define("qxapp.component.form.Auto", {
         nodeUuid: fromNodeId,
         output: fromPortId
       };
-      this.getControlLink(toPortId).setValue("Linked to " + fromNodeId + ": " + fromPortId);
+
+      const workbenchModel = this.getNodeModel().getWorkbenchModel();
+      const fromNode = workbenchModel.getNodeModel(fromNodeId);
+      const fromNodeLabel = fromNode.getLabel(fromNodeId);
+      const port = fromNode.getOutput(fromPortId);
+      const fromPortLabel = port ? port.label : null;
+      if (fromNodeLabel && fromPortLabel) {
+        this.getControlLink(toPortId).setValue("Linked to " + fromNodeLabel + ": " + fromPortLabel);
+      } else {
+        this.getControlLink(toPortId).setValue("Linked to " + fromNodeId + ": " + fromPortId);
+      }
 
       this.fireDataEvent("linkAdded", toPortId);
     },

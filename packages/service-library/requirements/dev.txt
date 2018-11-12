@@ -3,5 +3,4 @@
 bumpversion
 coverage
 
-pytest==3.4.2
-pytest-runner==2.11.1
+-r ../tests/requirements.txt

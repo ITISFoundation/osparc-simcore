@@ -23,6 +23,8 @@ matrix:
       services:
         - docker
 
+      cache: pip
+
       before_install:
         - python --version
         - uname -a

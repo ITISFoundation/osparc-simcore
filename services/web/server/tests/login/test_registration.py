@@ -6,7 +6,7 @@
 import pytest
 from aiohttp import web
 
-from servicelib.response_utils import unwrap_envelope
+from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login import get_storage
 from simcore_service_webserver.login.cfg import cfg # TODO: remove this by get_storage
