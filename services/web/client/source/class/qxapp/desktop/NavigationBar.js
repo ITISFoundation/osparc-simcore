@@ -89,6 +89,13 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     "DashboardPressed": "qx.event.type.Event"
   },
 
+  properties: {
+    projectModel: {
+      check: "qxapp.data.model.ProjectModel",
+      nullable: true
+    }
+  },
+
   members: {
     __mainViewCaptionLayout: null,
 
@@ -110,21 +117,28 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       this.__mainViewCaptionLayout.add(mainViewCaption);
     },
 
-    __showMainViewCaptionAsButtons: function(newLabels) {
+    __showMainViewCaptionAsButtons: function(nodeIds) {
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-      for (let i=0; i<newLabels.length; i++) {
-        const newLabel = newLabels[i];
-        const label = Object.values(newLabel)[0];
-        const nodeId = Object.keys(newLabel)[0];
-        let btn = new qx.ui.form.Button(label).set({
+      for (let i=0; i<nodeIds.length; i++) {
+        let btn = new qx.ui.form.Button().set({
           maxHeight: NAVIGATION_BUTTON_HEIGHT
         });
+        const nodeId = nodeIds[i];
+        if (nodeId === "root") {
+          this.getProjectModel().bind("name", btn, "label");
+        } else {
+          const nodeModel = this.getProjectModel().getWorkbenchModel()
+            .getNodeModel(nodeId);
+          if (nodeModel) {
+            nodeModel.bind("label", btn, "label");
+          }
+        }
         btn.addListener("execute", function() {
           this.fireDataEvent("NodeDoubleClicked", nodeId);
         }, this);
         this.__mainViewCaptionLayout.add(btn);
 
-        if (i<newLabels.length-1) {
+        if (i<nodeIds.length-1) {
           let mainViewCaption = this.__mainViewCaption = new qx.ui.basic.Label(">").set({
             font: navBarLabelFont
           });

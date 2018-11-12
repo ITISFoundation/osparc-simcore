@@ -190,8 +190,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
 
       this.__mainPanel.setMainView(widget);
-      let nodePath = this.getProjectModel().getWorkbenchModel().getPathWithId(nodeId);
-      this.fireDataEvent("ChangeMainViewCaption", nodePath);
+
+      let nodesPath = this.getProjectModel().getWorkbenchModel().getPathIds(nodeId);
+      this.fireDataEvent("ChangeMainViewCaption", nodesPath);
     },
 
     showInExtraView: function(widget) {
