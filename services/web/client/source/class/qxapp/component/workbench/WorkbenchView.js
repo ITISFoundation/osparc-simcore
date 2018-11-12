@@ -428,10 +428,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     __removeSelectedNode: function() {
       for (let i=0; i<this.__nodesUI.length; i++) {
         if (this.__desktop.getActiveWindow() === this.__nodesUI[i]) {
-          let connectedLinks = this.__getConnectedLinks(this.__nodesUI[i].getNodeId());
-          for (let j=0; j<connectedLinks.length; j++) {
-            this.__removeLink(this.__getLink(connectedLinks[j]));
-          }
           this.__removeNode(this.__nodesUI[i]);
           return;
         }
@@ -653,6 +649,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     },
 
     __removeNode: function(node) {
+      // remove first the links
+      let connectedLinks = this.__getConnectedLinks(node.getNodeId());
+      for (let j=0; j<connectedLinks.length; j++) {
+        this.__removeLink(this.__getLink(connectedLinks[j]));
+      }
+
       const removed = this.getWorkbenchModel().removeNode(node.getNodeModel());
       if (removed) {
         this.__clearNode(node);
