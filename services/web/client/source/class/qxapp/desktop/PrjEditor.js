@@ -70,6 +70,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__sidePanel.setBottomView(loggerView);
 
       let workbenchView = this.__workbenchView = new qxapp.component.workbench.WorkbenchView(project.getWorkbenchModel());
+      workbenchView.addListener("removeNode", e => {
+        const nodeId = e.getData();
+        if (this.getProjectModel().getWorkbenchModel().removeNode(nodeId)) {
+          this.__workbenchView.clearNode(nodeId);
+        }
+      }, this);
       this.showInMainView(workbenchView, "root");
 
       let nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({

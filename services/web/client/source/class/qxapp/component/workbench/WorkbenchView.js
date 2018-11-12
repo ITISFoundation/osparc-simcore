@@ -123,7 +123,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
   },
 
   events: {
-    "NodeDoubleClicked": "qx.event.type.Data"
+    "NodeDoubleClicked": "qx.event.type.Data",
+    "removeNode": "qx.event.type.Data"
   },
 
   properties: {
@@ -426,7 +427,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     __removeSelectedNode: function() {
       for (let i=0; i<this.__nodesUI.length; i++) {
         if (this.__desktop.getActiveWindow() === this.__nodesUI[i]) {
-          this.removeNode(this.__nodesUI[i]);
+          this.__removeNode(this.__nodesUI[i]);
           return;
         }
       }
@@ -615,9 +616,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return [p1, p2];
     },
 
-    getNodeUI: function(id) {
+    getNodeUI: function(nodeId) {
       for (let i = 0; i < this.__nodesUI.length; i++) {
-        if (this.__nodesUI[i].getNodeId() === id) {
+        if (this.__nodesUI[i].getNodeId() === nodeId) {
           return this.__nodesUI[i];
         }
       }
@@ -646,22 +647,22 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return null;
     },
 
-    removeNode: function(node) {
+    __removeNode: function(node) {
+      this.fireDataEvent("removeNode", node.getNodeId());
+    },
+
+    clearNode(nodeId) {
       // remove first the links
-      let connectedLinks = this.__getConnectedLinks(node.getNodeId());
+      let connectedLinks = this.__getConnectedLinks(nodeId);
       for (let j=0; j<connectedLinks.length; j++) {
         this.__removeLink(this.__getLink(connectedLinks[j]));
       }
-
-      const removed = this.getWorkbenchModel().removeNode(node.getNodeModel());
-      if (removed) {
-        this.__clearNode(node);
-      }
+      this.__clearNode(nodeId);
     },
 
     __removeAllNodes: function() {
       while (this.__nodesUI.length > 0) {
-        this.removeNode(this.__nodesUI[this.__nodesUI.length-1]);
+        this.__removeNode(this.__nodesUI[this.__nodesUI.length-1]);
       }
     },
 
@@ -701,7 +702,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       this.__removeAllLinks();
     },
 
-    __clearNode: function(node) {
+    __clearNode: function(nodeId) {
+      let node = this.getNodeUI(nodeId);
       if (this.__desktop.getChildren().includes(node)) {
         this.__desktop.remove(node);
       }
@@ -713,7 +715,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
 
     __clearAllNodes: function() {
       while (this.__nodesUI.length > 0) {
-        this.__clearNode(this.__nodesUI[this.__nodesUI.length-1]);
+        this.__clearNode(this.__nodesUI[this.__nodesUI.length-1].getNodeId());
       }
     },
 

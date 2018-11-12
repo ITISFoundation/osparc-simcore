@@ -133,12 +133,12 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       this.fireEvent("WorkbenchModelChanged");
     },
 
-    removeNode: function(nodeModel) {
+    removeNode: function(nodeId) {
       // TODO: only works with top level nodes
-      const nodeId = nodeModel.getNodeId();
+      let nodeModel = this.getNodeModel(nodeId);
       const exists = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
       if (exists) {
-        delete this.__nodesTopLevel[nodeModel.getNodeId()];
+        delete this.__nodesTopLevel[nodeId];
         this.fireEvent("WorkbenchModelChanged");
       }
       nodeModel.removeNode();
