@@ -10,7 +10,7 @@ CONFIG_SECTION_NAME = 'rest'
 
 
 schema = T.Dict({
-    "openapi_spec": T.Dict({
+    "oas": T.Dict({
         "version": T.String, # TODO: v0, v1, etc
         "location": T.Or(T.String, T.URL)   # either path or url should contain version in it
     })

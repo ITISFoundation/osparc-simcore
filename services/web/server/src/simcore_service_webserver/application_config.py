@@ -1,12 +1,20 @@
 """ app's configuration
 
+    This module loads the schema defined by every subsystem and injects it in the
+    application's configuration scheams
+
+    It was designed in a similar fashion to the setup protocol of the application
+    where every subsystem is imported and queried in a specific order. The application
+    depends on the subsystem and not the other way around.
+
+    The app configuration is created before the application instance exists.
+
 
 TODO: add more strict checks with re
 TODO: add support for versioning.
     - check shema fits version
     - parse/format version in schema
-TODO  add simcore_sdk.config.s3 section!!!
-TODO: create decorator so every module injects sections in a global schema. This way we avoid cyclic dependencies
+TODO: add simcore_sdk.config.s3 section!!!
 """
 import logging
 
@@ -21,6 +29,8 @@ from .resources import resources
 log = logging.getLogger(__name__)
 
 
+
+
 def create_schema():
     """
         Build schema for the configuration's file
@@ -33,7 +43,7 @@ def create_schema():
             "port": T.Int(),
             T.Key("public_url", optional=True): T.Or(T.String(), T.List(T.String)),  # full url seen by front-end
             "client_outdir": T.String(),
-            "log_level": T.Enum( list(logging._nameToLevel.keys()) ), # pylint: disable=W0212
+            "log_level": T.Enum(*logging._nameToLevel.keys()), # pylint: disable=protected-access
             "testing": T.Bool(),
             T.Key("disable_services", default=[], optional=True): T.List(T.String()), # TODO: optional enable function in every section
         }),
@@ -46,7 +56,7 @@ def create_schema():
 
 
     section_names = [k.name for k in schema.keys]
-    assert len(section_names) == set(section_names), "Found repeated section names in %s" % section_names
+    assert len(section_names) == len(set(section_names)), "Found repeated section names in %s" % section_names
 
     return schema
 
