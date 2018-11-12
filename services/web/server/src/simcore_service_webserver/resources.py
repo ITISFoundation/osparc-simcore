@@ -3,8 +3,8 @@
 """
 from servicelib.resources import ResourcesFacade
 
-# pylint: disable=unused-import
-from .resources_keys import RSC_CONFIG_DIR_KEY
+# RSC=resource
+RSC_CONFIG_DIR_KEY = __name__ + ".config"
 
 resources = ResourcesFacade(
     package_name=__name__,
