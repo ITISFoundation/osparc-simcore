@@ -39,7 +39,6 @@ def create_schema():
         "main": T.Dict({
             "host": T.IP,
             "port": T.Int(),
-            T.Key("public_url", optional=True): T.Or(T.String(), T.List(T.String)),  # full url seen by front-end
             "client_outdir": T.String(),
             "log_level": T.Enum(*logging._nameToLevel.keys()), # pylint: disable=protected-access
             "testing": T.Bool(),

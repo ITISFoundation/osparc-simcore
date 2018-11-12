@@ -4,7 +4,6 @@ version: "1.0"
 main:
   host: 0.0.0.0
   port: 8080
-  public_url: ${OSPARC_PUBLIC_URL}
   client_outdir: ${SIMCORE_WEB_OUTDIR}
   log_level: INFO
   testing: False
@@ -39,7 +38,8 @@ smtp:
   username: Null
   password: Null
 rest:
-  oas:
-    version: v0
-    location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0
+  version: v0
+  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/openapi.yaml
+  extra_urls:
+    - ${OSPARC_PUBLIC_URL}
 ...

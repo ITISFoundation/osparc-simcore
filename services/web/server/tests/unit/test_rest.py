@@ -37,15 +37,21 @@ def spec_dict(openapi_path):
     return spec_dict
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client):
+def client(loop, aiohttp_unused_port, aiohttp_client, api_specs_dir):
     app = web.Application()
 
     server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
-    app[APP_CONFIG_KEY] = { "main": server_kwargs } # Fake config
-
+    # fake config
+    app[APP_CONFIG_KEY] = {
+        "main": server_kwargs,
+        "rest": {
+            "version": "v0",
+            "location": str(api_specs_dir / "v0" / "openapi.yaml")
+        }
+    }
     # activates only security+restAPI sub-modules
     setup_security(app)
-    setup_rest(app)
+    setup_rest(app, debug=True)
 
     cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
     return cli

@@ -11,19 +11,17 @@ from aiohttp import web
 
 from ..application_keys import APP_CONFIG_KEY, APP_DB_POOL_KEY
 from ..db import DSN
-from ..email_config import CONFIG_SECTION_NAME
-from .cfg import cfg
+from ..email_config import CONFIG_SECTION_NAME as CONFIG_STMP_SECTION
+from ..rest_config import APP_OPENAPI_SPECS_KEY
+from .cfg import cfg, APP_LOGIN_CONFIG
 from .storage import AsyncpgStorage
+from .routes import create_routes
 
 log = logging.getLogger(__name__)
 
-APP_LOGIN_CONFIG = __name__ + ".config"
-CFG_LOGIN_STORAGE = __name__ + ".storage"
-
 
 async def pg_pool(app: web.Application):
-
-    smtp_config = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    smtp_config = app[APP_CONFIG_KEY][CONFIG_STMP_SECTION]
     config = {"SMTP_{}".format(k.upper()): v for k, v in smtp_config.items()}
     #'SMTP_SENDER': None,
     #'SMTP_HOST': REQUIRED,
@@ -47,16 +45,22 @@ async def pg_pool(app: web.Application):
 
 def setup(app: web.Application):
     log.debug("Setting up %s ...", __name__)
+
+    # TODO: requires rest ready!
+    assert CONFIG_STMP_SECTION in app[APP_CONFIG_KEY]
+
+    # routes
+    specs = app[APP_OPENAPI_SPECS_KEY]
+    routes = create_routes(specs)
+    app.router.add_routes(routes)
+
+    # signals
     app.on_startup.append(pg_pool)
 
-
-def get_storage(app: web.Application):
-    return app[APP_LOGIN_CONFIG]['STORAGE']
 
 # alias
 setup_login = setup
 
 __all__ = (
-    'setup_login',
-    'get_storage'
+    'setup_login'
 )

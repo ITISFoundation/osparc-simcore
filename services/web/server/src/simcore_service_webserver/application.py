@@ -35,16 +35,17 @@ def create_application(config: dict):
         log.debug("Config:\n%s",
             json.dumps(config, indent=2, sort_keys=True))
 
+    testing = config["main"].get("testing", False)
 
     # TODO: create dependency mechanism and compute setup order
+    setup_statics(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)
+    setup_rest(app, debug=testing)
     setup_email(app)
     setup_computation(app)
-    setup_statics(app)
     setup_sockets(app)
-    setup_rest(app)
     setup_login(app)
     setup_director(app)
     setup_s3(app)

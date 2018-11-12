@@ -43,7 +43,8 @@ async def create_openapi_specs(location: str) -> OpenApiSpec:
     if URL(location).host:
         spec_dict, spec_url = await load_from_url(URL(location))
     else:
-        spec_dict, spec_url = load_from_path(Path(location))
+        path = Path(location).expanduser().resolve()
+        spec_dict, spec_url = load_from_path(path)
 
     return openapi_core.create_spec(spec_dict, spec_url)
 
@@ -60,6 +61,11 @@ def create_specs(openapi_path: Path) -> OpenApiSpec:
 
     spec = openapi_core.create_spec(spec_dict, spec_url=openapi_path.as_uri())
     return spec
+
+
+def get_base_path(specs: OpenApiSpec) ->str :
+    # TODO: guarantee this convention is true
+    return '/v' + specs.info.version.split('.')[0]
 
 
 __all__ = (

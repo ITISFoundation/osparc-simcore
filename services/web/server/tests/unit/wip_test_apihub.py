@@ -9,15 +9,14 @@ class ApiHubClient:
 import pytest
 
 
-@pytest
-def apihub(aiohttp_server):
-    pass
+#@pytest
+#def apihub(aiohttp_server):
+#    pass
 
 # load specs from file at simcore/api/specs/webserver/${version}/api
 
-def test_load_specs_from_hub(apihub):
-
-    client = ApiHubClient(origin=apihub)
+#def test_load_specs_from_hub(apihub):
+#    client = ApiHubClient(origin=apihub)
 
 
 

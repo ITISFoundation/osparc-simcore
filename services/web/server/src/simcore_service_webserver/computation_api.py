@@ -20,6 +20,7 @@ from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
 
 from .director import director_sdk
 from .application_keys import APP_CONFIG_KEY
+from .db_config import CONFIG_SECTION_NAME as CONFIG_DB_SECTION
 from .computation_worker import celery
 
 # TODO: this should be coordinated with postgres options from config/server.yaml
@@ -45,7 +46,7 @@ async def init_database(_app):
     RETRY_COUNT = 20
 
     # db config
-    db_config = _app[APP_CONFIG_KEY]["postgres"]
+    db_config = _app[APP_CONFIG_KEY][CONFIG_DB_SECTION]["postgres"]
     endpoint = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(**db_config)
 
     db_engine = create_engine(endpoint,

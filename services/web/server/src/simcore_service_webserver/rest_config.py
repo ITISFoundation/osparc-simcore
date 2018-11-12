@@ -4,14 +4,14 @@
     - settings
 """
 import trafaret as T
+from .application_keys import APP_OPENAPI_SPECS_KEY
 
+APP_OPENAPI_SPECS_KEY = APP_OPENAPI_SPECS_KEY
 
 CONFIG_SECTION_NAME = 'rest'
 
-
 schema = T.Dict({
-    "oas": T.Dict({
-        "version": T.String, # TODO: v0, v1, etc
-        "location": T.Or(T.String, T.URL)   # either path or url should contain version in it
-    })
+    "version": T.Enum("v0"),
+    "location": T.Or(T.String, T.URL),   # either path or url should contain version in it
+    T.Key("extra_urls", optional=True): T.Or(T.String(), T.List(T.String)),  # full url seen by front-end
 })

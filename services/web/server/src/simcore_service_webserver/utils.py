@@ -4,8 +4,15 @@
 import os
 import sys
 
+from typing import Iterable, List
+
 from aiohttp.web import HTTPFound
 
+
+def as_list(obj) -> List:
+    if isinstance(obj, Iterable):
+        return list(obj)
+    return [obj,]
 
 def import_with_retry(module_name, *extended_paths):
     """

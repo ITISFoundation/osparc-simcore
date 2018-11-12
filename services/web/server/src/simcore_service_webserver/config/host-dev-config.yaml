@@ -4,7 +4,6 @@ main:
   host: 127.0.0.1
   log_level: INFO
   port: 8080
-  public_url: http://localhost:8080
   testing: true
   disable_services: []
 db:
@@ -40,7 +39,8 @@ smtp:
 #   endpoint: play.minio.io:9000
 #   secret_key: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
 rest:
-  oas:
-    version: v0
-    location: ../../../../../../api/specs/webserver/v0
-    #location: http://localhost:8043/api/specs/webserver/v0
+  version: v0
+  location: ~/devp/osparc-simcore/api/specs/webserver/v0/openapi.yaml
+  #location: http://localhost:8043/api/specs/webserver/v0/openapi.yaml
+  extra_urls:
+    - http://localhost:8080
