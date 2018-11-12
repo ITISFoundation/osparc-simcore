@@ -145,8 +145,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     __pointerPosX: null,
     __pointerPosY: null,
     __selectedItemId: null,
-    __playButton: null,
-    __stopButton: null,
     __currentModel: null,
 
     __getPlusButton: function() {
