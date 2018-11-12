@@ -11,7 +11,7 @@ import logging
 from aiohttp import web
 
 from .application_keys import APP_CONFIG_KEY
-from .comp_backend_subscribe import subscribe
+from .computation_subscribe import subscribe
 from .computation_config import CONFIG_SECTION_NAME, SERVICE_NAME
 
 log = logging.getLogger(__file__)

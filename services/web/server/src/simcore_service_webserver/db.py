@@ -15,7 +15,7 @@ from servicelib.aiopg_utils import DBAPIError
 
 from .application_keys import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY,
                                APP_DB_SESSION_KEY)
-from .comp_backend_api import init_database as _init_db
+from .computation_api import init_database as _init_db
 from .db_models import metadata
 from .db_config import CONFIG_SECTION_NAME
 

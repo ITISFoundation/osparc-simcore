@@ -3,12 +3,13 @@ import json
 import logging
 
 import aio_pika
+from aiohttp import web
 
 from simcore_sdk.config.rabbit import eval_broker
 
 from .application_keys import APP_CONFIG_KEY
 from .computation_config import CONFIG_SECTION_NAME
-from .sockets import SIO
+from .sockets import sio
 
 log = logging.getLogger(__file__)
 
@@ -18,16 +19,16 @@ async def on_message(message: aio_pika.IncomingMessage):
         data = json.loads(message.body)
         log.debug(data)
         if data["Channel"] == "Log":
-            await SIO.emit("logger", data = json.dumps(data))
+            await sio.emit("logger", data = json.dumps(data))
         elif data["Channel"] == "Progress":
-            await SIO.emit("progress", data = json.dumps(data))
+            await sio.emit("progress", data = json.dumps(data))
 
-async def subscribe(_app=None):
+async def subscribe(app: web.Application):
     # TODO: catch and deal with missing connections:
     # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
 
-    rb_config = _app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    rb_config = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     rabbit_broker = eval_broker(rb_config)
 
     # FIXME: This tmp resolves ``aio pika 169: IncompatibleProtocolError`` upon apio_pika.connect

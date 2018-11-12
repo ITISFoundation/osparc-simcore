@@ -7,7 +7,7 @@ from .director_config import CONFIG_SECTION_NAME
 logger = logging.getLogger(__name__)
 
 def setup(app: web.Application):
-    log.debug("Setting up %s ...", __name__)
+    logger.debug("Setting up %s ...", __name__)
 
     assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY]
 

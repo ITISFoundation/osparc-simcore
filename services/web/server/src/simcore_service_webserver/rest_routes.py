@@ -10,7 +10,7 @@ from aiohttp import web
 
 from servicelib import openapi
 
-from . import comp_backend_api, registry_api, rest_handlers
+from . import computation_api, registry_api, rest_handlers
 from .application_keys import APP_OPENAPI_SPECS_KEY
 from .login import routes as auth_routes
 from .rest_settings import get_base_path
@@ -45,7 +45,7 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     # FIXME: temp fix for running pipelines
     path, handle = '/services', registry_api.get_services
     routes.append(web.get(BASEPATH+path, handle))
-    path, handle = '/start_pipeline', comp_backend_api.start_pipeline
+    path, handle = '/start_pipeline', computation_api.start_pipeline
     routes.append(web.post(BASEPATH+path, handle))
 
     return routes
