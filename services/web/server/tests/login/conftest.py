@@ -40,7 +40,7 @@ def docker_compose_file(here, app_cfg):
     """
     old = os.environ.copy()
 
-    cfg = app_cfg["postgres"]
+    cfg = app_cfg["db"]["postgres"]
 
     # docker-compose reads these environs
     os.environ['TEST_POSTGRES_DB']=cfg['database']
@@ -56,7 +56,7 @@ def docker_compose_file(here, app_cfg):
 
 @pytest.fixture(scope='session')
 def postgres_service(docker_services, docker_ip, app_cfg):
-    cfg = app_cfg["postgres"]
+    cfg = app_cfg["db"]["postgres"]
     cfg['host'] = docker_ip
     cfg['port'] = docker_services.port_for('postgres', 5432)
 
@@ -79,7 +79,7 @@ def postgres_db(app_cfg, postgres_service): # NOTE: if postgres_services started
 
         In that case, comment postgres_service)
     """
-    cfg = app_cfg["postgres"]
+    cfg = app_cfg["db"]["postgres"]
     url = DSN.format(**cfg)
 
     # NOTE: Comment this to avoid postgres_service
