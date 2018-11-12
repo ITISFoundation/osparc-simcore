@@ -92,7 +92,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       if (existingNodeModel) {
         return existingNodeModel;
       }
-      let nodeModel = new qxapp.data.model.NodeModel(key, version, uuid);
+      let nodeModel = new qxapp.data.model.NodeModel(this, key, version, uuid);
       nodeModel.populateNodeData(nodeData);
       nodeModel.addListener("ShowInLogger", e => {
         this.fireDataEvent("ShowInLogger", e.getData());
@@ -216,8 +216,8 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
         // node especific
         if (!nodeModel.isContainer()) {
-          node.key = nodeModel.getMetaData().key;
-          node.version = nodeModel.getMetaData().version;
+          node.key = nodeModel.getKey();
+          node.version = nodeModel.getVersion();
         }
       }
       return workbench;

@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.component.widget.inputs.NodeOutputListItem", {
+qx.Class.define("qxapp.component.widget.inputs.NodeOutputTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 
   construct: function() {

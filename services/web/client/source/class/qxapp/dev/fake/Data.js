@@ -198,6 +198,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "UUID2": {
               key: "services/computational/itis/sleeper",
               version: "0.0.0",
+              label: "Sleeper 1",
               inputs: {
                 inNumber: 3.5
               },
@@ -212,11 +213,12 @@ qx.Class.define("qxapp.dev.fake.Data", {
             "UUID3": {
               key: "services/computational/itis/sleeper",
               version: "0.0.0",
+              label: "Sleeper 2",
               inputs: {
                 inNumber: 3.5
               },
               outputs: {
-                outNumber: 33
+                outNumber: 32
               },
               position: {
                 x: 10,
@@ -246,6 +248,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 }
               },
               inputNodes: [
+                "UUID2",
                 "UUID3",
                 "UUID1"
               ],
@@ -2042,6 +2045,309 @@ qx.Class.define("qxapp.dev.fake.Data", {
         }
       };
       return temp2Data;
+    },
+
+    getItemList: function(nodeInstanceUUID, portKey) {
+      switch (portKey) {
+        case "defaultNeuromanModels":
+          return [{
+            key: "Yoon-sun-UUID",
+            label: "Yoon-sun",
+            thumbnail: "qxapp/yoonsun.png"
+          }, {
+            key: "Yoon-sun-Light-UUID",
+            label: "Yoon-sun Light",
+            thumbnail: "qxapp/yoonsun-light.png"
+          }, {
+            key: "Rat-UUID",
+            label: "Rat",
+            thumbnail: "qxapp/rat.png"
+          }, {
+            key: "Rat-Light-UUID",
+            label: "Rat Light",
+            thumbnail: "qxapp/rat-light.png"
+          }];
+        case "defaultMaterials":
+          return [{
+            key: "Dielectric-UUID",
+            label: "Dielectric"
+          }, {
+            key: "PEC-UUID",
+            label: "PEC"
+          }, {
+            key: "PMC-UUID",
+            label: "PMC"
+          }];
+        case "defaultBoundaries":
+          return [{
+            key: "Dirichlet-UUID",
+            label: "Dirichlet"
+          }, {
+            key: "Neumann-UUID",
+            label: "Neumann"
+          }, {
+            key: "Flux-UUID",
+            label: "Flux"
+          }];
+        case "modeler":
+          return [{
+            key: "MODEL1-UUID",
+            label: "Model 1"
+          }, {
+            key: "MODEL2-UUID",
+            label: "Model 2"
+          }, {
+            key: "MODEL3-UUID",
+            label: "Model 3"
+          }];
+        case "materialDB":
+          return [{
+            key: "Air-UUID",
+            label: "Air"
+          }, {
+            key: "Brain-UUID",
+            label: "Brain"
+          }, {
+            key: "Eye-UUID",
+            label: "Eye"
+          }];
+        case "defaultStimulationSelectivity":
+          return [{
+            key: "StSeSubgroup-UUID",
+            label: "Subgroup"
+          }];
+      }
+      return [];
+    },
+
+    getItem: function(nodeInstanceUUID, portKey, itemUuid) {
+      switch (portKey) {
+        case "materialDB": {
+          switch (itemUuid) {
+            case "Air-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1.16409
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permittivity",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermeability": {
+                  displayOrder: 4,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                }
+              };
+            }
+            case "Brain-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1045.5
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0.234007
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permittivity",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermeability": {
+                  displayOrder: 4,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                }
+              };
+            }
+            case "Eye-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1050.5
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0.62
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permittivity",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermeability": {
+                  displayOrder: 4,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                }
+              };
+            }
+          }
+          break;
+        }
+        case "defaultMaterials": {
+          switch (itemUuid) {
+            case "Dielectric-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1.205
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permittivity",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticRelativePermeability": {
+                  displayOrder: 3,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 4,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                }
+              };
+            }
+          }
+          break;
+        }
+        case "defaultBoundaries": {
+          switch (itemUuid) {
+            case "Dirichlet-UUID": {
+              return {
+                "constantPotential": {
+                  displayOrder: 0,
+                  label: "Constant Potential",
+                  unit: "V",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "phase": {
+                  displayOrder: 1,
+                  label: "Phase",
+                  unit: "deg",
+                  type: "number",
+                  defaultValue: 0
+                }
+              };
+            }
+            case "Neumann-UUID": {
+              return {
+                "normalDerivative": {
+                  displayOrder: 0,
+                  label: "Normal Derivative",
+                  unit: "V/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "phase": {
+                  displayOrder: 1,
+                  label: "Phase",
+                  unit: "deg",
+                  type: "number",
+                  defaultValue: 0
+                }
+              };
+            }
+            case "Flux-UUID": {
+              return {
+                "constantFlux": {
+                  displayOrder: 0,
+                  label: "Constant Flux",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "phase": {
+                  displayOrder: 1,
+                  label: "Phase",
+                  unit: "deg",
+                  type: "number",
+                  defaultValue: 0
+                }
+              };
+            }
+          }
+          break;
+        }
+      }
+      return {};
     }
   } // statics
 
