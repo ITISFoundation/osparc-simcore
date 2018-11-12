@@ -9,9 +9,10 @@ import aiohttp_jinja2
 import jinja_app_loader
 from aiohttp import web
 
-from .resources import resources
-from .application_keys import APP_CONFIG_KEY
+from servicelib.application_keys import APP_CONFIG_KEY
+
 from .email_config import CONFIG_SECTION_NAME
+from .resources import resources
 
 # TODO: move login/utils.py email functionality here!
 #from email.mime.text import MIMEText

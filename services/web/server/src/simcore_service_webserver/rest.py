@@ -12,11 +12,11 @@ from copy import deepcopy
 from aiohttp import web
 
 from servicelib import openapi
+from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.openapi import create_openapi_specs
 from servicelib.rest_middlewares import append_rest_middlewares
 
 from . import rest_routes
-from .application_keys import APP_CONFIG_KEY
 from .rest_config import APP_OPENAPI_SPECS_KEY, CONFIG_SECTION_NAME
 
 log = logging.getLogger(__name__)

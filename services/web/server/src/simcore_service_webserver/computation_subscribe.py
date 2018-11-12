@@ -5,9 +5,9 @@ import logging
 import aio_pika
 from aiohttp import web
 
+from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.rabbit import eval_broker
 
-from .application_keys import APP_CONFIG_KEY
 from .computation_config import CONFIG_SECTION_NAME
 from .sockets import sio
 

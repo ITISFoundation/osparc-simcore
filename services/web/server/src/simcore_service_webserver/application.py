@@ -6,18 +6,19 @@ import logging
 
 from aiohttp import web
 
-from .application_keys import APP_CONFIG_KEY
+from servicelib.application_keys import APP_CONFIG_KEY
+
 from .computation import setup_computation
 from .db import setup_db
-from .login import setup_login
+from .director import setup_director
 from .email import setup_email
+from .login import setup_login
 from .rest import setup_rest
+from .s3 import setup_s3
 from .security import setup_security
 from .session import setup_session
 from .sockets import setup_sockets
 from .statics import setup_statics
-from .director import setup_director
-from .s3 import setup_s3
 
 log = logging.getLogger(__name__)
 

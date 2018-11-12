@@ -11,7 +11,7 @@ from pathlib import Path
 
 from aiohttp import web
 
-from .application_keys import APP_CONFIG_KEY
+from servicelib.application_keys import APP_CONFIG_KEY
 
 log = logging.getLogger(__file__)
 

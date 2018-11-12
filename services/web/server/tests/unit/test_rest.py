@@ -12,10 +12,9 @@ import yaml
 from aiohttp import web
 
 import simcore_service_webserver
+from servicelib.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import resources, rest
-from simcore_service_webserver.application_keys import (APP_CONFIG_KEY,
-                                                        APP_OPENAPI_SPECS_KEY)
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 

@@ -11,17 +11,17 @@ import logging
 
 import sqlalchemy.exc
 from aiohttp import web, web_exceptions
-from sqlalchemy import create_engine, and_
+from sqlalchemy import and_, create_engine
 from sqlalchemy.orm import sessionmaker
 
+from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_director_sdk.rest import ApiException
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 
-from .director import director_sdk
-from .application_keys import APP_CONFIG_KEY
-from .db_config import CONFIG_SECTION_NAME as CONFIG_DB_SECTION
 from .computation_worker import celery
+from .db_config import CONFIG_SECTION_NAME as CONFIG_DB_SECTION
+from .director import director_sdk
 
 # TODO: this should be coordinated with postgres options from config/server.yaml
 #from simcore_sdk.config.db import Config as DbConfig
