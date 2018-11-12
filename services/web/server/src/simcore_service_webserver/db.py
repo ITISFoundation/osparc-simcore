@@ -12,12 +12,12 @@ from aiopg.sa import create_engine
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from servicelib.aiopg_utils import DBAPIError
+from servicelib.application_keys import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY,
+                                         APP_DB_SESSION_KEY)
 
-from .application_keys import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY,
-                               APP_DB_SESSION_KEY)
 from .computation_api import init_database as _init_db
-from .db_models import metadata
 from .db_config import CONFIG_SECTION_NAME
+from .db_models import metadata
 
 # SETTINGS ----------------------------------------------------
 THIS_MODULE_NAME  = __name__.split(".")[-1]

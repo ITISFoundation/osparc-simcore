@@ -9,13 +9,14 @@ import logging
 import asyncpg
 from aiohttp import web
 
-from ..application_keys import APP_CONFIG_KEY, APP_DB_POOL_KEY
+from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_POOL_KEY
+
 from ..db import DSN
 from ..email_config import CONFIG_SECTION_NAME as CONFIG_STMP_SECTION
 from ..rest_config import APP_OPENAPI_SPECS_KEY
-from .cfg import cfg, APP_LOGIN_CONFIG
-from .storage import AsyncpgStorage
+from .cfg import APP_LOGIN_CONFIG, cfg
 from .routes import create_routes
+from .storage import AsyncpgStorage
 
 log = logging.getLogger(__name__)
 

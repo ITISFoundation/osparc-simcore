@@ -6,7 +6,8 @@ import logging
 
 from aiohttp import web
 
-from .application_keys import APP_CONFIG_KEY
+from servicelib.application_keys import APP_CONFIG_KEY
+
 from .s3_config import CONFIG_SECTION_NAME
 
 #from s3wrapper.s3_client import S3Client

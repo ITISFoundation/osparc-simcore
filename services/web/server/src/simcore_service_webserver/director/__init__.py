@@ -7,7 +7,8 @@ import logging
 
 from aiohttp import web
 
-from ..application_keys import APP_CONFIG_KEY
+from servicelib.application_keys import APP_CONFIG_KEY
+
 from .config import CONFIG_SECTION_NAME
 
 logger = logging.getLogger(__name__)

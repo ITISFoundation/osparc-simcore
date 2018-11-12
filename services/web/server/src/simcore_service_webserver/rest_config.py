@@ -4,7 +4,8 @@
     - settings
 """
 import trafaret as T
-from .application_keys import APP_OPENAPI_SPECS_KEY
+
+from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 
 APP_OPENAPI_SPECS_KEY = APP_OPENAPI_SPECS_KEY
 

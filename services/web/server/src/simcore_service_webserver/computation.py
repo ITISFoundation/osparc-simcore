@@ -10,9 +10,10 @@ import logging
 
 from aiohttp import web
 
-from .application_keys import APP_CONFIG_KEY
-from .computation_subscribe import subscribe
+from servicelib.application_keys import APP_CONFIG_KEY
+
 from .computation_config import CONFIG_SECTION_NAME, SERVICE_NAME
+from .computation_subscribe import subscribe
 
 log = logging.getLogger(__file__)
 
