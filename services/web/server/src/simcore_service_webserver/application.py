@@ -14,8 +14,10 @@ from .email import setup_email
 from .rest import setup_rest
 from .security import setup_security
 from .session import setup_session
-from .sockets import setup_sio
+from .sockets import setup_sockets
 from .statics import setup_statics
+from .director import setup_director
+from .s3 import setup_s3
 
 log = logging.getLogger(__name__)
 
@@ -41,9 +43,11 @@ def create_application(config: dict):
     setup_email(app)
     setup_computation(app)
     setup_statics(app)
-    setup_sio(app)
+    setup_sockets(app)
     setup_rest(app)
     setup_login(app)
+    setup_director(app)
+    setup_s3(app)
 
     return app
 

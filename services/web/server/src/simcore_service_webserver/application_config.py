@@ -29,8 +29,6 @@ from .resources import resources
 log = logging.getLogger(__name__)
 
 
-
-
 def create_schema():
     """
         Build schema for the configuration's file
@@ -52,6 +50,8 @@ def create_schema():
         rest_config.CONFIG_SECTION_NAME: rest_config.schema,
         email_config.CONFIG_SECTION_NAME: email_config.schema,
         computation_config.CONFIG_SECTION_NAME: computation_config.schema,
+        #s3_config.CONFIG_SECTION_NAME: s3_config.schema
+        #TODO: enable when sockets are refactored
     })
 
 
