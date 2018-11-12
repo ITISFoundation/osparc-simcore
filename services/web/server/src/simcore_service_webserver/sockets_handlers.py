@@ -16,7 +16,7 @@ from simcore_sdk.config.s3 import Config as s3_config
 # At first sight, adding it would require refactorin how socketio
 # is setup and avoid sio as a singleton!
 
-from . import interactive_services_manager
+from .director import interactive_services_manager
 
 log = logging.getLogger(__file__)
 

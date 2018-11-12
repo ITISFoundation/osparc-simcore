@@ -22,8 +22,8 @@ import trafaret as T
 
 from servicelib import application_keys  # pylint:disable=unused-import
 
-from . import (computation_config, db_config, director_config, email_config,
-               rest_config)
+from . import computation_config, db_config, email_config, rest_config
+from .director import config as director_config
 from .resources import resources
 
 log = logging.getLogger(__name__)

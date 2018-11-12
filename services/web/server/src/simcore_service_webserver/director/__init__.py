@@ -1,8 +1,14 @@
-from aiohttp import web
+""" director subsystem
+
+    Provides interactivity with the director service
+"""
 
 import logging
-from .application_keys import APP_CONFIG_KEY
-from .director_config import CONFIG_SECTION_NAME
+
+from aiohttp import web
+
+from ..application_keys import APP_CONFIG_KEY
+from .config import CONFIG_SECTION_NAME
 
 logger = logging.getLogger(__name__)
 

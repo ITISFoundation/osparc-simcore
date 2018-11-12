@@ -18,7 +18,7 @@ from simcore_director_sdk.rest import ApiException
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 
-from . import director_sdk
+from .director import director_sdk
 from .application_keys import APP_CONFIG_KEY
 from .computation_worker import celery
 
