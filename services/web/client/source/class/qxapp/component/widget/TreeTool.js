@@ -1,45 +1,23 @@
-/* eslint no-warning-comments: "off" */
-
 qx.Class.define("qxapp.component.widget.TreeTool", {
   extend: qx.ui.core.Widget,
 
   construct: function(projectName, workbenchModel) {
     this.base(arguments);
 
-    let treeLayout = new qx.ui.layout.VBox(10);
-    this._setLayout(treeLayout);
-
     this.set({
       projectName: projectName,
       workbenchModel: workbenchModel
     });
 
-    this.__buildLayout();
-    this.buildTree();
+    this._setLayout(new qx.ui.layout.VBox());
+
+    this.__toolBar = this._createChildControlImpl("toolbar");
+    this.__tree = this._createChildControlImpl("tree");
+    this.__populateTree();
 
     this.addListener("keypress", function(keyEvent) {
       if (keyEvent.getKeyIdentifier() === "F2") {
-        let treeSelection = this.__tree.getSelection();
-        if (treeSelection.length < 1) {
-          return;
-        }
-        let selectedItem = treeSelection.toArray()[0];
-        const selectedNodeId = selectedItem.getNodeId();
-        if (selectedNodeId === "root") {
-          return;
-        }
-
-        let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
-        treeItemRenamer.addListener("LabelChanged", e => {
-          const data = e.getData();
-          const newLabel = data.newLabel;
-          const nodeId = selectedItem.getNodeId();
-          let nodeModel = this.getWorkbenchModel().getNodeModel(nodeId);
-          nodeModel.setLabel(newLabel);
-        }, this);
-        const bounds = this.getLayoutParent().getBounds();
-        treeItemRenamer.moveTo(bounds.left+100, bounds.top+150);
-        treeItemRenamer.open();
+        this.__renameItem();
       }
     }, this);
   },
@@ -60,19 +38,60 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
   },
 
   members: {
+    __toolBar: null,
     __tree: null,
 
-    __buildLayout: function() {
-      let tree = this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "toolbar":
+          control = this.__buildToolbar();
+          this._add(control);
+          break;
+        case "tree":
+          control = this.__buildTree();
+          this._add(control, {
+            flex: 1
+          });
+          break;
+      }
+
+      return control || this.base(arguments, id);
+    },
+
+    __buildToolbar: function() {
+      const iconSize = 16;
+
+      let toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
+
+      let newButton = new qx.ui.toolbar.Button("New", "@FontAwesome5Solid/plus/"+iconSize);
+      toolbar.add(newButton);
+
+      let part2 = new qx.ui.toolbar.Part();
+      let deleteButton = new qx.ui.toolbar.Button("Delete", "@FontAwesome5Solid/trash/"+iconSize);
+      let renameButton = new qx.ui.toolbar.Button("Rename", "@FontAwesome5Solid/i-cursor/"+iconSize);
+      renameButton.addListener("execute", e => {
+        this.__renameItem();
+      }, this);
+      part2.add(deleteButton);
+      part2.add(renameButton);
+      toolbar.add(part2);
+
+      let part3 = new qx.ui.toolbar.Part();
+      let moveUpButton = new qx.ui.toolbar.Button("Up", "@FontAwesome5Solid/arrow-up/"+iconSize);
+      let moveDownButton = new qx.ui.toolbar.Button("Down", "@FontAwesome5Solid/arrow-down/"+iconSize);
+      part3.add(moveUpButton);
+      part3.add(moveDownButton);
+      toolbar.add(part3);
+
+      return toolbar;
+    },
+
+    __buildTree: function() {
+      let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
         openMode: "none"
       });
-
-      this._removeAll();
-      this._add(tree, {
-        flex: 1
-      });
-
-      this.__tree.addListener("dblclick", e => {
+      tree.addListener("dblclick", e => {
         let selection = this.__tree.getSelection();
         let currentSelection = selection.toArray();
         if (currentSelection.length > 0) {
@@ -80,9 +99,10 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
           this.fireDataEvent("NodeDoubleClicked", selectedRow.getNodeId());
         }
       }, this);
+      return tree;
     },
 
-    buildTree: function() {
+    __populateTree: function() {
       const topLevelNodes = this.getWorkbenchModel().getNodeModels();
       let data = {
         label: this.getProjectName(),
@@ -135,6 +155,40 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
         return node;
       }
       return null;
+    },
+
+    __getSelection: function() {
+      let treeSelection = this.__tree.getSelection();
+      if (treeSelection.length < 1) {
+        return null;
+      }
+
+      let selectedItem = treeSelection.toArray()[0];
+      const selectedNodeId = selectedItem.getNodeId();
+      if (selectedNodeId === "root") {
+        return null;
+      }
+
+      return selectedItem;
+    },
+
+    __renameItem: function() {
+      let selectedItem = this.__getSelection();
+      if (selectedItem === null) {
+        return;
+      }
+
+      let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
+      treeItemRenamer.addListener("LabelChanged", e => {
+        const data = e.getData();
+        const newLabel = data.newLabel;
+        const nodeId = selectedItem.getNodeId();
+        let nodeModel = this.getWorkbenchModel().getNodeModel(nodeId);
+        nodeModel.setLabel(newLabel);
+      }, this);
+      const bounds = this.getLayoutParent().getBounds();
+      treeItemRenamer.moveTo(bounds.left+100, bounds.top+150);
+      treeItemRenamer.open();
     },
 
     nodeSelected: function(nodeId) {
