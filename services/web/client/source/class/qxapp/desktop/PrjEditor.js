@@ -177,7 +177,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __workbenchModelChanged: function() {
-      this.__treeView.buildTree();
+      this.__treeView.populateTree();
       this.__treeView.nodeSelected(this.__currentNodeId);
     },
 

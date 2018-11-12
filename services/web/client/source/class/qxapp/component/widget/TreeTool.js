@@ -13,7 +13,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
 
     this.__toolBar = this._createChildControlImpl("toolbar");
     this.__tree = this._createChildControlImpl("tree");
-    this.__populateTree();
+    this.populateTree();
 
     this.addListener("keypress", function(keyEvent) {
       if (keyEvent.getKeyIdentifier() === "F2") {
@@ -102,7 +102,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       return tree;
     },
 
-    __populateTree: function() {
+    populateTree: function() {
       const topLevelNodes = this.getWorkbenchModel().getNodeModels();
       let data = {
         label: this.getProjectName(),
