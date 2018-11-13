@@ -31,9 +31,11 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
 
         let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
         treeItemRenamer.addListener("LabelChanged", e => {
-          let data = e.getData();
-          data["nodeId"] = selectedItem.getNodeId();
-          this.fireDataEvent("NodeLabelChanged", data);
+          const data = e.getData();
+          const newLabel = data.newLabel;
+          const nodeId = selectedItem.getNodeId();
+          let nodeModel = this.getWorkbenchModel().getNodeModel(nodeId);
+          nodeModel.setLabel(newLabel);
         }, this);
         const bounds = this.getLayoutParent().getBounds();
         treeItemRenamer.moveTo(bounds.left+100, bounds.top+150);
@@ -43,8 +45,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
   },
 
   events: {
-    "NodeDoubleClicked": "qx.event.type.Data",
-    "NodeLabelChanged": "qx.event.type.Data"
+    "NodeDoubleClicked": "qx.event.type.Data"
   },
 
   properties: {
