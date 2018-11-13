@@ -40,6 +40,7 @@ RUN pip install --upgrade pip && \
 # ----------------------------------------------------------------
 # prepare for booting
 COPY --chown=jovyan:users services/dy-jupyter/docker /docker
+COPY --chown=jovyan:users services/dy-jupyter/notebook-customisation/custom.js /home/jovyan/.jupyter/custom
 
 ENV NOTEBOOK_URL="notebooks/notebook.ipynb"
 # ----------------------------------------------------------------
