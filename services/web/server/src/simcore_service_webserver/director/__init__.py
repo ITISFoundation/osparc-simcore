@@ -13,6 +13,8 @@ from .config import CONFIG_SECTION_NAME
 
 logger = logging.getLogger(__name__)
 
+
+
 def setup(app: web.Application):
     logger.debug("Setting up %s ...", __name__)
 
