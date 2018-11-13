@@ -197,12 +197,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }
       this.getWorkbenchModel().addNodeModel(nodeModel, parent);
 
-      let nodeB = this.__createNodeUI(nodeModel.getNodeId());
-      this.__addNodeToWorkbench(nodeB, pos);
+      let nodeUI = this.__createNodeUI(nodeModel.getNodeId());
+      this.__addNodeToWorkbench(nodeUI, pos);
 
       if (nodeAId !== null && portA !== null) {
-        let nodeBId = nodeB.getNodeId();
-        let portB = this.__findCompatiblePort(nodeB, portA);
+        let nodeBId = nodeUI.getNodeId();
+        let portB = this.__findCompatiblePort(nodeUI, portA);
         // swap node-ports to have node1 as input and node2 as output
         if (portA.isInput) {
           [nodeAId, portA, nodeBId, portB] = [nodeBId, portB, nodeAId, portA];
@@ -215,7 +215,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }
     },
 
-    __addNodeToWorkbench: function(node, position) {
+    __addNodeToWorkbench: function(nodeUI, position) {
       if (position === undefined || position === null) {
         position = {};
         let farthestRight = 0;
@@ -229,22 +229,22 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         position.x = 50 + farthestRight;
         position.y = 200;
       }
-      node.getNodeModel().setPosition(position.x, position.y);
-      node.moveTo(position.x, position.y);
-      this.addWindowToDesktop(node);
-      this.__nodesUI.push(node);
+      nodeUI.getNodeModel().setPosition(position.x, position.y);
+      nodeUI.moveTo(position.x, position.y);
+      this.addWindowToDesktop(nodeUI);
+      this.__nodesUI.push(nodeUI);
 
-      node.addListener("NodeMoving", function() {
-        this.__updateLinks(node);
-        this.__updatePosition(node);
+      nodeUI.addListener("NodeMoving", function() {
+        this.__updateLinks(nodeUI);
+        this.__updatePosition(nodeUI);
       }, this);
 
-      node.addListener("appear", function() {
-        this.__updateLinks(node);
+      nodeUI.addListener("appear", function() {
+        this.__updateLinks(nodeUI);
       }, this);
 
-      node.addListener("dblclick", e => {
-        this.fireDataEvent("NodeDoubleClicked", node.getNodeId());
+      nodeUI.addListener("dblclick", e => {
+        this.fireDataEvent("NodeDoubleClicked", nodeUI.getNodeId());
         e.stopPropagation();
       }, this);
 
@@ -446,11 +446,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return null;
     },
 
-    __createLink: function(node1Id, node2Id, linkId) {
+    __createLinkUI: function(node1Id, node2Id, linkId) {
       let node1 = this.getNodeUI(node1Id);
-      let port1 = node1.getOutputPort();
       let node2 = this.getNodeUI(node2Id);
-      let port2 = node2.getInputPort();
 
       if (this.__currentModel.isContainer() && node2.getNodeId() === this.__currentModel.getNodeId()) {
         node1.getNodeModel().setIsOutputNode(true);
@@ -459,6 +457,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }
       linkId = linkId || qxapp.utils.Utils.uuidv4();
 
+      let port1 = node1.getOutputPort();
+      let port2 = node2.getInputPort();
       const pointList = this.__getLinkPoints(node1, port1, node2, port2);
       const x1 = pointList[0] ? pointList[0][0] : 0;
       const y1 = pointList[0] ? pointList[0][1] : 0;
@@ -488,7 +488,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     __createLinkBetweenNodes: function(from, to, linkId) {
       let node1Id = from.nodeUuid;
       let node2Id = to.nodeUuid;
-      this.__createLink(node1Id, node2Id, linkId);
+      this.__createLinkUI(node1Id, node2Id, linkId);
     },
 
     __createLinkBetweenNodesAndInputNodes: function(from, to, linkId) {
@@ -499,7 +499,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         if (inputNodeId === from.nodeUuid) {
           let node1Id = from.nodeUuid;
           let node2Id = to.nodeUuid;
-          this.__createLink(node1Id, node2Id, linkId);
+          this.__createLinkUI(node1Id, node2Id, linkId);
         }
       }
     },
@@ -507,7 +507,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     __createLinkToExposedOutputs: function(from, to, linkId) {
       let node1Id = from.nodeUuid;
       let node2Id = to.nodeUuid;
-      this.__createLink(node1Id, node2Id, linkId);
+      this.__createLinkUI(node1Id, node2Id, linkId);
     },
 
     __updatePosition: function(node) {
@@ -761,8 +761,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         let nodes = isContainer ? model.getInnerNodes() : model.getNodeModels();
         for (const nodeUuid in nodes) {
           const nodeModel = nodes[nodeUuid];
-          let node = this.__createNodeUI(nodeUuid);
-          this.__addNodeToWorkbench(node, nodeModel.getPosition());
+          let nodeUI = this.__createNodeUI(nodeUuid);
+          this.__addNodeToWorkbench(nodeUI, nodeModel.getPosition());
         }
 
         for (const nodeUuid in nodes) {
