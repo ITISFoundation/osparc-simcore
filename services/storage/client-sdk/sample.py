@@ -26,7 +26,7 @@ bucket_name = "testbucket"
 project_id = uuid.uuid4()
 node_id = uuid.uuid4()
 file_id = temp_file_path.name
-file_uuid = "{location_name}/{bucket_name}/{project_id}/{node_id}/{file_id}".format(location_name=location_name, bucket_name=bucket_name, project_id=project_id, node_id=node_id, file_id=file_id)    
+file_uuid = "{bucket_name}/{project_id}/{node_id}/{file_id}".format(bucket_name=bucket_name, project_id=project_id, node_id=node_id, file_id=file_id)
 
 @contextmanager
 def api_client(cfg):
@@ -43,7 +43,7 @@ def api_client(cfg):
 async def test_health_check(api:UsersApi):
     res = await api.health_check()
     print("health check:", res)
-    assert not res.error    
+    assert not res.error
     assert res.data
 
 async def test_get_locations(api:UsersApi):
@@ -77,7 +77,7 @@ async def test_download_file(api:UsersApi):
     tmp_file2 = tempfile.NamedTemporaryFile(delete=False)
     tmp_file2.close()
     urllib.request.urlretrieve(download_link, tmp_file2.name)
-    
+
     assert filecmp.cmp(tmp_file2.name, temp_file_path)
 
 async def test_delete_file(api:UsersApi):
@@ -117,7 +117,7 @@ async def run_test():
         await test_download_file(api)
         await test_delete_file(api)
 
-       
+
 
 
 def main():

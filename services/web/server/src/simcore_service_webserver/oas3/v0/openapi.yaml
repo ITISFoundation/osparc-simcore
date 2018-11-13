@@ -402,4 +402,25 @@ components:
       content:
         application/json:
           schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+            $ref: 'components/schemas/error.yml#/ErrorEnveloped'
+
+    FileMetaData_200:
+      description: 'Returns file metadata'
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/files.yml#FileMetaData'
+
+    PresignedLink_200:
+      description: 'Returns presigned link'
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/responses.yml#PresignedLink'
+
+  requestBodies:
+    FileMetaDataBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/files.yml#FileMetaData'

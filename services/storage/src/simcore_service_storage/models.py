@@ -36,21 +36,21 @@ file_meta_data = sa.Table(
 
 
 def _parse_simcore(file_uuid: str) -> Tuple[str, str]:
-    # we should have simcore.s3/simcore/12/123123123/111.txt
+    # we should have simcore/12/123123123/111.txt
 
     object_name = "invalid"
     bucket_name = "invalid"
 
     parts = file_uuid.split("/")
 
-    if len(parts) > 2:
-        bucket_name = parts[1]
-        object_name = "/".join(parts[2:])
+    if len(parts) > 1:
+        bucket_name = parts[0]
+        object_name = "/".join(parts[1:])
 
     return bucket_name, object_name
 
 def _parse_datcore(file_uuid: str) -> Tuple[str, str]:
-    # we should have datcore/boom/12/123123123/111.txt
+    # we should have boom/12/123123123/111.txt
     return _parse_simcore(file_uuid)
 
 def _locations():
@@ -91,7 +91,7 @@ class FileMetaData:
 
         file_name       : display name for a file
         location_id     : storage location
-        location_name   : storage location display name (currently used as part of the file_uuid)
+        location_name   : storage location display name
         project_id      : project_id
         projec_name     : project display name
         node_id         : node id
@@ -103,9 +103,8 @@ class FileMetaData:
 
         file_uuid       : unique identifier for a file:
 
-            location_name/bucket_name/project_id/node_id/file_name = location_name/bucket_name/object_name
+            bucket_name/project_id/node_id/file_name = /bucket_name/object_name
 
-            TODO: location_name should be location_id
 
         state:  on of OK, UPLOADING, DELETED
 
@@ -125,13 +124,13 @@ class FileMetaData:
 
     def simcore_from_uuid(self, file_uuid: str):
         parts = file_uuid.split("/")
-        assert len(parts) > 3
-        if len(parts) > 3:
+        assert len(parts) > 2
+        if len(parts) > 2:
             self.location = parts[0]
             self.location_id = _location_from_str(self.location)
-            self.bucket_name = parts[1]
-            self.object_name = "/".join(parts[2:])
+            self.bucket_name = parts[0]
+            self.object_name = "/".join(parts[1:])
             self.file_name = parts[-1]
-            self.project_id = parts[2]
-            self.node_id = parts[3]
+            self.project_id = parts[1]
+            self.node_id = parts[2]
             self.file_uuid = file_uuid
