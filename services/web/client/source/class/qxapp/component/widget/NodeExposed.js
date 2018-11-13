@@ -25,10 +25,18 @@ qx.Class.define("qxapp.component.widget.NodeExposed", {
     });
 
     let atom = new qx.ui.basic.Atom().set({
-      label: nodeModel.getLabel() + "'s outputs",
-      center : true,
+      rich: true,
+      center: true,
       draggable: true,
       droppable: true
+    });
+    atom.getChildControl("label").set({
+      textAlign: "center"
+    });
+    nodeModel.bind("label", atom, "label", {
+      converter: function(data) {
+        return data + "'s<br>outputs";
+      }
     });
 
     this._add(atom, {

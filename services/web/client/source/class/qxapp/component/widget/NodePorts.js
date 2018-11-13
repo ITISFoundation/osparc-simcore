@@ -26,11 +26,12 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     });
 
     const title16Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"]);
-    let label = new qx.ui.basic.Label(nodeModel.getLabel()).set({
+    let label = new qx.ui.basic.Label().set({
       font: title16Font,
       alignX: "center",
       alignY: "middle"
     });
+    nodeModel.bind("label", label, "value");
     this._add(label);
 
     this.setIsInputModel(isInputModel);

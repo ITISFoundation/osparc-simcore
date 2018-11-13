@@ -96,13 +96,13 @@ qx.Class.define("qxapp.component.workbench.NodeBase", {
 
     populateNodeLayout: function() {
       const nodeModel = this.getNodeModel();
-      const metaData = nodeModel.getMetaData();
-      this.setCaption(nodeModel.getLabel());
+      nodeModel.bind("label", this, "caption");
       if (nodeModel.isContainer()) {
         this.setIcon("@FontAwesome5Solid/folder-open/14");
       }
       this.__inputPort = {};
       this.__outputPort = {};
+      const metaData = nodeModel.getMetaData();
       if (metaData) {
         this.__createUIPorts(true, metaData.inputs);
         this.__createUIPorts(false, metaData.outputs);
