@@ -293,8 +293,25 @@ class DataStorageManager:
                     fmd.user_id = user_id
                     ins = file_meta_data.insert().values(**vars(fmd))
                     await conn.execute(ins)
-        else:
-            raise NotImplementedError("copy files from datcore 2 s3 not yet impl.")
+        elif source_location == DATCORE_STR:
+            if dest_location == DATCORE_STR:
+                raise NotImplementedError("copy files from datcore 2 datcore not impl")
+            elif dest_location == SIMCORE_S3_STR:
+                # 2 steps: Get download link for local copy, the upload link to s3
+                dc_link = await self.download_link(user_id=user_id, location=source_location, file_uuid=source_uuid)
+                s3_upload_link = await self.upload_link(user_id, dest_uuid)
+                filename = source_uuid.split("/")[-1]
+                tmp_dirpath = tempfile.mkdtemp()
+                local_file_path = os.path.join(tmp_dirpath,filename)
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(dc_link) as resp:
+                        if resp.status == 200:
+                            f = await aiofiles.open(local_file_path, mode='wb')
+                            await f.write(await resp.read())
+                            await f.close()
+                            # and now upload to s3
+                            with open(local_file_path, 'rb') as f:
+                                await session.post(s3_upload_link, data=f)
 
 
 

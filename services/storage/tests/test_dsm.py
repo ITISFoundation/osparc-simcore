@@ -240,6 +240,33 @@ async def test_dsm_datcore_to_local(postgres_service_url, dsm_fixture, mock_file
 # pylint: disable=R0913
 # Too many arguments
 @pytest.mark.travis
+async def test_dsm_datcore_to_S3(postgres_service_url, s3_client, tmp_file, dsm_fixture, mock_files_factory, datcore_testbucket):
+    utils.create_tables(url=postgres_service_url)
+    # create temporary file
+    tmp_file = mock_files_factory(1)[0]
+    dest_fmd = _create_file_meta_for_s3(postgres_service_url, s3_client, tmp_file)
+    user_id = dest_fmd.user_id
+    dest_uuid = dest_fmd.file_uuid
+
+    dsm = dsm_fixture
+
+    s3_data = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
+    assert len(s3_data) == 0
+
+    dc_data = await dsm.list_files(user_id=user_id, location=DATCORE_STR)
+    assert len(dc_data) == 2
+    src_fmd = dc_data[0]
+
+    dsm.copy_file(user_id=user_id, dest_location=SIMCORE_S3_STR, dest_uuid=dest_uuid, source_location=DATCORE_STR, source_uuid=src_fmd.file_uuid)
+
+    s3_data = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
+    assert len(s3_data) == 1
+
+
+
+# pylint: disable=R0913
+# Too many arguments
+@pytest.mark.travis
 async def test_copy_datcore(postgres_service_url, s3_client, dsm_fixture, mock_files_factory, datcore_testbucket):
     utils.create_tables(url=postgres_service_url)
 
