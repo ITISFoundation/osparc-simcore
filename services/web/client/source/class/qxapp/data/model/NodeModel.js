@@ -193,6 +193,10 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       this.__innerNodes[innerNodeId] = innerNodeModel;
     },
 
+    removeInnerNode: function(innerNodeId) {
+      delete this.__innerNodes[innerNodeId];
+    },
+
     isInnerNode: function(inputNodeId) {
       return (inputNodeId in this.__innerNodes);
     },
