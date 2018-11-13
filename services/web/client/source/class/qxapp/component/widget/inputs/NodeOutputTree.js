@@ -1,4 +1,4 @@
-qx.Class.define("qxapp.component.widget.inputs.NodeOutputList", {
+qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
   extend: qx.ui.core.Widget,
 
   construct: function(nodeModel, port, portKey) {
@@ -11,7 +11,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputList", {
     });
 
     tree.setDelegate({
-      createItem: () => new qxapp.component.widget.inputs.NodeOutputListItem(),
+      createItem: () => new qxapp.component.widget.inputs.NodeOutputTreeItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         c.bindProperty("key", "model", null, item, id);

@@ -9,7 +9,7 @@ LoginEnveloped:
       nullable: true
       default: null
     error:
-      $ref: "./error.yml#/ErrorType"
+      $ref: "./error.yaml#/ErrorType"
       nullable: true
       default: null
 

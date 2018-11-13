@@ -70,6 +70,47 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__sidePanel.setBottomView(loggerView);
 
       let workbenchView = this.__workbenchView = new qxapp.component.workbench.WorkbenchView(project.getWorkbenchModel());
+      workbenchView.addListener("removeNode", e => {
+        const nodeId = e.getData();
+        // remove first the connected links
+        let connectedLinks = this.getProjectModel().getWorkbenchModel().getConnectedLinks(nodeId);
+        for (let i=0; i<connectedLinks.length; i++) {
+          const linkId = connectedLinks[i];
+          if (this.getProjectModel().getWorkbenchModel().removeLink(linkId)) {
+            this.__workbenchView.clearLink(linkId);
+          }
+        }
+        if (this.getProjectModel().getWorkbenchModel().removeNode(nodeId)) {
+          this.__workbenchView.clearNode(nodeId);
+        }
+      }, this);
+      workbenchView.addListener("removeLink", e => {
+        const linkId = e.getData();
+        let workbenchModel = this.getProjectModel().getWorkbenchModel();
+        let currentNodeModel = workbenchModel.getNodeModel(this.__currentNodeId);
+        let link = workbenchModel.getLinkModel(linkId);
+        let removed = false;
+        if (currentNodeModel && currentNodeModel.isContainer() && link.getOutputNodeId() === currentNodeModel.getNodeId()) {
+          let inputNode = workbenchModel.getNodeModel(link.getInputNodeId());
+          inputNode.setIsOutputNode(false);
+
+          // Remove also dependencies from outter nodes
+          const cNodeId = inputNode.getNodeId();
+          const allNodes = workbenchModel.getNodeModels(true);
+          for (const nodeId in allNodes) {
+            let node = allNodes[nodeId];
+            if (node.isInputNode(cNodeId) && !currentNodeModel.isInnerNode(node.getNodeId())) {
+              workbenchModel.removeLink(linkId);
+            }
+          }
+          removed = true;
+        } else {
+          removed = workbenchModel.removeLink(linkId);
+        }
+        if (removed) {
+          this.__workbenchView.clearLink(linkId);
+        }
+      }, this);
       this.showInMainView(workbenchView, "root");
 
       let nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({
@@ -115,15 +156,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.nodeSelected(nodeId);
         }, this);
       });
-
-      this.__treeView.addListener("NodeLabelChanged", function(e) {
-        const data = e.getData();
-        const nodeId = data.nodeId;
-        const newLabel = data.newLabel;
-
-        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
-        nodeModel.setLabel(newLabel);
-      }, this);
     },
 
     nodeSelected: function(nodeId) {
@@ -146,12 +178,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           widget = this.__workbenchView;
         } else {
           this.__nodeView.setNodeModel(nodeModel);
-          if (nodeModel.getMetaData().type === "dynamic") {
-            const widgetManager = qxapp.component.widget.WidgetManager.getInstance();
-            widget = widgetManager.getWidgetForNode(nodeModel);
-            if (!widget) {
-              widget = this.__nodeView;
-            }
+          if (nodeModel.getKey().includes("file-picker")) {
+            widget = new qxapp.component.widget.FilePicker(nodeModel);
           } else {
             widget = this.__nodeView;
           }
@@ -163,7 +191,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }
       }
 
-      // SHow screenshots in the ExtraView
+      // Show screenshots in the ExtraView
       if (nodeId === "root") {
         this.showScreenshotInExtraView("workbench");
       } else {
@@ -171,7 +199,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         if (nodeModel.isContainer()) {
           this.showScreenshotInExtraView("container");
         } else {
-          let nodeKey = nodeModel.getMetaData().key;
+          let nodeKey = nodeModel.getKey();
           if (nodeKey.includes("file-picker")) {
             this.showScreenshotInExtraView("file-picker");
           } else if (nodeKey.includes("modeler")) {
@@ -190,7 +218,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __workbenchModelChanged: function() {
-      this.__treeView.buildTree();
+      this.__treeView.populateTree();
       this.__treeView.nodeSelected(this.__currentNodeId);
     },
 
@@ -203,8 +231,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
 
       this.__mainPanel.setMainView(widget);
-      let nodePath = this.getProjectModel().getWorkbenchModel().getPathWithId(nodeId);
-      this.fireDataEvent("ChangeMainViewCaption", nodePath);
+
+      let nodesPath = this.getProjectModel().getWorkbenchModel().getPathIds(nodeId);
+      this.fireDataEvent("ChangeMainViewCaption", nodesPath);
     },
 
     showInExtraView: function(widget) {

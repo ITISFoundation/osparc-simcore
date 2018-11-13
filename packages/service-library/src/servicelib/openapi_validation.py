@@ -9,11 +9,12 @@ from aiohttp import web
 from openapi_core import shortcuts
 from openapi_core.schema.specs.models import Spec as OpenApiSpec
 from openapi_core.validation.request.validators import RequestValidator
+from openapi_core.validation.response.validators import ResponseValidator
 
 from .openapi_wrappers import (PARAMETERS_KEYS, AiohttpOpenAPIRequest,
                                AiohttpOpenAPIResponse)
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 #from openapi_core.wrappers.mock import MockRequest
 
@@ -32,7 +33,6 @@ async def validate_request(request: web.Request, spec: OpenApiSpec):
 
     return result.parameters, result.body, result.errors
 
-
 async def validate_parameters(spec: OpenApiSpec, request: web.Request):
     req = await AiohttpOpenAPIRequest.create(request)
     return shortcuts.validate_parameters(spec, req)
@@ -40,6 +40,9 @@ async def validate_parameters(spec: OpenApiSpec, request: web.Request):
 async def validate_body(spec: OpenApiSpec, request: web.Request):
     req = await AiohttpOpenAPIRequest.create(request)
     return shortcuts.validate_body(spec, req)
+
+
+
 
 async def validate_data(spec: OpenApiSpec, request, response: web.Response):
 
@@ -58,7 +61,26 @@ async def validate_data(spec: OpenApiSpec, request, response: web.Response):
         req = request
 
     res = await AiohttpOpenAPIResponse.create(response)
-    return shortcuts.validate_data(spec, req, res)
+
+    validator = ResponseValidator(spec)
+    result = validator.validate(req, res)
+
+    result.raise_for_errors()
+
+    return result.data
+
+async def validate_response(spec: OpenApiSpec, request: web.Request, response: web.Response):
+    """
+      Validates server response against openapi specs
+
+      Raises exceptions OpenAPIError, OpenAPIMappingError
+    """
+    validator = ResponseValidator(spec)
+
+    req = await AiohttpOpenAPIRequest.create(request)
+    res = AiohttpOpenAPIResponse(response, response.text) # FIXME:ONLY IN SERVER side. Async in client!
+    result = validator.validate(req, res)
+    result.raise_for_errors()
 
 
 __all__ = (

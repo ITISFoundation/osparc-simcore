@@ -1,6 +1,9 @@
-""" Rest-API utilities
+""" rest - misc utils
 
-    Miscelaneous of functions and classes to build rest API sub-module
+UNDER DEVELOPMENT
+
+
+TODO: deprecate. Too general
 """
 import json
 from typing import Dict
@@ -9,11 +12,11 @@ import attr
 from aiohttp import web
 from openapi_core.extensions.models.factories import Model as BodyModel
 
-from .application_keys import APP_OPENAPI_SPECS_KEY
 #pylint: disable=W0611
 from .openapi_validation import (COOKIE_KEY, HEADER_KEY, PATH_KEY, QUERY_KEY,
                                  validate_request)
 from .rest_models import ErrorItemType, ErrorType
+from .rest_oas import get_specs
 
 
 def body_to_dict(body: BodyModel) -> Dict:
@@ -56,7 +59,7 @@ async def extract_and_validate(request: web.Request):
     See https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
     """
     # TODO: how to discriminate if multiple version of specs served?
-    spec = request.app[APP_OPENAPI_SPECS_KEY]
+    spec = get_specs(request.app)
     assert spec is not None
 
     params, body, errors = await validate_request(request, spec)
@@ -73,6 +76,7 @@ async def extract_and_validate(request: web.Request):
             )
 
     return params[PATH_KEY], params[QUERY_KEY], body
+
 
 
 #  TODO: fix __all__

@@ -17,6 +17,8 @@
     TODO: check storing JSON-ed data into redis-service, keeping into cookie only redis key (random UUID). Pros/cons analysis.
 """
 
+# TODO: drawback: forces all services to have session. Add as an extra module [session]
+
 import base64
 import logging
 
@@ -27,7 +29,7 @@ from cryptography import fernet
 
 from .application_keys import APP_SESSION_SECRET_KEY
 
-log = logging.getLogger(__file__)
+logger = logging.getLogger(__file__)
 
 
 def setup(app: web.Application):
@@ -35,7 +37,7 @@ def setup(app: web.Application):
         Inits and registers a session middleware in aiohttp.web.Application
 
     """
-    log.debug("Setting up %s ...", __name__)
+    logger.debug("Setting up %s ...", __name__)
 
     # TODO: Ensure called only once per application
 
