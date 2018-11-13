@@ -74,7 +74,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     label: {
       check: "String",
-      nullable: true
+      nullable: true,
+      event: "changeLabel"
     },
 
     propsWidget: {

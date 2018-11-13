@@ -115,15 +115,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.nodeSelected(nodeId);
         }, this);
       });
-
-      this.__treeView.addListener("NodeLabelChanged", function(e) {
-        const data = e.getData();
-        const nodeId = data.nodeId;
-        const newLabel = data.newLabel;
-
-        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
-        nodeModel.setLabel(newLabel);
-      }, this);
     },
 
     nodeSelected: function(nodeId) {
@@ -199,8 +190,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
 
       this.__mainPanel.setMainView(widget);
-      let nodePath = this.getProjectModel().getWorkbenchModel().getPathWithId(nodeId);
-      this.fireDataEvent("ChangeMainViewCaption", nodePath);
+
+      let nodesPath = this.getProjectModel().getWorkbenchModel().getPathIds(nodeId);
+      this.fireDataEvent("ChangeMainViewCaption", nodesPath);
     },
 
     showInExtraView: function(widget) {
