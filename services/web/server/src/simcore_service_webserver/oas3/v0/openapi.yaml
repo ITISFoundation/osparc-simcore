@@ -207,11 +207,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: user_id
-          in: query
-          required: true
-          schema:
-            type: string
         - name: uuid_filter
           in: query
           required: false
@@ -238,11 +233,6 @@ paths:
           type: string
       - name: location_id
         in : path
-        required: true
-        schema:
-          type: string
-      - name: user_id
-        in: query
         required: true
         schema:
           type: string
@@ -283,11 +273,6 @@ paths:
         required: true
         schema:
           type: string
-      - name: user_id
-        in: query
-        required: true
-        schema:
-          type: string
       responses:
         '200':
           $ref: '#/components/responses/PresignedLink_200'
@@ -302,11 +287,6 @@ paths:
           type: string
       - name: location_id
         in : path
-        required: true
-        schema:
-          type: string
-      - name: user_id
-        in: query
         required: true
         schema:
           type: string
@@ -329,11 +309,6 @@ paths:
           type: string
       - name: location_id
         in : path
-        required: true
-        schema:
-          type: string
-      - name: user_id
-        in: query
         required: true
         schema:
           type: string
