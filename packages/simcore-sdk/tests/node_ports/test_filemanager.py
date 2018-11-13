@@ -13,7 +13,7 @@ async def test_valid_upload_download(tmpdir, bucket, storage, filemanager_cfg, u
     file_path.write_text("I am a test file")
     assert file_path.exists()
     
-    file_id = file_uuid(s3_simcore_location, file_path)
+    file_id = file_uuid(file_path)
     store = s3_simcore_location
     await filemanager.upload_file(store, file_id, file_path)
 
@@ -30,7 +30,7 @@ async def test_invalid_file_path(tmpdir, bucket, storage, filemanager_cfg, user_
     assert file_path.exists()
     
     
-    file_id = file_uuid(s3_simcore_location, file_path)
+    file_id = file_uuid(file_path)
     store = s3_simcore_location
     with pytest.raises(FileNotFoundError):
         await filemanager.upload_file(store, file_id, Path(tmpdir)/"some other file.txt")
@@ -63,7 +63,7 @@ async def test_invalid_store(tmpdir, bucket, storage, filemanager_cfg, user_id, 
     file_path.write_text("I am a test file")
     assert file_path.exists()
 
-    file_id = file_uuid(s3_simcore_location, file_path)
+    file_id = file_uuid(file_path)
     store = "somefunkystore"
     with pytest.raises(exceptions.S3InvalidStore):
         await filemanager.upload_file(store, file_id, file_path)

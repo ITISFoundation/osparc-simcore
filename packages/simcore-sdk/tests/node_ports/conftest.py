@@ -40,12 +40,12 @@ def node_uuid()->str:
 
 @pytest.fixture
 def file_uuid(bucket, project_id, node_uuid)->str:
-    def create(store:str, file_path:Path, project:str=None, node:str=None):  
+    def create(file_path:Path, project:str=None, node:str=None):  
         if project is None:
             project = project_id
         if node is None:
             node = node_uuid
-        return helpers.file_uuid(store, bucket, file_path, project, node)              
+        return helpers.file_uuid(bucket, file_path, project, node)              
     yield create
 
 @pytest.fixture(scope='session')
@@ -102,7 +102,7 @@ def store_link(s3_client, bucket, file_uuid, s3_simcore_location):
     def create_store_link(file_path:Path, project_id:str=None, node_id:str=None):
         # upload the file to S3
         assert Path(file_path).exists()
-        file_id = file_uuid(s3_simcore_location, file_path, project_id, node_id)
+        file_id = file_uuid(file_path, project_id, node_id)
         # using the s3 client the path must be adapted
         #TODO: use the storage sdk instead
         s3_object = Path(project_id, node_id, Path(file_path).name).as_posix()
