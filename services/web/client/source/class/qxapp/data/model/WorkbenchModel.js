@@ -7,6 +7,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     this.base(arguments);
 
     this.__nodesTopLevel = {};
+    this.__links = {};
 
     this.setProjectName(prjName);
     this.createNodeModels(wbData);
@@ -27,6 +28,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
   members: {
     __nodesTopLevel: null,
+    __links: null,
 
     isContainer: function() {
       return false;
@@ -69,6 +71,55 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       }
       nodePath.unshift("root");
       return nodePath;
+    },
+
+    getConnectedLinks: function(nodeId) {
+      let connectedLinks = [];
+      for (const linkId in this.__links) {
+        const link = this.__links[linkId];
+        if (link.getInputNodeId() === nodeId) {
+          connectedLinks.push(link.getLinkId());
+        }
+        if (link.getOutputNodeId() === nodeId) {
+          connectedLinks.push(link.getLinkId());
+        }
+      }
+      return connectedLinks;
+    },
+
+    getLinkModel: function(linkId, node1Id, node2Id) {
+      const exists = Object.prototype.hasOwnProperty.call(this.__links, linkId);
+      if (exists) {
+        return this.__links[linkId];
+      }
+      for (const id in this.__links) {
+        const link = this.__links[id];
+        if (link.getInputNodeId() === node1Id &&
+          link.getOutputNodeId() === node2Id) {
+          return this.__links[id];
+        }
+      }
+      return null;
+    },
+
+    createLinkModel: function(linkId, node1Id, node2Id) {
+      let existingLinkModel = this.getLinkModel(linkId, node1Id, node2Id);
+      if (existingLinkModel) {
+        return existingLinkModel;
+      }
+      let linkModel = new qxapp.data.model.LinkModel(linkId, node1Id, node2Id);
+      return linkModel;
+    },
+
+    addLinkModel: function(linkModel) {
+      const linkId = linkModel.getLinkId();
+      const node1Id = linkModel.getInputNodeId();
+      const node2Id = linkModel.getOutputNodeId();
+      let exists = this.getLinkModel(linkId, node1Id, node2Id);
+      if (!exists) {
+        this.__links[linkId] = linkModel;
+        // this.fireEvent("WorkbenchModelChanged");
+      }
     },
 
     createNodeModel: function(key, version, uuid, nodeData) {
@@ -133,16 +184,23 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       this.fireEvent("WorkbenchModelChanged");
     },
 
-    removeNode: function(nodeModel) {
-      // TODO: only works with top level nodes
-      const nodeId = nodeModel.getNodeId();
-      const exists = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
-      if (exists) {
-        delete this.__nodesTopLevel[nodeModel.getNodeId()];
+    removeNode: function(nodeId) {
+      let nodeModel = this.getNodeModel(nodeId);
+      if (nodeModel) {
+        const isTopLevel = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
+        if (isTopLevel) {
+          delete this.__nodesTopLevel[nodeId];
+        }
+        const parentNodeId = nodeModel.getParentNodeId();
+        if (parentNodeId) {
+          let parentNodeModel = this.getNodeModel(parentNodeId);
+          parentNodeModel.removeInnerNode(nodeId);
+        }
+        nodeModel.removeNode();
         this.fireEvent("WorkbenchModelChanged");
+        return true;
       }
-      nodeModel.removeNode();
-      return exists;
+      return false;
     },
 
     createLink: function(outputNodeId, inputNodeId) {
@@ -164,10 +222,17 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       }
     },
 
-    removeLink: function(outputNodeId, inputNodeId) {
-      let node = this.getNodeModel(inputNodeId);
-      if (node) {
-        return node.removeInputNode(outputNodeId);
+    removeLink: function(linkId) {
+      let linkModel = this.getLinkModel(linkId);
+      if (linkModel) {
+        const inputNodeId = linkModel.getInputNodeId();
+        const outputNodeId = linkModel.getOutputNodeId();
+        let node = this.getNodeModel(outputNodeId);
+        if (node) {
+          node.removeInputNode(inputNodeId);
+          delete this.__links[linkId];
+          return true;
+        }
       }
       return false;
     },
