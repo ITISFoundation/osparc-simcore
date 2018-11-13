@@ -45,6 +45,7 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
   },
   members: {
     __iframe: null,
+    __syncScheduled: null,
     __actionButton: null,
     // override
     _createContentElement : function() {
@@ -96,11 +97,11 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
       });
       this.addListener("move", e => {
         // got to let the new layout render first or we don't see it
-        qx.event.Timer.once(this.__syncIframePos, this, 0);
+        this.__syncIframePos();
       });
       this.addListener("resize", e => {
         // got to let the new layout render first or we don't see it
-        qx.event.Timer.once(this.__syncIframePos, this, 0);
+        this.__syncIframePos();
       });
       this.addListener("changeVisibility", e => {
         var visibility = e.getData()[0];
@@ -115,21 +116,28 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
       return standin;
     },
     __syncIframePos: function() {
-      let iframeParentPos = qx.bom.element.Location.get(qx.bom.element.Location.getOffsetParent(this.__iframe.getContentElement().getDomElement()), "scroll");
-      let divPos = qx.bom.element.Location.get(this.getContentElement().getDomElement(), "scroll");
-      let divSize = qx.bom.element.Dimension.getSize(this.getContentElement().getDomElement());
-      this.__iframe.setLayoutProperties({
-        top: divPos.top - iframeParentPos.top,
-        left: (divPos.left - iframeParentPos.left)
-      });
-      this.__iframe.set({
-        width: (divSize.width),
-        height: (divSize.height)
-      });
-      this.__actionButton.setLayoutProperties({
-        top: (divPos.top - iframeParentPos.top),
-        right: (iframeParentPos.right - iframeParentPos.left - divPos.right)
-      });
+      if (this.__syncScheduled) {
+        return;
+      }
+      this.__syncScheduled = true;
+      window.setTimeout(() => {
+        this.__syncScheduled = false;
+        let iframeParentPos = qx.bom.element.Location.get(qx.bom.element.Location.getOffsetParent(this.__iframe.getContentElement().getDomElement()), "scroll");
+        let divPos = qx.bom.element.Location.get(this.getContentElement().getDomElement(), "scroll");
+        let divSize = qx.bom.element.Dimension.getSize(this.getContentElement().getDomElement());
+        this.__iframe.setLayoutProperties({
+          top: divPos.top - iframeParentPos.top,
+          left: (divPos.left - iframeParentPos.left)
+        });
+        this.__iframe.set({
+          width: (divSize.width),
+          height: (divSize.height)
+        });
+        this.__actionButton.setLayoutProperties({
+          top: (divPos.top - iframeParentPos.top),
+          right: (iframeParentPos.right - iframeParentPos.left - divPos.right)
+        });
+      }, 0);
     },
     _applyShowMaximize: function(newValue, oldValue) {
       this._maximizeBtn.show();
