@@ -1,6 +1,6 @@
 import logging
 import shutil
-import tempfile
+
 from pathlib import Path
 
 from . import config, data_items_utils, exceptions, filemanager
@@ -9,7 +9,7 @@ from ._schema_item import SchemaItem
 
 log = logging.getLogger(__name__)
 
-_INTERNAL_DIR = Path(tempfile.gettempdir(), "simcorefiles")
+
 
 def _check_type(item_type, value):
     if not value:
@@ -66,7 +66,7 @@ class Item():
             if data_items_utils.is_file_type(self.type):
                 # move the file to the right location
                 file_name = Path(value).name
-                file_path = _create_file_path(self.key, file_name)
+                file_path = data_items_utils.create_file_path(self.key, file_name)
                 if file_path.exists():
                     file_path.unlink()
                 file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -99,11 +99,11 @@ class Item():
             if not file_path.exists() or not file_path.is_file():
                 raise exceptions.InvalidItemTypeError(self.type, value)
             log.debug("file path %s will be uploaded to s3", value)
-            store = config.STORE
-            s3_object = data_items_utils.encode_file_id(file_path, store=store, bucket=config.BUCKET, project_id=config.PROJECT_ID, node_id=config.NODE_UUID)
-            await filemanager.upload_file_to_s3(store=store, s3_object=s3_object, file_path=file_path)
-            log.debug("file path %s uploaded to s3 in %s", value, s3_object)
-            value = data_items_utils.encode_store(store, s3_object)
+            s3_object = data_items_utils.encode_file_id(file_path, store=config.STORE, bucket=config.BUCKET, project_id=config.PROJECT_ID, node_id=config.NODE_UUID)
+            await filemanager.upload_file(store=config.STORE, s3_object=s3_object, local_file_path=file_path)
+            log.debug("file path %s uploaded", value)
+            # FIXME: THIS is an issue now
+            value = data_items_utils.encode_store(config.STORE, s3_object)
 
         # update the DB
         # let's create a new data if necessary
@@ -133,10 +133,8 @@ class Item():
         if self._schema.fileToKeyMap:
             file_name = next(iter(self._schema.fileToKeyMap))
 
-        file_path = _create_file_path(self.key, file_name)
-        return await filemanager.download_file_from_S3(store=store,            
-                                                s3_object=s3_path,
-                                                file_path=file_path)
+        file_path = data_items_utils.create_file_path(self.key, file_name)
+        await filemanager.download_file(store=store, s3_object=s3_path, local_file_path=file_path)
+        return file_path
 
-def _create_file_path(key, name):
-    return Path(_INTERNAL_DIR, key, name)
+

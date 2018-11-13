@@ -2,11 +2,11 @@
 import json
 import logging
 
-from simcore_sdk.nodeports import config, exceptions, nodeports #pylint: disable=R0401
-from simcore_sdk.nodeports._data_item import DataItem
-from simcore_sdk.nodeports._schema_item import SchemaItem
-from simcore_sdk.nodeports._data_items_list import DataItemsList
-from simcore_sdk.nodeports._schema_items_list import SchemaItemsList
+from . import config, exceptions, nodeports  # pylint: disable=R0401
+from ._data_item import DataItem
+from ._data_items_list import DataItemsList
+from ._schema_item import SchemaItem
+from ._schema_items_list import SchemaItemsList
 
 log = logging.getLogger(__name__)
 
@@ -112,4 +112,3 @@ def __decodeNodePorts(dct):
                                 SchemaItemsList(decoded_output_schema),
                                 DataItemsList(decoded_input_payload),
                                 DataItemsList(decoded_output_payload))
-    

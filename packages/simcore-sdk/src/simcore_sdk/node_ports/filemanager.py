@@ -1,3 +1,4 @@
+#pylint: disable=too-many-arguments
 import logging
 from contextlib import contextmanager
 from pathlib import Path
@@ -7,9 +8,10 @@ import aiohttp
 import async_timeout
 from yarl import URL
 
-from simcore_sdk.nodeports import config, exceptions
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
 from simcore_service_storage_sdk.rest import ApiException
+
+from . import config, exceptions
 
 log = logging.getLogger(__name__)
 
@@ -17,13 +19,9 @@ log = logging.getLogger(__name__)
 
 @contextmanager
 def api_client():
-    cfg = Configuration()
-    cfg.host = cfg.host.format(
-        host=config.STORAGE_HOST,
-        port=config.STORAGE_PORT,
-        basePath=config.STORAGE_VERSION
-    )
-
+    cfg = Configuration()    
+    cfg.host = "http://{}/{}".format(config.STORAGE_ENDPOINT, config.STORAGE_VERSION)
+    log.debug("api connects using %s", cfg.host)
     client = ApiClient(cfg)
     try:
         yield client
@@ -57,7 +55,7 @@ async def _get_location_id_from_location_name(store:str, api:UsersApi):
     
 
 async def _get_link(store:str, location_id:int, file_id:str, apifct):
-    log.debug("Getting link from %s, %s, %s", store, location_id, file_id)
+    log.debug("Getting link from %s for %s", store, file_id)
     try:
         resp = await apifct(location_id=location_id, user_id=config.USER_ID, file_id=file_id)
         
@@ -109,9 +107,9 @@ async def _upload_file_to_link(session: aiohttp.ClientSession, url: URL, file_pa
             response_text = await resp.text()
             raise exceptions.S3TransferError("Could not upload file {}:{}".format(file_path, response_text))
         
-
-async def download_file_from_S3(store: str, s3_object: str, file_path: Path):
-    log.debug("Trying to download from S3: store %s, s3 object %s, file name %s", store, s3_object, file_path)
+async def download_file(store: str, s3_object:str, local_file_path: Path):
+    log.debug("Trying to download: store %s, s3 object %s, to local file name %s", 
+                    store, s3_object, local_file_path)
     with api_client() as client:
         api = UsersApi(client)
         
@@ -122,16 +120,16 @@ async def download_file_from_S3(store: str, s3_object: str, file_path: Path):
             download_link = URL(download_link)
             # remove an already existing file if present
             # FIXME: if possible we should compare the files if the download needs to take place or not
-            if file_path.exists():
-                file_path.unlink()    
+            if local_file_path.exists():
+                local_file_path.unlink()    
             async with aiohttp.ClientSession() as session:
-                await _download_link_to_file(session, download_link, file_path, store, s3_object)
-            return file_path
+                await _download_link_to_file(session, download_link, local_file_path, store, s3_object)
+                return
 
     raise exceptions.S3InvalidPathError(s3_object)
 
-async def upload_file_to_s3(store:str, s3_object:str, file_path:Path):
-    log.debug("Trying to upload file to S3: store %s, s3ovject %s, file path %s", store, s3_object, file_path)
+async def upload_file(store:str, s3_object:str, local_file_path:Path):
+    log.debug("Trying to upload file to S3: store %s, s3object %s, file path %s", store, s3_object, local_file_path)
     with api_client() as client:
         api = UsersApi(client)
         
@@ -142,7 +140,7 @@ async def upload_file_to_s3(store:str, s3_object:str, file_path:Path):
             upload_link = URL(upload_link)
 
             async with aiohttp.ClientSession() as session:
-                await _upload_file_to_link(session, upload_link, file_path)                
-                return s3_object
+                await _upload_file_to_link(session, upload_link, local_file_path)
+                return
 
     raise exceptions.S3InvalidPathError(s3_object)

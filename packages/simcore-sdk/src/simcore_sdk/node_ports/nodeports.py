@@ -4,11 +4,10 @@
 import logging
 from pathlib import Path
 
-from simcore_sdk.nodeports import (data_items_utils, dbmanager, exceptions,
-                                   serialization)
-from simcore_sdk.nodeports._data_items_list import DataItemsList
-from simcore_sdk.nodeports._items_list import ItemsList
-from simcore_sdk.nodeports._schema_items_list import SchemaItemsList
+from . import data_items_utils, dbmanager, exceptions, serialization
+from ._data_items_list import DataItemsList
+from ._items_list import ItemsList
+from ._schema_items_list import SchemaItemsList
 
 log = logging.getLogger(__name__)
 
@@ -142,7 +141,7 @@ class Nodeports:
             raise exceptions.NodeportsException("db manager is not initialised")
         return serialization.create_nodeports_from_uuid(self.db_mgr, node_uuid)
 
-
-_db_manager = dbmanager.DBManager()
-# create initial Simcore object
-PORTS = serialization.create_from_json(_db_manager, auto_read=True, auto_write=True)
+def ports():
+    _db_manager = dbmanager.DBManager()
+    # create initial Simcore object
+    return serialization.create_from_json(_db_manager, auto_read=True, auto_write=True)

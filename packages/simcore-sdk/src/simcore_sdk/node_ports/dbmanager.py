@@ -2,12 +2,12 @@ import json
 import logging
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import exc
+from sqlalchemy.orm import exc, sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
 
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.models.pipeline_models import ComputationalTask as NodeModel
+
 from . import config
 
 log = logging.getLogger(__name__)

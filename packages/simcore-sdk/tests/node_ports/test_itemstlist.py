@@ -2,12 +2,12 @@
 import mock
 import pytest
 
-from simcore_sdk.nodeports._data_item import DataItem
-from simcore_sdk.nodeports._data_items_list import DataItemsList
-from simcore_sdk.nodeports._item import Item
-from simcore_sdk.nodeports._items_list import ItemsList
-from simcore_sdk.nodeports._schema_item import SchemaItem
-from simcore_sdk.nodeports._schema_items_list import SchemaItemsList
+from simcore_sdk.node_ports._data_item import DataItem
+from simcore_sdk.node_ports._data_items_list import DataItemsList
+from simcore_sdk.node_ports._item import Item
+from simcore_sdk.node_ports._items_list import ItemsList
+from simcore_sdk.node_ports._schema_item import SchemaItem
+from simcore_sdk.node_ports._schema_items_list import SchemaItemsList
 
 
 def create_item(key, item_type, item_value):
@@ -46,11 +46,12 @@ def test_accessing_by_key():
     assert itemslist["3"].key == "3"
 
 def test_access_by_wrong_key():
-    from simcore_sdk.nodeports import exceptions
+    from simcore_sdk.node_ports import exceptions
     itemslist = create_items_list([("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)])    
     with pytest.raises(exceptions.UnboundPortError, message="Expecting UnboundPortError"):
         print(itemslist["fdoiht"])
 
+@pytest.mark.asyncio
 async def test_modifying_items_triggers_cb(): #pylint: disable=C0103
     mock_method = mock.Mock()
 

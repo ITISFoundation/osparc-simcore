@@ -2,10 +2,11 @@
 
 # pylint: disable=too-many-ancestors
 import logging
-from typing import Dict
 from collections import MutableMapping
-from simcore_sdk.nodeports import exceptions
-from simcore_sdk.nodeports._data_item import DataItem
+from typing import Dict
+
+from . import exceptions
+from ._data_item import DataItem
 
 log = logging.getLogger(__name__)
 

@@ -41,7 +41,6 @@ class FileMetaDataType(object):
         'project_name': 'str',
         'node_id': 'str',
         'node_name': 'str',
-        'file_id': 'str',
         'file_name': 'str',
         'user_id': 'str',
         'user_name': 'str'
@@ -57,13 +56,12 @@ class FileMetaDataType(object):
         'project_name': 'project_name',
         'node_id': 'node_id',
         'node_name': 'node_name',
-        'file_id': 'file_id',
         'file_name': 'file_name',
         'user_id': 'user_id',
         'user_name': 'user_name'
     }
 
-    def __init__(self, file_uuid=None, location_id=None, location=None, bucket_name=None, object_name=None, project_id=None, project_name=None, node_id=None, node_name=None, file_id=None, file_name=None, user_id=None, user_name=None):  # noqa: E501
+    def __init__(self, file_uuid=None, location_id=None, location=None, bucket_name=None, object_name=None, project_id=None, project_name=None, node_id=None, node_name=None, file_name=None, user_id=None, user_name=None):  # noqa: E501
         """FileMetaDataType - a model defined in OpenAPI"""  # noqa: E501
 
         self._file_uuid = None
@@ -75,7 +73,6 @@ class FileMetaDataType(object):
         self._project_name = None
         self._node_id = None
         self._node_name = None
-        self._file_id = None
         self._file_name = None
         self._user_id = None
         self._user_name = None
@@ -99,8 +96,6 @@ class FileMetaDataType(object):
             self.node_id = node_id
         if node_name is not None:
             self.node_name = node_name
-        if file_id is not None:
-            self.file_id = file_id
         if file_name is not None:
             self.file_name = file_name
         if user_id is not None:
@@ -296,27 +291,6 @@ class FileMetaDataType(object):
         """
 
         self._node_name = node_name
-
-    @property
-    def file_id(self):
-        """Gets the file_id of this FileMetaDataType.  # noqa: E501
-
-
-        :return: The file_id of this FileMetaDataType.  # noqa: E501
-        :rtype: str
-        """
-        return self._file_id
-
-    @file_id.setter
-    def file_id(self, file_id):
-        """Sets the file_id of this FileMetaDataType.
-
-
-        :param file_id: The file_id of this FileMetaDataType.  # noqa: E501
-        :type: str
-        """
-
-        self._file_id = file_id
 
     @property
     def file_name(self):

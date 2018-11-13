@@ -11,7 +11,8 @@ from pathlib import Path
 import pytest
 
 from helpers import helpers #pylint: disable=no-name-in-module
-from simcore_sdk.nodeports import exceptions
+from simcore_sdk import node_ports
+from simcore_sdk.node_ports import exceptions
 
 
 def check_port_valid(ports, config_dict: dict, port_type:str, key_name: str, key):
@@ -56,12 +57,11 @@ def check_config_valid(ports, config_dict: dict):
 
 def test_default_configuration(default_configuration): # pylint: disable=W0613, W0621    
     config_dict = default_configuration    
-    from simcore_sdk.nodeports.nodeports import PORTS
-    check_config_valid(PORTS, config_dict)
+    check_config_valid(node_ports.ports(), config_dict)
 
 def test_invalid_ports(special_configuration):
     config_dict, _, _ = special_configuration()
-    from simcore_sdk.nodeports.nodeports import PORTS
+    PORTS = node_ports.ports()
     check_config_valid(PORTS, config_dict)
 
     assert not PORTS.inputs
@@ -86,10 +86,11 @@ def test_invalid_ports(special_configuration):
     ("string", "test-string", str),
     ("string", "", str)
 ])
+@pytest.mark.asyncio
 async def test_port_value_accessors(special_configuration, item_type, item_value, item_pytype): # pylint: disable=W0613, W0621
     item_key = "some key"
     config_dict, _, _ = special_configuration(inputs=[(item_key, item_type, item_value)], outputs=[(item_key, item_type, None)])
-    from simcore_sdk.nodeports.nodeports import PORTS
+    PORTS = node_ports.ports()
     check_config_valid(PORTS, config_dict)
 
     assert isinstance(await PORTS.inputs[item_key].get(), item_pytype)
@@ -112,9 +113,8 @@ async def test_port_value_accessors(special_configuration, item_type, item_value
 @pytest.mark.asyncio
 async def test_port_file_accessors(special_configuration, storage, filemanager_cfg, s3_simcore_location, bucket, item_type, item_value, item_pytype, config_value): # pylint: disable=W0613, W0621
     config_dict, project_id, node_uuid = special_configuration(inputs=[("in_1", item_type, config_value)], outputs=[("out_34", item_type, None)])
-    from simcore_sdk.nodeports.nodeports import PORTS
+    PORTS = node_ports.ports()
     check_config_valid(PORTS, config_dict)
-    
     assert await PORTS.outputs["out_34"].get() is None # check emptyness
     # with pytest.raises(exceptions.S3InvalidPathError, message="Expecting S3InvalidPathError"):
     #     await PORTS.inputs["in_1"].get()
@@ -132,7 +132,7 @@ async def test_port_file_accessors(special_configuration, storage, filemanager_c
 
 def test_adding_new_ports(special_configuration, session):
     config_dict, project_id, node_uuid = special_configuration()
-    from simcore_sdk.nodeports.nodeports import PORTS
+    PORTS = node_ports.ports()
     check_config_valid(PORTS, config_dict)
     # check empty configuration
     assert not PORTS.inputs
@@ -164,7 +164,7 @@ def test_removing_ports(special_configuration, session):
                                                                         ("in_17", "boolean", False)],
                                                                 outputs=[("out_123", "string", "blahblah"),
                                                                         ("out_2", "number", -12.3)]) #pylint: disable=W0612
-    from simcore_sdk.nodeports.nodeports import PORTS
+    PORTS = node_ports.ports()
     check_config_valid(PORTS, config_dict)
     # let's remove the first input
     del config_dict["schema"]["inputs"]["in_14"]
@@ -189,10 +189,11 @@ def test_removing_ports(special_configuration, session):
     ("string", "test-string", str),
     ("string", "", str),
 ])
+@pytest.mark.asyncio
 async def test_get_value_from_previous_node(special_2nodes_configuration, node_link, item_type, item_value, item_pytype):
     config_dict, _, _ = special_2nodes_configuration(prev_node_outputs=[("output_123", item_type, item_value)],
                                                     inputs=[("in_15", item_type, node_link("output_123"))])
-    from simcore_sdk.nodeports.nodeports import PORTS
+    PORTS = node_ports.ports()
     
     check_config_valid(PORTS, config_dict)
     input_value = await PORTS.inputs["in_15"].get()
@@ -204,11 +205,12 @@ async def test_get_value_from_previous_node(special_2nodes_configuration, node_l
     ("data:text/*", __file__, Path),
     ("data:text/py", __file__, Path),
 ])
+@pytest.mark.asyncio
 async def test_get_file_from_previous_node(special_2nodes_configuration, project_id, node_uuid, filemanager_cfg, node_link, store_link, item_type, item_value, item_pytype):
     config_dict, _, _ = special_2nodes_configuration(prev_node_outputs=[("output_123", item_type, store_link(item_value, project_id, node_uuid))],
                                                     inputs=[("in_15", item_type, node_link("output_123"))], 
                                                     project_id=project_id, previous_node_id=node_uuid)
-    from simcore_sdk.nodeports.nodeports import PORTS
+    PORTS = node_ports.ports()
     check_config_valid(PORTS, config_dict)
     file_path = await PORTS.inputs["in_15"].get()
     assert isinstance(file_path, item_pytype)
@@ -222,9 +224,10 @@ async def test_get_file_from_previous_node(special_2nodes_configuration, project
     ("data:text/*", __file__, "some funky name without extension", Path),
     ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
 ])
+@pytest.mark.asyncio
 async def test_file_mapping(special_configuration, project_id, node_uuid, filemanager_cfg, s3_simcore_location, bucket, store_link, session, item_type, item_value, item_alias, item_pytype):
     config_dict, project_id, node_uuid = special_configuration(inputs=[("in_1", item_type, store_link(item_value, project_id, node_uuid))], outputs=[("out_1", item_type, None)], project_id=project_id, node_id=node_uuid)
-    from simcore_sdk.nodeports.nodeports import PORTS
+    PORTS = node_ports.ports()
     check_config_valid(PORTS, config_dict)
     # add a filetokeymap
     config_dict["schema"]["inputs"]["in_1"]["fileToKeyMap"] = {item_alias:"in_1"}

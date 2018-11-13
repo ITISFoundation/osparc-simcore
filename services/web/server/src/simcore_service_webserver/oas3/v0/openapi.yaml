@@ -403,6 +403,7 @@ components:
         application/json:
           schema:
             $ref: 'components/schemas/error.yml#/ErrorEnveloped'
+
     FileMetaData_200:
       description: 'Returns file metadata'
       content:

@@ -9,7 +9,7 @@ import yarl
 from helpers import helpers
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
-from simcore_sdk.nodeports import config
+from simcore_sdk.node_ports import node_config
 
 
 
@@ -24,12 +24,10 @@ def s3_simcore_location() ->str:
 @pytest.fixture
 def filemanager_cfg(storage, user_id, bucket, s3_simcore_location):
     storage_endpoint = yarl.URL(storage)
-    config.USER_ID = user_id
-    config.STORAGE_HOST = storage_endpoint.host
-    config.STORAGE_PORT = storage_endpoint.port
-    config.STORAGE_VERSION = "v0"
-    config.BUCKET = bucket
-    config.STORE = s3_simcore_location
+    node_config.STORAGE_ENDPOINT = "{}:{}".format(storage_endpoint.host, storage_endpoint.port)
+    node_config.USER_ID = user_id    
+    node_config.BUCKET = bucket
+    node_config.STORE = s3_simcore_location
     yield
 
 @pytest.fixture
@@ -85,8 +83,8 @@ def default_configuration(postgres, default_configuration_file, project_id, node
     _create_new_pipeline(postgres, project_id)
     _set_configuration(postgres, project_id, node_uuid, json_configuration)
     config_dict = json.loads(json_configuration)
-    config.NODE_UUID = str(node_uuid)
-    config.PROJECT_ID = str(project_id)
+    node_config.NODE_UUID = str(node_uuid)
+    node_config.PROJECT_ID = str(project_id)
     yield config_dict
     # teardown
     postgres.query(ComputationalTask).delete()
@@ -120,8 +118,8 @@ def special_configuration(postgres, empty_configuration_file: Path, project_id, 
         _assign_config(config_dict, "outputs", outputs)
         project_id = _create_new_pipeline(postgres, project_id)
         node_uuid = _set_configuration(postgres, project_id, node_id, json.dumps(config_dict))
-        config.NODE_UUID = str(node_uuid)
-        config.PROJECT_ID = str(project_id)
+        node_config.NODE_UUID = str(node_uuid)
+        node_config.PROJECT_ID = str(project_id)
         return config_dict, project_id, node_uuid
     yield create_config
     # teardown
@@ -151,8 +149,8 @@ def special_2nodes_configuration(postgres, empty_configuration_file: Path, proje
         str_config = str_config.replace("TEST_NODE_UUID", str(previous_node_uuid))
         config_dict = json.loads(str_config)
         node_uuid = _set_configuration(postgres, project_id, node_id, str_config)
-        config.NODE_UUID = str(node_uuid)
-        config.PROJECT_ID = str(project_id)
+        node_config.NODE_UUID = str(node_uuid)
+        node_config.PROJECT_ID = str(project_id)
         return config_dict, project_id, node_uuid
     yield create_config
     # teardown

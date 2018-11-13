@@ -1,7 +1,7 @@
 import pytest
 from copy import deepcopy
-from simcore_sdk.nodeports import exceptions, config
-from simcore_sdk.nodeports._schema_item import SchemaItem
+from simcore_sdk.node_ports import exceptions, config
+from simcore_sdk.node_ports._schema_item import SchemaItem
 
 def test_default_item():
     with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):

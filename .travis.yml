@@ -60,6 +60,8 @@ matrix:
         - pip3 list
 
       script:
+        - export DOCKER_GID=1042
+        - docker-compose -f services/docker-compose.yml build storage
         - make pylint
         - make test
 
