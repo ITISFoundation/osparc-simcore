@@ -19,6 +19,7 @@ USER $NB_USER
 # ----------------------------------------------------------------
 # set up oSparc env variables
 ENV SIMCORE_NODE_UUID="-1" \
+    STORAGE_ENDPOINT="=1" \
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
     S3_SECRET_KEY="-1" \
@@ -43,7 +44,8 @@ COPY --chown=jovyan:users services/dy-jupyter/docker /docker
 ENV NOTEBOOK_URL="work/notebook.ipynb"
 # ----------------------------------------------------------------
 FROM base AS development
-VOLUME /packages
+VOLUME /home/jovyan/packages
+VOLUME /home/jovyan/services
 VOLUME /home/jovyan/devel
 VOLUME /home/jovyan/work
 ENV CREATE_DUMMY_TABLE=1
@@ -55,10 +57,11 @@ CMD [ "/bin/bash", "/docker/boot.sh" ]
 # ----------------------------------------------------------------
 FROM base AS production
 # install simcore packages
-COPY --chown=jovyan:users packages/simcore-sdk /packages/simcore-sdk
-COPY --chown=jovyan:users packages/s3wrapper /packages/s3wrapper
+COPY --chown=jovyan:users packages/simcore-sdk /home/jovyan/packages/simcore-sdk
+COPY --chown=jovyan:users packages/s3wrapper /home/jovyan/packages/s3wrapper
+COPY --chown=jovyan:users services/storage/client-sdk /home/jovyan/services/storage/client-sdk
 # copy the default notebook
 COPY --chown=jovyan:users services/dy-jupyter/work /home/jovyan/work
-RUN pip install /packages/simcore-sdk &&\
-    pip install /packages/s3wrapper
+RUN pip install /home/jovyan/packages/simcore-sdk &&\
+    pip install /home/jovyan/packages/s3wrapper
 ENTRYPOINT [ "/bin/bash", "/docker/boot.sh" ]
