@@ -25,7 +25,7 @@ services:
       - ../../packages/:/home/jovyan/packages
       - ../../services/:/home/jovyan/services
       - ./devel:/home/jovyan/devel
-      - ./work:/home/jovyan/work
+      - ./notebooks:/home/jovyan/notebooks
   #--------------------------------------------------------------------
   storage:
     image: services_storage:latest

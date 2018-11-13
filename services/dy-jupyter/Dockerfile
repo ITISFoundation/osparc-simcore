@@ -41,7 +41,7 @@ RUN pip install --upgrade pip && \
 # prepare for booting
 COPY --chown=jovyan:users services/dy-jupyter/docker /docker
 
-ENV NOTEBOOK_URL="work/notebook.ipynb"
+ENV NOTEBOOK_URL="notebooks/notebook.ipynb"
 # ----------------------------------------------------------------
 FROM base AS development
 VOLUME /home/jovyan/packages
@@ -61,7 +61,7 @@ COPY --chown=jovyan:users packages/simcore-sdk /home/jovyan/packages/simcore-sdk
 COPY --chown=jovyan:users packages/s3wrapper /home/jovyan/packages/s3wrapper
 COPY --chown=jovyan:users services/storage/client-sdk /home/jovyan/services/storage/client-sdk
 # copy the default notebook
-COPY --chown=jovyan:users services/dy-jupyter/work /home/jovyan/work
+COPY --chown=jovyan:users services/dy-jupyter/notebooks /home/jovyan/notebooks
 RUN pip install /home/jovyan/packages/simcore-sdk &&\
     pip install /home/jovyan/packages/s3wrapper
 ENTRYPOINT [ "/bin/bash", "/docker/boot.sh" ]

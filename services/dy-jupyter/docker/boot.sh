@@ -7,7 +7,7 @@ then
     pushd /home/jovyan/packages/s3wrapper; pip install -r requirements-dev.txt; popd
 
     echo "Creating dummy tables ... using ${USE_CASE_CONFIG_FILE}"
-    result="$(python devel/initialise_dummy_platorm.py ${USE_CASE_CONFIG_FILE} ${INIT_OPTIONS})"
+    result="$(python devel/initialise_dummy_platform.py ${USE_CASE_CONFIG_FILE} ${INIT_OPTIONS})"
     echo "Received result of $result";
     IFS=, read -a array <<< "$result"; 
     echo "Received result pipeline id of ${array[0]}";
