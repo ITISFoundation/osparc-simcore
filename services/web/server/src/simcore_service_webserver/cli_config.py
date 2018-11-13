@@ -6,7 +6,7 @@ import logging
 import trafaret_config
 import trafaret_config.commandline as commandline
 
-from .resources import resources, RSC_CONFIG_DIR_KEY
+from .resources import resources
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def config_from_options(options, schema, vars=None): # pylint: disable=W0622
         if resources.exists(resource_name):
             options.config = resources.get_path(resource_name)
         else:
-            resource_name = RSC_CONFIG_DIR_KEY + '/' + resource_name
+            resource_name = resources.config_folder + '/' + resource_name
             if resources.exists(resource_name):
                 options.config = resources.get_path(resource_name)
 

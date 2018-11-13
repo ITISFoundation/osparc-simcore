@@ -32,6 +32,7 @@ def get_server(servers, url):
 
 #-----------------------
 
+
 def setup(app: web.Application, *, debug=False):
     log.debug("Setting up %s ...", __name__)
 
@@ -42,8 +43,6 @@ def setup(app: web.Application, *, debug=False):
         #specs = await create_openapi_specs(location=cfg["location"])
         loop = asyncio.get_event_loop()
         location = cfg["location"]
-
-        # FIXME: resolve if location is relative location path
         specs = loop.run_until_complete( create_openapi_specs(location) )
 
         # sets servers variables to current server's config
