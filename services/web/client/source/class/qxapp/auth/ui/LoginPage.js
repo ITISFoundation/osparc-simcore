@@ -32,8 +32,9 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
 
   members: {
     // overrides base
+    __form: null,
     _buildPage: function() {
-      this._form = new qx.ui.form.Form();
+      this.__form = new qx.ui.form.Form();
 
       let atm = new qx.ui.basic.Atom().set({
         icon: "qxapp/osparc-white.svg",
@@ -51,18 +52,18 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
       email.setRequired(true);
       this.add(email);
       email.getContentElement().setAttribute("autocomplete", "username");
-      this._form.add(email, "", qx.util.Validate.email(), "email", null);
+      this.__form.add(email, "", qx.util.Validate.email(), "email", null);
 
       let pass = new qx.ui.form.PasswordField();
       pass.setPlaceholder(this.tr("Your password"));
       pass.setRequired(true);
       pass.getContentElement().setAttribute("autocomplete", "current-password");
       this.add(pass);
-      this._form.add(pass, "", null, "password", null);
+      this.__form.add(pass, "", null, "password", null);
 
       // TODO: Temporary disabled. 'Remember me' implies keeping login status in server
       // let chk = new qx.ui.form.CheckBox(this.tr("Remember me"));
-      // this._form.add(chk, "", null, "remember", null);
+      // this.__form.add(chk, "", null, "remember", null);
 
       let loginBtn = new qx.ui.form.Button(this.tr("Log In"));
       loginBtn.addListener("execute", function() {
@@ -124,12 +125,12 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
     },
 
     __login: function() {
-      if (!this._form.validate()) {
+      if (!this.__form.validate()) {
         return;
       }
 
-      const email = this._form.getItems().email;
-      const pass = this._form.getItems().password;
+      const email = this.__form.getItems().email;
+      const pass = this.__form.getItems().password;
 
       let manager = qxapp.auth.Manager.getInstance();
 
@@ -137,7 +138,7 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
         this.fireDataEvent("done", log.message);
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
-        this._form.dispose();
+        this._formElement.dispose();
         window.history.replaceState(null,window.document.title,window.location.pathname);
       };
 
@@ -156,7 +157,7 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
     },
 
     resetValues: function() {
-      let fieldItems = this._form.getItems();
+      let fieldItems = this.__form.getItems();
       for (var key in fieldItems) {
         fieldItems[key].resetValue();
       }
