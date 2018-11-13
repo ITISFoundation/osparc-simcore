@@ -34,7 +34,7 @@ ENV SIMCORE_NODE_UUID="-1" \
 RUN pip install --upgrade pip && \
     pip install jupyter_contrib_nbextensions && \
     pip install jupyterthemes && \
-    jt -t oceans16 && \
+    jt -t oceans16 -T -N -kl && \
     jupyter contrib nbextensions install --user && \
     jupyter nbextension enable hide_input/main && \
     jupyter nbextension enable init_cell/main
