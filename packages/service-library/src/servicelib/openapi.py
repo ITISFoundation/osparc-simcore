@@ -32,10 +32,12 @@ def load_from_path(filepath: Path) -> Tuple[Dict, str]:
 
 
 async def load_from_url(url: URL) -> Tuple[Dict, str]:
-    TIMEOUT_SECS = 5*60
-    async with ClientSession(timeout=TIMEOUT_SECS) as session:
+    #TIMEOUT_SECS = 5*60
+    #async with ClientSession(timeout=TIMEOUT_SECS) as session:
+    async with ClientSession() as session:
         async with session.get(url) as resp:
-            spec_dict = yaml.safe_load(resp.content)
+            text = await resp.text()
+            spec_dict = yaml.safe_load(text)
             return spec_dict, str(url)
 
 

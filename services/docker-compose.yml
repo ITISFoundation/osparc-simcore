@@ -78,6 +78,7 @@ services:
       - SMTP_PORT=${SMTP_PORT}
     depends_on:
       - webclient
+      - apihub
   #--------------------------------------------------------------------
   rabbit:
     image: rabbitmq:3-management

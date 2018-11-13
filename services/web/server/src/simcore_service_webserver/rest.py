@@ -10,6 +10,7 @@ import logging
 from copy import deepcopy
 
 from aiohttp import web
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from servicelib import openapi
 from servicelib.application_keys import APP_CONFIG_KEY
@@ -22,6 +23,10 @@ from .rest_config import APP_OPENAPI_SPECS_KEY, CONFIG_SECTION_NAME
 log = logging.getLogger(__name__)
 
 
+RETRY_WAIT_SECS = 2
+RETRY_COUNT = 20
+CONNECT_TIMEOUT_SECS = 30
+
 
 def get_server(servers, url):
     # Development server: http://{host}:{port}/{basePath}
@@ -30,7 +35,13 @@ def get_server(servers, url):
             return server
     raise ValueError("Cannot find server %s in openapi specs" % url)
 
-#-----------------------
+
+@retry( wait=wait_fixed(RETRY_WAIT_SECS),
+        stop=stop_after_attempt(RETRY_COUNT),
+        before_sleep=before_sleep_log(log, logging.INFO) )
+async def get_specs(location):
+    specs = await create_openapi_specs(location)
+    return specs
 
 
 def setup(app: web.Application, *, debug=False):
@@ -43,7 +54,7 @@ def setup(app: web.Application, *, debug=False):
         #specs = await create_openapi_specs(location=cfg["location"])
         loop = asyncio.get_event_loop()
         location = cfg["location"]
-        specs = loop.run_until_complete( create_openapi_specs(location) )
+        specs = loop.run_until_complete( get_specs(location) )
 
         # sets servers variables to current server's config
         extra_api_urls = cfg.get("extra_urls", list())
