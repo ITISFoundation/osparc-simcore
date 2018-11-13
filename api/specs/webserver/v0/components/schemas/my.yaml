@@ -44,7 +44,7 @@ ErrorEnvelopeModel:
   type: object
   properties:
     error:
-      $ref: "./error.yml#/ErrorType"
+      $ref: "./error.yaml#/ErrorType"
       nullable: true
 
 
