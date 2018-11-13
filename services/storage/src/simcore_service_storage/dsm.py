@@ -15,6 +15,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
 from sqlalchemy.sql import and_
+from yarl import URL
 
 from s3wrapper.s3_client import S3Client
 
@@ -298,6 +299,7 @@ class DataStorageManager:
                 raise NotImplementedError("copy files from datcore 2 datcore not impl")
             elif dest_location == SIMCORE_S3_STR:
                 # 2 steps: Get download link for local copy, the upload link to s3
+                # TODO: This should be a redirect stream!
                 dc_link = await self.download_link(user_id=user_id, location=source_location, file_uuid=source_uuid)
                 s3_upload_link = await self.upload_link(user_id, dest_uuid)
                 filename = source_uuid.split("/")[-1]
@@ -309,11 +311,10 @@ class DataStorageManager:
                             f = await aiofiles.open(local_file_path, mode='wb')
                             await f.write(await resp.read())
                             await f.close()
-                            # and now upload to s3
-                            with open(local_file_path, 'rb') as f:
-                                await session.post(s3_upload_link, data=f)
-
-
+                            s3_upload_link = URL(s3_upload_link)
+                            async with session.put(s3_upload_link, data=Path(local_file_path).open('rb')) as resp:
+                                if resp.status > 299:
+                                    _response_text = await resp.text()
 
     async def download_link(self, user_id: str, location: str, file_uuid: str)->str:
         link = None

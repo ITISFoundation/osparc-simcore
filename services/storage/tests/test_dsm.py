@@ -240,7 +240,7 @@ async def test_dsm_datcore_to_local(postgres_service_url, dsm_fixture, mock_file
 # pylint: disable=R0913
 # Too many arguments
 @pytest.mark.travis
-async def test_dsm_datcore_to_S3(postgres_service_url, s3_client, tmp_file, dsm_fixture, mock_files_factory, datcore_testbucket):
+async def test_dsm_datcore_to_S3(postgres_service_url, s3_client, dsm_fixture, mock_files_factory, datcore_testbucket):
     utils.create_tables(url=postgres_service_url)
     # create temporary file
     tmp_file = mock_files_factory(1)[0]
@@ -257,10 +257,24 @@ async def test_dsm_datcore_to_S3(postgres_service_url, s3_client, tmp_file, dsm_
     assert len(dc_data) == 2
     src_fmd = dc_data[0]
 
-    dsm.copy_file(user_id=user_id, dest_location=SIMCORE_S3_STR, dest_uuid=dest_uuid, source_location=DATCORE_STR, source_uuid=src_fmd.file_uuid)
+    await dsm.copy_file(user_id=user_id, dest_location=SIMCORE_S3_STR, dest_uuid=dest_uuid, source_location=DATCORE_STR, source_uuid=src_fmd.file_uuid)
 
     s3_data = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
     assert len(s3_data) == 1
+
+    # now download the original file
+    tmp_file1 = tmp_file + ".fromdatcore"
+    down_url_dc = await dsm.download_link(user_id, DATCORE_STR, src_fmd.file_uuid)
+    urllib.request.urlretrieve(down_url_dc, tmp_file1)
+
+    # and the one on s3
+    tmp_file2 = tmp_file + ".fromS3"
+    down_url_s3 = await dsm.download_link(user_id, SIMCORE_S3_STR, dest_uuid)
+    urllib.request.urlretrieve(down_url_s3, tmp_file2)
+
+    assert filecmp.cmp(tmp_file1, tmp_file2)
+
+
 
 
 
