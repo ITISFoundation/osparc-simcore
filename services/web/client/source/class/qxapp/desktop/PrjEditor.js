@@ -146,12 +146,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           widget = this.__workbenchView;
         } else {
           this.__nodeView.setNodeModel(nodeModel);
-          if (nodeModel.getMetaData().type === "dynamic") {
-            const widgetManager = qxapp.component.widget.WidgetManager.getInstance();
-            widget = widgetManager.getWidgetForNode(nodeModel);
-            if (!widget) {
-              widget = this.__nodeView;
-            }
+          if (nodeModel.getKey().includes("file-picker")) {
+            widget = new qxapp.component.widget.FilePicker(nodeModel);
           } else {
             widget = this.__nodeView;
           }
@@ -163,7 +159,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }
       }
 
-      // SHow screenshots in the ExtraView
+      // Show screenshots in the ExtraView
       if (nodeId === "root") {
         this.showScreenshotInExtraView("workbench");
       } else {
@@ -171,7 +167,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         if (nodeModel.isContainer()) {
           this.showScreenshotInExtraView("container");
         } else {
-          let nodeKey = nodeModel.getMetaData().key;
+          let nodeKey = nodeModel.getKey();
           if (nodeKey.includes("file-picker")) {
             this.showScreenshotInExtraView("file-picker");
           } else if (nodeKey.includes("modeler")) {

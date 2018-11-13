@@ -69,8 +69,10 @@ paths:
               schema:
                 type: object
                 # oneOf:
-                #   - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/request'
-                #   - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/request'
+                #    - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/properties/request'
+                #    - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/properties/request'
+                #    - $ref: '../../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItemList/properties/request'
+                #    - $ref: '../../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItem/properties/request'
       responses:
         default:
           description: node type specific api call according to the node type presented
@@ -79,8 +81,10 @@ paths:
               schema:
                 type: object
                 # oneOf:
-                #   - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/response'
-                #   - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/response'
+                #    - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItemList/properties/response'
+                #    - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties/getItem/properties/response'
+                #    - $ref: '../../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItemList/properties/response'
+                #    - $ref: '../../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItem/properties/response'
 
   /node/{nodeInstanceUUID}/iframe:
     get:
@@ -122,10 +126,6 @@ components:
           type: string
         config:
           type: object
-        apiCalls:
-          type: object
-          # oneOf:
-          #     - $ref: '../../shared/schemas/node-output-list-api-v0.0.1.yaml#/properties'
     outputApiCall:
       type: object
       properties:
