@@ -48,6 +48,7 @@ class Nodeports:
 
         self._inputs = ItemsList(self._input_schemas, self._inputs_payloads)
         self._outputs = ItemsList(self._output_schemas, self._outputs_payloads)
+        self._inputs.change_notifier = self.save_to_json
         self._inputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
         self._outputs.change_notifier = self.save_to_json
         self._outputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
@@ -127,6 +128,7 @@ class Nodeports:
 
         self._inputs = ItemsList(self._input_schemas, self._inputs_payloads)
         self._outputs = ItemsList(self._output_schemas, self._outputs_payloads)
+        self._inputs.change_notifier = self.save_to_json
         self._inputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
         self._outputs.change_notifier = self.save_to_json
         self._outputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
