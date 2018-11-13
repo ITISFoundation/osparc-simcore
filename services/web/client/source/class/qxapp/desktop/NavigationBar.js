@@ -11,7 +11,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     this.set({
       paddingLeft: 10,
       paddingRight: 10,
-      maxHeight: 50,
+      maxHeight: 50
     });
     this.getLayout().set({
       spacing: 10,
