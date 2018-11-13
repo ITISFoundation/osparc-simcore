@@ -11,7 +11,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     this.set({
       paddingLeft: 10,
       paddingRight: 10,
-      maxHeight: 50
+      maxHeight: 50,
     });
     this.getLayout().set({
       spacing: 10,
@@ -25,9 +25,11 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     };
 
 
-    let logo = new qx.ui.basic.Image("qxapp/osparc-white-small.png").set({
+    let logo = new qx.ui.basic.Image("qxapp/osparc-white.svg").set({
       maxHeight: NAVIGATION_BUTTON_HEIGHT,
       maxWidth: 92,
+      width: 92,
+      height: NAVIGATION_BUTTON_HEIGHT,
       scale: true
     });
     this.add(logo);
