@@ -35,46 +35,41 @@ Token:
     service: 'github-api-v1'
     token_key: foo
 
-
 # enveloped and array versions --------------------------
 
-
-# TODO: move this as base class??
-ErrorEnvelopeModel:
-  type: object
-  properties:
-    error:
-      $ref: "./error.yaml#/ErrorType"
-      nullable: true
-
-
 ProfileEnveloped:
-  allOf:
-    - $ref: '#/ErrorEnvelopeModel'
-    - type: object
-      properties:
-        data:
-          $ref: '#/Profile'
-          nullable: true
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/Profile'
+    error:
+      nullable: true
+      default: null
 
 
 TokenEnveloped:
-  allOf:
-    - $ref: '#/ErrorEnvelopeModel'
-    - type: object
-      properties:
-        data:
-          $ref: '#/Token'
-          nullable: true
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/Token'
+    error:
+      nullable: true
+      default: null
 
 
 TokensArrayEnveloped:
-  allOf:
-    - $ref: '#/ErrorEnvelopeModel'
-    - type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/Token'
-          nullable: true
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      type: array
+      items:
+        $ref: '#/Token'
+    error:
+      nullable: true
+      default: null
