@@ -279,25 +279,25 @@ components:
       content:
         application/json:
           schema:
-            $ref: './components/schemas/error.yml#/components/schemas/ErrorEnveloped'
+            $ref: './components/schemas/error.yaml#/components/schemas/ErrorEnveloped'
 
     FileMetaData_200:
       description: 'Returns file metadata'
       content:
         application/json:
           schema:
-            $ref: './components/schemas/file_meta_data.yml#/components/schemas/FileMetaDataEnveloped'
+            $ref: './components/schemas/file_meta_data.yaml#/components/schemas/FileMetaDataEnveloped'
 
     PresignedLink_200:
       description: 'Returns presigned link'
       content:
         application/json:
           schema:
-            $ref: './components/schemas/presigned_link.yml#/components/schemas/PresignedLinkEnveloped'
+            $ref: './components/schemas/presigned_link.yaml#/components/schemas/PresignedLinkEnveloped'
 
   requestBodies:
     FileMetaDataBody:
         content:
           application/json:
             schema:
-              $ref: './components/schemas/file_meta_data.yml#/components/schemas/FileMetaDataType'
+              $ref: './components/schemas/file_meta_data.yaml#/components/schemas/FileMetaDataType'

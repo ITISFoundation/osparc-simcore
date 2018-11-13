@@ -40,7 +40,7 @@ components:
         user_name:
           type: string
       example:
-        file_uuid: 'simcore.s3/simcore-testing/105/1000/3'
+        file_uuid: 'simcore-testing/105/1000/3'
         location_id: "0"
         location_name: "simcore.s3"
         bucket_name: "simcore-testing"

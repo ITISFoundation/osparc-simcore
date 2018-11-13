@@ -11,17 +11,25 @@ info:
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 servers:
   - description: Development server
-    url: http://{host}:{port}/v0
+    url: http://{host}:{port}/{basePath}
     variables:
       host:
         default: 'localhost'
       port:
         default: '8001'
+      basePath:
+        enum:
+          - v0
+        default: v0
   - description: Production server
-    url: https://webserver:{port}/v0
+    url: '{publicUrl}/{basePath}'
     variables:
-      port:
-        default: '9081'
+      publicUrl:
+        default: 'https://osparc.io'
+      basePath:
+        enum:
+          - v0
+        default: v0
 tags:
 - name: admins
   description: Secured Admin-only calls
@@ -98,6 +106,8 @@ paths:
             application/json:
               schema:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        '400':
+            $ref: '#/components/responses/DataError_BadRequest_400'
         '409':
             $ref: '#/components/responses/DataError_Conflict_409'
         '422':
@@ -127,6 +137,7 @@ paths:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/logout:
     get:
+      operationId: auth_logout
       responses:
         '200':
           description: Succesfully logged out
@@ -137,7 +148,28 @@ paths:
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   #/auth/reset-password:
-  #/auth/change-email:
+  /auth/change-email:
+    post:
+      operationId: auth_change_email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_email:
+                  type: string
+                  #format: email
+      responses:
+        '200':
+          description: User has been succesfully registered.
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
   #/auth/change-password:
   /auth/confirmation/{code}:
     get:
@@ -148,7 +180,7 @@ paths:
           required: true
           schema:
             type: string
-            format: uuid
+            #format: uuid
       responses:
         default:
           $ref: '#/components/responses/OK_NoContent_204'

@@ -52,38 +52,22 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return nodes;
     },
 
-    getPath: function(nodeId) {
-      let pathWithIds = this.getPathWithId(nodeId);
-      let nodePath = [];
-      for (let i=0; i<pathWithIds.length; i++) {
-        nodePath.push(Object.values(pathWithIds[i])[0]);
-      }
-      return nodePath;
-    },
-
-    getPathWithId: function(nodeId) {
-      let rootObj = {};
-      rootObj["root"] = this.getProjectName();
+    getPathIds: function(nodeId) {
       if (nodeId === "root" || nodeId === undefined) {
-        return [rootObj];
+        return ["root"];
       }
-
-      const nodeModel = this.getNodeModel(nodeId);
       let nodePath = [];
-      let obj = {};
-      obj[nodeId] = nodeModel.getLabel();
-      nodePath.unshift(obj);
+      nodePath.unshift(nodeId);
+      const nodeModel = this.getNodeModel(nodeId);
       let parentNodeId = nodeModel.getParentNodeId();
       while (parentNodeId) {
         const checkThisNode = this.getNodeModel(parentNodeId);
         if (checkThisNode) {
-          let thisObj = {};
-          thisObj[parentNodeId] = checkThisNode.getLabel();
-          nodePath.unshift(thisObj);
+          nodePath.unshift(parentNodeId);
           parentNodeId = checkThisNode.getParentNodeId();
         }
       }
-      nodePath.unshift(rootObj);
+      nodePath.unshift("root");
       return nodePath;
     },
 
@@ -92,7 +76,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       if (existingNodeModel) {
         return existingNodeModel;
       }
-      let nodeModel = new qxapp.data.model.NodeModel(key, version, uuid);
+      let nodeModel = new qxapp.data.model.NodeModel(this, key, version, uuid);
       nodeModel.populateNodeData(nodeData);
       nodeModel.addListener("ShowInLogger", e => {
         this.fireDataEvent("ShowInLogger", e.getData());
@@ -216,8 +200,8 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
         // node especific
         if (!nodeModel.isContainer()) {
-          node.key = nodeModel.getMetaData().key;
-          node.version = nodeModel.getMetaData().version;
+          node.key = nodeModel.getKey();
+          node.version = nodeModel.getVersion();
         }
       }
       return workbench;

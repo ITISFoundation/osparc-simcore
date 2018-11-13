@@ -12,6 +12,7 @@ from servicelib import openapi
 
 from . import comp_backend_api, registry_api, rest_handlers
 from .application_keys import APP_OPENAPI_SPECS_KEY
+from .rest_settings import get_base_path
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ log = logging.getLogger(__name__)
 def create(specs: openapi.Spec) -> List[web.RouteDef]:
     # TODO: consider the case in which server creates routes for both v0 and v1!!!
     # TODO: should this be taken from servers instead?
-    BASEPATH = '/v' + specs.info.version.split('.')[0]
+    BASEPATH = get_base_path(specs)
 
     log.debug("creating %s ", __name__)
     routes = []

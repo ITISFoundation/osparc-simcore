@@ -1,5 +1,7 @@
 """ Manages lifespan of interactive services.
 
+    - uses director's client-sdk to communicate with the director service
+
 """
 # pylint: disable=W0703
 # pylint: disable=C0111
@@ -20,6 +22,10 @@ def session_connect(session_id):
 
 
 async def session_disconnected(session_id):
+    """  Stops all running services when session disconnects
+
+    TODO: rename on_session_disconnected because is a reaction to that event
+    """
     log.debug("Session disconnection of session %s", session_id)
     try:
         director = director_sdk.get_director()
@@ -50,6 +56,12 @@ async def retrieve_list_of_services():
 
 
 async def start_service(session_id, service_key, service_uuid, service_version=None):
+    """ Starts a service registered in the container's registry
+
+        :param str service_key: The key (url) of the service (required)
+        :param str service_uuid: The uuid to assign the service with (required)
+        :param str service_version: The tag/version of the service
+    """
     if not service_version:
         service_version = "latest"
     log.debug("Starting service %s:%s with uuid %s", service_key, service_version, service_uuid)
@@ -68,6 +80,10 @@ async def start_service(session_id, service_key, service_uuid, service_version=N
 
 
 async def stop_service(session_id, service_uuid):
+    """ Stops and removes a running service
+
+        :param str service_uuid: The uuid to assign the service with (required)
+    """
     log.debug("Stopping service with uuid %s", service_uuid)
     try:
         director = director_sdk.get_director()
