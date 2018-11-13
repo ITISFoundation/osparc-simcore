@@ -101,7 +101,6 @@ run_test:
 	pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
 	pytest --cov=servicelib -v packages/service-library/tests
 	pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
-
 	pytest --cov=simcore_service_webserver -v services/web/server/tests/login
 	pytest --cov=simcore_service_director -v services/director/tests
 	pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
