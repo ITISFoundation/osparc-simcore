@@ -175,7 +175,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       });
       removeButton.addListener("execute", function() {
         if (this.__selectedItemId && this.__isSelectedItemALink(this.__selectedItemId)) {
-          this.__removeLink(this.__getLink(this.__selectedItemId));
+          this.__removeLink(this.__getLinkUI(this.__selectedItemId));
           this.__selectedItemId = null;
         } else {
           this.__removeSelectedNode();
@@ -520,7 +520,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       let linksInvolved = this.__getConnectedLinks(node.getNodeId());
 
       linksInvolved.forEach(linkId => {
-        let link = this.__getLink(linkId);
+        let link = this.__getLinkUI(linkId);
         if (link) {
           let node1 = this.getNodeUI(link.getInputNodeId());
           let port1 = node1.getOutputPort();
@@ -638,9 +638,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return connectedLinks;
     },
 
-    __getLink: function(id) {
+    __getLinkUI: function(linkId) {
       for (let i = 0; i < this.__linksUI.length; i++) {
-        if (this.__linksUI[i].getLinkId() === id) {
+        if (this.__linksUI[i].getLinkId() === linkId) {
           return this.__linksUI[i];
         }
       }
@@ -652,11 +652,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     },
 
     clearNode(nodeId) {
-      // remove first the links
-      let connectedLinks = this.__getConnectedLinks(nodeId);
-      for (let j=0; j<connectedLinks.length; j++) {
-        this.__removeLink(this.__getLink(connectedLinks[j]));
-      }
       this.__clearNode(nodeId);
     },
 
@@ -666,29 +661,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }
     },
 
+    clearLink(linkId) {
+      this.__clearLink(this.__getLinkUI(linkId));
+    },
+
     __removeLink: function(link) {
-      let removed = false;
-      if (this.__currentModel.isContainer() && link.getOutputNodeId() === this.__currentModel.getNodeId()) {
-        let inputNode = this.getWorkbenchModel().getNodeModel(link.getInputNodeId());
-        inputNode.setIsOutputNode(false);
-
-        // Remove also dependencies from outter nodes
-        const cNodeId = inputNode.getNodeId();
-        const allNodes = this.getWorkbenchModel().getNodeModels(true);
-        for (const nodeId in allNodes) {
-          let node = allNodes[nodeId];
-          if (node.isInputNode(cNodeId) && !this.__currentModel.isInnerNode(node.getNodeId())) {
-            this.getWorkbenchModel().removeLink(cNodeId, nodeId);
-          }
-        }
-
-        removed = true;
-      } else {
-        removed = this.getWorkbenchModel().removeLink(link.getInputNodeId(), link.getOutputNodeId());
-      }
-      if (removed) {
-        this.__clearLink(link);
-      }
+      this.fireDataEvent("removeLink", link.getLinkId());
     },
 
     __removeAllLinks: function() {
