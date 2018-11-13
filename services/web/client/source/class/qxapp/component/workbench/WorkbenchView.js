@@ -809,7 +809,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       let oldId = this.__selectedItemId;
       if (oldId) {
         if (this.__isSelectedItemALink(oldId)) {
-          let unselectedLink = this.__getLink(oldId);
+          let unselectedLink = this.__getLinkUI(oldId);
           const unselectedColor = qxapp.theme.Color.colors["workbench-link-comp-active"];
           this.__svgWidget.updateColor(unselectedLink.getRepresentation(), unselectedColor);
         }
@@ -817,14 +817,14 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
 
       this.__selectedItemId = newID;
       if (this.__isSelectedItemALink(newID)) {
-        let selectedLink = this.__getLink(newID);
+        let selectedLink = this.__getLinkUI(newID);
         const selectedColor = qxapp.theme.Color.colors["workbench-link-selected"];
         this.__svgWidget.updateColor(selectedLink.getRepresentation(), selectedColor);
       }
     },
 
     __isSelectedItemALink: function() {
-      return Boolean(this.__getLink(this.__selectedItemId));
+      return Boolean(this.__getLinkUI(this.__selectedItemId));
     }
   }
 });
