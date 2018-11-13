@@ -142,7 +142,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     getInputValues: function() {
-      if (this.isPropertyInitialized("propsWidget")) {
+      if (this.isPropertyInitialized("propsWidget") && this.getPropsWidget()) {
         return this.getPropsWidget().getValues();
       }
       return {};
