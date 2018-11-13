@@ -13,7 +13,6 @@ then
     echo "Received result pipeline id of ${array[0]}";
     echo "Received result node uuid of ${array[1]}";
     # the fake SIMCORE_NODE_UUID is exported to be available to the service
-    export SIMCORE_PIPELINE_ID="${array[0]}";
     export SIMCORE_NODE_UUID="${array[1]}";
 fi
 
