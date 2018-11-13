@@ -6,7 +6,7 @@ from typing import Tuple
 import attr
 import sqlalchemy as sa
 
-from .s3 import DATCORE_STR, SIMCORE_S3_STR
+from .s3 import DATCORE_STR, SIMCORE_S3_STR, SIMCORE_S3_ID
 
 #FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
 #from sqlalchemy.dialects.postgresql import UUID
@@ -35,23 +35,19 @@ file_meta_data = sa.Table(
 )
 
 
-def _parse_simcore(file_uuid: str) -> Tuple[str, str]:
-    # we should have simcore/12/123123123/111.txt
+def _parse_datcore(file_uuid: str) -> Tuple[str, str]:
+    # we should have 12/123123123/111.txt
 
     object_name = "invalid"
-    bucket_name = "invalid"
+    dataset_name = "invalid"
 
     parts = file_uuid.split("/")
 
     if len(parts) > 1:
-        bucket_name = parts[0]
+        dataset_name = parts[0]
         object_name = "/".join(parts[1:])
 
-    return bucket_name, object_name
-
-def _parse_datcore(file_uuid: str) -> Tuple[str, str]:
-    # we should have boom/12/123123123/111.txt
-    return _parse_simcore(file_uuid)
+    return dataset_name, object_name
 
 def _locations():
     # TODO: so far this is hardcoded
@@ -122,15 +118,15 @@ class FileMetaData:
     user_id: str=""
     user_name: str=""
 
-    def simcore_from_uuid(self, file_uuid: str):
+    def simcore_from_uuid(self, file_uuid: str, bucket_name: str):
         parts = file_uuid.split("/")
-        assert len(parts) > 2
-        if len(parts) > 2:
-            self.location = parts[0]
-            self.location_id = _location_from_str(self.location)
-            self.bucket_name = parts[0]
-            self.object_name = "/".join(parts[1:])
-            self.file_name = parts[-1]
-            self.project_id = parts[1]
-            self.node_id = parts[2]
+        assert len(parts) == 3
+        if len(parts) == 3:
+            self.location = SIMCORE_S3_ID
+            self.location_id = SIMCORE_S3_STR
+            self.bucket_name = bucket_name
+            self.object_name = "/".join(parts[:])
+            self.file_name = parts[2]
+            self.project_id = parts[0]
+            self.node_id = parts[1]
             self.file_uuid = file_uuid

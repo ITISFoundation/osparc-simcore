@@ -43,14 +43,6 @@ async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
         data = await dsm.list_files(user_id=_id, location=SIMCORE_S3_STR)
         assert len(data) == id_file_count[_id]
 
-    #data_as_dict = []
-    #for d in data:
-    #    data_as_dict.append(attr.asdict(d))
-
-    #ith open("example.json", 'w') as _f:
-    #    json.dump(data_as_dict, _f)
-
-
     # Get files from bob from the project biology
     bob_id = 0
     for _id in id_name_map.keys():
@@ -98,7 +90,7 @@ def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
     project_id = "22"
     node_id = "1006"
     file_name = filename
-    file_uuid = os.path.join(bucket_name, str(project_id), str(node_id), str(file_name))
+    file_uuid = os.path.join(str(project_id), str(node_id), str(file_name))
 
     d = {   'object_name' : os.path.join(str(project_id), str(node_id), str(file_name)),
             'bucket_name' : bucket_name,
@@ -163,8 +155,8 @@ async def test_copy_s3_s3(postgres_service_url, s3_client, mock_files_factory, d
 
     from_uuid = fmd.file_uuid
     new_project = "zoology"
-    to_uuid = os.path.join(fmd.bucket_name, new_project, fmd.node_id, fmd.file_name)
-    await dsm.copy_file(fmd.user_id, SIMCORE_S3_STR, to_uuid, from_uuid)
+    to_uuid = os.path.join(new_project, fmd.node_id, fmd.file_name)
+    await dsm.copy_file(user_id=fmd.user_id, dest_location=SIMCORE_S3_STR, dest_uuid=to_uuid, source_location=SIMCORE_S3_STR, source_uuid=from_uuid)
 
     data = await dsm.list_files(user_id=fmd.user_id, location=SIMCORE_S3_STR)
 
@@ -228,7 +220,7 @@ async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_fac
 # pylint: disable=R0913
 # Too many arguments
 @pytest.mark.travis
-async def test_dsm_datcore_to_s3(postgres_service_url, dsm_fixture, mock_files_factory, datcore_testbucket):
+async def test_dsm_datcore_to_local(postgres_service_url, dsm_fixture, mock_files_factory, datcore_testbucket):
     utils.create_tables(url=postgres_service_url)
     dsm = dsm_fixture
     user_id = "0"
@@ -248,13 +240,59 @@ async def test_dsm_datcore_to_s3(postgres_service_url, dsm_fixture, mock_files_f
 # pylint: disable=R0913
 # Too many arguments
 @pytest.mark.travis
+async def test_dsm_datcore_to_S3(postgres_service_url, s3_client, dsm_fixture, mock_files_factory, datcore_testbucket):
+    utils.create_tables(url=postgres_service_url)
+    # create temporary file
+    tmp_file = mock_files_factory(1)[0]
+    dest_fmd = _create_file_meta_for_s3(postgres_service_url, s3_client, tmp_file)
+    user_id = dest_fmd.user_id
+    dest_uuid = dest_fmd.file_uuid
+
+    dsm = dsm_fixture
+
+    s3_data = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
+    assert len(s3_data) == 0
+
+    dc_data = await dsm.list_files(user_id=user_id, location=DATCORE_STR)
+    assert len(dc_data) == 2
+    src_fmd = dc_data[0]
+
+    await dsm.copy_file(user_id=user_id, dest_location=SIMCORE_S3_STR, dest_uuid=dest_uuid, source_location=DATCORE_STR, source_uuid=src_fmd.file_uuid)
+
+    s3_data = await dsm.list_files(user_id=user_id, location=SIMCORE_S3_STR)
+    assert len(s3_data) == 1
+
+    # now download the original file
+    tmp_file1 = tmp_file + ".fromdatcore"
+    down_url_dc = await dsm.download_link(user_id, DATCORE_STR, src_fmd.file_uuid)
+    urllib.request.urlretrieve(down_url_dc, tmp_file1)
+
+    # and the one on s3
+    tmp_file2 = tmp_file + ".fromS3"
+    down_url_s3 = await dsm.download_link(user_id, SIMCORE_S3_STR, dest_uuid)
+    urllib.request.urlretrieve(down_url_s3, tmp_file2)
+
+    assert filecmp.cmp(tmp_file1, tmp_file2)
+
+
+
+
+
+# pylint: disable=R0913
+# Too many arguments
+@pytest.mark.travis
 async def test_copy_datcore(postgres_service_url, s3_client, dsm_fixture, mock_files_factory, datcore_testbucket):
     utils.create_tables(url=postgres_service_url)
+
+    # the fixture should provide 2 files
+    dsm = dsm_fixture
+    user_id = "0"
+    data = await dsm.list_files(user_id=user_id, location=DATCORE_STR)
+    assert len(data) == 2
 
     # create temporary file and upload to s3
     tmp_file = mock_files_factory(1)[0]
     fmd = _create_file_meta_for_s3(postgres_service_url, s3_client, tmp_file)
-    dsm = dsm_fixture
 
     up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
     with io.open(tmp_file, 'rb') as fp:
@@ -264,9 +302,10 @@ async def test_copy_datcore(postgres_service_url, s3_client, dsm_fixture, mock_f
             pass
 
     #now copy to datcore
-    user_id = "0"
     dat_core_uuid = os.path.join(datcore_testbucket, fmd.file_name)
-    await dsm.copy_file(user_id=user_id, location=DATCORE_STR, file_uuid=dat_core_uuid, source_uuid=fmd.file_uuid)
+
+    await dsm.copy_file(user_id=user_id, dest_location=DATCORE_STR, dest_uuid=dat_core_uuid, source_location=SIMCORE_S3_STR,
+        source_uuid=fmd.file_uuid)
 
     data = await dsm.list_files(user_id=user_id, location=DATCORE_STR)
 

@@ -29,7 +29,7 @@ components:
           description: log messages
           type: array
           items:
-            $ref: './log_message.yml#/components/schemas/LogMessageType'
+            $ref: './log_message.yaml#/components/schemas/LogMessageType'
         errors:
           description: errors metadata
           type: array

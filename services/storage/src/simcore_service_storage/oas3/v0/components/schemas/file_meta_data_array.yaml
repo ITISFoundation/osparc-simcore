@@ -1,18 +1,18 @@
 components:
   schemas:
-    FileLocationArrayEnveloped:
+    FileMetaDataArrayEnveloped:
       type: object
       required:
         - data
         - error
       properties:
         data:
-          $ref: '#/components/schemas/FileLocationArray'
+          $ref: '#/components/schemas/FileMetaDataArrayType'
         error:
           nullable: true
           default: null
 
-    FileLocationArray:
+    FileMetaDataArrayType:
       type: array
       items:
-        $ref: './location.yml#/components/schemas/FileLocation'
+        $ref: './file_meta_data.yaml#/components/schemas/FileMetaDataType'

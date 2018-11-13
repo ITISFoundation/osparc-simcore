@@ -39,13 +39,13 @@ def node_uuid()->str:
     return str(uuid.uuid4())
 
 @pytest.fixture
-def file_uuid(bucket, project_id, node_uuid)->str:
+def file_uuid(project_id, node_uuid)->str:
     def create(file_path:Path, project:str=None, node:str=None):  
         if project is None:
             project = project_id
         if node is None:
-            node = node_uuid
-        return helpers.file_uuid(bucket, file_path, project, node)              
+            node = node_uuid            
+        return helpers.file_uuid(file_path, project, node)              
     yield create
 
 @pytest.fixture(scope='session')

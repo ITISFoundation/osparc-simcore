@@ -11,7 +11,7 @@ from .settings import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DSM_THREADPOOL,
 
 @middleware
 async def dsm_middleware(request, handler):
-    # TODO: move below code to application level into dsm setup
+    # TODO: move below code to application level into dsm setup because this might be slow
     cfg = request.app[APP_CONFIG_KEY]
 
     s3_cfg = cfg["s3"]

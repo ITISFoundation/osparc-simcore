@@ -222,7 +222,7 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
         node_id = idx + 10000
         file_name = str(counter)
         object_name = Path(str(project_id), str(node_id), str(counter)).as_posix()
-        file_uuid = Path(bucket_name, object_name).as_posix()
+        file_uuid = Path(object_name).as_posix()
 
         assert s3_client.upload_file(bucket_name, object_name, _file)
 

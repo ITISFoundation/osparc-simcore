@@ -70,6 +70,47 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__sidePanel.setBottomView(loggerView);
 
       let workbenchView = this.__workbenchView = new qxapp.component.workbench.WorkbenchView(project.getWorkbenchModel());
+      workbenchView.addListener("removeNode", e => {
+        const nodeId = e.getData();
+        // remove first the connected links
+        let connectedLinks = this.getProjectModel().getWorkbenchModel().getConnectedLinks(nodeId);
+        for (let i=0; i<connectedLinks.length; i++) {
+          const linkId = connectedLinks[i];
+          if (this.getProjectModel().getWorkbenchModel().removeLink(linkId)) {
+            this.__workbenchView.clearLink(linkId);
+          }
+        }
+        if (this.getProjectModel().getWorkbenchModel().removeNode(nodeId)) {
+          this.__workbenchView.clearNode(nodeId);
+        }
+      }, this);
+      workbenchView.addListener("removeLink", e => {
+        const linkId = e.getData();
+        let workbenchModel = this.getProjectModel().getWorkbenchModel();
+        let currentNodeModel = workbenchModel.getNodeModel(this.__currentNodeId);
+        let link = workbenchModel.getLinkModel(linkId);
+        let removed = false;
+        if (currentNodeModel && currentNodeModel.isContainer() && link.getOutputNodeId() === currentNodeModel.getNodeId()) {
+          let inputNode = workbenchModel.getNodeModel(link.getInputNodeId());
+          inputNode.setIsOutputNode(false);
+
+          // Remove also dependencies from outter nodes
+          const cNodeId = inputNode.getNodeId();
+          const allNodes = workbenchModel.getNodeModels(true);
+          for (const nodeId in allNodes) {
+            let node = allNodes[nodeId];
+            if (node.isInputNode(cNodeId) && !currentNodeModel.isInnerNode(node.getNodeId())) {
+              workbenchModel.removeLink(linkId);
+            }
+          }
+          removed = true;
+        } else {
+          removed = workbenchModel.removeLink(linkId);
+        }
+        if (removed) {
+          this.__workbenchView.clearLink(linkId);
+        }
+      }, this);
       this.showInMainView(workbenchView, "root");
 
       let nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({
@@ -177,7 +218,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __workbenchModelChanged: function() {
-      this.__treeView.buildTree();
+      this.__treeView.populateTree();
       this.__treeView.nodeSelected(this.__currentNodeId);
     },
 

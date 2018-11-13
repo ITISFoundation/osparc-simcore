@@ -54,7 +54,7 @@ async def test_invalid_fileid(tmpdir, bucket, storage, filemanager_cfg, user_id,
     download_file_path = Path(tmpdir) / "somedownloaded file.txdt"
     with pytest.raises(exceptions.StorageInvalidCall):
         await filemanager.download_file(store, "", download_file_path)
-    with pytest.raises(exceptions.StorageServerIssue):
+    with pytest.raises(exceptions.S3InvalidPathError):
         await filemanager.download_file(store, "file_id", download_file_path)
     
 @pytest.mark.asyncio
