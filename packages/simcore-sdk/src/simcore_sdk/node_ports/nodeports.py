@@ -116,7 +116,7 @@ class Nodeports:
         upd_node = serialization.create_from_json(self.db_mgr)
         # copy from updated nodeports
         # pylint: disable=W0212
-        self._copy_schemas_payloads(upd_node._input_schemas, upd_node._output_schemas, upd_node._input_payloads, upd_node._outputs_payloads)
+        self._copy_schemas_payloads(upd_node._input_schemas, upd_node._output_schemas, upd_node._inputs_payloads, upd_node._outputs_payloads)
         log.debug("Updated json configuration")
 
     def save_to_json(self):
