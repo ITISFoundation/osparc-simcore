@@ -1,45 +1,22 @@
-/* eslint no-warning-comments: "off" */
-
 qx.Class.define("qxapp.component.widget.TreeTool", {
   extend: qx.ui.core.Widget,
 
   construct: function(projectName, workbenchModel) {
     this.base(arguments);
 
-    let treeLayout = new qx.ui.layout.VBox(10);
-    this._setLayout(treeLayout);
-
     this.set({
       projectName: projectName,
       workbenchModel: workbenchModel
     });
 
-    this.__buildLayout();
-    this.buildTree();
+    this._setLayout(new qx.ui.layout.VBox());
+
+    this.__tree = this._createChildControlImpl("tree");
+    this.populateTree();
 
     this.addListener("keypress", function(keyEvent) {
       if (keyEvent.getKeyIdentifier() === "F2") {
-        let treeSelection = this.__tree.getSelection();
-        if (treeSelection.length < 1) {
-          return;
-        }
-        let selectedItem = treeSelection.toArray()[0];
-        const selectedNodeId = selectedItem.getNodeId();
-        if (selectedNodeId === "root") {
-          return;
-        }
-
-        let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
-        treeItemRenamer.addListener("LabelChanged", e => {
-          const data = e.getData();
-          const newLabel = data.newLabel;
-          const nodeId = selectedItem.getNodeId();
-          let nodeModel = this.getWorkbenchModel().getNodeModel(nodeId);
-          nodeModel.setLabel(newLabel);
-        }, this);
-        const bounds = this.getLayoutParent().getBounds();
-        treeItemRenamer.moveTo(bounds.left+100, bounds.top+150);
-        treeItemRenamer.open();
+        this.__renameItem();
       }
     }, this);
   },
@@ -62,17 +39,25 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
   members: {
     __tree: null,
 
-    __buildLayout: function() {
-      let tree = this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "tree":
+          control = this.__buildTree();
+          this._add(control, {
+            flex: 1
+          });
+          break;
+      }
+
+      return control || this.base(arguments, id);
+    },
+
+    __buildTree: function() {
+      let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
         openMode: "none"
       });
-
-      this._removeAll();
-      this._add(tree, {
-        flex: 1
-      });
-
-      this.__tree.addListener("dblclick", e => {
+      tree.addListener("dblclick", e => {
         let selection = this.__tree.getSelection();
         let currentSelection = selection.toArray();
         if (currentSelection.length > 0) {
@@ -80,9 +65,10 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
           this.fireDataEvent("NodeDoubleClicked", selectedRow.getNodeId());
         }
       }, this);
+      return tree;
     },
 
-    buildTree: function() {
+    populateTree: function() {
       const topLevelNodes = this.getWorkbenchModel().getNodeModels();
       let data = {
         label: this.getProjectName(),
@@ -135,6 +121,40 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
         return node;
       }
       return null;
+    },
+
+    __getSelection: function() {
+      let treeSelection = this.__tree.getSelection();
+      if (treeSelection.length < 1) {
+        return null;
+      }
+
+      let selectedItem = treeSelection.toArray()[0];
+      const selectedNodeId = selectedItem.getNodeId();
+      if (selectedNodeId === "root") {
+        return null;
+      }
+
+      return selectedItem;
+    },
+
+    __renameItem: function() {
+      let selectedItem = this.__getSelection();
+      if (selectedItem === null) {
+        return;
+      }
+
+      let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
+      treeItemRenamer.addListener("LabelChanged", e => {
+        const data = e.getData();
+        const newLabel = data.newLabel;
+        const nodeId = selectedItem.getNodeId();
+        let nodeModel = this.getWorkbenchModel().getNodeModel(nodeId);
+        nodeModel.setLabel(newLabel);
+      }, this);
+      const bounds = this.getLayoutParent().getBounds();
+      treeItemRenamer.moveTo(bounds.left+100, bounds.top+150);
+      treeItemRenamer.open();
     },
 
     nodeSelected: function(nodeId) {
