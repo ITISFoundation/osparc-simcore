@@ -86,7 +86,7 @@ up-swarm-devel:
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.deploy.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
-	rm $(TEMPCOMPOSE).tmp-compose.yml
+	-rm $(TEMPCOMPOSE).tmp-compose.yml
 
 ifeq ($(WINDOWS_MODE),ON)
 file-watcher:
