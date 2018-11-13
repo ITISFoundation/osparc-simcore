@@ -5,12 +5,11 @@ import warnings
 from pathlib import Path
 from typing import Dict, Tuple
 
-import openapi_core
 import yaml
+
+import openapi_core
 from aiohttp import ClientSession
-from openapi_core.schema.exceptions import \
-    OpenAPIError  # pylint: disable=W0611
-from openapi_core.schema.exceptions import OpenAPIMappingError
+from openapi_core.schema.exceptions import OpenAPIError, OpenAPIMappingError  # pylint: disable=W0611
 from openapi_core.schema.specs.models import Spec
 from yarl import URL
 
@@ -33,7 +32,8 @@ def load_from_path(filepath: Path) -> Tuple[Dict, str]:
 
 
 async def load_from_url(url: URL) -> Tuple[Dict, str]:
-    async with ClientSession() as session:
+    TIMEOUT_SECS = 5*60
+    async with ClientSession(timeout=TIMEOUT_SECS) as session:
         async with session.get(url) as resp:
             spec_dict = yaml.safe_load(resp.content)
             return spec_dict, str(url)
