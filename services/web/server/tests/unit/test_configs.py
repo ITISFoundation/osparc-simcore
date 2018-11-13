@@ -52,7 +52,7 @@ def devel_environ(env_devel_file):
 
 
 @pytest.fixture("session")
-def container_environ(services_docker_compose_file, devel_environ):
+def container_environ(services_docker_compose_file, devel_environ, osparc_simcore_root_dir):
     """ Creates a dict with the environment variables
         inside of a webserver container
     """
@@ -61,7 +61,8 @@ def container_environ(services_docker_compose_file, devel_environ):
         dc = yaml.safe_load(f)
 
     container_environ = {
-        'SIMCORE_WEB_OUTDIR': 'home/scu/services/web/client'  # defined in Dockerfile
+        'SIMCORE_WEB_OUTDIR': 'home/scu/services/web/client',  # defined in Dockerfile
+        'OSPARC_SIMCORE_REPO_ROOTDIR': str(osparc_simcore_root_dir) # defined if pip install --edit (but not in travis!)
     }
 
     environ_items = dc["services"]["webserver"]["environment"]
