@@ -26,8 +26,6 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
 
     let logo = new qx.ui.basic.Image("qxapp/osparc-white.svg").set({
-      maxHeight: NAVIGATION_BUTTON_HEIGHT,
-      maxWidth: 92,
       width: 92,
       height: NAVIGATION_BUTTON_HEIGHT,
       scale: true
