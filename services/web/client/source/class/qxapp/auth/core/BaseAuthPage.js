@@ -25,15 +25,15 @@ qx.Class.define("qxapp.auth.core.BaseAuthPage", {
     });
     // at least chrome hates it when a password input field exists
     // outside a form, so lets accomodate him
-    this.addListenerOnce("appear", e => {
-      let el = this.getContentElement();
-      let form = this._form = new qx.html.Element("form", null, {
-        name: "fakeLoginform",
-        autocomplete: "on"
-      });
-      form.insertBefore(el);
-      el.insertInto(form);
+    // this.addListenerOnce("appear", e => {
+    let el = this.getContentElement();
+    let form = this._form = new qx.html.Element("form", null, {
+      name: "fakeLoginform",
+      autocomplete: "on"
     });
+    form.insertBefore(el);
+    el.insertInto(form);
+    // });
     this._buildPage();
   },
 
