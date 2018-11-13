@@ -24,12 +24,9 @@ def decode_store(value: Dict)->Tuple[str, str]:
 def encode_store(store:str, s3_object:str) -> Dict:
     return {"store":store, "path":s3_object}
 
-def encode_file_id(file_path: Path, store: str, bucket:str, project_id: str, node_id: str) -> str:
-    file_id = "{}/{}/{}/{}/{}".format(store, bucket, project_id, node_id, file_path.name)
+def encode_file_id(file_path: Path, bucket:str, project_id: str, node_id: str) -> str:
+    file_id = "{}/{}/{}/{}".format(bucket, project_id, node_id, file_path.name)
     return file_id
-
-def decode_file_id(file_id: str) -> Tuple[str, str, str, str, str]:
-    return Path(file_id).parts
 
 _INTERNAL_DIR = Path(tempfile.gettempdir(), "simcorefiles")
 def create_file_path(key:str, name:str) -> Path:
