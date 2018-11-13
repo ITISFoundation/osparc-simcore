@@ -42,4 +42,4 @@ smtp:
   password: None
 rest:
   version: v0
-  location: ../../../../api/specs/webserver/v0/openapi.yaml
+  location: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs/webserver/v0/openapi.yaml

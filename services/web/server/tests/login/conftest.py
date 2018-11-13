@@ -25,13 +25,26 @@ from simcore_service_webserver.application_config import CONFIG_SCHEMA
 def here():
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+
+@pytest.fixture(scope='session')
+def osparc_simcore_root_dir(here):
+    root_dir = here.parent.parent.parent.parent.parent.resolve()
+    assert root_dir.exists(), "Is this service within osparc-simcore repo?"
+    assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
+    return root_dir
+
 @pytest.fixture(scope="session")
-def app_cfg(here):
+def app_cfg(here, osparc_simcore_root_dir):
     cfg_path = here / "config.yaml"
     assert cfg_path.exists()
 
+    variables = dict(os.environ)
+    variables.update({
+        'OSPARC_SIMCORE_REPO_ROOTDIR': str(osparc_simcore_root_dir),
+    })
+
     # validates and fills all defaults/optional entries that normal load would not do
-    cfg_dict = trafaret_config.read_and_validate(cfg_path, CONFIG_SCHEMA)
+    cfg_dict = trafaret_config.read_and_validate(cfg_path, CONFIG_SCHEMA, vars=variables)
     return cfg_dict
 
 @pytest.fixture(scope='session')
