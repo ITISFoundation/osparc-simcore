@@ -58,11 +58,13 @@ build-devel:
 rebuild-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
 
-up-devel: file-watcher
+up-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml up
 
-up-webclient-devel: file-watcher
-	-${DOCKER} service rm services_webclient
+up-webclient-devel: up-webclient-devel-fight
+	${DOCKER} service rm services_webclient
+
+up-webclient-devel-fight: up-swarm-devel
 	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
 
 build:
@@ -88,6 +90,7 @@ up-swarm-devel:
 
 ifeq ($(WINDOWS_MODE),ON)
 file-watcher:
+	# unfortunately this is not working properly at the moment
 	pip install docker-windows-volume-watcher
 	docker-volume-watcher "*" "*\\web\\client*" &
 else
