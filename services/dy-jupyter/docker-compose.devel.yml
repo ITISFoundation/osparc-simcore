@@ -26,6 +26,7 @@ services:
       - ../../services/:/home/jovyan/services
       - ./devel:/home/jovyan/devel
       - ./notebooks:/home/jovyan/notebooks
+      - ./docker:/docker
   #--------------------------------------------------------------------
   storage:
     image: services_storage:latest
