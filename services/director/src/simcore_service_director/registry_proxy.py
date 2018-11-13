@@ -95,7 +95,7 @@ def __registry_request(path, method="GET"):
         # r = s.get(api_url, verify=False) #getattr(s, method.lower())(api_url)
         request_result = getattr(_SESSION, method.lower())(api_url)
         _logger.info("Request status: %s",request_result.status_code)
-        if request_result.status_code > 399:            
+        if request_result.status_code > 399:
             request_result.raise_for_status()
 
         return request_result

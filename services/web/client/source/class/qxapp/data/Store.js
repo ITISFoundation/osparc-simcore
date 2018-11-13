@@ -46,13 +46,9 @@ qx.Class.define("qxapp.data.Store", {
       return topLevelPort1.isInput !== topLevelPort2.isInput;
     },
 
-    arePortsCompatible: function(node1, port1, node2, port2) {
-      console.log("arePortsCompatible", node1, port1, node2, port2);
-      return true;
-      /*
-      return this.__matchPortType(port1.portType, port2.portType) &&
-        (port1.isInput !== port2.isInput);
-      */
+    arePortsCompatible: function(port1, port2) {
+      const arePortsCompatible = this.__matchPortType(port1.type, port2.type);
+      return arePortsCompatible;
     },
 
     getUserProjectList: function() {
@@ -87,515 +83,11 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getItemList: function(nodeInstanceUUID, portKey) {
-      switch (portKey) {
-        case "defaultNeuromanModels":
-          return [{
-            key: "Yoon-sun-UUID",
-            label: "Yoon-sun",
-            thumbnail: "qxapp/yoonsun.png"
-          }, {
-            key: "Yoon-sun-Light-UUID",
-            label: "Yoon-sun Light",
-            thumbnail: "qxapp/yoonsun-light.png"
-          }, {
-            key: "Rat-UUID",
-            label: "Rat",
-            thumbnail: "qxapp/rat.png"
-          }, {
-            key: "Rat-Light-UUID",
-            label: "Rat Light",
-            thumbnail: "qxapp/rat-light.png"
-          }];
-        case "defaultMaterials":
-          return [{
-            key: "Dielectric-UUID",
-            label: "Dielectric"
-          }, {
-            key: "PEC-UUID",
-            label: "PEC"
-          }, {
-            key: "PMC-UUID",
-            label: "PMC"
-          }];
-        case "defaultBoundaries":
-          return [{
-            key: "Dirichlet-UUID",
-            label: "Dirichlet"
-          }, {
-            key: "Neumann-UUID",
-            label: "Neumann"
-          }, {
-            key: "Flux-UUID",
-            label: "Flux"
-          }];
-        case "modeler":
-          return [{
-            key: "MODEL1-UUID",
-            label: "Model 1"
-          }, {
-            key: "MODEL2-UUID",
-            label: "Model 2"
-          }, {
-            key: "MODEL3-UUID",
-            label: "Model 3"
-          }];
-        case "materialDB":
-          return [{
-            key: "Air-UUID",
-            label: "Air"
-          }, {
-            key: "Brain-UUID",
-            label: "Brain"
-          }, {
-            key: "Eye-UUID",
-            label: "Eye"
-          }];
-        case "defaultStimulationSelectivity":
-          return [{
-            key: "StSeSubgroup-UUID",
-            label: "Subgroup"
-          }];
-      }
-      return [];
+      return qxapp.dev.fake.Data.getItemList(nodeInstanceUUID, portKey);
     },
 
     getItem: function(nodeInstanceUUID, portKey, itemUuid) {
-      switch (portKey) {
-        case "materialDB": {
-          switch (itemUuid) {
-            case "Air-UUID": {
-              return {
-                "massDensity": {
-                  displayOrder: 0,
-                  label: "Mass Density",
-                  unit: "kg/m3",
-                  type: "number",
-                  defaultValue: 1.16409
-                },
-                "electricConductivity": {
-                  displayOrder: 1,
-                  label: "Electric Conductivity",
-                  unit: "S/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "electricRelativePermitivity": {
-                  displayOrder: 2,
-                  label: "Electric Relative Permittivity",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                },
-                "magneticConductivity": {
-                  displayOrder: 3,
-                  label: "Magnetic Conductivity",
-                  unit: "Ohm/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "magneticRelativePermeability": {
-                  displayOrder: 4,
-                  label: "Magnetic Relative Permeability",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                }
-              };
-            }
-            case "Brain-UUID": {
-              return {
-                "massDensity": {
-                  displayOrder: 0,
-                  label: "Mass Density",
-                  unit: "kg/m3",
-                  type: "number",
-                  defaultValue: 1045.5
-                },
-                "electricConductivity": {
-                  displayOrder: 1,
-                  label: "Electric Conductivity",
-                  unit: "S/m",
-                  type: "number",
-                  defaultValue: 0.234007
-                },
-                "electricRelativePermitivity": {
-                  displayOrder: 2,
-                  label: "Electric Relative Permittivity",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                },
-                "magneticConductivity": {
-                  displayOrder: 3,
-                  label: "Magnetic Conductivity",
-                  unit: "Ohm/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "magneticRelativePermeability": {
-                  displayOrder: 4,
-                  label: "Magnetic Relative Permeability",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                }
-              };
-            }
-            case "Eye-UUID": {
-              return {
-                "massDensity": {
-                  displayOrder: 0,
-                  label: "Mass Density",
-                  unit: "kg/m3",
-                  type: "number",
-                  defaultValue: 1050.5
-                },
-                "electricConductivity": {
-                  displayOrder: 1,
-                  label: "Electric Conductivity",
-                  unit: "S/m",
-                  type: "number",
-                  defaultValue: 0.62
-                },
-                "electricRelativePermitivity": {
-                  displayOrder: 2,
-                  label: "Electric Relative Permittivity",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                },
-                "magneticConductivity": {
-                  displayOrder: 3,
-                  label: "Magnetic Conductivity",
-                  unit: "Ohm/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "magneticRelativePermeability": {
-                  displayOrder: 4,
-                  label: "Magnetic Relative Permeability",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                }
-              };
-            }
-          }
-        }
-        // eslint-disable-next-line no-fallthrough
-        case "defaultMaterials": {
-          switch (itemUuid) {
-            case "Dielectric-UUID": {
-              return {
-                "massDensity": {
-                  displayOrder: 0,
-                  label: "Mass Density",
-                  unit: "kg/m3",
-                  type: "number",
-                  defaultValue: 1.205
-                },
-                "electricConductivity": {
-                  displayOrder: 1,
-                  label: "Electric Conductivity",
-                  unit: "S/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "electricRelativePermitivity": {
-                  displayOrder: 2,
-                  label: "Electric Relative Permittivity",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                },
-                "magneticRelativePermeability": {
-                  displayOrder: 3,
-                  label: "Magnetic Relative Permeability",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                },
-                "magneticConductivity": {
-                  displayOrder: 4,
-                  label: "Magnetic Conductivity",
-                  unit: "Ohm/m",
-                  type: "number",
-                  defaultValue: 0
-                }
-              };
-            }
-          }
-        }
-      }
-      return {};
-    },
-
-    getList: function(nodeImageId) {
-      switch (nodeImageId) {
-        // case "services/demodec/dynamic/itis/s4l/Modeler-0.0.0": {
-        case "data:application/s4l-api/modeler": {
-          return [
-            {
-              name: "Model 1",
-              uuid: "MODEL1-UUID",
-              properties: {}
-            }, {
-              name: "Model 2",
-              uuid: "MODEL2-UUID",
-              properties: {}
-            }, {
-              name: "Model 3",
-              uuid: "MODEL3-UUID",
-              properties: {}
-            }, {
-              name: "Model 4",
-              uuid: "MODEL4-UUID",
-              properties: {}
-            }
-          ];
-        }
-        // case "services/demodec/dynamic/itis/s4l/MaterialDB-0.0.0": {
-        case "data:application/s4l-api/materialDB": {
-          return [
-            {
-              name: "Air",
-              uuid: "Air-UUID",
-              properties: {
-                "massDensity": {
-                  displayOrder: 0,
-                  label: "Mass Density",
-                  unit: "kg/m3",
-                  type: "number",
-                  defaultValue: 1.16409
-                },
-                "electricConductivity": {
-                  displayOrder: 1,
-                  label: "Electric Conductivity",
-                  unit: "S/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "electricRelativePermitivity": {
-                  displayOrder: 2,
-                  label: "Electric Relative Permittivity",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                },
-                "magneticConductivity": {
-                  displayOrder: 3,
-                  label: "Magnetic Conductivity",
-                  unit: "Ohm/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "magneticRelativePermeability": {
-                  displayOrder: 4,
-                  label: "Magnetic Relative Permeability",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                }
-              }
-            }, {
-              name: "Brain",
-              uuid: "Brain-UUID",
-              properties: {
-                "massDensity": {
-                  displayOrder: 0,
-                  label: "Mass Density",
-                  unit: "kg/m3",
-                  type: "number",
-                  defaultValue: 1045.5
-                },
-                "electricConductivity": {
-                  displayOrder: 1,
-                  label: "Electric Conductivity",
-                  unit: "S/m",
-                  type: "number",
-                  defaultValue: 0.234007
-                },
-                "electricRelativePermitivity": {
-                  displayOrder: 2,
-                  label: "Electric Relative Permittivity",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                },
-                "magneticConductivity": {
-                  displayOrder: 3,
-                  label: "Magnetic Conductivity",
-                  unit: "Ohm/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "magneticRelativePermeability": {
-                  displayOrder: 4,
-                  label: "Magnetic Relative Permeability",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                }
-              }
-            }, {
-              name: "Eye",
-              uuid: "Eye-UUID",
-              properties: {
-                "massDensity": {
-                  displayOrder: 0,
-                  label: "Mass Density",
-                  unit: "kg/m3",
-                  type: "number",
-                  defaultValue: 1050.5
-                },
-                "electricConductivity": {
-                  displayOrder: 1,
-                  label: "Electric Conductivity",
-                  unit: "S/m",
-                  type: "number",
-                  defaultValue: 0.62
-                },
-                "electricRelativePermitivity": {
-                  displayOrder: 2,
-                  label: "Electric Relative Permittivity",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                },
-                "magneticConductivity": {
-                  displayOrder: 3,
-                  label: "Magnetic Conductivity",
-                  unit: "Ohm/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "magneticRelativePermeability": {
-                  displayOrder: 4,
-                  label: "Magnetic Relative Permeability",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                }
-              }
-            }
-          ];
-        }
-        case "services/demodec/dynamic/itis/s4l/Simulator/LF/Materials-0.0.0": {
-          return [
-            {
-              name: "PEC",
-              uuid: "PEC-UUID",
-              properties: {}
-            }, {
-              name: "PMC",
-              uuid: "PMC-UUID",
-              properties: {}
-            }, {
-              name: "Dielectric",
-              uuid: "Dielectric-UUID",
-              properties: {
-                "massDensity": {
-                  displayOrder: 0,
-                  label: "Mass Density",
-                  unit: "kg/m3",
-                  type: "number",
-                  defaultValue: 1000
-                },
-                "electricConductivity": {
-                  displayOrder: 1,
-                  label: "Electric Conductivity",
-                  unit: "S/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "electricRelativePermitivity": {
-                  displayOrder: 2,
-                  label: "Electric Relative Permittivity",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                },
-                "magneticConductivity": {
-                  displayOrder: 3,
-                  label: "Magnetic Conductivity",
-                  unit: "Ohm/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "magneticRelativePermeability": {
-                  displayOrder: 4,
-                  label: "Magnetic Relative Permeability",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                }
-              }
-            }
-          ];
-        }
-        case "services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary-0.0.0": {
-          return [
-            {
-              name: "Dirichlet",
-              uuid: "Dirichlet-UUID",
-              properties: {
-                "constantPotential": {
-                  displayOrder: 0,
-                  label: "Constant Potential",
-                  unit: "V",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "phase": {
-                  displayOrder: 1,
-                  label: "Phase",
-                  unit: "deg",
-                  type: "number",
-                  defaultValue: 0
-                }
-              }
-            }, {
-              name: "Neumann",
-              uuid: "Neumann-UUID",
-              properties: {
-                "normalDerivative": {
-                  displayOrder: 0,
-                  label: "Normal Derivative",
-                  unit: "V/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "phase": {
-                  displayOrder: 1,
-                  label: "Phase",
-                  unit: "deg",
-                  type: "number",
-                  defaultValue: 0
-                }
-              }
-            }, {
-              name: "Flux",
-              uuid: "Flux-UUID",
-              properties: {
-                "constantFlux": {
-                  displayOrder: 0,
-                  label: "Constant Flux",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "phase": {
-                  displayOrder: 1,
-                  label: "Phase",
-                  unit: "deg",
-                  type: "number",
-                  defaultValue: 0
-                }
-              }
-            }
-          ];
-        }
-      }
-      return [];
+      return qxapp.dev.fake.Data.getItem(nodeInstanceUUID, portKey, itemUuid);
     },
 
     getBuiltInServices: function() {
@@ -653,7 +145,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Modeler Live link",
-              type: "node-output-list-api-v0.0.1"
+              type: "node-output-tree-api-v0.0.1"
             }
           }
         },
@@ -673,7 +165,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Subgroups",
               description: "Subgroups",
-              type: "node-output-list-api-v0.0.1"
+              type: "node-output-tree-api-v0.0.1"
             }
           },
           inputs: {
@@ -719,7 +211,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Modeler",
               description: "Modeler Live link",
-              type: "node-output-list-api-v0.0.1"
+              type: "node-output-tree-api-v0.0.1"
             }
           }
         },
@@ -740,7 +232,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "MaterialDB",
               description: "MaterialDB Live link",
-              type: "node-output-list-api-v0.0.1"
+              type: "node-output-tree-api-v0.0.1"
             }
           }
         },
@@ -878,7 +370,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Default Material Settings",
               description: "Default Material Settings",
-              type: "node-output-list-api-v0.0.1"
+              type: "node-output-tree-api-v0.0.1"
             }
           },
           inputs: {
@@ -937,7 +429,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Default Boundary Settings",
               description: "Default Boundary Settings",
-              type: "node-output-list-api-v0.0.1"
+              type: "node-output-tree-api-v0.0.1"
             }
           },
           inputs: {

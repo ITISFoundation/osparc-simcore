@@ -209,7 +209,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               name: p.name,
               thumbnail: p.thumbnail,
               projectUuid: p.projectUuid,
-              created: Date(p.creationDate),
+              created: new Date(p.creationDate),
               owner: p.owner
             })
           )

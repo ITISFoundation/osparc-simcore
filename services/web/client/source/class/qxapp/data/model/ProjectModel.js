@@ -36,6 +36,7 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
       check: "String",
       nullable: false,
       init: "New Project",
+      event: "changeName",
       apply : "__applyName"
     },
 
