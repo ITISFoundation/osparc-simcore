@@ -1,7 +1,11 @@
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.data.model.NodeModel", {
   extend: qx.core.Object,
 
-  construct: function(key, version, uuid) {
+  construct: function(workbenchModel, key, version, uuid) {
+    this.setWorkbenchModel(workbenchModel);
+
     this.base(arguments);
 
     this.__metaData = {};
@@ -42,6 +46,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
   },
 
   properties: {
+    workbenchModel: {
+      check: "qxapp.data.model.WorkbenchModel",
+      nullable: false
+    },
+
     key: {
       check: "String",
       nullable: false
@@ -65,11 +74,14 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     label: {
       check: "String",
-      nullable: true
+      nullable: true,
+      event: "changeLabel"
     },
 
     propsWidget: {
-      check: "qxapp.component.form.renderer.PropForm"
+      check: "qxapp.component.form.renderer.PropForm",
+      init: null,
+      nullable: true
     },
 
     inputsMapper: {
@@ -140,6 +152,18 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return this.__inputsDefault;
     },
 
+    getInput: function(outputId) {
+      return this.__inputs[outputId];
+    },
+
+    getInputs: function() {
+      return this.__inputs;
+    },
+
+    getOutput: function(outputId) {
+      return this.__outputs[outputId];
+    },
+
     getOutputs: function() {
       return this.__outputs;
     },
@@ -191,12 +215,12 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     populateNodeData: function(nodeData) {
       if (nodeData) {
+        if (nodeData.label) {
+          this.setLabel(nodeData.label);
+        }
+
         this.setInputData(nodeData);
         this.setOutputData(nodeData);
-
-        if (nodeData.position) {
-          this.setPosition(nodeData.position.x, nodeData.position.y);
-        }
 
         if (nodeData.inputNodes) {
           this.__inputNodes = nodeData.inputNodes;
@@ -206,9 +230,16 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           this.setIsOutputNode(nodeData.outputNode);
         }
 
-        if (nodeData.label) {
-          this.setLabel(nodeData.label);
+        if (nodeData.position) {
+          this.setPosition(nodeData.position.x, nodeData.position.y);
         }
+      }
+
+      if (this.__inputsDefaultWidget) {
+        this.__inputsDefaultWidget.populatePortsData();
+      }
+      if (this.__outputWidget) {
+        this.__outputWidget.populatePortsData();
       }
     },
 
@@ -218,9 +249,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     __addInputsDefaultWidgets: function() {
       const isInputModel = false;
-      let nodePorts = new qxapp.component.widget.NodePorts(this, isInputModel);
-      nodePorts.populateNodeLayout();
-      this.__inputsDefaultWidget = nodePorts;
+      this.__inputsDefaultWidget = new qxapp.component.widget.NodePorts(this, isInputModel);
     },
 
     /**
@@ -259,7 +288,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
      *
      */
     __addSetttings: function(inputs) {
-      let form = this.__settingsForm = new qxapp.component.form.Auto(inputs);
+      let form = this.__settingsForm = new qxapp.component.form.Auto(inputs, this);
       form.addListener("linkAdded", e => {
         let changedField = e.getData();
         this.getPropsWidget().linkAdded(changedField);
@@ -269,7 +298,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbenchModel(), this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("RemoveLink", e => {
         let changedField = e.getData();
@@ -283,9 +312,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     __addOutputWidget: function() {
       const isInputModel = true;
-      let nodePorts = new qxapp.component.widget.NodePorts(this, isInputModel);
-      nodePorts.populateNodeLayout();
-      this.__outputWidget = nodePorts;
+      this.__outputWidget = new qxapp.component.widget.NodePorts(this, isInputModel);
     },
 
     __addInputsDefault: function(inputsDefault) {
@@ -295,6 +322,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     __addInputs: function(inputs) {
+      this.__inputs = inputs;
+
       if (inputs === null) {
         return;
       }
@@ -324,8 +353,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
-    addPortLink: function(fromNodeId, fromPortId, toPortId) {
-      this.__settingsForm.addLink(fromNodeId, fromPortId, toPortId);
+    addPortLink: function(toPortId, fromNodeId, fromPortId) {
+      this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
     },
 
     addInputNode: function(inputNodeId) {
@@ -378,7 +407,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     __startInteractiveNode: function() {
-      let metaData = this.__metaData;
+      let metaData = this.getMetaData();
       if (metaData.type == "dynamic") {
         const slotName = "startDynamic";
         let button = new qx.ui.form.Button().set({
@@ -389,6 +418,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         }, this);
         button.setEnabled(false);
         this.setRestartIFrameButton(button);
+        this.__showLoadingIFrame();
         let socket = qxapp.wrappers.WebSocket.getInstance();
         socket.on(slotName, function(val) {
           const {
@@ -428,14 +458,31 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             }
 
             this.getRestartIFrameButton().setEnabled(true);
-            this.__restartIFrame();
-
-            console.log(this.getLabel(), msg);
+            // FIXME: Apparently no all services are inmediately ready when they publish the port
+            const waitFor = 4000;
+            qx.event.Timer.once(e => {
+              this.__restartIFrame();
+            }, this, waitFor);
           }
         }, this);
         let data = {
           serviceKey: metaData.key,
           serviceVersion: metaData.version,
+          nodeId: this.getNodeId()
+        };
+        socket.emit(slotName, data);
+      }
+    },
+
+    removeNode: function() {
+      this.__stopInteractiveNode();
+    },
+
+    __stopInteractiveNode: function() {
+      if (this.getMetaData().type == "dynamic") {
+        const slotName = "stopDynamic";
+        let socket = qxapp.wrappers.WebSocket.getInstance();
+        let data = {
           nodeId: this.getNodeId()
         };
         socket.emit(slotName, data);
