@@ -20,7 +20,7 @@ from s3wrapper.s3_client import S3Client
 
 from .datcore_wrapper import DatcoreWrapper
 from .models import (FileMetaData, _location_from_id, _parse_datcore,
-                     _parse_simcore, file_meta_data)
+                     file_meta_data)
 from .s3 import DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from .settings import APP_CONFIG_KEY, APP_DSM_THREADPOOL
 
@@ -80,7 +80,7 @@ class DataStorageManager:
     engine: Engine
     loop: object
     pool: ThreadPoolExecutor
-    s3_bucket: str
+    simcore_bucket_name: str
 
     # pylint: disable=R0201
     async def locations(self, user_id: str):
@@ -243,7 +243,7 @@ class DataStorageManager:
     async def upload_link(self, user_id: str, file_uuid: str):
         async with self.engine.acquire() as conn:
             fmd = FileMetaData()
-            fmd.simcore_from_uuid(file_uuid)
+            fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
             fmd.user_id = user_id
             query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
             # if file already exists, we might want to update a time-stamp
@@ -252,13 +252,15 @@ class DataStorageManager:
             if exists is None:
                 ins = file_meta_data.insert().values(**vars(fmd))
                 await conn.execute(ins)
-            bucket_name, object_name = _parse_simcore(file_uuid)
+            bucket_name = self.simcore_bucket_name
+            object_name = file_uuid
             return self.s3_client.create_presigned_put_url(bucket_name, object_name)
 
     async def copy_file(self, user_id: str, location: str, file_uuid: str, source_uuid: str):
         if location == DATCORE_STR:
-            # source is s3, get link
-            bucket_name, object_name = _parse_simcore(source_uuid)
+            # source is s3, get link and copy to datcore
+            bucket_name = self.simcore_bucket_name
+            object_name = source_uuid
             datcore_bucket, file_path = _parse_datcore(file_uuid)
             filename = file_path.split("/")[-1]
             tmp_dirpath = tempfile.mkdtemp()
@@ -276,15 +278,17 @@ class DataStorageManager:
             shutil.rmtree(tmp_dirpath)
         elif location == SIMCORE_S3_STR:
             # source is s3, location is s3
-            to_bucket_name, to_object_name = _parse_simcore(file_uuid)
-            from_bucket, from_object_name = _parse_simcore(source_uuid)
+            to_bucket_name = self.simcore_bucket_name
+            to_object_name = file_uuid
+            from_bucket = self.simcore_bucket_name
+            from_object_name = source_uuid
             from_bucket_object_name = os.path.join(from_bucket, from_object_name)
             # FIXME: This is not async!
             self.s3_client.copy_object(to_bucket_name, to_object_name, from_bucket_object_name)
             # update db
             async with self.engine.acquire() as conn:
                 fmd = FileMetaData()
-                fmd.simcore_from_uuid(file_uuid)
+                fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
                 fmd.user_id = user_id
                 ins = file_meta_data.insert().values(**vars(fmd))
                 await conn.execute(ins)
@@ -293,7 +297,8 @@ class DataStorageManager:
     async def download_link(self, user_id: str, location: str, file_uuid: str)->str:
         link = None
         if location == SIMCORE_S3_STR:
-            bucket_name, object_name = _parse_simcore(file_uuid)
+            bucket_name = self.simcore_bucket_name
+            object_name = file_uuid
             link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         elif location == DATCORE_STR:
             api_token, api_secret = await self._get_datcore_tokens(user_id)

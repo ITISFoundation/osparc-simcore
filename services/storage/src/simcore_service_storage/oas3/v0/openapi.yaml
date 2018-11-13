@@ -46,7 +46,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/health_check.yml#/components/schemas/HealthCheckEnveloped'
+                $ref: './components/schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /check/{action}:
@@ -69,14 +69,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './components/schemas/fake.yml#/components/schemas/FakeType'
+              $ref: './components/schemas/fake.yaml#/components/schemas/FakeType'
       responses:
         '200':
           description: Echoes response based on action
           content:
             application/json:
               schema:
-                $ref: './components/schemas/fake.yml#/components/schemas/FakeEnveloped'
+                $ref: './components/schemas/fake.yaml#/components/schemas/FakeEnveloped'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /locations:
@@ -97,7 +97,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/location_array.yml#/components/schemas/FileLocationArrayEnveloped'
+                $ref: './components/schemas/location_array.yaml#/components/schemas/FileLocationArrayEnveloped'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
@@ -129,7 +129,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/file_meta_data_array.yml#/components/schemas/FileMetaDataArrayEnveloped'
+                $ref: './components/schemas/file_meta_data_array.yaml#/components/schemas/FileMetaDataArrayEnveloped'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
