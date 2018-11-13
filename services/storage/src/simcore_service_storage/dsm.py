@@ -256,42 +256,46 @@ class DataStorageManager:
             object_name = file_uuid
             return self.s3_client.create_presigned_put_url(bucket_name, object_name)
 
-    async def copy_file(self, user_id: str, location: str, file_uuid: str, source_uuid: str):
-        if location == DATCORE_STR:
-            # source is s3, get link and copy to datcore
-            bucket_name = self.simcore_bucket_name
-            object_name = source_uuid
-            datcore_bucket, file_path = _parse_datcore(file_uuid)
-            filename = file_path.split("/")[-1]
-            tmp_dirpath = tempfile.mkdtemp()
-            local_file_path = os.path.join(tmp_dirpath,filename)
-            url = self.s3_client.create_presigned_get_url(bucket_name, object_name)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as resp:
-                    if resp.status == 200:
-                        f = await aiofiles.open(local_file_path, mode='wb')
-                        await f.write(await resp.read())
-                        await f.close()
-                        # and then upload
-                        await self.upload_file_to_datcore(user_id=user_id, local_file_path=local_file_path,
-                            datcore_bucket=datcore_bucket)
-            shutil.rmtree(tmp_dirpath)
-        elif location == SIMCORE_S3_STR:
-            # source is s3, location is s3
-            to_bucket_name = self.simcore_bucket_name
-            to_object_name = file_uuid
-            from_bucket = self.simcore_bucket_name
-            from_object_name = source_uuid
-            from_bucket_object_name = os.path.join(from_bucket, from_object_name)
-            # FIXME: This is not async!
-            self.s3_client.copy_object(to_bucket_name, to_object_name, from_bucket_object_name)
-            # update db
-            async with self.engine.acquire() as conn:
-                fmd = FileMetaData()
-                fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
-                fmd.user_id = user_id
-                ins = file_meta_data.insert().values(**vars(fmd))
-                await conn.execute(ins)
+    async def copy_file(self, user_id: str, dest_location: str, dest_uuid: str, source_location: str, source_uuid: str):
+        if source_location == SIMCORE_S3_STR:
+            if dest_location == DATCORE_STR:
+                # source is s3, get link and copy to datcore
+                bucket_name = self.simcore_bucket_name
+                object_name = source_uuid
+                datcore_bucket, file_path = _parse_datcore(dest_uuid)
+                filename = file_path.split("/")[-1]
+                tmp_dirpath = tempfile.mkdtemp()
+                local_file_path = os.path.join(tmp_dirpath,filename)
+                url = self.s3_client.create_presigned_get_url(bucket_name, object_name)
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url) as resp:
+                        if resp.status == 200:
+                            f = await aiofiles.open(local_file_path, mode='wb')
+                            await f.write(await resp.read())
+                            await f.close()
+                            # and then upload
+                            await self.upload_file_to_datcore(user_id=user_id, local_file_path=local_file_path,
+                                datcore_bucket=datcore_bucket)
+                shutil.rmtree(tmp_dirpath)
+            elif dest_location == SIMCORE_S3_STR:
+                # source is s3, location is s3
+                to_bucket_name = self.simcore_bucket_name
+                to_object_name = dest_uuid
+                from_bucket = self.simcore_bucket_name
+                from_object_name = source_uuid
+                from_bucket_object_name = os.path.join(from_bucket, from_object_name)
+                # FIXME: This is not async!
+                self.s3_client.copy_object(to_bucket_name, to_object_name, from_bucket_object_name)
+                # update db
+                async with self.engine.acquire() as conn:
+                    fmd = FileMetaData()
+                    fmd.simcore_from_uuid(dest_uuid, self.simcore_bucket_name)
+                    fmd.user_id = user_id
+                    ins = file_meta_data.insert().values(**vars(fmd))
+                    await conn.execute(ins)
+        else:
+            raise NotImplementedError("copy files from datcore 2 s3 not yet impl.")
+
 
 
     async def download_link(self, user_id: str, location: str, file_uuid: str)->str:

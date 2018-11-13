@@ -156,7 +156,7 @@ async def test_copy_s3_s3(postgres_service_url, s3_client, mock_files_factory, d
     from_uuid = fmd.file_uuid
     new_project = "zoology"
     to_uuid = os.path.join(new_project, fmd.node_id, fmd.file_name)
-    await dsm.copy_file(fmd.user_id, SIMCORE_S3_STR, to_uuid, from_uuid)
+    await dsm.copy_file(user_id=fmd.user_id, dest_location=SIMCORE_S3_STR, dest_uuid=to_uuid, source_location=SIMCORE_S3_STR, source_uuid=from_uuid)
 
     data = await dsm.list_files(user_id=fmd.user_id, location=SIMCORE_S3_STR)
 
@@ -220,7 +220,7 @@ async def test_dsm_s3_to_datcore(postgres_service_url, s3_client, mock_files_fac
 # pylint: disable=R0913
 # Too many arguments
 @pytest.mark.travis
-async def test_dsm_datcore_to_s3(postgres_service_url, dsm_fixture, mock_files_factory, datcore_testbucket):
+async def test_dsm_datcore_to_local(postgres_service_url, dsm_fixture, mock_files_factory, datcore_testbucket):
     utils.create_tables(url=postgres_service_url)
     dsm = dsm_fixture
     user_id = "0"
@@ -263,7 +263,8 @@ async def test_copy_datcore(postgres_service_url, s3_client, dsm_fixture, mock_f
     #now copy to datcore
     dat_core_uuid = os.path.join(datcore_testbucket, fmd.file_name)
 
-    await dsm.copy_file(user_id=user_id, location=DATCORE_STR, file_uuid=dat_core_uuid, source_uuid=fmd.file_uuid)
+    await dsm.copy_file(user_id=user_id, dest_location=DATCORE_STR, dest_uuid=dat_core_uuid, source_location=SIMCORE_S3_STR,
+        source_uuid=fmd.file_uuid)
 
     data = await dsm.list_files(user_id=user_id, location=DATCORE_STR)
 

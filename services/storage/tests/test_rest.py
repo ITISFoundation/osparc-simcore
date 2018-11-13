@@ -12,6 +12,7 @@ from simcore_service_storage.middlewares import dsm_middleware
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.session import setup_session
 from simcore_service_storage.settings import APP_CONFIG_KEY
+from simcore_service_storage.s3 import SIMCORE_S3_ID
 
 
 def parse_db(dsm_mockup_db):
@@ -152,8 +153,8 @@ async def test_copy(client, dsm_mockup_db, datcore_testbucket):
         fmd = dsm_mockup_db[d]
         source_uuid = fmd.file_uuid
         datcore_uuid = os.path.join(datcore_testbucket, fmd.file_name)
-        resp = await client.put("/v0/locations/1/files/{}?user_id={}&extra_source={}".format(quote(datcore_uuid, safe=''),
-            fmd.user_id, quote(source_uuid)))
+        resp = await client.put("/v0/locations/1/files/{}?user_id={}&extra_location={}&extra_source={}".format(quote(datcore_uuid, safe=''),
+            fmd.user_id, SIMCORE_S3_ID, quote(source_uuid, safe='')))
         payload = await resp.json()
         assert resp.status == 200, str(payload)
 

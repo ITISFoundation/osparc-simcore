@@ -232,6 +232,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: extra_location
+        in : query
+        required: false
+        schema:
+          type: string
       - name: extra_source
         in : query
         required: false
