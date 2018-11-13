@@ -262,6 +262,45 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return nodeBase;
     },
 
+    __createLinkUI: function(node1Id, node2Id, linkId) {
+      let node1 = this.getNodeUI(node1Id);
+      let node2 = this.getNodeUI(node2Id);
+
+      if (this.__currentModel.isContainer() && node2.getNodeId() === this.__currentModel.getNodeId()) {
+        node1.getNodeModel().setIsOutputNode(true);
+      } else {
+        node2.getNodeModel().addInputNode(node1Id);
+      }
+      linkId = linkId || qxapp.utils.Utils.uuidv4();
+
+      let port1 = node1.getOutputPort();
+      let port2 = node2.getInputPort();
+      const pointList = this.__getLinkPoints(node1, port1, node2, port2);
+      const x1 = pointList[0] ? pointList[0][0] : 0;
+      const y1 = pointList[0] ? pointList[0][1] : 0;
+      const x2 = pointList[1] ? pointList[1][0] : 0;
+      const y2 = pointList[1] ? pointList[1][1] : 0;
+      let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
+
+      let link = new qxapp.component.workbench.LinkBase(linkRepresentation);
+      link.setInputNodeId(node1.getNodeId());
+      link.setOutputNodeId(node2.getNodeId());
+      link.setLinkId(linkId);
+      this.__linksUI.push(link);
+
+      link.getRepresentation().node.addEventListener("click", e => {
+        // this is needed to get out of the context of svg
+        link.fireDataEvent("linkSelected", link.getLinkId());
+        e.stopPropagation();
+      }, this);
+
+      link.addListener("linkSelected", e => {
+        this.__selectedItemChanged(link.getLinkId());
+      }, this);
+
+      return link;
+    },
+
     __createDragDropMechanism: function(nodeBase) {
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", e => {
@@ -444,45 +483,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         return nodeB.getInputPort();
       }
       return null;
-    },
-
-    __createLinkUI: function(node1Id, node2Id, linkId) {
-      let node1 = this.getNodeUI(node1Id);
-      let node2 = this.getNodeUI(node2Id);
-
-      if (this.__currentModel.isContainer() && node2.getNodeId() === this.__currentModel.getNodeId()) {
-        node1.getNodeModel().setIsOutputNode(true);
-      } else {
-        node2.getNodeModel().addInputNode(node1Id);
-      }
-      linkId = linkId || qxapp.utils.Utils.uuidv4();
-
-      let port1 = node1.getOutputPort();
-      let port2 = node2.getInputPort();
-      const pointList = this.__getLinkPoints(node1, port1, node2, port2);
-      const x1 = pointList[0] ? pointList[0][0] : 0;
-      const y1 = pointList[0] ? pointList[0][1] : 0;
-      const x2 = pointList[1] ? pointList[1][0] : 0;
-      const y2 = pointList[1] ? pointList[1][1] : 0;
-      let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
-
-      let link = new qxapp.component.workbench.LinkBase(linkRepresentation);
-      link.setInputNodeId(node1.getNodeId());
-      link.setOutputNodeId(node2.getNodeId());
-      link.setLinkId(linkId);
-      this.__linksUI.push(link);
-
-      link.getRepresentation().node.addEventListener("click", e => {
-        // this is needed to get out of the context of svg
-        link.fireDataEvent("linkSelected", link.getLinkId());
-        e.stopPropagation();
-      }, this);
-
-      link.addListener("linkSelected", e => {
-        this.__selectedItemChanged(link.getLinkId());
-      }, this);
-
-      return link;
     },
 
     __createLinkBetweenNodes: function(from, to, linkId) {
