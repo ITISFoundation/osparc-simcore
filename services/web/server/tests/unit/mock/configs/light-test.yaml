@@ -7,13 +7,11 @@ main:
   client_outdir: ../../../client/source-output
   log_level: DEBUG
   testing: True
-  disable_services:
-  - postgres
-  - rabbit
 director:
   host: localhost
   port: 8001
 db:
+  enabled: False
   postgres:
     database: test_db
     user: test_user
@@ -23,6 +21,7 @@ db:
     # DEPRECATE OR add postgresql+psycopg2:// otherwise will fail sqlalchemy.exc.ArgumentError: Could not parse rfc1738 URL from string 'localhost:5432'
     endpoint: localhost:5432
 rabbit:
+  enabled: False
   host: ${RABBIT_HOST}
   password: simcore
   user: simcore

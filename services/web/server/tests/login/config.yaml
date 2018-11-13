@@ -5,8 +5,8 @@ main:
   log_level: DEBUG
   port: 8080
   testing: true
-  disable_services: ['rabbit', 'director', 's3']
 director:
+  enabled: False
   host: director
   port: 8001
 db:
@@ -21,12 +21,14 @@ db:
     minsize: 1
     endpoint: postgres:5432
 rabbit:
+  enabled: False
   channels:
     log: comp.backend.channels.log
     progress: comp.backend.channels.progress
   password: simcore
   user: simcore
 # s3:
+#   enabled: False
 #   access_key: 'Q3AM3UQ867SPQQA43P2F'
 #   bucket_name: simcore
 #   endpoint: play.minio.io:9000

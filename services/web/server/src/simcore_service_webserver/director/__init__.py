@@ -16,7 +16,11 @@ logger = logging.getLogger(__name__)
 def setup(app: web.Application):
     logger.debug("Setting up %s ...", __name__)
 
-    assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY]
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+
+    if not cfg["enabled"]:
+        logger.warning("'%s' explicitly disabled in config", __name__)
+        return
 
 
     # TODO: implement!!!

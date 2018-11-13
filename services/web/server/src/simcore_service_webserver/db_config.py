@@ -13,5 +13,5 @@ CONFIG_SECTION_NAME = 'db'
 schema = T.Dict({
     T.Key("postgres"): _PG_SCHEMA,
     T.Key("init_tables", default=False): T.Bool(),
-    T.Key("disable", default=False, optional=True): T.Bool()
+    T.Key("enabled", default=True, optional=True): T.Bool()
 })

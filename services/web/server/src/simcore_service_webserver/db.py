@@ -93,16 +93,14 @@ async def is_service_responsive(app:web.Application):
         return False
 
 def setup(app: web.Application):
-
-    disable_services = app[APP_CONFIG_KEY]["main"]["disable_services"]
-
-    if THIS_SERVICE_NAME in disable_services:
-        app[APP_DB_ENGINE_KEY] = app[APP_DB_SESSION_KEY] = None
-        log.warning("Service '%s' explicitly disabled in cfgig", THIS_SERVICE_NAME)
-        return
-
-    # app is created at this point but not yet started
     log.debug("Setting up %s [service: %s] ...", __name__, THIS_SERVICE_NAME)
+
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+
+    if not cfg["enabled"]:
+        app[APP_DB_ENGINE_KEY] = app[APP_DB_SESSION_KEY] = None
+        log.warning("Service '%s' explicitly disabled in config", THIS_SERVICE_NAME)
+        return
 
     # ensures keys exist
     app[APP_DB_ENGINE_KEY] = None

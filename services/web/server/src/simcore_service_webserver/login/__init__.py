@@ -23,6 +23,7 @@ log = logging.getLogger(__name__)
 
 
 async def pg_pool(app: web.Application):
+
     smtp_config = app[APP_CONFIG_KEY][SMTP_SECTION]
     config = {"SMTP_{}".format(k.upper()): v for k, v in smtp_config.items()}
     #'SMTP_SENDER': None,
@@ -50,6 +51,13 @@ def setup(app: web.Application):
 
     # TODO: requires rest ready!
     assert SMTP_SECTION in app[APP_CONFIG_KEY]
+    assert DB_SECTION in app[APP_CONFIG_KEY]
+
+    # TODO: automatize dependencies
+    enabled = all( app[APP_CONFIG_KEY].get(mod, {}).get("enabled", True) for mod in (SMTP_SECTION, DB_SECTION) )
+    if not enabled:
+        log.warning("Disabling '%s' since %s or %s were explictily disabled in config", __name__, SMTP_SECTION, DB_SECTION)
+        return
 
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]

@@ -5,8 +5,8 @@ main:
   log_level: INFO
   port: 8080
   testing: true
-  disable_services: []
 db:
+  enabled: True
   init_tables: True
   postgres:
     database: simcoredb
@@ -21,6 +21,7 @@ director:
   host: director
   port: 8001
 rabbit:
+  enabled: True
   channels:
     log: comp.backend.channels.log
     progress: comp.backend.channels.progress
