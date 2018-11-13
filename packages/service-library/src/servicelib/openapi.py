@@ -12,9 +12,14 @@ from openapi_core.schema.specs.models import Spec
 OAI_VERSION = '3.0.1'
 OAI_VERSION_URL = 'https://github.com/OAI/OpenAPI-Specification/blob/master/versions/%s.md'%OAI_VERSION
 
+# alias
+OpenApiSpec = Spec
+
+
 # TODO: ensure openapi_core.__version__ is up-to-date with OAI_VERSION
 
-def create_specs(openapi_path: Path) -> Spec:
+def create_specs(openapi_path: Path) -> OpenApiSpec:
+    # TODO: spec_from_file and spec_from_url
     with openapi_path.open() as f:
         spec_dict = yaml.safe_load(f)
 

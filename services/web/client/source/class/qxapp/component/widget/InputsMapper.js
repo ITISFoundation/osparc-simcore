@@ -22,7 +22,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
 
     let that = this;
     tree.setDelegate({
-      createItem: () => new qxapp.component.widget.inputs.NodeOutputListItem(),
+      createItem: () => new qxapp.component.widget.inputs.NodeOutputTreeItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         // c.bindProperty("key", "key", null, item, id);
@@ -78,7 +78,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
               const nodeInstanceUUID = null;
               const itemProps = qxapp.data.Store.getInstance().getItem(nodeInstanceUUID, fromPortKey, newItem.getKey());
               if (itemProps) {
-                let form = new qxapp.component.form.Auto(itemProps);
+                let form = new qxapp.component.form.Auto(itemProps, this.getNodeModel());
                 let propsWidget = new qxapp.component.form.renderer.PropForm(form);
                 newItem["propsWidget"] = propsWidget;
               }

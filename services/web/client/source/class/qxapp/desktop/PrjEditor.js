@@ -115,15 +115,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.nodeSelected(nodeId);
         }, this);
       });
-
-      this.__treeView.addListener("NodeLabelChanged", function(e) {
-        const data = e.getData();
-        const nodeId = data.nodeId;
-        const newLabel = data.newLabel;
-
-        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
-        nodeModel.setLabel(newLabel);
-      }, this);
     },
 
     nodeSelected: function(nodeId) {
@@ -146,12 +137,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           widget = this.__workbenchView;
         } else {
           this.__nodeView.setNodeModel(nodeModel);
-          if (nodeModel.getMetaData().type === "dynamic") {
-            const widgetManager = qxapp.component.widget.WidgetManager.getInstance();
-            widget = widgetManager.getWidgetForNode(nodeModel);
-            if (!widget) {
-              widget = this.__nodeView;
-            }
+          if (nodeModel.getKey().includes("file-picker")) {
+            widget = new qxapp.component.widget.FilePicker(nodeModel);
           } else {
             widget = this.__nodeView;
           }
@@ -163,7 +150,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }
       }
 
-      // SHow screenshots in the ExtraView
+      // Show screenshots in the ExtraView
       if (nodeId === "root") {
         this.showScreenshotInExtraView("workbench");
       } else {
@@ -171,7 +158,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         if (nodeModel.isContainer()) {
           this.showScreenshotInExtraView("container");
         } else {
-          let nodeKey = nodeModel.getMetaData().key;
+          let nodeKey = nodeModel.getKey();
           if (nodeKey.includes("file-picker")) {
             this.showScreenshotInExtraView("file-picker");
           } else if (nodeKey.includes("modeler")) {
@@ -203,8 +190,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
 
       this.__mainPanel.setMainView(widget);
-      let nodePath = this.getProjectModel().getWorkbenchModel().getPathWithId(nodeId);
-      this.fireDataEvent("ChangeMainViewCaption", nodePath);
+
+      let nodesPath = this.getProjectModel().getWorkbenchModel().getPathIds(nodeId);
+      this.fireDataEvent("ChangeMainViewCaption", nodesPath);
     },
 
     showInExtraView: function(widget) {

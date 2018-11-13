@@ -15,6 +15,8 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
   extend: qx.ui.core.Widget,
 
   construct: function(nodeModel) {
+    this.setNodeModel(nodeModel);
+
     this.base();
 
     let nodeInputLayout = new qx.ui.layout.VBox(10);
@@ -25,11 +27,11 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
     });
 
     let atom = new qx.ui.basic.Atom().set({
-      label: nodeModel.getLabel(),
       center: true,
       draggable: true,
       droppable: true
     });
+    nodeModel.bind("label", atom, "label");
     const title16Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"]);
     atom.getChildControl("label").set({
       font: title16Font
@@ -38,8 +40,6 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
     this._add(atom, {
       flex: 1
     });
-
-    this.setNodeModel(nodeModel);
   },
 
   properties: {
