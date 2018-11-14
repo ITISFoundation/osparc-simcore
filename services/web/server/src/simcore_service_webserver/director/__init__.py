@@ -5,16 +5,24 @@
 
 import logging
 
-from aiohttp import web
+from aiohttp import web, ClientSession
 
 from servicelib.application_keys import APP_CONFIG_KEY
 
-from .config import CONFIG_SECTION_NAME
+from .config import CONFIG_SECTION_NAME, APP_DIRECTOR_SESSION_KEY
 from . import handlers
 from servicelib.rest_routing import create_routes_from_namespace
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 
 logger = logging.getLogger(__name__)
+
+async def director_client_ctx(app: web.Application):
+    # TODO: deduce base url from configuration and add to session
+    async with ClientSession(loop=app.loop) as session:
+        app[APP_DIRECTOR_SESSION_KEY] = session
+        yield
+
+    logger.debug("cleanup session")
 
 def setup(app: web.Application):
     logger.debug("Setting up %s ...", __name__)
@@ -29,6 +37,8 @@ def setup(app: web.Application):
     specs = app[APP_OPENAPI_SPECS_KEY]
     routes = create_routes_from_namespace(specs, handlers)
     app.router.add_routes(routes)
+
+    app.cleanup_ctx.append(director_client_ctx)
 
 
 # alias
