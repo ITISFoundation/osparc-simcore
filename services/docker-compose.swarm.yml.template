@@ -11,12 +11,12 @@ services:
           - node.platform.os == linux
     ports:
       - '8043:8043'
-      
+
   director:
     image: masu.speag.com/simcore/workbench/director:3.9
     #image: services_director:latest
-    dns:
-      - 172.16.8.15
+    #dns:
+    #  - 172.16.8.15
     deploy:
       placement:
        constraints:
@@ -49,8 +49,8 @@ services:
   webserver:
     image: masu.speag.com/simcore/workbench/webserver:3.9
     #image: services_webserver:latest
-    dns:
-      - 172.16.8.15
+    #dns:
+    # - 172.16.8.15
     deploy:
       placement:
         constraints:
