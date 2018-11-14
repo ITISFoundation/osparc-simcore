@@ -12,7 +12,6 @@ from servicelib import openapi
 
 from . import comp_backend_api, registry_api, rest_handlers
 from .application_keys import APP_OPENAPI_SPECS_KEY
-from .login import routes as auth_routes
 from .rest_settings import get_base_path
 
 log = logging.getLogger(__name__)

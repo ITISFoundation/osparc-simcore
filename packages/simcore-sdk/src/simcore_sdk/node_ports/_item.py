@@ -99,7 +99,7 @@ class Item():
             if not file_path.exists() or not file_path.is_file():
                 raise exceptions.InvalidItemTypeError(self.type, value)
             log.debug("file path %s will be uploaded to s3", value)
-            s3_object = data_items_utils.encode_file_id(file_path, bucket=config.BUCKET, project_id=config.PROJECT_ID, node_id=config.NODE_UUID)
+            s3_object = data_items_utils.encode_file_id(file_path, project_id=config.PROJECT_ID, node_id=config.NODE_UUID)
             await filemanager.upload_file(store=config.STORE, s3_object=s3_object, local_file_path=file_path)
             log.debug("file path %s uploaded", value)
             # FIXME: THIS is an issue now

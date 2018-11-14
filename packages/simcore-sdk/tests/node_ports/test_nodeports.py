@@ -122,7 +122,7 @@ async def test_port_file_accessors(special_configuration, storage, filemanager_c
     # this triggers an upload to S3 + configuration change
     await PORTS.outputs["out_34"].set(item_value)
     # this is the link to S3 storage
-    assert PORTS.outputs["out_34"].value == {"store":s3_simcore_location, "path":Path(bucket, str(project_id), str(node_uuid), Path(item_value).name).as_posix()}  
+    assert PORTS.outputs["out_34"].value == {"store":s3_simcore_location, "path":Path(str(project_id), str(node_uuid), Path(item_value).name).as_posix()}  
     # this triggers a download from S3 to a location in /tempdir/simcorefiles/item_key
     assert isinstance(await PORTS.outputs["out_34"].get(), item_pytype)
     assert (await PORTS.outputs["out_34"].get()).exists()
@@ -243,5 +243,5 @@ async def test_file_mapping(special_configuration, project_id, node_uuid, filema
         await PORTS.set_file_by_keymap(invalid_alias)
     
     await PORTS.set_file_by_keymap(file_path)
-    file_id = helpers.file_uuid(bucket, file_path, project_id, node_uuid)
+    file_id = helpers.file_uuid(file_path, project_id, node_uuid)
     assert PORTS.outputs["out_1"].value == {"store":s3_simcore_location, "path": file_id}

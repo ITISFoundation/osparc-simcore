@@ -38,8 +38,13 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
       this.__form = new qx.ui.form.Form();
 
       let atm = new qx.ui.basic.Atom().set({
-        icon: "qxapp/osparc-white-small.png",
+        icon: "qxapp/osparc-white.svg",
         iconPosition: "top"
+      });
+      atm.getChildControl("icon").set({
+        width: 250,
+        height: 150,
+        scale: true
       });
       this.add(atm);
 

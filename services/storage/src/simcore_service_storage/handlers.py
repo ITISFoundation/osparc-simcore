@@ -219,10 +219,12 @@ async def upload_file(request: web.Request):
     user_id = query["user_id"]
     file_uuid = params["fileId"]
 
-    if query.get("extra_source"):
+    if query.get("extra_source") and query.get("extra_location"):
         source_uuid = query["extra_source"]
-        link = await dsm.copy_file(user_id=user_id, location=location,
-            file_uuid=file_uuid, source_uuid=source_uuid)
+        source_id = query["extra_location"]
+        source_location = dsm.location_from_id(source_id)
+        link = await dsm.copy_file(user_id=user_id, dest_location=location,
+            dest_uuid=file_uuid, source_location=source_location, source_uuid=source_uuid)
 
         envelope = {
             'error': None,

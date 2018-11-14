@@ -194,7 +194,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/locations.yml#FileLocationArray'
+                $ref: './components/schemas/locations.yaml#FileLocationArray'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /storage/locations/{location_id}/files/metadata:
@@ -204,11 +204,6 @@ paths:
       parameters:
         - name: location_id
           in : path
-          required: true
-          schema:
-            type: string
-        - name: user_id
-          in: query
           required: true
           schema:
             type: string
@@ -223,7 +218,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/files.yml#FileMetaDataArray'
+                $ref: './components/schemas/files.yaml#FileMetaDataArray'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /storage/locations/{location_id}/files/{fileId}/metadata:
@@ -238,11 +233,6 @@ paths:
           type: string
       - name: location_id
         in : path
-        required: true
-        schema:
-          type: string
-      - name: user_id
-        in: query
         required: true
         schema:
           type: string
@@ -283,11 +273,6 @@ paths:
         required: true
         schema:
           type: string
-      - name: user_id
-        in: query
-        required: true
-        schema:
-          type: string
       responses:
         '200':
           $ref: '#/components/responses/PresignedLink_200'
@@ -305,9 +290,9 @@ paths:
         required: true
         schema:
           type: string
-      - name: user_id
-        in: query
-        required: true
+      - name: extra_location
+        in : query
+        required: false
         schema:
           type: string
       - name: extra_source
@@ -329,11 +314,6 @@ paths:
           type: string
       - name: location_id
         in : path
-        required: true
-        schema:
-          type: string
-      - name: user_id
-        in: query
         required: true
         schema:
           type: string
@@ -402,25 +382,25 @@ components:
       content:
         application/json:
           schema:
-            $ref: 'components/schemas/error.yml#/ErrorEnveloped'
+            $ref: 'components/schemas/error.yaml#/ErrorEnveloped'
 
     FileMetaData_200:
       description: 'Returns file metadata'
       content:
         application/json:
           schema:
-            $ref: './components/schemas/files.yml#FileMetaData'
+            $ref: './components/schemas/files.yaml#FileMetaData'
 
     PresignedLink_200:
       description: 'Returns presigned link'
       content:
         application/json:
           schema:
-            $ref: './components/schemas/responses.yml#PresignedLink'
+            $ref: './components/schemas/responses.yaml#PresignedLink'
 
   requestBodies:
     FileMetaDataBody:
         content:
           application/json:
             schema:
-              $ref: './components/schemas/files.yml#FileMetaData'
+              $ref: './components/schemas/files.yaml#FileMetaData'

@@ -13,8 +13,9 @@ from .storage_settings import get_config, get_client_session
 
 
 async def _request_storage(request: web.Request, method: str):
-    url_path = request.rel_url.path.replace("storage/", "")
     await extract_and_validate(request)
+    # replace raw path, to keep the quotes
+    url_path = request.rel_url.raw_path.replace("storage/", "")
 
     cfg = get_config(request.app)
     urlbase = URL.build(scheme='http', host=cfg['host'], port=cfg['port'])
