@@ -11,7 +11,6 @@ from aiohttp import web
 from servicelib import openapi
 
 from . import computation_api, rest_handlers
-from .director import registry_api
 
 log = logging.getLogger(__name__)
 
@@ -36,9 +35,7 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     routes.append( web.post(base_path+path, handle, name=operation_id) )
 
 
-    # FIXME: temp fix for running pipelines
-    path, handle = '/services', registry_api.get_services
-    routes.append(web.get(base_path+path, handle))
+    # FIXME: temp fix for running pipelines    
     path, handle = '/start_pipeline', computation_api.start_pipeline
     routes.append(web.post(base_path+path, handle))
 

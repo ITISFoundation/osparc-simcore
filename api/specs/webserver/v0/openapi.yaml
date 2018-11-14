@@ -259,6 +259,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/FileMetaData_200'
+
   /storage/locations/{location_id}/files/{fileId}:
     get:
       summary: Returns download link for requested file
@@ -322,7 +323,197 @@ paths:
         '204':
           description: ''
 
+  /running_interactive_services:
+    post:
+      description: Starts an interactive service in the oSparc platform and returns its entrypoint
+      operationId: running_interactive_services_post
+      parameters:         
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/ServiceKey'
+        - $ref: '#/components/parameters/ServiceVersion'
+        - $ref: '#/components/parameters/AssignmentUuid'
+      responses:
+        "201":
+          description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
+        "400":
+          description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+        "401":
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+        "404":
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+        "409":
+          description: A service with the same uuid already exists
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+
+  /running_interactive_services/{service_uuid}:
+    get:
+      description: Succesfully returns if a service with the defined uuid is up and running
+      operationId: running_interactive_services_get
+      parameters: 
+        - $ref: '#/components/parameters/ServiceUuid'
+      responses:
+        "204":
+          description: OK service exists and runs
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/response204.yaml#/components/schemas/Response204Enveloped'
+        "400":
+          description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+        "404":
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+    delete:
+      description: Stops and removes an interactive service from the oSparc platform
+      operationId: running_interactive_services_delete
+      parameters: 
+        - $ref: '#/components/parameters/ServiceUuid'
+      responses:
+        "204":
+          description: Succesfully stopped and removed the service from the oSparc platform
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/response204.yaml#/components/schemas/Response204Enveloped'
+        "400":
+          description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+        "404":
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+
+  /services:
+    get:
+      description: Lists available services in the oSparc platform
+      operationId: services_get
+      parameters:
+        - $ref: '#/components/parameters/ServiceType'
+      responses:
+        "200":
+          description: Success, returns the list of available services
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/services.yaml#/components/schemas/ServicesEnveloped'                
+        "401":
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+
 components:
+  parameters:    
+    AssignmentUuid:
+      in: query
+      name: service_uuid
+      description: The uuid to assign the service with
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
+
+    ServiceKey:
+      in: query
+      name: service_key
+      description: The key (url) of the service
+      required: true
+      schema:
+        type: string   
+        format: url
+        example: simcore/services/dynamic/3d-viewer
+    
+    ServiceType:
+      in: query
+      name: service_type
+      description: |
+        The service type:
+          * computational - a computational service
+          * interactive - an interactive service
+      required: false
+      schema:
+        type: string          
+        enum: 
+          - computational
+          - interactive            
+        example: computational
+    
+    ServiceUuid:
+      in: path
+      name: service_uuid
+      description: The uuid of the service
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
+
+    ServiceVersion:
+      in: query
+      name: service_tag
+      description: The tag/version of the service
+      required: false
+      schema:
+        type: string
+        example: "1.4"
+
   responses:
     # TODO:Envelope objects are still not well/easily defined. See discriminators
     OK_NoContent_204:
@@ -397,7 +588,7 @@ components:
         application/json:
           schema:
             $ref: './components/schemas/presigned_link.yaml#/PresignedLink'
-
+  
   requestBodies:
     FileMetaDataBody:
         content:
