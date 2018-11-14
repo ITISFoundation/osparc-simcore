@@ -65,7 +65,7 @@ qx.Class.define("qxapp.data.Converters", {
                 children: [{
                   label: file["file_name"] ? file["file_name"] : fileId,
                   fileId: file["file_uuid"],
-                  storage: file["location_id"]
+                  location: file["location_id"]
                 }]
               }]
             });
@@ -87,7 +87,7 @@ qx.Class.define("qxapp.data.Converters", {
           let fileInfo = {
             label: splitted[splitted.length-1],
             fileId: file["file_uuid"],
-            storage: file["location_id"]
+            location: file["location_id"]
           };
           parent.children.push(fileInfo);
           this.mergeChildren(children, fileInTree);

@@ -5,6 +5,9 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
   construct: function(nodeModel, projectId) {
     this.base(arguments);
 
+    this.setNodeModel(nodeModel);
+    this.setProjectId(projectId);
+
     let filePickerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(filePickerLayout);
 
@@ -48,11 +51,6 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
     }, this);
 
     this.buildTree();
-
-    this.__createConnections(nodeModel);
-
-    this.setNodeModel(nodeModel);
-    this.setProjectId(projectId);
   },
 
   properties: {
@@ -67,7 +65,6 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
   },
 
   events: {
-    "ItemSelected": "qx.event.type.Data",
     "Finished": "qx.event.type.Event"
   },
 
@@ -120,18 +117,6 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
         }, that);
       };
       this.__tree.setDelegate(delegate);
-    },
-
-    __createConnections: function(nodeModel) {
-      this.addListener("ItemSelected", function(data) {
-        const itemPath = data.getData().itemPath;
-        let outputs = nodeModel.getOutputs();
-        outputs["outFile"].value = {
-          store: "s3-z43",
-          path: itemPath
-        };
-        this.fireEvent("Finished");
-      }, this);
     },
 
     // Request to the server an upload URL.
@@ -207,10 +192,12 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
     __itemSelected: function() {
       let selection = this.__tree.getSelection();
       let selectedItem = selection.toArray()[0];
-      const data = {
-        itemPath: selectedItem.getFileId()
+      let outputs = this.getNodeModel().getOutputs();
+      outputs["outFile"].value = {
+        store: selectedItem.getLocation(),
+        path: selectedItem.getFileId()
       };
-      this.fireDataEvent("ItemSelected", data);
+      this.fireEvent("Finished");
     }
   }
 });
