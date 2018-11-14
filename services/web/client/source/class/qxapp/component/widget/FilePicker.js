@@ -160,15 +160,17 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
           console.log("Unable to compute progress information since the total size is unknown");
         }
       }, false);
-      xhr.open("PUT", url, true);
-      xhr.send(file);
       xhr.onload = () => {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
           hBox.destroy();
           this.buildTree();
+        } else {
+          console.log(xhr.response);
         }
       };
+      xhr.open("PUT", url, true);
+      xhr.send(file);
     },
 
     __isFile: function(item) {
