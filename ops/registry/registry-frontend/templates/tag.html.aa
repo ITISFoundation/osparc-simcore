@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="panel panel-primary">
+
+    <div class="panel-heading">
+        <h3 class="panel-title">Image {{ image }} / Tag {{ tag }}</h3>
+    </div>
+
+    <div class="panel-body">
+        <table class="table">
+            <tr>
+                <td>Image</td><td><b>{{ image }}</b></td>
+            </tr><tr>
+                <td>Tag</td><td><b>{{ tag }}</b></td>
+            </tr><tr>
+                <td>Layers</td><td><b>{{ layers }}</b></td>
+            </tr>
+	    </tr><tr>
+                <td>Labels</td><td><b>{{ labels }}</b></td>
+            </tr>
+                {% for label in label.keys() %}
+                    <tr>
+                        <td>{{ label }}</td><td><b>{{labels[label]}}</b></td>
+                    </tr>
+                {% endfor %}
+        </table>
+    </div>
+
+</div>
+
+<p>
+    <a href="#" onClick="window.history.back()">Back</a>
+</p>
+{% endblock %}
