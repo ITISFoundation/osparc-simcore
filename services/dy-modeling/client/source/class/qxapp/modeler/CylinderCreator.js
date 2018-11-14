@@ -83,6 +83,8 @@ qx.Class.define("qxapp.modeler.CylinderCreator", {
         if (this.__centerPos === null) {
           this.__centerPos = intersect.point;
           this.__nextStep = this.__steps.radius;
+          this.__threeView.removeSnappingPlane();
+          this.__threeView.addSnappingPlane(2, this.__centerPos.z);
         } else if (this.__radius === null) {
           this.__radius = Math.hypot(intersect.point.x-this.__centerPos.x, intersect.point.y-this.__centerPos.y);
           this.__nextStep = this.__steps.height;
@@ -107,7 +109,7 @@ qx.Class.define("qxapp.modeler.CylinderCreator", {
         mesh.rotation.x = Math.PI / 2;
         mesh.position.x = center.x;
         mesh.position.y = center.y;
-        mesh.position.z = height/2;
+        mesh.position.z = center.z + height/2;
       }
     },
 
