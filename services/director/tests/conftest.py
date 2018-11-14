@@ -23,3 +23,7 @@ def configure_registry_access(docker_registry):
     config.REGISTRY_URL = docker_registry
     config.REGISTRY_SSL = False
     registry_proxy.setup_registry_connection()
+
+@pytest.fixture
+def user_id():
+    yield "some_user_id"

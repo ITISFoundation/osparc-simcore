@@ -319,7 +319,7 @@ def _start_docker_service(client: docker.client, user_id:str, service_key:str, s
         container_meta_data = {
             "published_port": published_port,
             "entry_point": service_entrypoint,
-            "node_uuid":node_uuid
+            "service_uuid":node_uuid
             }
         if published_port:
             __pass_port_to_service(service, published_port, service_boot_parameters_labels)
