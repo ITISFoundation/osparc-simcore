@@ -245,7 +245,7 @@ paths:
                 $ref: './components/schemas/my.yaml#/TokenEnveloped'
     put:
       summary: Updates token
-      operationId: get_token
+      operationId: update_token
       responses:
         '200':
           description: got detailed token
