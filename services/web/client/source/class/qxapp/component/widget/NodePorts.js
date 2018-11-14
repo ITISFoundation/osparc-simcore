@@ -57,8 +57,6 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
   },
 
   members: {
-    __inputPort: null,
-    __outputPort: null,
     __nodeUIPorts: null,
 
     getNodeId: function() {
@@ -72,21 +70,11 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     populatePortsData: function() {
       this.__nodeUIPorts.removeAll();
       const metaData = this.getNodeModel().getMetaData();
-      this.__inputPort = {};
-      this.__outputPort = {};
       if (this.getIsInputModel()) {
         this.__createUIPorts(false, metaData.outputs);
       } else if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
         this.__createUIPorts(false, metaData.inputsDefault);
       }
-    },
-
-    getInputPort: function() {
-      return this.__inputPort["Input"];
-    },
-
-    getOutputPort: function() {
-      return this.__outputPort["Output"];
     },
 
     __createUIPorts: function(isInput, ports) {
@@ -129,13 +117,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
             isInput: isInput,
             ui: widget
           };
-
           label.ui.isInput = isInput;
-          if (isInput) {
-            this.__inputPort["Input"] = label;
-          } else {
-            this.__outputPort["Output"] = label;
-          }
         }
       }
     }
