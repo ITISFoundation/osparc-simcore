@@ -3,6 +3,7 @@
 # TODO: add flavours by combinging docker-compose files. Namely development, test and production.
 VERSION := $(shell uname -a)
 # SAN this is a hack so that docker-compose works in the linux virtual environment under Windows
+WINDOWS_MODE=OFF
 ifneq (,$(findstring Microsoft,$(VERSION)))
 $(info    detected WSL)
 export DOCKER_COMPOSE=docker-compose
@@ -11,10 +12,19 @@ export RUN_DOCKER_ENGINE_ROOT=1
 # Windows does not have these things defined... but they are needed to execute a local swarm
 export DOCKER_GID=1042
 export HOST_GID=1000
+WINDOWS_MODE=ON
 else ifeq ($(OS), Windows_NT)
 $(info    detected Powershell/CMD)
 export DOCKER_COMPOSE=docker-compose.exe
 export DOCKER=docker.exe
+export RUN_DOCKER_ENGINE_ROOT=1
+export DOCKER_GID=1042
+export HOST_GID=1000
+WINDOWS_MODE=ON
+else ifneq (,$(findstring Darwin,$(VERSION)))
+$(info    detected OSX)
+export DOCKER_COMPOSE=docker-compose
+export DOCKER=docker
 export RUN_DOCKER_ENGINE_ROOT=1
 export DOCKER_GID=1042
 export HOST_GID=1000
@@ -29,6 +39,8 @@ export HOST_GID=1000
 endif
 
 PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*-sdk/python*" -not -path "*generated_code*" -not -path "*datcore.py"))
+
+TEMPCOMPOSE := $(shell mktemp)
 
 export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
@@ -49,6 +61,10 @@ rebuild-devel:
 up-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml up
 
+up-webclient-devel: up-swarm-devel remove-intermediate-file file-watcher
+	${DOCKER} service rm services_webclient
+	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
+
 build:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
 
@@ -60,14 +76,36 @@ up:
 
 up-swarm:
 	${DOCKER} swarm init
-	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.deploy.yml  -c services/docker-compose.tools.yml services
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.deploy.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
+	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
 
 up-swarm-devel:
 	${DOCKER} swarm init
-	${DOCKER} stack deploy -c services/docker-compose.yml -c services/docker-compose.devel.yml -c services/docker-compose.deploy.devel.yml  -c services/docker-compose.tools.yml services
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.deploy.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
+	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
+
+ifeq ($(WINDOWS_MODE),ON)
+remove-intermediate-file:
+	$(info    .tmp-compose.yml not removed)
+else
+remove-intermediate-file:
+	rm $(TEMPCOMPOSE).tmp-compose.yml
+endif
+
+ifeq ($(WINDOWS_MODE),ON)
+file-watcher:
+	pip install docker-windows-volume-watcher
+	# unfortunately this is not working properly at the moment
+	# docker-windows-volume-watcher python package will be installed but not executed
+	# you will have to run 'docker-volume-watcher *qx*' in a different process in ./services/web/client/source
+	# docker-volume-watcher &
+else
+file-watcher:
+	true
+endif
 
 down:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml  -f services/docker-compose.tools.yml down
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml down
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml down
 
 down-swarm:
@@ -155,4 +193,4 @@ push_platform_images:
 
 
 
-.PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images
+.PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel
