@@ -140,6 +140,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       store.getPresginedLink(download, locationId, fileUuid);
     },
 
+    // From https://github.com/minio/cookbook/blob/master/docs/presigned-put-upload-via-browser.md
     // Use XMLHttpRequest to upload the file to S3.
     __uploadFile: function(file, url) {
       let hBox = this._createChildControlImpl("progressBox");
