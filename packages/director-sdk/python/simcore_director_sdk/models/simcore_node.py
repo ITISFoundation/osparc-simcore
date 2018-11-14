@@ -199,8 +199,8 @@ class SimcoreNode(object):
         """
         if key is None:
             raise ValueError("Invalid value for `key`, must not be `None`")  # noqa: E501
-        if key is not None and not re.search(r'^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$', key):  # noqa: E501
-            raise ValueError(r"Invalid value for `key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$/`")  # noqa: E501
+        if key is not None and not re.search('^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$', key):  # noqa: E501
+            raise ValueError("Invalid value for `key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$/`")  # noqa: E501
 
         self._key = key
 
@@ -307,7 +307,7 @@ class SimcoreNode(object):
         """
         if version is None:
             raise ValueError("Invalid value for `version`, must not be `None`")  # noqa: E501
-        if version is not None and not re.search(r'^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$', version):  # noqa: E501
+        if version is not None and not re.search('^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$', version):  # noqa: E501
             raise ValueError(r"Invalid value for `version`, must be a follow pattern or equal to `/^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$/`")  # noqa: E501
 
         self._version = version
