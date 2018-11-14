@@ -1,0 +1,32 @@
+version: '2'
+services:
+  nginx:
+    image: "nginx:1.9"
+    ports:
+      - 80:80
+      - 443:443
+    links:
+      - registry:registry
+    volumes:
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - ./nginx/ssl/:/etc/nginx/ssl/
+      - ./nginx/www/:/var/www
+  registry:
+    image: registry:2
+    ports:
+      - 127.0.0.1:5000:5000
+    volumes:
+      - ./simcore-registry-config.yaml:/etc/docker/registry/config.yml
+  frontend:
+    build:
+      context: .
+      dockerfile: ./registry-frontend/Dockerfile
+    volumes:
+      - ./registry-frontend:/work
+    ports:
+      - "5001:5001"
+    environment:
+      - REGISTRY_URL=https://registry.simcore.io
+      - REGISTRY_AUTH=True
+      - REGISTRY_USER=${REGISTRY_USER}
+      - REGISTRY_PW=${REGISTRY_PW}

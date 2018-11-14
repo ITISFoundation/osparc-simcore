@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>simcore.io docker registry</title>
+
+    <!-- Bootstrap -->
+    <link href="//getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+
+    <!-- Datatables -->
+    <link href="//cdn.datatables.net/r/bs-3.3.5/jq-2.1.4,dt-1.10.8/datatables.min.css" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="//cdn.datatables.net/r/bs-3.3.5/jqc-1.11.3,dt-1.10.8/datatables.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('#datatable').DataTable();
+    </script>
+
+  </head>
+  <body>
+      <div class="container">
+          <nav class="navbar">
+              <div class="header">
+                  <h3 class="text-muted"><a href="{{ frontend_url }}">simcore.io docker registry</a></h3>
+                  <hr>
+              </div>
+          </nav>
+
+          {% block content %}
+              Template Content
+          {% endblock %}
+
+      </div>
+
+      <script type="text/javascript">
+          $('#datatable')
+              .removeClass( 'display' )
+              .addClass('table table-striped table-bordered'
+          );
+      </script>
+
+    </body>
+</html>
