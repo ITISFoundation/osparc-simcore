@@ -33,8 +33,9 @@ def client(loop, aiohttp_client, specs):
     app[APP_OPENAPI_SPECS_KEY] = specs
 
     # middlewares
-    app.middlewares.append(error_middleware_factory("/"))
-    app.middlewares.append(envelope_middleware_factory("/"))
+    base = openapi.get_base_path(specs)
+    app.middlewares.append(error_middleware_factory(base))
+    app.middlewares.append(envelope_middleware_factory(base))
 
 
     return loop.run_until_complete(aiohttp_client(app))

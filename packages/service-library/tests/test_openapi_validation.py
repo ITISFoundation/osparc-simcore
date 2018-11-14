@@ -31,11 +31,12 @@ def client(loop, aiohttp_client, specs):
 
     # validators
     app[APP_OPENAPI_SPECS_KEY] = specs
+    base = openapi.get_base_path(specs)
 
     # middlewares
-    app.middlewares.append(error_middleware_factory("/"))
-    app.middlewares.append(validate_middleware_factory("/"))
-    app.middlewares.append(envelope_middleware_factory("/"))
+    app.middlewares.append(error_middleware_factory(base))
+    app.middlewares.append(validate_middleware_factory(base))
+    app.middlewares.append(envelope_middleware_factory(base))
 
     return loop.run_until_complete(aiohttp_client(app))
 
