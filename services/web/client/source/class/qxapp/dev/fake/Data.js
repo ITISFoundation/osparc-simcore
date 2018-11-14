@@ -1485,24 +1485,23 @@ qx.Class.define("qxapp.dev.fake.Data", {
 
     getObjectList: function() {
       const objects = [{
-        "file_uuid": "simcore.s3/simcore-testing/103/10003/8",
+        "file_uuid": "fake-simcore-testing/103/10003/8",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "103/10003/8",
         "project_id": "103",
         "project_name": "dermatology",
         "node_id": "10003",
         "node_name": "delta",
-        "file_id": "8",
         "file_name": "8",
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/103/10001/11",
+        "file_uuid": "fake-simcore-testing/103/10001/11",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "103/10001/11",
         "project_id": "103",
         "project_name": "dermatology",
@@ -1513,10 +1512,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/102/10001/18",
+        "file_uuid": "fake-simcore-testing/102/10001/18",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "102/10001/18",
         "project_id": "102",
         "project_name": "chemistry",
@@ -1527,10 +1526,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/101/10003/26",
+        "file_uuid": "fake-simcore-testing/101/10003/26",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "101/10003/26",
         "project_id": "101",
         "project_name": "biology",
@@ -1541,10 +1540,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/102/10003/27",
+        "file_uuid": "fake-simcore-testing/102/10003/27",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "102/10003/27",
         "project_id": "102",
         "project_name": "chemistry",
@@ -1555,10 +1554,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/106/10002/29",
+        "file_uuid": "fake-simcore-testing/106/10002/29",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "106/10002/29",
         "project_id": "106",
         "project_name": "geology",
@@ -1569,10 +1568,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/102/10002/32",
+        "file_uuid": "fake-simcore-testing/102/10002/32",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "102/10002/32",
         "project_id": "102",
         "project_name": "chemistry",
@@ -1583,10 +1582,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/104/10000/40",
+        "file_uuid": "fake-simcore-testing/104/10000/40",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "104/10000/40",
         "project_id": "104",
         "project_name": "economics",
@@ -1597,10 +1596,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/101/10002/41",
+        "file_uuid": "fake-simcore-testing/101/10002/41",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "101/10002/41",
         "project_id": "101",
         "project_name": "biology",
@@ -1611,10 +1610,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/101/10000/51",
+        "file_uuid": "fake-simcore-testing/101/10000/51",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "101/10000/51",
         "project_id": "101",
         "project_name": "biology",
@@ -1625,10 +1624,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/102/10002/52",
+        "file_uuid": "fake-simcore-testing/102/10002/52",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "102/10002/52",
         "project_id": "102",
         "project_name": "chemistry",
@@ -1639,10 +1638,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/105/10001/55",
+        "file_uuid": "fake-simcore-testing/105/10001/55",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "105/10001/55",
         "project_id": "105",
         "project_name": "futurology",
@@ -1653,10 +1652,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/106/10001/56",
+        "file_uuid": "fake-simcore-testing/106/10001/56",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "106/10001/56",
         "project_id": "106",
         "project_name": "geology",
@@ -1667,10 +1666,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/106/10001/57",
+        "file_uuid": "fake-simcore-testing/106/10001/57",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "106/10001/57",
         "project_id": "106",
         "project_name": "geology",
@@ -1681,10 +1680,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/103/10001/60",
+        "file_uuid": "fake-simcore-testing/103/10001/60",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "103/10001/60",
         "project_id": "103",
         "project_name": "dermatology",
@@ -1695,10 +1694,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/105/10001/61",
+        "file_uuid": "fake-simcore-testing/105/10001/61",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "105/10001/61",
         "project_id": "105",
         "project_name": "futurology",
@@ -1709,10 +1708,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/102/10002/64",
+        "file_uuid": "fake-simcore-testing/102/10002/64",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "102/10002/64",
         "project_id": "102",
         "project_name": "chemistry",
@@ -1723,10 +1722,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/100/10002/70",
+        "file_uuid": "fake-simcore-testing/100/10002/70",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "100/10002/70",
         "project_id": "100",
         "project_name": "astronomy",
@@ -1737,10 +1736,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/104/10002/71",
+        "file_uuid": "fake-simcore-testing/104/10002/71",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "104/10002/71",
         "project_id": "104",
         "project_name": "economics",
@@ -1751,10 +1750,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/106/10003/72",
+        "file_uuid": "fake-simcore-testing/106/10003/72",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "106/10003/72",
         "project_id": "106",
         "project_name": "geology",
@@ -1765,10 +1764,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/101/10003/76",
+        "file_uuid": "fake-simcore-testing/101/10003/76",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "101/10003/76",
         "project_id": "101",
         "project_name": "biology",
@@ -1779,10 +1778,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/104/10003/79",
+        "file_uuid": "fake-simcore-testing/104/10003/79",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "104/10003/79",
         "project_id": "104",
         "project_name": "economics",
@@ -1793,10 +1792,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/102/10002/86",
+        "file_uuid": "fake-simcore-testing/102/10002/86",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "102/10002/86",
         "project_id": "102",
         "project_name": "chemistry",
@@ -1807,10 +1806,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/106/10002/95",
+        "file_uuid": "fake-simcore-testing/106/10002/95",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "106/10002/95",
         "project_id": "106",
         "project_name": "geology",
@@ -1821,10 +1820,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore.s3/simcore-testing/103/10003/96",
+        "file_uuid": "fake-simcore-testing/103/10003/96",
         "location_id": "0",
         "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
+        "bucket_name": "fake-simcore-testing",
         "object_name": "103/10003/96",
         "project_id": "103",
         "project_name": "dermatology",
@@ -1835,66 +1834,32 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "simcore/106/10002/95",
-        "location": "simcore.sandbox",
-        "bucket_name": "simcore",
-        "object_name": "106/10002/789",
-        "file_name": "789",
-        "size": 17224423
+        "file_uuid": "simcore-testing/5b6b55ae-f3aa-4086-9d00-7b11b5b7e5b7",
+        "location_id": 1,
+        "location": "datcore",
+        "bucket_name": "simcore-testing",
+        "object_name": "5b6b55ae-f3aa-4086-9d00-7b11b5b7e5b7",
+        "project_id": "",
+        "project_name": "",
+        "node_id": "",
+        "node_name": "",
+        "file_name": "5b6b55ae-f3aa-4086-9d00-7b11b5b7e5b7",
+        "user_id": "",
+        "user_name": ""
       }, {
-        "file_uuid": "simcore/103/10003/96",
-        "location": "simcore.sandbox",
-        "bucket_name": "simcore",
-        "object_name": "103/10003/dfgh",
-        "file_name": "dfgh",
-        "size": 7675509
-      }, {
-        "file_uuid": "simcore/Large.jpg",
-        "location": "simcore.sandbox",
-        "bucket_name": "simcore",
-        "object_name": "Large.jpg",
-        "file_name": "dfgh",
-        "size": 342456230
+        "file_uuid": "simcore-testing/52ad8047-dfad-468a-90ac-810c69e4407e",
+        "location_id": 1,
+        "location": "datcore",
+        "bucket_name": "simcore-testing",
+        "object_name": "52ad8047-dfad-468a-90ac-810c69e4407e",
+        "project_id": "",
+        "project_name": "",
+        "node_id": "",
+        "node_name": "",
+        "file_name": "52ad8047-dfad-468a-90ac-810c69e4407e",
+        "user_id": "",
+        "user_name": ""
       }];
-      return objects;
-    },
-
-    getObjectListOld: function() {
-      const objects = [
-        {
-          "path": "simcore0/file0",
-          "lastModified": "blah",
-          "size": 10
-        }, {
-          "path": "simcore0/bat/two/three/four/file1",
-          "lastModified": "blah",
-          "size": 11
-        }, {
-          "path": "simcore/file2",
-          "lastModified": "blah",
-          "size": 12
-        }, {
-          "path": "simcore/file3",
-          "lastModified": "blah",
-          "size": 13
-        }, {
-          "path": "simcore2/file4",
-          "lastModified": "blah2",
-          "size": 14
-        }, {
-          "path": "simcore2/file5",
-          "lastModified": "blah2",
-          "size": 15
-        }, {
-          "path": "simcore0/one/file6",
-          "lastModified": "blah",
-          "size": 16
-        }, {
-          "path": "simcore0/one/two/three/four/file7",
-          "lastModified": "blah",
-          "size": 17
-        }
-      ];
       return objects;
     },
 
