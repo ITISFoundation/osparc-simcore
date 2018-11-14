@@ -48,10 +48,8 @@ class InlineResponse204(object):
         self._error = None
         self.discriminator = None
 
-        if data is not None:
-            self.data = data
-        if error is not None:
-            self.error = error
+        self.data = data
+        self.error = error
 
     @property
     def data(self):
