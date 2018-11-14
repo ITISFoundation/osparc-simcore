@@ -26,7 +26,7 @@ async def retrieve_list_of_images_in_repo(repository_name):
     return request_result
 
 async def list_interactive_service_dependencies(service_key, service_tag):
-    image_labels = retrieve_labels_of_image(service_key, service_tag)
+    image_labels = await retrieve_labels_of_image(service_key, service_tag)
     dependency_keys = []
     if DEPENDENCIES_LABEL_KEY in image_labels:
         dependencies = json.loads(image_labels[DEPENDENCIES_LABEL_KEY])
