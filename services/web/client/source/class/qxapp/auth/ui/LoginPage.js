@@ -31,9 +31,8 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
   */
 
   members: {
-    __form: null,
-
     // overrides base
+    __form: null,
     _buildPage: function() {
       this.__form = new qx.ui.form.Form();
 
@@ -137,9 +136,10 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
 
       let successFun = function(log) {
         this.fireDataEvent("done", log.message);
-        // we don't need the form any more, so remove it
+        // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
-        this._form.dispose();
+        this._formElement.dispose();
+        window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
       let failFun = function(msg) {
