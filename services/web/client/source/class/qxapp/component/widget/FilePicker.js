@@ -197,6 +197,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
         store: selectedItem.getLocation(),
         path: selectedItem.getFileId()
       };
+      this.getNodeModel().repopulateOutputPortData();
       this.fireEvent("Finished");
     }
   }
