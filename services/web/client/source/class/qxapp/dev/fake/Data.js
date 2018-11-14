@@ -1834,29 +1834,31 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "10",
         "user_name": "alice"
       }, {
-        "file_uuid": "fake-simcore/106/10002/789",
-        "location_id": "1",
+        "file_uuid": "simcore-testing/5b6b55ae-f3aa-4086-9d00-7b11b5b7e5b7",
+        "location_id": 1,
         "location": "datcore",
-        "bucket_name": "fake-simcore",
-        "object_name": "106/10002/789",
-        "file_name": "789",
-        "size": 17224423
+        "bucket_name": "simcore-testing",
+        "object_name": "5b6b55ae-f3aa-4086-9d00-7b11b5b7e5b7",
+        "project_id": "",
+        "project_name": "",
+        "node_id": "",
+        "node_name": "",
+        "file_name": "5b6b55ae-f3aa-4086-9d00-7b11b5b7e5b7",
+        "user_id": "",
+        "user_name": ""
       }, {
-        "file_uuid": "fake-simcore/103/10003/dfgh",
-        "location_id": "1",
+        "file_uuid": "simcore-testing/52ad8047-dfad-468a-90ac-810c69e4407e",
+        "location_id": 1,
         "location": "datcore",
-        "bucket_name": "fake-simcore",
-        "object_name": "103/10003/dfgh",
-        "file_name": "dfgh",
-        "size": 7675509
-      }, {
-        "file_uuid": "fake-simcore/Large.jpg",
-        "location_id": "1",
-        "location": "datcore",
-        "bucket_name": "fake-simcore",
-        "object_name": "Large.jpg",
-        "file_name": "Large.jpg",
-        "size": 342456230
+        "bucket_name": "simcore-testing",
+        "object_name": "52ad8047-dfad-468a-90ac-810c69e4407e",
+        "project_id": "",
+        "project_name": "",
+        "node_id": "",
+        "node_name": "",
+        "file_name": "52ad8047-dfad-468a-90ac-810c69e4407e",
+        "user_id": "",
+        "user_name": ""
       }];
       return objects;
     },
