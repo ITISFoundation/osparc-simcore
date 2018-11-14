@@ -1,12 +1,11 @@
 qx.Class.define("qxapp.component.workbench.LinkBase", {
   extend: qx.core.Object,
 
-  construct: function(representation) {
+  construct: function(linkModel, representation) {
     this.base();
 
+    this.setLinkModel(linkModel);
     this.setRepresentation(representation);
-
-    this.setLinkId(qxapp.utils.Utils.uuidv4());
   },
 
   events: {
@@ -14,20 +13,19 @@ qx.Class.define("qxapp.component.workbench.LinkBase", {
   },
 
   properties: {
-    representation: {
-      init: null
-    },
-    linkId: {
-      check: "String",
+    linkModel: {
+      check: "qxapp.data.model.LinkModel",
       nullable: false
     },
-    inputNodeId: {
-      init: null,
-      check: "String"
-    },
-    outputNodeId: {
-      init: null,
-      check: "String"
+
+    representation: {
+      init: null
+    }
+  },
+
+  members: {
+    getLinkId: function() {
+      return this.getLinkModel().getLinkId();
     }
   }
 });
