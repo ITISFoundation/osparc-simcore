@@ -8,9 +8,8 @@ from typing import Dict
 import trafaret as T
 from aiohttp import ClientSession, web
 
-from servicelib.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
+from servicelib.application_keys import APP_CONFIG_KEY
 
-APP_OPENAPI_SPECS_KEY = APP_OPENAPI_SPECS_KEY
 APP_STORAGE_SESSION_KEY = __name__ + ".storage_session"
 
 CONFIG_SECTION_NAME = 'storage'

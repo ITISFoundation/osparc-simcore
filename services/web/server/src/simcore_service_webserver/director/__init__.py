@@ -10,10 +10,11 @@ from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
 
 from .config import CONFIG_SECTION_NAME
+from . import handlers
+from servicelib.rest_routing import create_routes_from_namespace
+from ..rest_config import APP_OPENAPI_SPECS_KEY
 
 logger = logging.getLogger(__name__)
-
-
 
 def setup(app: web.Application):
     logger.debug("Setting up %s ...", __name__)
@@ -25,8 +26,9 @@ def setup(app: web.Application):
         return
 
 
-    # TODO: implement!!!
-
+    specs = app[APP_OPENAPI_SPECS_KEY]
+    routes = create_routes_from_namespace(specs, handlers)
+    app.router.add_routes(routes)
 
 
 # alias
