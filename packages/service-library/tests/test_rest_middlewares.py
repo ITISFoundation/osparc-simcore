@@ -49,8 +49,9 @@ def client(loop, aiohttp_client, specs):
     ("/number", Handlers.get('number')),
     ("/mixed", Handlers.get('mixed'))
 ])
-async def test_envelope_middleware(path, expected_data, client):
-    response = await client.get(path)
+async def test_envelope_middleware(path, expected_data, client, specs):
+    base = openapi.get_base_path(specs)
+    response = await client.get(base+path)
     payload = await response.json()
 
     assert is_enveloped(payload)

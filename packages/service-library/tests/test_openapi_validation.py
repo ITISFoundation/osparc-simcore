@@ -19,8 +19,6 @@ def specs(here):
     specs = openapi.create_specs(openapi_path)
     return specs
 
-
-
 @pytest.fixture
 def client(loop, aiohttp_client, specs):
     app = web.Application()
@@ -53,8 +51,9 @@ def client(loop, aiohttp_client, specs):
     "/number",
     "/mixed"
 ])
-async def test_validate_handlers(path, client):
-    response = await client.get(path)
+async def test_validate_handlers(path, client, specs):
+    base = openapi.get_base_path(specs)
+    response = await client.get(base+path)
     payload = await response.json()
 
     assert is_enveloped(payload)
