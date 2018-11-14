@@ -133,12 +133,9 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       }, this);
       const download = false;
       const locationId = 0;
-      // const location = "simcore.s3";
-      // const bucketName = "simcore";
       const projectId = this.getProjectId();
       const nodeId = this.getNodeModel().getNodeId();
       const fileId = file.name;
-      // const fileUuid = location +"/"+ bucketName +"/"+ projectId +"/"+ nodeId +"/"+ fileId;
       const fileUuid = projectId +"/"+ nodeId +"/"+ fileId;
       store.getPresginedLink(download, locationId, fileUuid);
     },
