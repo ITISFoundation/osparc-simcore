@@ -3,6 +3,11 @@ matrix:
     - language: node_js
       node_js:
         - "8"
+
+      cache:
+        directories:
+          - .npm
+
       install:
         - npm install -g npm@latest
         - npm install --save-dev eslint

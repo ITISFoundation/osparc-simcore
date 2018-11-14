@@ -27,7 +27,7 @@ qx.Class.define("qxapp.auth.core.BaseAuthPage", {
     // outside a form, so lets accomodate him
     this.addListenerOnce("appear", e => {
       let el = this.getContentElement();
-      let form = this._form = new qx.html.Element("form", null, {
+      let form = this._formElement = new qx.html.Element("form", null, {
         name: "fakeLoginform",
         autocomplete: "on"
       });
@@ -58,7 +58,7 @@ qx.Class.define("qxapp.auth.core.BaseAuthPage", {
      * when all is said and done we should remove the form so that the password manager
      * knows to save the content of the form. so we save it here.
      */
-    _form: null,
+    _formElement: null,
     /**
      * This method gets called upon construction and
      * must be overriden in a subclass
