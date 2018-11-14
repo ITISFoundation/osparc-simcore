@@ -122,8 +122,8 @@ class FileMetaData:
         parts = file_uuid.split("/")
         assert len(parts) == 3
         if len(parts) == 3:
-            self.location = SIMCORE_S3_ID
-            self.location_id = SIMCORE_S3_STR
+            self.location = SIMCORE_S3_STR
+            self.location_id = SIMCORE_S3_ID
             self.bucket_name = bucket_name
             self.object_name = "/".join(parts[:])
             self.file_name = parts[2]

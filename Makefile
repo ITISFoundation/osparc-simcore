@@ -42,6 +42,10 @@ PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg
 
 TEMPCOMPOSE := $(shell mktemp)
 
+TEMPCOMPOSE := $(shell mktemp)
+
+export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
+
 all:
 	@echo 'run `make build-devel` to build your dev environment'
 	@echo 'run `make up-devel` to start your dev environment.'

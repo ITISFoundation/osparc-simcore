@@ -39,61 +39,29 @@ qx.Class.define("qxapp.data.Converters", {
       }
     },
 
-    fromS3ToVirtualTreeModel: function(files) {
-      let children = [];
-      for (let i=0; i<files.length; i++) {
-        const file = files[i];
-        let fileInTree = {
-          label: file["location"],
-          children: [{
-            label: file["bucket_name"],
-            children: []
-          }]
-        };
-        let bucketChildren = fileInTree.children[0].children;
-        let splitted = file["object_name"].split("/");
-        if (file["location"] === "simcore.sandbox") {
-          for (let j=0; j<splitted.length-1; j++) {
-            const newDir = {
-              label: splitted[j],
-              children: []
-            };
-            bucketChildren.push(newDir);
-            bucketChildren = bucketChildren[0].children;
-          }
-          let fileInfo = {
-            label: splitted[splitted.length-1],
-            fileId: file["file_uuid"]
-          };
-          if ("size" in file) {
-            fileInfo["size"] = file["size"];
-          }
-          bucketChildren.push(fileInfo);
-          this.mergeChildren(children, fileInTree);
-        }
-      }
-      return children;
-    },
-
     fromDSMToVirtualTreeModel: function(files) {
       let children = [];
       for (let i=0; i<files.length; i++) {
         const file = files[i];
         let fileInTree = {
           label: file["location"],
-          children: [{
-            label: file["bucket_name"],
-            children: []
-          }]
+          path: file["location"],
+          children: []
         };
-        let bucketChildren = fileInTree.children[0].children;
+        fileInTree.children.push({
+          label: file["bucket_name"],
+          path: file["location"] + "/" + file["bucket_name"],
+          children: []
+        });
+        let bucketItem = fileInTree.children[0];
         let splitted = file["object_name"].split("/");
         if (file["location"] === "simcore.s3") {
           // simcore files
           if (splitted.length === 2) {
             // user file
-            bucketChildren.push({
+            bucketItem.children.push({
               label: file["user_name"],
+              path: bucketItem.path +"/"+ file["user_name"],
               children: [{
                 label: file["file_name"],
                 fileId: file["file_uuid"]
@@ -102,10 +70,12 @@ qx.Class.define("qxapp.data.Converters", {
             this.mergeChildren(children, fileInTree);
           } else if (splitted.length === 3) {
             // node file
-            bucketChildren.push({
+            bucketItem.children.push({
               label: file["project_name"],
+              path: bucketItem.path +"/"+ file["project_name"],
               children: [{
                 label: file["node_name"],
+                path: bucketItem.path +"/"+ file["project_name"] +"/"+ file["node_name"],
                 children: [{
                   label: file["file_name"],
                   fileId: file["file_uuid"]
@@ -114,9 +84,25 @@ qx.Class.define("qxapp.data.Converters", {
             });
             this.mergeChildren(children, fileInTree);
           }
+        } else if (file["location"] === "simcore.sandbox") {
+          for (let j=0; j<splitted.length-1; j++) {
+            const newDir = {
+              label: splitted[j],
+              path: bucketItem.path +"/"+ splitted[j],
+              children: []
+            };
+            bucketItem.children.push(newDir);
+            bucketItem = bucketItem.children[0];
+          }
+          let fileInfo = {
+            label: splitted[splitted.length-1],
+            fileId: file["file_uuid"]
+          };
+          bucketItem.children.push(fileInfo);
+          this.mergeChildren(children, fileInTree);
         } else {
           // other files
-          bucketChildren.push({
+          bucketItem.children.push({
             label: file["file_name"],
             fileId: file["file_uuid"]
           });
