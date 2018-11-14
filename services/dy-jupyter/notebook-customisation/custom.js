@@ -1,3 +1,3 @@
-require(["base/js/namespace"], function (Jupyter) {
-    Jupyter._target = '_self';
-  });
+require(["base/js/namespace"], function (Jupyter) { // eslint-disable-line no-undef
+  Jupyter._target = '_self';
+});
