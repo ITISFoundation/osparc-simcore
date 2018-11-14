@@ -4,15 +4,18 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import pytest
+import collections
 
+import pytest
 from aiohttp import web
+from yarl import URL
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from simcore_service_webserver.rest import setup_rest, APP_OPENAPI_SPECS_KEY
-from simcore_service_webserver.users import setup_users
+from servicelib.openapi_validation import validate_data
 from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.rest import APP_OPENAPI_SPECS_KEY, setup_rest
 from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.users import setup_users
 
 API_VERSION = "v0"
 RESOURCE_NAME = 'tokens'
@@ -31,50 +34,58 @@ def client(loop, aiohttp_client, aiohttp_unused_port, api_specs_dir):
         }
     }
 
-    setup_db(app)
+    # setup_db(app)
     setup_session(app)
     setup_rest(app, debug=True)
     setup_users(app)
 
     return loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
 
-@pytest.fixture
-def response_validator(client):
-    specs = client.app[APP_OPENAPI_SPECS_KEY]
-    return specs
-
 
 # Tests CRUD operations --------------------------------------------
+BASEPATH = "%s/my" % API_VERSION
+
 
 # TODO: template for CRUD testing?
-
 async def test_create(client):
-    resp = await client.post("/%s" % RESOURCE_NAME, json={
+    resp = await client.post(BASEPATH + "/%s" % RESOURCE_NAME, json={
         'service': "blackfynn",
         'token_key': '4k9lyzBTS',
         'token_secret': 'my secret'
     })
     payload = await resp.json()
+    assert resp.status == 201, payload
 
 
 async def test_read(client):
-    # list all
-    resp = await client.post("/%s" % RESOURCE_NAME)
+    # get profile
+    resp = await client.get(BASEPATH)
     payload = await resp.json()
+    assert resp.status == 200, payload
+
+    # list all
+    resp = await client.get(BASEPATH + "/%s" % RESOURCE_NAME)
+    payload = await resp.json()
+    assert resp.status == 200, payload
 
     # get one
-    resp = await client.post("/%s/blackfynn" % RESOURCE_NAME)
+    resp = await client.get(BASEPATH + "/%s/blackfynn" % RESOURCE_NAME)
     payload = await resp.json()
+    assert resp.status == 200, payload
 
 
 async def test_update(client):
-    resp = await client.post("/%s/blackfynn" % RESOURCE_NAME, json={
+    resp = await client.post(BASEPATH + "/%s/blackfynn" % RESOURCE_NAME, json={
         'token_key': '4k9lyzBTS',
         'token_secret': 'my secret'
     })
     payload = await resp.json()
+    assert resp.status == 200, payload
 
 
 async def test_delete(client):
-    resp = await client.post("/%s/blackfynn" % RESOURCE_NAME)
+    resp = await client.post(BASEPATH + "/%s/blackfynn" % RESOURCE_NAME)
     payload = await resp.json()
+
+    assert resp.status == 204, payload
+    assert not payload
