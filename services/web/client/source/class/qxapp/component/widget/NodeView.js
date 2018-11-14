@@ -49,7 +49,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       flex: 1
     });
 
-    this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    this.__settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__initButtons();
@@ -116,62 +116,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       buttonsLayout.add(openFolder);
     },
 
-    __arePortsCompatible: function(node1, port1, node2, port2) {
-      return qxapp.data.Store.getInstance().arePortsCompatible(node1, port1, node2, port2);
-    },
-
-    __createDragDropMechanism: function(portUI) {
-      portUI.addListener("PortDragStart", e => {
-        let data = e.getData();
-        let event = data.event;
-        let dragNodeId = data.nodeId;
-        let dragPortId = data.portId;
-
-        // Register supported actions
-        event.addAction("copy");
-
-        // Register supported types
-        event.addType("osparc-port-link");
-        let dragData = {
-          dragNodeId: dragNodeId,
-          dragPortId: dragPortId
-        };
-        event.addData("osparc-port-link", dragData);
-      }, this);
-
-      portUI.addListener("PortDragOver", e => {
-        let data = e.getData();
-        let event = data.event;
-        // let dropNodeId = data.nodeId;
-        let dropNodeId = this.getNodeModel().getNodeId();
-        let dropPortId = data.portId;
-
-        let compatible = false;
-        if (event.supportsType("osparc-port-link")) {
-          const dragNodeId = event.getData("osparc-port-link").dragNodeId;
-          const dragPortId = event.getData("osparc-port-link").dragPortId;
-          compatible = this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId);
-        }
-
-        if (!compatible) {
-          event.preventDefault();
-        }
-      }, this);
-
-      portUI.addListener("PortDrop", e => {
-        let data = e.getData();
-        let event = data.event;
-        // let dropNodeId = data.nodeId;
-        let dropPortId = data.portId;
-
-        if (event.supportsType("osparc-port-link")) {
-          let dragNodeId = event.getData("osparc-port-link").dragNodeId;
-          let dragPortId = event.getData("osparc-port-link").dragPortId;
-          this.getNodeModel().addPortLink(dropPortId, dragNodeId, dragPortId);
-        }
-      }, this);
-    },
-
     __createInputPortsUI: function(inputNodeModel, isInputModel = true) {
       let nodePorts = null;
       if (isInputModel) {
@@ -180,7 +124,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
         nodePorts = inputNodeModel.getInputsDefaultWidget();
       }
       if (nodePorts) {
-        this.__createDragDropMechanism(nodePorts);
         this.__inputNodesLayout.add(nodePorts, {
           flex: 1
         });
@@ -237,7 +180,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
 
         this.__settingsLayout.add(titleBox);
         this.__settingsLayout.add(propsWidget);
-        this.__createDragDropMechanism(propsWidget);
 
         this.__mainLayout.add(this.__settingsLayout);
       } else if (qx.ui.core.Widget.contains(this.__mainLayout, this.__settingsLayout)) {

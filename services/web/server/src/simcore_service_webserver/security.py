@@ -18,7 +18,8 @@ from aiohttp_security.api import (authorized_userid, forget, has_permission,
 from aiohttp_security.session_identity import SessionIdentityPolicy
 from aiopg.sa import Engine
 
-from .application_keys import APP_DB_ENGINE_KEY
+from servicelib.application_keys import APP_DB_ENGINE_KEY
+
 from .db_models import UserRole, UserStatus, users
 from .session import setup_session
 

@@ -2,8 +2,7 @@ from aiohttp import web
 from yarl import URL
 
 from simcore_service_webserver.db_models import UserRole, UserStatus
-from simcore_service_webserver.login import get_storage
-from simcore_service_webserver.login.cfg import cfg
+from simcore_service_webserver.login.cfg import cfg, get_storage
 from simcore_service_webserver.login.utils import (encrypt_password,
                                                    get_random_string)
 from utils_assert import assert_status

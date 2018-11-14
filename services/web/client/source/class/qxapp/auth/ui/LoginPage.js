@@ -31,15 +31,19 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
   */
 
   members: {
-    __form: null,
-
     // overrides base
+    __form: null,
     _buildPage: function() {
       this.__form = new qx.ui.form.Form();
 
       let atm = new qx.ui.basic.Atom().set({
-        icon: "qxapp/osparc-white-small.png",
+        icon: "qxapp/osparc-white.svg",
         iconPosition: "top"
+      });
+      atm.getChildControl("icon").set({
+        width: 250,
+        height: 150,
+        scale: true
       });
       this.add(atm);
 
@@ -132,9 +136,10 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
 
       let successFun = function(log) {
         this.fireDataEvent("done", log.message);
-        // we don't need the form any more, so remove it
+        // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
-        this._form.dispose();
+        this._formElement.dispose();
+        window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
       let failFun = function(msg) {

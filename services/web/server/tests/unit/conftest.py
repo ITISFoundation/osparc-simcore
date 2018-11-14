@@ -35,6 +35,12 @@ def osparc_simcore_root_dir(here):
     return root_dir
 
 @pytest.fixture(scope='session')
+def api_specs_dir(osparc_simcore_root_dir):
+    specs_dir = osparc_simcore_root_dir/ "api" / "specs" / "webserver"
+    assert specs_dir.exists()
+    return specs_dir
+
+@pytest.fixture(scope='session')
 def mock_dir(here):
     dirpath = here / "mock"
     assert dirpath.exists()

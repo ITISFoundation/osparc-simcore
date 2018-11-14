@@ -12,6 +12,7 @@ import trafaret as T
 # TODO: adapt all data below!
 # TODO: can use venv as defaults? e.g. $RABBITMQ_LOG_CHANNEL
 CONFIG_SCHEMA = T.Dict({
+    T.Key("enabled", default=True, optional=True): T.Bool(),
     T.Key("host", default='rabbit', optional=True): T.String(),
     T.Key("port", default=5672, optional=True): T.Int(),
     "user": T.String(),
