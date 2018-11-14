@@ -40,7 +40,7 @@ async def services_get(request, service_type=None):  # pylint:disable=unused-arg
 async def services_by_key_version_get(request, service_key, service_version):  # pylint:disable=unused-argument
     log.debug("Client does services_get request %s with service_key %s, service_version %s", request, service_key, service_version)
     try:
-        services = [registry_proxy.get_service_details(service_key, service_version)]
+        services = [await registry_proxy.get_service_details(service_key, service_version)]
         return web.json_response(data=dict(data=services))
     except exceptions.ServiceNotAvailableError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
@@ -50,7 +50,7 @@ async def services_by_key_version_get(request, service_key, service_version):  #
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
 async def _list_services(list_service_fct):    
-    services = list_service_fct()
+    services = await list_service_fct()
     services = node_validator.validate_nodes(services)
     return services
 
@@ -59,7 +59,7 @@ async def running_interactive_services_post(request, user_id, service_key, servi
                 request, user_id, service_key, service_uuid, service_tag)
 
     try:
-        service = producer.start_service(user_id, service_key, service_tag, service_uuid)
+        service = await producer.start_service(user_id, service_key, service_tag, service_uuid)
         return web.json_response(data=dict(data=service), status=201)
     except exceptions.ServiceStartTimeoutError as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
@@ -75,7 +75,7 @@ async def running_interactive_services_post(request, user_id, service_key, servi
 async def running_interactive_services_get(request, service_uuid):  # pylint:disable=unused-argument
     log.debug("Client does running_interactive_services_get request %s with service_uuid %s", request, service_uuid)
     try:
-        producer.get_service_details(service_uuid)
+        await producer.get_service_details(service_uuid)
     except exceptions.ServiceUUIDNotFoundError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except Exception as err:
@@ -86,7 +86,7 @@ async def running_interactive_services_get(request, service_uuid):  # pylint:dis
 async def running_interactive_services_delete(request, service_uuid):  # pylint:disable=unused-argument
     log.debug("Client does running_interactive_services_delete request %s with service_uuid %s", request, service_uuid)
     try:
-        producer.stop_service(service_uuid)
+        await producer.stop_service(service_uuid)
     except exceptions.ServiceUUIDNotFoundError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except Exception as err:
