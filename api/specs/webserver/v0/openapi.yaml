@@ -327,8 +327,7 @@ paths:
     post:
       description: Starts an interactive service in the oSparc platform and returns its entrypoint
       operationId: running_interactive_services_post
-      parameters:         
-        - $ref: '#/components/parameters/UserId'
+      parameters:
         - $ref: '#/components/parameters/ServiceKey'
         - $ref: '#/components/parameters/ServiceVersion'
         - $ref: '#/components/parameters/AssignmentUuid'
