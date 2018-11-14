@@ -61,10 +61,8 @@ rebuild-devel:
 up-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml up
 
-up-webclient-devel: up-webclient-devel-fight
+up-webclient-devel: up-swarm-devel remove-intermediate-file file-watcher
 	${DOCKER} service rm services_webclient
-
-up-webclient-devel-fight: up-swarm-devel
 	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
 
 build:
@@ -80,19 +78,27 @@ up-swarm:
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.deploy.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
-	rm $(TEMPCOMPOSE).tmp-compose.yml
 
 up-swarm-devel:
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.deploy.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
-	-rm $(TEMPCOMPOSE).tmp-compose.yml
+
+ifeq ($(WINDOWS_MODE),ON)
+remove-intermediate-file:
+	$(info    .tmp-compose.yml not removed)
+else
+remove-intermediate-file:
+	rm $(TEMPCOMPOSE).tmp-compose.yml
+endif
 
 ifeq ($(WINDOWS_MODE),ON)
 file-watcher:
-	# unfortunately this is not working properly at the moment
 	pip install docker-windows-volume-watcher
-	docker-volume-watcher "*" "*\\web\\client*" &
+	# unfortunately this is not working properly at the moment
+	# docker-windows-volume-watcher python package will be installed but not executed
+	# you will have to run 'docker-volume-watcher *qx*' in a different process in ./services/web/client/source
+	# docker-volume-watcher &
 else
 file-watcher:
 	true
