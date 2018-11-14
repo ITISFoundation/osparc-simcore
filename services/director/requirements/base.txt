@@ -1,5 +1,4 @@
 # Common third party packages
-# Please keep alphabetical order
 aiohttp==3.3.2
 docker==3.5.0
 requests==2.20.1

@@ -10,14 +10,15 @@ main:
 director:
   host: localhost
   port: 8001
-postgres:
-  database: test_db
-  user: test_user
-  password: test_pass
-  host: localhost
-  port: ${POSTGRES_PORT}
-  # DEPRECATE OR add postgresql+psycopg2:// otherwise will fail sqlalchemy.exc.ArgumentError: Could not parse rfc1738 URL from string 'localhost:5432'
-  endpoint: localhost:5432
+db:
+  postgres:
+    database: test_db
+    user: test_user
+    password: test_pass
+    host: localhost
+    port: ${POSTGRES_PORT}
+    # DEPRECATE OR add postgresql+psycopg2:// otherwise will fail sqlalchemy.exc.ArgumentError: Could not parse rfc1738 URL from string 'localhost:5432'
+    endpoint: localhost:5432
 rabbit:
   host: ${RABBIT_HOST}
   password: simcore
@@ -37,4 +38,7 @@ smtp:
   tls: False
   username: None
   password: None
+rest:
+  version: v0
+  location: api/specs/webserver/v0/openapi.yaml
 ...

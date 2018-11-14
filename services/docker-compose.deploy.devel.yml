@@ -12,8 +12,8 @@ services:
   director:
     #image: masu.speag.com/simcore/workbench/director:2.3
     image: services_director:dev
-    dns:
-      - 172.16.8.15
+    #dns:
+    #  - 172.16.8.15
     deploy:
       placement:
        constraints:
@@ -44,8 +44,8 @@ services:
   webserver:
     #image: masu.speag.com/simcore/workbench/webserver:2.3
     image: services_webserver:dev
-    dns:
-      - 172.16.8.15
+    #dns:
+    #  - 172.16.8.15
     deploy:
       placement:
         constraints:

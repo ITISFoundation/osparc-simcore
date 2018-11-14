@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 def create(specs: openapi.Spec) -> List[web.RouteDef]:
     # TODO: consider the case in which server creates routes for both v0 and v1!!!
     # TODO: should this be taken from servers instead?
-    BASEPATH = '/v' + specs.info.version.split('.')[0]
+    base_path = openapi.get_base_path(specs)
 
     log.debug("creating %s ", __name__)
     routes = []
@@ -30,22 +30,30 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     # auth --
     path, handler = '/auth/register', login_handlers.register
     operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(BASEPATH+path, handler, name=operation_id) )
+    routes.append( web.post(base_path+path, handler, name=operation_id) )
 
     path, handler = '/auth/login', login_handlers.login
     operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(BASEPATH+path, handler, name=operation_id) )
+    routes.append( web.post(base_path+path, handler, name=operation_id) )
 
     path, handler = '/auth/logout', login_handlers.logout
     operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(BASEPATH+path, handler, name=operation_id) )
+    routes.append( web.get(base_path+path, handler, name=operation_id) )
 
     path, handler = '/auth/confirmation/{code}', login_handlers.email_confirmation
     operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(BASEPATH+path, handler, name=operation_id) )
+    routes.append( web.get(base_path+path, handler, name=operation_id) )
 
     path, handler = '/auth/change-email', login_handlers.change_email
     operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(BASEPATH+path, handler, name=operation_id) )
+    routes.append( web.post(base_path+path, handler, name=operation_id) )
 
     return routes
+
+
+# alias
+create_routes = create
+
+__all__ = (
+    'create_routes'
+)

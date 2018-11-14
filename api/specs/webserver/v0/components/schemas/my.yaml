@@ -1,0 +1,75 @@
+Profile:
+  type: object
+  properties:
+    login:
+      type: string
+      format: email
+    gravatar_id:
+      type: string
+    tokens_url:
+      type: string
+      format: url
+  example:
+    login: pcrespov@foo.com
+    gravatar_id: 205e460b479e2e5b48aec07710c08d50
+    tokens_url: http://simcore.io/my/tokens
+
+Token:
+  description: api keys for third party services
+  type: object
+  properties:
+    service:
+      description: where this token is needed
+      type: string
+    token_key:
+      description: basic token key
+      type: string
+      format: uuid
+    token_secret:
+      type: string
+      format: uuid
+  required:
+    - service
+    - token_key
+  example:
+    service: 'github-api-v1'
+    token_key: foo
+
+# enveloped and array versions --------------------------
+
+ProfileEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/Profile'
+    error:
+      nullable: true
+      default: null
+
+
+TokenEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/Token'
+    error:
+      nullable: true
+      default: null
+
+
+TokensArrayEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      type: array
+      items:
+        $ref: '#/Token'
+    error:
+      nullable: true
+      default: null

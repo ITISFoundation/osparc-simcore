@@ -1,27 +1,27 @@
 version: '1.0'
 main:
-  client_outdir: ~/devp/osparc-simcore/services/web/client/source-output
+  client_outdir: ${OSPARC_SIMCORE_REPO_ROOTDIR}/services/web/client/source-output
   host: 127.0.0.1
   log_level: INFO
   port: 8080
-  public_url: http://localhost:8080
   testing: true
-  disable_services: []
-  db:
-    init_tables: True
+db:
+  enabled: True
+  init_tables: True
+  postgres:
+    database: simcoredb
+    endpoint: postgres:5432
+    host: localhost
+    maxsize: 5
+    minsize: 1
+    password: simcore
+    port: 5432
+    user: simcore
 director:
   host: director
   port: 8001
-postgres:
-  database: simcoredb
-  endpoint: postgres:5432
-  host: localhost
-  maxsize: 5
-  minsize: 1
-  password: simcore
-  port: 5432
-  user: simcore
 rabbit:
+  enabled: True
   channels:
     log: comp.backend.channels.log
     progress: comp.backend.channels.progress
@@ -34,11 +34,17 @@ smtp:
   tls: False
   username: Null
   password: Null
-s3:
-  access_key: 'Q3AM3UQ867SPQQA43P2F'
-  bucket_name: simcore
-  endpoint: play.minio.io:9000
-  secret_key: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
+# s3:
+#   access_key: 'Q3AM3UQ867SPQQA43P2F'
+#   bucket_name: simcore
+#   endpoint: play.minio.io:9000
+#   secret_key: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
+rest:
+  version: v0
+  location: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs/webserver/v0/openapi.yaml
+  #location: http://localhost:8043/api/specs/webserver/v0/openapi.yaml
+  extra_urls:
+    - http://localhost:8080
 storage:
   host: storage
   port: 11111

@@ -6,15 +6,18 @@ import logging
 
 from aiohttp import web
 
-from .application_keys import APP_CONFIG_KEY
-from .computational_backend import setup_computational_backend
+from servicelib.application_keys import APP_CONFIG_KEY
+
+from .computation import setup_computation
 from .db import setup_db
+from .director import setup_director
 from .email import setup_email
 from .login import setup_login
 from .rest import setup_rest
+from .s3 import setup_s3
 from .security import setup_security
 from .session import setup_session
-from .sockets import setup_sio
+from .sockets import setup_sockets
 from .statics import setup_statics
 from .storage import setup_storage
 
@@ -34,19 +37,21 @@ def create_application(config: dict):
         log.debug("Config:\n%s",
             json.dumps(config, indent=2, sort_keys=True))
 
+    testing = config["main"].get("testing", False)
 
     # TODO: create dependency mechanism and compute setup order
+    setup_statics(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)
+    setup_rest(app, debug=testing)
     setup_email(app)
-    setup_computational_backend(app)
-    setup_statics(app)
-    setup_sio(app)
-    setup_rest(app) # FIXME: all submodules that inject routes, need to be after rest setup
+    setup_computation(app)
+    setup_sockets(app)
     setup_login(app)
+    setup_director(app)
+    setup_s3(app)
     setup_storage(app)
-
 
     return app
 

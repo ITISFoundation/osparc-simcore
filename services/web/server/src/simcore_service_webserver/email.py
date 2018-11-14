@@ -1,18 +1,23 @@
-""" Submodule that renders and sends emails
+""" Subsystem that renders and sends emails
+
+
 """
 import logging
 
 import aiohttp_jinja2
-from aiohttp import web
-
 #import jinja2 TODO: check
 import jinja_app_loader
+from aiohttp import web
+
+from servicelib.application_keys import APP_CONFIG_KEY
+
+from .email_config import CONFIG_SECTION_NAME
+from .resources import resources
 
 # TODO: move login/utils.py email functionality here!
 #from email.mime.text import MIMEText
 #import aiosmtplib
 
-from .resources import resources
 
 log = logging.getLogger(__name__)
 
@@ -20,6 +25,8 @@ log = logging.getLogger(__name__)
 
 def setup(app: web.Application, debug: bool=False):
     log.debug("Setting up %s ...", __name__)
+
+    assert CONFIG_SECTION_NAME in app[APP_CONFIG_KEY]
 
     tmpl_dir = resources.get_path('templates')
     assert tmpl_dir.exists()
