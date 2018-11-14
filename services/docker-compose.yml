@@ -21,7 +21,7 @@ services:
     # on Windows follow http://www.computerperformance.co.uk/powershell/powershell_profile_ps1.htm
     # currently needs to set $Env:COMPOSE_CONVERT_WINDOWS_PATHS=1 in powershell to make this works
     # on a windows machine
-      - REGISTRY_URL=masu.speag.com
+      - REGISTRY_URL=${REGISTRY_URL}
       - REGISTRY_AUTH=True
       - REGISTRY_USER=z43
       - REGISTRY_PW=z43
