@@ -2884,29 +2884,29 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "user_id": "12",
         "user_name": "chuck"
       }, {
-        "file_uuid": "simcore-testing/5b6b55ae-f3aa-4086-9d00-7b11b5b7e5b7",
+        "file_uuid": "one/two/three",
         "location_id": 1,
         "location": "datcore",
-        "bucket_name": "simcore-testing",
-        "object_name": "5b6b55ae-f3aa-4086-9d00-7b11b5b7e5b7",
+        "bucket_name": "",
+        "object_name": "",
         "project_id": "",
         "project_name": "",
         "node_id": "",
         "node_name": "",
-        "file_name": "5b6b55ae-f3aa-4086-9d00-7b11b5b7e5b7",
+        "file_name": "",
         "user_id": "",
         "user_name": ""
       }, {
-        "file_uuid": "simcore-testing/52ad8047-dfad-468a-90ac-810c69e4407e",
+        "file_uuid": "one/two/four",
         "location_id": 1,
         "location": "datcore",
-        "bucket_name": "simcore-testing",
-        "object_name": "52ad8047-dfad-468a-90ac-810c69e4407e",
+        "bucket_name": "",
+        "object_name": "",
         "project_id": "",
         "project_name": "",
         "node_id": "",
         "node_name": "",
-        "file_name": "52ad8047-dfad-468a-90ac-810c69e4407e",
+        "file_name": "",
         "user_id": "",
         "user_name": ""
       }];
