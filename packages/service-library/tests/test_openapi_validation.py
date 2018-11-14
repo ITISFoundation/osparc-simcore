@@ -27,7 +27,7 @@ def client(loop, aiohttp_client, specs):
 
     # routes
     handlers = Handlers()
-    routes = create_routes_from_namespace(specs, handlers)
+    routes = create_routes_from_namespace(specs, handlers, strict=False)
 
     app.router.add_routes(routes)
 
