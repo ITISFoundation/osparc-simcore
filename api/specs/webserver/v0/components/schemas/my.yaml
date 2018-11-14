@@ -6,20 +6,17 @@ Profile:
       format: email
     gravatar_id:
       type: string
-    tokens_url:
-      type: string
-      format: url
   example:
     login: pcrespov@foo.com
     gravatar_id: 205e460b479e2e5b48aec07710c08d50
-    tokens_url: http://simcore.io/my/tokens
+
 
 Token:
   description: api keys for third party services
   type: object
   properties:
     service:
-      description: where this token is needed
+      description: uniquely identifies the service where this token is used
       type: string
     token_key:
       description: basic token key
@@ -33,7 +30,7 @@ Token:
     - token_key
   example:
     service: 'github-api-v1'
-    token_key: foo
+    token_key: N1BP5ZSpB
 
 # enveloped and array versions --------------------------
 
