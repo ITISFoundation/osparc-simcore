@@ -28,9 +28,9 @@ async def services_get(request, service_type=None):  # pylint:disable=unused-arg
     try:
         services = []
         if not service_type or "computational" in service_type:
-            services.extend(_list_services(registry_proxy.list_computational_services))
+            services.extend(await _list_services(registry_proxy.list_computational_services))
         if not service_type or "interactive" in service_type:
-            services.extend(_list_services(registry_proxy.list_interactive_services))
+            services.extend(await _list_services(registry_proxy.list_interactive_services))
         return web.json_response(data=dict(data=services))
     except exceptions.RegistryConnectionError as err:
         raise web_exceptions.HTTPUnauthorized(reason=str(err))
@@ -49,7 +49,7 @@ async def services_by_key_version_get(request, service_key, service_version):  #
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
-def _list_services(list_service_fct):    
+async def _list_services(list_service_fct):    
     services = list_service_fct()
     services = node_validator.validate_nodes(services)
     return services
