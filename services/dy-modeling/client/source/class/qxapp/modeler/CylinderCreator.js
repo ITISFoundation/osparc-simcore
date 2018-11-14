@@ -26,11 +26,11 @@ qx.Class.define("qxapp.modeler.CylinderCreator", {
     startTool: function() {
       const fixedAxe = 2;
       const fixedPos = 0;
-      this.__threeView.addInvisiblePlane(fixedAxe, fixedPos);
+      this.__threeView.addSnappingPlane(fixedAxe, fixedPos);
     },
 
     stopTool: function() {
-      this.__threeView.removeInvisiblePlane();
+      this.__threeView.removeSnappingPlane();
     },
 
     __removeTemps: function() {
@@ -86,8 +86,8 @@ qx.Class.define("qxapp.modeler.CylinderCreator", {
         } else if (this.__radius === null) {
           this.__radius = Math.hypot(intersect.point.x-this.__centerPos.x, intersect.point.y-this.__centerPos.y);
           this.__nextStep = this.__steps.height;
-          this.__threeView.removeInvisiblePlane();
-          this.__threeView.addInvisiblePlane(0, this.__centerPos.x);
+          this.__threeView.removeSnappingPlane();
+          this.__threeView.addSnappingPlane(0, this.__centerPos.x);
         } else if (this.__height === null) {
           this.__height = intersect.point.z - this.__centerPos.z;
           this._consolidateCylinder();
