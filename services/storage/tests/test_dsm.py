@@ -40,10 +40,19 @@ async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
 
     dsm = dsm_fixture
 
+    data_as_dict = []
+    write_data = False
     # list files for every user
     for _id in id_file_count:
         data = await dsm.list_files(user_id=_id, location=SIMCORE_S3_STR)
         assert len(data) == id_file_count[_id]
+        if write_data:
+            for d in data:
+                data_as_dict.append(attr.asdict(d))
+
+    if write_data:
+        with open("example.json", 'w') as _f:
+            json.dump(data_as_dict, _f)
 
     # Get files from bob from the project biology
     bob_id = 0

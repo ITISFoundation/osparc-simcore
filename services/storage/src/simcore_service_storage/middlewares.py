@@ -21,6 +21,7 @@ async def dsm_middleware(request, handler):
     s3_bucket = s3_cfg["bucket_name"]
 
     s3_client = S3Client(s3_endpoint, s3_access_key, s3_secret_key)
+    s3_client.create_bucket(s3_bucket)
 
     main_cfg = cfg["main"]
     python27_exec = Path(main_cfg["python2"]) / "bin" / "python2"
