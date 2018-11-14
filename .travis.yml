@@ -7,7 +7,6 @@ matrix:
       cache:
         directories:
           - .npm
-          - .nvm
 
       install:
         - npm install -g npm@latest

@@ -139,7 +139,7 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
         this._formElement.dispose();
-        window.history.replaceState(null,window.document.title,window.location.pathname);
+        window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
       let failFun = function(msg) {
