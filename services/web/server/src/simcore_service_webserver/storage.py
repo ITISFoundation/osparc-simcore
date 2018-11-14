@@ -6,7 +6,7 @@ from aiohttp import web, ClientSession
 
 from . import storage_routes
 from .application_keys import APP_OPENAPI_SPECS_KEY
-from .storage_settings import get_config, APP_STORAGE_SESSION_KEY
+from .storage_config import get_config, APP_STORAGE_SESSION_KEY
 
 # SETTINGS ----------------------------------------------------
 THIS_MODULE_NAME = __name__.split(".")[-1]
