@@ -8,10 +8,10 @@ from utils import load_specs, is_json_schema, list_files_in_api_specs
 # TESTS ----------------------------------------------------------
 # NOTE: parametrizing tests per file makes more visible which file failed
 # NOTE: to debug use the wildcard and select problematic file, e.g. list_files_in_api_specs("*log_message.y*ml"))
-
+@pytest.mark.skip(reason="Implementing in PR 324")
 @pytest.mark.parametrize("spec_file_path",
                         list_files_in_api_specs("*.json") +
-                        list_files_in_api_specs("*.y*ml") )
+                        list_files_in_api_specs("*.y*ml") )                        
 def test_valid_individual_json_schemas_specs(spec_file_path):
     spec_file_path = Path(spec_file_path)
     specs_dict = load_specs(spec_file_path)
