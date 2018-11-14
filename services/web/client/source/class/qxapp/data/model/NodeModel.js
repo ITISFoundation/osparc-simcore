@@ -413,68 +413,65 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __startInteractiveNode: function() {
       let metaData = this.getMetaData();
       if (metaData.type == "dynamic") {
-        const slotName = "startDynamic";
-        let button = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/redo-alt/32"
-        });
-        button.addListener("execute", e => {
-          this.__restartIFrame();
-        }, this);
-        button.setEnabled(false);
-        this.setRestartIFrameButton(button);
-        this.__showLoadingIFrame();
-        let socket = qxapp.wrappers.WebSocket.getInstance();
-        socket.on(slotName, function(val) {
-          const {
-            data,
-            error
-          } = val;
-          if (error) {
-            console.error("Error starting dynamic service: ", data);
-            return;
-          }
-          const publishedPort = data["published_port"];
-          const entryPointD = data["entry_point"];
-          const nodeId = data["service_uuid"];
-          if (nodeId !== this.getNodeId()) {
-            return;
-          }
-          if (publishedPort) {
-            const entryPoint = entryPointD ? ("/" + entryPointD) : "";
-            const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
-            this.setServiceUrl(srvUrl);
-            const msg = "Service ready on " + srvUrl;
-            const msgData = {
-              nodeLabel: this.getLabel(),
-              msg: msg
-            };
-            this.fireDataEvent("ShowInLogger", msgData);
-
-            // HACK: Workaround for fetching inputs in Visualizer
-            if (this.getKey() === "3d-viewer") {
-              let urlUpdate = this.getServiceUrl() + "/retrieve";
-              let req = new qx.io.request.Xhr();
-              req.set({
-                url: urlUpdate,
-                method: "POST"
-              });
-              req.send();
-            }
-
-            this.getRestartIFrameButton().setEnabled(true);
-            // FIXME: Apparently no all services are inmediately ready when they publish the port
-            const waitFor = 4000;
-            qx.event.Timer.once(e => {
-              this.__restartIFrame();
-            }, this, waitFor);
-          }
-        }, this);
+        let request = new qxapp.io.request.ApiRequest("/running_interactive_services", "POST");
         let data = {
           serviceKey: metaData.key,
           serviceVersion: metaData.version,
           nodeId: this.getNodeId()
         };
-        socket.emit(slotName, data);
+        request.set({
+          requestData: qx.util.Serializer.toJson(data)
+        });
+        request.addListener("success", this.__onInteractiveNodeStarted, this);
+        request.addListener("error", e => {
+          this.getLogger().error("node", "Error starting interactive node")
+        }, this);
+        request.addListener("fail", e => {
+          this.getLogger().error("node", "Failed starting interactive node")
+        }, this);
+        request.send();
+        this.getLogger().info("node", "Starting interactive service");
+      }
+    },
+
+    __onInteractiveNodeStarted: function(e) {
+      let req = e.getTarget();
+      const {data} = req.getResponse()
+
+      const publishedPort = data["published_port"];
+      const entryPointD = data["entry_point"];
+      const nodeId = data["service_uuid"];
+      if (nodeId !== this.getNodeId()) {
+        return;
+      }
+      if (publishedPort) {
+        const entryPoint = entryPointD ? ("/" + entryPointD) : "";
+        const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
+        this.setServiceUrl(srvUrl);
+        const msg = "Service ready on " + srvUrl;
+        const msgData = {
+          nodeLabel: this.getLabel(),
+          msg: msg
+        };
+        this.fireDataEvent("ShowInLogger", msgData);
+
+        // HACK: Workaround for fetching inputs in Visualizer
+        if (this.getKey() === "3d-viewer") {
+          let urlUpdate = this.getServiceUrl() + "/retrieve";
+          let req = new qx.io.request.Xhr();
+          req.set({
+            url: urlUpdate,
+            method: "POST"
+          });
+          req.send();
+        }
+
+        this.getRestartIFrameButton().setEnabled(true);
+        // FIXME: Apparently no all services are inmediately ready when they publish the port
+        const waitFor = 4000;
+        qx.event.Timer.once(e => {
+          this.__restartIFrame();
+        }, this, waitFor);
       }
     },
 
@@ -484,12 +481,14 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     __stopInteractiveNode: function() {
       if (this.getMetaData().type == "dynamic") {
-        const slotName = "stopDynamic";
-        let socket = qxapp.wrappers.WebSocket.getInstance();
+        let request = new qxapp.io.request.ApiRequest("/running_interactive_services", "DELETE");
         let data = {
           nodeId: this.getNodeId()
         };
-        socket.emit(slotName, data);
+        request.set({
+          requestData: qx.util.Serializer.toJson(data)
+        });
+        request.send();
       }
     },
 
