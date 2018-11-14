@@ -91,6 +91,8 @@ async def get_storage_locations(request: web.Request):
 
 
 async def get_files_metadata(request: web.Request):
+    log.info("GET FILES METADATA %s %s",request.path, request.url)
+
     params, query, body = await extract_and_validate(request)
 
     assert params, "params %s" % params
@@ -115,6 +117,7 @@ async def get_files_metadata(request: web.Request):
 
     data_as_dict = []
     for d in data:
+        log.info("DATA %s",attr.asdict(d))
         data_as_dict.append(attr.asdict(d))
 
     envelope = {

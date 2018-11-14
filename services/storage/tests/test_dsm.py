@@ -12,13 +12,15 @@ import urllib
 import uuid
 from pprint import pprint
 
+from pathlib import Path
+
 import attr
 import pytest
 
 import utils
 from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import FileMetaData
-from simcore_service_storage.s3 import DATCORE_STR, SIMCORE_S3_STR
+from simcore_service_storage.s3 import DATCORE_STR, SIMCORE_S3_STR, SIMCORE_S3_ID
 from utils import BUCKET_NAME
 
 
@@ -276,8 +278,6 @@ async def test_dsm_datcore_to_S3(postgres_service_url, s3_client, dsm_fixture, m
 
 
 
-
-
 # pylint: disable=R0913
 # Too many arguments
 @pytest.mark.travis
@@ -311,3 +311,17 @@ async def test_copy_datcore(postgres_service_url, s3_client, dsm_fixture, mock_f
 
     # there should now be 3 files
     assert len(data) == 3
+
+def test_fmd_build():
+    file_uuid = str(Path("1234") / Path("abcd") / Path("xx.dat"))
+    fmd = FileMetaData()
+    fmd.simcore_from_uuid(file_uuid, "test-bucket")
+
+    assert fmd.node_id == "abcd"
+    assert fmd.project_id == "1234"
+    assert fmd.file_name == "xx.dat"
+    assert fmd.object_name == "1234/abcd/xx.dat"
+    assert fmd.file_uuid == file_uuid
+    assert fmd.location == SIMCORE_S3_STR
+    assert fmd.location_id == SIMCORE_S3_ID
+    assert fmd.bucket_name == "test-bucket"
