@@ -55,6 +55,15 @@ qx.Class.define("qxapp.Application", {
       -------------------------------------------------------------------------
       */
 
+      let isModeler = false;
+      let isDevel = false;
+      if (qx.core.Environment.get("qxapp.isModeler")) {
+        isModeler = true;
+      }
+      if (qx.core.Environment.get("qxapp.isDevel")) {
+        isDevel = true;
+      }
+
       this._appModel = qx.data.marshal.Json.createModel(this._getDefaultData());
 
       qx.locale.Manager.getInstance().setLocale(this._appModel.getLocaleCode());
@@ -78,9 +87,9 @@ qx.Class.define("qxapp.Application", {
       // initialize components
       let menuBarHeight = 35;
       let avaiBarHeight = 55;
-      const showMenuBar = false;
+      const showMenuBar = isDevel;
       const showUserMenu = false;
-      const showModelingTools = true;
+      const showModelingTools = isModeler;
 
       this._menuBar = new qxapp.component.MenuBar(
         docWidth, menuBarHeight,

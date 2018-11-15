@@ -12,8 +12,8 @@ services:
   director:
     #image: masu.speag.com/simcore/workbench/director:2.3
     image: services_director:latest
-    dns:
-      - 172.16.8.15
+    #dns:
+    #  - 172.16.8.15
     deploy:
       placement:
        constraints:
@@ -38,8 +38,8 @@ services:
   webserver:
     #image: masu.speag.com/simcore/workbench/webserver:2.3
     image: services_webserver:latest
-    dns:
-      - 172.16.8.15
+    #dns:
+    #  - 172.16.8.15
     deploy:
       placement:
         constraints:
@@ -70,12 +70,12 @@ services:
       - RABBITMQ_DEFAULT_PASS=simcore
   postgres:
     image: postgres:10
-    environment:      
+    environment:
       - POSTGRES_USER=simcore
       - POSTGRES_PASSWORD=simcore
       - POSTGRES_DB=simcoredb
   adminer:
-    image: adminer    
+    image: adminer
     depends_on:
       - postgres
   sidecar:
