@@ -156,7 +156,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.19
+PLATFORM_VERSION=3.21
 
 push_platform_images:
 	${DOCKER} login masu.speag.com
@@ -168,6 +168,8 @@ push_platform_images:
 	${DOCKER} push masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
 	${DOCKER} tag services_director:latest masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
 	${DOCKER} push masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
+	${DOCKER} tag services_storage:latest masu.speag.com/simcore/workbench/storage:${PLATFORM_VERSION}
+	${DOCKER} push masu.speag.com/simcore/workbench/storage:${PLATFORM_VERSION}
 
   setup-check: .env .vscode/settings.json
 
