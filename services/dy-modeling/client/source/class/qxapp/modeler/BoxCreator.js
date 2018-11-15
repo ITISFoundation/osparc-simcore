@@ -26,11 +26,11 @@ qx.Class.define("qxapp.modeler.BoxCreator", {
     startTool: function() {
       const fixedAxe = 2;
       const fixedPos = 0;
-      this.__threeView.addInvisiblePlane(fixedAxe, fixedPos);
+      this.__threeView.addSnappingPlane(fixedAxe, fixedPos);
     },
 
     stopTool: function() {
-      this.__threeView.removeInvisiblePlane();
+      this.__threeView.removeSnappingPlane();
     },
 
     __removeTemps: function() {
@@ -84,8 +84,8 @@ qx.Class.define("qxapp.modeler.BoxCreator", {
         } else if (this.__corner1Pos === null) {
           this.__corner1Pos = intersect.point;
           this.__nextStep = this.__steps.corner2;
-          this.__threeView.removeInvisiblePlane();
-          this.__threeView.addInvisiblePlane(0, this.__corner1Pos.x);
+          this.__threeView.removeSnappingPlane();
+          this.__threeView.addSnappingPlane(0, this.__corner1Pos.x);
         } else if (this.__corner2Pos === null) {
           this.__corner2Pos = intersect.point;
           this.__consolidateBox();
