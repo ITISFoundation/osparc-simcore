@@ -466,7 +466,7 @@ components:
       required: true
       schema:
         type: string
-        format: uuid
+        # format: uuid
         example: 123e4567-e89b-12d3-a456-426655440000
 
     ServiceKey:
@@ -476,7 +476,7 @@ components:
       required: true
       schema:
         type: string   
-        format: url
+        # format: url
         example: simcore/services/dynamic/3d-viewer
     
     ServiceType:
