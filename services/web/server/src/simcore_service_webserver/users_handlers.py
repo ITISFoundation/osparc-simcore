@@ -1,16 +1,14 @@
 import json
-import random
 
 from aiohttp import web
 
-from .security import authorized_userid  # TODO: change this by login.
-from .security import login_required
+from .login.decorators import login_required, RQT_USERID_KEY
 
 
 # my/
 #@login_required
 async def get_my_profile(request: web.Request):
-    _uid= await authorized_userid(request)
+    _uid= request[RQT_USERID_KEY]
 
     sample = {
         'login': 'pcrespov@foo.com',
