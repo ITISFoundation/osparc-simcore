@@ -221,7 +221,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
           const presginedLinkData = e.getData();
           console.log(presginedLinkData.presginedLink);
           if (presginedLinkData.presginedLink) {
-            this.__downloadFile(presginedLinkData.presginedLink, fileName);
+            this.__downloadFile(presginedLinkData.presginedLink.link, fileName);
           }
         }, this);
         const download = true;
