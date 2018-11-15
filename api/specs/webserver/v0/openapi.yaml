@@ -10,6 +10,8 @@ info:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 servers:
+  - description: API server
+    url: '/v0'
   - description: Development server
     url: http://{host}:{port}/{basePath}
     variables:
@@ -17,15 +19,6 @@ servers:
         default: 'localhost'
       port:
         default: '8001'
-      basePath:
-        enum:
-          - v0
-        default: v0
-  - description: Production server
-    url: '{publicUrl}/{basePath}'
-    variables:
-      publicUrl:
-        default: 'https://osparc.io'
       basePath:
         enum:
           - v0
