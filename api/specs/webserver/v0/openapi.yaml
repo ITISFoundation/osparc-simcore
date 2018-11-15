@@ -31,6 +31,7 @@ tags:
 - name: users
   description: Operations available to regular users
 paths:
+
   /:
     get:
       tags:
@@ -47,6 +48,7 @@ paths:
                 $ref: './components/schemas/health_check.yaml#/HealthCheckEnveloped'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+
   /check/{action}:
     post:
       tags:
@@ -82,6 +84,7 @@ paths:
             application/json:
               schema:
                 $ref: './components/schemas/fake.yaml#/FakeEnveloped'
+
   /auth/register:
     post:
       operationId: auth_register
@@ -107,6 +110,7 @@ paths:
             $ref: '#/components/responses/DataError_UnprocessableEntity_422'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+
   /auth/login:
     post:
       operationId: auth_login
@@ -128,6 +132,7 @@ paths:
             $ref: '#/components/responses/DataError_UnprocessableEntity_422'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+
   /auth/logout:
     get:
       operationId: auth_logout
@@ -140,7 +145,9 @@ paths:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+
   #/auth/reset-password:
+
   /auth/change-email:
     post:
       operationId: auth_change_email
@@ -164,6 +171,7 @@ paths:
           $ref: '#/components/responses/DefaultErrorResponse'
 
   #/auth/change-password:
+
   /auth/confirmation/{code}:
     get:
       operationId: auth_confirmation
@@ -177,7 +185,7 @@ paths:
       responses:
         default:
           $ref: '#/components/responses/OK_NoContent_204'
-<<<<<<< HEAD
+
   /my:
     get:
       operationId: get_my_profile
@@ -190,6 +198,7 @@ paths:
                 $ref: './components/schemas/my.yaml#/ProfileEnveloped'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+
   /my/tokens:
     get:
       summary: List tokens
@@ -220,77 +229,14 @@ paths:
                 $ref: './components/schemas/my.yaml#/TokenEnveloped'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+
   /my/tokens/{service}:
     parameters:
       - name: service
-=======
-
-  /storage/locations:
-    get:
-      summary: Get available storage locations
-      operationId : get_storage_locations
-      responses:
-        '200':
-          description: 'List of availabe storage locations'
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/locations.yaml#FileLocationArray'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /storage/locations/{location_id}/files/metadata:
-    get:
-      summary: Get list of file meta data
-      operationId: get_files_metadata
-      parameters:
-        - name: location_id
-          in : path
-          required: true
-          schema:
-            type: string
-        - name: uuid_filter
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: 'list of file meta-datas'
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/files.yaml#FileMetaDataArray'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /storage/locations/{location_id}/files/{fileId}/metadata:
-    get:
-      summary: Get File Metadata
-      operationId: get_file_metadata
-      parameters:
-      - name: fileId
         in: path
         required: true
         schema:
           type: string
-      - name: location_id
-        in : path
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/FileMetaData_200'
-    patch:
-      summary: Update File Metadata
-      operationId: update_file_meta_data
-      parameters:
-      - name: fileId
->>>>>>> master
-        in: path
-        required: true
-        schema:
-          type: string
-<<<<<<< HEAD
     get:
       summary: Gets specific token
       operationId: get_token
@@ -317,7 +263,73 @@ paths:
       responses:
         '204':
           $ref: '#/components/responses/OK_NoContent_204'
-=======
+
+  /storage/locations:
+    get:
+      summary: Get available storage locations
+      operationId : get_storage_locations
+      responses:
+        '200':
+          description: 'List of availabe storage locations'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/locations.yaml#FileLocationArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  /storage/locations/{location_id}/files/metadata:
+    get:
+      summary: Get list of file meta data
+      operationId: get_files_metadata
+      parameters:
+        - name: location_id
+          in : path
+          required: true
+          schema:
+            type: string
+        - name: uuid_filter
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'list of file meta-datas'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/files.yaml#FileMetaDataArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+  /storage/locations/{location_id}/files/{fileId}/metadata:
+    get:
+      summary: Get File Metadata
+      operationId: get_file_metadata
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: location_id
+        in : path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/FileMetaData_200'
+    patch:
+      summary: Update File Metadata
+      operationId: update_file_meta_data
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
       - name: location_id
         in : path
         required: true
@@ -525,7 +537,6 @@ paths:
             application/json:
               schema:
                 $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
->>>>>>> master
 
 components:
   parameters:
