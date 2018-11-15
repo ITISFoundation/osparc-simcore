@@ -3,7 +3,6 @@ ErrorEnveloped:
 #
   type: object
   required:
-    - data
     - error
   properties:
     data:
