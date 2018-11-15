@@ -106,9 +106,9 @@ async def test_port_value_accessors(special_configuration, item_type, item_value
     assert await PORTS.outputs[item_key].get() == item_value
 
 @pytest.mark.parametrize("item_type, item_value, item_pytype, config_value", [
-    ("data:*/*", __file__, Path, {"store":"simcore.s3", "path":__file__}),
-    ("data:text/*", __file__, Path, {"store":"simcore.s3", "path":__file__}),
-    ("data:text/py", __file__, Path, {"store":"simcore.s3", "path":__file__}),
+    ("data:*/*", __file__, Path, {"store":"0", "path":__file__}),
+    ("data:text/*", __file__, Path, {"store":"0", "path":__file__}),
+    ("data:text/py", __file__, Path, {"store":"0", "path":__file__}),
 ])
 @pytest.mark.asyncio
 async def test_port_file_accessors(special_configuration, storage, filemanager_cfg, s3_simcore_location, bucket, item_type, item_value, item_pytype, config_value): # pylint: disable=W0613, W0621
