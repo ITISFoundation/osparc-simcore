@@ -237,7 +237,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
       xhr.onload = () => {
         console.log("onload", xhr);
         if (xhr.status == 200) {
-          var blob = new Blob(xhr.response);
+          let blob = new Blob([xhr.response]);
           let urlBlob = window.URL.createObjectURL(blob);
           let downloadAnchorNode = document.createElement("a");
           downloadAnchorNode.setAttribute("href", urlBlob);
