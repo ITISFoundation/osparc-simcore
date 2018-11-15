@@ -103,11 +103,11 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       buttonContainer.add(widget);
     });
 
-    this.addListener("dblclick", function(pointerEvent) {
+    this.addListener("dbltap", e => {
       // FIXME:
       const navBarHeight = 50;
-      let x = pointerEvent.getViewportLeft() - this.getBounds().left;
-      let y = pointerEvent.getViewportTop() - navBarHeight;
+      let x = e.getViewportLeft() - this.getBounds().left;
+      let y = e.getViewportTop() - navBarHeight;
 
       let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
       srvCat.moveTo(x, y);
@@ -116,8 +116,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         x: x,
         y: y
       };
-      srvCat.addListener("AddService", e => {
-        this.__addServiceFromCatalogue(e, pos);
+      srvCat.addListener("AddService", ev => {
+        this.__addServiceFromCatalogue(ev, pos);
       }, this);
     }, this);
   },
@@ -244,7 +244,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         this.__updateLinks(nodeUI);
       }, this);
 
-      nodeUI.addListener("dblclick", e => {
+      nodeUI.addListener("dbltap", e => {
         this.fireDataEvent("NodeDoubleClicked", nodeUI.getNodeId());
         e.stopPropagation();
       }, this);

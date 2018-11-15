@@ -1,21 +1,24 @@
 main:
+#  disable_services: ['postgres', 's3']
   host: 0.0.0.0
   log_level: INFO
   port: 8080
-  testing: true
+  testing: True
+  max_workers: 8
   python2: ${VENV2}
+  test_datcore:
+     api_token: ${BF_API_KEY}
+     api_secret: ${BF_API_SECRET}
 postgres:
-  database: simcoredb
-  endpoint: postgres:5432
-  host: localhost
-  maxsize: 5
-  minsize: 1
-  password: simcore
-  port: 5432
-  user: simcore
+  database: ${POSTGRES_DB}
+  endpoint: ${POSTGRES_ENDPOINT}
+  user: ${POSTGRES_USER}
+  password: ${POSTGRES_PASSWORD}
+  host: ${POSTGRES_HOST}
+  port: ${POSTGRES_PORT}
 s3:
-  access_key: '12345678'
-  bucket_name: simcore
-  endpoint: minio:9000
-  secret_key: '12345678'
+  endpoint: ${S3_ENDPOINT}
+  access_key: ${S3_ACCESS_KEY}
+  secret_key: ${S3_SECRET_KEY}
+  bucket_name: ${S3_BUCKET_NAME}
 version: '1.0'

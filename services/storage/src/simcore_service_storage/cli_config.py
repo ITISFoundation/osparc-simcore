@@ -1,13 +1,13 @@
 
 import argparse
-import os
 import logging
+import os
 
 import trafaret_config
 import trafaret_config.commandline as commandline
 
-from .settings import DEFAULT_CONFIG, CONFIG_SCHEMA
-from .resources import resources, RSC_CONFIG_DIR_KEY
+from .resources import RSC_CONFIG_DIR_KEY, resources
+from .settings import CONFIG_SCHEMA, DEFAULT_CONFIG
 
 log = logging.getLogger(__name__)
 

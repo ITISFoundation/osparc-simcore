@@ -42,4 +42,7 @@ rest:
   location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/openapi.yaml
   extra_urls:
     - ${OSPARC_PUBLIC_URL}
+storage:
+  host: ${STORAGE_HOST}
+  port: ${STORAGE_PORT}
 ...

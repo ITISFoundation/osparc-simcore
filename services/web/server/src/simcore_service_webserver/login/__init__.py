@@ -26,6 +26,7 @@ async def pg_pool(app: web.Application):
 
     smtp_config = app[APP_CONFIG_KEY][SMTP_SECTION]
     config = {"SMTP_{}".format(k.upper()): v for k, v in smtp_config.items()}
+    # TODO: test keys!
     #'SMTP_SENDER': None,
     #'SMTP_HOST': REQUIRED,
     #'SMTP_PORT': REQUIRED,
@@ -39,8 +40,7 @@ async def pg_pool(app: web.Application):
     db_config = app[APP_CONFIG_KEY][DB_SECTION]['postgres']
     app[APP_DB_POOL_KEY] = await asyncpg.create_pool(dsn=DSN.format(**db_config), loop=app.loop)
 
-    # FIXME: replace by CFG_LOGIN_STORAGE
-    config['STORAGE'] = AsyncpgStorage(app[APP_DB_POOL_KEY])
+    config[CFG_LOGIN_STORAGE] = AsyncpgStorage(app[APP_DB_POOL_KEY]) #NOTE: this key belongs to cfg, not settings!
     cfg.configure(config)
 
     app[APP_LOGIN_CONFIG] = cfg

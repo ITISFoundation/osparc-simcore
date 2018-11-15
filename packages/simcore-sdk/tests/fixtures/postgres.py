@@ -1,19 +1,20 @@
 import logging
 import os
 
-import psycopg2
 import pytest
 from pytest_docker import docker_ip, docker_services  # pylint:disable=W0611
+import sqlalchemy as sa
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 
-def is_responsive(dbname, user, password, host, port):
+def is_responsive(url):
     """Check if there is a db"""
     try:
-        conn = psycopg2.connect(dbname=dbname, user=user, password=password, host=host, port=port)
+        eng = sa.create_engine(url)
+        conn = eng.connect()
         conn.close()
-    except psycopg2.OperationalError as _ex:
+    except sa.exc.OperationalError:
         logging.exception("Connection to db failed")
         return False
 
@@ -27,25 +28,21 @@ def engine(docker_ip, docker_services):
     password = 'pwd'
     host = docker_ip
     port = docker_services.port_for('postgres', 5432)
+    url = 'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
+        user = user,
+        password = password,
+        database = dbname,
+        host=docker_ip,
+        port=docker_services.port_for('postgres', 5432),
+    )
     # Wait until we can connect
     docker_services.wait_until_responsive(
-        check=lambda: is_responsive(dbname, user, password, host, port),
+        check=lambda: is_responsive(url),
         timeout=30.0,
         pause=1.0,
     )
 
-    connection_ok = False
-    try:
-        conn = psycopg2.connect(dbname=dbname, user=user, password=password, host=host, port=port)
-        conn.close()
-        connection_ok = True
-    except psycopg2.OperationalError as _ex:
-        pass
-
-    assert connection_ok
-    endpoint = 'postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}'.format(
-        user=user, password=password, host=host, port=port, dbname=dbname)
-    engine = create_engine(endpoint, client_encoding='utf8')
+    engine = create_engine(url, client_encoding='utf8')
 
     os.environ["POSTGRES_ENDPOINT"]="{host}:{port}".format(host=host, port=port)
     os.environ["POSTGRES_USER"]="user"
@@ -65,3 +62,4 @@ def session(engine):
     yield session
     #cleanup
     session.close()
+    

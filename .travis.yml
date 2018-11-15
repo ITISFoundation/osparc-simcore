@@ -39,6 +39,10 @@ matrix:
         - sudo apt-get update
         - sudo apt-get -y install docker-ce
         - docker --version
+        - sudo rm /usr/local/bin/docker-compose
+        - curl -L https://github.com/docker/compose/releases/download/1.23.1/docker-compose-`uname -s`-`uname -m` > docker-compose
+        - chmod +x docker-compose
+        - sudo mv docker-compose /usr/local/bin
         - docker-compose --version
         # shutdown postgres because sometimes is is alrady up ???
         - sudo service postgresql stop
@@ -61,6 +65,8 @@ matrix:
         - pip3 list
 
       script:
+        - export DOCKER_GID=1042
+        - docker-compose -f services/docker-compose.yml build storage
         - make pylint
         - make test
 

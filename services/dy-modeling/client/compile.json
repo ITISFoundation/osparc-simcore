@@ -17,6 +17,11 @@
   "locales": ["en"],
   "lint-check": true,
 
+  "environment": {
+    "qxapp.isModeler": true,
+    "qxapp.isDevel": false
+  },
+
   "applications": [
     {
       "class": "qxapp.Application",
@@ -41,9 +46,8 @@
     "add-script" : [
       {
         "uri" : "resource/socketio/socket.io.js"
-      },
-      {
-	    "uri" : "resource/three/*"
+      }, {
+	      "uri" : "resource/three/*"
       }
     ]
   }

@@ -138,8 +138,9 @@ run_test:
 	pytest -v services/apihub/tests
 	pytest --cov=pytest_docker -v packages/pytest_docker/tests
 	pytest --cov=s3wrapper -v packages/s3wrapper/tests
+	pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
 	pytest --cov=servicelib -v packages/service-library/tests
-	pytest --cov=simcore_service_webserver -v services/web/server/tests/unit
+	pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
 	pytest --cov=simcore_service_webserver -v services/web/server/tests/login
 	pytest --cov=simcore_service_director -v services/director/tests
 	pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
@@ -155,7 +156,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.19
+PLATFORM_VERSION=3.21
 
 push_platform_images:
 	${DOCKER} login masu.speag.com
@@ -167,6 +168,8 @@ push_platform_images:
 	${DOCKER} push masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
 	${DOCKER} tag services_director:latest masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
 	${DOCKER} push masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
+	${DOCKER} tag services_storage:latest masu.speag.com/simcore/workbench/storage:${PLATFORM_VERSION}
+	${DOCKER} push masu.speag.com/simcore/workbench/storage:${PLATFORM_VERSION}
 
   setup-check: .env .vscode/settings.json
 

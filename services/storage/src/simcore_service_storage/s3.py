@@ -16,6 +16,12 @@ log = logging.getLogger(__name__)
 _SERVICE_NAME = 's3'
 
 
+SIMCORE_S3_ID    = 0
+SIMCORE_S3_STR   = "simcore.s3"
+
+DATCORE_ID      = 1
+DATCORE_STR     = "datcore"
+
 def setup(app: web.Application):
     """ minio/s3 service setup"""
 
@@ -38,5 +44,6 @@ get_config_s3 = get_config
 
 __all__ = (
     "setup_s3",
-    "get_config_s3"
+    "get_config_s3",
+
 )

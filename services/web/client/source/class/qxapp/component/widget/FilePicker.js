@@ -2,11 +2,17 @@
 qx.Class.define("qxapp.component.widget.FilePicker", {
   extend: qx.ui.core.Widget,
 
-  construct: function(node) {
+  construct: function(nodeModel, projectId) {
     this.base(arguments);
+
+    this.setNodeModel(nodeModel);
+    this.setProjectId(projectId);
 
     let filePickerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(filePickerLayout);
+
+    let tree = this.__tree = this._createChildControlImpl("treeMenu");
+    tree.getSelection().addListener("change", this.__selectionChanged, this);
 
     // Create a button
     let input = new qx.html.Input("file", {
@@ -31,9 +37,6 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       }
     }, this);
 
-    let tree = this.__tree = this._createChildControlImpl("treeMenu");
-    tree.getSelection().addListener("change", this.__selectionChanged, this);
-
     let selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
     selectBtn.setEnabled(false);
     selectBtn.addListener("execute", function() {
@@ -48,12 +51,20 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
     }, this);
 
     this.buildTree();
+  },
 
-    this.__createConnections(node);
+  properties: {
+    nodeModel: {
+      check: "qxapp.data.model.NodeModel"
+    },
+
+    projectId: {
+      check: "String",
+      init: ""
+    }
   },
 
   events: {
-    "ItemSelected": "qx.event.type.Data",
     "Finished": "qx.event.type.Event"
   },
 
@@ -90,93 +101,43 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       return control || this.base(arguments, id);
     },
 
-    __clearTree: function() {
-      let data = {
-        label: "My Documents",
-        children: []
-      };
-      let emptyModel = qx.data.marshal.Json.createModel(data, true);
-      this.__tree.setModel(emptyModel);
-      let that = this;
-      this.__tree.setDelegate({
-        createItem: () => new qxapp.component.widget.FileTreeItem(),
-        bindItem: (c, item, id) => {
-          c.bindDefaultProperties(item, id);
-          c.bindProperty("fileId", "fileId", null, item, id);
-          c.bindProperty("size", "size", null, item, id);
-        },
-        configureItem: item => {
-          item.addListener("dbltap", e => {
-            that.__itemSelected(); // eslint-disable-line no-underscore-dangle
-          }, that);
-        }
-      });
-    },
-
     buildTree: function() {
       this.__getFiles();
     },
 
-    __setTreeData: function(data) {
-      let newModel = qx.data.marshal.Json.createModel(data, true);
-      let oldModel = this.__tree.getModel();
-      if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
-        this.__tree.setModel(newModel);
-      }
-    },
-
-    __addTreeData: function(data) {
-      let newModelToAdd = qx.data.marshal.Json.createModel(data, true);
-      let currentModel = this.__tree.getModel();
-      currentModel.getChildren().append(newModelToAdd);
-      this.__tree.setModel(currentModel);
-    },
-
     __getFiles: function() {
-      this.__clearTree();
-      let store = qxapp.data.Store.getInstance();
-      store.addListener("MyDocuments", e => {
-        const files = e.getData();
-        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-        this.__addTreeData(newChildren);
-      }, this);
-      store.getMyDocuments();
+      let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__tree);
+      filesTreePopulator.populateMyDocuments();
 
-      store.addListener("S3PublicDocuments", e => {
-        const files = e.getData();
-        const newChildren = qxapp.data.Converters.fromS3ToVirtualTreeModel(files);
-        this.__addTreeData(newChildren);
-      }, this);
-      store.getS3SandboxFiles();
-    },
-
-    __createConnections: function(node) {
-      this.addListener("ItemSelected", function(data) {
-        const itemPath = data.getData().itemPath;
-        let outputs = node.getOutputs();
-        outputs["outFile"].value = {
-          store: "s3-z43",
-          path: itemPath
-        };
-        this.fireEvent("Finished");
-      }, this);
+      let that = this;
+      let delegate = this.__tree.getDelegate();
+      delegate["configureItem"] = function(item) {
+        item.addListener("dbltap", e => {
+          that.__itemSelected(); // eslint-disable-line no-underscore-dangle
+        }, that);
+      };
+      this.__tree.setDelegate(delegate);
     },
 
     // Request to the server an upload URL.
     __retrieveURLAndUpload: function(file) {
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-
-      const slotName = "presignedUrl";
-      socket.removeSlot(slotName);
-      socket.on(slotName, function(data) {
-        const url = data["url"];
-        this.__uploadFile(file, url);
+      let store = qxapp.data.Store.getInstance();
+      store.addListenerOnce("PresginedLink", e => {
+        const presginedLinkData = e.getData();
+        // presginedLinkData.locationId;
+        // presginedLinkData.fileUuid;
+        console.log(file);
+        if (presginedLinkData.presginedLink) {
+          this.__uploadFile(file, presginedLinkData.presginedLink.link);
+        }
       }, this);
-      const data = {
-        bucketName: qxapp.dev.fake.Data.getS3PublicBucketName(),
-        fileName: file.name
-      };
-      socket.emit(slotName, data);
+      const download = false;
+      const locationId = 0;
+      const projectId = this.getProjectId();
+      const nodeId = this.getNodeModel().getNodeId();
+      const fileId = file.name;
+      const fileUuid = projectId +"/"+ nodeId +"/"+ fileId;
+      store.getPresginedLink(download, locationId, fileUuid);
     },
 
     // Use XMLHttpRequest to upload the file to S3.
@@ -190,6 +151,8 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       hBox.add(progressBar, {
         width: "85%"
       });
+
+      // From https://github.com/minio/cookbook/blob/master/docs/presigned-put-upload-via-browser.md
       let xhr = new XMLHttpRequest();
       xhr.upload.addEventListener("progress", e => {
         if (e.lengthComputable) {
@@ -199,34 +162,47 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
           console.log("Unable to compute progress information since the total size is unknown");
         }
       }, false);
-      xhr.open("PUT", url, true);
-      xhr.send(file);
       xhr.onload = () => {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
           hBox.destroy();
           this.buildTree();
+        } else {
+          console.log(xhr.response);
         }
       };
+      xhr.open("PUT", url, true);
+      xhr.send(file);
+    },
+
+    __isFile: function(item) {
+      let isFile = false;
+      if (item["set"+qx.lang.String.firstUp("fileId")]) {
+        isFile = true;
+      }
+      return isFile;
     },
 
     __selectionChanged: function() {
       let selection = this.__tree.getSelection();
       let selectedItem = selection.toArray()[0];
-      let enabled = false;
-      if (selectedItem["set"+qx.lang.String.firstUp("fileId")]) {
-        enabled = true;
-      }
+      let enabled = this.__isFile(selectedItem);
       this.__selectBtn.setEnabled(enabled);
     },
 
     __itemSelected: function() {
       let selection = this.__tree.getSelection();
       let selectedItem = selection.toArray()[0];
-      const data = {
-        itemPath: selectedItem.getFileId()
+      if (!this.__isFile(selectedItem)) {
+        return;
+      }
+      let outputs = this.getNodeModel().getOutputs();
+      outputs["outFile"].value = {
+        store: selectedItem.getLocation(),
+        path: selectedItem.getFileId()
       };
-      this.fireDataEvent("ItemSelected", data);
+      this.getNodeModel().repopulateOutputPortData();
+      this.fireEvent("Finished");
     }
   }
 });

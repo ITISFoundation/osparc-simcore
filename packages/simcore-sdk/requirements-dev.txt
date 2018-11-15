@@ -1,5 +1,7 @@
 # develop mode
--e . ".[test]"
+-e .[test]
+-e ../../services/storage/client-sdk/python/
 -e ../s3wrapper/
 
 autopep8>=1.3.5
+mock

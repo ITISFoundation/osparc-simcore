@@ -6,12 +6,10 @@ from pathlib import Path
 import pkg_resources
 import pytest
 import yaml
-
 from openapi_spec_validator import validate_spec
 from openapi_spec_validator.exceptions import OpenAPIValidationError
 
 import simcore_service_storage
-
 
 API_VERSIONS = ('v0', )
 
