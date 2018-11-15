@@ -413,24 +413,35 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __startInteractiveNode: function() {
       let metaData = this.getMetaData();
       if (metaData.type == "dynamic") {
-        let request = new qxapp.io.request.ApiRequest("/running_interactive_services", "POST");
-        let data = {
-          serviceKey: metaData.key,
-          serviceVersion: metaData.version,
-          nodeId: this.getNodeId()
-        };
-        request.set({
-          requestData: qx.util.Serializer.toJson(data)
-        });
+        let url = "/running_interactive_services";
+        let query = "?service_key=" + encodeURIComponent(metaData.key) + "&service_tag=" + encodeURIComponent(metaData.version) + "&service_uuid=" + encodeURIComponent(this.getNodeId());
+        console.log(url+query)
+        let request = new qxapp.io.request.ApiRequest(url+query, "POST");
+        
         request.addListener("success", this.__onInteractiveNodeStarted, this);
         request.addListener("error", e => {
-          this.getLogger().error("node", "Error starting interactive node")
+          const msg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
+          const msgData = {
+            nodeLabel: this.getLabel(),
+            msg: msg
+          };
+          this.fireDataEvent("ShowInLogger", msgData);
         }, this);
         request.addListener("fail", e => {
-          this.getLogger().error("node", "Failed starting interactive node")
+          const msg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
+          const msgData = {
+            nodeLabel: this.getLabel(),
+            msg: msg
+          };
+          this.fireDataEvent("ShowInLogger", msgData);
         }, this);
         request.send();
-        this.getLogger().info("node", "Starting interactive service");
+        const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
+        const msgData = {
+          nodeLabel: this.getLabel(),
+          msg: msg
+        };
+        this.fireDataEvent("ShowInLogger", msgData);
       }
     },
 
@@ -481,13 +492,9 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     __stopInteractiveNode: function() {
       if (this.getMetaData().type == "dynamic") {
-        let request = new qxapp.io.request.ApiRequest("/running_interactive_services", "DELETE");
-        let data = {
-          nodeId: this.getNodeId()
-        };
-        request.set({
-          requestData: qx.util.Serializer.toJson(data)
-        });
+        let url = "/running_interactive_services";
+        let query = "?service_uuid="+encodeURIComponent(this.getNodeId());
+        let request = new qxapp.io.request.ApiRequest(url+query, "DELETE");
         request.send();
       }
     },
