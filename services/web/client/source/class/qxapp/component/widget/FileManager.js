@@ -116,7 +116,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
 
     __reloadNodeTree: function() {
       let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__nodeTree);
-      filesTreePopulator.populateMyDocuments();
+      filesTreePopulator.populateNodeFiles();
 
       let that = this;
       let delegate = this.__nodeTree.getDelegate();
