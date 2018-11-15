@@ -30,7 +30,7 @@ async def _request_storage(request: web.Request, method: str = None) -> web.Resp
         return payload
 
 @login_required
-async def running_interactive_services_post(request: web.Request):
+async def running_interactive_services_post(request: web.Request) -> web.Response:
     payload = await _request_storage(request)
     if payload.status == 200:
         # TODO: add the service to the list of service for this user
@@ -38,12 +38,12 @@ async def running_interactive_services_post(request: web.Request):
     return payload
 
 @login_required
-async def running_interactive_services_get(request: web.Request):
+async def running_interactive_services_get(request: web.Request) -> web.Response:
     payload = await _request_storage(request)
     return payload
 
 @login_required
-async def running_interactive_services_delete(request: web.Request):
+async def running_interactive_services_delete(request: web.Request) -> web.Response:
     payload = await _request_storage(request)
     if payload.status == 204:
         #TODO: remove the service from the list of services for this user
@@ -51,6 +51,6 @@ async def running_interactive_services_delete(request: web.Request):
     return payload
 
 @login_required
-async def services_get(request):
+async def services_get(request: web.Request) -> web.Response:
     payload = await _request_storage(request)
     return payload
