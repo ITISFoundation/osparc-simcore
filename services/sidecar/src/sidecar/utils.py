@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import shutil
@@ -13,11 +14,11 @@ from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.config.docker import Config as docker_config
 from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.config.s3 import Config as s3_config
-from simcore_sdk.models.pipeline_models import (
-    SUCCESS,
-    ComputationalTask
-)
+from simcore_sdk.models.pipeline_models import SUCCESS, ComputationalTask
 
+
+def wrap_async_call(fct: asyncio.coroutine):
+    return asyncio.get_event_loop().run_until_complete(fct)
 
 def delete_contents(folder):
     for _fname in os.listdir(folder):

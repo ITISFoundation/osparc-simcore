@@ -15,6 +15,12 @@ log = logging.getLogger(__name__)
 
 
 def create_configfile_schema():
+     # TODO: import from storage-sdk
+    _STORAGE_SCHEMA = T.Dict({
+        "host": T.String(),
+        "port": T.Int()
+    })
+
     # should have per module?
     _DB_SCHEMA = T.Dict({
         T.Key("init_tables", default=False): T.Bool()
@@ -53,7 +59,8 @@ def create_configfile_schema():
         T.Key(DIRECTOR_SERVICE): director_schema,
         T.Key("postgres"): db.CONFIG_SCHEMA,
         T.Key("rabbit"): rabbit.CONFIG_SCHEMA,
-        T.Key("s3"): s3.CONFIG_SCHEMA
+        T.Key("s3"): s3.CONFIG_SCHEMA,
+        T.Key("storage"): _STORAGE_SCHEMA,
     })
 
 

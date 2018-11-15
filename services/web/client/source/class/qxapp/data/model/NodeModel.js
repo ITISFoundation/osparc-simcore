@@ -247,6 +247,12 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
+    repopulateOutputPortData: function() {
+      if (this.__outputWidget) {
+        this.__outputWidget.populatePortsData();
+      }
+    },
+
     getInputsDefaultWidget: function() {
       return this.__inputsDefaultWidget;
     },

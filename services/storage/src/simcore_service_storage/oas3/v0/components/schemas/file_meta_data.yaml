@@ -1,0 +1,54 @@
+components:
+  schemas:
+    FileMetaDataEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/FileMetaDataType'
+        error:
+          nullable: true
+          default: null
+
+    FileMetaDataType:
+      type: object
+      properties:
+        file_uuid:
+          type: string
+        location_id:
+          type: string
+        location:
+          type: string
+        bucket_name:
+          type: string
+        object_name:
+          type: string
+        project_id:
+          type: string
+        project_name:
+          type: string
+        node_id:
+          type: string
+        node_name:
+          type: string
+        file_name:
+          type: string
+        user_id:
+          type: string
+        user_name:
+          type: string
+      example:
+        file_uuid: 'simcore-testing/105/1000/3'
+        location_id: "0"
+        location_name: "simcore.s3"
+        bucket_name: "simcore-testing"
+        object_name: "105/10000/3"
+        project_id: "105"
+        project_name: "futurology"
+        node_id: "10000"
+        node_name: "alpha"
+        file_name: "example.txt"
+        user_id: "12"
+        user_name: "dennis"

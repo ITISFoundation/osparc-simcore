@@ -10,6 +10,8 @@ from pathlib import Path
 
 import zipfile
 
+from simcore_sdk import node_ports
+
 log = logging.getLogger(__name__)
 
 # necessary for CGI scripting compatiblity
@@ -17,7 +19,6 @@ log = logging.getLogger(__name__)
 print("Content-Type: text/html;charset=utf-8")
 print()
 
-from simcore_sdk.nodeports.nodeports import PORTS
 
 _INPUT_PATH = Path(os.environ.get("PARAVIEW_INPUT_PATH"))
 
@@ -29,6 +30,7 @@ if not _INPUT_PATH.exists():
     log.debug("Created input folder at %s", _INPUT_PATH)
 
 # get all files in the local system and copy them to the input folder
+PORTS = node_ports.ports()
 for node_input in PORTS.inputs:
     if not node_input or node_input.value is None:
         continue

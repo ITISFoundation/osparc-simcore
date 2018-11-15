@@ -57,7 +57,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
         openMode: "none"
       });
-      tree.addListener("dblclick", e => {
+      tree.addListener("dbltap", e => {
         let selection = this.__tree.getSelection();
         let currentSelection = selection.toArray();
         if (currentSelection.length > 0) {

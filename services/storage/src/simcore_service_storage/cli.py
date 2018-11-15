@@ -16,39 +16,42 @@ import argparse
 import logging
 import sys
 
-from . import cli_config
-from . import application
+from . import application, cli_config
 
 log = logging.getLogger(__name__)
 
 
 def setup(_parser):
-    _parser.add_argument('names', metavar='NAME', nargs=argparse.ZERO_OR_MORE,
-                    help="A name of something.")
     cli_config.add_cli_options(_parser)
+    return _parser
 
 
-def parse(args):
+def parse(args, _parser):
     """ Parse options and returns a configuration object """
     if args is None:
         args = sys.argv[1:]
 
     # ignore unknown options
-    options, _ = parser.parse_known_args(args)
+    options, _ = _parser.parse_known_args(args)
     config = cli_config.config_from_options(options)
 
     # TODO: check whether extra options can be added to the config?!
     return config
 
 
+parser = argparse.ArgumentParser(description='Service to manage data storage in simcore.')
+setup(parser)
+
+
 def main(args=None):
-    config = parse(args)
+    config = parse(args, parser)
 
     log_level = config["main"]["log_level"]
     logging.basicConfig(level=getattr(logging, log_level))
+    print("hello, iam")
 
     application.run(config)
 
 
-parser = argparse.ArgumentParser(description='Service to manage data storage in simcore.')
-setup(parser)
+# alias
+setup_parser = setup

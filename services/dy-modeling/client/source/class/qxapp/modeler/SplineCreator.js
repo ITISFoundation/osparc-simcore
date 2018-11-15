@@ -17,13 +17,13 @@ qx.Class.define("qxapp.modeler.SplineCreator", {
     startTool: function() {
       const fixedAxe = 2;
       const fixedPos = 0;
-      this.__threeView.addInvisiblePlane(fixedAxe, fixedPos);
+      this.__threeView.addSnappingPlane(fixedAxe, fixedPos);
       this.__pointList = [];
       this.__controlPoints = [];
     },
 
     stopTool: function() {
-      this.__threeView.removeInvisiblePlane();
+      this.__threeView.removeSnappingPlane();
     },
 
     onMouseHover: function(event, intersects) {
