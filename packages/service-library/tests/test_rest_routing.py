@@ -13,7 +13,7 @@ from tutils import Handlers
 
 @pytest.fixture
 def specs(here):
-    openapi_path = here / "data" / "v3.0" / "enveloped_responses.yaml"
+    openapi_path = here / "data" / "oas3" / "enveloped_responses.yaml"
     assert openapi_path.exists()
     specs = openapi.create_specs(openapi_path)
     return specs
@@ -59,3 +59,18 @@ def test_create_routes_from_namespace(specs):
     assert len(routes) == len(specs.paths)
     for rdef in routes:
         assert rdef.method == "GET"
+
+
+def test_prepends_basepath(specs):
+
+    # not - strict
+    try:
+        handlers = Handlers()
+        routes = create_routes_from_namespace(specs, handlers, strict=False)
+    except Exception: # pylint: disable=W0703
+        pytest.fail("Non-strict failed", pytrace=True)
+
+    basepath = openapi.get_base_path(specs)
+    for route in routes:
+        assert route.path.startswith(basepath)
+        assert route.handler.__name__[len("get_"):] in route.path

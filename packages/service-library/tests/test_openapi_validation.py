@@ -14,7 +14,7 @@ from tutils import Handlers
 
 @pytest.fixture
 def specs(here):
-    openapi_path = here / "data" / "v3.0" / "enveloped_responses.yaml"
+    openapi_path = here / "data" / "oas3" / "enveloped_responses.yaml"
     assert openapi_path.exists()
     specs = openapi.create_specs(openapi_path)
     return specs
