@@ -27,6 +27,8 @@ from utils import BUCKET_NAME
 def test_mockup(dsm_mockup_db):
     assert len(dsm_mockup_db)==100
 
+# Too many branches (13/12) (too-many-branches)
+# pylint: disable=R0912
 async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
     id_name_map = {}
     id_file_count = {}
