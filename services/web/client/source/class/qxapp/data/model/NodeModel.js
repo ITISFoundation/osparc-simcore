@@ -413,11 +413,17 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __startInteractiveNode: function() {
       let metaData = this.getMetaData();
       if (metaData.type == "dynamic") {
-        let url = "/running_interactive_services";
-        let query = "?service_key=" + encodeURIComponent(metaData.key) + "&service_tag=" + encodeURIComponent(metaData.version) + "&service_uuid=" + encodeURIComponent(this.getNodeId());
-        console.log(url+query)
+        const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
+        const msgData = {
+          nodeLabel: this.getLabel(),
+          msg: msg
+        };
+        this.fireDataEvent("ShowInLogger", msgData);
+
+        // start the service
+        const url = "/running_interactive_services";
+        const query = "?service_key=" + encodeURIComponent(metaData.key) + "&service_tag=" + encodeURIComponent(metaData.version) + "&service_uuid=" + encodeURIComponent(this.getNodeId());
         let request = new qxapp.io.request.ApiRequest(url+query, "POST");
-        
         request.addListener("success", this.__onInteractiveNodeStarted, this);
         request.addListener("error", e => {
           const msg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
@@ -436,19 +442,22 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           this.fireDataEvent("ShowInLogger", msgData);
         }, this);
         request.send();
-        const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
+        
+      }
+    },
+
+    __onInteractiveNodeStarted: function(e) {
+      let req = e.getTarget();
+      const {data, error} = req.getResponse()
+
+      if (error) {
+        const msg = "Error received: " + error;
         const msgData = {
           nodeLabel: this.getLabel(),
           msg: msg
         };
         this.fireDataEvent("ShowInLogger", msgData);
       }
-    },
-
-    __onInteractiveNodeStarted: function(e) {
-      let req = e.getTarget();
-      const {data} = req.getResponse()
-
       const publishedPort = data["published_port"];
       const entryPointD = data["entry_point"];
       const nodeId = data["service_uuid"];
