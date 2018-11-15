@@ -1,3 +1,8 @@
+/* global document */
+/* global XMLHttpRequest */
+/* global Blob */
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.component.widget.FileManager", {
   extend: qx.ui.core.Widget,
 
@@ -17,20 +22,20 @@ qx.Class.define("qxapp.component.widget.FileManager", {
     treesLayout.add(nodeTree, {
       flex: 1
     });
-    nodeTree.addListener("changeSelection", this.__itemSelected, this);
+    nodeTree.getSelection().addListener("change", this.__itemSelected, this);
 
     let userTree = this.__userTree = this._createChildControlImpl("userTree");
     treesLayout.add(userTree, {
       flex: 1
     });
-    userTree.addListener("changeSelection", this.__itemSelected, this);
+    userTree.getSelection().addListener("change", this.__itemSelected, this);
 
     let selectedFileLayout = this._createChildControlImpl("selectedFileLayout");
     {
       let selectedLabel = this.__selectedLabel = new qx.ui.basic.Label().set({
         decorator: "main",
         backgroundColor: "white",
-        minWidth: 300,
+        allowGrowX: true,
         height: 24
       });
 
@@ -38,7 +43,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
         icon: "@FontAwesome5Solid/cloud-download-alt/24"
       });
       downloadBtn.addListener("execute", e => {
-        this.__downloadFile();
+        this.__retrieveURLAndDownload();
       }, this);
 
       let deleteBtn = new qx.ui.form.Button().set({
@@ -90,7 +95,9 @@ qx.Class.define("qxapp.component.widget.FileManager", {
           break;
         case "nodeTree":
         case "userTree":
-          control = new qx.ui.tree.Tree();
+          control = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+            openMode: "none"
+          });
           break;
         case "selectedFileLayout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
@@ -108,162 +115,59 @@ qx.Class.define("qxapp.component.widget.FileManager", {
     },
 
     __reloadNodeTree: function() {
-      this.__nodeTree.resetRoot();
+      let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__nodeTree);
+      filesTreePopulator.populateNodeFiles();
 
-      const nodeName = this.getNodeModel().getLabel();
-      let root = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), nodeName);
-      root.setOpen(true);
-      this.__nodeTree.setRoot(root);
-
-      // this.__populateNodeFiles();
-      this.__populateFiles(this.__nodeTree, true, false);
+      let that = this;
+      let delegate = this.__nodeTree.getDelegate();
+      delegate["configureItem"] = function(item) {
+        that.__createDragMechanism(item); // eslint-disable-line no-underscore-dangle
+      };
+      this.__nodeTree.setDelegate(delegate);
     },
 
     __reloadUserTree: function() {
-      this.__userTree.resetRoot();
+      let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__userTree);
+      filesTreePopulator.populateMyDocuments();
 
-      let root = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), this.__currentUserId);
-      root.setOpen(true);
-      this.__userTree.setRoot(root);
-
-      // this.__populateUserFiles();
-      this.__populateFiles(this.__userTree, false, true);
+      let that = this;
+      let delegate = this.__userTree.getDelegate();
+      delegate["configureItem"] = function(item) {
+        that.__createDropMechanism(item); // eslint-disable-line no-underscore-dangle
+      };
+      this.__userTree.setDelegate(delegate);
     },
 
-    __populateFiles: function(tree, isDraggable = false, isDroppable = false) {
-      const slotName = "listObjects";
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-      socket.removeSlot(slotName);
-      socket.on(slotName, function(data) {
-        for (let i=0; i<data.length; i++) {
-          this.__addTreeItem(data[i], tree);
-        }
-        let allItems = tree.getItems(true, true);
-        for (let i=0; i<allItems.length; i++) {
-          let treeItem = allItems[i];
-          if (isDraggable && treeItem instanceof qx.ui.tree.TreeFile) {
-            this.__createDragMechanism(treeItem);
-          }
-          if (isDroppable && treeItem instanceof qx.ui.tree.TreeFolder) {
-            this.__createDropMechanism(treeItem);
-          }
-        }
-      }, this);
-      if (!socket.getSocket().connected) {
-        let data = qxapp.dev.fake.Data.getObjectList();
-        for (let i=0; i<data.length; i++) {
-          this.__addTreeItem(data[i], tree);
-        }
-        let allItems = tree.getItems(true, true);
-        for (let i=0; i<allItems.length; i++) {
-          let treeItem = allItems[i];
-          if (isDraggable && treeItem instanceof qx.ui.tree.TreeFile) {
-            this.__createDragMechanism(treeItem);
-          }
-          if (isDroppable && treeItem instanceof qx.ui.tree.TreeFolder) {
-            this.__createDropMechanism(treeItem);
-          }
+    __isFile: function(item) {
+      let isFile = false;
+      if (item["get"+qx.lang.String.firstUp("fileId")]) {
+        if (item.getFileId() !== null) {
+          isFile = true;
         }
       }
-      socket.emit(slotName);
+      return isFile;
     },
 
-    __alreadyExists: function(parentTree, itemName) {
-      for (let i=0; i<parentTree.getChildren().length; i++) {
-        let treeExsItem = parentTree.getChildren()[i];
-        if (treeExsItem.getLabel() === itemName) {
-          return treeExsItem;
+    __isDir: function(item) {
+      let isDir = false;
+      if (item["get"+qx.lang.String.firstUp("path")]) {
+        if (item.getPath() !== null) {
+          isDir = true;
         }
       }
-      return null;
-    },
-
-    __addTreeItem: function(data, root) {
-      let splitted = data.path.split("/");
-      let parentFolder = root.getRoot();
-      for (let i=0; i<splitted.length-1; i++) {
-        let parentPath = splitted.slice(0, i);
-        const folderName = splitted[i];
-        let folderPath = {
-          path: parentPath.concat(folderName).join("/")
-        };
-        if (this.__alreadyExists(parentFolder, folderName)) {
-          parentFolder = this.__alreadyExists(parentFolder, folderName);
-        } else {
-          let treeItem = this.__configureTreeItem(new qx.ui.tree.TreeFolder(), folderName, folderPath);
-          parentFolder.add(treeItem);
-          parentFolder = treeItem;
-        }
-      }
-
-      const fileName = splitted[splitted.length-1];
-      if (!this.__alreadyExists(parentFolder, fileName)) {
-        let treeItem = this.__configureTreeItem(new qx.ui.tree.TreeFile(), fileName, data);
-        parentFolder.add(treeItem);
-      }
-    },
-
-    __configureTreeItem: function(treeItem, label, extraInfo) {
-      // A left-justified icon
-      treeItem.addWidget(new qx.ui.core.Spacer(16, 16));
-
-      // Here's our indentation and tree-lines
-      treeItem.addSpacer();
-
-      if (treeItem instanceof qx.ui.tree.TreeFolder) {
-        treeItem.addOpenButton();
-      }
-
-      // The standard tree icon follows
-      treeItem.addIcon();
-
-      // The label
-      treeItem.addLabel(label);
-
-      // All else should be right justified
-      treeItem.addWidget(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      if (treeItem instanceof qx.ui.tree.TreeFile) {
-        // Add a file size, date and mode
-        const formattedSize = qxapp.utils.Utils.formatBytes(extraInfo.size);
-        let text = new qx.ui.basic.Label(formattedSize);
-        text.setWidth(80);
-        treeItem.addWidget(text);
-
-        text = new qx.ui.basic.Label((new Date(extraInfo.lastModified)).toUTCString());
-        text.setMinWidth(200);
-        treeItem.addWidget(text);
-
-        treeItem.addListener("click", function(mouseEvent) {
-          this.__itemSelected();
-        }, this);
-      }
-
-      if (extraInfo) {
-        treeItem.path = extraInfo.path;
-      }
-
-      if (treeItem instanceof qx.ui.tree.TreeFile) {
-        treeItem.isDir = false;
-      } else if (treeItem instanceof qx.ui.tree.TreeFolder) {
-        treeItem.isDir = true;
-      }
-
-      return treeItem;
+      return isDir;
     },
 
     __createDragMechanism: function(treeItem) {
       treeItem.setDraggable(true);
       treeItem.addListener("dragstart", e => {
-        if (e.getOriginalTarget().isDir == true) {
-          e.preventDefault();
-        } else {
+        if (this.__isFile(e.getOriginalTarget())) {
           // Register supported actions
           e.addAction("copy");
           // Register supported types
           e.addType("osparc-filePath");
+        } else {
+          e.preventDefault();
         }
       }, this);
     },
@@ -272,10 +176,8 @@ qx.Class.define("qxapp.component.widget.FileManager", {
       treeItem.setDroppable(true);
       treeItem.addListener("dragover", e => {
         let compatible = false;
-        if (e.supportsType("osparc-filePath")) {
-          const from = e.getRelatedTarget();
-          const to = e.getCurrentTarget();
-          if (from.isDir === false && to.isDir === true) {
+        if (this.__isDir(e.getOriginalTarget())) {
+          if (e.supportsType("osparc-filePath")) {
             compatible = true;
           }
         }
@@ -288,7 +190,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
         if (e.supportsType("osparc-filePath")) {
           const from = e.getRelatedTarget();
           const to = e.getCurrentTarget();
-          console.log("Copy", from.path, "to", to.path);
+          console.log("Copy", from.getFileId(), "to", to.getPath());
         }
       }, this);
     },
@@ -298,18 +200,53 @@ qx.Class.define("qxapp.component.widget.FileManager", {
       if (selectedItem.length < 1) {
         return;
       }
-      if ("path" in selectedItem[0]) {
-        const data = {
-          itemPath: selectedItem[0].path,
-          isDirectory: selectedItem[0].isDir
-        };
-        this.__selection = data.itemPath;
-        this.__selectedLabel.setValue(data.itemPath);
+      selectedItem = selectedItem.toArray();
+      if (this.__isFile(selectedItem[0])) {
+        this.__selection = selectedItem[0].getFileId();
+        this.__selectedLabel.setValue(selectedItem[0].getFileId());
+      } else {
+        this.__selection = null;
+        this.__selectedLabel.setValue("");
       }
     },
 
-    __downloadFile: function() {
-      console.log("Download ", this.__selection);
+    // Request to the server an download
+    __retrieveURLAndDownload: function() {
+      if (this.__selection !== null) {
+        const fileId = this.__selection;
+        let fileName = fileId.split("/");
+        fileName = fileName[fileName.length-1];
+        let store = qxapp.data.Store.getInstance();
+        store.addListenerOnce("PresginedLink", e => {
+          const presginedLinkData = e.getData();
+          console.log(presginedLinkData.presginedLink);
+          if (presginedLinkData.presginedLink) {
+            this.__downloadFile(presginedLinkData.presginedLink.link, fileName);
+          }
+        }, this);
+        const download = true;
+        const locationId = 0;
+        store.getPresginedLink(download, locationId, fileId);
+      }
+    },
+
+    __downloadFile: function(url, fileName) {
+      let xhr = new XMLHttpRequest();
+      xhr.open("GET", url, true);
+      xhr.responseType = "blob";
+      xhr.onload = () => {
+        console.log("onload", xhr);
+        if (xhr.status == 200) {
+          var blob = new Blob(xhr.response);
+          let urlBlob = window.URL.createObjectURL(blob);
+          let downloadAnchorNode = document.createElement("a");
+          downloadAnchorNode.setAttribute("href", urlBlob);
+          downloadAnchorNode.setAttribute("download", fileName);
+          downloadAnchorNode.click();
+          downloadAnchorNode.remove();
+        }
+      };
+      xhr.send();
     },
 
     __deleteFile: function() {

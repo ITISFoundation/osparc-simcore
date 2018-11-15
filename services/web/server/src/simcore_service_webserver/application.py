@@ -9,13 +9,14 @@ from aiohttp import web
 from .application_keys import APP_CONFIG_KEY
 from .computational_backend import setup_computational_backend
 from .db import setup_db
-from .login import setup_login
 from .email import setup_email
+from .login import setup_login
 from .rest import setup_rest
 from .security import setup_security
 from .session import setup_session
 from .sockets import setup_sio
 from .statics import setup_statics
+from .storage import setup_storage
 
 log = logging.getLogger(__name__)
 
@@ -42,8 +43,10 @@ def create_application(config: dict):
     setup_computational_backend(app)
     setup_statics(app)
     setup_sio(app)
-    setup_rest(app)
+    setup_rest(app) # FIXME: all submodules that inject routes, need to be after rest setup
     setup_login(app)
+    setup_storage(app)
+
 
     return app
 

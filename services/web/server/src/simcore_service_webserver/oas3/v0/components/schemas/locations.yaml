@@ -1,0 +1,30 @@
+FileLocationEnveloped:
+  type: object
+  required:
+    - data
+    - error
+  properties:
+    data:
+      $ref: '#/FileLocation'
+      nullable: true
+      default: null
+    error:
+      $ref: "./error.yaml#/ErrorType"
+      nullable: true
+      default: null
+
+FileLocation:
+  type: object
+  properties:
+    name:
+      type: string
+    id:
+      type: number
+  example:
+    filename: 'simcore.s3'
+    id: 0
+
+FileLocationArray:
+  type: array
+  items:
+    $ref: '#/FileLocation'

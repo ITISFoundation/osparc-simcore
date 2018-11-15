@@ -19,6 +19,7 @@ from .rest_settings import get_base_path
 log = logging.getLogger(__name__)
 
 
+#TODO: move to servicelib
 def _get_server(servers, url):
     # Development server: http://{host}:{port}/{basePath}
     for server in servers:
