@@ -1,5 +1,7 @@
 from aiohttp import web
 
+APP_LOGIN_CONFIG = __name__ + ".config"
+
 REQUIRED = object()
 DEFAULTS = {
     'COMMON_THEME': 'templates/common',
@@ -7,10 +9,6 @@ DEFAULTS = {
     'LOGIN_REDIRECT': '/',
     'LOGOUT_REDIRECT': '/',
     'REGISTRATION_CONFIRMATION_REQUIRED': False, # TODO: activate when
-
-    'ADMIN_EMAILS': [],
-    'BACK_URL_QS_KEY': 'back_to',
-
 
     # TODO: add in configuration file as environ!
     'SMTP_SENDER': None,
@@ -50,8 +48,7 @@ DEFAULTS = {
     'STORAGE': REQUIRED,
 }
 
-APP_LOGIN_CONFIG = __name__ + ".config"
-CFG_LOGIN_STORAGE = __name__ + ".storage"
+assert 'STORAGE' in DEFAULTS.keys()
 
 def get_storage(app: web.Application):
     return app[APP_LOGIN_CONFIG]['STORAGE']

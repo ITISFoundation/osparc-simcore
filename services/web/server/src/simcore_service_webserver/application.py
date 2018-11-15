@@ -19,6 +19,7 @@ from .security import setup_security
 from .session import setup_session
 from .sockets import setup_sockets
 from .statics import setup_statics
+from .storage import setup_storage
 
 log = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ def create_application(config: dict):
     setup_login(app)
     setup_director(app)
     setup_s3(app)
+    setup_storage(app)
 
     return app
 

@@ -37,8 +37,9 @@ def get_handlers_from_namespace(handlers_nsp) -> Dict:
 
 
 def iter_path_operations(specs: OpenApiSpec) -> Generator:
-    """Iterates paths in api specs returning tuple (method, url, operation_id)
+    """Iterates paths in api specs returning tuple (method, path, operation_id)
 
+    NOTE: prepend API version as basepath to path url, e.g. /v0/my/path for path=/my/path
     """
     base_path = get_base_path(specs)
 

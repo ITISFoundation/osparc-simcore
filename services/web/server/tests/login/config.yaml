@@ -43,3 +43,6 @@ smtp:
 rest:
   version: v0
   location: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs/webserver/v0/openapi.yaml
+storage:
+  host: localhost
+  port: 11111

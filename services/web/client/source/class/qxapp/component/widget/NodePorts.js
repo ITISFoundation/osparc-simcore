@@ -15,7 +15,7 @@
 qx.Class.define("qxapp.component.widget.NodePorts", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeModel, isInputModel = true) {
+  construct: function (nodeModel, isInputModel = true) {
     this.base();
 
     let nodeInputLayout = new qx.ui.layout.VBox(10);
@@ -33,6 +33,11 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     });
     nodeModel.bind("label", label, "value");
     this._add(label);
+
+    let nodeUIPorts = this.__nodeUIPorts = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this._add(nodeUIPorts, {
+      flex: 1
+    });
 
     this.setIsInputModel(isInputModel);
     this.setNodeModel(nodeModel);
@@ -52,21 +57,19 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
   },
 
   members: {
-    __inputPort: null,
-    __outputPort: null,
+    __nodeUIPorts: null,
 
-    getNodeId: function() {
+    getNodeId: function () {
       return this.getNodeModel().getNodeId();
     },
 
-    getMetaData: function() {
+    getMetaData: function () {
       return this.getNodeModel().getMetaData();
     },
 
-    populatePortsData: function() {
+    populatePortsData: function () {
+      this.__nodeUIPorts.removeAll();
       const metaData = this.getNodeModel().getMetaData();
-      this.__inputPort = {};
-      this.__outputPort = {};
       if (this.getIsInputModel()) {
         this.__createUIPorts(false, metaData.outputs);
       } else if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
@@ -74,15 +77,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       }
     },
 
-    getInputPort: function() {
-      return this.__inputPort["Input"];
-    },
-
-    getOutputPort: function() {
-      return this.__outputPort["Output"];
-    },
-
-    __createUIPorts: function(isInput, ports) {
+    __createUIPorts: function (isInput, ports) {
       // Always create ports if node is a container
       if (!this.getNodeModel().isContainer() && Object.keys(ports).length < 1) {
         return;
@@ -110,25 +105,19 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
             }
           }
           if (widget !== null) {
-            this._add(widget, {
+            this.__nodeUIPorts.add(widget, {
               flex: 1
             });
           }
         } else {
           let nodeOutputLabel = new qxapp.component.widget.inputs.NodeOutputLabel(this.getNodeModel(), port, portKey);
           let widget = nodeOutputLabel.getOutputWidget();
-          this._add(widget);
+          this.__nodeUIPorts.add(widget);
           let label = {
             isInput: isInput,
             ui: widget
           };
-
           label.ui.isInput = isInput;
-          if (isInput) {
-            this.__inputPort["Input"] = label;
-          } else {
-            this.__outputPort["Output"] = label;
-          }
         }
       }
     }

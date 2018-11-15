@@ -26,6 +26,12 @@ qx.Class.define("qxapp.component.widget.FileTreeItem", {
       nullable : true
     },
 
+    path : {
+      check : "String",
+      event: "changePath",
+      nullable : true
+    },
+
     size : {
       check : "String",
       event: "changeSize",
@@ -50,10 +56,21 @@ qx.Class.define("qxapp.component.widget.FileTreeItem", {
         flex: 1
       });
 
-      // Add a NodeId
+      // Add Path
+      var pathWidget = new qx.ui.basic.Label();
+      this.bind("path", pathWidget, "value");
+      pathWidget.setMaxWidth(300);
+      this.addWidget(pathWidget);
+
+      // All else should be right justified
+      this.addWidget(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      // Add NodeId
       var fileIdWidget = new qx.ui.basic.Label();
       this.bind("fileId", fileIdWidget, "value");
-      fileIdWidget.setMaxWidth(250);
+      fileIdWidget.setMaxWidth(300);
       this.addWidget(fileIdWidget);
 
       // All else should be right justified
@@ -61,10 +78,10 @@ qx.Class.define("qxapp.component.widget.FileTreeItem", {
         flex: 1
       });
 
-      // Add a NodeId
+      // Add size
       var sizeWidget = new qx.ui.basic.Label();
       this.bind("size", sizeWidget, "value");
-      sizeWidget.setMaxWidth(250);
+      sizeWidget.setMaxWidth(100);
       this.addWidget(sizeWidget);
     }
   }

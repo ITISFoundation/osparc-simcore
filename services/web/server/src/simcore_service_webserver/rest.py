@@ -7,7 +7,7 @@
 """
 import asyncio
 import logging
-from copy import deepcopy
+#from copy import deepcopy
 
 from aiohttp import web
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
@@ -45,9 +45,9 @@ async def get_specs(location):
 
 
 def setup(app: web.Application, *, debug=False):
-    log.debug("Setting up %s ...", __name__)
+    log.debug("Setting up %s %s...", __name__, "[DEBUG]" if debug else "")
 
-    main_cfg = app[APP_CONFIG_KEY]["main"]
+    # main_cfg = app[APP_CONFIG_KEY]["main"]
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
     try:
@@ -56,18 +56,19 @@ def setup(app: web.Application, *, debug=False):
         location = cfg["location"]
         specs = loop.run_until_complete( get_specs(location) )
 
+        # TODO: tmp removed but keep in case ...
         # sets servers variables to current server's config
-        extra_api_urls = cfg.get("extra_urls", list())
-        if debug:
-            for host in {'127.0.0.1', 'localhost', main_cfg['host'] }:
-                for port in {9081, main_cfg['port']}:
-                    extra_api_urls.append("http://{}:{}".format(host, port))
+        # extra_api_urls = cfg.get("extra_urls", list())
+        # if debug:
+        #     for host in {'127.0.0.1', 'localhost', main_cfg['host'] }:
+        #         for port in {9081, main_cfg['port']}:
+        #             extra_api_urls.append("http://{}:{}".format(host, port))
 
-        server = get_server(specs.servers, "{publicUrl}/{basePath}")
-        for url in extra_api_urls:
-            new_server = deepcopy(server)
-            new_server.variables['publicUrl'].default = url
-            specs.servers.append(new_server)
+        # server = get_server(specs.servers, "{publicUrl}/{basePath}")
+        # for url in extra_api_urls:
+        #     new_server = deepcopy(server)
+        #     new_server.variables['publicUrl'].default = url
+        #     specs.servers.append(new_server)
 
 
         # TODO: What if many specs to expose? v0, v1, v2 ... perhaps a dict instead?

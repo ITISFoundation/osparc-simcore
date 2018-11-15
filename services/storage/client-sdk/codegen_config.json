@@ -1,6 +1,6 @@
 {
-    "packageName":"simcore_storage_sdk",
-    "projectName":"Client-sdk for simcore-service-storage",
+    "packageName":"simcore_service_storage_sdk",
+    "projectName":"simcore-service-storage-sdk",
     "projectDescription":"Data storage manager service client's SDK",
     "packageVersion":"0.1.0",
     "packageUrl":"https://github.com/ITISFoundation/osparc-simcore/tree/master/services/storage/client-sdk/python",

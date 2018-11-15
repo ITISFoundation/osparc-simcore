@@ -5,8 +5,9 @@
 # W0621: Redefining name ... from outer scope
 # pylint: disable=W0621
 
-import pytest
 import subprocess
+
+import pytest
 
 from simcore_service_storage.cli import main
 

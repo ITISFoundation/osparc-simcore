@@ -36,7 +36,6 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     routes.append( web.post(base_path+path, handle, name=operation_id) )
 
 
-
     # FIXME: temp fix for running pipelines
     path, handle = '/services', registry_api.get_services
     routes.append(web.get(base_path+path, handle))

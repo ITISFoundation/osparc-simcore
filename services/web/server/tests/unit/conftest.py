@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-import
 # pylint: disable=bare-except
-# pylint: disable=W0621
+# pylint:disable=redefined-outer-name
 
 import collections
 import logging

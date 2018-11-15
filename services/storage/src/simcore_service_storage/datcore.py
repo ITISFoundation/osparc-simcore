@@ -41,8 +41,8 @@ class DatcoreClient(object):
 
     def list_datasets(self):
         ds = []
-        for ds in self.client.datasets():
-            ds.append(ds.name)
+        for item in self.client.datasets():
+            ds.append(item.name)
 
         return ds
 

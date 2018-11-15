@@ -26,11 +26,11 @@ qx.Class.define("qxapp.modeler.CylinderCreator", {
     startTool: function() {
       const fixedAxe = 2;
       const fixedPos = 0;
-      this.__threeView.addInvisiblePlane(fixedAxe, fixedPos);
+      this.__threeView.addSnappingPlane(fixedAxe, fixedPos);
     },
 
     stopTool: function() {
-      this.__threeView.removeInvisiblePlane();
+      this.__threeView.removeSnappingPlane();
     },
 
     __removeTemps: function() {
@@ -83,11 +83,13 @@ qx.Class.define("qxapp.modeler.CylinderCreator", {
         if (this.__centerPos === null) {
           this.__centerPos = intersect.point;
           this.__nextStep = this.__steps.radius;
+          this.__threeView.removeSnappingPlane();
+          this.__threeView.addSnappingPlane(2, this.__centerPos.z);
         } else if (this.__radius === null) {
           this.__radius = Math.hypot(intersect.point.x-this.__centerPos.x, intersect.point.y-this.__centerPos.y);
           this.__nextStep = this.__steps.height;
-          this.__threeView.removeInvisiblePlane();
-          this.__threeView.addInvisiblePlane(0, this.__centerPos.x);
+          this.__threeView.removeSnappingPlane();
+          this.__threeView.addSnappingPlane(0, this.__centerPos.x);
         } else if (this.__height === null) {
           this.__height = intersect.point.z - this.__centerPos.z;
           this._consolidateCylinder();
@@ -107,7 +109,7 @@ qx.Class.define("qxapp.modeler.CylinderCreator", {
         mesh.rotation.x = Math.PI / 2;
         mesh.position.x = center.x;
         mesh.position.y = center.y;
-        mesh.position.z = height/2;
+        mesh.position.z = center.z + height/2;
       }
     },
 
