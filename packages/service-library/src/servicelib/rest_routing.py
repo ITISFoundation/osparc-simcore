@@ -24,14 +24,15 @@ def create_routes_from_map(specs: Spec, handlers_map: Dict) -> List[web.RouteDef
     # TODO: key operation_id or other ask key-map???
     routes = []
     _handlers_map = handlers_map.copy()
+    BASEPATH = '/v' + specs.info.version.split('.')[0]
 
     for url, path in specs.paths.items():
         for method, operation in path.operations.items():
             handler = _handlers_map.pop(operation.operation_id, None)
             if handler:
-                routes.append( web.route(method.upper(), url, handler, name=operation.operation_id) )
+                routes.append( web.route(method.upper(), BASEPATH+url, handler, name=operation.operation_id) )
             else:
-                logger.debug("Could not map %s %s %s", url, method.upper(), operation.operation_id)
+                logger.debug("Could not map %s %s %s", BASEPATH+url, method.upper(), operation.operation_id)
 
 
     #assert _handlers_map, "Not all handlers are assigned?"
@@ -44,6 +45,6 @@ def create_routes_from_namespace(specs: Spec, handlers_nsp) -> List[web.RouteDef
     #TODO: if handlers_nsp is an instance, or a pakcage
 
     # TODO: add some kind of filter??
-    available_handlers = dict(inspect.getmembers(handlers_nsp, inspect.ismethod))
+    available_handlers = dict(inspect.getmembers(handlers_nsp, inspect.isfunction))
 
     return create_routes_from_map(specs, available_handlers)
