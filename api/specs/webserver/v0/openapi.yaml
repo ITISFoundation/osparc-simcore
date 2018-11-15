@@ -633,5 +633,11 @@ components:
       content:
         application/json:
           schema:
-            $ref: './components/schemas/pipeline.yaml#/components/schemas/WorkbenchType'
+            type: object
+            required:
+              - workbench
+            properties:
+              workbench:
+                $ref: './components/schemas/workbench-converted.yaml'
+            # $ref: './components/schemas/pipeline.yaml#/components/schemas/WorkbenchType'
 

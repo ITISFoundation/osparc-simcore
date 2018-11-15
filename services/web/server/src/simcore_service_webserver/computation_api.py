@@ -225,21 +225,23 @@ async def start_pipeline(request: web.Request) -> web.Response:
     global db_session
     if db_session is None:
         await init_database(request.app)
-    params, query, body = await extract_and_validate(request)
-    
-    if params is not None:
-        log.debug("params: %s", params)
-    if query is not None:
-        log.debug("query: %s", query)
-    if body is not None:
-        log.debug("body: %s", body)
 
-    assert "project_id" in params
-    assert "workbench" in body
+    # params, query, body = await extract_and_validate(request)
+    
+    # if params is not None:
+    #     log.debug("params: %s", params)
+    # if query is not None:
+    #     log.debug("query: %s", query)
+    # if body is not None:
+    #     log.debug("body: %s", body)
+
+    # assert "project_id" in params
+    # assert "workbench" in body
 
     # retrieve the data
-    project_id = params["project_id"]
-    pipeline_data = body["workbench"]
+    project_id = request.match_info.get("project_id", None)
+    assert project_id is not None
+    pipeline_data = (await request.json())["workbench"]
     userid = request[RQT_USERID_KEY]
     _app = request.app[APP_CONFIG_KEY]
 

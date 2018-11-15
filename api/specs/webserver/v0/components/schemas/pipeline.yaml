@@ -1,17 +1,5 @@
 components:
   schemas:
-    WorkbenchType:
-      type: object  
-      required:
-        - workbench
-        - project_id
-      properties:        
-        workbench:
-          $ref: './workbench-converted.yaml'
-        project_id:
-          type: string
-          format: uuid
-
     PipelineCreatedEnveloped:
       type: object
       required:
