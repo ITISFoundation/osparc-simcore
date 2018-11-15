@@ -45,7 +45,7 @@ async def get_specs(location):
 
 
 def setup(app: web.Application, *, debug=False):
-    log.debug("Setting up %s ...", __name__)
+    log.debug("Setting up %s %s...", __name__, "[DEBUG]" if debug else "")
 
     # main_cfg = app[APP_CONFIG_KEY]["main"]
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
