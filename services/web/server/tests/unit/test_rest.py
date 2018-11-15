@@ -12,10 +12,9 @@ import yaml
 from aiohttp import web
 
 import simcore_service_webserver
+from servicelib.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import resources, rest
-from simcore_service_webserver.application_keys import (APP_CONFIG_KEY,
-                                                        APP_OPENAPI_SPECS_KEY)
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 
@@ -25,14 +24,10 @@ logging.basicConfig(level=logging.INFO)
 # TODO: reduce log from openapi_core loggers
 
 @pytest.fixture
-def here():
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-@pytest.fixture
-def openapi_path():
-    package_dir = Path(simcore_service_webserver.__file__).resolve().parent
-    spec_path = package_dir / 'oas3/v0/openapi.yaml'
-    return spec_path
+def openapi_path(api_specs_dir):
+    specs_path = api_specs_dir / 'oas3/v0/openapi.yaml'
+    assert specs_path.exits()
+    return specs_path
 
 @pytest.fixture
 def spec_dict(openapi_path):
@@ -41,15 +36,21 @@ def spec_dict(openapi_path):
     return spec_dict
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client):
+def client(loop, aiohttp_unused_port, aiohttp_client, api_specs_dir):
     app = web.Application()
 
     server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
-    app[APP_CONFIG_KEY] = { "main": server_kwargs } # Fake config
-
+    # fake config
+    app[APP_CONFIG_KEY] = {
+        "main": server_kwargs,
+        "rest": {
+            "version": "v0",
+            "location": str(api_specs_dir / "v0" / "openapi.yaml")
+        }
+    }
     # activates only security+restAPI sub-modules
     setup_security(app)
-    setup_rest(app)
+    setup_rest(app, debug=True)
 
     cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
     return cli

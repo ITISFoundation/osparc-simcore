@@ -9,12 +9,14 @@ import logging
 import asyncpg
 from aiohttp import web
 
-from . import routes as login_routes
-from ..application_keys import (APP_CONFIG_KEY, APP_DB_POOL_KEY,
-                                APP_OPENAPI_SPECS_KEY)
-from ..db import DSN # TODO: get_db_config
-from .cfg import cfg
-from .settings import APP_LOGIN_CONFIG, CFG_LOGIN_STORAGE, get_storage
+from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_POOL_KEY
+
+from ..db import DSN
+from ..email_config import CONFIG_SECTION_NAME as SMTP_SECTION
+from ..rest_config import APP_OPENAPI_SPECS_KEY
+from ..db_config import CONFIG_SECTION_NAME as DB_SECTION
+from .cfg import APP_LOGIN_CONFIG, cfg
+from .routes import create_routes
 from .storage import AsyncpgStorage
 
 log = logging.getLogger(__name__)
@@ -22,7 +24,7 @@ log = logging.getLogger(__name__)
 
 async def pg_pool(app: web.Application):
 
-    smtp_config = app[APP_CONFIG_KEY]['smtp']
+    smtp_config = app[APP_CONFIG_KEY][SMTP_SECTION]
     config = {"SMTP_{}".format(k.upper()): v for k, v in smtp_config.items()}
     # TODO: test keys!
     #'SMTP_SENDER': None,
@@ -32,16 +34,13 @@ async def pg_pool(app: web.Application):
     #'SMTP_USERNAME': None,
     #'SMTP_PASSWORD': None,
 
-    config['REGISTRATION_CONFIRMATION_REQUIRED'] = True
-
     config = (config or {}).copy()
     config['APP'] = app
 
-    # TODO: guarantee set/getters
-    db_config = app[APP_CONFIG_KEY]['postgres']
+    db_config = app[APP_CONFIG_KEY][DB_SECTION]['postgres']
     app[APP_DB_POOL_KEY] = await asyncpg.create_pool(dsn=DSN.format(**db_config), loop=app.loop)
 
-    config[CFG_LOGIN_STORAGE] = AsyncpgStorage(app[APP_DB_POOL_KEY]) #NOTE: this key belongs to cfg, not settings!
+    config['STORAGE'] = AsyncpgStorage(app[APP_DB_POOL_KEY]) #NOTE: this key belongs to cfg, not settings!
     cfg.configure(config)
 
     app[APP_LOGIN_CONFIG] = cfg
@@ -50,19 +49,28 @@ async def pg_pool(app: web.Application):
 def setup(app: web.Application):
     log.debug("Setting up %s ...", __name__)
 
-    specs = app[APP_OPENAPI_SPECS_KEY] # validated openapi specs
+    # TODO: requires rest ready!
+    assert SMTP_SECTION in app[APP_CONFIG_KEY]
+    assert DB_SECTION in app[APP_CONFIG_KEY]
 
-    routes = login_routes.create(specs)
+    # TODO: automatize dependencies
+    enabled = all( app[APP_CONFIG_KEY].get(mod, {}).get("enabled", True) for mod in (SMTP_SECTION, DB_SECTION) )
+    if not enabled:
+        log.warning("Disabling '%s' since %s or %s were explictily disabled in config", __name__, SMTP_SECTION, DB_SECTION)
+        return
+
+    # routes
+    specs = app[APP_OPENAPI_SPECS_KEY]
+    routes = create_routes(specs)
     app.router.add_routes(routes)
 
+    # signals
     app.on_startup.append(pg_pool)
-
 
 
 # alias
 setup_login = setup
 
 __all__ = (
-    'setup_login',
-    'get_storage'
+    'setup_login'
 )

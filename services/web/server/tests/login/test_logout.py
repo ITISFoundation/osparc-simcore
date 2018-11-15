@@ -1,4 +1,4 @@
-from simcore_service_webserver.login import get_storage
+from simcore_service_webserver.login.cfg import get_storage
 
 from utils_login import LoggedUser
 from utils_assert import assert_status

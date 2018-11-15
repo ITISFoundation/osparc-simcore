@@ -1,17 +1,16 @@
-''' Subsystem that communicates with the storage service '''
+""" storage subsystem - manages the interaction with the storage service
+
+"""
 
 import logging
 
-from aiohttp import web, ClientSession
+from aiohttp import ClientSession, web
+
+from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 
 from . import storage_routes
-from .application_keys import APP_OPENAPI_SPECS_KEY
-from .storage_settings import get_config, APP_STORAGE_SESSION_KEY
+from .storage_config import APP_STORAGE_SESSION_KEY, get_config
 
-# SETTINGS ----------------------------------------------------
-THIS_MODULE_NAME = __name__.split(".")[-1]
-
-# --------------------------------------------------------------
 
 log = logging.getLogger(__name__)
 

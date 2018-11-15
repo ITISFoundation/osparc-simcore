@@ -2,14 +2,10 @@ FileMetaDataEnveloped:
   type: object
   required:
     - data
-    - error
   properties:
     data:
       $ref: '#/FileMetaData'
-      nullable: true
-      default: null
     error:
-      $ref: "./error.yaml#/ErrorType"
       nullable: true
       default: null
 

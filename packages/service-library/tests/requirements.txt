@@ -1,3 +1,4 @@
+pyyaml 
 pytest
 pytest-runner
 pytest-aiohttp

@@ -2,7 +2,6 @@ RunningServiceEnveloped:
   type: object
   required:
     - data
-    - error
   properties:
     data:
       $ref: '#/RunningServiceType'
@@ -10,7 +9,7 @@ RunningServiceEnveloped:
       type: object
       nullable: true
       default: null
-      
+
 RunningServiceType:
   type: object
   required:

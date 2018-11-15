@@ -11,16 +11,17 @@ import logging
 
 import sqlalchemy.exc
 from aiohttp import web, web_exceptions
-from sqlalchemy import create_engine, and_
+from sqlalchemy import and_, create_engine
 from sqlalchemy.orm import sessionmaker
 
+from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_director_sdk.rest import ApiException
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 
-from . import director_sdk
-from .application_keys import APP_CONFIG_KEY
-from .comp_backend_worker import celery
+from .computation_worker import celery
+from .db_config import CONFIG_SECTION_NAME as CONFIG_DB_SECTION
+from .director import director_sdk
 
 # TODO: this should be coordinated with postgres options from config/server.yaml
 #from simcore_sdk.config.db import Config as DbConfig
@@ -34,7 +35,7 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 
 db_session = None
-comp_backend_routes = web.RouteTableDef()
+computation_routes = web.RouteTableDef()
 
 async def init_database(_app):
     #pylint: disable=W0603
@@ -45,7 +46,7 @@ async def init_database(_app):
     RETRY_COUNT = 20
 
     # db config
-    db_config = _app[APP_CONFIG_KEY]["postgres"]
+    db_config = _app[APP_CONFIG_KEY][CONFIG_DB_SECTION]["postgres"]
     endpoint = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(**db_config)
 
     db_engine = create_engine(endpoint,
@@ -88,7 +89,7 @@ async def _get_node_details(node_key:str, node_version:str)->dict:
     try:
         services_enveloped = await director_sdk.get_director().services_by_key_version_get(node_key, node_version)
         node_details = services_enveloped.data[0].to_dict()
-        return node_details        
+        return node_details
     except ApiException as err:
         log.exception("Error could not find service %s:%s", node_key, node_version)
         raise web_exceptions.HTTPNotFound(reason=str(err))
@@ -120,7 +121,7 @@ async def _build_adjacency_list(node_uuid:str, node_schema:dict, node_inputs:dic
                 if node_uuid not in dag_adjacency_list[input_node_uuid] and is_node_computational:
                     dag_adjacency_list[input_node_uuid].append(node_uuid)
     return dag_adjacency_list
-    
+
 async def _parse_pipeline(pipeline_data:dict): # pylint: disable=R0912
     dag_adjacency_list = dict()
     tasks = dict()
@@ -133,7 +134,7 @@ async def _parse_pipeline(pipeline_data:dict): # pylint: disable=R0912
         node_key = value["key"]
         node_version = value["version"]
 
-        # get the task data        
+        # get the task data
         node_inputs = None
         if "inputs" in value:
             node_inputs = value["inputs"]
@@ -167,20 +168,20 @@ async def _parse_pipeline(pipeline_data:dict): # pylint: disable=R0912
 
 async def _set_adjacency_in_pipeline_db(project_id, dag_adjacency_list):
     try:
-        pipeline = db_session.query(ComputationalPipeline).filter(ComputationalPipeline.project_id==project_id).one()            
+        pipeline = db_session.query(ComputationalPipeline).filter(ComputationalPipeline.project_id==project_id).one()
         log.debug("Pipeline object found")
         pipeline.state = 0
         pipeline.dag_adjacency_list = dag_adjacency_list
     except sqlalchemy.orm.exc.NoResultFound:
         # let's create one then
-        pipeline = ComputationalPipeline(project_id=project_id, dag_adjacency_list=dag_adjacency_list, state=0)    
+        pipeline = ComputationalPipeline(project_id=project_id, dag_adjacency_list=dag_adjacency_list, state=0)
         log.debug("Pipeline object created")
         db_session.add(pipeline)
     except sqlalchemy.orm.exc.MultipleResultsFound:
         log.exception("the computation pipeline %s is not unique", project_id)
         raise
 
-async def _set_tasks_in_tasks_db(project_id, tasks):    
+async def _set_tasks_in_tasks_db(project_id, tasks):
     tasks_db = db_session.query(ComputationalTask).filter(ComputationalTask.project_id==project_id).all()
     # delete tasks that were deleted from the db
     for task_db in tasks_db:
@@ -213,7 +214,7 @@ async def _set_tasks_in_tasks_db(project_id, tasks):
             db_session.add(comp_task)
 
 # pylint:disable=too-many-branches, too-many-statements
-@comp_backend_routes.post("/start_pipeline")
+@computation_routes.post("/start_pipeline")
 async def start_pipeline(request):
     #pylint:disable=broad-except
     # FIXME: this should be implemented generaly using async lazy initialization of db_session??
@@ -230,7 +231,7 @@ async def start_pipeline(request):
 
     log.debug("Client calls start_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
     dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data)
-    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))    
+    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))
     try:
         await _set_adjacency_in_pipeline_db(project_id, dag_adjacency_list)
         await _set_tasks_in_tasks_db(project_id, tasks)

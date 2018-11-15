@@ -8,10 +8,9 @@ from aiohttp import web
 
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
-from simcore_service_webserver.login import get_storage
-from simcore_service_webserver.login.cfg import cfg # TODO: remove this by get_storage
-from utils_login import NewUser, parse_link
+from simcore_service_webserver.login.cfg import cfg, get_storage
 from utils_assert import assert_error, assert_status
+from utils_login import NewUser, parse_link
 
 EMAIL, PASSWORD = 'tester@test.com', 'password'
 

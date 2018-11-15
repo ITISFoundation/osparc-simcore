@@ -9,9 +9,7 @@ import pathlib
 import pytest
 
 # under test
-from simcore_service_webserver.resources import (RSC_CONFIG_DIR_KEY,
-                                                 RSC_OPENAPI_DIR_KEY,
-                                                 resources)
+from simcore_service_webserver.resources import resources
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +17,7 @@ log = logging.getLogger(__name__)
 def app_resources(package_dir):
     resource_names = []
     base = package_dir
-    for name in (RSC_CONFIG_DIR_KEY, RSC_OPENAPI_DIR_KEY):
+    for name in (resources.config_folder,):
         folder = base / name
         resource_names += [ str(p.relative_to(base)) for p in folder.rglob("*.y*ml") ]
 
