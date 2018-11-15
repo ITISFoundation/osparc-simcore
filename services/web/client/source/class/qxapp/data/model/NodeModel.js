@@ -432,29 +432,30 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         let request = new qxapp.io.request.ApiRequest(url+query, "POST");
         request.addListener("success", this.__onInteractiveNodeStarted, this);
         request.addListener("error", e => {
-          const msg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
-          const msgData = {
+          const errorMsg = "Error when starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
+          const errorMsgData = {
             nodeLabel: this.getLabel(),
-            msg: msg
+            msg: errorMsg
           };
-          this.fireDataEvent("ShowInLogger", msgData);
+          this.fireDataEvent("ShowInLogger", errorMsgData);
         }, this);
         request.addListener("fail", e => {
-          const msg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
-          const msgData = {
+          const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
+          const failMsgData = {
             nodeLabel: this.getLabel(),
-            msg: msg
+            msg: failMsg
           };
-          this.fireDataEvent("ShowInLogger", msgData);
+          this.fireDataEvent("ShowInLogger", failMsgData);
         }, this);
         request.send();
-        
       }
     },
 
     __onInteractiveNodeStarted: function(e) {
       let req = e.getTarget();
-      const {data, error} = req.getResponse()
+      const {
+        data, error
+      } = req.getResponse();
 
       if (error) {
         const msg = "Error received: " + error;
@@ -484,18 +485,18 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         // HACK: Workaround for fetching inputs in Visualizer
         if (this.getKey() === "3d-viewer") {
           let urlUpdate = this.getServiceUrl() + "/retrieve";
-          let req = new qx.io.request.Xhr();
-          req.set({
+          let updReq = new qx.io.request.Xhr();
+          updReq.set({
             url: urlUpdate,
             method: "POST"
           });
-          req.send();
+          updReq.send();
         }
 
         this.getRestartIFrameButton().setEnabled(true);
         // FIXME: Apparently no all services are inmediately ready when they publish the port
         const waitFor = 4000;
-        qx.event.Timer.once(e => {
+        qx.event.Timer.once(ev => {
           this.__restartIFrame();
         }, this, waitFor);
       }
