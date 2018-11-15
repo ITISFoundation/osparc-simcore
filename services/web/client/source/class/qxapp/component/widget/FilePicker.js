@@ -5,6 +5,9 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
   construct: function(nodeModel, projectId) {
     this.base(arguments);
 
+    this.setNodeModel(nodeModel);
+    this.setProjectId(projectId);
+
     let filePickerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(filePickerLayout);
 
@@ -48,11 +51,6 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
     }, this);
 
     this.buildTree();
-
-    this.__createConnections(nodeModel);
-
-    this.setNodeModel(nodeModel);
-    this.setProjectId(projectId);
   },
 
   properties: {
@@ -67,7 +65,6 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
   },
 
   events: {
-    "ItemSelected": "qx.event.type.Data",
     "Finished": "qx.event.type.Event"
   },
 
@@ -122,18 +119,6 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       this.__tree.setDelegate(delegate);
     },
 
-    __createConnections: function(nodeModel) {
-      this.addListener("ItemSelected", function(data) {
-        const itemPath = data.getData().itemPath;
-        let outputs = nodeModel.getOutputs();
-        outputs["outFile"].value = {
-          store: "s3-z43",
-          path: itemPath
-        };
-        this.fireEvent("Finished");
-      }, this);
-    },
-
     // Request to the server an upload URL.
     __retrieveURLAndUpload: function(file) {
       let store = qxapp.data.Store.getInstance();
@@ -148,12 +133,9 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       }, this);
       const download = false;
       const locationId = 0;
-      // const location = "simcore.s3";
-      // const bucketName = "simcore";
       const projectId = this.getProjectId();
       const nodeId = this.getNodeModel().getNodeId();
       const fileId = file.name;
-      // const fileUuid = location +"/"+ bucketName +"/"+ projectId +"/"+ nodeId +"/"+ fileId;
       const fileUuid = projectId +"/"+ nodeId +"/"+ fileId;
       store.getPresginedLink(download, locationId, fileUuid);
     },
@@ -169,6 +151,8 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       hBox.add(progressBar, {
         width: "85%"
       });
+
+      // From https://github.com/minio/cookbook/blob/master/docs/presigned-put-upload-via-browser.md
       let xhr = new XMLHttpRequest();
       xhr.upload.addEventListener("progress", e => {
         if (e.lengthComputable) {
@@ -178,15 +162,17 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
           console.log("Unable to compute progress information since the total size is unknown");
         }
       }, false);
-      xhr.open("PUT", url, true);
-      xhr.send(file);
       xhr.onload = () => {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
           hBox.destroy();
           this.buildTree();
+        } else {
+          console.log(xhr.response);
         }
       };
+      xhr.open("PUT", url, true);
+      xhr.send(file);
     },
 
     __isFile: function(item) {
@@ -207,10 +193,16 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
     __itemSelected: function() {
       let selection = this.__tree.getSelection();
       let selectedItem = selection.toArray()[0];
-      const data = {
-        itemPath: selectedItem.getFileId()
+      if (!this.__isFile(selectedItem)) {
+        return;
+      }
+      let outputs = this.getNodeModel().getOutputs();
+      outputs["outFile"].value = {
+        store: selectedItem.getLocation(),
+        path: selectedItem.getFileId()
       };
-      this.fireDataEvent("ItemSelected", data);
+      this.getNodeModel().repopulateOutputPortData();
+      this.fireEvent("Finished");
     }
   }
 });

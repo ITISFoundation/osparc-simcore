@@ -34,6 +34,11 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     nodeModel.bind("label", label, "value");
     this._add(label);
 
+    let nodeUIPorts = this.__nodeUIPorts = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this._add(nodeUIPorts, {
+      flex: 1
+    });
+
     this.setIsInputModel(isInputModel);
     this.setNodeModel(nodeModel);
   },
@@ -52,8 +57,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
   },
 
   members: {
-    __inputPort: null,
-    __outputPort: null,
+    __nodeUIPorts: null,
 
     getNodeId: function() {
       return this.getNodeModel().getNodeId();
@@ -64,22 +68,13 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     },
 
     populatePortsData: function() {
+      this.__nodeUIPorts.removeAll();
       const metaData = this.getNodeModel().getMetaData();
-      this.__inputPort = {};
-      this.__outputPort = {};
       if (this.getIsInputModel()) {
         this.__createUIPorts(false, metaData.outputs);
       } else if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
         this.__createUIPorts(false, metaData.inputsDefault);
       }
-    },
-
-    getInputPort: function() {
-      return this.__inputPort["Input"];
-    },
-
-    getOutputPort: function() {
-      return this.__outputPort["Output"];
     },
 
     __createUIPorts: function(isInput, ports) {
@@ -110,25 +105,19 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
             }
           }
           if (widget !== null) {
-            this._add(widget, {
+            this.__nodeUIPorts.add(widget, {
               flex: 1
             });
           }
         } else {
           let nodeOutputLabel = new qxapp.component.widget.inputs.NodeOutputLabel(this.getNodeModel(), port, portKey);
           let widget = nodeOutputLabel.getOutputWidget();
-          this._add(widget);
+          this.__nodeUIPorts.add(widget);
           let label = {
             isInput: isInput,
             ui: widget
           };
-
           label.ui.isInput = isInput;
-          if (isInput) {
-            this.__inputPort["Input"] = label;
-          } else {
-            this.__outputPort["Output"] = label;
-          }
         }
       }
     }

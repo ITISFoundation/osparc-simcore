@@ -261,15 +261,15 @@ qx.Class.define("qxapp.component.ThreeView", {
       this.setSelectionMode(NO_TOOL);
     },
 
-    addInvisiblePlane: function(fixedAxe = 2, fixedPosition = 0) {
+    addSnappingPlane: function(fixedAxe = 2, fixedPosition = 0) {
       let instersectionPlane = this.__threeWrapper.createInvisiblePlane(fixedAxe, fixedPosition);
-      instersectionPlane.name = "InvisiblePlaneForSnapping";
+      instersectionPlane.name = "PlaneForSnapping";
       this.__entities.push(instersectionPlane);
     },
 
-    removeInvisiblePlane: function() {
+    removeSnappingPlane: function() {
       for (let i = 0; i < this.__entities.length; i++) {
-        if (this.__entities[i].name === "InvisiblePlaneForSnapping") {
+        if (this.__entities[i].name === "PlaneForSnapping") {
           this.__entities.splice(i, 1);
           break;
         }

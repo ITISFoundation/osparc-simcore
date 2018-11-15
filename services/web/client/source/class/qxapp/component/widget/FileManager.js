@@ -1,3 +1,6 @@
+/* global document */
+/* global XMLHttpRequest */
+/* global Blob */
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.component.widget.FileManager", {
@@ -40,7 +43,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
         icon: "@FontAwesome5Solid/cloud-download-alt/24"
       });
       downloadBtn.addListener("execute", e => {
-        this.__downloadFile();
+        this.__retrieveURLAndDownload();
       }, this);
 
       let deleteBtn = new qx.ui.form.Button().set({
@@ -207,8 +210,42 @@ qx.Class.define("qxapp.component.widget.FileManager", {
       }
     },
 
-    __downloadFile: function() {
-      console.log("Download ", this.__selection);
+    // Request to the server an download
+    __retrieveURLAndDownload: function() {
+      if (this.__selection !== null) {
+        const fileId = this.__selection;
+        let fileName = fileId.split("/");
+        fileName = fileName[fileName.length-1];
+        let store = qxapp.data.Store.getInstance();
+        store.addListenerOnce("PresginedLink", e => {
+          const presginedLinkData = e.getData();
+          console.log(presginedLinkData.presginedLink);
+          if (presginedLinkData.presginedLink) {
+            this.__downloadFile(presginedLinkData.presginedLink, fileName);
+          }
+        }, this);
+        const download = true;
+        const locationId = 0;
+        store.getPresginedLink(download, locationId, fileId);
+      }
+    },
+
+    __downloadFile: function(url, fileName) {
+      let xhr = new XMLHttpRequest();
+      xhr.open("GET", url, true);
+      xhr.responseType = "blob";
+      xhr.onload = () => {
+        if (xhr.status == 200) {
+          var blob = new Blob(xhr.response);
+          let urlBlob = window.URL.createObjectURL(blob);
+          let downloadAnchorNode = document.createElement("a");
+          downloadAnchorNode.setAttribute("href", urlBlob);
+          downloadAnchorNode.setAttribute("download", fileName);
+          downloadAnchorNode.click();
+          downloadAnchorNode.remove();
+        }
+      };
+      xhr.send();
     },
 
     __deleteFile: function() {
