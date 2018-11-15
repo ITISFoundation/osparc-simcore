@@ -4,7 +4,7 @@
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function (projectModel) {
+  construct: function(projectModel) {
     this.base(arguments, "horizontal");
 
     this.setProjectModel(projectModel);
@@ -54,7 +54,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __nodeView: null,
     __currentNodeId: null,
 
-    initDefault: function () {
+    initDefault: function() {
       let project = this.getProjectModel();
 
       let treeView = this.__treeView = new qxapp.component.widget.TreeTool(project.getName(), project.getWorkbenchModel());
@@ -119,12 +119,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       nodeView.setWorkbenchModel(project.getWorkbenchModel());
     },
 
-    connectEvents: function () {
-      this.__mainPanel.getControls().addListener("SavePressed", function () {
+    connectEvents: function() {
+      this.__mainPanel.getControls().addListener("SavePressed", function() {
         this.serializeProjectDocument();
       }, this);
 
-      this.__mainPanel.getControls().addListener("StartPipeline", function () {
+      this.__mainPanel.getControls().addListener("StartPipeline", function() {
         if (this.getCanStart()) {
           this.__startPipeline();
         } else {
@@ -132,11 +132,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }
       }, this);
 
-      this.__mainPanel.getControls().addListener("StopPipeline", function () {
+      this.__mainPanel.getControls().addListener("StopPipeline", function() {
         this.__stopPipeline();
       }, this);
 
-      this.getProjectModel().getWorkbenchModel().addListener("WorkbenchModelChanged", function () {
+      this.getProjectModel().getWorkbenchModel().addListener("WorkbenchModelChanged", function() {
         this.__workbenchModelChanged();
       }, this);
 
@@ -158,7 +158,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       });
     },
 
-    nodeSelected: function (nodeId) {
+    nodeSelected: function(nodeId) {
       if (!nodeId) {
         return;
       }
@@ -217,15 +217,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
     },
 
-    __workbenchModelChanged: function () {
+    __workbenchModelChanged: function() {
       this.__treeView.populateTree();
       this.__treeView.nodeSelected(this.__currentNodeId);
     },
 
-    showInMainView: function (widget, nodeId) {
+    showInMainView: function(widget, nodeId) {
       if (this.__mainPanel.isPropertyInitialized("mainView")) {
         let previousWidget = this.__mainPanel.getMainView();
-        widget.addListener("Finished", function () {
+        widget.addListener("Finished", function() {
           this.__mainPanel.setMainView(previousWidget);
         }, this);
       }
@@ -236,11 +236,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.fireDataEvent("ChangeMainViewCaption", nodesPath);
     },
 
-    showInExtraView: function (widget) {
+    showInExtraView: function(widget) {
       this.__sidePanel.setMidView(widget);
     },
 
-    showScreenshotInExtraView: function (name) {
+    showScreenshotInExtraView: function(name) {
       let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_" + name + ".png").set({
         scale: true,
         allowShrinkX: true,
@@ -249,11 +249,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__sidePanel.setMidView(imageWidget);
     },
 
-    getLogger: function () {
+    getLogger: function() {
       return this.__loggerView;
     },
 
-    __startPipeline: function () {
+    __startPipeline: function() {
       // ui start pipeline
       // this.clearProgressData();
 
@@ -262,7 +262,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       // callback for incoming logs
       const slotName = "logger";
       if (!socket.slotExists(slotName)) {
-        socket.on(slotName, function (data) {
+        socket.on(slotName, function(data) {
           let d = JSON.parse(data);
           let node = d["Node"];
           let msg = d["Message"];
@@ -273,7 +273,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       // callback for incoming progress
       if (!socket.slotExists("progress")) {
-        socket.on("progress", function (data) {
+        socket.on("progress", function(data) {
           let d = JSON.parse(data);
           let node = d["Node"];
           let progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
@@ -308,7 +308,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.getLogger().info("Workbench", "Starting pipeline");
     },
 
-    __stopPipeline: function () {
+    __stopPipeline: function() {
       let req = new qxapp.io.request.ApiRequest("/stop_pipeline", "POST");
       let data = {};
       data["project_id"] = this.getProjectModel().getUuid();
@@ -332,7 +332,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.getLogger().info("Workbench", "Stopping pipeline. Not yet implemented");
     },
 
-    __onPipelinesubmitted: function (e) {
+    __onPipelinesubmitted: function(e) {
       let req = e.getTarget();
 
       const pipelineId = req.getResponse()["project_id"];
@@ -349,29 +349,29 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
     },
 
-    __onPipelineStopped: function (e) {
+    __onPipelineStopped: function(e) {
       this.__workbenchView.clearProgressData();
 
       this.setCanStart(true);
     },
 
-    __applyCanStart: function (value, old) {
+    __applyCanStart: function(value, old) {
       this.__mainPanel.getControls().setCanStart(value);
     },
 
-    __updateLogger: function (nodeId, msg) {
+    __updateLogger: function(nodeId, msg) {
       let node = this.__workbenchView.getNodeUI(nodeId);
       if (node) {
         this.getLogger().info(node.getCaption(), msg);
       }
     },
 
-    __createIFrame: function (url) {
+    __createIFrame: function(url) {
       let iFrame = new qxapp.component.widget.PersistentIframe(url);
       return iFrame;
     },
 
-    __addWidgetToMainView: function (widget) {
+    __addWidgetToMainView: function(widget) {
       let widgetContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
 
       widgetContainer.add(widget, {
@@ -390,13 +390,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         top: 0
       });
       let previousWidget = this.__mainPanel.getMainView();
-      closeBtn.addListener("execute", function () {
+      closeBtn.addListener("execute", function() {
         this.__mainPanel.setMainView(previousWidget);
       }, this);
       this.__mainPanel.setMainView(widgetContainer);
     },
 
-    serializeProjectDocument: function () {
+    serializeProjectDocument: function() {
       console.log("serializeProject", this.getProjectModel().serializeProject());
     }
   }

@@ -1,7 +1,7 @@
 qx.Class.define("qxapp.component.widget.TreeTool", {
   extend: qx.ui.core.Widget,
 
-  construct: function (projectName, workbenchModel) {
+  construct: function(projectName, workbenchModel) {
     this.base(arguments);
 
     this.set({
@@ -14,7 +14,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
     this.__tree = this._createChildControlImpl("tree");
     this.populateTree();
 
-    this.addListener("keypress", function (keyEvent) {
+    this.addListener("keypress", function(keyEvent) {
       if (keyEvent.getKeyIdentifier() === "F2") {
         this.__renameItem();
       }
@@ -39,7 +39,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
   members: {
     __tree: null,
 
-    _createChildControlImpl: function (id) {
+    _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "tree":
@@ -53,7 +53,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       return control || this.base(arguments, id);
     },
 
-    __buildTree: function () {
+    __buildTree: function() {
       let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
         openMode: "none"
       });
@@ -68,7 +68,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       return tree;
     },
 
-    populateTree: function () {
+    populateTree: function() {
       const topLevelNodes = this.getWorkbenchModel().getNodeModels();
       let data = {
         label: this.getProjectName(),
@@ -91,7 +91,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       }
     },
 
-    __convertModel: function (nodes) {
+    __convertModel: function(nodes) {
       let children = [];
       for (let nodeId in nodes) {
         const node = nodes[nodeId];
@@ -109,7 +109,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       return children;
     },
 
-    __getNodeInTree: function (model, nodeId) {
+    __getNodeInTree: function(model, nodeId) {
       if (model.getNodeId() === nodeId) {
         return model;
       } else if (model.getIsContainer() && model.getChildren() !== null) {
@@ -123,7 +123,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       return null;
     },
 
-    __getSelection: function () {
+    __getSelection: function() {
       let treeSelection = this.__tree.getSelection();
       if (treeSelection.length < 1) {
         return null;
@@ -138,7 +138,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       return selectedItem;
     },
 
-    __renameItem: function () {
+    __renameItem: function() {
       let selectedItem = this.__getSelection();
       if (selectedItem === null) {
         return;
@@ -157,7 +157,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       treeItemRenamer.open();
     },
 
-    nodeSelected: function (nodeId) {
+    nodeSelected: function(nodeId) {
       const dataModel = this.__tree.getModel();
       let nodeInTree = this.__getNodeInTree(dataModel, nodeId);
       if (nodeInTree) {

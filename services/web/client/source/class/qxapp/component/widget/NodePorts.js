@@ -15,7 +15,7 @@
 qx.Class.define("qxapp.component.widget.NodePorts", {
   extend: qx.ui.core.Widget,
 
-  construct: function (nodeModel, isInputModel = true) {
+  construct: function(nodeModel, isInputModel = true) {
     this.base();
 
     let nodeInputLayout = new qx.ui.layout.VBox(10);
@@ -59,15 +59,15 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
   members: {
     __nodeUIPorts: null,
 
-    getNodeId: function () {
+    getNodeId: function() {
       return this.getNodeModel().getNodeId();
     },
 
-    getMetaData: function () {
+    getMetaData: function() {
       return this.getNodeModel().getMetaData();
     },
 
-    populatePortsData: function () {
+    populatePortsData: function() {
       this.__nodeUIPorts.removeAll();
       const metaData = this.getNodeModel().getMetaData();
       if (this.getIsInputModel()) {
@@ -77,7 +77,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       }
     },
 
-    __createUIPorts: function (isInput, ports) {
+    __createUIPorts: function(isInput, ports) {
       // Always create ports if node is a container
       if (!this.getNodeModel().isContainer() && Object.keys(ports).length < 1) {
         return;

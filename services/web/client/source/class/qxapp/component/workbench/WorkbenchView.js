@@ -8,7 +8,7 @@ const NODE_INPUTS_WIDTH = 200;
 qx.Class.define("qxapp.component.workbench.WorkbenchView", {
   extend: qx.ui.container.Composite,
 
-  construct: function (workbenchModel) {
+  construct: function(workbenchModel) {
     this.base();
 
     let hBox = new qx.ui.layout.HBox();
@@ -149,14 +149,14 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     __selectedItemId: null,
     __currentModel: null,
 
-    __getPlusButton: function () {
+    __getPlusButton: function() {
       const icon = "@FontAwesome5Solid/plus/32"; // qxapp.dev.Placeholders.getIcon("fa-plus", 32);
       let plusButton = new qx.ui.form.Button(null, icon);
       plusButton.set({
         width: BUTTON_SIZE,
         height: BUTTON_SIZE
       });
-      plusButton.addListener("execute", function () {
+      plusButton.addListener("execute", function() {
         let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
         srvCat.center();
         srvCat.open();
@@ -167,14 +167,14 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return plusButton;
     },
 
-    __getRemoveButton: function () {
+    __getRemoveButton: function() {
       const icon = "@FontAwesome5Solid/trash/32";
       let removeButton = new qx.ui.form.Button(null, icon);
       removeButton.set({
         width: BUTTON_SIZE,
         height: BUTTON_SIZE
       });
-      removeButton.addListener("execute", function () {
+      removeButton.addListener("execute", function() {
         if (this.__selectedItemId && this.__isSelectedItemALink(this.__selectedItemId)) {
           this.__removeLink(this.__getLinkUI(this.__selectedItemId));
           this.__selectedItemId = null;
@@ -185,7 +185,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return removeButton;
     },
 
-    __addServiceFromCatalogue: function (e, pos) {
+    __addServiceFromCatalogue: function(e, pos) {
       let data = e.getData();
       let metaData = data.service;
       let nodeAId = data.contextNodeId;
@@ -211,12 +211,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         this.__createLinkBetweenNodes({
           nodeUuid: nodeAId
         }, {
-            nodeUuid: nodeBId
-          });
+          nodeUuid: nodeBId
+        });
       }
     },
 
-    __addNodeToWorkbench: function (nodeUI, position) {
+    __addNodeToWorkbench: function(nodeUI, position) {
       if (position === undefined || position === null) {
         position = {};
         let farthestRight = 0;
@@ -235,12 +235,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       this.addWindowToDesktop(nodeUI);
       this.__nodesUI.push(nodeUI);
 
-      nodeUI.addListener("NodeMoving", function () {
+      nodeUI.addListener("NodeMoving", function() {
         this.__updateLinks(nodeUI);
         this.__updatePosition(nodeUI);
       }, this);
 
-      nodeUI.addListener("appear", function () {
+      nodeUI.addListener("appear", function() {
         this.__updateLinks(nodeUI);
       }, this);
 
@@ -253,7 +253,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       qx.ui.core.queue.Layout.flush();
     },
 
-    __createNodeUI: function (nodeId) {
+    __createNodeUI: function(nodeId) {
       let nodeModel = this.getWorkbenchModel().getNodeModel(nodeId);
 
       let nodeBase = new qxapp.component.workbench.NodeBase(nodeModel);
@@ -263,7 +263,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return nodeBase;
     },
 
-    __createLinkUI: function (node1Id, node2Id, linkId) {
+    __createLinkUI: function(node1Id, node2Id, linkId) {
       let linkModel = this.getWorkbenchModel().createLinkModel(linkId, node1Id, node2Id);
       this.getWorkbenchModel().addLinkModel(linkModel);
 
@@ -300,7 +300,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return link;
     },
 
-    __createDragDropMechanism: function (nodeBase) {
+    __createDragDropMechanism: function(nodeBase) {
       const evType = "pointermove";
       nodeBase.addListener("LinkDragStart", e => {
         let data = e.getData();
@@ -367,8 +367,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
           this.__createLinkBetweenNodes({
             nodeUuid: nodeAId
           }, {
-              nodeUuid: nodeBId
-            });
+            nodeUuid: nodeBId
+          });
           this.__removeTempLink();
           qx.bom.Element.removeListener(
             this.__desktop,
@@ -398,10 +398,10 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
             x: posX,
             y: posY
           };
-          srvCat.addListener("AddService", function (ev) {
+          srvCat.addListener("AddService", function(ev) {
             this.__addServiceFromCatalogue(ev, pos);
           }, this);
-          srvCat.addListener("close", function (ev) {
+          srvCat.addListener("close", function(ev) {
             this.__removeTempLink();
           }, this);
         }
@@ -414,7 +414,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }, this);
     },
 
-    __createInputNodeUI: function (inputNodeModel) {
+    __createInputNodeUI: function(inputNodeModel) {
       let nodeInput = new qxapp.component.widget.NodeInput(inputNodeModel);
       nodeInput.populateNodeLayout();
       this.__createDragDropMechanism(nodeInput);
@@ -424,7 +424,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return nodeInput;
     },
 
-    __createInputNodeUIs: function (model) {
+    __createInputNodeUIs: function(model) {
       const inputNodes = model.getInputNodes();
       for (let i = 0; i < inputNodes.length; i++) {
         let inputNodeModel = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
@@ -433,14 +433,14 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }
     },
 
-    __clearInputNodeUIs: function () {
+    __clearInputNodeUIs: function() {
       // remove all but the title
       while (this.__inputNodesLayout.getChildren().length > 1) {
         this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length - 1);
       }
     },
 
-    __createNodeExposedUI: function (currentModel) {
+    __createNodeExposedUI: function(currentModel) {
       let nodeOutput = new qxapp.component.widget.NodeExposed(currentModel);
       nodeOutput.populateNodeLayout();
       this.__createDragDropMechanism(nodeOutput);
@@ -450,19 +450,19 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return nodeOutput;
     },
 
-    __createNodeExposedUIs: function (model) {
+    __createNodeExposedUIs: function(model) {
       let outputLabel = this.__createNodeExposedUI(model);
       this.__nodesUI.push(outputLabel);
     },
 
-    __clearNodeExposedUIs: function () {
+    __clearNodeExposedUIs: function() {
       // remove all but the title
       while (this.__outputNodesLayout.getChildren().length > 1) {
         this.__outputNodesLayout.removeAt(this.__outputNodesLayout.getChildren().length - 1);
       }
     },
 
-    __removeSelectedNode: function () {
+    __removeSelectedNode: function() {
       for (let i = 0; i < this.__nodesUI.length; i++) {
         if (this.__desktop.getActiveWindow() === this.__nodesUI[i]) {
           this.__removeNode(this.__nodesUI[i]);
@@ -471,11 +471,11 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }
     },
 
-    __areNodesCompatible: function (topLevelPort1, topLevelPort2) {
+    __areNodesCompatible: function(topLevelPort1, topLevelPort2) {
       return qxapp.data.Store.getInstance().areNodesCompatible(topLevelPort1, topLevelPort2);
     },
 
-    __findCompatiblePort: function (nodeB, portA) {
+    __findCompatiblePort: function(nodeB, portA) {
       if (portA.isInput && nodeB.getOutputPort()) {
         return nodeB.getOutputPort();
       } else if (nodeB.getInputPort()) {
@@ -484,13 +484,13 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return null;
     },
 
-    __createLinkBetweenNodes: function (from, to, linkId) {
+    __createLinkBetweenNodes: function(from, to, linkId) {
       let node1Id = from.nodeUuid;
       let node2Id = to.nodeUuid;
       this.__createLinkUI(node1Id, node2Id, linkId);
     },
 
-    __createLinkBetweenNodesAndInputNodes: function (from, to, linkId) {
+    __createLinkBetweenNodesAndInputNodes: function(from, to, linkId) {
       const inputNodes = this.__inputNodesLayout.getChildren();
       // Children[0] is the title
       for (let i = 1; i < inputNodes.length; i++) {
@@ -503,19 +503,19 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }
     },
 
-    __createLinkToExposedOutputs: function (from, to, linkId) {
+    __createLinkToExposedOutputs: function(from, to, linkId) {
       let node1Id = from.nodeUuid;
       let node2Id = to.nodeUuid;
       this.__createLinkUI(node1Id, node2Id, linkId);
     },
 
-    __updatePosition: function (node) {
+    __updatePosition: function(node) {
       const cBounds = node.getCurrentBounds();
       let nodeModel = this.getWorkbenchModel().getNodeModel(node.getNodeId());
       nodeModel.setPosition(cBounds.left, cBounds.top);
     },
 
-    __updateLinks: function (node) {
+    __updateLinks: function(node) {
       let linksInvolved = this.getWorkbenchModel().getConnectedLinks(node.getNodeId());
 
       linksInvolved.forEach(linkId => {
@@ -535,7 +535,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       });
     },
 
-    __startTempLink: function (pointerEvent) {
+    __startTempLink: function(pointerEvent) {
       if (this.__tempLinkNodeId === null) {
         return;
       }
@@ -583,7 +583,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }
     },
 
-    __removeTempLink: function () {
+    __removeTempLink: function() {
       if (this.__tempLinkRepr !== null) {
         this.__svgWidget.removeCurve(this.__tempLinkRepr);
       }
@@ -593,7 +593,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       this.__pointerPosY = null;
     },
 
-    __getLinkPoints: function (node1, port1, node2, port2) {
+    __getLinkPoints: function(node1, port1, node2, port2) {
       let p1 = null;
       let p2 = null;
       // swap node-ports to have node1 as input and node2 as output
@@ -615,7 +615,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return [p1, p2];
     },
 
-    getNodeUI: function (nodeId) {
+    getNodeUI: function(nodeId) {
       for (let i = 0; i < this.__nodesUI.length; i++) {
         if (this.__nodesUI[i].getNodeId() === nodeId) {
           return this.__nodesUI[i];
@@ -624,7 +624,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return null;
     },
 
-    __getLinkUI: function (linkId) {
+    __getLinkUI: function(linkId) {
       for (let i = 0; i < this.__linksUI.length; i++) {
         if (this.__linksUI[i].getLinkId() === linkId) {
           return this.__linksUI[i];
@@ -633,7 +633,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return null;
     },
 
-    __removeNode: function (node) {
+    __removeNode: function(node) {
       this.fireDataEvent("removeNode", node.getNodeId());
     },
 
@@ -641,7 +641,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       this.__clearNode(nodeId);
     },
 
-    __removeAllNodes: function () {
+    __removeAllNodes: function() {
       while (this.__nodesUI.length > 0) {
         this.__removeNode(this.__nodesUI[this.__nodesUI.length - 1]);
       }
@@ -651,22 +651,22 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       this.__clearLink(this.__getLinkUI(linkId));
     },
 
-    __removeLink: function (link) {
+    __removeLink: function(link) {
       this.fireDataEvent("removeLink", link.getLinkId());
     },
 
-    __removeAllLinks: function () {
+    __removeAllLinks: function() {
       while (this.__linksUI.length > 0) {
         this.__removeLink(this.__linksUI[this.__linksUI.length - 1]);
       }
     },
 
-    removeAll: function () {
+    removeAll: function() {
       this.__removeAllNodes();
       this.__removeAllLinks();
     },
 
-    __clearNode: function (nodeId) {
+    __clearNode: function(nodeId) {
       let node = this.getNodeUI(nodeId);
       if (this.__desktop.getChildren().includes(node)) {
         this.__desktop.remove(node);
@@ -677,13 +677,13 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }
     },
 
-    __clearAllNodes: function () {
+    __clearAllNodes: function() {
       while (this.__nodesUI.length > 0) {
         this.__clearNode(this.__nodesUI[this.__nodesUI.length - 1].getNodeId());
       }
     },
 
-    __clearLink: function (link) {
+    __clearLink: function(link) {
       this.__svgWidget.removeCurve(link.getRepresentation());
       let index = this.__linksUI.indexOf(link);
       if (index > -1) {
@@ -691,18 +691,18 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }
     },
 
-    __clearAllLinks: function () {
+    __clearAllLinks: function() {
       while (this.__linksUI.length > 0) {
         this.__clearLink(this.__linksUI[this.__linksUI.length - 1]);
       }
     },
 
-    clearAll: function () {
+    clearAll: function() {
       this.__clearAllNodes();
       this.__clearAllLinks();
     },
 
-    loadModel: function (model) {
+    loadModel: function(model) {
       this.clearAll();
 
       this.__currentModel = model;
@@ -738,8 +738,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
               this.__createLinkBetweenNodes({
                 nodeUuid: inputNode
               }, {
-                  nodeUuid: nodeUuid
-                });
+                nodeUuid: nodeUuid
+              });
             } else {
               if (!isContainer) {
                 console.log("Shouldn't be the case");
@@ -747,8 +747,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
               this.__createLinkBetweenNodesAndInputNodes({
                 nodeUuid: inputNode
               }, {
-                  nodeUuid: nodeUuid
-                });
+                nodeUuid: nodeUuid
+              });
             }
           }
         }
@@ -760,34 +760,34 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
             this.__createLinkToExposedOutputs({
               nodeUuid: innerNode.getNodeId()
             }, {
-                nodeUuid: model.getNodeId()
-              });
+              nodeUuid: model.getNodeId()
+            });
           }
         }
       }
     },
 
-    addWindowToDesktop: function (node) {
+    addWindowToDesktop: function(node) {
       this.__desktop.add(node);
       node.open();
 
       // qx.ui.core.queue.Widget.flush();
     },
 
-    clearProgressData: function () {
+    clearProgressData: function() {
       for (let i = 0; i < this.__nodesUI.length; i++) {
         this.__nodesUI[i].setProgress(0);
       }
     },
 
-    updateProgress: function (nodeId, progress) {
+    updateProgress: function(nodeId, progress) {
       let node = this.getNodeUI(nodeId);
       if (node) {
         node.setProgress(progress);
       }
     },
 
-    __selectedItemChanged: function (newID) {
+    __selectedItemChanged: function(newID) {
       if (newID === this.__selectedItemId) {
         return;
       }
@@ -809,7 +809,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }
     },
 
-    __isSelectedItemALink: function () {
+    __isSelectedItemALink: function() {
       return Boolean(this.__getLinkUI(this.__selectedItemId));
     }
   }
