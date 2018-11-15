@@ -10,9 +10,23 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
   members: {
     __tree: null,
 
+    populateNodeFiles: function(prjId, nodeId) {
+      const treeName = "Node files";
+      this.__resetTree(treeName);
+      let store = qxapp.data.Store.getInstance();
+
+      store.addListenerOnce("NodeFiles", e => {
+        const files = e.getData();
+        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+        this.__addTreeData(newChildren);
+      }, this);
+
+      store.getNodeFiles(prjId, nodeId);
+    },
+
     populateMyDocuments: function() {
       const treeName = "My Documents";
-      this.__clearTree(treeName);
+      this.__resetTree(treeName);
       let store = qxapp.data.Store.getInstance();
 
       [
@@ -28,11 +42,10 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       }, this);
 
       store.getMyDocuments();
-      // store.getS3SandboxFiles();
-      store.getFakeFiles();
+      // store.getFakeFiles();
     },
 
-    __clearTree: function(treeName) {
+    __resetTree: function(treeName) {
       // FIXME: It is not reseting the model
       this.__tree.resetModel();
       let data = {

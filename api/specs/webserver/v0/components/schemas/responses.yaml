@@ -1,11 +1,11 @@
-FileLocationEnveloped:
+PresignedLinkEnveloped:
   type: object
   required:
     - data
     - error
   properties:
     data:
-      $ref: '#/FileLocation'
+      $ref: '#/PresignedLink'
       nullable: true
       default: null
     error:
@@ -13,18 +13,10 @@ FileLocationEnveloped:
       nullable: true
       default: null
 
-FileLocation:
+PresignedLink:
   type: object
   properties:
-    name:
+    link:
       type: string
-    id:
-      type: number
   example:
-    filename: 'simcore.s3'
-    id: 0
-
-FileLocationArray:
-  type: array
-  items:
-    $ref: '#/FileLocation'
+    link: 'example_link'

@@ -116,7 +116,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
 
     __reloadNodeTree: function() {
       let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__nodeTree);
-      filesTreePopulator.populateMyDocuments();
+      filesTreePopulator.populateNodeFiles();
 
       let that = this;
       let delegate = this.__nodeTree.getDelegate();
@@ -221,7 +221,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
           const presginedLinkData = e.getData();
           console.log(presginedLinkData.presginedLink);
           if (presginedLinkData.presginedLink) {
-            this.__downloadFile(presginedLinkData.presginedLink, fileName);
+            this.__downloadFile(presginedLinkData.presginedLink.link, fileName);
           }
         }, this);
         const download = true;
@@ -235,6 +235,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
       xhr.open("GET", url, true);
       xhr.responseType = "blob";
       xhr.onload = () => {
+        console.log("onload", xhr);
         if (xhr.status == 200) {
           var blob = new Blob(xhr.response);
           let urlBlob = window.URL.createObjectURL(blob);

@@ -7,6 +7,7 @@ qx.Class.define("qxapp.data.Store", {
     "servicesRegistered": "qx.event.type.Event",
     "S3PublicDocuments": "qx.event.type.Event",
     "MyDocuments": "qx.event.type.Event",
+    "NodeFiles": "qx.event.type.Event",
     "PresginedLink": "qx.event.type.Event",
     "DeleteFile": "qx.event.type.Event",
     "FakeFiles": "qx.event.type.Event"
@@ -720,15 +721,29 @@ qx.Class.define("qxapp.data.Store", {
       this.fireDataEvent("FakeFiles", data);
     },
 
-    getS3SandboxFiles: function() {
-      const slotName = "listObjects";
-      let socket = qxapp.wrappers.WebSocket.getInstance();
-      socket.removeSlot(slotName);
-      socket.on(slotName, function(data) {
-        console.log(slotName, data);
-        this.fireDataEvent("S3PublicDocuments", data);
+    getNodeFiles: function(prjId, nodeId) {
+      const filter = "?uuid_filter=" + nodeId;
+      let endPoint = "/storage/locations/0/files/metadata";
+      endPoint += filter;
+      let reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
+
+      reqFiles.addListener("success", eFiles => {
+        const files = eFiles.getTarget().getResponse()
+          .data;
+        console.log("Node Files", files);
+        if (files && files.length>0) {
+          this.fireDataEvent("NodeFiles", files);
+        }
       }, this);
-      socket.emit(slotName);
+
+      reqFiles.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        console.log("Failed getting NodeF iles list", error);
+      });
+
+      reqFiles.send();
     },
 
     getMyDocuments: function() {

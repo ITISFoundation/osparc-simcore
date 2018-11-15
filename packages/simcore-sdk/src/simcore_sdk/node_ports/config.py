@@ -17,6 +17,13 @@ BUCKET = os.environ.get("S3_BUCKET_NAME", default="simcore")
 # -------------------------------------------------------------------------
 # internals
 PROJECT_ID = os.environ.get("SIMCORE_PIPELINE_ID", default="undefined")
+USER_ID = os.environ.get("SIMCORE_USER_ID", default="undefined")
+
+STORAGE_ENDPOINT = os.environ.get("STORAGE_ENDPOINT", default="undefined")
+STORAGE_VERSION = "v0"
+
+STORE = "simcore.s3"
+BUCKET = "simcore"
 
 
 NODE_KEYS = {"version":True,

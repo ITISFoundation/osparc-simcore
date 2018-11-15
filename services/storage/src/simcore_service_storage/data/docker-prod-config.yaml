@@ -13,8 +13,8 @@ postgres:
   endpoint: ${POSTGRES_ENDPOINT}
   user: ${POSTGRES_USER}
   password: ${POSTGRES_PASSWORD}
-  host: postgres
-  port: 5432
+  host: ${POSTGRES_HOST}
+  port: ${POSTGRES_PORT}
 s3:
   endpoint: ${S3_ENDPOINT}
   access_key: ${S3_ACCESS_KEY}
