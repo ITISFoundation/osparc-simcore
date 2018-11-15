@@ -432,6 +432,7 @@ paths:
                 $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
 
   /services:
+
     get:
       description: Lists available services in the oSparc platform
       operationId: services_get
@@ -457,8 +458,41 @@ paths:
               schema:
                 $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
 
+  /computation/pipeline/{project_id}/start:
+    post:
+      description: Starts a pipeline
+      operationId: start_pipeline
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        $ref: '#/components/requestBodies/PipelineBody'
+      responses:
+        "200":
+          description: Succesffully started the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/pipeline.yaml#/components/schemas/PipelineCreatedEnveloped'
+                
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+
 components:
   parameters:    
+    ProjectId:
+      in: path
+      name: project_id
+      required: true
+      description: starts the pipeline
+      schema:
+        type: string          
+        # format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
+
     AssignmentUuid:
       in: query
       name: service_uuid
@@ -590,7 +624,14 @@ components:
   
   requestBodies:
     FileMetaDataBody:
-        content:
-          application/json:
-            schema:
-              $ref: './components/schemas/files.yaml#/FileMetaData'
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/files.yaml#/FileMetaData'
+    
+    PipelineBody:
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/pipeline.yaml#/components/schemas/WorkbenchType'
+

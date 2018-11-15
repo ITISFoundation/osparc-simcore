@@ -1,0 +1,37 @@
+components:
+  schemas:
+    WorkbenchType:
+      type: object  
+      required:
+        - workbench
+        - project_id
+      properties:        
+        workbench:
+          $ref: './workbench-converted.yaml'
+        project_id:
+          type: string
+          format: uuid
+
+    PipelineCreatedEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/PipelineCreatedType'
+        error:
+          nullable: true
+          default: null
+    
+    PipelineCreatedType:
+      type: object
+      required:
+        - pipeline_name
+        - pipeline_id
+      properties:
+        pipeline_name:
+          type: string
+          example: a pipeline named pipeline
+        pipeline_id:
+          type: string
+          example: 123e4567-e89b-12d3-a456-426655440000
