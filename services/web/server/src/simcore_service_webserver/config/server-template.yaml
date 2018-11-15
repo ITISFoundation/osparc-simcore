@@ -9,26 +9,27 @@ main:
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
-postgres:
-  database: ${POSTGRES_DB}
-  user: ${POSTGRES_USER}
-  password: ${POSTGRES_PASSWORD}
-  host: localhost
-  port: 5432
-  minsize: 1
-  maxsize: 5
-  endpoint: ${POSTGRES_ENDPOINT}
+db:
+  postgres:
+    database: ${POSTGRES_DB}
+    user: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    host: localhost
+    port: 5432
+    minsize: 1
+    maxsize: 5
+    endpoint: ${POSTGRES_ENDPOINT}
 rabbit:
   user: ${RABBITMQ_USER}
   password: ${RABBITMQ_PASSWORD}
   channels:
     progress: ${RABBITMQ_PROGRESS_CHANNEL}
     log: ${RABBITMQ_LOG_CHANNEL}
-s3:
-  endpoint: ${S3_ENDPOINT}
-  access_key: ${S3_ACCESS_KEY}
-  secret_key: ${S3_SECRET_KEY}
-  bucket_name: ${S3_BUCKET_NAME}
+# s3:
+#   endpoint: ${S3_ENDPOINT}
+#   access_key: ${S3_ACCESS_KEY}
+#   secret_key: ${S3_SECRET_KEY}
+#   bucket_name: ${S3_BUCKET_NAME}
 smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: ${SMTP_HOST}
@@ -36,6 +37,11 @@ smtp:
   tls: False
   username: Null
   password: Null
+rest:
+  version: v0
+  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/openapi.yaml
+  extra_urls:
+    - ${OSPARC_PUBLIC_URL}
 storage:
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}

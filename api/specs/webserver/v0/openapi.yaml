@@ -10,6 +10,8 @@ info:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 servers:
+  - description: API server
+    url: '/v0'
   - description: Development server
     url: http://{host}:{port}/{basePath}
     variables:
@@ -17,15 +19,6 @@ servers:
         default: 'localhost'
       port:
         default: '8001'
-      basePath:
-        enum:
-          - v0
-        default: v0
-  - description: Production server
-    url: '{publicUrl}/{basePath}'
-    variables:
-      publicUrl:
-        default: 'https://osparc.io'
       basePath:
         enum:
           - v0
@@ -185,9 +178,334 @@ paths:
         default:
           $ref: '#/components/responses/OK_NoContent_204'
 
+  /storage/locations:
+    get:
+      summary: Get available storage locations
+      operationId : get_storage_locations
+      responses:
+        '200':
+          description: 'List of availabe storage locations'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/locations.yaml#FileLocationArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /storage/locations/{location_id}/files/metadata:
+    get:
+      summary: Get list of file meta data
+      operationId: get_files_metadata
+      parameters:
+        - name: location_id
+          in : path
+          required: true
+          schema:
+            type: string
+        - name: uuid_filter
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'list of file meta-datas'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/files.yaml#FileMetaDataArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /storage/locations/{location_id}/files/{fileId}/metadata:
+    get:
+      summary: Get File Metadata
+      operationId: get_file_metadata
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: location_id
+        in : path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/FileMetaData_200'
+    patch:
+      summary: Update File Metadata
+      operationId: update_file_meta_data
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: location_id
+        in : path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        $ref: '#/components/requestBodies/FileMetaDataBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/FileMetaData_200'
 
+  /storage/locations/{location_id}/files/{fileId}:
+    get:
+      summary: Returns download link for requested file
+      operationId: download_file
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: location_id
+        in : path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/PresignedLink_200'
+    put:
+      summary: Returns upload link or performs copy operation to datcore
+      operationId: upload_file
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: location_id
+        in : path
+        required: true
+        schema:
+          type: string
+      - name: extra_location
+        in : query
+        required: false
+        schema:
+          type: string
+      - name: extra_source
+        in : query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/PresignedLink_200'
+    delete:
+      summary: Deletes File
+      operationId: delete_file
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: location_id
+        in : path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: ''
+
+  /running_interactive_services:
+    post:
+      description: Starts an interactive service in the oSparc platform and returns its entrypoint
+      operationId: running_interactive_services_post
+      parameters:
+        - $ref: '#/components/parameters/ServiceKey'
+        - $ref: '#/components/parameters/ServiceVersion'
+        - $ref: '#/components/parameters/AssignmentUuid'
+      responses:
+        "201":
+          description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/running_service.yaml#/RunningServiceEnveloped'
+        "400":
+          description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        "401":
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        "404":
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        "409":
+          description: A service with the same uuid already exists
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+
+  /running_interactive_services/{service_uuid}:
+    get:
+      description: Succesfully returns if a service with the defined uuid is up and running
+      operationId: running_interactive_services_get
+      parameters:
+        - $ref: '#/components/parameters/ServiceUuid'
+      responses:
+        "204":
+          description: OK service exists and runs
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/response204.yaml#/Response204Enveloped'
+        "400":
+          description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        "404":
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+    delete:
+      description: Stops and removes an interactive service from the oSparc platform
+      operationId: running_interactive_services_delete
+      parameters:
+        - $ref: '#/components/parameters/ServiceUuid'
+      responses:
+        "204":
+          description: Succesfully stopped and removed the service from the oSparc platform
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/response204.yaml#/Response204Enveloped'
+        "400":
+          description: Malformed function call, missing field
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        "404":
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+
+  /services:
+    get:
+      description: Lists available services in the oSparc platform
+      operationId: services_get
+      parameters:
+        - $ref: '#/components/parameters/ServiceType'
+      responses:
+        "200":
+          description: Success, returns the list of available services
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/services.yaml#/ServicesEnveloped'
+        "401":
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
 
 components:
+  parameters:
+    AssignmentUuid:
+      in: query
+      name: service_uuid
+      description: The uuid to assign the service with
+      required: true
+      schema:
+        type: string
+        # format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
+
+    ServiceKey:
+      in: query
+      name: service_key
+      description: The key (url) of the service
+      required: true
+      schema:
+        type: string
+        # format: url
+        example: simcore/services/dynamic/3d-viewer
+
+    ServiceType:
+      in: query
+      name: service_type
+      description: |
+        The service type:
+          * computational - a computational service
+          * interactive - an interactive service
+      required: false
+      schema:
+        type: string
+        enum:
+          - computational
+          - interactive
+        example: computational
+
+    ServiceUuid:
+      in: path
+      name: service_uuid
+      description: The uuid of the service
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
+
+    ServiceVersion:
+      in: query
+      name: service_tag
+      description: The tag/version of the service
+      required: false
+      schema:
+        type: string
+        example: "1.4"
+
   responses:
     # TODO:Envelope objects are still not well/easily defined. See discriminators
     OK_NoContent_204:
@@ -248,3 +566,24 @@ components:
         application/json:
           schema:
             $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+
+    FileMetaData_200:
+      description: 'Returns file metadata'
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/files.yaml#/FileMetaData'
+
+    PresignedLink_200:
+      description: 'Returns presigned link'
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/presigned_link.yaml#/PresignedLink'
+
+  requestBodies:
+    FileMetaDataBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/files.yaml#/FileMetaData'

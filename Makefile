@@ -38,7 +38,7 @@ export HOST_GID=1000
 # TODO: Add a meaningfull call to retrieve the local docker group ID and the user ID in linux.
 endif
 
-PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*-sdk/python*" -not -path "*generated_code*" -not -path "*datcore.py"))
+PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*-sdk/python*" -not -path "*generated_code*" -not -path "*datcore.py" -not -path "*web/server*"))
 
 TEMPCOMPOSE := $(shell mktemp)
 

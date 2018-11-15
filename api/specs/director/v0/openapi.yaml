@@ -1,7 +1,7 @@
 openapi: "3.0.0"
 info:
   description: This is the oSparc's director API
-  version: 1.0.0
+  version: 0.1.0
   title: Director API
   # put the contact info for your development or API team
   contact:
@@ -12,8 +12,10 @@ info:
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 
 servers:
-  - url: http://{host}:{port}/{version}
-    description: Development server
+  - description: API server
+    url: '/v0'
+  - description: Development server
+    url: http://{host}:{port}/{version}
     variables:
       host:
         default: 'localhost'
@@ -36,7 +38,7 @@ tags:
 paths:
   /:
     get:
-      tags: 
+      tags:
         - users
       summary: Service health-check endpoint
       description: Some general information on the API and state of the service behind
@@ -57,7 +59,7 @@ paths:
 
   /services:
     get:
-      tags: 
+      tags:
         - users
       summary: Lists available services in the oSparc platform
       description: Lists available services in the oSparc platform
@@ -70,7 +72,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/services.yaml#/ServicesEnveloped'                
+                $ref: '../../shared/schemas/services.yaml#/ServicesEnveloped'
         "401":
           description: Unauthorized access
           content:
@@ -86,7 +88,7 @@ paths:
 
   /services/{service_key}/{service_version}:
     get:
-      tags: 
+      tags:
         - users
       summary: Returns details of the selected service if available in the oSparc platform
       description: Returns details of the selected service if available in the oSparc platform
@@ -100,7 +102,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/services.yaml#/ServicesEnveloped'                
+                $ref: '../../shared/schemas/services.yaml#/ServicesEnveloped'
         "401":
           description: Unauthorized access
           content:
@@ -122,12 +124,12 @@ paths:
 
   /running_interactive_services:
     post:
-      tags: 
+      tags:
         - users
       summary: Starts an interactive service in the oSparc platform and returns its entrypoint
       description: Starts an interactive service in the oSparc platform and returns its entrypoint
       operationId: running_interactive_services_post
-      parameters:         
+      parameters:
         - $ref: '#/components/parameters/ServiceKey'
         - $ref: '#/components/parameters/ServiceVersion'
         - $ref: '#/components/parameters/AssignmentUuid'
@@ -171,12 +173,12 @@ paths:
 
   /running_interactive_services/{service_uuid}:
     get:
-      tags: 
+      tags:
         - users
       summary: Succesfully returns if a service with the defined uuid is up and running
       description: Succesfully returns if a service with the defined uuid is up and running
       operationId: running_interactive_services_get
-      parameters: 
+      parameters:
         - $ref: '#/components/parameters/ServiceUuid'
       responses:
         "204":
@@ -204,12 +206,12 @@ paths:
               schema:
                 $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
     delete:
-      tags: 
+      tags:
         - users
       summary: Stops and removes an interactive service from the oSparc platform
       description: Stops and removes an interactive service from the oSparc platform
       operationId: running_interactive_services_delete
-      parameters: 
+      parameters:
         - $ref: '#/components/parameters/ServiceUuid'
       responses:
         "204":
@@ -255,20 +257,20 @@ components:
       description: The key (url) of the service
       required: true
       schema:
-        type: string   
+        type: string
         format: url
         example: simcore/services/dynamic/3d-viewer
-    
+
     ServiceKey:
       in: query
       name: service_key
       description: The key (url) of the service
       required: true
       schema:
-        type: string   
+        type: string
         format: url
         example: simcore/services/dynamic/3d-viewer
-    
+
     ServiceType:
       in: query
       name: service_type
@@ -278,12 +280,12 @@ components:
           * interactive - an interactive service
       required: false
       schema:
-        type: string          
-        enum: 
+        type: string
+        enum:
           - computational
-          - interactive            
+          - interactive
         example: computational
-    
+
     ServiceUuid:
       in: path
       name: service_uuid

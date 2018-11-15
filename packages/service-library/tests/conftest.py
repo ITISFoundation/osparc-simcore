@@ -33,7 +33,7 @@ def osparc_simcore_root_dir(here):
 
 @pytest.fixture
 def petstore_spec_file(here):
-    filepath = here / "data/v3.0/petstore.yaml"
+    filepath = here / "data/oas3/petstore.yaml"
     assert filepath.exists()
     return filepath
 

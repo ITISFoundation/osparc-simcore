@@ -8,17 +8,22 @@
 """
 import logging
 
-from .comp_backend_subscribe import SERVICE_NAME, subscribe
-from .application_keys import APP_CONFIG_KEY
+from aiohttp import web
+
+from servicelib.application_keys import APP_CONFIG_KEY
+
+from .computation_config import CONFIG_SECTION_NAME, SERVICE_NAME
+from .computation_subscribe import subscribe
 
 log = logging.getLogger(__file__)
 
 
-def setup_computational_backend(app):
+def setup(app: web.Application):
     log.debug("Setting up %s [service: %s] ...", __name__, SERVICE_NAME)
 
-    disable_services = app[APP_CONFIG_KEY].get("main", {}).get("disable_services",[])
-    if SERVICE_NAME in disable_services:
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+
+    if not cfg["enabled"]:
         log.warning("Service '%s' explicitly disabled in config", SERVICE_NAME)
         return
 
@@ -29,3 +34,11 @@ def setup_computational_backend(app):
 
     # TODO: add function to "unsubscribe"
     # app.on_cleanup.append(unsubscribe)
+
+
+# alias
+setup_computation = setup
+
+__all__ = (
+    "setup_computation"
+)

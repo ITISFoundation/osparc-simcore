@@ -4,34 +4,32 @@ main:
   host: 127.0.0.1
   log_level: DEBUG
   port: 8080
-  public_url: http://localhost:9081
   testing: true
-  disable_services: []
-  db:
-    init_tables: False
 director:
   host: director
   port: 8001
-postgres:
-  database: simcoredb
-  endpoint: postgres:5432
-  host: postgres
-  maxsize: 5
-  minsize: 1
-  password: simcore
-  port: 5432
-  user: simcore
+db:
+  init_tables: False
+  postgres:
+    database: simcoredb
+    endpoint: postgres:5432
+    host: postgres
+    maxsize: 5
+    minsize: 1
+    password: simcore
+    port: 5432
+    user: simcore
 rabbit:
   channels:
     log: comp.backend.channels.log
     progress: comp.backend.channels.progress
   password: simcore
   user: simcore
-s3:
-  access_key: 'Q3AM3UQ867SPQQA43P2F'
-  bucket_name: simcore
-  endpoint: play.minio.io:9000
-  secret_key: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
+# s3:
+#   access_key: 'Q3AM3UQ867SPQQA43P2F'
+#   bucket_name: simcore
+#   endpoint: play.minio.io:9000
+#   secret_key: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
 smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: mail.foo.com
@@ -39,6 +37,11 @@ smtp:
   tls: False
   username: Null
   password: Null
+rest:
+  version: v0
+  location: http://localhost:8043/api/specs/webserver/v0/openapi.yaml
+  extra_urls:
+    - http://localhost:9081
 storage:
   host: storage
   port: 11111

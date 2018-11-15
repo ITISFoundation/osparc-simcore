@@ -1,16 +1,15 @@
 ErrorEnveloped:
   type: object
   required:
-    - data
     - error
   properties:
-    data:      
+    data:
       type: object
       nullable: true
       default: null
     error:
       $ref: '#/ErrorType'
-      
+
 ErrorType:
   type: object
   required:

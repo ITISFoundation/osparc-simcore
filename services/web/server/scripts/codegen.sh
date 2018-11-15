@@ -9,7 +9,7 @@
 
 REPO_ROOT=../../../..
 SOURCE_DIR=../src/simcore_service_webserver
-INPUT_SPEC=${SOURCE_DIR}/.openapi/v1/test_1.0.0-oas3.yaml
+INPUT_SPEC=${REPO_ROOT}/api/specs/webserver/v0/openapi.yaml
 OUTPUT_DIR=${SOURCE_DIR}/rest
 OUTPUT_DIR_GEN=${SOURCE_DIR}/rest/generated_code
 INIT_FILE_PATH=${OUTPUT_DIR}/__init__.py

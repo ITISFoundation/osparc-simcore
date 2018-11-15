@@ -54,6 +54,10 @@ def change_references_to_schemas(filepath: Path, specs: dict):
             # navigate specs
             change_references_to_schemas(filepath, value)
 
+        elif key in ("allOf", "oneOf", "anyOf"): # navigates allOf, oneOf, anyOf
+            for item in value:
+                change_references_to_schemas(filepath, item)
+
         elif key=="$ref":
             # Ensures value = "file_ref#section_ref"
             value = str(value)
