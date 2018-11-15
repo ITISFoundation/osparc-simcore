@@ -4,7 +4,7 @@ main:
   log_level: INFO
   port: 8080
   testing: true
-  python2: ~/devp/osparc-simcore/.venv2 #${VENV2}
+  python2: ${VENV2}
   test_datcore:
      api_token: ${BF_API_KEY}
      api_secret: ${BF_API_SECRET}

@@ -2,3 +2,4 @@ aiohttp
 openapi-core
 werkzeug
 pyyaml
+ujson

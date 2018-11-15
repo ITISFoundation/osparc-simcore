@@ -13,9 +13,54 @@ from servicelib.rest_middlewares import append_rest_middlewares
 
 from . import rest_routes
 from .resources import resources
-from .settings import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY, RSC_OPENAPI_ROOTFILE_KEY
+from .settings import (APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY,
+                       RSC_OPENAPI_ROOTFILE_KEY)
+
 
 log = logging.getLogger(__name__)
+
+
+
+#TODO: move to servicelib
+def _get_server(servers, url):
+    # Development server: http://{host}:{port}/{basePath}
+    for server in servers:
+        if server.url == url:
+            return server
+    raise ValueError("Cannot find server %s" % url)
+
+def _setup_servers_specs(specs: openapi.Spec, app_config: Dict) -> openapi.Spec:
+    # TODO: temporary solution. Move to servicelib. Modifying dynamically servers does not seem like
+    # the best solution!
+
+    if app_config.get('testing', True):
+        # FIXME: host/port in host side!
+        #  - server running inside container. use environ set by container to find port maps maps (see portainer)
+        #  - server running in host
+
+        devserver = _get_server(specs.servers, "http://{host}:{port}/{basePath}")
+        host, port = app_config['host'], app_config['port']
+
+        devserver.variables['host'].default = host
+        devserver.variables['port'].default = port
+
+        # Extends server specs to locahosts
+        for host in {'127.0.0.1', 'localhost', host}:
+            for port in {port, 11111, 8080}:
+                log.info("Extending to server %s:%s", host, port)
+                new_server = copy.deepcopy(devserver)
+                new_server.variables['host'].default = host
+                new_server.variables['port'].default = port
+                specs.servers.append(new_server)
+
+        for s in specs.servers:
+            if 'host' in s.variables.keys():
+                log.info("SERVER SPEC %s:%s", s.variables['host'].default, s.variables['port'].default)
+            else:
+                log.info("SERVER SPEC storage :%s", s.variables['port'].default)
+
+
+    return specs
 
 
 def create_apispecs(app_config: Dict) -> openapi.Spec:
@@ -25,24 +70,7 @@ def create_apispecs(app_config: Dict) -> openapi.Spec:
 
     try:
         specs = openapi.create_specs(openapi_path)
-
-        # sets servers variables to current server's config
-        if app_config.get('testing', True):
-            # FIXME: host/port in host side!  Consider
-            #  - server running inside container. use environ set by container to find port maps maps (see portainer)
-            #  - server running in host
-            devserver = specs.servers[0]
-
-            host, port = app_config['host'], app_config['port']
-
-            devserver.variables['host'].default = host
-            devserver.variables['port'].default = port
-
-            HOSTNAMES = ('127.0.0.1', 'localhost')
-            if host in HOSTNAMES:
-                new_server = copy.deepcopy(devserver)
-                new_server.variables['host'].default = HOSTNAMES[(HOSTNAMES.index(host)+1) % 2]
-                specs.servers.append(new_server)
+        specs = _setup_servers_specs(specs, app_config)
 
     except openapi.OpenAPIError:
         # TODO: protocol when some parts are unavailable because of failure

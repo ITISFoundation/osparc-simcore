@@ -28,7 +28,7 @@ usage()
     echo "usage: openapi_codegen [[[-i input] [-o output directory] [-g generator] [-c configuration file]] | [-h help] | [-languages] [-config-help language]]"
 }
 
-openapi_generator=openapitools/openapi-generator-cli:v3.2.3
+openapi_generator=openapitools/openapi-generator-cli:v3.3.2
 
 list_languages()
 {

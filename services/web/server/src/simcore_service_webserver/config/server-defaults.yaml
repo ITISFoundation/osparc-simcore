@@ -39,3 +39,6 @@ smtp:
   tls: False
   username: Null
   password: Null
+storage:
+  host: storage
+  port: 11111

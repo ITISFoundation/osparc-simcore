@@ -10,8 +10,8 @@ from aiohttp import web
 
 from servicelib import openapi
 
-from . import handlers as auth_handlers
-#from .login import fake_handlers as auth_handlers
+from . import handlers as login_handlers
+#from .login import fake_handlers as login_handlers
 
 
 log = logging.getLogger(__name__)
@@ -28,23 +28,23 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     # TODO: routing will be done automatically using operation_id/tags, etc...
 
     # auth --
-    path, handler = '/auth/register', auth_handlers.register
+    path, handler = '/auth/register', login_handlers.register
     operation_id = specs.paths[path].operations['post'].operation_id
     routes.append( web.post(BASEPATH+path, handler, name=operation_id) )
 
-    path, handler = '/auth/login', auth_handlers.login
+    path, handler = '/auth/login', login_handlers.login
     operation_id = specs.paths[path].operations['post'].operation_id
     routes.append( web.post(BASEPATH+path, handler, name=operation_id) )
 
-    path, handler = '/auth/logout', auth_handlers.logout
+    path, handler = '/auth/logout', login_handlers.logout
     operation_id = specs.paths[path].operations['get'].operation_id
     routes.append( web.get(BASEPATH+path, handler, name=operation_id) )
 
-    path, handler = '/auth/confirmation/{code}', auth_handlers.email_confirmation
+    path, handler = '/auth/confirmation/{code}', login_handlers.email_confirmation
     operation_id = specs.paths[path].operations['get'].operation_id
     routes.append( web.get(BASEPATH+path, handler, name=operation_id) )
 
-    path, handler = '/auth/change-email', auth_handlers.change_email
+    path, handler = '/auth/change-email', login_handlers.change_email
     operation_id = specs.paths[path].operations['post'].operation_id
     routes.append( web.post(BASEPATH+path, handler, name=operation_id) )
 

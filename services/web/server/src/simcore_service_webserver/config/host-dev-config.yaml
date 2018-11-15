@@ -39,3 +39,6 @@ s3:
   bucket_name: simcore
   endpoint: play.minio.io:9000
   secret_key: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
+storage:
+  host: storage
+  port: 11111
