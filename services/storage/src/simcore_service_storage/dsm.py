@@ -8,6 +8,7 @@ from operator import itemgetter
 from pathlib import Path
 from typing import List, Tuple
 
+import aioboto3
 import aiofiles
 import aiohttp
 import attr
@@ -257,6 +258,8 @@ class DataStorageManager:
             object_name = file_uuid
             return self.s3_client.create_presigned_put_url(bucket_name, object_name)
 
+    # pylint: disable=R0915
+    # Too many statements
     async def copy_file(self, user_id: str, dest_location: str, dest_uuid: str, source_location: str, source_uuid: str):
         if source_location == SIMCORE_S3_STR:
             if dest_location == DATCORE_STR:
@@ -285,8 +288,10 @@ class DataStorageManager:
                 from_bucket = self.simcore_bucket_name
                 from_object_name = source_uuid
                 from_bucket_object_name = os.path.join(from_bucket, from_object_name)
-                # FIXME: This is not async!
-                self.s3_client.copy_object(to_bucket_name, to_object_name, from_bucket_object_name)
+                async with aioboto3.resource('s3', endpoint_url="http://"+self.s3_client.endpoint, aws_access_key_id=self.s3_client.access_key,
+                    aws_secret_access_key=self.s3_client.secret_key) as s3:
+                    await s3.Object(to_bucket_name, to_object_name).copy_from(CopySource=from_bucket_object_name)
+
                 # update db
                 async with self.engine.acquire() as conn:
                     fmd = FileMetaData()
@@ -302,19 +307,23 @@ class DataStorageManager:
                 # TODO: This should be a redirect stream!
                 dc_link = await self.download_link(user_id=user_id, location=source_location, file_uuid=source_uuid)
                 s3_upload_link = await self.upload_link(user_id, dest_uuid)
-                filename = source_uuid.split("/")[-1]
-                tmp_dirpath = tempfile.mkdtemp()
-                local_file_path = os.path.join(tmp_dirpath,filename)
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(dc_link) as resp:
-                        if resp.status == 200:
-                            f = await aiofiles.open(local_file_path, mode='wb')
-                            await f.write(await resp.read())
-                            await f.close()
-                            s3_upload_link = URL(s3_upload_link)
-                            async with session.put(s3_upload_link, data=Path(local_file_path).open('rb')) as resp:
-                                if resp.status > 299:
-                                    _response_text = await resp.text()
+                do_multipart = True
+                if do_multipart:
+                    await self.stream_to_s3(dc_link, dest_uuid)
+                else:
+                    filename = source_uuid.split("/")[-1]
+                    tmp_dirpath = tempfile.mkdtemp()
+                    local_file_path = os.path.join(tmp_dirpath,filename)
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(dc_link) as resp:
+                            if resp.status == 200:
+                                f = await aiofiles.open(local_file_path, mode='wb')
+                                await f.write(await resp.read())
+                                await f.close()
+                                s3_upload_link = URL(s3_upload_link)
+                                async with session.put(s3_upload_link, data=Path(local_file_path).open('rb')) as resp:
+                                    if resp.status > 299:
+                                        _response_text = await resp.text()
 
     async def download_link(self, user_id: str, location: str, file_uuid: str)->str:
         link = None
@@ -328,3 +337,44 @@ class DataStorageManager:
             dataset, filename = _parse_datcore(file_uuid)
             link = await dcw.download_link(dataset, filename)
         return link
+
+    async def stream_to_s3(self, from_url: str, to_file_uuid: str):
+        kb = 1024 # bytes
+        mb = 1024 * kb
+        CHUNK_SIZE = 8 * mb
+        async with aioboto3.resource('s3', endpoint_url="http://"+self.s3_client.endpoint, aws_access_key_id=self.s3_client.access_key,
+            aws_secret_access_key=self.s3_client.secret_key) as s3:
+
+            mpu = await s3.meta.client.create_multipart_upload(Bucket=self.simcore_bucket_name, Key=to_file_uuid)
+            part_no = 0
+            parts = {'Parts': []}
+            async with aiohttp.ClientSession() as session:
+                async with session.get(from_url) as response:
+                    assert response.status == 200
+                    data = bytearray()
+                    data_to_read = True
+                    while data_to_read:
+                        red = 0
+                        data.clear()
+                        while red < CHUNK_SIZE:
+                            chunk = await response.content.readany()
+                            if not chunk:
+                                data_to_read = False
+                                break
+                            data.extend(chunk)
+                            red += len(chunk)
+                        part_no +=1
+                        part = await s3.meta.client.upload_part(Body=data,
+                                              Bucket=self.simcore_bucket_name,
+                                              Key=to_file_uuid,
+                                              PartNumber=part_no,
+                                              UploadId=mpu['UploadId'])
+                        parts['Parts'].append({
+                            'ETag': part['ETag'],
+                            'PartNumber': part_no
+                        })
+                    del data
+                    await s3.meta.client.complete_multipart_upload(Bucket=self.simcore_bucket_name,
+                                                 Key=to_file_uuid,
+                                                 MultipartUpload=parts,
+                                                 UploadId=mpu['UploadId'])

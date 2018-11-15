@@ -16,6 +16,9 @@ class S3Client:
     def __init__(self, endpoint, access_key=None, secret_key=None, secure=False):
         self.__metadata_prefix = "x-amz-meta-"
         self.client = None
+        self.endpoint = endpoint
+        self.access_key = access_key
+        self.secret_key = secret_key
         try:
             self.client = Minio(endpoint,
                 access_key=access_key,
