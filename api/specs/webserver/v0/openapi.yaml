@@ -23,21 +23,11 @@ servers:
         enum:
           - v0
         default: v0
-tags:
-- name: admins
-  description: Secured Admin-only calls
-- name: tests
-  description: Operations available for testing
-- name: users
-  description: Operations available to regular users
 paths:
 
   /:
     get:
-      tags:
-        - users
-      summary: Service health-check endpoint
-      description: Some general information on the API and state of the service behind
+      summary: Service health check
       operationId: check_health
       responses:
         "200":
@@ -51,9 +41,7 @@ paths:
 
   /check/{action}:
     post:
-      tags:
-        - tests
-      summary: Test checkpoint to ask server to fail or echo back the transmitted data
+      summary: service test endpoint
       operationId: check_action
       parameters:
         - in: query
@@ -146,7 +134,7 @@ paths:
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
-  #/auth/reset-password:
+  #TODO: /auth/reset-password:
 
   /auth/change-email:
     post:
@@ -170,7 +158,7 @@ paths:
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 
-  #/auth/change-password:
+  #TODO: /auth/change-password:
 
   /auth/confirmation/{code}:
     get:
