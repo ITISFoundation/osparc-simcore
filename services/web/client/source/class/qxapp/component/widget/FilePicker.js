@@ -128,7 +128,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
         // presginedLinkData.fileUuid;
         console.log(file);
         if (presginedLinkData.presginedLink) {
-          this.__uploadFile(file, presginedLinkData.presginedLink);
+          this.__uploadFile(file, presginedLinkData.presginedLink.link);
         }
       }, this);
       const download = false;
