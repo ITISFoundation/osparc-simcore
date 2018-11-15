@@ -6,6 +6,7 @@ import simcore_director_sdk
 
 from simcore_director_sdk.rest import ApiException
 
+USER_ID = "testing123"
 SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
 SERVICE_UUID = "testing6"
 
@@ -38,7 +39,7 @@ async def get_service_details():
 
 async def start_service():
     try:
-        api_response = await api_instance.running_interactive_services_post(service_key=SERVICE_KEY, service_uuid=SERVICE_UUID)
+        api_response = await api_instance.running_interactive_services_post(user_id=USER_ID, service_key=SERVICE_KEY, service_uuid=SERVICE_UUID)
         print(api_response)
     except ApiException as e:
         print("Exception when calling UserApi->root_get: %s\n" % e)

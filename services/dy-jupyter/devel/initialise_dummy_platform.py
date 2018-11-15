@@ -63,7 +63,7 @@ async def create_dummy(json_configuration_file_path: Path,
         configuration = json.load(file_pointer)
     
     # init s3
-    s3 = init_s3()
+    init_s3()
 
     # set up db
     db = init_db()

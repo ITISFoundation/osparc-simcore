@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from simcore_service_director import config, registry_proxy
+from simcore_service_director import config
 
 # pylint:disable=unused-argument
 
