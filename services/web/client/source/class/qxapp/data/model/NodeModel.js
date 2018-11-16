@@ -419,6 +419,16 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __startInteractiveNode: function() {
       let metaData = this.getMetaData();
       if (metaData.type == "dynamic") {
+        let button = new qx.ui.form.Button().set({
+          icon: "@FontAwesome5Solid/redo-alt/32"
+        });
+        button.addListener("execute", e => {
+          this.__restartIFrame();
+        }, this);
+        button.setEnabled(false);
+        this.setRestartIFrameButton(button);
+        this.__showLoadingIFrame();
+
         const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeLabel: this.getLabel(),
@@ -464,6 +474,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           msg: msg
         };
         this.fireDataEvent("ShowInLogger", msgData);
+        return;
       }
       const publishedPort = data["published_port"];
       const entryPointD = data["entry_point"];
