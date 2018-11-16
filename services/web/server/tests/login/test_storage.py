@@ -42,13 +42,30 @@ def storage_server(loop, aiohttp_server, app_cfg):
         assert "user_id" in query
 
         assert query["user_id"], "Expected user id"
+
         return web.json_response({
             'data': [{"user_id": int(query["user_id"])}, ]
+        })
+
+    async def _get_filtered_list(request: web.Request):
+        assert not request.has_body
+
+        query = request.query
+        assert query
+        assert "user_id" in query
+
+        assert query["user_id"], "Expected user id"
+        assert query["uuid_filter"], "expected a filter"
+        import pdb; pdb.set_trace()
+
+        return web.json_response({
+            'data': [{"user_id": int(query["user_id"]), "uuid_filter": str(query["uuid_filter"])} ]
         })
 
 
     app.router.add_get("/v0/locations", _get_locs)
     app.router.add_get("/v0/locations/0/files/{file_id}", _get_dlink)
+    app.router.add_get("/v0/locations/0/files/metadata", _get_filtered_list)
 
     assert cfg['host']=='localhost'
 
@@ -91,3 +108,23 @@ async def test_storage_download_link(client, storage_server):
         assert not error
 
         assert data[0]['user_id'] == user['id']
+
+@pytest.mark.travis
+async def test_storage_list_filter(client, storage_server):
+    file_id = "a/b/c/d/e/dat"
+    url = "/v0/storage/locations/0/files/metadata?uuid_filter={}".format(quote(file_id, safe=''))
+
+    async with LoggedUser(client) as user:
+        print("Logged user:", user) # TODO: can use in the test
+
+        resp = await client.get(url)
+        payload = await resp.json()
+        assert resp.status == 200, str(payload)
+
+        data, error = unwrap_envelope(payload)
+
+        assert len(data) == 1
+        assert not error
+        import pdb; pdb.set_trace()
+        assert data[0]['user_id'] == user['id']
+        assert data[0]['uuid_filter'] == file_id
