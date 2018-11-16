@@ -51,10 +51,11 @@ def setup_statics(app: web.Application):
         folders = [x for x in outdir.iterdir() if x.is_dir()]
 
         for name in EXPECTED_FOLDERS:
-            got = [path.name for path in folders]
-            if name not in got:
+            folder_names = [path.name for path in folders]
+            if name not in folder_names:
                 raise web.HTTPServiceUnavailable(
-                    reason="Invalid front-end source-output folders. Expected %s, got %s" %(EXPECTED_FOLDERS, got),
+                    reason="Invalid front-end source-output folders" \
+                    " Expected %s, got %s in %s" %(EXPECTED_FOLDERS, folder_names, outdir),
                     text ="Front-end application is not available"
                 )
 

@@ -1,4 +1,6 @@
-''' Subsystem that communicates with the storage service '''
+""" storage subsystem - manages the interaction with the storage service
+
+"""
 
 import logging
 
@@ -9,10 +11,9 @@ from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from . import storage_routes
 from .storage_config import APP_STORAGE_SESSION_KEY, get_config
 
-# SETTINGS ----------------------------------------------------
-THIS_MODULE_NAME = __name__.split(".")[-1]
+from . import storage_routes
+from .storage_config import APP_STORAGE_SESSION_KEY, get_config
 
-# --------------------------------------------------------------
 
 log = logging.getLogger(__name__)
 
