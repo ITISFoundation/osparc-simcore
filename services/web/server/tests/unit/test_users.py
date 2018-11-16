@@ -43,12 +43,16 @@ def client(loop, aiohttp_client, aiohttp_unused_port, api_specs_dir):
 
 
 # Tests CRUD operations --------------------------------------------
-BASEPATH = "%s/my" % API_VERSION
+PREFIX = "/" + API_VERSION + "/my"
 
 
 # TODO: template for CRUD testing?
+# TODO: create parametrize fixture with resource_name
+#
+
+
 async def test_create(client):
-    resp = await client.post(BASEPATH + "/%s" % RESOURCE_NAME, json={
+    resp = await client.post(PREFIX + "/%s" % RESOURCE_NAME, json={
         'service': "blackfynn",
         'token_key': '4k9lyzBTS',
         'token_secret': 'my secret'
@@ -59,23 +63,23 @@ async def test_create(client):
 
 async def test_read(client):
     # get profile
-    resp = await client.get(BASEPATH)
+    resp = await client.get(PREFIX)
     payload = await resp.json()
     assert resp.status == 200, payload
 
     # list all
-    resp = await client.get(BASEPATH + "/%s" % RESOURCE_NAME)
+    resp = await client.get(PREFIX + "/%s" % RESOURCE_NAME)
     payload = await resp.json()
     assert resp.status == 200, payload
 
     # get one
-    resp = await client.get(BASEPATH + "/%s/blackfynn" % RESOURCE_NAME)
+    resp = await client.get(PREFIX + "/%s/blackfynn" % RESOURCE_NAME)
     payload = await resp.json()
     assert resp.status == 200, payload
 
 
 async def test_update(client):
-    resp = await client.post(BASEPATH + "/%s/blackfynn" % RESOURCE_NAME, json={
+    resp = await client.post(PREFIX + "/%s/blackfynn" % RESOURCE_NAME, json={
         'token_key': '4k9lyzBTS',
         'token_secret': 'my secret'
     })
@@ -84,7 +88,7 @@ async def test_update(client):
 
 
 async def test_delete(client):
-    resp = await client.post(BASEPATH + "/%s/blackfynn" % RESOURCE_NAME)
+    resp = await client.post(PREFIX + "/%s/blackfynn" % RESOURCE_NAME)
     payload = await resp.json()
 
     assert resp.status == 204, payload
