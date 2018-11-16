@@ -26,12 +26,18 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     });
 
     const title16Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"]);
-    let label = new qx.ui.basic.Label(nodeModel.getLabel()).set({
+    let label = new qx.ui.basic.Label().set({
       font: title16Font,
       alignX: "center",
       alignY: "middle"
     });
+    nodeModel.bind("label", label, "value");
     this._add(label);
+
+    let nodeUIPorts = this.__nodeUIPorts = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this._add(nodeUIPorts, {
+      flex: 1
+    });
 
     this.setIsInputModel(isInputModel);
     this.setNodeModel(nodeModel);
@@ -50,13 +56,8 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     }
   },
 
-  events: {
-    "PortDragStart": "qx.event.type.Data"
-  },
-
   members: {
-    __inputPort: null,
-    __outputPort: null,
+    __nodeUIPorts: null,
 
     getNodeId: function() {
       return this.getNodeModel().getNodeId();
@@ -66,23 +67,14 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       return this.getNodeModel().getMetaData();
     },
 
-    populateNodeLayout: function() {
+    populatePortsData: function() {
+      this.__nodeUIPorts.removeAll();
       const metaData = this.getNodeModel().getMetaData();
-      this.__inputPort = {};
-      this.__outputPort = {};
       if (this.getIsInputModel()) {
         this.__createUIPorts(false, metaData.outputs);
       } else if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
         this.__createUIPorts(false, metaData.inputsDefault);
       }
-    },
-
-    getInputPort: function() {
-      return this.__inputPort["Input"];
-    },
-
-    getOutputPort: function() {
-      return this.__outputPort["Output"];
     },
 
     __createUIPorts: function(isInput, ports) {
@@ -96,34 +88,36 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
           let widget = null;
           switch (port.type) {
             case "node-output-list-api-v0.0.1": {
-              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputList(this.getNodeModel(), port, portKey);
+              console.log("widget for ", port.type, " to be implemented");
+              // let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputList(this.getNodeModel(), port, portKey);
+              // widget = nodeOutputList.getOutputWidget();
+              break;
+            }
+            case "node-output-list-icon-api-v0.0.1": {
+              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputListIcon(this.getNodeModel(), port, portKey);
+              widget = nodeOutputList.getOutputWidget();
+              break;
+            }
+            case "node-output-tree-api-v0.0.1": {
+              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputTree(this.getNodeModel(), port, portKey);
               widget = nodeOutputList.getOutputWidget();
               break;
             }
           }
           if (widget !== null) {
-            this._add(widget, {
+            this.__nodeUIPorts.add(widget, {
               flex: 1
             });
           }
         } else {
           let nodeOutputLabel = new qxapp.component.widget.inputs.NodeOutputLabel(this.getNodeModel(), port, portKey);
           let widget = nodeOutputLabel.getOutputWidget();
-          nodeOutputLabel.addListener("PortDragStart", e => {
-            this.fireDataEvent("PortDragStart", e.getData());
-          }, this);
-          this._add(widget);
+          this.__nodeUIPorts.add(widget);
           let label = {
             isInput: isInput,
             ui: widget
           };
-
           label.ui.isInput = isInput;
-          if (isInput) {
-            this.__inputPort["Input"] = label;
-          } else {
-            this.__outputPort["Output"] = label;
-          }
         }
       }
     }

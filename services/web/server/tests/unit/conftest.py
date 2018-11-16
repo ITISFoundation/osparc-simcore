@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-import
 # pylint: disable=bare-except
-# pylint: disable=W0621
+# pylint:disable=redefined-outer-name
 
 import collections
 import logging
@@ -33,6 +33,12 @@ def osparc_simcore_root_dir(here):
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
     assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
     return root_dir
+
+@pytest.fixture(scope='session')
+def api_specs_dir(osparc_simcore_root_dir):
+    specs_dir = osparc_simcore_root_dir/ "api" / "specs" / "webserver"
+    assert specs_dir.exists()
+    return specs_dir
 
 @pytest.fixture(scope='session')
 def mock_dir(here):

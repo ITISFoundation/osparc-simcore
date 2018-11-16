@@ -12,8 +12,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
   statics: {
     getNodeMap: function() {
       return {
-        "service/computational/itis/sleeper-0.0.0":{
-          key: "service/computational/itis/sleeper",
+        "services/computational/itis/sleeper-0.0.0":{
+          key: "services/computational/itis/sleeper",
           version: "0.0.0",
           type: "computational",
           name: "sleeper service",
@@ -43,8 +43,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
             }
           }
         },
-        "service/computational/itis/tutti-0.0.0-alpha": {
-          key: "service/computational/itis/tutti",
+        "services/computational/itis/tutti-0.0.0-alpha": {
+          key: "services/computational/itis/tutti",
           version: "0.0.0-alpha",
           type: "computational",
           name: "a little test node",
@@ -182,7 +182,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?0.jpg",
           workbench: {
             "UUID1": {
-              key: "service/dynamic/itis/file-picker",
+              key: "services/dynamic/itis/file-picker",
               version: "0.0.0",
               outputs: {
                 outFile: {
@@ -196,8 +196,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "UUID2": {
-              key: "service/computational/itis/sleeper",
+              key: "services/computational/itis/sleeper",
               version: "0.0.0",
+              label: "Sleeper 1",
               inputs: {
                 inNumber: 3.5
               },
@@ -210,13 +211,14 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "UUID3": {
-              key: "service/computational/itis/sleeper",
+              key: "services/computational/itis/sleeper",
               version: "0.0.0",
+              label: "Sleeper 2",
               inputs: {
                 inNumber: 3.5
               },
               outputs: {
-                outNumber: 33
+                outNumber: 32
               },
               position: {
                 x: 10,
@@ -224,7 +226,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "UUID4": {
-              key: "service/computational/itis/tutti",
+              key: "services/computational/itis/tutti",
               version: "0.0.0-alpha",
               inputs: {
                 inNumber: {
@@ -246,6 +248,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 }
               },
               inputNodes: [
+                "UUID2",
                 "UUID3",
                 "UUID1"
               ],
@@ -277,7 +280,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 150,
                 "y": 150
               },
-              "key": "service/dynamic/itis/file-picker",
+              "key": "services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "8d603045-bfe8-4822-906c-590fa69c1d13": {
@@ -313,7 +316,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 150,
                 "y": 300
               },
-              "key": "service/dynamic/itis/file-picker",
+              "key": "services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "1a4aafff-88c7-4e7e-89cc-fe374cfe64ea": {
@@ -394,7 +397,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?15.jpg",
           workbench: {
             "Sleeper1": {
-              key: "service/computational/itis/sleeper",
+              key: "services/computational/itis/sleeper",
               version: "0.0.0",
               label: "Sleeper 1",
               inputs: {
@@ -434,7 +437,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "Container1"
             },
             "Sleeper2": {
-              key: "service/computational/itis/sleeper",
+              key: "services/computational/itis/sleeper",
               version: "0.0.0",
               inputs: {
                 inNumber: 3
@@ -449,7 +452,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "Container1"
             },
             "Sleeper3": {
-              key: "service/computational/itis/sleeper",
+              key: "services/computational/itis/sleeper",
               version: "0.0.0",
               inputs: {
                 inNumber: 2
@@ -489,7 +492,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 100,
                 "y": 150
               },
-              "key": "service/dynamic/itis/file-picker",
+              "key": "services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "418bd484-905b-4212-8108-c7cfab4f241e": {
@@ -503,7 +506,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 100,
                 "y": 400
               },
-              "key": "service/dynamic/itis/file-picker",
+              "key": "services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "Container0D": {
@@ -722,7 +725,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 108,
                 "y": 131
               },
-              "key": "service/dynamic/itis/file-picker",
+              "key": "services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "5986cf64-9f81-409d-998c-c1f04de67f8b": {
@@ -788,7 +791,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 100,
                 "y": 429
               },
-              "key": "service/dynamic/itis/file-picker",
+              "key": "services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "5e548936-ee08-43f3-ab01-a58e7c49a946": {
@@ -910,7 +913,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?8.jpg",
           workbench: {
             "c104bb08-77b1-4157-b9f9-e9df7779df08": {
-              key: "service/demodec/dynamic/itis/s4l/Modeler",
+              key: "services/demodec/dynamic/itis/s4l/Modeler",
               version: "0.0.0",
               label: "Modeler 1",
               position: {
@@ -919,7 +922,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "bf88496d-ddf8-476c-8d6c-24c716c2ae4c": {
-              key: "service/demodec/dynamic/itis/s4l/MaterialDB",
+              key: "services/demodec/dynamic/itis/s4l/MaterialDB",
               version: "0.0.0",
               label: "Material DB 1",
               position: {
@@ -942,7 +945,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               outputNode: false
             },
             "SetupId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
               version: "0.0.0",
               label: "LF Setup 1",
               inputNodes: [],
@@ -954,7 +957,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "MaterialsId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
               label: "LF Materials 1",
               inputNodes: [
@@ -969,7 +972,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "BoundaryId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
               label: "LF Boundary 1",
               inputNodes: [
@@ -983,7 +986,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "SensorsId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
               version: "0.0.0",
               label: "LF Sensors 1",
               inputNodes: [
@@ -997,7 +1000,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "GridId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
               label: "LF Grid 1",
               inputNodes: [
@@ -1011,7 +1014,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "VoxelId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
               version: "0.0.0",
               label: "LF Voxel 1",
               inputNodes: [
@@ -1025,7 +1028,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "SolverSettingsId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
               version: "0.0.0",
               label: "LF SolverSett 1",
               inputNodes: [],
@@ -1037,7 +1040,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "4069bf2e-e2be-4799-ad1c-c53f0cb46e4e": {
-              key: "service/computational/itis/Solver-LF",
+              key: "services/computational/itis/Solver-LF",
               version: "0.0.0",
               label: "LF Solver 1",
               inputs: {
@@ -1072,7 +1075,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?3.jpg",
           workbench: {
             "8870a55b-680d-41b4-b40c-c928cceb7d2a": {
-              key: "service/demodec/dynamic/itis/s4l/MaterialDB",
+              key: "services/demodec/dynamic/itis/s4l/MaterialDB",
               version: "0.0.0",
               position: {
                 x: 10,
@@ -1080,7 +1083,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "17a932a0-f401-4571-9c55-b579f5050d37": {
-              key: "service/demodec/dynamic/itis/s4l/Modeler",
+              key: "services/demodec/dynamic/itis/s4l/Modeler",
               version: "0.0.0",
               position: {
                 x: 7,
@@ -1088,7 +1091,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "83bc4123-ebe4-4f5f-8770-b1584d6cf95f": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
               version: "0.0.0",
               inputs: {
                 "frequency": 1000
@@ -1099,7 +1102,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "ac80863e-e4ef-48c0-804b-d9296f1f3563": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
               inputs: {
                 "updateDispersive": false
@@ -1114,7 +1117,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "ed4c85a8-c20f-4acd-8e1e-5161301e2f3d": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
               inputNodes: [
                 "17a932a0-f401-4571-9c55-b579f5050d37"
@@ -1125,7 +1128,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "36d70cf2-ef36-4052-988d-d32b3456b786": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
               version: "0.0.0",
               inputs: {
                 "sensorSetting": 4
@@ -1139,7 +1142,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "c3ab33a7-4ead-4302-9867-5b194a4f45ec": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
               inputs: {
                 "gridSetting": 5
@@ -1156,7 +1159,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "01e28708-46c4-474b-837b-479fd596e566": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
               version: "0.0.0",
               inputs: {
                 "solverSetting": 7
@@ -1171,7 +1174,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "b37bea52-bb29-482a-9540-bc11c7dc779c": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
               version: "0.0.0",
               inputs: {
                 "voxelSetting": 6
@@ -1186,7 +1189,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "2472a166-7a9e-4023-be12-465d2f6eee54": {
-              key: "service/computational/itis/Solver-LF",
+              key: "services/computational/itis/Solver-LF",
               version: "0.0.0",
               inputs: {
                 "inFile": {
@@ -1220,7 +1223,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?2.jpg",
           workbench: {
             "c104bb08-77b1-4157-b9f9-e9df7779df08": {
-              key: "service/demodec/dynamic/itis/s4l/Modeler",
+              key: "services/demodec/dynamic/itis/s4l/Modeler",
               version: "0.0.0",
               label: "Modeler",
               position: {
@@ -1229,7 +1232,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "bf88496d-ddf8-476c-8d6c-24c716c2ae4c": {
-              key: "service/demodec/dynamic/itis/s4l/MaterialDB",
+              key: "services/demodec/dynamic/itis/s4l/MaterialDB",
               version: "0.0.0",
               label: "Material DB",
               position: {
@@ -1252,7 +1255,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               outputNode: false
             },
             "SetupId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
               version: "0.0.0",
               label: "LF Setup 1",
               inputNodes: [],
@@ -1264,7 +1267,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "MaterialsId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
               label: "LF Materials 1",
               inputNodes: [
@@ -1279,7 +1282,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "BoundaryId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
               label: "LF Boundary 1",
               inputNodes: [
@@ -1293,7 +1296,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "SensorsId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
               version: "0.0.0",
               label: "LF Sensors 1",
               inputNodes: [
@@ -1307,7 +1310,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "GridId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
               label: "LF Grid 1",
               inputNodes: [
@@ -1321,7 +1324,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "VoxelId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
               version: "0.0.0",
               label: "LF Voxel 1",
               inputNodes: [
@@ -1335,7 +1338,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "SolverSettingsId": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
               version: "0.0.0",
               label: "LF SolverSett 1",
               inputNodes: [],
@@ -1380,7 +1383,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               outputNode: false
             },
             "SetupId2": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup",
               version: "0.0.0",
               label: "Neuron Setup",
               inputNodes: [],
@@ -1392,7 +1395,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "96343608-610b-4951-89af-4b189e5e3861"
             },
             "MaterialsId2": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/Neuron/Materials",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/Neuron/Materials",
               version: "0.0.0",
               label: "Neurons",
               inputNodes: [
@@ -1407,7 +1410,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "96343608-610b-4951-89af-4b189e5e3861"
             },
             "SensorsId2": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors",
               version: "0.0.0",
               label: "Neuron Sensors",
               inputNodes: [
@@ -1421,7 +1424,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "96343608-610b-4951-89af-4b189e5e3861"
             },
             "SolverSettingsId2": {
-              key: "service/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings",
+              key: "services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings",
               version: "0.0.0",
               label: "Neuron SolverSett",
               inputNodes: [],
@@ -1482,105 +1485,511 @@ qx.Class.define("qxapp.dev.fake.Data", {
 
     getObjectList: function() {
       const objects = [{
-        "file_uuid": "simcore.s3/simcore-testing/103/10003/8",
+        "file_uuid": "103/10002/0",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "103/10003/8",
+        "object_name": "103/10002/0",
         "project_id": "103",
         "project_name": "dermatology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "0",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "106/10003/2",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10003/2",
+        "project_id": "106",
+        "project_name": "geology",
         "node_id": "10003",
         "node_name": "delta",
-        "file_id": "8",
-        "file_name": "8",
+        "file_name": "2",
         "user_id": "10",
         "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/103/10001/11",
+      },
+      {
+        "file_uuid": "104/10002/4",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "103/10001/11",
-        "project_id": "103",
-        "project_name": "dermatology",
-        "node_id": "10001",
-        "node_name": "beta",
-        "file_id": "11",
-        "file_name": "11",
+        "object_name": "104/10002/4",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "4",
         "user_id": "10",
         "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/102/10001/18",
+      },
+      {
+        "file_uuid": "101/10003/22",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "102/10001/18",
-        "project_id": "102",
-        "project_name": "chemistry",
-        "node_id": "10001",
-        "node_name": "beta",
-        "file_id": "18",
-        "file_name": "18",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/101/10003/26",
-        "location_id": "0",
-        "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
-        "object_name": "101/10003/26",
+        "object_name": "101/10003/22",
         "project_id": "101",
         "project_name": "biology",
         "node_id": "10003",
         "node_name": "delta",
-        "file_id": "26",
-        "file_name": "26",
+        "file_name": "22",
         "user_id": "10",
         "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/102/10003/27",
+      },
+      {
+        "file_uuid": "103/10003/32",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "102/10003/27",
-        "project_id": "102",
-        "project_name": "chemistry",
+        "object_name": "103/10003/32",
+        "project_id": "103",
+        "project_name": "dermatology",
         "node_id": "10003",
         "node_name": "delta",
-        "file_id": "27",
-        "file_name": "27",
+        "file_name": "32",
         "user_id": "10",
         "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/106/10002/29",
+      },
+      {
+        "file_uuid": "103/10003/48",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "106/10002/29",
+        "object_name": "103/10003/48",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "48",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "106/10002/49",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10002/49",
         "project_id": "106",
         "project_name": "geology",
         "node_id": "10002",
         "node_name": "gamma",
-        "file_id": "29",
-        "file_name": "29",
+        "file_name": "49",
         "user_id": "10",
         "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/102/10002/32",
+      },
+      {
+        "file_uuid": "103/10000/54",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "102/10002/32",
+        "object_name": "103/10000/54",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "54",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "106/10002/56",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10002/56",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "56",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "100/10002/64",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "100/10002/64",
+        "project_id": "100",
+        "project_name": "astronomy",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "64",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "105/10003/70",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10003/70",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "70",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "102/10003/72",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10003/72",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "72",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "106/10000/73",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10000/73",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "73",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "102/10001/76",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10001/76",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "76",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "105/10000/79",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10000/79",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "79",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "101/10002/81",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "101/10002/81",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "81",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "104/10001/83",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10001/83",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "83",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "102/10001/85",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10001/85",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "85",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "102/10001/88",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10001/88",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "88",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "100/10002/94",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "100/10002/94",
+        "project_id": "100",
+        "project_name": "astronomy",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "94",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "102/10002/95",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10002/95",
         "project_id": "102",
         "project_name": "chemistry",
         "node_id": "10002",
         "node_name": "gamma",
-        "file_id": "32",
-        "file_name": "32",
+        "file_name": "95",
         "user_id": "10",
         "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/104/10000/40",
+      },
+      {
+        "file_uuid": "103/10001/98",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10001/98",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "98",
+        "user_id": "10",
+        "user_name": "alice"
+      },
+      {
+        "file_uuid": "105/10003/1",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10003/1",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "1",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "106/10000/3",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10000/3",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "3",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "102/10001/6",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10001/6",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "6",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "100/10001/11",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "100/10001/11",
+        "project_id": "100",
+        "project_name": "astronomy",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "11",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "105/10000/12",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10000/12",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "12",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "102/10001/15",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10001/15",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "15",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "100/10001/19",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "100/10001/19",
+        "project_id": "100",
+        "project_name": "astronomy",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "19",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "104/10003/23",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10003/23",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "23",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "102/10001/27",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10001/27",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "27",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "103/10000/29",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10000/29",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "29",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "104/10001/30",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10001/30",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "30",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "106/10000/35",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10000/35",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "35",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "104/10003/36",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10003/36",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "36",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "103/10001/37",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10001/37",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "37",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "104/10000/40",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
@@ -1589,309 +1998,918 @@ qx.Class.define("qxapp.dev.fake.Data", {
         "project_name": "economics",
         "node_id": "10000",
         "node_name": "alpha",
-        "file_id": "40",
         "file_name": "40",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/101/10002/41",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "106/10003/41",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "101/10002/41",
-        "project_id": "101",
-        "project_name": "biology",
-        "node_id": "10002",
-        "node_name": "gamma",
-        "file_id": "41",
+        "object_name": "106/10003/41",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10003",
+        "node_name": "delta",
         "file_name": "41",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/101/10000/51",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "103/10003/42",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "101/10000/51",
-        "project_id": "101",
-        "project_name": "biology",
-        "node_id": "10000",
-        "node_name": "alpha",
-        "file_id": "51",
-        "file_name": "51",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/102/10002/52",
-        "location_id": "0",
-        "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
-        "object_name": "102/10002/52",
-        "project_id": "102",
-        "project_name": "chemistry",
-        "node_id": "10002",
-        "node_name": "gamma",
-        "file_id": "52",
-        "file_name": "52",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/105/10001/55",
-        "location_id": "0",
-        "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
-        "object_name": "105/10001/55",
-        "project_id": "105",
-        "project_name": "futurology",
-        "node_id": "10001",
-        "node_name": "beta",
-        "file_id": "55",
-        "file_name": "55",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/106/10001/56",
-        "location_id": "0",
-        "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
-        "object_name": "106/10001/56",
-        "project_id": "106",
-        "project_name": "geology",
-        "node_id": "10001",
-        "node_name": "beta",
-        "file_id": "56",
-        "file_name": "56",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/106/10001/57",
-        "location_id": "0",
-        "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
-        "object_name": "106/10001/57",
-        "project_id": "106",
-        "project_name": "geology",
-        "node_id": "10001",
-        "node_name": "beta",
-        "file_id": "57",
-        "file_name": "57",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/103/10001/60",
-        "location_id": "0",
-        "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
-        "object_name": "103/10001/60",
+        "object_name": "103/10003/42",
         "project_id": "103",
         "project_name": "dermatology",
-        "node_id": "10001",
-        "node_name": "beta",
-        "file_id": "60",
-        "file_name": "60",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/105/10001/61",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "42",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "103/10003/43",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "105/10001/61",
-        "project_id": "105",
-        "project_name": "futurology",
-        "node_id": "10001",
-        "node_name": "beta",
-        "file_id": "61",
-        "file_name": "61",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/102/10002/64",
+        "object_name": "103/10003/43",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "43",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "104/10003/44",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "102/10002/64",
-        "project_id": "102",
-        "project_name": "chemistry",
-        "node_id": "10002",
-        "node_name": "gamma",
-        "file_id": "64",
-        "file_name": "64",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/100/10002/70",
+        "object_name": "104/10003/44",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "44",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "100/10002/57",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "100/10002/70",
+        "object_name": "100/10002/57",
         "project_id": "100",
         "project_name": "astronomy",
         "node_id": "10002",
         "node_name": "gamma",
-        "file_id": "70",
-        "file_name": "70",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/104/10002/71",
+        "file_name": "57",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "104/10000/58",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "104/10002/71",
+        "object_name": "104/10000/58",
         "project_id": "104",
         "project_name": "economics",
-        "node_id": "10002",
-        "node_name": "gamma",
-        "file_id": "71",
-        "file_name": "71",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/106/10003/72",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "58",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "104/10000/61",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "106/10003/72",
-        "project_id": "106",
-        "project_name": "geology",
-        "node_id": "10003",
-        "node_name": "delta",
-        "file_id": "72",
-        "file_name": "72",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/101/10003/76",
-        "location_id": "0",
-        "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
-        "object_name": "101/10003/76",
-        "project_id": "101",
-        "project_name": "biology",
-        "node_id": "10003",
-        "node_name": "delta",
-        "file_id": "76",
-        "file_name": "76",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/104/10003/79",
-        "location_id": "0",
-        "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
-        "object_name": "104/10003/79",
+        "object_name": "104/10000/61",
         "project_id": "104",
         "project_name": "economics",
-        "node_id": "10003",
-        "node_name": "delta",
-        "file_id": "79",
-        "file_name": "79",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/102/10002/86",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "61",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "103/10003/63",
         "location_id": "0",
         "location": "simcore.s3",
         "bucket_name": "simcore-testing",
-        "object_name": "102/10002/86",
-        "project_id": "102",
-        "project_name": "chemistry",
-        "node_id": "10002",
-        "node_name": "gamma",
-        "file_id": "86",
-        "file_name": "86",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/106/10002/95",
-        "location_id": "0",
-        "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
-        "object_name": "106/10002/95",
-        "project_id": "106",
-        "project_name": "geology",
-        "node_id": "10002",
-        "node_name": "gamma",
-        "file_id": "95",
-        "file_name": "95",
-        "user_id": "10",
-        "user_name": "alice"
-      }, {
-        "file_uuid": "simcore.s3/simcore-testing/103/10003/96",
-        "location_id": "0",
-        "location": "simcore.s3",
-        "bucket_name": "simcore-testing",
-        "object_name": "103/10003/96",
+        "object_name": "103/10003/63",
         "project_id": "103",
         "project_name": "dermatology",
         "node_id": "10003",
         "node_name": "delta",
-        "file_id": "96",
+        "file_name": "63",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "100/10002/71",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "100/10002/71",
+        "project_id": "100",
+        "project_name": "astronomy",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "71",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "104/10002/75",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10002/75",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "75",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "101/10002/77",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "101/10002/77",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "77",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "103/10003/78",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10003/78",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "78",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "106/10003/84",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10003/84",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "84",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "105/10002/89",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10002/89",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "89",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "105/10003/90",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10003/90",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "90",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "101/10002/99",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "101/10002/99",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "99",
+        "user_id": "13",
+        "user_name": "dennis"
+      },
+      {
+        "file_uuid": "103/10003/5",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10003/5",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "5",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "106/10003/9",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10003/9",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "9",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "105/10000/14",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10000/14",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "14",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "105/10002/21",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10002/21",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "21",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "105/10002/25",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10002/25",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "25",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "103/10002/31",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10002/31",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "31",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "106/10000/34",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10000/34",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "34",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "103/10002/45",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10002/45",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "45",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "104/10001/47",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10001/47",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "47",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "105/10002/51",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10002/51",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "51",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "105/10002/53",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10002/53",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "53",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "102/10002/55",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10002/55",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "55",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "105/10000/59",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10000/59",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "59",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "101/10001/60",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "101/10001/60",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "60",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "106/10001/62",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10001/62",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "62",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "100/10002/65",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "100/10002/65",
+        "project_id": "100",
+        "project_name": "astronomy",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "65",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "103/10000/67",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10000/67",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "67",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "104/10000/69",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10000/69",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "69",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "101/10000/74",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "101/10000/74",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "74",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "101/10000/86",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "101/10000/86",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "86",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "106/10001/91",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10001/91",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "91",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "103/10003/93",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10003/93",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "93",
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "102/10002/96",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10002/96",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10002",
+        "node_name": "gamma",
         "file_name": "96",
-        "user_id": "10",
-        "user_name": "alice"
+        "user_id": "11",
+        "user_name": "bob"
+      },
+      {
+        "file_uuid": "104/10003/7",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10003/7",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "7",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "106/10002/8",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10002/8",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "8",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "103/10002/10",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10002/10",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "10",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "100/10003/13",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "100/10003/13",
+        "project_id": "100",
+        "project_name": "astronomy",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "13",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "103/10003/16",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10003/16",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "16",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "101/10002/17",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "101/10002/17",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "17",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "105/10001/18",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10001/18",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "18",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "105/10003/20",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10003/20",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "20",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "101/10000/24",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "101/10000/24",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "24",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "100/10001/26",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "100/10001/26",
+        "project_id": "100",
+        "project_name": "astronomy",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "26",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "104/10001/28",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10001/28",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "28",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "104/10002/33",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10002/33",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "33",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "102/10000/38",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10000/38",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "38",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "106/10002/39",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10002/39",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "39",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "104/10000/46",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "104/10000/46",
+        "project_id": "104",
+        "project_name": "economics",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "46",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "101/10000/50",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "101/10000/50",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "50",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "100/10000/52",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "100/10000/52",
+        "project_id": "100",
+        "project_name": "astronomy",
+        "node_id": "10000",
+        "node_name": "alpha",
+        "file_name": "52",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "102/10001/66",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "102/10001/66",
+        "project_id": "102",
+        "project_name": "chemistry",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "66",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "105/10003/68",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10003/68",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10003",
+        "node_name": "delta",
+        "file_name": "68",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "103/10002/80",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10002/80",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "80",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "105/10001/82",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "105/10001/82",
+        "project_id": "105",
+        "project_name": "futurology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "82",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "103/10002/87",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "103/10002/87",
+        "project_id": "103",
+        "project_name": "dermatology",
+        "node_id": "10002",
+        "node_name": "gamma",
+        "file_name": "87",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "106/10001/92",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "106/10001/92",
+        "project_id": "106",
+        "project_name": "geology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "92",
+        "user_id": "12",
+        "user_name": "chuck"
+      },
+      {
+        "file_uuid": "101/10001/97",
+        "location_id": "0",
+        "location": "simcore.s3",
+        "bucket_name": "simcore-testing",
+        "object_name": "101/10001/97",
+        "project_id": "101",
+        "project_name": "biology",
+        "node_id": "10001",
+        "node_name": "beta",
+        "file_name": "97",
+        "user_id": "12",
+        "user_name": "chuck"
       }, {
-        "file_uuid": "simcore/106/10002/95",
-        "location": "simcore.sandbox",
-        "bucket_name": "simcore",
-        "object_name": "106/10002/789",
-        "file_name": "789",
-        "size": 17224423
+        "file_uuid": "one/two/three",
+        "location_id": 1,
+        "location": "datcore",
+        "bucket_name": "",
+        "object_name": "",
+        "project_id": "",
+        "project_name": "",
+        "node_id": "",
+        "node_name": "",
+        "file_name": "",
+        "user_id": "",
+        "user_name": ""
       }, {
-        "file_uuid": "simcore/103/10003/96",
-        "location": "simcore.sandbox",
-        "bucket_name": "simcore",
-        "object_name": "103/10003/dfgh",
-        "file_name": "dfgh",
-        "size": 7675509
-      }, {
-        "file_uuid": "simcore/Large.jpg",
-        "location": "simcore.sandbox",
-        "bucket_name": "simcore",
-        "object_name": "Large.jpg",
-        "file_name": "dfgh",
-        "size": 342456230
+        "file_uuid": "one/two/four",
+        "location_id": 1,
+        "location": "datcore",
+        "bucket_name": "",
+        "object_name": "",
+        "project_id": "",
+        "project_name": "",
+        "node_id": "",
+        "node_name": "",
+        "file_name": "",
+        "user_id": "",
+        "user_name": ""
       }];
-      return objects;
-    },
-
-    getObjectListOld: function() {
-      const objects = [
-        {
-          "path": "simcore0/file0",
-          "lastModified": "blah",
-          "size": 10
-        }, {
-          "path": "simcore0/bat/two/three/four/file1",
-          "lastModified": "blah",
-          "size": 11
-        }, {
-          "path": "simcore/file2",
-          "lastModified": "blah",
-          "size": 12
-        }, {
-          "path": "simcore/file3",
-          "lastModified": "blah",
-          "size": 13
-        }, {
-          "path": "simcore2/file4",
-          "lastModified": "blah2",
-          "size": 14
-        }, {
-          "path": "simcore2/file5",
-          "lastModified": "blah2",
-          "size": 15
-        }, {
-          "path": "simcore0/one/file6",
-          "lastModified": "blah",
-          "size": 16
-        }, {
-          "path": "simcore0/one/two/three/four/file7",
-          "lastModified": "blah",
-          "size": 17
-        }
-      ];
       return objects;
     },
 
@@ -1969,7 +2987,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         lastChangeDate: "2018-07-02T16:02:22Z",
         workbench: {
           "UUID5": {
-            key: "service/dynamic/itis/file-picker",
+            key: "services/dynamic/itis/file-picker",
             version: "0.0.0",
             inputs: {},
             outputs: {
@@ -2042,6 +3060,309 @@ qx.Class.define("qxapp.dev.fake.Data", {
         }
       };
       return temp2Data;
+    },
+
+    getItemList: function(nodeInstanceUUID, portKey) {
+      switch (portKey) {
+        case "defaultNeuromanModels":
+          return [{
+            key: "Yoon-sun-UUID",
+            label: "Yoon-sun",
+            thumbnail: "qxapp/yoonsun.png"
+          }, {
+            key: "Yoon-sun-Light-UUID",
+            label: "Yoon-sun Light",
+            thumbnail: "qxapp/yoonsun-light.png"
+          }, {
+            key: "Rat-UUID",
+            label: "Rat",
+            thumbnail: "qxapp/rat.png"
+          }, {
+            key: "Rat-Light-UUID",
+            label: "Rat Light",
+            thumbnail: "qxapp/rat-light.png"
+          }];
+        case "defaultMaterials":
+          return [{
+            key: "Dielectric-UUID",
+            label: "Dielectric"
+          }, {
+            key: "PEC-UUID",
+            label: "PEC"
+          }, {
+            key: "PMC-UUID",
+            label: "PMC"
+          }];
+        case "defaultBoundaries":
+          return [{
+            key: "Dirichlet-UUID",
+            label: "Dirichlet"
+          }, {
+            key: "Neumann-UUID",
+            label: "Neumann"
+          }, {
+            key: "Flux-UUID",
+            label: "Flux"
+          }];
+        case "modeler":
+          return [{
+            key: "MODEL1-UUID",
+            label: "Model 1"
+          }, {
+            key: "MODEL2-UUID",
+            label: "Model 2"
+          }, {
+            key: "MODEL3-UUID",
+            label: "Model 3"
+          }];
+        case "materialDB":
+          return [{
+            key: "Air-UUID",
+            label: "Air"
+          }, {
+            key: "Brain-UUID",
+            label: "Brain"
+          }, {
+            key: "Eye-UUID",
+            label: "Eye"
+          }];
+        case "defaultStimulationSelectivity":
+          return [{
+            key: "StSeSubgroup-UUID",
+            label: "Subgroup"
+          }];
+      }
+      return [];
+    },
+
+    getItem: function(nodeInstanceUUID, portKey, itemUuid) {
+      switch (portKey) {
+        case "materialDB": {
+          switch (itemUuid) {
+            case "Air-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1.16409
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permittivity",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermeability": {
+                  displayOrder: 4,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                }
+              };
+            }
+            case "Brain-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1045.5
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0.234007
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permittivity",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermeability": {
+                  displayOrder: 4,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                }
+              };
+            }
+            case "Eye-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1050.5
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0.62
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permittivity",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 3,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "magneticRelativePermeability": {
+                  displayOrder: 4,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                }
+              };
+            }
+          }
+          break;
+        }
+        case "defaultMaterials": {
+          switch (itemUuid) {
+            case "Dielectric-UUID": {
+              return {
+                "massDensity": {
+                  displayOrder: 0,
+                  label: "Mass Density",
+                  unit: "kg/m3",
+                  type: "number",
+                  defaultValue: 1.205
+                },
+                "electricConductivity": {
+                  displayOrder: 1,
+                  label: "Electric Conductivity",
+                  unit: "S/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "electricRelativePermitivity": {
+                  displayOrder: 2,
+                  label: "Electric Relative Permittivity",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticRelativePermeability": {
+                  displayOrder: 3,
+                  label: "Magnetic Relative Permeability",
+                  unit: "",
+                  type: "number",
+                  defaultValue: 1
+                },
+                "magneticConductivity": {
+                  displayOrder: 4,
+                  label: "Magnetic Conductivity",
+                  unit: "Ohm/m",
+                  type: "number",
+                  defaultValue: 0
+                }
+              };
+            }
+          }
+          break;
+        }
+        case "defaultBoundaries": {
+          switch (itemUuid) {
+            case "Dirichlet-UUID": {
+              return {
+                "constantPotential": {
+                  displayOrder: 0,
+                  label: "Constant Potential",
+                  unit: "V",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "phase": {
+                  displayOrder: 1,
+                  label: "Phase",
+                  unit: "deg",
+                  type: "number",
+                  defaultValue: 0
+                }
+              };
+            }
+            case "Neumann-UUID": {
+              return {
+                "normalDerivative": {
+                  displayOrder: 0,
+                  label: "Normal Derivative",
+                  unit: "V/m",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "phase": {
+                  displayOrder: 1,
+                  label: "Phase",
+                  unit: "deg",
+                  type: "number",
+                  defaultValue: 0
+                }
+              };
+            }
+            case "Flux-UUID": {
+              return {
+                "constantFlux": {
+                  displayOrder: 0,
+                  label: "Constant Flux",
+                  type: "number",
+                  defaultValue: 0
+                },
+                "phase": {
+                  displayOrder: 1,
+                  label: "Phase",
+                  unit: "deg",
+                  type: "number",
+                  defaultValue: 0
+                }
+              };
+            }
+          }
+          break;
+        }
+      }
+      return {};
     }
   } // statics
 

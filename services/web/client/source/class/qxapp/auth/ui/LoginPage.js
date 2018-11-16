@@ -31,15 +31,19 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
   */
 
   members: {
-    __form: null,
-
     // overrides base
+    __form: null,
     _buildPage: function() {
       this.__form = new qx.ui.form.Form();
 
       let atm = new qx.ui.basic.Atom().set({
-        icon: "qxapp/osparc-white-small.png",
+        icon: "qxapp/osparc-white.svg",
         iconPosition: "top"
+      });
+      atm.getChildControl("icon").set({
+        width: 250,
+        height: 150,
+        scale: true
       });
       this.add(atm);
 
@@ -47,11 +51,13 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
       email.setPlaceholder(this.tr("Your email address"));
       email.setRequired(true);
       this.add(email);
+      email.getContentElement().setAttribute("autocomplete", "username");
       this.__form.add(email, "", qx.util.Validate.email(), "email", null);
 
       let pass = new qx.ui.form.PasswordField();
       pass.setPlaceholder(this.tr("Your password"));
       pass.setRequired(true);
+      pass.getContentElement().setAttribute("autocomplete", "current-password");
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
@@ -130,6 +136,10 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
 
       let successFun = function(log) {
         this.fireDataEvent("done", log.message);
+        // we don't need the form any more, so remove it and mock-navigate-away
+        // and thus tell the password manager to save the content
+        this._formElement.dispose();
+        window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
       let failFun = function(msg) {

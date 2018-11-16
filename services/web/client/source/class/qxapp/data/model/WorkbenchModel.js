@@ -7,6 +7,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     this.base(arguments);
 
     this.__nodesTopLevel = {};
+    this.__links = {};
 
     this.setProjectName(prjName);
     this.createNodeModels(wbData);
@@ -27,6 +28,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
   members: {
     __nodesTopLevel: null,
+    __links: null,
 
     isContainer: function() {
       return false;
@@ -52,39 +54,72 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return nodes;
     },
 
-    getPath: function(nodeId) {
-      let pathWithIds = this.getPathWithId(nodeId);
-      let nodePath = [];
-      for (let i=0; i<pathWithIds.length; i++) {
-        nodePath.push(Object.values(pathWithIds[i])[0]);
-      }
-      return nodePath;
-    },
-
-    getPathWithId: function(nodeId) {
-      let rootObj = {};
-      rootObj["root"] = this.getProjectName();
+    getPathIds: function(nodeId) {
       if (nodeId === "root" || nodeId === undefined) {
-        return [rootObj];
+        return ["root"];
       }
-
-      const nodeModel = this.getNodeModel(nodeId);
       let nodePath = [];
-      let obj = {};
-      obj[nodeId] = nodeModel.getLabel();
-      nodePath.unshift(obj);
+      nodePath.unshift(nodeId);
+      const nodeModel = this.getNodeModel(nodeId);
       let parentNodeId = nodeModel.getParentNodeId();
       while (parentNodeId) {
         const checkThisNode = this.getNodeModel(parentNodeId);
         if (checkThisNode) {
-          let thisObj = {};
-          thisObj[parentNodeId] = checkThisNode.getLabel();
-          nodePath.unshift(thisObj);
+          nodePath.unshift(parentNodeId);
           parentNodeId = checkThisNode.getParentNodeId();
         }
       }
-      nodePath.unshift(rootObj);
+      nodePath.unshift("root");
       return nodePath;
+    },
+
+    getConnectedLinks: function(nodeId) {
+      let connectedLinks = [];
+      for (const linkId in this.__links) {
+        const link = this.__links[linkId];
+        if (link.getInputNodeId() === nodeId) {
+          connectedLinks.push(link.getLinkId());
+        }
+        if (link.getOutputNodeId() === nodeId) {
+          connectedLinks.push(link.getLinkId());
+        }
+      }
+      return connectedLinks;
+    },
+
+    getLinkModel: function(linkId, node1Id, node2Id) {
+      const exists = Object.prototype.hasOwnProperty.call(this.__links, linkId);
+      if (exists) {
+        return this.__links[linkId];
+      }
+      for (const id in this.__links) {
+        const link = this.__links[id];
+        if (link.getInputNodeId() === node1Id &&
+          link.getOutputNodeId() === node2Id) {
+          return this.__links[id];
+        }
+      }
+      return null;
+    },
+
+    createLinkModel: function(linkId, node1Id, node2Id) {
+      let existingLinkModel = this.getLinkModel(linkId, node1Id, node2Id);
+      if (existingLinkModel) {
+        return existingLinkModel;
+      }
+      let linkModel = new qxapp.data.model.LinkModel(linkId, node1Id, node2Id);
+      return linkModel;
+    },
+
+    addLinkModel: function(linkModel) {
+      const linkId = linkModel.getLinkId();
+      const node1Id = linkModel.getInputNodeId();
+      const node2Id = linkModel.getOutputNodeId();
+      let exists = this.getLinkModel(linkId, node1Id, node2Id);
+      if (!exists) {
+        this.__links[linkId] = linkModel;
+        // this.fireEvent("WorkbenchModelChanged");
+      }
     },
 
     createNodeModel: function(key, version, uuid, nodeData) {
@@ -92,7 +127,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       if (existingNodeModel) {
         return existingNodeModel;
       }
-      let nodeModel = new qxapp.data.model.NodeModel(key, version, uuid);
+      let nodeModel = new qxapp.data.model.NodeModel(this, key, version, uuid);
       nodeModel.populateNodeData(nodeData);
       nodeModel.addListener("ShowInLogger", e => {
         this.fireDataEvent("ShowInLogger", e.getData());
@@ -149,23 +184,23 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       this.fireEvent("WorkbenchModelChanged");
     },
 
-    removeNode: function(nodeModel) {
-      // TODO: only works with top level nodes
-      const nodeId = nodeModel.getNodeId();
-      const exists = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
-      if (exists) {
-        if (nodeModel.getMetaData().type == "dynamic") {
-          const slotName = "stopDynamic";
-          let socket = qxapp.wrappers.WebSocket.getInstance();
-          let data = {
-            nodeId: nodeModel.getNodeId()
-          };
-          socket.emit(slotName, data);
+    removeNode: function(nodeId) {
+      let nodeModel = this.getNodeModel(nodeId);
+      if (nodeModel) {
+        const isTopLevel = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
+        if (isTopLevel) {
+          delete this.__nodesTopLevel[nodeId];
         }
-        delete this.__nodesTopLevel[nodeModel.getNodeId()];
+        const parentNodeId = nodeModel.getParentNodeId();
+        if (parentNodeId) {
+          let parentNodeModel = this.getNodeModel(parentNodeId);
+          parentNodeModel.removeInnerNode(nodeId);
+        }
+        nodeModel.removeNode();
         this.fireEvent("WorkbenchModelChanged");
+        return true;
       }
-      return exists;
+      return false;
     },
 
     createLink: function(outputNodeId, inputNodeId) {
@@ -187,10 +222,17 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       }
     },
 
-    removeLink: function(outputNodeId, inputNodeId) {
-      let node = this.getNodeModel(inputNodeId);
-      if (node) {
-        return node.removeInputNode(outputNodeId);
+    removeLink: function(linkId) {
+      let linkModel = this.getLinkModel(linkId);
+      if (linkModel) {
+        const inputNodeId = linkModel.getInputNodeId();
+        const outputNodeId = linkModel.getOutputNodeId();
+        let node = this.getNodeModel(outputNodeId);
+        if (node) {
+          node.removeInputNode(inputNodeId);
+          delete this.__links[linkId];
+          return true;
+        }
       }
       return false;
     },
@@ -223,8 +265,8 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
         // node especific
         if (!nodeModel.isContainer()) {
-          node.key = nodeModel.getMetaData().key;
-          node.version = nodeModel.getMetaData().version;
+          node.key = nodeModel.getKey();
+          node.version = nodeModel.getVersion();
         }
       }
       return workbench;

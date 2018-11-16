@@ -69,7 +69,7 @@ ENV DEBUG 1
 ENV RUN_DOCKER_ENGINE_ROOT=0
 USER root
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD ./boot.sh
+CMD ["/bin/sh", "boot.sh"]
 
 
 # --------------------------Production multi-stage -------------------
@@ -79,6 +79,7 @@ FROM build as production
 # TODO: check if scu:scu copy is necessary in all cases!? since we are just installing?
 COPY --chown=scu:scu packages $HOME/packages
 COPY --chown=scu:scu services/sidecar $HOME/services/sidecar
+COPY --chown=scu:scu services/storage/client-sdk $HOME/services/storage/client-sdk
 
 WORKDIR /home/scu/services/sidecar
 RUN $PIP --no-cache-dir install -r requirements/prod.txt ;\
@@ -102,4 +103,4 @@ ENV DEBUG 0
 ENV RUN_DOCKER_ENGINE_ROOT=0
 USER root
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD ["/bin/sh", "./boot.sh"]
+CMD ["/bin/sh", "boot.sh"]

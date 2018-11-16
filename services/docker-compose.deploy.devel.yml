@@ -12,8 +12,8 @@ services:
   director:
     #image: masu.speag.com/simcore/workbench/director:2.3
     image: services_director:dev
-    dns:
-      - 172.16.8.15
+    #dns:
+    #  - 172.16.8.15
     deploy:
       placement:
        constraints:
@@ -34,6 +34,7 @@ services:
       - S3_ACCESS_KEY=12345678
       - S3_SECRET_KEY=12345678
       - S3_BUCKET_NAME=simcore
+      - STORAGE_ENDPOINT=storage:11111
       - PUBLISHED_HOST_NAME=localhost
   webclient:
     image: services_webclient:dev
@@ -44,8 +45,8 @@ services:
   webserver:
     #image: masu.speag.com/simcore/workbench/webserver:2.3
     image: services_webserver:dev
-    dns:
-      - 172.16.8.15
+    #dns:
+    #  - 172.16.8.15
     deploy:
       placement:
         constraints:
@@ -66,8 +67,31 @@ services:
       - S3_ACCESS_KEY=12345678
       - S3_SECRET_KEY=12345678
       - S3_BUCKET_NAME=simcore
-      - SMTP_HOST=smtp.speag.com
+      - SMTP_HOST=mail.speag.com
       - SMTP_PORT=25
+
+  storage:
+    image: services_storage:dev
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+    environment:
+      - POSTGRES_ENDPOINT=postgres
+      - POSTGRES_USER=simcore
+      - POSTGRES_PASSWORD=simcore
+      - POSTGRES_DB=simcoredb
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - S3_ENDPOINT=minio:9000
+      - S3_ACCESS_KEY=12345678
+      - S3_SECRET_KEY=12345678
+      - S3_BUCKET_NAME=simcore
+      - BF_API_KEY=id_without_quotes
+      - BF_API_SECRET=id_without_quotes
+    depends_on:
+      - minio
+      - postgres
   rabbit:
     image: rabbitmq:3-management
     environment:
@@ -75,12 +99,12 @@ services:
       - RABBITMQ_DEFAULT_PASS=simcore
   postgres:
     image: postgres:10
-    environment:      
+    environment:
       - POSTGRES_USER=simcore
       - POSTGRES_PASSWORD=simcore
       - POSTGRES_DB=simcoredb
   adminer:
-    image: adminer    
+    image: adminer
     depends_on:
       - postgres
   sidecar:
@@ -100,6 +124,7 @@ services:
       - S3_ACCESS_KEY=12345678
       - S3_SECRET_KEY=12345678
       - S3_BUCKET_NAME=simcore
+      - STORAGE_ENDPOINT=storage:11111
   minio:
     environment:
       - MINIO_ACCESS_KEY=12345678

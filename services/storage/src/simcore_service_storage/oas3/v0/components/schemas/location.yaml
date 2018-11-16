@@ -1,0 +1,24 @@
+components:
+  schemas:
+    FileLocationEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/FileLocation'
+        error:
+          nullable: true
+          default: null
+
+    FileLocation:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: integer
+      example:
+        filename: 'simcore.s3'
+        id: 0

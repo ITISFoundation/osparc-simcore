@@ -53,10 +53,8 @@ class InlineResponse2001Authors(object):
 
         if affiliation is not None:
             self.affiliation = affiliation
-        if email is not None:
-            self.email = email
-        if name is not None:
-            self.name = name
+        self.email = email
+        self.name = name
 
     @property
     def affiliation(self):
@@ -101,6 +99,8 @@ class InlineResponse2001Authors(object):
         :param email: The email of this InlineResponse2001Authors.  # noqa: E501
         :type: str
         """
+        if email is None:
+            raise ValueError("Invalid value for `email`, must not be `None`")  # noqa: E501
 
         self._email = email
 
@@ -124,6 +124,8 @@ class InlineResponse2001Authors(object):
         :param name: The name of this InlineResponse2001Authors.  # noqa: E501
         :type: str
         """
+        if name is None:
+            raise ValueError("Invalid value for `name`, must not be `None`")  # noqa: E501
 
         self._name = name
 

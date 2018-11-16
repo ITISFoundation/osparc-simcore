@@ -10,7 +10,8 @@ import pytest
 
 # under test
 from simcore_service_storage.resources import resources
-from simcore_service_storage.settings import RSC_CONFIG_DIR_KEY, RSC_OPENAPI_DIR_KEY
+from simcore_service_storage.settings import (RSC_CONFIG_DIR_KEY,
+                                              RSC_OPENAPI_DIR_KEY)
 
 log = logging.getLogger(__name__)
 

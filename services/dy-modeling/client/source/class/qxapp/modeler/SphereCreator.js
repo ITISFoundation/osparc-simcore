@@ -22,11 +22,11 @@ qx.Class.define("qxapp.modeler.SphereCreator", {
     startTool: function() {
       const fixedAxe = 2;
       const fixedPos = 0;
-      this.__threeView.addInvisiblePlane(fixedAxe, fixedPos);
+      this.__threeView.addSnappingPlane(fixedAxe, fixedPos);
     },
 
     stopTool: function() {
-      this.__threeView.removeInvisiblePlane();
+      this.__threeView.removeSnappingPlane();
     },
 
     onMouseHover: function(event, intersects) {

@@ -1,10 +1,7 @@
+# pylint:disable=unused-import
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
 
-# TODO: W0611:Unused import ...
-# pylint: disable=W0611
-# TODO: W0613:Unused argument ...
-# pylint: disable=W0613
-# W0621: Redefining name ... from outer scope
-# pylint: disable=W0621
 import logging
 import sys
 from pathlib import Path
@@ -14,10 +11,10 @@ import pytest
 import yaml
 from aiohttp import web
 
-from servicelib.response_utils import unwrap_envelope
+import simcore_service_webserver
+from servicelib.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
+from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import resources, rest
-from simcore_service_webserver.application_keys import (APP_CONFIG_KEY,
-                                                        APP_OPENAPI_SPECS_KEY)
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 
@@ -27,13 +24,10 @@ logging.basicConfig(level=logging.INFO)
 # TODO: reduce log from openapi_core loggers
 
 @pytest.fixture
-def here():
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-@pytest.fixture
-def openapi_path(here):
-    spec_path = here.parent / 'src/simcore_service_webserver/oas3/v0/openapi.yaml'
-    return spec_path
+def openapi_path(api_specs_dir):
+    specs_path = api_specs_dir / 'oas3/v0/openapi.yaml'
+    assert specs_path.exits()
+    return specs_path
 
 @pytest.fixture
 def spec_dict(openapi_path):
@@ -42,15 +36,21 @@ def spec_dict(openapi_path):
     return spec_dict
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client):
+def client(loop, aiohttp_unused_port, aiohttp_client, api_specs_dir):
     app = web.Application()
 
     server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost'}
-    app[APP_CONFIG_KEY] = { "main": server_kwargs } # Fake config
-
+    # fake config
+    app[APP_CONFIG_KEY] = {
+        "main": server_kwargs,
+        "rest": {
+            "version": "v0",
+            "location": str(api_specs_dir / "v0" / "openapi.yaml")
+        }
+    }
     # activates only security+restAPI sub-modules
     setup_security(app)
-    setup_rest(app)
+    setup_rest(app, debug=True)
 
     cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
     return cli
@@ -59,9 +59,9 @@ def client(loop, aiohttp_unused_port, aiohttp_client):
 
 async def test_check_health(client):
     resp = await client.get("/v0/")
-    assert resp.status == 200
-
     payload = await resp.json()
+
+    assert resp.status == 200, str(payload)
     data, error = tuple(payload.get(k) for k in ('data', 'error'))
 
     assert data
@@ -191,7 +191,7 @@ async def test_auth_login(client, caplog):
 @pytest.mark.skip(reason="SAN: this must be added to ensure easier transition")
 async def test_start_pipeline(client):
 
-    resp = await client.post("/start_pipeline", 
+    resp = await client.post("/start_pipeline",
             json={
                 "project_id":"asdfsk-sdfsdgsd-sdfsfd-sdfsd",
                 "workbench":{

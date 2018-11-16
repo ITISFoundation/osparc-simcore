@@ -1,0 +1,18 @@
+components:
+  schemas:
+    FileMetaDataArrayEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/FileMetaDataArrayType'
+        error:
+          nullable: true
+          default: null
+
+    FileMetaDataArrayType:
+      type: array
+      items:
+        $ref: './file_meta_data.yaml#/components/schemas/FileMetaDataType'

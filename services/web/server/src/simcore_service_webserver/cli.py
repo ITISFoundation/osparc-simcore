@@ -14,18 +14,20 @@ Why does this file exist, and why not put this in __main__?
 """
 import argparse
 import logging
+import os
 import sys
 
-from .cli_config import add_cli_options, config_from_options
-from .settings import CLI_DEFAULT_CONFIGFILE
 from .application import run_service
-from .settings import CONFIG_SCHEMA
+from .application_config import CLI_DEFAULT_CONFIGFILE, CONFIG_SCHEMA
+from .cli_config import add_cli_options, config_from_options
+from .utils import search_osparc_repo_dir
 
 log = logging.getLogger(__name__)
 
 
 def create_default_parser():
     return argparse.ArgumentParser(description='Service to manage data storage in simcore.')
+
 
 def setup_parser(parser):
     """ Adds all options to a parser"""
@@ -38,6 +40,26 @@ def setup_parser(parser):
 
     return parser
 
+
+def create_environ():
+    """
+        Build environment with substitutable variables
+
+    """
+    # system's environment variables
+    environ = dict(os.environ)
+
+    # project-related environment variables
+    rootdir = search_osparc_repo_dir()
+    if rootdir is not None:
+        environ.update({
+            'OSPARC_SIMCORE_REPO_ROOTDIR': str(rootdir),
+        })
+
+    return environ
+
+
+
 def parse(args, parser):
     """ Parse options and returns a configuration object """
     if args is None:
@@ -45,7 +67,8 @@ def parse(args, parser):
 
     # ignore unknown options
     options, _ = parser.parse_known_args(args)
-    config = config_from_options(options, CONFIG_SCHEMA)
+
+    config = config_from_options(options, CONFIG_SCHEMA, vars=create_environ())
 
     # TODO: check whether extra options can be added to the config?!
     return config
