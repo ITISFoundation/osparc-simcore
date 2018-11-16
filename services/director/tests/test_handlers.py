@@ -175,7 +175,6 @@ async def _start_get_stop_services(push_services, user_id):
 
     with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
         web_response = await rest.handlers.running_interactive_services_delete(fake_request, "service_uuid")
-
     created_services = push_services(0,2)
     assert len(created_services) == 2
     for created_service in created_services:

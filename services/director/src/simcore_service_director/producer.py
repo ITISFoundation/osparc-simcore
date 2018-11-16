@@ -1,8 +1,8 @@
 # pylint: disable=C0111
 
+import asyncio
 import json
 import logging
-import time
 from typing import Dict, List
 
 import aiohttp
@@ -216,7 +216,7 @@ def __remove_overlay_network_of_swarm(client: docker.client, node_uuid: str):
         log.exception("Error while removing networks for service with uuid: %s", node_uuid)
         raise exceptions.GenericDockerError("Error while removing networks", err) from err
 
-def __wait_until_service_running_or_failed(service_id: str, service_name: str, node_uuid: str):
+async def __wait_until_service_running_or_failed(service_id: str, service_name: str, node_uuid: str):
     # pylint: disable=C0103
     log.debug("Waiting for service %s to start", service_id)
     client = docker.APIClient()
@@ -235,9 +235,8 @@ def __wait_until_service_running_or_failed(service_id: str, service_name: str, n
             elif task_state in ("failed", "rejected"):
                 log.error("Error while waiting for service")               
                 raise exceptions.ServiceStartTimeoutError(service_name, node_uuid)
-        # TODO: all these functions should be async and here one could use await sleep which
         # would allow dealing with other events instead of wasting time here
-        time.sleep(0.005)  # 5ms
+        await asyncio.sleep(0.005)  # 5ms
     log.debug("Waited for service %s to start", service_id)
 
 async def __get_repos_from_key(service_key: str) -> List[Dict]:
@@ -256,16 +255,12 @@ async def __get_repos_from_key(service_key: str) -> List[Dict]:
 async def __get_dependant_repos(service_key: str, service_tag: str) -> Dict:
     list_of_images = await __get_repos_from_key(service_key)
     tag = __find_service_tag(list_of_images, service_key, 'Unkonwn name', service_tag)
-
-    list_of_images = {}
     # look for dependencies
     dependent_repositories = await registry_proxy.list_interactive_service_dependencies(service_key, tag)
-    for repo in dependent_repositories:
-        list_of_images[repo] = await registry_proxy.retrieve_list_of_images_in_repo(repo)
-    return list_of_images
+    return dependent_repositories
 
-def __find_service_tag(list_of_images: Dict, docker_image_path: str, service_name: str, service_tag: str) -> str:
-    available_tags_list = sorted(list_of_images[docker_image_path]['tags'])
+def __find_service_tag(list_of_images: Dict, service_key: str, service_name: str, service_tag: str) -> str:
+    available_tags_list = sorted(list_of_images[service_key]['tags'])
     # not tags available... probably an undefined service there...
     if not available_tags_list:
         raise exceptions.ServiceNotAvailableError(service_name, service_tag)
@@ -309,7 +304,7 @@ async def _start_docker_service(client: docker.client, user_id:str, service_key:
         log.debug("Starting docker service %s using parameters %s", docker_image_full_path, docker_service_runtime_parameters)
         service = client.services.create(docker_image_full_path, **docker_service_runtime_parameters)
         log.debug("Service started now waiting for it to run")
-        __wait_until_service_running_or_failed(service.id, docker_image_full_path, node_uuid)
+        await __wait_until_service_running_or_failed(service.id, docker_image_full_path, node_uuid)
         # the docker swarm opened some random port to access the service
         published_port = __get_docker_image_published_port(service.id)
         log.debug("Service successfully started on %s:%s",service_entrypoint, published_port)
@@ -341,19 +336,17 @@ async def _silent_service_cleanup(node_uuid):
     except exceptions.DirectorException:
         pass    
 
-async def __create_node(client: docker.client, user_id:str, list_of_images: List, service_name: str, service_tag: str, node_uuid: str) -> List[Dict]: # pylint: disable=R0913, R0915
-    log.debug("Creating %s docker services for node %s:%s using %s for user %s", len(list_of_images), service_name, service_tag, node_uuid, user_id)
+async def __create_node(client: docker.client, user_id:str, list_of_services: List[Dict], service_name: str, node_uuid: str) -> List[Dict]: # pylint: disable=R0913, R0915
+    log.debug("Creating %s docker services for node %s using %s for user %s", len(list_of_services), service_name, node_uuid, user_id)
     # if the service uses several docker images, a network needs to be setup to connect them together
     inter_docker_network = None
-    if len(list_of_images) > 1:
+    if len(list_of_services) > 1:
         inter_docker_network = __create_overlay_network_in_swarm(client, service_name, node_uuid)
         log.debug("Created docker network in swarm for service %s", service_name)
 
     containers_meta_data = list()
-    for docker_image_path in list_of_images:
-        tag = __find_service_tag(list_of_images, docker_image_path, service_name, service_tag)
-        log.debug("Preparing runtime parameters for docker image %s:%s", docker_image_path, tag)
-        service_meta_data = await _start_docker_service(client, user_id, docker_image_path, tag, node_uuid, inter_docker_network)
+    for service in list_of_services:        
+        service_meta_data = await _start_docker_service(client, user_id, service["key"], service["tag"], node_uuid, inter_docker_network)
         containers_meta_data.append(service_meta_data)
         
     return containers_meta_data
@@ -365,15 +358,21 @@ async def start_service(user_id: str, service_key: str, service_tag: str, node_u
     client = __get_docker_client()
     __check_node_uuid_available(client, node_uuid)
 
+    service_name = registry_proxy.get_service_first_name(service_key)
     list_of_images = await __get_repos_from_key(service_key)
+    service_tag = __find_service_tag(list_of_images, service_key, service_name, service_tag)
+    log.debug("Found service to start %s:%s", service_key, service_tag)
+    list_of_services_to_start = [{"key":service_key, "tag":service_tag}]
     # find the service dependencies
     list_of_dependencies = await __get_dependant_repos(service_key, service_tag)
-    list_of_images.update(list_of_dependencies)
+    log.debug("Found service dependencies: %s", list_of_dependencies)
+    if list_of_dependencies:
+        list_of_services_to_start.append(list_of_dependencies)
 
     # create services
     __login_docker_registry(client)
-    service_name = registry_proxy.get_service_first_name(service_key)
-    containers_meta_data = await __create_node(client, user_id, list_of_images, service_name, service_tag, node_uuid)
+    
+    containers_meta_data = await __create_node(client, user_id, list_of_services_to_start, service_name, node_uuid)
     # we return only the info of the main service
     return containers_meta_data[0]
 

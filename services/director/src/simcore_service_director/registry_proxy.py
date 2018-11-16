@@ -1,7 +1,7 @@
 #pylint: disable=C0111
 import json
 import logging
-
+from typing import Dict, List
 import aiohttp
 
 from . import config, exceptions
@@ -11,37 +11,37 @@ COMPUTATIONAL_SERVICES_PREFIX = 'simcore/services/comp/'
 DEPENDENCIES_LABEL_KEY = 'simcore.service.dependencies'
 _logger = logging.getLogger(__name__)
 
-async def list_computational_services():
+async def list_computational_services() -> List[List[Dict]]:
     return await __list_services(COMPUTATIONAL_SERVICES_PREFIX)
 
-async def list_interactive_services():
+async def list_interactive_services() -> List[List[Dict]]:
     return await __list_services(INTERACTIVE_SERVICES_PREFIX)
 
-async def get_service_details(service_key, service_version):
+async def get_service_details(service_key: str, service_version: str) -> List[Dict]:
     return await __get_repo_version_details(service_key, service_version)
 
-async def retrieve_list_of_images_in_repo(repository_name):
+async def retrieve_list_of_images_in_repo(repository_name: str):
     request_result = await __registry_request(repository_name + '/tags/list')
     _logger.info("retrieved list of images in %s: %s",repository_name, request_result)
     return request_result
 
-async def list_interactive_service_dependencies(service_key, service_tag):
+async def list_interactive_service_dependencies(service_key: str, service_tag: str) -> List[Dict]:
     image_labels = await retrieve_labels_of_image(service_key, service_tag)
     dependency_keys = []
     if DEPENDENCIES_LABEL_KEY in image_labels:
         dependencies = json.loads(image_labels[DEPENDENCIES_LABEL_KEY])
         for dependency in dependencies:
-            dependency_keys.append(dependency['key'])
+            dependency_keys.append({"key":dependency['key'], "tag":dependency['tag']})
     return dependency_keys
 
-async def retrieve_labels_of_image(image, tag):
+async def retrieve_labels_of_image(image: str, tag: str) -> Dict:
     request_result = await __registry_request(image + '/manifests/' + tag)
     labels = json.loads(request_result["history"][0]["v1Compatibility"])[
         "container_config"]["Labels"]
     _logger.info("retrieved labels of image %s:%s: %s", image, tag, request_result)
     return labels
 
-def get_service_first_name(repository_name):
+def get_service_first_name(repository_name: str) -> str:
     if str(repository_name).startswith(INTERACTIVE_SERVICES_PREFIX):
         service_name_suffixes = str(repository_name)[len(INTERACTIVE_SERVICES_PREFIX):]
     elif str(repository_name).startswith(COMPUTATIONAL_SERVICES_PREFIX):
@@ -52,7 +52,7 @@ def get_service_first_name(repository_name):
     _logger.info("retrieved service name from repo %s : %s", repository_name, service_name_suffixes)
     return service_name_suffixes.split('/')[0]
 
-def get_service_last_names(repository_name):
+def get_service_last_names(repository_name: str) -> str:
     if str(repository_name).startswith(INTERACTIVE_SERVICES_PREFIX):
         service_name_suffixes = str(repository_name)[len(INTERACTIVE_SERVICES_PREFIX):]
     elif str(repository_name).startswith(COMPUTATIONAL_SERVICES_PREFIX):
@@ -63,7 +63,7 @@ def get_service_last_names(repository_name):
     _logger.info("retrieved service last name from repo %s : %s", repository_name, service_last_name)
     return service_last_name
 
-async def __registry_request(path, method="GET"):
+async def __registry_request(path: str, method: str ="GET") -> str:
     if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
 
@@ -92,13 +92,13 @@ async def __registry_request(path, method="GET"):
                 raise exceptions.DirectorException(await response.text())
             return await response.json(content_type=None)
 
-async def __retrieve_list_of_repositories():
+async def __retrieve_list_of_repositories() -> List[str]:
     result_json = await __registry_request('_catalog')
     result_json = result_json['repositories']
     _logger.info("retrieved list of repos: %s", result_json)
     return result_json
 
-async def __get_repo_version_details(repo_key, repo_tag):
+async def __get_repo_version_details(repo_key: str, repo_tag: str) -> Dict:
     image_tags = {}
     label_data = await __registry_request(repo_key + '/manifests/' + repo_tag)
     labels = json.loads(label_data["history"][0]["v1Compatibility"])["container_config"]["Labels"]
@@ -110,7 +110,7 @@ async def __get_repo_version_details(repo_key, repo_tag):
                     image_tags[label_key] = label_data[label_key]
     return image_tags
 
-async def __get_repo_details(repo):
+async def __get_repo_details(repo: str) -> List[Dict]:
     #pylint: disable=too-many-nested-blocks
     current_repo = []
     if "/comp/" in repo or "/dynamic/" in repo:
@@ -125,7 +125,7 @@ async def __get_repo_details(repo):
 
     return current_repo
 
-async def __list_services(service_prefix):
+async def __list_services(service_prefix: str) -> List[List[Dict]]:
     _logger.info("getting list of computational services")
     list_all_repos = await __retrieve_list_of_repositories()
     # get the services repos

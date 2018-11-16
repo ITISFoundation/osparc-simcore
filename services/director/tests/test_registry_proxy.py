@@ -1,9 +1,11 @@
 # pylint: disable=W0613, W0621
 
+import json
+
 import pytest
-from simcore_service_director import (
-    registry_proxy    
-    )
+
+from simcore_service_director import registry_proxy
+
 
 @pytest.mark.asyncio
 async def test_list_no_services_available(docker_registry, configure_registry_access):    
@@ -39,11 +41,20 @@ async def test_retrieve_list_of_images_in_repo(docker_registry, push_services, c
         list_of_images = await registry_proxy.retrieve_list_of_images_in_repo(key)
         assert len(list_of_images["tags"]) == number
 
-@pytest.mark.skip(reason="SAN: this must be changed according to issue #222")
 @pytest.mark.asyncio
-async def test_list_interactive_service_dependencies():
-    # need to setup a fake registry to test this
-    pass
+async def test_list_interactive_service_dependencies(docker_registry, push_services, configure_registry_access):
+    images = push_services(2,2, inter_dependent_services=True)
+    for image in images:
+        service_description = image["service_description"]
+        docker_labels = image["docker_labels"]
+        if "simcore.service.dependencies" in docker_labels:
+            docker_dependencies = json.loads(docker_labels["simcore.service.dependencies"])
+            image_dependencies = await registry_proxy.list_interactive_service_dependencies(service_description["key"], service_description["version"])
+            assert isinstance(image_dependencies, list)
+            assert len(image_dependencies) == len(docker_dependencies)
+            assert image_dependencies[0]["key"] == docker_dependencies[0]["key"]
+            assert image_dependencies[0]["tag"] == docker_dependencies[0]["tag"]
+
 
 @pytest.mark.asyncio
 async def test_retrieve_labels_of_image(docker_registry, push_services, configure_registry_access):
