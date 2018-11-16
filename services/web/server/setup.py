@@ -34,8 +34,6 @@ setup(
     package_data={
         '': [
             'config/*.y*ml',
-            'oas3/**/*.yaml',
-            'oas3/**/**/schemas/*.y*ml',
             'templates/**/*.html',
             ]
     },

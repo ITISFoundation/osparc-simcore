@@ -15,7 +15,7 @@ minio==4.0.0
 networkx==2.1
 passlib==1.7.1
 # See http://initd.org/psycopg/docs/install.html#binary-install-from-pypi
-psycopg2-binary
+psycopg2-binary==2.7.5
 python-socketio==1.9.0
 requests==2.20.1
 sqlalchemy==1.2.9

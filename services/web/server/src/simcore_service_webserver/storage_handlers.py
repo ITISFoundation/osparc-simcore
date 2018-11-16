@@ -6,7 +6,7 @@ from servicelib.rest_utils import extract_and_validate
 
 from .db_models import UserRole
 from .login.decorators import login_required, restricted_to
-from .storage_settings import get_config, get_client_session
+from .storage_config import get_config, get_client_session
 
 # TODO: retrieve from db tokens
 
@@ -66,7 +66,7 @@ async def upload_file(request: web.Request):
     return payload
 
 
-@restricted_to(UserRole.MODERATOR)
+@login_required
 async def delete_file(request: web.Request):
     payload = await _request_storage(request, 'DELETE')
     return payload
