@@ -10,9 +10,8 @@ import os
 import pdb
 import urllib
 import uuid
-from pprint import pprint
-
 from pathlib import Path
+from pprint import pprint
 
 import attr
 import pytest
@@ -20,7 +19,8 @@ import pytest
 import utils
 from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import FileMetaData
-from simcore_service_storage.s3 import DATCORE_STR, SIMCORE_S3_STR, SIMCORE_S3_ID
+from simcore_service_storage.settings import (DATCORE_STR, SIMCORE_S3_ID,
+                                              SIMCORE_S3_STR)
 from utils import BUCKET_NAME
 
 

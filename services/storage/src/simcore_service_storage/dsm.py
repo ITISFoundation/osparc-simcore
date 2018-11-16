@@ -22,8 +22,8 @@ from s3wrapper.s3_client import S3Client
 from .datcore_wrapper import DatcoreWrapper
 from .models import (FileMetaData, _location_from_id, _parse_datcore,
                      file_meta_data)
-from .s3 import DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
-from .settings import APP_CONFIG_KEY, APP_DSM_THREADPOOL
+from .settings import (APP_CONFIG_KEY, APP_DSM_THREADPOOL, DATCORE_ID,
+                       DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR)
 
 #pylint: disable=W0212
 #FIXME: W0212:Access to a protected member _result_proxy of a client class

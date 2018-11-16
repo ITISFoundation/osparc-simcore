@@ -6,12 +6,13 @@ import logging
 
 from aiohttp import web
 
-from . import s3
+from .s3 import setup_s3
 from .db import setup_db
 from .middlewares import dsm_middleware
 from .rest import setup_rest
 from .session import setup_session
 from .settings import APP_CONFIG_KEY
+from .dsm import setup_dsm
 
 log = logging.getLogger(__name__)
 
@@ -26,7 +27,8 @@ def create(config):
     setup_db(app)
     setup_session(app)
     setup_rest(app)
-    s3.setup(app)
+    setup_dsm(app)
+    setup_s3(app)
 
     return app
 

@@ -45,8 +45,18 @@ APP_DB_ENGINE_KEY  = 'db_engine'
 APP_DB_SESSION_KEY = 'db_session'
 
 APP_DSM_THREADPOOL = "dsm_threadpool"
+APP_DSM_KEY = "DSM"
 
 # CFG=configuration
+
+
+# DSM specific constants
+SIMCORE_S3_ID    = 0
+SIMCORE_S3_STR   = "simcore.s3"
+
+DATCORE_ID      = 1
+DATCORE_STR     = "datcore"
+
 
 # RSC=resource
 RSC_OPENAPI_DIR_KEY = "oas3/{}".format(API_URL_VERSION)
