@@ -215,7 +215,7 @@ class Sidecar:
                     if not self._s3.client.upload_file(self._s3.bucket, object_name, filepath):
                         log.error("Error uploading file to S3")
 
-    def initialize(self, task):
+    def initialize(self, task, user_id):
         self._task = task
 
         HOMEDIR = str(Path.home())
@@ -235,6 +235,7 @@ class Sidecar:
         self._docker.env = ["{}_FOLDER=/{}".format(name.upper(), tail) for name, tail in tails.items()]
 
         # config nodeports
+        node_ports.node_config.USER_ID = user_id
         node_ports.node_config.NODE_UUID = task.node_id        
 
     def preprocess(self):
@@ -322,7 +323,7 @@ class Sidecar:
         finally:
             _session.close()
 
-    def inspect(self, celery_task, project_id, node_id):
+    def inspect(self, celery_task, user_id, project_id, node_id):
         log.debug("ENTERING inspect pipeline:node %s: %s", project_id, node_id)
         # import pdb; pdb.set_trace()
         next_task_nodes = []
@@ -373,7 +374,7 @@ class Sidecar:
                         _session.add(task)
                         _session.commit()
 
-                        self.initialize(task)
+                        self.initialize(task, user_id)
 
                         do_run = True
             else:

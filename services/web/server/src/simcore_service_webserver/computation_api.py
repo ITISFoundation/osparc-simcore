@@ -253,7 +253,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
         await _set_tasks_in_tasks_db(project_id, tasks)
         db_session.commit()
         # commit the tasks to celery
-        _ = celery.send_task("comp.task", args=(project_id,), kwargs={})
+        _ = celery.send_task("comp.task", args=(userid, project_id,), kwargs={})
         log.debug("Task commited")
         # answer the client
         pipeline_name = "request_data"
