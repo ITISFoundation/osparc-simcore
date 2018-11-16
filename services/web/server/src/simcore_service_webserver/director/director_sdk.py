@@ -38,6 +38,6 @@ _DIRECTOR_PATH = "v0"
 
 def get_director():
     configuration = simcore_director_sdk.Configuration()
-    configuration.host = configuration.host.format(host=_DIRECTOR_HOST, port=_DIRECTOR_PORT, version=_DIRECTOR_PATH)
+    configuration.host = "http://{}:{}/{}".format(_DIRECTOR_HOST, _DIRECTOR_PORT, _DIRECTOR_PATH)
     api_instance = simcore_director_sdk.UsersApi(simcore_director_sdk.ApiClient(configuration))
     return api_instance

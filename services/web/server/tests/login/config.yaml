@@ -46,3 +46,6 @@ rest:
 storage:
   host: localhost
   port: 11111
+rest:
+  version: v0
+  location: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs/webserver/v0/openapi.yaml

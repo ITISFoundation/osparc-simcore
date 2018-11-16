@@ -17,8 +17,8 @@ db:
     endpoint: ${POSTGRES_ENDPOINT}
     user: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
-    host: postgres
-    port: 5432
+    host: ${POSTGRES_HOST}
+    port: ${POSTGRES_PORT}
 rabbit:
   user: ${RABBITMQ_USER}
   password: ${RABBITMQ_PASSWORD}
@@ -45,4 +45,9 @@ rest:
 storage:
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}
+rest:
+  version: v0
+  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/openapi.yaml
+  extra_urls:
+    - ${OSPARC_PUBLIC_URL}
 ...
