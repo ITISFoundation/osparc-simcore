@@ -330,43 +330,43 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/running_service.yaml#/RunningServiceEnveloped'
+                $ref: '../../shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
         "409":
           description: A service with the same uuid already exists
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
 
   /running_interactive_services/{service_uuid}:
     get:
       description: Succesfully returns if a service with the defined uuid is up and running
       operationId: running_interactive_services_get
-      parameters:
+      parameters: 
         - $ref: '#/components/parameters/ServiceUuid'
       responses:
         "204":
@@ -374,29 +374,29 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/response204.yaml#/Response204Enveloped'
+                $ref: '../../shared/schemas/response204.yaml#/components/schemas/Response204Enveloped'
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
     delete:
       description: Stops and removes an interactive service from the oSparc platform
       operationId: running_interactive_services_delete
-      parameters:
+      parameters: 
         - $ref: '#/components/parameters/ServiceUuid'
       responses:
         "204":
@@ -404,27 +404,28 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/response204.yaml#/Response204Enveloped'
+                $ref: '../../shared/schemas/response204.yaml#/components/schemas/Response204Enveloped'
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
 
   /services:
+
     get:
       description: Lists available services in the oSparc platform
       operationId: services_get
@@ -436,22 +437,55 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/services.yaml#/ServicesEnveloped'
+                $ref: '../../shared/schemas/services.yaml#/components/schemas/ServicesEnveloped'                
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+
+  /computation/pipeline/{project_id}/start:
+    post:
+      description: Starts a pipeline
+      operationId: start_pipeline
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        $ref: '#/components/requestBodies/PipelineBody'
+      responses:
+        "200":
+          description: Succesffully started the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/pipeline.yaml#/components/schemas/PipelineCreatedEnveloped'
+                
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
 
 components:
-  parameters:
+  parameters:    
+    ProjectId:
+      in: path
+      name: project_id
+      required: true
+      description: starts the pipeline
+      schema:
+        type: string          
+        # format: uuid
+        example: 123e4567-e89b-12d3-a456-426655440000
+
     AssignmentUuid:
       in: query
       name: service_uuid
@@ -468,10 +502,10 @@ components:
       description: The key (url) of the service
       required: true
       schema:
-        type: string
+        type: string   
         # format: url
         example: simcore/services/dynamic/3d-viewer
-
+    
     ServiceType:
       in: query
       name: service_type
@@ -481,12 +515,12 @@ components:
           * interactive - an interactive service
       required: false
       schema:
-        type: string
-        enum:
+        type: string          
+        enum: 
           - computational
-          - interactive
+          - interactive            
         example: computational
-
+    
     ServiceUuid:
       in: path
       name: service_uuid
@@ -580,10 +614,23 @@ components:
         application/json:
           schema:
             $ref: './components/schemas/presigned_link.yaml#/PresignedLink'
-
+  
   requestBodies:
     FileMetaDataBody:
-        content:
-          application/json:
-            schema:
-              $ref: './components/schemas/files.yaml#/FileMetaData'
+      content:
+        application/json:
+          schema:
+            $ref: './components/schemas/files.yaml#/FileMetaData'
+    
+    PipelineBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - workbench
+            properties:
+              workbench:
+                $ref: './components/schemas/workbench-converted.yaml'
+            # $ref: './components/schemas/pipeline.yaml#/components/schemas/WorkbenchType'
+

@@ -4,8 +4,7 @@ from yarl import URL
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_utils import extract_and_validate
 
-from .db_models import UserRole
-from .login.decorators import login_required, restricted_to
+from .login.decorators import login_required
 from .storage_config import get_config, get_client_session
 
 # TODO: retrieve from db tokens

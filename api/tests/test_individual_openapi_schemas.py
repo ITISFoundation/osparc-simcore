@@ -136,7 +136,7 @@ def converted_specs_testdir(api_specs_dir, all_api_specs_tails, tmpdir_factory):
 
 
 # TESTS ----------------------------------------------------------
-
+@pytest.mark.skip(reason="Implementing in PR 324")
 def test_valid_individual_openapi_specs(api_specs_tail, converted_specs_testdir):
     # NOTE: api_specs_tail is a parametrized **fixture**
     #

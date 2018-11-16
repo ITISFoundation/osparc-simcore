@@ -22,12 +22,11 @@ def s3_simcore_location() ->str:
     yield helpers.SIMCORE_STORE
 
 @pytest.fixture
-def filemanager_cfg(storage, user_id, bucket, s3_simcore_location):
+def filemanager_cfg(storage, user_id, bucket):
     storage_endpoint = yarl.URL(storage)
     node_config.STORAGE_ENDPOINT = "{}:{}".format(storage_endpoint.host, storage_endpoint.port)
     node_config.USER_ID = user_id    
-    node_config.BUCKET = bucket
-    node_config.STORE = s3_simcore_location
+    node_config.BUCKET = bucket    
     yield
 
 @pytest.fixture
