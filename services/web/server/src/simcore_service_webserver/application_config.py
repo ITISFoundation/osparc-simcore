@@ -33,7 +33,7 @@ log = logging.getLogger(__name__)
 def create_schema():
     """
         Build schema for the configuration's file
-
+        by aggregating all the subsystem configurations
     """
     schema = T.Dict({
         "version": T.String(),

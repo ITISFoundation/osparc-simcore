@@ -64,6 +64,14 @@ components:
       schema:
         example: '1.4'
         type: string
+    UserId:
+      description: The ID of the user that starts the service
+      in: query
+      name: user_id
+      required: true
+      schema:
+        example: asdfgj233
+        type: string
 info:
   contact:
     email: support@simcore.com
@@ -104,10 +112,8 @@ paths:
                   error:
                     default: null
                     nullable: true
-                    type: object
                 required:
                 - data
-                - error
                 type: object
           description: Service information
         default:
@@ -118,7 +124,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -142,7 +147,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Unexpected error
@@ -155,6 +159,13 @@ paths:
         its entrypoint
       operationId: running_interactive_services_post
       parameters:
+      - description: The ID of the user that starts the service
+        in: query
+        name: user_id
+        required: true
+        schema:
+          example: asdfgj233
+          type: string
       - description: The key (url) of the service
         in: query
         name: service_key
@@ -209,10 +220,8 @@ paths:
                   error:
                     default: null
                     nullable: true
-                    type: object
                 required:
                 - data
-                - error
                 type: object
           description: Succesfully created the service in the oSparc platform. Returns
             the location where the service runs.
@@ -224,7 +233,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -248,7 +256,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Malformed function call, missing field
@@ -260,7 +267,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -284,7 +290,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Unauthorized access
@@ -296,7 +301,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -320,7 +324,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Service not found
@@ -332,7 +335,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -356,7 +358,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: A service with the same uuid already exists
@@ -368,7 +369,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -392,7 +392,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Unexpected error
@@ -422,14 +421,9 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     default: null
                     nullable: true
-                    type: object
-                required:
-                - data
-                - error
                 type: object
           description: Succesfully stopped and removed the service from the oSparc
             platform
@@ -441,7 +435,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -465,7 +458,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Malformed function call, missing field
@@ -477,7 +469,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -501,7 +492,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Service not found
@@ -513,7 +503,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -537,7 +526,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Unexpected error
@@ -566,14 +554,9 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     default: null
                     nullable: true
-                    type: object
-                required:
-                - data
-                - error
                 type: object
           description: OK service exists and runs
         '400':
@@ -584,7 +567,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -608,7 +590,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Malformed function call, missing field
@@ -620,7 +601,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -644,7 +624,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Service not found
@@ -656,7 +635,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -680,7 +658,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Unexpected error
@@ -978,10 +955,8 @@ paths:
                   error:
                     default: null
                     nullable: true
-                    type: object
                 required:
                 - data
-                - error
                 type: object
           description: Success, returns the list of available services
         '401':
@@ -992,7 +967,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -1016,7 +990,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Unauthorized access
@@ -1028,7 +1001,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -1052,7 +1024,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Unexpected error
@@ -1355,10 +1326,8 @@ paths:
                   error:
                     default: null
                     nullable: true
-                    type: object
                 required:
                 - data
-                - error
                 type: object
           description: Success, returns the details of the service
         '401':
@@ -1369,7 +1338,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -1393,7 +1361,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Unauthorized access
@@ -1405,7 +1372,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -1429,7 +1395,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Service not found
@@ -1441,7 +1406,6 @@ paths:
                   data:
                     default: null
                     nullable: true
-                    type: object
                   error:
                     properties:
                       errors:
@@ -1465,7 +1429,6 @@ paths:
                     - message
                     type: object
                 required:
-                - data
                 - error
                 type: object
           description: Unexpected error

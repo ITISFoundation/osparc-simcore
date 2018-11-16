@@ -15,7 +15,7 @@ from servicelib.aiopg_utils import DBAPIError
 from servicelib.application_keys import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY,
                                          APP_DB_SESSION_KEY)
 
-from .computation_api import init_database as _init_db
+# from .computation_api import init_database as _init_db
 from .db_config import CONFIG_SECTION_NAME
 from .db_models import metadata
 
@@ -107,7 +107,7 @@ def setup(app: web.Application):
     app[APP_DB_SESSION_KEY] = None
 
     # async connection to db
-    app.on_startup.append(_init_db) # TODO: review how is this disposed
+    # app.on_startup.append(_init_db) # TODO: review how is this disposed
     app.cleanup_ctx.append(pg_engine)
 
 

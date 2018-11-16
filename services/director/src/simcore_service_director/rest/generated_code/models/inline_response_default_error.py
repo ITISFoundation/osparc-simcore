@@ -15,7 +15,7 @@ class InlineResponseDefaultError(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, errors: List[object]=None, message: str=None, status: int=None):  # noqa: E501
+    def __init__(self, errors=None, message=None, status=None):  # noqa: E501
         """InlineResponseDefaultError - a model defined in OpenAPI
 
         :param errors: The errors of this InlineResponseDefaultError.  # noqa: E501
@@ -26,9 +26,9 @@ class InlineResponseDefaultError(Model):
         :type status: int
         """
         self.openapi_types = {
-            'errors': List[object],
-            'message': str,
-            'status': int
+            'errors': 'List[object]',
+            'message': 'str',
+            'status': 'int'
         }
 
         self.attribute_map = {
@@ -53,7 +53,7 @@ class InlineResponseDefaultError(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def errors(self) -> List[object]:
+    def errors(self):
         """Gets the errors of this InlineResponseDefaultError.
 
 
@@ -63,7 +63,7 @@ class InlineResponseDefaultError(Model):
         return self._errors
 
     @errors.setter
-    def errors(self, errors: List[object]):
+    def errors(self, errors):
         """Sets the errors of this InlineResponseDefaultError.
 
 
@@ -74,7 +74,7 @@ class InlineResponseDefaultError(Model):
         self._errors = errors
 
     @property
-    def message(self) -> str:
+    def message(self):
         """Gets the message of this InlineResponseDefaultError.
 
         Error message  # noqa: E501
@@ -85,7 +85,7 @@ class InlineResponseDefaultError(Model):
         return self._message
 
     @message.setter
-    def message(self, message: str):
+    def message(self, message):
         """Sets the message of this InlineResponseDefaultError.
 
         Error message  # noqa: E501
@@ -93,11 +93,13 @@ class InlineResponseDefaultError(Model):
         :param message: The message of this InlineResponseDefaultError.
         :type message: str
         """
+        if message is None:
+            raise ValueError("Invalid value for `message`, must not be `None`")  # noqa: E501
 
         self._message = message
 
     @property
-    def status(self) -> int:
+    def status(self):
         """Gets the status of this InlineResponseDefaultError.
 
         Error code  # noqa: E501
@@ -108,7 +110,7 @@ class InlineResponseDefaultError(Model):
         return self._status
 
     @status.setter
-    def status(self, status: int):
+    def status(self, status):
         """Sets the status of this InlineResponseDefaultError.
 
         Error code  # noqa: E501
@@ -116,5 +118,7 @@ class InlineResponseDefaultError(Model):
         :param status: The status of this InlineResponseDefaultError.
         :type status: int
         """
+        if status is None:
+            raise ValueError("Invalid value for `status`, must not be `None`")  # noqa: E501
 
         self._status = status

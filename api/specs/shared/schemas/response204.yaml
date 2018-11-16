@@ -1,14 +1,11 @@
-Response204Enveloped:
-  type: object
-  required:
-    - data
-    - error
-  properties:
-    data:
+components:
+  schemas:
+    Response204Enveloped:
       type: object
-      nullable: true
-      default: null
-    error:
-      type: object
-      nullable: true
-      default: null
+      properties:
+        data:
+          nullable: true
+          default: null
+        error:
+          nullable: true
+          default: null
