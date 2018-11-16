@@ -100,10 +100,9 @@ class Item():
                 raise exceptions.InvalidItemTypeError(self.type, value)
             log.debug("file path %s will be uploaded to s3", value)
             s3_object = data_items_utils.encode_file_id(file_path, project_id=config.PROJECT_ID, node_id=config.NODE_UUID)
-            await filemanager.upload_file(store=config.STORE, s3_object=s3_object, local_file_path=file_path)
+            store_id = await filemanager.upload_file(store_name=config.STORE, s3_object=s3_object, local_file_path=file_path)
             log.debug("file path %s uploaded", value)
-            # FIXME: THIS is an issue now
-            value = data_items_utils.encode_store(config.STORE, s3_object)
+            value = data_items_utils.encode_store(store_id, s3_object)
 
         # update the DB
         # let's create a new data if necessary
@@ -126,7 +125,7 @@ class Item():
 
     async def __get_value_from_store(self, value):
         log.debug("Getting value from storage %s", value)
-        store, s3_path = data_items_utils.decode_store(value)
+        store_id, s3_path = data_items_utils.decode_store(value)
         log.debug("Fetch file from S3 %s", self.value)
         file_name = Path(s3_path).name
         # if a file alias is present use it
@@ -134,7 +133,7 @@ class Item():
             file_name = next(iter(self._schema.fileToKeyMap))
 
         file_path = data_items_utils.create_file_path(self.key, file_name)
-        await filemanager.download_file(store=store, s3_object=s3_path, local_file_path=file_path)
+        await filemanager.download_file(store_id=store_id, s3_object=s3_path, local_file_path=file_path)
         return file_path
 
 

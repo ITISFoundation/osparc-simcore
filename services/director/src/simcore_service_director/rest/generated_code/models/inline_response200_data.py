@@ -15,7 +15,7 @@ class InlineResponse200Data(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, api_version: str=None, name: str=None, status: str=None, version: str=None):  # noqa: E501
+    def __init__(self, api_version=None, name=None, status=None, version=None):  # noqa: E501
         """InlineResponse200Data - a model defined in OpenAPI
 
         :param api_version: The api_version of this InlineResponse200Data.  # noqa: E501
@@ -28,10 +28,10 @@ class InlineResponse200Data(Model):
         :type version: str
         """
         self.openapi_types = {
-            'api_version': str,
-            'name': str,
-            'status': str,
-            'version': str
+            'api_version': 'str',
+            'name': 'str',
+            'status': 'str',
+            'version': 'str'
         }
 
         self.attribute_map = {
@@ -58,7 +58,7 @@ class InlineResponse200Data(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def api_version(self) -> str:
+    def api_version(self):
         """Gets the api_version of this InlineResponse200Data.
 
 
@@ -68,7 +68,7 @@ class InlineResponse200Data(Model):
         return self._api_version
 
     @api_version.setter
-    def api_version(self, api_version: str):
+    def api_version(self, api_version):
         """Sets the api_version of this InlineResponse200Data.
 
 
@@ -79,7 +79,7 @@ class InlineResponse200Data(Model):
         self._api_version = api_version
 
     @property
-    def name(self) -> str:
+    def name(self):
         """Gets the name of this InlineResponse200Data.
 
 
@@ -89,7 +89,7 @@ class InlineResponse200Data(Model):
         return self._name
 
     @name.setter
-    def name(self, name: str):
+    def name(self, name):
         """Sets the name of this InlineResponse200Data.
 
 
@@ -100,7 +100,7 @@ class InlineResponse200Data(Model):
         self._name = name
 
     @property
-    def status(self) -> str:
+    def status(self):
         """Gets the status of this InlineResponse200Data.
 
 
@@ -110,7 +110,7 @@ class InlineResponse200Data(Model):
         return self._status
 
     @status.setter
-    def status(self, status: str):
+    def status(self, status):
         """Sets the status of this InlineResponse200Data.
 
 
@@ -121,7 +121,7 @@ class InlineResponse200Data(Model):
         self._status = status
 
     @property
-    def version(self) -> str:
+    def version(self):
         """Gets the version of this InlineResponse200Data.
 
 
@@ -131,7 +131,7 @@ class InlineResponse200Data(Model):
         return self._version
 
     @version.setter
-    def version(self, version: str):
+    def version(self, version):
         """Sets the version of this InlineResponse200Data.
 
 

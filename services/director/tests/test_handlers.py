@@ -146,20 +146,23 @@ async def test_services_by_key_version_get(configure_registry_access, push_servi
         retrieved_services.append(services[0])
     _check_services(created_services, retrieved_services)
 
-async def _start_get_stop_services(push_services):
+async def _start_get_stop_services(push_services, user_id):
     fake_request = "fake request"
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, None, None, None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, None, None, None, None)
     
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", None, None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", None, None, None)
+
+    with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", None, None)
     
     with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", None)
 
     with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "ablah")
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah")
     
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
         web_response = await rest.handlers.running_interactive_services_get(fake_request, None)
@@ -172,7 +175,6 @@ async def _start_get_stop_services(push_services):
 
     with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
         web_response = await rest.handlers.running_interactive_services_delete(fake_request, "service_uuid")
-
     created_services = push_services(0,2)
     assert len(created_services) == 2
     for created_service in created_services:
@@ -181,7 +183,7 @@ async def _start_get_stop_services(push_services):
         service_tag = service_description["version"]
         service_uuid = str(uuid.uuid4())
         # start the service
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, service_key, service_uuid, service_tag)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, user_id, service_key, service_uuid, service_tag)
         assert web_response.status == 201
         assert web_response.content_type == "application/json"
         running_service_enveloped = json.loads(web_response.text)
@@ -200,10 +202,10 @@ async def _start_get_stop_services(push_services):
         assert web_response.text is None
 
 @pytest.mark.asyncio
-async def test_running_services_post_and_delete_no_swarm(configure_registry_access, push_services): #pylint: disable=W0613, W0621
+async def test_running_services_post_and_delete_no_swarm(configure_registry_access, push_services, user_id): #pylint: disable=W0613, W0621
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal error as there is no docker swarm"):
-        await _start_get_stop_services(push_services)
+        await _start_get_stop_services(push_services, user_id)
 
 @pytest.mark.asyncio
-async def test_running_services_post_and_delete(configure_registry_access, push_services, docker_swarm): #pylint: disable=W0613, W0621
-    await _start_get_stop_services(push_services)
+async def test_running_services_post_and_delete(configure_registry_access, push_services, docker_swarm, user_id): #pylint: disable=W0613, W0621
+    await _start_get_stop_services(push_services, user_id)

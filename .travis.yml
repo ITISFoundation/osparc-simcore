@@ -49,8 +49,9 @@ matrix:
         # wait for postgresql to shutdown
         - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
 
-      install:
+      install:        
         - pip install --upgrade pip wheel setuptools && pip3 --version
+        - pip3 install pytest-travis-fold
         - pip3 install packages/s3wrapper[test]
         - pip3 install packages/simcore-sdk[test]
         - pushd services/director; pip3 install -r requirements/ci.txt; popd
