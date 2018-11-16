@@ -6,7 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
-from .inline_response_default_error import InlineResponseDefaultError  # noqa: F401,E501
 from .. import util
 
 
@@ -16,7 +15,7 @@ class InlineResponseDefault(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: object=None, error: InlineResponseDefaultError=None):  # noqa: E501
+    def __init__(self, data=None, error=None):  # noqa: E501
         """InlineResponseDefault - a model defined in OpenAPI
 
         :param data: The data of this InlineResponseDefault.  # noqa: E501
@@ -25,8 +24,8 @@ class InlineResponseDefault(Model):
         :type error: InlineResponseDefaultError
         """
         self.openapi_types = {
-            'data': object,
-            'error': InlineResponseDefaultError
+            'data': 'object',
+            'error': 'InlineResponseDefaultError'
         }
 
         self.attribute_map = {
@@ -49,7 +48,7 @@ class InlineResponseDefault(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def data(self) -> object:
+    def data(self):
         """Gets the data of this InlineResponseDefault.
 
 
@@ -59,7 +58,7 @@ class InlineResponseDefault(Model):
         return self._data
 
     @data.setter
-    def data(self, data: object):
+    def data(self, data):
         """Sets the data of this InlineResponseDefault.
 
 
@@ -70,7 +69,7 @@ class InlineResponseDefault(Model):
         self._data = data
 
     @property
-    def error(self) -> InlineResponseDefaultError:
+    def error(self):
         """Gets the error of this InlineResponseDefault.
 
 
@@ -80,12 +79,14 @@ class InlineResponseDefault(Model):
         return self._error
 
     @error.setter
-    def error(self, error: InlineResponseDefaultError):
+    def error(self, error):
         """Sets the error of this InlineResponseDefault.
 
 
         :param error: The error of this InlineResponseDefault.
         :type error: InlineResponseDefaultError
         """
+        if error is None:
+            raise ValueError("Invalid value for `error`, must not be `None`")  # noqa: E501
 
         self._error = error

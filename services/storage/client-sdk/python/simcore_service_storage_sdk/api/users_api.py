@@ -879,6 +879,7 @@ class UsersApi(object):
         :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
+        :param str extra_location:
         :param str extra_source:
         :return: PresignedLinkEnveloped
                  If the method is called asynchronously,
@@ -903,6 +904,7 @@ class UsersApi(object):
         :param str file_id: (required)
         :param str location_id: (required)
         :param str user_id: (required)
+        :param str extra_location:
         :param str extra_source:
         :return: PresignedLinkEnveloped
                  If the method is called asynchronously,
@@ -911,7 +913,7 @@ class UsersApi(object):
 
         local_var_params = locals()
 
-        all_params = ['file_id', 'location_id', 'user_id', 'extra_source']  # noqa: E501
+        all_params = ['file_id', 'location_id', 'user_id', 'extra_location', 'extra_source']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -949,6 +951,8 @@ class UsersApi(object):
         query_params = []
         if 'user_id' in local_var_params:
             query_params.append(('user_id', local_var_params['user_id']))  # noqa: E501
+        if 'extra_location' in local_var_params:
+            query_params.append(('extra_location', local_var_params['extra_location']))  # noqa: E501
         if 'extra_source' in local_var_params:
             query_params.append(('extra_source', local_var_params['extra_source']))  # noqa: E501
 
