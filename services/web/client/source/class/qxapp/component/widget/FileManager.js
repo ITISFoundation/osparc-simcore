@@ -286,6 +286,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
         const locationId = selection.getLocation();
         let store = qxapp.data.Store.getInstance();
         store.addListenerOnce("DeleteFile", e => {
+          this.__reloadNodeTree();
           this.__reloadUserTree();
         }, this);
         store.deleteFile(locationId, fileId);
