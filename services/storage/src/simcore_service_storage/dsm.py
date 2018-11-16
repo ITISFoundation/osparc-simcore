@@ -53,7 +53,7 @@ async def _setup_dsm(app: web.Application):
     max_workers = main_cfg["max_workers"]
     pool = ThreadPoolExecutor(max_workers=max_workers)
 
-    s3_cfg = s3.get_config_s3()
+    s3_cfg = get_config_s3(app)
     bucket_name = s3_cfg["bucket_name"]
 
     dsm = DataStorageManager(s3_client, python27_exec, engine, loop, pool, bucket_name)
