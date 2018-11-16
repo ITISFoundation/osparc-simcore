@@ -37,6 +37,7 @@ services:
       - S3_ACCESS_KEY=<edit>
       - S3_SECRET_KEY=<edit>
       - S3_BUCKET_NAME=simcore
+      - STORAGE_ENDPOINT=storage:11111
       - PUBLISHED_HOST_NAME=osparc01.itis.ethz.ch
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
@@ -98,6 +99,7 @@ services:
       - S3_ACCESS_KEY=<edit>
       - S3_SECRET_KEY=<edit>
       - S3_BUCKET_NAME=simcore
+      - STORAGE_ENDPOINT=storage:11111
     volumes:
       - input:/home/scu/input
       - output:/home/scu/output
