@@ -22,13 +22,13 @@ qx.Class.define("qxapp.component.widget.FileManager", {
     treesLayout.add(nodeTree, {
       flex: 1
     });
-    nodeTree.getSelection().addListener("change", this.__itemSelected, this);
+    nodeTree.getSelection().addListener("change", this.__nodeItemSelected, this);
 
     let userTree = this.__userTree = this._createChildControlImpl("userTree");
     treesLayout.add(userTree, {
       flex: 1
     });
-    userTree.getSelection().addListener("change", this.__itemSelected, this);
+    userTree.getSelection().addListener("change", this.__userItemSelected, this);
 
     let selectedFileLayout = this._createChildControlImpl("selectedFileLayout");
     {
@@ -116,7 +116,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
 
     __reloadNodeTree: function() {
       let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__nodeTree);
-      filesTreePopulator.populateNodeFiles();
+      filesTreePopulator.populateNodeFiles(this.getNodeModel().getNodeId());
 
       let that = this;
       let delegate = this.__nodeTree.getDelegate();
@@ -190,30 +190,59 @@ qx.Class.define("qxapp.component.widget.FileManager", {
         if (e.supportsType("osparc-filePath")) {
           const from = e.getRelatedTarget();
           const to = e.getCurrentTarget();
+          let store = qxapp.data.Store.getInstance();
           console.log("Copy", from.getFileId(), "to", to.getPath());
+          store.copyFile(from.getLocation(), from.getFileId(), to.getLocation(), to.getPath());
+          store.addListenerOnce("FileCopied", ev => {
+            this.__reloadUserTree();
+          }, this);
         }
       }, this);
     },
 
-    __itemSelected: function() {
+    __nodeItemSelected: function() {
       let selectedItem = this.__nodeTree.getSelection();
       if (selectedItem.length < 1) {
         return;
       }
+      this.__userTree.resetSelection();
       selectedItem = selectedItem.toArray();
-      if (this.__isFile(selectedItem[0])) {
-        this.__selection = selectedItem[0].getFileId();
-        this.__selectedLabel.setValue(selectedItem[0].getFileId());
+      this.__itemSelected(selectedItem[0]);
+    },
+
+    __userItemSelected: function() {
+      let selectedItem = this.__userTree.getSelection();
+      if (selectedItem.length < 1) {
+        return;
+      }
+      this.__nodeTree.resetSelection();
+      selectedItem = selectedItem.toArray();
+      this.__itemSelected(selectedItem[0]);
+    },
+
+    __itemSelected: function(selectedItem) {
+      if (this.__isFile(selectedItem)) {
+        this.__selection = selectedItem;
+        this.__selectedLabel.setValue(selectedItem.getFileId());
       } else {
         this.__selection = null;
         this.__selectedLabel.setValue("");
       }
     },
 
+    __getItemSelected: function() {
+      let selectedItem = this.__selection;
+      if (selectedItem && this.__isFile(selectedItem)) {
+        return selectedItem;
+      }
+      return null;
+    },
+
     // Request to the server an download
     __retrieveURLAndDownload: function() {
-      if (this.__selection !== null) {
-        const fileId = this.__selection;
+      let selection = this.__getItemSelected();
+      if (selection) {
+        const fileId = selection.getFileId();
         let fileName = fileId.split("/");
         fileName = fileName[fileName.length-1];
         let store = qxapp.data.Store.getInstance();
@@ -225,7 +254,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
           }
         }, this);
         const download = true;
-        const locationId = 0;
+        const locationId = selection.getLocation();
         store.getPresginedLink(download, locationId, fileId);
       }
     },
@@ -237,7 +266,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
       xhr.onload = () => {
         console.log("onload", xhr);
         if (xhr.status == 200) {
-          var blob = new Blob(xhr.response);
+          let blob = new Blob([xhr.response]);
           let urlBlob = window.URL.createObjectURL(blob);
           let downloadAnchorNode = document.createElement("a");
           downloadAnchorNode.setAttribute("href", urlBlob);
@@ -250,7 +279,18 @@ qx.Class.define("qxapp.component.widget.FileManager", {
     },
 
     __deleteFile: function() {
-      console.log("Delete ", this.__selection);
+      let selection = this.__getItemSelected();
+      if (selection) {
+        console.log("Delete ", selection);
+        const fileId = selection.getFileId();
+        const locationId = selection.getLocation();
+        let store = qxapp.data.Store.getInstance();
+        store.addListenerOnce("DeleteFile", e => {
+          this.__reloadNodeTree();
+          this.__reloadUserTree();
+        }, this);
+        store.deleteFile(locationId, fileId);
+      }
     }
   }
 });

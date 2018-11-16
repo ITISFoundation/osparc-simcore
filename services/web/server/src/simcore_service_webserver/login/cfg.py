@@ -8,7 +8,7 @@ DEFAULTS = {
     'PASSWORD_LEN': (6, 30),
     'LOGIN_REDIRECT': '/',
     'LOGOUT_REDIRECT': '/',
-    'REGISTRATION_CONFIRMATION_REQUIRED': False, # TODO: activate when
+    'REGISTRATION_CONFIRMATION_REQUIRED': True, # TODO: activate when
 
     # TODO: add in configuration file as environ!
     'SMTP_SENDER': None,
