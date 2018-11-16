@@ -14,8 +14,8 @@ db:
     database: ${POSTGRES_DB}
     user: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
-    host: localhost
-    port: 5432
+    host: ${POSTGRES_HOST}
+    port: ${POSTGRES_PORT}
     minsize: 1
     maxsize: 5
     endpoint: ${POSTGRES_ENDPOINT}
