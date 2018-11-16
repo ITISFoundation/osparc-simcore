@@ -11,6 +11,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
+    this.__toolBar = this._createChildControlImpl("toolbar");
     this.__tree = this._createChildControlImpl("tree");
     this.populateTree();
 
@@ -37,11 +38,16 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
   },
 
   members: {
+    __toolBar: null,
     __tree: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "toolbar":
+          control = this.__buildToolbar();
+          this._add(control);
+          break;
         case "tree":
           control = this.__buildTree();
           this._add(control, {
@@ -51,6 +57,29 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __buildToolbar: function() {
+      const iconSize = 16;
+      let toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
+      let newButton = new qx.ui.toolbar.Button("New", "@FontAwesome5Solid/plus/"+iconSize);
+      toolbar.add(newButton);
+      let part2 = new qx.ui.toolbar.Part();
+      let deleteButton = new qx.ui.toolbar.Button("Delete", "@FontAwesome5Solid/trash/"+iconSize);
+      let renameButton = new qx.ui.toolbar.Button("Rename", "@FontAwesome5Solid/i-cursor/"+iconSize);
+      renameButton.addListener("execute", e => {
+        this.__renameItem();
+      }, this);
+      part2.add(deleteButton);
+      part2.add(renameButton);
+      toolbar.add(part2);
+      let part3 = new qx.ui.toolbar.Part();
+      let moveUpButton = new qx.ui.toolbar.Button("Up", "@FontAwesome5Solid/arrow-up/"+iconSize);
+      let moveDownButton = new qx.ui.toolbar.Button("Down", "@FontAwesome5Solid/arrow-down/"+iconSize);
+      part3.add(moveUpButton);
+      part3.add(moveDownButton);
+      toolbar.add(part3);
+      return toolbar;
     },
 
     __buildTree: function() {
