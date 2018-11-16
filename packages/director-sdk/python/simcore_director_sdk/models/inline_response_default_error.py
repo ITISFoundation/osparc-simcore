@@ -53,10 +53,8 @@ class InlineResponseDefaultError(object):
 
         if errors is not None:
             self.errors = errors
-        if message is not None:
-            self.message = message
-        if status is not None:
-            self.status = status
+        self.message = message
+        self.status = status
 
     @property
     def errors(self):
@@ -99,6 +97,8 @@ class InlineResponseDefaultError(object):
         :param message: The message of this InlineResponseDefaultError.  # noqa: E501
         :type: str
         """
+        if message is None:
+            raise ValueError("Invalid value for `message`, must not be `None`")  # noqa: E501
 
         self._message = message
 
@@ -122,6 +122,8 @@ class InlineResponseDefaultError(object):
         :param status: The status of this InlineResponseDefaultError.  # noqa: E501
         :type: int
         """
+        if status is None:
+            raise ValueError("Invalid value for `status`, must not be `None`")  # noqa: E501
 
         self._status = status
 

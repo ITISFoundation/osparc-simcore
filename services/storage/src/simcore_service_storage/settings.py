@@ -10,7 +10,7 @@ import logging
 from servicelib import application_keys
 
 from .__version__ import get_version_object
-from .settings_schema import CONFIG_SCHEMA #pylint: disable=W0611
+from .settings_schema import CONFIG_SCHEMA  # pylint: disable=W0611
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ TIMEOUT_IN_SECS = 2
 RESOURCE_KEY_OPENAPI = "oas3/v0"
 
 
-DEFAULT_CONFIG='config-prod.yaml'
+DEFAULT_CONFIG='docker-prod-config.yaml'
 
 ## BUILD ------------------------
 #  - Settings revealed at build/installation time
@@ -44,6 +44,8 @@ APP_OPENAPI_SPECS_KEY = application_keys.APP_OPENAPI_SPECS_KEY
 APP_DB_ENGINE_KEY  = 'db_engine'
 APP_DB_SESSION_KEY = 'db_session'
 
+APP_DSM_THREADPOOL = "dsm_threadpool"
+
 # CFG=configuration
 
 # RSC=resource
@@ -53,7 +55,7 @@ RSC_CONFIG_DIR_KEY  = "data"
 RSC_CONFIG_SCHEMA_KEY = RSC_CONFIG_DIR_KEY + "/config-schema-v1.json"
 
 # RQT=request
-
+RQT_DSM_KEY = "DSM"
 
 # RSP=response
 

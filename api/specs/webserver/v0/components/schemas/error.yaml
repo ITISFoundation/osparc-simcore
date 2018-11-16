@@ -3,7 +3,6 @@ ErrorEnveloped:
 #
   type: object
   required:
-    - data
     - error
   properties:
     data:
@@ -22,6 +21,7 @@ ErrorType:
 #     - e.g. metadata can serialize an exception in server that can be reproduced in client side
 #
   type: object
+  nullable: true
   properties:
     logs:
       description: log messages

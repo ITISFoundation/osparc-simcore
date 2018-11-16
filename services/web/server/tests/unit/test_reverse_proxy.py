@@ -16,12 +16,11 @@ import pytest
 from aiohttp import web
 from aiohttp.client_reqrep import ClientResponse
 from aiohttp.test_utils import TestClient
-from yarl import URL
-
-from simcore_service_webserver.application_keys import APP_CONFIG_KEY
+from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.reverse_proxy import setup_reverse_proxy
 from simcore_service_webserver.reverse_proxy.abc import ServiceResolutionPolicy
 from simcore_service_webserver.reverse_proxy.settings import PROXY_MOUNTPOINT
+from yarl import URL
 
 
 def create_backend_app(name, image, basepath):

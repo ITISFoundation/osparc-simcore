@@ -14,12 +14,10 @@ from tutils import Handlers
 
 @pytest.fixture
 def specs(here):
-    openapi_path = here / "data" / "v3.0" / "enveloped_responses.yaml"
+    openapi_path = here / "data" / "oas3" / "enveloped_responses.yaml"
     assert openapi_path.exists()
     specs = openapi.create_specs(openapi_path)
     return specs
-
-
 
 @pytest.fixture
 def client(loop, aiohttp_client, specs):
@@ -27,17 +25,18 @@ def client(loop, aiohttp_client, specs):
 
     # routes
     handlers = Handlers()
-    routes = create_routes_from_namespace(specs, handlers)
+    routes = create_routes_from_namespace(specs, handlers, strict=False)
 
     app.router.add_routes(routes)
 
     # validators
     app[APP_OPENAPI_SPECS_KEY] = specs
+    base = openapi.get_base_path(specs)
 
     # middlewares
-    app.middlewares.append(error_middleware_factory("/"))
-    app.middlewares.append(validate_middleware_factory("/"))
-    app.middlewares.append(envelope_middleware_factory("/"))
+    app.middlewares.append(error_middleware_factory(base))
+    app.middlewares.append(validate_middleware_factory(base))
+    app.middlewares.append(envelope_middleware_factory(base))
 
     return loop.run_until_complete(aiohttp_client(app))
 
@@ -53,8 +52,9 @@ def client(loop, aiohttp_client, specs):
     "/number",
     "/mixed"
 ])
-async def test_validate_handlers(path, client):
-    response = await client.get(path)
+async def test_validate_handlers(path, client, specs):
+    base = openapi.get_base_path(specs)
+    response = await client.get(base+path)
     payload = await response.json()
 
     assert is_enveloped(payload)

@@ -42,5 +42,16 @@ services:
         - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
       target: development
     volumes:
-      - ./sidecar:/home/scu/services/sidecar
+      - ./sidecar:/home/scu/services/sidecar      
+      - ./storage/client-sdk:/home/scu/services/storage/client-sdk
+      - ../packages:/home/scu/packages
+  #--------------------------------------------------------------------
+  storage:
+    image: services_storage:dev
+    build:
+      args:
+        - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
+      target: development
+    volumes:
+      - ./storage:/home/scu/services/storage
       - ../packages:/home/scu/packages

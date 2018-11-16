@@ -1,9 +1,10 @@
 import json
 import logging
 import os
+import shutil
 import time
 from pathlib import Path
-import shutil
+from typing import Dict
 
 import docker
 import pika
@@ -14,11 +15,13 @@ from sqlalchemy import and_, exc
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
-from simcore_sdk.nodeports import config as nodeports_config
+
+from simcore_sdk import node_ports
+
 
 from .utils import (DbSettings, DockerSettings, ExecutorSettings,
                     RabbitSettings, S3Settings, delete_contents,
-                    find_entry_point, is_node_ready)
+                    find_entry_point, is_node_ready, wrap_async_call)
 
 log = get_task_logger(__name__)
 log.setLevel(logging.DEBUG) # FIXME: set level via config
@@ -51,10 +54,10 @@ class Sidecar:
             else:
                 delete_contents(folder)
 
-    def _process_task_input(self, port, input_ports):
+    def _process_task_input(self, port:node_ports.Port, input_ports:Dict):
         # pylint: disable=too-many-branches
         port_name = port.key
-        port_value = port.get()
+        port_value = wrap_async_call(port.get())
         log.debug("PROCESSING %s %s", port_name, port_value)
         log.debug(type(port_value))
         if str(port.type).startswith("data:"):
@@ -79,9 +82,9 @@ class Sidecar:
             as port['key']. Both end up in /input/ of the container
         """
         log.debug('Input parsing for %s and node %s from container', self._task.project_id, self._task.internal_id)
-
-        from simcore_sdk.nodeports.nodeports import PORTS         
+         
         input_ports = dict()
+        PORTS = node_ports.ports()
         for port in PORTS.inputs:
             log.debug(port)
             self._process_task_input(port, input_ports)
@@ -172,7 +175,7 @@ class Sidecar:
             Files will be pushed to S3 with reference in db. output.json will be parsed
             and the db updated
         """
-        from simcore_sdk.nodeports.nodeports import PORTS     
+        PORTS = node_ports.ports()
         directory = self._executor.out_dir
         if not os.path.exists(directory):
             return
@@ -190,10 +193,10 @@ class Sidecar:
                             task_outputs = PORTS.outputs
                             for to in task_outputs:                                
                                 if to.key in output_ports.keys():
-                                    to.set(output_ports[to.key])                                    
+                                    wrap_async_call(to.set(output_ports[to.key]))
                     else:
                         port_key = name
-                        PORTS.outputs[port_key].set(Path(filepath))
+                        wrap_async_call(PORTS.outputs[port_key].set(Path(filepath)))
 
         except (OSError, IOError) as _e:
             logging.exception("Could not process output")
@@ -212,7 +215,7 @@ class Sidecar:
                     if not self._s3.client.upload_file(self._s3.bucket, object_name, filepath):
                         log.error("Error uploading file to S3")
 
-    def initialize(self, task):
+    def initialize(self, task, user_id):
         self._task = task
 
         HOMEDIR = str(Path.home())
@@ -232,8 +235,8 @@ class Sidecar:
         self._docker.env = ["{}_FOLDER=/{}".format(name.upper(), tail) for name, tail in tails.items()]
 
         # config nodeports
-        nodeports_config.PROJECT_ID = task.project_id
-        nodeports_config.NODE_UUID = task.node_id        
+        node_ports.node_config.USER_ID = user_id
+        node_ports.node_config.NODE_UUID = task.node_id        
 
     def preprocess(self):
         log.debug('Pre-Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
@@ -320,7 +323,7 @@ class Sidecar:
         finally:
             _session.close()
 
-    def inspect(self, celery_task, project_id, node_id):
+    def inspect(self, celery_task, user_id, project_id, node_id):
         log.debug("ENTERING inspect pipeline:node %s: %s", project_id, node_id)
         # import pdb; pdb.set_trace()
         next_task_nodes = []
@@ -371,7 +374,7 @@ class Sidecar:
                         _session.add(task)
                         _session.commit()
 
-                        self.initialize(task)
+                        self.initialize(task, user_id)
 
                         do_run = True
             else:

@@ -53,7 +53,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/error.yaml#/ErrorEnveloped'
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
   /node/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}:
     post:
       tags:

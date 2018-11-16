@@ -10,10 +10,7 @@ from aiohttp import web
 
 from servicelib import openapi
 
-from . import comp_backend_api, registry_api, rest_handlers
-from .application_keys import APP_OPENAPI_SPECS_KEY
-from .login import routes as auth_routes
-from .rest_settings import get_base_path
+from . import rest_handlers
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +18,7 @@ log = logging.getLogger(__name__)
 def create(specs: openapi.Spec) -> List[web.RouteDef]:
     # TODO: consider the case in which server creates routes for both v0 and v1!!!
     # TODO: should this be taken from servers instead?
-    BASEPATH = get_base_path(specs)
+    base_path = openapi.get_base_path(specs)
 
     log.debug("creating %s ", __name__)
     routes = []
@@ -31,30 +28,11 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     # diagnostics --
     path, handle = '/', rest_handlers.check_health
     operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+    routes.append( web.get(base_path+path, handle, name=operation_id) )
 
     path, handle = '/check/{action}', rest_handlers.check_action
     operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(BASEPATH+path, handle, name=operation_id) )
+    routes.append( web.post(base_path+path, handle, name=operation_id) )
 
-
-    # auth --
-    routes.extend( auth_routes.create(specs) )
-
-
-    # FIXME: temp fix for running pipelines
-    path, handle = '/services', registry_api.get_services
-    routes.append(web.get(BASEPATH+path, handle))
-    path, handle = '/start_pipeline', comp_backend_api.start_pipeline
-    routes.append(web.post(BASEPATH+path, handle))
 
     return routes
-
-
-def setup(app: web.Application):
-    valid_specs = app[APP_OPENAPI_SPECS_KEY]
-
-    assert valid_specs, "No API specs in app[%s]. Skipping setup %s "% (APP_OPENAPI_SPECS_KEY, __name__)
-
-    routes = create(valid_specs)
-    app.router.add_routes(routes)
