@@ -71,6 +71,8 @@ services:
       - SMTP_PORT=25
       - STORAGE_HOST=storage
       - STORAGE_PORT=8080
+      - APIHUB_HOST=apihub
+      - APIHUB_PORT=8043
     ports:
       - '9081:8080'
 
