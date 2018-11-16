@@ -722,8 +722,8 @@ qx.Class.define("qxapp.data.Store", {
       this.fireDataEvent("FakeFiles", data);
     },
 
-    getNodeFiles: function(prjId, nodeId) {
-      const filter = "?uuid_filter=" + nodeId;
+    getNodeFiles: function(nodeId) {
+      const filter = "?uuid_filter=" + encodeURIComponent(nodeId);
       let endPoint = "/storage/locations/0/files/metadata";
       endPoint += filter;
       let reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
@@ -741,7 +741,7 @@ qx.Class.define("qxapp.data.Store", {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log("Failed getting NodeF iles list", error);
+        console.log("Failed getting Node Files list", error);
       });
 
       reqFiles.send();
@@ -855,7 +855,8 @@ qx.Class.define("qxapp.data.Store", {
 
     deleteFile: function(locationId, fileUuid) {
       // Deletes File
-      const endPoint = "/storage/locations/" + locationId + "/files/" + fileUuid;
+      let parameters = encodeURIComponent(fileUuid);
+      const endPoint = "/storage/locations/" + locationId + "/files/" + parameters;
       let req = new qxapp.io.request.ApiRequest(endPoint, "DELETE");
 
       req.addListener("success", e => {
@@ -869,7 +870,7 @@ qx.Class.define("qxapp.data.Store", {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log("Failed getting Presgined Link", error);
+        console.log("Failed deleting file", error);
       });
 
       req.send();

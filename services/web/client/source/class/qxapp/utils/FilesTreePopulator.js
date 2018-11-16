@@ -10,7 +10,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
   members: {
     __tree: null,
 
-    populateNodeFiles: function(prjId, nodeId) {
+    populateNodeFiles: function(nodeId) {
       const treeName = "Node files";
       this.__resetTree(treeName);
       let store = qxapp.data.Store.getInstance();
@@ -21,7 +21,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
         this.__addTreeData(newChildren);
       }, this);
 
-      store.getNodeFiles(prjId, nodeId);
+      store.getNodeFiles(nodeId);
     },
 
     populateMyDocuments: function() {
@@ -50,6 +50,9 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       this.__tree.resetModel();
       let data = {
         label: treeName,
+        fileId: null,
+        location: null,
+        path: null,
         children: []
       };
       let emptyModel = qx.data.marshal.Json.createModel(data, true);
