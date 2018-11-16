@@ -9,6 +9,7 @@ qx.Class.define("qxapp.data.Store", {
     "MyDocuments": "qx.event.type.Event",
     "NodeFiles": "qx.event.type.Event",
     "PresginedLink": "qx.event.type.Event",
+    "FileCopied": "qx.event.type.Event",
     "DeleteFile": "qx.event.type.Event",
     "FakeFiles": "qx.event.type.Event"
   },
@@ -816,6 +817,37 @@ qx.Class.define("qxapp.data.Store", {
           error
         } = e.getTarget().getResponse();
         console.log("Failed getting Presgined Link", error);
+      });
+
+      req.send();
+    },
+
+    copyFile: function(fromLoc, fileUuid, toLoc, pathId) {
+      // "/v0/locations/1/files/{}?user_id={}&extra_location={}&extra_source={}".format(quote(datcore_uuid, safe=''),
+      let fileName = fileUuid.split("/");
+      fileName = fileName[fileName.length-1];
+      let endPoint = "/storage/locations/"+toLoc+"/files/";
+      let parameters = encodeURIComponent(pathId + "/" + fileName);
+      parameters += "?extra_location=";
+      parameters += fromLoc;
+      parameters += "&extra_source=";
+      parameters += encodeURIComponent(fileUuid);
+      endPoint += parameters;
+      let req = new qxapp.io.request.ApiRequest(endPoint, "PUT");
+
+      req.addListener("success", e => {
+        const {
+          data
+        } = e.getTarget().getResponse();
+        this.fireDataEvent("FileCopied", data);
+      }, this);
+
+      req.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        console.log(error);
+        console.log("Failed copying file", fileUuid, "to", pathId);
       });
 
       req.send();

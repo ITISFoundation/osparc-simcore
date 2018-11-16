@@ -190,7 +190,12 @@ qx.Class.define("qxapp.component.widget.FileManager", {
         if (e.supportsType("osparc-filePath")) {
           const from = e.getRelatedTarget();
           const to = e.getCurrentTarget();
+          let store = qxapp.data.Store.getInstance();
           console.log("Copy", from.getFileId(), "to", to.getPath());
+          store.copyFile(from.getLocation(), from.getFileId(), to.getLocation(), to.getPath());
+          store.addListenerOnce("FileCopied", ev => {
+            this.__reloadUserTree();
+          }, this);
         }
       }, this);
     },
