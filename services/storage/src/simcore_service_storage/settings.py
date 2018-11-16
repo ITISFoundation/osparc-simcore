@@ -44,8 +44,8 @@ APP_OPENAPI_SPECS_KEY = application_keys.APP_OPENAPI_SPECS_KEY
 APP_DB_ENGINE_KEY  = 'db_engine'
 APP_DB_SESSION_KEY = 'db_session'
 
-APP_DSM_THREADPOOL = "dsm_threadpool"
 APP_DSM_KEY = "DSM"
+APP_S3_KEY ="S3_CLIENT"
 
 # CFG=configuration
 

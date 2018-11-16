@@ -6,9 +6,8 @@ from urllib.parse import quote
 import pytest
 from aiohttp import web
 
-from simcore_service_storage.db import setup_db, is_service_responsive
+from simcore_service_storage.db import setup_db
 from simcore_service_storage.dsm import setup_dsm
-from simcore_service_storage.middlewares import dsm_middleware
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.session import setup_session
 from simcore_service_storage.s3 import setup_s3
@@ -29,7 +28,7 @@ def parse_db(dsm_mockup_db):
     return id_file_count, id_name_map
 
 @pytest.fixture
-async def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postgres_service, minio_service):
+def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postgres_service, minio_service):
     app = web.Application()
 
     max_workers = 4
@@ -44,12 +43,9 @@ async def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postg
     # fake main
     app[APP_CONFIG_KEY] = { 'main': server_kwargs, 'postgres' : postgres_kwargs, "s3" : s3_kwargs } # Fake config
 
-    app.middlewares.append(dsm_middleware)
+    #app.middlewares.append(dsm_middleware)
 
     setup_db(app)
-
-    #assert await is_service_responsive(app)
-
     setup_session(app)
     setup_rest(app)
     setup_dsm(app)
