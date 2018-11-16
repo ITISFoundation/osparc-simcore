@@ -11,7 +11,8 @@ import logging
 from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.rest_routing import create_routes_from_namespace
+from servicelib.rest_routing import (iter_path_operations,
+                                     map_handlers_with_operations)
 
 from . import computation_api
 from .computation_config import CONFIG_SECTION_NAME, SERVICE_NAME
@@ -39,7 +40,11 @@ def setup(app: web.Application):
     # app.on_cleanup.append(unsubscribe)
 
     specs = app[APP_OPENAPI_SPECS_KEY]
-    routes = create_routes_from_namespace(specs, computation_api)
+    routes = map_handlers_with_operations(
+        {'start_pipeline': computation_api.start_pipeline },
+        filter(lambda o: "/computation" in o[1], iter_path_operations(specs)),
+        strict=True
+    )
     app.router.add_routes(routes)
 
 # alias

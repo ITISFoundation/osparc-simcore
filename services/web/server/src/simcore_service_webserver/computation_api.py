@@ -15,7 +15,6 @@ from sqlalchemy import and_, create_engine
 from sqlalchemy.orm import sessionmaker
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.rest_utils import extract_and_validate
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_director_sdk.rest import ApiException
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
