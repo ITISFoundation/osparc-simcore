@@ -11,7 +11,6 @@ from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from . import storage_routes
 from .storage_config import APP_STORAGE_SESSION_KEY, get_config
 
-
 log = logging.getLogger(__name__)
 
 async def storage_client_ctx(app: web.Application):

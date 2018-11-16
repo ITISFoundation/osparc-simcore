@@ -34,6 +34,7 @@ services:
       - S3_ACCESS_KEY=12345678
       - S3_SECRET_KEY=12345678
       - S3_BUCKET_NAME=simcore
+      - STORAGE_ENDPOINT=storage:11111
       - PUBLISHED_HOST_NAME=localhost
   webserver:
     #image: masu.speag.com/simcore/workbench/webserver:2.3
@@ -95,6 +96,7 @@ services:
       - S3_ACCESS_KEY=12345678
       - S3_SECRET_KEY=12345678
       - S3_BUCKET_NAME=simcore
+      - STORAGE_ENDPOINT=storage:11111
   minio:
     environment:
       - MINIO_ACCESS_KEY=12345678

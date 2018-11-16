@@ -6,7 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
-from .simcore_node import SimcoreNode  # noqa: F401,E501
 from .. import util
 
 
@@ -16,7 +15,7 @@ class InlineResponse2001(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: List[SimcoreNode]=None, error: object=None):  # noqa: E501
+    def __init__(self, data=None, error=None):  # noqa: E501
         """InlineResponse2001 - a model defined in OpenAPI
 
         :param data: The data of this InlineResponse2001.  # noqa: E501
@@ -25,8 +24,8 @@ class InlineResponse2001(Model):
         :type error: object
         """
         self.openapi_types = {
-            'data': List[SimcoreNode],
-            'error': object
+            'data': 'List[SimcoreNode]',
+            'error': 'object'
         }
 
         self.attribute_map = {
@@ -49,7 +48,7 @@ class InlineResponse2001(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def data(self) -> List[SimcoreNode]:
+    def data(self):
         """Gets the data of this InlineResponse2001.
 
 
@@ -59,18 +58,20 @@ class InlineResponse2001(Model):
         return self._data
 
     @data.setter
-    def data(self, data: List[SimcoreNode]):
+    def data(self, data):
         """Sets the data of this InlineResponse2001.
 
 
         :param data: The data of this InlineResponse2001.
         :type data: List[SimcoreNode]
         """
+        if data is None:
+            raise ValueError("Invalid value for `data`, must not be `None`")  # noqa: E501
 
         self._data = data
 
     @property
-    def error(self) -> object:
+    def error(self):
         """Gets the error of this InlineResponse2001.
 
 
@@ -80,7 +81,7 @@ class InlineResponse2001(Model):
         return self._error
 
     @error.setter
-    def error(self, error: object):
+    def error(self, error):
         """Sets the error of this InlineResponse2001.
 
 

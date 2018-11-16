@@ -11,12 +11,6 @@ from ._schema_items_list import SchemaItemsList
 
 log = logging.getLogger(__name__)
 
-def _check_payload_schema(payloads, schemas):
-    if len(payloads) != len(schemas):
-        if len(payloads) > len(schemas):
-            raise exceptions.InvalidProtocolError(None, msg="More payload than schemas!")
-
-
 #pylint: disable=C0111, R0902
 class Nodeports:
     """This class allow the client to access the inputs and outputs assigned to the node."""
@@ -30,33 +24,35 @@ class Nodeports:
 
         if not input_schemas:
             input_schemas = SchemaItemsList()
-        self._input_schemas = input_schemas
         if not output_schemas:
             output_schemas = SchemaItemsList()
-        self._output_schemas = output_schemas
-
         if input_payloads is None:
             input_payloads = DataItemsList()
-        self._inputs_payloads = input_payloads
-        _check_payload_schema(self._inputs_payloads, self._input_schemas)
-
         if outputs_payloads is None:
             outputs_payloads = DataItemsList()
-        self._outputs_payloads = outputs_payloads
-        _check_payload_schema(self._outputs_payloads, self._output_schemas)
 
-
-        self._inputs = ItemsList(self._input_schemas, self._inputs_payloads)
-        self._outputs = ItemsList(self._output_schemas, self._outputs_payloads)
-        self._inputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
-        self._outputs.change_notifier = self.save_to_json
-        self._outputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
+        self._copy_schemas_payloads(input_schemas, output_schemas, input_payloads, outputs_payloads)
 
         self.db_mgr = None
         self.autoread = False
         self.autowrite = False
 
         log.debug("Initialised Nodeports object with version %s, inputs %s and outputs %s", version, input_payloads, outputs_payloads)
+
+    def _copy_schemas_payloads(self, input_schemas: SchemaItemsList, output_schemas: SchemaItemsList, input_payloads: DataItemsList, outputs_payloads: DataItemsList):
+        self._input_schemas = input_schemas
+        self._output_schemas = output_schemas
+        self._inputs_payloads = input_payloads
+        self._outputs_payloads = outputs_payloads
+
+        self._inputs = ItemsList(self._input_schemas, self._inputs_payloads)
+        self._outputs = ItemsList(self._output_schemas, self._outputs_payloads)
+
+        self._inputs.change_notifier = self.save_to_json
+        self._inputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
+
+        self._outputs.change_notifier = self.save_to_json
+        self._outputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
 
     @property
     def inputs(self) -> ItemsList:
@@ -117,19 +113,10 @@ class Nodeports:
         log.debug("Updating json configuration")
         if not self.db_mgr:
             raise exceptions.NodeportsException("db manager is not initialised")
-        updated_nodeports = serialization.create_from_json(self.db_mgr)
+        upd_node = serialization.create_from_json(self.db_mgr)
         # copy from updated nodeports
         # pylint: disable=W0212
-        self._input_schemas = updated_nodeports._input_schemas
-        self._output_schemas = updated_nodeports._output_schemas
-        self._inputs_payloads = updated_nodeports._inputs_payloads
-        self._outputs_payloads = updated_nodeports._outputs_payloads
-
-        self._inputs = ItemsList(self._input_schemas, self._inputs_payloads)
-        self._outputs = ItemsList(self._output_schemas, self._outputs_payloads)
-        self._inputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
-        self._outputs.change_notifier = self.save_to_json
-        self._outputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
+        self._copy_schemas_payloads(upd_node._input_schemas, upd_node._output_schemas, upd_node._inputs_payloads, upd_node._outputs_payloads)
         log.debug("Updated json configuration")
 
     def save_to_json(self):

@@ -1,3 +1,4 @@
+import asyncio
 import argparse
 import json
 import sys
@@ -16,7 +17,7 @@ from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.config.s3 import Config as s3_config
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
-
+from simcore_sdk import node_ports
 
 class DbSettings:
     def __init__(self):
@@ -51,10 +52,19 @@ def create_dummy_table(number_of_rows, number_of_columns):
     df = pd.DataFrame(fullmatrix)
     return df
 
-def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number_of_columns: int, number_of_files: int, sep: str ="\t"): #pylint: disable=W0613
-    with json_configuration_file_path.open() as file_pointer:
-        json_configuration = file_pointer.read()
+async def create_dummy(json_configuration_file_path: Path, 
+                        number_of_rows: int, 
+                        number_of_columns: int, 
+                        number_of_files: int,  #pylint: disable=W0613
+                        sep: str ="\t"):
     
+    
+    with json_configuration_file_path.open() as file_pointer:
+        configuration = json.load(file_pointer)
+    
+    # init s3
+    init_s3()
+
     # set up db
     db = init_db()
     new_Pipeline = ComputationalPipeline()
@@ -62,13 +72,18 @@ def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number
     db.session.commit()
 
     node_uuid = str(uuid.uuid4())
-    # correct configuration with node uuid
-    json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", node_uuid)
-    configuration = json.loads(json_configuration)
-        
-
-    # init s3
-    s3 = init_s3()
+    # now create the node in the db with links to S3
+    new_Node = ComputationalTask(project_id=new_Pipeline.project_id, 
+                                node_id=node_uuid, 
+                                schema=configuration["schema"], 
+                                inputs=configuration["inputs"], 
+                                outputs=configuration["outputs"])
+    db.session.add(new_Node)
+    db.session.commit()
+    
+    # set up node_ports
+    node_ports.node_config.NODE_UUID = node_uuid
+    PORTS = node_ports.ports()
     # push the file to the S3 for each input item
     for key, input_item in configuration["schema"]["inputs"].items():
         if str(input_item["type"]).startswith("data:"):
@@ -81,36 +96,35 @@ def create_dummy(json_configuration_file_path: Path, number_of_rows: int, number
                 df.to_csv(path_or_buf=file_pointer, sep=sep, header=False, index=False)        
 
             # upload to S3
-            s3_object_name = Path(str(new_Pipeline.project_id), node_uuid, Path(temp_file.name).name)
-            s3.client.upload_file(s3.bucket, s3_object_name.as_posix(), temp_file.name)
-            # add to the payload
-            configuration["inputs"][key] = {"store":"s3-z43", "path":s3_object_name.as_posix()}
+            await PORTS.inputs[key].set(Path(temp_file.name))
 
     Path(temp_file.name).unlink()
 
-    # now create the node in the db with links to S3
-    new_Node = ComputationalTask(project_id=new_Pipeline.project_id, node_id=node_uuid, schema=configuration["schema"], inputs=configuration["inputs"], outputs=configuration["outputs"])
-    db.session.add(new_Node)
-    db.session.commit()
+    
     # print the node uuid so that it can be set as env variable from outside
     print("{pipelineid},{nodeuuid}".format(pipelineid=str(new_Node.project_id), nodeuuid=node_uuid))
 
-parser = argparse.ArgumentParser(description="Initialise an oSparc database/S3 with fake data for development.")
-parser.add_argument("portconfig", help="The path to the port configuration file (json format)", type=Path)
-parser.add_argument("rows", help="The number of rows in each table", type=int)
-parser.add_argument("columns", help="The number of columns in each table", type=int)
-parser.add_argument("files", help="The number of tables in case of folder-url type", type=int)
-parser.add_argument("separator", help="The value separator to be used, for example tab or space or any single character", type=str)
-args = sys.argv[1:]
-options = parser.parse_args(args)
-if "tab" in options.separator:
-    separator = "\t"
-elif "space" in options.separator:
-    separator = " "
-else:
-    separator = options.separator
-create_dummy(options.portconfig, 
-    number_of_rows=options.rows, 
-    number_of_columns=options.columns, 
-    number_of_files=options.files, 
-    sep=separator)
+def main():
+    parser = argparse.ArgumentParser(description="Initialise an oSparc database/S3 with fake data for development.")
+    parser.add_argument("portconfig", help="The path to the port configuration file (json format)", type=Path)
+    parser.add_argument("rows", help="The number of rows in each table", type=int)
+    parser.add_argument("columns", help="The number of columns in each table", type=int)
+    parser.add_argument("files", help="The number of tables in case of folder-url type", type=int)
+    parser.add_argument("separator", help="The value separator to be used, for example tab or space or any single character", type=str)
+    args = sys.argv[1:]
+    options = parser.parse_args(args)
+    if "tab" in options.separator:
+        separator = "\t"
+    elif "space" in options.separator:
+        separator = " "
+    else:
+        separator = options.separator    
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(create_dummy(options.portconfig, 
+        number_of_rows=options.rows, 
+        number_of_columns=options.columns, 
+        number_of_files=options.files, 
+        sep=separator))
+
+if __name__ == "__main__":
+    main()

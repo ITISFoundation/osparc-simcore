@@ -69,24 +69,15 @@ class SimcoreNode(object):
         self._version = None
         self.discriminator = None
 
-        if authors is not None:
-            self.authors = authors
-        if contact is not None:
-            self.contact = contact
-        if description is not None:
-            self.description = description
-        if inputs is not None:
-            self.inputs = inputs
-        if key is not None:
-            self.key = key
-        if name is not None:
-            self.name = name
-        if outputs is not None:
-            self.outputs = outputs
-        if type is not None:
-            self.type = type
-        if version is not None:
-            self.version = version
+        self.authors = authors
+        self.contact = contact
+        self.description = description
+        self.inputs = inputs
+        self.key = key
+        self.name = name
+        self.outputs = outputs
+        self.type = type
+        self.version = version
 
     @property
     def authors(self):
@@ -106,6 +97,8 @@ class SimcoreNode(object):
         :param authors: The authors of this SimcoreNode.  # noqa: E501
         :type: list[InlineResponse2001Authors]
         """
+        if authors is None:
+            raise ValueError("Invalid value for `authors`, must not be `None`")  # noqa: E501
 
         self._authors = authors
 
@@ -129,6 +122,8 @@ class SimcoreNode(object):
         :param contact: The contact of this SimcoreNode.  # noqa: E501
         :type: str
         """
+        if contact is None:
+            raise ValueError("Invalid value for `contact`, must not be `None`")  # noqa: E501
 
         self._contact = contact
 
@@ -152,6 +147,8 @@ class SimcoreNode(object):
         :param description: The description of this SimcoreNode.  # noqa: E501
         :type: str
         """
+        if description is None:
+            raise ValueError("Invalid value for `description`, must not be `None`")  # noqa: E501
 
         self._description = description
 
@@ -175,6 +172,8 @@ class SimcoreNode(object):
         :param inputs: The inputs of this SimcoreNode.  # noqa: E501
         :type: object
         """
+        if inputs is None:
+            raise ValueError("Invalid value for `inputs`, must not be `None`")  # noqa: E501
 
         self._inputs = inputs
 
@@ -198,6 +197,8 @@ class SimcoreNode(object):
         :param key: The key of this SimcoreNode.  # noqa: E501
         :type: str
         """
+        if key is None:
+            raise ValueError("Invalid value for `key`, must not be `None`")  # noqa: E501
         if key is not None and not re.search('^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$', key):  # noqa: E501
             raise ValueError("Invalid value for `key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$/`")  # noqa: E501
 
@@ -223,6 +224,8 @@ class SimcoreNode(object):
         :param name: The name of this SimcoreNode.  # noqa: E501
         :type: str
         """
+        if name is None:
+            raise ValueError("Invalid value for `name`, must not be `None`")  # noqa: E501
 
         self._name = name
 
@@ -246,6 +249,8 @@ class SimcoreNode(object):
         :param outputs: The outputs of this SimcoreNode.  # noqa: E501
         :type: object
         """
+        if outputs is None:
+            raise ValueError("Invalid value for `outputs`, must not be `None`")  # noqa: E501
 
         self._outputs = outputs
 
@@ -269,6 +274,8 @@ class SimcoreNode(object):
         :param type: The type of this SimcoreNode.  # noqa: E501
         :type: str
         """
+        if type is None:
+            raise ValueError("Invalid value for `type`, must not be `None`")  # noqa: E501
         allowed_values = ["computational", "dynamic"]  # noqa: E501
         if type not in allowed_values:
             raise ValueError(
@@ -298,8 +305,10 @@ class SimcoreNode(object):
         :param version: The version of this SimcoreNode.  # noqa: E501
         :type: str
         """
+        if version is None:
+            raise ValueError("Invalid value for `version`, must not be `None`")  # noqa: E501
         if version is not None and not re.search('^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$', version):  # noqa: E501
-            raise ValueError("Invalid value for `version`, must be a follow pattern or equal to `/^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$/`")  # noqa: E501
+            raise ValueError(r"Invalid value for `version`, must be a follow pattern or equal to `/^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$/`")  # noqa: E501
 
         self._version = version
 

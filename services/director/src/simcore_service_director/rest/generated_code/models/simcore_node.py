@@ -6,8 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from .base_model_ import Model
-from .inline_response2001_authors import InlineResponse2001Authors  # noqa: F401,E501
-import re  # noqa: F401,E501
 from .. import util
 
 
@@ -17,7 +15,7 @@ class SimcoreNode(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, authors: List[InlineResponse2001Authors]=None, contact: str=None, description: str=None, inputs: object=None, key: str=None, name: str=None, outputs: object=None, type: str=None, version: str=None):  # noqa: E501
+    def __init__(self, authors=None, contact=None, description=None, inputs=None, key=None, name=None, outputs=None, type=None, version=None):  # noqa: E501
         """SimcoreNode - a model defined in OpenAPI
 
         :param authors: The authors of this SimcoreNode.  # noqa: E501
@@ -40,15 +38,15 @@ class SimcoreNode(Model):
         :type version: str
         """
         self.openapi_types = {
-            'authors': List[InlineResponse2001Authors],
-            'contact': str,
-            'description': str,
-            'inputs': object,
-            'key': str,
-            'name': str,
-            'outputs': object,
-            'type': str,
-            'version': str
+            'authors': 'List[InlineResponse2001Authors]',
+            'contact': 'str',
+            'description': 'str',
+            'inputs': 'object',
+            'key': 'str',
+            'name': 'str',
+            'outputs': 'object',
+            'type': 'str',
+            'version': 'str'
         }
 
         self.attribute_map = {
@@ -85,7 +83,7 @@ class SimcoreNode(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def authors(self) -> List[InlineResponse2001Authors]:
+    def authors(self):
         """Gets the authors of this SimcoreNode.
 
 
@@ -95,18 +93,20 @@ class SimcoreNode(Model):
         return self._authors
 
     @authors.setter
-    def authors(self, authors: List[InlineResponse2001Authors]):
+    def authors(self, authors):
         """Sets the authors of this SimcoreNode.
 
 
         :param authors: The authors of this SimcoreNode.
         :type authors: List[InlineResponse2001Authors]
         """
+        if authors is None:
+            raise ValueError("Invalid value for `authors`, must not be `None`")  # noqa: E501
 
         self._authors = authors
 
     @property
-    def contact(self) -> str:
+    def contact(self):
         """Gets the contact of this SimcoreNode.
 
         email to correspond to the authors about the node  # noqa: E501
@@ -117,7 +117,7 @@ class SimcoreNode(Model):
         return self._contact
 
     @contact.setter
-    def contact(self, contact: str):
+    def contact(self, contact):
         """Sets the contact of this SimcoreNode.
 
         email to correspond to the authors about the node  # noqa: E501
@@ -125,11 +125,13 @@ class SimcoreNode(Model):
         :param contact: The contact of this SimcoreNode.
         :type contact: str
         """
+        if contact is None:
+            raise ValueError("Invalid value for `contact`, must not be `None`")  # noqa: E501
 
         self._contact = contact
 
     @property
-    def description(self) -> str:
+    def description(self):
         """Gets the description of this SimcoreNode.
 
         human readable description of the purpose of the node  # noqa: E501
@@ -140,7 +142,7 @@ class SimcoreNode(Model):
         return self._description
 
     @description.setter
-    def description(self, description: str):
+    def description(self, description):
         """Sets the description of this SimcoreNode.
 
         human readable description of the purpose of the node  # noqa: E501
@@ -148,11 +150,13 @@ class SimcoreNode(Model):
         :param description: The description of this SimcoreNode.
         :type description: str
         """
+        if description is None:
+            raise ValueError("Invalid value for `description`, must not be `None`")  # noqa: E501
 
         self._description = description
 
     @property
-    def inputs(self) -> object:
+    def inputs(self):
         """Gets the inputs of this SimcoreNode.
 
         definition of the inputs of this node  # noqa: E501
@@ -163,7 +167,7 @@ class SimcoreNode(Model):
         return self._inputs
 
     @inputs.setter
-    def inputs(self, inputs: object):
+    def inputs(self, inputs):
         """Sets the inputs of this SimcoreNode.
 
         definition of the inputs of this node  # noqa: E501
@@ -171,11 +175,13 @@ class SimcoreNode(Model):
         :param inputs: The inputs of this SimcoreNode.
         :type inputs: object
         """
+        if inputs is None:
+            raise ValueError("Invalid value for `inputs`, must not be `None`")  # noqa: E501
 
         self._inputs = inputs
 
     @property
-    def key(self) -> str:
+    def key(self):
         """Gets the key of this SimcoreNode.
 
         distinctive name for the node based on the docker registry path  # noqa: E501
@@ -186,7 +192,7 @@ class SimcoreNode(Model):
         return self._key
 
     @key.setter
-    def key(self, key: str):
+    def key(self, key):
         """Sets the key of this SimcoreNode.
 
         distinctive name for the node based on the docker registry path  # noqa: E501
@@ -194,13 +200,15 @@ class SimcoreNode(Model):
         :param key: The key of this SimcoreNode.
         :type key: str
         """
-        if key is not None and not re.search('^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$', key):  # noqa: E501
+        if key is None:
+            raise ValueError("Invalid value for `key`, must not be `None`")  # noqa: E501
+        if key is not None and not re.search(r'^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$', key):  # noqa: E501
             raise ValueError("Invalid value for `key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$/`")  # noqa: E501
 
         self._key = key
 
     @property
-    def name(self) -> str:
+    def name(self):
         """Gets the name of this SimcoreNode.
 
         short, human readable name for the node  # noqa: E501
@@ -211,7 +219,7 @@ class SimcoreNode(Model):
         return self._name
 
     @name.setter
-    def name(self, name: str):
+    def name(self, name):
         """Sets the name of this SimcoreNode.
 
         short, human readable name for the node  # noqa: E501
@@ -219,11 +227,13 @@ class SimcoreNode(Model):
         :param name: The name of this SimcoreNode.
         :type name: str
         """
+        if name is None:
+            raise ValueError("Invalid value for `name`, must not be `None`")  # noqa: E501
 
         self._name = name
 
     @property
-    def outputs(self) -> object:
+    def outputs(self):
         """Gets the outputs of this SimcoreNode.
 
         definition of the outputs of this node  # noqa: E501
@@ -234,7 +244,7 @@ class SimcoreNode(Model):
         return self._outputs
 
     @outputs.setter
-    def outputs(self, outputs: object):
+    def outputs(self, outputs):
         """Sets the outputs of this SimcoreNode.
 
         definition of the outputs of this node  # noqa: E501
@@ -242,11 +252,13 @@ class SimcoreNode(Model):
         :param outputs: The outputs of this SimcoreNode.
         :type outputs: object
         """
+        if outputs is None:
+            raise ValueError("Invalid value for `outputs`, must not be `None`")  # noqa: E501
 
         self._outputs = outputs
 
     @property
-    def type(self) -> str:
+    def type(self):
         """Gets the type of this SimcoreNode.
 
         service type  # noqa: E501
@@ -257,7 +269,7 @@ class SimcoreNode(Model):
         return self._type
 
     @type.setter
-    def type(self, type: str):
+    def type(self, type):
         """Sets the type of this SimcoreNode.
 
         service type  # noqa: E501
@@ -275,7 +287,7 @@ class SimcoreNode(Model):
         self._type = type
 
     @property
-    def version(self) -> str:
+    def version(self):
         """Gets the version of this SimcoreNode.
 
         semantic version number  # noqa: E501
@@ -286,7 +298,7 @@ class SimcoreNode(Model):
         return self._version
 
     @version.setter
-    def version(self, version: str):
+    def version(self, version):
         """Sets the version of this SimcoreNode.
 
         semantic version number  # noqa: E501
@@ -294,7 +306,9 @@ class SimcoreNode(Model):
         :param version: The version of this SimcoreNode.
         :type version: str
         """
-        if version is not None and not re.search('^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$', version):  # noqa: E501
+        if version is None:
+            raise ValueError("Invalid value for `version`, must not be `None`")  # noqa: E501
+        if version is not None and not re.search(r'^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$', version):  # noqa: E501
             raise ValueError("Invalid value for `version`, must be a follow pattern or equal to `/^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$/`")  # noqa: E501
 
         self._version = version

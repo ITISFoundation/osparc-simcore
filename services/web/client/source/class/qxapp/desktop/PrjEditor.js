@@ -286,14 +286,16 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       const saveContainers = false;
       const savePosition = false;
       let currentPipeline = this.getProjectModel().getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
-      let req = new qxapp.io.request.ApiRequest("/start_pipeline", "POST");
+      let url = "/computation/pipeline/" + encodeURIComponent(this.getProjectModel().getUuid()) + "/start";
+
+      let req = new qxapp.io.request.ApiRequest(url, "POST");
       let data = {};
       data["workbench"] = currentPipeline;
-      data["project_id"] = this.getProjectModel().getUuid();
-      console.log(data);
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
+      console.log("starting pipeline: " + url + "\n" + data);
+
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
         this.setCanStart(true);

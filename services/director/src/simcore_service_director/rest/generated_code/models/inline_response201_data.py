@@ -15,7 +15,7 @@ class InlineResponse201Data(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, entry_point: str=None, published_port: int=None, service_uuid: str=None):  # noqa: E501
+    def __init__(self, entry_point=None, published_port=None, service_uuid=None):  # noqa: E501
         """InlineResponse201Data - a model defined in OpenAPI
 
         :param entry_point: The entry_point of this InlineResponse201Data.  # noqa: E501
@@ -26,9 +26,9 @@ class InlineResponse201Data(Model):
         :type service_uuid: str
         """
         self.openapi_types = {
-            'entry_point': str,
-            'published_port': int,
-            'service_uuid': str
+            'entry_point': 'str',
+            'published_port': 'int',
+            'service_uuid': 'str'
         }
 
         self.attribute_map = {
@@ -53,7 +53,7 @@ class InlineResponse201Data(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def entry_point(self) -> str:
+    def entry_point(self):
         """Gets the entry_point of this InlineResponse201Data.
 
         The entry point where the service provides its interface if specified  # noqa: E501
@@ -64,7 +64,7 @@ class InlineResponse201Data(Model):
         return self._entry_point
 
     @entry_point.setter
-    def entry_point(self, entry_point: str):
+    def entry_point(self, entry_point):
         """Sets the entry_point of this InlineResponse201Data.
 
         The entry point where the service provides its interface if specified  # noqa: E501
@@ -76,7 +76,7 @@ class InlineResponse201Data(Model):
         self._entry_point = entry_point
 
     @property
-    def published_port(self) -> int:
+    def published_port(self):
         """Gets the published_port of this InlineResponse201Data.
 
         The ports where the service provides its interface  # noqa: E501
@@ -87,7 +87,7 @@ class InlineResponse201Data(Model):
         return self._published_port
 
     @published_port.setter
-    def published_port(self, published_port: int):
+    def published_port(self, published_port):
         """Sets the published_port of this InlineResponse201Data.
 
         The ports where the service provides its interface  # noqa: E501
@@ -95,13 +95,15 @@ class InlineResponse201Data(Model):
         :param published_port: The published_port of this InlineResponse201Data.
         :type published_port: int
         """
+        if published_port is None:
+            raise ValueError("Invalid value for `published_port`, must not be `None`")  # noqa: E501
         if published_port is not None and published_port < 1:  # noqa: E501
             raise ValueError("Invalid value for `published_port`, must be a value greater than or equal to `1`")  # noqa: E501
 
         self._published_port = published_port
 
     @property
-    def service_uuid(self) -> str:
+    def service_uuid(self):
         """Gets the service_uuid of this InlineResponse201Data.
 
         The UUID attached to this service  # noqa: E501
@@ -112,7 +114,7 @@ class InlineResponse201Data(Model):
         return self._service_uuid
 
     @service_uuid.setter
-    def service_uuid(self, service_uuid: str):
+    def service_uuid(self, service_uuid):
         """Sets the service_uuid of this InlineResponse201Data.
 
         The UUID attached to this service  # noqa: E501
@@ -120,5 +122,7 @@ class InlineResponse201Data(Model):
         :param service_uuid: The service_uuid of this InlineResponse201Data.
         :type service_uuid: str
         """
+        if service_uuid is None:
+            raise ValueError("Invalid value for `service_uuid`, must not be `None`")  # noqa: E501
 
         self._service_uuid = service_uuid
