@@ -1,5 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://simcore.io/api/specs/webserver/v0/components/schemas/project-v0.0.1.json",
   "title": "simcore project",
   "description": "Description of a simcore project",
   "type": "object",
