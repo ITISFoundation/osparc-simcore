@@ -18,7 +18,7 @@ async def _request_storage(request: web.Request, method: str):
     origin = URL.build(scheme='http', host=cfg['host'], port=cfg['port'])
     userid = request[RQT_USERID_KEY]
 
-    url = origin.with_path( "/".join([ p for p in request.url.parts if p not in ['/', 'storage']])) \
+    url = origin.with_path( "/".join([ p for p in request.url.raw_parts if p not in ['/', 'storage']])) \
                         .with_query(request.query) \
                         .update_query(user_id=userid)
 

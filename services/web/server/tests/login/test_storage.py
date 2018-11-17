@@ -34,7 +34,7 @@ def storage_server(loop, aiohttp_server, app_cfg):
             'data': [{"user_id": int(query["user_id"])}, ]
         })
 
-    async def _get_dlink(request: web.Request):
+    async def _get_filemeta(request: web.Request):
         assert not request.has_body
 
         query = request.query
@@ -44,7 +44,7 @@ def storage_server(loop, aiohttp_server, app_cfg):
         assert query["user_id"], "Expected user id"
 
         return web.json_response({
-            'data': [{"user_id": int(query["user_id"])}, ]
+            'data': [{"filemeta": 42}, ]
         })
 
     async def _get_filtered_list(request: web.Request):
@@ -58,12 +58,12 @@ def storage_server(loop, aiohttp_server, app_cfg):
         assert query["uuid_filter"], "expected a filter"
 
         return web.json_response({
-            'data': [{"user_id": int(query["user_id"]), "uuid_filter": str(query["uuid_filter"])} ]
+            'data': [{"uuid_filter": query["uuid_filter"]}, ]
         })
 
 
-    #app.router.add_get("/v0/locations", _get_locs)
-    #app.router.add_get("/v0/locations/0/files/{file_id}", _get_dlink)
+    app.router.add_get("/v0/locations", _get_locs)
+    app.router.add_get("/v0/locations/0/files/{file_id}/metadata", _get_filemeta)
     app.router.add_get("/v0/locations/0/files/metadata", _get_filtered_list)
 
     assert cfg['host']=='localhost'
@@ -71,45 +71,44 @@ def storage_server(loop, aiohttp_server, app_cfg):
     server = loop.run_until_complete(aiohttp_server(app, port= cfg['port']))
     return server
 
-#@pytest.mark.travis
-#async def test_storage_locations(client, storage_server):
-#    url = "/v0/storage/locations"
-#
-#    async with LoggedUser(client) as user:
-#        print("Logged user:", user) # TODO: can use in the test
-#
-#        resp = await client.get(url)
-#        payload = await resp.json()
-#        assert resp.status == 200, str(payload)
-#
-#        data, error = unwrap_envelope(payload)
-#
-#        assert len(data) == 1
-#        assert not error
-#
-#        assert data[0]['user_id'] == user['id']
-#
-#@pytest.mark.travis
-#async def test_storage_download_link(client, storage_server):
-#    file_id = "a/b/c/d/e/dat"
-#    url = "/v0/storage/locations/0/files/{}".format(quote(file_id, safe=''))
-#
-#    async with LoggedUser(client) as user:
-#        print("Logged user:", user) # TODO: can use in the test
-#
-#        resp = await client.get(url)
-#        payload = await resp.json()
-#        assert resp.status == 200, str(payload)
-#
-#        data, error = unwrap_envelope(payload)
-#
-#        assert len(data) == 1
-#        assert not error
-#
-#        assert data[0]['user_id'] == user['id']
-#
-@pytest.mark.travis
+async def test_storage_locations(client, storage_server):
+    url = "/v0/storage/locations"
+
+    async with LoggedUser(client) as user:
+        print("Logged user:", user) # TODO: can use in the test
+
+        resp = await client.get(url)
+        payload = await resp.json()
+        assert resp.status == 200, str(payload)
+
+        data, error = unwrap_envelope(payload)
+
+        assert len(data) == 1
+        assert not error
+
+        assert data[0]['user_id'] == user['id']
+
+async def test_storage_file_meta(client, storage_server):
+    # tests redirect of path with quotes in path
+    file_id = "a/b/c/d/e/dat"
+    url = "/v0/storage/locations/0/files/{}/metadata".format(quote(file_id, safe=''))
+
+    async with LoggedUser(client) as user:
+        print("Logged user:", user) # TODO: can use in the test
+
+        resp = await client.get(url)
+        payload = await resp.json()
+        assert resp.status == 200, str(payload)
+
+        data, error = unwrap_envelope(payload)
+
+        assert len(data) == 1
+        assert not error
+
+        assert data[0]['filemeta'] == 42
+
 async def test_storage_list_filter(client, storage_server):
+    # tests composition of 2 queries 
     file_id = "a/b/c/d/e/dat"
     url = "/v0/storage/locations/0/files/metadata?uuid_filter={}".format(quote(file_id, safe=''))
 
@@ -124,5 +123,4 @@ async def test_storage_list_filter(client, storage_server):
 
         assert len(data) == 1
         assert not error
-        assert data[0]['user_id'] == user['id']
         assert data[0]['uuid_filter'] == file_id
