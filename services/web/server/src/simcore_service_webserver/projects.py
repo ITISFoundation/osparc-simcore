@@ -2,7 +2,6 @@
 
 
 """
-
 import logging
 
 from aiohttp import web
@@ -28,7 +27,7 @@ def setup(app: web.Application, *, debug=False):
 
     routes = map_handlers_with_operations(
             get_handlers_from_namespace(users_handlers),
-            filter(lambda o: "/project" in o[1],  iter_path_operations(specs)),
+            filter(lambda o: "/projects" in o[1],  iter_path_operations(specs)),
             strict=True
     )
 
@@ -36,8 +35,8 @@ def setup(app: web.Application, *, debug=False):
 
 
 # alias
-setup_users = setup
+setup_projects = setup
 
 __all__ = (
-    'setup_users'
+    'setup_projects'
 )

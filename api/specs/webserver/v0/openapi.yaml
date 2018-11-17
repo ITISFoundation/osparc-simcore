@@ -25,15 +25,15 @@ servers:
         default: v0
 paths:
 
-  # DIAGNOSTICS
+  # DIAGNOSTICS ---------------------------------------------------------
   /:
     $ref: './openapi-diagnostics.yaml#/paths/~1'
 
   /check/{action}:
     $ref: './openapi-diagnostics.yaml#/paths/~1check~1{action}'
 
+  # AUTHENTICATION & AUTHORIZATION --------------------------------------
 
-  # AUTHENTICATION & AUTHORIZATION
   /auth/register:
     $ref: './openapi-auth.yaml#/paths/~1auth~1register'
 
@@ -48,10 +48,9 @@ paths:
 
   /auth/confirmation/{code}:
     $ref: './openapi-auth.yaml#/paths/~1auth~1confirmation~1{code}'
-  #TODO: /auth/reset-password:
-  #TODO: /auth/change-password:
 
-  # USER SETTINGS
+  # USER SETTINGS ------------------------------------------------------------------
+
   /my:
     $ref: './openapi-user.yaml#/paths/~1my'
 
@@ -61,7 +60,7 @@ paths:
   /my/tokens/{service}:
     $ref: './openapi-user.yaml#/paths/~1my~1tokens~1{service}'
 
-  # STORAGE SERVICES
+  # DATA STORAGE SERVICES ----------------------------------------------------------
 
   /storage/locations:
     get:
@@ -203,7 +202,7 @@ paths:
         '204':
           description: ''
 
-  # COMPUTATIONAL SERVICES
+  # COMPUTATIONAL SERVICES ----------------------------------------------------------
 
   /running_interactive_services:
     post:
@@ -362,6 +361,15 @@ paths:
             application/json:
               schema:
                 $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+
+  # PROJECT SERVICES -----------------------------------------------------------------
+
+  /projects:
+    $ref: './openapi-projects.yaml#/paths/~1projects'
+
+  /projects/{project_id}:
+    $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}'
+
 
 components:
   parameters:
