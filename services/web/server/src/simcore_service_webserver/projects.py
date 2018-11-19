@@ -9,7 +9,7 @@ from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations, get_handlers_from_namespace
 
-from . import users_handlers
+from . import projects_handlers
 from .rest_config import APP_OPENAPI_SPECS_KEY
 
 CONFIG_SECTION_NAME = "projects"
@@ -26,7 +26,7 @@ def setup(app: web.Application, *, debug=False):
     specs = app[APP_OPENAPI_SPECS_KEY]
 
     routes = map_handlers_with_operations(
-            get_handlers_from_namespace(users_handlers),
+            get_handlers_from_namespace(projects_handlers),
             filter(lambda o: "/projects" in o[1],  iter_path_operations(specs)),
             strict=True
     )

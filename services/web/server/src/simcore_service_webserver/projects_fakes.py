@@ -21,8 +21,8 @@ class Fake:
     ProjectItem = namedtuple("ProjectItem", "id template data".split())
 
     # fake databases
-    projects = {}
-    user_to_projects_map = defaultdict(list)
+    projects = {} # project_id -> ProjectItem
+    user_to_projects_map = defaultdict(list) # user_id -> [project_id, ...]
 
 
     @classmethod
@@ -37,13 +37,13 @@ class Fake:
                 cls.user_to_projects_map[user_id].append(pid)
 
     @classmethod
-    def load_user_projects(cls):
+    def load_user_projects(cls, user_id=None):
         """ adds a project per user """
         with resources.stream("data/fake-user-projects.json") as f:
             projects = json.load(f)
 
         for i, prj in enumerate(projects):
-            pid, uid = prj['projectUuid'], i
+            pid, uid = prj['projectUuid'], i if not user_id else user_id
             cls.projects[pid] = cls.ProjectItem(id=pid, template=False, data=prj)
             cls.user_to_projects_map[uid].append(pid)
 

@@ -23,7 +23,7 @@ from simcore_service_webserver.projects_handlers import Fake
 
 API_VERSION = "v0"
 RESOURCE_NAME = 'projects'
-
+ANONYMOUS_UID = -1 # For testing purposes
 
 @pytest.fixture
 def fake_db():
@@ -53,7 +53,7 @@ def client(loop, aiohttp_client, aiohttp_unused_port, api_specs_dir, fake_db):
     yield loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
 
 
-@pytest
+@pytest.fixture
 def fake_project():
     # TODO: create automatically fakes??
     #
@@ -96,10 +96,16 @@ PREFIX = "/" + API_VERSION
 
 
 async def test_create(client, fake_db, fake_project):
+    # TODO: create fixture
+    pid = fake_project["projectUuid"]
+    #--------------------------
 
     url = client.app.router["create_projects"].url_for()
-    assert url == PREFIX + "/%s" % RESOURCE_NAME
+    assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
+
+    # POST /v0/projects
     resp = await client.post(url, json=fake_project)
+    text = await resp.text()
 
     payload = await resp.json()
     assert resp.status == 201, payload
@@ -108,19 +114,23 @@ async def test_create(client, fake_db, fake_project):
 
     assert not error
 
-    assert fake_db.projects
-    assert fake_db.projects[0] == fake_project
+    assert len(fake_db.projects)==1
+    assert fake_db.projects[pid].data == fake_project
+    assert pid in fake_db.user_to_projects_map[ANONYMOUS_UID]
 
 
 async def test_read_all(client, fake_db):
-    fake_db.load_user_projects()
+    # TODO: create fixture
+    fake_db.load_user_projects(ANONYMOUS_UID)
     fake_db.load_template_projects()
+    #-----------------
 
     # list all
     # TODO: discriminate between templates and user projects
     url = client.app.router["list_projects"].url_for()
-    assert url == PREFIX + "/%s" % RESOURCE_NAME
+    assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
 
+    # GET /v0/projects
     resp = await client.get(url)
     payload = await resp.json()
     assert resp.status == 200, payload
@@ -132,24 +142,30 @@ async def test_read_all(client, fake_db):
 
 
 async def test_read_one(client, fake_db, fake_project):
+    fake_db.add_projects([fake_project, ], user_id=-1) # TODO: create fixture
     pid = fake_project["projectUuid"]
+    #-----------------
 
     # get one
     url = client.app.router["get_project"].url_for(project_id=pid)
-    assert url == PREFIX + "/%s/%s" % (RESOURCE_NAME, pid)
+    assert str(url) == PREFIX + "/%s/%s" % (RESOURCE_NAME, pid)
 
+    # GET /v0/projects/{project_id}
     resp = await client.get()
     payload = await resp.json()
     assert resp.status == 200, payload
 
 
 async def test_update(client, fake_db, fake_project):
-    fake_db.add_projects(fake_project, user_id=0) # TODO:
+    fake_db.add_projects([fake_project, ], user_id=0) # TODO: create fixture
     pid = fake_project["projectUuid"]
+    #-----------------
 
     url = client.app.router["update_project"].url_for(project_id=pid)
+    assert str(url) == PREFIX + "/%s/%s" % (RESOURCE_NAME, pid)
 
-    resp = await client.post(url, json={
+    # PUT /v0/projects/{project_id}
+    resp = await client.put(url, json={
         "name": "some other name",
         "description": "some other",
         "notes": "some other",
@@ -160,8 +176,22 @@ async def test_update(client, fake_db, fake_project):
     # TODO: read in db
 
 async def test_delete(client, fake_db, fake_project):
-    resp = await client.post(PREFIX + "/%s/blackfynn" % RESOURCE_NAME)
+    fake_db.add_projects([fake_project, ], user_id=0) # TODO:
+    pid = fake_project["projectUuid"]
+    # -------------
+
+    url = client.app.router["delete_project"].url_for(project_id=pid)
+    assert str(url) == PREFIX + "/%s/%s" % (RESOURCE_NAME, pid)
+
+    # DELETE /v0/projects/{project_id}
+    resp = await client.delete(url)
     payload = await resp.json()
 
     assert resp.status == 204, payload
-    assert not payload
+
+    data, error = unwrap_envelope(payload)
+    assert not data
+    assert not error
+
+    assert not fake_db.projects
+    assert not fake_db.user_to_projects_map
