@@ -36,20 +36,3 @@ async def test_multi_doc_openapi_specs(multi_doc_oas, single_doc_oas):
 
     assert single_doc_specs.paths['/tags'].operations['get'].operation_id == \
            multi_doc_specs.paths['/tags'].operations['get'].operation_id
-
-
-
-
-# TODO: move this test to api/specs
-
-@pytest.fixture
-def webserver_oas(osparc_simcore_root_dir):
-    openapi_path = osparc_simcore_root_dir / "api/specs/webserver/v0/openapi.yaml"
-    assert openapi_path.exists()
-    return openapi_path
-
-
-def test_can_create_specs(webserver_oas):
-    spec_dict, spec_url = openapi._load_from_path(webserver_oas)
-    specs = openapi_core.create_spec(spec_dict, spec_url)
-    assert specs
