@@ -29,6 +29,11 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     });
     let publicProjectList = this.__createPublicProjectList();
 
+    this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
+    // this._projectResources.projects
+    // this._projectResources.project
+    // this._projectResources.templates
+
     mainView.add(new qx.ui.core.Spacer(null, 10));
     mainView.add(myPrjsLabel);
     mainView.add(userProjectList);
@@ -42,6 +47,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   },
 
   members: {
+    __projectResources: null,
+
     newPrjBtnClkd: function() {
       let win = new qx.ui.window.Window(this.tr("Create New Project")).set({
         layout: new qx.ui.layout.Grow(),
@@ -79,11 +86,35 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       this.fireDataEvent("StartProject", data);
     },
 
+    __getProject: function(projectId, fromTemplate = false) {
+      let project = fromTemplate ? this._projectResources.template: this._projectResources.project;
+
+      project.addListener("getSuccess", function(e) {
+        let projectData = e.getRequest().getRequestData();
+        let model = new qxapp.data.model.ProjectModel(projectData, fromTemplate);
+        this.fireDataEvent("StartProject", model);
+      }, this);
+
+      project.get({
+        "project_id": projectId
+      });
+    },
+
     __getProjectModel: function(projectId, fromTemplate = false) {
       let project = new qxapp.data.model.ProjectModel();
       if (projectId) {
-        let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
-        project = new qxapp.data.model.ProjectModel(projectData, fromTemplate);
+        // let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
+
+        this._projectResources.project.addListener("getSuccess", function(e) {
+          let projectData = e.getRequest().getRequestData();
+          project = new qxapp.data.model.ProjectModel(projectData, fromTemplate);
+
+        }, this);
+
+
+        this._projectResources.project.get({
+          "project_id": projectId
+        });
       }
       return project;
     },

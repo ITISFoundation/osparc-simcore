@@ -57,6 +57,7 @@ qx.Class.define("qxapp.data.Store", {
       return arePortsCompatible;
     },
 
+
     getUserProjectList: function() {
       return qxapp.dev.fake.Data.getUserProjectList();
     },
