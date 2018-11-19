@@ -16,7 +16,7 @@ export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
 
-export SERVICES_VERSION=1.5.0
+export SERVICES_VERSION=1.6.0
 export VCS_REF=$(shell git rev-parse --short HEAD) 
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 export REGISTRY_KEY=masu.speag.com/simcore/services/dynamic/

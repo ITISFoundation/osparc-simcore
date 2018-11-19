@@ -38,11 +38,9 @@ export HOST_GID=1000
 # TODO: Add a meaningfull call to retrieve the local docker group ID and the user ID in linux.
 endif
 
-PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*-sdk/python*" -not -path "*generated_code*" -not -path "*datcore.py"))
+PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*-sdk/python*" -not -path "*generated_code*" -not -path "*datcore.py" -not -path "*web/server*"))
 
 TEMPCOMPOSE := $(shell mktemp)
-
-export PYTHONPATH=${CURDIR}/packages/s3wrapper/src:${CURDIR}/packages/simcore-sdk/src
 
 all:
 	@echo 'run `make build-devel` to build your dev environment'
@@ -156,7 +154,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.21
+PLATFORM_VERSION=3.22
 
 push_platform_images:
 	${DOCKER} login masu.speag.com

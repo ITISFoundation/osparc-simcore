@@ -53,10 +53,8 @@ class InlineResponse201Data(object):
 
         if entry_point is not None:
             self.entry_point = entry_point
-        if published_port is not None:
-            self.published_port = published_port
-        if service_uuid is not None:
-            self.service_uuid = service_uuid
+        self.published_port = published_port
+        self.service_uuid = service_uuid
 
     @property
     def entry_point(self):
@@ -101,6 +99,8 @@ class InlineResponse201Data(object):
         :param published_port: The published_port of this InlineResponse201Data.  # noqa: E501
         :type: int
         """
+        if published_port is None:
+            raise ValueError("Invalid value for `published_port`, must not be `None`")  # noqa: E501
         if published_port is not None and published_port < 1:  # noqa: E501
             raise ValueError("Invalid value for `published_port`, must be a value greater than or equal to `1`")  # noqa: E501
 
@@ -126,6 +126,8 @@ class InlineResponse201Data(object):
         :param service_uuid: The service_uuid of this InlineResponse201Data.  # noqa: E501
         :type: str
         """
+        if service_uuid is None:
+            raise ValueError("Invalid value for `service_uuid`, must not be `None`")  # noqa: E501
 
         self._service_uuid = service_uuid
 

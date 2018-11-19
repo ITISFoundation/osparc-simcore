@@ -8,10 +8,9 @@ from aiohttp import web
 
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
-from simcore_service_webserver.login import get_storage
-from simcore_service_webserver.login.cfg import cfg # TODO: remove this by get_storage
-from utils_login import NewUser, parse_link
+from simcore_service_webserver.login.cfg import cfg, get_storage
 from utils_assert import assert_error, assert_status
+from utils_login import NewUser, parse_link
 
 EMAIL, PASSWORD = 'tester@test.com', 'password'
 
@@ -99,6 +98,7 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
     # retrieves sent link by email (see monkeypatch of email in conftest.py)
     out, err = capsys.readouterr()
     link = parse_link(out)
+    assert '/auth/confirmation/' in str(link)
     r = await client.get(link)
 
     data, error = unwrap_envelope(await r.json())

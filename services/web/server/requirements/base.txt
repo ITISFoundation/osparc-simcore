@@ -11,8 +11,8 @@ aiosmtplib
 asyncpg
 urllib3==1.21.1
 attrs==18.2.0
-celery==4.1.1
-kombu==4.2.0
+celery==4.1.0
+kombu==4.1.0
 minio==4.0.0
 networkx==2.1
 passlib==1.7.1

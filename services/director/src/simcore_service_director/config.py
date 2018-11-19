@@ -5,7 +5,7 @@ import logging
 import os
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    # level=logging.DEBUG,
     format='%(levelname)s:%(name)s-%(lineno)d: %(message)s'
     )
 
@@ -17,17 +17,14 @@ REGISTRY_PW = os.environ.get("REGISTRY_PW", "")
 REGISTRY_URL = os.environ.get("REGISTRY_URL", "")
 REGISTRY_SSL = os.environ.get("REGISTRY_SSL", True)
 
-POSTGRES_ENDPOINT = os.environ.get("POSTGRES_ENDPOINT", "")
-POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "")
-POSTGRES_PORT = os.environ.get("POSTGRES_PORT", "")
-POSTGRES_USER = os.environ.get("POSTGRES_USER", "")
-POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
-POSTGRES_DB = os.environ.get("POSTGRES_DB", "")
-
-S3_ENDPOINT = os.environ.get("S3_ENDPOINT", "")
-S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY", "")
-S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY", "")
-S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME", "")
+# these are the envs passed to the dynamic services by default
+SERVICES_DEFAULT_ENVS = {
+    "POSTGRES_ENDPOINT": os.environ.get("POSTGRES_ENDPOINT", "udnefined postgres endpoint"),
+    "POSTGRES_USER": os.environ.get("POSTGRES_USER", "undefined postgres user"),
+    "POSTGRES_PASSWORD": os.environ.get("POSTGRES_PASSWORD", "undefined postgres password"),
+    "POSTGRES_DB": os.environ.get("POSTGRES_DB", "undefined postgres db"),
+    "STORAGE_ENDPOINT": os.environ.get("STORAGE_ENDPOINT", "undefined storage endpoint")
+}
 
 # some services need to know the published host to be functional (paraview)
 PUBLISHED_HOST_NAME = os.environ.get("PUBLISHED_HOST_NAME", "")

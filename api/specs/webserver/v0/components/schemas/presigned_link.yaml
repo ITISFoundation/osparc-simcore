@@ -1,0 +1,18 @@
+PresignedLinkEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/PresignedLink'
+    error:
+      nullable: true
+      default: null
+
+PresignedLink:
+  type: object
+  properties:
+    link:
+      type: string
+  example:
+    link: 'example_link'
