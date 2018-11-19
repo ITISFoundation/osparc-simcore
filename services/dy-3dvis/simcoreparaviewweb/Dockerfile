@@ -27,6 +27,8 @@ WORKDIR /home/root
 # ----------------------------------------------------------------
 # set up oSparc env variables
 ENV SIMCORE_NODE_UUID="-1" \
+    SIMCORE_USER_ID="-1" \
+    STORAGE_ENDPOINT="=1" \    
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
     S3_SECRET_KEY="-1" \
@@ -40,7 +42,7 @@ ENV SIMCORE_NODE_UUID="-1" \
 ENV SERVER_PORT="-1"  \
     HOST_NAME="-1"
 # update pip
-RUN pip3 install --upgrade pip
+RUN pip3 install --upgrade pip wheel setuptools
 
 # copy scripts
 COPY services/dy-3dvis/simcoreparaviewweb/scripts /home/root/scripts
@@ -58,9 +60,11 @@ FROM common as development
 VOLUME /home/root/src
 VOLUME /home/root/devel
 VOLUME /home/root/packages
+VOLUME /home/root/services
 VOLUME /home/root/test-data
+VOLUME /home/root/scripts/dy_services_helpers
 ENV CREATE_DUMMY_TABLE 1
-ENV USE_CASE_CONFIG_FILE="devel/devel-dbconfiguration.json"
+ENV USE_CASE_CONFIG_FILE="devel/port_config.json"
 ENV TEST_DATA_PATH="/test-data"
 # Need to use entrypoint as base image's entrypoint must be overriden
 ENTRYPOINT [ "/bin/bash", "scripts/boot.sh" ]
@@ -69,9 +73,11 @@ FROM common AS production
 # install simcore packages
 COPY packages/simcore-sdk /home/root/packages/simcore-sdk
 COPY packages/s3wrapper /home/root/packages/s3wrapper
+COPY services/storage/client-sdk /home/root/services/storage/client-sdk
 # copy the default notebook
-RUN pip install /home/root/packages/simcore-sdk &&\
-    pip install /home/root/packages/s3wrapper
+RUN pip3 install /home/root/packages/simcore-sdk &&\
+    pip3 install /home/root/packages/s3wrapper && \
+    pip3 install /home/root/services/storage/client-sdk/python
 # copy script to get the inputs inside the local file system
 COPY services/dy-3dvis/simcoreparaviewweb/src /home/root/src
 ENTRYPOINT [ "/bin/bash", "scripts/boot.sh" ]
