@@ -103,6 +103,7 @@ if __name__ == "__main__":
     group.add_argument("--folder", help="a path to upload files from", type=Path, nargs="*")
     args = sys.argv[1:]
     options = parser.parse_args(args)
+    #print("options %s", options)
     if options.files is not None:
         def _file_generator(file_index: int):
             if file_index < len(options.files):
