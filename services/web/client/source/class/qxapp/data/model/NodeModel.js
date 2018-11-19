@@ -410,7 +410,12 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         if (this.getKey().includes("3d-viewer")) {
           // HACK: add this argument to only load the defined colorMaps
           // https://github.com/Kitware/visualizer/commit/197acaf
-          this.getIFrame().setSource(this.getServiceUrl() + "?serverColorMaps");
+          const srvUrl = this.getServiceUrl();
+          let arg = "?serverColorMaps";
+          if (srvUrl[srvUrl.length-1] !== "/") {
+            arg = "/" + arg;
+          }
+          this.getIFrame().setSource(srvUrl + arg);
         } else {
           this.getIFrame().setSource(this.getServiceUrl());
         }
