@@ -87,15 +87,15 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     },
 
     __getProject: function(projectId, fromTemplate = false) {
-      let project = fromTemplate ? this._projectResources.template: this._projectResources.project;
+      let resource = this._projectResources.project;
 
-      project.addListener("getSuccess", function(e) {
+      resource.addListener("getSuccess", function(e) {
         let projectData = e.getRequest().getRequestData();
         let model = new qxapp.data.model.ProjectModel(projectData, fromTemplate);
         this.fireDataEvent("StartProject", model);
       }, this);
 
-      project.get({
+      resource.get({
         "project_id": projectId
       });
     },
