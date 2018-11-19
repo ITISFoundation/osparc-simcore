@@ -407,7 +407,13 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.getIFrame().setSource(loadThis);
       } else if (this.getServiceUrl() !== null) {
         this.getIFrame().resetSource();
-        this.getIFrame().setSource(this.getServiceUrl());
+        if (this.getKey() === "3d-viewer") {
+          // HACK: add this argument to only load the defined colorMaps
+          // https://github.com/Kitware/visualizer/commit/197acaf
+          this.getIFrame().setSource(this.getServiceUrl() + "?serverColorMaps");
+        } else {
+          this.getIFrame().setSource(this.getServiceUrl());
+        }
       }
     },
 
