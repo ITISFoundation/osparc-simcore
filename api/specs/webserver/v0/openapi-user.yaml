@@ -83,7 +83,7 @@ paths:
       operationId: delete_token
       responses:
         '204':
-          $ref: '#/components/responses/OK_NoContent_204'
+          $ref: './openapi-user.yaml#/components/responses/OK_NoContent_204'
 
 
 components:

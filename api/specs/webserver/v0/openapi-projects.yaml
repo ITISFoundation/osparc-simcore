@@ -17,7 +17,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectArrayEnveloped'
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectArrayEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
     post:
@@ -27,14 +27,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Project'
+              $ref: './openapi-projects.yaml#/components/schemas/Project'
       responses:
         '201':
           description: project created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectEnveloped'
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
@@ -54,7 +54,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectEnveloped'
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
     put:
@@ -64,17 +64,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Project'
+              $ref: './openapi-projects.yaml#/components/schemas/Project'
       responses:
         '200':
           description: got detailed project
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectEnveloped'
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
-
     delete:
       summary: Delete project
       operationId: delete_project
@@ -92,7 +91,7 @@ components:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/Project'
+          $ref: './openapi-projects.yaml#/components/schemas/Project'
         error:
           nullable: true
           default: null
@@ -104,7 +103,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Project'
+            $ref: './openapi-projects.yaml#/components/schemas/Project'
         error:
           nullable: true
           default: null

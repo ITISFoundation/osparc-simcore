@@ -26,13 +26,13 @@ paths:
               schema:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
         '400':
-            $ref: '#/components/responses/DataError_BadRequest_400'
+            $ref: './openapi-auth.yaml#/components/responses/DataError_BadRequest_400'
         '409':
-            $ref: '#/components/responses/DataError_Conflict_409'
+            $ref: './openapi-auth.yaml#/components/responses/DataError_Conflict_409'
         '422':
-            $ref: '#/components/responses/DataError_UnprocessableEntity_422'
+            $ref: './openapi-auth.yaml#/components/responses/DataError_UnprocessableEntity_422'
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: './openapi-auth.yaml#/components/responses/DefaultErrorResponse'
 
   /auth/login:
     post:
@@ -50,11 +50,11 @@ paths:
               schema:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
         '401':
-          $ref: '#/components/responses/AuthError_Unauthorized_401'
+          $ref: './openapi-auth.yaml#/components/responses/AuthError_Unauthorized_401'
         '422':
-            $ref: '#/components/responses/DataError_UnprocessableEntity_422'
+            $ref: './openapi-auth.yaml#/components/responses/DataError_UnprocessableEntity_422'
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: './openapi-auth.yaml#/components/responses/DefaultErrorResponse'
 
   /auth/logout:
     get:
@@ -67,7 +67,7 @@ paths:
               schema:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: './openapi-auth.yaml#/components/responses/DefaultErrorResponse'
 
   #TODO: /auth/reset-password:
 
@@ -91,7 +91,7 @@ paths:
               schema:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: './openapi-auth.yaml#/components/responses/DefaultErrorResponse'
 
   #TODO: /auth/change-password:
 
@@ -107,7 +107,7 @@ paths:
             #format: uuid
       responses:
         default:
-          $ref: '#/components/responses/OK_NoContent_204'
+          $ref: './openapi-auth.yaml#/components/responses/OK_NoContent_204'
 
 components:
   responses:
