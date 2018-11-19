@@ -9,9 +9,11 @@ from openapi_core.schema.exceptions import OpenAPIError
 
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 from .rest_responses import (JSON_CONTENT_TYPE, create_data_response,
-                             create_error_response, is_enveloped_from_text)
+                             create_error_response, is_enveloped_from_text, is_enveloped_from_map, wrap_as_envelope)
 from .rest_utils import EnvelopeFactory
 from .rest_validators import OpenApiValidator
+import json
+
 
 DEFAULT_API_VERSION = "v0"
 
@@ -22,6 +24,17 @@ logger = logging.getLogger(__name__)
 def is_api_request(request: web.Request, api_version: str) -> bool:
     base_path = "/" + api_version.lstrip("/")
     return request.path.startswith(base_path)
+
+
+def _process_and_raise_unexpected_error(err):
+    # TODO: send info + trace to client ONLY in debug mode!!!
+    logger.exception("Unexpected exception on server side")
+    exc = create_error_response(
+            [err,],
+            "Unexpected Server error",
+            web.HTTPInternalServerError
+        )
+    raise exc
 
 
 def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
@@ -37,13 +50,13 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
         try:
             response = await handler(request)
             return response
+
         except web.HTTPError as err:
             # TODO: differenciate between server/client error
             if not err.reason:
                 err.reason = "Unexpected error"
 
-            if not err.content_type == JSON_CONTENT_TYPE:
-                err.content_type = JSON_CONTENT_TYPE
+            err.content_type = JSON_CONTENT_TYPE
 
             if not err.text or not is_enveloped_from_text(err.text):
                 error = ErrorType(
@@ -54,23 +67,26 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
                 err.text = EnvelopeFactory(error=error).as_text()
 
             raise
+
         except web.HTTPSuccessful as ex:
             ex.content_type = JSON_CONTENT_TYPE
-            if ex.text and not is_enveloped_from_text(ex.text):
-                ex.text = EnvelopeFactory(error=ex.text).as_text()
-            raise
+            if ex.text:
+                try:
+                    payload = json.loads(ex.text)
+                    if not is_enveloped_from_map(payload):
+                        payload = wrap_as_envelope(data=payload)
+                        ex.text = json.dumps(payload)
+                except Exception as err:  # pylint: disable=W0703
+                    _process_and_raise_unexpected_error(err)
+            raise ex
+
         except web.HTTPRedirection as ex:
             logger.debug("Redirection %s", ex)
             raise
+
         except Exception as err:  # pylint: disable=W0703
-            # TODO: send info + trace nly in debug mode
-            logger.exception("Unexpected exception on server side")
-            exc = create_error_response(
-                    [err,],
-                    "Unexpected Server error",
-                    web.HTTPInternalServerError
-                )
-            raise exc
+            _process_and_raise_unexpected_error(err)
+
     return _middleware
 
 

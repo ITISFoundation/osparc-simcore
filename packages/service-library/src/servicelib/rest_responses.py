@@ -31,6 +31,7 @@ def is_enveloped(payload) -> bool:
         return is_enveloped_from_text(text=payload)
     return False
 
+
 def wrap_as_envelope(data=None, error=None, as_null=True):
     """
     as_null: if True, keys for null values are created and assigned to None

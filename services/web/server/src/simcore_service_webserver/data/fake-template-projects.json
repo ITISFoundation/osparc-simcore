@@ -235,7 +235,7 @@
   }, {
     "projectUuid": "61d5829d-426a-49a8-8292-c701530e6e35",
     "name": "Colleen Clancy use cases expanded",
-    "description": "All use "cases": 0D, 1D, 2D",
+    "description": "All use cases: 0D, 1D, 2D",
     "notes": "Empty",
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
     "owner": "Colleen Clancy",
@@ -980,4 +980,4 @@
       }
     }
   }
-];
+]
