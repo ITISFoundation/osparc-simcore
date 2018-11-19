@@ -202,6 +202,7 @@ qx.Class.define("qxapp.Application", {
     },
 
     loadModel: function(modelName) {
+      console.log("Loading...", modelName);
       if (!this._socket.slotExists("importModelScene")) {
         this._socket.on("importModelScene", function(val) {
           if (val.type === "importModelScene") {
