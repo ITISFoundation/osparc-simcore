@@ -20,7 +20,20 @@ ENV PARAVIEW_INPUT_PATH="/data"
 # install git, pip
 RUN apt-get update && \
     apt-get install -y \
-    python3-pip
+    python3-pip && \
+    python3 -V
+
+# install python 3.6
+RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash && \
+    export PATH="/root/.pyenv/bin:$PATH" && \
+    eval "$(pyenv init -)" && \
+    eval "$(pyenv virtualenv-init -)" && \
+    apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
+    libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
+    xz-utils tk-dev libffi-dev liblzma-dev && \
+    pyenv install 3.6.7 && \
+    pyenv global 3.6.7 && \
+    python -V
 # get the patched visualizer
 COPY --from=visualizer /home/node/visualizer/dist /opt/paraview/install/share/paraview-5.5/web/visualizer/www
 WORKDIR /home/root

@@ -1,7 +1,13 @@
 #!/bin/bash
 echo "current directory is ${PWD}"
 
-
+export PATH="/root/.pyenv/bin:$PATH"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+pyenv global 3.6.7
+python -V
+pip install --upgrade pip
+pip -V
 
 if [[ -v CREATE_DUMMY_TABLE ]];
 then
