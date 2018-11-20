@@ -203,7 +203,13 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       if (pos) {
         srvCat.moveTo(pos.x, pos.y);
       } else {
-        srvCat.center();
+        // srvCat.center();
+        const bounds = this.getLayoutParent().getBounds();
+        const workbenchViewCenter = {
+          x: bounds.left + parseInt((bounds.left + bounds.width) / 2),
+          y: bounds.top + parseInt((bounds.top + bounds.height) / 2)
+        };
+        srvCat.moveTo(workbenchViewCenter.x - 200, workbenchViewCenter.y - 200);
       }
       srvCat.addListener("AddService", ev => {
         this.__addServiceFromCatalogue(ev, pos);
