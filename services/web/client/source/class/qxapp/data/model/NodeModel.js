@@ -382,7 +382,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         // remove port connections
         let inputs = this.getInputValues();
         for (const portId in inputs) {
-          if (Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
+          if (inputs[portId] && Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
             if (inputs[portId]["nodeUuid"] === inputNodeId) {
               this.__settingsForm.removeLink(portId);
             }
