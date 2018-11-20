@@ -152,8 +152,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         height: BUTTON_SIZE
       });
       plusButton.addListener("execute", function() {
-        let srvCat = this.__createServicesCatalogue();
-        srvCat.open();
+        this.openServicesCatalogue();
       }, this);
       return plusButton;
     },
@@ -174,6 +173,11 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         }
       }, this);
       return removeButton;
+    },
+
+    openServicesCatalogue: function() {
+      let srvCat = this.__createServicesCatalogue();
+      srvCat.open();
     },
 
     __createServicesCatalogue: function(pos) {
