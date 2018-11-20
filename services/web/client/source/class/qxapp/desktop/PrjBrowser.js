@@ -87,7 +87,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       this.fireDataEvent("StartProject", data);
     },
 
-    startProjectModel: function(projectId, fromTemplate = false) {
+    __startProjectModel: function(projectId, fromTemplate = false) {
       // let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
       let resource = this.__projectResources.project;
 
@@ -183,7 +183,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           item.addListener("dbltap", e => {
             const prjUuid = item.getModel();
             if (prjUuid) {
-              that.startProjectModel(prjUuid, fromTemplate); // eslint no-underscore-dangle: "off"
+              that.__startProjectModel(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
             } else {
               that.newPrjBtnClkd();
             }
