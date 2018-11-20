@@ -30,15 +30,20 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
 
     let portOutput = this._createChildControlImpl("portOutput");
     let outputValue = "Unknown value";
+    let toolTip = "";
     if (Object.prototype.hasOwnProperty.call(port, "value")) {
       if (typeof port.value === "object") {
-        outputValue = this.__pretifyObject(port.value);
+        outputValue = this.__pretifyObject(port.value, true);
+        toolTip = this.__pretifyObject(port.value, false);
       } else {
         outputValue = JSON.stringify(port.value);
       }
     }
     portOutput.set({
-      value: outputValue
+      value: outputValue,
+      toolTip: new qx.ui.tooltip.ToolTip(toolTip).set({
+        rich: true
+      })
     });
 
     this.__createDragMechanism(this, portKey);
@@ -100,7 +105,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
       }, this);
     },
 
-    __pretifyObject: function(object) {
+    __pretifyObject: function(object, short) {
       let uuidToName = qxapp.utils.UuidToName.getInstance();
       let myText = "";
       const entries = Object.entries(object);
@@ -110,10 +115,14 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
         myText += ": ";
         // entry[1] might me a path of uuids
         let entrySplitted = String(entry[1]).split("/");
-        for (let j=0; j<entrySplitted.length; j++) {
-          myText += uuidToName.convertToName(entrySplitted[j]);
-          if (j !== entrySplitted.length-1) {
-            myText += "/";
+        if (short) {
+          myText += entrySplitted[entrySplitted.length-1];
+        } else {
+          for (let j=0; j<entrySplitted.length; j++) {
+            myText += uuidToName.convertToName(entrySplitted[j]);
+            if (j !== entrySplitted.length-1) {
+              myText += "/";
+            }
           }
         }
         myText += "<br/>";
