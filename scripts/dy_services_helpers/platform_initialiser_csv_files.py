@@ -32,14 +32,14 @@ def main():
         separator = options.separator    
     
 
-    def _file_generator(file_index: int):
+    def _file_generator(file_index: int): # pylint: disable=W0613
         # on Windows you need to close the file to be sure to re-open it to get a name
         temp_file = tempfile.NamedTemporaryFile(suffix=".csv")
         temp_file.close()
         df = _create_dummy_table(options.rows, options.columns)
         with open(temp_file.name, "w") as file_pointer:
             df.to_csv(path_or_buf=file_pointer, sep=separator, header=False, index=False)        
-            yield temp_file.name
+            return temp_file.name
         Path(temp_file.name).unlink()
 
     init_platform(port_configuration_path=options.portconfig, file_generator=_file_generator)
