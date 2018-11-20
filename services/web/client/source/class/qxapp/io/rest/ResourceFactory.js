@@ -10,7 +10,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
     createProjectResources: function() {
       // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
       // SEE: api/specs/webserver/v0/openapi-projects.yaml
-      const basePath = qxapp.rest.ResourceFactory.API;
+      const basePath = qxapp.io.rest.ResourceFactory.API;
 
       // Singular resource
       var project = new qx.io.rest.Resource({
@@ -38,7 +38,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
         // Retrieve list of projects
         get: {
           method: "GET",
-          url: basePath+"/projects"
+          url: basePath+"/projects?type=user"
         },
 
         // Create project
