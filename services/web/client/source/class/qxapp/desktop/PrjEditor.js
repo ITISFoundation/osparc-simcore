@@ -163,12 +163,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__currentNodeId = nodeId;
       this.__treeView.nodeSelected(nodeId);
 
+      const workbenchModel = this.getProjectModel().getWorkbenchModel();
       if (nodeId === "root") {
-        const workbenchModel = this.getProjectModel().getWorkbenchModel();
         this.__workbenchView.loadModel(workbenchModel);
         this.showInMainView(this.__workbenchView, nodeId);
       } else {
-        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
+        let nodeModel = workbenchModel.getNodeModel(nodeId);
 
         let widget;
         if (nodeModel.isContainer()) {
@@ -192,7 +192,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (nodeId === "root") {
         this.showScreenshotInExtraView("workbench");
       } else {
-        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
+        let nodeModel = workbenchModel.getNodeModel(nodeId);
         if (nodeModel.isContainer()) {
           this.showScreenshotInExtraView("container");
         } else {
@@ -226,14 +226,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         return;
       }
       // remove first the connected links
-      let connectedLinks = this.getProjectModel().getWorkbenchModel().getConnectedLinks(nodeId);
+      let workbenchModel = this.getProjectModel().getWorkbenchModel();
+      let connectedLinks = workbenchModel.getConnectedLinks(nodeId);
       for (let i=0; i<connectedLinks.length; i++) {
         const linkId = connectedLinks[i];
-        if (this.getProjectModel().getWorkbenchModel().removeLink(linkId)) {
+        if (workbenchModel.removeLink(linkId)) {
           this.__workbenchView.clearLink(linkId);
         }
       }
-      if (this.getProjectModel().getWorkbenchModel().removeNode(nodeId)) {
+      if (workbenchModel.removeNode(nodeId)) {
         this.__workbenchView.clearNode(nodeId);
       }
     },
