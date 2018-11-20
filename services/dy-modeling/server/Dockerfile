@@ -24,19 +24,6 @@ WORKDIR /home/node/
 COPY package.json /home/node/package.json
 VOLUME /home/node/source-output
 
-# call git rev-parse — short HEAD in a bash
-ARG VCS_REF
-# call date -u +”%Y-%m-%dT%H:%M:%SZ” in a bash
-ARG BUILD_DATE
-# Labels.
-LABEL org.label-schema.schema-version="1.0" \
-    org.label-schema.build-date=${BUILD_DATE} \
-    org.label-schema.url="https://www.itis.ethz.ch" \
-    org.label-schema.vcs-url="https://github.com/ITISFoundation/osparc-simcore" \
-    org.label-schema.vcs-ref=${VCS_REF} \
-    org.label-schema.vendor="IT'IS foundation"
-LABEL simcore.service.settings='[{"name": "ports", "type": "int", "value": 9090}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "env", "type": "string", "value": ["CS_S4L_HOSTNAME=modeler_xrpc-worker_%service_uuid%"]}]'
-
 #--------------------Development------------------
 FROM common AS development
 

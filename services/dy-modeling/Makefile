@@ -16,26 +16,30 @@ export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
 
-export MODELER_VERSION=2.3.0
+export VCS_REF=$(shell git rev-parse --short HEAD) 
+export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+export MODELER_VERSION=2.4.0
+MODELER_MASU_REGISTRY_NAME=masu.speag.com/simcore/services/dynamic/modeler/webserver
+
 all:
 	@echo 'run `make build-devel` to build your dev environment'
 	@echo 'run `make up-devel` to start your dev environment.'
 	@echo 'see Makefile for further targets'
 
 build-devel:
-	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build --build-arg VCS_REF=`git rev-parse --short HEAD` --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
+	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build
 
 rebuild-devel:
-	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build --no-cache --build-arg VCS_REF=`git rev-parse --short HEAD` --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
+	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build --no-cache
 
 up-devel:
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml up
 
 build:	
-	${DOCKER_COMPOSE} -f docker-compose.yml build --build-arg VCS_REF=`git rev-parse --short HEAD` --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
+	${DOCKER_COMPOSE} -f docker-compose.yml build
 
 rebuild:
-	${DOCKER_COMPOSE} -f docker-compose.yml build --no-cache --build-arg VCS_REF=`git rev-parse --short HEAD` --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
+	${DOCKER_COMPOSE} -f docker-compose.yml build --no-cache
 
 up:
 	${DOCKER_COMPOSE} -f docker-compose.yml up
@@ -44,8 +48,6 @@ down:
 	${DOCKER_COMPOSE} -f docker-compose.yml down
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml down
 
-
-MODELER_MASU_REGISTRY_NAME=masu.speag.com/simcore/services/dynamic/modeler/webserver
 push_service_images:
 	${DOCKER} login masu.speag.com
 	${DOCKER} tag dy-modeling_server:latest ${MODELER_MASU_REGISTRY_NAME}:${MODELER_VERSION}
