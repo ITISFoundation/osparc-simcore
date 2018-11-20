@@ -96,12 +96,13 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       bottom: 10,
       right: 10
     });
-    [
-      this.__getPlusButton(),
-      this.__getRemoveButton()
-    ].forEach(widget => {
-      buttonContainer.add(widget);
-    });
+    // let addButton = this.__getPlusButton();
+    // buttonContainer.add(addButton);
+    // let removeButton = this.__getRemoveButton();
+    // buttonContainer.add(removeButton);
+    let unlinkButton = this.__unlinkButton = this.__getUnlinkButton();
+    unlinkButton.setVisibility("excluded");
+    buttonContainer.add(unlinkButton);
 
     this.addListener("dbltap", e => {
       // FIXME:
@@ -131,6 +132,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
   },
 
   members: {
+    __unlinkButton: null,
     __nodesUI: null,
     __linksUI: null,
     __inputNodesLayout: null,
@@ -173,6 +175,22 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         }
       }, this);
       return removeButton;
+    },
+
+    __getUnlinkButton: function() {
+      const icon = "@FontAwesome5Solid/unlink/16";
+      let unlinkBtn = new qx.ui.form.Button(null, icon);
+      unlinkBtn.set({
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE
+      });
+      unlinkBtn.addListener("execute", function() {
+        if (this.__selectedItemId && this.__isSelectedItemALink(this.__selectedItemId)) {
+          this.__removeLink(this.__getLinkUI(this.__selectedItemId));
+          this.__selectedItemId = null;
+        }
+      }, this);
+      return unlinkBtn;
     },
 
     openServicesCatalogue: function() {
@@ -811,6 +829,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         const selectedColor = qxapp.theme.Color.colors["workbench-link-selected"];
         this.__svgWidget.updateColor(selectedLink.getRepresentation(), selectedColor);
       }
+
+      this.__unlinkButton.setVisibility(this.__isSelectedItemALink(newID) ? "visible" : "excluded");
     },
 
     __isSelectedItemALink: function() {
