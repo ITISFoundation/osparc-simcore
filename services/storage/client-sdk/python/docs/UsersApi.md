@@ -405,7 +405,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **upload_file**
-> PresignedLinkEnveloped upload_file(file_id, location_id, user_id, extra_source=extra_source)
+> PresignedLinkEnveloped upload_file(file_id, location_id, user_id, extra_location=extra_location, extra_source=extra_source)
 
 Returns upload link or performs copy operation to datcore
 
@@ -422,11 +422,12 @@ api_instance = simcore_service_storage_sdk.UsersApi()
 file_id = 'file_id_example' # str | 
 location_id = 'location_id_example' # str | 
 user_id = 'user_id_example' # str | 
+extra_location = 'extra_location_example' # str |  (optional)
 extra_source = 'extra_source_example' # str |  (optional)
 
 try:
     # Returns upload link or performs copy operation to datcore
-    api_response = api_instance.upload_file(file_id, location_id, user_id, extra_source=extra_source)
+    api_response = api_instance.upload_file(file_id, location_id, user_id, extra_location=extra_location, extra_source=extra_source)
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling UsersApi->upload_file: %s\n" % e)
@@ -439,6 +440,7 @@ Name | Type | Description  | Notes
  **file_id** | **str**|  | 
  **location_id** | **str**|  | 
  **user_id** | **str**|  | 
+ **extra_location** | **str**|  | [optional] 
  **extra_source** | **str**|  | [optional] 
 
 ### Return type

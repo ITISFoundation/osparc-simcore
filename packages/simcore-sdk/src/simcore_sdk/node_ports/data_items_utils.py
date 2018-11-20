@@ -22,7 +22,7 @@ def decode_store(value: Dict)->Tuple[str, str]:
     return value["store"], value["path"]
 
 def encode_store(store:str, s3_object:str) -> Dict:
-    return {"store":store, "path":s3_object}
+    return {"store":str(store), "path":s3_object}
 
 def encode_file_id(file_path: Path, project_id: str, node_id: str) -> str:
     file_id = "{}/{}/{}".format(project_id, node_id, file_path.name)

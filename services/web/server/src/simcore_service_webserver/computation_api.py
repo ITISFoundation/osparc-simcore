@@ -15,6 +15,7 @@ from sqlalchemy import and_, create_engine
 from sqlalchemy.orm import sessionmaker
 
 from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.request_keys import RQT_USERID_KEY
 from simcore_director_sdk.rest import ApiException
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
@@ -22,6 +23,7 @@ from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
 from .computation_worker import celery
 from .db_config import CONFIG_SECTION_NAME as CONFIG_DB_SECTION
 from .director import director_sdk
+from .login.decorators import login_required
 
 # TODO: this should be coordinated with postgres options from config/server.yaml
 #from simcore_sdk.config.db import Config as DbConfig
@@ -214,19 +216,32 @@ async def _set_tasks_in_tasks_db(project_id, tasks):
             db_session.add(comp_task)
 
 # pylint:disable=too-many-branches, too-many-statements
-@computation_routes.post("/start_pipeline")
-async def start_pipeline(request):
+@login_required
+async def start_pipeline(request: web.Request) -> web.Response:
     #pylint:disable=broad-except
     # FIXME: this should be implemented generaly using async lazy initialization of db_session??
     #pylint: disable=W0603
     global db_session
     if db_session is None:
         await init_database(request.app)
-    request_data = await request.json()
+
+    # params, query, body = await extract_and_validate(request)
+    
+    # if params is not None:
+    #     log.debug("params: %s", params)
+    # if query is not None:
+    #     log.debug("query: %s", query)
+    # if body is not None:
+    #     log.debug("body: %s", body)
+
+    # assert "project_id" in params
+    # assert "workbench" in body
 
     # retrieve the data
-    project_id = request_data["project_id"]
-    pipeline_data = request_data["workbench"]
+    project_id = request.match_info.get("project_id", None)
+    assert project_id is not None
+    pipeline_data = (await request.json())["workbench"]
+    userid = request[RQT_USERID_KEY]
     _app = request.app[APP_CONFIG_KEY]
 
     log.debug("Client calls start_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
@@ -237,7 +252,7 @@ async def start_pipeline(request):
         await _set_tasks_in_tasks_db(project_id, tasks)
         db_session.commit()
         # commit the tasks to celery
-        _ = celery.send_task("comp.task", args=(project_id,), kwargs={})
+        _ = celery.send_task("comp.task", args=(userid, project_id,), kwargs={})
         log.debug("Task commited")
         # answer the client
         pipeline_name = "request_data"

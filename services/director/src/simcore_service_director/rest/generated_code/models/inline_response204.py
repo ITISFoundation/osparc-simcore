@@ -15,7 +15,7 @@ class InlineResponse204(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: object=None, error: object=None):  # noqa: E501
+    def __init__(self, data=None, error=None):  # noqa: E501
         """InlineResponse204 - a model defined in OpenAPI
 
         :param data: The data of this InlineResponse204.  # noqa: E501
@@ -24,8 +24,8 @@ class InlineResponse204(Model):
         :type error: object
         """
         self.openapi_types = {
-            'data': object,
-            'error': object
+            'data': 'object',
+            'error': 'object'
         }
 
         self.attribute_map = {
@@ -48,7 +48,7 @@ class InlineResponse204(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def data(self) -> object:
+    def data(self):
         """Gets the data of this InlineResponse204.
 
 
@@ -58,7 +58,7 @@ class InlineResponse204(Model):
         return self._data
 
     @data.setter
-    def data(self, data: object):
+    def data(self, data):
         """Sets the data of this InlineResponse204.
 
 
@@ -69,7 +69,7 @@ class InlineResponse204(Model):
         self._data = data
 
     @property
-    def error(self) -> object:
+    def error(self):
         """Gets the error of this InlineResponse204.
 
 
@@ -79,7 +79,7 @@ class InlineResponse204(Model):
         return self._error
 
     @error.setter
-    def error(self, error: object):
+    def error(self, error):
         """Sets the error of this InlineResponse204.
 
 
