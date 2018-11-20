@@ -1,8 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=W0212
-
-import openapi_core
 import pytest
 
 from servicelib import openapi
