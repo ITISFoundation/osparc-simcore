@@ -25,14 +25,8 @@ paths:
             application/json:
               schema:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
-        '400':
-            $ref: './openapi-auth.yaml#/components/responses/DataError_BadRequest_400'
-        '409':
-            $ref: './openapi-auth.yaml#/components/responses/DataError_Conflict_409'
-        '422':
-            $ref: './openapi-auth.yaml#/components/responses/DataError_UnprocessableEntity_422'
         default:
-          $ref: './openapi-auth.yaml#/components/responses/DefaultErrorResponse'
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
   /auth/login:
     post:
@@ -49,12 +43,8 @@ paths:
             application/json:
               schema:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
-        '401':
-          $ref: './openapi-auth.yaml#/components/responses/AuthError_Unauthorized_401'
-        '422':
-            $ref: './openapi-auth.yaml#/components/responses/DataError_UnprocessableEntity_422'
         default:
-          $ref: './openapi-auth.yaml#/components/responses/DefaultErrorResponse'
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
   /auth/logout:
     get:
@@ -67,7 +57,7 @@ paths:
               schema:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
         default:
-          $ref: './openapi-auth.yaml#/components/responses/DefaultErrorResponse'
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
   #TODO: /auth/reset-password:
 
@@ -91,7 +81,7 @@ paths:
               schema:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
         default:
-          $ref: './openapi-auth.yaml#/components/responses/DefaultErrorResponse'
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
   #TODO: /auth/change-password:
 
@@ -106,67 +96,5 @@ paths:
             type: string
             #format: uuid
       responses:
-        default:
-          $ref: './openapi-auth.yaml#/components/responses/OK_NoContent_204'
-
-components:
-  responses:
-    # TODO:Envelope objects are still not well/easily defined. See discriminators
-    OK_NoContent_204:
-      description: everything is OK, but there is no content to return
-
-    DefaultErrorResponse:
-      description: Unexpected error
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    DataError_BadRequest_400:
-      description: requested information is incomplete or malformed
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    AuthError_Unauthorized_401:
-      description: access token isnt provided or is invalid
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    AuthError_Forbidden_403:
-      description: an access token is valid, but requires more privileges
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    DataError_NotFound_404:
-      description: everything is okay, but the resource doesnt exist
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    DataError_Conflict_409:
-      description: a confict of data exists, even with valid information
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    DataError_UnprocessableEntity_422:
-      description: requested information is ok but invalid
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    InternalServerError_500:
-      description: server throws an error, completely unexpected
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+        '204':
+          description: confirmation processed

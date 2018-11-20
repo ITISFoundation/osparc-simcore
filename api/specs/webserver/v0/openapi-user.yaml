@@ -79,11 +79,4 @@ paths:
       operationId: delete_token
       responses:
         '204':
-          $ref: './openapi-user.yaml#/components/responses/OK_NoContent_204'
-
-
-components:
-  responses:
-    # TODO:Envelope objects are still not well/easily defined. See discriminators
-    OK_NoContent_204:
-      description: everything is OK, but there is no content to return
+          description: project has been successfully deleted
