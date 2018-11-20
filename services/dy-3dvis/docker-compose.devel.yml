@@ -22,7 +22,7 @@ services:
       - postgres
       - minio
     volumes: 
-      - ./simcoreparaviewweb/src:/home/root/src
+      - ./simcoreparaviewweb/cgi_scripts:/home/root/cgi_scripts
       - ./simcoreparaviewweb/devel:/home/root/devel
       - ../../packages:/home/root/packages
       - ../../services:/home/root/services

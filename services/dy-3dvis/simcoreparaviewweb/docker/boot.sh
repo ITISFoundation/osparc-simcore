@@ -26,13 +26,13 @@ then
 fi
 
 echo "modifying apache configuration..."
-. scripts/apachePatch.sh
+. docker/apachePatch.sh
 
 echo "restarting the apache service..."
 service apache2 restart
 
 # echo "modifying wslink launcher configuration"
-. scripts/visualizer_launcher_patch.sh
+. docker/visualizer_launcher_patch.sh
 
 if [[ -v CREATE_DUMMY_TABLE ]];
 then
@@ -44,7 +44,7 @@ else
     # this is currently necessary due to some unknown reason with regard to how paraviewweb 
     # visualizer is started (see below)
     echo "Waiting for server hostname/port to be defined"
-    host_port="$(python3 src/getport.py)";
+    host_port="$(python docker/getport.py)";
     echo "Received hostname/port: ${host_port}"
     IFS=, read -a array <<< "$host_port"; 
     echo "Host name decoded as ${array[0]}";

@@ -8,8 +8,7 @@ COPY services/dy-3dvis/simcoreparaviewweb/rebrand-osparc/rebrand-osparc.patch re
 RUN git apply rebrand-osparc.patch && \
     npm install && \
     npm run build:release && \
-    npm link && \
-    cp src/*.png dist
+    npm link
 # ----------------------------------------------------------------
 # build visualizer service
 FROM kitware/paraviewweb:pvw-visualizer-osmesa-master  AS common
@@ -60,19 +59,19 @@ ENV SERVER_PORT="-1"  \
 RUN pip3 install --upgrade pip wheel setuptools
 
 # copy scripts
-COPY services/dy-3dvis/simcoreparaviewweb/scripts /home/root/scripts
+COPY services/dy-3dvis/simcoreparaviewweb/docker /home/root/docker
 COPY services/dy-3dvis/simcoreparaviewweb/config /home/root/config
 
-RUN chmod +x scripts/boot.sh
+# RUN chmod +x docker/boot.sh
 # apply apache config changer script
-RUN chmod +x scripts/apachePatch.sh
+# RUN chmod +x docker/apachePatch.sh
 RUN mkdir /home/root/trigger && \
     chmod 777 /home/root/trigger
 # apply paraview launcher modifier script
-RUN chmod +x scripts/visualizer_launcher_patch.sh
+# RUN chmod +x docker/visualizer_launcher_patch.sh
 #------------------------------------------
 FROM common as development
-VOLUME /home/root/src
+VOLUME /home/root/cgi_scripts
 VOLUME /home/root/devel
 VOLUME /home/root/packages
 VOLUME /home/root/services
@@ -82,7 +81,7 @@ ENV CREATE_DUMMY_TABLE 1
 ENV USE_CASE_CONFIG_FILE="devel/port_config.json"
 ENV TEST_DATA_PATH="/test-data"
 # Need to use entrypoint as base image's entrypoint must be overriden
-ENTRYPOINT [ "/bin/bash", "scripts/boot.sh" ]
+ENTRYPOINT [ "/bin/bash", "docker/boot.sh" ]
 #------------------------------------------
 FROM common AS production
 # install simcore packages
@@ -94,5 +93,5 @@ RUN pip3 install /home/root/packages/simcore-sdk &&\
     pip3 install /home/root/packages/s3wrapper && \
     pip3 install /home/root/services/storage/client-sdk/python
 # copy script to get the inputs inside the local file system
-COPY services/dy-3dvis/simcoreparaviewweb/src /home/root/src
-ENTRYPOINT [ "/bin/bash", "scripts/boot.sh" ]
+COPY services/dy-3dvis/simcoreparaviewweb/cgi_scripts /home/root/cgi_scripts
+ENTRYPOINT [ "/bin/bash", "docker/boot.sh" ]
