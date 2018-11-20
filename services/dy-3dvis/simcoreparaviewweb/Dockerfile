@@ -8,7 +8,8 @@ COPY services/dy-3dvis/simcoreparaviewweb/rebrand-osparc/rebrand-osparc.patch re
 RUN git apply rebrand-osparc.patch && \
     npm install && \
     npm run build:release && \
-    npm link
+    npm link && \
+    cp src/*.png dist
 # ----------------------------------------------------------------
 # build visualizer service
 FROM kitware/paraviewweb:pvw-visualizer-osmesa-master  AS common
