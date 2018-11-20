@@ -108,17 +108,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       const navBarHeight = 50;
       let x = e.getViewportLeft() - this.getBounds().left;
       let y = e.getViewportTop() - navBarHeight;
-
-      let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
-      srvCat.moveTo(x, y);
-      srvCat.open();
-      let pos = {
+      const pos = {
         x: x,
         y: y
       };
-      srvCat.addListener("AddService", ev => {
-        this.__addServiceFromCatalogue(ev, pos);
-      }, this);
+      let srvCat = this.__createServicesCatalogue(pos);
+      srvCat.open();
     }, this);
   },
 
@@ -157,12 +152,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         height: BUTTON_SIZE
       });
       plusButton.addListener("execute", function() {
-        let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
-        srvCat.center();
+        let srvCat = this.__createServicesCatalogue();
         srvCat.open();
-        srvCat.addListener("AddService", e => {
-          this.__addServiceFromCatalogue(e);
-        }, this);
       }, this);
       return plusButton;
     },
@@ -183,6 +174,19 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         }
       }, this);
       return removeButton;
+    },
+
+    __createServicesCatalogue: function(pos) {
+      let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
+      if (pos) {
+        srvCat.moveTo(pos.x, pos.y);
+      } else {
+        srvCat.center();
+      }
+      srvCat.addListener("AddService", ev => {
+        this.__addServiceFromCatalogue(ev, pos);
+      }, this);
+      return srvCat;
     },
 
     __addServiceFromCatalogue: function(e, pos) {
@@ -386,24 +390,20 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         let posX = this.__pointerPosX;
         let posY = this.__pointerPosY;
         if (this.__tempLinkNodeId === dragNodeId) {
-          let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
+          const pos = {
+            x: posX,
+            y: posY
+          };
+          let srvCat = this.__createServicesCatalogue(pos);
           if (this.__tempLinkIsInput === true) {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort());
           } else {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getOutputPort());
           }
-          srvCat.moveTo(posX, posY);
-          srvCat.open();
-          let pos = {
-            x: posX,
-            y: posY
-          };
-          srvCat.addListener("AddService", function(ev) {
-            this.__addServiceFromCatalogue(ev, pos);
-          }, this);
           srvCat.addListener("close", function(ev) {
             this.__removeTempLink();
           }, this);
+          srvCat.open();
         }
         qx.bom.Element.removeListener(
           this.__desktop,
