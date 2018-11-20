@@ -85,6 +85,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
         project = new qxapp.data.model.ProjectModel(projectData, fromTemplate);
       }
+      qxapp.utils.UuidToName.getInstance().setProjectModel(project);
       return project;
     },
 
