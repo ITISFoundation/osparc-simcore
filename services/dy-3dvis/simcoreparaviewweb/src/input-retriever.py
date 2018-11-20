@@ -1,5 +1,5 @@
-#!/usr/bin/python3
-
+#!/pyenv/versions/3.6.7/bin/python
+# Note: this shebang is the one where the python 3.6 interpreter is installed by pyenv
 import cgitb
 cgitb.enable()
 
