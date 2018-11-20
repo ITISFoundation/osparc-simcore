@@ -183,7 +183,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           item.addListener("dbltap", e => {
             const prjUuid = item.getModel();
             if (prjUuid) {
-              that.__startProjectModel(prjUuid, fromTemplate); // eslint no-underscore-dangle: "off"
+              that.__startProjectModel(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
             } else {
               that.newPrjBtnClkd();
             }
