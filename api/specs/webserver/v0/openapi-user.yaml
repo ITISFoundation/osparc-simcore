@@ -44,10 +44,6 @@ paths:
       responses:
         '201':
           description: token created
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/my.yaml#/TokenEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
