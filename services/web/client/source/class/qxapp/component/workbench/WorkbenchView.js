@@ -96,29 +96,25 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       bottom: 10,
       right: 10
     });
-    [
-      this.__getPlusButton(),
-      this.__getRemoveButton()
-    ].forEach(widget => {
-      buttonContainer.add(widget);
-    });
+    // let addButton = this.__getPlusButton();
+    // buttonContainer.add(addButton);
+    // let removeButton = this.__getRemoveButton();
+    // buttonContainer.add(removeButton);
+    let unlinkButton = this.__unlinkButton = this.__getUnlinkButton();
+    unlinkButton.setVisibility("excluded");
+    buttonContainer.add(unlinkButton);
 
     this.addListener("dbltap", e => {
       // FIXME:
       const navBarHeight = 50;
       let x = e.getViewportLeft() - this.getBounds().left;
       let y = e.getViewportTop() - navBarHeight;
-
-      let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
-      srvCat.moveTo(x, y);
-      srvCat.open();
-      let pos = {
+      const pos = {
         x: x,
         y: y
       };
-      srvCat.addListener("AddService", ev => {
-        this.__addServiceFromCatalogue(ev, pos);
-      }, this);
+      let srvCat = this.__createServicesCatalogue(pos);
+      srvCat.open();
     }, this);
   },
 
@@ -136,6 +132,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
   },
 
   members: {
+    __unlinkButton: null,
     __nodesUI: null,
     __linksUI: null,
     __inputNodesLayout: null,
@@ -157,12 +154,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         height: BUTTON_SIZE
       });
       plusButton.addListener("execute", function() {
-        let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
-        srvCat.center();
-        srvCat.open();
-        srvCat.addListener("AddService", e => {
-          this.__addServiceFromCatalogue(e);
-        }, this);
+        this.openServicesCatalogue();
       }, this);
       return plusButton;
     },
@@ -183,6 +175,46 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         }
       }, this);
       return removeButton;
+    },
+
+    __getUnlinkButton: function() {
+      const icon = "@FontAwesome5Solid/unlink/16";
+      let unlinkBtn = new qx.ui.form.Button(null, icon);
+      unlinkBtn.set({
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE
+      });
+      unlinkBtn.addListener("execute", function() {
+        if (this.__selectedItemId && this.__isSelectedItemALink(this.__selectedItemId)) {
+          this.__removeLink(this.__getLinkUI(this.__selectedItemId));
+          this.__selectedItemId = null;
+        }
+      }, this);
+      return unlinkBtn;
+    },
+
+    openServicesCatalogue: function() {
+      let srvCat = this.__createServicesCatalogue();
+      srvCat.open();
+    },
+
+    __createServicesCatalogue: function(pos) {
+      let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
+      if (pos) {
+        srvCat.moveTo(pos.x, pos.y);
+      } else {
+        // srvCat.center();
+        const bounds = this.getLayoutParent().getBounds();
+        const workbenchViewCenter = {
+          x: bounds.left + parseInt((bounds.left + bounds.width) / 2),
+          y: bounds.top + parseInt((bounds.top + bounds.height) / 2)
+        };
+        srvCat.moveTo(workbenchViewCenter.x - 200, workbenchViewCenter.y - 200);
+      }
+      srvCat.addListener("AddService", ev => {
+        this.__addServiceFromCatalogue(ev, pos);
+      }, this);
+      return srvCat;
     },
 
     __addServiceFromCatalogue: function(e, pos) {
@@ -386,24 +418,20 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         let posX = this.__pointerPosX;
         let posY = this.__pointerPosY;
         if (this.__tempLinkNodeId === dragNodeId) {
-          let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
+          const pos = {
+            x: posX,
+            y: posY
+          };
+          let srvCat = this.__createServicesCatalogue(pos);
           if (this.__tempLinkIsInput === true) {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort());
           } else {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getOutputPort());
           }
-          srvCat.moveTo(posX, posY);
-          srvCat.open();
-          let pos = {
-            x: posX,
-            y: posY
-          };
-          srvCat.addListener("AddService", function(ev) {
-            this.__addServiceFromCatalogue(ev, pos);
-          }, this);
           srvCat.addListener("close", function(ev) {
             this.__removeTempLink();
           }, this);
+          srvCat.open();
         }
         qx.bom.Element.removeListener(
           this.__desktop,
@@ -807,6 +835,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         const selectedColor = qxapp.theme.Color.colors["workbench-link-selected"];
         this.__svgWidget.updateColor(selectedLink.getRepresentation(), selectedColor);
       }
+
+      this.__unlinkButton.setVisibility(this.__isSelectedItemALink(newID) ? "visible" : "excluded");
     },
 
     __isSelectedItemALink: function() {
