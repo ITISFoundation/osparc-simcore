@@ -3,13 +3,13 @@ services:
   # Maintenance services
   #--------------------------------------------------------------------
   # By default disabled: celery workers monitor
-  #flower:
-  #  image: ondrejit/flower:latest
-  #  command: --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbit:5672
-  #  ports:
-  #    - 5555:5555
-  #  depends_on:
-  #    - rabbit
+  flower:
+    image: ondrejit/flower:latest
+    command: --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbit:5672
+    ports:
+      - 5555:5555
+    depends_on:
+      - rabbit
   #--------------------------------------------------------------------
   # monitors databases
   adminer:
