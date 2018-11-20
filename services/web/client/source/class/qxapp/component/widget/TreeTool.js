@@ -16,8 +16,13 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
     this.populateTree();
 
     this.addListener("keypress", function(keyEvent) {
+      if (keyEvent.getKeyIdentifier() === "Delete") {
+        this.__deleteNode();
+      }
+    }, this);
+    this.addListener("keypress", function(keyEvent) {
       if (keyEvent.getKeyIdentifier() === "F2") {
-        this.__renameItem();
+        this.__renameNode();
       }
     }, this);
   },
@@ -76,14 +81,20 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       }, this);
       let renameButton = new qx.ui.toolbar.Button("Rename", "@FontAwesome5Solid/i-cursor/"+iconSize);
       renameButton.addListener("execute", e => {
-        this.__renameItem();
+        this.__renameNode();
       }, this);
       part2.add(deleteButton);
       part2.add(renameButton);
       toolbar.add(part2);
       let part3 = new qx.ui.toolbar.Part();
       let moveUpButton = new qx.ui.toolbar.Button("Up", "@FontAwesome5Solid/arrow-up/"+iconSize);
+      moveUpButton.addListener("execute", e => {
+        this.__moveUpNode();
+      }, this);
       let moveDownButton = new qx.ui.toolbar.Button("Down", "@FontAwesome5Solid/arrow-down/"+iconSize);
+      moveDownButton.addListener("execute", e => {
+        this.__moveDownNode();
+      }, this);
       part3.add(moveUpButton);
       part3.add(moveDownButton);
       toolbar.add(part3);
@@ -187,7 +198,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       this.fireDataEvent("removeNode", selectedItem.getNodeId());
     },
 
-    __renameItem: function() {
+    __renameNode: function() {
       let selectedItem = this.__getSelection();
       if (selectedItem === null) {
         return;
@@ -204,6 +215,20 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       const bounds = this.getLayoutParent().getBounds();
       treeItemRenamer.moveTo(bounds.left+100, bounds.top+150);
       treeItemRenamer.open();
+    },
+
+    __moveUpNode: function() {
+      let selectedItem = this.__getSelection();
+      if (selectedItem === null) {
+        return;
+      }
+    },
+
+    __moveDownNode: function() {
+      let selectedItem = this.__getSelection();
+      if (selectedItem === null) {
+        return;
+      }
     },
 
     nodeSelected: function(nodeId) {
