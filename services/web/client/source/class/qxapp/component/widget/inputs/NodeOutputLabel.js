@@ -61,7 +61,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
             font: title14Font,
             textAlign: "right",
             allowGrowX: true,
-            padding: 15,
+            padding: 10,
             rich: true
           });
           this._add(control, {
@@ -75,7 +75,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
             font: title14Font,
             textAlign: "right",
             allowGrowX: true,
-            padding: 15,
+            padding: 10,
             maxWidth: 250,
             rich: true
           });
@@ -101,13 +101,21 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     },
 
     __pretifyObject: function(object) {
+      let uuidToName = qxapp.utils.UuidToName.getInstance();
       let myText = "";
       const entries = Object.entries(object);
       for (let i=0; i<entries.length; i++) {
         const entry = entries[i];
         myText += String(entry[0]);
         myText += ": ";
-        myText += String(entry[1]);
+        // entry[1] might me a path of uuids
+        let entrySplitted = String(entry[1]).split("/");
+        for (let j=0; j<entrySplitted.length; j++) {
+          myText += uuidToName.convertToName(entrySplitted[j]);
+          if (j !== entrySplitted.length-1) {
+            myText += "/";
+          }
+        }
         myText += "<br/>";
       }
       return myText;
