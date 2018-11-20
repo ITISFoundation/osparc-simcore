@@ -407,7 +407,18 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.getIFrame().setSource(loadThis);
       } else if (this.getServiceUrl() !== null) {
         this.getIFrame().resetSource();
-        this.getIFrame().setSource(this.getServiceUrl());
+        if (this.getKey().includes("3d-viewer")) {
+          // HACK: add this argument to only load the defined colorMaps
+          // https://github.com/Kitware/visualizer/commit/197acaf
+          const srvUrl = this.getServiceUrl();
+          let arg = "?serverColorMaps";
+          if (srvUrl[srvUrl.length-1] !== "/") {
+            arg = "/" + arg;
+          }
+          this.getIFrame().setSource(srvUrl + arg);
+        } else {
+          this.getIFrame().setSource(this.getServiceUrl());
+        }
       }
     },
 
@@ -494,7 +505,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.fireDataEvent("ShowInLogger", msgData);
 
         // HACK: Workaround for fetching inputs in Visualizer
-        if (this.getKey() === "3d-viewer") {
+        if (this.getKey().includes("3d-viewer")) {
           let urlUpdate = this.getServiceUrl() + "/retrieve";
           let updReq = new qx.io.request.Xhr();
           updReq.set({

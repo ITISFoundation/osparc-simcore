@@ -77,9 +77,9 @@ def __convert_labels_to_docker_runtime_parameters(service_runtime_parameters_lab
     for param in service_runtime_parameters_labels:
         __check_setting_correctness(param)
         # index = str(param['value']).find("%node_uuid%")
-        if str(param['value']).find("%node_uuid%") != -1:
+        if str(param['value']).find("%service_uuid%") != -1:
             dummy_string = json.dumps(param['value'])
-            dummy_string = dummy_string.replace("%node_uuid%", node_uuid)
+            dummy_string = dummy_string.replace("%service_uuid%", node_uuid)
             param['value'] = json.loads(dummy_string)
             # replace string by actual value
             #param['value'] = str(param['value']).replace("%node_uuid%", node_uuid)
@@ -338,6 +338,7 @@ async def _silent_service_cleanup(node_uuid):
 
 async def __create_node(client: docker.client, user_id:str, list_of_services: List[Dict], service_name: str, node_uuid: str) -> List[Dict]: # pylint: disable=R0913, R0915
     log.debug("Creating %s docker services for node %s using %s for user %s", len(list_of_services), service_name, node_uuid, user_id)
+    log.debug("services %s will be started", list_of_services)
     # if the service uses several docker images, a network needs to be setup to connect them together
     inter_docker_network = None
     if len(list_of_services) > 1:
@@ -367,7 +368,7 @@ async def start_service(user_id: str, service_key: str, service_tag: str, node_u
     list_of_dependencies = await __get_dependant_repos(service_key, service_tag)
     log.debug("Found service dependencies: %s", list_of_dependencies)
     if list_of_dependencies:
-        list_of_services_to_start.append(list_of_dependencies)
+        list_of_services_to_start.extend(list_of_dependencies)
 
     # create services
     __login_docker_registry(client)
