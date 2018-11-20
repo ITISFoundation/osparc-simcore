@@ -58,6 +58,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let project = this.getProjectModel();
 
       let treeView = this.__treeView = new qxapp.component.widget.TreeTool(project.getName(), project.getWorkbenchModel());
+      treeView.addListener("addNode", () => {
+        this.__addNode();
+      }, this);
+      treeView.addListener("removeNode", e => {
+        const nodeId = e.getData();
+        this.__removeNode(nodeId);
+      }, this);
       this.__sidePanel.setTopView(treeView);
 
       let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
@@ -205,6 +212,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           }
         }
       }
+    },
+
+    __addNode: function() {
+      this.__workbenchView.openServicesCatalogue();
     },
 
     __removeNode: function(nodeId) {

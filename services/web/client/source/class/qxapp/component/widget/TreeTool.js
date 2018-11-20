@@ -23,7 +23,9 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
   },
 
   events: {
-    "NodeDoubleClicked": "qx.event.type.Data"
+    "NodeDoubleClicked": "qx.event.type.Data",
+    "addNode": "qx.event.type.Event",
+    "removeNode": "qx.event.type.Data"
   },
 
   properties: {
@@ -63,9 +65,15 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       const iconSize = 16;
       let toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
       let newButton = new qx.ui.toolbar.Button("New", "@FontAwesome5Solid/plus/"+iconSize);
+      newButton.addListener("execute", e => {
+        this.__addNode();
+      }, this);
       toolbar.add(newButton);
       let part2 = new qx.ui.toolbar.Part();
       let deleteButton = new qx.ui.toolbar.Button("Delete", "@FontAwesome5Solid/trash/"+iconSize);
+      deleteButton.addListener("execute", e => {
+        this.__deleteNode();
+      }, this);
       let renameButton = new qx.ui.toolbar.Button("Rename", "@FontAwesome5Solid/i-cursor/"+iconSize);
       renameButton.addListener("execute", e => {
         this.__renameItem();
@@ -165,6 +173,18 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       }
 
       return selectedItem;
+    },
+
+    __addNode: function() {
+      this.fireEvent("addNode");
+    },
+
+    __deleteNode: function() {
+      let selectedItem = this.__getSelection();
+      if (selectedItem === null) {
+        return;
+      }
+      this.fireDataEvent("removeNode", selectedItem.getNodeId());
     },
 
     __renameItem: function() {
