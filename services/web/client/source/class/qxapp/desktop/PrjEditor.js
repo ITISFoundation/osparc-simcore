@@ -215,10 +215,16 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __addNode: function() {
+      if (this.__mainPanel.getMainView() !== this.__workbenchView) {
+        return;
+      }
       this.__workbenchView.openServicesCatalogue();
     },
 
     __removeNode: function(nodeId) {
+      if (this.__mainPanel.getMainView() !== this.__workbenchView) {
+        return;
+      }
       // remove first the connected links
       let connectedLinks = this.getProjectModel().getWorkbenchModel().getConnectedLinks(nodeId);
       for (let i=0; i<connectedLinks.length; i++) {
