@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 ANONYMOUS_UID = -1 # For testing purposes
 
 
-#@login_required
+@login_required
 async def list_projects(request: web.Request):
     uid = request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
@@ -40,10 +40,11 @@ async def list_projects(request: web.Request):
     return {'data': projects}
 
 
-#@login_required
+@login_required
 async def create_projects(request: web.Request):
     project = await request.json()
     # TODO: validate here
+    #TODO: create as template .. ?type=template
 
     pid, uid = project['projectUuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
@@ -54,7 +55,7 @@ async def create_projects(request: web.Request):
                           content_type='application/json')
 
 
-#@login_required
+@login_required
 async def get_project(request: web.Request):
     pid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
@@ -67,7 +68,7 @@ async def get_project(request: web.Request):
     return {'data': project.data}
 
 
-#@login_required
+@login_required
 async def update_project(request: web.Request):
     pid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
@@ -86,7 +87,7 @@ async def update_project(request: web.Request):
         current_project.data[key] = value
 
 
-#@login_required
+@login_required
 async def delete_project(request: web.Request):
     pid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
@@ -110,6 +111,8 @@ async def delete_project(request: web.Request):
 # HELPERS -------------
 
 def assert_ownership(pid, uid):
-    if pid not in Fake.user_to_projects_map.get(uid):
-        msg = "User %s does not own requested project %s" %(uid, pid)
-        raise web.HTTPForbidden(reason=msg, content_type='application/json')
+    project = Fake.projects.get(pid, None)
+    if project and not project.template:
+        if pid not in Fake.user_to_projects_map.get(uid):
+            msg = "User %s does not own requested project %s" %(uid, pid)
+            raise web.HTTPForbidden(reason=msg, content_type='application/json')

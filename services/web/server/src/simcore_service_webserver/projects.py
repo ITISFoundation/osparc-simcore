@@ -11,6 +11,7 @@ from servicelib.rest_routing import iter_path_operations, map_handlers_with_oper
 
 from . import projects_handlers
 from .rest_config import APP_OPENAPI_SPECS_KEY
+from .projects_fakes import Fake
 
 CONFIG_SECTION_NAME = "projects"
 
@@ -30,8 +31,12 @@ def setup(app: web.Application, *, debug=False):
             filter(lambda o: "/projects" in o[1],  iter_path_operations(specs)),
             strict=True
     )
-
     app.router.add_routes(routes)
+
+    # debug
+    if debug:
+        Fake.load_user_projects(1)
+        Fake.load_template_projects()
 
 
 # alias
