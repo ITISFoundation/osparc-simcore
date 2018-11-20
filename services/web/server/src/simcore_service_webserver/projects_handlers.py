@@ -35,8 +35,8 @@ async def list_projects(request: web.Request):
     if count is None:
         count = len(projects)
 
-    count = min(count, len(projects))
-    projects = projects[start:start+count]
+    stop = min(start+count, len(projects))
+    projects = projects[start:stop]
     return {'data': projects}
 
 
