@@ -7,10 +7,25 @@ from simcore_service_webserver.login.utils import (encrypt_password,
                                                    get_random_string)
 from utils_assert import assert_status
 
+import re
+
+TEST_MARKS = re.compile(r'TEST (\w+):(.*)')
+
+def parse_test_marks(text):
+    """ Checs for marks as
+
+        TEST name:123123
+        TEST link:some-value
+    """
+    marks = {}
+    for m in TEST_MARKS.finditer(text):
+        key, value = m.groups()
+        marks[key] = value.strip()
+    return marks
+
 
 def parse_link(text):
-    link = text.split('<a href="')[1].split('"')[0]
-    assert '/auth/confirmation/' in link
+    link = parse_test_marks(text)["link"]
     return URL(link).path
 
 
