@@ -11,18 +11,26 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
+    this.__toolBar = this._createChildControlImpl("toolbar");
     this.__tree = this._createChildControlImpl("tree");
     this.populateTree();
 
     this.addListener("keypress", function(keyEvent) {
+      if (keyEvent.getKeyIdentifier() === "Delete") {
+        this.__deleteNode();
+      }
+    }, this);
+    this.addListener("keypress", function(keyEvent) {
       if (keyEvent.getKeyIdentifier() === "F2") {
-        this.__renameItem();
+        this.__renameNode();
       }
     }, this);
   },
 
   events: {
-    "NodeDoubleClicked": "qx.event.type.Data"
+    "NodeDoubleClicked": "qx.event.type.Data",
+    "addNode": "qx.event.type.Event",
+    "removeNode": "qx.event.type.Data"
   },
 
   properties: {
@@ -37,11 +45,16 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
   },
 
   members: {
+    __toolBar: null,
     __tree: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "toolbar":
+          control = this.__buildToolbar();
+          this._add(control);
+          break;
         case "tree":
           control = this.__buildTree();
           this._add(control, {
@@ -51,6 +64,37 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __buildToolbar: function() {
+      const iconSize = 16;
+      let toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
+      let newButton = new qx.ui.toolbar.Button("New", "@FontAwesome5Solid/plus/"+iconSize);
+      newButton.addListener("execute", e => {
+        this.__addNode();
+      }, this);
+      toolbar.add(newButton);
+      let part2 = new qx.ui.toolbar.Part();
+      let deleteButton = new qx.ui.toolbar.Button("Delete", "@FontAwesome5Solid/trash/"+iconSize);
+      deleteButton.addListener("execute", e => {
+        this.__deleteNode();
+      }, this);
+      let renameButton = new qx.ui.toolbar.Button("Rename", "@FontAwesome5Solid/i-cursor/"+iconSize);
+      renameButton.addListener("execute", e => {
+        this.__renameNode();
+      }, this);
+      part2.add(deleteButton);
+      part2.add(renameButton);
+      toolbar.add(part2);
+      /*
+      let part3 = new qx.ui.toolbar.Part();
+      let moveUpButton = new qx.ui.toolbar.Button("Up", "@FontAwesome5Solid/arrow-up/"+iconSize);
+      let moveDownButton = new qx.ui.toolbar.Button("Down", "@FontAwesome5Solid/arrow-down/"+iconSize);
+      part3.add(moveUpButton);
+      part3.add(moveDownButton);
+      toolbar.add(part3);
+      */
+      return toolbar;
     },
 
     __buildTree: function() {
@@ -138,7 +182,19 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       return selectedItem;
     },
 
-    __renameItem: function() {
+    __addNode: function() {
+      this.fireEvent("addNode");
+    },
+
+    __deleteNode: function() {
+      let selectedItem = this.__getSelection();
+      if (selectedItem === null) {
+        return;
+      }
+      this.fireDataEvent("removeNode", selectedItem.getNodeId());
+    },
+
+    __renameNode: function() {
       let selectedItem = this.__getSelection();
       if (selectedItem === null) {
         return;

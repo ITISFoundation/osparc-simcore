@@ -76,6 +76,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
             textAlign: "right",
             allowGrowX: true,
             padding: 15,
+            maxWidth: 250,
             rich: true
           });
           this._add(control);
