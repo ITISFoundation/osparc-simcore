@@ -87,13 +87,13 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       this.fireDataEvent("StartProject", data);
     },
 
-    __startProjectModel: function(projectId, fromTemplate = false) {
+    startProjectModel: function(projectId, fromTemplate = false) {
       // let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
       let resource = this.__projectResources.project;
 
       resource.addListenerOnce("getSuccess", function(e) {
         // TODO: is this listener added everytime we call ?? It does not depend on input params
-        // but it needs to be here to implemenet __startProjectModel
+        // but it needs to be here to implemenet startProjectModel
         let projectData = e.getRequest().getResponse().data;
         let model = new qxapp.data.model.ProjectModel(projectData, fromTemplate);
         const data = {
@@ -183,7 +183,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           item.addListener("dbltap", e => {
             const prjUuid = item.getModel();
             if (prjUuid) {
-              that.__startProjectModel(prjUuid, fromTemplate); // eslint no-underscore-dangle: "off"
+              that.startProjectModel(prjUuid, fromTemplate); // eslint no-underscore-dangle: "off"
             } else {
               that.newPrjBtnClkd();
             }
