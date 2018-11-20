@@ -72,17 +72,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let workbenchView = this.__workbenchView = new qxapp.component.workbench.WorkbenchView(project.getWorkbenchModel());
       workbenchView.addListener("removeNode", e => {
         const nodeId = e.getData();
-        // remove first the connected links
-        let connectedLinks = this.getProjectModel().getWorkbenchModel().getConnectedLinks(nodeId);
-        for (let i=0; i<connectedLinks.length; i++) {
-          const linkId = connectedLinks[i];
-          if (this.getProjectModel().getWorkbenchModel().removeLink(linkId)) {
-            this.__workbenchView.clearLink(linkId);
-          }
-        }
-        if (this.getProjectModel().getWorkbenchModel().removeNode(nodeId)) {
-          this.__workbenchView.clearNode(nodeId);
-        }
+        this.__removeNode(nodeId);
       }, this);
       workbenchView.addListener("removeLink", e => {
         const linkId = e.getData();
@@ -214,6 +204,20 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
             this.showScreenshotInExtraView("form");
           }
         }
+      }
+    },
+
+    __removeNode: function(nodeId) {
+      // remove first the connected links
+      let connectedLinks = this.getProjectModel().getWorkbenchModel().getConnectedLinks(nodeId);
+      for (let i=0; i<connectedLinks.length; i++) {
+        const linkId = connectedLinks[i];
+        if (this.getProjectModel().getWorkbenchModel().removeLink(linkId)) {
+          this.__workbenchView.clearLink(linkId);
+        }
+      }
+      if (this.getProjectModel().getWorkbenchModel().removeNode(nodeId)) {
+        this.__workbenchView.clearNode(nodeId);
       }
     },
 
