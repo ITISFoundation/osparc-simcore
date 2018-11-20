@@ -244,8 +244,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/container/itis/s4l/Simulator/LF-0.0.0": {
-          key: "services/container/itis/s4l/Simulator/LF",
+        "services/demodec/container/itis/s4l/Simulator/LF-0.0.0": {
+          key: "services/demodec/container/itis/s4l/Simulator/LF",
           version: "0.0.0",
           type: "container",
           name: "LF Simulator",
