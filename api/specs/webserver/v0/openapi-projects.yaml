@@ -11,6 +11,25 @@ paths:
     get:
       summary: List projects
       operationId: list_projects
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [template, user, all]
+          description: if true only templates otherwise only users
+        - name: count
+          in: query
+          schema:
+            type: integer
+            minItems: 1
+          description: maximum number of items to return
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minItems: 0
+          description: 'the page index to return within a collection. The page size is determined by the value of the count parameter'
       responses:
         '200':
           description: list of projects

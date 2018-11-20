@@ -119,30 +119,40 @@ async def test_create(client, fake_db, fake_project):
     assert pid in fake_db.user_to_projects_map[ANONYMOUS_UID]
 
 
-async def test_read_all(client, fake_db):
+async def test_list(client, fake_db):
     # TODO: create fixture
     fake_db.load_user_projects(ANONYMOUS_UID)
     fake_db.load_template_projects()
     #-----------------
 
-    # list all
-    # TODO: discriminate between templates and user projects
+    # list all user projects
     url = client.app.router["list_projects"].url_for()
     assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
 
     # GET /v0/projects
-    resp = await client.get(url)
+    resp = await client.get(url.with_query(count=3))
     payload = await resp.json()
     assert resp.status == 200, payload
 
     projects, error = unwrap_envelope(payload)
     assert not error
     assert projects
-    assert isinstance(projects, list)
+    assert len(projects)==3
 
 
-async def test_read_one(client, fake_db, fake_project):
-    fake_db.add_projects([fake_project, ], user_id=-1) # TODO: create fixture
+    # list all template projects
+    resp = await client.get(url.with_query(type="template"))
+    payload = await resp.json()
+    assert resp.status == 200, payload
+
+    projects, error = unwrap_envelope(payload)
+    assert not error
+    assert projects
+
+
+
+async def test_get(client, fake_db, fake_project):
+    fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO: create fixture
     pid = fake_project["projectUuid"]
     #-----------------
 
@@ -151,13 +161,19 @@ async def test_read_one(client, fake_db, fake_project):
     assert str(url) == PREFIX + "/%s/%s" % (RESOURCE_NAME, pid)
 
     # GET /v0/projects/{project_id}
-    resp = await client.get()
+    resp = await client.get(url)
     payload = await resp.json()
     assert resp.status == 200, payload
 
+    project, error = unwrap_envelope(payload)
+    assert not error
+    assert project
+
+    assert project == fake_project
+
 
 async def test_update(client, fake_db, fake_project):
-    fake_db.add_projects([fake_project, ], user_id=0) # TODO: create fixture
+    fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO: create fixture
     pid = fake_project["projectUuid"]
     #-----------------
 
@@ -173,10 +189,17 @@ async def test_update(client, fake_db, fake_project):
     payload = await resp.json()
     assert resp.status == 200, payload
 
+    project, error = unwrap_envelope(payload)
+    assert not error
+    assert not project
+
+    assert fake_db.projects[pid].data["name"] == "some other name"
+    assert fake_db.projects[pid].data["notes"] == "some other"
+
     # TODO: read in db
 
 async def test_delete(client, fake_db, fake_project):
-    fake_db.add_projects([fake_project, ], user_id=0) # TODO:
+    fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO:
     pid = fake_project["projectUuid"]
     # -------------
 
