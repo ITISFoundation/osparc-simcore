@@ -11,6 +11,25 @@ paths:
     get:
       summary: List projects
       operationId: list_projects
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [template, user, all]
+          description: if true only templates otherwise only users
+        - name: start
+          in: query
+          schema:
+            type: integer
+            minItems: 0
+          description: index to the first item to return
+        - name: count
+          in: query
+          schema:
+            type: integer
+            minItems: 1
+          description: maximum number of items to return
       responses:
         '200':
           description: list of projects

@@ -18,14 +18,25 @@ ANONYMOUS_UID = -1 # For testing purposes
 #@login_required
 async def list_projects(request: web.Request):
     uid = request.get(RQT_USERID_KEY, ANONYMOUS_UID)
-    only_templates = request.match_info.get("template", False)
 
-    if only_templates:
-        projects = [prj for prj in Fake.user_to_projects_map if prj.template]
-    else:
-        projects = [Fake.projects[pid]
+    # TODO: implement all query parameters as in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
+    start = request.match_info.get('start', 0)
+    count = request.match_info.get('count', None)
+    ptype = request.match_info.get('type', 'user')
+
+    projects = []
+    if ptype in ("template", "all"):
+        projects += [prj.data for prj in Fake.projects if prj.template]
+
+    if ptype in ("user", "all"):
+        projects += [Fake.projects[pid].data
                         for pid in Fake.user_to_projects_map.get(uid, list())]
 
+    if count is None:
+        count = len(projects)
+
+    count = min(count, len(projects))
+    projects = projects[start:start+count]
     return {'data': projects}
 
 
@@ -51,43 +62,54 @@ async def get_project(request: web.Request):
     if not project:
         raise web.HTTPNotFound(content_type='application/json')
 
-    if pid in Fake.user_to_projects_map.get(uid):
-        msg = "User %s does not own requested project %s" %(uid, pid)
-        raise web.HTTPForbidden(reason=msg, content_type='application/json')
+    assert_ownership(pid, uid)
 
-    return {'data': project}
+    return {'data': project.data}
 
 
 #@login_required
 async def update_project(request: web.Request):
-    project = await request.json()
+    pid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+
+    new_values = await request.json()
     # TODO: validate project data
 
-    import pdb; pdb.set_trace()
-
-    pid, uid = project['projectUuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
     current_project = Fake.projects.get(pid)
     if not current_project:
         raise web.HTTPNotFound(content_type='application/json')
 
-    if pid in Fake.user_to_projects_map.get(uid):
-        msg = "User %s does not own requested project %s" %(uid, pid)
-        raise web.HTTPForbidden(reason=msg, content_type='application/json')
+    assert_ownership(pid, uid)
 
-    for key in project:
-        current_project[key] = project[key] # FIXME: update only rhs branches
+    # FIXME: limited to updates in first level!
+    for key, value in new_values.items():
+        current_project.data[key] = value
 
 
 #@login_required
 async def delete_project(request: web.Request):
     pid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
-    if pid in Fake.user_to_projects_map.get(uid):
-        msg = "User %s does not own requested project %s" %(uid, pid)
-        raise web.HTTPForbidden(reason=msg, content_type='application/json')
+    assert_ownership(pid, uid)
 
     # TODO: sharing policy: can user delete if shared?
     Fake.projects.pop(pid, None)
-    for _, project_ids in Fake.user_to_projects_map.items():
+    delete = []
+    for key, project_ids in Fake.user_to_projects_map.items():
         project_ids[:] = [i for i in project_ids if i!=pid]
+        if not project_ids:
+            delete.append(key)
+
+    for key in delete:
+        Fake.user_to_projects_map.pop(key, None)
+
+    raise web.HTTPNoContent(content_type='application/json')
+
+
+
+# HELPERS -------------
+
+def assert_ownership(pid, uid):
+    if pid not in Fake.user_to_projects_map.get(uid):
+        msg = "User %s does not own requested project %s" %(uid, pid)
+        raise web.HTTPForbidden(reason=msg, content_type='application/json')

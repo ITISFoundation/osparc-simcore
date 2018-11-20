@@ -9,6 +9,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
   members: {
     createProjectResources: function() {
       // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
+      // SEE: api/specs/webserver/v0/openapi-projects.yaml
       const basePath = qxapp.rest.ResourceFactory.API;
 
       // Singular resource
