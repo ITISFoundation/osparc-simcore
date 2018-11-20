@@ -49,8 +49,8 @@ async def _initialise_platform(port_configuration_path: Path, file_generator):
     with port_configuration_path.open() as file_pointer:
         configuration = json.load(file_pointer)
     
-    if not all(["schema", "inputs", "outputs"]) in configuration:
-        raise Exception(msg="invalid port configuration!")
+    if not all(k in configuration for k in ("schema", "inputs", "outputs")):
+        raise Exception("invalid port configuration in {}, {}!".format(str(port_configuration_path), configuration))
 
     # init s3 to ensure we have a bucket
     init_s3()
@@ -100,23 +100,23 @@ if __name__ == "__main__":
     parser.add_argument("portconfig", help="The path to the port configuration file (json format)", type=Path)
     group = parser.add_mutually_exclusive_group()    
     group.add_argument("--files", help="any number of files to upload", type=Path, nargs="*")
-    group.add_argument("--folder", help="a path to upload files from", type=Path, nargs="*")
+    group.add_argument("--folder", help="a path to upload files from", type=Path)
     args = sys.argv[1:]
     options = parser.parse_args(args)
     #print("options %s", options)
     if options.files is not None:
         def _file_generator(file_index: int):
             if file_index < len(options.files):
-                yield options.files[file_index]
-            yield None
+                return options.files[file_index]
+            return None
         main(port_configuration_path=options.portconfig, file_generator=_file_generator)
 
     if options.folder is not None:
         def _file_generator(file_index: int):
             files = [x for x in options.folder.iterdir() if x.is_file()]
             if file_index < len(files):
-                yield files[file_index]
-            yield None
+                return files[file_index]
+            return None
         main(port_configuration_path=options.portconfig, file_generator=_file_generator)    
 
     
