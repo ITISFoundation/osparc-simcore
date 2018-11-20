@@ -137,7 +137,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Neuroman models",
               description: "Neuroman models",
-              type: "node-output-list-icon-api-v0.0.1"
+              type: "node-output-list-api-v0.0.1"
             }
           },
           inputs: {
