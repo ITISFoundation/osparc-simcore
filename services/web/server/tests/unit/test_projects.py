@@ -48,7 +48,10 @@ def client(loop, aiohttp_client, aiohttp_unused_port, api_specs_dir, fake_db):
     # setup_db(app)
     setup_session(app)
     setup_rest(app, debug=True)
-    setup_projects(app, debug=False)
+    setup_projects(app,
+        debug=False, # no fake data
+        disable_login=True
+    )
 
     yield loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
 
