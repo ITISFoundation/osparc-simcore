@@ -109,7 +109,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       // let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
       let resource = this.__projectResources.project;
 
-      resource.addListenerOnce("getSuccess", function(e) {
+      resource.addListenerOnce("getSuccess", e => {
         // TODO: is this listener added everytime we call ?? It does not depend on input params
         // but it needs to be here to implemenet startProjectModel
         let projectData = e.getRequest().getResponse().data;
@@ -145,12 +145,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         }
       }, this);
 
-      this.__fetchUserProjects();
+      this.reloadUserProjects();
 
       return usrLst;
     },
 
-    __fetchUserProjects: function() {
+    reloadUserProjects: function() {
       // resources
       // let userPrjList = qxapp.data.Store.getInstance().getUserProjectList();
       this.__userProjectList.removeAll();
@@ -179,6 +179,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }, this);
 
       resources.get();
+
+      this.__itemSelected(null);
     },
 
     __createPublicProjectList: function() {
@@ -365,8 +367,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
       // buttons
       let saveButton = new qx.ui.form.Button(this.tr("Save"));
-      saveButton.setWidth(70);
-      form.addButton(saveButton);
+      saveButton.setMaxWidth(70);
+      saveButton.setEnabled(!fromTemplate);
       saveButton.addListener("execute", e => {
         for (let i=0; i<itemsToBeModified.length; i++) {
           const key = itemsToBeModified[i];
@@ -377,7 +379,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         let resource = this.__projectResources.project;
 
         resource.addListenerOnce("putSuccess", ev => {
-          this.__fetchUserProjects();
+          this.reloadUserProjects();
         }, this);
 
         resource.put({
@@ -386,13 +388,32 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
         this.__itemSelected(null);
       }, this);
+      form.addButton(saveButton);
 
       let cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
-      cancelButton.setWidth(70);
-      form.addButton(cancelButton);
+      cancelButton.setMaxWidth(70);
       cancelButton.addListener("execute", e => {
         this.__itemSelected(null);
       }, this);
+      form.addButton(cancelButton);
+
+      let deleteButton = new qx.ui.form.Button(this.tr("Delete"));
+      deleteButton.setMaxWidth(70);
+      deleteButton.setEnabled(!fromTemplate);
+      deleteButton.addListener("execute", e => {
+        let resource = this.__projectResources.project;
+
+        resource.addListenerOnce("delSuccess", ev => {
+          this.reloadUserProjects();
+        }, this);
+
+        resource.del({
+          "project_id": projectData["projectUuid"]
+        });
+
+        this.__itemSelected(null);
+      }, this);
+      form.addButton(deleteButton);
 
       this.__editPrjLayout.add(new qx.ui.form.renderer.Single(form));
       this.__editPrjLayout.add(saveButton);
