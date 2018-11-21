@@ -17,12 +17,13 @@ async def _request_director(request: web.Request, method: str = None) -> web.Res
         method = request.method
     # replace raw path, to keep the quotes
     url_path = request.rel_url.raw_path
+    # FIXME: the basepath (i.e. version in director) is NOT the same as the version api in webserver!!! USE director_sdk instead!!!
 
     cfg = get_config(request.app)
     urlbase = URL.build(scheme='http', host=cfg['host'], port=cfg['port'])
 
     # add the user id
-    userid = request[RQT_USERID_KEY]  
+    userid = request[RQT_USERID_KEY]
     query["user_id"] = userid
     url = urlbase.with_path(url_path).with_query(query)
 
