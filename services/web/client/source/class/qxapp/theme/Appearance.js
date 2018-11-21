@@ -35,10 +35,10 @@ qx.Theme.define("qxapp.theme.Appearance", {
           backgroundColor: "transparent"
         };
         if (states.hovered) {
-          style.backgroundColor = "yellow";
+          style.backgroundColor = "#444";
         }
         if (states.selected) {
-          style.backgroundColor = "blue";
+          style.backgroundColor = "#555";
         }
         return style;
       }
