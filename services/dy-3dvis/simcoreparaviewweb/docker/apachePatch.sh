@@ -8,9 +8,10 @@
 # docker defined variables (which are user variables)
 
 echo "setting up system-variables..."
-echo "export PYTHONPATH=/home/root/packages/packages/simcore-sdk/src:/home/root/packages/packages/s3wrapper/src" >> /etc/environment
 echo "export SIMCORE_NODE_UUID=${SIMCORE_NODE_UUID}" >> /etc/environment
 echo "export SIMCORE_PIPELINE_ID=${SIMCORE_PIPELINE_ID}" >> /etc/environment
+echo "export SIMCORE_USER_ID=${SIMCORE_USER_ID}" >> /etc/environment
+echo "export STORAGE_ENDPOINT=${STORAGE_ENDPOINT}" >> /etc/environment
 echo "export S3_ENDPOINT=${S3_ENDPOINT}" >> /etc/environment
 echo "export S3_ACCESS_KEY=${S3_ACCESS_KEY}" >> /etc/environment
 echo "export S3_SECRET_KEY=${S3_SECRET_KEY}" >> /etc/environment

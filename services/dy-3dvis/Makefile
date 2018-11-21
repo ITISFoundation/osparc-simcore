@@ -15,7 +15,7 @@ export DOCKER=docker
 endif
 
 
-export SERVICES_VERSION=1.0.4
+export SERVICES_VERSION=1.0.5
 export VCS_REF=$(shell git rev-parse --short HEAD) 
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
