@@ -98,6 +98,7 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
     # retrieves sent link by email (see monkeypatch of email in conftest.py)
     out, err = capsys.readouterr()
     link = parse_link(out)
+    assert '/auth/confirmation/' in str(link)
     r = await client.get(link)
 
     data, error = unwrap_envelope(await r.json())

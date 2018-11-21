@@ -20,6 +20,7 @@ from .session import setup_session
 from .sockets import setup_sockets
 from .statics import setup_statics
 from .storage import setup_storage
+from .projects import setup_projects
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ def create_application(config: dict):
     setup_director(app)
     setup_s3(app)
     setup_storage(app)
+    setup_projects(app, debug=True) # TODO: deactivate fakes i.e. debug=testing
 
     return app
 

@@ -1,34 +1,38 @@
 #!/bin/bash
 echo "current directory is ${PWD}"
 
-
+# we need to be in python 3.6 to install simcore stuff
+export PATH="${PYENV_ROOT}/bin:$PATH"
+eval "$(pyenv init -)"
+python -V
+pip -V
 
 if [[ -v CREATE_DUMMY_TABLE ]];
 then
-    pushd /home/root/packages/simcore-sdk; pip install -r requirements-dev.txt; popd
-    pushd /home/root/packages/s3wrapper; pip install -r requirements-dev.txt; popd
+    pushd /home/root/packages/simcore-sdk; pip3 install -r requirements-dev.txt; popd
+    pushd /home/root/packages/s3wrapper; pip3 install -r requirements-dev.txt; popd
+    pushd /home/root/scripts/dy_services_helpers; pip3 install -r requirements.txt; popd
     # in dev mode, data located in mounted volume /test-data are uploaded to the S3 server
     # also a fake configuration is set in the DB to simulate the osparc platform
     echo "development mode, creating dummy tables..."
     # in style: pipelineid,nodeuuid
-    result="$(python3 devel/devel-initconfiguration.py ${USE_CASE_CONFIG_FILE})";
+    result="$(python3 scripts/dy_services_helpers/platform_initialiser.py ${USE_CASE_CONFIG_FILE} --folder ${TEST_DATA_PATH})";
     echo "Received result of $result";
     IFS=, read -a array <<< "$result"; 
     echo "Received result pipeline id of ${array[0]}";
     echo "Received result node uuid of ${array[1]}";
     # the fake SIMCORE_NODE_UUID is exported to be available to the service
-    export SIMCORE_PIPELINE_ID="${array[0]}";
     export SIMCORE_NODE_UUID="${array[1]}";
 fi
 
 echo "modifying apache configuration..."
-. scripts/apachePatch.sh
+. docker/apachePatch.sh
 
 echo "restarting the apache service..."
 service apache2 restart
 
 # echo "modifying wslink launcher configuration"
-. scripts/visualizer_launcher_patch.sh
+. docker/visualizer_launcher_patch.sh
 
 if [[ -v CREATE_DUMMY_TABLE ]];
 then
@@ -40,7 +44,7 @@ else
     # this is currently necessary due to some unknown reason with regard to how paraviewweb 
     # visualizer is started (see below)
     echo "Waiting for server hostname/port to be defined"
-    host_port="$(python3 src/getport.py)";
+    host_port="$(python docker/getport.py)";
     echo "Received hostname/port: ${host_port}"
     IFS=, read -a array <<< "$host_port"; 
     echo "Host name decoded as ${array[0]}";

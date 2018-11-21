@@ -47,6 +47,7 @@ FROM base AS development
 VOLUME /home/jovyan/packages
 VOLUME /home/jovyan/services
 VOLUME /home/jovyan/devel
+VOLUME /home/root/scripts/dy_services_helpers
 VOLUME /home/jovyan/work
 VOLUME /home/jovyan/docker
 ENV CREATE_DUMMY_TABLE=1
@@ -66,5 +67,6 @@ COPY --chown=jovyan:users services/storage/client-sdk /home/jovyan/services/stor
 # copy the default notebook
 COPY --chown=jovyan:users services/dy-jupyter/notebooks /home/jovyan/notebooks
 RUN pip install /home/jovyan/packages/simcore-sdk &&\
-    pip install /home/jovyan/packages/s3wrapper
+    pip install /home/jovyan/packages/s3wrapper && \
+    pip install /home/jovyan/services/storage/client-sdk/python
 ENTRYPOINT [ "/bin/bash", "/docker/boot.sh" ]

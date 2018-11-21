@@ -1,0 +1,100 @@
+openapi: 3.0.0
+info:
+  title: auth API
+  version: 0.1.0
+  description: authentication and authorization
+servers:
+  - description: API server
+    url: '/v0'
+paths:
+
+  /auth/register:
+    post:
+      operationId: auth_register
+      requestBody:
+        description: user registration
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/registration.yaml#/RegistrationType'
+        required: true
+      responses:
+        '200':
+          description: User has been succesfully registered.
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  /auth/login:
+    post:
+      operationId: auth_login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/login.yaml#/LoginFormType'
+      responses:
+        '200':
+          description: Succesfully logged in
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  /auth/logout:
+    get:
+      operationId: auth_logout
+      responses:
+        '200':
+          description: Succesfully logged out
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  #TODO: /auth/reset-password:
+
+  /auth/change-email:
+    post:
+      operationId: auth_change_email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_email:
+                  type: string
+                  #format: email
+      responses:
+        '200':
+          description: User has been succesfully registered.
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  #TODO: /auth/change-password:
+
+  /auth/confirmation/{code}:
+    get:
+      operationId: auth_confirmation
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            #format: uuid
+      responses:
+        '204':
+          description: confirmation processed

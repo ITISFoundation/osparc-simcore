@@ -70,12 +70,13 @@ async def register(request: web.Request):
     try:
         await render_and_send_mail(
             request, email,
-            common_themed('registration_email.html'), {
+            common_themed('registration_email-v2.html'), {
                 'auth': {
                     'cfg': cfg,
                 },
                 'host': request.host,
                 'link': link,
+                'name': email.split("@")[0],
             })
     except Exception: #pylint: disable=broad-except
         log.exception('Can not send email')

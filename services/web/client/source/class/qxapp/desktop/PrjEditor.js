@@ -35,7 +35,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       nullable: false,
       init: true,
       check: "Boolean",
-      apply : "__applyCanStart"
+      apply: "__applyCanStart"
     }
   },
 
@@ -58,6 +58,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let project = this.getProjectModel();
 
       let treeView = this.__treeView = new qxapp.component.widget.TreeTool(project.getName(), project.getWorkbenchModel());
+      treeView.addListener("addNode", () => {
+        this.__addNode();
+      }, this);
+      treeView.addListener("removeNode", e => {
+        const nodeId = e.getData();
+        this.__removeNode(nodeId);
+      }, this);
       this.__sidePanel.setTopView(treeView);
 
       let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
@@ -72,17 +79,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let workbenchView = this.__workbenchView = new qxapp.component.workbench.WorkbenchView(project.getWorkbenchModel());
       workbenchView.addListener("removeNode", e => {
         const nodeId = e.getData();
-        // remove first the connected links
-        let connectedLinks = this.getProjectModel().getWorkbenchModel().getConnectedLinks(nodeId);
-        for (let i=0; i<connectedLinks.length; i++) {
-          const linkId = connectedLinks[i];
-          if (this.getProjectModel().getWorkbenchModel().removeLink(linkId)) {
-            this.__workbenchView.clearLink(linkId);
-          }
-        }
-        if (this.getProjectModel().getWorkbenchModel().removeNode(nodeId)) {
-          this.__workbenchView.clearNode(nodeId);
-        }
+        this.__removeNode(nodeId);
       }, this);
       workbenchView.addListener("removeLink", e => {
         const linkId = e.getData();
@@ -166,12 +163,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__currentNodeId = nodeId;
       this.__treeView.nodeSelected(nodeId);
 
+      const workbenchModel = this.getProjectModel().getWorkbenchModel();
       if (nodeId === "root") {
-        const workbenchModel = this.getProjectModel().getWorkbenchModel();
         this.__workbenchView.loadModel(workbenchModel);
         this.showInMainView(this.__workbenchView, nodeId);
       } else {
-        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
+        let nodeModel = workbenchModel.getNodeModel(nodeId);
 
         let widget;
         if (nodeModel.isContainer()) {
@@ -195,7 +192,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (nodeId === "root") {
         this.showScreenshotInExtraView("workbench");
       } else {
-        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
+        let nodeModel = workbenchModel.getNodeModel(nodeId);
         if (nodeModel.isContainer()) {
           this.showScreenshotInExtraView("container");
         } else {
@@ -214,6 +211,31 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
             this.showScreenshotInExtraView("form");
           }
         }
+      }
+    },
+
+    __addNode: function() {
+      if (this.__mainPanel.getMainView() !== this.__workbenchView) {
+        return;
+      }
+      this.__workbenchView.openServicesCatalogue();
+    },
+
+    __removeNode: function(nodeId) {
+      if (this.__mainPanel.getMainView() !== this.__workbenchView) {
+        return;
+      }
+      // remove first the connected links
+      let workbenchModel = this.getProjectModel().getWorkbenchModel();
+      let connectedLinks = workbenchModel.getConnectedLinks(nodeId);
+      for (let i=0; i<connectedLinks.length; i++) {
+        const linkId = connectedLinks[i];
+        if (workbenchModel.removeLink(linkId)) {
+          this.__workbenchView.clearLink(linkId);
+        }
+      }
+      if (workbenchModel.removeNode(nodeId)) {
+        this.__workbenchView.clearNode(nodeId);
       }
     },
 
@@ -241,7 +263,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showScreenshotInExtraView: function(name) {
-      let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_"+name+".png").set({
+      let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_" + name + ".png").set({
         scale: true,
         allowShrinkX: true,
         allowShrinkY: true
@@ -276,7 +298,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         socket.on("progress", function(data) {
           let d = JSON.parse(data);
           let node = d["Node"];
-          let progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
+          let progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
           this.__workbenchView.updateProgress(node, progress);
         }, this);
       }
@@ -366,11 +388,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (node) {
         this.getLogger().info(node.getCaption(), msg);
       }
-    },
-
-    __createIFrame: function(url) {
-      let iFrame = new qxapp.component.widget.PersistentIframe(url);
-      return iFrame;
     },
 
     __addWidgetToMainView: function(widget) {
