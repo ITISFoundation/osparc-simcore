@@ -17,6 +17,7 @@ def create_db_tables(**kargs):
     metadata.create_all(bind=engine, tables=[users, tokens], checkfirst=True)
     return url
 
+
 async def create_token_in_db(engine, **data):
     # TODO change by faker?
     params = {
@@ -35,14 +36,16 @@ async def create_token_in_db(engine, **data):
         row = await result.first()
         return dict(row)
 
-async def get_token_from_db(engine, *, token_id):
+
+async def get_token_from_db(engine, *, token_id=None, user_id=None, token_service=None, token_data=None):
     async with engine.acquire() as conn:
-        stmt = sa.select([tokens,]).where(
-            tokens.c.token_id == token_id
-        )
+        expr = to_expression(token_id=token_id, user_id=user_id,
+                             token_service=token_service, token_data=token_data)
+        stmt = sa.select([tokens, ]).where(expr)
         result = await conn.execute(stmt)
         row = await result.first()
-        return dict(row)
+        return dict(row) if row else None
+
 
 async def delete_token_from_db(engine, *, token_id):
     expr = tokens.c.token_id == token_id
@@ -50,12 +53,13 @@ async def delete_token_from_db(engine, *, token_id):
         stmt = tokens.delete().where(expr)
         await conn.execute(stmt)
 
+
 async def delete_all_tokens_from_db(engine):
     async with engine.acquire() as conn:
         await conn.execute(tokens.delete())
 
 
-
-def build_expression(params):
-    expr = reduce(and_, [ getattr(tokens.c, key) == value for key, value in params.items() ] )
+def to_expression(**params):
+    expr = reduce(and_, [getattr(tokens.c, key) ==
+                         value for key, value in params.items() if value is not None])
     return expr

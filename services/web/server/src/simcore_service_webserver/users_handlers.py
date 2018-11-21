@@ -63,7 +63,7 @@ async def list_tokens(request: web.Request):
     async with engine.acquire() as conn:
         query = (sa.select([tokens.c.token_data])
                    .where(tokens.c.user_id == uid)
-        )
+                 )
         async for row in conn.execute(query):
             user_tokens.append(row["token_data"])
 
@@ -77,10 +77,10 @@ async def get_token(request: web.Request):
 
     async with engine.acquire() as conn:
         query = (sa.select([tokens.c.token_data])
-                   .where( sql.and_(
+                   .where(sql.and_(
                        tokens.c.user_id == uid,
                        tokens.c.token_service == service_id)
-                   )
+        )
         )
         result = await conn.execute(query)
         row = await result.first()
@@ -94,5 +94,13 @@ async def update_token(request: web.Request):
 
 @login_required
 async def delete_token(request: web.Request):
-    raise NotImplementedError("%s still not implemented" % request)
-    #raise web.HTTPNoContent()
+    uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
+    service_id = request.match_info.get('service')
+
+    async with engine.acquire() as conn:
+        query = tokens.delete().where(sql.and_(tokens.c.user_id == uid,
+                                               tokens.c.token_service == service_id)
+                                      )
+        await conn.execute(query)
+
+    raise web.HTTPNoContent(content_type='application/json')

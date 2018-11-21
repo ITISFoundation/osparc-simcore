@@ -152,7 +152,6 @@ async def test_create(client, logged_user, tokens_db):
 
 
 async def test_read(client, logged_user, tokens_db, fake_tokens):
-
     # list all
     url = client.app.router["list_tokens"].url_for()
     assert "/v0/my/tokens" == str(url)
@@ -195,15 +194,19 @@ async def test_update(client):
             # TODO: check db entry and field was update
 
 
-async def test_delete(client):
-    async with LoggedUser(client):
-        async with NewToken({'service': 'blackfynn'}, client.app):
-            url = client.app.router["delete_token"].url_for(
-                service='blackfynn')
-            assert "/v0/my/tokens/blackfynn" == str(url)
+async def test_delete(client, logged_user, tokens_db, fake_tokens):
+    sid = fake_tokens[0]['service']
 
-            resp = await client.delete(url)
-            payload = await resp.json()
+    url = client.app.router["delete_token"].url_for(service=sid)
+    assert "/v0/my/tokens/%s" % sid == str(url)
 
-            assert resp.status == 204, payload
-            assert not payload
+    resp = await client.delete(url)
+    payload = await resp.json()
+
+    assert resp.status == 204, payload
+
+    data, error = unwrap_envelope(payload)
+    assert not error
+    assert not data
+
+    assert not (await get_token_from_db(tokens_db, token_service=sid))
