@@ -22,6 +22,7 @@ from simcore_service_webserver.users import setup_users
 
 from utils_assert import assert_status
 from utils_login import LoggedUser
+from utils_tokens import get_token, delete_all_tokens
 
 API_VERSION = "v0"
 
@@ -30,9 +31,8 @@ API_VERSION = "v0"
 # , postgres_db):
 def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg):
     app = web.Application()
-
-    import pdb; pdb.set_trace()
     port = app_cfg["main"]["port"] = aiohttp_unused_port()
+
     assert app_cfg["rest"]["version"] == API_VERSION
     assert API_VERSION in app_cfg["rest"]["location"]
 
@@ -54,24 +54,38 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg):
     }))
     return client
 
+
+@pytest.fixture
+async def logged_user(client):
+    """ adds a user in db registry and returns it """
+    async with LoggedUser(client) as user:
+        yield user
+
+@pytest.fixture
+async def tokens_db(logged_user, client):
+    engine = client.app[APP_DB_ENGINE_KEY]
+    yield engine
+    await delete_all_tokens(engine)
+
+
+
 PREFIX = "/" + API_VERSION + "/my"
 
+# test R on profile ----------------------------------------------------
+async def test_get_profile(logged_user, client):
+    url = client.app.router["get_my_profile"].url_for()
+    assert str(url) == "/v0/my"
 
-async def test_get_profile(client):
-    async with LoggedUser(client) as user:
-        url = client.app.router["get_my_profile"].url_for()
-        assert str(url) == "/v0/my"
+    resp = await client.get(url)
+    payload = await resp.json()
+    assert resp.status == 200, payload
 
-        resp = await client.get(url)
-        payload = await resp.json()
-        assert resp.status == 200, payload
+    data, error = unwrap_envelope(payload)
+    assert not error
+    assert data
 
-        data, error = unwrap_envelope(payload)
-        assert not error
-        assert data
-
-        assert data['login'] == user["email"]
-        assert data['gravatar_id']
+    assert data['login'] == logged_user["email"]
+    assert data['gravatar_id']
 
 
 # Test CRUD on tokens --------------------------------------------
@@ -81,26 +95,33 @@ RESOURCE_NAME = 'tokens'
 # TODO: template for CRUD testing?
 # TODO: create parametrize fixture with resource_name
 
-async def test_create(client):
-    async with LoggedUser(client) as user:
-        url = client.app.router["create_tokens"].url_for()
-        assert '/v0/my/tokens' == str(url)
+async def test_create(client, logged_user, tokens_db):
+    url = client.app.router["create_tokens"].url_for()
+    assert '/v0/my/tokens' == str(url)
 
-        token = {
-            'service': "blackfynn",
-            'token_key': '4k9lyzBTS',
-            'token_secret': 'my secret'
-        }
+    token = {
+        'service': "blackfynn",
+        'token_key': '4k9lyzBTS',
+        'token_secret': 'my secret'
+    }
 
-        resp = await client.post(url, json=token)
-        payload = await resp.json()
-        assert resp.status == 201, payload
+    resp = await client.post(url, json=token)
+    payload = await resp.json()
+    assert resp.status == 201, payload
 
-        data, error = unwrap_envelope(payload)
-        assert not error
-        assert not data
+    data, error = unwrap_envelope(payload)
+    assert not error
+    assert data
 
-        # TODO: retrieve from db! and compare
+    db_token = await get_token(tokens_db, token_id=data)
+    assert db_token['token_data'] == token
+    assert db_token['user_id'] == logged_user["id"]
+
+
+
+
+
+
 
 
 async def test_read(client):
