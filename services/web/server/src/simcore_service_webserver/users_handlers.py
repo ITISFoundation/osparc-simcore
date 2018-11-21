@@ -1,9 +1,15 @@
 import json
 import logging
 
+import sqlalchemy as sa
 from aiohttp import web
 
+from servicelib.application_keys import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY,
+                                         APP_DB_SESSION_KEY)
+
+from .db_models import users
 from .login.decorators import RQT_USERID_KEY, login_required
+from .utils import gravatar_hash
 
 logger = logging.getLogger(__name__)
 
@@ -11,13 +17,17 @@ logger = logging.getLogger(__name__)
 # my/ -----------------------------------------------------------
 @login_required
 async def get_my_profile(request: web.Request):
-    _uid= request[RQT_USERID_KEY]
+    uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
 
-    sample = {
-        'login': 'pcrespov@foo.com',
-        'gravatar_id': str(_uid)
+    async with engine.acquire() as conn:
+        stmt = sa.select([users.c.email]).where(users.c.id == uid)
+        email = await conn.scalar(stmt)
+
+    return {
+        'login': email,
+        'gravatar_id': gravatar_hash(email)
     }
-    return sample
+
 
 
 # my/tokens/ ------------------------------------------------------
