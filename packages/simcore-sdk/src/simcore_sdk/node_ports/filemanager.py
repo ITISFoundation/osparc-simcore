@@ -5,7 +5,6 @@ from pathlib import Path
 
 import aiofiles
 import aiohttp
-import async_timeout
 from yarl import URL
 
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
@@ -76,20 +75,19 @@ async def _get_upload_link(store_id:int, file_id:str, api:UsersApi):
 
 async def _download_link_to_file(session:aiohttp.ClientSession, url:URL, file_path:Path, store: str, s3_object: str):
     log.debug("Downloading from %s to %s", url, file_path)
-    with async_timeout.timeout(10):
-        async with session.get(url) as response:
-            if response.status == 404:
-                raise exceptions.S3InvalidPathError(s3_object)
-            if response.status > 299:
-                raise exceptions.S3TransferError("Error when downloading {} from {} using {}".format(s3_object, store, url))
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            async with aiofiles.open(file_path, 'wb') as file_pointer:
+    async with session.get(url) as response:
+        if response.status == 404:
+            raise exceptions.S3InvalidPathError(s3_object)
+        if response.status > 299:
+            raise exceptions.S3TransferError("Error when downloading {} from {} using {}".format(s3_object, store, url))
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        async with aiofiles.open(file_path, 'wb') as file_pointer:
+            chunk = await response.content.read(1024)
+            while chunk:
+                await file_pointer.write(chunk)
                 chunk = await response.content.read(1024)
-                while chunk:
-                    await file_pointer.write(chunk)
-                    chunk = await response.content.read(1024)
-            log.debug("Download complete")
-            return await response.release()
+        log.debug("Download complete")
+        return await response.release()
 
 async def _file_sender(file_path:Path):
     # with async_timeout.timeout(10):

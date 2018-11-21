@@ -4,9 +4,6 @@ services:
     build:      
       context: client
       target: production
-      args: 
-        VCS_REF: 
-        BUILD_DATE:
 #-------------------------------------------------------------------- 
   server:
     build:
@@ -17,8 +14,6 @@ services:
         s4l_ip: "172.16.9.89"
         s4l_port_app: 9095
         s4l_port_mod: 9096
-        VCS_REF: 
-        BUILD_DATE:
       labels: 
         io.simcore.key: '{"key": "simcore/services/dynamic/modeler/webserver"}'
         io.simcore.version: '{"version": "${MODELER_VERSION}"}'
@@ -29,7 +24,12 @@ services:
         io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'        
         io.simcore.inputs: '{"inputs": {"input_1":{"label": "Entities in", "displayOrder":0, "description": "List of entities", "type": "data:*/*"}}}'
         io.simcore.outputs: '{"outputs": {"output_1":{"label": "Entities out", "displayOrder":1, "description": "List of entities", "type": "data:*/*"}}}'
-        simcore.service.dependencies: '[{"key": "simcore/services/dynamic/modeler/xrpc-worker", "tag": "1.9"}]'
+        simcore.service.settings: '[{"name": "ports", "type": "int", "value": 9090}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "env", "type": "string", "value": ["CS_S4L_HOSTNAME=modeler_xrpc-worker_%service_uuid%"]}]'
+        simcore.service.dependencies: '[{"key": "simcore/services/dynamic/modeler/xrpc-worker", "tag": "2.0.0"}]'
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '8080:9090'
     depends_on:
