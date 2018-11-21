@@ -50,7 +50,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   members: {
     __projectResources: null,
 
-    newPrjBtnClkd: function() {
+    __newPrjBtnClkd: function() {
       let win = new qx.ui.window.Window(this.tr("Create New Project")).set({
         layout: new qx.ui.layout.Grow(),
         contentPadding: 0,
@@ -185,7 +185,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             if (prjUuid) {
               that.__startProjectModel(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
             } else {
-              that.newPrjBtnClkd();
+              that.__newPrjBtnClkd(); // eslint-disable-line no-underscore-dangle
             }
           });
           return item;
