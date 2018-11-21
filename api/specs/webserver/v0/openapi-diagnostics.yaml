@@ -1,0 +1,56 @@
+openapi: 3.0.0
+info:
+  title: diagnostics API
+  version: 0.1.0
+  description: Access to service diagnostics tools
+servers:
+  - description: API server
+    url: '/v0'
+paths:
+  /:
+    get:
+      summary: Service health check
+      operationId: check_health
+      responses:
+        "200":
+          description: Service information
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/health_check.yaml#/HealthCheckEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  /check/{action}:
+    post:
+      summary: service test endpoint
+      operationId: check_action
+      parameters:
+        - in: query
+          name: data
+          schema:
+            type: string
+        - in: path
+          name: action
+          schema:
+            type: string
+            default: 'echo'
+            enum: ['fail', 'echo']
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/fake.yaml#/FakeType'
+      responses:
+        '200':
+          description: Echoes response based on action
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/fake.yaml#/FakeEnveloped'
+        default:
+          description: 'Returns enveloped payload w/ or w/o data'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/fake.yaml#/FakeEnveloped'

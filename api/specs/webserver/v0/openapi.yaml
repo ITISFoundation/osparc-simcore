@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  description: API definition for simcore-service-webserver service
-  version: 0.1.0
   title: simcore-service-webserver API
+  version: 0.1.0
+  description: API definition for simcore-service-webserver service
   contact:
     name: IT'IS Foundation
     email: support@simcore.io
@@ -23,160 +23,44 @@ servers:
         enum:
           - v0
         default: v0
-tags:
-- name: admins
-  description: Secured Admin-only calls
-- name: tests
-  description: Operations available for testing
-- name: users
-  description: Operations available to regular users
 paths:
-  /:
-    get:
-      tags:
-        - users
-      summary: Service health-check endpoint
-      description: Some general information on the API and state of the service behind
-      operationId: check_health
-      responses:
-        "200":
-          description: Service information
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/health_check.yaml#/HealthCheckEnveloped'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /check/{action}:
-    post:
-      tags:
-        - tests
-      summary: Test checkpoint to ask server to fail or echo back the transmitted data
-      operationId: check_action
-      parameters:
-        - in: query
-          name: data
-          schema:
-            type: string
-        - in: path
-          name: action
-          schema:
-            type: string
-            default: 'echo'
-            enum: ['fail', 'echo']
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: './components/schemas/fake.yaml#/FakeType'
-      responses:
-        '200':
-          description: Echoes response based on action
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/fake.yaml#/FakeEnveloped'
-        default:
-          description: 'Returns enveloped payload w/ or w/o data'
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/fake.yaml#/FakeEnveloped'
-  /auth/register:
-    post:
-      operationId: auth_register
-      requestBody:
-        description: user registration
-        content:
-          application/json:
-            schema:
-              $ref: './components/schemas/registration.yaml#/RegistrationType'
-        required: true
-      responses:
-        '200':
-          description: User has been succesfully registered.
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
-        '400':
-            $ref: '#/components/responses/DataError_BadRequest_400'
-        '409':
-            $ref: '#/components/responses/DataError_Conflict_409'
-        '422':
-            $ref: '#/components/responses/DataError_UnprocessableEntity_422'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /auth/login:
-    post:
-      operationId: auth_login
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: './components/schemas/login.yaml#/LoginFormType'
-      responses:
-        '200':
-          description: Succesfully logged in
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
-        '401':
-          $ref: '#/components/responses/AuthError_Unauthorized_401'
-        '422':
-            $ref: '#/components/responses/DataError_UnprocessableEntity_422'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /auth/logout:
-    get:
-      operationId: auth_logout
-      responses:
-        '200':
-          description: Succesfully logged out
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  #/auth/reset-password:
-  /auth/change-email:
-    post:
-      operationId: auth_change_email
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                new_email:
-                  type: string
-                  #format: email
-      responses:
-        '200':
-          description: User has been succesfully registered.
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
 
-  #/auth/change-password:
+  # DIAGNOSTICS ---------------------------------------------------------
+  /:
+    $ref: './openapi-diagnostics.yaml#/paths/~1'
+
+  /check/{action}:
+    $ref: './openapi-diagnostics.yaml#/paths/~1check~1{action}'
+
+  # AUTHENTICATION & AUTHORIZATION --------------------------------------
+
+  /auth/register:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1register'
+
+  /auth/login:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1login'
+
+  /auth/logout:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1logout'
+
+  /auth/change-email:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1change-email'
+
   /auth/confirmation/{code}:
-    get:
-      operationId: auth_confirmation
-      parameters:
-        - name: code
-          in: path
-          required: true
-          schema:
-            type: string
-            #format: uuid
-      responses:
-        default:
-          $ref: '#/components/responses/OK_NoContent_204'
+    $ref: './openapi-auth.yaml#/paths/~1auth~1confirmation~1{code}'
+
+  # USER SETTINGS ------------------------------------------------------------------
+
+  /my:
+    $ref: './openapi-user.yaml#/paths/~1my'
+
+  /my/tokens:
+    $ref: './openapi-user.yaml#/paths/~1my~1tokens'
+
+  /my/tokens/{service}:
+    $ref: './openapi-user.yaml#/paths/~1my~1tokens~1{service}'
+
+  # DATA STORAGE SERVICES ----------------------------------------------------------
 
   /storage/locations:
     get:
@@ -191,6 +75,7 @@ paths:
                 $ref: './components/schemas/locations.yaml#FileLocationArray'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+
   /storage/locations/{location_id}/files/metadata:
     get:
       summary: Get list of file meta data
@@ -215,6 +100,7 @@ paths:
                 $ref: './components/schemas/files.yaml#FileMetaDataArray'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+
   /storage/locations/{location_id}/files/{fileId}/metadata:
     get:
       summary: Get File Metadata
@@ -316,6 +202,8 @@ paths:
         '204':
           description: ''
 
+  # COMPUTATIONAL SERVICES ----------------------------------------------------------
+
   /running_interactive_services:
     post:
       description: Starts an interactive service in the oSparc platform and returns its entrypoint
@@ -366,7 +254,7 @@ paths:
     get:
       description: Succesfully returns if a service with the defined uuid is up and running
       operationId: running_interactive_services_get
-      parameters: 
+      parameters:
         - $ref: '#/components/parameters/ServiceUuid'
       responses:
         "204":
@@ -396,7 +284,7 @@ paths:
     delete:
       description: Stops and removes an interactive service from the oSparc platform
       operationId: running_interactive_services_delete
-      parameters: 
+      parameters:
         - $ref: '#/components/parameters/ServiceUuid'
       responses:
         "204":
@@ -437,7 +325,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/services.yaml#/components/schemas/ServicesEnveloped'                
+                $ref: '../../shared/schemas/services.yaml#/components/schemas/ServicesEnveloped'
         "401":
           description: Unauthorized access
           content:
@@ -466,7 +354,7 @@ paths:
             application/json:
               schema:
                 $ref: './components/schemas/pipeline.yaml#/components/schemas/PipelineCreatedEnveloped'
-                
+
         default:
           description: Unexpected error
           content:
@@ -474,15 +362,24 @@ paths:
               schema:
                 $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
 
+  # PROJECT SERVICES -----------------------------------------------------------------
+
+  /projects:
+    $ref: './openapi-projects.yaml#/paths/~1projects'
+
+  /projects/{project_id}:
+    $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}'
+
+
 components:
-  parameters:    
+  parameters:
     ProjectId:
       in: path
       name: project_id
       required: true
       description: starts the pipeline
       schema:
-        type: string          
+        type: string
         # format: uuid
         example: 123e4567-e89b-12d3-a456-426655440000
 
@@ -502,10 +399,10 @@ components:
       description: The key (url) of the service
       required: true
       schema:
-        type: string   
+        type: string
         # format: url
         example: simcore/services/dynamic/3d-viewer
-    
+
     ServiceType:
       in: query
       name: service_type
@@ -515,12 +412,12 @@ components:
           * interactive - an interactive service
       required: false
       schema:
-        type: string          
-        enum: 
+        type: string
+        enum:
           - computational
-          - interactive            
+          - interactive
         example: computational
-    
+
     ServiceUuid:
       in: path
       name: service_uuid
@@ -541,61 +438,8 @@ components:
         example: "1.4"
 
   responses:
-    # TODO:Envelope objects are still not well/easily defined. See discriminators
-    OK_NoContent_204:
-      description: everything is OK, but there is no content to return
-
     DefaultErrorResponse:
       description: Unexpected error
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    DataError_BadRequest_400:
-      description: requested information is incomplete or malformed
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    DataError_UnprocessableEntity_422:
-      description: requested information is ok but invalid
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    DataError_NotFound_404:
-      description: everything is okay, but the resource doesnt exist
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    DataError_Conflict_409:
-      description: a confict of data exists, even with valid information
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    AuthError_Unauthorized_401:
-      description: access token isnt provided or is invalid
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    AuthError_Forbidden_403:
-      description: an access token is valid, but requires more privileges
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-
-    InternalServerError_500:
-      description: server throws an error, completely unexpected
       content:
         application/json:
           schema:
@@ -614,14 +458,14 @@ components:
         application/json:
           schema:
             $ref: './components/schemas/presigned_link.yaml#/PresignedLink'
-  
+
   requestBodies:
     FileMetaDataBody:
       content:
         application/json:
           schema:
             $ref: './components/schemas/files.yaml#/FileMetaData'
-    
+
     PipelineBody:
       content:
         application/json:
@@ -633,4 +477,3 @@ components:
               workbench:
                 $ref: './components/schemas/workbench-converted.yaml'
             # $ref: './components/schemas/pipeline.yaml#/components/schemas/WorkbenchType'
-

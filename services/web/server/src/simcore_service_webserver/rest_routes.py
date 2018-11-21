@@ -1,6 +1,5 @@
-"""
+""" Create diagnostics routes and maps them to rest_handlers
 
-FIXME: for the moment all routings are here and done by hand
 """
 
 import logging
