@@ -280,9 +280,15 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
     __itemSelected: function(projectId, fromTemplate = false) {
       if (projectId === null) {
-        this.__userProjectList.resetSelection();
-        this.__publicProjectList.resetSelection();
-        this.__editPrjLayout.setVisibility("excluded");
+        if (this.__userProjectList) {
+          this.__userProjectList.resetSelection();
+        }
+        if (this.__publicProjectList) {
+          this.__publicProjectList.resetSelection();
+        }
+        if (this.__editPrjLayout) {
+          this.__editPrjLayout.setVisibility("excluded");
+        }
         return;
       }
 
