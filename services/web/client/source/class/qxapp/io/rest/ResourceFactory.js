@@ -42,6 +42,8 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
         },
 
         // Create project
+        // NOTE: When calling ".post(null, payload)" the first argument needs to be filled in
+        // so that the second argument contains the payload
         post: {
           method: "POST",
           url: basePath+"/projects"
