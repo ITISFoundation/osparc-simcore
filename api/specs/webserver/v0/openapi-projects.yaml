@@ -1,0 +1,128 @@
+openapi: 3.0.0
+info:
+  title: project management API
+  version: 0.1.0
+  description: 'Operations on projects'
+servers:
+  - description: API server
+    url: '/v0'
+paths:
+  /projects:
+    get:
+      summary: List projects
+      operationId: list_projects
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [template, user, all]
+          description: if true only templates otherwise only users
+        - name: start
+          in: query
+          schema:
+            type: integer
+            minItems: 0
+          description: index to the first item to return
+        - name: count
+          in: query
+          schema:
+            type: integer
+            minItems: 1
+          description: maximum number of items to return
+      responses:
+        '200':
+          description: list of projects
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectArrayEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    post:
+      summary: Create projects
+      operationId: create_projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-projects.yaml#/components/schemas/Project'
+      responses:
+        '201':
+          description: project created
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  /projects/{project_id}:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Gets specific project
+      operationId: get_project
+      responses:
+        '200':
+          description: got detailed project
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    put:
+      summary: Updates project
+      operationId: update_project
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-projects.yaml#/components/schemas/Project'
+      responses:
+        '200':
+          description: got detailed project
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-projects.yaml#/components/schemas/ProjectEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    delete:
+      summary: Delete project
+      operationId: delete_project
+      responses:
+        '204':
+          description: project has been successfully deleted
+
+components:
+  schemas:
+    Project:
+      $ref: './components/schemas/project-v0.0.1-converted.yaml'
+    ProjectEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: './openapi-projects.yaml#/components/schemas/Project'
+        error:
+          nullable: true
+          default: null
+    ProjectArrayEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: './openapi-projects.yaml#/components/schemas/Project'
+        error:
+          nullable: true
+          default: null
