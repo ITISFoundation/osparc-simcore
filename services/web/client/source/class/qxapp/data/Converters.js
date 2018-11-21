@@ -27,7 +27,7 @@ qx.Class.define("qxapp.data.Converters", {
     mergeChildren: function(one, two) {
       let newDir = true;
       for (let i=0; i<one.length; i++) {
-        if (one[i].label === two.label) {
+        if (one[i].path === two.path) {
           newDir = false;
           if ("children" in two) {
             this.mergeChildren(one[i].children, two.children[0]);
@@ -48,6 +48,7 @@ qx.Class.define("qxapp.data.Converters", {
     },
 
     fromDSMToVirtualTreeModel: function(files) {
+      let uuidToName = qxapp.utils.UuidToName.getInstance();
       let children = [];
       for (let i=0; i<files.length; i++) {
         const file = files[i];
@@ -63,19 +64,22 @@ qx.Class.define("qxapp.data.Converters", {
             let splitted = file["file_uuid"].split("/");
             if (splitted.length === 3) {
               const prjId = splitted[0];
-              const nodejId = splitted[1];
+              const nodeId = splitted[1];
               const fileId = splitted[2];
+              let prjLabel = file["project_name"] === "" ? uuidToName.convertToName(prjId) : file["project_name"];
+              let nodeLabel = file["node_name"] === "" ? uuidToName.convertToName(nodeId) : file["node_name"];
+              let fileName = file["file_name"] === "" ? fileId : file["file_name"];
               // node file
               fileInTree.children.push({
-                label: file["project_name"] === "" ? prjId : file["project_name"],
+                label: prjLabel,
                 location: file["location_id"],
                 path: prjId,
                 children: [{
-                  label: file["node_name"] === "" ? nodejId : file["node_name"],
+                  label: nodeLabel,
                   location: file["location_id"],
-                  path: prjId +"/"+ nodejId,
+                  path: prjId +"/"+ nodeId,
                   children: [{
-                    label: file["file_name"] === "" ? fileId : file["file_name"],
+                    label: fileName,
                     location: file["location_id"],
                     fileId: file["file_uuid"]
                   }]
