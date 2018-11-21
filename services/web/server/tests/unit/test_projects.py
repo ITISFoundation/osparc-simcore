@@ -221,6 +221,14 @@ async def test_delete(client, fake_db, fake_project):
     assert not fake_db.projects
     assert not fake_db.user_to_projects_map
 
+async def test_delete_invalid_project(client, fake_db):
+    resp = await client.delete("/v0/projects/some-fake-id")
+    payload = await resp.json()
+
+    assert resp.status == 204, payload
+    data, error = unwrap_envelope(payload)
+    assert not data
+    assert not error
 
 
 async def test_workfolow(client, fake_db, fake_project):
@@ -228,7 +236,7 @@ async def test_workfolow(client, fake_db, fake_project):
     #-----------------
 
    # list all user projects
-    
+
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
     resp = await client.get(url.with_query(start=0, count=3))
@@ -242,7 +250,7 @@ async def test_workfolow(client, fake_db, fake_project):
     #-------------------------------------------------
     pid = projects[0]["projectUuid"]
 
-    # PUT /v0/projects/{project_id}    
+    # PUT /v0/projects/{project_id}
     url = client.app.router["update_project"].url_for(project_id=pid)
     resp = await client.put(url, json={
         "name": "some other name",
@@ -266,6 +274,3 @@ async def test_workfolow(client, fake_db, fake_project):
 
     assert project["name"] == "some other name"
     assert project["notes"] == "some other"
-
-
-    # TODO: read in db
