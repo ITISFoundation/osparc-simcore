@@ -373,7 +373,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
       // buttons
       let saveButton = new qx.ui.form.Button(this.tr("Save"));
-      saveButton.setMaxWidth(70);
+      saveButton.setMinWidth(70);
       saveButton.setEnabled(!fromTemplate);
       saveButton.addListener("execute", e => {
         for (let i=0; i<itemsToBeModified.length; i++) {
@@ -397,33 +397,71 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       form.addButton(saveButton);
 
       let cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
-      cancelButton.setMaxWidth(70);
+      cancelButton.setMinWidth(70);
       cancelButton.addListener("execute", e => {
         this.__itemSelected(null);
       }, this);
       form.addButton(cancelButton);
 
       let deleteButton = new qx.ui.form.Button(this.tr("Delete"));
-      deleteButton.setMaxWidth(70);
+      deleteButton.setMinWidth(70);
       deleteButton.setEnabled(!fromTemplate);
       deleteButton.addListener("execute", e => {
-        let resource = this.__projectResources.project;
+        let win = this.__createConfirmWindow();
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win["value"] === 1) {
+            let resource = this.__projectResources.project;
 
-        resource.addListenerOnce("delSuccess", ev => {
-          this.reloadUserProjects();
+            resource.addListenerOnce("delSuccess", ev => {
+              this.reloadUserProjects();
+            }, this);
+
+            resource.del({
+              "project_id": projectData["projectUuid"]
+            });
+
+            this.__itemSelected(null);
+          }
         }, this);
-
-        resource.del({
-          "project_id": projectData["projectUuid"]
-        });
-
-        this.__itemSelected(null);
       }, this);
       form.addButton(deleteButton);
 
       this.__editPrjLayout.add(new qx.ui.form.renderer.Single(form));
-      this.__editPrjLayout.add(saveButton);
-      this.__editPrjLayout.add(cancelButton);
+    },
+
+    __createConfirmWindow: function() {
+      let win = new qx.ui.window.Window("Confirmation").set({
+        layout: new qx.ui.layout.VBox(10),
+        width: 300,
+        height: 60,
+        modal: true,
+        showMaximize: false,
+        showMinimize: false,
+        showClose: false,
+        autoDestroy: false
+      });
+
+      let text = new qx.ui.basic.Label(this.tr("Are you sure you want to delete the project?"));
+      win.add(text);
+
+      let buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(10, "right"));
+      var btnNo = new qx.ui.form.Button("No");
+      var btnYes = new qx.ui.form.Button("Yes");
+      btnNo.addListener("execute", e => {
+        win["value"] = 0;
+        win.close(0);
+      }, this);
+      btnYes.addListener("execute", e => {
+        win["value"] = 1;
+        win.close(1);
+      }, this);
+      buttons.add(btnNo);
+      buttons.add(btnYes);
+      win.add(buttons);
+
+      return win;
     },
 
     __getProjectArrayModel: function(prjList) {
