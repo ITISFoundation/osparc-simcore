@@ -34,6 +34,7 @@ setup(
     package_data={
         '': [
             'config/*.y*ml',
+            'data/*.json',
             'templates/**/*.html',
             ]
     },

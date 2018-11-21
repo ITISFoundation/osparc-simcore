@@ -6,6 +6,11 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   construct: function() {
     this.base(arguments, new qx.ui.layout.HBox());
 
+    this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
+    // this._projectResources.projects
+    // this._projectResources.project
+    // this._projectResources.templates
+
     let leftSpacer = new qx.ui.core.Spacer(150);
     let mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     let rightSpacer = new qx.ui.core.Spacer(150);
@@ -29,6 +34,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     });
     let publicProjectList = this.__createPublicProjectList();
 
+
     mainView.add(new qx.ui.core.Spacer(null, 10));
     mainView.add(myPrjsLabel);
     mainView.add(userProjectList);
@@ -42,6 +48,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   },
 
   members: {
+    __projectResources: null,
+
     newPrjBtnClkd: function() {
       let win = new qx.ui.window.Window(this.tr("Create New Project")).set({
         layout: new qx.ui.layout.Grow(),
@@ -68,7 +76,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     },
 
     __startBlankProject: function(newPrj) {
-      let blankProject = this.__getProjectModel();
+      let blankProject = new qxapp.data.model.ProjectModel();
       blankProject.set({
         name: newPrj.name,
         description: newPrj.description
@@ -79,33 +87,61 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       this.fireDataEvent("StartProject", data);
     },
 
-    __getProjectModel: function(projectId, fromTemplate = false) {
-      let project = new qxapp.data.model.ProjectModel();
-      if (projectId) {
-        let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
-        project = new qxapp.data.model.ProjectModel(projectData, fromTemplate);
-      }
-      return project;
+    __startProjectModel: function(projectId, fromTemplate = false) {
+      // let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
+      let resource = this.__projectResources.project;
+
+      resource.addListenerOnce("getSuccess", function(e) {
+        // TODO: is this listener added everytime we call ?? It does not depend on input params
+        // but it needs to be here to implemenet startProjectModel
+        let projectData = e.getRequest().getResponse().data;
+        let model = new qxapp.data.model.ProjectModel(projectData, fromTemplate);
+        const data = {
+          projectModel: model
+        };
+        this.fireDataEvent("StartProject", data);
+      }, this);
+
+      resource.addListenerOnce("getError", e => {
+        console.log(e);
+      });
+
+      resource.get({
+        "project_id": projectId
+      });
     },
 
     __createUserProjectList: function() {
       // layout
       let prjLst = this.__cretePrjListLayout();
 
-      // controller
-      let userPrjList = qxapp.data.Store.getInstance().getUserProjectList();
-      let userPrjArrayModel = this.__getProjectArrayModel(userPrjList);
-      userPrjArrayModel.unshift(qx.data.marshal.Json.createModel({
-        name: this.tr("New Project"),
-        thumbnail: "@FontAwesome5Solid/plus-circle/80",
-        projectUuid: null,
-        created: null,
-        owner: null
-      }));
-      let prjCtr = new qx.data.controller.List(userPrjArrayModel, prjLst, "name");
-      const fromTemplate = false;
-      let delegate = this.__getDelegate(fromTemplate);
-      prjCtr.setDelegate(delegate);
+      // resources
+      // let userPrjList = qxapp.data.Store.getInstance().getUserProjectList();
+      let resources = this.__projectResources.projects;
+
+      resources.addListener("getSuccess", e => {
+        let userPrjList = e.getRequest().getResponse().data;
+        let userPrjArrayModel = this.__getProjectArrayModel(userPrjList);
+        userPrjArrayModel.unshift(qx.data.marshal.Json.createModel({
+          name: this.tr("New Project"),
+          thumbnail: "@FontAwesome5Solid/plus-circle/80",
+          projectUuid: null,
+          created: null,
+          owner: null
+        }));
+        // controller
+        let prjCtr = new qx.data.controller.List(userPrjArrayModel, prjLst, "name");
+        const fromTemplate = false;
+        let delegate = this.__getDelegate(fromTemplate);
+        prjCtr.setDelegate(delegate);
+      }, this);
+
+      resources.addListener("getError", e => {
+        console.log(e);
+      }, this);
+
+      resources.get();
+
       return prjLst;
     },
 
@@ -140,7 +176,6 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       const thumbnailWidth = 246;
       const thumbnailHeight = 144;
       let that = this;
-      let getProjectModel = this.__getProjectModel;
       let delegate = {
         // Item's Layout
         createItem: function() {
@@ -148,11 +183,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           item.addListener("dbltap", e => {
             const prjUuid = item.getModel();
             if (prjUuid) {
-              let projectModel = getProjectModel(prjUuid, fromTemplate);
-              const data = {
-                projectModel: projectModel
-              };
-              that.fireDataEvent("StartProject", data);
+              that.__startProjectModel(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
             } else {
               that.newPrjBtnClkd();
             }
