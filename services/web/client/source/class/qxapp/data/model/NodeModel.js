@@ -531,7 +531,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __stopInteractiveNode: function() {
       if (this.getMetaData().type == "dynamic") {
         let url = "/running_interactive_services";
-        let query = "?service_uuid="+encodeURIComponent(this.getNodeId());
+        let query = "/"+encodeURIComponent(this.getNodeId());
         let request = new qxapp.io.request.ApiRequest(url+query, "DELETE");
         request.send();
       }

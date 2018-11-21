@@ -308,20 +308,25 @@ function exportScene(socketClient, activeUser, sceneJson) {
 }
 
 function importModelS4L(socketClient, modelName) {
+  const data_path = 'c:/app/data/';
   s4lAppClient.NewDocument( function(err, response) {
-    let modelPath;
+    let modelPath = data_path;
     switch (modelName) {
     case 'Thelonious':
-      modelPath = 'c:/app/data/thelonius_reduced.smash';
+      modelPath += 'thelonius_reduced.smash';
       break;
     case 'Rat':
-      modelPath = 'c:/app/data/ratmodel_simplified.smash';
+      modelPath += 'ratmodel_simplified.smash';
       break;
     case 'BigRat':
-      modelPath = 'c:/app/data/Rat_Male_567g_v2.0b02.sat';
+      modelPath += 'Rat_Male_567g_v2.0b02.sat';
+      break;
+    case 'DecDemo_Modeler.smash':
+    case 'DecDemo_LF.smash':
+      modelPath += modelName;
       break;
     default:
-      modelPath = 'c:/app/data/ratmodel_simplified.smash';
+      modelPath += 'ratmodel_simplified.smash';
       break;
     }
     console.log('Importing', modelName);
