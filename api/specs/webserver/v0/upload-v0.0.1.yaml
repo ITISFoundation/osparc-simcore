@@ -99,7 +99,6 @@ paths:
                         - eTag
         '405':
           description: Request was not formed as expected
-
   /upload/part:
     post:
       tags:
@@ -195,8 +194,6 @@ paths:
                   example: 1c10d25dc4581d89b9285be5f334fec5
           '404':
             description: No Such Upload
-
-
   /upload/abort:
     post:
       tags:

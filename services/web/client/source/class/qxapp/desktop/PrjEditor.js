@@ -35,7 +35,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       nullable: false,
       init: true,
       check: "Boolean",
-      apply : "__applyCanStart"
+      apply: "__applyCanStart"
     }
   },
 
@@ -263,7 +263,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showScreenshotInExtraView: function(name) {
-      let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_"+name+".png").set({
+      let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_" + name + ".png").set({
         scale: true,
         allowShrinkX: true,
         allowShrinkY: true
@@ -298,7 +298,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         socket.on("progress", function(data) {
           let d = JSON.parse(data);
           let node = d["Node"];
-          let progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
+          let progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
           this.__workbenchView.updateProgress(node, progress);
         }, this);
       }

@@ -1,0 +1,82 @@
+openapi: 3.0.0
+info:
+  title: user management API
+  version: 0.1.0
+  description: 'Access to logged-in user settings and profile'
+servers:
+  - description: API server
+    url: '/v0'
+paths:
+  /my:
+    get:
+      operationId: get_my_profile
+      responses:
+        '200':
+          description: current user profile
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/my.yaml#/ProfileEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  /my/tokens:
+    get:
+      summary: List tokens
+      operationId: list_tokens
+      responses:
+        '200':
+          description: list of tokens
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/my.yaml#/TokensArrayEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    post:
+      summary: Create tokens
+      operationId: create_tokens
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/my.yaml#/TokenEnveloped'
+      responses:
+        '201':
+          description: token created
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  /my/tokens/{service}:
+    parameters:
+      - name: service
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Gets specific token
+      operationId: get_token
+      responses:
+        '200':
+          description: got detailed token
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/my.yaml#/TokenEnveloped'
+    put:
+      summary: Updates token
+      operationId: update_token
+      responses:
+        '200':
+          description: got detailed token
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/my.yaml#/TokenEnveloped'
+    delete:
+      summary: Delete token
+      operationId: delete_token
+      responses:
+        '204':
+          description: project has been successfully deleted

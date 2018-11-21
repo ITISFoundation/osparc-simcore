@@ -1,0 +1,238 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://simcore.io/api/specs/webserver/v0/components/schemas/project-v0.0.1.json",
+  "title": "simcore project",
+  "description": "Description of a simcore project",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "projectUuid",
+    "name",
+    "description",
+    "notes",
+    "owner",
+    "collaborators",
+    "creationDate",
+    "lastChangeDate",
+    "thumbnail",
+    "workbench"
+  ],
+  "properties": {
+    "projectUuid": {
+      "type": "string",
+      "description": "project unique identifier",
+      "examples": [
+        "07640335-a91f-468c-ab69-a374fa82078d",
+        "9bcf8feb-c1b1-41b6-b201-639cd6ccdba8"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "description": "project name",
+      "examples": [
+        "Temporal Distortion Simulator"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "description": "longer one-line description about the project",
+      "examples": [
+        "Dabbling in temporal transitions ..."
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "description": "longer project description. using common mark",
+      "examples": [
+        "# title\nSome Text `with` common mark markup"
+      ]
+    },
+    "owner": {
+      "type": "string",
+      "description": "user uuid"
+    },
+    "collaborators": {
+      "type": "object",
+      "description": "UUIDs of the users/groups who should get access to this",
+      "patternProperties": {
+        "^\\S+$": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write"
+            ]
+          }
+        }
+      }
+    },
+    "creationDate": {
+      "type": "string",
+      "description": "project creation date",
+      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}Z",
+      "examples": [
+        "2018-07-01T11:13:43Z"
+      ]
+    },
+    "lastChangeDate": {
+      "type": "string",
+      "description": "last save date",
+      "pattern": "\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}Z",
+      "examples": [
+        "2018-07-01T11:13:43Z"
+      ]
+    },
+    "thumbnail": {
+      "type": "string",
+      "description": "url of the latest screenshot of the project",
+      "examples": [
+        "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
+      ]
+    },
+    "workbench": {
+      "type": "object",
+      "patternProperties": {
+        "^\\S+$": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "key",
+            "version",
+            "position"
+          ],
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "distinctive name for the node based on the docker registry path",
+              "pattern": "^(service)/(computational|dynamic)(/[^\\s/]+)+$",
+              "examples": [
+                "service/computational/sleeper",
+                "service/dynamic/3dviewer"
+              ]
+            },
+            "version": {
+              "type": "string",
+              "description": "semantic version number of the node",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "examples": [
+                "1.0.0",
+                "0.0.1"
+              ]
+            },
+            "inputs": {
+              "type": "object",
+              "description": "values of input properties",
+              "patternProperties": {
+                "^[-_a-zA-Z0-9]+$": {
+                  "oneOf": [
+                    {
+                      "type": [
+                        "integer",
+                        "boolean",
+                        "string",
+                        "number"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "nodeUuid",
+                        "output"
+                      ],
+                      "properties": {
+                        "nodeUuid": {
+                          "type": "string"
+                        },
+                        "output": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "store",
+                        "path"
+                      ],
+                      "properties": {
+                        "store": {
+                          "type": "string"
+                        },
+                        "path": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "outputs": {
+              "type": "object",
+              "patternProperties": {
+                "^[-_a-zA-Z0-9]+$": {
+                  "oneOf": [
+                    {
+                      "type": [
+                        "integer",
+                        "boolean",
+                        "string",
+                        "number"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "store",
+                        "path"
+                      ],
+                      "properties": {
+                        "store": {
+                          "type": "string"
+                        },
+                        "path": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "node IDs of where the node is connected to",
+              "examples": [
+                "nodeUuid1",
+                "nodeUuid2"
+              ]
+            },
+            "position": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "x",
+                "y"
+              ],
+              "properties": {
+                "x": {
+                  "type": "integer"
+                },
+                "y": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
