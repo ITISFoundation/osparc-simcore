@@ -68,8 +68,15 @@ connectToS4LServer().then(function() {
 
 
 let io = require('socket.io')(server);
+let connectedClient = null;
 io.on('connection', function(socketClient) {
   console.log('Client connected...');
+  connectedClient = socketClient;
+
+  socketClient.on('disconnect', function() {
+    console.log('Client disconnected')
+    connectedClient = null;
+  })
 
   socketClient.on('importScene', function(activeUser) {
     importScene(socketClient, activeUser);
@@ -365,10 +372,12 @@ function importModelS4L(socketClient, modelName) {
   });
 
   function sendEncodedScenesToTheClient(socketClient, listOfEncodedScenes) {
+    if (socketClient) {
     for (let i = 0; i < listOfEncodedScenes.length; i++) {
       socketClient.emit('importModelScene', listOfEncodedScenes[i]);
     }
   }
+}
 }
 
 function booleanOperationS4L(socketClient, entityMeshesScene, operationType) {
@@ -415,3 +424,55 @@ function booleanOperationS4L(socketClient, entityMeshesScene, operationType) {
 
 
 console.log('server started on ' + PORT + '/app');
+
+
+const spawn = require("child_process").spawn;
+
+
+
+// GET retrieve method route
+app.get('/retrieve', callInputRetriever); 
+function callInputRetriever(request, response) {
+  console.log('Received a call to retrieve the data on input ports from '+ request.ip)
+
+  var pyProcess = spawn("python", ["/home/node/source/input-retriever.py"]);
+
+  pyProcess.on("error", function(err){
+    console.log(`ERROR: ${err}`);
+    response.sendStatus("500")
+  });
+
+  let dataString = "";
+  pyProcess.stdout.setEncoding("utf8");
+  pyProcess.stdout.on("data", function(data) {
+    console.log(`stdout: ${data}`);
+    dataString += data;
+  });
+
+  pyProcess.stderr.on("data", function(data) {
+    console.log(`stderr: ${data}`);
+  });
+
+  pyProcess.on("close", function(code) {
+    console.log(`Function completed with code ${code}.`);
+    if (code !== 0) {
+      response.sendStatus("500")
+    }
+    else {
+      const dataArray = dataString.split("json=");
+      if (dataArray.length == 2) {
+        console.log(`retrieved data ${dataArray[1]}`)
+        // we have some data in json format
+        const data = JSON.parse(dataArray[1]);
+        const modelName = data.model_name.value;
+        console.log(`model to be loaded is ${modelName}`)
+        connectToS4LServer().then(function() {
+          importModelS4L(connectedClient, modelName);
+        }).catch(failureCallback);
+      }
+      response.sendStatus("204")
+    }
+  });
+
+  
+}

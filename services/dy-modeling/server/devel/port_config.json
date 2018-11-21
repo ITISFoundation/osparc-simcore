@@ -2,7 +2,7 @@
     "version":"0.1",
     "schema": {
         "inputs":{
-            "project_file_name": {
+            "model_name": {
                 "displayOrder": 0,
                 "label": "The input file name",
                 "description": "Some 3D data",
@@ -12,7 +12,7 @@
         "outputs":{}
     },
     "inputs": {
-        "project_file_name": "ratmodel_simplified.smash"
+        "model_name": "ratmodel_simplified.smash"
     },
     "outputs": {}
 }
