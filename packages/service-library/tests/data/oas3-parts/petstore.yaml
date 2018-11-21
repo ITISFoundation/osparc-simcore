@@ -1,0 +1,300 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  license:
+    name: MIT
+servers:
+  - url: http://petstore.swagger.io/{version}
+    variables:
+      version:
+        enum:
+          - v1
+          - v2
+        default: v1
+paths:
+  /pets:
+    get:
+      summary: List all pets
+      operationId: listPets
+      tags:
+        - pets
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: limit
+          in: query
+          description: How many items to return at one time (max 100)
+          required: true
+          schema:
+            type: integer
+            format: int32
+            nullable: true
+        - name: search
+          in: query
+          description: Search query
+          schema:
+            type: string
+            default: ""
+          allowEmptyValue: true
+        - name: ids
+          in: query
+          description: Filter pets with Ids
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int32
+        - name: tags
+          in: query
+          description: Filter pets with tags
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Tag"
+          explode: false
+      responses:
+        '200':
+          description: An paged array of pets
+          headers:
+            x-next:
+              description: A link to the next page of responses
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetsData"
+    post:
+      summary: Create a pet
+      operationId: createPets
+      tags:
+        - pets
+      parameters:
+        - name: api_key
+          in: header
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - name: user
+          in: cookie
+          schema:
+            type: integer
+            format: int32
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetCreate'
+            example:
+              name: "Pet"
+              wings: []
+      responses:
+        '201':
+          description: Null response
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /pets/{petId}:
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetData"
+              example: |
+                {
+                  "data": []
+                }
+            image/*:
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+  /tags:
+    $ref: "./petstore-tags.yaml#/paths/~1tags"
+components:
+  schemas:
+    Utctime:
+      oneOf:
+        - type: string
+          enum: [always, now]
+        - type: string
+          format: date-time
+    Address:
+      type: object
+      x-model: Address
+      required:
+        - city
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+    Tag:
+      type: string
+      enum:
+        - cats
+        - dogs
+        - birds
+    Position:
+      type: integer
+      enum:
+        - 1
+        - 2
+        - 3
+    Pet:
+      type: object
+      x-model: Pet
+      allOf:
+        - $ref: "#/components/schemas/PetCreate"
+      required:
+        - id
+      properties:
+        id:
+          type: integer
+          format: int64
+    PetCreate:
+      type: object
+      x-model: PetCreate
+      allOf:
+        - $ref: "#/components/schemas/PetCreatePartOne"
+        - $ref: "#/components/schemas/PetCreatePartTwo"
+      oneOf:
+        - $ref: "#/components/schemas/Cat"
+        - $ref: "#/components/schemas/Bird"
+    PetCreatePartOne:
+      type: object
+      x-model: PetCreatePartOne
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        tag:
+          $ref: "#/components/schemas/Tag"
+        address:
+          $ref: "#/components/schemas/Address"
+    PetCreatePartTwo:
+      type: object
+      x-model: PetCreatePartTwo
+      properties:
+        position:
+          $ref: "#/components/schemas/Position"
+        healthy:
+          type: boolean
+    Bird:
+      type: object
+      x-model: Bird
+      required:
+        - wings
+      properties:
+        wings:
+          $ref: "#/components/schemas/Wings"
+    Wings:
+      type: object
+      x-model: Wings
+      required:
+        - healthy
+      properties:
+        healthy:
+          type: boolean
+    Cat:
+      type: object
+      x-model: Cat
+      required:
+        - ears
+      properties:
+        ears:
+          $ref: "#/components/schemas/Ears"
+    Ears:
+      type: object
+      x-model: Ears
+      required:
+        - healthy
+      properties:
+        healthy:
+          type: boolean
+    Pets:
+      type: array
+      items:
+        $ref: "#/components/schemas/Pet"
+    PetsData:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/Pets"
+    PetData:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/Pet"
+    TagCreate:
+      type: object
+      required:
+        - name
+      properties:
+        created:
+          $ref: "#/components/schemas/Utctime"
+        name:
+          type: string
+    TagList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Tag"
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    ExtendedError:
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required:
+            - rootCause
+          properties:
+            rootCause:
+              type: string
+            suberror:
+              $ref: "#/components/schemas/ExtendedError"
+      additionalProperties:
+        type: string
+  responses:
+      ErrorResponse:
+        description: unexpected error
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExtendedError"

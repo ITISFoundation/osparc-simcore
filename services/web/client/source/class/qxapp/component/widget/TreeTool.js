@@ -159,7 +159,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       } else if (model.getIsContainer() && model.getChildren() !== null) {
         let node = null;
         let children = model.getChildren().toArray();
-        for (let i=0; node === null && i < children.length; i++) {
+        for (let i = 0; node === null && i < children.length; i++) {
           node = this.__getNodeInTree(children[i], nodeId);
         }
         return node;
@@ -209,7 +209,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
         nodeModel.setLabel(newLabel);
       }, this);
       const bounds = this.getLayoutParent().getBounds();
-      treeItemRenamer.moveTo(bounds.left+100, bounds.top+150);
+      treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);
       treeItemRenamer.open();
     },
 

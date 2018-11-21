@@ -2,7 +2,7 @@ version: '3.4'
 services:
   # Maintenance services
   #--------------------------------------------------------------------
-  # celery workers monitor
+  # By default disabled: celery workers monitor
   flower:
     image: ondrejit/flower:latest
     command: --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbit:5672

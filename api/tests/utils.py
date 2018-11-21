@@ -4,6 +4,9 @@ from pathlib import Path
 
 import yaml
 
+# Conventions
+CONVERTED_SUFFIX = "-converted.yaml"
+
 
 def specs_folder():
     here = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -21,6 +24,13 @@ def list_files_in_api_specs(wildcard):
 
     # NOTE: keep as string and not path, so it can be rendered
     return list(str(p) for p in specs_dir.rglob(wildcard))
+
+
+def list_all_openapi():
+    """ Lists str paths for all openapi.yaml in api/specs
+    """
+    return [ pathstr for pathstr in list_files_in_api_specs("openapi.y*ml")
+                        if not pathstr.endswith(CONVERTED_SUFFIX) ]  # skip converted schemas
 
 
 def load_specs(spec_file_path: Path) -> dict:

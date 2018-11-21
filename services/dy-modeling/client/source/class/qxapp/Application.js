@@ -55,8 +55,12 @@ qx.Class.define("qxapp.Application", {
       -------------------------------------------------------------------------
       */
 
+      this.__preloadModel = null;
       let isModeler = false;
       let isDevel = false;
+      if (qx.core.Environment.get("qxapp.preloadModel")) {
+        this.__preloadModel = qx.core.Environment.get("qxapp.preloadModel");
+      }
       if (qx.core.Environment.get("qxapp.isModeler")) {
         isModeler = true;
       }
@@ -198,6 +202,7 @@ qx.Class.define("qxapp.Application", {
     },
 
     loadModel: function(modelName) {
+      console.log("Loading...", modelName);
       if (!this._socket.slotExists("importModelScene")) {
         this._socket.on("importModelScene", function(val) {
           if (val.type === "importModelScene") {
@@ -462,6 +467,12 @@ qx.Class.define("qxapp.Application", {
           }, this);
         }
         this._socket.emit("exportScene", [this.getActiveUserName(), e.getData()]);
+      }, this);
+
+      this.__threeView.addListenerOnce("ThreeViewReady", e => {
+        if (e.getData() && this.__preloadModel !== null) {
+          this.loadModel(this.__preloadModel);
+        }
       }, this);
     },
 
