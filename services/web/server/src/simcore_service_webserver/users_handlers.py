@@ -4,6 +4,7 @@ import json
 import logging
 
 import sqlalchemy as sa
+import sqlalchemy.sql as sql
 from aiohttp import web
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
@@ -31,21 +32,6 @@ async def get_my_profile(request: web.Request):
 
 
 # my/tokens/ ------------------------------------------------------
-token_sample = {
-    'service': 'blackfynn',
-    'token_key': 'N1BP5ZSpB',
-    'token_secret': 'secret'
-}
-
-
-@login_required
-async def list_tokens(request: web.Request):
-    logger.debug(request)
-    token_samples = [token_sample, ] * 3
-
-    return token_samples
-
-
 @login_required
 async def create_tokens(request: web.Request):
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
@@ -68,8 +54,37 @@ async def create_tokens(request: web.Request):
 
 
 @login_required
+async def list_tokens(request: web.Request):
+    # TODO: start = request.match_info.get('start', 0)
+    # TODO: count = request.match_info.get('count', None)
+    uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
+
+    user_tokens = []
+    async with engine.acquire() as conn:
+        query = (sa.select([tokens.c.token_data])
+                   .where(tokens.c.user_id == uid)
+        )
+        async for row in conn.execute(query):
+            user_tokens.append(row["token_data"])
+
+    return user_tokens
+
+
+@login_required
 async def get_token(request: web.Request):
-    raise NotImplementedError("%s still not implemented" % request)
+    uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
+    service_id = request.match_info.get('service')
+
+    async with engine.acquire() as conn:
+        query = (sa.select([tokens.c.token_data])
+                   .where( sql.and_(
+                       tokens.c.user_id == uid,
+                       tokens.c.token_service == service_id)
+                   )
+        )
+        result = await conn.execute(query)
+        row = await result.first()
+        return row["token_data"]
 
 
 @login_required

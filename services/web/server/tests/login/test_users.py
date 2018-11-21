@@ -22,7 +22,7 @@ from simcore_service_webserver.users import setup_users
 
 from utils_assert import assert_status
 from utils_login import LoggedUser
-from utils_tokens import get_token, delete_all_tokens
+from utils_tokens import get_token_from_db, delete_all_tokens_from_db, create_token_in_db
 
 API_VERSION = "v0"
 
@@ -65,7 +65,40 @@ async def logged_user(client):
 async def tokens_db(logged_user, client):
     engine = client.app[APP_DB_ENGINE_KEY]
     yield engine
-    await delete_all_tokens(engine)
+    await delete_all_tokens_from_db(engine)
+
+import faker
+from itertools import repeat
+import random
+
+
+@pytest.fixture
+async def fake_tokens(logged_user, tokens_db):
+    # See api/specs/webserver/v0/components/schemas/my.yaml
+    # pylint: disable=E1101
+    from faker.providers import lorem, misc
+    fake = faker.Factory.create()
+    fake.add_provider(lorem)
+    fake.add_provider(lorem)
+
+    all_tokens = []
+
+    # TODO: automatically create data from oas!
+    for _ in repeat(None, 50):
+        # TODO: add tokens from other users
+        data = {
+            'service': fake.word(ext_word_list=None),
+            'token_key': fake.md5(raw_output=False),
+            'token_secret': fake.md5(raw_output=False)
+        }
+        row = await create_token_in_db( tokens_db,
+            user_id = logged_user['id'],
+            token_service = data['service'],
+            token_data = data
+        )
+        all_tokens.append(data)
+    return all_tokens
+
 
 
 
@@ -113,47 +146,36 @@ async def test_create(client, logged_user, tokens_db):
     assert not error
     assert data
 
-    db_token = await get_token(tokens_db, token_id=data)
+    db_token = await get_token_from_db(tokens_db, token_id=data)
     assert db_token['token_data'] == token
     assert db_token['user_id'] == logged_user["id"]
 
 
+async def test_read(client, logged_user, tokens_db, fake_tokens):
 
+    # list all
+    url = client.app.router["list_tokens"].url_for()
+    assert "/v0/my/tokens" == str(url)
+    resp = await client.get(url)
+    payload = await resp.json()
+    assert resp.status == 200, payload
 
+    data, error = unwrap_envelope(payload)
+    assert not error
+    assert data == fake_tokens
 
+    # get one
+    sid = fake_tokens[0]['service']
 
+    url = client.app.router["get_token"].url_for(service=sid)
+    assert "/v0/my/tokens/%s" % sid == str(url)
+    resp = await client.get(url)
+    payload = await resp.json()
+    assert resp.status == 200, payload
 
-
-async def test_read(client):
-    async with LoggedUser(client) as user:
-        import pdb; pdb.set_trace()
-        async with NewToken({
-            'token_service': 'blackfynn',
-            'user_id': user['id']
-        },
-            client.app
-        ) as ftoken:
-            # list all
-            url = client.app.router["list_tokens"].url_for()
-            assert "/v0/my/tokens" == str(url)
-            resp = await client.get(url)
-            payload = await resp.json()
-            assert resp.status == 200, payload
-
-            data, error = unwrap_envelope(payload)
-            assert not error
-            assert data == [ftoken, ]
-
-            # get one
-            url = client.app.router["get_token"].url_for(service='blackfynn')
-            assert "/v0/my/tokens/blackfynn" == str(url)
-            resp = await client.get(url)
-            payload = await resp.json()
-            assert resp.status == 200, payload
-
-            data, error = unwrap_envelope(payload)
-            assert not error
-            assert data == ftoken
+    data, error = unwrap_envelope(payload)
+    assert not error
+    assert data == fake_tokens[0]
 
 
 async def test_update(client):
