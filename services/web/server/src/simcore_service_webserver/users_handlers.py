@@ -73,14 +73,13 @@ async def list_tokens(request: web.Request):
 @login_required
 async def get_token(request: web.Request):
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    service_id = request.match_info.get('service')
+    service_id = request.match_info['service']
 
     async with engine.acquire() as conn:
         query = (sa.select([tokens.c.token_data])
                    .where(sql.and_(
                        tokens.c.user_id == uid,
-                       tokens.c.token_service == service_id)
-        )
+                       tokens.c.token_service == service_id) )
         )
         result = await conn.execute(query)
         row = await result.first()
@@ -89,7 +88,36 @@ async def get_token(request: web.Request):
 
 @login_required
 async def update_token(request: web.Request):
-    raise NotImplementedError("%s still not implemented" % request)
+    """ updates token_data of a given user service
+
+    WARNING: token_data has to be complete!
+    """
+    uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
+    service_id = request.match_info['service']
+
+    # TODO: validate
+    body = await request.json()
+
+    # TODO: optimize to a single call?
+    async with engine.acquire() as conn:
+        query = (sa.select([tokens.c.token_data, tokens.c.token_id])
+                   .where(sql.and_(
+                       tokens.c.user_id == uid,
+                       tokens.c.token_service == service_id) )
+        )
+        result = await conn.execute(query)
+        row = await result.first()
+
+        data = dict(row["token_data"])
+        tid = row["token_id"]
+        data.update(body)
+
+        query = (tokens.update()
+                       .where(tokens.c.token_id == tid )
+                       .values(token_data=data)
+        )
+        resp = await conn.execute(query)
+        assert resp.rowcount == 1
 
 
 @login_required
