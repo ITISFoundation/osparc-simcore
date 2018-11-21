@@ -5,7 +5,7 @@ services:
     build:
       target: development
     volumes:
-      - './client:/home/node/qxapp'
+      - './client:/home/scu/client'
   server:
     build:
       target: development

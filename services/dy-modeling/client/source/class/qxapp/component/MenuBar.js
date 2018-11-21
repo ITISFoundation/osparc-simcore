@@ -115,6 +115,18 @@ qx.Class.define("qxapp.component.MenuBar", {
       }, this);
       modelsMenu.add(bigRatButton);
 
+      let ModelerButton = new qx.ui.menu.Button("DecDemoModeler", null, null);
+      ModelerButton.addListener("execute", function(e) {
+        this.fireDataEvent("fileLoadModelPressed", "DecDemo_Modeler.smash");
+      }, this);
+      modelsMenu.add(ModelerButton);
+
+      let LFButton = new qx.ui.menu.Button("DecDemoLF", null, null);
+      LFButton.addListener("execute", function(e) {
+        this.fireDataEvent("fileLoadModelPressed", "DecDemo_LF.smash");
+      }, this);
+      modelsMenu.add(LFButton);
+
       return modelsMenu;
     },
 
