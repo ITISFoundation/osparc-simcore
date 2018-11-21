@@ -26,13 +26,13 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       font: navBarLabelFont,
       minWidth: 150
     });
-    let userProjectList = this.__createUserProjectList();
+    let userProjectList = this.__userProjectList = this.__createUserProjectList();
 
     let pubPrjsLabel = new qx.ui.basic.Label(this.tr("Popular Projects")).set({
       font: navBarLabelFont,
       minWidth: 150
     });
-    let publicProjectList = this.__createPublicProjectList();
+    let publicProjectList = this.__publicProjectList = this.__createPublicProjectList();
 
 
     mainView.add(new qx.ui.core.Spacer(null, 10));
@@ -49,6 +49,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
   members: {
     __projectResources: null,
+    __userProjectList: null,
+    __publicProjectList: null,
 
     __newPrjBtnClkd: function() {
       let win = new qx.ui.window.Window(this.tr("Create New Project")).set({
@@ -113,7 +115,19 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
     __createUserProjectList: function() {
       // layout
-      let prjLst = this.__cretePrjListLayout();
+      let usrLst = this.__cretePrjListLayout();
+      usrLst.addListener("changeSelection", e => {
+        if (e.getData() && e.getData().length>0) {
+          this.__publicProjectList.resetSelection();
+          const selectedId = e.getData()[0].getModel();
+          if (selectedId) {
+            this.__itemSelected(selectedId, false);
+          } else {
+            // "New Project" selected
+            this.__userProjectList.resetSelection();
+          }
+        }
+      }, this);
 
       // resources
       // let userPrjList = qxapp.data.Store.getInstance().getUserProjectList();
@@ -130,7 +144,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           owner: null
         }));
         // controller
-        let prjCtr = new qx.data.controller.List(userPrjArrayModel, prjLst, "name");
+        let prjCtr = new qx.data.controller.List(userPrjArrayModel, usrLst, "name");
         const fromTemplate = false;
         let delegate = this.__getDelegate(fromTemplate);
         prjCtr.setDelegate(delegate);
@@ -142,31 +156,39 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
       resources.get();
 
-      return prjLst;
+      return usrLst;
     },
 
     __createPublicProjectList: function() {
       // layout
-      let prjLst = this.__cretePrjListLayout();
+      let pblLst = this.__cretePrjListLayout();
+      pblLst.addListener("changeSelection", e => {
+        if (e.getData() && e.getData().length>0) {
+          this.__userProjectList.resetSelection();
+          const selectedId = e.getData()[0].getModel();
+          this.__itemSelected(selectedId, true);
+        }
+      }, this);
 
       // controller
       let publicPrjList = qxapp.data.Store.getInstance().getPublicProjectList();
       let publicPrjArrayModel = this.__getProjectArrayModel(publicPrjList);
-      let prjCtr = new qx.data.controller.List(publicPrjArrayModel, prjLst, "name");
+      let prjCtr = new qx.data.controller.List(publicPrjArrayModel, pblLst, "name");
       const fromTemplate = true;
       let delegate = this.__getDelegate(fromTemplate);
       prjCtr.setDelegate(delegate);
-      return prjLst;
+      return pblLst;
     },
 
     __cretePrjListLayout: function() {
-      return new qx.ui.form.List().set({
+      let list = new qx.ui.form.List().set({
         orientation: "horizontal",
         spacing: 10,
         height: 245,
         alignY: "middle",
         appearance: "pb-list"
       });
+      return list;
     },
 
     /**
@@ -230,6 +252,23 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       };
 
       return delegate;
+    },
+
+    __itemSelected: function(projectId, fromTemplate = false) {
+      let resource = this.__projectResources.project;
+
+      resource.addListenerOnce("getSuccess", function(e) {
+        let projectData = e.getRequest().getResponse().data;
+        console.log(projectData);
+      }, this);
+
+      resource.addListenerOnce("getError", e => {
+        console.log(e);
+      });
+
+      resource.get({
+        "project_id": projectId
+      });
     },
 
     __getProjectArrayModel: function(prjList) {
