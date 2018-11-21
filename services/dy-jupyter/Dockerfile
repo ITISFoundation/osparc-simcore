@@ -47,6 +47,7 @@ FROM base AS development
 VOLUME /home/jovyan/packages
 VOLUME /home/jovyan/services
 VOLUME /home/jovyan/devel
+VOLUME /home/root/scripts/dy_services_helpers
 VOLUME /home/jovyan/work
 VOLUME /home/jovyan/docker
 ENV CREATE_DUMMY_TABLE=1
