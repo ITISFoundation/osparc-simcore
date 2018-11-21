@@ -18,7 +18,10 @@ log = getLogger(__name__)
 
 
 def encrypt_password(password):
-    return passlib.hash.sha256_crypt.encrypt(password, rounds=1000)
+    #TODO: add settings sha256_crypt.using(**settings).hash(secret)
+    # see https://passlib.readthedocs.io/en/stable/lib/passlib.hash.sha256_crypt.html
+    #
+    return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
 
 
 def check_password(password, password_hash):
