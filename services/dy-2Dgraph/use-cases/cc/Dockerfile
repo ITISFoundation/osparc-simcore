@@ -20,7 +20,7 @@ ENV NOTEBOOK_URL=${NOTEBOOK_NAME}
 # -----------------------------------------------------------------------------
 FROM common AS development
 VOLUME /packages
-VOLUME /home/jovyan/devel
+VOLUME /home/jovyan/scripts/dy_services_helpers
 VOLUME /home/jovyan/devel-config
 VOLUME /home/jovyan/notebook
 ENV USE_CASE_CONFIG_FILE="node_configuration_file.json"

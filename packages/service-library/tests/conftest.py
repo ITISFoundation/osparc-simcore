@@ -16,6 +16,7 @@ import pytest
 def here():
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+
 @pytest.fixture(scope="session")
 def package_dir():
     pdir = Path(servicelib.__file__).resolve().parent
