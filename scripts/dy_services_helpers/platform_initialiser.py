@@ -1,8 +1,7 @@
-import asyncio
 import argparse
+import asyncio
 import json
 import sys
-import tempfile
 import uuid
 from pathlib import Path
 
@@ -10,14 +9,13 @@ import tenacity
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import numpy as np
-import pandas as pd
 from s3wrapper.s3_client import S3Client
+from simcore_sdk import node_ports
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.config.s3 import Config as s3_config
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
-from simcore_sdk import node_ports
+
 
 class DbSettings:
     def __init__(self):
@@ -45,32 +43,26 @@ def init_s3():
     s3 = S3Settings()
     return s3
 
-def create_dummy_table(number_of_rows, number_of_columns):
-    time = np.arange(number_of_rows).reshape(number_of_rows,1)
-    matrix = np.random.randn(number_of_rows, number_of_columns)
-    fullmatrix = np.hstack((time, matrix))
-    df = pd.DataFrame(fullmatrix)
-    return df
-
-async def create_dummy(json_configuration_file_path: Path, 
-                        number_of_rows: int, 
-                        number_of_columns: int, 
-                        number_of_files: int,  #pylint: disable=W0613
-                        sep: str ="\t"):
+async def _initialise_platform(port_configuration_path: Path, file_generator):
     
     
-    with json_configuration_file_path.open() as file_pointer:
+    with port_configuration_path.open() as file_pointer:
         configuration = json.load(file_pointer)
     
-    # init s3
-    init_s3()
+    if not all(k in configuration for k in ("schema", "inputs", "outputs")):
+        raise Exception("invalid port configuration in {}, {}!".format(str(port_configuration_path), configuration))
 
+    # init s3 to ensure we have a bucket
+    init_s3()
     # set up db
     db = init_db()
+
+    # create a new pipeline
     new_Pipeline = ComputationalPipeline()
     db.session.add(new_Pipeline)
     db.session.commit()
 
+    # create a new node
     node_uuid = str(uuid.uuid4())
     # now create the node in the db with links to S3
     new_Node = ComputationalTask(project_id=new_Pipeline.project_id, 
@@ -85,46 +77,46 @@ async def create_dummy(json_configuration_file_path: Path,
     node_ports.node_config.NODE_UUID = node_uuid
     PORTS = node_ports.ports()
     # push the file to the S3 for each input item
+    file_index = 0
     for key, input_item in configuration["schema"]["inputs"].items():
         if str(input_item["type"]).startswith("data:"):
-            # create a dummy file filled with dummy data
-            temp_file = tempfile.NamedTemporaryFile(suffix=".csv")
-            temp_file.close()
-            # create dummy file containing a table
-            df = create_dummy_table(number_of_rows, number_of_columns)
-            with open(temp_file.name, "w") as file_pointer:
-                df.to_csv(path_or_buf=file_pointer, sep=sep, header=False, index=False)        
-
-            # upload to S3
-            await PORTS.inputs[key].set(Path(temp_file.name))
-
-    Path(temp_file.name).unlink()
+            file_to_upload = file_generator(file_index)
+            if file_to_upload is not None:
+                # upload to S3
+                await PORTS.inputs[key].set(Path(file_to_upload))
+                file_index += 1
 
     
     # print the node uuid so that it can be set as env variable from outside
     print("{pipelineid},{nodeuuid}".format(pipelineid=str(new_Node.project_id), nodeuuid=node_uuid))
 
-def main():
-    parser = argparse.ArgumentParser(description="Initialise an oSparc database/S3 with fake data for development.")
-    parser.add_argument("portconfig", help="The path to the port configuration file (json format)", type=Path)
-    parser.add_argument("rows", help="The number of rows in each table", type=int)
-    parser.add_argument("columns", help="The number of columns in each table", type=int)
-    parser.add_argument("files", help="The number of tables in case of folder-url type", type=int)
-    parser.add_argument("separator", help="The value separator to be used, for example tab or space or any single character", type=str)
-    args = sys.argv[1:]
-    options = parser.parse_args(args)
-    if "tab" in options.separator:
-        separator = "\t"
-    elif "space" in options.separator:
-        separator = " "
-    else:
-        separator = options.separator    
+def main(port_configuration_path: Path, file_generator):
+    
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(create_dummy(options.portconfig, 
-        number_of_rows=options.rows, 
-        number_of_columns=options.columns, 
-        number_of_files=options.files, 
-        sep=separator))
+    loop.run_until_complete(_initialise_platform(port_configuration_path, file_generator))
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Initialise an oSparc database/S3 with user data for development.")
+    parser.add_argument("portconfig", help="The path to the port configuration file (json format)", type=Path)
+    group = parser.add_mutually_exclusive_group()    
+    group.add_argument("--files", help="any number of files to upload", type=Path, nargs="*")
+    group.add_argument("--folder", help="a path to upload files from", type=Path)
+    args = sys.argv[1:]
+    options = parser.parse_args(args)
+    #print("options %s", options)
+    if options.files is not None:
+        def _file_generator(file_index: int):
+            if file_index < len(options.files):
+                return options.files[file_index]
+            return None
+        main(port_configuration_path=options.portconfig, file_generator=_file_generator)
+
+    if options.folder is not None:
+        def _file_generator(file_index: int):
+            files = [x for x in options.folder.iterdir() if x.is_file()]
+            if file_index < len(files):
+                return files[file_index]
+            return None
+        main(port_configuration_path=options.portconfig, file_generator=_file_generator)    
+
+    
