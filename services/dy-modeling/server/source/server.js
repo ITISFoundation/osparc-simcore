@@ -321,9 +321,11 @@ function importModelS4L(socketClient, modelName) {
     case 'BigRat':
       modelPath += 'Rat_Male_567g_v2.0b02.sat';
       break;
-    case 'DecDemo_Modeler.smash':
-    case 'DecDemo_LF.smash':
-      modelPath += modelName
+    case 'DecDemoModeler':
+      modelPath += 'DecDemo_Modeler.smash';
+      break;
+    case 'DecDemoLF':
+      modelPath += 'DecDemo_LF.smash';
       break;
     default:
       modelPath += 'ratmodel_simplified.smash';
