@@ -81,13 +81,15 @@ def __convert_labels_to_docker_runtime_parameters(service_runtime_parameters_lab
             dummy_string = json.dumps(param['value'])
             dummy_string = dummy_string.replace("%service_uuid%", node_uuid)
             param['value'] = json.loads(dummy_string)
-            # replace string by actual value
-            #param['value'] = str(param['value']).replace("%node_uuid%", node_uuid)
 
-        if param['name'] == 'ports':
+        if param["type"] != "string" and param["name"] != "ports": # backward compatible till all dyn services are correctly updated
+            # this is a special docker API type
+            arguments_dict = param["value"]
+            runtime_params[param['name']] = getattr(docker.types, param["type"])(**arguments_dict)
+        elif param['name'] == 'ports':
             # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
             enpoint_spec = docker.types.EndpointSpec(ports={0: int(param['value'])})
-            runtime_params["endpoint_spec"] = enpoint_spec
+            runtime_params["endpoint_spec"] = enpoint_spec            
         else:
             runtime_params[param['name']] = param['value']
     log.debug("Converted labels to docker runtime parameters: %s", runtime_params)
