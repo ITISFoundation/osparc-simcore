@@ -35,6 +35,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     let publicProjectList = this.__publicProjectList = this.__createPublicProjectList();
 
 
+
     mainView.add(new qx.ui.core.Spacer(null, 10));
     mainView.add(myPrjsLabel);
     mainView.add(userProjectList);

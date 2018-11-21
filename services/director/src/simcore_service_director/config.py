@@ -5,7 +5,7 @@ import logging
 import os
 
 logging.basicConfig(
-    # level=logging.DEBUG,
+    level=logging.DEBUG,
     format='%(levelname)s:%(name)s-%(lineno)d: %(message)s'
     )
 
