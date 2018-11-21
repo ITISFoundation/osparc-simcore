@@ -348,6 +348,7 @@ function importModelS4L(socketClient, modelName) {
             let meshId = response3[i].uuid;
             s4lModelerClient.GetEntitiesEncodedScene([meshId], thrModelerTypes.SceneFileFormat.GLTF,
               function(err4, response4) {
+                console.log('Received GLTF scene')
                 let encodedScene = {
                   type: 'importModelScene',
                   value: response4.data,
@@ -360,13 +361,16 @@ function importModelS4L(socketClient, modelName) {
                   console.log(i);
                   if (i === nMeshes-1) {
                     sendEncodedScenesToTheClient(socketClient, listOfEncodedScenes);
+                    console.log(`Sent GLTF scene ${i}`)
                   }
                 }
                 else {
                   sendEncodedScenesToTheClient(socketClient, [encodedScene]);
+                  console.log(`Sent GLTF scene ${i}`)
                 }
               });
           }
+          console.log(`Sent ${nMeshes} GLTF scene`)
         });
     });
   });
