@@ -83,8 +83,7 @@ async def update_project(request: web.Request):
     assert_ownership(pid, uid)
 
     # FIXME: limited to updates in first level!
-    for key, value in new_values.items():
-        current_project.data[key] = value
+    current_project.data.update(new_values)
 
 
 @login_required
