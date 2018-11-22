@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 async def director_client_ctx(app: web.Application):
     # TODO: deduce base url from configuration and add to session
+    # TODO: create instead a class that wraps the session and hold all information
+    # known upon setup
     async with ClientSession(loop=app.loop) as session:
         app[APP_DIRECTOR_SESSION_KEY] = session
         yield
