@@ -20,14 +20,12 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
     let transformPath = "three/TransformControls.js";
     let gltfLoaderPath = "three/GLTFLoader.js";
     let gltfExporterPath = "three/GLTFExporter.js";
-    let vtkLoaderPath = "three/VTKLoader.js";
     let dynLoader = new qx.util.DynamicScriptLoader([
       threePath,
       orbitPath,
       transformPath,
       gltfLoaderPath,
-      gltfExporterPath,
-      vtkLoaderPath
+      gltfExporterPath
     ]);
 
     dynLoader.addListenerOnce("ready", function(e) {
