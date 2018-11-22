@@ -9,8 +9,6 @@ from .storage_config import get_config, get_client_session
 
 # TODO: retrieve from db tokens
 
-
-
 async def _request_storage(request: web.Request, method: str):
     await extract_and_validate(request)
 
@@ -22,8 +20,9 @@ async def _request_storage(request: web.Request, method: str):
                           host=cfg['host'],
                           port=cfg['port'])
 
-    # strip basepath from webserver API path (i.e. webserver api version)
+
     BASEPATH_INDEX = 3
+    # strip basepath from webserver API path (i.e. webserver api version)
     # >>> URL('http://storage:1234/v5/storage/asdf/').raw_parts[3:]
     #    ('asdf', '')
     parts = [cfg["version"], ] + list( request.url.raw_parts[BASEPATH_INDEX:]  )
