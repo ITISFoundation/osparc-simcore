@@ -56,14 +56,10 @@ qx.Class.define("qxapp.Application", {
       */
 
       this.__preloadModel = null;
-      let isModeler = false;
-      let isDevel = false;
       if (qx.core.Environment.get("qxapp.preloadModel") != "") {
         this.__preloadModel = qx.core.Environment.get("qxapp.preloadModel");
       }
-      if (qx.core.Environment.get("qxapp.isModeler")) {
-        isModeler = true;
-      }
+      let isDevel = false;
       if (qx.core.Environment.get("qxapp.isDevel")) {
         isDevel = true;
       }
@@ -93,7 +89,6 @@ qx.Class.define("qxapp.Application", {
       let avaiBarHeight = 55;
       const showMenuBar = isDevel;
       const showUserMenu = false;
-      const showModelingTools = isModeler;
 
       this._menuBar = new qxapp.component.MenuBar(
         docWidth, menuBarHeight,
@@ -136,9 +131,7 @@ qx.Class.define("qxapp.Application", {
       if (showMenuBar) {
         toolBarcontainer.add(this._menuBar);
       }
-      if (showModelingTools) {
-        toolBarcontainer.add(this.__availableServicesBar);
-      }
+      toolBarcontainer.add(this.__availableServicesBar);
       doc.add(toolBarcontainer);
 
       if (showUserMenu) {
@@ -148,7 +141,6 @@ qx.Class.define("qxapp.Application", {
       }
 
       menuBarHeight = showMenuBar ? menuBarHeight : 0;
-      avaiBarHeight = showModelingTools ? avaiBarHeight : 0;
       this.__entityList.moveTo(10, menuBarHeight + avaiBarHeight + 10);
       this.__entityList.open();
 
