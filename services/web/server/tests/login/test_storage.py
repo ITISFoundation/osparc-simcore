@@ -61,10 +61,11 @@ def storage_server(loop, aiohttp_server, app_cfg):
             'data': [{"uuid_filter": query["uuid_filter"]}, ]
         })
 
+    version = cfg['version']
 
-    app.router.add_get("/v0/locations", _get_locs)
-    app.router.add_get("/v0/locations/0/files/{file_id}/metadata", _get_filemeta)
-    app.router.add_get("/v0/locations/0/files/metadata", _get_filtered_list)
+    app.router.add_get("/%s/locations" % version, _get_locs)
+    app.router.add_get("/%s/locations/0/files/{file_id}/metadata" % version, _get_filemeta)
+    app.router.add_get("/%s/locations/0/files/metadata" % version, _get_filtered_list)
 
     assert cfg['host']=='localhost'
 
@@ -108,7 +109,7 @@ async def test_storage_file_meta(client, storage_server):
         assert data[0]['filemeta'] == 42
 
 async def test_storage_list_filter(client, storage_server):
-    # tests composition of 2 queries 
+    # tests composition of 2 queries
     file_id = "a/b/c/d/e/dat"
     url = "/v0/storage/locations/0/files/metadata?uuid_filter={}".format(quote(file_id, safe=''))
 
