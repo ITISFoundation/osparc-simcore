@@ -16,19 +16,16 @@ async def _request_storage(request: web.Request, method: str):
     userid = request[RQT_USERID_KEY]
 
     # storage service API endpoint
-    origin = URL.build( scheme='http',
-                          host=cfg['host'],
-                          port=cfg['port'])
-
+    endpoint = URL.build(scheme='http', host=cfg['host'], port=cfg['port']).with_path(cfg["version"])
 
     BASEPATH_INDEX = 3
     # strip basepath from webserver API path (i.e. webserver api version)
     # >>> URL('http://storage:1234/v5/storage/asdf/').raw_parts[3:]
     #    ('asdf', '')
-    parts = [cfg["version"], ] + list( request.url.raw_parts[BASEPATH_INDEX:]  )
+    suffix = "/".join( request.url.raw_parts[BASEPATH_INDEX:] )
 
     # TODO: check request.query to storage! unsafe!?
-    url = origin.with_path("/".join(parts)).with_query(request.query).update_query(user_id=userid)
+    url = (endpoint / suffix).with_query(request.query).update_query(user_id=userid)
 
     session = get_client_session(request.app)
     async with session.request(method.upper(), url, ssl=False) as resp:

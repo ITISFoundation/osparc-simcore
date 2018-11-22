@@ -18,7 +18,7 @@ schema = T.Dict({
     T.Key("enabled", default=True, optional=True): T.Bool(),
     T.Key("host", default="storage"): T.String(),
     T.Key("port", default=11111): T.Int(),
-    T.Key("version", default="v0"): T.String() # storage API version basepath
+    T.Key("version", default="v0"): T.Regexp(regexp=r'^v\d+') # storage API version basepath
 })
 
 def get_config(app: web.Application) -> Dict:
