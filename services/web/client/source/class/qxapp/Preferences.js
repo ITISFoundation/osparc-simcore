@@ -211,7 +211,7 @@ qx.Class.define("qxapp.Preferences", {
           console.log(eve);
         });
         const newTokenInfo = {
-          "service": "dat-core"
+          "service": service
         };
         token.del(newTokenInfo);
       }, this);
