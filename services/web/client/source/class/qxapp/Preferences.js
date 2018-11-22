@@ -210,10 +210,9 @@ qx.Class.define("qxapp.Preferences", {
         token.addListenerOnce("delError", eve => {
           console.log(eve);
         });
-        const newTokenInfo = {
+        token.del({
           "service": service
-        };
-        token.del(newTokenInfo);
+        });
       }, this);
       form.addButton(delTokenBtn);
 
