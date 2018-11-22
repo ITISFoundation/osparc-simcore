@@ -226,10 +226,12 @@ qx.Class.define("qxapp.Application", {
       this._socket.addListener("reconnect", function(e) {
         console.log("REconnecting to server via websocket...");
         // if (!this._socket.slotExists("importModelScene")) {
-          this._socket.on("importModelScene", function(val) {
-            if (val.type === "importModelScene") {
+          this._socket.on("importModelScene", function(val, ackCb) {
+            ackCb();
+            if (val.type === "importModelScene") {              
               this.__threeView.importSceneFromBuffer(val.value);
             }
+            
           }, this);
         // }
       }, this);
