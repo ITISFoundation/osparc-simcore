@@ -415,6 +415,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           if (srvUrl[srvUrl.length-1] !== "/") {
             arg = "/" + arg;
           }
+          // FIXME:
+          arg = "";
           this.getIFrame().setSource(srvUrl + arg);
         } else {
           this.getIFrame().setSource(this.getServiceUrl());
