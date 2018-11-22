@@ -12,7 +12,7 @@
         "outputs":{}
     },
     "inputs": {
-        "model_name": "ratmodel_simplified.smash"
+        "model_name": "DecDemo_LF.smash"
     },
     "outputs": {}
 }
