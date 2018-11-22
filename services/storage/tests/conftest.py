@@ -259,8 +259,9 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
 
         data[object_name] = FileMetaData(**d)
 
+        # pylint: disable=no-member
         utils.insert_metadata(postgres_service_url,
-                              data[object_name])  # pylint: disable=no-member
+                              data[object_name])
 
     total_count = 0
     for _obj in s3_client.list_objects_v2(bucket_name, recursive=True):
