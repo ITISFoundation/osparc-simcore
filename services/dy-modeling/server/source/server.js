@@ -69,6 +69,7 @@ connectToS4LServer().then(function() {
 
 let io = require('socket.io')(server);
 let connectedClient = null;
+let _sceneBuffer = [];
 io.on('connection', function(socketClient) {
   console.log(`Client connected as ${socketClient.id}...`);
   connectedClient = socketClient;
@@ -373,7 +374,7 @@ function importModelS4L(modelName) {
     }
   }
 
-  let _sceneBuffer = [];
+  
   function sendEncodedScenesToTheClient(listOfEncodedScenes) {
     if (connectedClient) {
       for (let i = 0; i < listOfEncodedScenes.length; i++) {
@@ -381,16 +382,18 @@ function importModelS4L(modelName) {
           return element.value === listOfEncodedScenes[i].value;
         });
         // send the data
+        console.log(`sending the data`);
         connectedClient.binary(true).emit('importModelScene', listOfEncodedScenes[i], function() {
           // callback fct from client after receiving data
           console.log(`received acknowledgment from client`);
           _sceneBuffer.splice(index, 1);
-          console.log(`remaining scenes to transmit ${_sceneBuffer.length}`)
+          console.log(`remaining scenes to transmit ${_sceneBuffer.length}`);
         });
       }
     } 
     else {
       console.log(`could not send scene...`);
+      console.log(`remaining scenes to transmit ${_sceneBuffer.length}`);
     }   
   }
 }
