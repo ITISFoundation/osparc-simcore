@@ -156,7 +156,7 @@ qx.Class.define("qxapp.Preferences", {
           let validTokenGrp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
           let validToken = new qx.ui.form.TextField();
           validToken.set({
-            value: tokensList[i],
+            value: tokensList[i]["service"] + ": " + tokensList[i]["token_key"],
             enable: false,
             alignY: "bottom"
           });
