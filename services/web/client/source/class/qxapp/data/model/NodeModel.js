@@ -504,8 +504,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         };
         this.fireDataEvent("ShowInLogger", msgData);
 
-        // HACK: Workaround for fetching inputs in Visualizer
-        if (this.getKey().includes("3d-viewer")) {
+        // HACK: Workaround for fetching inputs in Visualizer and modeler
+        if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler")) {
           let urlUpdate = this.getServiceUrl() + "/retrieve";
           let updReq = new qx.io.request.Xhr();
           updReq.set({
