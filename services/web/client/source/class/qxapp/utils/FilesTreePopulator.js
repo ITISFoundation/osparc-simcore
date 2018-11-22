@@ -34,7 +34,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
         "S3PublicDocuments",
         "FakeFiles"
       ].forEach(eventName => {
-        store.addListenerOnce(eventName, e => {
+        store.addListener(eventName, e => {
           const files = e.getData();
           const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
           this.__addTreeData(newChildren);
