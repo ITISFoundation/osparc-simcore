@@ -1,5 +1,4 @@
 /* eslint no-warning-comments: "off" */
-
 qx.Class.define("qxapp.Preferences", {
   extend: qx.ui.window.Window,
 
@@ -61,18 +60,19 @@ qx.Class.define("qxapp.Preferences", {
     },
 
     __getGeneral: function() {
-      const iconUrl = "@FontAwesome5Solid/sliders-h/32";
+      const iconUrl = "@FontAwesome5Solid/sliders-h/24";
       let page = this.__createPage(this.tr("General"), iconUrl);
 
       const userEmail = qxapp.auth.Data.getInstance().getEmail();
 
+      let form = new qx.ui.form.Form();
       // content
       let username = new qx.ui.form.TextField().set({
         value: userEmail.split("@")[0],
         placeholder: "User Name",
         readOnly: true
       });
-      page.add(username);
+      form.add(username, "Username");
 
       // let fullname = new qx.ui.form.TextField().set({
       //   placeholder: "Full Name"
@@ -85,7 +85,12 @@ qx.Class.define("qxapp.Preferences", {
         placeholder: "Email",
         readOnly: true
       });
-      page.add(email);
+      form.add(email, this.tr("Email"));
+
+      page.add(new qx.ui.form.renderer.Single(form).set({
+        alignY: "bottom",
+        padding: 0
+      }));
 
       let img = new qx.ui.basic.Image().set({
         source: qxapp.utils.Avatar.getUrl(email.getValue(), 200)
@@ -96,7 +101,7 @@ qx.Class.define("qxapp.Preferences", {
     },
 
     __getSecurity: function() {
-      const iconUrl = "@FontAwesome5Solid/shield-alt/32";
+      const iconUrl = "@FontAwesome5Solid/shield-alt/24";
       let page = this.__createPage(this.tr("Security"), iconUrl);
 
       // content
@@ -121,8 +126,7 @@ qx.Class.define("qxapp.Preferences", {
       newTokenGrp.add(newTokenPass, {
         flex: 1
       });
-      const iconSize = 12;
-      let newTokenBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/plus/"+iconSize);
+      let newTokenBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/plus/12");
       newTokenBtn.addListener("execute", e => {
         let tokens = this.__tokenResources.tokens;
         tokens.addListenerOnce("postSuccess", ev => {
@@ -163,8 +167,7 @@ qx.Class.define("qxapp.Preferences", {
           validTokenGrp.add(validToken, {
             flex: 1
           });
-          const iconSize = 12;
-          let newTokenBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/trash/"+iconSize);
+          let newTokenBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/trash/12");
           newTokenBtn.addListener("execute", ev => {
             let token = this.__tokenResources.token;
             token.addListenerOnce("delSuccess", eve => {
@@ -186,7 +189,7 @@ qx.Class.define("qxapp.Preferences", {
     },
 
     __getDisplay: function() {
-      const iconUrl = "@FontAwesome5Solid/eye/32";
+      const iconUrl = "@FontAwesome5Solid/eye/24";
       let page = this.__createPage(this.tr("Display"), iconUrl);
       let themes = qx.Theme.getAll();
 
@@ -220,7 +223,7 @@ qx.Class.define("qxapp.Preferences", {
     },
 
     __getAdvanced: function() {
-      const iconUrl = "@FontAwesome5Solid/flask/32";
+      const iconUrl = "@FontAwesome5Solid/flask/24";
       let page = this.__createPage(this.tr("Experimental"), iconUrl);
 
       return page;
