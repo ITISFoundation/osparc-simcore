@@ -56,7 +56,7 @@ qx.Class.define("qxapp.Application", {
       */
 
       this.__preloadModel = null;
-      if (qx.core.Environment.get("qxapp.preloadModel")) {
+      if (qx.core.Environment.get("qxapp.preloadModel") != "") {
         this.__preloadModel = qx.core.Environment.get("qxapp.preloadModel");
       }
       let isDevel = false;
@@ -195,17 +195,38 @@ qx.Class.define("qxapp.Application", {
 
     loadModel: function(modelName) {
       console.log("Loading...", modelName);
-      if (!this._socket.slotExists("importModelScene")) {
+      this._socket.emit("importModel", modelName);
+    },
+
+    _initSignals: function() {
+      this._socket.addListener("connect", function() {
+        console.log("connecting to server via websocket...");
+        // if (!this._socket.slotExists("importModelScene")) {
         this._socket.on("importModelScene", function(val) {
           if (val.type === "importModelScene") {
             this.__threeView.importSceneFromBuffer(val.value);
           }
         }, this);
-      }
-      this._socket.emit("importModel", modelName);
-    },
+        // }
+      }, this);
+      this._socket.addListener("disconnect", function() {
+        console.log("disconnected from server websocket");
+      }, this);
+      this._socket.addListener("error", function(e) {
+        console.log("error from server websocket: " + e);
+      }, this);
+      this._socket.addListener("reconnect", function(e) {
+        console.log("REconnecting to server via websocket...");
+        // if (!this._socket.slotExists("importModelScene")) {
+        this._socket.on("importModelScene", function(val, ackCb) {
+          ackCb();
+          if (val.type === "importModelScene") {
+            this.__threeView.importSceneFromBuffer(val.value);
+          }
+        }, this);
+        // }
+      }, this);
 
-    _initSignals: function() {
       // Menu bar
       this._menuBar.addListener("fileNewPressed", function(e) {
         this.__threeView.removeAll();

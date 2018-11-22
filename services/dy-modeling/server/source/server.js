@@ -68,8 +68,20 @@ connectToS4LServer().then(function() {
 
 
 let io = require('socket.io')(server);
+let connectedClient = null;
+let _sceneBuffer = [];
 io.on('connection', function(socketClient) {
-  console.log('Client connected...');
+  console.log(`Client connected as ${socketClient.id}...`);
+  connectedClient = socketClient;
+
+  socketClient.on('disconnect', function(reason) {
+    console.log(`Client disconnected with reason ${reason}`)
+    connectedClient = null;
+  });
+
+  socketClient.on('error', function(error){
+    console.log(`socket error: ${error}`);
+  });
 
   socketClient.on('importScene', function(activeUser) {
     importScene(socketClient, activeUser);
@@ -83,7 +95,7 @@ io.on('connection', function(socketClient) {
 
   socketClient.on('importModel', function(modelName) {
     connectToS4LServer().then(function() {
-      importModelS4L(socketClient, modelName);
+      importModelS4L(modelName);
     }).catch(failureCallback);
   });
 
@@ -307,8 +319,9 @@ function exportScene(socketClient, activeUser, sceneJson) {
   });
 }
 
-function importModelS4L(socketClient, modelName) {
+function importModelS4L(modelName) {
   const data_path = 'c:/app/data/';
+  // const data_path = 'd:/xrpcapp/data/';
   s4lAppClient.NewDocument( function(err, response) {
     let modelPath = data_path;
     switch (modelName) {
@@ -333,41 +346,55 @@ function importModelS4L(socketClient, modelName) {
     s4lModelerClient.ImportModel( modelPath, function(err2, response2) {
       console.log('Importing path', modelPath);
       s4lModelerClient.GetFilteredEntities(thrModelerTypes.EntityFilterType.BODY_AND_MESH,
-        function(err3, response3) {
-          console.log('Total meshes', response3.length);
-
-          let nMeshes = response3.length;
-          for (let i = 0; i <nMeshes; i++) {
-            let meshId = response3[i].uuid;
-            s4lModelerClient.GetEntitiesEncodedScene([meshId], thrModelerTypes.SceneFileFormat.GLTF,
-              function(err4, response4) {
-                let encodedScene = {
-                  type: 'importModelScene',
-                  value: response4.data,
-                };
-                let storeAllInServerFirst = false;
-                if (storeAllInServerFirst) {
-                  let listOfEncodedScenes = [];
-                  listOfEncodedScenes.push(encodedScene);
-                  // socketClient.emit('importModelScene', meshEntity);
-                  console.log(i);
-                  if (i === nMeshes-1) {
-                    sendEncodedScenesToTheClient(socketClient, listOfEncodedScenes);
-                  }
-                }
-                else {
-                  sendEncodedScenesToTheClient(socketClient, [encodedScene]);
-                }
-              });
-          }
+        function(err3, entities) {
+          console.log('Total entities', entities.length);
+          transmitEntities(entities).then(function() {
+            console.log(`Sent all GLTF scene`);
+          });          
         });
     });
   });
 
-  function sendEncodedScenesToTheClient(socketClient, listOfEncodedScenes) {
-    for (let i = 0; i < listOfEncodedScenes.length; i++) {
-      socketClient.emit('importModelScene', listOfEncodedScenes[i]);
+  function transmitEntities(entities) {
+    let nMeshes = entities.length;
+    for (let i = 0; i < nMeshes; i++) {
+      let meshId = entities[i].uuid;
+      s4lModelerClient.GetEntitiesEncodedScene([meshId], thrModelerTypes.SceneFileFormat.GLTF,
+        function(err4, response4) {
+          console.log('Received GLTF scene')
+          let encodedScene = {
+            type: 'importModelScene',
+            value: response4.data,
+          };
+          // keep the scene in an internal buffer as the socket sometimes breaks
+          _sceneBuffer.push(encodedScene);        
+          sendEncodedScenesToTheClient([encodedScene]);
+          console.log(`Sent GLTF scene ${i+1}`);
+        });
     }
+  }
+
+  
+  function sendEncodedScenesToTheClient(listOfEncodedScenes) {
+    if (connectedClient) {
+      for (let i = 0; i < listOfEncodedScenes.length; i++) {
+        const index = _sceneBuffer.findIndex(function(element){
+          return element.value === listOfEncodedScenes[i].value;
+        });
+        // send the data
+        console.log(`sending the data`);
+        connectedClient.binary(true).emit('importModelScene', listOfEncodedScenes[i], function() {
+          // callback fct from client after receiving data
+          console.log(`received acknowledgment from client`);
+          _sceneBuffer.splice(index, 1);
+          console.log(`remaining scenes to transmit ${_sceneBuffer.length}`);
+        });
+      }
+    } 
+    else {
+      console.log(`could not send scene...`);
+      console.log(`remaining scenes to transmit ${_sceneBuffer.length}`);
+    }   
   }
 }
 
@@ -415,3 +442,55 @@ function booleanOperationS4L(socketClient, entityMeshesScene, operationType) {
 
 
 console.log('server started on ' + PORT + '/app');
+
+
+const spawn = require("child_process").spawn;
+
+
+
+// GET retrieve method route
+app.get('/retrieve', callInputRetriever); 
+function callInputRetriever(request, response) {
+  console.log('Received a call to retrieve the data on input ports from '+ request.ip)
+
+  var pyProcess = spawn("python", ["/home/node/source/input-retriever.py"]);
+
+  pyProcess.on("error", function(err){
+    console.log(`ERROR: ${err}`);
+    response.sendStatus("500")
+  });
+
+  let dataString = "";
+  pyProcess.stdout.setEncoding("utf8");
+  pyProcess.stdout.on("data", function(data) {
+    console.log(`stdout: ${data}`);
+    dataString += data;
+  });
+
+  pyProcess.stderr.on("data", function(data) {
+    console.log(`stderr: ${data}`);
+  });
+
+  pyProcess.on("close", function(code) {
+    console.log(`Function completed with code ${code}.`);
+    if (code !== 0) {
+      response.sendStatus("500")
+    }
+    else {
+      const dataArray = dataString.split("json=");
+      if (dataArray.length == 2) {
+        console.log(`retrieved data ${dataArray[1]}`)
+        // we have some data in json format
+        const data = JSON.parse(dataArray[1]);
+        const modelName = data.model_name.value;
+        console.log(`model to be loaded is ${modelName}`)
+        connectToS4LServer().then(function() {
+          importModelS4L(modelName);
+        }).catch(failureCallback);
+      }
+      response.sendStatus("204")
+    }
+  });
+
+  
+}
