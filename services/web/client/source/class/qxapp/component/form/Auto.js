@@ -211,7 +211,7 @@ qx.Class.define("qxapp.component.form.Auto", {
       this.__settingData = true;
 
       for (let key in data) {
-        if (typeof data[key] == "object" && data[key].nodeUuid) {
+        if (data[key] !== null && typeof data[key] === "object" && data[key].nodeUuid) {
           this.addLink(key, data[key].nodeUuid, data[key].output);
           continue;
         }
