@@ -56,11 +56,18 @@ def client(loop, aiohttp_client, aiohttp_unused_port, app_cfg, postgres_service)
     return client
 
 
+# WARNING: pytest-asyncio and pytest-aiohttp are not compatible
+#
+# https://github.com/aio-libs/pytest-aiohttp/issues/8#issuecomment-405602020
+# https://github.com/pytest-dev/pytest-asyncio/issues/76
+#
+
 @pytest.fixture
 async def logged_user(client):
     """ adds a user in db and logs in with client """
     async with LoggedUser(client) as user:
         yield user
+
 
 @pytest.fixture
 async def tokens_db(logged_user, client):
