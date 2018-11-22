@@ -40,7 +40,7 @@ qx.Class.define("qxapp.Preferences", {
 
   members: {
     __tokenResources: null,
-    __validTokens: null,
+    __tokensList: null,
 
     __createPage: function(name, iconSrc = null) {
       let page = new qx.ui.tabview.Page(name, iconSrc);
@@ -87,10 +87,7 @@ qx.Class.define("qxapp.Preferences", {
       });
       form.add(email, this.tr("Email"));
 
-      page.add(new qx.ui.form.renderer.Single(form).set({
-        alignY: "bottom",
-        padding: 0
-      }));
+      page.add(new qx.ui.form.renderer.Single(form));
 
       let img = new qx.ui.basic.Image().set({
         source: qxapp.utils.Avatar.getUrl(email.getValue(), 200)
@@ -104,88 +101,123 @@ qx.Class.define("qxapp.Preferences", {
       const iconUrl = "@FontAwesome5Solid/shield-alt/24";
       let page = this.__createPage(this.tr("Security"), iconUrl);
 
-      // content
-      // page.add(new qx.ui.form.PasswordField().set({
-      //   placeholder: "Password"
-      // }));
-
-      // page.add(new qx.ui.form.PasswordField().set({
-      //   placeholder: "Re-type Password"
-      // }));
-
       page.add(new qx.ui.basic.Atom("<h3>DAT-CORE</h3>").set({
         rich: true
       }));
 
-      let newTokenGrp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      let newTokenPass = new qx.ui.form.PasswordField();
-      newTokenPass.set({
-        placeholder: "Personal Access Token",
-        alignY: "bottom"
-      });
-      newTokenGrp.add(newTokenPass, {
-        flex: 1
-      });
-      let newTokenBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/plus/12");
-      newTokenBtn.addListener("execute", e => {
-        let tokens = this.__tokenResources.tokens;
-        tokens.addListenerOnce("postSuccess", ev => {
-          newTokenPass.resetValue();
-          let tokensList = ev.getRequest().getResponse().data;
-          console.log(tokensList);
-          this.__reloadTokens();
-        }, this);
-        tokens.addListenerOnce("getError", ev => {
-          console.log(ev);
-        });
-        tokens.post(newTokenPass.getValue());
-      }, this);
-      newTokenGrp.add(newTokenBtn);
-      page.add(newTokenGrp);
+      this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      page.add(this.__tokensList);
 
-      this.__validTokens = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      page.add(this.__validTokens);
       this.__reloadTokens();
 
       return page;
     },
 
     __reloadTokens: function() {
-      this.__validTokens.removeAll();
+      this.__tokensList.removeAll();
 
       let tokens = this.__tokenResources.tokens;
       tokens.addListenerOnce("getSuccess", e => {
         let tokensList = e.getRequest().getResponse().data;
-        for (let i=0; i<tokensList.length; i++) {
-          let validTokenGrp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-          let validToken = new qx.ui.form.TextField();
-          validToken.set({
-            value: tokensList[i]["service"] + ": " + tokensList[i]["token_key"],
-            enable: false,
-            alignY: "bottom"
-          });
-          validTokenGrp.add(validToken, {
-            flex: 1
-          });
-          let newTokenBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/trash/12");
-          newTokenBtn.addListener("execute", ev => {
-            let token = this.__tokenResources.token;
-            token.addListenerOnce("delSuccess", eve => {
-              this.__reloadTokens();
-            }, this);
-            token.addListenerOnce("delError", eve => {
-              console.log(eve);
-            });
-            token.del();
-          }, this);
-          validTokenGrp.add(newTokenBtn);
-          this.__validTokens.add(validTokenGrp);
+        if (tokensList.length === 0) {
+          let emptyForm = this.__getEmptyTokenForm();
+          this.__tokensList.add(new qx.ui.form.renderer.Single(emptyForm));
+        } else {
+          for (let i=0; i<tokensList.length; i++) {
+            const token = tokensList[i];
+            let tokenForm = this.__getValidTokenForm(token["service"], token["token_key"], token["token_secret"]);
+            this.__tokensList.add(tokenForm);
+          }
         }
       }, this);
       tokens.addListenerOnce("getError", e => {
         console.log(e);
       });
       tokens.get();
+    },
+
+    __getEmptyTokenForm: function() {
+      let form = new qx.ui.form.Form();
+
+      let newTokenKey = new qx.ui.form.TextField();
+      newTokenKey.set({
+        placeholder: "Key"
+      });
+      form.add(newTokenKey, this.tr("Key"));
+
+      let newTokenSecret = new qx.ui.form.TextField();
+      newTokenSecret.set({
+        placeholder: "Secret"
+      });
+      form.add(newTokenSecret, this.tr("Secret"));
+
+      let addTokenBtn = new qx.ui.form.Button(this.tr("Add token"));
+      addTokenBtn.setWidth(100);
+      addTokenBtn.setTextColor("black");
+      addTokenBtn.addListener("execute", e => {
+        let tokens = this.__tokenResources.tokens;
+        tokens.addListenerOnce("postSuccess", ev => {
+          this.__reloadTokens();
+        }, this);
+        tokens.addListenerOnce("getError", ev => {
+          console.log(ev);
+        });
+        const newTokenInfo = {
+          "service": "dat-core",
+          "token_key": newTokenKey.getValue(),
+          "token_secret": newTokenSecret.getValue()
+        };
+        tokens.post(newTokenInfo);
+      }, this);
+      form.addButton(addTokenBtn);
+
+      return form;
+    },
+
+    __getValidTokenForm: function(service, key, secret) {
+      let form = new qx.ui.form.Form();
+
+      let tokenService = new qx.ui.form.TextField().set({
+        value: service,
+        readOnly: true
+      });
+      form.add(tokenService, this.tr("Service"));
+
+      let tokenKey = new qx.ui.form.TextField();
+      tokenKey.set({
+        value: key,
+        readOnly: true
+      });
+      form.add(tokenKey, this.tr("Key"));
+
+      if (secret) {
+        let tokenSecret = new qx.ui.form.TextField();
+        tokenSecret.set({
+          value: secret,
+          readOnly: true
+        });
+        form.add(tokenSecret, this.tr("Secret"));
+      }
+
+      let delTokenBtn = new qx.ui.form.Button(this.tr("Delete token"));
+      delTokenBtn.setWidth(100);
+      delTokenBtn.setTextColor("black");
+      delTokenBtn.addListener("execute", e => {
+        let token = this.__tokenResources.token;
+        token.addListenerOnce("delSuccess", eve => {
+          this.__reloadTokens();
+        }, this);
+        token.addListenerOnce("delError", eve => {
+          console.log(eve);
+        });
+        const newTokenInfo = {
+          "service": "dat-core"
+        };
+        token.del(newTokenInfo);
+      }, this);
+      form.addButton(delTokenBtn);
+
+      return form;
     },
 
     __getDisplay: function() {
