@@ -51,7 +51,7 @@ qx.Class.define("qxapp.Preferences", {
       }));
 
       // title
-      page.add(new qx.ui.basic.Label("<h3>" + name + " Settings</h3>").set({
+      page.add(new qx.ui.basic.Label("<h3>" + name + " " + this.tr("Settings") + "</h3>").set({
         rich: true
       }));
 
@@ -61,8 +61,8 @@ qx.Class.define("qxapp.Preferences", {
     },
 
     __getGeneral: function() {
-      const iconUrl = qxapp.dev.Placeholders.getIcon("ion-ios-settings", 32);
-      let page = this.__createPage("General", iconUrl);
+      const iconUrl = "@FontAwesome5Solid/sliders-h/32";
+      let page = this.__createPage(this.tr("General"), iconUrl);
 
       const userEmail = qxapp.auth.Data.getInstance().getEmail();
 
@@ -96,8 +96,8 @@ qx.Class.define("qxapp.Preferences", {
     },
 
     __getSecurity: function() {
-      const iconUrl = qxapp.dev.Placeholders.getIcon("fa-lock", 32);
-      let page = this.__createPage("Security", iconUrl);
+      const iconUrl = "@FontAwesome5Solid/shield-alt/32";
+      let page = this.__createPage(this.tr("Security"), iconUrl);
 
       // content
       // page.add(new qx.ui.form.PasswordField().set({
@@ -186,8 +186,8 @@ qx.Class.define("qxapp.Preferences", {
     },
 
     __getDisplay: function() {
-      const iconUrl = qxapp.dev.Placeholders.getIcon("fa-eye", 32);
-      let page = this.__createPage("Display", iconUrl);
+      const iconUrl = "@FontAwesome5Solid/eye/32";
+      let page = this.__createPage(this.tr("Display"), iconUrl);
       let themes = qx.Theme.getAll();
 
       let select = new qx.ui.form.SelectBox("Theme");
@@ -220,8 +220,8 @@ qx.Class.define("qxapp.Preferences", {
     },
 
     __getAdvanced: function() {
-      const iconUrl = qxapp.dev.Placeholders.getIcon("fa-rebel", 32);
-      let page = this.__createPage("Advanced", iconUrl);
+      const iconUrl = "@FontAwesome5Solid/flask/32";
+      let page = this.__createPage(this.tr("Experimental"), iconUrl);
 
       return page;
     }
