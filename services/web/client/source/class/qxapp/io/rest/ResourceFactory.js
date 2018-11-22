@@ -13,7 +13,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       const basePath = qxapp.io.rest.ResourceFactory.API;
 
       // Singular resource
-      var project = new qx.io.rest.Resource({
+      var project = new qxapp.io.rest.Resource({
         // Retrieve project
         get: {
           method: "GET",
@@ -22,7 +22,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
 
         // Update project
         put: {
-          method: "POST",
+          method: "PUT",
           url: basePath+"/projects/{project_id}"
         },
 
@@ -34,7 +34,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       });
 
       // Plural resource
-      var projects = new qx.io.rest.Resource({
+      var projects = new qxapp.io.rest.Resource({
         // Retrieve list of projects
         get: {
           method: "GET",
@@ -42,19 +42,22 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
         },
 
         // Create project
+        // NOTE: When calling ".post(null, payload)" the first argument needs to be filled in
+        // so that the second argument contains the payload
         post: {
           method: "POST",
           url: basePath+"/projects"
         }
       });
 
-      var templates = new qx.io.rest.Resource({
+      var templates = new qxapp.io.rest.Resource({
         // Retrieve list of projects
         get: {
           method: "GET",
           url: basePath+"/projects?type=template"
         }
       });
+
 
       return {
         "project": project,
