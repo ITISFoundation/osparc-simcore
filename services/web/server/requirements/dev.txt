@@ -10,3 +10,5 @@
 aiohttp-devtools
 autopep8
 rope
+# TODO: See docker-compose notes
+# wdb

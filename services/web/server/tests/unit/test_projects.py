@@ -199,7 +199,6 @@ async def test_update(client, fake_db, fake_project):
     assert fake_db.projects[pid].data["name"] == "some other name"
     assert fake_db.projects[pid].data["notes"] == "some other"
 
-    # TODO: read in db
 
 async def test_delete(client, fake_db, fake_project):
     fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO:
@@ -221,3 +220,57 @@ async def test_delete(client, fake_db, fake_project):
 
     assert not fake_db.projects
     assert not fake_db.user_to_projects_map
+
+async def test_delete_invalid_project(client, fake_db):
+    resp = await client.delete("/v0/projects/some-fake-id")
+    payload = await resp.json()
+
+    assert resp.status == 204, payload
+    data, error = unwrap_envelope(payload)
+    assert not data
+    assert not error
+
+
+async def test_workfolow(client, fake_db, fake_project):
+    fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO: create fixture
+    #-----------------
+
+   # list all user projects
+
+    # GET /v0/projects
+    url = client.app.router["list_projects"].url_for()
+    resp = await client.get(url.with_query(start=0, count=3))
+    payload = await resp.json()
+    assert resp.status == 200, payload
+
+    projects, error = unwrap_envelope(payload)
+    assert not error
+    assert projects
+
+    #-------------------------------------------------
+    pid = projects[0]["projectUuid"]
+
+    # PUT /v0/projects/{project_id}
+    url = client.app.router["update_project"].url_for(project_id=pid)
+    resp = await client.put(url, json={
+        "name": "some other name",
+        "description": "some other",
+        "notes": "some other",
+    })
+    payload = await resp.json()
+    assert resp.status == 200, payload
+
+    project, error = unwrap_envelope(payload)
+    assert not error
+    assert not project
+
+    # -------------------------
+    # GET /v0/projects/{project_id}
+    url = client.app.router["get_project"].url_for(project_id=pid)
+    resp = await client.get(url)
+    payload = await resp.json()
+    assert resp.status == 200, payload
+    project, error = unwrap_envelope(payload)
+
+    assert project["name"] == "some other name"
+    assert project["notes"] == "some other"

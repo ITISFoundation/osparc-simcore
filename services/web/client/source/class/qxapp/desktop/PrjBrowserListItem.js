@@ -29,11 +29,11 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
   },
 
   properties: {
-    appearance :
-    {
+    appearance: {
       refine : true,
       init : "pb-listitem"
     },
+
     icon: {
       check: "String",
       apply : "_applyIcon",
