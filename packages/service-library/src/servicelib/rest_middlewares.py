@@ -81,7 +81,7 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
             raise ex
 
         except web.HTTPRedirection as ex:
-            logger.debug("Redirection %s", ex)
+            logger.debug("Redirected to %s", ex)
             raise
 
         except Exception as err:  # pylint: disable=W0703
