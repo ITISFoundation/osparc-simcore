@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from aiohttp import web
 from yarl import URL
@@ -11,20 +12,27 @@ from .config import get_client_session, get_config
 
 log = logging.getLogger(__name__)
 
-async def _request_director(request: web.Request, method: str = None) -> web.Response:
+
+async def _request_director(request: web.Request, method: Optional[str] = None) -> web.Response:
     params, query, body = await extract_and_validate(request)
-    if method is None:
-        method = request.method
-    # replace raw path, to keep the quotes
-    url_path = request.rel_url.raw_path
+    method = method or request.method
 
     cfg = get_config(request.app)
-    urlbase = URL.build(scheme='http', host=cfg['host'], port=cfg['port'])
+
+    # director service API endpoint
+    # TODO: service API endpoint could be deduced and checked upon setup (e.g. health check on startup)
+    endpoint = URL.build(scheme='http', host=cfg['host'], port=cfg['port']).with_path(cfg["version"])
+
+    # replace raw path, to keep the quotes and
+    # strip webserver API version number from basepath
+    # >>> URL('http://localhost:8091/v0/services/').raw_parts[2:]
+    #    ('services', '')
+    tail = "/".join(request.url.raw_parts[2:])
 
     # add the user id
-    userid = request[RQT_USERID_KEY]  
+    userid = request[RQT_USERID_KEY]
     query["user_id"] = userid
-    url = urlbase.with_path(url_path).with_query(query)
+    url = (endpoint / tail).with_query(query)
 
     # forward the call
     session = get_client_session(request.app)

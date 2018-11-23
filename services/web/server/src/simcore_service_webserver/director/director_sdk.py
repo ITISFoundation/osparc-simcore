@@ -2,42 +2,38 @@ import os
 import logging
 import simcore_director_sdk
 
-log = logging.getLogger(__file__)
+from .config import get_config
+from yarl import URL
+from aiohttp import web
 
-# FIXME: This has to come from settings.config._DIRECTOR_SCHEMA schema !
-# Better wait until server is merged since there were lots of changes
-# this should somehow be setup a la aiohttp provided the configuration issue #195
-#
-# TIPS:
-#
-#from .settings.config import _DIRECTOR_SCHEMA
-#
-# def get_director(config: dict) -> simcore_director_sdk.UserApi:
-#    _DIRECTOR_SCHEMA.check(config) # this should be optional since it was already validated?
+logger = logging.getLogger(__file__)
 
-# def get_director(app) -> simcore_director_sdk.UserApi:
-#   if app['services']['director']:
-#     ...
-#
-# OR
-#
-# def get_director(config: dict) -> simcore_director_sdk.UserApi:
-#    _DIRECTOR_SCHEMA.check(config) # this should be optional since it was already validated?
-#   ...
-#    version needs to be given by simcore_director_sdk!!!
-#
-#
-# notice that app[APP_CONFIG_KEY]['service']['director'] returns this config
-#
-# OR cache per session?
-#
-
+# TODO: deprecate!!!
 _DIRECTOR_HOST = os.environ.get("DIRECTOR_HOST", "0.0.0.0")
 _DIRECTOR_PORT = os.environ.get("DIRECTOR_PORT", "8001")
 _DIRECTOR_PATH = "v0"
 
+
 def get_director():
+    # TODO: deprecate, use instead create_client!!!
     configuration = simcore_director_sdk.Configuration()
-    configuration.host = "http://{}:{}/{}".format(_DIRECTOR_HOST, _DIRECTOR_PORT, _DIRECTOR_PATH)
-    api_instance = simcore_director_sdk.UsersApi(simcore_director_sdk.ApiClient(configuration))
+    configuration.host = "http://{}:{}/{}".format(
+            _DIRECTOR_HOST,
+            _DIRECTOR_PORT,
+            _DIRECTOR_PATH)
+    api_instance = simcore_director_sdk.UsersApi(
+        simcore_director_sdk.ApiClient(configuration))
+    return api_instance
+
+
+def create_client(app: web.Application):
+    cfg = get_config(app)
+    endpoint = URL.build(scheme='http',
+                         host=cfg['host'],
+                         port=cfg['port']).with_path(cfg['version'])
+
+    configuration = simcore_director_sdk.Configuration()
+    configuration.host = str(endpoint)
+    api_instance = simcore_director_sdk.UsersApi(
+        simcore_director_sdk.ApiClient(configuration))
     return api_instance

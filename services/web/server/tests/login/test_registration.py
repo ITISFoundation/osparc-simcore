@@ -99,13 +99,11 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
     out, err = capsys.readouterr()
     link = parse_link(out)
     assert '/auth/confirmation/' in str(link)
-    r = await client.get(link)
+    resp = await client.get(link)
+    text = await resp.text()
 
-    data, error = unwrap_envelope(await r.json())
-
-    assert r.status == web.HTTPNoContent.status_code, (data, error)
-    assert not data
-    assert not error
+    assert "welcome to fake web front-end" in text
+    assert resp.status == 200
 
     user = await db.get_user({'email': EMAIL})
     assert user['status'] == UserStatus.ACTIVE.name
