@@ -101,8 +101,9 @@ qx.Class.define("qxapp.Preferences", {
       const iconUrl = "@FontAwesome5Solid/shield-alt/24";
       let page = this.__createPage(this.tr("Security"), iconUrl);
 
-      page.add(new qx.ui.basic.Atom("<h3>DAT-CORE</h3>").set({
-        rich: true
+      const title14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"]);
+      page.add(new qx.ui.basic.Label("API Tokens").set({
+        font: title14Font
       }));
 
       this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
@@ -126,7 +127,7 @@ qx.Class.define("qxapp.Preferences", {
           for (let i=0; i<tokensList.length; i++) {
             const token = tokensList[i];
             let tokenForm = this.__getValidTokenForm(token["service"], token["token_key"], token["token_secret"]);
-            this.__tokensList.add(tokenForm);
+            this.__tokensList.add(new qx.ui.form.renderer.Single(tokenForm));
           }
         }
       }, this);
@@ -139,21 +140,29 @@ qx.Class.define("qxapp.Preferences", {
     __getEmptyTokenForm: function() {
       let form = new qx.ui.form.Form();
 
+      // FIXME: for the moment this is fixed since it has to be a unique id
+      let newTokenService = new qx.ui.form.TextField();
+      newTokenService.set({
+        value: "blackfynn-datcore",
+        readOnly: true
+      });
+      form.add(newTokenService, this.tr("Service"));
+
+      // TODO:
       let newTokenKey = new qx.ui.form.TextField();
       newTokenKey.set({
-        placeholder: "Key"
+        placeholder: "introduce token key here"
       });
       form.add(newTokenKey, this.tr("Key"));
 
       let newTokenSecret = new qx.ui.form.TextField();
       newTokenSecret.set({
-        placeholder: "Secret"
+        placeholder: "introduce token secret here"
       });
       form.add(newTokenSecret, this.tr("Secret"));
 
-      let addTokenBtn = new qx.ui.form.Button(this.tr("Add token"));
+      let addTokenBtn = new qx.ui.form.Button(this.tr("Add"));
       addTokenBtn.setWidth(100);
-      addTokenBtn.setTextColor("black");
       addTokenBtn.addListener("execute", e => {
         let tokens = this.__tokenResources.tokens;
         tokens.addListenerOnce("postSuccess", ev => {
@@ -163,11 +172,11 @@ qx.Class.define("qxapp.Preferences", {
           console.log(ev);
         });
         const newTokenInfo = {
-          "service": "dat-core",
+          "service": newTokenService.getValue(),
           "token_key": newTokenKey.getValue(),
           "token_secret": newTokenSecret.getValue()
         };
-        tokens.post(newTokenInfo);
+        tokens.post(null, newTokenInfo);
       }, this);
       form.addButton(addTokenBtn);
 
@@ -181,7 +190,7 @@ qx.Class.define("qxapp.Preferences", {
         value: service,
         readOnly: true
       });
-      form.add(tokenService, this.tr("Service"));
+      form.add(tokenService, this.tr("Service API"));
 
       let tokenKey = new qx.ui.form.TextField();
       tokenKey.set({
@@ -199,9 +208,8 @@ qx.Class.define("qxapp.Preferences", {
         form.add(tokenSecret, this.tr("Secret"));
       }
 
-      let delTokenBtn = new qx.ui.form.Button(this.tr("Delete token"));
+      let delTokenBtn = new qx.ui.form.Button(this.tr("Delete"));
       delTokenBtn.setWidth(100);
-      delTokenBtn.setTextColor("black");
       delTokenBtn.addListener("execute", e => {
         let token = this.__tokenResources.token;
         token.addListenerOnce("delSuccess", eve => {
