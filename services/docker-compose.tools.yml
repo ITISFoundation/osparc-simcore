@@ -27,6 +27,11 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
-
+  #----------------------------------------------
+  # TODO: Pedro reviews
+  # wdb:
+  #  image: kozea/wdb
+  #  ports:
+  #    - "1984:1984"
 volumes:
   portainer_data:

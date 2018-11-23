@@ -1,11 +1,14 @@
 /* global window */
 
 /* eslint newline-per-chained-call: 0 */
+/* eslint no-warning-comments: "off" */
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,
 
   construct: function(projectModel) {
     this.base(arguments, "horizontal");
+
+    this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
 
     this.setProjectModel(projectModel);
 
@@ -44,6 +47,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   },
 
   members: {
+    __projectResources: null,
     __pipelineId: null,
     __mainPanel: null,
     __sidePanel: null,
@@ -416,7 +420,19 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     serializeProjectDocument: function() {
-      console.log("serializeProject", this.getProjectModel().serializeProject());
+      let myPrj = this.getProjectModel().serializeProject();
+      // FIXME: server expects "projectUuid" and we have "uuid"
+      myPrj["projectUuid"] = myPrj["uuid"];
+      console.log("serializeProject", myPrj);
+
+      let resource = this.__projectResources.project;
+      resource.addListenerOnce("delSuccess", e => {
+        let resources = this.__projectResources.projects;
+        resources.post(null, myPrj);
+      }, this);
+      resource.del({
+        "project_id": myPrj["uuid"]
+      });
     }
   }
 });

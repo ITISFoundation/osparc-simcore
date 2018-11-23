@@ -12,9 +12,10 @@ from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_POOL_KEY
 
 from ..db import DSN
+from ..db_config import CONFIG_SECTION_NAME as DB_SECTION
 from ..email_config import CONFIG_SECTION_NAME as SMTP_SECTION
 from ..rest_config import APP_OPENAPI_SPECS_KEY
-from ..db_config import CONFIG_SECTION_NAME as DB_SECTION
+from ..statics import INDEX_RESOURCE_NAME
 from .cfg import APP_LOGIN_CONFIG, cfg
 from .routes import create_routes
 from .storage import AsyncpgStorage
@@ -42,6 +43,11 @@ async def pg_pool(app: web.Application):
 
     config["STORAGE"] = AsyncpgStorage(app[APP_DB_POOL_KEY]) #NOTE: this key belongs to cfg, not settings!
     cfg.configure(config)
+
+    if INDEX_RESOURCE_NAME in app.router:
+        cfg['LOGIN_REDIRECT'] = app.router[INDEX_RESOURCE_NAME].url_for()
+    else:
+        log.warning("Unknown location for login page. Defaulting redirection to %s", cfg['LOGIN_REDIRECT'] )
 
     app[APP_LOGIN_CONFIG] = cfg
 
