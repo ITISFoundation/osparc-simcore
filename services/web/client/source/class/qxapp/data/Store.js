@@ -28,7 +28,7 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   members: {
-    __servicesCache: null,
+    __servicesCached: null,
 
     __getMimeType: function(type) {
       let match = type.match(/^data:([^/\s]+\/[^/;\s])/);
@@ -79,8 +79,8 @@ qx.Class.define("qxapp.data.Store", {
       let metaData = {};
       if (key && version) {
         const nodeImageId = key + "-" + version;
-        if (nodeImageId in this.__servicesCache) {
-          return this.__servicesCache[nodeImageId];
+        if (nodeImageId in this.__servicesCached) {
+          return this.__servicesCached[nodeImageId];
         }
         metaData = this.getFakeServices()[nodeImageId];
         if (metaData === undefined) {
@@ -681,40 +681,44 @@ qx.Class.define("qxapp.data.Store", {
       return services;
     },
 
-    getServices: function() {
-      let req = new qxapp.io.request.ApiRequest("/services", "GET");
-      req.addListener("success", e => {
-        let requ = e.getTarget();
-        const {
-          data
-        } = requ.getResponse();
-        const listOfRepositories = data;
-        let services = Object.assign({}, this.getBuiltInServices());
-        for (const key in listOfRepositories) {
-          const repoData = listOfRepositories[key];
-          const nodeImageId = repoData.key + "-" + repoData.version;
-          services[nodeImageId] = repoData;
-        }
-        if (this.__servicesCache === null) {
-          this.__servicesCache = {};
-        }
-        this.__servicesCache = Object.assign(this.__servicesCache, services);
-        this.fireDataEvent("servicesRegistered", services);
-      }, this);
+    getServices: function(reload) {
+      if (reload || Object.keys(this.__servicesCached).length === 0) {
+        let req = new qxapp.io.request.ApiRequest("/services", "GET");
+        req.addListener("success", e => {
+          let requ = e.getTarget();
+          const {
+            data
+          } = requ.getResponse();
+          const newServices = data;
+          let services = Object.assign({}, this.getBuiltInServices());
+          for (const key in newServices) {
+            const service = newServices[key];
+            const nodeImageId = service.key + "-" + service.version;
+            services[nodeImageId] = service;
+          }
+          if (this.__servicesCached === null) {
+            this.__servicesCached = {};
+          }
+          this.__servicesCached = Object.assign(this.__servicesCached, services);
+          this.fireDataEvent("servicesRegistered", services);
+        }, this);
 
-      req.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        console.log("getServices failed", error);
-        let services = this.getFakeServices();
-        if (this.__servicesCache === null) {
-          this.__servicesCache = {};
-        }
-        this.__servicesCache = Object.assign(this.__servicesCache, services);
-        this.fireDataEvent("servicesRegistered", services);
-      }, this);
-      req.send();
+        req.addListener("fail", e => {
+          const {
+            error
+          } = e.getTarget().getResponse();
+          console.log("getServices failed", error);
+          let services = this.getFakeServices();
+          if (this.__servicesCached === null) {
+            this.__servicesCached = {};
+          }
+          this.__servicesCached = Object.assign(this.__servicesCached, services);
+          this.fireDataEvent("servicesRegistered", services);
+        }, this);
+        req.send();
+        return null;
+      }
+      return this.__servicesCached;
     },
 
     getFakeFiles: function() {
