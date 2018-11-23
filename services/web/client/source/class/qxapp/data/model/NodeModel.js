@@ -40,7 +40,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         if (Object.prototype.hasOwnProperty.call(metaData, "outputs")) {
           this.__addOutputs(metaData.outputs);
         }
-        this.__startInteractiveNode();
       }
     }
   },
@@ -218,6 +217,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     populateNodeData: function(nodeData) {
+      this.__startInteractiveNode();
+
       if (nodeData) {
         if (nodeData.label) {
           this.setLabel(nodeData.label);
