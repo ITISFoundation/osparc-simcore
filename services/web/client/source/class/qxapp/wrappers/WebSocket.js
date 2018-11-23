@@ -130,8 +130,7 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
 
 
         if (this.getSocket() !== null) {
-          this.getSocket().removeAllListeners();
-          this.getSocket().disconnect();
+          this.disconnect();
         }
 
         let dir = this.getUrl() + ":" + this.getPort();
@@ -172,6 +171,13 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
       }, this);
 
       dynLoader.start();
+    },
+
+    disconnect: function() {
+      if (this.getSocket() !== null) {
+        this.getSocket().removeAllListeners();
+        this.getSocket().disconnect();
+      }
     },
 
     /**
