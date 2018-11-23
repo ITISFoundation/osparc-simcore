@@ -13,6 +13,8 @@ from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
 
+INDEX_RESOURCE_NAME = "statics.index"
+
 log = logging.getLogger(__file__)
 
 
@@ -60,7 +62,7 @@ def setup_statics(app: web.Application):
                 )
 
         # TODO: map ui to /ui or create an alias!?
-        app.router.add_get("/", index)
+        app.router.add_get("/", index, name=INDEX_RESOURCE_NAME)
 
         # NOTE: source-output and build-output have both the same subfolder structure
         # TODO: check whether this can be done at oncen
