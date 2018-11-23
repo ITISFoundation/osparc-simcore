@@ -1,6 +1,6 @@
 version: '1.0'
 main:
-  client_outdir: /usr/src/app/client
+  client_outdir: ${OSPARC_SIMCORE_REPO_ROOTDIR}/services/web/server/tests/login/static
   host: 127.0.0.1
   log_level: DEBUG
   port: 8080
