@@ -5,13 +5,12 @@ qx.Class.define("qxapp.data.Store", {
 
   events: {
     "servicesRegistered": "qx.event.type.Event",
-    "S3PublicDocuments": "qx.event.type.Event",
+    // "FakeFiles": "qx.event.type.Event",
     "MyDocuments": "qx.event.type.Event",
     "NodeFiles": "qx.event.type.Event",
     "PresginedLink": "qx.event.type.Event",
     "FileCopied": "qx.event.type.Event",
-    "DeleteFile": "qx.event.type.Event",
-    "FakeFiles": "qx.event.type.Event"
+    "DeleteFile": "qx.event.type.Event"
   },
 
   statics: {
@@ -770,7 +769,11 @@ qx.Class.define("qxapp.data.Store", {
               .data;
             console.log("My Files", files);
             if (files && files.length>0) {
-              this.fireDataEvent("MyDocuments", files);
+              const data = {
+                location: locationId,
+                files: files
+              };
+              this.fireDataEvent("MyDocuments", data);
             }
           }, this);
 

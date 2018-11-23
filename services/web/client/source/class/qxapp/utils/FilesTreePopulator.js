@@ -13,36 +13,43 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
     populateNodeFiles: function(nodeId) {
       const treeName = "Node files";
       this.__resetTree(treeName);
-      let store = qxapp.data.Store.getInstance();
 
+      let store = qxapp.data.Store.getInstance();
       store.addListenerOnce("NodeFiles", e => {
         const files = e.getData();
         const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
         this.__addTreeData(newChildren);
       }, this);
-
       store.getNodeFiles(nodeId);
     },
 
     populateMyDocuments: function() {
       const treeName = "My Documents";
       this.__resetTree(treeName);
-      let store = qxapp.data.Store.getInstance();
 
-      [
-        "MyDocuments",
-        "S3PublicDocuments",
-        "FakeFiles"
-      ].forEach(eventName => {
-        store.addListenerOnce(eventName, e => {
-          const files = e.getData();
+      let locationsAdded = [];
+      let store = qxapp.data.Store.getInstance();
+      store.addListenerOnce("MyDocuments", e => {
+        const {
+          location,
+          files
+        } = e.getData();
+        if (!locationsAdded.includes(location)) {
+          locationsAdded.push(location);
           const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
           this.__addTreeData(newChildren);
-        }, this);
+        }
       }, this);
-
       store.getMyDocuments();
-      // store.getFakeFiles();
+
+      /*
+      store.addListenerOnce("FakeFiles", e => {
+        const files = e.getData();
+        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+        this.__addTreeData(newChildren);
+      }, this);
+      store.getFakeFiles();
+      */
     },
 
     __resetTree: function(treeName) {
