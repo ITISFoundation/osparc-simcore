@@ -12,8 +12,8 @@ import aiohttp
 from aiohttp import client, web
 
 # TODO: find actual name in registry
-SUPPORTED_IMAGE_NAME = "paraview"
-SUPPORTED_IMAGE_TAG = "==0.1.0"
+SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/3d-viewer"
+SUPPORTED_IMAGE_TAG = "==1.0.5"
 
 logger = logging.getLogger(__name__)
 

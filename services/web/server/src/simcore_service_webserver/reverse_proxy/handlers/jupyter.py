@@ -11,8 +11,10 @@ import aiohttp
 from aiohttp import client, web
 
 # TODO: find actual name in registry
-SUPPORTED_IMAGE_NAME = "jupyter"
-SUPPORTED_IMAGE_TAG = "==0.1.0"
+
+
+SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/jupyter-base-notebook"
+SUPPORTED_IMAGE_TAG = ">=1.5.0"
 
 logger = logging.getLogger(__name__)
 
