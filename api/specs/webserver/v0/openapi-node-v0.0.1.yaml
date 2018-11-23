@@ -39,15 +39,15 @@ paths:
         and a list of open api json schema objects describing the possible
         json payloads and responses for the api calls available at this endpoint
       parameters:
-        - $ref: '#/components/parameters/nodeInstanceUUID'
-        - $ref: '#/components/parameters/outputKey'
+        - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/nodeInstanceUUID'
+        - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/outputKey'
       responses:
         "200":
           description: Service Information
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/outputUi'
+                $ref: './openapi-node-v0.0.1.yaml#/components/schemas/outputUi'
         default:
           description: Unexpected error
           content:
@@ -60,9 +60,9 @@ paths:
         - node
       summary: send data back to the output api ... protocol depends on the definition
       parameters:
-        - $ref: '#/components/parameters/nodeInstanceUUID'
-        - $ref: '#/components/parameters/outputKey'
-        - $ref: '#/components/parameters/apiCall'
+        - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/nodeInstanceUUID'
+        - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/outputKey'
+        - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/apiCall'
       requestBody:
          content:
             application/json:
@@ -92,7 +92,7 @@ paths:
         - node api
       summary: entry point for iframe interaction with the node. This relies on the reverse proxy code.
       parameters:
-        - $ref: '#/components/parameters/nodeInstanceUUID'
+        - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/nodeInstanceUUID'
       responses:
         default:
           description: "any response appropriate in the iframe context"

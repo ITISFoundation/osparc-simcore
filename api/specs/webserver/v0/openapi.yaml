@@ -371,6 +371,15 @@ paths:
     $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}'
 
 
+  /nodes/{nodeInstanceUUID}/outputUi/{outputKey}:
+    $ref: './openapi-node-v0.0.1.yaml#/paths/~1node~1{nodeInstanceUUID}~1outputUi~1{outputKey}'
+
+  /nodes/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}:
+    $ref: './openapi-node-v0.0.1.yaml#/paths/~1node~1{nodeInstanceUUID}~1outputUi~1{outputKey}~1{apiCall}'
+
+  /nodes/{nodeInstanceUUID}/iframe:
+    $ref: './openapi-node-v0.0.1.yaml#/paths/~1node~1{nodeInstanceUUID}~1iframe'
+
 components:
   parameters:
     ProjectId:
