@@ -8,6 +8,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   construct: function(projectModel) {
     this.base(arguments, "horizontal");
 
+    qxapp.utils.UuidToName.getInstance().setProjectModel(projectModel);
+
     this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
 
     this.setProjectModel(projectModel);
