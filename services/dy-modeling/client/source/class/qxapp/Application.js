@@ -201,13 +201,12 @@ qx.Class.define("qxapp.Application", {
     _initSignals: function() {
       this._socket.addListener("connect", function() {
         console.log("connecting to server via websocket...");
-        // if (!this._socket.slotExists("importModelScene")) {
-        this._socket.on("importModelScene", function(val) {
+        this._socket.on("importModelScene", function(val, ackCb) {
+          ackCb();
           if (val.type === "importModelScene") {
             this.__threeView.importSceneFromBuffer(val.value);
           }
         }, this);
-        // }
       }, this);
       this._socket.addListener("disconnect", function() {
         console.log("disconnected from server websocket");
@@ -217,14 +216,12 @@ qx.Class.define("qxapp.Application", {
       }, this);
       this._socket.addListener("reconnect", function(e) {
         console.log("REconnecting to server via websocket...");
-        // if (!this._socket.slotExists("importModelScene")) {
         this._socket.on("importModelScene", function(val, ackCb) {
           ackCb();
           if (val.type === "importModelScene") {
             this.__threeView.importSceneFromBuffer(val.value);
           }
         }, this);
-        // }
       }, this);
 
       // Menu bar
