@@ -32,6 +32,13 @@ Token:
     service: 'github-api-v1'
     token_key: N1BP5ZSpB
 
+
+TokenId:
+  description: toke identifier
+  type: string
+  # format: uuid
+
+
 # enveloped and array versions --------------------------
 
 ProfileEnveloped:
@@ -67,6 +74,17 @@ TokensArrayEnveloped:
       type: array
       items:
         $ref: '#/Token'
+    error:
+      nullable: true
+      default: null
+
+TokenIdEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/TokenId'
     error:
       nullable: true
       default: null

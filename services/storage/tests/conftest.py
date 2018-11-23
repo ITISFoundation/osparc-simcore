@@ -46,6 +46,7 @@ def osparc_simcore_root_dir(here):
     assert root_dir.exists() and any(root_dir.glob("services")), "Is this service within osparc-simcore repo?"
     return root_dir
 
+
 @pytest.fixture(scope='session')
 def osparc_api_specs_dir(osparc_simcore_root_dir):
     dirpath = osparc_simcore_root_dir / "api" / "specs"
