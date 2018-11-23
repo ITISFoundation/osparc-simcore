@@ -72,7 +72,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/services.yaml#/components/schemas/ServicesEnveloped'                
+                $ref: '../../shared/schemas/services.yaml#/components/schemas/ServicesEnveloped'
         "401":
           description: Unauthorized access
           content:
@@ -102,7 +102,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/services.yaml#/components/schemas/ServicesEnveloped'                
+                $ref: '../../shared/schemas/services.yaml#/components/schemas/ServicesEnveloped'
         "401":
           description: Unauthorized access
           content:
@@ -129,7 +129,7 @@ paths:
       summary: Starts an interactive service in the oSparc platform and returns its entrypoint
       description: Starts an interactive service in the oSparc platform and returns its entrypoint
       operationId: running_interactive_services_post
-      parameters:         
+      parameters:
         - $ref: '#/components/parameters/UserId'
         - $ref: '#/components/parameters/ServiceKey'
         - $ref: '#/components/parameters/ServiceVersion'
@@ -182,12 +182,12 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ServiceUuid'
       responses:
-        "204":
-          description: OK service exists and runs
+        "200":
+          description: "Services exists and runs. Returns enpoint of running service"
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/response204.yaml#/components/schemas/Response204Enveloped'
+                $ref: '../../shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
         "400":
           description: Malformed function call, missing field
           content:
