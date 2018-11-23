@@ -25,7 +25,6 @@ files_schema = FileMetaDataSchema(many=True)
 
 async def check_health(request: web.Request):
     log.info("CHECK HEALTH INCOMING PATH %s",request.path)
-
     params, query, body = await extract_and_validate(request)
 
     assert not params
