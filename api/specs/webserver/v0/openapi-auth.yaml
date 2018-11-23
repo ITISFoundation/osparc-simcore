@@ -96,5 +96,5 @@ paths:
             type: string
             #format: uuid
       responses:
-        '204':
-          description: confirmation processed
+        '3XX':
+          description: redirection to ui application
