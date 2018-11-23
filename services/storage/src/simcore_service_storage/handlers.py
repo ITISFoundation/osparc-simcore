@@ -68,6 +68,7 @@ async def check_action(request: web.Request):
     }
     return output
 
+
 async def get_storage_locations(request: web.Request):
     log.info("CHECK LOCATION PATH %s %s",request.path, request.url)
 
