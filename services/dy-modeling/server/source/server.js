@@ -34,6 +34,8 @@ const MODELS_PATH = '/models/';
 const S4L_IP = process.env.CS_S4L_HOSTNAME || '172.16.9.89';
 const S4L_PORT_APP = process.env.CS_S4L_PORT_APP || 9095;
 const S4L_PORT_MOD = process.env.CS_S4L_PORT_MOD || 9096;
+const S4L_DATA_PATH = 'c:/app/data/';
+
 
 const staticPath = APP_PATH;
 const transport = thrift.TBufferedTransport;
@@ -278,9 +280,6 @@ function createSplineS4L(socketClient, pointList, uuid) {
 }
 
 function importModelS4L(modelName) {
-  // const data_path = 'c:/app/data/';
-  const data_path = 'd:/xrpcapp/data/';
-  
   loadModelInS4L(modelName)
     .then(getEntitiesFromS4L)
     .then(transmitEntities)
@@ -291,25 +290,7 @@ function importModelS4L(modelName) {
   function loadModelInS4L(modelName) {
     return new Promise(function(resolve, reject){
       s4lAppClient.NewDocument(function(){
-        let modelPath = data_path;
-        switch (modelName) {
-        case 'Thelonious':
-          modelPath += 'thelonius_reduced.smash';
-          break;
-        case 'Rat':
-          modelPath += 'ratmodel_simplified.smash';
-          break;
-        case 'BigRat':
-          modelPath += 'Rat_Male_567g_v2.0b02.sat';
-          break;
-        case 'DecDemo_Modeler.smash':
-        case 'DecDemo_LF.smash':
-          modelPath += modelName;
-          break;
-        default:
-          modelPath += 'ratmodel_simplified.smash';
-          break;
-        }
+        let modelPath = S4L_DATA_PATH + modelName;
         console.log('Importing', modelPath);
         s4lModelerClient.ImportModel(modelPath, function(err){
           if (err) {
