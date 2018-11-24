@@ -21,7 +21,7 @@ from .sockets import setup_sockets
 from .statics import setup_statics
 from .storage import setup_storage
 from .projects import setup_projects
-from .users import setup_users
+from .application_proxy import setup_app_proxy
 
 log = logging.getLogger(__name__)
 
@@ -56,6 +56,7 @@ def create_application(config: dict):
     setup_storage(app)
     setup_users(app)
     setup_projects(app, debug=True) # TODO: deactivate fakes i.e. debug=testing
+    setup_app_proxy(app)
 
     return app
 
