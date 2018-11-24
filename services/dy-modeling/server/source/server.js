@@ -311,6 +311,7 @@ function importModelS4L(modelName) {
       s4lModelerClient.GetFilteredEntities(thrModelerTypes.EntityFilterType.BODY_AND_MESH,
         function (err, entities) {
           if (err) {
+            console.log(`error while retrieving entities ${err}`)
             reject(err);
           }
           else {
@@ -325,7 +326,7 @@ function importModelS4L(modelName) {
     for (let i = 0; i < entities.length; i++) {
       const encodedScene = await getEncodedSceneFromS4L(entities[i]);
       const transmittedBytes = await sendEncodedSceneToClient(encodedScene);
-      totalTransmittedMB += transmittedBytes/1024.0;
+      totalTransmittedMB += transmittedBytes/(1024.0*1024.0);
     }
     return totalTransmittedMB;
   }
@@ -335,6 +336,7 @@ function importModelS4L(modelName) {
       s4lModelerClient.GetEntitiesEncodedScene([entity.uuid], thrModelerTypes.SceneFileFormat.GLTF,
         function (err, scene) {
           if (err) {
+            console.log(`error while getting encoded scene: ${err}`)
             reject(err);
           }
           else {
