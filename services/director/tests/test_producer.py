@@ -26,6 +26,11 @@ async def run_services(loop, configure_registry_access, push_services, docker_sw
             assert "published_port" in started_service
             assert "entry_point" in started_service
             assert "service_uuid" in started_service
+            assert started_service["service_uuid"] == service_uuid
+            assert "service_key" in started_service
+            assert started_service["service_key"] == service_key
+            assert "service_version" in started_service
+            assert started_service["service_version"] == service_version
             # should not throw
             await producer.get_service_details(service_uuid)
             started_services.append(started_service)
