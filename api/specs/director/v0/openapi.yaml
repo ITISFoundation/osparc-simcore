@@ -12,8 +12,6 @@ info:
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 
 servers:
-  - description: API server
-    url: '/v0'
   - description: Development server
     url: http://{host}:{port}/{version}
     variables:
@@ -25,6 +23,16 @@ servers:
         default: 'v0'
         enum:
           - 'v0'
+  - description: Production server    
+    url: http://director:{port}/{version}
+    variables:
+      port:
+        default: '8001'
+      version:
+        default: 'v0'
+        enum:
+          - 'v0'
+  
 
 # tags are used for organizing operations
 tags:
