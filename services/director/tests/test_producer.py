@@ -15,10 +15,9 @@ async def run_services(loop, configure_registry_access, push_services, docker_sw
         assert len(pushed_services) == (number_comp + number_dyn)
         for pushed_service in pushed_services:
             service_description = pushed_service["service_description"]
-
             service_key = service_description["key"]
             service_version = service_description["version"]
-            service_uuid = str(uuid.uuid4())
+            service_uuid = str(uuid.uuid1())
             with pytest.raises(exceptions.ServiceUUIDNotFoundError, message="expecting service uuid not found error"):
                 await producer.get_service_details(service_uuid)
             # start the service
