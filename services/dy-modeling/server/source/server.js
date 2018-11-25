@@ -308,7 +308,7 @@ function importModelS4L(modelName) {
   }
   function getEntitiesFromS4L() {
     return new Promise(function(resolve, reject){
-      s4lModelerClient.GetFilteredEntities(thrModelerTypes.EntityFilterType.BODY_AND_MESH,
+      s4lModelerClient.GetFilteredEntities(thrModelerTypes.EntityFilterType.SOLID_BODY_AND_MESH,
         function (err, entities) {
           if (err) {
             console.log(`error while retrieving entities ${err}`)

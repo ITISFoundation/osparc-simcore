@@ -23,8 +23,9 @@ ttypes.BooleanOperationType = {
 ttypes.EntityFilterType = {
   'ALL' : 0,
   'MESH' : 1,
-  'BODY' : 2,
-  'BODY_AND_MESH' : 3
+  'SOLID_BODY' : 2,
+  'SOLID_BODY_AND_MESH' : 3,
+  'WIRE' : 4
 };
 var ApiVersion = module.exports.ApiVersion = function(args) {
   this.major = 0;
