@@ -26,7 +26,7 @@ async def test_root_get():
     assert healthcheck["name"] == "simcore-service-director"
     assert healthcheck["status"] == "SERVICE_RUNNING"
     assert healthcheck["version"] == "0.1.0"
-    assert healthcheck["api_version"] == "1.0.0"
+    assert healthcheck["api_version"] == "0.1.0"
 
 def _check_services(created_services, services, schema_version="v1"):
     assert len(created_services) == len(services)
