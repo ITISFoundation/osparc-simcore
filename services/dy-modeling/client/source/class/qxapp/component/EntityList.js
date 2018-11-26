@@ -53,8 +53,8 @@ qx.Class.define("qxapp.component.EntityList", {
     populateTree: function() {
       let data = {
         label: "Model",
-        entityId: "root",
-        pathId: "root",
+        entityId: "00000000-0000-0000-0000-000000000000",
+        pathId: "00000000-0000-0000-0000-000000000000",
         pathLabel: "Model",
         checked: true,
         children: []
