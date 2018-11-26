@@ -83,6 +83,7 @@ qx.Class.define("qxapp.component.EntityList", {
     },
 
     // from http://www.qooxdoo.org/current/demobrowser/#virtual~Tree_Columns.html
+    // TODO: It's not working
     configureTriState: function(item) {
       item.getModel = function() {
         return this;
@@ -232,6 +233,25 @@ qx.Class.define("qxapp.component.EntityList", {
       return null;
     },
 
+    __getParents: function(item) {
+      let parents = [this.__tree.getModel()];
+      if (item) {
+        let pathSplitted = item.getPathId().split("/");
+        let parent = this.__tree.getModel();
+        for (let i = 1; i < pathSplitted.length-1; i++) {
+          let children = parent.getChildren().toArray();
+          for (let j = 0; j < children.length; j++) {
+            if (children[j].getEntityId() === pathSplitted[i]) {
+              parents.push(children[j]);
+              parent = children[j];
+              break;
+            }
+          }
+        }
+      }
+      return parents;
+    },
+
     removeEntity: function(uuid) {
       let item = this.__findUuid(uuid);
       if (item) {
@@ -265,6 +285,9 @@ qx.Class.define("qxapp.component.EntityList", {
           let item = this.__findUuid(uuid);
           if (item) {
             selected.push(item);
+            // TODO: open parent folders
+            let parents = this.__getParents(item);
+            console.log(parents);
           }
         }
         this.__tree.setSelection(selected);
