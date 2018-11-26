@@ -2,8 +2,6 @@
 
 import json
 
-import pytest
-
 from simcore_service_director import registry_proxy
 
 
