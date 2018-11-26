@@ -113,11 +113,7 @@ qx.Class.define("qxapp.Application", {
         this._appModel.getColors().get3DView()
           .getBackground());
 
-      this.__entityList = new qxapp.component.EntityList(
-        250, 300,
-        this._appModel.getColors().getSettingsView()
-          .getBackground(), this._appModel.getColors().getSettingsView()
-          .getFont());
+      this.__entityList = new qxapp.component.EntityList();
 
 
       // components to layout
@@ -144,6 +140,18 @@ qx.Class.define("qxapp.Application", {
           right: 30
         });
       }
+
+      let win = new qx.ui.window.Window();
+      win.set({
+        showMinimize: false,
+        showMaximize: false,
+        allowMaximize: false,
+        showStatusbar: false,
+        resizable: false,
+        contentPadding: 0,
+        caption: "Logger",
+        layout: new qx.ui.layout.Canvas()
+      });
 
       // components to document
       doc.add(layout, {
@@ -442,8 +450,8 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       this.__entityList.addListener("visibilityChanged", function(e) {
-        let entityId = e.getData()[0];
-        let show = e.getData()[1];
+        let entityId = e.getData().entityId;
+        let show = e.getData().show;
         this.__threeView.showHideEntity(entityId, show);
       }, this);
 

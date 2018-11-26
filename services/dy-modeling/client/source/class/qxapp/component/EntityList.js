@@ -6,39 +6,29 @@ qx.Class.define("qxapp.component.EntityList", {
 
   include: [qx.locale.MTranslation],
 
-  construct: function(width, height, backgroundColor, fontColor) {
+  construct: function() {
     this.base(arguments, this.tr("Entity List"));
 
     this.set({
       contentPadding: 0,
-      width: width,
-      height: height,
-      allowClose: false,
-      allowMinimize: false,
-      layout: new qx.ui.layout.VBox(),
-      backgroundColor: backgroundColor,
-      textColor: fontColor
+      width: 250,
+      height: 400,
+      showMinimize: false,
+      showMaximize: false,
+      showClose: false,
+      layout: new qx.ui.layout.VBox()
     });
 
     let scroller = new qx.ui.container.Scroll();
-    this.add(scroller);
-    this.setHeight(height-30);
+    this.add(scroller, {
+      flex: 1
+    });
 
     // create and add the tree
-    this.__tree = new qx.ui.tree.Tree();
-    this.__tree.set({
-      backgroundColor: backgroundColor,
-      textColor: fontColor
-    });
+    this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children");
     this.__tree.setSelectionMode("multi");
-    this.__tree.setWidth(width);
-    this.__tree.setHeight(height);
-
-    let root = new qx.ui.tree.TreeFolder("Model");
-    root.setOpen(true);
-    this.__tree.setRoot(root);
-
-    this.__tree.addListener("changeSelection", this.__onSelectionChanged.bind(this));
+    this.populateTree();
+    this.__tree.getSelection().addListener("change", this.__onSelectionChanged.bind(this));
 
     let removeBtn = new qx.ui.form.Button(this.tr("Remove entity"));
     removeBtn.set({
@@ -60,12 +50,82 @@ qx.Class.define("qxapp.component.EntityList", {
   members: {
     __tree: null,
 
-    __onSelectionChanged: function(e) {
-      let selectedIds = [];
-      for (let i = 0; i < e.getData().length; i++) {
-        selectedIds.push(e.getData()[i].id);
+    populateTree: function() {
+      let data = {
+        label: "Model",
+        entityId: "root",
+        path: "Model",
+        checked: true,
+        children: []
+      };
+      let model = qx.data.marshal.Json.createModel(data, true);
+      // configure model for triState usage
+      this.configureTriState(model);
+
+      // data binding
+      this.__tree.setModel(model);
+      this.__tree.setDelegate({
+        createItem: () => new qxapp.component.EntityListItem(),
+        bindItem: (c, item, id) => {
+          c.bindDefaultProperties(item, id);
+          c.bindProperty("entityId", "entityId", null, item, id);
+          c.bindProperty("path", "path", null, item, id);
+          c.bindProperty("checked", "checked", null, item, id);
+        },
+        configureItem: item => {
+          item.addListener("visibilityChanged", e => {
+            this.fireDataEvent("visibilityChanged", e.getData());
+          }, this);
+        }
+      });
+    },
+
+    // from http://www.qooxdoo.org/current/demobrowser/#virtual~Tree_Columns.html
+    configureTriState: function(item) {
+      item.getModel = function() {
+        return this;
+      };
+
+      if (item.getChildren != null) { // eslint-disable-line no-eq-null
+        let children = item.getChildren();
+        for (let i = 0; i < children.getLength(); i++) {
+          let child = children.getItem(i);
+          this.configureTriState(child);
+
+          // bind parent with child
+          item.bind("checked", child, "checked", {
+            converter: function(value, child2) {
+              // when parent is set to null than the child should keep it's value
+              if (value === null) {
+                return child2.getChecked();
+              }
+              return value;
+            }
+          });
+
+          // bind child with parent
+          child.bind("checked", item, "checked", {
+            converter: function(value, parent) {
+              let children2 = parent.getChildren().toArray();
+              let isAllChecked = children2.every(function(item2) {
+                return item2.getChecked();
+              });
+              let isOneChecked = children2.some(function(item2) {
+                return item.getChecked() || item2.getChecked() === null;
+              });
+              // Set triState (on parent node) when one child is checked
+              if (isOneChecked) {
+                return isAllChecked ? true : null;
+              }
+              return false;
+            }
+          });
+        }
       }
-      this.fireDataEvent("selectionChanged", selectedIds);
+    },
+
+    __onSelectionChanged: function(e) {
+      this.fireDataEvent("selectionChanged", this.getSelectedEntityIds());
     },
 
     __removeEntityPressed: function() {
@@ -75,59 +135,49 @@ qx.Class.define("qxapp.component.EntityList", {
       }
     },
 
-    __getSelectedEntities: function() {
-      return this.__tree.getSelection();
+    __getSelectedItems: function() {
+      return this.__tree.getSelection().toArray();
     },
 
     getSelectedEntityId: function() {
-      if (this.__getSelectedEntities().length > 0) {
-        return this.__getSelectedEntities()[0].id;
+      let selectedItems = this.__getSelectedItems();
+      if (selectedItems.length > 0) {
+        return selectedItems[0].getEntityId();
       }
       return null;
     },
 
     getSelectedEntityIds: function() {
       let selectedIds = [];
-      for (let i = 0; i < this.__getSelectedEntities().length; i++) {
-        selectedIds.push(this.__getSelectedEntities()[i].id);
+      let selectedItems = this.__getSelectedItems();
+      for (let i = 0; i < selectedItems.length; i++) {
+        selectedIds.push(selectedItems[i].getEntityId());
       }
       return selectedIds;
     },
 
-    addEntity: function(id, name) {
-      let newItem = new qx.ui.tree.TreeFile();
-
-      // A checkbox comes right after the tree icon
-      let checkbox = new qx.ui.form.CheckBox();
-      checkbox.setFocusable(false);
-      checkbox.setValue(true);
-      newItem.addWidget(checkbox);
-      checkbox.addListener("changeValue", function(e) {
-        this.fireDataEvent("visibilityChanged", [id, e.getData()]);
-        let selectedIds = this.getSelectedEntityIds();
-        for (let i = 0; i < this.__tree.getRoot().getChildren().length; i++) {
-          if (selectedIds.indexOf(this.__tree.getRoot().getChildren()[i].id) >= 0) {
-            // ToDo: Look for a better solution
-            for (let j = 0; j < this.__tree.getRoot().getChildren()[i].__widgetChildren.length; j++) {
-              if (this.__tree.getRoot().getChildren()[i].__widgetChildren[j].basename === "CheckBox") {
-                this.__tree.getRoot().getChildren()[i].__widgetChildren[j].setValue(e.getData());
-              }
-            }
-          }
-        }
-      }, this);
-
-      newItem.addLabel(name);
-
-      newItem.id = id;
-      this.__tree.getRoot().add(newItem);
-      this.__tree.setSelection([newItem]);
+    addEntity: function(entityId, name, path) {
+      let model = this.__tree.getModel();
+      let newItem = {
+        entityId: entityId,
+        label: name,
+        path: path ? path : "Model/"+name,
+        checked: true
+      };
+      let newItemModel = qx.data.marshal.Json.createModel(newItem, true);
+      model.getChildren().push(newItemModel);
+      this.configureTriState(model);
+      this.__tree.setModel(model);
+      let newSelection = new qx.data.Array([newItemModel]);
+      this.__tree.setSelection(newSelection);
     },
 
     removeEntity: function(uuid) {
-      for (let i = 0; i < this.__tree.getRoot().getChildren().length; i++) {
-        if (this.__tree.getRoot().getChildren()[i].id === uuid) {
-          this.__tree.getRoot().remove(this.__tree.getRoot().getChildren()[i]);
+      const model = this.__tree.getModel();
+      let children = model.getChildren().toArray();
+      for (let i = 0; i < children.length; i++) {
+        if (uuid === children[i].getEntityId()) {
+          model.getChildren().remove(children[i]);
         }
       }
     },
@@ -136,10 +186,12 @@ qx.Class.define("qxapp.component.EntityList", {
       if (uuids === null) {
         this.__tree.resetSelection();
       } else {
-        let selected = [];
-        for (let i = 0; i < this.__tree.getRoot().getChildren().length; i++) {
-          if (uuids.indexOf(this.__tree.getRoot().getChildren()[i].id) >= 0) {
-            selected.push(this.__tree.getRoot().getChildren()[i]);
+        const model = this.__tree.getModel();
+        let selected = new qx.data.Array();
+        let children = model.getChildren().toArray();
+        for (let i = 0; i < children.length; i++) {
+          if (uuids.includes(children[i].getEntityId())) {
+            selected.push(children[i]);
           }
         }
         this.__tree.setSelection(selected);
