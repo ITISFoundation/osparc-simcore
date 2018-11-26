@@ -275,6 +275,10 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       // Services
+      this.__availableServicesBar.addListener("centerCamera", () => {
+        this.__threeView.centerCameraToBB();
+      }, this);
+
       this.__availableServicesBar.addListener("selectionModeChanged", function(e) {
         let selectionMode = e.getData();
         this.__threeView.setSelectionMode(selectionMode);

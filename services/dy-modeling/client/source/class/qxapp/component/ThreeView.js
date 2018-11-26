@@ -282,6 +282,9 @@ qx.Class.define("qxapp.component.ThreeView", {
       this._render();
     },
 
+    centerCameraToBB: function() {
+    },
+
     setSelectionMode: function(mode) {
       if (mode === FACE_PICKING) {
         this._showEdges(true);
