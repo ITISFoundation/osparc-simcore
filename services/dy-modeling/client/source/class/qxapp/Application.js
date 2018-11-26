@@ -208,7 +208,7 @@ qx.Class.define("qxapp.Application", {
           }
         }, this);
 
-        this._socket.on("newSplineS4LRequested", function (val, ackCb) {
+        this._socket.on("newSplineS4LRequested", function(val, ackCb) {
           ackCb();
           if (val.type === "newSplineS4LRequested") {
             var splineCreator = new qxapp.modeler.SplineCreatorS4L(this.__threeView);

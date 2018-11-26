@@ -340,10 +340,11 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
     },
 
     createSpline: function(listOfPoints, color=null) {
+      let splineColor = color ? new THREE.Color(color.r, color.g, color.b) : 0xffffff;
       let curvePoints = this.__arrayToThreePoints(listOfPoints);
       let curve = new THREE.CatmullRomCurve3(curvePoints);
       let points = curve.getPoints(listOfPoints.length * 10);
-      return this.__createLine(points, color);
+      return this.__createLine(points, splineColor);
     },
 
     fromEntityMeshToEntity: function(entityMesh) {
@@ -449,11 +450,10 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       return threePoints;
     },
 
-    __createLine: function(points, color) {
+    __createLine: function(points, lineColor) {
       let geometry = new THREE.BufferGeometry().setFromPoints(points);
-      let colorAssignement = color ? new THREE.Color(color.r, color.g, color.b) : 0xffffff;
-      let material = new THREE.LineBasicMaterial({        
-        color : colorAssignement
+      let material = new THREE.LineBasicMaterial({
+        color : lineColor
       });
       let curveObject = new THREE.Line(geometry, material);
       return curveObject;
