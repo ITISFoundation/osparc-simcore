@@ -18,7 +18,6 @@ class ServiceResolutionPolicy(metaclass=abc.ABCMeta):
             Identifies a type of service. This normally corresponds
             to the name of the docker image
         """
-        pass
 
     @abc.abstractmethod
     async def find_url(self, service_identifier: str) -> URL:
@@ -30,7 +29,6 @@ class ServiceResolutionPolicy(metaclass=abc.ABCMeta):
 
             E.g. 'http://127.0.0.1:58873/x/ae1q8/'
         """
-        pass
 
     # TODO: on_closed signal to notify sub-system that the service
     # has closed and can raise HTTPServiceAnavailable

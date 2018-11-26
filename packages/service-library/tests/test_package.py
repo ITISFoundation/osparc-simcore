@@ -39,3 +39,16 @@ def test_no_pdbs_in_place(package_dir):
                 # TODO: should return line number
                 assert not found, "pbd.set_trace found in %s" % pypth
         dirs[:] = [d for d in dirs if d not in EXCLUDE]
+
+
+
+from servicelib.utils import is_osparc_repo_dir, search_osparc_repo_dir
+
+def test_utils(osparc_simcore_root_dir, package_dir):
+
+    assert is_osparc_repo_dir(osparc_simcore_root_dir)
+
+    assert search_osparc_repo_dir(package_dir) == osparc_simcore_root_dir
+    assert search_osparc_repo_dir(osparc_simcore_root_dir) == osparc_simcore_root_dir
+
+    assert not search_osparc_repo_dir(osparc_simcore_root_dir.parent)
