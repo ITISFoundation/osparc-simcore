@@ -20,6 +20,7 @@ from .session import setup_session
 from .sockets import setup_sockets
 from .statics import setup_statics
 from .storage import setup_storage
+from .users import setup_users
 from .projects import setup_projects
 from .application_proxy import setup_app_proxy
 
@@ -56,9 +57,7 @@ def create_application(config: dict):
     setup_storage(app)
     setup_users(app)
     setup_projects(app, debug=True) # TODO: deactivate fakes i.e. debug=testing
-
-    # TODO: activate when ready
-    #setup_app_proxy(app)
+    setup_app_proxy(app) # TODO: under development!!!
 
     return app
 

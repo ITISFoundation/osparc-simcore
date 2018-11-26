@@ -46,8 +46,9 @@ class ServiceMonitor(ServiceResolutionPolicy):
         self.info_service_id = service.service_uuid
         self.info_service_image = "{}:{}".format(service.service_key, service.service_version)
 
-        # FIXME: hwo do you want the url??
-        self.info_service_url = (service.entry_point, service.published_port)
+        # FIXME:Not sure format is correct!?
+        self.info_service_url = service.entry_point + ":%d" % service.published_port \
+                                + self.base_mountpoint + "/" + self.info_service_id
 
     # override
     async def get_image_name(self, service_identifier: str) -> str:

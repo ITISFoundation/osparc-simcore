@@ -19,9 +19,9 @@ SUPPORTED_IMAGE_TAG = ">=1.5.0"
 logger = logging.getLogger(__name__)
 
 
-async def handler(req: web.Request, service_url: str, **_kwargs) -> web.StreamResponse:
+async def handler(req: web.Request, service_url: str, **_kwargs):
     # Resolved url pointing to backend jupyter service
-    tarfind_url = service_url + req.path_qs
+    target_url = service_url + req.path_qs
 
     reqH = req.headers.copy()
     if reqH['connection'] == 'Upgrade' and reqH['upgrade'] == 'websocket' and req.method == 'GET':
@@ -31,9 +31,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs) -> web.StreamRe
         logger.info('##### WS_SERVER %s', pprint.pformat(ws_server))
 
         client_session = aiohttp.ClientSession(cookies=req.cookies)
-        async with client_session.ws_connect(
-            tarfind_url,
-        ) as ws_client:
+        async with client_session.ws_connect(target_url) as ws_client:
             logger.info('##### WS_CLIENT %s', pprint.pformat(ws_client))
 
             async def ws_forward(ws_from, ws_to):
@@ -61,7 +59,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs) -> web.StreamRe
     else:
 
         async with client.request(
-            req.method, tarfind_url,
+            req.method, target_url,
             headers=reqH,
             allow_redirects=False,
             data=await req.read()
