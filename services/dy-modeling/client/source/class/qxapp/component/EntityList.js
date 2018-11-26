@@ -160,9 +160,6 @@ qx.Class.define("qxapp.component.EntityList", {
     },
 
     addEntity: function(entityId, name, pathId, pathName) {
-      pathId = "root/1234123412341234/" + entityId;
-      pathName = "Model/Hallo/" + name;
-
       let rootModel = this.__tree.getModel();
       let newItem = {
         label: name,
