@@ -5,6 +5,7 @@ services:
     build:
       target: development
     environment: 
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
@@ -16,7 +17,7 @@ services:
       - USE_CASE_CONFIG_FILE=devel-config/port_config.json
       - INIT_OPTIONS=5000 200 20 tab
     volumes: 
-      - ./devel:/home/jovyan/devel
+      - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./cc/cc-single-cell/notebook:/home/jovyan/notebook
       - ./cc/cc-single-cell/devel-config:/home/jovyan/devel-config
       - ../../../packages:/packages
@@ -29,6 +30,7 @@ services:
     build:
       target: development      
     environment: 
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
@@ -40,7 +42,7 @@ services:
       - USE_CASE_CONFIG_FILE=devel-config/port_config.json
       - INIT_OPTIONS=5000 200 20 tab
     volumes: 
-      - ./devel:/home/jovyan/devel
+      - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./cc/cc-oned/notebook:/home/jovyan/notebook
       - ./cc/cc-oned/devel-config:/home/jovyan/devel-config
       - ../../../packages:/packages
@@ -53,6 +55,7 @@ services:
     build:
       target: development
     environment: 
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
@@ -64,7 +67,7 @@ services:
       - USE_CASE_CONFIG_FILE=devel-config/port_config.json
       - INIT_OPTIONS=5000 200 20 tab
     volumes: 
-      - ./devel:/home/jovyan/devel
+      - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./cc/cc-twod/notebook:/home/jovyan/notebook
       - ./cc/cc-twod/devel-config:/home/jovyan/devel-config
       - ../../../packages:/packages
@@ -77,6 +80,7 @@ services:
     build:
       target: development
     environment: 
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
@@ -88,13 +92,35 @@ services:
       - USE_CASE_CONFIG_FILE=devel-config/port_config.json
       - INIT_OPTIONS=100 6000 20 space
     volumes: 
-      - ./devel:/home/jovyan/devel
+      - ../../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./kember/notebook:/home/jovyan/notebook
       - ./kember/devel-config:/home/jovyan/devel-config
       - ../../../packages:/packages
     depends_on:
       - postgres
       - minio
+  #--------------------------------------------------------------------
+  storage:
+    image: services_storage:latest
+    ports:
+      - 11111:8080
+    environment:
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - RUN_DOCKER_ENGINE_ROOT=1
+      - BF_API_SECRET=none
+      - BF_API_KEY=none
+    restart: always
+    depends_on: 
+      - postgres
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10

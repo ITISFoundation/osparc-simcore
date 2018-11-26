@@ -1,3 +1,7 @@
+""" Tests functionality that requires login users
+
+
+"""
 # pylint:disable=wildcard-import
 # pylint:disable=unused-import
 # pylint:disable=unused-variable

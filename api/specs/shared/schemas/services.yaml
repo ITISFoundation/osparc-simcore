@@ -1,15 +1,15 @@
-ServicesEnveloped:
-  type: object
-  required:
-    - data
-    - error
-  properties:
-    data:
-      type: array
-      items:
-        $ref: './node-meta-v0.0.1-converted.yaml'
-    error:
+components:
+  schemas:
+    ServicesEnveloped:
       type: object
-      nullable: true
-      default: null
-      
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: './node-meta-v0.0.1-converted.yaml'
+        error:
+          nullable: true
+          default: null
+          

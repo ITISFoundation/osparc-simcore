@@ -6,6 +6,11 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   construct: function() {
     this.base(arguments, new qx.ui.layout.HBox());
 
+    this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
+    // this._projectResources.projects
+    // this._projectResources.project
+    // this._projectResources.templates
+
     let leftSpacer = new qx.ui.core.Spacer(150);
     let mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     let rightSpacer = new qx.ui.core.Spacer(150);
@@ -29,12 +34,28 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     });
     let publicProjectList = this.__createPublicProjectList();
 
-    mainView.add(new qx.ui.core.Spacer(null, 10));
+    let editPrjLayout = this.__editPrjLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+    let editPrjLabel = new qx.ui.basic.Label(this.tr("Edit Project")).set({
+      font: navBarLabelFont,
+      minWidth: 150
+    });
+    editPrjLayout.add(editPrjLabel);
+    editPrjLayout.setVisibility("excluded");
+
+
+    mainView.add(new qx.ui.core.Spacer(null, 5));
     mainView.add(myPrjsLabel);
     mainView.add(userProjectList);
-    mainView.add(new qx.ui.core.Spacer(null, 10));
+    mainView.add(new qx.ui.core.Spacer(null, 5));
     mainView.add(pubPrjsLabel);
     mainView.add(publicProjectList);
+    mainView.add(new qx.ui.core.Spacer(null, 5));
+    mainView.add(this.__editPrjLayout);
+
+    let commandEsc = new qx.ui.command.Command("Esc");
+    commandEsc.addListener("execute", e => {
+      this.__itemSelected(null);
+    });
   },
 
   events: {
@@ -42,7 +63,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   },
 
   members: {
-    newPrjBtnClkd: function() {
+    __projectResources: null,
+    __userProjectList: null,
+    __publicProjectList: null,
+    __editPrjLayout: null,
+
+    __newPrjBtnClkd: function() {
       let win = new qx.ui.window.Window(this.tr("Create New Project")).set({
         layout: new qx.ui.layout.Grow(),
         contentPadding: 0,
@@ -68,7 +94,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     },
 
     __startBlankProject: function(newPrj) {
-      let blankProject = this.__getProjectModel();
+      let blankProject = new qxapp.data.model.ProjectModel();
       blankProject.set({
         name: newPrj.name,
         description: newPrj.description
@@ -79,58 +105,114 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       this.fireDataEvent("StartProject", data);
     },
 
-    __getProjectModel: function(projectId, fromTemplate = false) {
-      let project = new qxapp.data.model.ProjectModel();
-      if (projectId) {
-        let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
-        project = new qxapp.data.model.ProjectModel(projectData, fromTemplate);
-      }
-      return project;
+    __startProjectModel: function(projectId, fromTemplate = false) {
+      // let projectData = qxapp.data.Store.getInstance().getProjectData(projectId);
+      let resource = this.__projectResources.project;
+
+      resource.addListenerOnce("getSuccess", e => {
+        // TODO: is this listener added everytime we call ?? It does not depend on input params
+        // but it needs to be here to implemenet startProjectModel
+        let projectData = e.getRequest().getResponse().data;
+        let model = new qxapp.data.model.ProjectModel(projectData, fromTemplate);
+        const data = {
+          projectModel: model
+        };
+        this.fireDataEvent("StartProject", data);
+      }, this);
+
+      resource.addListener("getError", e => {
+        console.log(e);
+      });
+
+      resource.get({
+        "project_id": projectId
+      });
     },
 
     __createUserProjectList: function() {
       // layout
-      let prjLst = this.__cretePrjListLayout();
+      let usrLst = this.__userProjectList = this.__cretePrjListLayout();
+      usrLst.addListener("changeSelection", e => {
+        if (e.getData() && e.getData().length>0) {
+          this.__publicProjectList.resetSelection();
+          const selectedId = e.getData()[0].getModel();
+          if (selectedId) {
+            this.__itemSelected(selectedId, false);
+          } else {
+            // "New Project" selected
+            this.__itemSelected(null);
+          }
+        }
+      }, this);
 
-      // controller
-      let userPrjList = qxapp.data.Store.getInstance().getUserProjectList();
-      let userPrjArrayModel = this.__getProjectArrayModel(userPrjList);
-      userPrjArrayModel.unshift(qx.data.marshal.Json.createModel({
-        name: this.tr("New Project"),
-        thumbnail: "@FontAwesome5Solid/plus-circle/80",
-        projectUuid: null,
-        created: null,
-        owner: null
-      }));
-      let prjCtr = new qx.data.controller.List(userPrjArrayModel, prjLst, "name");
-      const fromTemplate = false;
-      let delegate = this.__getDelegate(fromTemplate);
-      prjCtr.setDelegate(delegate);
-      return prjLst;
+      this.reloadUserProjects();
+
+      return usrLst;
+    },
+
+    reloadUserProjects: function() {
+      // resources
+      // let userPrjList = qxapp.data.Store.getInstance().getUserProjectList();
+      this.__userProjectList.removeAll();
+
+      let resources = this.__projectResources.projects;
+
+      resources.addListenerOnce("getSuccess", e => {
+        let userPrjList = e.getRequest().getResponse().data;
+        let userPrjArrayModel = this.__getProjectArrayModel(userPrjList);
+        userPrjArrayModel.unshift(qx.data.marshal.Json.createModel({
+          name: this.tr("New Project"),
+          thumbnail: "@FontAwesome5Solid/plus-circle/80",
+          projectUuid: null,
+          created: null,
+          owner: null
+        }));
+        // controller
+        let prjCtr = new qx.data.controller.List(userPrjArrayModel, this.__userProjectList, "name");
+        const fromTemplate = false;
+        let delegate = this.__getDelegate(fromTemplate);
+        prjCtr.setDelegate(delegate);
+      }, this);
+
+      resources.addListener("getError", e => {
+        console.log(e);
+      }, this);
+
+      resources.get();
+
+      this.__itemSelected(null);
     },
 
     __createPublicProjectList: function() {
       // layout
-      let prjLst = this.__cretePrjListLayout();
+      let pblLst = this.__publicProjectList = this.__cretePrjListLayout();
+      pblLst.addListener("changeSelection", e => {
+        if (e.getData() && e.getData().length>0) {
+          this.__userProjectList.resetSelection();
+          const selectedId = e.getData()[0].getModel();
+          this.__itemSelected(selectedId, true);
+        }
+      }, this);
 
       // controller
       let publicPrjList = qxapp.data.Store.getInstance().getPublicProjectList();
       let publicPrjArrayModel = this.__getProjectArrayModel(publicPrjList);
-      let prjCtr = new qx.data.controller.List(publicPrjArrayModel, prjLst, "name");
+      let prjCtr = new qx.data.controller.List(publicPrjArrayModel, pblLst, "name");
       const fromTemplate = true;
       let delegate = this.__getDelegate(fromTemplate);
       prjCtr.setDelegate(delegate);
-      return prjLst;
+      return pblLst;
     },
 
     __cretePrjListLayout: function() {
-      return new qx.ui.form.List().set({
+      let list = new qx.ui.form.List().set({
         orientation: "horizontal",
         spacing: 10,
-        height: 245,
+        height: 225,
         alignY: "middle",
         appearance: "pb-list"
       });
+      return list;
     },
 
     /**
@@ -140,7 +222,6 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       const thumbnailWidth = 246;
       const thumbnailHeight = 144;
       let that = this;
-      let getProjectModel = this.__getProjectModel;
       let delegate = {
         // Item's Layout
         createItem: function() {
@@ -148,13 +229,9 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           item.addListener("dbltap", e => {
             const prjUuid = item.getModel();
             if (prjUuid) {
-              let projectModel = getProjectModel(prjUuid, fromTemplate);
-              const data = {
-                projectModel: projectModel
-              };
-              that.fireDataEvent("StartProject", data);
+              that.__startProjectModel(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
             } else {
-              that.newPrjBtnClkd();
+              that.__newPrjBtnClkd(); // eslint-disable-line no-underscore-dangle
             }
           });
           return item;
@@ -199,6 +276,192 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       };
 
       return delegate;
+    },
+
+    __itemSelected: function(projectId, fromTemplate = false) {
+      if (projectId === null) {
+        if (this.__userProjectList) {
+          this.__userProjectList.resetSelection();
+        }
+        if (this.__publicProjectList) {
+          this.__publicProjectList.resetSelection();
+        }
+        if (this.__editPrjLayout) {
+          this.__editPrjLayout.setVisibility("excluded");
+        }
+        return;
+      }
+
+      let resource = this.__projectResources.project;
+
+      resource.addListenerOnce("getSuccess", e => {
+        this.__editPrjLayout.setVisibility("visible");
+        let projectData = e.getRequest().getResponse().data;
+        this.__createForm(projectData, fromTemplate);
+        console.log(projectData);
+      }, this);
+
+      resource.addListener("getError", e => {
+        console.log(e);
+      });
+
+      resource.get({
+        "project_id": projectId
+      });
+    },
+
+    __createForm: function(projectData, fromTemplate) {
+      while (this.__editPrjLayout.getChildren().length > 1) {
+        this.__editPrjLayout.removeAt(1);
+      }
+
+      const itemsToBeDisplayed = ["name", "description", "notes", "owner", "collaborators", "creationDate", "lastChangeDate"];
+      const itemsToBeModified = fromTemplate ? [] : ["name", "description", "notes"];
+      let form = new qx.ui.form.Form();
+      let control;
+      for (const dataId in projectData) {
+        if (itemsToBeDisplayed.includes(dataId)) {
+          switch (dataId) {
+            case "name":
+              control = new qx.ui.form.TextField();
+              form.add(control, this.tr("Name"));
+              break;
+            case "description":
+              control = new qx.ui.form.TextField();
+              form.add(control, this.tr("Description"));
+              break;
+            case "notes":
+              control = new qx.ui.form.TextArea().set({
+                minimalLineHeight: 2
+              });
+              form.add(control, this.tr("Notes"));
+              break;
+            case "owner":
+              control = new qx.ui.form.TextField();
+              form.add(control, this.tr("Owner"));
+              break;
+            case "collaborators":
+              control = new qx.ui.form.TextField();
+              form.add(control, this.tr("Collaborators"));
+              break;
+            case "creationDate":
+              control = new qx.ui.form.TextField();
+              form.add(control, this.tr("Creation Date"));
+              break;
+            case "lastChangeDate":
+              control = new qx.ui.form.TextField();
+              form.add(control, this.tr("Last Change Date"));
+              break;
+          }
+          let value = projectData[dataId];
+          if (typeof value === "object") {
+            if (value === null) {
+              value = "";
+            } else {
+              value = Object.keys(value).join(", ");
+            }
+          }
+          control.set({
+            value: value
+          });
+          control.setEnabled(itemsToBeModified.includes(dataId));
+        }
+      }
+
+      let controller = new qx.data.controller.Form(null, form);
+      let model = controller.createModel();
+
+      // buttons
+      let saveButton = new qx.ui.form.Button(this.tr("Save"));
+      saveButton.setMinWidth(70);
+      saveButton.setEnabled(!fromTemplate);
+      saveButton.addListener("execute", e => {
+        for (let i=0; i<itemsToBeModified.length; i++) {
+          const key = itemsToBeModified[i];
+          let getter = "get" + qx.lang.String.firstUp(key);
+          let newVal = model[getter]();
+          projectData[key] = newVal;
+        }
+        let resource = this.__projectResources.project;
+
+        resource.addListenerOnce("putSuccess", ev => {
+          this.reloadUserProjects();
+        }, this);
+
+        resource.put({
+          "project_id": projectData["projectUuid"]
+        }, projectData);
+
+        this.__itemSelected(null);
+      }, this);
+      form.addButton(saveButton);
+
+      let cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
+      cancelButton.setMinWidth(70);
+      cancelButton.addListener("execute", e => {
+        this.__itemSelected(null);
+      }, this);
+      form.addButton(cancelButton);
+
+      let deleteButton = new qx.ui.form.Button(this.tr("Delete"));
+      deleteButton.setMinWidth(70);
+      deleteButton.setEnabled(!fromTemplate);
+      deleteButton.addListener("execute", e => {
+        let win = this.__createConfirmWindow();
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win["value"] === 1) {
+            let resource = this.__projectResources.project;
+
+            resource.addListenerOnce("delSuccess", ev => {
+              this.reloadUserProjects();
+            }, this);
+
+            resource.del({
+              "project_id": projectData["projectUuid"]
+            });
+
+            this.__itemSelected(null);
+          }
+        }, this);
+      }, this);
+      form.addButton(deleteButton);
+
+      this.__editPrjLayout.add(new qx.ui.form.renderer.Single(form));
+    },
+
+    __createConfirmWindow: function() {
+      let win = new qx.ui.window.Window("Confirmation").set({
+        layout: new qx.ui.layout.VBox(10),
+        width: 300,
+        height: 60,
+        modal: true,
+        showMaximize: false,
+        showMinimize: false,
+        showClose: false,
+        autoDestroy: false
+      });
+
+      let text = new qx.ui.basic.Label(this.tr("Are you sure you want to delete the project?"));
+      win.add(text);
+
+      let buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(10, "right"));
+      var btnNo = new qx.ui.form.Button("No");
+      var btnYes = new qx.ui.form.Button("Yes");
+      btnNo.addListener("execute", e => {
+        win["value"] = 0;
+        win.close(0);
+      }, this);
+      btnYes.addListener("execute", e => {
+        win["value"] = 1;
+        win.close(1);
+      }, this);
+      buttons.add(btnNo);
+      buttons.add(btnYes);
+      win.add(buttons);
+
+      return win;
     },
 
     __getProjectArrayModel: function(prjList) {

@@ -1,0 +1,41 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  license:
+    name: MIT
+paths:
+  /tags:
+    get:
+      summary: List all tags
+      operationId: listTags
+      tags:
+        - tags
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: "./petstore.yaml#/components/schemas/TagList"
+              example:
+                - dogs
+                - cats
+        default:
+          $ref: "./petstore.yaml#/components/responses/ErrorResponse"
+    post:
+      summary: Create new tag
+      operationId: createTag
+      tags:
+        - tags
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './petstore.yaml#/components/schemas/TagCreate'
+      responses:
+        '200':
+          description: Null response
+        default:
+          $ref: "./petstore.yaml#/components/responses/ErrorResponse"

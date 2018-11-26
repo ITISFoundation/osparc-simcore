@@ -32,6 +32,12 @@ qx.Class.define("qxapp.component.widget.FileTreeItem", {
       nullable : true
     },
 
+    location : {
+      check : "String",
+      event: "changePath",
+      nullable : true
+    },
+
     size : {
       check : "String",
       event: "changeSize",

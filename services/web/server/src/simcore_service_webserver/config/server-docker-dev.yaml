@@ -10,6 +10,7 @@ main:
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
+  version: "v0"
 db:
   init_tables: True
   postgres:
@@ -17,8 +18,8 @@ db:
     endpoint: ${POSTGRES_ENDPOINT}
     user: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
-    host: postgres
-    port: 5432
+    host: ${POSTGRES_HOST}
+    port: ${POSTGRES_PORT}
 rabbit:
   user: ${RABBITMQ_USER}
   password: ${RABBITMQ_PASSWORD}
@@ -45,4 +46,5 @@ rest:
 storage:
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}
+  version: v0
 ...

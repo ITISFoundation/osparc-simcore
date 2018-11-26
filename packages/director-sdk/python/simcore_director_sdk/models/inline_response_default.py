@@ -48,10 +48,8 @@ class InlineResponseDefault(object):
         self._error = None
         self.discriminator = None
 
-        if data is not None:
-            self.data = data
-        if error is not None:
-            self.error = error
+        self.data = data
+        self.error = error
 
     @property
     def data(self):
@@ -92,6 +90,8 @@ class InlineResponseDefault(object):
         :param error: The error of this InlineResponseDefault.  # noqa: E501
         :type: InlineResponseDefaultError
         """
+        if error is None:
+            raise ValueError("Invalid value for `error`, must not be `None`")  # noqa: E501
 
         self._error = error
 

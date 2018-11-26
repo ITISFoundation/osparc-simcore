@@ -15,7 +15,7 @@ class InlineResponse2001Authors(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, affiliation: str=None, email: str=None, name: str=None):  # noqa: E501
+    def __init__(self, affiliation=None, email=None, name=None):  # noqa: E501
         """InlineResponse2001Authors - a model defined in OpenAPI
 
         :param affiliation: The affiliation of this InlineResponse2001Authors.  # noqa: E501
@@ -26,9 +26,9 @@ class InlineResponse2001Authors(Model):
         :type name: str
         """
         self.openapi_types = {
-            'affiliation': str,
-            'email': str,
-            'name': str
+            'affiliation': 'str',
+            'email': 'str',
+            'name': 'str'
         }
 
         self.attribute_map = {
@@ -53,7 +53,7 @@ class InlineResponse2001Authors(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def affiliation(self) -> str:
+    def affiliation(self):
         """Gets the affiliation of this InlineResponse2001Authors.
 
         Affiliation of the author  # noqa: E501
@@ -64,7 +64,7 @@ class InlineResponse2001Authors(Model):
         return self._affiliation
 
     @affiliation.setter
-    def affiliation(self, affiliation: str):
+    def affiliation(self, affiliation):
         """Sets the affiliation of this InlineResponse2001Authors.
 
         Affiliation of the author  # noqa: E501
@@ -76,7 +76,7 @@ class InlineResponse2001Authors(Model):
         self._affiliation = affiliation
 
     @property
-    def email(self) -> str:
+    def email(self):
         """Gets the email of this InlineResponse2001Authors.
 
         Email address  # noqa: E501
@@ -87,7 +87,7 @@ class InlineResponse2001Authors(Model):
         return self._email
 
     @email.setter
-    def email(self, email: str):
+    def email(self, email):
         """Sets the email of this InlineResponse2001Authors.
 
         Email address  # noqa: E501
@@ -95,11 +95,13 @@ class InlineResponse2001Authors(Model):
         :param email: The email of this InlineResponse2001Authors.
         :type email: str
         """
+        if email is None:
+            raise ValueError("Invalid value for `email`, must not be `None`")  # noqa: E501
 
         self._email = email
 
     @property
-    def name(self) -> str:
+    def name(self):
         """Gets the name of this InlineResponse2001Authors.
 
         Name of the author  # noqa: E501
@@ -110,7 +112,7 @@ class InlineResponse2001Authors(Model):
         return self._name
 
     @name.setter
-    def name(self, name: str):
+    def name(self, name):
         """Sets the name of this InlineResponse2001Authors.
 
         Name of the author  # noqa: E501
@@ -118,5 +120,7 @@ class InlineResponse2001Authors(Model):
         :param name: The name of this InlineResponse2001Authors.
         :type name: str
         """
+        if name is None:
+            raise ValueError("Invalid value for `name`, must not be `None`")  # noqa: E501
 
         self._name = name

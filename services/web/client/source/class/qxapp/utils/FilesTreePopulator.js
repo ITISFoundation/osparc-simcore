@@ -10,39 +10,46 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
   members: {
     __tree: null,
 
-    populateNodeFiles: function(prjId, nodeId) {
+    populateNodeFiles: function(nodeId) {
       const treeName = "Node files";
       this.__resetTree(treeName);
-      let store = qxapp.data.Store.getInstance();
 
+      let store = qxapp.data.Store.getInstance();
       store.addListenerOnce("NodeFiles", e => {
         const files = e.getData();
         const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
         this.__addTreeData(newChildren);
       }, this);
-
-      store.getNodeFiles(prjId, nodeId);
+      store.getNodeFiles(nodeId);
     },
 
     populateMyDocuments: function() {
       const treeName = "My Documents";
       this.__resetTree(treeName);
-      let store = qxapp.data.Store.getInstance();
 
-      [
-        "MyDocuments",
-        "S3PublicDocuments",
-        "FakeFiles"
-      ].forEach(eventName => {
-        store.addListenerOnce(eventName, e => {
-          const files = e.getData();
+      let locationsAdded = [];
+      let store = qxapp.data.Store.getInstance();
+      store.addListenerOnce("MyDocuments", e => {
+        const {
+          location,
+          files
+        } = e.getData();
+        if (!locationsAdded.includes(location)) {
+          locationsAdded.push(location);
           const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
           this.__addTreeData(newChildren);
-        }, this);
+        }
       }, this);
-
       store.getMyDocuments();
-      // store.getFakeFiles();
+
+      /*
+      store.addListenerOnce("FakeFiles", e => {
+        const files = e.getData();
+        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+        this.__addTreeData(newChildren);
+      }, this);
+      store.getFakeFiles();
+      */
     },
 
     __resetTree: function(treeName) {
@@ -50,6 +57,9 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       this.__tree.resetModel();
       let data = {
         label: treeName,
+        fileId: null,
+        location: null,
+        path: null,
         children: []
       };
       let emptyModel = qx.data.marshal.Json.createModel(data, true);
@@ -59,6 +69,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
           c.bindProperty("fileId", "fileId", null, item, id);
+          c.bindProperty("location", "location", null, item, id);
           c.bindProperty("path", "path", null, item, id);
           c.bindProperty("size", "size", null, item, id);
         }

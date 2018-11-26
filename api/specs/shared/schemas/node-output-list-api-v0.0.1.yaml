@@ -39,6 +39,9 @@ properties:
               type: string
             label:
               type: string
+            thumbnail:
+              description: data url - https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs
+              type: string
   getItem:
       description: get details about an item in the list
       type: object

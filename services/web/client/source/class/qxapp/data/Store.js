@@ -5,12 +5,12 @@ qx.Class.define("qxapp.data.Store", {
 
   events: {
     "servicesRegistered": "qx.event.type.Event",
-    "S3PublicDocuments": "qx.event.type.Event",
+    // "FakeFiles": "qx.event.type.Event",
     "MyDocuments": "qx.event.type.Event",
     "NodeFiles": "qx.event.type.Event",
     "PresginedLink": "qx.event.type.Event",
-    "DeleteFile": "qx.event.type.Event",
-    "FakeFiles": "qx.event.type.Event"
+    "FileCopied": "qx.event.type.Event",
+    "DeleteFile": "qx.event.type.Event"
   },
 
   statics: {
@@ -27,7 +27,7 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   members: {
-    __servicesCache: null,
+    __servicesCached: null,
 
     __getMimeType: function(type) {
       let match = type.match(/^data:([^/\s]+\/[^/;\s])/);
@@ -57,6 +57,7 @@ qx.Class.define("qxapp.data.Store", {
       return arePortsCompatible;
     },
 
+
     getUserProjectList: function() {
       return qxapp.dev.fake.Data.getUserProjectList();
     },
@@ -77,8 +78,8 @@ qx.Class.define("qxapp.data.Store", {
       let metaData = {};
       if (key && version) {
         const nodeImageId = key + "-" + version;
-        if (nodeImageId in this.__servicesCache) {
-          return this.__servicesCache[nodeImageId];
+        if (nodeImageId in this.__servicesCached) {
+          return this.__servicesCached[nodeImageId];
         }
         metaData = this.getFakeServices()[nodeImageId];
         if (metaData === undefined) {
@@ -135,7 +136,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Neuroman models",
               description: "Neuroman models",
-              type: "node-output-list-icon-api-v0.0.1"
+              type: "node-output-list-api-v0.0.1"
             }
           },
           inputs: {
@@ -242,8 +243,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/container/itis/s4l/Simulator/LF-0.0.0": {
-          key: "services/container/itis/s4l/Simulator/LF",
+        "services/demodec/container/itis/s4l/Simulator/LF-0.0.0": {
+          key: "services/demodec/container/itis/s4l/Simulator/LF",
           version: "0.0.0",
           type: "container",
           name: "LF Simulator",
@@ -679,40 +680,44 @@ qx.Class.define("qxapp.data.Store", {
       return services;
     },
 
-    getServices: function() {
-      let req = new qxapp.io.request.ApiRequest("/services", "GET");
-      req.addListener("success", e => {
-        let requ = e.getTarget();
-        const {
-          data
-        } = requ.getResponse();
-        const listOfRepositories = data;
-        let services = Object.assign({}, this.getBuiltInServices());
-        for (const key in listOfRepositories) {
-          const repoData = listOfRepositories[key];
-          const nodeImageId = repoData.key + "-" + repoData.version;
-          services[nodeImageId] = repoData;
-        }
-        if (this.__servicesCache === null) {
-          this.__servicesCache = {};
-        }
-        this.__servicesCache = Object.assign(this.__servicesCache, services);
-        this.fireDataEvent("servicesRegistered", services);
-      }, this);
+    getServices: function(reload) {
+      if (reload || Object.keys(this.__servicesCached).length === 0) {
+        let req = new qxapp.io.request.ApiRequest("/services", "GET");
+        req.addListener("success", e => {
+          let requ = e.getTarget();
+          const {
+            data
+          } = requ.getResponse();
+          const newServices = data;
+          let services = Object.assign({}, this.getBuiltInServices());
+          for (const key in newServices) {
+            const service = newServices[key];
+            const nodeImageId = service.key + "-" + service.version;
+            services[nodeImageId] = service;
+          }
+          if (this.__servicesCached === null) {
+            this.__servicesCached = {};
+          }
+          this.__servicesCached = Object.assign(this.__servicesCached, services);
+          this.fireDataEvent("servicesRegistered", services);
+        }, this);
 
-      req.addListener("fail", e => {
-        const {
-          error
-        } = e.getTarget().getResponse();
-        console.log("getServices failed", error);
-        let services = this.getFakeServices();
-        if (this.__servicesCache === null) {
-          this.__servicesCache = {};
-        }
-        this.__servicesCache = Object.assign(this.__servicesCache, services);
-        this.fireDataEvent("servicesRegistered", services);
-      }, this);
-      req.send();
+        req.addListener("fail", e => {
+          const {
+            error
+          } = e.getTarget().getResponse();
+          console.log("getServices failed", error);
+          let services = this.getFakeServices();
+          if (this.__servicesCached === null) {
+            this.__servicesCached = {};
+          }
+          this.__servicesCached = Object.assign(this.__servicesCached, services);
+          this.fireDataEvent("servicesRegistered", services);
+        }, this);
+        req.send();
+        return null;
+      }
+      return this.__servicesCached;
     },
 
     getFakeFiles: function() {
@@ -721,8 +726,8 @@ qx.Class.define("qxapp.data.Store", {
       this.fireDataEvent("FakeFiles", data);
     },
 
-    getNodeFiles: function(prjId, nodeId) {
-      const filter = "?uuid_filter=" + nodeId;
+    getNodeFiles: function(nodeId) {
+      const filter = "?uuid_filter=" + encodeURIComponent(nodeId);
       let endPoint = "/storage/locations/0/files/metadata";
       endPoint += filter;
       let reqFiles = new qxapp.io.request.ApiRequest(endPoint, "GET");
@@ -740,7 +745,7 @@ qx.Class.define("qxapp.data.Store", {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log("Failed getting NodeF iles list", error);
+        console.log("Failed getting Node Files list", error);
       });
 
       reqFiles.send();
@@ -764,7 +769,11 @@ qx.Class.define("qxapp.data.Store", {
               .data;
             console.log("My Files", files);
             if (files && files.length>0) {
-              this.fireDataEvent("MyDocuments", files);
+              const data = {
+                location: locationId,
+                files: files
+              };
+              this.fireDataEvent("MyDocuments", data);
             }
           }, this);
 
@@ -821,9 +830,41 @@ qx.Class.define("qxapp.data.Store", {
       req.send();
     },
 
+    copyFile: function(fromLoc, fileUuid, toLoc, pathId) {
+      // "/v0/locations/1/files/{}?user_id={}&extra_location={}&extra_source={}".format(quote(datcore_uuid, safe=''),
+      let fileName = fileUuid.split("/");
+      fileName = fileName[fileName.length-1];
+      let endPoint = "/storage/locations/"+toLoc+"/files/";
+      let parameters = encodeURIComponent(pathId + "/" + fileName);
+      parameters += "?extra_location=";
+      parameters += fromLoc;
+      parameters += "&extra_source=";
+      parameters += encodeURIComponent(fileUuid);
+      endPoint += parameters;
+      let req = new qxapp.io.request.ApiRequest(endPoint, "PUT");
+
+      req.addListener("success", e => {
+        const {
+          data
+        } = e.getTarget().getResponse();
+        this.fireDataEvent("FileCopied", data);
+      }, this);
+
+      req.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        console.log(error);
+        console.log("Failed copying file", fileUuid, "to", pathId);
+      });
+
+      req.send();
+    },
+
     deleteFile: function(locationId, fileUuid) {
       // Deletes File
-      const endPoint = "/storage/locations/" + locationId + "/files/" + fileUuid;
+      let parameters = encodeURIComponent(fileUuid);
+      const endPoint = "/storage/locations/" + locationId + "/files/" + parameters;
       let req = new qxapp.io.request.ApiRequest(endPoint, "DELETE");
 
       req.addListener("success", e => {
@@ -837,7 +878,7 @@ qx.Class.define("qxapp.data.Store", {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log("Failed getting Presgined Link", error);
+        console.log("Failed deleting file", error);
       });
 
       req.send();

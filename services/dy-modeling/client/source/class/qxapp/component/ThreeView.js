@@ -33,7 +33,7 @@ qx.Class.define("qxapp.component.ThreeView", {
 
     this.__threeWrapper = new qxapp.wrappers.ThreeWrapper();
 
-    this.__threeWrapper.addListener(("ThreeLibReady"), function(e) {
+    this.__threeWrapper.addListener("ThreeLibReady", e => {
       let ready = e.getData();
       if (ready) {
         this.__threeDViewer = new qx.ui.core.Widget();
@@ -62,6 +62,8 @@ qx.Class.define("qxapp.component.ThreeView", {
           }, this);
 
           this._render();
+
+          this.fireDataEvent("ThreeViewReady", true);
         }, this);
       } else {
         console.log("Three.js was not loaded");
@@ -86,7 +88,8 @@ qx.Class.define("qxapp.component.ThreeView", {
     "entityAdded": "qx.event.type.Data",
     "entityRemoved": "qx.event.type.Data",
     "entitiesToBeExported": "qx.event.type.Data",
-    "SceneToBeExported": "qx.event.type.Data"
+    "SceneToBeExported": "qx.event.type.Data",
+    "ThreeViewReady": "qx.event.type.Data"
   },
 
   members: {

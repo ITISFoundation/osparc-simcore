@@ -1,0 +1,302 @@
+[
+  {
+    "projectUuid": "07640335-a91f-468c-ab69-a374fa82078d",
+    "name": "Sample Project",
+    "description": "A little fake project without actual backend",
+    "notes": "# title\nThere be dragons inside",
+    "owner": "TOBI",
+    "collaborators": {
+      "PEDRO": [
+        "read",
+        "write"
+      ]
+    },
+    "creationDate": "2018-07-02T16:01:00Z",
+    "lastChangeDate": "2018-07-02T16:02:22Z",
+    "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?0.jpg",
+    "workbench": {
+      "EyRyp1uaS": {
+        "key": "services/dynamic/itis/file-picker",
+        "version": "0.0.0",
+        "outputs": {
+          "outFile": {
+            "store": "s3-z43",
+            "path": "/bucket1/file1"
+          }
+        },
+        "position": {
+          "x": 10,
+          "y": 10
+        }
+      },
+      "4ygzpkd6B": {
+        "key": "services/computational/itis/sleeper",
+        "version": "0.0.0",
+        "label": "Sleeper 1",
+        "inputs": {
+          "inNumber": 3.5
+        },
+        "outputs": {
+          "outNumber": 33
+        },
+        "position": {
+          "x": 400,
+          "y": 10
+        }
+      },
+      "VyU461Oar": {
+        "key": "services/computational/itis/sleeper",
+        "version": "0.0.0",
+        "label": "Sleeper 2",
+        "inputs": {
+          "inNumber": 3.5
+        },
+        "outputs": {
+          "outNumber": 32
+        },
+        "position": {
+          "x": 10,
+          "y": 300
+        }
+      },
+      "Vy6Bp1dpH": {
+        "key": "services/computational/itis/tutti",
+        "version": "0.0.0-alpha",
+        "inputs": {
+          "inNumber": {
+            "nodeUuid": "VyU461Oar",
+            "output": "outNumber"
+          },
+          "inInt": 372,
+          "inBool": true,
+          "inStr": "Ooops, Agnodain",
+          "inArea": "some\nmore",
+          "inSb": "cat",
+          "inFile": {
+            "nodeUuid": "EyRyp1uaS",
+            "output": "outFile"
+          },
+          "inImage": {
+            "nodeUuid": "EyRyp1uaS",
+            "output": "outFile"
+          }
+        },
+        "inputNodes": [
+          "4ygzpkd6B",
+          "VyU461Oar",
+          "EyRyp1uaS"
+        ],
+        "position": {
+          "x": 400,
+          "y": 400
+        }
+      }
+    }
+  }, {
+    "projectUuid": "89a92ea1-ce5e-488e-9fd8-933a263c6219",
+    "name": "3 pipelines",
+    "description": "Empty",
+    "notes": "Empty",
+    "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?25.jpg",
+    "owner": "MANUEL",
+    "collaborators": {},
+    "creationDate": "2018-10-31T12:11:53.179Z",
+    "lastChangeDate": "2018-10-31T12:24:32.660Z",
+    "workbench": {
+      "2e8acead-a59a-42d9-9185-946d428d70b3": {
+        "label": "File Picker EM",
+        "inputs": {},
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 150,
+          "y": 150
+        },
+        "key": "services/dynamic/itis/file-picker",
+        "version": "0.0.0"
+      },
+      "8d603045-bfe8-4822-906c-590fa69c1d13": {
+        "label": "isolve-emlf",
+        "inputs": {
+          "in_1": {
+            "nodeUuid": "2e8acead-a59a-42d9-9185-946d428d70b3",
+            "output": "outFile"
+          },
+          "NRanks": 1
+        },
+        "inputNodes": [
+          "2e8acead-a59a-42d9-9185-946d428d70b3"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 450,
+          "y": 150
+        },
+        "key": "simcore/services/comp/itis/isolve-emlf",
+        "version": "0.0.1"
+      },
+      "08116c6d-2c9e-4939-9c2b-67fe0ae65dc9": {
+        "label": "File Picker Neuron",
+        "inputs": {},
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 150,
+          "y": 300
+        },
+        "key": "services/dynamic/itis/file-picker",
+        "version": "0.0.0"
+      },
+      "1a4aafff-88c7-4e7e-89cc-fe374cfe64ea": {
+        "label": "neuron-isolve",
+        "inputs": {
+          "in_1": {
+            "nodeUuid": "08116c6d-2c9e-4939-9c2b-67fe0ae65dc9",
+            "output": "outFile"
+          }
+        },
+        "inputNodes": [
+          "08116c6d-2c9e-4939-9c2b-67fe0ae65dc9"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 450,
+          "y": 300
+        },
+        "key": "simcore/services/comp/itis/neuron-isolve",
+        "version": "0.0.1"
+      },
+      "d2d8028c-be3f-473d-a74f-161a286a00ed": {
+        "label": "Kember cardiac model",
+        "inputs": {
+          "dt": 0.01,
+          "T": 1000,
+          "forcing_factor": 0.0
+        },
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 150,
+          "y": 450
+        },
+        "key": "simcore/services/comp/kember/cardiac",
+        "version": "0.0.2"
+      },
+      "6cffe7a9-6758-4be6-9988-ec190f4c1d4f": {
+        "label": "kember-viewer",
+        "inputs": {
+          "outputController": {
+            "nodeUuid": "d2d8028c-be3f-473d-a74f-161a286a00ed",
+            "output": "outputController"
+          }
+        },
+        "inputNodes": [
+          "d2d8028c-be3f-473d-a74f-161a286a00ed"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 450,
+          "y": 450
+        },
+        "key": "simcore/services/dynamic/kember-viewer",
+        "version": "1.1.0"
+      }
+    }
+  }, {
+    "projectUuid": "80363288-84c2-49db-95d1-22e1ea78043e",
+    "name": "Macros",
+    "description": "Project containing nested custom macros",
+    "notes": "# title\nBlah",
+    "owner": "ODEI",
+    "collaborators": {
+      "ODEI": [
+        "read",
+        "write"
+      ]
+    },
+    "creationDate": "2018-09-24T16:01:00Z",
+    "lastChangeDate": "2018-09-24T16:02:22Z",
+    "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?15.jpg",
+    "workbench": {
+      "Sleeper1": {
+        "key": "services/computational/itis/sleeper",
+        "version": "0.0.0",
+        "label": "Sleeper 1",
+        "inputs": {
+          "inNumber": 1
+        },
+        "outputs": {
+          "outNumber": 33
+        },
+        "position": {
+          "x": 50,
+          "y": 50
+        }
+      },
+      "Container1": {
+        "label": "Container 1",
+        "inputs": {},
+        "outputs": {},
+        "inputNodes": [
+          "Sleeper1"
+        ],
+        "outputNode": false,
+        "position": {
+          "x": 300,
+          "y": 50
+        }
+      },
+      "Container2": {
+        "label": "Container 2",
+        "inputs": {},
+        "outputs": {},
+        "inputNodes": [],
+        "outputNode": false,
+        "position": {
+          "x": 50,
+          "y": 50
+        },
+        "parent": "Container1"
+      },
+      "Sleeper2": {
+        "key": "services/computational/itis/sleeper",
+        "version": "0.0.0",
+        "inputs": {
+          "inNumber": 3
+        },
+        "inputNodes": [
+          "Container2"
+        ],
+        "position": {
+          "x": 350,
+          "y": 50
+        },
+        "parent": "Container1"
+      },
+      "Sleeper3": {
+        "key": "services/computational/itis/sleeper",
+        "version": "0.0.0",
+        "inputs": {
+          "inNumber": 2
+        },
+        "position": {
+          "x": 50,
+          "y": 50
+        },
+        "parent": "Container2"
+      }
+    }
+  }
+]
