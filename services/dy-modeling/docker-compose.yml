@@ -1,4 +1,4 @@
-version: '3.4'
+version: '3.6'
 services:
   client:
     build:      
@@ -7,7 +7,8 @@ services:
 #-------------------------------------------------------------------- 
   server:
     build:
-      context: server
+      context: ../../
+      dockerfile: services/dy-modeling/server/Dockerfile
       target: production
       args:
         web_app_port: 9090
@@ -22,10 +23,10 @@ services:
         io.simcore.description: '{"description": "Modeler viewer"}'
         io.simcore.authors: '{"authors": [{"name": "sanderegg", "email": "anderegg@itis.swiss", "affiliation": "ITIS Foundation"}]}'
         io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'        
-        io.simcore.inputs: '{"inputs": {"input_1":{"label": "Entities in", "displayOrder":0, "description": "List of entities", "type": "data:*/*"}}}'
+        io.simcore.inputs: '{"inputs": {"model_name":{"label": "The input file name", "displayOrder":0, "description": "Some 3D data", "type": "string"}}}'
         io.simcore.outputs: '{"outputs": {"output_1":{"label": "Entities out", "displayOrder":1, "description": "List of entities", "type": "data:*/*"}}}'
         simcore.service.settings: '[{"name": "ports", "type": "int", "value": 9090}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "env", "type": "string", "value": ["CS_S4L_HOSTNAME=modeler_xrpc-worker_%service_uuid%"]}]'
-        simcore.service.dependencies: '[{"key": "simcore/services/dynamic/modeler/xrpc-worker", "tag": "2.0.0"}]'
+        simcore.service.dependencies: '[{"key": "simcore/services/dynamic/modeler/xrpc-worker", "tag": "2.0.1"}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
