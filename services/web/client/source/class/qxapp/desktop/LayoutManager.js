@@ -10,7 +10,6 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     });
 
     this.__servicesPreload();
-    this.__nodeCheck();
 
     this.__navBar = this.__createNavigationBar();
     this.__navBar.setHeight(100);
@@ -70,33 +69,31 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       return navBar;
     },
 
-    __nodeCheck: function() {
+    __nodeCheck: function(services) {
       /** a little ajv test */
       let nodeCheck = new qx.io.request.Xhr("/resource/qxapp/node-meta-v0.0.1.json");
       nodeCheck.addListener("success", e => {
         let data = e.getTarget().getResponse();
         try {
           let ajv = new qxapp.wrappers.Ajv(data);
-          let store = qxapp.data.Store.getInstance();
-          store.addListener("servicesRegistered", ev => {
-            const services = ev.getData();
-            for (let i = 0; i < services.length; i++) {
-              const service = services[i];
-              let check = ajv.validate(service);
-              console.log("services validation result " + service.key + ":", check);
-            }
-          });
-          store.getServices();
+          for (const srvId in services) {
+            const service = services[srvId];
+            let check = ajv.validate(service);
+            console.log("services validation result " + service.key + ":", check);
+          }
         } catch (err) {
           console.error(err);
         }
-      });
+      }, this);
       nodeCheck.send();
     },
 
     __servicesPreload: function() {
       let store = qxapp.data.Store.getInstance();
-      store.getServices();
+      store.addListener("servicesRegistered", e => {
+        this.__nodeCheck(e.getData());
+      }, this);
+      store.getServices(true);
     }
   }
 });
