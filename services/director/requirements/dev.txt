@@ -1,6 +1,8 @@
 # paths relative to location of setup.py
--e .
+-e ".[test]"
 git+https://github.com/ITISFoundation/aiohttp_apiset.git@fixes_4_osparc#egg=aiohttp_apiset
+
+
 # extra dev tools
 autopep8
 pylint
