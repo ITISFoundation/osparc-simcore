@@ -281,35 +281,56 @@ function createSplineS4L(socketClient, pointList, uuid) {
 
 async function importModelS4L(modelName) {
   await loadModelInS4L(modelName);
-  // const solid_entities = await getEntitiesFromS4L(thrModelerTypes.EntityFilterType.SOLID_BODY_AND_MESH);
-  // const totalTransmittedMB = await transmitEntities(solid_entities);
-  // console.log(`Sent all GLTF scene: ${totalTransmittedMB}MB`);
-  const spline_entities = await getEntitiesFromS4L(thrModelerTypes.EntityFilterType.ALL);
-  for (let spline_index = 0; spline_index < spline_entities.length; spline_index++) {
-    const response = await s4lModelerClient.GetEntityWire(spline_entities[spline_index].uuid);    
-    if (response.length > 0) {
-      let listOfPoints = {
-        type: 'newSplineS4LRequested',
-        value: response,
-        uuid: spline_entities[spline_index].uuid,
-      };
-      console.log(`sending ${response.length} points`);
-      await transmitSpline(listOfPoints);
-    }
-    
-    // console.log(response);
-  }
+  const solid_entities = await getEntitiesFromS4L(thrModelerTypes.EntityFilterType.SOLID_BODY_AND_MESH);
+  const totalTransmittedMB = await transmitEntities(solid_entities);
+  console.log(`Sent all GLTF scene: ${totalTransmittedMB}MB`);
+  const splineEntities = await getEntitiesFromS4L(thrModelerTypes.EntityFilterType.WIRE);
+  const totalTransmittedSplineMB = await transmitSplines(splineEntities);
+  console.log(`Sent all GLTF scene: ${totalTransmittedSplineMB}MB`);
 }
 
-function transmitSpline(listOfPoints) {
+async function transmitSplines(splineEntities) {
+  let totalTransmittedMB = 0;
+  for (let splineIndex = 0; splineIndex < splineEntities.length; splineIndex++) {
+    const wireObject = await getWireFromS4l(splineEntities[splineIndex]);
+    const transmittedBytes = await transmitSpline(wireObject);
+    totalTransmittedMB += transmittedBytes/(1024.0*1024.0);
+  }
+  return totalTransmittedMB;
+}
+
+function getWireFromS4l(entity) {
+  return new Promise(function(resolve, reject) {
+    s4lModelerClient.GetEntityWire(entity.uuid, function(err, wirePoints) {
+      if (err) {
+        console.log(`error while getting wire: ${err}`)
+        reject(err);
+      }
+      else {
+        console.log(`received wire of ${wirePoints.length} points`);
+        let wireObject = {
+          type: 'newSplineS4LRequested',
+          value: wirePoints,
+          uuid: entity.uuid,
+          name: entity.name,
+          pathNames: entity.pathNames,
+          pathUuids: entity.pathUuids,
+          color: entity.color,
+        };
+        resolve(wireObject);
+      }
+    });
+  });
+}
+function transmitSpline(wireObject) {
   return new Promise(function(resolve, reject){
     if (!connectedClient) {
       console.log("no client...");
       reject();
     }
-    const sceneSizeBytes = sizeof(listOfPoints);
-    console.log(`sending points ${sceneSizeBytes} to client...`);
-    connectedClient.binary(true).emit('newSplineS4LRequested', listOfPoints, function () {
+    const sceneSizeBytes = sizeof(wireObject);
+    console.log(`sending ${wireObject.value.length} points of size ${sceneSizeBytes} to client...`);
+    connectedClient.binary(true).emit('newSplineS4LRequested', wireObject, function () {
       // callback fct from client after receiving data
       console.log(`received acknowledgment from client`);
       resolve(sceneSizeBytes);
@@ -374,6 +395,7 @@ function getEncodedSceneFromS4L(entity) {
           let encodedScene = {
             type: 'importModelScene',
             value: scene.data,
+            path: entity.path,
           };
           resolve(encodedScene);
         }
