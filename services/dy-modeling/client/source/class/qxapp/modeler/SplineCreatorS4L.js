@@ -75,7 +75,7 @@ qx.Class.define("qxapp.modeler.SplineCreatorS4L", {
       return true;
     },
 
-    splineFromS4L : function(response) {      
+    splineFromS4L : function(response) {
       let spline = this.__threeView.getThreeWrapper().createSpline(response.value, response.color);
       spline.name = response.name;
       spline.uuid = response.uuid;
