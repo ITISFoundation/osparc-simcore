@@ -54,7 +54,7 @@ qx.Class.define("qxapp.component.EntityList", {
       let data = {
         label: "Model",
         entityId: "root",
-        path: "Model",
+        path: "root",
         checked: true,
         children: []
       };
@@ -161,7 +161,7 @@ qx.Class.define("qxapp.component.EntityList", {
       let newItem = {
         entityId: entityId,
         label: name,
-        path: path ? path : "Model/"+name,
+        path: path ? path : "root/"+entityId,
         checked: true
       };
       let newItemModel = qx.data.marshal.Json.createModel(newItem, true);
