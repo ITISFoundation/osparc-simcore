@@ -64,6 +64,53 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
         "projects": projects,
         "templates": templates
       };
+    },
+
+    createTokenResources: function() {
+      // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
+      // SEE: api/specs/webserver/v0/openapi-user.yaml
+      const basePath = qxapp.io.rest.ResourceFactory.API;
+
+      // Singular resource
+      let token = new qxapp.io.rest.Resource({
+        // Get token
+        get: {
+          method: "GET",
+          url: basePath+"/my/tokens/{service}"
+        },
+
+        // Update token
+        put: {
+          method: "PUT",
+          url: basePath+"/my/tokens/{service}"
+        },
+
+        // Delete token
+        del: {
+          method: "DELETE",
+          url: basePath+"/my/tokens/{service}"
+        }
+      });
+
+      // Plural resource
+      var tokens = new qxapp.io.rest.Resource({
+        // Retrieve tokens
+        get: {
+          method: "GET",
+          url: basePath+"/my/tokens"
+        },
+
+        // Create token
+        post: {
+          method: "POST",
+          url: basePath+"/my/tokens"
+        }
+      });
+
+      return {
+        "token": token,
+        "tokens": tokens
+      };
     }
 
   } // members

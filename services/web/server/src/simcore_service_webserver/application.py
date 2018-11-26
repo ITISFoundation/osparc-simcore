@@ -21,6 +21,7 @@ from .sockets import setup_sockets
 from .statics import setup_statics
 from .storage import setup_storage
 from .projects import setup_projects
+from .users import setup_users
 
 log = logging.getLogger(__name__)
 
@@ -53,6 +54,7 @@ def create_application(config: dict):
     setup_director(app)
     setup_s3(app)
     setup_storage(app)
+    setup_users(app)
     setup_projects(app, debug=True) # TODO: deactivate fakes i.e. debug=testing
 
     return app
