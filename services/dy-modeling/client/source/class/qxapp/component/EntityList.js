@@ -210,12 +210,47 @@ qx.Class.define("qxapp.component.EntityList", {
       this.__tree.setSelection(newSelection);
     },
 
+    __getLeafList: function(item, leaves) {
+      if (item.getChildren == null) { // eslint-disable-line no-eq-null
+        leaves.push(item);
+      } else {
+        for (let i = 0; i < item.getChildren().length; i++) {
+          this.__getLeafList(item.getChildren().toArray()[i], leaves);
+        }
+      }
+    },
+
+    __findUuid: function(uuid) {
+      let parent = this.__tree.getModel();
+      let list = [];
+      this.__getLeafList(parent, list);
+      for (let j = 0; j < list.length; j++) {
+        if (uuid === list[j].getEntityId()) {
+          return list[j];
+        }
+      }
+      return null;
+    },
+
     removeEntity: function(uuid) {
-      const model = this.__tree.getModel();
-      let children = model.getChildren().toArray();
-      for (let i = 0; i < children.length; i++) {
-        if (uuid === children[i].getEntityId()) {
-          model.getChildren().remove(children[i]);
+      let item = this.__findUuid(uuid);
+      if (item) {
+        let pathSplitted = item.getPathId().split("/");
+        let parent = this.__tree.getModel();
+        for (let i = 1; i < pathSplitted.length-1; i++) {
+          let children = parent.getChildren().toArray();
+          for (let j = 0; j < children.length; j++) {
+            if (children[j].getEntityId() === pathSplitted[i]) {
+              parent = children[j];
+              break;
+            }
+          }
+        }
+        let children = parent.getChildren().toArray();
+        for (let i = 0; i < children.length; i++) {
+          if (uuid === children[i].getEntityId()) {
+            parent.getChildren().remove(children[i]);
+          }
         }
       }
     },
@@ -224,12 +259,12 @@ qx.Class.define("qxapp.component.EntityList", {
       if (uuids === null) {
         this.__tree.resetSelection();
       } else {
-        const model = this.__tree.getModel();
         let selected = new qx.data.Array();
-        let children = model.getChildren().toArray();
-        for (let i = 0; i < children.length; i++) {
-          if (uuids.includes(children[i].getEntityId())) {
-            selected.push(children[i]);
+        for (let i = 0; i < uuids.length; i++) {
+          const uuid = uuids[i];
+          let item = this.__findUuid(uuid);
+          if (item) {
+            selected.push(item);
           }
         }
         this.__tree.setSelection(selected);
