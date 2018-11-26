@@ -1,5 +1,4 @@
 import logging
-import time
 
 import attr
 from aiohttp import web
@@ -9,6 +8,7 @@ from servicelib.rest_utils import extract_and_validate
 from . import __version__
 from .rest_models import FileMetaDataSchema
 from .settings import RQT_DSM_KEY
+from .db_helpers import get_token_key_and_secret
 
 log = logging.getLogger(__name__)
 
@@ -25,11 +25,15 @@ async def check_health(request: web.Request):
     assert not query
     assert not body
 
+    token_key, token_secret = get_token_key_and_secret(request, 0)
+
     # we play with session here
     data = {
         'name':__name__.split('.')[0],
         'version': __version__,
         'status': 'SERVICE_RUNNING',
+        'token_key': token_key,
+        'token_key':token_secret
     }
     return data
 
