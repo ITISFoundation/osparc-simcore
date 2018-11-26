@@ -24,7 +24,12 @@ qx.Class.define("qxapp.component.EntityListItem", {
       nullable: true
     },
 
-    path: {
+    pathId: {
+      check: "String",
+      nullable: true
+    },
+
+    pathLabel: {
       check: "String",
       nullable: true
     },
