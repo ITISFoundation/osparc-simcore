@@ -1,17 +1,22 @@
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 import uuid
 
-import docker
 import pytest
-from simcore_service_director import (
-    producer,
-    exceptions
-)
+
+import docker
+from simcore_service_director import exceptions, producer
+
 
 @pytest.fixture
-async def run_services(loop, configure_registry_access, push_services, docker_swarm, user_id): #pylint: disable=W0613, W0621
+async def run_services(loop, configure_registry_access, push_services, docker_swarm, user_id):
     started_services = []
     async def push_start_services(number_comp, number_dyn):
-        pushed_services = push_services(number_comp,number_dyn, 60)
+        pushed_services = push_services(number_comp, number_dyn, 60)
         assert len(pushed_services) == (number_comp + number_dyn)
         for pushed_service in pushed_services:
             service_description = pushed_service["service_description"]
@@ -31,7 +36,8 @@ async def run_services(loop, configure_registry_access, push_services, docker_sw
             assert "service_version" in started_service
             assert started_service["service_version"] == service_version
             # should not throw
-            await producer.get_service_details(service_uuid)
+            node_details = await producer.get_service_details(service_uuid)
+            assert node_details
             started_services.append(started_service)
         return started_services
 
@@ -45,13 +51,13 @@ async def run_services(loop, configure_registry_access, push_services, docker_sw
             await producer.get_service_details(service_uuid)
 
 
-async def test_start_stop_service(run_services): #pylint: disable=W0613, W0621
+async def test_start_stop_service(run_services):
     # standard test
-    await run_services(1,1)
+    await run_services(number_comp=1, number_dyn=1)
 
 
-async def test_service_assigned_env_variables(run_services, user_id): #pylint: disable=W0621
-    started_services = await run_services(1,1)
+async def test_service_assigned_env_variables(run_services, user_id):
+    started_services = await run_services(number_comp=1, number_dyn=1)
     client = docker.from_env()
     for service in started_services:
         service_uuid = service["service_uuid"]
@@ -76,12 +82,13 @@ async def test_service_assigned_env_variables(run_services, user_id): #pylint: d
         assert envs_dict["SIMCORE_USER_ID"] == user_id
 
 
-async def test_interactive_service_published_port(run_services): #pylint: disable=W0621
-    running_dynamic_services = await run_services(0,1)
+async def test_interactive_service_published_port(run_services):
+    running_dynamic_services = await run_services(number_comp=0, number_dyn=1)
     assert len(running_dynamic_services) == 1
 
     service = running_dynamic_services[0]
     assert "published_port" in service
+
     service_port = service["published_port"]
     assert service_port > 0
 
@@ -89,6 +96,7 @@ async def test_interactive_service_published_port(run_services): #pylint: disabl
     service_uuid = service["service_uuid"]
     list_of_services = client.services.list(filters={"label":"uuid=" + service_uuid})
     assert len(list_of_services) == 1
+
     docker_service = list_of_services[0]
     low_level_client = docker.APIClient()
     service_information = low_level_client.inspect_service(docker_service.id)
