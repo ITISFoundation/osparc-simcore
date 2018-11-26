@@ -279,93 +279,122 @@ function createSplineS4L(socketClient, pointList, uuid) {
   });
 }
 
-function importModelS4L(modelName) {
-  loadModelInS4L(modelName)
-    .then(getEntitiesFromS4L)
-    .then(transmitEntities)
-    .then(function(totalTransmittedMB){      
-      console.log(`Sent all GLTF scene: ${totalTransmittedMB}MB`);
-    });
-
-  function loadModelInS4L(modelName) {
-    return new Promise(function(resolve, reject){
-      s4lAppClient.NewDocument(function(){
-        let modelPath = S4L_DATA_PATH + modelName;
-        console.log('Importing', modelPath);
-        s4lModelerClient.ImportModel(modelPath, function(err){
-          if (err) {
-            console.log(`loading in S4L failed with ${err}`)
-            reject(err);
-          }
-          else {
-            console.log("loading in S4L done")
-            resolve();
-          }          
-        });
-      });
-    });
-    
-  }
-  function getEntitiesFromS4L() {
-    return new Promise(function(resolve, reject){
-      s4lModelerClient.GetFilteredEntities(thrModelerTypes.EntityFilterType.SOLID_BODY_AND_MESH,
-        function (err, entities) {
-          if (err) {
-            console.log(`error while retrieving entities ${err}`)
-            reject(err);
-          }
-          else {
-            console.log(`received ${entities.length} entities`)
-            resolve(entities);
-          }
-        });
-    });    
-  }
-  async function transmitEntities(entities) {
-    let totalTransmittedMB = 0;
-    for (let i = 0; i < entities.length; i++) {
-      const encodedScene = await getEncodedSceneFromS4L(entities[i]);
-      const transmittedBytes = await sendEncodedSceneToClient(encodedScene);
-      totalTransmittedMB += transmittedBytes/(1024.0*1024.0);
+async function importModelS4L(modelName) {
+  await loadModelInS4L(modelName);
+  // const solid_entities = await getEntitiesFromS4L(thrModelerTypes.EntityFilterType.SOLID_BODY_AND_MESH);
+  // const totalTransmittedMB = await transmitEntities(solid_entities);
+  // console.log(`Sent all GLTF scene: ${totalTransmittedMB}MB`);
+  const spline_entities = await getEntitiesFromS4L(thrModelerTypes.EntityFilterType.ALL);
+  for (let spline_index = 0; spline_index < spline_entities.length; spline_index++) {
+    const response = await s4lModelerClient.GetEntityWire(spline_entities[spline_index].uuid);    
+    if (response.length > 0) {
+      let listOfPoints = {
+        type: 'newSplineS4LRequested',
+        value: response,
+        uuid: spline_entities[spline_index].uuid,
+      };
+      console.log(`sending ${response.length} points`);
+      await transmitSpline(listOfPoints);
     }
-    return totalTransmittedMB;
+    
+    // console.log(response);
   }
+}
 
-  function getEncodedSceneFromS4L(entity) {
-    return new Promise(function(resolve, reject) {
-      s4lModelerClient.GetEntitiesEncodedScene([entity.uuid], thrModelerTypes.SceneFileFormat.GLTF,
-        function (err, scene) {
-          if (err) {
-            console.log(`error while getting encoded scene: ${err}`)
-            reject(err);
-          }
-          else {
-            console.log(`received scene of ${sizeof(scene)} bytes`);
-            let encodedScene = {
-              type: 'importModelScene',
-              value: scene.data,
-            };
-            resolve(encodedScene);
-          }
-        })
+function transmitSpline(listOfPoints) {
+  return new Promise(function(resolve, reject){
+    if (!connectedClient) {
+      console.log("no client...");
+      reject();
+    }
+    const sceneSizeBytes = sizeof(listOfPoints);
+    console.log(`sending points ${sceneSizeBytes} to client...`);
+    connectedClient.binary(true).emit('newSplineS4LRequested', listOfPoints, function () {
+      // callback fct from client after receiving data
+      console.log(`received acknowledgment from client`);
+      resolve(sceneSizeBytes);
     });
-  }
-  
-  function sendEncodedSceneToClient(scene) {
-    return new Promise(function(resolve, reject) {
-      if (!connectedClient) {
-        console.log("no client...");
-        reject();
-      }
-      const sceneSizeBytes = sizeof(scene);
-      console.log(`sending scene ${sceneSizeBytes} to client...`);
-      connectedClient.binary(true).emit('importModelScene', scene, function () {
-        // callback fct from client after receiving data
-        console.log(`received acknowledgment from client`);
-        resolve(sceneSizeBytes);
+  });
+}
+
+function loadModelInS4L(modelName) {
+  return new Promise(function(resolve, reject){
+    s4lAppClient.NewDocument(function(){
+      let modelPath = S4L_DATA_PATH + modelName;
+      console.log('Importing', modelPath);
+      s4lModelerClient.ImportModel(modelPath, function(err){
+        if (err) {
+          console.log(`loading in S4L failed with ${err}`)
+          reject(err);
+        }
+        else {
+          console.log("loading in S4L done")
+          resolve();
+        }          
       });
     });
+  });
+}
+
+function getEntitiesFromS4L(entityType) {
+  return new Promise(function(resolve, reject){
+    s4lModelerClient.GetFilteredEntities(entityType,
+      function (err, entities) {
+        if (err) {
+          console.log(`error while retrieving entities ${err}`)
+          reject(err);
+        }
+        else {
+          console.log(`received ${entities.length} entities`)
+          resolve(entities);
+        }
+      });
+  });    
+}
+async function transmitEntities(entities) {
+  let totalTransmittedMB = 0;
+  for (let i = 0; i < entities.length; i++) {
+    const encodedScene = await getEncodedSceneFromS4L(entities[i]);
+    const transmittedBytes = await sendEncodedSceneToClient(encodedScene);
+    totalTransmittedMB += transmittedBytes/(1024.0*1024.0);
   }
+  return totalTransmittedMB;
+}
+
+function getEncodedSceneFromS4L(entity) {
+  return new Promise(function(resolve, reject) {
+    s4lModelerClient.GetEntitiesEncodedScene([entity.uuid], thrModelerTypes.SceneFileFormat.GLTF,
+      function (err, scene) {
+        if (err) {
+          console.log(`error while getting encoded scene: ${err}`)
+          reject(err);
+        }
+        else {
+          console.log(`received scene of ${sizeof(scene)} bytes`);
+          let encodedScene = {
+            type: 'importModelScene',
+            value: scene.data,
+          };
+          resolve(encodedScene);
+        }
+      })
+  });
+}
+
+function sendEncodedSceneToClient(scene) {
+  return new Promise(function(resolve, reject) {
+    if (!connectedClient) {
+      console.log("no client...");
+      reject();
+    }
+    const sceneSizeBytes = sizeof(scene);
+    console.log(`sending scene ${sceneSizeBytes} to client...`);
+    connectedClient.binary(true).emit('importModelScene', scene, function () {
+      // callback fct from client after receiving data
+      console.log(`received acknowledgment from client`);
+      resolve(sceneSizeBytes);
+    });
+  });
 }
 
 function booleanOperationS4L(socketClient, entityMeshesScene, operationType) {

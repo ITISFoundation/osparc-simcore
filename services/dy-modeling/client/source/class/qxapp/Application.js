@@ -207,6 +207,17 @@ qx.Class.define("qxapp.Application", {
             this.__threeView.importSceneFromBuffer(val.value);
           }
         }, this);
+
+        this._socket.on("newSplineS4LRequested", function (val, ackCb) {
+          ackCb();
+          if (val.type === "newSplineS4LRequested") {
+            
+            var splineCreator = new qxapp.modeler.SplineCreatorS4L(this.__threeView);
+            this.__threeView.startTool(splineCreator);
+            splineCreator.splineFromS4L(val);
+            this.__threeView.stopTool();
+          }
+        }, this);
       }, this);
       this._socket.addListener("disconnect", function() {
         console.log("disconnected from server websocket");
