@@ -1,6 +1,8 @@
 /* eslint no-warning-comments: "off" */
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true, "allow": ["__widgetChildren"] }] */
 
+const ROOT_ID = "00000000-0000-0000-0000-000000000000";
+
 qx.Class.define("qxapp.component.EntityList", {
   extend: qx.ui.window.Window,
 
@@ -53,8 +55,8 @@ qx.Class.define("qxapp.component.EntityList", {
     populateTree: function() {
       let data = {
         label: "Model",
-        entityId: "00000000-0000-0000-0000-000000000000",
-        pathId: "00000000-0000-0000-0000-000000000000",
+        entityId: ROOT_ID,
+        pathId: ROOT_ID,
         pathLabel: "Model",
         checked: true,
         children: []
@@ -133,8 +135,17 @@ qx.Class.define("qxapp.component.EntityList", {
 
     __removeEntityPressed: function() {
       let selectedIds = this.getSelectedEntityIds();
+      if (selectedIds.includes(ROOT_ID)) {
+        return;
+      }
       for (let i = 0; i < selectedIds.length; i++) {
-        this.fireDataEvent("removeEntityRequested", selectedIds[i]);
+        if (this.__findUuidInLeaves(selectedIds[i])) {
+          // Leaf
+          this.fireDataEvent("removeEntityRequested", selectedIds[i]);
+        } else {
+          // Folder
+          // TODO: Delete folders
+        }
       }
     },
 
@@ -218,7 +229,7 @@ qx.Class.define("qxapp.component.EntityList", {
       }
     },
 
-    __findUuid: function(uuid) {
+    __findUuidInLeaves: function(uuid) {
       let parent = this.__tree.getModel();
       let list = [];
       this.__getLeafList(parent, list);
@@ -250,8 +261,9 @@ qx.Class.define("qxapp.component.EntityList", {
     },
 
     removeEntity: function(uuid) {
-      let item = this.__findUuid(uuid);
+      let item = this.__findUuidInLeaves(uuid);
       if (item) {
+        // Leave
         let pathSplitted = item.getPathId().split("/");
         let parent = this.__tree.getModel();
         for (let i = 1; i < pathSplitted.length-1; i++) {
@@ -279,7 +291,7 @@ qx.Class.define("qxapp.component.EntityList", {
         let selected = new qx.data.Array();
         for (let i = 0; i < uuids.length; i++) {
           const uuid = uuids[i];
-          let item = this.__findUuid(uuid);
+          let item = this.__findUuidInLeaves(uuid);
           if (item) {
             selected.push(item);
             // TODO: open parent folders
