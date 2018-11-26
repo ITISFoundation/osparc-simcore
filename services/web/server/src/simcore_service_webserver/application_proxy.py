@@ -26,7 +26,7 @@ def setup(app: web.Application):
 
 
     client = director_sdk.get_director()
-    services = await director.services_get(service_type="interactive")
+    # services = await director.services_get(service_type="interactive")
 
     monitor = ServiceMonitor(app["director.client"])
 
