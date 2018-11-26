@@ -1,5 +1,4 @@
 /* global document */
-/* global window */
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true, "allow": ["__dirtyColors"] }] */
 
 const NO_TOOL = 0;
@@ -34,7 +33,7 @@ qx.Class.define("qxapp.component.ThreeView", {
           document.addEventListener("mousedown", this._onMouseDown.bind(this), false);
           document.addEventListener("mousemove", this._onMouseHover.bind(this), false);
 
-          window.addEventListener("resize", ev => {
+          this.addListener("resize", ev => {
             this.__threeWrapper.setSize(this.getBounds().width, this.getBounds().height);
           }, this);
 
@@ -104,8 +103,8 @@ qx.Class.define("qxapp.component.ThreeView", {
         return;
       }
 
-      let posX = (event.clientX / window.innerWidth) * 2 - 1;
-      let posY = -(event.clientY / window.innerHeight) * 2 + 1;
+      let posX = (event.clientX / this.getBounds().width) * 2 - 1;
+      let posY = -(event.clientY / this.getBounds().height) * 2 + 1;
 
       if (this.__selectionMode === TOOL_ACTIVE && this.__activeTool) {
         let isShiftKeyPressed = event.shiftKey;
@@ -129,8 +128,8 @@ qx.Class.define("qxapp.component.ThreeView", {
         return;
       }
 
-      let posX = (event.clientX / window.innerWidth) * 2 - 1;
-      let posY = -(event.clientY / window.innerHeight) * 2 + 1;
+      let posX = (event.clientX / this.getBounds().width) * 2 - 1;
+      let posY = -(event.clientY / this.getBounds().height) * 2 + 1;
       let intersects = this.__threeWrapper.intersectEntities(this.__entities, posX, posY);
 
       if (this.__selectionMode === TOOL_ACTIVE && this.__activeTool) {
