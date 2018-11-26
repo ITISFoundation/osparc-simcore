@@ -53,7 +53,8 @@ qx.Class.define("qxapp.component.ThreeView", {
           document.addEventListener("mousedown", this._onMouseDown.bind(this), false);
           document.addEventListener("mousemove", this._onMouseHover.bind(this), false);
 
-          window.addEventListener("resize", function() {
+          window.addEventListener("resize", ev => {
+            console.log("ThreeView resize", ev);
             this.set({
               width: window.innerWidth,
               height: window.innerHeight

@@ -74,6 +74,8 @@ qx.Class.define("qxapp.Application", {
       // Document is the application root
       let doc = this.getRoot();
 
+      let layout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+
       // openning web socket
       this._socket = new qxapp.wrappers.WebSocket("app");
       this._socket.connect();
@@ -120,8 +122,13 @@ qx.Class.define("qxapp.Application", {
           .getFont());
 
 
-      // components to document
-      doc.add(this.__threeView);
+      // components to layout
+      layout.add(this.__threeView, {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+      });
 
       let toolBarcontainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(1)).set({
         backgroundColor: "white",
@@ -132,13 +139,18 @@ qx.Class.define("qxapp.Application", {
         toolBarcontainer.add(this._menuBar);
       }
       toolBarcontainer.add(this.__availableServicesBar);
-      doc.add(toolBarcontainer);
+      layout.add(toolBarcontainer);
 
       if (showUserMenu) {
-        doc.add(userMenu, {
+        layout.add(userMenu, {
           right: 30
         });
       }
+
+      // components to document
+      doc.add(layout, {
+        edge: 0
+      });
 
       menuBarHeight = showMenuBar ? menuBarHeight : 0;
       this.__entityList.moveTo(10, menuBarHeight + avaiBarHeight + 10);
