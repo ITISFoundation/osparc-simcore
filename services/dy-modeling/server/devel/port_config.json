@@ -1,0 +1,18 @@
+{
+    "version":"0.1",
+    "schema": {
+        "inputs":{
+            "model_name": {
+                "displayOrder": 0,
+                "label": "The input file name",
+                "description": "Some 3D data",
+                "type": "string"
+            }
+        },
+        "outputs":{}
+    },
+    "inputs": {
+        "model_name": "DemoDec_OnlyHead_Clean_Neuron.smash"
+    },
+    "outputs": {}
+}
