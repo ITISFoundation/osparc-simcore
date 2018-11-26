@@ -1,9 +1,9 @@
-# TODO: W0611:Unused import ...
-# pylint: disable=W0611
-# TODO: W0613:Unused argument ...
-# pylint: disable=W0613
-#
-# pylint: disable=W0621
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 import asyncio
 import os
 import subprocess
@@ -26,11 +26,12 @@ from simcore_service_storage.s3 import (DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID,
                                         SIMCORE_S3_STR)
 from utils import ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER
 
-# fixtures -------------------------------------------------------
+
 
 @pytest.fixture(scope='session')
 def here():
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
 
 @pytest.fixture(scope='session')
 def package_dir(here):
@@ -38,11 +39,13 @@ def package_dir(here):
     assert dirpath.exists()
     return dirpath
 
+
 @pytest.fixture(scope='session')
 def osparc_simcore_root_dir(here):
     root_dir = here.parent.parent.parent
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
     return root_dir
+
 
 @pytest.fixture(scope='session')
 def python27_exec(osparc_simcore_root_dir, tmpdir_factory, here):
@@ -52,16 +55,18 @@ def python27_exec(osparc_simcore_root_dir, tmpdir_factory, here):
     if not venv27.exists():
         # create its own virtualenv
         venv27 = tmpdir_factory.mktemp("virtualenv") / ".venv27"
-        cmd = "virtualenv --python=python2 %s"%(venv27) # TODO: how to split in command safely?
-        assert subprocess.check_call(cmd.split()) == 0, "Unable to run %s" %cmd
+        # TODO: how to split in command safely?
+        cmd = "virtualenv --python=python2 %s" % (venv27)
+        assert subprocess.check_call(
+            cmd.split()) == 0, "Unable to run %s" % cmd
 
         # installs python2 requirements
         pip_exec = venv27 / "bin" / "pip"
         assert pip_exec.exists()
         requirements_py2 = here.parent / "requirements/py27.txt"
         cmd = "{} install -r {}".format(pip_exec, requirements_py2)
-        assert subprocess.check_call(cmd.split()) == 0, "Unable to run %s" %cmd
-
+        assert subprocess.check_call(
+            cmd.split()) == 0, "Unable to run %s" % cmd
 
     python27_exec = venv27 / "bin" / "python2.7"
     assert python27_exec.exists()
@@ -73,6 +78,7 @@ def python27_path(python27_exec):
     return Path(python27_exec).parent.parent
     # Assumes already created with make .venv27
 
+
 @pytest.fixture(scope='session')
 def docker_compose_file(here):
     """ Overrides pytest-docker fixture
@@ -80,12 +86,12 @@ def docker_compose_file(here):
     old = os.environ.copy()
 
     # docker-compose reads these environs
-    os.environ['POSTGRES_DB']=DATABASE
-    os.environ['POSTGRES_USER']=USER
-    os.environ['POSTGRES_PASSWORD']=PASS
-    os.environ['POSTGRES_ENDPOINT']="FOO" # TODO: update config schema!!
-    os.environ['MINIO_ACCESS_KEY']=ACCESS_KEY
-    os.environ['MINIO_SECRET_KEY']=SECRET_KEY
+    os.environ['POSTGRES_DB'] = DATABASE
+    os.environ['POSTGRES_USER'] = USER
+    os.environ['POSTGRES_PASSWORD'] = PASS
+    os.environ['POSTGRES_ENDPOINT'] = "FOO"  # TODO: update config schema!!
+    os.environ['MINIO_ACCESS_KEY'] = ACCESS_KEY
+    os.environ['MINIO_SECRET_KEY'] = SECRET_KEY
 
     dc_path = here / 'docker-compose.yml'
 
@@ -94,12 +100,13 @@ def docker_compose_file(here):
 
     os.environ = old
 
+
 @pytest.fixture(scope='session')
 def postgres_service(docker_services, docker_ip):
     url = 'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
-        user = USER,
-        password = PASS,
-        database = DATABASE,
+        user=USER,
+        password=PASS,
+        database=DATABASE,
         host=docker_ip,
         port=docker_services.port_for('postgres', 5432),
     )
@@ -112,26 +119,28 @@ def postgres_service(docker_services, docker_ip):
     )
 
     postgres_service = {
-        'user' : USER,
-        'password' : PASS,
-        'database' : DATABASE,
-        'host' : docker_ip,
-        'port' : docker_services.port_for('postgres', 5432)
+        'user': USER,
+        'password': PASS,
+        'database': DATABASE,
+        'host': docker_ip,
+        'port': docker_services.port_for('postgres', 5432)
     }
 
     return postgres_service
 
+
 @pytest.fixture(scope='session')
 def postgres_service_url(postgres_service, docker_services, docker_ip):
     postgres_service_url = 'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
-        user = USER,
-        password = PASS,
-        database = DATABASE,
+        user=USER,
+        password=PASS,
+        database=DATABASE,
         host=docker_ip,
         port=docker_services.port_for('postgres', 5432),
     )
 
     return postgres_service_url
+
 
 @pytest.fixture(scope='function')
 async def postgres_engine(loop, postgres_service_url):
@@ -163,16 +172,19 @@ def minio_service(docker_services, docker_ip):
     return {
         'endpoint': '{ip}:{port}'.format(ip=docker_ip, port=docker_services.port_for('minio', 9000)),
         'access_key': ACCESS_KEY,
-        'secret_key' : SECRET_KEY,
-        'bucket_name' : BUCKET_NAME,
-        }
+        'secret_key': SECRET_KEY,
+        'bucket_name': BUCKET_NAME,
+    }
+
 
 @pytest.fixture(scope="module")
 def s3_client(minio_service):
     from s3wrapper.s3_client import S3Client
 
-    s3_client = S3Client(endpoint=minio_service['endpoint'],access_key=minio_service["access_key"], secret_key=minio_service["secret_key"])
+    s3_client = S3Client(
+        endpoint=minio_service['endpoint'], access_key=minio_service["access_key"], secret_key=minio_service["secret_key"])
     return s3_client
+
 
 @pytest.fixture(scope="function")
 def mock_files_factory(tmpdir_factory):
@@ -180,7 +192,8 @@ def mock_files_factory(tmpdir_factory):
         filepaths = []
         for _i in range(count):
             name = str(uuid.uuid4())
-            filepath = os.path.normpath(str(tmpdir_factory.mktemp('data').join(name + ".txt")))
+            filepath = os.path.normpath(
+                str(tmpdir_factory.mktemp('data').join(name + ".txt")))
             with open(filepath, 'w') as fout:
                 fout.write("Hello world\n")
             filepaths.append(filepath)
@@ -198,10 +211,11 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
     bucket_name = BUCKET_NAME
     s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
 
-    #TODO: use pip install Faker
-    users = [ 'alice', 'bob', 'chuck', 'dennis']
+    # TODO: use pip install Faker
+    users = ['alice', 'bob', 'chuck', 'dennis']
 
-    projects = ['astronomy', 'biology', 'chemistry', 'dermatology', 'economics', 'futurology', 'geology']
+    projects = ['astronomy', 'biology', 'chemistry',
+                'dermatology', 'economics', 'futurology', 'geology']
     location = SIMCORE_S3_STR
 
     nodes = ['alpha', 'beta', 'gamma', 'delta']
@@ -214,41 +228,43 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
         idx = randrange(len(users))
         user_name = users[idx]
         user_id = idx + 10
-        idx =  randrange(len(projects))
+        idx = randrange(len(projects))
         project_name = projects[idx]
         project_id = idx + 100
-        idx =  randrange(len(nodes))
+        idx = randrange(len(nodes))
         node = nodes[idx]
         node_id = idx + 10000
         file_name = str(counter)
-        object_name = Path(str(project_id), str(node_id), str(counter)).as_posix()
+        object_name = Path(str(project_id), str(
+            node_id), str(counter)).as_posix()
         file_uuid = Path(object_name).as_posix()
 
         assert s3_client.upload_file(bucket_name, object_name, _file)
 
-        d = { 'file_uuid' : file_uuid,
-              'location_id' : "0",
-              'location' : location,
-              'bucket_name' : bucket_name,
-              'object_name' : object_name,
-              'project_id' : str(project_id),
-              'project_name' : project_name,
-              'node_id' : str(node_id),
-              'node_name' : node,
-              'file_name' : file_name,
-              'user_id' : str(user_id),
-              'user_name' : user_name
-            }
+        d = {'file_uuid': file_uuid,
+             'location_id': "0",
+             'location': location,
+             'bucket_name': bucket_name,
+             'object_name': object_name,
+             'project_id': str(project_id),
+             'project_name': project_name,
+             'node_id': str(node_id),
+             'node_name': node,
+             'file_name': file_name,
+             'user_id': str(user_id),
+             'user_name': user_name
+             }
 
         counter = counter + 1
 
         data[object_name] = FileMetaData(**d)
 
-        utils.insert_metadata(postgres_service_url, data[object_name]) #pylint: disable=no-member
-
+        # pylint: disable=no-member
+        utils.insert_metadata(postgres_service_url,
+                              data[object_name])
 
     total_count = 0
-    for _obj in s3_client.list_objects_v2(bucket_name, recursive = True):
+    for _obj in s3_client.list_objects_v2(bucket_name, recursive=True):
         total_count = total_count + 1
 
     assert total_count == N
@@ -260,10 +276,6 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
     # db
     utils.drop_tables(url=postgres_service_url)
 
-# This is weird, somehow the default loop gives problems with pytest asyncio, so lets override it
-@pytest.fixture
-def loop(event_loop):
-    return event_loop
 
 @pytest.fixture(scope="function")
 async def datcore_testbucket(loop, python27_exec, mock_files_factory):
@@ -282,19 +294,20 @@ async def datcore_testbucket(loop, python27_exec, mock_files_factory):
 
     ready = False
     counter = 0
-    while not ready and counter<5:
+    while not ready and counter < 5:
         data = await dcw.list_files()
         ready = len(data) == 2
         await asyncio.sleep(10)
         counter = counter + 1
 
-
     yield BUCKET_NAME
 
     await dcw.delete_test_dataset(BUCKET_NAME)
 
+
 @pytest.fixture(scope="function")
 def dsm_fixture(s3_client, python27_exec, postgres_engine, loop):
     pool = ThreadPoolExecutor(3)
-    dsm_fixture = DataStorageManager(s3_client, python27_exec, postgres_engine, loop, pool, BUCKET_NAME)
+    dsm_fixture = DataStorageManager(
+        s3_client, python27_exec, postgres_engine, loop, pool, BUCKET_NAME)
     return dsm_fixture
