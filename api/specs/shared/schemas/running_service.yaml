@@ -32,7 +32,7 @@ components:
         service_uuid:
           description: The UUID attached to this service
           type: string
-          format: UUID
+          # format: UUID
           example: 123e4567-e89b-12d3-a456-426655440000
         service_key:
           type: string
