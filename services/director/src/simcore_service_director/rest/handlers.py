@@ -75,13 +75,12 @@ async def running_interactive_services_post(request, user_id, service_key, servi
 async def running_interactive_services_get(request, service_uuid):  # pylint:disable=unused-argument
     log.debug("Client does running_interactive_services_get request %s with service_uuid %s", request, service_uuid)
     try:
-        await producer.get_service_details(service_uuid)
+        service = await producer.get_service_details(service_uuid)
+        return web.json_response(data=dict(data=service), status=200)
     except exceptions.ServiceUUIDNotFoundError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
-
-    return web.json_response(status=204)
 
 async def running_interactive_services_delete(request, service_uuid):  # pylint:disable=unused-argument
     log.debug("Client does running_interactive_services_delete request %s with service_uuid %s", request, service_uuid)

@@ -87,7 +87,7 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **service_uuid** | [**str**](.md)| The uuid of the service | 
+ **service_uuid** | **str**| The uuid of the service | 
 
 ### Return type
 
@@ -105,7 +105,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **running_interactive_services_get**
-> InlineResponse204 running_interactive_services_get(service_uuid)
+> InlineResponse201 running_interactive_services_get(service_uuid)
 
 Succesfully returns if a service with the defined uuid is up and running
 
@@ -135,11 +135,11 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **service_uuid** | [**str**](.md)| The uuid of the service | 
+ **service_uuid** | **str**| The uuid of the service | 
 
 ### Return type
 
-[**InlineResponse204**](InlineResponse204.md)
+[**InlineResponse201**](InlineResponse201.md)
 
 ### Authorization
 
@@ -170,9 +170,9 @@ from pprint import pprint
 # create an instance of the API class
 api_instance = simcore_director_sdk.UsersApi()
 user_id = asdfgj233 # str | The ID of the user that starts the service
-service_key = simcore/services/dynamic/3d-viewer # str | The key (url) of the service
+service_key = ["simcore/services/comp/itis/sleeper","simcore/services/dynamic/3dviewer"] # str | The key (url) of the service
 service_uuid = 123e4567-e89b-12d3-a456-426655440000 # str | The uuid to assign the service with
-service_tag = 1.4 # str | The tag/version of the service (optional)
+service_tag = ["1.0.0","0.0.1"] # str | The tag/version of the service (optional)
 
 try:
     # Starts an interactive service in the oSparc platform and returns its entrypoint
@@ -188,7 +188,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **user_id** | **str**| The ID of the user that starts the service | 
  **service_key** | **str**| The key (url) of the service | 
- **service_uuid** | [**str**](.md)| The uuid to assign the service with | 
+ **service_uuid** | **str**| The uuid to assign the service with | 
  **service_tag** | **str**| The tag/version of the service | [optional] 
 
 ### Return type
@@ -223,8 +223,8 @@ from pprint import pprint
 
 # create an instance of the API class
 api_instance = simcore_director_sdk.UsersApi()
-service_key = simcore/services/dynamic/3d-viewer # str | The key (url) of the service
-service_version = 1.4 # str | The tag/version of the service
+service_key = ["simcore/services/comp/itis/sleeper","simcore/services/dynamic/3dviewer"] # str | The key (url) of the service
+service_version = ["1.0.0","0.0.1"] # str | The tag/version of the service
 
 try:
     # Returns details of the selected service if available in the oSparc platform

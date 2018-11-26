@@ -12,8 +12,6 @@ info:
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 
 servers:
-  - description: API server
-    url: '/v0'
   - description: Development server
     url: http://{host}:{port}/{version}
     variables:
@@ -25,6 +23,16 @@ servers:
         default: 'v0'
         enum:
           - 'v0'
+  - description: Production server    
+    url: http://director:{port}/{version}
+    variables:
+      port:
+        default: '8001'
+      version:
+        default: 'v0'
+        enum:
+          - 'v0'
+  
 
 # tags are used for organizing operations
 tags:
@@ -182,12 +190,12 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ServiceUuid'
       responses:
-        "204":
-          description: OK service exists and runs
+        "200":
+          description: OK service exists and runs. Returns service location.
           content:
             application/json:
               schema:
-                $ref: '../../shared/schemas/response204.yaml#/components/schemas/Response204Enveloped'
+                $ref: '../../shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
         "400":
           description: Malformed function call, missing field
           content:
@@ -258,7 +266,7 @@ components:
       required: true
       schema:
         type: string
-        format: uuid
+        # format: uuid
         example: 123e4567-e89b-12d3-a456-426655440000
 
     ServiceKeyPath:
@@ -268,8 +276,11 @@ components:
       required: true
       schema:
         type: string
-        format: url
-        example: simcore/services/dynamic/3d-viewer
+        description: distinctive name for the node based on the docker registry path
+        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+        example:
+          - simcore/services/comp/itis/sleeper
+          - simcore/services/dynamic/3dviewer
 
     ServiceKey:
       in: query
@@ -278,8 +289,11 @@ components:
       required: true
       schema:
         type: string
-        format: url
-        example: simcore/services/dynamic/3d-viewer
+        description: distinctive name for the node based on the docker registry path
+        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+        example:
+          - simcore/services/comp/itis/sleeper
+          - simcore/services/dynamic/3dviewer
 
     ServiceType:
       in: query
@@ -303,7 +317,7 @@ components:
       required: true
       schema:
         type: string
-        format: uuid
+        # format: uuid
         example: 123e4567-e89b-12d3-a456-426655440000
 
     ServiceVersionPath:
@@ -313,7 +327,12 @@ components:
       required: true
       schema:
         type: string
-        example: "1.4"
+        description: semantic version number
+        pattern: >-
+          ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+        example:
+          - 1.0.0
+          - 0.0.1
 
     ServiceVersion:
       in: query
@@ -322,4 +341,9 @@ components:
       required: false
       schema:
         type: string
-        example: "1.4"
+        description: semantic version number
+        pattern: >-
+          ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+        example:
+          - 1.0.0
+          - 0.0.1

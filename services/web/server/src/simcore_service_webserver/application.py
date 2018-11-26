@@ -54,6 +54,7 @@ def create_application(config: dict):
     setup_director(app)
     setup_s3(app)
     setup_storage(app)
+    setup_users(app)
     setup_projects(app, debug=True) # TODO: deactivate fakes i.e. debug=testing
     setup_app_proxy(app)
 
