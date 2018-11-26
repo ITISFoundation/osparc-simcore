@@ -84,7 +84,6 @@ qx.Class.define("qxapp.Application", {
       let html = document.documentElement;
 
       let docWidth = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
-      let docHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
 
       // initialize components
       let menuBarHeight = 35;
@@ -111,7 +110,6 @@ qx.Class.define("qxapp.Application", {
           .getFont());
 
       this.__threeView = new qxapp.component.ThreeView(
-        docWidth, docHeight,
         this._appModel.getColors().get3DView()
           .getBackground());
 
