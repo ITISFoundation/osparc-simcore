@@ -283,6 +283,27 @@ qx.Class.define("qxapp.component.ThreeView", {
     },
 
     centerCameraToBB: function() {
+      let center = {
+        x: 0,
+        y: 0,
+        z: 0
+      };
+      if (this.__entities.length > 0) {
+        let unionBBox = null;
+        for (let i = 0; i < this.__entities.length; i++) {
+          const ent = this.__entities[i];
+          if (ent.Name === "PlaneForSnapping") {
+            continue;
+          }
+          const bBox = this.__threeWrapper.getBBox(ent);
+          if (unionBBox === null) {
+            unionBBox = this.__threeWrapper.getBBox(ent);
+          }
+          unionBBox = this.__threeWrapper.mergeBBoxes(bBox, unionBBox);
+        }
+        center = this.__threeWrapper.getBBoxCenter(unionBBox);
+      }
+      this.__threeWrapper.setOrbitPoint(center);
     },
 
     setSelectionMode: function(mode) {

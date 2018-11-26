@@ -522,6 +522,24 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       this._orbitControls.update();
     },
 
+    setOrbitPoint: function(newPos) {
+      this._orbitControls.target.set(newPos.x, newPos.y, newPos.z);
+      this._orbitControls.update();
+      this.render();
+    },
+
+    getBBox: function(obj) {
+      return new THREE.Box3().setFromObject(obj);
+    },
+
+    mergeBBoxes: function(bbox1, bbox2) {
+      return bbox1.union(bbox2);
+    },
+
+    getBBoxCenter: function(bbox) {
+      return bbox.getCenter();
+    },
+
     __updateOrbitControls: function() {
       this.render();
     }
