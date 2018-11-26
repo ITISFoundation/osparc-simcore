@@ -54,7 +54,8 @@ qx.Class.define("qxapp.component.EntityList", {
       let data = {
         label: "Model",
         entityId: "root",
-        path: "root",
+        pathId: "root",
+        pathLabel: "Model",
         checked: true,
         children: []
       };
@@ -69,7 +70,8 @@ qx.Class.define("qxapp.component.EntityList", {
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
           c.bindProperty("entityId", "entityId", null, item, id);
-          c.bindProperty("path", "path", null, item, id);
+          c.bindProperty("pathId", "pathId", null, item, id);
+          c.bindProperty("pathLabel", "pathLabel", null, item, id);
           c.bindProperty("checked", "checked", null, item, id);
         },
         configureItem: item => {
@@ -156,18 +158,54 @@ qx.Class.define("qxapp.component.EntityList", {
       return selectedIds;
     },
 
-    addEntity: function(entityId, name, path) {
-      let model = this.__tree.getModel();
+    addEntity: function(entityId, name, pathId, pathName) {
+      pathId = "root/1234123412341234/" + entityId;
+      pathName = "Model/Hallo/" + name;
+
+      let rootModel = this.__tree.getModel();
       let newItem = {
-        entityId: entityId,
         label: name,
-        path: path ? path : "root/"+entityId,
+        entityId: entityId,
+        pathId: pathId ? pathId : "root/"+entityId,
+        pathLabel: pathName ? pathName : "Model/"+name,
         checked: true
       };
+
+      // create first the folders if do not exist yet
+      let parent = rootModel;
+      let pathSplitted = newItem.pathId.split("/");
+      let labelSplitted = newItem.pathLabel.split("/");
+      // i=0 is always there
+      for (let i=1; i<pathSplitted.length-1; i++) {
+        let found = false;
+        for (let j=0; j<parent.getChildren().length; j++) {
+          if (parent.getChildren().toArray()[j].getEntityId() === pathSplitted[i]) {
+            parent = parent.getChildren().toArray()[j];
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          let folderItem = {
+            label: labelSplitted[i],
+            entityId: pathSplitted[i],
+            pathId: pathSplitted.slice(0, i).join("/"),
+            pathLabel: labelSplitted.slice(0, i).join("/"),
+            checked: true,
+            children: []
+          };
+          parent.getChildren().push(qx.data.marshal.Json.createModel(folderItem, true));
+          parent = parent.getChildren().toArray()[0];
+        }
+      }
+
       let newItemModel = qx.data.marshal.Json.createModel(newItem, true);
-      model.getChildren().push(newItemModel);
-      this.configureTriState(model);
-      this.__tree.setModel(model);
+      parent.getChildren().push(newItemModel);
+
+      this.configureTriState(rootModel);
+      this.__tree.setModel(rootModel);
+
+      // select new item
       let newSelection = new qx.data.Array([newItemModel]);
       this.__tree.setSelection(newSelection);
     },
