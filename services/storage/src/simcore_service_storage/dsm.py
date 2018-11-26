@@ -187,7 +187,6 @@ class DataStorageManager:
             _dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
             raise NotImplementedError
 
-
     async def delete_file(self, user_id: str, location: str, file_uuid: str):
         """ Deletes a file given its fmd and location
 

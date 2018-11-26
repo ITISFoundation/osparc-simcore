@@ -8,20 +8,14 @@ from servicelib.rest_utils import extract_and_validate
 
 from . import __version__
 from .rest_models import FileMetaDataSchema
-from .session import get_session
 from .settings import RQT_DSM_KEY
 
 log = logging.getLogger(__name__)
 
-
-#FIXME: W0613: Unused argument 'request' (unused-argument)
-#pylint: disable=W0613
-
-#FIXME: W0612:Unused variable 'fileId'
-# pylint: disable=W0612
-
 file_schema  = FileMetaDataSchema()
 files_schema = FileMetaDataSchema(many=True)
+
+
 
 async def check_health(request: web.Request):
     log.info("CHECK HEALTH INCOMING PATH %s",request.path)
@@ -32,18 +26,13 @@ async def check_health(request: web.Request):
     assert not body
 
     # we play with session here
-    session = await get_session(request)
     data = {
         'name':__name__.split('.')[0],
         'version': __version__,
         'status': 'SERVICE_RUNNING',
-        'last_access' : session.get("last", -1.)
     }
-
-    #TODO: servicelib.create_and_validate_response(data)
-
-    session["last"] = time.time()
     return data
+
 
 async def check_action(request: web.Request):
     params, query, body = await extract_and_validate(request)
@@ -127,6 +116,7 @@ async def get_files_metadata(request: web.Request):
 
     return envelope
 
+
 async def get_file_metadata(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
@@ -145,10 +135,6 @@ async def get_file_metadata(request: web.Request):
     file_uuid = params["fileId"]
 
     data = await dsm.list_file(user_id=user_id, location=location, file_uuid=file_uuid)
-
-    data_as_dict = None
-    if data:
-        data_as_dict = attr.asdict(data)
 
     envelope = {
         'error': None,
@@ -177,6 +163,7 @@ async def update_file_meta_data(request: web.Request):
 
     return
 
+
 async def download_file(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
@@ -204,6 +191,7 @@ async def download_file(request: web.Request):
         }
 
     return envelope
+
 
 async def upload_file(request: web.Request):
     params, query, body = await extract_and_validate(request)
@@ -247,6 +235,7 @@ async def upload_file(request: web.Request):
 
     return envelope
 
+
 async def delete_file(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
@@ -264,11 +253,10 @@ async def delete_file(request: web.Request):
     user_id = query["user_id"]
     file_uuid = params["fileId"]
 
-    data = await dsm.delete_file(user_id=user_id, location=location, file_uuid=file_uuid)
+    _discard = await dsm.delete_file(user_id=user_id, location=location, file_uuid=file_uuid)
 
     envelope = {
         'error': None,
         'data': None
         }
-
     return envelope
