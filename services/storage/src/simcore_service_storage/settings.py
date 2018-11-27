@@ -4,68 +4,58 @@ The application can consume settings revealed at different
 stages of the development workflow. This submodule gives access
 to all of them.
 
+
+Naming convention:
+
+APP_*_KEY: is a key in app-storage
+RQT_*_KEY: is a key in request-storage
+RSP_*_KEY: is a key in response-storage
+
+See https://docs.aiohttp.org/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
 """
+
 import logging
 
 from servicelib import application_keys
 
+# IMPORTANT: lowest level module
+#   I order to avoid cyclic dependences, please
+#   DO NOT IMPORT ANYTHING from . (except for __version__)
 from .__version__ import get_version_object
-from .settings_schema import CONFIG_SCHEMA  # pylint: disable=W0611
+
 
 log = logging.getLogger(__name__)
 
+
 ## CONSTANTS--------------------
-TIMEOUT_IN_SECS = 2
-RESOURCE_KEY_OPENAPI = "oas3/v0"
+RETRY_WAIT_SECS = 2
+RETRY_COUNT = 20
+CONNECT_TIMEOUT_SECS = 30
+
+## VERSION-----------------------------
+service_version = get_version_object()
 
 
+## CONFIGURATION FILES------------------
 DEFAULT_CONFIG='docker-prod-config.yaml'
 
-## BUILD ------------------------
-#  - Settings revealed at build/installation time
-#  - Only known after some setup or build step is completed
-PACKAGE_VERSION = get_version_object()
-
-API_MAJOR_VERSION = PACKAGE_VERSION.major
-API_URL_VERSION = "v{:.0f}".format(API_MAJOR_VERSION)
+APP_CONFIG_KEY = application_keys.APP_CONFIG_KEY # app-storage-key for config object
+RSC_CONFIG_DIR_KEY  = "data"  # resource folder
 
 
-## KEYS -------------------------
-# TODO: test no key collisions
-# Keys used in different scopes. Common naming format:
-#
-#    $(SCOPE)_$(NAME)_KEY
-#
+# REST API ----------------------------
+API_MAJOR_VERSION = service_version.major # NOTE: syncs with service key
+API_VERSION_TAG = "v{:.0f}".format(API_MAJOR_VERSION)
 
-# APP=application
-APP_CONFIG_KEY = application_keys.APP_CONFIG_KEY
-APP_OPENAPI_SPECS_KEY = application_keys.APP_OPENAPI_SPECS_KEY
-
-APP_DB_ENGINE_KEY  = 'db_engine'
-APP_DB_SESSION_KEY = 'db_session'
-
-APP_DSM_THREADPOOL = "dsm_threadpool"
-
-# CFG=configuration
-
-# RSC=resource
-RSC_OPENAPI_DIR_KEY = "oas3/{}".format(API_URL_VERSION)
-RSC_OPENAPI_ROOTFILE_KEY = "{}/openapi.yaml".format(RSC_OPENAPI_DIR_KEY)
-RSC_CONFIG_DIR_KEY  = "data"
-RSC_CONFIG_SCHEMA_KEY = RSC_CONFIG_DIR_KEY + "/config-schema-v1.json"
-
-# RQT=request
-RQT_DSM_KEY = "DSM"
-
-# RSP=response
+APP_OPENAPI_SPECS_KEY = application_keys.APP_OPENAPI_SPECS_KEY # app-storage-key for openapi specs object
 
 
-## Settings revealed at runtime: only known when the application starts
-#  - via the config file passed to the cli
+# DATABASE ----------------------------
+APP_DB_ENGINE_KEY  = __name__ + '.db_engine'
+APP_DB_SESSION_KEY = __name__ + '.db_session'
 
-OAS_ROOT_FILE = "{}/openapi.yaml".format(RSC_OPENAPI_DIR_KEY) # TODO: delete
 
+# DATA STORAGE MANAGER ----------------------------------
+APP_DSM_THREADPOOL = __name__ + '.dsm_threadpool'
 
-__all__ = (
-    'CONFIG_SCHEMA', # TODO: fill with proper values
-)
+RQT_DSM_KEY = "DSM" # request-storage-key

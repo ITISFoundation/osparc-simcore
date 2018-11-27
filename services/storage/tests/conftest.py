@@ -43,9 +43,15 @@ def package_dir(here):
 @pytest.fixture(scope='session')
 def osparc_simcore_root_dir(here):
     root_dir = here.parent.parent.parent
-    assert root_dir.exists(), "Is this service within osparc-simcore repo?"
+    assert root_dir.exists() and any(root_dir.glob("services")), "Is this service within osparc-simcore repo?"
     return root_dir
 
+
+@pytest.fixture(scope='session')
+def osparc_api_specs_dir(osparc_simcore_root_dir):
+    dirpath = osparc_simcore_root_dir / "api" / "specs"
+    assert dirpath.exists()
+    return dirpath
 
 @pytest.fixture(scope='session')
 def python27_exec(osparc_simcore_root_dir, tmpdir_factory, here):
