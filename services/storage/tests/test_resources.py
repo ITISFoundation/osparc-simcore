@@ -10,15 +10,14 @@ import pytest
 
 # under test
 from simcore_service_storage.resources import resources
-from simcore_service_storage.settings import (RSC_CONFIG_DIR_KEY,
-                                              RSC_OPENAPI_DIR_KEY)
+from simcore_service_storage.settings import RSC_CONFIG_DIR_KEY
 
 log = logging.getLogger(__name__)
 
 @pytest.fixture
 def app_resources(package_dir):
     resource_names = []
-    for name in (RSC_CONFIG_DIR_KEY, RSC_OPENAPI_DIR_KEY):
+    for name in (RSC_CONFIG_DIR_KEY, ):
         folder = package_dir / name
         resource_names += [ str(p.relative_to(package_dir)) for p in folder.rglob("*.y*ml") ]
 

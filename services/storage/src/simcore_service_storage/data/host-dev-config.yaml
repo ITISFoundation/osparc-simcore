@@ -1,3 +1,4 @@
+version: '1.0'
 main:
   disable_services: ['postgres', 's3']
   host: 127.0.0.1
@@ -22,4 +23,6 @@ s3:
   bucket_name: simcore
   endpoint: minio:9000
   secret_key: '12345678'
-version: '1.0'
+rest:
+  oas_repo: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs
+  #oas_repo: http://localhost:8043/api/specs

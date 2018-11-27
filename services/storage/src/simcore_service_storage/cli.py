@@ -15,10 +15,34 @@ Why does this file exist, and why not put this in __main__?
 import argparse
 import logging
 import sys
+import os
 
 from . import application, cli_config
+from servicelib.utils import search_osparc_repo_dir
+
 
 log = logging.getLogger(__name__)
+
+
+def create_environ(skip_system_environ=False):
+    """
+        Build environment of substitutable variables
+
+    """
+    # system's environment variables
+    environ = {} if skip_system_environ else dict(os.environ)
+
+    # project-related environment variables
+    here = os.path.dirname(__file__)
+    environ['THIS_PACKAGE_DIR'] = here
+
+    rootdir = search_osparc_repo_dir(start=here)
+    if rootdir is not None:
+        environ['OSPARC_SIMCORE_REPO_ROOTDIR'] = str(rootdir)
+
+
+    return environ
+
 
 
 def setup(_parser):
@@ -33,7 +57,7 @@ def parse(args, _parser):
 
     # ignore unknown options
     options, _ = _parser.parse_known_args(args)
-    config = cli_config.config_from_options(options)
+    config = cli_config.config_from_options(options, vars=create_environ())
 
     # TODO: check whether extra options can be added to the config?!
     return config
