@@ -134,8 +134,8 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
         }
 
         let dir = this.getUrl();
-        if (this.getPort() > 0){
-          dir += ":" + this.getPort()
+        if (this.getPort() > 0) {
+          dir += ":" + this.getPort();
         }
         console.log("socket in", dir);
         let mySocket = io.connect(dir, {
