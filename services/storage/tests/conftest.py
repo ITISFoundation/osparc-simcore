@@ -22,8 +22,8 @@ import utils
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import FileMetaData
-from simcore_service_storage.s3 import (DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID,
-                                        SIMCORE_S3_STR)
+from simcore_service_storage.settings import (DATCORE_ID, DATCORE_STR,
+                                              SIMCORE_S3_ID, SIMCORE_S3_STR)
 from utils import ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER
 
 
