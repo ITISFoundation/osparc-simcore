@@ -453,6 +453,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         const url = "/running_interactive_services";
         let query = "?service_key=" + encodeURIComponent(metaData.key) + "&service_tag=" + encodeURIComponent(metaData.version) + "&service_uuid=" + encodeURIComponent(this.getNodeId());
         if (metaData.key.includes("/neuroman")) {
+          // HACK: Only Neuroman should enter here
           query = "?service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver") + "&service_tag=" + encodeURIComponent("2.6.0") + "&service_uuid=" + encodeURIComponent(this.getNodeId());
         }
         let request = new qxapp.io.request.ApiRequest(url+query, "POST");

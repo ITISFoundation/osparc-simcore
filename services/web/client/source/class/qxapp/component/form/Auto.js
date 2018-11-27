@@ -547,16 +547,14 @@ qx.Class.define("qxapp.component.form.Auto", {
 
       const workbenchModel = this.getNodeModel().getWorkbenchModel();
       const fromNode = workbenchModel.getNodeModel(fromNodeId);
-      const fromNodeLabel = fromNode.getLabel(fromNodeId);
+      const fromNodeLabel = fromNode.getLabel();
       const port = fromNode.getOutput(fromPortId);
-      const fromPortLabel = port ? port.label : null;
-      if (this.getNodeModel().getNodeId() === fromNodeId) {
+      let fromPortLabel = port ? port.label : null;
+      if (fromNode.getKey().includes("/neuroman")) {
         // HACK: Only Neuroman should enter here
-        console.log("Only Neuroman should enter here");
-        delete this.getControl(toPortId).link;
-        this.getControl(toPortId).setValue(fromPortId);
-        this.getControlLink(toPortId).setValue(fromPortId);
-      } else if (fromNodeLabel && fromPortLabel) {
+        fromPortLabel = fromPortId;
+      }
+      if (fromNodeLabel && fromPortLabel) {
         this.getControlLink(toPortId).setValue("Linked to " + fromNodeLabel + ": " + fromPortLabel);
       } else {
         this.getControlLink(toPortId).setValue("Linked to " + fromNodeId + ": " + fromPortId);

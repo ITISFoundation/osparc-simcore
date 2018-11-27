@@ -124,7 +124,7 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       }
 
       function onError(error) {
-        console.log("An error happened");
+        console.log("GLTFLoader An error happened");
       }
 
       let glTFLoader = new THREE.GLTFLoader();
