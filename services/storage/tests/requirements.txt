@@ -5,9 +5,11 @@
 coveralls
 pytest
 pytest-aiohttp
-pytest-asyncio
 pytest-cov
 pytest-docker
 openapi_spec_validator
 pyyaml
 virtualenv
+
+# NOTE: pytest-aiohttp and pytest-asyncio incompatible
+# https://github.com/pytest-dev/pytest-asyncio/issues/76

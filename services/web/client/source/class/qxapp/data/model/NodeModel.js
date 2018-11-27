@@ -40,7 +40,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         if (Object.prototype.hasOwnProperty.call(metaData, "outputs")) {
           this.__addOutputs(metaData.outputs);
         }
-        this.__startInteractiveNode();
       }
     }
   },
@@ -218,6 +217,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     populateNodeData: function(nodeData) {
+      this.__startInteractiveNode();
+
       if (nodeData) {
         if (nodeData.label) {
           this.setLabel(nodeData.label);
@@ -415,10 +416,13 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           if (srvUrl[srvUrl.length-1] !== "/") {
             arg = "/" + arg;
           }
+          // FIXME:
+          arg = "";
           this.getIFrame().setSource(srvUrl + arg);
         } else {
           this.getIFrame().setSource(this.getServiceUrl());
         }
+        this.__retrieveInputs();
       }
     },
 
@@ -504,23 +508,25 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         };
         this.fireDataEvent("ShowInLogger", msgData);
 
-        // HACK: Workaround for fetching inputs in Visualizer
-        if (this.getKey().includes("3d-viewer")) {
-          let urlUpdate = this.getServiceUrl() + "/retrieve";
-          let updReq = new qx.io.request.Xhr();
-          updReq.set({
-            url: urlUpdate,
-            method: "POST"
-          });
-          updReq.send();
-        }
-
         this.getRestartIFrameButton().setEnabled(true);
         // FIXME: Apparently no all services are inmediately ready when they publish the port
         const waitFor = 4000;
         qx.event.Timer.once(ev => {
           this.__restartIFrame();
         }, this, waitFor);
+      }
+    },
+
+    __retrieveInputs: function() {
+      // HACK: Workaround for fetching inputs in Visualizer and modeler
+      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler")) {
+        let urlUpdate = this.getServiceUrl() + "/retrieve";
+        let updReq = new qx.io.request.Xhr();
+        updReq.set({
+          url: urlUpdate,
+          method: "POST"
+        });
+        updReq.send();
       }
     },
 
@@ -531,7 +537,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __stopInteractiveNode: function() {
       if (this.getMetaData().type == "dynamic") {
         let url = "/running_interactive_services";
-        let query = "?service_uuid="+encodeURIComponent(this.getNodeId());
+        let query = "/"+encodeURIComponent(this.getNodeId());
         let request = new qxapp.io.request.ApiRequest(url+query, "DELETE");
         request.send();
       }

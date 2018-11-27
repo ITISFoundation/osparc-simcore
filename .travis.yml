@@ -44,12 +44,12 @@ matrix:
         - chmod +x docker-compose
         - sudo mv docker-compose /usr/local/bin
         - docker-compose --version
-        # shutdown postgres because sometimes is is alrady up ???
+        # shutdown postgres because sometimes is is already up ???
         - sudo service postgresql stop
         # wait for postgresql to shutdown
         - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
 
-      install:        
+      install:
         - pip install --upgrade pip wheel setuptools && pip3 --version
         - pip3 install pytest-travis-fold
         - pip3 install packages/s3wrapper[test]
@@ -67,7 +67,7 @@ matrix:
 
       script:
         - export DOCKER_GID=1042
-        - docker-compose -f services/docker-compose.yml build storage
+        - docker-compose -f services/docker-compose.yml build storage apihub
         - make pylint
         - make test
 

@@ -5,6 +5,8 @@ from aiohttp import web
 from aiopg.sa import create_engine
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
+from servicelib.aiopg_utils import DBAPIError
+
 from .models import metadata
 from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DB_SESSION_KEY
 
@@ -51,7 +53,19 @@ async def pg_engine(app: web.Application):
         engine.close()
         await engine.wait_closed()
 
+async def is_service_responsive(app:web.Application):
+    """ Returns true if the app can connect to db service
 
+    """
+    engine = app[APP_DB_ENGINE_KEY]
+    try:
+        async with engine.acquire() as conn:
+            await conn.execute("SELECT 1 as is_alive")
+            log.debug("%s is alive", THIS_SERVICE_NAME)
+            return True
+    except DBAPIError as err:
+        log.debug("%s is NOT responsive: %s", THIS_SERVICE_NAME, err)
+        return False
 
 def setup_db(app: web.Application):
 
@@ -61,6 +75,9 @@ def setup_db(app: web.Application):
         app[APP_DB_ENGINE_KEY] = app[APP_DB_SESSION_KEY] = None
         log.warning("Service '%s' explicitly disabled in config", THIS_SERVICE_NAME)
         return
+
+    app[APP_DB_ENGINE_KEY] = None
+    app[APP_DB_SESSION_KEY] = None
 
 
     # app is created at this point but not yet started

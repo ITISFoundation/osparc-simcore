@@ -21,13 +21,15 @@ qx.Class.define("qxapp.io.rest.Resource", {
         value: "application/json"
       }];
 
-      if (this.AUTHENTICATION !== null) {
+      if (this.AUTHENTICATION !== undefined && this.AUTHENTICATION !== null) {
         headers.concat(this.AUTHENTICATION.getAuthHeaders());
       }
 
       headers.forEach(function(item, index, array) {
         request.setRequestHeader(item.key, item.value);
       });
+
+      request.setRequestHeader("Content-Type", "application/json");
     });
   }
 });

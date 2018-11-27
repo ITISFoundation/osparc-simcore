@@ -7,7 +7,8 @@ import trafaret_config
 import trafaret_config.commandline as commandline
 
 from .resources import RSC_CONFIG_DIR_KEY, resources
-from .settings import CONFIG_SCHEMA, DEFAULT_CONFIG
+from .config_schema import schema
+from .settings import DEFAULT_CONFIG
 
 log = logging.getLogger(__name__)
 
@@ -48,14 +49,14 @@ def config_from_options(options, vars=None): # pylint: disable=W0622
 
     log.debug("loading %s", options.config)
 
-    return commandline.config_from_options(options, trafaret=CONFIG_SCHEMA, vars=vars)
+    return commandline.config_from_options(options, trafaret=schema, vars=vars)
 
 def read_and_validate(filepath, vars=None): # pylint: disable=W0622
     if vars is None:
         vars = os.environ
     # NOTE: vars=os.environ in signature freezes default to os.environ before it gets
     # Cannot user functools.partial because os.environ gets then frozen
-    return trafaret_config.read_and_validate(filepath, trafaret=CONFIG_SCHEMA, vars=vars)
+    return trafaret_config.read_and_validate(filepath, trafaret=schema, vars=vars)
 
 
 def config_from_file(filepath) -> dict:
@@ -65,5 +66,5 @@ def config_from_file(filepath) -> dict:
 
         Raises trafaret_config.ConfigError
     """
-    config = trafaret_config.read_and_validate(filepath, CONFIG_SCHEMA, vars=os.environ)
+    config = trafaret_config.read_and_validate(filepath, schema, vars=os.environ)
     return config

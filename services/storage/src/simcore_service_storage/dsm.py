@@ -22,8 +22,11 @@ from s3wrapper.s3_client import S3Client
 from .datcore_wrapper import DatcoreWrapper
 from .models import (FileMetaData, _location_from_id, _parse_datcore,
                      file_meta_data)
-from .s3 import DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
-from .settings import APP_CONFIG_KEY, APP_DSM_THREADPOOL
+from .settings import (APP_CONFIG_KEY, APP_DB_ENGINE_KEY, APP_DSM_KEY,
+                       APP_S3_KEY, DATCORE_ID, DATCORE_STR, SIMCORE_S3_ID,
+                       SIMCORE_S3_STR)
+
+from .s3 import get_config_s3
 
 #pylint: disable=W0212
 #FIXME: W0212:Access to a protected member _result_proxy of a client class
@@ -36,15 +39,32 @@ logger = logging.getLogger(__name__)
 
 FileMetaDataVec = List[FileMetaData]
 
-def setup_dsm(app: web.Application):
+async def _setup_dsm(app: web.Application):
     cfg = app[APP_CONFIG_KEY]
     main_cfg = cfg["main"]
+
+    main_cfg = cfg["main"]
+    python27_exec = Path(main_cfg["python2"]) / "bin" / "python2"
+
+    engine = app.get(APP_DB_ENGINE_KEY)
+    loop = app.loop
+    s3_client = app.get(APP_S3_KEY)
 
     max_workers = main_cfg["max_workers"]
     pool = ThreadPoolExecutor(max_workers=max_workers)
 
-    app[APP_DSM_THREADPOOL] = pool
+    s3_cfg = get_config_s3(app)
+    bucket_name = s3_cfg["bucket_name"]
 
+    dsm = DataStorageManager(s3_client, python27_exec, engine, loop, pool, bucket_name)
+
+    app[APP_DSM_KEY] = dsm
+
+    yield
+    #clean up
+
+def setup_dsm(app: web.Application):
+    app.cleanup_ctx.append(_setup_dsm)
 
 @attr.s(auto_attribs=True)
 class DataStorageManager:
