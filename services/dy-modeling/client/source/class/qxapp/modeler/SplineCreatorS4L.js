@@ -77,22 +77,24 @@ qx.Class.define("qxapp.modeler.SplineCreatorS4L", {
 
     splineFromS4L : function(response) {
       let spline = this.__threeView.getThreeWrapper().createSpline(response.value, response.color);
-      spline.name = response.name;
-      spline.uuid = response.uuid;
+      if (spline) {
+        spline.name = response.name;
+        spline.uuid = response.uuid;
 
-      if (this.__uuidTemp === "") {
-        this.__uuidTemp = spline.uuid;
-      }
+        if (this.__uuidTemp === "") {
+          this.__uuidTemp = spline.uuid;
+        }
 
-      if (this.__splineTemp) {
-        this.__threeView.getThreeWrapper().removeEntityFromScene(this.__splineTemp);
-      }
+        if (this.__splineTemp) {
+          this.__threeView.getThreeWrapper().removeEntityFromScene(this.__splineTemp);
+        }
 
-      if (this.__uuidTemp === spline.uuid) {
-        this.__splineTemp = spline;
-        this.__threeView.getThreeWrapper().addEntityToScene(this.__splineTemp);
-      } else {
-        this.__consolidateSpline(spline);
+        if (this.__uuidTemp === spline.uuid) {
+          this.__splineTemp = spline;
+          this.__threeView.getThreeWrapper().addEntityToScene(this.__splineTemp);
+        } else {
+          this.__consolidateSpline(spline);
+        }
       }
     },
 

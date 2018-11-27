@@ -222,7 +222,7 @@ qx.Class.define("qxapp.Application", {
         this._socket.on("importModelScene", function(val, ackCb) {
           ackCb();
           if (val.type === "importModelScene") {
-            this.__threeView.importSceneFromBuffer(val.value);
+            this.__threeView.importSceneFromBuffer(val);
           }
         }, this);
 
@@ -477,9 +477,12 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       this.__threeView.addListener("entityAdded", function(e) {
-        let entityName = e.getData()[0];
-        let entityId = e.getData()[1];
-        this.__entityList.addEntity(entityName, entityId);
+        const data = e.getData();
+        const entityName = data.name;
+        const entityId = data.uuid;
+        const pathId = data.pathUuids;
+        const pathName = data.pathNames;
+        this.__entityList.addEntity(entityName, entityId, pathId, pathName);
       }, this);
 
       this.__threeView.addListener("entityRemoved", function(e) {

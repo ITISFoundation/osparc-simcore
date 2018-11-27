@@ -170,7 +170,7 @@ qx.Class.define("qxapp.component.EntityList", {
       return selectedIds;
     },
 
-    addEntity: function(entityId, name, pathId, pathName) {
+    addEntity: function(name, entityId, pathId, pathName) {
       let rootModel = this.__tree.getModel();
       let newItem = {
         label: name,

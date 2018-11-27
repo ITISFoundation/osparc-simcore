@@ -189,6 +189,7 @@ qx.Class.define("qxapp.component.ThreeView", {
 
     addEntityToScene: function(entity) {
       this.__threeWrapper.addEntityToScene(entity);
+      console.log("addEntityToScene", entity);
       this.__entities.push(entity);
       this.fireDataEvent("entityAdded", [entity.uuid, entity.name]);
     },
