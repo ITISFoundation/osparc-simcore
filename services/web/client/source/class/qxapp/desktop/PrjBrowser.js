@@ -28,7 +28,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     });
     let userProjectList = this.__createUserProjectList();
 
-    let pubPrjsLabel = new qx.ui.basic.Label(this.tr("Popular Projects")).set({
+    let pubPrjsLabel = new qx.ui.basic.Label(this.tr("Shared Projects")).set({
       font: navBarLabelFont,
       minWidth: 150
     });
