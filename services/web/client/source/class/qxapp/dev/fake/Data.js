@@ -302,7 +302,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 450,
                 "y": 150
               },
-              "key": "simcore/services/comp/itis/isolve-emlf",
+              "key": "simcore/services/demodec/comp/itis/isolve-emlf",
               "version": "0.0.1"
             },
             "08116c6d-2c9e-4939-9c2b-67fe0ae65dc9": {
@@ -337,7 +337,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 450,
                 "y": 300
               },
-              "key": "simcore/services/comp/itis/neuron-isolve",
+              "key": "simcore/services/demodec/comp/itis/neuron-isolve",
               "version": "0.0.1"
             },
             "d2d8028c-be3f-473d-a74f-161a286a00ed": {
@@ -1349,7 +1349,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "4069bf2e-e2be-4799-ad1c-c53f0cb46e4e": {
-              key: "simcore/services/comp/itis/isolve-emlf",
+              key: "simcore/services/demodec/comp/itis/isolve-emlf",
               version: "0.0.1",
               label: "EM-LF Solver",
               inputs: {
@@ -1436,7 +1436,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "96343608-610b-4951-89af-4b189e5e3861"
             },
             "da1ccae6-70cd-4c90-94a4-c43fab9b10f7": {
-              key: "simcore/services/comp/itis/neuron-isolve",
+              key: "simcore/services/demodec/comp/itis/neuron-isolve",
               version: "0.0.1",
               label: "Neuron Solver",
               inputs: {
