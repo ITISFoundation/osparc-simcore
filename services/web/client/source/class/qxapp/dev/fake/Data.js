@@ -2912,19 +2912,23 @@ qx.Class.define("qxapp.dev.fake.Data", {
         case "defaultNeuromanModels":
           return [{
             key: "Yoon-sun-UUID",
-            label: "Yoon-sun",
+            label: "DemoDec_Neuroman.smash",
             thumbnail: "qxapp/yoonsun.png"
           }, {
             key: "Yoon-sun-Light-UUID",
-            label: "Yoon-sun Light",
+            label: "DemoDec_OnlyHead_Clean_Modeler.smash",
             thumbnail: "qxapp/yoonsun-light.png"
           }, {
             key: "Rat-UUID",
-            label: "Rat",
+            label: "DemoDec_OnlyHead_Clean_LF.smash",
             thumbnail: "qxapp/rat.png"
           }, {
             key: "Rat-Light-UUID",
-            label: "Rat Light",
+            label: "DemoDec_OnlyHead_Clean_Neuron.smash",
+            thumbnail: "qxapp/rat-light.png"
+          }, {
+            key: "Rat2-UUID",
+            label: "ratmodel_simplified.smash",
             thumbnail: "qxapp/rat-light.png"
           }];
         case "defaultMaterials":
