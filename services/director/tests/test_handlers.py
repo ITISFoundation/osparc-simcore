@@ -190,12 +190,19 @@ async def _start_get_stop_services(push_services, user_id):
         assert web_response.content_type == "application/json"
         running_service_enveloped = json.loads(web_response.text)
         assert isinstance(running_service_enveloped["data"], dict)
-        assert all(k in running_service_enveloped["data"] for k in ["service_uuid", "service_key", "service_version", "published_port", "entry_point"])
+        assert all(k in running_service_enveloped["data"] for k in ["service_uuid", "service_key", "service_version", "published_port", "entry_point", "service_host", "service_port", "service_basepath"])
         assert running_service_enveloped["data"]["service_uuid"] == service_uuid
         assert running_service_enveloped["data"]["service_key"] == service_key
         assert running_service_enveloped["data"]["service_version"] == service_tag
+        # assert running_service_enveloped["data"]["service_host"] == service_description["host"]
+        # assert running_service_enveloped["data"]["service_port"] == service_description["port"]
+        # assert running_service_enveloped["data"]["service_basepath"] == service_description["basepath"]
         service_published_port = running_service_enveloped["data"]["published_port"]
         service_entry_point = running_service_enveloped["data"]["entry_point"]
+        service_host = running_service_enveloped["data"]["service_host"]
+        service_port = running_service_enveloped["data"]["service_port"]
+        service_basepath = running_service_enveloped["data"]["service_basepath"]
+        
 
         # get the service
         web_response = await rest.handlers.running_interactive_services_get(fake_request, service_uuid)
@@ -209,6 +216,9 @@ async def _start_get_stop_services(push_services, user_id):
         assert running_service_enveloped["data"]["service_version"] == service_tag
         assert running_service_enveloped["data"]["published_port"] == service_published_port
         assert running_service_enveloped["data"]["entry_point"] == service_entry_point
+        assert running_service_enveloped["data"]["service_host"] == service_host
+        assert running_service_enveloped["data"]["service_port"] == service_port
+        assert running_service_enveloped["data"]["service_basepath"] == service_basepath
 
         # stop the service
         web_response = await rest.handlers.running_interactive_services_delete(fake_request, service_uuid)
