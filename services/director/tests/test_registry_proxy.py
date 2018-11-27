@@ -5,7 +5,6 @@ import json
 from simcore_service_director import registry_proxy
 
 
-
 async def test_list_no_services_available(docker_registry, configure_registry_access):
     computational_services = await registry_proxy.list_computational_services()
     assert (not computational_services) # it's empty
@@ -14,19 +13,23 @@ async def test_list_no_services_available(docker_registry, configure_registry_ac
 
 
 async def test_list_computational_services(docker_registry, push_services, configure_registry_access):
-    push_services(6, 3)
+    push_services( number_of_computational_services=6,
+                   number_of_interactive_services=3)
+
     computational_services = await registry_proxy.list_computational_services()
     assert len(computational_services) == 6
 
 
 async def test_list_interactive_services(docker_registry, push_services, configure_registry_access):
-    push_services(5, 4)
+    push_services( number_of_computational_services=5,
+                   number_of_interactive_services=4)
     interactive_services = await registry_proxy.list_interactive_services()
     assert len(interactive_services) == 4
 
 
 async def test_retrieve_list_of_images_in_repo(docker_registry, push_services, configure_registry_access):
-    images = push_services(5, 3)
+    images = push_services( number_of_computational_services=5,
+                            number_of_interactive_services=3)
     image_number = {}
     for image in images:
         service_description = image["service_description"]
@@ -41,7 +44,9 @@ async def test_retrieve_list_of_images_in_repo(docker_registry, push_services, c
 
 
 async def test_list_interactive_service_dependencies(docker_registry, push_services, configure_registry_access):
-    images = push_services(2,2, inter_dependent_services=True)
+    images = push_services( number_of_computational_services=2,
+                            number_of_interactive_services=2,
+                            inter_dependent_services=True)
     for image in images:
         service_description = image["service_description"]
         docker_labels = image["docker_labels"]
@@ -56,7 +61,8 @@ async def test_list_interactive_service_dependencies(docker_registry, push_servi
 
 
 async def test_retrieve_labels_of_image(docker_registry, push_services, configure_registry_access):
-    images = push_services(1, 1)
+    images = push_services(number_of_computational_services=1,
+                           number_of_interactive_services=1)
     for image in images:
         service_description = image["service_description"]
         labels = await registry_proxy.retrieve_labels_of_image(service_description["key"], service_description["version"])
@@ -108,7 +114,8 @@ def test_get_service_last_namess():
 
 
 async def test_get_service_details(push_services, configure_registry_access):
-    images = push_services(1, 1)
+    images = push_services(number_of_computational_services=1,
+                           number_of_interactive_services=1)
     for image in images:
         service_description = image["service_description"]
         details = await registry_proxy.get_service_details(service_description["key"], service_description["version"])
