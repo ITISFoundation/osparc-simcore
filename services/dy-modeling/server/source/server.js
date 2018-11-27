@@ -62,7 +62,10 @@ server.listen(PORT, HOSTNAME);
 console.log('server started on ' + PORT + '/app');
 
 // init socket.io
-let io = require('socket.io')(server);
+let io = require('socket.io')(server, {
+  pingInterval: 15000,
+  pingTimeout: 10000
+});
 let connectedClient = null;
 
 // Socket IO stuff
