@@ -158,16 +158,16 @@ PLATFORM_VERSION=3.25
 
 push_platform_images:
 	${DOCKER} login masu.speag.com
-	#${DOCKER} tag services_apihub:latest masu.speag.com/simcore/workbench/apihub:${PLATFORM_VERSION}
-	#${DOCKER} push masu.speag.com/simcore/workbench/apihub:${PLATFORM_VERSION}
+	${DOCKER} tag services_apihub:latest masu.speag.com/simcore/workbench/apihub:${PLATFORM_VERSION}
+	${DOCKER} push masu.speag.com/simcore/workbench/apihub:${PLATFORM_VERSION}
 	${DOCKER} tag services_webserver:latest masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
 	${DOCKER} push masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
-	#${DOCKER} tag services_sidecar:latest masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
-	#${DOCKER} push masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
-	#${DOCKER} tag services_director:latest masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
-	#${DOCKER} push masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
-	#${DOCKER} tag services_storage:latest masu.speag.com/simcore/workbench/storage:${PLATFORM_VERSION}
-	#${DOCKER} push masu.speag.com/simcore/workbench/storage:${PLATFORM_VERSION}
+	${DOCKER} tag services_sidecar:latest masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
+	${DOCKER} push masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
+	${DOCKER} tag services_director:latest masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
+	${DOCKER} push masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
+	${DOCKER} tag services_storage:latest masu.speag.com/simcore/workbench/storage:${PLATFORM_VERSION}
+	${DOCKER} push masu.speag.com/simcore/workbench/storage:${PLATFORM_VERSION}
 
   setup-check: .env .vscode/settings.json
 
