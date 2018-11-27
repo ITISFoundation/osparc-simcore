@@ -18,7 +18,7 @@ import os
 import sys
 
 from .application import run_service
-from .application_config import CLI_DEFAULT_CONFIGFILE, CONFIG_SCHEMA
+from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema
 from .cli_config import add_cli_options, config_from_options
 from .utils import search_osparc_repo_dir
 
@@ -68,7 +68,7 @@ def parse(args, parser):
     # ignore unknown options
     options, _ = parser.parse_known_args(args)
 
-    config = config_from_options(options, CONFIG_SCHEMA, vars=create_environ())
+    config = config_from_options(options, app_schema, vars=create_environ())
 
     # TODO: check whether extra options can be added to the config?!
     return config

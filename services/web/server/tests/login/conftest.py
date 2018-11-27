@@ -22,7 +22,7 @@ import simcore_service_webserver.utils
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, metadata, users
-from simcore_service_webserver.application_config import CONFIG_SCHEMA
+from simcore_service_webserver.application_config import app_schema as app_schema
 
 
 @pytest.fixture(scope="session")
@@ -48,7 +48,7 @@ def app_cfg(here, osparc_simcore_root_dir):
     })
 
     # validates and fills all defaults/optional entries that normal load would not do
-    cfg_dict = trafaret_config.read_and_validate(cfg_path, CONFIG_SCHEMA, vars=variables)
+    cfg_dict = trafaret_config.read_and_validate(cfg_path, app_schema, vars=variables)
     return cfg_dict
 
 @pytest.fixture(scope='session')

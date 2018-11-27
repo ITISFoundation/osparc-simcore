@@ -62,6 +62,6 @@ def create_schema():
 
 
 CLI_DEFAULT_CONFIGFILE = 'server-defaults.yaml'
-CONFIG_SCHEMA = create_schema()
+app_schema = create_schema() # TODO: rename as schema
 
 assert resources.exists( 'config/' + CLI_DEFAULT_CONFIGFILE )

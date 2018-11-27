@@ -58,12 +58,12 @@ def config_from_options(options, schema, vars=None): # pylint: disable=W0622
 # FIXME: should replace these functions and remove dependency
 
 def read_and_validate(filepath, vars=None): # pylint: disable=W0622
-    from .application_config import CONFIG_SCHEMA
+    from .application_config import app_schema
     if vars is None:
         vars = os.environ
     # NOTE: vars=os.environ in signature freezes default to os.environ before it gets
     # Cannot user functools.partial because os.environ gets then frozen
-    return trafaret_config.read_and_validate(filepath, trafaret=CONFIG_SCHEMA, vars=vars)
+    return trafaret_config.read_and_validate(filepath, trafaret=app_schema, vars=vars)
 
 
 def config_from_file(filepath) -> dict:
@@ -73,6 +73,6 @@ def config_from_file(filepath) -> dict:
 
         Raises trafaret_config.ConfigError
     """
-    from .application_config import CONFIG_SCHEMA
-    config = trafaret_config.read_and_validate(filepath, CONFIG_SCHEMA, vars=os.environ)
+    from .application_config import app_schema
+    config = trafaret_config.read_and_validate(filepath, app_schema, vars=os.environ)
     return config
