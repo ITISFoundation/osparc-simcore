@@ -152,19 +152,22 @@ async def _start_get_stop_services(push_services, user_id):
     fake_request = "fake request"
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, None, None, None, None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, None, None, None, None, None)
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", None, None, None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", None, None, None, None)
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", None, None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", None, None, None)
 
     with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", None, None)
 
     with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah")
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", None)
+    
+    with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", "None")
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
         web_response = await rest.handlers.running_interactive_services_get(fake_request, None)
@@ -183,19 +186,27 @@ async def _start_get_stop_services(push_services, user_id):
         service_description = created_service["service_description"]
         service_key = service_description["key"]
         service_tag = service_description["version"]
+        service_port = created_service["internal_port"]
+        service_basepath = ""
         service_uuid = str(uuid.uuid4())
         # start the service
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, user_id, service_key, service_uuid, service_tag)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, user_id, service_key, service_uuid, service_tag, service_basepath)
         assert web_response.status == 201
         assert web_response.content_type == "application/json"
         running_service_enveloped = json.loads(web_response.text)
         assert isinstance(running_service_enveloped["data"], dict)
-        assert all(k in running_service_enveloped["data"] for k in ["service_uuid", "service_key", "service_version", "published_port", "entry_point"])
+        assert all(k in running_service_enveloped["data"] for k in ["service_uuid", "service_key", "service_version", "published_port", "entry_point", "service_host", "service_port", "service_basepath"])
         assert running_service_enveloped["data"]["service_uuid"] == service_uuid
         assert running_service_enveloped["data"]["service_key"] == service_key
         assert running_service_enveloped["data"]["service_version"] == service_tag
+        # assert running_service_enveloped["data"]["service_host"] == service_description["host"]
+        assert running_service_enveloped["data"]["service_port"] == service_port
+        # assert running_service_enveloped["data"]["service_basepath"] == service_description["basepath"]
         service_published_port = running_service_enveloped["data"]["published_port"]
         service_entry_point = running_service_enveloped["data"]["entry_point"]
+        service_host = running_service_enveloped["data"]["service_host"]        
+        service_basepath = running_service_enveloped["data"]["service_basepath"]
+        
 
         # get the service
         web_response = await rest.handlers.running_interactive_services_get(fake_request, service_uuid)
@@ -209,6 +220,9 @@ async def _start_get_stop_services(push_services, user_id):
         assert running_service_enveloped["data"]["service_version"] == service_tag
         assert running_service_enveloped["data"]["published_port"] == service_published_port
         assert running_service_enveloped["data"]["entry_point"] == service_entry_point
+        assert running_service_enveloped["data"]["service_host"] == service_host
+        assert running_service_enveloped["data"]["service_port"] == service_port
+        assert running_service_enveloped["data"]["service_basepath"] == service_basepath
 
         # stop the service
         web_response = await rest.handlers.running_interactive_services_delete(fake_request, service_uuid)

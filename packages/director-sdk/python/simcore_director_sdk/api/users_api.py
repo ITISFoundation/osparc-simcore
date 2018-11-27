@@ -327,6 +327,7 @@ class UsersApi(object):
         :param str service_key: The key (url) of the service (required)
         :param str service_uuid: The uuid to assign the service with (required)
         :param str service_tag: The tag/version of the service
+        :param str service_basepath: predefined basepath for the backend service otherwise uses root
         :return: InlineResponse201
                  If the method is called asynchronously,
                  returns the request thread.
@@ -352,6 +353,7 @@ class UsersApi(object):
         :param str service_key: The key (url) of the service (required)
         :param str service_uuid: The uuid to assign the service with (required)
         :param str service_tag: The tag/version of the service
+        :param str service_basepath: predefined basepath for the backend service otherwise uses root
         :return: InlineResponse201
                  If the method is called asynchronously,
                  returns the request thread.
@@ -359,7 +361,7 @@ class UsersApi(object):
 
         local_var_params = locals()
 
-        all_params = ['user_id', 'service_key', 'service_uuid', 'service_tag']  # noqa: E501
+        all_params = ['user_id', 'service_key', 'service_uuid', 'service_tag', 'service_basepath']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -403,6 +405,8 @@ class UsersApi(object):
             query_params.append(('service_tag', local_var_params['service_tag']))  # noqa: E501
         if 'service_uuid' in local_var_params:
             query_params.append(('service_uuid', local_var_params['service_uuid']))  # noqa: E501
+        if 'service_basepath' in local_var_params:
+            query_params.append(('service_basepath', local_var_params['service_basepath']))  # noqa: E501
 
         header_params = {}
 
