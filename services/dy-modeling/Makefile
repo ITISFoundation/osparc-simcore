@@ -19,7 +19,9 @@ endif
 export VCS_REF=$(shell git rev-parse --short HEAD) 
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 export MODELER_VERSION=2.6.0
+export NEUROMAN_VERSION=0.0.0
 MODELER_MASU_REGISTRY_NAME=masu.speag.com/simcore/services/dynamic/modeler/webserver
+NEUROMAN_MASU_REGISTRY_NAME=masu.speag.com/simcore/services/demodec/dynamic/itis/s4l/neuroman
 
 all:
 	@echo 'run `make build-devel` to build your dev environment'
@@ -52,3 +54,6 @@ push_service_images:
 	${DOCKER} login masu.speag.com
 	${DOCKER} tag dy-modeling_server:latest ${MODELER_MASU_REGISTRY_NAME}:${MODELER_VERSION}
 	${DOCKER} push ${MODELER_MASU_REGISTRY_NAME}:${MODELER_VERSION}
+
+	${DOCKER} tag dy-modeling_neuroman:latest ${NEUROMAN_MASU_REGISTRY_NAME}:${NEUROMAN_VERSION}
+	${DOCKER} push ${NEUROMAN_MASU_REGISTRY_NAME}:${NEUROMAN_VERSION}
