@@ -433,7 +433,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     __startInteractiveNode: function() {
       let metaData = this.getMetaData();
-      if (metaData.type == "dynamic") {
+      if (metaData && ("type" in metaData) && metaData.type == "dynamic") {
         let button = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/redo-alt/32"
         });
