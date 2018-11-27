@@ -6,7 +6,7 @@ from typing import Tuple
 import attr
 import sqlalchemy as sa
 
-from .s3 import DATCORE_STR, SIMCORE_S3_STR, SIMCORE_S3_ID
+from .settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
 #FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
 #from sqlalchemy.dialects.postgresql import UUID
