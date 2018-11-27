@@ -12,7 +12,7 @@ import attr
 import execnet
 
 from .models import FileMetaData
-from .s3 import DATCORE_STR, DATCORE_ID
+from .settings import DATCORE_ID, DATCORE_STR
 
 FileMetaDataVec = List[FileMetaData]
 

@@ -2,9 +2,9 @@ import trafaret as T
 
 from simcore_sdk.config import db, s3
 
-## Config file schema
-# FIXME: load from json schema instead!
-_APP_SCHEMA = T.Dict({
+from . import rest_config
+
+app_schema = T.Dict({
     T.Key("host", default="0.0.0.0"): T.IP,
     "port": T.Int(),
     "log_level": T.Enum("DEBUG", "WARNING", "INFO", "ERROR", "CRITICAL", "FATAL", "NOTSET"),
@@ -18,11 +18,12 @@ _APP_SCHEMA = T.Dict({
     T.Key("disable_services", default=[], optional=True): T.List(T.String())
 })
 
-CONFIG_SCHEMA = T.Dict({
+schema = T.Dict({
     "version": T.String(),
-    T.Key("main"): _APP_SCHEMA,
+    T.Key("main"): app_schema,
     T.Key("postgres"): db.CONFIG_SCHEMA,
-    T.Key("s3"): s3.CONFIG_SCHEMA
+    T.Key("s3"): s3.CONFIG_SCHEMA,
+    T.Key(rest_config.CONFIG_SECTION_NAME): rest_config.schema
 })
 
 
