@@ -8,6 +8,14 @@ components:
       schema:
         example: 123e4567-e89b-12d3-a456-426655440000
         type: string
+    ServiceBasePath:
+      description: predefined basepath for the backend service otherwise uses root
+      in: query
+      name: service_basepath
+      required: false
+      schema:
+        example: /x/EycCXbU0H/
+        type: string
     ServiceKey:
       description: The key (url) of the service
       in: query
@@ -208,6 +216,13 @@ paths:
         schema:
           example: 123e4567-e89b-12d3-a456-426655440000
           type: string
+      - description: predefined basepath for the backend service otherwise uses root
+        in: query
+        name: service_basepath
+        required: false
+        schema:
+          example: /x/EycCXbU0H/
+          type: string
       responses:
         '201':
           content:
@@ -227,6 +242,16 @@ paths:
                         format: int32
                         minimum: 1
                         type: integer
+                      service_basepath:
+                        default: ''
+                        description: different base path where current service is
+                          mounted otherwise defaults to root
+                        example: /x/E1O2E-LAH
+                        type: string
+                      service_host:
+                        description: service host name within the network
+                        example: jupyter_E1O2E-LAH
+                        type: string
                       service_key:
                         description: distinctive name for the node based on the docker
                           registry path
@@ -235,6 +260,11 @@ paths:
                         - simcore/services/dynamic/3dviewer
                         pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$
                         type: string
+                      service_port:
+                        description: port to access the service within the network
+                        example: 8081
+                        minimum: 1
+                        type: integer
                       service_uuid:
                         description: The UUID attached to this service
                         example: 123e4567-e89b-12d3-a456-426655440000
@@ -251,6 +281,8 @@ paths:
                     - service_uuid
                     - service_key
                     - service_version
+                    - service_host
+                    - service_port
                     type: object
                   error:
                     default: null
@@ -597,6 +629,16 @@ paths:
                         format: int32
                         minimum: 1
                         type: integer
+                      service_basepath:
+                        default: ''
+                        description: different base path where current service is
+                          mounted otherwise defaults to root
+                        example: /x/E1O2E-LAH
+                        type: string
+                      service_host:
+                        description: service host name within the network
+                        example: jupyter_E1O2E-LAH
+                        type: string
                       service_key:
                         description: distinctive name for the node based on the docker
                           registry path
@@ -605,6 +647,11 @@ paths:
                         - simcore/services/dynamic/3dviewer
                         pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$
                         type: string
+                      service_port:
+                        description: port to access the service within the network
+                        example: 8081
+                        minimum: 1
+                        type: integer
                       service_uuid:
                         description: The UUID attached to this service
                         example: 123e4567-e89b-12d3-a456-426655440000
@@ -621,6 +668,8 @@ paths:
                     - service_uuid
                     - service_key
                     - service_version
+                    - service_host
+                    - service_port
                     type: object
                   error:
                     default: null

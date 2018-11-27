@@ -15,15 +15,21 @@ class InlineResponse201Data(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, entry_point=None, published_port=None, service_key=None, service_uuid=None, service_version=None):  # noqa: E501
+    def __init__(self, entry_point=None, published_port=None, service_basepath=None, service_host=None, service_key=None, service_port=None, service_uuid=None, service_version=None):  # noqa: E501
         """InlineResponse201Data - a model defined in OpenAPI
 
         :param entry_point: The entry_point of this InlineResponse201Data.  # noqa: E501
         :type entry_point: str
         :param published_port: The published_port of this InlineResponse201Data.  # noqa: E501
         :type published_port: int
+        :param service_basepath: The service_basepath of this InlineResponse201Data.  # noqa: E501
+        :type service_basepath: str
+        :param service_host: The service_host of this InlineResponse201Data.  # noqa: E501
+        :type service_host: str
         :param service_key: The service_key of this InlineResponse201Data.  # noqa: E501
         :type service_key: str
+        :param service_port: The service_port of this InlineResponse201Data.  # noqa: E501
+        :type service_port: int
         :param service_uuid: The service_uuid of this InlineResponse201Data.  # noqa: E501
         :type service_uuid: str
         :param service_version: The service_version of this InlineResponse201Data.  # noqa: E501
@@ -32,7 +38,10 @@ class InlineResponse201Data(Model):
         self.openapi_types = {
             'entry_point': 'str',
             'published_port': 'int',
+            'service_basepath': 'str',
+            'service_host': 'str',
             'service_key': 'str',
+            'service_port': 'int',
             'service_uuid': 'str',
             'service_version': 'str'
         }
@@ -40,14 +49,20 @@ class InlineResponse201Data(Model):
         self.attribute_map = {
             'entry_point': 'entry_point',
             'published_port': 'published_port',
+            'service_basepath': 'service_basepath',
+            'service_host': 'service_host',
             'service_key': 'service_key',
+            'service_port': 'service_port',
             'service_uuid': 'service_uuid',
             'service_version': 'service_version'
         }
 
         self._entry_point = entry_point
         self._published_port = published_port
+        self._service_basepath = service_basepath
+        self._service_host = service_host
         self._service_key = service_key
+        self._service_port = service_port
         self._service_uuid = service_uuid
         self._service_version = service_version
 
@@ -113,6 +128,54 @@ class InlineResponse201Data(Model):
         self._published_port = published_port
 
     @property
+    def service_basepath(self):
+        """Gets the service_basepath of this InlineResponse201Data.
+
+        different base path where current service is mounted otherwise defaults to root  # noqa: E501
+
+        :return: The service_basepath of this InlineResponse201Data.
+        :rtype: str
+        """
+        return self._service_basepath
+
+    @service_basepath.setter
+    def service_basepath(self, service_basepath):
+        """Sets the service_basepath of this InlineResponse201Data.
+
+        different base path where current service is mounted otherwise defaults to root  # noqa: E501
+
+        :param service_basepath: The service_basepath of this InlineResponse201Data.
+        :type service_basepath: str
+        """
+
+        self._service_basepath = service_basepath
+
+    @property
+    def service_host(self):
+        """Gets the service_host of this InlineResponse201Data.
+
+        service host name within the network  # noqa: E501
+
+        :return: The service_host of this InlineResponse201Data.
+        :rtype: str
+        """
+        return self._service_host
+
+    @service_host.setter
+    def service_host(self, service_host):
+        """Sets the service_host of this InlineResponse201Data.
+
+        service host name within the network  # noqa: E501
+
+        :param service_host: The service_host of this InlineResponse201Data.
+        :type service_host: str
+        """
+        if service_host is None:
+            raise ValueError("Invalid value for `service_host`, must not be `None`")  # noqa: E501
+
+        self._service_host = service_host
+
+    @property
     def service_key(self):
         """Gets the service_key of this InlineResponse201Data.
 
@@ -138,6 +201,33 @@ class InlineResponse201Data(Model):
             raise ValueError("Invalid value for `service_key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic)(\/[^\\s\/]+)+$/`")  # noqa: E501
 
         self._service_key = service_key
+
+    @property
+    def service_port(self):
+        """Gets the service_port of this InlineResponse201Data.
+
+        port to access the service within the network  # noqa: E501
+
+        :return: The service_port of this InlineResponse201Data.
+        :rtype: int
+        """
+        return self._service_port
+
+    @service_port.setter
+    def service_port(self, service_port):
+        """Sets the service_port of this InlineResponse201Data.
+
+        port to access the service within the network  # noqa: E501
+
+        :param service_port: The service_port of this InlineResponse201Data.
+        :type service_port: int
+        """
+        if service_port is None:
+            raise ValueError("Invalid value for `service_port`, must not be `None`")  # noqa: E501
+        if service_port is not None and service_port < 1:  # noqa: E501
+            raise ValueError("Invalid value for `service_port`, must be a value greater than or equal to `1`")  # noqa: E501
+
+        self._service_port = service_port
 
     @property
     def service_uuid(self):
