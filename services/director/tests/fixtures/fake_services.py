@@ -78,8 +78,9 @@ def _build_push_image(docker_dir, registry_url, service_type, name, tag, sleep_t
     service_description = _create_service_description(service_type, name, tag, schema_version)
     docker_labels = _create_docker_labels(service_description)
     additional_docker_labels = [{"name": "constraints", "type": "string", "value": ["node.role==manager"]}]
-    internal_port = random.randint(1, 100000)
+    internal_port = None    
     if service_type == "dynamic":
+        internal_port = random.randint(1, 100000)
         additional_docker_labels.append({"name": "ports", "type": "int", "value": internal_port})
     docker_labels["simcore.service.settings"] = json.dumps(additional_docker_labels)
 

@@ -152,19 +152,22 @@ async def _start_get_stop_services(push_services, user_id):
     fake_request = "fake request"
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, None, None, None, None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, None, None, None, None, None)
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", None, None, None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", None, None, None, None)
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", None, None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", None, None, None)
 
     with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", None)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", None, None)
 
     with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah")
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", None)
+    
+    with pytest.raises(web_exceptions.HTTPNotFound, message="Expecting not found error"):
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, "None", "None", "None", "ablah", "None")
 
     with pytest.raises(web_exceptions.HTTPInternalServerError, message="Expecting internal server error"):
         web_response = await rest.handlers.running_interactive_services_get(fake_request, None)
@@ -184,9 +187,10 @@ async def _start_get_stop_services(push_services, user_id):
         service_key = service_description["key"]
         service_tag = service_description["version"]
         service_port = created_service["internal_port"]
+        service_basepath = ""
         service_uuid = str(uuid.uuid4())
         # start the service
-        web_response = await rest.handlers.running_interactive_services_post(fake_request, user_id, service_key, service_uuid, service_tag)
+        web_response = await rest.handlers.running_interactive_services_post(fake_request, user_id, service_key, service_uuid, service_tag, service_basepath)
         assert web_response.status == 201
         assert web_response.content_type == "application/json"
         running_service_enveloped = json.loads(web_response.text)
