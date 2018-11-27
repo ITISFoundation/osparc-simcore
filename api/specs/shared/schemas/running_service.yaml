@@ -64,4 +64,4 @@ components:
           description: different base path where current service is mounted otherwise defaults to root
           type: string
           example: '/x/E1O2E-LAH'
-          default: /
+          default: ''
