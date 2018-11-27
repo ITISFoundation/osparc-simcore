@@ -164,6 +164,7 @@ services:
     depends_on:
       - minio
       - postgres
+      - apihub
   #--------------------------------------------------------------------
   minio:
     image: minio/minio

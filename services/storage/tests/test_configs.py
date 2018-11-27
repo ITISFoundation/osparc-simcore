@@ -41,6 +41,7 @@ def devel_environ(env_devel_file):
                 env_devel[key] = value
     return env_devel
 
+from simcore_service_storage.cli import create_environ
 
 @pytest.fixture("session")
 def container_environ(services_docker_compose_file, devel_environ):
@@ -51,11 +52,12 @@ def container_environ(services_docker_compose_file, devel_environ):
     with services_docker_compose_file.open() as f:
         dc = yaml.safe_load(f)
 
-    container_environ = {
+    container_environ = create_environ(skip_system_environ=True)
+    container_environ.update({
         'VENV2': '/home/scu/.venv27/' # defined in Dockerfile
-    }
+    })
 
-    environ_items =dc["services"][THIS_SERVICE].get("environment", list())
+    environ_items = dc["services"][THIS_SERVICE].get("environment", list())
     MATCH = re.compile(r'\$\{(\w+)+')
 
     for item in environ_items:
