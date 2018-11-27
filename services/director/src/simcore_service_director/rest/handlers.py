@@ -54,12 +54,12 @@ async def _list_services(list_service_fct):
     services = node_validator.validate_nodes(services)
     return services
 
-async def running_interactive_services_post(request, user_id, service_key, service_uuid, service_tag):  # pylint:disable=unused-argument
-    log.debug("Client does running_interactive_services_post request %s with user_id %s service_key %s, service_uuid %s and service_tag %s",
-                request, user_id, service_key, service_uuid, service_tag)
+async def running_interactive_services_post(request, user_id, service_key, service_uuid, service_tag, service_basepath):  # pylint:disable=unused-argument
+    log.debug("Client does running_interactive_services_post request %s with user_id %s service %s:%s, service_uuid %s, service_basepath %s",
+                request, user_id, service_key, service_tag, service_uuid, service_basepath)
 
     try:
-        service = await producer.start_service(user_id, service_key, service_tag, service_uuid)
+        service = await producer.start_service(user_id, service_key, service_tag, service_uuid, service_basepath)
         return web.json_response(data=dict(data=service), status=201)
     except exceptions.ServiceStartTimeoutError as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
