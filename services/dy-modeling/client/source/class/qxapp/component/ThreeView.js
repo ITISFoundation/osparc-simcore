@@ -48,7 +48,7 @@ qx.Class.define("qxapp.component.ThreeView", {
       this.__threeWrapper.addListener("EntityToBeAdded", function(e) {
         let newEntity = e.getData();
         if (newEntity) {
-          this.addEntityToScene(newEntity);
+          this.addEntityToSceneFromS4L(newEntity);
         }
       }, this);
 
@@ -189,8 +189,15 @@ qx.Class.define("qxapp.component.ThreeView", {
 
     addEntityToScene: function(entity) {
       console.log("addEntityToScene", entity);
-      this.__threeWrapper.addEntityToScene(entity["entity"]);
+      this.__threeWrapper.addEntityToScene(entity);
       this.__entities.push(entity);
+      this.fireDataEvent("entityAdded", entity);
+    },
+
+    addEntityToSceneFromS4L: function(entity) {
+      console.log("addEntityToSceneFromS4L", entity);
+      this.__threeWrapper.addEntityToScene(entity["entity"]);
+      this.__entities.push(entity["entity"]);
       this.fireDataEvent("entityAdded", entity);
     },
 

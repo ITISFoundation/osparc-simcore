@@ -80,6 +80,8 @@ qx.Class.define("qxapp.modeler.SplineCreatorS4L", {
       if (spline) {
         spline.name = response.name;
         spline.uuid = response.uuid;
+        spline.pathNames = response.pathNames;
+        spline.pathUuids = response.pathUuids;
 
         if (this.__uuidTemp === "") {
           this.__uuidTemp = spline.uuid;
@@ -91,7 +93,8 @@ qx.Class.define("qxapp.modeler.SplineCreatorS4L", {
 
         if (this.__uuidTemp === spline.uuid) {
           this.__splineTemp = spline;
-          this.__threeView.getThreeWrapper().addEntityToScene(this.__splineTemp);
+          // this.__threeView.getThreeWrapper().addEntityToScene(this.__splineTemp);
+          this.__threeView.addEntityToScene(this.__splineTemp);
         } else {
           this.__consolidateSpline(spline);
         }

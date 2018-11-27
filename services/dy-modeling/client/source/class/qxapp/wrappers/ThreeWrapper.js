@@ -103,9 +103,12 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       let scope = this;
 
       function onLoad(myScene) {
+        console.log(myScene.scene);
         for (let i = myScene.scene.children.length-1; i >=0; i--) {
           if (myScene.scene.children[i].type === "Mesh" ||
               myScene.scene.children[i].type === "Line") {
+            // Not really sure about this
+            myScene.scene.children[i].uuid = modelBuffer.uuid;
             const data = {
               name: modelBuffer.name,
               pathNames: modelBuffer.pathNames,
@@ -114,6 +117,8 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
               entity: myScene.scene.children[i]
             };
             scope.fireDataEvent("EntityToBeAdded", data);
+          } else {
+            console.log("Will not loaded", myScene.scene.children[i]);
           }
         }
       }
@@ -350,6 +355,7 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       if (listOfPoints.length === 0) {
         return null;
       }
+      console.log("listOfPoints", listOfPoints, color);
       let splineColor = color ? new THREE.Color(color.r, color.g, color.b) : 0xffffff;
       let curvePoints = this.__arrayToThreePoints(listOfPoints);
       let curve = new THREE.CatmullRomCurve3(curvePoints);
