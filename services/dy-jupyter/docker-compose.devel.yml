@@ -16,6 +16,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
+      - APIHUB_HOST=${APIHUB_HOST}
+      - APIHUB_PORT=${APIHUB_PORT}
       - USE_CASE_CONFIG_FILE=devel/port_config.json
       - INIT_OPTIONS=10 60 2 space
     depends_on:
@@ -53,6 +55,8 @@ services:
       - RUN_DOCKER_ENGINE_ROOT=1
       - BF_API_SECRET=none
       - BF_API_KEY=none
+      - APIHUB_HOST=${APIHUB_HOST}
+      - APIHUB_PORT=${APIHUB_PORT}
     restart: always
     depends_on:
       - postgres
