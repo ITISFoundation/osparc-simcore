@@ -1,8 +1,12 @@
+# pylint:disable=unused-import
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 import logging
 
 import docker
 import pytest
-from pytest_docker import docker_ip, docker_services  # pylint:disable=W0611
+from pytest_docker import docker_ip, docker_services
 
 log = logging.getLogger(__name__)
 
@@ -15,9 +19,9 @@ def is_responsive(url):
         return False
     return True
 
-# pylint:disable=redefined-outer-name
+
 @pytest.fixture(scope="session")
-def docker_registry(docker_ip, docker_services): 
+def docker_registry(docker_ip, docker_services):
     host = docker_ip
     port = docker_services.port_for('registry', 5000)
     url = "{host}:{port}".format(host=host, port=port)
