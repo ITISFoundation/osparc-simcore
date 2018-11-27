@@ -47,7 +47,7 @@ services:
         s4l_port_app: 9095
         s4l_port_mod: 9096
       labels: 
-        io.simcore.key: '{"key": "simcore/services/demodec/dynamic/itis/s4l/neuroman"}'
+        io.simcore.key: '{"key": "simcore/services/dynamic/demodec/itis/s4l/neuroman"}'
         io.simcore.version: '{"version": "${NEUROMAN_VERSION}"}'
         io.simcore.type: '{"type": "dynamic"}'
         io.simcore.name: '{"name": "neuroman"}'

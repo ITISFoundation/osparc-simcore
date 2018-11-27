@@ -21,7 +21,7 @@ export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 export MODELER_VERSION=2.6.0
 export NEUROMAN_VERSION=0.0.0
 MODELER_MASU_REGISTRY_NAME=masu.speag.com/simcore/services/dynamic/modeler/webserver
-NEUROMAN_MASU_REGISTRY_NAME=masu.speag.com/simcore/services/demodec/dynamic/itis/s4l/neuroman
+NEUROMAN_MASU_REGISTRY_NAME=masu.speag.com/simcore/services/dynamic/demodec/itis/s4l/neuroman
 
 all:
 	@echo 'run `make build-devel` to build your dev environment'
