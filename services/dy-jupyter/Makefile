@@ -19,7 +19,10 @@ endif
 export SERVICES_VERSION=1.6.0
 export VCS_REF=$(shell git rev-parse --short HEAD) 
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-export REGISTRY_KEY=masu.speag.com/simcore/services/dynamic/
+
+DOCKER_REGISTRY=masu.speag.com
+DOCKER_REGISTRY=registry.osparc.dev
+export REGISTRY_KEY=${DOCKER_REGISTRY}/simcore/services/dynamic/
 
 all:
 	@echo 'run `make build` to build'
@@ -46,6 +49,7 @@ down:
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml down
 
 
+
 push_service_images:
-	${DOCKER} login masu.speag.com
-	${DOCKER} push masu.speag.com/simcore/services/dynamic/jupyter-base-notebook:${SERVICES_VERSION}
+	${DOCKER} login ${DOCKER_REGISTRY}
+	${DOCKER} push ${DOCKER_REGISTRY}/simcore/services/dynamic/jupyter-base-notebook:${SERVICES_VERSION}
