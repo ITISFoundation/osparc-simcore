@@ -12,8 +12,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
   statics: {
     getNodeMap: function() {
       return {
-        "services/computational/itis/sleeper-0.0.0":{
-          key: "services/computational/itis/sleeper",
+        "simcore/services/computational/itis/sleeper-0.0.0":{
+          key: "simcore/services/computational/itis/sleeper",
           version: "0.0.0",
           type: "computational",
           name: "sleeper service",
@@ -43,8 +43,8 @@ qx.Class.define("qxapp.dev.fake.Data", {
             }
           }
         },
-        "services/computational/itis/tutti-0.0.0-alpha": {
-          key: "services/computational/itis/tutti",
+        "simcore/services/computational/itis/tutti-0.0.0-alpha": {
+          key: "simcore/services/computational/itis/tutti",
           version: "0.0.0-alpha",
           type: "computational",
           name: "a little test node",
@@ -182,7 +182,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?0.jpg",
           workbench: {
             "UUID1": {
-              key: "services/dynamic/itis/file-picker",
+              key: "simcore/services/dynamic/itis/file-picker",
               version: "0.0.0",
               outputs: {
                 outFile: {
@@ -196,7 +196,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "UUID2": {
-              key: "services/computational/itis/sleeper",
+              key: "simcore/services/computational/itis/sleeper",
               version: "0.0.0",
               label: "Sleeper 1",
               inputs: {
@@ -211,7 +211,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "UUID3": {
-              key: "services/computational/itis/sleeper",
+              key: "simcore/services/computational/itis/sleeper",
               version: "0.0.0",
               label: "Sleeper 2",
               inputs: {
@@ -226,7 +226,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "UUID4": {
-              key: "services/computational/itis/tutti",
+              key: "simcore/services/computational/itis/tutti",
               version: "0.0.0-alpha",
               inputs: {
                 inNumber: {
@@ -280,7 +280,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 150,
                 "y": 150
               },
-              "key": "services/dynamic/itis/file-picker",
+              "key": "simcore/services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "8d603045-bfe8-4822-906c-590fa69c1d13": {
@@ -316,7 +316,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 150,
                 "y": 300
               },
-              "key": "services/dynamic/itis/file-picker",
+              "key": "simcore/services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "1a4aafff-88c7-4e7e-89cc-fe374cfe64ea": {
@@ -397,7 +397,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           thumbnail: "https://placeimg.com/171/96/tech/grayscale/?15.jpg",
           workbench: {
             "Sleeper1": {
-              key: "services/computational/itis/sleeper",
+              key: "simcore/services/computational/itis/sleeper",
               version: "0.0.0",
               label: "Sleeper 1",
               inputs: {
@@ -437,7 +437,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "Container1"
             },
             "Sleeper2": {
-              key: "services/computational/itis/sleeper",
+              key: "simcore/services/computational/itis/sleeper",
               version: "0.0.0",
               inputs: {
                 inNumber: 3
@@ -452,7 +452,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "Container1"
             },
             "Sleeper3": {
-              key: "services/computational/itis/sleeper",
+              key: "simcore/services/computational/itis/sleeper",
               version: "0.0.0",
               inputs: {
                 inNumber: 2
@@ -492,7 +492,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 100,
                 "y": 150
               },
-              "key": "services/dynamic/itis/file-picker",
+              "key": "simcore/services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "418bd484-905b-4212-8108-c7cfab4f241e": {
@@ -506,7 +506,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 100,
                 "y": 400
               },
-              "key": "services/dynamic/itis/file-picker",
+              "key": "simcore/services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "Container0D": {
@@ -725,7 +725,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 108,
                 "y": 131
               },
-              "key": "services/dynamic/itis/file-picker",
+              "key": "simcore/services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "5986cf64-9f81-409d-998c-c1f04de67f8b": {
@@ -791,7 +791,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
                 "x": 100,
                 "y": 429
               },
-              "key": "services/dynamic/itis/file-picker",
+              "key": "simcore/services/dynamic/itis/file-picker",
               "version": "0.0.0"
             },
             "5e548936-ee08-43f3-ab01-a58e7c49a946": {
@@ -1040,7 +1040,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               parent: "89e185ca-dda1-4a45-8059-715f2cb17100"
             },
             "4069bf2e-e2be-4799-ad1c-c53f0cb46e4e": {
-              key: "services/computational/itis/Solver-LF",
+              key: "simcore/services/computational/itis/Solver-LF",
               version: "0.0.0",
               label: "LF Solver 1",
               inputs: {
@@ -1189,7 +1189,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
               }
             },
             "2472a166-7a9e-4023-be12-465d2f6eee54": {
-              key: "services/computational/itis/Solver-LF",
+              key: "simcore/services/computational/itis/Solver-LF",
               version: "0.0.0",
               inputs: {
                 "inFile": {

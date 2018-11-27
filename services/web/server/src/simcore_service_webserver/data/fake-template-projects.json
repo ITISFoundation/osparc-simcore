@@ -21,7 +21,7 @@
           "x": 100,
           "y": 150
         },
-        "key": "services/dynamic/itis/file-picker",
+        "key": "simcore/services/dynamic/itis/file-picker",
         "version": "0.0.0"
       },
       "418bd484-905b-4212-8108-c7cfab4f241e": {
@@ -35,7 +35,7 @@
           "x": 100,
           "y": 400
         },
-        "key": "services/dynamic/itis/file-picker",
+        "key": "simcore/services/dynamic/itis/file-picker",
         "version": "0.0.0"
       },
       "Container0D": {
@@ -254,7 +254,7 @@
           "x": 108,
           "y": 131
         },
-        "key": "services/dynamic/itis/file-picker",
+        "key": "simcore/services/dynamic/itis/file-picker",
         "version": "0.0.0"
       },
       "5986cf64-9f81-409d-998c-c1f04de67f8b": {
@@ -320,7 +320,7 @@
           "x": 100,
           "y": 429
         },
-        "key": "services/dynamic/itis/file-picker",
+        "key": "simcore/services/dynamic/itis/file-picker",
         "version": "0.0.0"
       },
       "5e548936-ee08-43f3-ab01-a58e7c49a946": {
@@ -564,7 +564,7 @@
         "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
       },
       "4069bf2e-e2be-4799-ad1c-c53f0cb46e4e": {
-        "key": "services/computational/itis/Solver-LF",
+        "key": "simcore/services/computational/itis/Solver-LF",
         "version": "0.0.0",
         "label": "LF Solver 1",
         "inputs": {
@@ -713,7 +713,7 @@
         }
       },
       "2472a166-7a9e-4023-be12-465d2f6eee54": {
-        "key": "services/computational/itis/Solver-LF",
+        "key": "simcore/services/computational/itis/Solver-LF",
         "version": "0.0.0",
         "inputs": {
           "inFile": {

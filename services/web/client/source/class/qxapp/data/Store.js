@@ -99,8 +99,8 @@ qx.Class.define("qxapp.data.Store", {
 
     getBuiltInServices: function() {
       let builtInServices = {
-        "services/dynamic/itis/file-picker-0.0.0": {
-          key: "services/dynamic/itis/file-picker",
+        "simcore/services/dynamic/itis/file-picker-0.0.0": {
+          key: "simcore/services/dynamic/itis/file-picker",
           version: "0.0.0",
           type: "computational",
           name: "File Picker",
@@ -641,8 +641,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/computational/itis/Solver-LF-0.0.0": {
-          key: "services/computational/itis/Solver-LF",
+        "simcore/services/demodec/computational/itis/Solver-LF-0.0.0": {
+          key: "simcore/services/demodec/computational/itis/Solver-LF",
           version: "0.0.0",
           type: "computational",
           name: "LF Solver",
