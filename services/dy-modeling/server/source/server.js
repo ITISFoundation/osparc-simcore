@@ -399,6 +399,10 @@ function getEncodedSceneFromS4L(entity) {
             type: 'importModelScene',
             value: scene.data,
             path: entity.path,
+            uuid: entity.uuid,
+            name: entity.name,
+            pathNames: entity.pathNames,
+            pathUuids: entity.pathUuids,
           };
           resolve(encodedScene);
         }
