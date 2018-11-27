@@ -21,6 +21,10 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
       let projectTitle = new qx.ui.form.TextField().set({
         placeholder: this.tr("Project Title")
       });
+      this.addListener("appear", () => {
+        projectTitle.activate();
+        projectTitle.focus();
+      });
       prjFormLayout.add(projectTitle);
 
       prjFormLayout.add(new qx.ui.core.Spacer(5));
