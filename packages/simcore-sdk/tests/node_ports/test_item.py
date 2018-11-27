@@ -12,18 +12,18 @@ from simcore_sdk.node_ports._schema_item import SchemaItem
 
 def create_item(item_type, item_value):
     key = "some key"
-    return Item(SchemaItem(key=key, 
-                    label="a label", 
-                    description="a description", 
-                    type=item_type, 
-                    displayOrder=2), DataItem(key=key, 
+    return Item(SchemaItem(key=key,
+                    label="a label",
+                    description="a description",
+                    type=item_type,
+                    displayOrder=2), DataItem(key=key,
                     value=item_value))
 
 def test_default_item():
     with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError"):
         Item(None, None)
 
-@pytest.mark.asyncio
+
 async def test_item():
     key = "my key"
     label = "my label"
@@ -45,20 +45,20 @@ async def test_item():
 
     assert await item.get() == item_value
 
-@pytest.mark.asyncio
+
 async def test_valid_type():
     for item_type in config.TYPE_TO_PYTHON_TYPE_MAP:
         item = create_item(item_type, None)
         assert await item.get() is None
 
-@pytest.mark.asyncio
+
 async def test_invalid_type():
     item = create_item("some wrong type", None)
     with pytest.raises(exceptions.InvalidProtocolError, message="Expecting InvalidProtocolError") as excinfo:
         await item.get()
     assert "Invalid protocol used" in str(excinfo.value)
 
-@pytest.mark.asyncio
+
 async def test_invalid_value_type():
     #pylint: disable=W0612
     with pytest.raises(exceptions.InvalidItemTypeError, message="Expecting InvalidItemTypeError") as excinfo:
@@ -68,11 +68,11 @@ async def test_invalid_value_type():
     ("integer", 26, 26),
     ("number", -746.4748, -746.4748),
 #     ("data:*/*", __file__, {"store":"s3-z43", "path":"undefined/undefined/{filename}".format(filename=Path(__file__).name)}),
-    ("boolean", False, False),    
+    ("boolean", False, False),
     ("string", "test-string", "test-string")
 ])
-@pytest.mark.asyncio
-async def test_set_new_value(bucket, item_type, item_value_to_set, expected_value): # pylint: disable=W0613    
+
+async def test_set_new_value(bucket, item_type, item_value_to_set, expected_value): # pylint: disable=W0613
     mock_method = mock.Mock()
     item = create_item(item_type, None)
     item.new_data_cb = mock_method
@@ -87,7 +87,7 @@ async def test_set_new_value(bucket, item_type, item_value_to_set, expected_valu
     ("boolean", 123),
     ("string", True)
 ])
-@pytest.mark.asyncio
+
 async def test_set_new_invalid_value(bucket, item_type, item_value_to_set): # pylint: disable=W0613
     item = create_item(item_type, None)
     assert await item.get() is None

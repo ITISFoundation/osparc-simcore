@@ -29,20 +29,30 @@ def parse_db(dsm_mockup_db):
     return id_file_count, id_name_map
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postgres_service, minio_service):
+def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postgres_service, minio_service, osparc_api_specs_dir):
     app = web.Application()
 
-    max_workers = 4
+    main_cfg = {
+        'port': aiohttp_unused_port(),
+        'host': 'localhost',
+        'python2': python27_path,
+        "max_workers" : 4
+    }
+    rest_cfg = {
+        'oas_repo': str(osparc_api_specs_dir), #'${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs',
+        #oas_repo: http://localhost:8043/api/specs
+    }
+    postgres_cfg = postgres_service
+    s3_cfg = minio_service
 
-    server_kwargs={'port': aiohttp_unused_port(), 'host': 'localhost', 'python2' : python27_path, "max_workers" : max_workers }
 
-    postgres_kwargs = postgres_service
-
-    s3_kwargs = minio_service
-
-
-    # fake main
-    app[APP_CONFIG_KEY] = { 'main': server_kwargs, 'postgres' : postgres_kwargs, "s3" : s3_kwargs } # Fake config
+    # fake config
+    app[APP_CONFIG_KEY] = {
+        'main': main_cfg,
+        'postgres' : postgres_cfg,
+        's3' : s3_cfg,
+        'rest': rest_cfg
+    }
 
     app.middlewares.append(dsm_middleware)
 
@@ -53,12 +63,14 @@ def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postgres_se
 
     assert "SECRET_KEY" in app[APP_CONFIG_KEY]
 
-    cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=server_kwargs) )
+    cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=main_cfg) )
     return cli
 
 async def test_health_check(client):
     resp = await client.get("/v0/")
-    assert resp.status == 200
+    text = await resp.text()
+
+    assert resp.status == 200, text
 
     payload = await resp.json()
     data, error = tuple( payload.get(k) for k in ('data', 'error') )
