@@ -142,6 +142,7 @@ paths:
         - $ref: '#/components/parameters/ServiceKey'
         - $ref: '#/components/parameters/ServiceVersion'
         - $ref: '#/components/parameters/AssignmentUuid'
+        - $ref: '#/components/parameters/ServiceBasePath'
       responses:
         "201":
           description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
@@ -309,6 +310,15 @@ components:
           - computational
           - interactive
         example: computational
+
+    ServiceBasePath:
+      in: query
+      name: service_basepath
+      description: predefined basepath for the backend service otherwise uses root
+      required: false
+      schema:
+        type: string
+        example: '/x/EycCXbU0H/'
 
     ServiceUuid:
       in: path
