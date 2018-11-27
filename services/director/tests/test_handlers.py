@@ -183,6 +183,7 @@ async def _start_get_stop_services(push_services, user_id):
         service_description = created_service["service_description"]
         service_key = service_description["key"]
         service_tag = service_description["version"]
+        service_port = created_service["internal_port"]
         service_uuid = str(uuid.uuid4())
         # start the service
         web_response = await rest.handlers.running_interactive_services_post(fake_request, user_id, service_key, service_uuid, service_tag)
@@ -195,12 +196,11 @@ async def _start_get_stop_services(push_services, user_id):
         assert running_service_enveloped["data"]["service_key"] == service_key
         assert running_service_enveloped["data"]["service_version"] == service_tag
         # assert running_service_enveloped["data"]["service_host"] == service_description["host"]
-        # assert running_service_enveloped["data"]["service_port"] == service_description["port"]
+        assert running_service_enveloped["data"]["service_port"] == service_port
         # assert running_service_enveloped["data"]["service_basepath"] == service_description["basepath"]
         service_published_port = running_service_enveloped["data"]["published_port"]
         service_entry_point = running_service_enveloped["data"]["entry_point"]
-        service_host = running_service_enveloped["data"]["service_host"]
-        service_port = running_service_enveloped["data"]["service_port"]
+        service_host = running_service_enveloped["data"]["service_host"]        
         service_basepath = running_service_enveloped["data"]["service_basepath"]
         
 
