@@ -319,6 +319,7 @@ components:
       schema:
         type: string
         example: '/x/EycCXbU0H/'
+        default: ''
 
     ServiceUuid:
       in: path

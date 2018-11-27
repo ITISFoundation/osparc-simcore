@@ -14,6 +14,7 @@ components:
       name: service_basepath
       required: false
       schema:
+        default: ''
         example: /x/EycCXbU0H/
         type: string
     ServiceKey:
@@ -221,6 +222,7 @@ paths:
         name: service_basepath
         required: false
         schema:
+          default: ''
           example: /x/EycCXbU0H/
           type: string
       responses:
