@@ -535,10 +535,11 @@ def __get_service_key_version_from_docker_service(service: docker.models.service
     service_attrs = service.attrs
     service_full_name = str(
         service_attrs["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"])
-    if config.REGISTRY_URL not in service_full_name:
+    if not service_full_name.startswith(config.REGISTRY_URL):
         raise exceptions.DirectorException(
             msg="Invalid service {}".format(service_full_name))
-    service_full_name = service_full_name.lstrip(config.REGISTRY_URL + "/")
+
+    service_full_name = service_full_name[len(config.REGISTRY_URL):]
     return service_full_name.split(":")[0], service_full_name.split(":")[1]
 
 def _get_service_basepath_from_docker_service(service: docker.models.services.Service) -> str:
