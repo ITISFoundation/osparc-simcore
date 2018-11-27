@@ -50,11 +50,7 @@ DATCORE_ID      = 1
 DATCORE_STR     = "datcore"
 
 
-
-
 # RSC=resource
-RSC_OPENAPI_DIR_KEY = "oas3/{}".format(API_URL_VERSION)
-RSC_OPENAPI_ROOTFILE_KEY = "{}/openapi.yaml".format(RSC_OPENAPI_DIR_KEY)
 RSC_CONFIG_DIR_KEY  = "data"
 RSC_CONFIG_SCHEMA_KEY = RSC_CONFIG_DIR_KEY + "/config-schema-v1.json"
 
