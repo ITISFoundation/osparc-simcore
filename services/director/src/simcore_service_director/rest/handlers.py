@@ -54,7 +54,7 @@ async def _list_services(list_service_fct):
     services = node_validator.validate_nodes(services)
     return services
 
-async def running_interactive_services_post(request, user_id, service_key, service_uuid, service_tag, service_basepath):  # pylint:disable=unused-argument
+async def running_interactive_services_post(request, user_id, service_key, service_uuid, service_tag, service_basepath):  # pylint:disable=unused-argument, too-many-arguments
     log.debug("Client does running_interactive_services_post request %s with user_id %s service %s:%s, service_uuid %s, service_basepath %s",
                 request, user_id, service_key, service_tag, service_uuid, service_basepath)
 
