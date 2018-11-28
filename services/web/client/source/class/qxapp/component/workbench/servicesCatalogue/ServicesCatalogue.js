@@ -33,7 +33,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     let showAll = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
     showAll.setValue(false);
     showAll.addListener("changeValue", e => {
-      this.__showAllServices(e.getData());
+      this.__refilterData();
     }, this);
     filterLayout.add(showAll);
     // buttons for reloading services
@@ -141,17 +141,6 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       }
     },
 
-    __showAllServices: function(show) {
-      let newData = [];
-      for (let i = 0; i < this.__allServices.length; i++) {
-        const service = this.__allServices[i];
-        if (show || !service.getKey().includes("demodec")) {
-          newData.push(service);
-        }
-      }
-      this.__setNewData(newData);
-    },
-
     __reloadServices: function() {
       this.__clearData();
       this.__populateList(true);
@@ -199,9 +188,20 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       this.__controller.setModel(clearData);
     },
 
+    __refilterData: function() {
+      this.__setNewData(this.__allServices);
+    },
+
     __setNewData: function(newData) {
-      let filteredData = new qx.data.Array(newData);
-      this.__controller.setModel(filteredData);
+      let filteredData = [];
+      for (let i = 0; i < newData.length; i++) {
+        const service = newData[i];
+        if (this.__showAll.getValue() || !service.getKey().includes("demodec")) {
+          filteredData.push(service);
+        }
+      }
+      let newModel = new qx.data.Array(filteredData);
+      this.__controller.setModel(newModel);
       this.__controller.update();
     },
 
