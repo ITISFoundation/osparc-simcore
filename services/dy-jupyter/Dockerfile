@@ -40,7 +40,7 @@ RUN pip install --upgrade pip && \
     jupyter nbextension enable hide_input/main && \
     jupyter nbextension enable init_cell/main
 # ----------------------------------------------------------------
-COPY --chown=jovyan:users services/dy-jupyter/notebook-customisation/custom.js /home/jovyan/.jupyter/custom
+COPY --chown=jovyan:users services/dy-jupyter/notebook-customisation/custom.js /home/jovyan/.jupyter/custom/custom.js
 
 ENV NOTEBOOK_URL="notebooks/notebook.ipynb"
 # ----------------------------------------------------------------
