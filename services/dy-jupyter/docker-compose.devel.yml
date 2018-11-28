@@ -20,6 +20,7 @@ services:
       - APIHUB_PORT=${APIHUB_PORT}
       - USE_CASE_CONFIG_FILE=devel/port_config.json
       - INIT_OPTIONS=10 60 2 space
+      - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     depends_on:
       - postgres
       - minio
