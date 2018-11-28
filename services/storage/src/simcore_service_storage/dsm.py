@@ -309,6 +309,7 @@ class DataStorageManager:
                 from_object_name = source_uuid
                 from_bucket_object_name = os.path.join(from_bucket, from_object_name)
                 # TODO: I am tempted to completely replace the minio client..,
+                # BUG: This will not work behind nginx: see https://boto3.amazonaws.com/v1/documentation/api/latest/reference/core/session.html
                 async with aioboto3.resource('s3', endpoint_url="http://"+self.s3_client.endpoint, aws_access_key_id=self.s3_client.access_key,
                     aws_secret_access_key=self.s3_client.secret_key) as s3:
                     await s3.Object(to_bucket_name, to_object_name).copy_from(CopySource=from_bucket_object_name)
@@ -366,6 +367,8 @@ class DataStorageManager:
         CHUNK_SIZE = 8 * mb
 
         # TODO: this guy can probably become a member
+        # BUG: This will not work behind nginx: see https://boto3.amazonaws.com/v1/documentation/api/latest/reference/core/session.html
+
         async with aioboto3.resource('s3', endpoint_url="http://"+self.s3_client.endpoint, aws_access_key_id=self.s3_client.access_key,
             aws_secret_access_key=self.s3_client.secret_key) as s3:
 
