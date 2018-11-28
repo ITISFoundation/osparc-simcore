@@ -314,6 +314,17 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       const saveContainers = false;
       const savePosition = false;
       let currentPipeline = this.getProjectModel().getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
+      for (const nodeId in currentPipeline) {
+        let currentNode = currentPipeline[nodeId];
+        if (currentNode.key.includes("/neuroman")) {
+          // HACK: Only Neuroman should enter here
+          currentNode.key = "simcore/services/dynamic/modeler/webserver";
+          currentNode.version = "2.6.0";
+          const modelSelected = currentNode.inputs["inModel"];
+          delete currentNode.inputs["inModel"];
+          currentNode.inputs["model_name"] = modelSelected;
+        }
+      }
       let url = "/computation/pipeline/" + encodeURIComponent(this.getProjectModel().getUuid()) + "/start";
 
       let req = new qxapp.io.request.ApiRequest(url, "POST");

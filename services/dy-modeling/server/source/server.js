@@ -62,7 +62,10 @@ server.listen(PORT, HOSTNAME);
 console.log('server started on ' + PORT + '/app');
 
 // init socket.io
-let io = require('socket.io')(server);
+let io = require('socket.io')(server, {
+  pingInterval: 15000,
+  pingTimeout: 10000
+});
 let connectedClient = null;
 
 // Socket IO stuff
@@ -396,6 +399,10 @@ function getEncodedSceneFromS4L(entity) {
             type: 'importModelScene',
             value: scene.data,
             path: entity.path,
+            uuid: entity.uuid,
+            name: entity.name,
+            pathNames: entity.pathNames,
+            pathUuids: entity.pathUuids,
           };
           resolve(encodedScene);
         }
@@ -549,6 +556,4 @@ function callInputRetriever(request, response) {
       response.sendStatus("204")
     }
   });
-
-
 }

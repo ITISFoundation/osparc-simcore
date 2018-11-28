@@ -416,8 +416,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           if (srvUrl[srvUrl.length-1] !== "/") {
             arg = "/" + arg;
           }
-          // FIXME:
-          arg = "";
           this.getIFrame().setSource(srvUrl + arg);
         } else {
           this.getIFrame().setSource(this.getServiceUrl());
@@ -433,7 +431,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     __startInteractiveNode: function() {
       let metaData = this.getMetaData();
-      if (metaData.type == "dynamic") {
+      if (metaData && ("type" in metaData) && metaData.type == "dynamic") {
         let button = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/redo-alt/32"
         });
@@ -453,7 +451,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
         // start the service
         const url = "/running_interactive_services";
-        const query = "?service_key=" + encodeURIComponent(metaData.key) + "&service_tag=" + encodeURIComponent(metaData.version) + "&service_uuid=" + encodeURIComponent(this.getNodeId());
+        let query = "?service_key=" + encodeURIComponent(metaData.key) + "&service_tag=" + encodeURIComponent(metaData.version) + "&service_uuid=" + encodeURIComponent(this.getNodeId());
+        if (metaData.key.includes("/neuroman")) {
+          // HACK: Only Neuroman should enter here
+          query = "?service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver") + "&service_tag=" + encodeURIComponent("2.6.0") + "&service_uuid=" + encodeURIComponent(this.getNodeId());
+        }
         let request = new qxapp.io.request.ApiRequest(url+query, "POST");
         request.addListener("success", this.__onInteractiveNodeStarted, this);
         request.addListener("error", e => {
