@@ -18,6 +18,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     let catalogueLayout = new qx.ui.layout.VBox(10);
     this.setLayout(catalogueLayout);
 
+
     // Controls
     // create the textfield
     let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -30,7 +31,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     });
     // check box for filtering
     let showAll = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
-    showAll.setValue(true);
+    showAll.setValue(false);
     showAll.addListener("changeValue", e => {
       this.__showAllServices(e.getData());
     }, this);
@@ -45,31 +46,35 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     filterLayout.add(reloadBtn);
     this.add(filterLayout);
 
-    this.__allServices = [];
-    let names = [];
-    let rawData = new qx.data.Array(names);
 
-    this.__list = new qx.ui.form.List();
-    this.add(this.__list, {
-      flex: 1
-    });
-    this.__list.setSelectionMode("one");
+    // Services list
+    this.__allServices = [];
+
+    let list = this.__list = new qx.ui.form.List();
+    list.setSelectionMode("one");
 
     // create the controller
-    this.__controller = new qx.data.controller.List(rawData, this.__list);
-    // controller.setLabelPath("name");
+    let controller = this.__controller = new qx.data.controller.List(new qx.data.Array([]), list);
+    // set the name for the label property
+    controller.setLabelPath("name");
+    // convert for the label
+    controller.setLabelOptions({
+      converter: function(data, model) {
+        return model.getName() + " " + model.getVersion();
+      }
+    });
 
     // create the filter
     let filterObj = new qxapp.component.workbench.servicesCatalogue.SearchTypeFilter(this.__controller);
-    // Item's data sorting
-    filterObj.sorter = function(a, b) {
-      return a > b;
-    };
     // set the filter
     this.__controller.setDelegate(filterObj);
 
     // make every input in the textfield update the controller
     textfield.bind("changeValue", filterObj, "searchString");
+
+    this.add(list, {
+      flex: 1
+    });
 
 
     // create buttons
@@ -136,20 +141,12 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       }
     },
 
-    __getServiceNameInList: function(service) {
-      return (service.name + " " + service.version);
-    },
-
     __showAllServices: function(show) {
       let newData = [];
       for (let i = 0; i < this.__allServices.length; i++) {
         const service = this.__allServices[i];
-        if (show) {
-          const listName = this.__getServiceNameInList(service);
-          newData.push(listName);
-        } else if (!service.key.includes("demodec")) {
-          const listName = this.__getServiceNameInList(service);
-          newData.push(listName);
+        if (show || !service.getKey().includes("demodec")) {
+          newData.push(service);
         }
       }
       this.__setNewData(newData);
@@ -169,8 +166,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
             let outputsMap = this.__allServices[i].outputs;
             for (let key in outputsMap) {
               if (this.__areNodesCompatible(outputsMap[key], this.__contextPort)) {
-                const listName = this.__getServiceNameInList(this.__allServices[i]);
-                newData.push(listName);
+                newData.push(this.__allServices[i]);
                 break;
               }
             }
@@ -178,8 +174,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
             let inputsMap = this.__allServices[i].inputs;
             for (let key in inputsMap) {
               if (this.__areNodesCompatible(inputsMap[key], this.__contextPort)) {
-                const listName = this.__getServiceNameInList(this.__allServices[i]);
-                newData.push(listName);
+                newData.push(this.__allServices[i]);
                 break;
               }
             }
@@ -187,8 +182,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         }
       } else {
         for (let i = 0; i < this.__allServices.length; i++) {
-          const listName = this.__getServiceNameInList(this.__allServices[i]);
-          newData.push(listName);
+          newData.push(this.__allServices[i]);
         }
       }
       this.__setNewData(newData);
@@ -212,7 +206,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     __addNewData: function(newData) {
       for (const serviceKey in newData) {
-        this.__allServices.push(newData[serviceKey]);
+        let newModel = qx.data.marshal.Json.createModel(newData[serviceKey], true);
+        this.__allServices.push(newModel);
       }
       this.__updateCompatibleList();
     },
@@ -222,11 +217,10 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         return;
       }
 
-      let selection = this.__list.getSelection();
-      let selectedLabel = selection[0].getLabel();
+      let selection = this.__list.getSelection()[0];
       for (let i = 0; i < this.__allServices.length; i++) {
-        const listName = this.__getServiceNameInList(this.__allServices[i]);
-        if (selectedLabel === listName) {
+        if (selection.getModel().getKey() === this.__allServices[i].getKey() &&
+          selection.getModel().getVersion() === this.__allServices[i].getVersion()) {
           const eData = {
             service: this.__allServices[i],
             contextNodeId: this.__contextNodeId,

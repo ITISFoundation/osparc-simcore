@@ -35,6 +35,16 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
     __controller: null,
     __filter: null,
 
+    // create the delegate to change the bindings
+    bindItem: function(controller, item, id) {
+      controller.bindDefaultProperties(item, id);
+    },
+
+    // Item's data sorting
+    sorter: function(a, b) {
+      return a > b;
+    },
+
     __applySearchString : function(value, old) {
       this.__controller.update();
     }
