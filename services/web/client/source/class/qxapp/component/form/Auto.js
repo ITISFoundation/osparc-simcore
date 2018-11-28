@@ -211,7 +211,7 @@ qx.Class.define("qxapp.component.form.Auto", {
       this.__settingData = true;
 
       for (let key in data) {
-        if (typeof data[key] == "object" && data[key].nodeUuid) {
+        if (data[key] !== null && typeof data[key] === "object" && data[key].nodeUuid) {
           this.addLink(key, data[key].nodeUuid, data[key].output);
           continue;
         }
@@ -547,9 +547,13 @@ qx.Class.define("qxapp.component.form.Auto", {
 
       const workbenchModel = this.getNodeModel().getWorkbenchModel();
       const fromNode = workbenchModel.getNodeModel(fromNodeId);
-      const fromNodeLabel = fromNode.getLabel(fromNodeId);
+      const fromNodeLabel = fromNode.getLabel();
       const port = fromNode.getOutput(fromPortId);
-      const fromPortLabel = port ? port.label : null;
+      let fromPortLabel = port ? port.label : null;
+      if (fromNode.getKey().includes("/neuroman")) {
+        // HACK: Only Neuroman should enter here
+        fromPortLabel = fromPortId;
+      }
       if (fromNodeLabel && fromPortLabel) {
         this.getControlLink(toPortId).setValue("Linked to " + fromNodeLabel + ": " + fromPortLabel);
       } else {

@@ -27,6 +27,7 @@ services:
       - ../../packages/:/home/jovyan/packages
       - ../../services/:/home/jovyan/services
       - ./devel:/home/jovyan/devel
+      - ../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./notebooks:/home/jovyan/notebooks
       - ./docker:/docker
   #--------------------------------------------------------------------

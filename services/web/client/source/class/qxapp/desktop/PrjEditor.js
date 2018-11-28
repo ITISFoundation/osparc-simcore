@@ -1,11 +1,16 @@
 /* global window */
 
 /* eslint newline-per-chained-call: 0 */
+/* eslint no-warning-comments: "off" */
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,
 
   construct: function(projectModel) {
     this.base(arguments, "horizontal");
+
+    qxapp.utils.UuidToName.getInstance().setProjectModel(projectModel);
+
+    this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
 
     this.setProjectModel(projectModel);
 
@@ -35,7 +40,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       nullable: false,
       init: true,
       check: "Boolean",
-      apply : "__applyCanStart"
+      apply: "__applyCanStart"
     }
   },
 
@@ -44,6 +49,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   },
 
   members: {
+    __projectResources: null,
     __pipelineId: null,
     __mainPanel: null,
     __sidePanel: null,
@@ -263,7 +269,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showScreenshotInExtraView: function(name) {
-      let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_"+name+".png").set({
+      let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_" + name + ".png").set({
         scale: true,
         allowShrinkX: true,
         allowShrinkY: true
@@ -298,7 +304,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         socket.on("progress", function(data) {
           let d = JSON.parse(data);
           let node = d["Node"];
-          let progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
+          let progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
           this.__workbenchView.updateProgress(node, progress);
         }, this);
       }
@@ -308,6 +314,17 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       const saveContainers = false;
       const savePosition = false;
       let currentPipeline = this.getProjectModel().getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
+      for (const nodeId in currentPipeline) {
+        let currentNode = currentPipeline[nodeId];
+        if (currentNode.key.includes("/neuroman")) {
+          // HACK: Only Neuroman should enter here
+          currentNode.key = "simcore/services/dynamic/modeler/webserver";
+          currentNode.version = "2.6.0";
+          const modelSelected = currentNode.inputs["inModel"];
+          delete currentNode.inputs["inModel"];
+          currentNode.inputs["model_name"] = modelSelected;
+        }
+      }
       let url = "/computation/pipeline/" + encodeURIComponent(this.getProjectModel().getUuid()) + "/start";
 
       let req = new qxapp.io.request.ApiRequest(url, "POST");
@@ -416,7 +433,19 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     serializeProjectDocument: function() {
-      console.log("serializeProject", this.getProjectModel().serializeProject());
+      let myPrj = this.getProjectModel().serializeProject();
+      // FIXME: server expects "projectUuid" and we have "uuid"
+      myPrj["projectUuid"] = myPrj["uuid"];
+      console.log("serializeProject", myPrj);
+
+      let resource = this.__projectResources.project;
+      resource.addListenerOnce("delSuccess", e => {
+        let resources = this.__projectResources.projects;
+        resources.post(null, myPrj);
+      }, this);
+      resource.del({
+        "project_id": myPrj["uuid"]
+      });
     }
   }
 });

@@ -109,10 +109,14 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     __populateList: function() {
       let store = qxapp.data.Store.getInstance();
-      store.addListener("servicesRegistered", e => {
-        this.__addNewData(e.getData());
-      }, this);
-      store.getServices();
+      let services = store.getServices();
+      if (services === null) {
+        store.addListener("servicesRegistered", e => {
+          this.__addNewData(e.getData());
+        }, this);
+      } else {
+        this.__addNewData(services);
+      }
     },
 
     __getServiceNameInList: function(service) {

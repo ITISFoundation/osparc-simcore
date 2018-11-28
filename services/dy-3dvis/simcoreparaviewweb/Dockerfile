@@ -20,13 +20,30 @@ ENV PARAVIEW_INPUT_PATH="/data"
 # install git, pip
 RUN apt-get update && \
     apt-get install -y \
-    python3-pip
+    python3-pip && \
+    python3 -V
+
+# install python 3.6 for root and also for www-data
+ENV PYENV_ROOT=/pyenv
+RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash && \
+    export PATH="${PYENV_ROOT}/bin:$PATH" && \
+    eval "$(pyenv init -)" && \
+    eval "$(pyenv virtualenv-init -)" && \
+    apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
+    libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
+    xz-utils tk-dev libffi-dev liblzma-dev && \
+    pyenv install 3.6.7 && \
+    pyenv global 3.6.7 && \
+    pip install --upgrade pip wheel setuptools
+
 # get the patched visualizer
 COPY --from=visualizer /home/node/visualizer/dist /opt/paraview/install/share/paraview-5.5/web/visualizer/www
 WORKDIR /home/root
 # ----------------------------------------------------------------
 # set up oSparc env variables
 ENV SIMCORE_NODE_UUID="-1" \
+    SIMCORE_USER_ID="-1" \
+    STORAGE_ENDPOINT="=1" \    
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
     S3_SECRET_KEY="-1" \
@@ -40,38 +57,44 @@ ENV SIMCORE_NODE_UUID="-1" \
 ENV SERVER_PORT="-1"  \
     HOST_NAME="-1"
 # update pip
-RUN pip3 install --upgrade pip
+RUN pip3 install --upgrade pip wheel setuptools
 
 # copy scripts
-COPY services/dy-3dvis/simcoreparaviewweb/scripts /home/root/scripts
+COPY services/dy-3dvis/simcoreparaviewweb/docker /home/root/docker
 COPY services/dy-3dvis/simcoreparaviewweb/config /home/root/config
 
-RUN chmod +x scripts/boot.sh
+# RUN chmod +x docker/boot.sh
 # apply apache config changer script
-RUN chmod +x scripts/apachePatch.sh
+# RUN chmod +x docker/apachePatch.sh
 RUN mkdir /home/root/trigger && \
     chmod 777 /home/root/trigger
 # apply paraview launcher modifier script
-RUN chmod +x scripts/visualizer_launcher_patch.sh
+# RUN chmod +x docker/visualizer_launcher_patch.sh
 #------------------------------------------
 FROM common as development
-VOLUME /home/root/src
+VOLUME /home/root/cgi_scripts
 VOLUME /home/root/devel
 VOLUME /home/root/packages
+VOLUME /home/root/services
 VOLUME /home/root/test-data
+VOLUME /home/root/scripts/dy_services_helpers
 ENV CREATE_DUMMY_TABLE 1
-ENV USE_CASE_CONFIG_FILE="devel/devel-dbconfiguration.json"
+ENV USE_CASE_CONFIG_FILE="devel/port_config.json"
 ENV TEST_DATA_PATH="/test-data"
 # Need to use entrypoint as base image's entrypoint must be overriden
-ENTRYPOINT [ "/bin/bash", "scripts/boot.sh" ]
+ENTRYPOINT [ "/bin/bash", "docker/boot.sh" ]
 #------------------------------------------
 FROM common AS production
 # install simcore packages
 COPY packages/simcore-sdk /home/root/packages/simcore-sdk
 COPY packages/s3wrapper /home/root/packages/s3wrapper
-# copy the default notebook
-RUN pip install /home/root/packages/simcore-sdk &&\
-    pip install /home/root/packages/s3wrapper
+COPY services/storage/client-sdk /home/root/services/storage/client-sdk
+# install packages but beware we need to use python 3.6 through pyenv
+RUN export PATH="${PYENV_ROOT}/bin:$PATH" && \
+    eval "$(pyenv init -)" && \
+    pip install /home/root/packages/simcore-sdk &&\
+    pip install /home/root/packages/s3wrapper && \
+    pip install /home/root/services/storage/client-sdk/python
 # copy script to get the inputs inside the local file system
-COPY services/dy-3dvis/simcoreparaviewweb/src /home/root/src
-ENTRYPOINT [ "/bin/bash", "scripts/boot.sh" ]
+COPY services/dy-3dvis/simcoreparaviewweb/cgi_scripts /home/root/cgi_scripts
+ENTRYPOINT [ "/bin/bash", "docker/boot.sh" ]

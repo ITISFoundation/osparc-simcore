@@ -72,11 +72,13 @@ qx.Class.define("qxapp.modeler.SplineCreator", {
       }
 
       let spline = this.__threeView.getThreeWrapper().createSpline(this.__pointList);
-      spline.name = "Spline";
-      for (let i = 0; i < this.__controlPoints.length; i++) {
-        spline.add(this.__controlPoints[i]);
+      if (spline) {
+        spline.name = "Spline";
+        for (let i = 0; i < this.__controlPoints.length; i++) {
+          spline.add(this.__controlPoints[i]);
+        }
+        this.__threeView.addEntityToScene(spline);
       }
-      this.__threeView.addEntityToScene(spline);
       this.__pointList = [];
       this.__controlPoints = [];
       this.__threeView.stopTool();

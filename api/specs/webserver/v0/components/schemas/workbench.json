@@ -1,5 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://simcore.io/api/specs/webserver/v0/components/schemas/workbench.json",
   "title": "simcore workbench",
   "description": "description of a simcore workbench",
   "type": "object",

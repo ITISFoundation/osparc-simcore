@@ -144,6 +144,11 @@ async def _parse_pipeline(pipeline_data:dict): # pylint: disable=R0912
         if "outputs" in value:
             node_outputs = value["outputs"]
         log.debug("node %s:%s has inputs: \n%s\n outputs: \n%s", node_key, node_version, node_inputs, node_outputs)
+        
+        # HACK: skip fake services
+        if "demodec" in node_key:
+            log.debug("skipping workbench entry containing %s:%s", node_uuid, value)
+            continue
         node_details = await _get_node_details(node_key, node_version)
         log.debug("node %s:%s has schema:\n %s",node_key, node_version, node_details)
         dag_adjacency_list = await _build_adjacency_list(node_uuid, node_details, node_inputs, pipeline_data, dag_adjacency_list)

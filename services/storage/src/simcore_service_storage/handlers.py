@@ -9,7 +9,7 @@ from servicelib.rest_utils import extract_and_validate
 from . import __version__
 from .rest_models import FileMetaDataSchema
 from .session import get_session
-from .settings import RQT_DSM_KEY
+from .settings import APP_DSM_KEY
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +25,6 @@ files_schema = FileMetaDataSchema(many=True)
 
 async def check_health(request: web.Request):
     log.info("CHECK HEALTH INCOMING PATH %s",request.path)
-
     params, query, body = await extract_and_validate(request)
 
     assert not params
@@ -68,6 +67,7 @@ async def check_action(request: web.Request):
     }
     return output
 
+
 async def get_storage_locations(request: web.Request):
     log.info("CHECK LOCATION PATH %s %s",request.path, request.url)
 
@@ -79,7 +79,7 @@ async def get_storage_locations(request: web.Request):
 
     assert query["user_id"]
     user_id = query["user_id"]
-    dsm = request[RQT_DSM_KEY]
+    dsm = request.app[APP_DSM_KEY]
 
     assert dsm
 
@@ -101,7 +101,7 @@ async def get_files_metadata(request: web.Request):
 
     assert params["location_id"]
     assert query["user_id"]
-    dsm = request[RQT_DSM_KEY]
+    dsm = request.app[APP_DSM_KEY]
 
     location_id = params["location_id"]
     location = dsm.location_from_id(location_id)
@@ -137,7 +137,8 @@ async def get_file_metadata(request: web.Request):
     assert params["location_id"]
     assert params["fileId"]
     assert query["user_id"]
-    dsm = request[RQT_DSM_KEY]
+
+    dsm = request.app[APP_DSM_KEY]
 
     location_id = params["location_id"]
     location = dsm.location_from_id(location_id)
@@ -168,7 +169,8 @@ async def update_file_meta_data(request: web.Request):
     assert params["location_id"]
     assert params["fileId"]
     assert query["user_id"]
-    dsm = request[RQT_DSM_KEY]
+    dsm = request.app[APP_DSM_KEY]
+
 
     location_id = params["location_id"]
     location = dsm.location_from_id(location_id)
@@ -187,7 +189,8 @@ async def download_file(request: web.Request):
     assert params["location_id"]
     assert params["fileId"]
     assert query["user_id"]
-    dsm = request[RQT_DSM_KEY]
+
+    dsm = request.app[APP_DSM_KEY]
 
     location_id = params["location_id"]
     location = dsm.location_from_id(location_id)
@@ -215,7 +218,8 @@ async def upload_file(request: web.Request):
     assert params["location_id"]
     assert params["fileId"]
     assert query["user_id"]
-    dsm = request[RQT_DSM_KEY]
+
+    dsm = request.app[APP_DSM_KEY]
 
     location_id = params["location_id"]
     location = dsm.location_from_id(location_id)
@@ -257,7 +261,8 @@ async def delete_file(request: web.Request):
     assert params["location_id"]
     assert params["fileId"]
     assert query["user_id"]
-    dsm = request[RQT_DSM_KEY]
+
+    dsm = request.app[APP_DSM_KEY]
 
     location_id = params["location_id"]
     location = dsm.location_from_id(location_id)
