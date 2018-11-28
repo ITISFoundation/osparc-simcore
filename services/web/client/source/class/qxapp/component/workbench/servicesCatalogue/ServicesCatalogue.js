@@ -202,6 +202,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     __setNewData: function(newData) {
       let filteredData = new qx.data.Array(newData);
       this.__controller.setModel(filteredData);
+      this.__controller.update();
     },
 
     __addNewData: function(newData) {
