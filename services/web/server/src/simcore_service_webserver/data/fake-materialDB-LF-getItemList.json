@@ -29,7 +29,7 @@
   }, 
   {
     "value": "Brain (White Matter)", 
-    "key": "Brain_(White_Matter)-UUID"
+    "key": "Brain__White_Matter_-UUID"
   }, 
   {
     "value": "Cartilage", 
@@ -37,7 +37,7 @@
   }, 
   {
     "value": "Brain (Grey Matter)", 
-    "key": "Brain_(Grey_Matter)-UUID"
+    "key": "Brain__Grey_Matter_-UUID"
   }, 
   {
     "value": "Air 1", 
@@ -45,11 +45,11 @@
   }, 
   {
     "value": "Eye (Vitreous Humor)", 
-    "key": "Eye_(Vitreous_Humor)-UUID"
+    "key": "Eye__Vitreous_Humor_-UUID"
   }, 
   {
     "value": "Eye (Lens)", 
-    "key": "Eye_(Lens)-UUID"
+    "key": "Eye__Lens_-UUID"
   }, 
   {
     "value": "Skin", 
@@ -69,11 +69,11 @@
   }, 
   {
     "value": "Eye (Cornea)", 
-    "key": "Eye_(Cornea)-UUID"
+    "key": "Eye__Cornea_-UUID"
   }, 
   {
     "value": "Eye (Sclera)", 
-    "key": "Eye_(Sclera)-UUID"
+    "key": "Eye__Sclera_-UUID"
   }, 
   {
     "value": "Lymphnode", 
@@ -129,7 +129,7 @@
   }, 
   {
     "value": "Tendon\\Ligament", 
-    "key": "Tendon\\Ligament-UUID"
+    "key": "Tendon_Ligament-UUID"
   }, 
   {
     "value": "Thalamus", 
@@ -153,7 +153,7 @@
   }, 
   {
     "value": "SAT (Subcutaneous Fat)", 
-    "key": "SAT_(Subcutaneous_Fat)-UUID"
+    "key": "SAT__Subcutaneous_Fat_-UUID"
   }, 
   {
     "value": "Tongue", 
@@ -177,15 +177,15 @@
   }, 
   {
     "value": "Bone Marrow (Yellow)", 
-    "key": "Bone_Marrow_(Yellow)-UUID"
+    "key": "Bone_Marrow__Yellow_-UUID"
   }, 
   {
     "value": "Bone (Cancellous)", 
-    "key": "Bone_(Cancellous)-UUID"
+    "key": "Bone__Cancellous_-UUID"
   }, 
   {
     "value": "Bone (Cortical)", 
-    "key": "Bone_(Cortical)-UUID"
+    "key": "Bone__Cortical_-UUID"
   }, 
   {
     "value": "Skull Cortical", 

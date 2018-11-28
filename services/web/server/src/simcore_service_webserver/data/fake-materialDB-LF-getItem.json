@@ -184,6 +184,43 @@
       "label": "Magnetic Conductivity"
     }
   }, 
+  "Bone_Marrow__Yellow_-UUID": {
+    "RelativePermeability": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 4, 
+      "label": "Relative Permeability"
+    }, 
+    "MassDensity": {
+      "defaultValue": 980.0, 
+      "type": "number", 
+      "unit": "kg/m^3", 
+      "displayOrder": 0, 
+      "label": "Mass Density"
+    }, 
+    "RelativePermittivity": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 2, 
+      "label": "Relative Permittivity"
+    }, 
+    "ElectricConductivity": {
+      "defaultValue": 0.00247168316831683, 
+      "type": "number", 
+      "unit": "S/m", 
+      "displayOrder": 1, 
+      "label": "Electric Conductivity"
+    }, 
+    "MagneticConductivity": {
+      "defaultValue": 0.0, 
+      "type": "number", 
+      "unit": "Ohm/m", 
+      "displayOrder": 3, 
+      "label": "Magnetic Conductivity"
+    }
+  }, 
   "Medulla_Oblongata-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
@@ -208,43 +245,6 @@
     }, 
     "ElectricConductivity": {
       "defaultValue": 0.234006562252398, 
-      "type": "number", 
-      "unit": "S/m", 
-      "displayOrder": 1, 
-      "label": "Electric Conductivity"
-    }, 
-    "MagneticConductivity": {
-      "defaultValue": 0.0, 
-      "type": "number", 
-      "unit": "Ohm/m", 
-      "displayOrder": 3, 
-      "label": "Magnetic Conductivity"
-    }
-  }, 
-  "Thyroid_Gland-UUID": {
-    "RelativePermeability": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 4, 
-      "label": "Relative Permeability"
-    }, 
-    "MassDensity": {
-      "defaultValue": 1050.0, 
-      "type": "number", 
-      "unit": "kg/m^3", 
-      "displayOrder": 0, 
-      "label": "Mass Density"
-    }, 
-    "RelativePermittivity": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 2, 
-      "label": "Relative Permittivity"
-    }, 
-    "ElectricConductivity": {
-      "defaultValue": 0.4811, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
@@ -295,7 +295,7 @@
       "label": "Magnetic Conductivity"
     }
   }, 
-  "Bone_(Cortical)-UUID": {
+  "Skull_Cortical-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
       "type": "number", 
@@ -318,44 +318,7 @@
       "label": "Relative Permittivity"
     }, 
     "ElectricConductivity": {
-      "defaultValue": 0.0035039941902687, 
-      "type": "number", 
-      "unit": "S/m", 
-      "displayOrder": 1, 
-      "label": "Electric Conductivity"
-    }, 
-    "MagneticConductivity": {
-      "defaultValue": 0.0, 
-      "type": "number", 
-      "unit": "Ohm/m", 
-      "displayOrder": 3, 
-      "label": "Magnetic Conductivity"
-    }
-  }, 
-  "Tendon\\Ligament-UUID": {
-    "RelativePermeability": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 4, 
-      "label": "Relative Permeability"
-    }, 
-    "MassDensity": {
-      "defaultValue": 1142.0, 
-      "type": "number", 
-      "unit": "kg/m^3", 
-      "displayOrder": 0, 
-      "label": "Mass Density"
-    }, 
-    "RelativePermittivity": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 2, 
-      "label": "Relative Permittivity"
-    }, 
-    "ElectricConductivity": {
-      "defaultValue": 0.367577227722772, 
+      "defaultValue": 0.32, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
@@ -443,6 +406,43 @@
       "label": "Magnetic Conductivity"
     }
   }, 
+  "Eye__Sclera_-UUID": {
+    "RelativePermeability": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 4, 
+      "label": "Relative Permeability"
+    }, 
+    "MassDensity": {
+      "defaultValue": 1032.0, 
+      "type": "number", 
+      "unit": "kg/m^3", 
+      "displayOrder": 0, 
+      "label": "Mass Density"
+    }, 
+    "RelativePermittivity": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 2, 
+      "label": "Relative Permittivity"
+    }, 
+    "ElectricConductivity": {
+      "defaultValue": 0.62, 
+      "type": "number", 
+      "unit": "S/m", 
+      "displayOrder": 1, 
+      "label": "Electric Conductivity"
+    }, 
+    "MagneticConductivity": {
+      "defaultValue": 0.0, 
+      "type": "number", 
+      "unit": "Ohm/m", 
+      "displayOrder": 3, 
+      "label": "Magnetic Conductivity"
+    }
+  }, 
   "Cartilage-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
@@ -467,43 +467,6 @@
     }, 
     "ElectricConductivity": {
       "defaultValue": 1.01, 
-      "type": "number", 
-      "unit": "S/m", 
-      "displayOrder": 1, 
-      "label": "Electric Conductivity"
-    }, 
-    "MagneticConductivity": {
-      "defaultValue": 0.0, 
-      "type": "number", 
-      "unit": "Ohm/m", 
-      "displayOrder": 3, 
-      "label": "Magnetic Conductivity"
-    }
-  }, 
-  "Brain_(White_Matter)-UUID": {
-    "RelativePermeability": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 4, 
-      "label": "Relative Permeability"
-    }, 
-    "MassDensity": {
-      "defaultValue": 1041.0, 
-      "type": "number", 
-      "unit": "kg/m^3", 
-      "displayOrder": 0, 
-      "label": "Mass Density"
-    }, 
-    "RelativePermittivity": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 2, 
-      "label": "Relative Permittivity"
-    }, 
-    "ElectricConductivity": {
-      "defaultValue": 0.265075903212916, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
@@ -554,43 +517,6 @@
       "label": "Magnetic Conductivity"
     }
   }, 
-  "SAT_(Subcutaneous_Fat)-UUID": {
-    "RelativePermeability": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 4, 
-      "label": "Relative Permeability"
-    }, 
-    "MassDensity": {
-      "defaultValue": 911.0, 
-      "type": "number", 
-      "unit": "kg/m^3", 
-      "displayOrder": 0, 
-      "label": "Mass Density"
-    }, 
-    "RelativePermittivity": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 2, 
-      "label": "Relative Permittivity"
-    }, 
-    "ElectricConductivity": {
-      "defaultValue": 0.0573412363008279, 
-      "type": "number", 
-      "unit": "S/m", 
-      "displayOrder": 1, 
-      "label": "Electric Conductivity"
-    }, 
-    "MagneticConductivity": {
-      "defaultValue": 0.0, 
-      "type": "number", 
-      "unit": "Ohm/m", 
-      "displayOrder": 3, 
-      "label": "Magnetic Conductivity"
-    }
-  }, 
   "Trachea_Lumen-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
@@ -615,43 +541,6 @@
     }, 
     "ElectricConductivity": {
       "defaultValue": 0.0, 
-      "type": "number", 
-      "unit": "S/m", 
-      "displayOrder": 1, 
-      "label": "Electric Conductivity"
-    }, 
-    "MagneticConductivity": {
-      "defaultValue": 0.0, 
-      "type": "number", 
-      "unit": "Ohm/m", 
-      "displayOrder": 3, 
-      "label": "Magnetic Conductivity"
-    }
-  }, 
-  "Lymphnode-UUID": {
-    "RelativePermeability": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 4, 
-      "label": "Relative Permeability"
-    }, 
-    "MassDensity": {
-      "defaultValue": 1035.0, 
-      "type": "number", 
-      "unit": "kg/m^3", 
-      "displayOrder": 0, 
-      "label": "Mass Density"
-    }, 
-    "RelativePermittivity": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 2, 
-      "label": "Relative Permittivity"
-    }, 
-    "ElectricConductivity": {
-      "defaultValue": 0.293380448454906, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
@@ -739,43 +628,6 @@
       "label": "Magnetic Conductivity"
     }
   }, 
-  "Eye_(Lens)-UUID": {
-    "RelativePermeability": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 4, 
-      "label": "Relative Permeability"
-    }, 
-    "MassDensity": {
-      "defaultValue": 1075.5, 
-      "type": "number", 
-      "unit": "kg/m^3", 
-      "displayOrder": 0, 
-      "label": "Mass Density"
-    }, 
-    "RelativePermittivity": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 2, 
-      "label": "Relative Permittivity"
-    }, 
-    "ElectricConductivity": {
-      "defaultValue": 0.345333333333333, 
-      "type": "number", 
-      "unit": "S/m", 
-      "displayOrder": 1, 
-      "label": "Electric Conductivity"
-    }, 
-    "MagneticConductivity": {
-      "defaultValue": 0.0, 
-      "type": "number", 
-      "unit": "Ohm/m", 
-      "displayOrder": 3, 
-      "label": "Magnetic Conductivity"
-    }
-  }, 
   "Tooth-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
@@ -850,6 +702,43 @@
       "label": "Magnetic Conductivity"
     }
   }, 
+  "Eye__Vitreous_Humor_-UUID": {
+    "RelativePermeability": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 4, 
+      "label": "Relative Permeability"
+    }, 
+    "MassDensity": {
+      "defaultValue": 1004.5, 
+      "type": "number", 
+      "unit": "kg/m^3", 
+      "displayOrder": 0, 
+      "label": "Mass Density"
+    }, 
+    "RelativePermittivity": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 2, 
+      "label": "Relative Permittivity"
+    }, 
+    "ElectricConductivity": {
+      "defaultValue": 1.55, 
+      "type": "number", 
+      "unit": "S/m", 
+      "displayOrder": 1, 
+      "label": "Electric Conductivity"
+    }, 
+    "MagneticConductivity": {
+      "defaultValue": 0.0, 
+      "type": "number", 
+      "unit": "Ohm/m", 
+      "displayOrder": 3, 
+      "label": "Magnetic Conductivity"
+    }
+  }, 
   "Midbrain-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
@@ -887,7 +776,7 @@
       "label": "Magnetic Conductivity"
     }
   }, 
-  "Eye_(Sclera)-UUID": {
+  "Lymphnode-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
       "type": "number", 
@@ -896,7 +785,81 @@
       "label": "Relative Permeability"
     }, 
     "MassDensity": {
-      "defaultValue": 1032.0, 
+      "defaultValue": 1035.0, 
+      "type": "number", 
+      "unit": "kg/m^3", 
+      "displayOrder": 0, 
+      "label": "Mass Density"
+    }, 
+    "RelativePermittivity": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 2, 
+      "label": "Relative Permittivity"
+    }, 
+    "ElectricConductivity": {
+      "defaultValue": 0.293380448454906, 
+      "type": "number", 
+      "unit": "S/m", 
+      "displayOrder": 1, 
+      "label": "Electric Conductivity"
+    }, 
+    "MagneticConductivity": {
+      "defaultValue": 0.0, 
+      "type": "number", 
+      "unit": "Ohm/m", 
+      "displayOrder": 3, 
+      "label": "Magnetic Conductivity"
+    }
+  }, 
+  "SAT__Subcutaneous_Fat_-UUID": {
+    "RelativePermeability": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 4, 
+      "label": "Relative Permeability"
+    }, 
+    "MassDensity": {
+      "defaultValue": 911.0, 
+      "type": "number", 
+      "unit": "kg/m^3", 
+      "displayOrder": 0, 
+      "label": "Mass Density"
+    }, 
+    "RelativePermittivity": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 2, 
+      "label": "Relative Permittivity"
+    }, 
+    "ElectricConductivity": {
+      "defaultValue": 0.0573412363008279, 
+      "type": "number", 
+      "unit": "S/m", 
+      "displayOrder": 1, 
+      "label": "Electric Conductivity"
+    }, 
+    "MagneticConductivity": {
+      "defaultValue": 0.0, 
+      "type": "number", 
+      "unit": "Ohm/m", 
+      "displayOrder": 3, 
+      "label": "Magnetic Conductivity"
+    }
+  }, 
+  "Eye__Cornea_-UUID": {
+    "RelativePermeability": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 4, 
+      "label": "Relative Permeability"
+    }, 
+    "MassDensity": {
+      "defaultValue": 1050.5, 
       "type": "number", 
       "unit": "kg/m^3", 
       "displayOrder": 0, 
@@ -911,43 +874,6 @@
     }, 
     "ElectricConductivity": {
       "defaultValue": 0.62, 
-      "type": "number", 
-      "unit": "S/m", 
-      "displayOrder": 1, 
-      "label": "Electric Conductivity"
-    }, 
-    "MagneticConductivity": {
-      "defaultValue": 0.0, 
-      "type": "number", 
-      "unit": "Ohm/m", 
-      "displayOrder": 3, 
-      "label": "Magnetic Conductivity"
-    }
-  }, 
-  "Silicone-UUID": {
-    "RelativePermeability": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 4, 
-      "label": "Relative Permeability"
-    }, 
-    "MassDensity": {
-      "defaultValue": 1000.0, 
-      "type": "number", 
-      "unit": "kg/m^3", 
-      "displayOrder": 0, 
-      "label": "Mass Density"
-    }, 
-    "RelativePermittivity": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 2, 
-      "label": "Relative Permittivity"
-    }, 
-    "ElectricConductivity": {
-      "defaultValue": 1e-12, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
@@ -985,6 +911,43 @@
     }, 
     "ElectricConductivity": {
       "defaultValue": 0.265075903212916, 
+      "type": "number", 
+      "unit": "S/m", 
+      "displayOrder": 1, 
+      "label": "Electric Conductivity"
+    }, 
+    "MagneticConductivity": {
+      "defaultValue": 0.0, 
+      "type": "number", 
+      "unit": "Ohm/m", 
+      "displayOrder": 3, 
+      "label": "Magnetic Conductivity"
+    }
+  }, 
+  "Brain__Grey_Matter_-UUID": {
+    "RelativePermeability": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 4, 
+      "label": "Relative Permeability"
+    }, 
+    "MassDensity": {
+      "defaultValue": 1044.5, 
+      "type": "number", 
+      "unit": "kg/m^3", 
+      "displayOrder": 0, 
+      "label": "Mass Density"
+    }, 
+    "RelativePermittivity": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 2, 
+      "label": "Relative Permittivity"
+    }, 
+    "ElectricConductivity": {
+      "defaultValue": 0.23914873606449, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
@@ -1220,7 +1183,44 @@
       "label": "Magnetic Conductivity"
     }
   }, 
-  "Skull_Cortical-UUID": {
+  "Silicone-UUID": {
+    "RelativePermeability": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 4, 
+      "label": "Relative Permeability"
+    }, 
+    "MassDensity": {
+      "defaultValue": 1000.0, 
+      "type": "number", 
+      "unit": "kg/m^3", 
+      "displayOrder": 0, 
+      "label": "Mass Density"
+    }, 
+    "RelativePermittivity": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 2, 
+      "label": "Relative Permittivity"
+    }, 
+    "ElectricConductivity": {
+      "defaultValue": 1e-12, 
+      "type": "number", 
+      "unit": "S/m", 
+      "displayOrder": 1, 
+      "label": "Electric Conductivity"
+    }, 
+    "MagneticConductivity": {
+      "defaultValue": 0.0, 
+      "type": "number", 
+      "unit": "Ohm/m", 
+      "displayOrder": 3, 
+      "label": "Magnetic Conductivity"
+    }
+  }, 
+  "Bone__Cortical_-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
       "type": "number", 
@@ -1243,7 +1243,7 @@
       "label": "Relative Permittivity"
     }, 
     "ElectricConductivity": {
-      "defaultValue": 0.32, 
+      "defaultValue": 0.0035039941902687, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
@@ -1331,7 +1331,7 @@
       "label": "Magnetic Conductivity"
     }
   }, 
-  "Intervertebral_Disc-UUID": {
+  "Tendon_Ligament-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
       "type": "number", 
@@ -1340,7 +1340,7 @@
       "label": "Relative Permeability"
     }, 
     "MassDensity": {
-      "defaultValue": 1099.5, 
+      "defaultValue": 1142.0, 
       "type": "number", 
       "unit": "kg/m^3", 
       "displayOrder": 0, 
@@ -1354,7 +1354,44 @@
       "label": "Relative Permittivity"
     }, 
     "ElectricConductivity": {
-      "defaultValue": 1.01, 
+      "defaultValue": 0.367577227722772, 
+      "type": "number", 
+      "unit": "S/m", 
+      "displayOrder": 1, 
+      "label": "Electric Conductivity"
+    }, 
+    "MagneticConductivity": {
+      "defaultValue": 0.0, 
+      "type": "number", 
+      "unit": "Ohm/m", 
+      "displayOrder": 3, 
+      "label": "Magnetic Conductivity"
+    }
+  }, 
+  "Esophagus-UUID": {
+    "RelativePermeability": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 4, 
+      "label": "Relative Permeability"
+    }, 
+    "MassDensity": {
+      "defaultValue": 1040.0, 
+      "type": "number", 
+      "unit": "kg/m^3", 
+      "displayOrder": 0, 
+      "label": "Mass Density"
+    }, 
+    "RelativePermittivity": {
+      "defaultValue": 1.0, 
+      "type": "number", 
+      "unit": "", 
+      "displayOrder": 2, 
+      "label": "Relative Permittivity"
+    }, 
+    "ElectricConductivity": {
+      "defaultValue": 0.163535918367347, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
@@ -1442,7 +1479,7 @@
       "label": "Magnetic Conductivity"
     }
   }, 
-  "Eye_(Vitreous_Humor)-UUID": {
+  "Trachea-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
       "type": "number", 
@@ -1451,7 +1488,7 @@
       "label": "Relative Permeability"
     }, 
     "MassDensity": {
-      "defaultValue": 1004.5, 
+      "defaultValue": 1080.0, 
       "type": "number", 
       "unit": "kg/m^3", 
       "displayOrder": 0, 
@@ -1465,7 +1502,7 @@
       "label": "Relative Permittivity"
     }, 
     "ElectricConductivity": {
-      "defaultValue": 1.55, 
+      "defaultValue": 0.341986666666667, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
@@ -1516,43 +1553,6 @@
       "label": "Magnetic Conductivity"
     }
   }, 
-  "Trachea-UUID": {
-    "RelativePermeability": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 4, 
-      "label": "Relative Permeability"
-    }, 
-    "MassDensity": {
-      "defaultValue": 1080.0, 
-      "type": "number", 
-      "unit": "kg/m^3", 
-      "displayOrder": 0, 
-      "label": "Mass Density"
-    }, 
-    "RelativePermittivity": {
-      "defaultValue": 1.0, 
-      "type": "number", 
-      "unit": "", 
-      "displayOrder": 2, 
-      "label": "Relative Permittivity"
-    }, 
-    "ElectricConductivity": {
-      "defaultValue": 0.341986666666667, 
-      "type": "number", 
-      "unit": "S/m", 
-      "displayOrder": 1, 
-      "label": "Electric Conductivity"
-    }, 
-    "MagneticConductivity": {
-      "defaultValue": 0.0, 
-      "type": "number", 
-      "unit": "Ohm/m", 
-      "displayOrder": 3, 
-      "label": "Magnetic Conductivity"
-    }
-  }, 
   "Muscle-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
@@ -1590,7 +1590,7 @@
       "label": "Magnetic Conductivity"
     }
   }, 
-  "Eye_(Cornea)-UUID": {
+  "Thyroid_Gland-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
       "type": "number", 
@@ -1599,7 +1599,7 @@
       "label": "Relative Permeability"
     }, 
     "MassDensity": {
-      "defaultValue": 1050.5, 
+      "defaultValue": 1050.0, 
       "type": "number", 
       "unit": "kg/m^3", 
       "displayOrder": 0, 
@@ -1613,7 +1613,7 @@
       "label": "Relative Permittivity"
     }, 
     "ElectricConductivity": {
-      "defaultValue": 0.62, 
+      "defaultValue": 0.4811, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
@@ -1627,7 +1627,7 @@
       "label": "Magnetic Conductivity"
     }
   }, 
-  "Esophagus-UUID": {
+  "Brain__White_Matter_-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
       "type": "number", 
@@ -1636,7 +1636,7 @@
       "label": "Relative Permeability"
     }, 
     "MassDensity": {
-      "defaultValue": 1040.0, 
+      "defaultValue": 1041.0, 
       "type": "number", 
       "unit": "kg/m^3", 
       "displayOrder": 0, 
@@ -1650,7 +1650,7 @@
       "label": "Relative Permittivity"
     }, 
     "ElectricConductivity": {
-      "defaultValue": 0.163535918367347, 
+      "defaultValue": 0.265075903212916, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
@@ -1738,7 +1738,7 @@
       "label": "Magnetic Conductivity"
     }
   }, 
-  "Bone_(Cancellous)-UUID": {
+  "Intervertebral_Disc-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
       "type": "number", 
@@ -1747,7 +1747,7 @@
       "label": "Relative Permeability"
     }, 
     "MassDensity": {
-      "defaultValue": 1178.33333333333, 
+      "defaultValue": 1099.5, 
       "type": "number", 
       "unit": "kg/m^3", 
       "displayOrder": 0, 
@@ -1761,7 +1761,7 @@
       "label": "Relative Permittivity"
     }, 
     "ElectricConductivity": {
-      "defaultValue": 0.0820712643678161, 
+      "defaultValue": 1.01, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
@@ -1812,7 +1812,7 @@
       "label": "Magnetic Conductivity"
     }
   }, 
-  "Bone_Marrow_(Yellow)-UUID": {
+  "Bone__Cancellous_-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
       "type": "number", 
@@ -1821,7 +1821,7 @@
       "label": "Relative Permeability"
     }, 
     "MassDensity": {
-      "defaultValue": 980.0, 
+      "defaultValue": 1178.33333333333, 
       "type": "number", 
       "unit": "kg/m^3", 
       "displayOrder": 0, 
@@ -1835,7 +1835,7 @@
       "label": "Relative Permittivity"
     }, 
     "ElectricConductivity": {
-      "defaultValue": 0.00247168316831683, 
+      "defaultValue": 0.0820712643678161, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
@@ -1849,7 +1849,7 @@
       "label": "Magnetic Conductivity"
     }
   }, 
-  "Brain_(Grey_Matter)-UUID": {
+  "Eye__Lens_-UUID": {
     "RelativePermeability": {
       "defaultValue": 1.0, 
       "type": "number", 
@@ -1858,7 +1858,7 @@
       "label": "Relative Permeability"
     }, 
     "MassDensity": {
-      "defaultValue": 1044.5, 
+      "defaultValue": 1075.5, 
       "type": "number", 
       "unit": "kg/m^3", 
       "displayOrder": 0, 
@@ -1872,7 +1872,7 @@
       "label": "Relative Permittivity"
     }, 
     "ElectricConductivity": {
-      "defaultValue": 0.23914873606449, 
+      "defaultValue": 0.345333333333333, 
       "type": "number", 
       "unit": "S/m", 
       "displayOrder": 1, 
