@@ -539,7 +539,7 @@ def __get_service_key_version_from_docker_service(service: docker.models.service
         raise exceptions.DirectorException(
             msg="Invalid service {}".format(service_full_name))
 
-    service_full_name = service_full_name[len(config.REGISTRY_URL):]
+    service_full_name = service_full_name[len(config.REGISTRY_URL):].strip("/")
     return service_full_name.split(":")[0], service_full_name.split(":")[1]
 
 def _get_service_basepath_from_docker_service(service: docker.models.services.Service) -> str:
