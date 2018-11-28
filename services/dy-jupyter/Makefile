@@ -21,7 +21,7 @@ export VCS_REF=$(shell git rev-parse --short HEAD)
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 DOCKER_REGISTRY=masu.speag.com
-DOCKER_REGISTRY=registry.osparc.io
+#DOCKER_REGISTRY=registry.osparc.io
 export REGISTRY_KEY=${DOCKER_REGISTRY}/simcore/services/dynamic/
 
 all:

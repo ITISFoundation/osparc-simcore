@@ -159,8 +159,8 @@ test:
 	make after_test
 
 PLATFORM_VERSION=3.24
-#DOCKER_REGISTRY=masu.speag.com
-DOCKER_REGISTRY=registry.osparc.io
+DOCKER_REGISTRY=masu.speag.com
+#DOCKER_REGISTRY=registry.osparc.io
 
 
 push_platform_images:
