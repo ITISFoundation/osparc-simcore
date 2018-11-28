@@ -1,10 +1,6 @@
 # USAGE:  docker-compose -f docker-compose.yml -f docker-compose.devel.yml ...
 version: '3.6'
 services:
-  apihub:
-    image: services_apihub:latest    
-    ports:
-      - '8043:8043'
   client:
     build:
       target: development
