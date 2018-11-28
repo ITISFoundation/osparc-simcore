@@ -8,6 +8,8 @@ import pytest
 import yaml
 from aiohttp import web
 from yarl import URL
+import asyncio
+
 
 import simcore_service_webserver.reverse_proxy.handlers.jupyter as rp_jupyter
 import simcore_service_webserver.reverse_proxy.handlers.paraview as rp_paraview
@@ -66,8 +68,6 @@ async def test_reverse_proxy_workflow(client, service_key, service_version, serv
     """
         client <--> webserver <--> director
     """
-    #import pdb; pdb.set_trace()
-
     # List services in registry ----------------
     resp = await client.get("/v0/services?service_type=interactive")
     assert resp.status == 200, (await resp.text())
@@ -81,29 +81,33 @@ async def test_reverse_proxy_workflow(client, service_key, service_version, serv
 
     # Start backend dynamic service --------------
     resp = await client.post( URL("/v0/running_interactive_services").with_query(
-        service_key=service_key,
-        service_version =service_version,
-        service_uuid = service_uuid)
+         service_key=service_key,
+         service_version =service_version,
+         service_uuid = service_uuid)
     )
-    assert resp.status == 200, (await resp.text())
+    assert resp.status == 201, (await resp.text())
 
     payload = await resp.json()
     data, error = unwrap_envelope(payload)
     assert data
     assert not error
 
-    # Communicate with backend dynamic service --------------
-    # TODO: webserver should not respond identical to the director!!
     service_basepath = data['service_basepath']
     assert service_basepath == PROXY_MOUNTPOINT + "/" + service_uuid
 
-    resp = await client.get(service_basepath)
-    assert resp.status == 200, (await resp.text())
+    # TODO: wait until service is responsive!
+    await asyncio.sleep(5)
 
-    payload = await resp.json()
-    data, error = unwrap_envelope(payload)
-    assert data
-    assert not error
+
+    # Communicate with backend dynamic service --------------
+    # TODO: webserver should not respond identical to the director!!
+    service_basepath = PROXY_MOUNTPOINT + "/" + service_uuid
+
+    resp = await client.get(service_basepath + '/')
+    content = await resp.text()
+
+    assert content
+    assert resp.status == 200, content
 
     # Stop backend dynamic service
     resp = await client.delete("/v0/running_interactive_services/{}".format(service_uuid))
