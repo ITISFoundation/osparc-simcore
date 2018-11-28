@@ -6,6 +6,7 @@ TODO: document
 import asyncio
 import logging
 import pprint
+from yarl import URL
 
 import aiohttp
 from aiohttp import client, web
@@ -21,10 +22,10 @@ logger = logging.getLogger(__name__)
 
 async def handler(req: web.Request, service_url: str, **_kwargs):
     # Resolved url pointing to backend jupyter service
-    target_url = service_url + req.path_qs
+    target_url = URL(service_url).origin() / req.path_qs.lstrip('/')
 
     reqH = req.headers.copy()
-    if reqH['connection'] == 'Upgrade' and reqH['upgrade'] == 'websocket' and req.method == 'GET':
+    if reqH.get('connection') == 'Upgrade' and reqH.get('upgrade') == 'websocket' and req.method == 'GET':
 
         ws_server = web.WebSocketResponse()
         await ws_server.prepare(req)
@@ -57,21 +58,20 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
 
             return ws_server
     else:
-
         async with client.request(
             req.method, target_url,
             headers=reqH,
             allow_redirects=False,
             data=await req.read()
         ) as res:
-            headers = res.headers.copy()
             body = await res.read()
-            return web.Response(
-                headers=headers,
+            response= web.Response(
+                headers=res.headers.copy(),
                 status=res.status,
                 body=body
             )
-        return ws_server
+            return response
+
 
 
 if __name__ == "__main__":
