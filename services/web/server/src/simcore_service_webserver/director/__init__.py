@@ -43,6 +43,8 @@ def setup(app: web.Application,* , disable_login=False):
         logger.warning("'%s' explicitly disabled in config", __name__)
         return
 
+
+    # Setup routes
     specs = app[APP_OPENAPI_SPECS_KEY]
 
     def include_path(tup_object):
