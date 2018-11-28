@@ -10,6 +10,7 @@
 
 """
 import logging
+import os
 
 import attr
 from aiohttp import web
@@ -28,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 @attr.s(auto_attribs=True)
 class ServiceMonitor(ServiceResolutionPolicy):
-    session: ClientSession
+    director_api: ClientSession
     base_url: URL
 
     async def _request_info(self, service_identifier: str):
@@ -37,20 +38,16 @@ class ServiceMonitor(ServiceResolutionPolicy):
 
         # TODO: see if client can cache consecutive calls. SEE self.cli.api_client.last_response is a
         # https://docs.aiohttp.org/en/stable/client_reference.html#response-object
-        async with self.session.get(url, ssl=False) as resp:
+        async with self.director_api.get(url, ssl=False) as resp:
             payload = await resp.json()
-            data, _error = unwrap_envelope(payload)
-
+            data, error = unwrap_envelope(payload)
+            if error:
+                raise RuntimeError(str(error))
         return data
 
     # override
     async def get_image_name(self, service_identifier: str) -> str:
         data = await self._request_info(service_identifier)
-        #data.get('service_uuid')
-        #data.get('service_basepath')
-        #data.get('service_host')
-        #data.get('service_port')
-        #data.get('service_version')
         return data.get('service_key')
 
 
@@ -59,14 +56,19 @@ class ServiceMonitor(ServiceResolutionPolicy):
         """ Returns the url = origin + mountpoint of the backend dynamic service identified
 
         """
-        # FIXME: if server is not in swarm (e.g. during testing)
-        # then host:port = localhost:data['published_port']
         data = await self._request_info(service_identifier)
-        base_url =  URL.build(scheme="http",
-                         host=data.get('service_host'),
-                         port=data.get('service_port'),
-                         path=data.get('service_basepath', "/"))
+        base_url = URL.build(scheme="http",
+                        host=data.get('service_host'),
+                        port=data.get('service_port'),
+                        path=data.get('service_basepath'))
+
+        if not os.environ.get('IS_CONTAINER_CONTEXT'):
+            # If server is not in swarm (e.g. during testing) then host:port = localhost:data['published_port']
+            base_url = base_url.with_host('127.0.0.1') \
+                               .with_port(data['published_port'])
+
         return base_url
+
 
 
 async def cleanup(app: web.Application):
@@ -76,7 +78,6 @@ async def cleanup(app: web.Application):
 
 
 def setup(app: web.Application):
-
     app[MY_CLIENT_SESSION] = session = ClientSession(loop=app.loop)
 
     monitor = ServiceMonitor(session, base_url=app[APP_DIRECTOR_API_KEY])
