@@ -45,7 +45,9 @@ let connectedClient = null;
 io.on('connection', socketIOConnected);
 
 // init thrift
-s4l_utils.connectToS4LServer().catch(console.log("no connection to S4L"));
+s4l_utils.connectToS4LServer().catch(function(err) {
+  console.log(`no connection to S4L: ${err}`);
+});
 
 
 function socketIOConnected(socketClient) {
