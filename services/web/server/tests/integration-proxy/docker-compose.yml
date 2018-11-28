@@ -23,6 +23,8 @@ services:
     - RUN_DOCKER_ENGINE_ROOT=0
     - PUBLISHED_HOST_NAME=osparc01.itis.ethz.ch
     image: services_director:latest
+    stdin_open: true
+    tty: true
     ports:
     - 8001:8001
     volumes:

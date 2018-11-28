@@ -19,7 +19,7 @@ main:
   client_outdir: undefined
   host: 127.0.0.1
   log_level: DEBUG
-  port: 45759
+  port: 47569
   testing: true
 rabbit:
   channels:
