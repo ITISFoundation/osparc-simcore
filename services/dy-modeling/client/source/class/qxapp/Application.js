@@ -74,6 +74,8 @@ qx.Class.define("qxapp.Application", {
       // Document is the application root
       let doc = this.getRoot();
 
+      let layout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+
       // openning web socket
       this._socket = new qxapp.wrappers.WebSocket("app");
       this._socket.connect();
@@ -82,7 +84,6 @@ qx.Class.define("qxapp.Application", {
       let html = document.documentElement;
 
       let docWidth = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
-      let docHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
 
       // initialize components
       let menuBarHeight = 35;
@@ -109,19 +110,19 @@ qx.Class.define("qxapp.Application", {
           .getFont());
 
       this.__threeView = new qxapp.component.ThreeView(
-        docWidth, docHeight,
         this._appModel.getColors().get3DView()
           .getBackground());
 
-      this.__entityList = new qxapp.component.EntityList(
-        250, 300,
-        this._appModel.getColors().getSettingsView()
-          .getBackground(), this._appModel.getColors().getSettingsView()
-          .getFont());
+      this.__entityList = new qxapp.component.EntityList();
 
 
-      // components to document
-      doc.add(this.__threeView);
+      // components to layout
+      layout.add(this.__threeView, {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+      });
 
       let toolBarcontainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(1)).set({
         backgroundColor: "white",
@@ -132,13 +133,30 @@ qx.Class.define("qxapp.Application", {
         toolBarcontainer.add(this._menuBar);
       }
       toolBarcontainer.add(this.__availableServicesBar);
-      doc.add(toolBarcontainer);
+      layout.add(toolBarcontainer);
 
       if (showUserMenu) {
-        doc.add(userMenu, {
+        layout.add(userMenu, {
           right: 30
         });
       }
+
+      let win = new qx.ui.window.Window();
+      win.set({
+        showMinimize: false,
+        showMaximize: false,
+        allowMaximize: false,
+        showStatusbar: false,
+        resizable: false,
+        contentPadding: 0,
+        caption: "Logger",
+        layout: new qx.ui.layout.Canvas()
+      });
+
+      // components to document
+      doc.add(layout, {
+        edge: 0
+      });
 
       menuBarHeight = showMenuBar ? menuBarHeight : 0;
       this.__entityList.moveTo(10, menuBarHeight + avaiBarHeight + 10);
@@ -204,7 +222,7 @@ qx.Class.define("qxapp.Application", {
         this._socket.on("importModelScene", function(val, ackCb) {
           ackCb();
           if (val.type === "importModelScene") {
-            this.__threeView.importSceneFromBuffer(val.value);
+            this.__threeView.importSceneFromBuffer(val);
           }
         }, this);
 
@@ -270,6 +288,10 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       // Services
+      this.__availableServicesBar.addListener("centerCamera", () => {
+        this.__threeView.centerCameraToBB();
+      }, this);
+
       this.__availableServicesBar.addListener("selectionModeChanged", function(e) {
         let selectionMode = e.getData();
         this.__threeView.setSelectionMode(selectionMode);
@@ -433,8 +455,8 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       this.__entityList.addListener("visibilityChanged", function(e) {
-        let entityId = e.getData()[0];
-        let show = e.getData()[1];
+        let entityId = e.getData().entityId;
+        let show = e.getData().show;
         this.__threeView.showHideEntity(entityId, show);
       }, this);
 
@@ -455,9 +477,12 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       this.__threeView.addListener("entityAdded", function(e) {
-        let entityName = e.getData()[0];
-        let entityId = e.getData()[1];
-        this.__entityList.addEntity(entityName, entityId);
+        const data = e.getData();
+        const entityName = data.name;
+        const entityId = data.uuid;
+        const pathId = data.pathUuids;
+        const pathName = data.pathNames;
+        this.__entityList.addEntity(entityName, entityId, pathId, pathName);
       }, this);
 
       this.__threeView.addListener("entityRemoved", function(e) {
