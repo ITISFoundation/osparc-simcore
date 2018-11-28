@@ -8,11 +8,10 @@ from aiohttp import web
 
 from simcore_service_storage.db import setup_db
 from simcore_service_storage.dsm import setup_dsm
-from simcore_service_storage.middlewares import dsm_middleware
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.session import setup_session
-from simcore_service_storage.settings import APP_CONFIG_KEY
-from simcore_service_storage.s3 import SIMCORE_S3_ID
+from simcore_service_storage.s3 import setup_s3
+from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
 
 
 def parse_db(dsm_mockup_db):
@@ -54,12 +53,15 @@ def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postgres_se
         'rest': rest_cfg
     }
 
-    app.middlewares.append(dsm_middleware)
+    #app.middlewares.append(dsm_middleware)
 
     setup_db(app)
     setup_session(app)
     setup_rest(app)
     setup_dsm(app)
+    setup_s3(app)
+
+
 
     assert "SECRET_KEY" in app[APP_CONFIG_KEY]
 
