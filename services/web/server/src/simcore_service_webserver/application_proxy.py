@@ -18,24 +18,22 @@ from yarl import URL
 
 from servicelib.rest_responses import unwrap_envelope
 
-from .director.config import get_client_session
-from .director.director_sdk import (ApiException, UsersApi,
-                                    create_director_api_client)
+from .director.config import APP_DIRECTOR_API_KEY
 from .reverse_proxy import setup_reverse_proxy
 from .reverse_proxy.abc import ServiceResolutionPolicy
 
-logger = logging.getLogger(__name__)
+MY_CLIENT_SESSION = __name__ + ".session"
 
+logger = logging.getLogger(__name__)
 
 @attr.s(auto_attribs=True)
 class ServiceMonitor(ServiceResolutionPolicy):
-    cli: UsersApi=None
     session: ClientSession
+    base_url: URL
 
     async def _request_info(self, service_identifier: str):
         data = {}
-        # See API specs in api/specs/director/v0/openapi.yaml
-        url = "v0/running_interactive_services/{}" % service_identifier
+        url = self.base_url / ("running_interactive_services/%s" % service_identifier)
 
         # TODO: see if client can cache consecutive calls. SEE self.cli.api_client.last_response is a
         # https://docs.aiohttp.org/en/stable/client_reference.html#response-object
@@ -45,32 +43,8 @@ class ServiceMonitor(ServiceResolutionPolicy):
 
         return data
 
-    async def _request_info_tmp(self, service_identifier: str):
-        data = {}
-
-        # GET /running_interactive_services/{service_uuid}
-        #  200 -> RunningServiceEnveloped
-        #  404 not found
-
-        # TODO: see if client can cache consecutive calls. SEE self.cli.api_client.last_response is a
-        # https://docs.aiohttp.org/en/stable/client_reference.html#response-object
-        try:
-            response, _status, _headers = await self.cli.running_interactive_services_get(service_uuid=service_identifier)
-
-            payload = await response.json()
-            data, _error = unwrap_envelope(payload)
-
-        except ApiException:
-            # FIXME: define error treatment policy!?
-            logger.exception("Failed to request service info %s", service_identifier)
-            data.clear()
-
-        return data
-
     # override
     async def get_image_name(self, service_identifier: str) -> str:
-        import pdb; pdb.set_trace()
-
         data = await self._request_info(service_identifier)
         #data.get('service_uuid')
         #data.get('service_basepath')
@@ -85,25 +59,39 @@ class ServiceMonitor(ServiceResolutionPolicy):
         """ Returns the url = origin + mountpoint of the backend dynamic service identified
 
         """
-        import pdb; pdb.set_trace()
+        # FIXME: if server is not in swarm (e.g. during testing)
+        # then host:port = localhost:data['published_port']
         data = await self._request_info(service_identifier)
-        return URL.build(scheme="http",
+        base_url =  URL.build(scheme="http",
                          host=data.get('service_host'),
                          port=data.get('service_port'),
                          path=data.get('service_basepath', "/"))
+        return base_url
+
+
+async def cleanup(app: web.Application):
+    session =  app.get(MY_CLIENT_SESSION)
+    if session:
+        await session.close()
 
 
 def setup(app: web.Application):
 
-    director_client = create_director_api_client(app)
-    director_session = get_client_session(app)
+    app[MY_CLIENT_SESSION] = session = ClientSession(loop=app.loop)
 
-    monitor = ServiceMonitor(director_client, director_session)
+    monitor = ServiceMonitor(session, base_url=app[APP_DIRECTOR_API_KEY])
     setup_reverse_proxy(app, monitor)
 
     assert "reverse_proxy" in app.router
     app["reverse_proxy.basemount"] = monitor.base_mountpoint
 
+    app.on_cleanup.append(cleanup)
+
 
 # alias
 setup_app_proxy = setup
+
+
+__all__ = (
+    'setup_app_proxy'
+)
