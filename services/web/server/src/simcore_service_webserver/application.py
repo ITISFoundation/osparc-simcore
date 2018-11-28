@@ -57,7 +57,9 @@ def create_application(config: dict):
     setup_storage(app)
     setup_users(app)
     setup_projects(app, debug=True) # TODO: deactivate fakes i.e. debug=testing
-    setup_app_proxy(app) # TODO: under development!!!
+
+    if config['director']["enabled"]:
+        setup_app_proxy(app) # TODO: under development!!!
 
     return app
 
