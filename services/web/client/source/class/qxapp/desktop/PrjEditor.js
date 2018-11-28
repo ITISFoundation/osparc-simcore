@@ -139,15 +139,22 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__stopPipeline();
       }, this);
 
-      this.getProjectModel().getWorkbenchModel().addListener("WorkbenchModelChanged", function() {
+      let workbenchModel = this.getProjectModel().getWorkbenchModel();
+      workbenchModel.addListener("WorkbenchModelChanged", function() {
         this.__workbenchModelChanged();
       }, this);
 
-      this.getProjectModel().getWorkbenchModel().addListener("ShowInLogger", e => {
-        const data = e.getData();
-        const nodeLabel = data.nodeLabel;
-        const msg = data.msg;
-        this.getLogger().info(nodeLabel, msg);
+      workbenchModel.addListener("NodeAdded", e => {
+        let nodeModel = e.getData();
+        nodeModel.addListener("UpdatePipeline", () => {
+          this.__updatePipeline(nodeModel);
+        }, this);
+        nodeModel.addListener("ShowInLogger", ev => {
+          const data = ev.getData();
+          const nodeLabel = data.nodeLabel;
+          const msg = data.msg;
+          this.getLogger().info(nodeLabel, msg);
+        }, this);
       }, this);
 
       [
@@ -297,6 +304,34 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }
       }
       return currentPipeline;
+    },
+
+    __updatePipeline: function(nodeModel) {
+      let currentPipeline = this.__getCurrentPipeline();
+      let url = "/computation/pipeline/" + encodeURIComponent(this.getProjectModel().getUuid());
+      let req = new qxapp.io.request.ApiRequest(url, "PUT");
+      let data = {};
+      data["workbench"] = currentPipeline;
+      req.set({
+        requestData: qx.util.Serializer.toJson(data)
+      });
+      console.log("updating pipeline: " + url + "\n" + data);
+
+      req.addListener("success", e => {
+        this.getLogger().debug("Workbench", "Pipeline successfully updated");
+        if (nodeModel) {
+          nodeModel.retrieveInputs();
+        }
+      }, this);
+      req.addListener("error", e => {
+        this.getLogger().error("Workbench", "Error updating pipeline");
+      }, this);
+      req.addListener("fail", e => {
+        this.getLogger().error("Workbench", "Failed updating pipeline");
+      }, this);
+      req.send();
+
+      this.getLogger().debug("Workbench", "Updating pipeline");
     },
 
     __startPipeline: function() {

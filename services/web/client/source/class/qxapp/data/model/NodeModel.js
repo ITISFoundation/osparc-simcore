@@ -117,7 +117,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
   },
 
   events: {
-    "ShowInLogger": "qx.event.type.Event"
+    "UpdatePipeline": "qx.event.type.Event",
+    "ShowInLogger": "qx.event.type.Data"
   },
 
   members: {
@@ -420,7 +421,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         } else {
           this.getIFrame().setSource(this.getServiceUrl());
         }
-        this.__retrieveInputs();
+        this.__updateBackendAndRetrieveInputs();
       }
     },
 
@@ -519,17 +520,21 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
-    __retrieveInputs: function() {
+    __updateBackendAndRetrieveInputs: function() {
       // HACK: Workaround for fetching inputs in Visualizer and modeler
       if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler")) {
-        let urlUpdate = this.getServiceUrl() + "/retrieve";
-        let updReq = new qx.io.request.Xhr();
-        updReq.set({
-          url: urlUpdate,
-          method: "POST"
-        });
-        updReq.send();
+        this.fireEvent("UpdatePipeline");
       }
+    },
+
+    retrieveInputs: function() {
+      let urlUpdate = this.getServiceUrl() + "/retrieve";
+      let updReq = new qx.io.request.Xhr();
+      updReq.set({
+        url: urlUpdate,
+        method: "POST"
+      });
+      updReq.send();
     },
 
     removeNode: function() {
