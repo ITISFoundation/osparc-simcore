@@ -17,11 +17,11 @@ export DOCKER=docker
 endif
 
 export SERVICES_VERSION=1.6.0
-export VCS_REF=$(shell git rev-parse --short HEAD) 
+export VCS_REF=$(shell git rev-parse --short HEAD)
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 DOCKER_REGISTRY=masu.speag.com
-DOCKER_REGISTRY=registry.osparc.dev
+DOCKER_REGISTRY=registry.osparc.io
 export REGISTRY_KEY=${DOCKER_REGISTRY}/simcore/services/dynamic/
 
 all:
@@ -29,10 +29,10 @@ all:
 	@echo 'run `make up` to start'
 	@echo 'see Makefile for further targets'
 
-build:	
+build:
 	${DOCKER_COMPOSE} -f docker-compose.yml build
 
-build-devel:	
+build-devel:
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build
 
 rebuild:
