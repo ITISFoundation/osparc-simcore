@@ -48,13 +48,13 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
      */
     url: {
       nullable: false,
-      init: "http://".concat(window.location.hostname),
+      init: "/",
       check: "String"
     },
     /** The port used to connect */
     port: {
-      nullable: false,
-      init: Number(window.location.port),
+      nullable: true,
+      init: null,
       check: "Number"
     },
     /** The namespace (socket.io namespace), can be empty */
@@ -133,10 +133,12 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
           this.disconnect();
         }
 
-        let dir = this.getUrl() + ":" + this.getPort();
+        let dir = this.getUrl();
+        if (this.getPort() > 0) {
+          dir += ":" + this.getPort();
+        }
         console.log("socket in", dir);
         let mySocket = io.connect(dir, {
-          "port": this.getPort(),
           "reconnect": this.getReconnect(),
           "connect timeout": this.getConnectTimeout(),
           "reconnection delay": this.getReconnectionDelay(),
