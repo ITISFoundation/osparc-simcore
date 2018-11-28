@@ -133,7 +133,7 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
           this.getSocket().removeAllListeners();
           this.getSocket().disconnect();
         }
-        let dummy = window.location;
+
         let dir = this.getUrl() + ":" + this.getPort();
         console.log("socket in", dir);
         let mySocket = io.connect(dir, {
@@ -143,7 +143,7 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
           "reconnection delay": this.getReconnectionDelay(),
           "max reconnection attempts": this.getMaxReconnectionAttemps(),
           "force new connection": true,
-          "path": this.getPathname() + "socket.io",
+          "path": this.getPathname() + "socket.io"
         });
         this.setSocket(mySocket);
 
