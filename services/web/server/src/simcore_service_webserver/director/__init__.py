@@ -9,21 +9,28 @@ from aiohttp import web, ClientSession
 
 from servicelib.application_keys import APP_CONFIG_KEY
 
-from .config import CONFIG_SECTION_NAME, APP_DIRECTOR_SESSION_KEY
+from .config import CONFIG_SECTION_NAME, APP_DIRECTOR_SESSION_KEY, APP_DIRECTOR_API_KEY, build_api_url
 from . import handlers
 from servicelib.rest_routing import get_handlers_from_namespace, map_handlers_with_operations, iter_path_operations
 from ..rest_config import APP_OPENAPI_SPECS_KEY
+
+from yarl import URL
 
 logger = logging.getLogger(__name__)
 
 async def director_client_ctx(app: web.Application):
     # TODO: deduce base url from configuration and add to session
-    # TODO: create instead a class that wraps the session and hold all information
-    # known upon setup
-    async with ClientSession(loop=app.loop) as session:
-        app[APP_DIRECTOR_SESSION_KEY] = session
-        yield
+    # TODO: test if ready!
 
+    session = ClientSession(loop=app.loop)
+    app[APP_DIRECTOR_SESSION_KEY] = session
+
+    # TODO: create instead a class that wraps the session and hold all information known upon setup
+    session.base_url = app[APP_DIRECTOR_API_KEY]
+
+    yield
+
+    session.close()
     logger.debug("cleanup session")
 
 
@@ -43,6 +50,8 @@ def setup(app: web.Application,* , disable_login=False):
         logger.warning("'%s' explicitly disabled in config", __name__)
         return
 
+    # director service API endpoint
+    app[APP_DIRECTOR_API_KEY] = build_api_url(cfg)
 
     # Setup routes
     specs = app[APP_OPENAPI_SPECS_KEY]

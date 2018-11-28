@@ -14,7 +14,6 @@ ANONYMOUS_USER = -1
 log = logging.getLogger(__name__)
 
 
-
 def _resolve_url(request: web.Request) -> URL:
     cfg = get_config(request.app)
 
