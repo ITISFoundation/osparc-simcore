@@ -1,6 +1,10 @@
 # USAGE:  docker-compose -f docker-compose.yml -f docker-compose.devel.yml ...
 version: '3.6'
 services:
+  apihub:
+    image: services_apihub:latest    
+    ports:
+      - '8043:8043'
   client:
     build:
       target: development
@@ -55,6 +59,8 @@ services:
       - RUN_DOCKER_ENGINE_ROOT=1
       - BF_API_SECRET=none
       - BF_API_KEY=none
+      - APIHUB_HOST=${APIHUB_HOST}
+      - APIHUB_PORT=${APIHUB_PORT}
     restart: always
     depends_on: 
       - postgres
