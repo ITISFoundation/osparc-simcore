@@ -8,11 +8,12 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
 
     // apply the filter funtion on creation time because the 'this' context
     // needs to be bound to the function
-    this.__filter = qx.lang.Function.bind(function(data) {
+    this.filter = qx.lang.Function.bind(function(data) {
       if (data === undefined || data === null) {
         console.log("Service with no data");
         return false;
       }
+      data = data.getName();
       const caseSensitive = false;
       let searchString = this.getSearchString();
       if (caseSensitive === false) {
@@ -33,7 +34,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
 
   members: {
     __controller: null,
-    __filter: null,
+    filter: null,
 
     // create the delegate to change the bindings
     bindItem: function(controller, item, id) {
