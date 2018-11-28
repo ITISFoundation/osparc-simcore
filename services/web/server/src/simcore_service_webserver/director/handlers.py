@@ -46,7 +46,7 @@ async def services_get(request: web.Request) -> web.Response:
     session = get_client_session(request.app)
     async with session.request(request.method, url, ssl=False) as resp:
         payload = await resp.json()
-        return payload
+        return web.json_response(payload, status=resp.status)
 
 
 @login_required
@@ -63,12 +63,11 @@ async def running_interactive_services_post(request: web.Request) -> web.Respons
                       service_basepath='/x/'+ query['service_uuid'] # TODO: mountpoint should be setup!!
                     )
 
-    import pdb; pdb.set_trace()
     # forward to director API
     session = get_client_session(request.app)
     async with session.request(request.method, url, ssl=False) as resp:
         payload = await resp.json()
-        return payload
+        return web.json_response(payload, status=resp.status)
 
 
 
@@ -86,7 +85,7 @@ async def running_interactive_services_get(request: web.Request) -> web.Response
     session = get_client_session(request.app)
     async with session.request(request.method, url, ssl=False) as resp:
         payload = await resp.json()
-        return payload
+        return web.json_response(payload, status=resp.status)
 
 
 
@@ -104,4 +103,4 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
     session = get_client_session(request.app)
     async with session.request(request.method, url, ssl=False) as resp:
         payload = await resp.json()
-        return payload
+        return web.json_response(payload, status=resp.status)
