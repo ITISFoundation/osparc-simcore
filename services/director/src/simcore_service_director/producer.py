@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 
 import aiohttp
 import tenacity
