@@ -21,26 +21,31 @@ let s4lAppClient = null;
 let s4lModelerClient = null;
 
 async function connectToS4LServer() {
-  s4lAppClient = await createThriftConnection(config.S4L_IP, config.S4L_PORT_APP, thrApplication, s4lAppClient, disconnectFromApplicationServer);
-  s4lAppClient.GetApiVersion(function (err, response) {
-    if (err) {
-      console.log(`error getting application api version: ${err}`);
-      throw new Error(`error retrieving api`);
-    }
-    else {
-      console.log('Application API version', response);
-    }    
-  });
-  s4lModelerClient = await createThriftConnection(config.S4L_IP, config.S4L_PORT_MOD, thrModeler, s4lModelerClient, disconnectFromModelerServer);
-  s4lModelerClient.GetApiVersion(function (err, response) {
-    if (err) {
-      console.log(`error getting modeler api version: ${err}`);
-      throw new Error(`error retrieving api`);
-    }
-    else {
-      console.log('Modeler API version', response);
-    }    
-  });
+  try {
+    s4lAppClient = await createThriftConnection(config.S4L_IP, config.S4L_PORT_APP, thrApplication, s4lAppClient, disconnectFromApplicationServer);  
+    s4lAppClient.GetApiVersion(function (err, response) {
+      if (err) {
+        console.log(`error getting application api version: ${err}`);
+        throw new Error(`error retrieving api`);
+      }
+      else {
+        console.log('Application API version', response);
+      }    
+    });
+    s4lModelerClient = await createThriftConnection(config.S4L_IP, config.S4L_PORT_MOD, thrModeler, s4lModelerClient, disconnectFromModelerServer);
+    s4lModelerClient.GetApiVersion(function (err, response) {
+      if (err) {
+        console.log(`error getting modeler api version: ${err}`);
+        throw new Error(`error retrieving api`);
+      }
+      else {
+        console.log('Modeler API version', response);
+      }    
+    });
+  } catch (error) {
+    console.log(`Error while connecting to S4L: ${error}`);
+    throw error;
+  }  
 }
 
 function createThriftConnection(host, port, thing, client, disconnectionCB) {
