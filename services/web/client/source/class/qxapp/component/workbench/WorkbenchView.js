@@ -218,12 +218,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     },
 
     __addServiceFromCatalogue: function(e, pos) {
-      let data = e.getData();
-      let metaData = data.service;
+      const data = e.getData();
+      const service = data.service;
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let nodeModel = this.getWorkbenchModel().createNodeModel(metaData.key, metaData.version);
+      let nodeModel = this.getWorkbenchModel().createNodeModel(service.getKey(), service.getVersion());
       let parent = null;
       if (this.__currentModel.isContainer()) {
         parent = this.__currentModel;
