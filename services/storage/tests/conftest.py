@@ -180,6 +180,7 @@ def minio_service(docker_services, docker_ip):
         'access_key': ACCESS_KEY,
         'secret_key': SECRET_KEY,
         'bucket_name': BUCKET_NAME,
+        'secure' : 0
     }
 
 
