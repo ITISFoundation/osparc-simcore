@@ -1,6 +1,8 @@
 """ Basic configuration file for docker registry
 
 """
+from os import environ as env
+
 import trafaret as T
 
 # TODO: adapt all data below!
@@ -14,9 +16,13 @@ CONFIG_SCHEMA = T.Dict({
 class Config():
     # TODO: uniform config classes . see server.config file
     def __init__(self):
-        self._registry = "masu.speag.com"
-        self._user = "z43"
-        self._pwd = "z43"
+        REGISTRY = env.get("DOCKER_REGISTRY_HOST", "masu.speag.com")
+        USER = env.get("DOCKER_REGISTRY_USER", "z43")
+        PWD = env.get("DOCKER_REGISTRY_PWD", "z43")
+
+        self._registry = REGISTRY
+        self._user = USER
+        self._pwd = PWD
 
     @property
     def registry(self):

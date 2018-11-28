@@ -30,8 +30,11 @@ def setup(app: web.Application):
     s3_endpoint = s3_cfg["endpoint"]
     s3_secret_key = s3_cfg["secret_key"]
     s3_bucket = s3_cfg["bucket_name"]
+    s3_secure = s3_cfg["secure"]
 
-    s3_client = S3Client(s3_endpoint, s3_access_key, s3_secret_key)
+    secure = s3_secure == 1
+
+    s3_client = S3Client(s3_endpoint, s3_access_key, s3_secret_key, secure=secure)
     s3_client.create_bucket(s3_bucket)
 
     app[APP_S3_KEY] = s3_client
@@ -51,5 +54,4 @@ get_config_s3 = get_config
 __all__ = (
     "setup_s3",
     "get_config_s3",
-
 )
