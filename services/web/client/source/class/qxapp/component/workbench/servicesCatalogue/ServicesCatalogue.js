@@ -20,15 +20,21 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
 
     // create the textfield
-    let searchLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+    let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
     let searchLabel = new qx.ui.basic.Label(this.tr("Search"));
-    searchLayout.add(searchLabel);
+    filterLayout.add(searchLabel);
     let textfield = this.__textfield = new qx.ui.form.TextField();
     textfield.setLiveUpdate(true);
-    searchLayout.add(textfield, {
+    filterLayout.add(textfield, {
       flex: 1
     });
-    this.add(searchLayout);
+    let showAll = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
+    showAll.setValue(true);
+    showAll.addListener("changeValue", e => {
+      this.__showAllServices(e.getData());
+    }, this);
+    filterLayout.add(showAll);
+    this.add(filterLayout);
 
     this.__allServices = [];
     let names = [];
@@ -57,25 +63,25 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     textfield.bind("changeValue", filterObj, "searchString");
 
 
-    // crate buttons
-    let box = new qx.ui.layout.HBox(10);
-    box.setAlignX("right");
-    let buttonsLayout = new qx.ui.container.Composite(box);
+    // create buttons
+    let btnBox = new qx.ui.layout.HBox(10);
+    btnBox.setAlignX("right");
+    let btnLayout = new qx.ui.container.Composite(btnBox);
 
     let addBtn = new qx.ui.form.Button("Add");
     addBtn.addListener("execute", this.__onAddService, this);
     addBtn.setAllowGrowX(false);
-    buttonsLayout.add(addBtn);
+    btnLayout.add(addBtn);
 
     let cancelBtn = new qx.ui.form.Button("Cancel");
     cancelBtn.addListener("execute", this.__onCancel, this);
     cancelBtn.setAllowGrowX(false);
-    buttonsLayout.add(cancelBtn);
+    btnLayout.add(cancelBtn);
 
-    this.add(buttonsLayout);
+    this.add(btnLayout);
 
     // Listen to "Enter" key
-    this.addListener("keypress", function(keyEvent) {
+    this.addListener("keypress", keyEvent => {
       if (keyEvent.getKeyIdentifier() === "Enter") {
         this.__onAddService();
       }
@@ -96,6 +102,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
   members: {
     __allServices: null,
     __textfield: null,
+    __showAll: null,
     __list: null,
     __controller: null,
     __contextNodeId: null,
@@ -121,6 +128,21 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     __getServiceNameInList: function(service) {
       return (service.name + " " + service.version);
+    },
+
+    __showAllServices: function(show) {
+      let newData = [];
+      for (let i = 0; i < this.__allServices.length; i++) {
+        const service = this.__allServices[i];
+        if (show) {
+          const listName = this.__getServiceNameInList(service);
+          newData.push(listName);
+        } else if (!service.key.includes("demodec")) {
+          const listName = this.__getServiceNameInList(service);
+          newData.push(listName);
+        }
+      }
+      this.__setNewData(newData);
     },
 
     __updateCompatibleList: function() {
