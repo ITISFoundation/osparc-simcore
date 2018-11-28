@@ -14,6 +14,7 @@ CONFIG_SCHEMA = T.Dict({
     "access_key": T.String(),
     "secret_key": T.String(),
     "bucket_name": T.String(),
+    T.Key("secure", default=0): T.Int(),
 })
 
 
@@ -25,11 +26,13 @@ class Config():
         S3_ACCESS_KEY = env.get("S3_ACCESS_KEY", "12345678")
         S3_SECRET_KEY = env.get("S3_SECRET_KEY", "12345678")
         S3_BUCKET_NAME = env.get("S3_BUCKET_NAME", "simcore")
+        S3_SECURE = env.get("S3_SECURE", "0")
 
         self._endpoint = S3_ENDPOINT
         self._access_key = S3_ACCESS_KEY
         self._secret_key = S3_SECRET_KEY
         self._bucket_name = S3_BUCKET_NAME
+        self._secure = S3_SECURE
 
     @property
     def endpoint(self):
@@ -46,3 +49,7 @@ class Config():
     @property
     def bucket_name(self):
         return self._bucket_name
+
+    @property
+    def secure(self):
+        return self._secure

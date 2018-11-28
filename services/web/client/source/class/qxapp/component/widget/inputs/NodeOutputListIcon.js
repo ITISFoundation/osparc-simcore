@@ -59,7 +59,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
         e.addAction("copy");
 
         // HACK
-        if (this.getNodeModel().getKey() === "services/demodec/dynamic/itis/s4l/Neuroman") {
+        if (this.getNodeModel().getKey() === "simcore/services/demodec/dynamic/itis/s4l/neuroman") {
           // Register supported types
           e.addType("osparc-port-link");
           item.nodeId = this.getNodeModel().getNodeId();
