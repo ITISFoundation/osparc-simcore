@@ -66,6 +66,10 @@ up-webclient-devel: up-swarm-devel remove-intermediate-file file-watcher
 build:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
 
+build-client:
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
+
 rebuild:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
 
@@ -170,6 +174,11 @@ push_platform_images:
 	${DOCKER} push masu.speag.com/simcore/workbench/storage:${PLATFORM_VERSION}
 
   setup-check: .env .vscode/settings.json
+
+push_client_image:
+	${DOCKER} login masu.speag.com
+	${DOCKER} tag services_webserver:latest masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
+	${DOCKER} push masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
 
 .env: .env-devel
 	$(info #####  $< is newer than $@ ####)

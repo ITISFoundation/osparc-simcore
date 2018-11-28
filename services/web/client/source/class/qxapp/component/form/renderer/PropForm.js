@@ -106,9 +106,15 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       for (const portId in data) {
         let ctrl = this._form.getControl(portId);
         if (ctrl && Object.prototype.hasOwnProperty.call(ctrl, "link")) {
-          data[portId] = ctrl.link;
+          if (this.getNodeModel().getKey()
+            .includes("/neuroman")) {
+            // HACK: Only Neuroman should enter here
+            data[portId] = ctrl.link["output"];
+          } else {
+            data[portId] = ctrl.link;
+          }
         }
-        // FIXME: "null" shoulb be a valid input
+        // FIXME: "null" should be a valid input
         if (data[portId] === "null") {
           data[portId] = null;
         }

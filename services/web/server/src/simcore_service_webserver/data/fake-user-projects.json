@@ -16,7 +16,7 @@
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?0.jpg",
     "workbench": {
       "EyRyp1uaS": {
-        "key": "services/dynamic/itis/file-picker",
+        "key": "simcore/services/dynamic/itis/file-picker",
         "version": "0.0.0",
         "outputs": {
           "outFile": {
@@ -30,7 +30,7 @@
         }
       },
       "4ygzpkd6B": {
-        "key": "services/computational/itis/sleeper",
+        "key": "simcore/services/computational/itis/sleeper",
         "version": "0.0.0",
         "label": "Sleeper 1",
         "inputs": {
@@ -45,7 +45,7 @@
         }
       },
       "VyU461Oar": {
-        "key": "services/computational/itis/sleeper",
+        "key": "simcore/services/computational/itis/sleeper",
         "version": "0.0.0",
         "label": "Sleeper 2",
         "inputs": {
@@ -60,7 +60,7 @@
         }
       },
       "Vy6Bp1dpH": {
-        "key": "services/computational/itis/tutti",
+        "key": "simcore/services/computational/itis/tutti",
         "version": "0.0.0-alpha",
         "inputs": {
           "inNumber": {
@@ -114,7 +114,7 @@
           "x": 150,
           "y": 150
         },
-        "key": "services/dynamic/itis/file-picker",
+        "key": "simcore/services/dynamic/itis/file-picker",
         "version": "0.0.0"
       },
       "8d603045-bfe8-4822-906c-590fa69c1d13": {
@@ -136,7 +136,7 @@
           "x": 450,
           "y": 150
         },
-        "key": "simcore/services/comp/itis/isolve-emlf",
+        "key": "simcore/services/demodec/comp/itis/isolve-emlf",
         "version": "0.0.1"
       },
       "08116c6d-2c9e-4939-9c2b-67fe0ae65dc9": {
@@ -150,7 +150,7 @@
           "x": 150,
           "y": 300
         },
-        "key": "services/dynamic/itis/file-picker",
+        "key": "simcore/services/dynamic/itis/file-picker",
         "version": "0.0.0"
       },
       "1a4aafff-88c7-4e7e-89cc-fe374cfe64ea": {
@@ -171,7 +171,7 @@
           "x": 450,
           "y": 300
         },
-        "key": "simcore/services/comp/itis/neuron-isolve",
+        "key": "simcore/services/demodec/comp/itis/neuron-isolve",
         "version": "0.0.1"
       },
       "d2d8028c-be3f-473d-a74f-161a286a00ed": {
@@ -231,7 +231,7 @@
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?15.jpg",
     "workbench": {
       "Sleeper1": {
-        "key": "services/computational/itis/sleeper",
+        "key": "simcore/services/computational/itis/sleeper",
         "version": "0.0.0",
         "label": "Sleeper 1",
         "inputs": {
@@ -271,7 +271,7 @@
         "parent": "Container1"
       },
       "Sleeper2": {
-        "key": "services/computational/itis/sleeper",
+        "key": "simcore/services/computational/itis/sleeper",
         "version": "0.0.0",
         "inputs": {
           "inNumber": 3
@@ -286,7 +286,7 @@
         "parent": "Container1"
       },
       "Sleeper3": {
-        "key": "services/computational/itis/sleeper",
+        "key": "simcore/services/computational/itis/sleeper",
         "version": "0.0.0",
         "inputs": {
           "inNumber": 2

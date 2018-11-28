@@ -1,44 +1,36 @@
 /* eslint no-warning-comments: "off" */
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true, "allow": ["__widgetChildren"] }] */
 
+const ROOT_ID = "00000000-0000-0000-0000-000000000000";
+
 qx.Class.define("qxapp.component.EntityList", {
   extend: qx.ui.window.Window,
 
   include: [qx.locale.MTranslation],
 
-  construct: function(width, height, backgroundColor, fontColor) {
+  construct: function() {
     this.base(arguments, this.tr("Entity List"));
 
     this.set({
       contentPadding: 0,
-      width: width,
-      height: height,
-      allowClose: false,
-      allowMinimize: false,
-      layout: new qx.ui.layout.VBox(),
-      backgroundColor: backgroundColor,
-      textColor: fontColor
+      width: 250,
+      height: 400,
+      showMinimize: false,
+      showMaximize: false,
+      showClose: false,
+      layout: new qx.ui.layout.VBox()
     });
 
     let scroller = new qx.ui.container.Scroll();
-    this.add(scroller);
-    this.setHeight(height-30);
+    this.add(scroller, {
+      flex: 1
+    });
 
     // create and add the tree
-    this.__tree = new qx.ui.tree.Tree();
-    this.__tree.set({
-      backgroundColor: backgroundColor,
-      textColor: fontColor
-    });
+    this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children");
     this.__tree.setSelectionMode("multi");
-    this.__tree.setWidth(width);
-    this.__tree.setHeight(height);
-
-    let root = new qx.ui.tree.TreeFolder("Model");
-    root.setOpen(true);
-    this.__tree.setRoot(root);
-
-    this.__tree.addListener("changeSelection", this.__onSelectionChanged.bind(this));
+    this.populateTree();
+    this.__tree.getSelection().addListener("change", this.__onSelectionChanged.bind(this));
 
     let removeBtn = new qx.ui.form.Button(this.tr("Remove entity"));
     removeBtn.set({
@@ -60,74 +52,234 @@ qx.Class.define("qxapp.component.EntityList", {
   members: {
     __tree: null,
 
-    __onSelectionChanged: function(e) {
-      let selectedIds = [];
-      for (let i = 0; i < e.getData().length; i++) {
-        selectedIds.push(e.getData()[i].id);
+    populateTree: function() {
+      let data = {
+        label: "Model",
+        entityId: ROOT_ID,
+        pathId: ROOT_ID,
+        pathLabel: "Model",
+        checked: true,
+        children: []
+      };
+      let model = qx.data.marshal.Json.createModel(data, true);
+      // configure model for triState usage
+      this.configureTriState(model);
+
+      // data binding
+      this.__tree.setModel(model);
+      this.__tree.setDelegate({
+        createItem: () => new qxapp.component.EntityListItem(),
+        bindItem: (c, item, id) => {
+          c.bindDefaultProperties(item, id);
+          c.bindProperty("entityId", "entityId", null, item, id);
+          c.bindProperty("pathId", "pathId", null, item, id);
+          c.bindProperty("pathLabel", "pathLabel", null, item, id);
+          c.bindProperty("checked", "checked", null, item, id);
+        },
+        configureItem: item => {
+          item.addListener("visibilityChanged", e => {
+            this.fireDataEvent("visibilityChanged", e.getData());
+          }, this);
+        }
+      });
+    },
+
+    // from http://www.qooxdoo.org/current/demobrowser/#virtual~Tree_Columns.html
+    // TODO: It's not working
+    configureTriState: function(item) {
+      item.getModel = function() {
+        return this;
+      };
+
+      if (item.getChildren != null) { // eslint-disable-line no-eq-null
+        let children = item.getChildren();
+        for (let i = 0; i < children.getLength(); i++) {
+          let child = children.getItem(i);
+          this.configureTriState(child);
+
+          // bind parent with child
+          item.bind("checked", child, "checked", {
+            converter: function(value, child2) {
+              // when parent is set to null than the child should keep it's value
+              if (value === null) {
+                return child2.getChecked();
+              }
+              return value;
+            }
+          });
+
+          // bind child with parent
+          child.bind("checked", item, "checked", {
+            converter: function(value, parent) {
+              let children2 = parent.getChildren().toArray();
+              let isAllChecked = children2.every(function(item2) {
+                return item2.getChecked();
+              });
+              let isOneChecked = children2.some(function(item2) {
+                return item.getChecked() || item2.getChecked() === null;
+              });
+              // Set triState (on parent node) when one child is checked
+              if (isOneChecked) {
+                return isAllChecked ? true : null;
+              }
+              return false;
+            }
+          });
+        }
       }
-      this.fireDataEvent("selectionChanged", selectedIds);
+    },
+
+    __onSelectionChanged: function(e) {
+      this.fireDataEvent("selectionChanged", this.getSelectedEntityIds());
     },
 
     __removeEntityPressed: function() {
       let selectedIds = this.getSelectedEntityIds();
+      if (selectedIds.includes(ROOT_ID)) {
+        return;
+      }
       for (let i = 0; i < selectedIds.length; i++) {
-        this.fireDataEvent("removeEntityRequested", selectedIds[i]);
+        if (this.__findUuidInLeaves(selectedIds[i])) {
+          // Leaf
+          this.fireDataEvent("removeEntityRequested", selectedIds[i]);
+        } else {
+          // Folder
+          // TODO: Delete folders
+        }
       }
     },
 
-    __getSelectedEntities: function() {
-      return this.__tree.getSelection();
+    __getSelectedItems: function() {
+      return this.__tree.getSelection().toArray();
     },
 
     getSelectedEntityId: function() {
-      if (this.__getSelectedEntities().length > 0) {
-        return this.__getSelectedEntities()[0].id;
+      let selectedItems = this.__getSelectedItems();
+      if (selectedItems.length > 0) {
+        return selectedItems[0].getEntityId();
       }
       return null;
     },
 
     getSelectedEntityIds: function() {
       let selectedIds = [];
-      for (let i = 0; i < this.__getSelectedEntities().length; i++) {
-        selectedIds.push(this.__getSelectedEntities()[i].id);
+      let selectedItems = this.__getSelectedItems();
+      for (let i = 0; i < selectedItems.length; i++) {
+        selectedIds.push(selectedItems[i].getEntityId());
       }
       return selectedIds;
     },
 
-    addEntity: function(id, name) {
-      let newItem = new qx.ui.tree.TreeFile();
+    addEntity: function(name, entityId, pathId, pathName) {
+      let rootModel = this.__tree.getModel();
+      let newItem = {
+        label: name,
+        entityId: entityId,
+        pathId: pathId ? pathId : "root/"+entityId,
+        pathLabel: pathName ? pathName : "Model/"+name,
+        checked: true
+      };
 
-      // A checkbox comes right after the tree icon
-      let checkbox = new qx.ui.form.CheckBox();
-      checkbox.setFocusable(false);
-      checkbox.setValue(true);
-      newItem.addWidget(checkbox);
-      checkbox.addListener("changeValue", function(e) {
-        this.fireDataEvent("visibilityChanged", [id, e.getData()]);
-        let selectedIds = this.getSelectedEntityIds();
-        for (let i = 0; i < this.__tree.getRoot().getChildren().length; i++) {
-          if (selectedIds.indexOf(this.__tree.getRoot().getChildren()[i].id) >= 0) {
-            // ToDo: Look for a better solution
-            for (let j = 0; j < this.__tree.getRoot().getChildren()[i].__widgetChildren.length; j++) {
-              if (this.__tree.getRoot().getChildren()[i].__widgetChildren[j].basename === "CheckBox") {
-                this.__tree.getRoot().getChildren()[i].__widgetChildren[j].setValue(e.getData());
-              }
+      // create first the folders if do not exist yet
+      let parent = rootModel;
+      let pathSplitted = newItem.pathId.split("/");
+      let labelSplitted = newItem.pathLabel.split("/");
+      // i=0 is always there
+      for (let i=1; i<pathSplitted.length-1; i++) {
+        let found = false;
+        for (let j=0; j<parent.getChildren().length; j++) {
+          if (parent.getChildren().toArray()[j].getEntityId() === pathSplitted[i]) {
+            parent = parent.getChildren().toArray()[j];
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          let folderItem = {
+            label: labelSplitted[i],
+            entityId: pathSplitted[i],
+            pathId: pathSplitted.slice(0, i).join("/"),
+            pathLabel: labelSplitted.slice(0, i).join("/"),
+            checked: true,
+            children: []
+          };
+          parent.getChildren().push(qx.data.marshal.Json.createModel(folderItem, true));
+          parent = parent.getChildren().toArray()[0];
+        }
+      }
+
+      let newItemModel = qx.data.marshal.Json.createModel(newItem, true);
+      parent.getChildren().push(newItemModel);
+
+      this.configureTriState(rootModel);
+      this.__tree.setModel(rootModel);
+
+      // select new item
+      let newSelection = new qx.data.Array([newItemModel]);
+      this.__tree.setSelection(newSelection);
+    },
+
+    __getLeafList: function(item, leaves) {
+      if (item.getChildren == null) { // eslint-disable-line no-eq-null
+        leaves.push(item);
+      } else {
+        for (let i = 0; i < item.getChildren().length; i++) {
+          this.__getLeafList(item.getChildren().toArray()[i], leaves);
+        }
+      }
+    },
+
+    __findUuidInLeaves: function(uuid) {
+      let parent = this.__tree.getModel();
+      let list = [];
+      this.__getLeafList(parent, list);
+      for (let j = 0; j < list.length; j++) {
+        if (uuid === list[j].getEntityId()) {
+          return list[j];
+        }
+      }
+      return null;
+    },
+
+    __getParents: function(item) {
+      let parents = [this.__tree.getModel()];
+      if (item) {
+        let pathSplitted = item.getPathId().split("/");
+        let parent = this.__tree.getModel();
+        for (let i = 1; i < pathSplitted.length-1; i++) {
+          let children = parent.getChildren().toArray();
+          for (let j = 0; j < children.length; j++) {
+            if (children[j].getEntityId() === pathSplitted[i]) {
+              parents.push(children[j]);
+              parent = children[j];
+              break;
             }
           }
         }
-      }, this);
-
-      newItem.addLabel(name);
-
-      newItem.id = id;
-      this.__tree.getRoot().add(newItem);
-      this.__tree.setSelection([newItem]);
+      }
+      return parents;
     },
 
     removeEntity: function(uuid) {
-      for (let i = 0; i < this.__tree.getRoot().getChildren().length; i++) {
-        if (this.__tree.getRoot().getChildren()[i].id === uuid) {
-          this.__tree.getRoot().remove(this.__tree.getRoot().getChildren()[i]);
+      let item = this.__findUuidInLeaves(uuid);
+      if (item) {
+        // Leave
+        let pathSplitted = item.getPathId().split("/");
+        let parent = this.__tree.getModel();
+        for (let i = 1; i < pathSplitted.length-1; i++) {
+          let children = parent.getChildren().toArray();
+          for (let j = 0; j < children.length; j++) {
+            if (children[j].getEntityId() === pathSplitted[i]) {
+              parent = children[j];
+              break;
+            }
+          }
+        }
+        let children = parent.getChildren().toArray();
+        for (let i = 0; i < children.length; i++) {
+          if (uuid === children[i].getEntityId()) {
+            parent.getChildren().remove(children[i]);
+          }
         }
       }
     },
@@ -136,10 +288,15 @@ qx.Class.define("qxapp.component.EntityList", {
       if (uuids === null) {
         this.__tree.resetSelection();
       } else {
-        let selected = [];
-        for (let i = 0; i < this.__tree.getRoot().getChildren().length; i++) {
-          if (uuids.indexOf(this.__tree.getRoot().getChildren()[i].id) >= 0) {
-            selected.push(this.__tree.getRoot().getChildren()[i]);
+        let selected = new qx.data.Array();
+        for (let i = 0; i < uuids.length; i++) {
+          const uuid = uuids[i];
+          let item = this.__findUuidInLeaves(uuid);
+          if (item) {
+            selected.push(item);
+            // TODO: open parent folders
+            let parents = this.__getParents(item);
+            console.log(parents);
           }
         }
         this.__tree.setSelection(selected);
