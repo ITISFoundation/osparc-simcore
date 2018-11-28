@@ -1,6 +1,4 @@
 /* global require */
-/* global process */
-/* global __dirname */
 /* global console */
 /* eslint no-console: "off" */
 
@@ -8,36 +6,32 @@
 // node server.js
 
 const express = require('express');
-const path = require('path');
 
 const app = express();
 let server = require('http').createServer(app);
 let Promise = require('promise');
 let sizeof = require('object-sizeof');
 let s4l_utils = require('./s4l_utils');
-
-// constants ---------------------------------------------
-const HOSTNAME = process.env.SIMCORE_WEB_HOSTNAME || '127.0.0.1';
-const PORT = process.env.SIMCORE_WEB_PORT || 8080;
-const BASEPATH = process.env.SIMCORE_NODE_BASEPATH;
-const APP_PATH = process.env.SIMCORE_WEB_OUTDIR || path.resolve(__dirname, 'source-output');
-const MODELS_PATH = '/models/';
-
-const staticPath = APP_PATH;
-
+let routes = require('./routes');
+const config = require('./config');
 
 // variables ----------------------------------------
-console.log(BASEPATH);
+console.log(config.BASEPATH);
 // serve static assets normally
-console.log('Serving static : ' + staticPath);
-app.use(`${BASEPATH}`, express.static(staticPath));
+console.log('Serving static : ' + config.APP_PATH);
+app.use(`${config.BASEPATH}`, express.static(config.APP_PATH));
 
 
 // init route for retrieving port inputs
-app.use(`${BASEPATH}`, require("./routes"));
+app.use(`${config.BASEPATH}`, routes);
+routes.eventEmitter.on("retrieveModel", function(modelName){
+  s4l_utils.connectToS4LServer().then(function () {
+    importModelS4L(modelName);
+  }).catch(failureCallback);
+});
 // start server
-server.listen(PORT, HOSTNAME);
-console.log('server started on ' + PORT + '/app');
+server.listen(config.PORT, config.HOSTNAME);
+console.log('server started on ' + config.PORT + '/app');
 
 // init socket.io
 let io = require('socket.io')(server, {
@@ -47,7 +41,13 @@ let io = require('socket.io')(server, {
 let connectedClient = null;
 
 // Socket IO stuff
-io.on('connection', function (socketClient) {
+io.on('connection', socketIOConnected);
+
+// init thrift
+s4l_utils.connectToS4LServer().catch(console.log("no connection to S4L"));
+
+
+function socketIOConnected(socketClient) {
   console.log(`Client connected as ${socketClient.id}...`);
   connectedClient = socketClient;
 
@@ -83,9 +83,10 @@ io.on('connection', function (socketClient) {
   socketClient.on('newSplineS4LRequested', function (pointListUUID) {
     var pointList = pointListUUID[0];
     var uuid = pointListUUID[1];
-    s4l_utils.connectToS4LServer().then(function () {
-      createSplineS4L(socketClient, pointList, uuid);
-    }).catch(failureCallback);
+    s4l_utils.connectToS4LServer()
+      .then(function () {
+        return createSplineS4L(pointList, uuid);
+      })
   });
 
   socketClient.on('newSphereS4LRequested', function (radiusCenterUUID) {
@@ -94,77 +95,36 @@ io.on('connection', function (socketClient) {
     let uuid = radiusCenterUUID[2];
     s4l_utils.connectToS4LServer()
       .then(function () {
-        console.log('calling createSpheres4L');
-        return s4l_utils.createSphereS4L(radius, center, uuid);
-      })
-      .then(function (uuid) {
-        console.log('calling get entity meshes' + uuid);
-        return s4l_utils.getEntityMeshes(uuid, 'newSphereS4LRequested');
-      })
-      .then(function (meshEntity) {
-        console.log('emitting back ' + meshEntity.value);
-        socketClient.emit('newSphereS4LRequested', meshEntity);
-      })
-      .catch(failureCallback);
+        return createSphereS4L(radius, center, uuid);
+      }).catch(failureCallback);
   });
 
   socketClient.on('newBooleanOperationRequested', function (entityMeshesSceneOperationType) {
     let entityMeshesScene = entityMeshesSceneOperationType[0];
     let operationType = entityMeshesSceneOperationType[1];
     s4l_utils.connectToS4LServer().then(function () {
-      booleanOperationS4L(socketClient, entityMeshesScene, operationType);
-    }).
-      catch(failureCallback);
+      booleanOperationS4L(entityMeshesScene, operationType);
+    }).catch(failureCallback);
   });
-});
+}
 
-// init thrift
-s4l_utils.connectToS4LServer().catch(console.log("no connection to S4L"));
 
-// TODO: these should be moved to s4l utils
 // S4L (thrift) stuff -----------------------------------------------------------------------------
 function failureCallback(error) {
   console.log('Thrift error: ' + error);
 }
-function createSplineS4L(socketClient, pointList, uuid) {
-  let transform4x4 = [
-    1.0, 0.0, 0.0, 0.0,
-    0.0, 1.0, 0.0, 0.0,
-    0.0, 0.0, 1.0, 0.0,
-    0.0, 0.0, 0.0, 1.0];
-  let color = {
-    diffuse: {
-      r: 1.0,
-      g: 0.3,
-      b: 0.65,
-      a: 1.0
-    }
-  };
-  let spline = {
-    vertices: pointList,
-    transform4x4: transform4x4,
-    material: color
-  };
-  s4l_utils.s4lModelerClient.CreateSpline(spline, uuid, function (err, responseUUID) {
-    s4l_utils.s4lModelerClient.GetEntityWire(responseUUID, function (err2, response2) {
-      let listOfPoints = {
-        type: 'newSplineS4LRequested',
-        value: response2,
-        uuid: responseUUID,
-      };
-      socketClient.emit('newSplineS4LRequested', listOfPoints);
-    });
-  });
-}
 
 async function importModelS4L(modelName) {
-  await s4l_utils.loadModelInS4L(modelName);
-  const solid_entities = await s4l_utils.getEntitiesFromS4L(s4l_utils.thrModelerTypes.EntityFilterType.SOLID_BODY_AND_MESH);
-  const totalTransmittedMB = await transmitEntities(solid_entities);
-  console.log(`Sent all GLTF scene: ${totalTransmittedMB}MB`);
-  const splineEntities = await s4l_utils.getEntitiesFromS4L(s4l_utils.thrModelerTypes.EntityFilterType.WIRE);
-  const totalTransmittedSplineMB = await transmitSplines(splineEntities);
-  console.log(`Sent all GLTF scene: ${totalTransmittedSplineMB}MB`);
+  try {
+    await s4l_utils.loadModelInS4L(modelName);
+    const solid_entities = await s4l_utils.getEntitiesFromS4L(s4l_utils.entityType.SOLID_BODY_AND_MESH);
+    await transmitEntities(solid_entities);
+    const splineEntities = await s4l_utils.getEntitiesFromS4L(s4l_utils.entityType.WIRE);
+    await transmitSplines(splineEntities);    
+  } catch (error) {
+    console.log(`Error while importing model: ${error}`);
+  }
+  
 }
 
 async function transmitSplines(splineEntities) {
@@ -172,15 +132,15 @@ async function transmitSplines(splineEntities) {
   for (let splineIndex = 0; splineIndex < splineEntities.length; splineIndex++) {
     const wireObject = await s4l_utils.getWireFromS4l(splineEntities[splineIndex]);
     const transmittedBytes = await transmitSpline(wireObject);
-    totalTransmittedMB += transmittedBytes/(1024.0*1024.0);
+    totalTransmittedMB += transmittedBytes / (1024.0 * 1024.0);
   }
-  return totalTransmittedMB;
+  console.log(`Sent all spline objects: ${totalTransmittedMB}MB`);
 }
 function transmitSpline(wireObject) {
-  return new Promise(function(resolve, reject){
+  return new Promise(function (resolve, reject) {
     if (!connectedClient) {
       console.log("no client...");
-      reject();
+      reject("no connected client");
     }
     const sceneSizeBytes = sizeof(wireObject);
     console.log(`sending ${wireObject.value.length} points of size ${sceneSizeBytes} to client...`);
@@ -196,17 +156,17 @@ async function transmitEntities(entities) {
   let totalTransmittedMB = 0;
   for (let i = 0; i < entities.length; i++) {
     const encodedScene = await s4l_utils.getEncodedSceneFromS4L(entities[i]);
-    const transmittedBytes = await sendEncodedSceneToClient(encodedScene);
-    totalTransmittedMB += transmittedBytes/(1024.0*1024.0);
+    const transmittedBytes = await transmitScene(encodedScene);
+    totalTransmittedMB += transmittedBytes / (1024.0 * 1024.0);
   }
-  return totalTransmittedMB;
+  console.log(`Sent all GLTF scene: ${totalTransmittedMB}MB`);
 }
 
-function sendEncodedSceneToClient(scene) {
-  return new Promise(function(resolve, reject) {
+function transmitScene(scene) {
+  return new Promise(function (resolve, reject) {
     if (!connectedClient) {
       console.log("no client...");
-      reject();
+      reject("no connected client");
     }
     const sceneSizeBytes = sizeof(scene);
     console.log(`sending scene ${sceneSizeBytes} to client...`);
@@ -218,19 +178,41 @@ function sendEncodedSceneToClient(scene) {
   });
 }
 
-async function booleanOperationS4L(socketClient, entityMeshesScene, operationType) {  
+async function booleanOperationS4L(entityMeshesScene, operationType) {
   console.log('server: booleanOps4l ' + operationType);
   await s4l_utils.newDocumentS4L();
-  let uuidsList = await s4l_utils.sendEncodedSceneToS4L(entityMeshesScene);
-  let newEntityUuid = await s4l_utils.booleanOperationS4L(uuidsList);
-  let encodedScene = await s4l_utils.getEncodedSceneFromS4L(newEntityUuid);
-  console.log("sending scene to client..");
-  socketClient.emit('newBooleanOperationRequested', encodedScene);
+  const uuidsList = await s4l_utils.sendEncodedSceneToS4L(entityMeshesScene);
+  const newEntityUuid = await s4l_utils.booleanOperationS4L(uuidsList, operationType);
+  const listOfEntities = await s4l_utils.getEntitiesFromS4L(s4l_utils.entityType.MESH);
+  const index = listOfEntities.findIndex(function (element) {
+    return element.uuid == newEntityUuid;
+  });
+  await transmitEntities([listOfEntities[index]]);  
+}
+
+async function createSphereS4L(radius, center, uuid) {
+  await s4l_utils.newDocumentS4L();
+  const newEntityUuid = await s4l_utils.createSphereS4L(radius, center, uuid);
+  const listOfEntities = await s4l_utils.getEntitiesFromS4L(s4l_utils.entityType.MESH);
+  const index = listOfEntities.findIndex(function (element) {
+    return element.uuid == newEntityUuid;
+  });
+  await transmitEntities([listOfEntities[index]]);  
+}
+
+async function createSplineS4L(pointList, uuid) {
+  await s4l_utils.newDocumentS4L();
+  const newEntityUuid = await s4l_utils.createSplineS4L(pointList, uuid);
+  const listOfEntities = await s4l_utils.getEntitiesFromS4L(s4l_utils.entityType.WIRE);
+  const index = listOfEntities.findIndex(function (element) {
+    return element.uuid == newEntityUuid;
+  });
+  await transmitSplines([listOfEntities[index]]);
 }
 
 // generic functions --------------------------------------------------
 function importScene(socketClient, activeUser) {
-  const modelsDirectory = APP_PATH + MODELS_PATH + activeUser;
+  const modelsDirectory = config.APP_PATH + config.MODELS_PATH + activeUser;
   console.log('import Scene from: ', modelsDirectory);
   let fs = require('fs');
   fs.readdirSync(modelsDirectory).forEach((file) => {
@@ -252,7 +234,7 @@ function importScene(socketClient, activeUser) {
 }
 
 function exportScene(socketClient, activeUser, sceneJson) {
-  const modelsDirectory = APP_PATH + MODELS_PATH + activeUser + '/myScene.gltf';
+  const modelsDirectory = config.APP_PATH + config.MODELS_PATH + activeUser + '/myScene.gltf';
   console.log('export Scene to: ', modelsDirectory);
   let content = JSON.stringify(sceneJson);
   let fs = require('fs');

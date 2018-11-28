@@ -6,12 +6,13 @@
 /* eslint no-console: "off" */
 
 let express = require("express");
-let s4l_utils = require("./s4l_utils")
 const spawn = require("child_process").spawn;
 const path = require('path');
 let appRouter = express.Router();
+const events = require('events');
 
 const APP_PATH = process.env.SIMCORE_WEB_OUTDIR || path.resolve(__dirname, 'source-output');
+let eventEmitter = new events.EventEmitter()
 
 // handle every other route with index.html, which will contain
 // a script tag to your application's JavaScript file(s).
@@ -58,11 +59,11 @@ function callInputRetriever(request, response) {
         const data = JSON.parse(dataArray[1]);
         const modelName = data.model_name.value;
         console.log(`model to be loaded is ${modelName}`)        
-        s4l_utils.connectToS4LServer().then(function () {
-          server.importModelS4L(modelName);
-        }).catch(server.failureCallback);
+        eventEmitter.emit("retrieveModel", modelName);
       }
       response.sendStatus("204");
     }
   });
 }
+
+module.exports.eventEmitter = eventEmitter;

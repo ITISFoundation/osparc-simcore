@@ -1,9 +1,9 @@
 /* global require */
 /* global console */
-/* global process */
 /* global module */
 /* eslint no-console: "off" */
 
+const config = require('./config');
 let Promise = require('promise');
 let thrift = require('thrift');
 let thrApplication = require('./thrift/ApplicationJSNode/gen-nodejs/Application.js');
@@ -17,16 +17,11 @@ let sizeof = require('object-sizeof');
 const transport = thrift.TBufferedTransport;
 const protocol = thrift.TBinaryProtocol;
 
-const S4L_IP = process.env.CS_S4L_HOSTNAME || '172.16.9.89';
-const S4L_PORT_APP = process.env.CS_S4L_PORT_APP || 9095;
-const S4L_PORT_MOD = process.env.CS_S4L_PORT_MOD || 9096;
-const S4L_DATA_PATH = 'c:/app/data/';
-
 let s4lAppClient = null;
 let s4lModelerClient = null;
 
 async function connectToS4LServer() {
-  s4lAppClient = await createThriftConnection(S4L_IP, S4L_PORT_APP, thrApplication, s4lAppClient, disconnectFromApplicationServer);
+  s4lAppClient = await createThriftConnection(config.S4L_IP, config.S4L_PORT_APP, thrApplication, s4lAppClient, disconnectFromApplicationServer);
   s4lAppClient.GetApiVersion(function (err, response) {
     if (err) {
       console.log(`error getting application api version: ${err}`);
@@ -36,7 +31,7 @@ async function connectToS4LServer() {
       console.log('Application API version', response);
     }    
   });
-  s4lModelerClient = await createThriftConnection(S4L_IP, S4L_PORT_MOD, thrModeler, s4lModelerClient, disconnectFromModelerServer);
+  s4lModelerClient = await createThriftConnection(config.S4L_IP, config.S4L_PORT_MOD, thrModeler, s4lModelerClient, disconnectFromModelerServer);
   s4lModelerClient.GetApiVersion(function (err, response) {
     if (err) {
       console.log(`error getting modeler api version: ${err}`);
@@ -100,7 +95,37 @@ function createSphereS4L(radius, center, uuid) {
         reject(err);
       }
       else {
-        resolve(uuid);
+        resolve(responseUUID);
+      }
+    });
+  });
+}
+function createSplineS4L(pointList, uuid) {
+  return new Promise(function (resolve, reject) {
+    let transform4x4 = [
+      1.0, 0.0, 0.0, 0.0,
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0];
+    let color = {
+      diffuse: {
+        r: 1.0,
+        g: 0.3,
+        b: 0.65,
+        a: 1.0
+      }
+    };
+    let spline = {
+      vertices: pointList,
+      transform4x4: transform4x4,
+      material: color
+    };
+    s4lModelerClient.CreateSpline(spline, uuid, function (err, responseUUID) {
+      if (err) {
+        reject(err);
+      }
+      else {
+        resolve(responseUUID);
       }
     });
   });
@@ -150,7 +175,7 @@ function getWireFromS4l(entity) {
 function loadModelInS4L(modelName) {
   return new Promise(function(resolve, reject){
     s4lAppClient.NewDocument(function(){
-      let modelPath = S4L_DATA_PATH + modelName;
+      let modelPath = config.S4L_DATA_PATH + modelName;
       console.log('Importing', modelPath);
       s4lModelerClient.ImportModel(modelPath, function(err){
         if (err) {
@@ -168,6 +193,7 @@ function loadModelInS4L(modelName) {
 
 function getEntitiesFromS4L(entityType) {
   return new Promise(function(resolve, reject){
+    console.log(`retrieving entities of type: ${entityType}`);
     s4lModelerClient.GetFilteredEntities(entityType,
       function (err, entities) {
         if (err) {
@@ -196,28 +222,14 @@ function getEncodedSceneFromS4L(entity) {
             type: 'importModelScene',
             value: scene.data,
             path: entity.path,
+            uuid: entity.uuid,
+            name: entity.name,
+            pathNames: entity.pathNames,
+            pathUuids: entity.pathUuids,
           };
           resolve(encodedScene);
         }
       })
-  });
-}
-
-function newDocumentS4L() {
-  return new Promise(function(resolve, reject) {
-    if (!s4lAppClient) {
-      reject("no app client");
-    }
-    s4lAppClient.NewDocument(function (err, response) {
-      if (err) {
-        console.log('New Document creation failed ' + err);
-        reject(err);
-      }
-      else {
-        console.log(`New Document created: ${response}`);
-        resolve(response);
-      }      
-    });
   });
 }
 
@@ -243,18 +255,39 @@ function sendEncodedSceneToS4L(encodedScene) {
   });
 }
 
-function booleanOperationS4L(uuidsList) {
+function newDocumentS4L() {
+  return new Promise(function(resolve, reject) {
+    if (!s4lAppClient) {
+      reject("no app client");
+    }
+    s4lAppClient.NewDocument(function (err, response) {
+      if (err) {
+        console.log('New Document creation failed ' + err);
+        reject(err);
+      }
+      else {
+        console.log(`New Document created: ${response}`);
+        resolve(response);
+      }      
+    });
+  });
+}
+
+function booleanOperationS4L(uuidsList, operationType) {
   return new Promise(function(resolve, reject) {
     if (!s4lModelerClient) {
+      console.log(`no modeler client`);
       reject("no modeler client");
     }
-    s4lModelerClient.BooleanOperation(uuidsList, function (err, response) {
+    console.log(`starting boolean operation with ${uuidsList}`);
+    s4lModelerClient.BooleanOperation(uuidsList, operationType, function (err, response) {
+      console.log(`completed operation...`);
       if (err) {
         console.log('Entities creation failed: ' + err);
         reject(err);
       }
       else {
-        console.log(`scene created with response: ${response}`);
+        console.log(`boolean operation completed created with response: ${response}`);
         resolve(response);
       }
     });
@@ -262,7 +295,20 @@ function booleanOperationS4L(uuidsList) {
 }
 
 module.exports.connectToS4LServer = connectToS4LServer;
+
 module.exports.newDocumentS4L = newDocumentS4L;
-module.exports.sendEncodedSceneToS4L = sendEncodedSceneToS4L;
-module.exports.booleanOperationS4L = booleanOperationS4L;
+module.exports.loadModelInS4L = loadModelInS4L;
+
 module.exports.getEncodedSceneFromS4L = getEncodedSceneFromS4L;
+module.exports.sendEncodedSceneToS4L = sendEncodedSceneToS4L;
+
+module.exports.createSphereS4L = createSphereS4L;
+module.exports.createSplineS4L = createSplineS4L;
+module.exports.booleanOperationS4L = booleanOperationS4L;
+
+module.exports.getEntitiesFromS4L = getEntitiesFromS4L;
+module.exports.getEntityMeshesFromS4L = getEntityMeshes;
+module.exports.getWireFromS4l = getWireFromS4l;
+
+module.exports.entityType = thrModelerTypes.EntityFilterType;
+module.exports.booleanOperationType = thrModelerTypes.BooleanOperationType;
