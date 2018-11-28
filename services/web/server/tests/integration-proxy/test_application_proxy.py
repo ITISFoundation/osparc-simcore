@@ -5,14 +5,17 @@
 # pylint:disable=redefined-outer-name
 
 import pytest
-from aiohttp import web
 import yaml
+from aiohttp import web
+from yarl import URL
 
 import simcore_service_webserver.reverse_proxy.handlers.jupyter as rp_jupyter
 import simcore_service_webserver.reverse_proxy.handlers.paraview as rp_paraview
 from servicelib.rest_responses import unwrap_envelope
+from simcore_service_webserver.application import (APP_CONFIG_KEY,
+                                                   setup_app_proxy,
+                                                   setup_director, setup_rest)
 from simcore_service_webserver.reverse_proxy.settings import PROXY_MOUNTPOINT
-from simcore_service_webserver.application import setup_director, setup_app_proxy, APP_CONFIG_KEY, setup_rest
 
 
 @pytest.fixture
@@ -38,10 +41,10 @@ def webserver_service(loop, app_config, aiohttp_unused_port, aiohttp_server, her
     app[APP_CONFIG_KEY] = app_config
 
     setup_rest(app, debug=True)
-    setup_director(app)
+    setup_director(app, disable_login=True)
     setup_app_proxy(app) # <-----------|
 
-    server = loop.run_until_complete(aiohttp_server(app, port=port, host=host))
+    server = loop.run_until_complete(aiohttp_server(app, port=port))
     return server
 
 @pytest.fixture
@@ -63,11 +66,7 @@ async def test_reverse_proxy_workflow(client, service_key, service_version, serv
     """
         client <--> webserver <--> director
     """
-
-    import pdb; pdb.set_trace()
-    resp = await client.get("/v0")
-    assert resp.status == 200
-
+    #import pdb; pdb.set_trace()
 
     # List services in registry
     resp = await client.get("/v0/services?service_type=interactive")
@@ -81,19 +80,17 @@ async def test_reverse_proxy_workflow(client, service_key, service_version, serv
     assert any(srv['key']==service_key and srv['version']==service_version for srv in data)
 
     # Start backend dynamic service
-    service = {
-        'service_key': service_key,
-        'service_version': service_version,
-        'service_uuid': service_uuid
-    }
-    resp = await client.post("/v0/running_interactive_services", json=service)
+    resp = await client.post( URL("/v0/running_interactive_services").with_query(
+        service_key=service_key,
+        service_version =service_version,
+        service_uuid = service_uuid)
+    )
     assert resp.status == 200, (await resp.text())
 
     payload = await resp.json()
     data, error = unwrap_envelope(payload)
     assert data
     assert not error
-
 
     # Communicate with backend dynamic service
     # TODO: webserver should not respond identical to the director!!
