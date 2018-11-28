@@ -18,7 +18,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     let catalogueLayout = new qx.ui.layout.VBox(10);
     this.setLayout(catalogueLayout);
 
-
+    // Controls
     // create the textfield
     let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
     let searchLabel = new qx.ui.basic.Label(this.tr("Search"));
@@ -28,12 +28,21 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     filterLayout.add(textfield, {
       flex: 1
     });
+    // check box for filtering
     let showAll = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
     showAll.setValue(true);
     showAll.addListener("changeValue", e => {
       this.__showAllServices(e.getData());
     }, this);
     filterLayout.add(showAll);
+    // buttons for reloading services
+    let reloadBtn = new qx.ui.form.Button().set({
+      icon: "@FontAwesome5Solid/sync-alt/16"
+    });
+    reloadBtn.addListener("execute", function() {
+      this.__reloadServices();
+    }, this);
+    filterLayout.add(reloadBtn);
     this.add(filterLayout);
 
     this.__allServices = [];
@@ -114,9 +123,10 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       this.__updateCompatibleList();
     },
 
-    __populateList: function() {
+    __populateList: function(reload = false) {
+      this.__allServices = [];
       let store = qxapp.data.Store.getInstance();
-      let services = store.getServices();
+      let services = store.getServices(reload);
       if (services === null) {
         store.addListener("servicesRegistered", e => {
           this.__addNewData(e.getData());
@@ -143,6 +153,11 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         }
       }
       this.__setNewData(newData);
+    },
+
+    __reloadServices: function() {
+      this.__clearData();
+      this.__populateList(true);
     },
 
     __updateCompatibleList: function() {
@@ -182,6 +197,12 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     __areNodesCompatible: function(topLevelPort1, topLevelPort2) {
       return qxapp.data.Store.getInstance().areNodesCompatible(topLevelPort1, topLevelPort2);
+    },
+
+    __clearData: function() {
+      this.__allServices = [];
+      let clearData = new qx.data.Array([]);
+      this.__controller.setModel(clearData);
     },
 
     __setNewData: function(newData) {
