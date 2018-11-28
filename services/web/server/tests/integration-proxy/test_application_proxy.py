@@ -6,7 +6,6 @@
 
 import pytest
 from aiohttp import web
-import trafaret_config
 import yaml
 
 import simcore_service_webserver.reverse_proxy.handlers.jupyter as rp_jupyter
@@ -14,35 +13,24 @@ import simcore_service_webserver.reverse_proxy.handlers.paraview as rp_paraview
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.reverse_proxy.settings import PROXY_MOUNTPOINT
 from simcore_service_webserver.application import setup_director, setup_app_proxy, APP_CONFIG_KEY, setup_rest
-from simcore_service_webserver.application_config import app_schema
-from simcore_service_webserver.resources import resources as app_resources
-
-@pytest.fixture
-def app_config(config_environ):
-    # load from resources with this host_environ
-    cfg_path = app_resources.get_path("config/server-docker-prod.yaml")
-
-    # validates and fills all defaults/optional entries that normal load would not do
-    cfg_dict = trafaret_config.read_and_validate(cfg_path, app_schema, vars=config_environ)
-
-    return cfg_dict
 
 
 @pytest.fixture
-def webserver_service(loop, app_config, director_service, aiohttp_unused_port, aiohttp_server, here):
-    # server lives with the testing framework
+#def webserver_service(loop, app_config, director_service, aiohttp_unused_port, aiohttp_server, here):
+def webserver_service(loop, app_config, aiohttp_unused_port, aiohttp_server, here):
+
+    # OVERRIDES app_config:
+    #  - server lives with the testing framework
     port = app_config['main']['port'] = aiohttp_unused_port()
-    host = '127.0.0.1'
+    host = app_config['main']['host'] = '127.0.0.1'
 
+    #  - disable some subsystems
     app_config['rabbit']['enabled'] = False
+    app_config['db']['enabled'] = False
+    app_config['storage']['enabled'] = False
 
-    for name in app_config:
-        if name != "version":
-            app_config[name]['host'] = host
-
-    # For info dumps
-    tmp_config = here / 'config.ignore.yaml'
-    with tmp_config.open('wt') as f:
+    # TODO: parse_and_validate
+    with (here / "config.app.yaml").open('wt') as f:
         yaml.dump(app_config, f, default_flow_style=False)
 
     # app
@@ -51,7 +39,7 @@ def webserver_service(loop, app_config, director_service, aiohttp_unused_port, a
 
     setup_rest(app, debug=True)
     setup_director(app)
-    setup_app_proxy(app) # <-----------
+    setup_app_proxy(app) # <-----------|
 
     server = loop.run_until_complete(aiohttp_server(app, port=port, host=host))
     return server
@@ -68,14 +56,18 @@ def client(loop, webserver_service,  aiohttp_client):
 # TESTS ----------------------------------------------------------------------------
 
 @pytest.mark.parametrize("service_key,service_version,service_uuid", [
- (rp_jupyter.SUPPORTED_IMAGE_NAME, "1.6.0", "NJKfISIRB"),
- (rp_paraview.SUPPORTED_IMAGE_NAME, "1.0.5", "EkE7LSU0r"),
+ (rp_jupyter.SUPPORTED_IMAGE_NAME, "1.7.0", "NJKfISIRB"),
+ #(rp_paraview.SUPPORTED_IMAGE_NAME, "1.0.5", "EkE7LSU0r"),
 ])
 async def test_reverse_proxy_workflow(client, service_key, service_version, service_uuid):
     """
         client <--> webserver <--> director
     """
+
     import pdb; pdb.set_trace()
+    resp = await client.get("/v0")
+    assert resp.status == 200
+
 
     # List services in registry
     resp = await client.get("/v0/services?service_type=interactive")

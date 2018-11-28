@@ -1,0 +1,42 @@
+db:
+  init_tables: true
+  postgres:
+    database: ${POSTGRES_DB}
+    endpoint: ${POSTGRES_ENDPOINT}
+    host: ${POSTGRES_HOST}
+    password: ${POSTGRES_PASSWORD}
+    port: ${POSTGRES_PORT}
+    user: ${POSTGRES_USER}
+director:
+  host: ${DIRECTOR_HOST}
+  port: ${DIRECTOR_PORT}
+  version: v0
+main:
+  client_outdir: ${SIMCORE_WEB_OUTDIR}
+  host: 127.0.0.0
+  log_level: DEBUG
+  port: 8080
+  testing: true
+rabbit:
+  channels:
+    log: ${RABBITMQ_LOG_CHANNEL}
+    progress: ${RABBITMQ_PROGRESS_CHANNEL}
+  password: ${RABBITMQ_PASSWORD}
+  user: ${RABBITMQ_USER}
+rest:
+  extra_urls:
+  - ${OSPARC_PUBLIC_URL}
+  location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/openapi.yaml
+  version: v0
+smtp:
+  host: ${SMTP_HOST}
+  password: null
+  port: ${SMTP_PORT}
+  sender: OSPARC support <support@osparc.io>
+  tls: false
+  username: null
+storage:
+  host: ${STORAGE_HOST}
+  port: ${STORAGE_PORT}
+  version: v0
+version: '1.0'

@@ -10,6 +10,7 @@ from . import __version__
 
 
 async def check_health(request: web.Request):
+    import pdb; pdb.set_trace()
     params, query, body = await extract_and_validate(request)
 
     assert not params

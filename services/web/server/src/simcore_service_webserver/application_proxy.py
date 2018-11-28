@@ -53,6 +53,7 @@ class ServiceMonitor(ServiceResolutionPolicy):
 
     # override
     async def get_image_name(self, service_identifier: str) -> str:
+        import pdb; pdb.set_trace()
         data = await self._request_info(service_identifier)
         #data.get('service_uuid')
         #data.get('service_basepath')
@@ -67,6 +68,7 @@ class ServiceMonitor(ServiceResolutionPolicy):
         """ Returns the url = origin + mountpoint of the backend dynamic service identified
 
         """
+        import pdb; pdb.set_trace()
         data = await self._request_info(service_identifier)
         return URL.build(scheme="http",
                          host=data.get('service_host'),
