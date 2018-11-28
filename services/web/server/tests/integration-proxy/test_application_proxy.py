@@ -68,7 +68,7 @@ async def test_reverse_proxy_workflow(client, service_key, service_version, serv
     """
     #import pdb; pdb.set_trace()
 
-    # List services in registry
+    # List services in registry ----------------
     resp = await client.get("/v0/services?service_type=interactive")
     assert resp.status == 200, (await resp.text())
 
@@ -79,7 +79,7 @@ async def test_reverse_proxy_workflow(client, service_key, service_version, serv
 
     assert any(srv['key']==service_key and srv['version']==service_version for srv in data)
 
-    # Start backend dynamic service
+    # Start backend dynamic service --------------
     resp = await client.post( URL("/v0/running_interactive_services").with_query(
         service_key=service_key,
         service_version =service_version,
@@ -92,10 +92,10 @@ async def test_reverse_proxy_workflow(client, service_key, service_version, serv
     assert data
     assert not error
 
-    # Communicate with backend dynamic service
+    # Communicate with backend dynamic service --------------
     # TODO: webserver should not respond identical to the director!!
     service_basepath = data['service_basepath']
-    assert service_basepath.startswith(PROXY_MOUNTPOINT)
+    assert service_basepath == PROXY_MOUNTPOINT + "/" + service_uuid
 
     resp = await client.get(service_basepath)
     assert resp.status == 200, (await resp.text())
