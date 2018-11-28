@@ -8,7 +8,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
 
     // apply the filter funtion on creation time because the 'this' context
     // needs to be bound to the function
-    this.filter = qx.lang.Function.bind(function(data) {
+    this.__filter = qx.lang.Function.bind(function(data) {
       if (data === undefined || data === null) {
         console.log("Service with no data");
         return false;
@@ -33,7 +33,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
 
   members: {
     __controller: null,
-    filter: null,
+    __filter: null,
 
     __applySearchString : function(value, old) {
       this.__controller.update();
