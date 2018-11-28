@@ -83,7 +83,7 @@ async def __registry_request(path: str, method: str ="GET") -> str:
         auth = aiohttp.BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW)
 
     async with aiohttp.ClientSession(auth=auth) as session:
-        async with getattr(session, method.lower())(api_url) as response:
+        async with getattr(session, method.lower())(api_url, ssl=False) as response:
             if response.status == 404:
                 _logger.exception("path not found")
                 raise exceptions.ServiceNotAvailableError(path, None)

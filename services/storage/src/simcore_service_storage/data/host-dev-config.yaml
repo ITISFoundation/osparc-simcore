@@ -23,6 +23,7 @@ s3:
   bucket_name: simcore
   endpoint: minio:9000
   secret_key: '12345678'
+  secure: 0
 rest:
   oas_repo: ${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs
   #oas_repo: http://localhost:8043/api/specs
