@@ -36,7 +36,8 @@ console.log('server started on ' + config.PORT + '/app');
 // init socket.io
 let io = require('socket.io')(server, {
   pingInterval: 15000,
-  pingTimeout: 10000
+  pingTimeout: 10000,
+  path: `${config.BASEPATH}/socket.io`,
 });
 let connectedClient = null;
 
@@ -121,10 +122,10 @@ async function importModelS4L(modelName) {
     await transmitEntities(solid_entities);
     const splineEntities = await s4l_utils.getEntitiesFromS4L(s4l_utils.entityType.WIRE);
     await transmitSplines(splineEntities);    
-  } catch (error) {
+  } 
+  catch (error) {
     console.log(`Error while importing model: ${error}`);
   }
-  
 }
 
 async function transmitSplines(splineEntities) {
