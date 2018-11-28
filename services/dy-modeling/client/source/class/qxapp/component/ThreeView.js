@@ -1,5 +1,4 @@
 /* global document */
-/* global window */
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true, "allow": ["__dirtyColors"] }] */
 
 const NO_TOOL = 0;
@@ -8,77 +7,54 @@ const ENTITY_PICKING = 2;
 const FACE_PICKING = 3;
 
 qx.Class.define("qxapp.component.ThreeView", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.core.Widget,
 
-  construct : function(width, height, backgroundColor) {
+  construct : function(backgroundColor) {
     this.base(arguments);
-    this.set({
-      width: width,
-      height: height
-    });
 
-    let box = new qx.ui.layout.VBox();
-    box.set({
-      spacing: 10,
-      alignX: "center",
-      alignY: "middle"
-    });
-
-    this.set({
-      layout: box
-    });
+    this._setLayout(new qx.ui.layout.Canvas());
 
     this.__transformControls = [];
     this.__entities = [];
 
-    this.__threeWrapper = new qxapp.wrappers.ThreeWrapper();
-
-    this.__threeWrapper.addListener("ThreeLibReady", e => {
-      let ready = e.getData();
-      if (ready) {
-        this.__threeDViewer = new qx.ui.core.Widget();
-        this.add(this.__threeDViewer, {
-          flex: 1
-        });
-
-        this.__threeDViewer.addListenerOnce("appear", function() {
-          this.__threeDViewer.getContentElement().getDomElement()
+    this.addListenerOnce("appear", () => {
+      this.__threeWrapper = new qxapp.wrappers.ThreeWrapper();
+      this.__threeWrapper.addListener("ThreeLibReady", e => {
+        let ready = e.getData();
+        if (ready) {
+          this.getContentElement().getDomElement()
             .appendChild(this.__threeWrapper.getDomElement());
 
           this.__threeWrapper.setBackgroundColor(backgroundColor);
           // this.__threeWrapper.SetCameraPosition(18, 0, 25);
           this.__threeWrapper.setCameraPosition(21, 21, 9); // Z up
-          this.__threeWrapper.setSize(this.getWidth(), this.getHeight());
+          this.__threeWrapper.setSize(this.getBounds().width, this.getBounds().height);
 
           document.addEventListener("mousedown", this._onMouseDown.bind(this), false);
           document.addEventListener("mousemove", this._onMouseHover.bind(this), false);
 
-          window.addEventListener("resize", function() {
-            this.set({
-              width: window.innerWidth,
-              height: window.innerHeight
-            });
-            this.__threeWrapper.setSize(window.innerWidth, window.innerHeight);
+          this.addListener("resize", ev => {
+            this.__threeWrapper.setSize(this.getBounds().width, this.getBounds().height);
           }, this);
 
           this._render();
 
           this.fireDataEvent("ThreeViewReady", true);
-        }, this);
-      } else {
-        console.log("Three.js was not loaded");
-      }
-    }, this);
+        } else {
+          console.log("Three.js was not loaded");
+        }
+      }, this);
 
-    this.__threeWrapper.addListener(("EntityToBeAdded"), function(e) {
-      let newEntity = e.getData();
-      if (newEntity) {
-        this.addEntityToScene(newEntity);
-      }
-    }, this);
+      this.__threeWrapper.addListener("EntityToBeAdded", function(e) {
+        let newEntity = e.getData();
+        if (newEntity) {
+          this.addEntityToSceneFromS4L(newEntity);
+        }
+      }, this);
 
-    this.__threeWrapper.addListener(("SceneToBeExported"), function(e) {
-      this.fireDataEvent("SceneToBeExported", e.getData());
+      this.__threeWrapper.addListener(("SceneToBeExported"), function(e) {
+        this.fireDataEvent("SceneToBeExported", e.getData());
+      }, this);
     }, this);
   },
 
@@ -93,7 +69,6 @@ qx.Class.define("qxapp.component.ThreeView", {
   },
 
   members: {
-    __threeDViewer: null,
     __threeWrapper: null,
     __transformControls: null,
     __entities: null,
@@ -128,8 +103,8 @@ qx.Class.define("qxapp.component.ThreeView", {
         return;
       }
 
-      let posX = (event.clientX / window.innerWidth) * 2 - 1;
-      let posY = -(event.clientY / window.innerHeight) * 2 + 1;
+      let posX = (event.clientX / this.getBounds().width) * 2 - 1;
+      let posY = -(event.clientY / this.getBounds().height) * 2 + 1;
 
       if (this.__selectionMode === TOOL_ACTIVE && this.__activeTool) {
         let isShiftKeyPressed = event.shiftKey;
@@ -153,8 +128,8 @@ qx.Class.define("qxapp.component.ThreeView", {
         return;
       }
 
-      let posX = (event.clientX / window.innerWidth) * 2 - 1;
-      let posY = -(event.clientY / window.innerHeight) * 2 + 1;
+      let posX = (event.clientX / this.getBounds().width) * 2 - 1;
+      let posY = -(event.clientY / this.getBounds().height) * 2 + 1;
       let intersects = this.__threeWrapper.intersectEntities(this.__entities, posX, posY);
 
       if (this.__selectionMode === TOOL_ACTIVE && this.__activeTool) {
@@ -213,9 +188,17 @@ qx.Class.define("qxapp.component.ThreeView", {
     },
 
     addEntityToScene: function(entity) {
+      console.log("addEntityToScene", entity);
       this.__threeWrapper.addEntityToScene(entity);
       this.__entities.push(entity);
-      this.fireDataEvent("entityAdded", [entity.uuid, entity.name]);
+      this.fireDataEvent("entityAdded", entity);
+    },
+
+    addEntityToSceneFromS4L: function(entity) {
+      console.log("addEntityToSceneFromS4L", entity);
+      this.__threeWrapper.addEntityToScene(entity["entity"]);
+      this.__entities.push(entity["entity"]);
+      this.fireDataEvent("entityAdded", entity);
     },
 
     removeAll: function() {
@@ -305,6 +288,30 @@ qx.Class.define("qxapp.component.ThreeView", {
       }
       this.__transformControls = [];
       this._render();
+    },
+
+    centerCameraToBB: function() {
+      let center = {
+        x: 0,
+        y: 0,
+        z: 0
+      };
+      if (this.__entities.length > 0) {
+        let unionBBox = null;
+        for (let i = 0; i < this.__entities.length; i++) {
+          const ent = this.__entities[i];
+          if (ent.Name === "PlaneForSnapping") {
+            continue;
+          }
+          const bBox = this.__threeWrapper.getBBox(ent);
+          if (unionBBox === null) {
+            unionBBox = this.__threeWrapper.getBBox(ent);
+          }
+          unionBBox = this.__threeWrapper.mergeBBoxes(bBox, unionBBox);
+        }
+        center = this.__threeWrapper.getBBoxCenter(unionBBox);
+      }
+      this.__threeWrapper.setOrbitPoint(center);
     },
 
     setSelectionMode: function(mode) {

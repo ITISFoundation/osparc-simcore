@@ -99,8 +99,8 @@ qx.Class.define("qxapp.data.Store", {
 
     getBuiltInServices: function() {
       let builtInServices = {
-        "services/dynamic/itis/file-picker-0.0.0": {
-          key: "services/dynamic/itis/file-picker",
+        "simcore/services/dynamic/itis/file-picker-0.0.0": {
+          key: "simcore/services/dynamic/itis/file-picker",
           version: "0.0.0",
           type: "computational",
           name: "File Picker",
@@ -120,8 +120,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/demodec/dynamic/itis/s4l/Neuroman-0.0.0": {
-          key: "services/demodec/dynamic/itis/s4l/Neuroman",
+        "simcore/services/demodec/dynamic/itis/s4l/neuroman-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/neuroman",
           version: "0.0.0",
           type: "dynamic",
           name: "Neuroman",
@@ -156,8 +156,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/demodec/dynamic/itis/s4l/StimulationSelectivity-0.0.0": {
-          key: "services/demodec/dynamic/itis/s4l/StimulationSelectivity",
+        "simcore/services/demodec/dynamic/itis/s4l/StimulationSelectivity-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/StimulationSelectivity",
           version: "0.0.0",
           type: "computational",
           name: "Stimulation Selectivity Evaluator",
@@ -188,7 +188,7 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps Model entities into Subgroups",
               type: "mapper",
               maps: {
-                leaf: "services/demodec/dynamic/itis/s4l/Modeler"
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
               }
             }
           },
@@ -201,8 +201,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/demodec/dynamic/itis/s4l/Modeler-0.0.0": {
-          key: "services/demodec/dynamic/itis/s4l/Modeler",
+        "simcore/services/demodec/dynamic/itis/s4l/Modeler-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Modeler",
           version: "0.0.0",
           type: "dynamic",
           name: "Modeler",
@@ -222,8 +222,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/demodec/dynamic/itis/s4l/MaterialDB-0.0.0": {
-          key: "services/demodec/dynamic/itis/s4l/MaterialDB",
+        "simcore/services/demodec/dynamic/itis/s4l/MaterialDB-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
           version: "0.0.0",
           type: "computational",
           name: "MaterialDB",
@@ -243,8 +243,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/demodec/container/itis/s4l/Simulator/LF-0.0.0": {
-          key: "services/demodec/container/itis/s4l/Simulator/LF",
+        "simcore/services/demodec/container/itis/s4l/Simulator/LF-0.0.0": {
+          key: "simcore/services/demodec/container/itis/s4l/Simulator/LF",
           version: "0.0.0",
           type: "container",
           name: "LF Simulator",
@@ -278,13 +278,13 @@ qx.Class.define("qxapp.data.Store", {
           },
           innerNodes: {
             "inner1": {
-              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
+              key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
               version: "0.0.0",
               inputNodes: [],
               outputNode: false
             },
             "inner2": {
-              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
+              key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
               version: "0.0.0",
               inputNodes: [
                 "modeler",
@@ -293,7 +293,7 @@ qx.Class.define("qxapp.data.Store", {
               outputNode: false
             },
             "inner3": {
-              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
+              key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
               version: "0.0.0",
               inputNodes: [
                 "modeler"
@@ -301,7 +301,7 @@ qx.Class.define("qxapp.data.Store", {
               outputNode: false
             },
             "inner4": {
-              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
+              key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
               version: "0.0.0",
               inputNodes: [
                 "modeler"
@@ -309,7 +309,7 @@ qx.Class.define("qxapp.data.Store", {
               outputNode: false
             },
             "inner5": {
-              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
+              key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
               version: "0.0.0",
               inputNodes: [
                 "modeler"
@@ -317,7 +317,7 @@ qx.Class.define("qxapp.data.Store", {
               outputNode: false
             },
             "inner6": {
-              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
+              key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
               version: "0.0.0",
               inputNodes: [
                 "modeler"
@@ -325,15 +325,15 @@ qx.Class.define("qxapp.data.Store", {
               outputNode: false
             },
             "inner7": {
-              key: "services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+              key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
               version: "0.0.0",
               inputNodes: [],
               outputNode: true
             }
           }
         },
-        "services/demodec/dynamic/itis/s4l/Simulator/LF/Setup-0.0.0": {
-          key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
           version: "0.0.0",
           type: "computational",
           name: "LF Setup",
@@ -361,8 +361,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/demodec/dynamic/itis/s4l/Simulator/LF/Materials-0.0.0": {
-          key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
           version: "0.0.0",
           type: "computational",
           name: "LF Materials",
@@ -406,8 +406,8 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps Model entities into Materials",
               type: "mapper",
               maps: {
-                branch: "services/demodec/dynamic/itis/s4l/MaterialDB",
-                leaf: "services/demodec/dynamic/itis/s4l/Modeler"
+                branch: "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
               }
             }
           },
@@ -420,8 +420,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary-0.0.0": {
-          key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
           version: "0.0.0",
           type: "computational",
           name: "LF Boundary Conditions",
@@ -452,7 +452,7 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps Model entities into Boundary Conditions",
               type: "mapper",
               maps: {
-                leaf: "services/demodec/dynamic/itis/s4l/Modeler"
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
               }
             }
           },
@@ -465,8 +465,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors-0.0.0": {
-          key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
           version: "0.0.0",
           type: "computational",
           name: "LF Sensors",
@@ -506,8 +506,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/demodec/dynamic/itis/s4l/Simulator/LF/Grid-0.0.0": {
-          key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
           version: "0.0.0",
           type: "computational",
           name: "LF Grid",
@@ -559,8 +559,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel-0.0.0": {
-          key: "services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
           version: "0.0.0",
           type: "computational",
           name: "LF Voxels",
@@ -600,8 +600,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings-0.0.0": {
-          key: "services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
           version: "0.0.0",
           type: "computational",
           name: "LF Solver Settings",
@@ -641,8 +641,8 @@ qx.Class.define("qxapp.data.Store", {
             }
           }
         },
-        "services/computational/itis/Solver-LF-0.0.0": {
-          key: "services/computational/itis/Solver-LF",
+        "simcore/services/demodec/computational/itis/Solver-LF-0.0.0": {
+          key: "simcore/services/demodec/computational/itis/Solver-LF",
           version: "0.0.0",
           type: "computational",
           name: "LF Solver",
