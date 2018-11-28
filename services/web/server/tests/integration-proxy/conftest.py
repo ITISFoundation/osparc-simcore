@@ -27,12 +27,12 @@ SERVICES = ['director', 'apihub']
 
 
 @pytest.fixture(scope="session")
-def here():
+def here() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture(scope='session')
-def osparc_simcore_root_dir(here):
+def osparc_simcore_root_dir(here) -> Path:
     root_dir = here.parent.parent.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
     assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
@@ -40,14 +40,14 @@ def osparc_simcore_root_dir(here):
 
 
 @pytest.fixture("session")
-def env_devel_file(osparc_simcore_root_dir):
+def env_devel_file(osparc_simcore_root_dir) -> Path:
     env_devel_fpath = osparc_simcore_root_dir / ".env-devel"
     assert env_devel_fpath.exists()
     return env_devel_fpath
 
 
 @pytest.fixture("session")
-def services_docker_compose(osparc_simcore_root_dir):
+def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose.yml"
     assert docker_compose_path.exists()
 
@@ -58,7 +58,7 @@ def services_docker_compose(osparc_simcore_root_dir):
 
 
 @pytest.fixture("session")
-def devel_environ(env_devel_file):
+def devel_environ(env_devel_file) -> Dict[str, str]:
     """ Environ dict from .env-devel """
     env_devel = {}
     with env_devel_file.open() as f:
@@ -66,12 +66,12 @@ def devel_environ(env_devel_file):
             line = line.strip()
             if line and not line.startswith("#"):
                 key, value = line.split("=")
-                env_devel[key] = value
+                env_devel[key] = str(value)
     return env_devel
 
 
 @pytest.fixture(scope="session")
-def webserver_environ(devel_environ, services_docker_compose):
+def webserver_environ(devel_environ, services_docker_compose) -> Dict[str, str]:
     """ Environment variables for the webserver application
 
     """
@@ -96,6 +96,7 @@ def webserver_environ(devel_environ, services_docker_compose):
     environ['APIHUB_HOST'] = '127.0.0.1'
 
     return environ
+
 
 @pytest.fixture
 def app_config(here, webserver_environ) -> Dict:
@@ -168,7 +169,6 @@ def docker_compose_file(here, services_docker_compose, devel_environ):
     yield docker_compose_path
 
 
-
 @pytest.fixture(scope='session')
 def director_service(docker_services, docker_ip):
     """ Returns (host, port) to the director accessible from host """
@@ -176,6 +176,7 @@ def director_service(docker_services, docker_ip):
     # No need to wait... webserver should do that
 
     return docker_ip, docker_services.port_for('director', 8001)
+
 
 @pytest.fixture(scope='session')
 def apihub_service(docker_services, docker_ip):

@@ -106,5 +106,5 @@ async def test_reverse_proxy_workflow(client, service_key, service_version, serv
     assert not error
 
     # Stop backend dynamic service
-    resp = await client.delete("/v0/running_interactive_services/{service_uuid}".format(**service))
+    resp = await client.delete("/v0/running_interactive_services/{}".format(service_uuid))
     assert resp.status == 204, (await resp.text())
