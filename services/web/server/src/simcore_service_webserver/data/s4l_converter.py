@@ -23,7 +23,7 @@ materials = [s for s in sim.AllSettings if isinstance(s, MaterialSettings)]
 def create_material_getitemlist(materials):
     path =  os.path.join(here, r'fake-materialDB-LF-getItemList.json')
     with open(path, 'wt') as f:    
-        data = [dict(key=make_key(m), value=m.Name) for m in materials]
+        data = [dict(key=make_key(m), label=m.Name) for m in materials]
         json.dump(data, f, indent=2)
 
 def create_item(m):
@@ -57,7 +57,7 @@ def create_material_getitem(materials):
 
 def create_material2entities(sim):
     def create_map(sim):
-        result = defaultdict(list)	
+        result = defaultdict(list)
         for c in sim.AllComponents:
             materials = [s for s in c.ListSettings() if isinstance(s, MaterialSettings)]
             for m in materials:
@@ -68,18 +68,18 @@ def create_material2entities(sim):
     with open(path, 'wt') as f:    
         data = create_map(sim)
         json.dump(data, f, indent=2)
-	
+
 
 def get_name(ent):
-	name = ent.Name
-	group = ent.ParentGroup()
-	while group:
-		name = group.Name + "/" + name
-		group = group.ParentGroup()
-	name = name.replace("Model/", "")
-	return name
+    name = ent.Name
+    group = ent.ParentGroup()
+    while group:
+        name = group.Name + "/" + name
+        group = group.ParentGroup()
+    name = name.replace("Model/", "")
+    return name
 
 path =  os.path.join(here, r'fake-modeler-LF-getItemList.json')
 with open(path, 'wt') as f:
-    data = [ dict(key=make_key(c), value=get_name(c.Geometry)) for c in sim.AllComponents if c.Geometry ]
-    json.dump(data, f, indent=2)	
+    data = [ dict(key=make_key(c), label=get_name(c.Geometry)) for c in sim.AllComponents if c.Geometry ]
+    json.dump(data, f, indent=2)
