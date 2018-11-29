@@ -30,7 +30,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
       }
     });
 
-    const itemList = qxapp.data.Store.getInstance().getItemList(nodeModel.getNodeId(), portKey);
+    const itemList = qxapp.data.Store.getInstance().getItemList(nodeModel.getNodeKey(), portKey);
     const showAsDirs = !portKey.includes("modeler");
     const children = qxapp.data.Converters.fromAPITreeToVirtualTreeModel(itemList, showAsDirs);
     let data = {
