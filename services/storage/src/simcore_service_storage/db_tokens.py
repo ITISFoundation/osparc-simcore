@@ -31,7 +31,7 @@ async def get_api_token_and_secret(request: web.Request, userid) -> Tuple[str, s
 
     defaults = request.app[APP_CONFIG_KEY]["main"].get("test_datacore", {})
 
-    api_token = data['token_data'].get('api_token', defaults.get('api_token'))
-    api_secret = data['token_data'].get('api_secret', defaults.get('api_secret'))
+    api_token = data['token_data'].get('token_key', defaults.get('api_token'))
+    api_secret = data['token_data'].get('token_secret', defaults.get('api_secret'))
 
     return api_token, api_secret
