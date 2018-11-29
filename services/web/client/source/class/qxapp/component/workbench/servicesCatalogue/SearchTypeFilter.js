@@ -13,6 +13,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
         console.log("Service with no data");
         return false;
       }
+      data = data.getName();
       const caseSensitive = false;
       let searchString = this.getSearchString();
       if (caseSensitive === false) {
@@ -34,6 +35,16 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
   members: {
     __controller: null,
     filter: null,
+
+    // create the delegate to change the bindings
+    bindItem: function(controller, item, id) {
+      controller.bindDefaultProperties(item, id);
+    },
+
+    // Item's data sorting
+    sorter: function(a, b) {
+      return a > b;
+    },
 
     __applySearchString : function(value, old) {
       this.__controller.update();
