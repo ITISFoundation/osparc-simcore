@@ -29,7 +29,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
 
       let locationsAdded = [];
       let store = qxapp.data.Store.getInstance();
-      store.addListenerOnce("MyDocuments", e => {
+      store.addListener("MyDocuments", e => {
         const {
           location,
           files
@@ -57,7 +57,6 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       this.__tree.resetModel();
       let data = {
         label: treeName,
-        fileId: null,
         location: null,
         path: null,
         children: []
