@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from aiohttp import web
 from yarl import URL
@@ -10,13 +9,12 @@ from servicelib.rest_utils import extract_and_validate
 from ..login.decorators import login_required
 from .config import get_client_session, get_config
 
+ANONYMOUS_USER = -1
+
 log = logging.getLogger(__name__)
 
 
-async def _request_director(request: web.Request, method: Optional[str] = None) -> web.Response:
-    params, query, body = await extract_and_validate(request)
-    method = method or request.method
-
+def _resolve_url(request: web.Request) -> URL:
     cfg = get_config(request.app)
 
     # director service API endpoint
@@ -29,39 +27,80 @@ async def _request_director(request: web.Request, method: Optional[str] = None) 
     #    ('services', '')
     tail = "/".join(request.url.raw_parts[2:])
 
-    # add the user id
-    userid = request[RQT_USERID_KEY]
-    query["user_id"] = userid
-    url = (endpoint / tail).with_query(query)
+    url = (endpoint / tail).with_query(request.query)
+    return url
 
-    # forward the call
-    session = get_client_session(request.app)
-    async with session.request(str(method).upper(), url, ssl=False, params=params, data=body) as resp:
-        payload = await resp.json()
-        return payload
-
-@login_required
-async def running_interactive_services_post(request: web.Request) -> web.Response:
-    payload = await _request_director(request)
-    # if payload.status == 200:
-    #     # TODO: add the service to the list of service for this user
-    #     pass
-    return payload
-
-@login_required
-async def running_interactive_services_get(request: web.Request) -> web.Response:
-    payload = await _request_director(request)
-    return payload
-
-@login_required
-async def running_interactive_services_delete(request: web.Request) -> web.Response:
-    payload = await _request_director(request)
-    # if payload.status == 204:
-    #     #TODO: remove the service from the list of services for this user
-    #     pass
-    return payload
+# HANDLERS -------------------------------------------------------------------
 
 @login_required
 async def services_get(request: web.Request) -> web.Response:
-    payload = await _request_director(request)
-    return payload
+    params, query, body = await extract_and_validate(request)
+
+    assert not params
+    assert query
+    assert not body
+
+    url = _resolve_url(request)
+
+    # forward to director API
+    session = get_client_session(request.app)
+    async with session.request(request.method, url, ssl=False) as resp:
+        payload = await resp.json()
+        return web.json_response(payload, status=resp.status)
+
+
+@login_required
+async def running_interactive_services_post(request: web.Request) -> web.Response:
+    params, query, body = await extract_and_validate(request)
+
+    assert not params
+    assert query, "POST expected /running_interactive_services? ... "
+    assert not body
+
+    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
+    url = _resolve_url(request)
+    url = url.update_query( user_id=userid,
+                      service_basepath='/x/'+ query['service_uuid'] # TODO: mountpoint should be setup!!
+                    )
+
+    # forward to director API
+    session = get_client_session(request.app)
+    async with session.request(request.method, url, ssl=False) as resp:
+        payload = await resp.json()
+        return web.json_response(payload, status=resp.status)
+
+
+
+@login_required
+async def running_interactive_services_get(request: web.Request) -> web.Response:
+    params, query, body = await extract_and_validate(request)
+
+    assert params, "GET expected /running_interactive_services/{service_uuid}"
+    assert not query
+    assert not body
+
+    url = _resolve_url(request)
+
+    # forward to director API
+    session = get_client_session(request.app)
+    async with session.request(request.method, url, ssl=False) as resp:
+        payload = await resp.json()
+        return web.json_response(payload, status=resp.status)
+
+
+
+@login_required
+async def running_interactive_services_delete(request: web.Request) -> web.Response:
+    params, query, body = await extract_and_validate(request)
+
+    assert params, "DELETE expected /running_interactive_services/{service_uuid}"
+    assert not query
+    assert not body
+
+    url = _resolve_url(request)
+
+    # forward to director API
+    session = get_client_session(request.app)
+    async with session.request(request.method, url, ssl=False) as resp:
+        payload = await resp.json()
+        return web.json_response(payload, status=resp.status)

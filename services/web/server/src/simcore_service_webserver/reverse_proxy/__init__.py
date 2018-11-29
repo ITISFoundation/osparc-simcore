@@ -2,10 +2,10 @@
 
     Dynamically reroutes communication between web-server client and dynamic-backend services  (or dyb's)
 
- Use case
-    - All requests to `/x/{serviceId}/{proxyPath}` are re-routed to resolved dyb service
-    - dy-services are managed by the director service who monitors and controls its lifetime
-    - a client-sdk to query the director is passed upon setup
+    - All requests to `/x/{serviceId}/{proxyPath}` are resolved and rerouted to a dyb service
+    - dyb services live in the backend
+    - dyb services are identifiable (have an id)
+    - dyb services are accessible (have a URL-endpoint) from the web-server.
     - Customized reverse proxy handlers for dy-jupyter, dy-modeling and dy-3dvis
 
 """
@@ -21,6 +21,7 @@ from .settings import URL_PATH
 logger = logging.getLogger(__name__)
 
 MODULE_NAME = __name__.split(".")[-1]
+ROUTE_NAME = MODULE_NAME
 
 
 def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
@@ -40,7 +41,7 @@ def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
 
     # /x/{serviceId}/{proxyPath:.*}
     app.router.add_route(method='*', path=URL_PATH,
-                         handler=chooser.do_route, name=MODULE_NAME)
+                         handler=chooser.do_route, name=ROUTE_NAME)
 
     # chooser has same lifetime as the application
     app[__name__] = {"chooser": chooser}
