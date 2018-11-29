@@ -339,6 +339,24 @@ paths:
               schema:
                 $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
 
+  /computation/pipeline/{project_id}:
+    put:
+      description: Update a pipeline
+      operationId: update_pipeline
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        $ref: '#/components/requestBodies/PipelineBody'
+      responses:
+        "204":
+          description: Succesfully updated the pipeline
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+
   /computation/pipeline/{project_id}/start:
     post:
       description: Starts a pipeline
