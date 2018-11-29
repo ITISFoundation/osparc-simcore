@@ -801,11 +801,9 @@ qx.Class.define("qxapp.dev.fake.modeler.Data", {
 
     getItemList: function(nodeKey) {
       let itemList = [];
-      if (nodeKey.includes("LF")) {
-        qxapp.dev.fake.modeler.Data.itemList["lfSim"];
-      } else if (nodeKey.includes("Neuron")) {
-        qxapp.dev.fake.modeler.Data.itemList["neuronSim"];
-      }
+      const itemListLF = qxapp.dev.fake.modeler.Data.itemList["lfSim"];
+      const itemListNeuron = qxapp.dev.fake.modeler.Data.itemList["neuronSim"];
+      itemList = itemListLF.concat(itemListNeuron);
       itemList.sort(this.compare);
       return itemList;
     }
