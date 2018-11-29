@@ -23,6 +23,14 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
       }, {
         key: "Flux-UUID",
         label: "Flux"
+      }],
+
+      "defaultSensors": [{
+        key: "Field-Sensor-UUID",
+        label: "Field-Sensor"
+      }, {
+        key: "Voltage-Sensor-UUID",
+        label: "Voltage-Sensor"
       }]
     },
 
@@ -34,7 +42,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
             label: "Mass Density",
             unit: "kg/m3",
             type: "number",
-            defaultValue: 1.205
+            defaultValue: 1000
           },
           "electricConductivity": {
             displayOrder: 1,
@@ -104,6 +112,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
           "constantFlux": {
             displayOrder: 0,
             label: "Constant Flux",
+            unit: "",
             type: "number",
             defaultValue: 0
           },
@@ -113,6 +122,41 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
             unit: "deg",
             type: "number",
             defaultValue: 0
+          }
+        }
+      },
+
+      "defaultSensors": {
+        "Field-Sensor-UUID": {
+          "recordEField": {
+            displayOrder: 0,
+            label: "Record E-Field",
+            unit: "",
+            type: "boolean",
+            defaultValue: true
+          },
+          "recordHField": {
+            displayOrder: 1,
+            label: "Record H-Field",
+            unit: "",
+            type: "boolean",
+            defaultValue: true
+          },
+          "recordMagnetic": {
+            displayOrder: 3,
+            label: "Record Magnetic Vector-Potential-Field",
+            unit: "",
+            type: "boolean",
+            defaultValue: true
+          }
+        },
+        "Voltage-Sensor-UUID": {
+          "revertDirection": {
+            displayOrder: 0,
+            label: "Revert Direction",
+            unit: "",
+            type: "boolean",
+            defaultValue: false
           }
         }
       }
