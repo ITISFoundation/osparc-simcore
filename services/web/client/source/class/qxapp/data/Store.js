@@ -474,12 +474,14 @@ qx.Class.define("qxapp.data.Store", {
               description: "Live Link to Modeler",
               type: "data:application/s4l-api/modeler"
             },
-            sensorSetting: {
+            mapper: {
               displayOrder: 1,
-              label: "SensorsSettings",
-              description: "Sensors Settings",
-              type: "number",
-              defaultValue: 4
+              label: "Sensor Settings",
+              description: "Maps Model entities into Sensor Settings",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+              }
             }
           },
           outputs: {
@@ -514,31 +516,6 @@ qx.Class.define("qxapp.data.Store", {
               label: "Modeler",
               description: "Live Link to Modeler",
               type: "data:application/s4l-api/modeler"
-            },
-            materialSetting: {
-              displayOrder: 1,
-              label: "MaterialSettings",
-              description: "Material Settings",
-              type: "data:application/s4l-api/settings"
-            },
-            boundarySetting: {
-              displayOrder: 2,
-              label: "BoundarySettings",
-              description: "Boundary Settings",
-              type: "data:application/s4l-api/settings"
-            },
-            sensorSetting: {
-              displayOrder: 3,
-              label: "SensorSettings",
-              description: "Sensor Settings",
-              type: "data:application/s4l-api/settings"
-            },
-            gridSetting: {
-              displayOrder: 4,
-              label: "GridSettings",
-              description: "Grid Settings",
-              type: "number",
-              defaultValue: 5
             }
           },
           outputs: {
@@ -567,19 +544,6 @@ qx.Class.define("qxapp.data.Store", {
               label: "Modeler",
               description: "Live Link to Modeler",
               type: "data:application/s4l-api/modeler"
-            },
-            gridSetting: {
-              displayOrder: 1,
-              label: "GridSettings",
-              description: "Grid Settings",
-              type: "data:application/s4l-api/settings"
-            },
-            voxelSetting: {
-              displayOrder: 2,
-              label: "VoxelSettings",
-              description: "Voxel Settings",
-              type: "number",
-              defaultValue: 6
             }
           },
           outputs: {
@@ -603,24 +567,40 @@ qx.Class.define("qxapp.data.Store", {
           }],
           contact: "maiz@itis.ethz.ch",
           inputs: {
-            setupSetting: {
+            parallelization: {
               displayOrder: 0,
-              label: "SetupSettings",
-              description: "Setup Settings Out",
-              type: "data:application/s4l-api/settings"
+              label: "Parallelization Handling",
+              description: "Parallelization Handling",
+              type: "string",
+              defaultValue: "Manual"
             },
-            voxelSetting: {
+            processes: {
               displayOrder: 1,
-              label: "VoxelSettings",
-              description: "Voxel Settings",
-              type: "data:application/s4l-api/settings"
-            },
-            solverSetting: {
-              displayOrder: 2,
-              label: "SolverSetting",
-              description: "Solver Setting",
+              label: "Number of processes",
+              description: "Number of processes",
               type: "number",
-              defaultValue: 7
+              defaultValue: 1
+            },
+            priority: {
+              displayOrder: 2,
+              label: "Priority in queue",
+              description: "Priority in queue",
+              type: "number",
+              defaultValue: 0
+            },
+            convergence: {
+              displayOrder: 3,
+              label: "Convergence Tolerance",
+              description: "Convergence Tolerance",
+              type: "string",
+              defaultValue: "Medium"
+            },
+            additionalOptions: {
+              displayOrder: 4,
+              label: "Additional Solver Options",
+              description: "Additional Solver Options",
+              type: "string",
+              defaultValue: ""
             }
           },
           outputs: {
