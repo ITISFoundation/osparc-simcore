@@ -60,9 +60,6 @@ def client(loop, aiohttp_unused_port, aiohttp_client, python27_path, postgres_se
     setup_s3(app)
 
 
-
-    assert "SECRET_KEY" in app[APP_CONFIG_KEY]
-
     cli = loop.run_until_complete( aiohttp_client(app, server_kwargs=main_cfg) )
     return cli
 
