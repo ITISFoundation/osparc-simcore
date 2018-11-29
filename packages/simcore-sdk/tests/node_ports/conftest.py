@@ -14,8 +14,9 @@ from simcore_sdk.node_ports import node_config
 
 
 @pytest.fixture
-def user_id()->str:
-    yield "testuser"
+def user_id()->int:
+    # see fixtures/postgres.py
+    yield 1258
 
 @pytest.fixture
 def s3_simcore_location() ->str:
@@ -25,8 +26,8 @@ def s3_simcore_location() ->str:
 def filemanager_cfg(storage, user_id, bucket):
     storage_endpoint = yarl.URL(storage)
     node_config.STORAGE_ENDPOINT = "{}:{}".format(storage_endpoint.host, storage_endpoint.port)
-    node_config.USER_ID = user_id    
-    node_config.BUCKET = bucket    
+    node_config.USER_ID = user_id
+    node_config.BUCKET = bucket
     yield
 
 @pytest.fixture
@@ -39,12 +40,12 @@ def node_uuid()->str:
 
 @pytest.fixture
 def file_uuid(project_id, node_uuid)->str:
-    def create(file_path:Path, project:str=None, node:str=None):  
+    def create(file_path:Path, project:str=None, node:str=None):
         if project is None:
             project = project_id
         if node is None:
-            node = node_uuid            
-        return helpers.file_uuid(file_path, project, node)              
+            node = node_uuid
+        return helpers.file_uuid(file_path, project, node)
     yield create
 
 @pytest.fixture(scope='session')
@@ -78,7 +79,7 @@ def postgres(engine, session):
 def default_configuration(postgres, default_configuration_file, project_id, node_uuid):
     # prepare database with default configuration
     json_configuration = default_configuration_file.read_text()
-    
+
     _create_new_pipeline(postgres, project_id)
     _set_configuration(postgres, project_id, node_uuid, json_configuration)
     config_dict = json.loads(json_configuration)
@@ -129,7 +130,7 @@ def special_configuration(postgres, empty_configuration_file: Path, project_id, 
 @pytest.fixture(scope="function")
 def special_2nodes_configuration(postgres, empty_configuration_file: Path, project_id, node_uuid):
     def create_config(prev_node_inputs: List[Tuple[str, str, Any]] =None, prev_node_outputs: List[Tuple[str, str, Any]] =None,
-                    inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None, 
+                    inputs: List[Tuple[str, str, Any]] =None, outputs: List[Tuple[str, str, Any]] =None,
                     project_id:str =project_id, previous_node_id:str = node_uuid, node_id:str = "asdasdadsa"):
         _create_new_pipeline(postgres, project_id)
 
@@ -157,7 +158,7 @@ def special_2nodes_configuration(postgres, empty_configuration_file: Path, proje
     postgres.query(ComputationalPipeline).delete()
     postgres.commit()
 
-def _create_new_pipeline(session, project:str)->str:    
+def _create_new_pipeline(session, project:str)->str:
     new_Pipeline = ComputationalPipeline(project_id=project)
     session.add(new_Pipeline)
     session.commit()
@@ -170,7 +171,7 @@ def _set_configuration(session, project_id: str, node_id:str, json_configuration
 
     new_Node = ComputationalTask(project_id=project_id, node_id=node_uuid, schema=configuration["schema"], inputs=configuration["inputs"], outputs=configuration["outputs"])
     session.add(new_Node)
-    session.commit()    
+    session.commit()
     return node_uuid
 
 def _assign_config(config_dict:dict, port_type:str, entries: List[Tuple[str, str, Any]]):
