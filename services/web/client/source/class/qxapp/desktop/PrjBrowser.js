@@ -221,6 +221,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     __getDelegate: function(fromTemplate) {
       const thumbnailWidth = 246;
       const thumbnailHeight = 144;
+      const nThumbnails = 25;
+      let thumbnailCounter = 0;
       let that = this;
       let delegate = {
         // Item's Layout
@@ -240,8 +242,13 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         bindItem: function(controller, item, id) {
           controller.bindProperty("thumbnail", "icon", {
             converter: function(data) {
-              const nThumbnails = 5;
-              let thumbnailUrl = data.match(/^@/) ? data : "qxapp/thumbnail"+ (Math.floor(Math.random()*nThumbnails)) +".png";
+              let thumbnailId = thumbnailCounter + (fromTemplate ? 10 : 0);
+              if (thumbnailId >= nThumbnails) {
+                thumbnailId -= nThumbnails;
+              }
+              let thumbnailUrl = data.match(/^@/) ? data : "qxapp/img"+ thumbnailId +".jpg";
+              thumbnailCounter++;
+              console.log(thumbnailCounter);
               return thumbnailUrl;
             }
           }, item, id);
