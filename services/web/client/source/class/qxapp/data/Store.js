@@ -57,23 +57,6 @@ qx.Class.define("qxapp.data.Store", {
       return arePortsCompatible;
     },
 
-
-    getUserProjectList: function() {
-      return qxapp.dev.fake.Data.getUserProjectList();
-    },
-
-    getPublicProjectList: function() {
-      return qxapp.dev.fake.Data.getPublicProjectList();
-    },
-
-    getProjectList: function() {
-      return qxapp.dev.fake.Data.getProjectList();
-    },
-
-    getProjectData: function(projectUuid) {
-      return qxapp.dev.fake.Data.getProjectData(projectUuid);
-    },
-
     getNodeMetaData: function(key, version) {
       let metaData = {};
       if (key && version) {
