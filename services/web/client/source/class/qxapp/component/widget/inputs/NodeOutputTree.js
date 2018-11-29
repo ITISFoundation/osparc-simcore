@@ -6,9 +6,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
 
     this.setNodeModel(nodeModel);
 
-    let tree = this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
-      openMode: "none"
-    });
+    let tree = this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children");
 
     tree.setDelegate({
       createItem: () => new qxapp.component.widget.inputs.NodeOutputTreeItem(),
@@ -34,7 +32,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
 
     const itemList = qxapp.data.Store.getInstance().getItemList(nodeModel.getNodeId(), portKey);
     const showAsDirs = !portKey.includes("modeler");
-    const children = qxapp.data.Converters.fromAPIListToVirtualTreeModel(itemList, showAsDirs);
+    const children = qxapp.data.Converters.fromAPITreeToVirtualTreeModel(itemList, showAsDirs);
     let data = {
       label: port.label,
       children: children
