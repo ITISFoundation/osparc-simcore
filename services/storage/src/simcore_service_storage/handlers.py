@@ -6,7 +6,7 @@ from aiohttp import web
 from servicelib.rest_utils import extract_and_validate
 
 from . import __version__
-from .db_helpers import get_api_token_and_secret
+from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
 from .rest_models import FileMetaDataSchema
 from .settings import APP_DSM_KEY, DATCORE_STR
@@ -253,9 +253,7 @@ async def _prepare_storage_manager(params, query, request: web.Request) -> DataS
 
     user_id = query.get("user_id")
     location_id = params.get("location_id")
-
-    if location_id:
-        location = dsm.location_from_id(location_id)
+    location = dsm.location_from_id(location_id) if location_id else None
 
     if user_id and location==DATCORE_STR:
         api_token, api_secret = await get_api_token_and_secret(request, user_id)
