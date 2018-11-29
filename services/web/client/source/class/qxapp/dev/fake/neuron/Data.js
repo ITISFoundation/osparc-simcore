@@ -1,4 +1,3 @@
-/* eslint-disable no-trailing-spaces */
 qx.Class.define("qxapp.dev.fake.neuron.Data", {
   type: "static",
 
@@ -259,7 +258,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       {
         label: "Splines/Axon_63",
         key: "Axon_63 ___Splines_-UUID"
-      }      
+      }
     ],
 
     compare: function(a, b) {

@@ -1,4 +1,3 @@
-/* eslint-disable no-trailing-spaces */
 qx.Class.define("qxapp.dev.fake.neuroman.Data", {
   type: "static",
 

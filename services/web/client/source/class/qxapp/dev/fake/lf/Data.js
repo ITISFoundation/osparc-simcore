@@ -1,4 +1,3 @@
-/* eslint-disable no-trailing-spaces */
 qx.Class.define("qxapp.dev.fake.lf.Data", {
   type: "static",
 
@@ -12,5 +11,4 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
       return itemList;
     }
   } // statics
-
 });
