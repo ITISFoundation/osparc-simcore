@@ -11,6 +11,7 @@ import tenacity
 import docker
 
 from . import config, exceptions, registry_proxy
+from .system_utils import get_system_extra_hosts
 
 SERVICE_RUNTIME_SETTINGS = 'simcore.service.settings'
 SERVICE_RUNTIME_BOOTSETTINGS = 'simcore.service.bootsettings'
@@ -202,6 +203,13 @@ def __add_env_variables_to_service_runtime_params(
         docker_service_runtime_parameters["env"] = service_env_variables
     log.debug("Added env parameter to docker runtime parameters: %s", docker_service_runtime_parameters["env"])
 
+def _add_extra_hosts_to_service_runtime_params(docker_service_runtime_parameters: Dict):
+    log.debug("Getting extra hosts with suffix: %s",config.EXTRA_HOSTS_SUFFIX)
+    extra_hosts = get_system_extra_hosts(config.EXTRA_HOSTS_SUFFIX)
+    if "hosts" in docker_service_runtime_parameters:
+        docker_service_runtime_parameters["hosts"].update(extra_hosts)
+    else:
+        docker_service_runtime_parameters["hosts"] = extra_hosts
 
 def __set_service_name(docker_service_runtime_parameters: Dict,
                        service_name: str,
@@ -393,6 +401,7 @@ async def __prepare_runtime_parameters(user_id: str,
     __add_uuid_label_to_service_runtime_params(docker_service_runtime_parameters, node_uuid)
     __add_main_service_label_to_service_runtime_params(docker_service_runtime_parameters, main_service)
     __add_env_variables_to_service_runtime_params(docker_service_runtime_parameters, user_id, node_uuid, node_base_path)
+    _add_extra_hosts_to_service_runtime_params(docker_service_runtime_parameters)
     __set_service_name(docker_service_runtime_parameters,
                        registry_proxy.get_service_last_names(service_key),
                        node_uuid)

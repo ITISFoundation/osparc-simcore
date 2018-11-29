@@ -3,13 +3,12 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import uuid
 
 import pytest
 
 import docker
-from simcore_service_director import exceptions, producer
+from simcore_service_director import config, exceptions, producer
 
 
 @pytest.fixture
@@ -111,3 +110,8 @@ async def test_interactive_service_published_port(run_services):
     service_information = low_level_client.inspect_service(docker_service.id)
     service_published_port = service_information["Endpoint"]["Ports"][0]["PublishedPort"]
     assert service_published_port == service_port
+
+async def test_extra_hosts_passed_to_services(run_services):
+    # would need to test right inside a docker or test from outside...
+    # start the director with extra hosts, start some services, and test if the extra hosts are added
+    pass
