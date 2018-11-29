@@ -247,15 +247,18 @@ async def delete_file(request: web.Request):
 
 
 # HELPERS -----------------------------------------------------
+INIT_STR = "init"
 
 async def _prepare_storage_manager(params, query, request: web.Request) -> DataStorageManager:
     dsm = request.app[APP_DSM_KEY]
 
     user_id = query.get("user_id")
     location_id = params.get("location_id")
-    location = dsm.location_from_id(location_id) if location_id else None
+    location = dsm.location_from_id(location_id) if location_id else INIT_STR
 
-    if user_id and location==DATCORE_STR:
+    if user_id and location in (INIT_STR, DATCORE_STR):
+        # TODO: notify from db instead when tokens changed, then invalidate resource which enforces
+        # re-query when needed.
         api_token, api_secret = await get_api_token_and_secret(request, user_id)
         dsm.datcore_tokens[user_id] = DatCoreApiToken(api_token, api_secret)
 

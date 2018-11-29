@@ -142,7 +142,15 @@ class DataStorageManager:
     def location_from_id(cls, location_id : str):
         return _location_from_id(location_id)
 
-    async def ping_datcore(self, user_id: str):
+    async def ping_datcore(self, user_id: str) -> bool:
+        """ Checks whether user account in datcore is accesible
+
+        :param user_id: user identifier
+        :type user_id: str
+        :return: True if user can access his datcore account
+        :rtype: bool
+        """
+
         api_token, api_secret = self._get_datcore_tokens(user_id)
         logger.info("token: %s, secret %s", api_token, api_secret)
         if api_token:
@@ -176,9 +184,8 @@ class DataStorageManager:
                     data.append(d)
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            logger.info("Datcore query %s %s %s", api_token, api_secret, self.python27_exec)
             dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
-            return await dcw.list_files(regex, sortby)
+            data = await dcw.list_files()
 
         if sortby:
             data = sorted(data, key=itemgetter(sortby))
@@ -219,7 +226,8 @@ class DataStorageManager:
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             _dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
-            raise NotImplementedError
+            data = await _dcw.list_files
+            return data
 
     async def delete_file(self, user_id: str, location: str, file_uuid: str):
         """ Deletes a file given its fmd and location
