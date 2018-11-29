@@ -1,18 +1,14 @@
 """ Reverse-proxy customized for jupyter notebooks
 
-TODO: document
 """
 
 import asyncio
 import logging
 import pprint
-from yarl import URL
 
 import aiohttp
 from aiohttp import client, web
-
-# TODO: find actual name in registry
-
+from yarl import URL
 
 SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/jupyter-base-notebook"
 SUPPORTED_IMAGE_TAG = ">=1.5.0"
