@@ -133,7 +133,7 @@ qx.Class.define("qxapp.dev.fake.materialDB.Data", {
         "key": "Pineal_Body-UUID"
       }, 
       {
-        "label": "Tendon\\Ligament", 
+        "label": "Tendon Ligament", 
         "key": "Tendon_Ligament-UUID"
       }, 
       {
