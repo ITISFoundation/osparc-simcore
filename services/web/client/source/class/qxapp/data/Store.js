@@ -639,6 +639,344 @@ qx.Class.define("qxapp.data.Store", {
               type: "data:application/hdf5"
             }
           }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup",
+          version: "0.0.0",
+          type: "computational",
+          name: "Neuron Setup",
+          description: "Neuron Simulator Setup Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            temperature: {
+              displayOrder: 0,
+              label: "Global Temperature (°C)",
+              description: "Global Temperature (°C)",
+              type: "number",
+              defaultValue: 37
+            },
+            titration: {
+              displayOrder: 1,
+              label: "Perform Titration",
+              description: "Perform Titration",
+              type: "boolean",
+              defaultValue: true
+            },
+            convergence: {
+              displayOrder: 2,
+              label: "Titration convergence criterion",
+              description: "Titration convergence criterion",
+              type: "number",
+              defaultValue: 1
+            },
+            actionPotential: {
+              displayOrder: 3,
+              label: "Action Potential detection method",
+              description: "Action Potential detection method",
+              type: "string",
+              defaultValue: "Threshold"
+            },
+            threshold: {
+              displayOrder: 4,
+              label: "Threshold for depolarization (mV)",
+              description: "Threshold for depolarization (mV)",
+              type: "number",
+              defaultValue: 80
+            }
+          },
+          outputs: {
+            setupSetting: {
+              displayOrder: 0,
+              label: "Neuron-Setup",
+              description: "Neuron Setup Settings",
+              type: "data:application/s4l-api/settings"
+            }
+          }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons",
+          version: "0.0.0",
+          type: "computational",
+          name: "Neurons",
+          description: "Neuron Simulator Neurons",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultNeurons: {
+              displayOrder: 0,
+              label: "Default Neurons",
+              description: "Default Neurons",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/s4l-api/modeler"
+            },
+            mapper: {
+              displayOrder: 1,
+              label: "Neurons",
+              description: "Maps Model entities into Neurons",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+              }
+            }
+          },
+          outputs: {
+            neuronsSetting: {
+              displayOrder: 0,
+              label: "NeuronsSettings",
+              description: "Neurons Settings",
+              type: "data:application/s4l-api/settings"
+            }
+          }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources",
+          version: "0.0.0",
+          type: "computational",
+          name: "Sources",
+          description: "Neuron Simulator Sources",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultSources: {
+              displayOrder: 0,
+              label: "Default Sources Settings",
+              description: "Default Sources Settings",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
+          inputs: {
+            lfSimulation: {
+              displayOrder: 0,
+              label: "LF Simulation",
+              description: "Live Link to LF Simulation",
+              type: "data:application/s4l-api/lf-sensor"
+            },
+            mapper: {
+              displayOrder: 1,
+              label: "Sources Conditions",
+              description: "Maps LF Fields into Sources",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/lfSimulation"
+              }
+            }
+          },
+          outputs: {
+            sourceSetting: {
+              displayOrder: 0,
+              label: "Sources",
+              description: "Sources",
+              type: "data:application/s4l-api/settings"
+            }
+          }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/PointProcesses-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/PointProcesses",
+          version: "0.0.0",
+          type: "computational",
+          name: "Neuron Point Processes",
+          description: "Neuron Simulator Point Processes",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultPointProcesses: {
+              displayOrder: 0,
+              label: "Default Point Processes",
+              description: "Default Point Processes",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/s4l-api/modeler"
+            },
+            mapper: {
+              displayOrder: 1,
+              label: "Point Processes",
+              description: "Maps Model entities into Point Processes",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+              }
+            }
+          }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection",
+          version: "0.0.0",
+          type: "computational",
+          name: "Neuron Network Connection",
+          description: "Neuron Simulator Network Connection Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultNetworkConnection: {
+              displayOrder: 0,
+              label: "Default Network Connection",
+              description: "Default Network Connection",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/s4l-api/modeler"
+            },
+            mapper: {
+              displayOrder: 1,
+              label: "Network Connection",
+              description: "Maps Model entities into Network Connection",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+              }
+            }
+          },
+          outputs: {
+            networkConnectionSetting: {
+              displayOrder: 0,
+              label: "Network Connection Settings",
+              description: "Network Connection Settings",
+              type: "data:application/s4l-api/settings"
+            }
+          }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors",
+          version: "0.0.0",
+          type: "computational",
+          name: "Neuron Sensors",
+          description: "Neuron Simulator Sensors Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultSensors: {
+              displayOrder: 0,
+              label: "Default Sensors",
+              description: "Default Sensors",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/s4l-api/modeler"
+            },
+            mapper: {
+              displayOrder: 1,
+              label: "Sensors",
+              description: "Maps Model entities into Sensors",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+              }
+            }
+          },
+          outputs: {
+            sensorSetting: {
+              displayOrder: 0,
+              label: "Sensors Settings",
+              description: "Sensors Settings",
+              type: "data:application/s4l-api/settings"
+            }
+          }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings",
+          version: "0.0.0",
+          type: "computational",
+          name: "Neuron Solver Settings",
+          description: "Neuron Simulator Solver Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            parallelization: {
+              displayOrder: 0,
+              label: "Parallelization Handling",
+              description: "Parallelization Handling",
+              type: "string",
+              defaultValue: "Manual"
+            },
+            threads: {
+              displayOrder: 1,
+              label: "Number of threads",
+              description: "Number of threads",
+              type: "number",
+              defaultValue: 1
+            },
+            priority: {
+              displayOrder: 2,
+              label: "Priority in queue",
+              description: "Priority in queue",
+              type: "number",
+              defaultValue: 0
+            },
+            duration: {
+              displayOrder: 3,
+              label: "Duration (ms)",
+              description: "Duration (ms)",
+              type: "number",
+              defaultValue: 1
+            },
+            timeStep: {
+              displayOrder: 4,
+              label: "Time Step (ms)",
+              description: "Time Step (ms)",
+              type: "number",
+              defaultValue: 0.0025
+            },
+            sectionName: {
+              displayOrder: 5,
+              label: "Section names for spike detection",
+              description: "Section names for spike detection",
+              type: "string",
+              defaultValue: ""
+            }
+          },
+          outputs: {
+            outFile: {
+              displayOrder: 0,
+              label: "Input file",
+              description: "Neuron Solver Input File",
+              type: "data:application/hdf5"
+            }
+          }
         }
       };
       return builtInServices;
