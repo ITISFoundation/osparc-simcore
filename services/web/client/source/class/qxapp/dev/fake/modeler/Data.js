@@ -530,8 +530,20 @@ qx.Class.define("qxapp.dev.fake.modeler.Data", {
       }
     ],
 
+    compare: function(a, b) {
+      if (a.label < b.label) {
+        return -1;
+      }
+      if (a.label > b.label) {
+        return 1;
+      }
+      return 0;
+    },
+
     getItemList: function() {
-      return qxapp.dev.fake.modeler.Data.itemList;
+      let itemList = qxapp.dev.fake.modeler.Data.itemList;
+      itemList.sort(this.compare);
+      return itemList;
     }
   } // statics
 

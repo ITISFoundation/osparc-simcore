@@ -2141,8 +2141,20 @@ qx.Class.define("qxapp.dev.fake.materialDB.Data", {
       }
     },
 
+    compare: function(a, b) {
+      if (a.label < b.label) {
+        return -1;
+      }
+      if (a.label > b.label) {
+        return 1;
+      }
+      return 0;
+    },
+
     getItemList: function() {
-      return qxapp.dev.fake.materialDB.Data.itemList;
+      let itemList = qxapp.dev.fake.materialDB.Data.itemList;
+      itemList.sort(this.compare);
+      return itemList;
     },
 
     getItem: function(materialId) {
