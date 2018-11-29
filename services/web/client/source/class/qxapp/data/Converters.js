@@ -24,13 +24,13 @@ qx.Class.define("qxapp.data.Converters", {
       return metaData;
     },
 
-    mergeChildren: function(one, two) {
+    __mergeFileTreeChildren: function(one, two) {
       let newDir = true;
       for (let i=0; i<one.length; i++) {
         if (one[i].path === two.path) {
           newDir = false;
           if ("children" in two) {
-            this.mergeChildren(one[i].children, two.children[0]);
+            this.__mergeFileTreeChildren(one[i].children, two.children[0]);
           }
         }
       }
@@ -85,7 +85,7 @@ qx.Class.define("qxapp.data.Converters", {
                   }]
                 }]
               });
-              this.mergeChildren(children, fileInTree);
+              this.__mergeFileTreeChildren(children, fileInTree);
             }
           } else if (file["location_id"] === 1 || file["location_id"] === "1") {
             // datcore files
@@ -107,7 +107,7 @@ qx.Class.define("qxapp.data.Converters", {
               fileId: file["file_uuid"]
             };
             parent.children.push(fileInfo);
-            this.mergeChildren(children, fileInTree);
+            this.__mergeFileTreeChildren(children, fileInTree);
           }
         }
       }
