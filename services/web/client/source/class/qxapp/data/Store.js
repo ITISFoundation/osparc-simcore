@@ -476,6 +476,14 @@ qx.Class.define("qxapp.data.Store", {
             email: "maiz@itis.ethz.ch"
           }],
           contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultSensors: {
+              displayOrder: 0,
+              label: "Default Sensors",
+              description: "Default Sensors",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
           inputs: {
             modeler: {
               displayOrder: 0,

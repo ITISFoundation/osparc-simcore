@@ -2919,6 +2919,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           return qxapp.dev.fake.materialDB.Data.getItemList();
         case "defaultMaterials":
         case "defaultBoundaries":
+        case "defaultSensors":
           return qxapp.dev.fake.lf.Data.getItemList(portKey);
         case "defaultStimulationSelectivity":
           return qxapp.dev.fake.stimulationSelectivity.Data.getItemList();
@@ -2932,6 +2933,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
           return qxapp.dev.fake.materialDB.Data.getItem(itemUuid);
         case "defaultMaterials":
         case "defaultBoundaries":
+        case "defaultSensors":
           return qxapp.dev.fake.lf.Data.getItem(portKey, itemUuid);
       }
       return {};
