@@ -26,6 +26,7 @@ qx.Class.define("qxapp.component.AvailableServices", {
   },
 
   events: {
+    "centerCamera": "qx.event.type.Event",
     "selectionModeChanged": "qx.event.type.Data",
     "moveToolRequested": "qx.event.type.Data",
     "rotateToolRequested": "qx.event.type.Data",
@@ -94,6 +95,13 @@ qx.Class.define("qxapp.component.AvailableServices", {
       selectionPart.add(disabledBtn);
       selectionPart.add(selEntBtn);
       // selectionPart.add(selFaceBtn);
+
+      // Center camera
+      let centerCameraBtn = new qx.ui.toolbar.Button(this.tr("Center camera"));
+      centerCameraBtn.addListener("execute", function(e) {
+        this.fireEvent("centerCamera");
+      }, this);
+      toolbar.add(centerCameraBtn);
 
       if (qx.core.Environment.get("qxapp.isModeler")) {
         let selectionGroup = new qx.ui.form.RadioGroup(disabledBtn, selEntBtn, selFaceBtn);

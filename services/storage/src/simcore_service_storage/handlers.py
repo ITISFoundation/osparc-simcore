@@ -9,8 +9,7 @@ from . import __version__
 from .db_helpers import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
 from .rest_models import FileMetaDataSchema
-from .s3 import DATCORE_STR
-from .settings import RQT_DSM_KEY
+from .settings import APP_DSM_KEY, DATCORE_STR
 
 log = logging.getLogger(__name__)
 
@@ -58,7 +57,7 @@ async def check_action(request: web.Request):
 
 
 async def get_storage_locations(request: web.Request):
-    log.info("CHECK LOCATION PATH %s %s",request.path, request.url)
+    log.debug("CHECK LOCATION PATH %s %s",request.path, request.url)
 
     params, query, body = await extract_and_validate(request)
 
@@ -70,8 +69,8 @@ async def get_storage_locations(request: web.Request):
     user_id = query["user_id"]
 
     dsm = await _prepare_storage_manager(params, query, request)
-
     locs = await dsm.locations(user_id)
+
     return {
         'error': None,
         'data': locs
@@ -79,7 +78,7 @@ async def get_storage_locations(request: web.Request):
 
 
 async def get_files_metadata(request: web.Request):
-    log.info("GET FILES METADATA %s %s",request.path, request.url)
+    log.debug("GET FILES METADATA %s %s",request.path, request.url)
 
     params, query, body = await extract_and_validate(request)
 
@@ -97,7 +96,7 @@ async def get_files_metadata(request: web.Request):
     dsm = await _prepare_storage_manager(params, query, request)
     location = dsm.location_from_id(location_id)
 
-    log.info("list files %s %s %s", user_id, location, uuid_filter)
+    log.debug("list files %s %s %s", user_id, location, uuid_filter)
 
     data = await dsm.list_files(user_id=user_id, location=location, uuid_filter=uuid_filter)
 
@@ -197,10 +196,6 @@ async def upload_file(request: web.Request):
     assert query, "query %s" % query
     assert not body, "body %s" % body
 
-    assert params["location_id"]
-    assert params["fileId"]
-    assert query["user_id"]
-
     location_id = params["location_id"]
     user_id = query["user_id"]
     file_uuid = params["fileId"]
@@ -254,7 +249,7 @@ async def delete_file(request: web.Request):
 # HELPERS -----------------------------------------------------
 
 async def _prepare_storage_manager(params, query, request: web.Request) -> DataStorageManager:
-    dsm = request[RQT_DSM_KEY]
+    dsm = request.app[APP_DSM_KEY]
 
     user_id = query.get("user_id")
     location_id = params.get("location_id")

@@ -53,7 +53,10 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
       this.add(email);
       email.getContentElement().setAttribute("autocomplete", "username");
       this.__form.add(email, "", qx.util.Validate.email(), "email", null);
-
+      this.addListener("appear", () => {
+        email.focus();
+        email.activate();
+      });
       let pass = new qx.ui.form.PasswordField();
       pass.setPlaceholder(this.tr("Your password"));
       pass.setRequired(true);

@@ -35,12 +35,24 @@ CONNECT_TIMEOUT_SECS = 30
 ## VERSION-----------------------------
 service_version = get_version_object()
 
-
 ## CONFIGURATION FILES------------------
 DEFAULT_CONFIG='docker-prod-config.yaml'
 
+
 APP_CONFIG_KEY = application_keys.APP_CONFIG_KEY # app-storage-key for config object
 RSC_CONFIG_DIR_KEY  = "data"  # resource folder
+
+# DSM specific constants
+SIMCORE_S3_ID    = 0
+SIMCORE_S3_STR   = "simcore.s3"
+
+DATCORE_ID      = 1
+DATCORE_STR     = "datcore"
+
+
+# RSC=resource
+RSC_CONFIG_DIR_KEY  = "data"
+RSC_CONFIG_SCHEMA_KEY = RSC_CONFIG_DIR_KEY + "/config-schema-v1.json"
 
 
 # REST API ----------------------------
@@ -57,5 +69,5 @@ APP_DB_SESSION_KEY = __name__ + '.db_session'
 
 # DATA STORAGE MANAGER ----------------------------------
 APP_DSM_THREADPOOL = __name__ + '.dsm_threadpool'
-
-RQT_DSM_KEY = "DSM" # request-storage-key
+APP_DSM_KEY = __name__ + ".DSM"
+APP_S3_KEY = __name__ + ".S3_CLIENT"
