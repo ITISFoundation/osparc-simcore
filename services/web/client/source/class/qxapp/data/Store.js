@@ -383,7 +383,7 @@ qx.Class.define("qxapp.data.Store", {
           inputs: {
             updateDispersive: {
               displayOrder: 0,
-              label: "UpdateDispersive",
+              label: "Enable automatic update of dispersive materials",
               description: "Enable automatic update of dispersive materials",
               type: "boolean",
               defaultValue: false

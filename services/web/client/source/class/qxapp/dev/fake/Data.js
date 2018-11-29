@@ -2906,33 +2906,10 @@ qx.Class.define("qxapp.dev.fake.Data", {
     },
 
 
-
     getItemList: function(nodeInstanceUUID, portKey) {
       switch (portKey) {
         case "defaultNeuromanModels":
           return qxapp.dev.fake.neuroman.Data.getItemList();
-        case "defaultMaterials":
-          return [{
-            key: "Dielectric-UUID",
-            label: "Dielectric"
-          }, {
-            key: "PEC-UUID",
-            label: "PEC"
-          }, {
-            key: "PMC-UUID",
-            label: "PMC"
-          }];
-        case "defaultBoundaries":
-          return [{
-            key: "Dirichlet-UUID",
-            label: "Dirichlet"
-          }, {
-            key: "Neumann-UUID",
-            label: "Neumann"
-          }, {
-            key: "Flux-UUID",
-            label: "Flux"
-          }];
         case "modeler":
           if (nodeInstanceUUID === "neuron") {
             return qxapp.dev.fake.neuron.Data.getItemList();
@@ -2940,122 +2917,22 @@ qx.Class.define("qxapp.dev.fake.Data", {
           return qxapp.dev.fake.modeler.Data.getItemList();
         case "materialDB":
           return qxapp.dev.fake.materialDB.Data.getItemList();
+        case "defaultMaterials":
+        case "defaultBoundaries":
+          return qxapp.dev.fake.lf.Data.getItemList(portKey);
         case "defaultStimulationSelectivity":
-          return [{
-            key: "StSeSubgroup-UUID",
-            label: "Subgroup"
-          }];
+          return qxapp.dev.fake.stimulationSelectivity.Data.getItemList();
       }
       return [];
     },
 
     getItem: function(nodeInstanceUUID, portKey, itemUuid) {
       switch (portKey) {
-        case "materialDB": {
+        case "materialDB":
           return qxapp.dev.fake.materialDB.Data.getItem(itemUuid);
-        }
-        case "defaultMaterials": {
-          switch (itemUuid) {
-            case "Dielectric-UUID": {
-              return {
-                "massDensity": {
-                  displayOrder: 0,
-                  label: "Mass Density",
-                  unit: "kg/m3",
-                  type: "number",
-                  defaultValue: 1.205
-                },
-                "electricConductivity": {
-                  displayOrder: 1,
-                  label: "Electric Conductivity",
-                  unit: "S/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "electricRelativePermitivity": {
-                  displayOrder: 2,
-                  label: "Electric Relative Permittivity",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                },
-                "magneticRelativePermeability": {
-                  displayOrder: 3,
-                  label: "Magnetic Relative Permeability",
-                  unit: "",
-                  type: "number",
-                  defaultValue: 1
-                },
-                "magneticConductivity": {
-                  displayOrder: 4,
-                  label: "Magnetic Conductivity",
-                  unit: "Ohm/m",
-                  type: "number",
-                  defaultValue: 0
-                }
-              };
-            }
-          }
-          break;
-        }
-        case "defaultBoundaries": {
-          switch (itemUuid) {
-            case "Dirichlet-UUID": {
-              return {
-                "constantPotential": {
-                  displayOrder: 0,
-                  label: "Constant Potential",
-                  unit: "V",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "phase": {
-                  displayOrder: 1,
-                  label: "Phase",
-                  unit: "deg",
-                  type: "number",
-                  defaultValue: 0
-                }
-              };
-            }
-            case "Neumann-UUID": {
-              return {
-                "normalDerivative": {
-                  displayOrder: 0,
-                  label: "Normal Derivative",
-                  unit: "V/m",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "phase": {
-                  displayOrder: 1,
-                  label: "Phase",
-                  unit: "deg",
-                  type: "number",
-                  defaultValue: 0
-                }
-              };
-            }
-            case "Flux-UUID": {
-              return {
-                "constantFlux": {
-                  displayOrder: 0,
-                  label: "Constant Flux",
-                  type: "number",
-                  defaultValue: 0
-                },
-                "phase": {
-                  displayOrder: 1,
-                  label: "Phase",
-                  unit: "deg",
-                  type: "number",
-                  defaultValue: 0
-                }
-              };
-            }
-          }
-          break;
-        }
+        case "defaultMaterials":
+        case "defaultBoundaries":
+          return qxapp.dev.fake.lf.Data.getItem(portKey, itemUuid);
       }
       return {};
     }
