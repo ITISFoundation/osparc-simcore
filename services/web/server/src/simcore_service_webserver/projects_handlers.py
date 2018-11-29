@@ -23,7 +23,7 @@ async def list_projects(request: web.Request):
 
     projects = []
     if ptype in ("template", "all"):
-        projects += [prj.data for prj in Fake.projects if prj.template]
+        projects += [prj.data for prj in Fake.projects.values() if prj.template]
 
     if ptype in ("user", "all"):
         projects += [Fake.projects[pid].data
