@@ -259,7 +259,11 @@ async def _prepare_storage_manager(params, query, request: web.Request) -> DataS
     if user_id and location in (INIT_STR, DATCORE_STR):
         # TODO: notify from db instead when tokens changed, then invalidate resource which enforces
         # re-query when needed.
-        api_token, api_secret = await get_api_token_and_secret(request, user_id)
-        dsm.datcore_tokens[user_id] = DatCoreApiToken(api_token, api_secret)
 
+        # updates from db
+        token_info = await get_api_token_and_secret(request, user_id)
+        if all(token_info):
+            dsm.datcore_tokens[user_id] = DatCoreApiToken(*token_info)
+        else:
+            dsm.datcore_tokens.pop(user_id, None)
     return dsm
