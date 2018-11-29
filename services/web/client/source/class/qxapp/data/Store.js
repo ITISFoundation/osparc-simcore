@@ -72,8 +72,8 @@ qx.Class.define("qxapp.data.Store", {
       return metaData;
     },
 
-    getItemList: function(nodeInstanceUUID, portKey) {
-      return qxapp.dev.fake.Data.getItemList(nodeInstanceUUID, portKey);
+    getItemList: function(nodeKey, portKey) {
+      return qxapp.dev.fake.Data.getItemList(nodeKey, portKey);
     },
 
     getItem: function(nodeInstanceUUID, portKey, itemUuid) {
