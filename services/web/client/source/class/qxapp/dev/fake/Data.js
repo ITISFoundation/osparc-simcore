@@ -1605,6 +1605,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
         case "defaultMaterials":
         case "defaultBoundaries":
         case "defaultSensors":
+          if (nodeKey.includes("Neuron")) {
+            return qxapp.dev.fake.neuron.Data.getItemList(portKey);
+          }
           return qxapp.dev.fake.lf.Data.getItemList(portKey);
         case "defaultStimulationSelectivity":
           return qxapp.dev.fake.stimulationSelectivity.Data.getItemList();
