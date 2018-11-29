@@ -2910,27 +2910,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
     getItemList: function(nodeInstanceUUID, portKey) {
       switch (portKey) {
         case "defaultNeuromanModels":
-          return [{
-            key: "Yoon-sun-UUID",
-            label: "DemoDec_Neuroman.smash",
-            thumbnail: "qxapp/yoonsun.png"
-          }, {
-            key: "Yoon-sun-Light-UUID",
-            label: "DemoDec_OnlyHead_Clean_Modeler.smash",
-            thumbnail: "qxapp/yoonsun-light.png"
-          }, {
-            key: "Rat-UUID",
-            label: "DemoDec_OnlyHead_Clean_LF.smash",
-            thumbnail: "qxapp/rat.png"
-          }, {
-            key: "Rat-Light-UUID",
-            label: "DemoDec_OnlyHead_Clean_Neuron.smash",
-            thumbnail: "qxapp/rat-light.png"
-          }, {
-            key: "Rat2-UUID",
-            label: "ratmodel_simplified.smash",
-            thumbnail: "qxapp/rat-light.png"
-          }];
+          return qxapp.dev.fake.neuroman.Data.getItemList();
         case "defaultMaterials":
           return [{
             key: "Dielectric-UUID",
@@ -2954,6 +2934,9 @@ qx.Class.define("qxapp.dev.fake.Data", {
             label: "Flux"
           }];
         case "modeler":
+          if (nodeInstanceUUID === "neuron") {
+            return qxapp.dev.fake.neuron.Data.getItemList();
+          }
           return qxapp.dev.fake.modeler.Data.getItemList();
         case "materialDB":
           return qxapp.dev.fake.materialDB.Data.getItemList();
