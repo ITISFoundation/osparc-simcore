@@ -12,17 +12,17 @@ import aiohttp
 from aiohttp import client, web
 
 # TODO: find actual name in registry
-SUPPORTED_IMAGE_NAME = "paraview"
-SUPPORTED_IMAGE_TAG = "==0.1.0"
+SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/3d-viewer"
+SUPPORTED_IMAGE_TAG = "==1.0.5"
 
 logger = logging.getLogger(__name__)
 
 
-async def handler(req: web.Request, service_url: str, mount_point: str, proxy_path: str) -> web.StreamResponse:
+async def handler(req: web.Request, service_url: str, mount_point: str, proxy_path: str):
     assert req.path_qs.endswith(proxy_path)
     assert mount_point in req.path, "Expected /x/identifier as mount point, got %s" % req.path
 
-    #tarfind_url = service_url + req.path_qs
+    #target_url = service_url + req.path_qs
 
     reqH = req.headers.copy()
     if reqH['connection'] == 'Upgrade' and reqH['upgrade'] == 'websocket' and req.method == 'GET':

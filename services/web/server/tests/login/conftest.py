@@ -22,7 +22,7 @@ import simcore_service_webserver.utils
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, metadata, users
-from simcore_service_webserver.application_config import CONFIG_SCHEMA
+from simcore_service_webserver.application_config import app_schema as app_schema
 
 
 @pytest.fixture(scope="session")
@@ -37,6 +37,7 @@ def osparc_simcore_root_dir(here):
     assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
     return root_dir
 
+
 @pytest.fixture(scope="session")
 def app_cfg(here, osparc_simcore_root_dir):
     cfg_path = here / "config.yaml"
@@ -48,8 +49,9 @@ def app_cfg(here, osparc_simcore_root_dir):
     })
 
     # validates and fills all defaults/optional entries that normal load would not do
-    cfg_dict = trafaret_config.read_and_validate(cfg_path, CONFIG_SCHEMA, vars=variables)
+    cfg_dict = trafaret_config.read_and_validate(cfg_path, app_schema, vars=variables)
     return cfg_dict
+
 
 @pytest.fixture(scope='session')
 def docker_compose_file(here, app_cfg):
@@ -71,6 +73,7 @@ def docker_compose_file(here, app_cfg):
 
     os.environ = old
 
+
 @pytest.fixture(scope='session')
 def postgres_service(docker_services, docker_ip, app_cfg):
     cfg = app_cfg["db"]["postgres"]
@@ -85,8 +88,8 @@ def postgres_service(docker_services, docker_ip, app_cfg):
         timeout=30.0,
         pause=0.1,
     )
-
     return url
+
 
 @pytest.fixture
 def postgres_db(app_cfg, postgres_service): # NOTE: if postgres_services started manually, comment
@@ -112,6 +115,7 @@ def postgres_db(app_cfg, postgres_service): # NOTE: if postgres_services started
     metadata.drop_all(engine)
     engine.dispose()
 
+
 @pytest.fixture
 def server(loop, aiohttp_server, app_cfg, monkeypatch, aiohttp_unused_port, postgres_db): #pylint: disable=R0913
     port = app_cfg["main"]["port"] = aiohttp_unused_port()
@@ -120,6 +124,7 @@ def server(loop, aiohttp_server, app_cfg, monkeypatch, aiohttp_unused_port, post
     path_mail(monkeypatch)
     server = loop.run_until_complete( aiohttp_server(app, port=port) )
     return server
+
 
 @pytest.fixture
 def client(loop, aiohttp_client, server):
