@@ -148,6 +148,8 @@ services:
     ports:
       - "11111:8080"
     environment:
+      - APIHUB_HOST=apihub
+      - APIHUB_PORT=8043
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
