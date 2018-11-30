@@ -6,10 +6,10 @@ services:
       context: ../../
       dockerfile: services/dy-jupyter/Dockerfile
       target: production
-      args: 
+      args:
         BASE_IMAGE: jupyter/base-notebook
       labels:
-        io.simcore.key: '{"key": "simcore/services/dynamic/jupyter-base-notebook"}'        
+        io.simcore.key: '{"key": "simcore/services/dynamic/jupyter-base-notebook"}'
         io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
         io.simcore.type: '{"type": "dynamic"}'
         io.simcore.name: '{"name": "jupyter-base-notebook"}'

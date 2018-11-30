@@ -20,7 +20,7 @@ EXTRA_HOSTS_SUFFIX = os.environ.get("EXTRA_HOSTS_SUFFIX", "undefined")
 
 # these are the envs passed to the dynamic services by default
 SERVICES_DEFAULT_ENVS = {
-    "POSTGRES_ENDPOINT": os.environ.get("POSTGRES_ENDPOINT", "udnefined postgres endpoint"),
+    "POSTGRES_ENDPOINT": os.environ.get("POSTGRES_ENDPOINT", "undefined postgres endpoint"),
     "POSTGRES_USER": os.environ.get("POSTGRES_USER", "undefined postgres user"),
     "POSTGRES_PASSWORD": os.environ.get("POSTGRES_PASSWORD", "undefined postgres password"),
     "POSTGRES_DB": os.environ.get("POSTGRES_DB", "undefined postgres db"),
