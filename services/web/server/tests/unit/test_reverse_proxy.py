@@ -15,7 +15,7 @@ import attr
 import pytest
 from aiohttp import web
 from aiohttp.client_reqrep import ClientResponse
-from aiohttp.test_utils import TestClient
+from aiohttp.test_utils import TestClient as DTestClient # renaming avoid pytest to collect
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.reverse_proxy import setup_reverse_proxy
 from simcore_service_webserver.reverse_proxy.abc import ServiceResolutionPolicy
@@ -143,7 +143,7 @@ def reverse_proxy_server(loop, aiohttp_server, spawner_client):
 
     @attr.s(auto_attribs=True)
     class ServiceMonitor(ServiceResolutionPolicy):
-        cli: TestClient = None
+        cli: DTestClient = None
 
         # override
         async def get_image_name(self, service_identifier: str) -> str:
