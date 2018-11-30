@@ -202,6 +202,7 @@ class Sidecar:
         except (OSError, IOError) as _e:
             logging.exception("Could not process output")
 
+    # pylint: disable=no-self-use
     def _process_task_log(self):
         """ There will be some files in the /log
 
