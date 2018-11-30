@@ -7,8 +7,8 @@ main:
   max_workers: 8
   python2: ${VENV2}
   test_datcore:
-     api_token: ${BF_API_KEY}
-     api_secret: ${BF_API_SECRET}
+     token_key: ${BF_API_KEY}
+     token_secret: ${BF_API_SECRET}
 postgres:
   database: ${POSTGRES_DB}
   endpoint: ${POSTGRES_ENDPOINT}
