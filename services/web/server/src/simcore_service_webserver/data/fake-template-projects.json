@@ -376,7 +376,7 @@
       },
       "emlfSolverId": {
         "key": "simcore/services/demodec/comp/itis/isolve-emlf",
-        "version": "0.0.1",
+        "version": "1.0.0",
         "label": "EM-LF Solver",
         "inputs": {
           "in_1": {
@@ -523,7 +523,7 @@
       },
       "NeuronISolve": {
         "key": "simcore/services/demodec/comp/itis/neuron-isolve",
-        "version": "0.0.1",
+        "version": "1.0.0",
         "label": "Neuron Solver",
         "inputs": {
           "in_1": {
