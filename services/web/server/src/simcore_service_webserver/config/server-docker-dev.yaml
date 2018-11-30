@@ -31,6 +31,9 @@ rabbit:
 #   access_key: ${S3_ACCESS_KEY}
 #   secret_key: ${S3_SECRET_KEY}
 #   bucket_name: ${S3_BUCKET_NAME}
+login:
+  enabled: True
+  registration_confirmation_required: True
 smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: ${SMTP_HOST}
