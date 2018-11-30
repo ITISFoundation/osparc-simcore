@@ -494,15 +494,15 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.fireDataEvent("ShowInLogger", msgData);
         return;
       }
-      const publishedPort = data["published_port"];
+      const servicePath=data["service_basepath"];
       const entryPointD = data["entry_point"];
       const nodeId = data["service_uuid"];
       if (nodeId !== this.getNodeId()) {
         return;
       }
-      if (publishedPort) {
-        const entryPoint = entryPointD ? ("/" + entryPointD) : "";
-        const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
+      if (servicePath) {
+        const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
+        const srvUrl = servicePath + entryPoint;
         this.setServiceUrl(srvUrl);
         const msg = "Service ready on " + srvUrl;
         const msgData = {

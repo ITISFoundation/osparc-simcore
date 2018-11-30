@@ -128,8 +128,8 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
         return existingNodeModel;
       }
       let nodeModel = new qxapp.data.model.NodeModel(this, key, version, uuid);
-      nodeModel.populateNodeData(nodeData);
       this.fireDataEvent("NodeAdded", nodeModel);
+      nodeModel.populateNodeData(nodeData);
       return nodeModel;
     },
 

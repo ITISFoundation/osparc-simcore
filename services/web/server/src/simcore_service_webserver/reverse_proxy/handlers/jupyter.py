@@ -1,18 +1,14 @@
 """ Reverse-proxy customized for jupyter notebooks
 
-TODO: document
 """
 
 import asyncio
 import logging
 import pprint
-from yarl import URL
 
 import aiohttp
 from aiohttp import client, web
-
-# TODO: find actual name in registry
-
+from yarl import URL
 
 SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/jupyter-base-notebook"
 SUPPORTED_IMAGE_TAG = ">=1.5.0"
@@ -21,8 +17,18 @@ logger = logging.getLogger(__name__)
 
 
 async def handler(req: web.Request, service_url: str, **_kwargs):
-    # Resolved url pointing to backend jupyter service
-    target_url = URL(service_url).origin() / req.path_qs.lstrip('/')
+    """ Redirects communication to jupyter notebook in the backend
+
+    :param req: aiohttp request
+    :type req: web.Request
+    :param service_url: Resolved url pointing to backend jupyter service. Typically http:hostname:port/x/12345/.
+    :type service_url: str
+    :raises ValueError: Unexpected web-socket message
+    """
+
+    # FIXME: hash of statics somehow get do not work. then neeed to be strip away
+    # Removing query ... which not sure is a good idea
+    target_url = URL(service_url).origin() / req.path.lstrip('/')
 
     reqH = req.headers.copy()
     if reqH.get('connection') == 'Upgrade' and reqH.get('upgrade') == 'websocket' and req.method == 'GET':
@@ -77,7 +83,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
 if __name__ == "__main__":
     # dummies for manual testing
     BASE_URL = 'http://0.0.0.0:8888'
-    MOUNT_POINT = '/x/fakeUuid'
+    MOUNT_POINT = '/x/12345'
 
     def adapter(req: web.Request):
         return handler(req, service_url=BASE_URL)

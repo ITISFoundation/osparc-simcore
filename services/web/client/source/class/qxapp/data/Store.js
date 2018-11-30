@@ -57,23 +57,6 @@ qx.Class.define("qxapp.data.Store", {
       return arePortsCompatible;
     },
 
-
-    getUserProjectList: function() {
-      return qxapp.dev.fake.Data.getUserProjectList();
-    },
-
-    getPublicProjectList: function() {
-      return qxapp.dev.fake.Data.getPublicProjectList();
-    },
-
-    getProjectList: function() {
-      return qxapp.dev.fake.Data.getProjectList();
-    },
-
-    getProjectData: function(projectUuid) {
-      return qxapp.dev.fake.Data.getProjectData(projectUuid);
-    },
-
     getNodeMetaData: function(key, version) {
       let metaData = {};
       if (key && version) {
@@ -89,8 +72,8 @@ qx.Class.define("qxapp.data.Store", {
       return metaData;
     },
 
-    getItemList: function(nodeInstanceUUID, portKey) {
-      return qxapp.dev.fake.Data.getItemList(nodeInstanceUUID, portKey);
+    getItemList: function(nodeKey, portKey) {
+      return qxapp.dev.fake.Data.getItemList(nodeKey, portKey);
     },
 
     getItem: function(nodeInstanceUUID, portKey, itemUuid) {
@@ -373,7 +356,7 @@ qx.Class.define("qxapp.data.Store", {
           }],
           contact: "maiz@itis.ethz.ch",
           inputsDefault: {
-            defaultMaterials: {
+            defaultLFMaterials: {
               displayOrder: 0,
               label: "Default Material Settings",
               description: "Default Material Settings",
@@ -383,7 +366,7 @@ qx.Class.define("qxapp.data.Store", {
           inputs: {
             updateDispersive: {
               displayOrder: 0,
-              label: "UpdateDispersive",
+              label: "Enable automatic update of dispersive materials",
               description: "Enable automatic update of dispersive materials",
               type: "boolean",
               defaultValue: false
@@ -408,7 +391,12 @@ qx.Class.define("qxapp.data.Store", {
               maps: {
                 branch: "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
                 leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
-              }
+              },
+              defaultValue: [{
+                "Air-UUID": [
+                  "Background"
+                ]
+              }]
             }
           },
           outputs: {
@@ -432,7 +420,7 @@ qx.Class.define("qxapp.data.Store", {
           }],
           contact: "maiz@itis.ethz.ch",
           inputsDefault: {
-            defaultBoundaries: {
+            defaultLFBoundaries: {
               displayOrder: 0,
               label: "Default Boundary Settings",
               description: "Default Boundary Settings",
@@ -453,7 +441,17 @@ qx.Class.define("qxapp.data.Store", {
               type: "mapper",
               maps: {
                 leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
-              }
+              },
+              defaultValue: [{
+                "Dirichlet-UUID": [
+                  "Plane X+",
+                  "Plane X-",
+                  "Plane Y+",
+                  "Plane Y-",
+                  "Plane Z+",
+                  "Plane Z-"
+                ]
+              }]
             }
           },
           outputs: {
@@ -476,6 +474,14 @@ qx.Class.define("qxapp.data.Store", {
             email: "maiz@itis.ethz.ch"
           }],
           contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultLFSensors: {
+              displayOrder: 0,
+              label: "Default Sensors",
+              description: "Default Sensors",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
           inputs: {
             modeler: {
               displayOrder: 0,
@@ -483,12 +489,19 @@ qx.Class.define("qxapp.data.Store", {
               description: "Live Link to Modeler",
               type: "data:application/s4l-api/modeler"
             },
-            sensorSetting: {
+            mapper: {
               displayOrder: 1,
-              label: "SensorsSettings",
-              description: "Sensors Settings",
-              type: "number",
-              defaultValue: 4
+              label: "Sensor Settings",
+              description: "Maps Model entities into Sensor Settings",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+              },
+              defaultValue: [{
+                "Field-Sensor-UUID": [
+                  "Overall Field"
+                ]
+              }]
             }
           },
           outputs: {
@@ -500,9 +513,9 @@ qx.Class.define("qxapp.data.Store", {
             },
             sensorSettingAPI: {
               displayOrder: 1,
-              label: "SensorSettingsAPI",
-              description: "Sensors",
-              type: "data:application/s4l-api/sensor-settings"
+              label: "LF Sensors",
+              description: "LF Sensors",
+              type: "node-output-tree-api-v0.0.1"
             }
           }
         },
@@ -523,31 +536,6 @@ qx.Class.define("qxapp.data.Store", {
               label: "Modeler",
               description: "Live Link to Modeler",
               type: "data:application/s4l-api/modeler"
-            },
-            materialSetting: {
-              displayOrder: 1,
-              label: "MaterialSettings",
-              description: "Material Settings",
-              type: "data:application/s4l-api/settings"
-            },
-            boundarySetting: {
-              displayOrder: 2,
-              label: "BoundarySettings",
-              description: "Boundary Settings",
-              type: "data:application/s4l-api/settings"
-            },
-            sensorSetting: {
-              displayOrder: 3,
-              label: "SensorSettings",
-              description: "Sensor Settings",
-              type: "data:application/s4l-api/settings"
-            },
-            gridSetting: {
-              displayOrder: 4,
-              label: "GridSettings",
-              description: "Grid Settings",
-              type: "number",
-              defaultValue: 5
             }
           },
           outputs: {
@@ -576,19 +564,6 @@ qx.Class.define("qxapp.data.Store", {
               label: "Modeler",
               description: "Live Link to Modeler",
               type: "data:application/s4l-api/modeler"
-            },
-            gridSetting: {
-              displayOrder: 1,
-              label: "GridSettings",
-              description: "Grid Settings",
-              type: "data:application/s4l-api/settings"
-            },
-            voxelSetting: {
-              displayOrder: 2,
-              label: "VoxelSettings",
-              description: "Voxel Settings",
-              type: "number",
-              defaultValue: 6
             }
           },
           outputs: {
@@ -612,24 +587,40 @@ qx.Class.define("qxapp.data.Store", {
           }],
           contact: "maiz@itis.ethz.ch",
           inputs: {
-            setupSetting: {
+            parallelization: {
               displayOrder: 0,
-              label: "SetupSettings",
-              description: "Setup Settings Out",
-              type: "data:application/s4l-api/settings"
+              label: "Parallelization Handling",
+              description: "Parallelization Handling",
+              type: "string",
+              defaultValue: "Manual"
             },
-            voxelSetting: {
+            processes: {
               displayOrder: 1,
-              label: "VoxelSettings",
-              description: "Voxel Settings",
-              type: "data:application/s4l-api/settings"
-            },
-            solverSetting: {
-              displayOrder: 2,
-              label: "SolverSetting",
-              description: "Solver Setting",
+              label: "Number of processes",
+              description: "Number of processes",
               type: "number",
-              defaultValue: 7
+              defaultValue: 1
+            },
+            priority: {
+              displayOrder: 2,
+              label: "Priority in queue",
+              description: "Priority in queue",
+              type: "number",
+              defaultValue: 0
+            },
+            convergence: {
+              displayOrder: 3,
+              label: "Convergence Tolerance",
+              description: "Convergence Tolerance",
+              type: "string",
+              defaultValue: "Medium"
+            },
+            additionalOptions: {
+              displayOrder: 4,
+              label: "Additional Solver Options",
+              description: "Additional Solver Options",
+              type: "string",
+              defaultValue: ""
             }
           },
           outputs: {
@@ -665,6 +656,352 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "Output file",
               description: "LF Solver Output File",
+              type: "data:application/hdf5"
+            }
+          }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup",
+          version: "0.0.0",
+          type: "computational",
+          name: "Neuron Setup",
+          description: "Neuron Simulator Setup Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            temperature: {
+              displayOrder: 0,
+              label: "Global Temperature (°C)",
+              description: "Global Temperature (°C)",
+              type: "number",
+              defaultValue: 37
+            },
+            titration: {
+              displayOrder: 1,
+              label: "Perform Titration",
+              description: "Perform Titration",
+              type: "boolean",
+              defaultValue: true
+            },
+            convergence: {
+              displayOrder: 2,
+              label: "Titration convergence criterion",
+              description: "Titration convergence criterion",
+              type: "number",
+              defaultValue: 1
+            },
+            actionPotential: {
+              displayOrder: 3,
+              label: "Action Potential detection method",
+              description: "Action Potential detection method",
+              type: "string",
+              defaultValue: "Threshold"
+            },
+            threshold: {
+              displayOrder: 4,
+              label: "Threshold for depolarization (mV)",
+              description: "Threshold for depolarization (mV)",
+              type: "number",
+              defaultValue: 80
+            }
+          },
+          outputs: {
+            setupSetting: {
+              displayOrder: 0,
+              label: "Neuron-Setup",
+              description: "Neuron Setup Settings",
+              type: "data:application/s4l-api/settings"
+            }
+          }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons",
+          version: "0.0.0",
+          type: "computational",
+          name: "Neuron Neurons",
+          description: "Neuron Simulator Neurons",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultNeurons: {
+              displayOrder: 0,
+              label: "Default Neurons",
+              description: "Default Neurons",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/s4l-api/modeler"
+            },
+            mapper: {
+              displayOrder: 1,
+              label: "Neurons",
+              description: "Maps Model entities into Neurons",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+              }
+            }
+          },
+          outputs: {
+            neuronsSetting: {
+              displayOrder: 0,
+              label: "NeuronsSettings",
+              description: "Neurons Settings",
+              type: "data:application/s4l-api/settings"
+            }
+          }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources",
+          version: "0.0.0",
+          type: "computational",
+          name: "Neuron Sources",
+          description: "Neuron Simulator Sources",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultNeuronSources: {
+              displayOrder: 0,
+              label: "Default Sources Settings",
+              description: "Default Sources Settings",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
+          inputs: {
+            lfSimulation: {
+              displayOrder: 0,
+              label: "LF Simulation",
+              description: "Live Link to LF Simulation",
+              type: "data:application/s4l-api/lf-sensor"
+            },
+            mapper: {
+              displayOrder: 1,
+              label: "Sources Conditions",
+              description: "Maps LF Fields into Sources",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors"
+              }
+            }
+          },
+          outputs: {
+            sourceSetting: {
+              displayOrder: 0,
+              label: "Sources",
+              description: "Sources",
+              type: "data:application/s4l-api/settings"
+            }
+          }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/PointProcesses-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/PointProcesses",
+          version: "0.0.0",
+          type: "computational",
+          name: "Neuron Point Processes",
+          description: "Neuron Simulator Point Processes",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultNeuronPointProcesses: {
+              displayOrder: 0,
+              label: "Default Point Processes",
+              description: "Default Point Processes",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/s4l-api/modeler"
+            },
+            mapper: {
+              displayOrder: 1,
+              label: "Point Processes",
+              description: "Maps Model entities into Point Processes",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+              }
+            }
+          },
+          outputs: {
+            pointProcesses: {
+              displayOrder: 0,
+              label: "Point Processes",
+              description: "Point Processes",
+              type: "data:application/s4l-api/settings"
+            }
+          }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection",
+          version: "0.0.0",
+          type: "computational",
+          name: "Neuron Network Connection",
+          description: "Neuron Simulator Network Connection Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultNeuronNetworkConnection: {
+              displayOrder: 0,
+              label: "Default Network Connection",
+              description: "Default Network Connection",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/s4l-api/modeler"
+            },
+            mapper: {
+              displayOrder: 1,
+              label: "Network Connection",
+              description: "Maps Model entities into Network Connection",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+              }
+            }
+          },
+          outputs: {
+            networkConnectionSetting: {
+              displayOrder: 0,
+              label: "Network Connection Settings",
+              description: "Network Connection Settings",
+              type: "data:application/s4l-api/settings"
+            }
+          }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors",
+          version: "0.0.0",
+          type: "computational",
+          name: "Neuron Sensors",
+          description: "Neuron Simulator Sensors Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputsDefault: {
+            defaultNeuronSensors: {
+              displayOrder: 0,
+              label: "Default Sensors",
+              description: "Default Sensors",
+              type: "node-output-tree-api-v0.0.1"
+            }
+          },
+          inputs: {
+            modeler: {
+              displayOrder: 0,
+              label: "Modeler",
+              description: "Live Link to Modeler",
+              type: "data:application/s4l-api/modeler"
+            },
+            mapper: {
+              displayOrder: 1,
+              label: "Sensors",
+              description: "Maps Model entities into Sensors",
+              type: "mapper",
+              maps: {
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+              }
+            }
+          },
+          outputs: {
+            sensorSetting: {
+              displayOrder: 0,
+              label: "Sensors Settings",
+              description: "Sensors Settings",
+              type: "data:application/s4l-api/settings"
+            }
+          }
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings-0.0.0": {
+          key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings",
+          version: "0.0.0",
+          type: "computational",
+          name: "Neuron Solver Settings",
+          description: "Neuron Simulator Solver Settings",
+          authors: [{
+            name: "Odei Maiz",
+            email: "maiz@itis.ethz.ch"
+          }],
+          contact: "maiz@itis.ethz.ch",
+          inputs: {
+            parallelization: {
+              displayOrder: 0,
+              label: "Parallelization Handling",
+              description: "Parallelization Handling",
+              type: "string",
+              defaultValue: "Manual"
+            },
+            threads: {
+              displayOrder: 1,
+              label: "Number of threads",
+              description: "Number of threads",
+              type: "number",
+              defaultValue: 1
+            },
+            priority: {
+              displayOrder: 2,
+              label: "Priority in queue",
+              description: "Priority in queue",
+              type: "number",
+              defaultValue: 0
+            },
+            duration: {
+              displayOrder: 3,
+              label: "Duration (ms)",
+              description: "Duration (ms)",
+              type: "number",
+              defaultValue: 1
+            },
+            timeStep: {
+              displayOrder: 4,
+              label: "Time Step (ms)",
+              description: "Time Step (ms)",
+              type: "number",
+              defaultValue: 0.0025
+            },
+            sectionName: {
+              displayOrder: 5,
+              label: "Section names for spike detection",
+              description: "Section names for spike detection",
+              type: "string",
+              defaultValue: ""
+            }
+          },
+          outputs: {
+            outFile: {
+              displayOrder: 0,
+              label: "Input file",
+              description: "Neuron Solver Input File",
               type: "data:application/hdf5"
             }
           }
