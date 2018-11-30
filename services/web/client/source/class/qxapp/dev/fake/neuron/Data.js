@@ -37,9 +37,6 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       }, {
         key: "IClamp-UUID",
         label: "IClamp"
-      }, {
-        key: "VClamp-UUID",
-        label: "VClamp"
       }],
 
       "defaultNetworkConnection": [{
@@ -211,6 +208,246 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
             unit: "ms",
             type: "number",
             defaultValue: 0.1
+          }
+        }
+      },
+
+      "defaultPointProcesses": {
+        "ExpSyn-UUID": {
+          "sectionName": {
+            displayOrder: 0,
+            label: "Section Name",
+            unit: "",
+            type: "string",
+            defaultValue: "-"
+          },
+          "relativePosition": {
+            displayOrder: 1,
+            label: "Relative Position",
+            unit: "",
+            type: "number",
+            defaultValue: 0.5
+          },
+          "decayTime": {
+            displayOrder: 2,
+            label: "Decay Time",
+            unit: "ms",
+            type: "number",
+            defaultValue: 0
+          },
+          "reversalPotential": {
+            displayOrder: 3,
+            label: "Reversal Potential",
+            unit: "mV",
+            type: "number",
+            defaultValue: 0
+          }
+        },
+        "Exp2Syn-UUID": {
+          "sectionName": {
+            displayOrder: 0,
+            label: "Section Name",
+            unit: "",
+            type: "string",
+            defaultValue: "-"
+          },
+          "relativePosition": {
+            displayOrder: 1,
+            label: "Relative Position",
+            unit: "",
+            type: "number",
+            defaultValue: 0.5
+          },
+          "riseTime": {
+            displayOrder: 2,
+            label: "Rise Time",
+            unit: "ms",
+            type: "number",
+            defaultValue: 0
+          },
+          "decayTime": {
+            displayOrder: 3,
+            label: "Decay Time",
+            unit: "ms",
+            type: "number",
+            defaultValue: 0
+          },
+          "reversalPotential": {
+            displayOrder: 4,
+            label: "Reversal Potential",
+            unit: "mV",
+            type: "number",
+            defaultValue: 0
+          }
+        },
+        "AlphaSynapse-UUID": {
+          "sectionName": {
+            displayOrder: 0,
+            label: "Section Name",
+            unit: "",
+            type: "string",
+            defaultValue: "-"
+          },
+          "relativePosition": {
+            displayOrder: 1,
+            label: "Relative Position",
+            unit: "",
+            type: "number",
+            defaultValue: 0.5
+          },
+          "onset": {
+            displayOrder: 2,
+            label: "Onset",
+            unit: "ms",
+            type: "number",
+            defaultValue: 0
+          },
+          "decayTime": {
+            displayOrder: 3,
+            label: "Decay Time",
+            unit: "ms",
+            type: "number",
+            defaultValue: 0
+          },
+          "maximumConductance": {
+            displayOrder: 4,
+            label: "Maximum Conductance",
+            unit: "uS",
+            type: "number",
+            defaultValue: 0
+          },
+          "reversalPotential": {
+            displayOrder: 5,
+            label: "Reversal Potential",
+            unit: "mV",
+            type: "number",
+            defaultValue: 0
+          }
+        },
+        "IClamp-UUID": {
+          "sectionName": {
+            displayOrder: 0,
+            label: "Section Name",
+            unit: "",
+            type: "string",
+            defaultValue: "-"
+          },
+          "relativePosition": {
+            displayOrder: 1,
+            label: "Relative Position",
+            unit: "",
+            type: "number",
+            defaultValue: 0.5
+          },
+          "delay": {
+            displayOrder: 2,
+            label: "Delay",
+            unit: "ms",
+            type: "number",
+            defaultValue: 0
+          },
+          "duration": {
+            displayOrder: 3,
+            label: "Duration",
+            unit: "ms",
+            type: "number",
+            defaultValue: 0
+          },
+          "amplitude": {
+            displayOrder: 4,
+            label: "Amplitude",
+            unit: "nA",
+            type: "number",
+            defaultValue: 0
+          }
+        }
+      },
+
+      "defaultNetworkConnection": {
+        "Synapse-UUID": {
+          "sectionName": {
+            displayOrder: 0,
+            label: "Section Name",
+            unit: "",
+            type: "string",
+            defaultValue: "-"
+          },
+          "relativePosition": {
+            displayOrder: 1,
+            label: "Relative Position",
+            unit: "",
+            type: "number",
+            defaultValue: 0.5
+          },
+          "threshold": {
+            displayOrder: 2,
+            label: "Threshold",
+            unit: "",
+            type: "number",
+            defaultValue: 0.5
+          },
+          "delay": {
+            displayOrder: 3,
+            label: "Delay",
+            unit: "ms",
+            type: "number",
+            defaultValue: 0
+          },
+          "weight": {
+            displayOrder: 4,
+            label: "Weight",
+            unit: "",
+            type: "number",
+            defaultValue: 0
+          }
+        }
+      },
+
+      "defaultSensors": {
+        "Line-Sensor-UUID": {
+          "measuredQuantity": {
+            displayOrder: 0,
+            label: "Measured Quantity",
+            unit: "",
+            type: "string",
+            defaultValue: "V"
+          },
+          "numberSnapshots": {
+            displayOrder: 1,
+            label: "Number of Snapshots",
+            unit: "",
+            type: "number",
+            defaultValue: 1
+          }
+        },
+        "Point-Sensor-UUID": {
+          "sectionName": {
+            displayOrder: 0,
+            label: "Section Name",
+            unit: "",
+            type: "string",
+            defaultValue: "-"
+          },
+          "relativePosition": {
+            displayOrder: 1,
+            label: "Relative Position",
+            unit: "",
+            type: "number",
+            defaultValue: 0.5
+          },
+          "measuredQuantity": {
+            displayOrder: 2,
+            label: "Measured Quantity",
+            unit: "",
+            type: "string",
+            defaultValue: "V"
+          },
+          "enableGrouping": {
+            displayOrder: 3,
+            label: "Enable Grouping",
+            unit: "",
+            type: "boolean",
+            defaultValue: false
           }
         }
       }
