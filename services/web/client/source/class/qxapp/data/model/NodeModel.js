@@ -529,10 +529,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     retrieveInputs: function() {
       let urlUpdate = this.getServiceUrl() + "/retrieve";
+      urlUpdate = urlUpdate.replace("//", "/");
       let updReq = new qx.io.request.Xhr();
       updReq.set({
         url: urlUpdate,
-        method: "POST"
+        method: "GET"
       });
       updReq.send();
     },
