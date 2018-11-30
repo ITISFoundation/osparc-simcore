@@ -1602,13 +1602,16 @@ qx.Class.define("qxapp.dev.fake.Data", {
           return qxapp.dev.fake.modeler.Data.getItemList();
         case "materialDB":
           return qxapp.dev.fake.materialDB.Data.getItemList();
-        case "defaultMaterials":
-        case "defaultBoundaries":
-        case "defaultSensors":
-          if (nodeKey.includes("Neuron")) {
-            return qxapp.dev.fake.neuron.Data.getItemList(portKey);
-          }
+        case "defaultLFMaterials":
+        case "defaultLFBoundaries":
+        case "defaultLFSensors":
           return qxapp.dev.fake.lf.Data.getItemList(portKey);
+        case "defaultNeurons":
+        case "defaultNeuronSources":
+        case "defaultNeuronPointProcesses":
+        case "defaultNeuronNetworkConnection":
+        case "defaultNeuronSensors":
+          return qxapp.dev.fake.neuron.Data.getItemList(portKey);
         case "defaultStimulationSelectivity":
           return qxapp.dev.fake.stimulationSelectivity.Data.getItemList();
       }
@@ -1619,10 +1622,16 @@ qx.Class.define("qxapp.dev.fake.Data", {
       switch (portKey) {
         case "materialDB":
           return qxapp.dev.fake.materialDB.Data.getItem(itemUuid);
-        case "defaultMaterials":
-        case "defaultBoundaries":
-        case "defaultSensors":
+        case "defaultLFMaterials":
+        case "defaultLFBoundaries":
+        case "defaultLFSensors":
           return qxapp.dev.fake.lf.Data.getItem(portKey, itemUuid);
+        case "defaultNeurons":
+        case "defaultNeuronSources":
+        case "defaultNeuronPointProcesses":
+        case "defaultNeuronNetworkConnection":
+        case "defaultNeuronSensors":
+          return qxapp.dev.fake.neuron.Data.getItem(portKey, itemUuid);
       }
       return {};
     }

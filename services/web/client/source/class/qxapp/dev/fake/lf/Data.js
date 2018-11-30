@@ -3,7 +3,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
 
   statics: {
     itemList: {
-      "defaultMaterials": [{
+      "defaultLFMaterials": [{
         key: "Dielectric-UUID",
         label: "Dielectric"
       }, {
@@ -14,7 +14,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
         label: "PMC"
       }],
 
-      "defaultBoundaries": [{
+      "defaultLFBoundaries": [{
         key: "Dirichlet-UUID",
         label: "Dirichlet"
       }, {
@@ -25,7 +25,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
         label: "Flux"
       }],
 
-      "defaultSensors": [{
+      "defaultLFSensors": [{
         key: "Field-Sensor-UUID",
         label: "Field-Sensor"
       }, {
@@ -35,7 +35,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
     },
 
     item: {
-      "defaultMaterials": {
+      "defaultLFMaterials": {
         "Dielectric-UUID": {
           "massDensity": {
             displayOrder: 0,
@@ -75,7 +75,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
         }
       },
 
-      "defaultBoundaries": {
+      "defaultLFBoundaries": {
         "Dirichlet-UUID": {
           "constantPotential": {
             displayOrder: 0,
@@ -126,7 +126,7 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
         }
       },
 
-      "defaultSensors": {
+      "defaultLFSensors": {
         "Field-Sensor-UUID": {
           "recordEField": {
             displayOrder: 0,

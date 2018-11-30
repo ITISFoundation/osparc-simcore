@@ -356,7 +356,7 @@ qx.Class.define("qxapp.data.Store", {
           }],
           contact: "maiz@itis.ethz.ch",
           inputsDefault: {
-            defaultMaterials: {
+            defaultLFMaterials: {
               displayOrder: 0,
               label: "Default Material Settings",
               description: "Default Material Settings",
@@ -415,7 +415,7 @@ qx.Class.define("qxapp.data.Store", {
           }],
           contact: "maiz@itis.ethz.ch",
           inputsDefault: {
-            defaultBoundaries: {
+            defaultLFBoundaries: {
               displayOrder: 0,
               label: "Default Boundary Settings",
               description: "Default Boundary Settings",
@@ -460,7 +460,7 @@ qx.Class.define("qxapp.data.Store", {
           }],
           contact: "maiz@itis.ethz.ch",
           inputsDefault: {
-            defaultSensors: {
+            defaultLFSensors: {
               displayOrder: 0,
               label: "Default Sensors",
               description: "Default Sensors",
@@ -754,7 +754,7 @@ qx.Class.define("qxapp.data.Store", {
           }],
           contact: "maiz@itis.ethz.ch",
           inputsDefault: {
-            defaultSources: {
+            defaultNeuronSources: {
               displayOrder: 0,
               label: "Default Sources Settings",
               description: "Default Sources Settings",
@@ -799,7 +799,7 @@ qx.Class.define("qxapp.data.Store", {
           }],
           contact: "maiz@itis.ethz.ch",
           inputsDefault: {
-            defaultPointProcesses: {
+            defaultNeuronPointProcesses: {
               displayOrder: 0,
               label: "Default Point Processes",
               description: "Default Point Processes",
@@ -822,6 +822,14 @@ qx.Class.define("qxapp.data.Store", {
                 leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
               }
             }
+          },
+          outputs: {
+            pointProcesses: {
+              displayOrder: 0,
+              label: "Point Processes",
+              description: "Point Processes",
+              type: "data:application/s4l-api/settings"
+            }
           }
         },
         "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection-0.0.0": {
@@ -836,7 +844,7 @@ qx.Class.define("qxapp.data.Store", {
           }],
           contact: "maiz@itis.ethz.ch",
           inputsDefault: {
-            defaultNetworkConnection: {
+            defaultNeuronNetworkConnection: {
               displayOrder: 0,
               label: "Default Network Connection",
               description: "Default Network Connection",
@@ -881,7 +889,7 @@ qx.Class.define("qxapp.data.Store", {
           }],
           contact: "maiz@itis.ethz.ch",
           inputsDefault: {
-            defaultSensors: {
+            defaultNeuronSensors: {
               displayOrder: 0,
               label: "Default Sensors",
               description: "Default Sensors",

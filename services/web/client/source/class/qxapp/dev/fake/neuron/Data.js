@@ -20,12 +20,12 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
         label: "Hoc"
       }],
 
-      "defaultSources": [{
+      "defaultNeuronSources": [{
         key: "SourceSettings-UUID",
         label: "Source Settings"
       }],
 
-      "defaultPointProcesses": [{
+      "defaultNeuronPointProcesses": [{
         key: "ExpSyn-UUID",
         label: "ExpSyn"
       }, {
@@ -39,12 +39,12 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
         label: "IClamp"
       }],
 
-      "defaultNetworkConnection": [{
+      "defaultNeuronNetworkConnection": [{
         key: "Synapse-UUID",
         label: "Synapse"
       }],
 
-      "defaultSensors": [{
+      "defaultNeuronSensors": [{
         key: "Line-Sensor-UUID",
         label: "Line-Sensor"
       }, {
@@ -179,7 +179,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
         }
       },
 
-      "defaultSources": {
+      "defaultNeuronSources": {
         "SourceSettings-UUID": {
           "pulseType": {
             displayOrder: 0,
@@ -212,7 +212,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
         }
       },
 
-      "defaultPointProcesses": {
+      "defaultNeuronPointProcesses": {
         "ExpSyn-UUID": {
           "sectionName": {
             displayOrder: 0,
@@ -363,7 +363,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
         }
       },
 
-      "defaultNetworkConnection": {
+      "defaultNeuronNetworkConnection": {
         "Synapse-UUID": {
           "sectionName": {
             displayOrder: 0,
@@ -403,7 +403,7 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
         }
       },
 
-      "defaultSensors": {
+      "defaultNeuronSensors": {
         "Line-Sensor-UUID": {
           "measuredQuantity": {
             displayOrder: 0,
@@ -463,10 +463,16 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       return 0;
     },
 
-    getItemList: function() {
-      let itemList = qxapp.dev.fake.neuron.Data.itemList;
-      itemList.sort(this.compare);
+    getItemList: function(simSettingsId) {
+      let itemList = qxapp.dev.fake.neuron.Data.itemList[simSettingsId];
+      if (itemList) {
+        itemList.sort(this.compare);
+      }
       return itemList;
+    },
+
+    getItem: function(simSettingsId, itemId) {
+      return qxapp.dev.fake.neuron.Data.item[simSettingsId][itemId];
     }
   } // statics
 
