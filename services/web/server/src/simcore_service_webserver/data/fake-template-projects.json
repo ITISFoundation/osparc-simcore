@@ -263,7 +263,7 @@
         "label": "Modeler",
         "position": {
           "x": 50,
-          "y": 300
+          "y": 250
         }
       },
       "lfContainerId": {
@@ -394,11 +394,29 @@
         },
         "parent": "lfContainerId"
       },
+      "3DViewerId1": {
+        "key": "simcore/services/dynamic/3d-viewer",
+        "version": "0.0.1",
+        "label": "EM-LF Solver Viewer",
+        "inputs": {
+          "in_1": {
+            "nodeUuid": "emlfSolverId",
+            "output": "out_1"
+          }
+        },
+        "inputNodes": [
+          "lfContainerId"
+        ],
+        "position": {
+          "x": 700,
+          "y": 50
+        }
+      },
       "NeuronContainerId": {
         "label": "Neuron Simulator Container",
         "position": {
-          "x": 500,
-          "y": 450
+          "x": 450,
+          "y": 300
         },
         "inputs": {},
         "outputs": {},
@@ -521,6 +539,51 @@
           "y": 250
         },
         "parent": "NeuronContainerId"
+      },
+      "3DViewerId2": {
+        "key": "simcore/services/dynamic/3d-viewer",
+        "version": "0.0.1",
+        "label": "Neuron Solver Viewer",
+        "inputs": {
+          "in_1": {
+            "nodeUuid": "NeuronISolve",
+            "output": "out_1"
+          }
+        },
+        "inputNodes": [
+          "NeuronContainerId"
+        ],
+        "position": {
+          "x": 700,
+          "y": 200
+        }
+      },
+      "StimulationSelectivityId": {
+        "key": "simcore/services/demodec/dynamic/itis/s4l/StimulationSelectivity",
+        "version": "0.0.0",
+        "label": "Stimulation Selectivity",
+        "inputNodes": [
+          "NeuronContainerId"
+        ],
+        "outputs": {
+          "stimulationFactor": 0.6
+        },
+        "position": {
+          "x": 600,
+          "y": 425
+        }
+      },
+      "KemberId": {
+        "key": "simcore/services/comp/kember/cardiac",
+        "version": "1.0.0",
+        "label": "Kember Model",
+        "inputNodes": [
+          "StimulationSelectivityId"
+        ],
+        "position": {
+          "x": 750,
+          "y": 550
+        }
       }
     }
   }
