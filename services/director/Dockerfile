@@ -22,6 +22,11 @@ ENV REGISTRY_URL = ''
 ENV PUBLISHED_HOST_NAME=''
 ENV EXTRA_HOSTS_SUFFIX = 'undefined'
 
+# ----------------------------------------------------------------
+COPY --chown=scu:scu scripts/docker/healthcheck_curl_host.py /healthcheck/healthcheck_curl_host.py
+# will start to run after interval every interval. fails after timeout. fail do not count if during start-period. will do # retries
+HEALTHCHECK --interval=10s --timeout=30s --start-period=1s --retries=3 CMD [ "python3", "/healthcheck/healthcheck_curl_host.py", "http://localhost:8001/v0/" ]
+
 WORKDIR /home/scu
 
 # -------------------------- Build stage -------------------
