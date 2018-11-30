@@ -17,12 +17,12 @@ from aiohttp import web
 
 from simcore_service_webserver.cli import parse, setup_parser
 from simcore_service_webserver.resources import resources
-from simcore_service_webserver.application_config import CONFIG_SCHEMA
+from simcore_service_webserver.application_config import create_schema
 
 
 @pytest.fixture("session")
 def app_config_schema():
-    return CONFIG_SCHEMA
+    return create_schema()
 
 
 @pytest.fixture("session")

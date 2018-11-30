@@ -1,6 +1,8 @@
 import os
 import logging
 import simcore_director_sdk
+from simcore_director_sdk import UsersApi
+from simcore_director_sdk.rest import ApiException #pylint: disable=W0611
 
 from .config import get_config
 from yarl import URL
@@ -21,12 +23,11 @@ def get_director():
             _DIRECTOR_HOST,
             _DIRECTOR_PORT,
             _DIRECTOR_PATH)
-    api_instance = simcore_director_sdk.UsersApi(
-        simcore_director_sdk.ApiClient(configuration))
+    api_instance = UsersApi(simcore_director_sdk.ApiClient(configuration))
     return api_instance
 
 
-def create_client(app: web.Application):
+def create_director_api_client(app: web.Application):
     cfg = get_config(app)
     endpoint = URL.build(scheme='http',
                          host=cfg['host'],
@@ -34,6 +35,5 @@ def create_client(app: web.Application):
 
     configuration = simcore_director_sdk.Configuration()
     configuration.host = str(endpoint)
-    api_instance = simcore_director_sdk.UsersApi(
-        simcore_director_sdk.ApiClient(configuration))
+    api_instance = UsersApi(simcore_director_sdk.ApiClient(configuration))
     return api_instance
