@@ -24,7 +24,7 @@ services:
         io.simcore.authors: '{"authors": [{"name": "sanderegg", "email": "anderegg@itis.swiss", "affiliation": "ITIS Foundation"}]}'
         io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'        
         io.simcore.inputs: '{"inputs": {"model_name":{"label": "The input file name", "displayOrder":0, "description": "Some 3D data", "type": "string"}}}'
-        io.simcore.outputs: '{"outputs": {"modeler":{"label": "Modeler", "displayOrder":0, "description": "Modeler", "type": "node-output-tree-api-v0.0.1"}}}'
+        io.simcore.outputs: '{"outputs": {"output_1":{"label": "Entities out", "displayOrder":1, "description": "List of entities", "type": "data:*/*"}}}'
         simcore.service.settings: '[{"name": "ports", "type": "int", "value": 9090}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "env", "type": "string", "value": ["CS_S4L_HOSTNAME=modeler_xrpc-worker_%service_uuid%"]}]'
         simcore.service.dependencies: '[{"key": "simcore/services/dynamic/modeler/xrpc-worker", "tag": "2.0.1"}]'
         org.label-schema.schema-version: "1.0"
