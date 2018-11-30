@@ -88,6 +88,21 @@ async def _get_node_details(node_key:str, node_version:str)->dict:
                         "type":"dynamic"
             }
         return fake_node_details
+    if "StimulationSelectivity" in node_key:
+        # create a fake file-picker schema here!!
+        fake_node_details = {"inputs":{},
+                        "outputs":{
+                            "stimulationFactor":{
+                                "label":"the output",
+                                "displayOrder":0,
+                                "description":"a file",
+                                "type":"data:*/*",
+                                "defaultValue": 0.6
+                            }
+                        },
+                        "type":"dynamic"
+            }
+        return fake_node_details
     try:
         services_enveloped = await director_sdk.get_director().services_by_key_version_get(node_key, node_version)
         node_details = services_enveloped.data[0].to_dict()
@@ -112,6 +127,8 @@ async def _build_adjacency_list(node_uuid:str, node_schema:dict, node_inputs:dic
         if isinstance(input_data, dict) and all(k in input_data for k in ("nodeUuid", "output")):
             log.debug("decoding link %s", input_data)
             input_node_uuid = input_data["nodeUuid"]
+            if "demodec" in pipeline_data[input_node_uuid]["key"]:
+                continue
             input_node_details = await _get_node_details(pipeline_data[input_node_uuid]["key"], pipeline_data[input_node_uuid]["version"])
             log.debug("input node details %s", input_node_details)
             if input_node_details is None:
