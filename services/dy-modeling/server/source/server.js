@@ -15,28 +15,14 @@ let s4l_utils = require('./s4l_utils');
 let routes = require('./routes');
 const config = require('./config');
 
-// the base path shall be like "" or "/something/gjfj"
-let basePath = config.BASEPATH;
-if (basePath.length == 0 || basePath == "/") {
-  basePath = "";
-} 
-else {  
-  if (basePath[basePath.length - 1] == "/") {
-    basePath = basePath.substr(0, basePath.length - 1);
-  }
-  if (basePath[0] != "/") {
-    basePath = "/" + basePath;
-  }
-}
-
-console.log(`received basepath: ${basePath}`);
+console.log(`received basepath: ${config.BASEPATH}`);
 // serve static assets normally
 console.log('Serving static : ' + config.APP_PATH);
-app.use(`${basePath}`, express.static(config.APP_PATH));
+app.use(`${config.BASEPATH}`, express.static(config.APP_PATH));
 
 
 // init route for retrieving port inputs
-app.use(`${basePath}`, routes);
+app.use(`${config.BASEPATH}`, routes);
 routes.eventEmitter.on("retrieveModel", function(modelName){
   s4l_utils.connectToS4LServer().then(function () {
     importModelS4L(modelName);
@@ -50,7 +36,7 @@ console.log('server started on ' + config.PORT + '/app');
 let io = require('socket.io')(server, {
   pingInterval: 15000,
   pingTimeout: 10000,
-  path: `${basePath}/socket.io`,
+  path: `${config.BASEPATH}/socket.io`,
 });
 let connectedClient = null;
 

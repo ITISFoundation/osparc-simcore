@@ -501,14 +501,14 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       if (nodeId !== this.getNodeId()) {
         return;
       }
-      if (servicePath) {
-        let entryPoint;
-        let srvUrl;
-        if (this.getKey().includes("jupyter")) {
-          entryPoint = entryPointD ? ("/" + entryPointD) : "/";
-          srvUrl = servicePath + entryPoint;
-        } else {
-          entryPoint = entryPointD ? ("/" + entryPointD) : "";
+      if (servicePath) {        
+        const entryPoint = entryPointD ? ("/" + entryPointD) : "/";        
+        let srvUrl = servicePath + entryPoint;
+        // FIXME: this is temporary until the reverse proxy works for these services
+        if (this.getKey().includes("neuroman") || this.getKey().includes("modeler")) {
+          srvUrl = "http://" + window.location.hostname + ":" + publishedPort + srvUrl;
+        }
+        else if (this.getKey().includes("3d-viewer")) {
           srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
         }
         this.setServiceUrl(srvUrl);
