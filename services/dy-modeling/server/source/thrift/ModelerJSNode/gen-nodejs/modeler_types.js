@@ -23,8 +23,9 @@ ttypes.BooleanOperationType = {
 ttypes.EntityFilterType = {
   'ALL' : 0,
   'MESH' : 1,
-  'BODY' : 2,
-  'BODY_AND_MESH' : 3
+  'SOLID_BODY' : 2,
+  'SOLID_BODY_AND_MESH' : 3,
+  'WIRE' : 4
 };
 var ApiVersion = module.exports.ApiVersion = function(args) {
   this.major = 0;
@@ -85,127 +86,6 @@ ApiVersion.prototype.write = function(output) {
   if (this.minor !== null && this.minor !== undefined) {
     output.writeFieldBegin('minor', Thrift.Type.I32, 2);
     output.writeI32(this.minor);
-    output.writeFieldEnd();
-  }
-  output.writeFieldStop();
-  output.writeStructEnd();
-  return;
-};
-
-var Entity = module.exports.Entity = function(args) {
-  this.name = null;
-  this.uuid = null;
-  this.children = null;
-  this.has_geometry = true;
-  if (args) {
-    if (args.name !== undefined && args.name !== null) {
-      this.name = args.name;
-    }
-    if (args.uuid !== undefined && args.uuid !== null) {
-      this.uuid = args.uuid;
-    }
-    if (args.children !== undefined && args.children !== null) {
-      this.children = Thrift.copyList(args.children, [null]);
-    }
-    if (args.has_geometry !== undefined && args.has_geometry !== null) {
-      this.has_geometry = args.has_geometry;
-    }
-  }
-};
-Entity.prototype = {};
-Entity.prototype.read = function(input) {
-  input.readStructBegin();
-  while (true)
-  {
-    var ret = input.readFieldBegin();
-    var fname = ret.fname;
-    var ftype = ret.ftype;
-    var fid = ret.fid;
-    if (ftype == Thrift.Type.STOP) {
-      break;
-    }
-    switch (fid)
-    {
-      case 1:
-      if (ftype == Thrift.Type.STRING) {
-        this.name = input.readString();
-      } else {
-        input.skip(ftype);
-      }
-      break;
-      case 2:
-      if (ftype == Thrift.Type.STRING) {
-        this.uuid = input.readString();
-      } else {
-        input.skip(ftype);
-      }
-      break;
-      case 3:
-      if (ftype == Thrift.Type.LIST) {
-        var _size0 = 0;
-        var _rtmp34;
-        this.children = [];
-        var _etype3 = 0;
-        _rtmp34 = input.readListBegin();
-        _etype3 = _rtmp34.etype;
-        _size0 = _rtmp34.size;
-        for (var _i5 = 0; _i5 < _size0; ++_i5)
-        {
-          var elem6 = null;
-          elem6 = new ttypes.Entity();
-          elem6.read(input);
-          this.children.push(elem6);
-        }
-        input.readListEnd();
-      } else {
-        input.skip(ftype);
-      }
-      break;
-      case 4:
-      if (ftype == Thrift.Type.BOOL) {
-        this.has_geometry = input.readBool();
-      } else {
-        input.skip(ftype);
-      }
-      break;
-      default:
-        input.skip(ftype);
-    }
-    input.readFieldEnd();
-  }
-  input.readStructEnd();
-  return;
-};
-
-Entity.prototype.write = function(output) {
-  output.writeStructBegin('Entity');
-  if (this.name !== null && this.name !== undefined) {
-    output.writeFieldBegin('name', Thrift.Type.STRING, 1);
-    output.writeString(this.name);
-    output.writeFieldEnd();
-  }
-  if (this.uuid !== null && this.uuid !== undefined) {
-    output.writeFieldBegin('uuid', Thrift.Type.STRING, 2);
-    output.writeString(this.uuid);
-    output.writeFieldEnd();
-  }
-  if (this.children !== null && this.children !== undefined) {
-    output.writeFieldBegin('children', Thrift.Type.LIST, 3);
-    output.writeListBegin(Thrift.Type.STRUCT, this.children.length);
-    for (var iter7 in this.children)
-    {
-      if (this.children.hasOwnProperty(iter7))
-      {
-        iter7 = this.children[iter7];
-        iter7.write(output);
-      }
-    }
-    output.writeListEnd();
-    output.writeFieldEnd();
-  }
-  if (this.has_geometry !== null && this.has_geometry !== undefined) {
-    output.writeFieldBegin('has_geometry', Thrift.Type.BOOL, 4);
-    output.writeBool(this.has_geometry);
     output.writeFieldEnd();
   }
   output.writeFieldStop();
@@ -304,6 +184,176 @@ Color.prototype.write = function(output) {
   if (this.a !== null && this.a !== undefined) {
     output.writeFieldBegin('a', Thrift.Type.DOUBLE, 4);
     output.writeDouble(this.a);
+    output.writeFieldEnd();
+  }
+  output.writeFieldStop();
+  output.writeStructEnd();
+  return;
+};
+
+var Entity = module.exports.Entity = function(args) {
+  this.name = null;
+  this.uuid = null;
+  this.children = null;
+  this.has_geometry = true;
+  this.pathNames = null;
+  this.pathUuids = null;
+  this.color = null;
+  if (args) {
+    if (args.name !== undefined && args.name !== null) {
+      this.name = args.name;
+    }
+    if (args.uuid !== undefined && args.uuid !== null) {
+      this.uuid = args.uuid;
+    }
+    if (args.children !== undefined && args.children !== null) {
+      this.children = Thrift.copyList(args.children, [null]);
+    }
+    if (args.has_geometry !== undefined && args.has_geometry !== null) {
+      this.has_geometry = args.has_geometry;
+    }
+    if (args.pathNames !== undefined && args.pathNames !== null) {
+      this.pathNames = args.pathNames;
+    }
+    if (args.pathUuids !== undefined && args.pathUuids !== null) {
+      this.pathUuids = args.pathUuids;
+    }
+    if (args.color !== undefined && args.color !== null) {
+      this.color = new ttypes.Color(args.color);
+    }
+  }
+};
+Entity.prototype = {};
+Entity.prototype.read = function(input) {
+  input.readStructBegin();
+  while (true)
+  {
+    var ret = input.readFieldBegin();
+    var fname = ret.fname;
+    var ftype = ret.ftype;
+    var fid = ret.fid;
+    if (ftype == Thrift.Type.STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+      if (ftype == Thrift.Type.STRING) {
+        this.name = input.readString();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 2:
+      if (ftype == Thrift.Type.STRING) {
+        this.uuid = input.readString();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 3:
+      if (ftype == Thrift.Type.LIST) {
+        var _size0 = 0;
+        var _rtmp34;
+        this.children = [];
+        var _etype3 = 0;
+        _rtmp34 = input.readListBegin();
+        _etype3 = _rtmp34.etype;
+        _size0 = _rtmp34.size;
+        for (var _i5 = 0; _i5 < _size0; ++_i5)
+        {
+          var elem6 = null;
+          elem6 = new ttypes.Entity();
+          elem6.read(input);
+          this.children.push(elem6);
+        }
+        input.readListEnd();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 4:
+      if (ftype == Thrift.Type.BOOL) {
+        this.has_geometry = input.readBool();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 5:
+      if (ftype == Thrift.Type.STRING) {
+        this.pathNames = input.readString();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 6:
+      if (ftype == Thrift.Type.STRING) {
+        this.pathUuids = input.readString();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 7:
+      if (ftype == Thrift.Type.STRUCT) {
+        this.color = new ttypes.Color();
+        this.color.read(input);
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      default:
+        input.skip(ftype);
+    }
+    input.readFieldEnd();
+  }
+  input.readStructEnd();
+  return;
+};
+
+Entity.prototype.write = function(output) {
+  output.writeStructBegin('Entity');
+  if (this.name !== null && this.name !== undefined) {
+    output.writeFieldBegin('name', Thrift.Type.STRING, 1);
+    output.writeString(this.name);
+    output.writeFieldEnd();
+  }
+  if (this.uuid !== null && this.uuid !== undefined) {
+    output.writeFieldBegin('uuid', Thrift.Type.STRING, 2);
+    output.writeString(this.uuid);
+    output.writeFieldEnd();
+  }
+  if (this.children !== null && this.children !== undefined) {
+    output.writeFieldBegin('children', Thrift.Type.LIST, 3);
+    output.writeListBegin(Thrift.Type.STRUCT, this.children.length);
+    for (var iter7 in this.children)
+    {
+      if (this.children.hasOwnProperty(iter7))
+      {
+        iter7 = this.children[iter7];
+        iter7.write(output);
+      }
+    }
+    output.writeListEnd();
+    output.writeFieldEnd();
+  }
+  if (this.has_geometry !== null && this.has_geometry !== undefined) {
+    output.writeFieldBegin('has_geometry', Thrift.Type.BOOL, 4);
+    output.writeBool(this.has_geometry);
+    output.writeFieldEnd();
+  }
+  if (this.pathNames !== null && this.pathNames !== undefined) {
+    output.writeFieldBegin('pathNames', Thrift.Type.STRING, 5);
+    output.writeString(this.pathNames);
+    output.writeFieldEnd();
+  }
+  if (this.pathUuids !== null && this.pathUuids !== undefined) {
+    output.writeFieldBegin('pathUuids', Thrift.Type.STRING, 6);
+    output.writeString(this.pathUuids);
+    output.writeFieldEnd();
+  }
+  if (this.color !== null && this.color !== undefined) {
+    output.writeFieldBegin('color', Thrift.Type.STRUCT, 7);
+    this.color.write(output);
     output.writeFieldEnd();
   }
   output.writeFieldStop();

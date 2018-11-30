@@ -144,6 +144,11 @@ async def _parse_pipeline(pipeline_data:dict): # pylint: disable=R0912
         if "outputs" in value:
             node_outputs = value["outputs"]
         log.debug("node %s:%s has inputs: \n%s\n outputs: \n%s", node_key, node_version, node_inputs, node_outputs)
+        
+        # HACK: skip fake services
+        if "demodec" in node_key:
+            log.debug("skipping workbench entry containing %s:%s", node_uuid, value)
+            continue
         node_details = await _get_node_details(node_key, node_version)
         log.debug("node %s:%s has schema:\n %s",node_key, node_version, node_details)
         dag_adjacency_list = await _build_adjacency_list(node_uuid, node_details, node_inputs, pipeline_data, dag_adjacency_list)
@@ -214,6 +219,46 @@ async def _set_tasks_in_tasks_db(project_id, tasks):
                 )
             internal_id = internal_id+1
             db_session.add(comp_task)
+
+@login_required
+async def update_pipeline(request: web.Request) -> web.Response:
+    #pylint:disable=broad-except
+    # FIXME: this should be implemented generaly using async lazy initialization of db_session??
+    #pylint: disable=W0603
+    global db_session
+    if db_session is None:
+        await init_database(request.app)
+
+    # retrieve the data
+    project_id = request.match_info.get("project_id", None)
+    assert project_id is not None
+    pipeline_data = (await request.json())["workbench"]
+    _app = request.app[APP_CONFIG_KEY]
+
+    log.debug("Client calls update_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
+    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data)
+    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))
+    try:
+        await _set_adjacency_in_pipeline_db(project_id, dag_adjacency_list)
+        await _set_tasks_in_tasks_db(project_id, tasks)
+        db_session.commit()
+
+        log.debug("END OF ROUTINE.")
+        return web.json_response(status=204)
+    except sqlalchemy.exc.InvalidRequestError as err:
+        log.exception("Alchemy error: Invalid request. Rolling back db.")
+        db_session.rollback()
+        raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
+    except sqlalchemy.exc.SQLAlchemyError as err:
+        log.exception("Alchemy error: General error. Rolling back db.")
+        db_session.rollback()
+        raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
+    except Exception as err:
+        log.exception("Unexpected error.")
+        raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
+    finally:
+        log.debug("Close session")
+        db_session.close()
 
 # pylint:disable=too-many-branches, too-many-statements
 @login_required

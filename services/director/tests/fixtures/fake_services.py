@@ -1,28 +1,34 @@
-from pathlib import Path
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
+
+import json
 import logging
+import random
+from pathlib import Path
+
 import docker
 import pytest
-import json
 
 _logger = logging.getLogger(__name__)
 
 @pytest.fixture(scope="function")
-def push_services(docker_registry, tmpdir):
+def push_services(loop, docker_registry, tmpdir):
     registry_url = docker_registry
     tmp_dir = Path(tmpdir)
 
     list_of_pushed_images_tags = []
     def build_push_images(number_of_computational_services, number_of_interactive_services, inter_dependent_services=False, sleep_time_s=60):
-        try:        
+        try:
             version = "1.0."
             dependent_image = None
-            for image_index in range(0, number_of_computational_services): 
+            for image_index in range(0, number_of_computational_services):
                 image = _build_push_image(tmp_dir, registry_url, "computational", "test", version + str(image_index), sleep_time_s, dependent_image)
                 if inter_dependent_services and image_index == 0:
                     dependent_image = image
                 list_of_pushed_images_tags.append(image)
             dependent_image = None
-            for image_index in range(0, number_of_interactive_services):                
+            for image_index in range(0, number_of_interactive_services):
                 image = _build_push_image(tmp_dir, registry_url, "dynamic", "test", version + str(image_index), sleep_time_s, dependent_image)
                 if inter_dependent_services and image_index == 0:
                     dependent_image = image
@@ -44,16 +50,16 @@ def push_v0_schema_services(docker_registry, tmpdir):
 
     schema_version = "v0"
     list_of_pushed_images_tags = []
-    def build_push_images(number_of_computational_services, number_of_interactive_services, sleep_time_s=10):        
-        try:        
+    def build_push_images(number_of_computational_services, number_of_interactive_services, sleep_time_s=10):
+        try:
             version = "0.0."
-            
+
             dependent_image = None
-            for image_index in range(0, number_of_computational_services):                                
+            for image_index in range(0, number_of_computational_services):
                 image = _build_push_image(tmp_dir, registry_url, "computational", "test", version + str(image_index), sleep_time_s, dependent_image, schema_version)
                 list_of_pushed_images_tags.append(image)
             dependent_image = None
-            for image_index in range(0, number_of_interactive_services):                                
+            for image_index in range(0, number_of_interactive_services):
                 image = _build_push_image(tmp_dir, registry_url, "dynamic", "test", version + str(image_index), sleep_time_s, dependent_image, schema_version)
                 list_of_pushed_images_tags.append(image)
         except docker.errors.APIError:
@@ -72,8 +78,10 @@ def _build_push_image(docker_dir, registry_url, service_type, name, tag, sleep_t
     service_description = _create_service_description(service_type, name, tag, schema_version)
     docker_labels = _create_docker_labels(service_description)
     additional_docker_labels = [{"name": "constraints", "type": "string", "value": ["node.role==manager"]}]
+    internal_port = None    
     if service_type == "dynamic":
-        additional_docker_labels.append({"name": "ports", "type": "int", "value": 8888})
+        internal_port = random.randint(1, 100000)
+        additional_docker_labels.append({"name": "ports", "type": "int", "value": internal_port})
     docker_labels["simcore.service.settings"] = json.dumps(additional_docker_labels)
 
     if dependent_image is not None:
@@ -92,7 +100,8 @@ def _build_push_image(docker_dir, registry_url, service_type, name, tag, sleep_t
     return {
         "service_description":service_description,
         "docker_labels":docker_labels,
-        "image_path":image_tag
+        "image_path":image_tag,
+        "internal_port":internal_port
         }
 
 def _clean_registry(registry_url, list_of_images, schema_version="v1"):
@@ -106,7 +115,7 @@ def _clean_registry(registry_url, list_of_images, schema_version="v1"):
         else:
             tag = service_description["version"]
         url = "http://{host}/v2/{name}/manifests/{tag}".format(host=registry_url, name=service_description["key"], tag=tag)
-        response = requests.request("GET", url, headers=request_headers)        
+        response = requests.request("GET", url, headers=request_headers)
         docker_content_digest = response.headers["Docker-Content-Digest"]
         # remove the image from the registry
         url = "http://{host}/v2/{name}/manifests/{digest}".format(host=registry_url, name=service_description["key"], digest=docker_content_digest)
@@ -115,7 +124,7 @@ def _clean_registry(registry_url, list_of_images, schema_version="v1"):
 def _create_base_image(base_dir, labels, sleep_time_s):
     # create a basic dockerfile
     docker_file = base_dir / "Dockerfile"
-    with docker_file.open("w") as file_pointer:        
+    with docker_file.open("w") as file_pointer:
         file_pointer.write('FROM alpine\nCMD sleep %s\n' % (sleep_time_s))
     assert docker_file.exists() == True
     # build docker base image
@@ -133,13 +142,13 @@ def _create_service_description(service_type, name, tag, schema_version):
         service_key_type = "comp"
     elif service_type == "dynamic":
         service_key_type = "dynamic"
-    service_desc["key"] = "simcore/services/" + service_key_type + "/" + name    
+    service_desc["key"] = "simcore/services/" + service_key_type + "/" + name
     # version 0 had no validation, no version, no type
     if schema_version == "v0":
         service_desc["tag"] = tag
     elif schema_version == "v1":
         service_desc["version"] = tag
-        service_desc["type"] = service_type        
+        service_desc["type"] = service_type
     else:
         raise Exception("invalid version!!")
 

@@ -56,14 +56,10 @@ qx.Class.define("qxapp.Application", {
       */
 
       this.__preloadModel = null;
-      let isModeler = false;
-      let isDevel = false;
-      if (qx.core.Environment.get("qxapp.preloadModel")) {
+      if (qx.core.Environment.get("qxapp.preloadModel") != "") {
         this.__preloadModel = qx.core.Environment.get("qxapp.preloadModel");
       }
-      if (qx.core.Environment.get("qxapp.isModeler")) {
-        isModeler = true;
-      }
+      let isDevel = false;
       if (qx.core.Environment.get("qxapp.isDevel")) {
         isDevel = true;
       }
@@ -78,6 +74,8 @@ qx.Class.define("qxapp.Application", {
       // Document is the application root
       let doc = this.getRoot();
 
+      let layout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+
       // openning web socket
       this._socket = new qxapp.wrappers.WebSocket("app");
       this._socket.connect();
@@ -86,14 +84,12 @@ qx.Class.define("qxapp.Application", {
       let html = document.documentElement;
 
       let docWidth = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
-      let docHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
 
       // initialize components
       let menuBarHeight = 35;
       let avaiBarHeight = 55;
       const showMenuBar = isDevel;
       const showUserMenu = false;
-      const showModelingTools = isModeler;
 
       this._menuBar = new qxapp.component.MenuBar(
         docWidth, menuBarHeight,
@@ -114,19 +110,19 @@ qx.Class.define("qxapp.Application", {
           .getFont());
 
       this.__threeView = new qxapp.component.ThreeView(
-        docWidth, docHeight,
         this._appModel.getColors().get3DView()
           .getBackground());
 
-      this.__entityList = new qxapp.component.EntityList(
-        250, 300,
-        this._appModel.getColors().getSettingsView()
-          .getBackground(), this._appModel.getColors().getSettingsView()
-          .getFont());
+      this.__entityList = new qxapp.component.EntityList();
 
 
-      // components to document
-      doc.add(this.__threeView);
+      // components to layout
+      layout.add(this.__threeView, {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+      });
 
       let toolBarcontainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(1)).set({
         backgroundColor: "white",
@@ -136,19 +132,33 @@ qx.Class.define("qxapp.Application", {
       if (showMenuBar) {
         toolBarcontainer.add(this._menuBar);
       }
-      if (showModelingTools) {
-        toolBarcontainer.add(this.__availableServicesBar);
-      }
-      doc.add(toolBarcontainer);
+      toolBarcontainer.add(this.__availableServicesBar);
+      layout.add(toolBarcontainer);
 
       if (showUserMenu) {
-        doc.add(userMenu, {
+        layout.add(userMenu, {
           right: 30
         });
       }
 
+      let win = new qx.ui.window.Window();
+      win.set({
+        showMinimize: false,
+        showMaximize: false,
+        allowMaximize: false,
+        showStatusbar: false,
+        resizable: false,
+        contentPadding: 0,
+        caption: "Logger",
+        layout: new qx.ui.layout.Canvas()
+      });
+
+      // components to document
+      doc.add(layout, {
+        edge: 0
+      });
+
       menuBarHeight = showMenuBar ? menuBarHeight : 0;
-      avaiBarHeight = showModelingTools ? avaiBarHeight : 0;
       this.__entityList.moveTo(10, menuBarHeight + avaiBarHeight + 10);
       this.__entityList.open();
 
@@ -203,17 +213,43 @@ qx.Class.define("qxapp.Application", {
 
     loadModel: function(modelName) {
       console.log("Loading...", modelName);
-      if (!this._socket.slotExists("importModelScene")) {
-        this._socket.on("importModelScene", function(val) {
-          if (val.type === "importModelScene") {
-            this.__threeView.importSceneFromBuffer(val.value);
-          }
-        }, this);
-      }
       this._socket.emit("importModel", modelName);
     },
 
     _initSignals: function() {
+      this._socket.addListener("connect", function() {
+        console.log("connecting to server via websocket...");
+        this._socket.on("importModelScene", function(val, ackCb) {
+          ackCb();
+          if (val.type === "importModelScene") {
+            this.__threeView.importSceneFromBuffer(val);
+          }
+        }, this);
+
+        this._socket.on("newSplineS4LRequested", function(val, ackCb) {
+          ackCb();
+          if (val.type === "newSplineS4LRequested") {
+            var splineCreator = new qxapp.modeler.SplineCreatorS4L(this.__threeView);
+            splineCreator.splineFromS4L(val);
+          }
+        }, this);
+      }, this);
+      this._socket.addListener("disconnect", function() {
+        console.log("disconnected from server websocket");
+      }, this);
+      this._socket.addListener("error", function(e) {
+        console.log("error from server websocket: " + e);
+      }, this);
+      this._socket.addListener("reconnect", function(e) {
+        console.log("REconnecting to server via websocket...");
+        this._socket.on("importModelScene", function(val, ackCb) {
+          ackCb();
+          if (val.type === "importModelScene") {
+            this.__threeView.importSceneFromBuffer(val.value);
+          }
+        }, this);
+      }, this);
+
       // Menu bar
       this._menuBar.addListener("fileNewPressed", function(e) {
         this.__threeView.removeAll();
@@ -252,6 +288,10 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       // Services
+      this.__availableServicesBar.addListener("centerCamera", () => {
+        this.__threeView.centerCameraToBB();
+      }, this);
+
       this.__availableServicesBar.addListener("selectionModeChanged", function(e) {
         let selectionMode = e.getData();
         this.__threeView.setSelectionMode(selectionMode);
@@ -415,8 +455,8 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       this.__entityList.addListener("visibilityChanged", function(e) {
-        let entityId = e.getData()[0];
-        let show = e.getData()[1];
+        let entityId = e.getData().entityId;
+        let show = e.getData().show;
         this.__threeView.showHideEntity(entityId, show);
       }, this);
 
@@ -437,9 +477,12 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       this.__threeView.addListener("entityAdded", function(e) {
-        let entityName = e.getData()[0];
-        let entityId = e.getData()[1];
-        this.__entityList.addEntity(entityName, entityId);
+        const data = e.getData();
+        const entityName = data.name;
+        const entityId = data.uuid;
+        const pathId = data.pathUuids;
+        const pathName = data.pathNames;
+        this.__entityList.addEntity(entityName, entityId, pathId, pathName);
       }, this);
 
       this.__threeView.addListener("entityRemoved", function(e) {

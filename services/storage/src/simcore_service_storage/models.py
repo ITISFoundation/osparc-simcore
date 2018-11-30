@@ -6,7 +6,7 @@ from typing import Tuple
 import attr
 import sqlalchemy as sa
 
-from .s3 import DATCORE_STR, SIMCORE_S3_STR, SIMCORE_S3_ID
+from .settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
 #FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
 #from sqlalchemy.dialects.postgresql import UUID
@@ -62,7 +62,8 @@ def _locations():
     return [simcore_s3, datcore]
 
 def _location_from_id(location_id : str) ->str:
-    loc_str = "undefinded"
+    # TODO create a map to sync _location_from_id and _location_from_str
+    loc_str = "undefined"
     if location_id == "0":
         loc_str = SIMCORE_S3_STR
     elif location_id == "1":

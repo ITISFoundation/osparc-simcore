@@ -66,6 +66,10 @@ up-webclient-devel: up-swarm-devel remove-intermediate-file file-watcher
 build:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
 
+build-client:
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
+
 rebuild:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
 
@@ -155,21 +159,29 @@ test:
 	make after_test
 
 PLATFORM_VERSION=3.24
+DOCKER_REGISTRY=masu.speag.com
+#DOCKER_REGISTRY=registry.osparc.io
+
 
 push_platform_images:
-	${DOCKER} login masu.speag.com
-	${DOCKER} tag services_apihub:latest masu.speag.com/simcore/workbench/apihub:${PLATFORM_VERSION}
-	${DOCKER} push masu.speag.com/simcore/workbench/apihub:${PLATFORM_VERSION}
-	${DOCKER} tag services_webserver:latest masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
-	${DOCKER} push masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
-	${DOCKER} tag services_sidecar:latest masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
-	${DOCKER} push masu.speag.com/simcore/workbench/sidecar:${PLATFORM_VERSION}
-	${DOCKER} tag services_director:latest masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
-	${DOCKER} push masu.speag.com/simcore/workbench/director:${PLATFORM_VERSION}
-	${DOCKER} tag services_storage:latest masu.speag.com/simcore/workbench/storage:${PLATFORM_VERSION}
-	${DOCKER} push masu.speag.com/simcore/workbench/storage:${PLATFORM_VERSION}
+	${DOCKER} login ${DOCKER_REGISTRY}
+	${DOCKER} tag services_apihub:latest ${DOCKER_REGISTRY}/simcore/workbench/apihub:${PLATFORM_VERSION}
+	${DOCKER} push ${DOCKER_REGISTRY}/simcore/workbench/apihub:${PLATFORM_VERSION}
+	${DOCKER} tag services_webserver:latest ${DOCKER_REGISTRY}/simcore/workbench/webserver:${PLATFORM_VERSION}
+	${DOCKER} push ${DOCKER_REGISTRY}/simcore/workbench/webserver:${PLATFORM_VERSION}
+	${DOCKER} tag services_sidecar:latest ${DOCKER_REGISTRY}/simcore/workbench/sidecar:${PLATFORM_VERSION}
+	${DOCKER} push ${DOCKER_REGISTRY}/simcore/workbench/sidecar:${PLATFORM_VERSION}
+	${DOCKER} tag services_director:latest ${DOCKER_REGISTRY}/simcore/workbench/director:${PLATFORM_VERSION}
+	${DOCKER} push ${DOCKER_REGISTRY}/simcore/workbench/director:${PLATFORM_VERSION}
+	${DOCKER} tag services_storage:latest ${DOCKER_REGISTRY}/simcore/workbench/storage:${PLATFORM_VERSION}
+	${DOCKER} push ${DOCKER_REGISTRY}/simcore/workbench/storage:${PLATFORM_VERSION}
 
   setup-check: .env .vscode/settings.json
+
+push_client_image:
+	${DOCKER} login masu.speag.com
+	${DOCKER} tag services_webserver:latest masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
+	${DOCKER} push masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
 
 .env: .env-devel
 	$(info #####  $< is newer than $@ ####)
