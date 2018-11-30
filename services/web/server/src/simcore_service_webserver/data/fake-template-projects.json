@@ -259,7 +259,7 @@
       },
       "modelerId": {
         "key": "simcore/services/dynamic/modeler/webserver",
-        "version": "0.0.0",
+        "version": "2.7.0",
         "label": "Modeler",
         "position": {
           "x": 50,
@@ -396,10 +396,10 @@
       },
       "3DViewerId1": {
         "key": "simcore/services/dynamic/3d-viewer",
-        "version": "0.0.1",
+        "version": "1.0.5",
         "label": "EM-LF Solver Viewer",
         "inputs": {
-          "in_1": {
+          "A": {
             "nodeUuid": "emlfSolverId",
             "output": "out_1"
           }
@@ -542,10 +542,10 @@
       },
       "3DViewerId2": {
         "key": "simcore/services/dynamic/3d-viewer",
-        "version": "0.0.1",
+        "version": "1.0.5",
         "label": "Neuron Solver Viewer",
         "inputs": {
-          "in_1": {
+          "A": {
             "nodeUuid": "NeuronISolve",
             "output": "out_1"
           }
