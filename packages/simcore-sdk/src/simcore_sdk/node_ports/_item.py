@@ -17,6 +17,11 @@ def _check_type(item_type, value):
     if data_items_utils.is_value_link(value):
         return
 
+
+    if isinstance(value, (int, float)):
+        if item_type in ("number", "integer"):
+            return
+
     possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
     if not item_type in possible_types:
         if data_items_utils.is_file_type(item_type) and data_items_utils.is_value_on_store(value):
