@@ -258,7 +258,7 @@
         }
       },
       "modelerId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Modeler",
+        "key": "simcore/services/dynamic/modeler/webserver",
         "version": "0.0.0",
         "label": "Modeler",
         "position": {
@@ -375,17 +375,17 @@
         "parent": "lfContainerId"
       },
       "emlfSolverId": {
-        "key": "simcore/services/demodec/comp/itis/isolve-emlf",
+        "key": "simcore/services/comp/itis/isolve-emlf",
         "version": "1.0.0",
         "label": "EM-LF Solver",
         "inputs": {
           "in_1": {
-            "nodeUuid": "SolverSettingsId",
+            "nodeUuid": "lfSolverSettingsId",
             "output": "outFile"
           }
         },
         "inputNodes": [
-          "SolverSettingsId"
+          "lfSolverSettingsId"
         ],
         "outputNode": true,
         "position": {
@@ -522,7 +522,7 @@
         "parent": "NeuronContainerId"
       },
       "NeuronISolve": {
-        "key": "simcore/services/demodec/comp/itis/neuron-isolve",
+        "key": "simcore/services/comp/itis/neuron-isolve",
         "version": "1.0.0",
         "label": "Neuron Solver",
         "inputs": {
