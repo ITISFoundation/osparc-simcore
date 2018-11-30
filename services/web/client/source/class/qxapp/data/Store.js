@@ -721,7 +721,7 @@ qx.Class.define("qxapp.data.Store", {
           key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons",
           version: "0.0.0",
           type: "computational",
-          name: "Neurons",
+          name: "Neuron Neurons",
           description: "Neuron Simulator Neurons",
           authors: [{
             name: "Odei Maiz",
@@ -766,7 +766,7 @@ qx.Class.define("qxapp.data.Store", {
           key: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources",
           version: "0.0.0",
           type: "computational",
-          name: "Sources",
+          name: "Neuron Sources",
           description: "Neuron Simulator Sources",
           authors: [{
             name: "Odei Maiz",

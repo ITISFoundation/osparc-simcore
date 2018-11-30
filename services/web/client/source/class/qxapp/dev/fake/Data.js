@@ -1597,7 +1597,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
     getItemList: function(nodeKey, portKey) {
       switch (portKey) {
         case "defaultNeuromanModels":
-          return qxapp.dev.fake.neuroman.Data.getItemList();
+          return qxapp.dev.fake.neuroman.Data.getItemList(portKey);
         case "modeler":
           return qxapp.dev.fake.modeler.Data.getItemList();
         case "materialDB":
