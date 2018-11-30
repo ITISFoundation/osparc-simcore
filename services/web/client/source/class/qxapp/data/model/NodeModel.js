@@ -494,7 +494,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.fireDataEvent("ShowInLogger", msgData);
         return;
       }
-      const publishedPort=data["published_port"];
+      const publishedPort = data["published_port"];
       const servicePath=data["service_basepath"];
       const entryPointD = data["entry_point"];
       const nodeId = data["service_uuid"];
