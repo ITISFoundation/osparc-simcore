@@ -8,7 +8,7 @@ module.exports = {
   // webserver configs
   HOSTNAME: process.env.SIMCORE_WEB_HOSTNAME || '127.0.0.1',
   PORT: process.env.SIMCORE_WEB_PORT || 8080,
-  BASEPATH: process.env.SIMCORE_NODE_BASEPATH || '',
+  BASEPATH: '', //process.env.SIMCORE_NODE_BASEPATH || '',
   APP_PATH: process.env.SIMCORE_WEB_OUTDIR || path.resolve(__dirname, 'source-output'),
   MODELS_PATH: '/models/',
 

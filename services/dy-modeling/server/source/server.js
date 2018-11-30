@@ -17,7 +17,7 @@ const config = require('./config');
 
 // the base path shall be like "" or "/something/gjfj"
 let basePath = config.BASEPATH;
-if (basePath == "/") {
+if (basePath.length == 0 || basePath == "/") {
   basePath = "";
 } 
 else {  
