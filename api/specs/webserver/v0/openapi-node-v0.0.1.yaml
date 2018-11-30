@@ -20,7 +20,7 @@ tags:
       defines the protocol for the frontend to interact with the node.
 
 paths:
-  #/node/{nodeInstanceUUID}/mainUi:
+  #/nodes/{nodeInstanceUUID}/mainUi:
   #  get:
   #    tags:
   #      - node
@@ -31,13 +31,14 @@ paths:
   #      - node
   #    summary: send data back. the protocol depends on the ui description.
 
-  /node/{nodeInstanceUUID}/outputUi/{outputKey}:
+  /nodes/{nodeInstanceUUID}/outputUi/{outputKey}:
     get:
       tags:
         - node
       summary: get a json description of the ui for presenting the output within the mainUi
         and a list of open api json schema objects describing the possible
         json payloads and responses for the api calls available at this endpoint
+      operationId: get_node_output_ui
       parameters:
         - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/nodeInstanceUUID'
         - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/outputKey'
@@ -54,11 +55,13 @@ paths:
             application/json:
               schema:
                 $ref: '../../shared/schemas/error.yaml#/components/schemas/ErrorEnveloped'
-  /node/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}:
+
+  /nodes/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}:
     post:
       tags:
         - node
       summary: send data back to the output api ... protocol depends on the definition
+      operationId: send_to_node_output_api
       parameters:
         - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/nodeInstanceUUID'
         - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/outputKey'
@@ -84,17 +87,17 @@ paths:
                     - $ref: '../../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItemList/properties/response'
                     - $ref: '../../shared/schemas/node-output-tree-api-v0.0.1.yaml#/properties/getItem/properties/response'
 
-  /node/{nodeInstanceUUID}/iframe:
+  /nodes/{nodeInstanceUUID}/iframe:
     get:
       tags:
         - node api
       summary: entry point for iframe interaction with the node. This relies on the reverse proxy code.
+      operationId: get_node_output_iframe
       parameters:
         - $ref: './openapi-node-v0.0.1.yaml#/components/parameters/nodeInstanceUUID'
       responses:
         default:
           description: "any response appropriate in the iframe context"
-
 
 components:
   parameters:

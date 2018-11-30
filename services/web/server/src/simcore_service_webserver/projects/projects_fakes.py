@@ -6,7 +6,7 @@ import logging
 from collections import defaultdict, namedtuple
 from copy import deepcopy
 
-from .resources import resources
+from ..resources import resources
 
 log = logging.getLogger(__name__)
 
