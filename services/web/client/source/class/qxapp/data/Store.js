@@ -513,9 +513,9 @@ qx.Class.define("qxapp.data.Store", {
             },
             sensorSettingAPI: {
               displayOrder: 1,
-              label: "SensorSettingsAPI",
-              description: "Sensors",
-              type: "data:application/s4l-api/sensor-settings"
+              label: "LF Sensors",
+              description: "LF Sensors",
+              type: "node-output-tree-api-v0.0.1"
             }
           }
         },
@@ -794,7 +794,7 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps LF Fields into Sources",
               type: "mapper",
               maps: {
-                leaf: "simcore/services/demodec/dynamic/itis/s4l/lfSimulation"
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors"
               }
             }
           },

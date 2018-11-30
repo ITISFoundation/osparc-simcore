@@ -34,6 +34,11 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
       }, {
         key: "Voltage-Sensor-UUID",
         label: "Voltage-Sensor"
+      }],
+
+      "sensorSettingAPI": [{
+        key: "Field-Sensor-UUID",
+        label: "LF Field-Sensor (Overall Field)"
       }]
     },
 
