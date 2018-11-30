@@ -4,6 +4,9 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
   statics: {
     itemList: {
       "defaultLFMaterials": [{
+        key: "Air-UUID",
+        label: "Air"
+      }, {
         key: "Dielectric-UUID",
         label: "Dielectric"
       }, {
@@ -36,6 +39,43 @@ qx.Class.define("qxapp.dev.fake.lf.Data", {
 
     item: {
       "defaultLFMaterials": {
+        "Air-UUID": {
+          "massDensity": {
+            "displayOrder": 0,
+            "label": "Mass Density",
+            "unit": "kg/m^3",
+            "type": "number",
+            "defaultValue": 1.205
+          },
+          "electricConductivity": {
+            "displayOrder": 1,
+            "label": "Electric Conductivity",
+            "unit": "S/m",
+            "type": "number",
+            "defaultValue": 0.0
+          },
+          "relativePermittivity": {
+            "displayOrder": 2,
+            "label": "Relative Permittivity",
+            "unit": "",
+            "type": "number",
+            "defaultValue": 1.0
+          },
+          "magneticConductivity": {
+            "displayOrder": 3,
+            "label": "Magnetic Conductivity",
+            "unit": "Ohm/m",
+            "type": "number",
+            "defaultValue": 0.0
+          },
+          "relativePermeability": {
+            "displayOrder": 4,
+            "label": "Relative Permeability",
+            "unit": "",
+            "type": "number",
+            "defaultValue": 1.0
+          }
+        },
         "Dielectric-UUID": {
           "massDensity": {
             displayOrder: 0,

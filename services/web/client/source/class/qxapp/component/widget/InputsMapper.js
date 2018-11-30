@@ -100,7 +100,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
       for (let i=0; i<defValues.length; i++) {
         const defValue = defValues[i];
         for (const defValueId in defValue) {
-          let newItemBranch = {
+          let newBranch = {
             key: defValueId,
             label: defValueId.replace("-UUID", ""),
             nodeKey: nodeModel.getKey(),
@@ -108,17 +108,25 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             isDir: true,
             children: []
           };
+          let newItemBranch = qx.data.marshal.Json.createModel(newBranch, true);
+          const itemProps = qxapp.data.Store.getInstance().getItem(null, Object.keys(nodeModel.getInputsDefault())[0], defValueId);
+          if (itemProps) {
+            let form = new qxapp.component.form.Auto(itemProps, this.getNodeModel());
+            let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+            newItemBranch["propsWidget"] = propsWidget;
+          }
           data.children.push(newItemBranch);
           const values = defValue[defValueId];
           for (let j=0; j<values.length; j++) {
-            let newItemLeaf = {
+            let newLeaf = {
               key: values[j],
               label: values[j],
               nodeKey: nodeModel.getKey(),
               portKey: "myPort",
               isDir: true
             };
-            newItemBranch.children.push(newItemLeaf);
+            let newItemLeaf = qx.data.marshal.Json.createModel(newLeaf, true);
+            newItemBranch.getChildren().push(newItemLeaf);
           }
         }
       }
