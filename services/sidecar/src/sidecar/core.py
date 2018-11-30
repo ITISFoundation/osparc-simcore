@@ -205,7 +205,7 @@ class Sidecar:
     def _process_task_log(self):
         """ There will be some files in the /log
 
-                - put them all into S3 /log
+                - put them all into S3 /logg
         """
         directory = self._executor.log_dir
         if os.path.exists(directory):
@@ -213,8 +213,8 @@ class Sidecar:
                 for name in files:
                     filepath = os.path.join(root, name)
                     object_name = str(self._task.project_id) + "/" + self._task.node_id + "/log/" + name
-                    if not self._s3.client.upload_file(self._s3.bucket, object_name, filepath):
-                        log.error("Error uploading file to S3")
+                    # if not self._s3.client.upload_file(self._s3.bucket, object_name, filepath):
+                    #     log.error("Error uploading file to S3")
 
     def initialize(self, task, user_id):
         self._task = task
