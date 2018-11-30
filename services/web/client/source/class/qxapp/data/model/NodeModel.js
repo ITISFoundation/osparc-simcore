@@ -494,6 +494,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.fireDataEvent("ShowInLogger", msgData);
         return;
       }
+      const publishedPort = data["published_port"];
       const servicePath=data["service_basepath"];
       const entryPointD = data["entry_point"];
       const nodeId = data["service_uuid"];
@@ -501,8 +502,15 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         return;
       }
       if (servicePath) {
-        const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
-        const srvUrl = servicePath + entryPoint;
+        let entryPoint;
+        let srvUrl;
+        if (this.getKey().includes("jupyter")) {
+          entryPoint = entryPointD ? ("/" + entryPointD) : "/";
+          srvUrl = servicePath + entryPoint;
+        } else {
+          entryPoint = entryPointD ? ("/" + entryPointD) : "";
+          srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
+        }
         this.setServiceUrl(srvUrl);
         const msg = "Service ready on " + srvUrl;
         const msgData = {
@@ -522,7 +530,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     __updateBackendAndRetrieveInputs: function() {
       // HACK: Workaround for fetching inputs in Visualizer and modeler
-      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler")) {
+      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler") || this.getKey().includes("neuroman")) {
         this.fireEvent("UpdatePipeline");
       }
     },
