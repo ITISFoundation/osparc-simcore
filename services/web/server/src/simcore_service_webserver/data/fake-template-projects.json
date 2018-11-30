@@ -426,311 +426,6 @@
       }
     }
   }, {
-    "projectUuid": "345a37ab-5346-4983-951a-19ba2ef9ca0f",
-    "name": "LF Simulator",
-    "description": "LF Simulator",
-    "notes": "",
-    "owner": "ODEI",
-    "collaborators": {},
-    "creationDate": "2018-07-08T16:01:00Z",
-    "lastChangeDate": "2018-07-09T16:02:22Z",
-    "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?8.jpg",
-    "workbench": {
-      "c104bb08-77b1-4157-b9f9-e9df7779df08": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Modeler",
-        "version": "0.0.0",
-        "label": "Modeler 1",
-        "position": {
-          "x": 50,
-          "y": 50
-        }
-      },
-      "bf88496d-ddf8-476c-8d6c-24c716c2ae4c": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
-        "version": "0.0.0",
-        "label": "Material DB 1",
-        "position": {
-          "x": 50,
-          "y": 300
-        }
-      },
-      "89e185ca-dda1-4a45-8059-715f2cb17100": {
-        "label": "LF Simulator Container",
-        "position": {
-          "x": 400,
-          "y": 150
-        },
-        "inputs": {},
-        "outputs": {},
-        "inputNodes": [
-          "bf88496d-ddf8-476c-8d6c-24c716c2ae4c",
-          "c104bb08-77b1-4157-b9f9-e9df7779df08"
-        ],
-        "outputNode": false
-      },
-      "SetupId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
-        "version": "0.0.0",
-        "label": "LF Setup 1",
-        "inputNodes": [],
-        "outputNode": false,
-        "position": {
-          "x": 100,
-          "y": 50
-        },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
-      },
-      "MaterialsId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
-        "version": "0.0.0",
-        "label": "LF Materials 1",
-        "inputNodes": [
-          "c104bb08-77b1-4157-b9f9-e9df7779df08",
-          "bf88496d-ddf8-476c-8d6c-24c716c2ae4c"
-        ],
-        "outputNode": false,
-        "position": {
-          "x": 100,
-          "y": 150
-        },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
-      },
-      "BoundaryId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
-        "version": "0.0.0",
-        "label": "LF Boundary 1",
-        "inputNodes": [
-          "c104bb08-77b1-4157-b9f9-e9df7779df08"
-        ],
-        "outputNode": false,
-        "position": {
-          "x": 100,
-          "y": 250
-        },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
-      },
-      "SensorsId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
-        "version": "0.0.0",
-        "label": "LF Sensors 1",
-        "inputNodes": [
-          "c104bb08-77b1-4157-b9f9-e9df7779df08"
-        ],
-        "outputNode": true,
-        "position": {
-          "x": 100,
-          "y": 350
-        },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
-      },
-      "GridId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
-        "version": "0.0.0",
-        "label": "LF Grid 1",
-        "inputNodes": [
-          "c104bb08-77b1-4157-b9f9-e9df7779df08"
-        ],
-        "outputNode": false,
-        "position": {
-          "x": 100,
-          "y": 450
-        },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
-      },
-      "VoxelId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
-        "version": "0.0.0",
-        "label": "LF Voxel 1",
-        "inputNodes": [
-          "c104bb08-77b1-4157-b9f9-e9df7779df08"
-        ],
-        "outputNode": false,
-        "position": {
-          "x": 100,
-          "y": 550
-        },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
-      },
-      "SolverSettingsId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
-        "version": "0.0.0",
-        "label": "LF SolverSett 1",
-        "inputNodes": [],
-        "outputNode": true,
-        "position": {
-          "x": 500,
-          "y": 250
-        },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
-      },
-      "4069bf2e-e2be-4799-ad1c-c53f0cb46e4e": {
-        "key": "simcore/services/computational/itis/Solver-LF",
-        "version": "0.0.0",
-        "label": "LF Solver 1",
-        "inputs": {
-          "inFile": {
-            "nodeUuid": "89e185ca-dda1-4a45-8059-715f2cb17100",
-            "output": "outFile"
-          }
-        },
-        "inputNodes": [
-          "89e185ca-dda1-4a45-8059-715f2cb17100"
-        ],
-        "position": {
-          "x": 750,
-          "y": 150
-        }
-      }
-    }
-  }, {
-    "projectUuid": "5a1d7405-882c-4611-a74c-4c75f3cf7749",
-    "name": "LF Simulator expanded",
-    "description": "LF Simulator expanded",
-    "notes": "",
-    "owner": "ODEI",
-    "collaborators": {
-      "ODEI": [
-        "read",
-        "write"
-      ]
-    },
-    "creationDate": "2018-08-31T12:44:03Z",
-    "lastChangeDate": "2018-08-31T13:21:24Z",
-    "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?3.jpg",
-    "workbench": {
-      "8870a55b-680d-41b4-b40c-c928cceb7d2a": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
-        "version": "0.0.0",
-        "position": {
-          "x": 10,
-          "y": 160
-        }
-      },
-      "17a932a0-f401-4571-9c55-b579f5050d37": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Modeler",
-        "version": "0.0.0",
-        "position": {
-          "x": 7,
-          "y": 538
-        }
-      },
-      "83bc4123-ebe4-4f5f-8770-b1584d6cf95f": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
-        "version": "0.0.0",
-        "inputs": {
-          "frequency": 1000
-        },
-        "position": {
-          "x": 348,
-          "y": 2
-        }
-      },
-      "ac80863e-e4ef-48c0-804b-d9296f1f3563": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
-        "version": "0.0.0",
-        "inputs": {
-          "updateDispersive": false
-        },
-        "inputNodes": [
-          "17a932a0-f401-4571-9c55-b579f5050d37",
-          "8870a55b-680d-41b4-b40c-c928cceb7d2a"
-        ],
-        "position": {
-          "x": 349,
-          "y": 103
-        }
-      },
-      "ed4c85a8-c20f-4acd-8e1e-5161301e2f3d": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
-        "version": "0.0.0",
-        "inputNodes": [
-          "17a932a0-f401-4571-9c55-b579f5050d37"
-        ],
-        "position": {
-          "x": 351,
-          "y": 242
-        }
-      },
-      "36d70cf2-ef36-4052-988d-d32b3456b786": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
-        "version": "0.0.0",
-        "inputs": {
-          "sensorSetting": 4
-        },
-        "inputNodes": [
-          "17a932a0-f401-4571-9c55-b579f5050d37"
-        ],
-        "position": {
-          "x": 353,
-          "y": 363
-        }
-      },
-      "c3ab33a7-4ead-4302-9867-5b194a4f45ec": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
-        "version": "0.0.0",
-        "inputs": {
-          "gridSetting": 5
-        },
-        "inputNodes": [
-          "17a932a0-f401-4571-9c55-b579f5050d37",
-          "ac80863e-e4ef-48c0-804b-d9296f1f3563",
-          "ed4c85a8-c20f-4acd-8e1e-5161301e2f3d",
-          "36d70cf2-ef36-4052-988d-d32b3456b786"
-        ],
-        "position": {
-          "x": 624,
-          "y": 496
-        }
-      },
-      "01e28708-46c4-474b-837b-479fd596e566": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
-        "version": "0.0.0",
-        "inputs": {
-          "solverSetting": 7
-        },
-        "inputNodes": [
-          "83bc4123-ebe4-4f5f-8770-b1584d6cf95f",
-          "b37bea52-bb29-482a-9540-bc11c7dc779c"
-        ],
-        "position": {
-          "x": 955,
-          "y": 318
-        }
-      },
-      "b37bea52-bb29-482a-9540-bc11c7dc779c": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
-        "version": "0.0.0",
-        "inputs": {
-          "voxelSetting": 6
-        },
-        "inputNodes": [
-          "17a932a0-f401-4571-9c55-b579f5050d37",
-          "c3ab33a7-4ead-4302-9867-5b194a4f45ec"
-        ],
-        "position": {
-          "x": 874,
-          "y": 699
-        }
-      },
-      "2472a166-7a9e-4023-be12-465d2f6eee54": {
-        "key": "simcore/services/computational/itis/Solver-LF",
-        "version": "0.0.0",
-        "inputs": {
-          "inFile": {
-            "nodeUuid": "01e28708-46c4-474b-837b-479fd596e566",
-            "output": "outFile"
-          }
-        },
-        "inputNodes": [
-          "01e28708-46c4-474b-837b-479fd596e566"
-        ],
-        "position": {
-          "x": 1245,
-          "y": 318
-        }
-      }
-    }
-  }, {
     "projectUuid": "1d4269a4-0fbc-4bf9-9eb3-11356a46c45a",
     "name": "Demo December",
     "description": "",
@@ -746,16 +441,7 @@
     "lastChangeDate": "2018-07-09T16:02:22Z",
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?2.jpg",
     "workbench": {
-      "c104bb08-77b1-4157-b9f9-e9df7779df08": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Modeler",
-        "version": "0.0.0",
-        "label": "Modeler",
-        "position": {
-          "x": 50,
-          "y": 300
-        }
-      },
-      "bf88496d-ddf8-476c-8d6c-24c716c2ae4c": {
+      "materialDbId": {
         "key": "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
         "version": "0.0.0",
         "label": "Material DB",
@@ -764,7 +450,16 @@
           "y": 50
         }
       },
-      "89e185ca-dda1-4a45-8059-715f2cb17100": {
+      "modelerId": {
+        "key": "simcore/services/demodec/dynamic/itis/s4l/Modeler",
+        "version": "0.0.0",
+        "label": "Modeler",
+        "position": {
+          "x": 50,
+          "y": 300
+        }
+      },
+      "lfContainerId": {
         "label": "LF Simulator Container",
         "position": {
           "x": 300,
@@ -773,106 +468,106 @@
         "inputs": {},
         "outputs": {},
         "inputNodes": [
-          "bf88496d-ddf8-476c-8d6c-24c716c2ae4c",
-          "c104bb08-77b1-4157-b9f9-e9df7779df08"
+          "materialDbId",
+          "modelerId"
         ],
         "outputNode": false
       },
-      "SetupId": {
+      "lfSetupId": {
         "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup",
         "version": "0.0.0",
-        "label": "LF Setup 1",
+        "label": "Setup",
         "inputNodes": [],
         "outputNode": false,
         "position": {
           "x": 100,
           "y": 50
         },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
+        "parent": "lfContainerId"
       },
-      "MaterialsId": {
+      "lfMaterialsId": {
         "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials",
         "version": "0.0.0",
-        "label": "LF Materials 1",
+        "label": "Material Settings",
         "inputNodes": [
-          "c104bb08-77b1-4157-b9f9-e9df7779df08",
-          "bf88496d-ddf8-476c-8d6c-24c716c2ae4c"
+          "modelerId",
+          "materialDbId"
         ],
         "outputNode": false,
         "position": {
           "x": 100,
           "y": 150
         },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
+        "parent": "lfContainerId"
       },
-      "BoundaryId": {
+      "lfBoundaryId": {
         "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary",
         "version": "0.0.0",
-        "label": "LF Boundary 1",
+        "label": "Boundary Conditions",
         "inputNodes": [
-          "c104bb08-77b1-4157-b9f9-e9df7779df08"
+          "modelerId"
         ],
         "outputNode": false,
         "position": {
           "x": 100,
           "y": 250
         },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
+        "parent": "lfContainerId"
       },
-      "SensorsId": {
+      "lfSensorsId": {
         "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors",
         "version": "0.0.0",
-        "label": "LF Sensors 1",
+        "label": "Sensors",
         "inputNodes": [
-          "c104bb08-77b1-4157-b9f9-e9df7779df08"
+          "modelerId"
         ],
         "outputNode": true,
         "position": {
           "x": 100,
           "y": 350
         },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
+        "parent": "lfContainerId"
       },
-      "GridId": {
+      "lfGridId": {
         "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid",
         "version": "0.0.0",
-        "label": "LF Grid 1",
+        "label": "Grid",
         "inputNodes": [
-          "c104bb08-77b1-4157-b9f9-e9df7779df08"
+          "modelerId"
         ],
         "outputNode": false,
         "position": {
           "x": 100,
           "y": 450
         },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
+        "parent": "lfContainerId"
       },
-      "VoxelId": {
+      "lfVoxelId": {
         "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel",
         "version": "0.0.0",
-        "label": "LF Voxel 1",
+        "label": "Voxel",
         "inputNodes": [
-          "c104bb08-77b1-4157-b9f9-e9df7779df08"
+          "modelerId"
         ],
         "outputNode": false,
         "position": {
           "x": 100,
           "y": 550
         },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
+        "parent": "lfContainerId"
       },
-      "SolverSettingsId": {
+      "lfSolverSettingsId": {
         "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings",
         "version": "0.0.0",
-        "label": "LF SolverSett 1",
+        "label": "Solver Settings",
         "inputNodes": [],
         "position": {
           "x": 400,
           "y": 250
         },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
+        "parent": "lfContainerId"
       },
-      "4069bf2e-e2be-4799-ad1c-c53f0cb46e4e": {
+      "emlfSolverId": {
         "key": "simcore/services/demodec/comp/itis/isolve-emlf",
         "version": "0.0.1",
         "label": "EM-LF Solver",
@@ -890,9 +585,9 @@
           "x": 650,
           "y": 250
         },
-        "parent": "89e185ca-dda1-4a45-8059-715f2cb17100"
+        "parent": "lfContainerId"
       },
-      "96343608-610b-4951-89af-4b189e5e3861": {
+      "NeuronContainerId": {
         "label": "Neuron Simulator Container",
         "position": {
           "x": 500,
@@ -901,82 +596,124 @@
         "inputs": {},
         "outputs": {},
         "inputNodes": [
-          "c104bb08-77b1-4157-b9f9-e9df7779df08",
-          "89e185ca-dda1-4a45-8059-715f2cb17100"
+          "modelerId",
+          "lfContainerId"
         ],
         "outputNode": false
       },
-      "SetupId2": {
+      "NeuronSetupId": {
         "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup",
         "version": "0.0.0",
-        "label": "Neuron Setup",
+        "label": "Setup",
         "inputNodes": [],
         "outputNode": false,
         "position": {
-          "x": 100,
+          "x": 150,
           "y": 50
         },
-        "parent": "96343608-610b-4951-89af-4b189e5e3861"
+        "parent": "NeuronContainerId"
       },
-      "MaterialsId2": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Materials",
+      "NeuronNeuronsId": {
+        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons",
         "version": "0.0.0",
         "label": "Neurons",
         "inputNodes": [
-          "c104bb08-77b1-4157-b9f9-e9df7779df08",
-          "bf88496d-ddf8-476c-8d6c-24c716c2ae4c"
+          "modelerId"
         ],
         "outputNode": true,
         "position": {
-          "x": 100,
+          "x": 150,
           "y": 150
         },
-        "parent": "96343608-610b-4951-89af-4b189e5e3861"
+        "parent": "NeuronContainerId"
       },
-      "SensorsId2": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors",
+      "NeuronSourcesId": {
+        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources",
         "version": "0.0.0",
-        "label": "Neuron Sensors",
+        "label": "Sources",
         "inputNodes": [
-          "c104bb08-77b1-4157-b9f9-e9df7779df08"
+          "modelerId",
+          "lfContainerId"
         ],
-        "outputNode": true,
+        "outputNode": false,
         "position": {
-          "x": 100,
+          "x": 150,
+          "y": 250
+        },
+        "parent": "NeuronContainerId"
+      },
+      "NeuronPointProcessesId": {
+        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/PointProcesses",
+        "version": "0.0.0",
+        "label": "Point Processes",
+        "inputNodes": [
+          "modelerId"
+        ],
+        "outputNode": false,
+        "position": {
+          "x": 150,
           "y": 350
         },
-        "parent": "96343608-610b-4951-89af-4b189e5e3861"
+        "parent": "NeuronContainerId"
       },
-      "SolverSettingsId2": {
+      "NeuronNetworkConnectionId": {
+        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection",
+        "version": "0.0.0",
+        "label": "Network Connection",
+        "inputNodes": [
+          "modelerId"
+        ],
+        "outputNode": false,
+        "position": {
+          "x": 150,
+          "y": 450
+        },
+        "parent": "NeuronContainerId"
+      },
+      "NeuronSensorsId": {
+        "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors",
+        "version": "0.0.0",
+        "label": "Sensors",
+        "inputNodes": [
+          "modelerId"
+        ],
+        "outputNode": false,
+        "position": {
+          "x": 150,
+          "y": 550
+        },
+        "parent": "NeuronContainerId"
+      },
+      "NeuronSolverSettingsId": {
         "key": "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings",
         "version": "0.0.0",
-        "label": "Neuron SolverSett",
+        "label": "Solver Settings",
         "inputNodes": [],
-        "outputNode": true,
+        "outputNode": false,
         "position": {
           "x": 400,
           "y": 250
         },
-        "parent": "96343608-610b-4951-89af-4b189e5e3861"
+        "parent": "NeuronContainerId"
       },
-      "da1ccae6-70cd-4c90-94a4-c43fab9b10f7": {
+      "NeuronISolve": {
         "key": "simcore/services/demodec/comp/itis/neuron-isolve",
         "version": "0.0.1",
         "label": "Neuron Solver",
         "inputs": {
           "in_1": {
-            "nodeUuid": "SolverSettingsId2",
+            "nodeUuid": "NeuronSolverSettingsId",
             "output": "outFile"
           }
         },
         "inputNodes": [
-          "SolverSettingsId2"
+          "NeuronSolverSettingsId"
         ],
         "position": {
           "x": 650,
           "y": 250
         },
-        "parent": "96343608-610b-4951-89af-4b189e5e3861"
+        "parent": "NeuronContainerId"
       }
     }
   }
