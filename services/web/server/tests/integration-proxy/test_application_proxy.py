@@ -62,6 +62,7 @@ def client(loop, webserver_service,  aiohttp_client):
 
 @pytest.mark.parametrize("service_key,service_version,service_uuid", [
  (rp_jupyter.SUPPORTED_IMAGE_NAME, "1.7.0", "NJKfISIRB"),
+ ("simcore/services/dynamic/modeler/webserver", "2.7.0", "4k4zZL90S"),
  #(rp_paraview.SUPPORTED_IMAGE_NAME, "1.0.5", "EkE7LSU0r"),
 ])
 async def test_reverse_proxy_workflow(client, service_key, service_version, service_uuid):
