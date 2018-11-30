@@ -18,11 +18,8 @@ ANONYMOUS_UID = -1 # For testing purposes
 @login_required
 async def list_projects(request: web.Request):
     uid = request.get(RQT_USERID_KEY, ANONYMOUS_UID)
-
     # TODO: implement all query parameters as in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
-    start = request.match_info.get('start', 0)
-    count = request.match_info.get('count', None)
-    ptype = request.match_info.get('type', 'user')
+    ptype = request.query.get('type', 'user')
 
     projects = []
     if ptype in ("template", "all"):
@@ -32,8 +29,8 @@ async def list_projects(request: web.Request):
         projects += [Fake.projects[pid].data
                         for pid in Fake.user_to_projects_map.get(uid, list())]
 
-    if count is None:
-        count = len(projects)
+    start = int(request.query.get('start', 0))
+    count = int(request.query.get('count',len(projects)))
 
     stop = min(start+count, len(projects))
     projects = projects[start:stop]

@@ -133,15 +133,14 @@ async def test_list(client, fake_db):
     assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
 
     # GET /v0/projects
-    resp = await client.get(url.with_query(start=1, count=3))
+    resp = await client.get(url.with_query(start=1, count=2))
     payload = await resp.json()
     assert resp.status == 200, payload
 
     projects, error = unwrap_envelope(payload)
     assert not error
     assert projects
-    assert len(projects)==3
-
+    assert len(projects)==2
 
     # list all template projects
     resp = await client.get(url.with_query(type="template"))
@@ -150,7 +149,9 @@ async def test_list(client, fake_db):
 
     projects, error = unwrap_envelope(payload)
     assert not error
-    assert projects
+    assert len(projects) == 3
+
+
 
 
 
