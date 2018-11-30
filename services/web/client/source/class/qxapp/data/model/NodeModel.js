@@ -536,7 +536,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     retrieveInputs: function() {
       let urlUpdate = this.getServiceUrl() + "/retrieve";
-      urlUpdate = urlUpdate.replace("//", "/");
+      urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
       let updReq = new qx.io.request.Xhr();
       updReq.set({
         url: urlUpdate,
