@@ -14,6 +14,7 @@ from . import config, exceptions
 
 log = logging.getLogger(__name__)
 
+CHUNK_SIZE = 1*1024*1024
 
 
 @contextmanager
@@ -82,24 +83,31 @@ async def _download_link_to_file(session:aiohttp.ClientSession, url:URL, file_pa
             raise exceptions.S3TransferError("Error when downloading {} from {} using {}".format(s3_object, store, url))
         file_path.parent.mkdir(parents=True, exist_ok=True)
         async with aiofiles.open(file_path, 'wb') as file_pointer:
-            chunk = await response.content.read(1024)
+            # await file_pointer.write(await response.read())
+            chunk = await response.content.read(CHUNK_SIZE)
             while chunk:
                 await file_pointer.write(chunk)
-                chunk = await response.content.read(1024)
+                chunk = await response.content.read(CHUNK_SIZE)
         log.debug("Download complete")
         return await response.release()
 
 async def _file_sender(file_path:Path):
     # with async_timeout.timeout(10):
     async with aiofiles.open(file_path, 'rb') as file_pointer:
-        chunk = await file_pointer.read(1024)
+        chunk = await file_pointer.read(CHUNK_SIZE)
         while chunk:
             yield chunk
-            chunk = await file_pointer.read(1024)
+            chunk = await file_pointer.read(CHUNK_SIZE)
 
 async def _upload_file_to_link(session: aiohttp.ClientSession, url: URL, file_path: Path):
     log.debug("Uploading from %s to %s", file_path, url)
+    # with aiohttp.MultipartWriter() as writer:
+    #     writer.append(await aiofiles.open(file_path, 'rb'))
 
+    #     async with session.put(url, data=writer) as resp:
+    #         if resp.status > 299:
+    #             response_text = await resp.text()
+    #             raise exceptions.S3TransferError("Could not upload file {}:{}".format(file_path, response_text))    
     async with session.put(url, data=file_path.open('rb')) as resp:
         if resp.status > 299:
             response_text = await resp.text()
