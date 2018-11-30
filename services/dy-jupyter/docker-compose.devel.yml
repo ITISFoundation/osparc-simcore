@@ -4,7 +4,7 @@ services:
     image: jupyter-base-notebook-dev
     build:
       target: development
-    environment: 
+    environment:
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
@@ -16,14 +16,17 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
-      - USE_CASE_CONFIG_FILE=devel/port_config.json      
+      - APIHUB_HOST=${APIHUB_HOST}
+      - APIHUB_PORT=${APIHUB_PORT}
+      - USE_CASE_CONFIG_FILE=devel/port_config.json
       - INIT_OPTIONS=10 60 2 space
+      - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     depends_on:
       - postgres
       - minio
     ports:
       - '8888:8888'
-    volumes: 
+    volumes:
       - ../../packages/:/home/jovyan/packages
       - ../../services/:/home/jovyan/services
       - ./devel:/home/jovyan/devel
@@ -31,6 +34,10 @@ services:
       - ./notebooks:/home/jovyan/notebooks
       - ./docker:/docker
   #--------------------------------------------------------------------
+  apihub:
+    image: services_apihub:latest
+    ports:
+      - '8043:8043'
   storage:
     image: services_storage:latest
     ports:
@@ -49,9 +56,12 @@ services:
       - RUN_DOCKER_ENGINE_ROOT=1
       - BF_API_SECRET=none
       - BF_API_KEY=none
+      - APIHUB_HOST=${APIHUB_HOST}
+      - APIHUB_PORT=${APIHUB_PORT}
     restart: always
-    depends_on: 
+    depends_on:
       - postgres
+      - apihub
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10
