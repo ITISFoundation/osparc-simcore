@@ -11,14 +11,14 @@ import pprint
 import aiohttp
 from aiohttp import client, web
 
-# TODO: find actual name in registry
-SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/3d-viewer"
+SUPPORTED_IMAGE_NAME = "DISABLED" #"simcore/services/dynamic/3d-viewer"
 SUPPORTED_IMAGE_TAG = "==1.0.5"
 
 logger = logging.getLogger(__name__)
 
 
 async def handler(req: web.Request, service_url: str, mount_point: str, proxy_path: str):
+    # FIXME:
     assert req.path_qs.endswith(proxy_path)
     assert mount_point in req.path, "Expected /x/identifier as mount point, got %s" % req.path
 

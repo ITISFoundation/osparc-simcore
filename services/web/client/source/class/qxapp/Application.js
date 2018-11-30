@@ -52,7 +52,6 @@ qx.Class.define("qxapp.Application", {
       }, this);
 
       this.__restart();
-      this.__schemaCheck();
     },
 
     __restart: function() {
@@ -120,41 +119,6 @@ qx.Class.define("qxapp.Application", {
     __disconnectWebSocket: function() {
       // open web socket
       qxapp.wrappers.WebSocket.getInstance().disconnect();
-    },
-
-    __schemaCheck: function() {
-      /** a little ajv test */
-      let nodeCheck = new qx.io.request.Xhr("/resource/qxapp/node-meta-v0.0.1.json");
-      nodeCheck.addListener("success", e => {
-        let data = e.getTarget().getResponse();
-        try {
-          let ajv = new qxapp.wrappers.Ajv(data);
-          let map = qxapp.data.Store.getInstance().getFakeServices();
-          for (let key in map) {
-            let check = ajv.validate(map[key]);
-            console.log("services validation result " + key + ":", check);
-          }
-        } catch (err) {
-          console.error(err);
-        }
-      });
-      nodeCheck.send();
-      let projectCheck = new qx.io.request.Xhr("/resource/qxapp/project-v0.0.1.json");
-      projectCheck.addListener("success", e => {
-        let data = e.getTarget().getResponse();
-        try {
-          let ajv = new qxapp.wrappers.Ajv(data);
-          let list = qxapp.data.Store.getInstance().getProjectList();
-          list.forEach((project, i) => {
-            let check = ajv.validate(project);
-            console.log("project validation result " + i + ":", check);
-          });
-        } catch (err) {
-          console.error(err);
-        }
-      });
-      projectCheck.send();
     }
-
   }
 });

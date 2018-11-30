@@ -24,13 +24,13 @@ qx.Class.define("qxapp.data.Converters", {
       return metaData;
     },
 
-    mergeChildren: function(one, two) {
+    __mergeFileTreeChildren: function(one, two) {
       let newDir = true;
       for (let i=0; i<one.length; i++) {
         if (one[i].path === two.path) {
           newDir = false;
           if ("children" in two) {
-            this.mergeChildren(one[i].children, two.children[0]);
+            this.__mergeFileTreeChildren(one[i].children, two.children[0]);
           }
         }
       }
@@ -85,7 +85,7 @@ qx.Class.define("qxapp.data.Converters", {
                   }]
                 }]
               });
-              this.mergeChildren(children, fileInTree);
+              this.__mergeFileTreeChildren(children, fileInTree);
             }
           } else if (file["location_id"] === 1 || file["location_id"] === "1") {
             // datcore files
@@ -107,11 +107,69 @@ qx.Class.define("qxapp.data.Converters", {
               fileId: file["file_uuid"]
             };
             parent.children.push(fileInfo);
-            this.mergeChildren(children, fileInTree);
+            this.__mergeFileTreeChildren(children, fileInTree);
           }
         }
       }
 
+      return children;
+    },
+
+    __mergeAPITreeChildren: function(one, two) {
+      let newDir = true;
+      for (let i=0; i<one.length; i++) {
+        if (one[i].key === two.key) {
+          newDir = false;
+          if ("children" in two) {
+            this.__mergeAPITreeChildren(one[i].children, two.children[0]);
+          }
+        }
+      }
+      // if (one.length === 0 || "fileId" in two || newDir) {
+      if (one.length === 0 || newDir) {
+        one.push(two);
+      }
+    },
+
+    fromAPITreeToVirtualTreeModel: function(treeItems, showLeavesAsDirs = false) {
+      let children = [];
+      for (let i=0; i<treeItems.length; i++) {
+        const treeItem = treeItems[i];
+        let splitted = treeItem["label"].split("/");
+        let newItem = {
+          "label": splitted[0]
+        };
+        if (splitted.length === 1) {
+          // leaf already
+          newItem["key"] = treeItem["key"];
+          if (showLeavesAsDirs) {
+            newItem["children"] = [];
+          }
+        } else {
+          // branch
+          newItem["key"] = splitted[0];
+          newItem["children"] = [];
+          let parent = newItem;
+          for (let j=1; j<splitted.length-1; j++) {
+            let branch = {
+              label: splitted[j],
+              key: parent.key +"/"+ splitted[j],
+              children: []
+            };
+            parent.children.push(branch);
+            parent = branch;
+          }
+          let leaf = {
+            label: splitted[splitted.length-1],
+            key: parent.key +"/"+ splitted[splitted.length-1]
+          };
+          if (showLeavesAsDirs) {
+            leaf["children"] = [];
+          }
+          parent.children.push(leaf);
+        }
+        this.__mergeAPITreeChildren(children, newItem);
+      }
       return children;
     },
 
