@@ -34,11 +34,7 @@ def _resolve_url(request: web.Request) -> URL:
 
 @login_required
 async def services_get(request: web.Request) -> web.Response:
-    params, query, body = await extract_and_validate(request)
-
-    assert not params
-    assert query
-    assert not body
+    _, _, _ = await extract_and_validate(request)
 
     url = _resolve_url(request)
 
