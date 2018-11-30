@@ -21,8 +21,8 @@ if (basePath == "/") {
   basePath = "";
 } 
 else {  
-  if (basePath[basePath.length() - 1] == "/") {
-    basePath = basePath.substr(0, basePath.length() - 1);
+  if (basePath[basePath.length - 1] == "/") {
+    basePath = basePath.substr(0, basePath.length - 1);
   }
   if (basePath[0] != "/") {
     basePath = "/" + basePath;
