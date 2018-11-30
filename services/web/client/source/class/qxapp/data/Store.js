@@ -62,7 +62,17 @@ qx.Class.define("qxapp.data.Store", {
       if (key && version) {
         const nodeImageId = key + "-" + version;
         if (nodeImageId in this.__servicesCached) {
-          return this.__servicesCached[nodeImageId];
+          let service = this.__servicesCached[nodeImageId];
+          if (service.key === "simcore/services/dynamic/modeler/webserver") {
+            service.outputs["modeler"] = {
+              "label": "Modeler",
+              "displayOrder":0,
+              "description": "Modeler",
+              "type": "node-output-tree-api-v0.0.1"
+            };
+            delete service.outputs["output_1"];
+          }
+          return service;
         }
         metaData = this.getFakeServices()[nodeImageId];
         if (metaData === undefined) {
@@ -176,7 +186,7 @@ qx.Class.define("qxapp.data.Store", {
             }
           },
           outputs: {
-            modeler: {
+            stimulationFactor: {
               displayOrder: 0,
               label: "Stimulation factor",
               description: "Stimulation factor",
@@ -758,7 +768,7 @@ qx.Class.define("qxapp.data.Store", {
               displayOrder: 0,
               label: "NeuronsSettings",
               description: "Neurons Settings",
-              type: "data:application/s4l-api/settings"
+              type: "node-output-tree-api-v0.0.1"
             }
           }
         },

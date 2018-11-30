@@ -494,6 +494,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.fireDataEvent("ShowInLogger", msgData);
         return;
       }
+      const publishedPort = data["published_port"];
       const servicePath=data["service_basepath"];
       const entryPointD = data["entry_point"];
       const nodeId = data["service_uuid"];
@@ -502,7 +503,13 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
       if (servicePath) {
         const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
-        const srvUrl = servicePath + entryPoint;
+        let srvUrl = servicePath + entryPoint;
+        // FIXME: this is temporary until the reverse proxy works for these services
+        if (this.getKey().includes("neuroman") || this.getKey().includes("modeler")) {
+          srvUrl = "http://" + window.location.hostname + ":" + publishedPort + srvUrl;
+        } else if (this.getKey().includes("3d-viewer")) {
+          srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
+        }
         this.setServiceUrl(srvUrl);
         const msg = "Service ready on " + srvUrl;
         const msgData = {
@@ -522,17 +529,18 @@ qx.Class.define("qxapp.data.model.NodeModel", {
 
     __updateBackendAndRetrieveInputs: function() {
       // HACK: Workaround for fetching inputs in Visualizer and modeler
-      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler")) {
+      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler") || this.getKey().includes("neuroman")) {
         this.fireEvent("UpdatePipeline");
       }
     },
 
     retrieveInputs: function() {
       let urlUpdate = this.getServiceUrl() + "/retrieve";
+      urlUpdate = urlUpdate.replace("//", "/");
       let updReq = new qx.io.request.Xhr();
       updReq.set({
         url: urlUpdate,
-        method: "POST"
+        method: "GET"
       });
       updReq.send();
     },
