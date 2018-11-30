@@ -95,6 +95,34 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
       isRoot: true,
       children: []
     };
+    if (Object.prototype.hasOwnProperty.call(mapper, "defaultValue")) {
+      const defValues = mapper["defaultValue"];
+      for (let i=0; i<defValues.length; i++) {
+        const defValue = defValues[i];
+        for (const defValueId in defValue) {
+          let newItemBranch = {
+            key: defValueId,
+            label: defValueId.replace("-UUID", ""),
+            nodeKey: nodeModel.getKey(),
+            portKey: "myPort",
+            isDir: true,
+            children: []
+          };
+          data.children.push(newItemBranch);
+          const values = defValue[defValueId];
+          for (let j=0; j<values.length; j++) {
+            let newItemLeaf = {
+              key: values[j],
+              label: values[j],
+              nodeKey: nodeModel.getKey(),
+              portKey: "myPort",
+              isDir: true
+            };
+            newItemBranch.children.push(newItemLeaf);
+          }
+        }
+      }
+    }
     let model = qx.data.marshal.Json.createModel(data, true);
     tree.setModel(model);
 

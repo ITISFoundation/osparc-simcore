@@ -391,7 +391,12 @@ qx.Class.define("qxapp.data.Store", {
               maps: {
                 branch: "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
                 leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
-              }
+              },
+              defaultValue: [{
+                "Air-UUID": [
+                  "Background"
+                ]
+              }]
             }
           },
           outputs: {
@@ -436,7 +441,17 @@ qx.Class.define("qxapp.data.Store", {
               type: "mapper",
               maps: {
                 leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
-              }
+              },
+              defaultValue: [{
+                "Dirichlet-UUID": [
+                  "Plane X+",
+                  "Plane X-",
+                  "Plane Y+",
+                  "Plane Y-",
+                  "Plane Z+",
+                  "Plane Z-"
+                ]
+              }]
             }
           },
           outputs: {
@@ -481,7 +496,12 @@ qx.Class.define("qxapp.data.Store", {
               type: "mapper",
               maps: {
                 leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
-              }
+              },
+              defaultValue: [{
+                "Field-Sensor-UUID": [
+                  "Overall Field"
+                ]
+              }]
             }
           },
           outputs: {
