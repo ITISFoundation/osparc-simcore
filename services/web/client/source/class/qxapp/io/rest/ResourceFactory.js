@@ -66,10 +66,20 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       };
     },
 
-    createTokenResources: function() {
+    createUserResources: function() {
       // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
       // SEE: api/specs/webserver/v0/openapi-user.yaml
       const basePath = qxapp.io.rest.ResourceFactory.API;
+
+      // Singular resource
+      // api\specs\webserver\v0\components\schemas\my.yaml
+      let profile = new qxapp.io.rest.Resource({
+        // Get token
+        get: {
+          method: "GET",
+          url: basePath+"/my"
+        }
+      });
 
       // Singular resource
       let token = new qxapp.io.rest.Resource({
@@ -108,6 +118,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       });
 
       return {
+        "profile": profile,
         "token": token,
         "tokens": tokens
       };

@@ -6,6 +6,11 @@ Profile:
       format: email
     gravatar_id:
       type: string
+    role:
+      type: string
+      enum:
+       - admin
+       - user
   example:
     login: pcrespov@foo.com
     gravatar_id: 205e460b479e2e5b48aec07710c08d50

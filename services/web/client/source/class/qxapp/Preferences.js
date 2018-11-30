@@ -5,7 +5,7 @@ qx.Class.define("qxapp.Preferences", {
   construct: function() {
     this.base(arguments, this.tr("Account Settings"));
 
-    this.__tokenResources = qxapp.io.rest.ResourceFactory.getInstance().createTokenResources();
+    this.__tokenResources = qxapp.io.rest.ResourceFactory.getInstance().createUserResources();
     // this.__tokenResources.token
     // this.__tokenResources.tokens
 
