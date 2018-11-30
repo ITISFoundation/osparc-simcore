@@ -30,11 +30,14 @@ export DOCKER_GID=1042
 export HOST_GID=1000
 else
 $(info    detected native linux)
+# TODO: DO NOT TOUCH THIS CONFIG --- (ask mguidon)
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 export RUN_DOCKER_ENGINE_ROOT=0
 export DOCKER_GID=1042
 export HOST_GID=1000
+# TODO: DO NOT TOUCH THIS CONFIG --- (ask mguidon)
+# FIXME: DOCKER_GID and HOST_GID should be removed when issue #90 is resolved
 # TODO: Add a meaningfull call to retrieve the local docker group ID and the user ID in linux.
 endif
 
