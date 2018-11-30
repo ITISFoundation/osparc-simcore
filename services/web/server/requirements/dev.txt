@@ -7,7 +7,6 @@
 -e ../../../packages/service-library/
 -e ../../../packages/director-sdk/python
 
-aiohttp-devtools
 autopep8
 rope
 # TODO: See docker-compose notes
