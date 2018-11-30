@@ -15,8 +15,7 @@ let s4l_utils = require('./s4l_utils');
 let routes = require('./routes');
 const config = require('./config');
 
-// variables ----------------------------------------
-console.log(config.BASEPATH);
+console.log(`received basepath: ${config.BASEPATH}`);
 // serve static assets normally
 console.log('Serving static : ' + config.APP_PATH);
 app.use(`${config.BASEPATH}`, express.static(config.APP_PATH));

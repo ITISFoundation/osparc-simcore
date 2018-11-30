@@ -1612,6 +1612,7 @@ qx.Class.define("qxapp.dev.fake.Data", {
         case "defaultNeuronPointProcesses":
         case "defaultNeuronNetworkConnection":
         case "defaultNeuronSensors":
+        case "neuronsSetting":
           return qxapp.dev.fake.neuron.Data.getItemList(portKey);
         case "defaultStimulationSelectivity":
           return qxapp.dev.fake.stimulationSelectivity.Data.getItemList();

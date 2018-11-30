@@ -25,7 +25,6 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
       createItem: () => new qxapp.component.widget.InputsMapperTreeItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
-        // c.bindProperty("key", "key", null, item, id);
         c.bindProperty("isDir", "isDir", null, item, id);
         c.bindProperty("isRoot", "isRoot", null, item, id);
       },
@@ -43,8 +42,13 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             const to = e.getCurrentTarget();
             const fromKey = from.getNodeKey();
             if (to.getIsRoot()) {
-              // root
-              compatible = from.getIsDir() && that.__willBeBranch(fromKey);
+              // HACK
+              if (from.getLabel() === "20181113_Yoon-sun_V4_preview") {
+                compatible = true;
+              } else {
+                // root
+                compatible = from.getIsDir() && that.__willBeBranch(fromKey);
+              }
             } else {
               // non root
               compatible = to.getIsDir() && !from.getIsDir() && that.__willBeLeaf(fromKey);
@@ -59,29 +63,38 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             const from = e.getRelatedTarget();
             const fromNodeKey = from.getNodeKey();
             const fromPortKey = from.getPortKey();
-            let data = {
-              key: from.getModel(),
-              label: from.getLabel(),
-              nodeKey: from.getNodeKey(),
-              portKey: from.getPortKey(),
-              isDir: from.getIsDir()
-            };
-            const willBeBranch = that.__willBeBranch(fromNodeKey);
-            if (willBeBranch) {
-              data["children"] = [];
-            }
-            let newItem = qx.data.marshal.Json.createModel(data, true);
             const to = e.getCurrentTarget();
-            to.getModel().getChildren()
-              .push(newItem);
-            if (willBeBranch) {
-              const nodeInstanceUUID = null;
-              const itemProps = qxapp.data.Store.getInstance().getItem(nodeInstanceUUID, fromPortKey, newItem.getKey());
-              if (itemProps) {
-                let form = new qxapp.component.form.Auto(itemProps, this.getNodeModel());
-                let propsWidget = new qxapp.component.form.renderer.PropForm(form);
-                newItem["propsWidget"] = propsWidget;
+            // HACK
+            if (from.getLabel() === "20181113_Yoon-sun_V4_preview") {
+              const mat2ent = qxapp.dev.fake.mat2ent.Data.mat2ent(from.getLabel());
+              for (let i=0; i<mat2ent.length; i++) {
+                to.getModel().getChildren()
+                  .push(mat2ent[i]);
               }
+            } else if (from.getModel().getChildren && from.getModel().getChildren().length>0) {
+              let children = from.getModel().getChildren();
+              for (let i=0; i<children.length; i++) {
+                let child = children.toArray()[i];
+                if (!child.getChildren) {
+                  let data = {
+                    key: child.getKey(),
+                    label: child.getLabel(),
+                    nodeKey: from.getNodeKey(),
+                    portKey: from.getPortKey(),
+                    isDir: false
+                  };
+                  this.__createItemAndPush(data, to, fromNodeKey, fromPortKey);
+                }
+              }
+            } else {
+              let data = {
+                key: from.getModel(),
+                label: from.getLabel(),
+                nodeKey: from.getNodeKey(),
+                portKey: from.getPortKey(),
+                isDir: from.getIsDir()
+              };
+              this.__createItemAndPush(data, to, fromNodeKey, fromPortKey);
             }
             to.setOpen(true);
             tree.focus();
@@ -188,6 +201,25 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
 
   members: {
     __tree: null,
+
+    __createItemAndPush: function(data, to, fromNodeKey, fromPortKey) {
+      const willBeBranch = this.__willBeBranch(fromNodeKey);
+      if (willBeBranch) {
+        data["children"] = [];
+      }
+      let newItem = qx.data.marshal.Json.createModel(data, true);
+      to.getModel().getChildren()
+        .push(newItem);
+      if (willBeBranch) {
+        // Hmmmm not sure about the double getKey :(
+        const itemProps = qxapp.data.Store.getInstance().getItem(null, fromPortKey, newItem.getKey().getKey());
+        if (itemProps) {
+          let form = new qxapp.component.form.Auto(itemProps, this.getNodeModel());
+          let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+          newItem["propsWidget"] = propsWidget;
+        }
+      }
+    },
 
     __willBeBranch: function(candidate) {
       let isBranch = false;
