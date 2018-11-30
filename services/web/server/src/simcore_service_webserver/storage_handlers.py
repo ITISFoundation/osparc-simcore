@@ -5,18 +5,20 @@ from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_utils import extract_and_validate
 
 from .login.decorators import login_required
-from .storage_config import get_config, get_client_session
+from .storage_config import get_client_session, get_config
 
-# TODO: retrieve from db tokens
 
-async def _request_storage(request: web.Request, method: str):
-    await extract_and_validate(request)
+def _resolve_storage_url(request: web.Request) -> URL:
+    """ Composes a new url against storage API
 
-    cfg = get_config(request.app)
+    """
     userid = request[RQT_USERID_KEY]
+    cfg = get_config(request.app)
 
     # storage service API endpoint
-    endpoint = URL.build(scheme='http', host=cfg['host'], port=cfg['port']).with_path(cfg["version"])
+    endpoint = URL.build(scheme='http',
+                         host=cfg['host'],
+                         port=cfg['port']).with_path(cfg["version"])
 
     BASEPATH_INDEX = 3
     # strip basepath from webserver API path (i.e. webserver api version)
@@ -26,12 +28,26 @@ async def _request_storage(request: web.Request, method: str):
 
     # TODO: check request.query to storage! unsafe!?
     url = (endpoint / suffix).with_query(request.query).update_query(user_id=userid)
+    return url
+
+
+async def _request_storage(request: web.Request, method: str):
+    await extract_and_validate(request)
+
+    url = _resolve_storage_url(request)
+    # _token_data, _token_secret = _get_token_key_and_secret(request)
+
+    body = None
+    if request.can_read_body:
+        body = await request.json()
 
     session = get_client_session(request.app)
-    async with session.request(method.upper(), url, ssl=False) as resp:
+    async with session.request(method.upper(), url, ssl=False, json=body) as resp:
         payload = await resp.json()
         return payload
 
+
+#---------------------------------------------------------------------
 
 @login_required
 async def get_storage_locations(request: web.Request):
