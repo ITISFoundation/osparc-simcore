@@ -43,8 +43,13 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             const to = e.getCurrentTarget();
             const fromKey = from.getNodeKey();
             if (to.getIsRoot()) {
-              // root
-              compatible = from.getIsDir() && that.__willBeBranch(fromKey);
+              // HACK
+              if (from.getModel() === "20181113_Yoon-sun_V4_preview") {
+                compatible = true;
+              } else {
+                // root
+                compatible = from.getIsDir() && that.__willBeBranch(fromKey);
+              }
             } else {
               // non root
               compatible = to.getIsDir() && !from.getIsDir() && that.__willBeLeaf(fromKey);
@@ -59,28 +64,37 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             const from = e.getRelatedTarget();
             const fromNodeKey = from.getNodeKey();
             const fromPortKey = from.getPortKey();
-            let data = {
-              key: from.getModel(),
-              label: from.getLabel(),
-              nodeKey: from.getNodeKey(),
-              portKey: from.getPortKey(),
-              isDir: from.getIsDir()
-            };
-            const willBeBranch = that.__willBeBranch(fromNodeKey);
-            if (willBeBranch) {
-              data["children"] = [];
-            }
-            let newItem = qx.data.marshal.Json.createModel(data, true);
             const to = e.getCurrentTarget();
-            to.getModel().getChildren()
-              .push(newItem);
-            if (willBeBranch) {
-              const nodeInstanceUUID = null;
-              const itemProps = qxapp.data.Store.getInstance().getItem(nodeInstanceUUID, fromPortKey, newItem.getKey());
-              if (itemProps) {
-                let form = new qxapp.component.form.Auto(itemProps, this.getNodeModel());
-                let propsWidget = new qxapp.component.form.renderer.PropForm(form);
-                newItem["propsWidget"] = propsWidget;
+            // HACK
+            if (from.getModel() === "20181113_Yoon-sun_V4_preview") {
+              const mat2ent = qxapp.dev.fake.mat2ent.Data.mat2ent(from.getModel());
+              for (let i=0; i<mat2ent.length; i++) {
+                to.getModel().getChildren()
+                  .push(mat2ent[i]);
+              }
+            } else {
+              let data = {
+                key: from.getModel(),
+                label: from.getLabel(),
+                nodeKey: from.getNodeKey(),
+                portKey: from.getPortKey(),
+                isDir: from.getIsDir()
+              };
+              const willBeBranch = that.__willBeBranch(fromNodeKey);
+              if (willBeBranch) {
+                data["children"] = [];
+              }
+              let newItem = qx.data.marshal.Json.createModel(data, true);
+              to.getModel().getChildren()
+                .push(newItem);
+              if (willBeBranch) {
+                const nodeInstanceUUID = null;
+                const itemProps = qxapp.data.Store.getInstance().getItem(nodeInstanceUUID, fromPortKey, newItem.getKey());
+                if (itemProps) {
+                  let form = new qxapp.component.form.Auto(itemProps, this.getNodeModel());
+                  let propsWidget = new qxapp.component.form.renderer.PropForm(form);
+                  newItem["propsWidget"] = propsWidget;
+                }
               }
             }
             to.setOpen(true);
