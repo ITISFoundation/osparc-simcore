@@ -248,8 +248,8 @@ qx.Class.define("qxapp.dev.fake.mat2ent.Data", {
       return "";
     },
 
-    mat2ent: function(modelItem) {
-      if (modelItem !== "20181113_Yoon-sun_V4_preview") {
+    mat2ent: function(label) {
+      if (label !== "20181113_Yoon-sun_V4_preview") {
         return null;
       }
 

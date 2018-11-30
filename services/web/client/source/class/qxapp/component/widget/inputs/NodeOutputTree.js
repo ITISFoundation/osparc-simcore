@@ -12,7 +12,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
       createItem: () => new qxapp.component.widget.inputs.NodeOutputTreeItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
-        c.bindProperty("key", "model", null, item, id);
+        // c.bindProperty("key", "model", null, item, id);
       },
       configureItem: item => {
         item.set({
