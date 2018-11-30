@@ -378,15 +378,8 @@
         "key": "simcore/services/comp/itis/isolve-emlf",
         "version": "1.0.0",
         "label": "EM-LF Solver",
-        "inputs": {
-          "in_1": {
-            "nodeUuid": "lfSolverSettingsId",
-            "output": "outFile"
-          }
-        },
-        "inputNodes": [
-          "lfSolverSettingsId"
-        ],
+        "inputs": {},
+        "inputNodes": [],
         "outputNode": true,
         "position": {
           "x": 650,
@@ -525,15 +518,8 @@
         "key": "simcore/services/comp/itis/neuron-isolve",
         "version": "1.0.0",
         "label": "Neuron Solver",
-        "inputs": {
-          "in_1": {
-            "nodeUuid": "NeuronSolverSettingsId",
-            "output": "outFile"
-          }
-        },
-        "inputNodes": [
-          "NeuronSolverSettingsId"
-        ],
+        "inputs": {},
+        "inputNodes": [],
         "position": {
           "x": 650,
           "y": 250
