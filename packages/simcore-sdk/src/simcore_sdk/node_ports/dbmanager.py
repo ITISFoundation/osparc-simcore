@@ -58,7 +58,7 @@ class DBManager:
             node = session.query(NodeModel).filter(NodeModel.node_id == config.NODE_UUID).one()
             config.PROJECT_ID = node.project_id
 
-    def _get_node_from_db(self, node_uuid: str, session: sqlalchemy.orm.session.Session) -> NodeModel:
+    def _get_node_from_db(self, node_uuid: str, session) -> NodeModel:
         log.debug("Reading from database for node uuid %s", node_uuid)
         try:
             return session.query(NodeModel).filter(NodeModel.node_id == node_uuid).one()
