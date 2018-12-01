@@ -563,7 +563,9 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         };
         this.fireDataEvent("ShowInLogger", msgData);
 
-        this.getRetrieveIFrameButton().setEnabled(true);
+        if (this.__hasRetrieve()) {
+          this.getRetrieveIFrameButton().setEnabled(true);
+        }
         this.getRestartIFrameButton().setEnabled(true);
         // FIXME: Apparently no all services are inmediately ready when they publish the port
         const waitFor = 4000;
