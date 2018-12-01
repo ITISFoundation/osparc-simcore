@@ -1,6 +1,6 @@
 """ director subsystem
 
-    Provides interactivity with the director service
+    Provides access to the director backend service
 """
 
 import logging
@@ -19,23 +19,32 @@ from yarl import URL
 logger = logging.getLogger(__name__)
 
 async def director_client_ctx(app: web.Application):
-    # TODO: deduce base url from configuration and add to session
-    # TODO: test if ready!
+    """
+        - Resolves director service base url, e.g. http://director:8080/v0
+        - Creates client session to query this API
 
-    session = ClientSession(loop=app.loop)
-    app[APP_DIRECTOR_SESSION_KEY] = session
+    :param app: main application
+    :type app: web.Application
+    """
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
     # TODO: create instead a class that wraps the session and hold all information known upon setup
-    session.base_url = app[APP_DIRECTOR_API_KEY]
+    session = ClientSession(loop=app.loop)
+    session.base_url = build_api_url(cfg)
+
+    # TODO: test if service health via API healthcheck call
+
+    app[APP_DIRECTOR_SESSION_KEY] = session
 
     yield
 
     session.close()
-    logger.debug("cleanup session")
+    app.pop(APP_DIRECTOR_SESSION_KEY, None)
+
 
 
 def setup(app: web.Application,* , disable_login=False):
-    """
+    """ Sets up director's subsystem
 
     :param app: main application
     :type app: web.Application
@@ -50,10 +59,10 @@ def setup(app: web.Application,* , disable_login=False):
         logger.warning("'%s' explicitly disabled in config", __name__)
         return
 
-    # director service API endpoint
+    # director service API base url, e.g. http://director:8081/v0
     app[APP_DIRECTOR_API_KEY] = build_api_url(cfg)
 
-    # Setup routes
+    # setup routes ------------
     specs = app[APP_OPENAPI_SPECS_KEY]
 
     def include_path(tup_object):
@@ -80,6 +89,7 @@ def setup(app: web.Application,* , disable_login=False):
     )
     app.router.add_routes(routes)
 
+    # setup cleanup context --------------
     app.cleanup_ctx.append(director_client_ctx)
 
 
