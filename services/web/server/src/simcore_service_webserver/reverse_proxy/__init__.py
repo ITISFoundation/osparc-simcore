@@ -16,13 +16,12 @@ from aiohttp import web
 from .abc import ServiceResolutionPolicy
 from .routing import ReverseChooser
 from .handlers import jupyter, paraview
-from .settings import URL_PATH
+from .settings import URL_PATH, APP_SOCKETS_KEY
 
 logger = logging.getLogger(__name__)
 
 MODULE_NAME = __name__.split(".")[-1]
 ROUTE_NAME = MODULE_NAME
-APP_SOCKETS_KEY = __name__ + ".sockets"
 
 
 async def _on_shutdown(app: web.Application):

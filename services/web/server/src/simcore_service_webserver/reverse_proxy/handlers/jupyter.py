@@ -11,8 +11,7 @@ from aiohttp import client, web
 from yarl import URL
 
 
-# TODO: tests all APP_*_KEY constants have the same value within an app
-APP_SOCKETS_KEY = "simcore_service_webserver.reverse_proxy.sockets"
+APP_SOCKETS_KEY = "simcore_service_webserver.reverse_proxy.settings.sockets"
 
 SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/jupyter-base-notebook"
 SUPPORTED_IMAGE_TAG = ">=1.5.0"

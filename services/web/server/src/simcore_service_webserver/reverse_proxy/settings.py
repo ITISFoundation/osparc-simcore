@@ -13,3 +13,5 @@ BACKEND_MOUNTPOINT = r"/{%s}" % SERVICE_ID_KEY
 
 # /x/{serviceId}/{proxyPath:.*}
 URL_PATH = PROXY_MOUNTPOINT + BACKEND_MOUNTPOINT + r"/{%s:.*}" % PROXY_PATH_KEY
+
+APP_SOCKETS_KEY = __name__ + ".sockets"
