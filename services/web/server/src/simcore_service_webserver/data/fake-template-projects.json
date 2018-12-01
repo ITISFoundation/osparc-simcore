@@ -233,199 +233,6 @@
       }
     }
   }, {
-    "projectUuid": "61d5829d-426a-49a8-8292-c701530e6e35",
-    "name": "Colleen Clancy use cases expanded",
-    "description": "All use cases: 0D, 1D, 2D",
-    "notes": "Empty",
-    "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
-    "owner": "Colleen Clancy",
-    "collaborators": {},
-    "creationDate": "2018-10-23T09:13:13.360Z",
-    "lastChangeDate": "2018-10-23T09:33:41.858Z",
-    "workbench": {
-      "0b42c964-195d-4674-b758-946151cae351": {
-        "label": "File Picker",
-        "inputs": {},
-        "inputNodes": [],
-        "outputNode": false,
-        "outputs": {},
-        "parent": null,
-        "position": {
-          "x": 108,
-          "y": 131
-        },
-        "key": "simcore/services/dynamic/itis/file-picker",
-        "version": "0.0.0"
-      },
-      "5986cf64-9f81-409d-998c-c1f04de67f8b": {
-        "label": "DBP-Clancy-Rabbit-Single-Cell solver v 0.0.2",
-        "inputs": {
-          "Na": 0,
-          "Kr": 0,
-          "BCL": 200,
-          "NBeats": 5,
-          "Ligand": 0,
-          "cAMKII": "WT",
-          "initial_WTstates": {
-            "nodeUuid": "0b42c964-195d-4674-b758-946151cae351",
-            "output": "outFile"
-          }
-        },
-        "inputNodes": [
-          "0b42c964-195d-4674-b758-946151cae351"
-        ],
-        "outputNode": false,
-        "outputs": {},
-        "parent": null,
-        "position": {
-          "x": 393,
-          "y": 131
-        },
-        "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
-        "version": "0.0.1"
-      },
-      "00336089-9984-43e7-9fda-cf9625e59986": {
-        "label": "cc-0d-viewer",
-        "inputs": {
-          "vm_1Hz": {
-            "nodeUuid": "5986cf64-9f81-409d-998c-c1f04de67f8b",
-            "output": "vm_1Hz"
-          },
-          "all_results_1Hz": {
-            "nodeUuid": "5986cf64-9f81-409d-998c-c1f04de67f8b",
-            "output": "allresult_1Hz"
-          }
-        },
-        "inputNodes": [
-          "5986cf64-9f81-409d-998c-c1f04de67f8b"
-        ],
-        "outputNode": false,
-        "outputs": {},
-        "parent": null,
-        "position": {
-          "x": 681,
-          "y": 131
-        },
-        "key": "simcore/services/dynamic/cc-0d-viewer",
-        "version": "1.1.0"
-      },
-      "418bd484-905b-4212-8108-c7cfab4f241e": {
-        "label": "File Picker",
-        "inputs": {},
-        "inputNodes": [],
-        "outputNode": false,
-        "outputs": {},
-        "parent": null,
-        "position": {
-          "x": 100,
-          "y": 429
-        },
-        "key": "simcore/services/dynamic/itis/file-picker",
-        "version": "0.0.0"
-      },
-      "5e548936-ee08-43f3-ab01-a58e7c49a946": {
-        "label": "DBP-Clancy-Rabbit-1-D solver v 0.0.1",
-        "inputs": {
-          "Na": 0,
-          "Kr": 0,
-          "BCL": 10,
-          "NBeats": 1,
-          "Ligand": 0,
-          "cAMKII": "WT",
-          "tw": 5,
-          "tl": 200,
-          "homogeneity": "heterogeneous",
-          "initial_WTstates": {
-            "nodeUuid": "418bd484-905b-4212-8108-c7cfab4f241e",
-            "output": "outFile"
-          }
-        },
-        "inputNodes": [
-          "418bd484-905b-4212-8108-c7cfab4f241e"
-        ],
-        "outputNode": false,
-        "outputs": {},
-        "parent": null,
-        "position": {
-          "x": 363,
-          "y": 346
-        },
-        "key": "simcore/services/comp/ucdavis/cardiac-oned",
-        "version": "0.0.1"
-      },
-      "c3e872c0-b105-40ce-8d33-7d501a694550": {
-        "label": "DBP-Clancy-Rabbit-2-D solver v 0.0.1",
-        "inputs": {
-          "Na": 0,
-          "Kr": 0,
-          "BCL": 10,
-          "Ligand": 0,
-          "cAMKII": "WT",
-          "tw": 5,
-          "tl": 200,
-          "homogeneity": "heterogeneous",
-          "initial_WTstates": {
-            "nodeUuid": "418bd484-905b-4212-8108-c7cfab4f241e",
-            "output": "outFile"
-          },
-          "fiber": {
-            "nodeUuid": "5e548936-ee08-43f3-ab01-a58e7c49a946",
-            "output": "fiber"
-          }
-        },
-        "inputNodes": [
-          "418bd484-905b-4212-8108-c7cfab4f241e",
-          "5e548936-ee08-43f3-ab01-a58e7c49a946"
-        ],
-        "outputNode": false,
-        "outputs": {},
-        "parent": null,
-        "position": {
-          "x": 603,
-          "y": 517
-        },
-        "key": "simcore/services/comp/ucdavis/cardiac-twod",
-        "version": "0.0.1"
-      },
-      "c354690d-c9c4-47f5-a089-cc4e2eec30b3": {
-        "label": "cc-1d-viewer",
-        "inputs": {
-          "ECGs": "null",
-          "y_1D": "null"
-        },
-        "inputNodes": [
-          "5e548936-ee08-43f3-ab01-a58e7c49a946"
-        ],
-        "outputNode": false,
-        "outputs": {},
-        "parent": null,
-        "position": {
-          "x": 844,
-          "y": 348
-        },
-        "key": "simcore/services/dynamic/cc-1d-viewer",
-        "version": "1.1.0"
-      },
-      "ef9404ef-324f-46b7-825c-6f0f614c54ef": {
-        "label": "cc-2d-viewer",
-        "inputs": {
-          "ap": "null"
-        },
-        "inputNodes": [
-          "c3e872c0-b105-40ce-8d33-7d501a694550"
-        ],
-        "outputNode": false,
-        "outputs": {},
-        "parent": null,
-        "position": {
-          "x": 850,
-          "y": 517
-        },
-        "key": "simcore/services/dynamic/cc-2d-viewer",
-        "version": "1.1.0"
-      }
-    }
-  }, {
     "projectUuid": "1d4269a4-0fbc-4bf9-9eb3-11356a46c45a",
     "name": "Demo December",
     "description": "",
@@ -451,12 +258,12 @@
         }
       },
       "modelerId": {
-        "key": "simcore/services/demodec/dynamic/itis/s4l/Modeler",
-        "version": "0.0.0",
+        "key": "simcore/services/dynamic/modeler/webserver",
+        "version": "2.7.0",
         "label": "Modeler",
         "position": {
           "x": 50,
-          "y": 300
+          "y": 250
         }
       },
       "lfContainerId": {
@@ -568,18 +375,11 @@
         "parent": "lfContainerId"
       },
       "emlfSolverId": {
-        "key": "simcore/services/demodec/comp/itis/isolve-emlf",
-        "version": "0.0.1",
+        "key": "simcore/services/comp/itis/isolve-emlf",
+        "version": "1.0.0",
         "label": "EM-LF Solver",
-        "inputs": {
-          "in_1": {
-            "nodeUuid": "SolverSettingsId",
-            "output": "outFile"
-          }
-        },
-        "inputNodes": [
-          "SolverSettingsId"
-        ],
+        "inputs": {},
+        "inputNodes": [],
         "outputNode": true,
         "position": {
           "x": 650,
@@ -587,11 +387,29 @@
         },
         "parent": "lfContainerId"
       },
+      "3DViewerId1": {
+        "key": "simcore/services/dynamic/3d-viewer",
+        "version": "1.0.5",
+        "label": "EM-LF Solver Viewer",
+        "inputs": {
+          "A": {
+            "nodeUuid": "emlfSolverId",
+            "output": "out_1"
+          }
+        },
+        "inputNodes": [
+          "lfContainerId"
+        ],
+        "position": {
+          "x": 700,
+          "y": 50
+        }
+      },
       "NeuronContainerId": {
         "label": "Neuron Simulator Container",
         "position": {
-          "x": 500,
-          "y": 450
+          "x": 450,
+          "y": 300
         },
         "inputs": {},
         "outputs": {},
@@ -697,23 +515,61 @@
         "parent": "NeuronContainerId"
       },
       "NeuronISolve": {
-        "key": "simcore/services/demodec/comp/itis/neuron-isolve",
-        "version": "0.0.1",
+        "key": "simcore/services/comp/itis/neuron-isolve",
+        "version": "1.0.0",
         "label": "Neuron Solver",
-        "inputs": {
-          "in_1": {
-            "nodeUuid": "NeuronSolverSettingsId",
-            "output": "outFile"
-          }
-        },
-        "inputNodes": [
-          "NeuronSolverSettingsId"
-        ],
+        "inputs": {},
+        "inputNodes": [],
         "position": {
           "x": 650,
           "y": 250
         },
         "parent": "NeuronContainerId"
+      },
+      "3DViewerId2": {
+        "key": "simcore/services/dynamic/3d-viewer",
+        "version": "1.0.5",
+        "label": "Neuron Solver Viewer",
+        "inputs": {
+          "A": {
+            "nodeUuid": "NeuronISolve",
+            "output": "out_1"
+          }
+        },
+        "inputNodes": [
+          "NeuronContainerId"
+        ],
+        "position": {
+          "x": 700,
+          "y": 200
+        }
+      },
+      "StimulationSelectivityId": {
+        "key": "simcore/services/demodec/dynamic/itis/s4l/StimulationSelectivity",
+        "version": "0.0.0",
+        "label": "Stimulation Selectivity",
+        "inputNodes": [
+          "NeuronContainerId"
+        ],
+        "outputs": {
+          "stimulationFactor": 0.6
+        },
+        "position": {
+          "x": 600,
+          "y": 425
+        }
+      },
+      "KemberId": {
+        "key": "simcore/services/comp/kember/cardiac",
+        "version": "1.0.0",
+        "label": "Kember Model",
+        "inputNodes": [
+          "StimulationSelectivityId"
+        ],
+        "position": {
+          "x": 750,
+          "y": 550
+        }
       }
     }
   }

@@ -24,8 +24,6 @@ rabbit:
   password: ${RABBITMQ_PASSWORD}
   user: ${RABBITMQ_USER}
 rest:
-  extra_urls:
-  - ${OSPARC_PUBLIC_URL}
   location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/openapi.yaml
   version: v0
 smtp:

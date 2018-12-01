@@ -1,3 +1,4 @@
+#pylint: disable=unused-argument
 import argparse
 import asyncio
 import json
@@ -43,7 +44,7 @@ def init_s3():
     s3 = S3Settings()
     return s3
 
-async def _initialise_platform(port_configuration_path: Path, file_generator):
+async def _initialise_platform(port_configuration_path: Path, file_generator, delete_file):
     
     
     with port_configuration_path.open() as file_pointer:
@@ -80,20 +81,22 @@ async def _initialise_platform(port_configuration_path: Path, file_generator):
     file_index = 0
     for key, input_item in configuration["schema"]["inputs"].items():
         if str(input_item["type"]).startswith("data:"):
-            file_to_upload = file_generator(file_index)
+            file_to_upload = file_generator(file_index, input_item["type"])
             if file_to_upload is not None:
                 # upload to S3
                 await PORTS.inputs[key].set(Path(file_to_upload))
                 file_index += 1
+                if delete_file:
+                    Path(file_to_upload).unlink()
 
     
     # print the node uuid so that it can be set as env variable from outside
     print("{pipelineid},{nodeuuid}".format(pipelineid=str(new_Node.project_id), nodeuuid=node_uuid))
 
-def main(port_configuration_path: Path, file_generator):
+def main(port_configuration_path: Path, file_generator, delete_file=False):
     
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(_initialise_platform(port_configuration_path, file_generator))
+    loop.run_until_complete(_initialise_platform(port_configuration_path, file_generator, delete_file))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Initialise an oSparc database/S3 with user data for development.")
@@ -105,14 +108,14 @@ if __name__ == "__main__":
     options = parser.parse_args(args)
     #print("options %s", options)
     if options.files is not None:
-        def _file_generator(file_index: int):
+        def _file_generator(file_index: int, file_type: str):
             if file_index < len(options.files):
                 return options.files[file_index]
             return None
         main(port_configuration_path=options.portconfig, file_generator=_file_generator)
 
     if options.folder is not None:
-        def _file_generator(file_index: int):
+        def _file_generator(file_index: int, file_type: str):
             files = [x for x in options.folder.iterdir() if x.is_file()]
             if file_index < len(files):
                 return files[file_index]

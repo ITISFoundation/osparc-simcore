@@ -50,7 +50,9 @@ qx.Class.define("qxapp.dev.fake.neuron.Data", {
       }, {
         key: "Point-Sensor-UUID",
         label: "Point-Sensor"
-      }]
+      }],
+
+      "neuronsSetting": qxapp.dev.fake.modeler.Data.itemList["neuronSim"]
     },
 
     item: {
