@@ -8,10 +8,12 @@ from servicelib.rest_utils import extract_and_validate
 
 from ..login.decorators import login_required
 from .config import get_client_session, get_config
+from .registry import get_registry
 
 ANONYMOUS_USER = -1
 
 log = logging.getLogger(__name__)
+
 
 
 def _resolve_url(request: web.Request) -> URL:
@@ -46,29 +48,10 @@ async def services_get(request: web.Request) -> web.Response:
 
 
 @login_required
-async def running_interactive_services_post(request: web.Request) -> web.Response:
-    params, query, body = await extract_and_validate(request)
-
-    assert not params
-    assert query, "POST expected /running_interactive_services? ... "
-    assert not body
-
-    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
-    url = _resolve_url(request)
-    url = url.update_query( user_id=userid,
-                      service_basepath='/x/'+ query['service_uuid'] # TODO: mountpoint should be setup!!
-                    )
-
-    # forward to director API
-    session = get_client_session(request.app)
-    async with session.request(request.method, url, ssl=False) as resp:
-        payload = await resp.json()
-        return web.json_response(payload, status=resp.status)
-
-
-
-@login_required
 async def running_interactive_services_get(request: web.Request) -> web.Response:
+    """Succesfully returns if a service with the defined uuid is up and running
+
+    """
     params, query, body = await extract_and_validate(request)
 
     assert params, "GET expected /running_interactive_services/{service_uuid}"
@@ -84,19 +67,55 @@ async def running_interactive_services_get(request: web.Request) -> web.Response
         return web.json_response(payload, status=resp.status)
 
 
+@login_required
+async def running_interactive_services_post(request: web.Request) -> web.Response:
+    """ Starts an interactive service in the oSparc platform
+
+    """
+    params, query, body = await extract_and_validate(request)
+
+    assert not params
+    assert query, "POST expected /running_interactive_services? ... "
+    assert not body
+
+    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
+    service_uuid = query['service_uuid']
+    url = _resolve_url(request)
+    url = url.update_query( user_id=userid,
+                      service_basepath='/x/'+ service_uuid # TODO: mountpoint should be setup!!
+                    )
+
+    registry = get_registry(request.app)
+
+    # forward to director API
+    session = get_client_session(request.app)
+    async with session.request(request.method, url, ssl=False) as resp:
+        payload = await resp.json()
+        if resp.status<400:
+            registry.as_started(userid, service_uuid)
+        return web.json_response(payload, status=resp.status)
+
 
 @login_required
 async def running_interactive_services_delete(request: web.Request) -> web.Response:
+    """ Stops and removes an interactive service from the oSparc platform
+
+    """
     params, query, body = await extract_and_validate(request)
 
     assert params, "DELETE expected /running_interactive_services/{service_uuid}"
     assert not query
     assert not body
 
+    service_uuid = query['service_uuid']
     url = _resolve_url(request)
+
+    registry = get_registry(request.app)
 
     # forward to director API
     session = get_client_session(request.app)
     async with session.request(request.method, url, ssl=False) as resp:
         payload = await resp.json()
+        if resp.status<400 or resp.status==404:
+            registry.as_stopped(service_uuid)
         return web.json_response(payload, status=resp.status)

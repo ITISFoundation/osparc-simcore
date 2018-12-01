@@ -5,18 +5,23 @@
 
 import logging
 
-from aiohttp import web, ClientSession
-
-from servicelib.application_keys import APP_CONFIG_KEY
-
-from .config import CONFIG_SECTION_NAME, APP_DIRECTOR_SESSION_KEY, APP_DIRECTOR_API_KEY, build_api_url
-from . import handlers
-from servicelib.rest_routing import get_handlers_from_namespace, map_handlers_with_operations, iter_path_operations
-from ..rest_config import APP_OPENAPI_SPECS_KEY
-
+from aiohttp import ClientSession, web
 from yarl import URL
 
+from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.rest_routing import (get_handlers_from_namespace,
+                                     iter_path_operations,
+                                     map_handlers_with_operations)
+
+from . import handlers
+from ..rest_config import APP_OPENAPI_SPECS_KEY
+from .config import (APP_DIRECTOR_API_KEY, APP_DIRECTOR_SESSION_KEY,
+                     CONFIG_SECTION_NAME, build_api_url)
+from .registry import InteractiveServiceLocalRegistry, set_registry
+
+
 logger = logging.getLogger(__name__)
+
 
 async def director_client_ctx(app: web.Application):
     """
@@ -61,6 +66,8 @@ def setup(app: web.Application,* , disable_login=False):
 
     # director service API base url, e.g. http://director:8081/v0
     app[APP_DIRECTOR_API_KEY] = build_api_url(cfg)
+
+    set_registry(app, InteractiveServiceLocalRegistry())
 
     # setup routes ------------
     specs = app[APP_OPENAPI_SPECS_KEY]
