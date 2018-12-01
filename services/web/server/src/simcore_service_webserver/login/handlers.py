@@ -45,7 +45,7 @@ async def register(request: web.Request):
         'name': username,
         'email': email,
         'password_hash': encrypt_password(password),
-        'status': CONFIRMATION_PENDING if cfg.REGISTRATION_CONFIRMATION_REQUIRED
+        'status': CONFIRMATION_PENDING if bool(cfg.REGISTRATION_CONFIRMATION_REQUIRED)
                     else ACTIVE,
         'role':  USER,
         'created_ip': get_client_ip(request),
@@ -55,7 +55,7 @@ async def register(request: web.Request):
         "You are registered successfully! To activate your account, please, "
         "click on the verification link in the email we sent you.", "INFO"))
 
-    if not cfg.REGISTRATION_CONFIRMATION_REQUIRED:
+    if not bool(cfg.REGISTRATION_CONFIRMATION_REQUIRED):
         # user is logged in
         identity = body.email
         response = web.json_response(data={
