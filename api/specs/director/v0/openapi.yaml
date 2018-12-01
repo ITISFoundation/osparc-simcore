@@ -134,8 +134,7 @@ paths:
     post:
       tags:
         - users
-      summary: Starts an interactive service in the oSparc platform and returns its entrypoint
-      description: Starts an interactive service in the oSparc platform and returns its entrypoint
+      summary: Starts an interactive service in the oSparc platform
       operationId: running_interactive_services_post
       parameters:
         - $ref: '#/components/parameters/UserId'

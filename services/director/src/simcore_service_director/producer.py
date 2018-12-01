@@ -193,15 +193,14 @@ def __add_env_variables_to_service_runtime_params(
     # add specifics
     service_env_variables.append("=".join(["SIMCORE_USER_ID", user_id]))
     service_env_variables.append("=".join(["SIMCORE_NODE_UUID", node_uuid]))
-    if node_base_path is None:
-        node_base_path = ""
-    service_env_variables.append("=".join(["SIMCORE_NODE_BASEPATH", node_base_path]))
+    service_env_variables.append("=".join(["SIMCORE_NODE_BASEPATH", node_base_path or ""]))
 
     if "env" in docker_service_runtime_parameters:
         docker_service_runtime_parameters["env"].extend(service_env_variables)
     else:
         docker_service_runtime_parameters["env"] = service_env_variables
     log.debug("Added env parameter to docker runtime parameters: %s", docker_service_runtime_parameters["env"])
+
 
 def _add_extra_hosts_to_service_runtime_params(docker_service_runtime_parameters: Dict):
     log.debug("Getting extra hosts with suffix: %s",config.EXTRA_HOSTS_SUFFIX)
@@ -210,6 +209,7 @@ def _add_extra_hosts_to_service_runtime_params(docker_service_runtime_parameters
         docker_service_runtime_parameters["hosts"].update(extra_hosts)
     else:
         docker_service_runtime_parameters["hosts"] = extra_hosts
+
 
 def __set_service_name(docker_service_runtime_parameters: Dict,
                        service_name: str,
@@ -554,6 +554,7 @@ def __get_service_key_version_from_docker_service(service: docker.models.service
 
     service_full_name = service_full_name[len(config.REGISTRY_URL):].strip("/")
     return service_full_name.split(":")[0], service_full_name.split(":")[1]
+
 
 def _get_service_basepath_from_docker_service(service: docker.models.services.Service) -> str:
     service_attrs = service.attrs
