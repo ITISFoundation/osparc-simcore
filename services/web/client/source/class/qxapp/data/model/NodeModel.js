@@ -429,26 +429,53 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       }
     },
 
-    __retrieveInputs: function() {
-      this.__updateBackendAndRetrieveInputs();
-    },
-
     __showLoadingIFrame: function() {
       const loadingUrl = qx.util.ResourceManager.getInstance().toUri("qxapp/loading/loader.html");
       this.__restartIFrame(loadingUrl);
     },
 
+    __hasRetrieve: function() {
+      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler") || this.getKey().includes("neuroman")) {
+        return true;
+      }
+      return false;
+    },
+
+    __retrieveInputs: function() {
+      this.__updateBackendAndRetrieveInputs();
+    },
+
+    __updateBackendAndRetrieveInputs: function() {
+      // HACK: Workaround for fetching inputs in Visualizer and modeler
+      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler") || this.getKey().includes("neuroman")) {
+        this.fireEvent("UpdatePipeline");
+      }
+    },
+
+    retrieveInputs: function() {
+      let urlUpdate = this.getServiceUrl() + "/retrieve";
+      urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
+      let updReq = new qx.io.request.Xhr();
+      updReq.set({
+        url: urlUpdate,
+        method: "GET"
+      });
+      updReq.send();
+    },
+
     __startInteractiveNode: function() {
       let metaData = this.getMetaData();
       if (metaData && ("type" in metaData) && metaData.type == "dynamic") {
-        let retrieveBtn = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/spinner/32"
-        });
-        retrieveBtn.addListener("execute", e => {
-          this.__retrieveInputs();
-        }, this);
-        retrieveBtn.setEnabled(false);
-        this.setRetrieveIFrameButton(retrieveBtn);
+        if (this.__hasRetrieve()) {
+          let retrieveBtn = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/spinner/32"
+          });
+          retrieveBtn.addListener("execute", e => {
+            this.__retrieveInputs();
+          }, this);
+          retrieveBtn.setEnabled(false);
+          this.setRetrieveIFrameButton(retrieveBtn);
+        }
 
         let restartBtn = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/redo-alt/32"
@@ -544,24 +571,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           this.__restartIFrame();
         }, this, waitFor);
       }
-    },
-
-    __updateBackendAndRetrieveInputs: function() {
-      // HACK: Workaround for fetching inputs in Visualizer and modeler
-      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler") || this.getKey().includes("neuroman")) {
-        this.fireEvent("UpdatePipeline");
-      }
-    },
-
-    retrieveInputs: function() {
-      let urlUpdate = this.getServiceUrl() + "/retrieve";
-      urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
-      let updReq = new qx.io.request.Xhr();
-      updReq.set({
-        url: urlUpdate,
-        method: "GET"
-      });
-      updReq.send();
     },
 
     removeNode: function() {
