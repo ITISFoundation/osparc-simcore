@@ -453,7 +453,7 @@ qx.Class.define("qxapp.data.Store", {
                 leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
               },
               defaultValue: [{
-                "Dirichlet-UUID": [
+                "Neumann-UUID": [
                   "Plane X+",
                   "Plane X-",
                   "Plane Y+",

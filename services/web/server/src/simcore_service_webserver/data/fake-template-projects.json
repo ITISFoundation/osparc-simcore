@@ -562,7 +562,7 @@
           "y": 425
         }
       },
-      "KemberId": {
+      "KemberSolverId": {
         "key": "simcore/services/comp/kember/cardiac",
         "version": "1.0.0",
         "label": "Kember Model",
@@ -572,6 +572,18 @@
         "position": {
           "x": 750,
           "y": 550
+        }
+      },
+      "KemberViewerId": {
+        "key": "simcore/services/dynamic/kember-viewer",
+        "version": "1.2.0",
+        "label": "Kember Viewer",
+        "inputNodes": [
+          "KemberSolverId"
+        ],
+        "position": {
+          "x": 900,
+          "y": 700
         }
       }
     }
