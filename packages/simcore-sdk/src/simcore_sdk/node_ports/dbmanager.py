@@ -67,15 +67,8 @@ class DBManager:
         except exc.MultipleResultsFound:
             log.exception("the node id %s is not unique", node_uuid)
 
-    def _get_configuration_from_db(self, node_uuid:str) -> str:
-        log.debug("Reading from database")
-        with session_scope(self._db_settings.Session) as session:
-            node = self._get_node_from_db(node_uuid, session)
-            node_json_config = json.dumps(node, cls=_NodeModelEncoder)
-        log.debug("Found and converted to json")
-        return node_json_config
-
-    def _write_configuration_to_db(self, json_configuration: str, node_uuid: str):
+    def write_ports_configuration(self, json_configuration: str, node_uuid: str):
+        log.debug("Writing ports configuration")
         log.debug("Writing to database")
 
         node_configuration = json.loads(json_configuration)
@@ -95,20 +88,11 @@ class DBManager:
         
             session.commit()
 
-    def write_ports_configuration(self, json_configuration: str, node_uuid: str):
-        """writes the json configuration of the node ports.
-        """
-        log.debug("Writing ports configuration")
-        self._write_configuration_to_db(json_configuration, node_uuid)
-
     def get_ports_configuration_from_node_uuid(self, node_uuid:str) -> str:
-        """returns the json configuration of a node with a specific node uuid in the same pipeline
-
-        Arguments:
-            node_uuid {string} -- node uuid
-
-        Returns:
-            string -- a json containing the ports configuration
-        """
         log.debug("Getting ports configuration of node %s", node_uuid)
-        return self._get_configuration_from_db(node_uuid=node_uuid)
+        log.debug("Reading from database")
+        with session_scope(self._db_settings.Session) as session:
+            node = self._get_node_from_db(node_uuid, session)
+            node_json_config = json.dumps(node, cls=_NodeModelEncoder)
+        log.debug("Found and converted to json")
+        return node_json_config
