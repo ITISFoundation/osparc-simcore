@@ -574,7 +574,7 @@
           "y": 550
         }
       },
-      "KemberViewerId": {
+      "kemberviewerid": {
         "key": "simcore/services/dynamic/kember-viewer",
         "version": "1.2.0",
         "label": "Kember Viewer",
