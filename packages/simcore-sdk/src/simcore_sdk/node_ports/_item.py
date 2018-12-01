@@ -97,7 +97,7 @@ class Item():
         """
         log.info("Setting data item with value %s", value)
         # try to guess the type and check the type set fits this (there can be more than one possibility, e.g. string)
-        possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
+        possible_types = [key for key, key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
         log.debug("possible types are for value %s are %s", value, possible_types)
         if not self.type in possible_types:
             if not data_items_utils.is_file_type(self.type) or not isinstance(value, (Path, str)):
