@@ -52,13 +52,13 @@ class _NodeModelEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 def _get_node_from_db(node_uuid: str, session: sqlalchemy.orm.session.Session) -> NodeModel:
-        log.debug("Reading from database for node uuid %s", node_uuid)
-        try:
-            return session.query(NodeModel).filter(NodeModel.node_id == node_uuid).one()
-        except exc.NoResultFound:
-            log.exception("the node id %s was not found", node_uuid)
-        except exc.MultipleResultsFound:
-            log.exception("the node id %s is not unique", node_uuid)
+    log.debug("Reading from database for node uuid %s", node_uuid)
+    try:
+        return session.query(NodeModel).filter(NodeModel.node_id == node_uuid).one()
+    except exc.NoResultFound:
+        log.exception("the node id %s was not found", node_uuid)
+    except exc.MultipleResultsFound:
+        log.exception("the node id %s is not unique", node_uuid)
 
 class DBManager:
     def __init__(self):
