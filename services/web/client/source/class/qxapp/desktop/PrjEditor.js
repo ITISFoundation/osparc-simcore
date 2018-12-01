@@ -144,11 +144,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__workbenchModelChanged();
       }, this);
 
-      workbenchModel.addListener("NodeAdded", e => {
+      workbenchModel.addListener("UpdatePipeline", e => {
         let nodeModel = e.getData();
-        nodeModel.addListener("UpdatePipeline", () => {
-          this.__updatePipeline(nodeModel);
-        }, this);
+        this.__updatePipeline(nodeModel);
       }, this);
 
       workbenchModel.addListener("ShowInLogger", ev => {

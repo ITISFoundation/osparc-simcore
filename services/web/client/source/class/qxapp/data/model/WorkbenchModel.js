@@ -24,6 +24,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
   events: {
     "WorkbenchModelChanged": "qx.event.type.Event",
     "NodeAdded": "qx.event.type.Data",
+    "UpdatePipeline": "qx.event.type.Data",
     "ShowInLogger": "qx.event.type.Data"
   },
 
@@ -131,6 +132,9 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       let nodeModel = new qxapp.data.model.NodeModel(this, key, version, uuid);
       nodeModel.addListener("ShowInLogger", e => {
         this.fireDataEvent("ShowInLogger", e.getData());
+      }, this);
+      nodeModel.addListener("UpdatePipeline", e => {
+        this.fireDataEvent("UpdatePipeline", e.getData());
       }, this);
       this.fireDataEvent("NodeAdded", nodeModel);
       nodeModel.populateNodeData(nodeData);
