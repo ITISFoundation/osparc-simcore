@@ -546,6 +546,13 @@ qx.Class.define("qxapp.data.Store", {
               label: "Modeler",
               description: "Live Link to Modeler",
               type: "data:application/s4l-api/modeler"
+            },
+            homogeneous: {
+              displayOrder: 1,
+              label: "Homogeneous grid",
+              description: "Homogeneous grid",
+              type: "boolean",
+              defaultValue: true
             }
           },
           outputs: {
@@ -574,6 +581,27 @@ qx.Class.define("qxapp.data.Store", {
               label: "Modeler",
               description: "Live Link to Modeler",
               type: "data:application/s4l-api/modeler"
+            },
+            voxelEngine: {
+              displayOrder: 1,
+              label: "Used Voxel Engine",
+              description: "Used Voxel Engine",
+              type: "string",
+              defaultValue: "Topological Voxeler"
+            },
+            maximumFraction: {
+              displayOrder: 2,
+              label: "Maximum Fraction",
+              description: "Maximum Fraction",
+              type: "number",
+              defaultValue: 21
+            },
+            congruentSubgrid: {
+              displayOrder: 3,
+              label: "Congruent Subgrid Voxeling",
+              description: "Congruent Subgrid Voxeling",
+              type: "boolean",
+              defaultValue: true
             }
           },
           outputs: {
