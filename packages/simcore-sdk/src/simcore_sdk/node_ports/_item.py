@@ -16,7 +16,12 @@ def _check_type(item_type, value):
         return
     if data_items_utils.is_value_link(value):
         return
-    
+
+
+    if isinstance(value, (int, float)):
+        if item_type in ("number", "integer"):
+            return
+
     possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
     if not item_type in possible_types:
         if data_items_utils.is_file_type(item_type) and data_items_utils.is_value_on_store(value):
@@ -66,6 +71,11 @@ class Item():
             if data_items_utils.is_file_type(self.type):
                 # move the file to the right location
                 file_name = Path(value).name
+
+                # if a file alias is present use it
+                if self._schema.fileToKeyMap:
+                    file_name = next(iter(self._schema.fileToKeyMap))
+
                 file_path = data_items_utils.create_file_path(self.key, file_name)
                 if file_path.exists():
                     file_path.unlink()
@@ -78,14 +88,14 @@ class Item():
             return await self.__get_value_from_store(self.value)
         # the value is not a link, let's directly convert it to the right type
         return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["type"](config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value))
-    
+
     async def set(self, value):
         """sets the data to the underlying port
 
         Arguments:
             value {any type} -- must be convertible to a string, or an exception will be thrown.
         """
-        log.info("Setting data item with value %s", value)        
+        log.info("Setting data item with value %s", value)
         # try to guess the type and check the type set fits this (there can be more than one possibility, e.g. string)
         possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
         log.debug("possible types are for value %s are %s", value, possible_types)
@@ -111,7 +121,7 @@ class Item():
             log.debug("calling new data callback to update database")
             self.new_data_cb(new_data) #pylint: disable=not-callable
             log.debug("database updated")
-    
+
     async def __get_value_from_link(self, value):    # pylint: disable=R1710
         log.debug("Getting value %s", value)
         node_uuid, port_key = data_items_utils.decode_link(value)
@@ -135,5 +145,3 @@ class Item():
         file_path = data_items_utils.create_file_path(self.key, file_name)
         await filemanager.download_file(store_id=store_id, s3_object=s3_path, local_file_path=file_path)
         return file_path
-
-

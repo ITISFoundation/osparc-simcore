@@ -14,5 +14,6 @@ CONFIG_SECTION_NAME = 'rest'
 schema = T.Dict({
     "version": T.Enum("v0"),
     "location": T.Or(T.String, T.URL),   # either path or url should contain version in it
+    # TODO: DO NOT USE this option anymore. Deprecate
     T.Key("extra_urls", optional=True): T.Or(T.String(), T.List(T.String)),  # full url seen by front-end
 })

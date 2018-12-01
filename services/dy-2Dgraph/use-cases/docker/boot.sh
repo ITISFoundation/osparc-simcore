@@ -2,7 +2,6 @@
 
 if test "${CREATE_DUMMY_TABLE}" = "1"
 then
-    pip install -r /home/jovyan/devel/requirements.txt
     pushd /packages/simcore-sdk; pip install -r requirements-dev.txt; popd
     pushd /packages/s3wrapper; pip install -r requirements-dev.txt; popd
 
