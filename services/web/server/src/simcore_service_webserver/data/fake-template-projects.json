@@ -390,7 +390,7 @@
         },
         "parent": "lfContainerId"
       },
-      "3DViewerId1": {
+      "visualizer1id": {
         "key": "simcore/services/dynamic/3d-viewer",
         "version": "1.0.5",
         "label": "EM-LF Solver Viewer",
@@ -529,7 +529,7 @@
         },
         "parent": "NeuronContainerId"
       },
-      "3DViewerId2": {
+      "visualizer2id": {
         "key": "simcore/services/dynamic/3d-viewer",
         "version": "1.0.5",
         "label": "Neuron Solver Viewer",
