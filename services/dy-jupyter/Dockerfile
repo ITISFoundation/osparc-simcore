@@ -20,7 +20,8 @@ USER $NB_USER
 # set up oSparc env variables
 ENV SIMCORE_NODE_UUID="-1" \
     SIMCORE_USER_ID="-1" \
-    STORAGE_ENDPOINT="=1" \    
+    SIMCORE_NODE_BASEPATH="-1" \
+    STORAGE_ENDPOINT="=1" \
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
     S3_SECRET_KEY="-1" \
@@ -30,6 +31,9 @@ ENV SIMCORE_NODE_UUID="-1" \
     POSTGRES_PASSWORD="-1" \
     POSTGRES_DB="-1"
 # ----------------------------------------------------------------
+COPY --chown=jovyan:users scripts/docker/healthcheck_curl_host.py /healthcheck/healthcheck_curl_host.py
+# will start to run after interval every interval. fails after timeout. fail do not count if during start-period. will do # retries
+HEALTHCHECK --interval=10s --timeout=30s --start-period=1s --retries=3 CMD [ "python3", "/healthcheck/healthcheck_curl_host.py", "http://localhost:8888" ]
 # configure notebook
 RUN pip install --upgrade pip && \
     pip install jupyter_contrib_nbextensions && \
@@ -39,7 +43,7 @@ RUN pip install --upgrade pip && \
     jupyter nbextension enable hide_input/main && \
     jupyter nbextension enable init_cell/main
 # ----------------------------------------------------------------
-COPY --chown=jovyan:users services/dy-jupyter/notebook-customisation/custom.js /home/jovyan/.jupyter/custom
+COPY --chown=jovyan:users services/dy-jupyter/notebook-customisation/custom.js /home/jovyan/.jupyter/custom/custom.js
 
 ENV NOTEBOOK_URL="notebooks/notebook.ipynb"
 # ----------------------------------------------------------------
@@ -47,6 +51,7 @@ FROM base AS development
 VOLUME /home/jovyan/packages
 VOLUME /home/jovyan/services
 VOLUME /home/jovyan/devel
+VOLUME /home/root/scripts/dy_services_helpers
 VOLUME /home/jovyan/work
 VOLUME /home/jovyan/docker
 ENV CREATE_DUMMY_TABLE=1
@@ -66,5 +71,6 @@ COPY --chown=jovyan:users services/storage/client-sdk /home/jovyan/services/stor
 # copy the default notebook
 COPY --chown=jovyan:users services/dy-jupyter/notebooks /home/jovyan/notebooks
 RUN pip install /home/jovyan/packages/simcore-sdk &&\
-    pip install /home/jovyan/packages/s3wrapper
+    pip install /home/jovyan/packages/s3wrapper && \
+    pip install /home/jovyan/services/storage/client-sdk/python
 ENTRYPOINT [ "/bin/bash", "/docker/boot.sh" ]

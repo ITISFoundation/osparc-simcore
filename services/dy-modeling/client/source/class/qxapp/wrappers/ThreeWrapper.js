@@ -20,14 +20,12 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
     let transformPath = "three/TransformControls.js";
     let gltfLoaderPath = "three/GLTFLoader.js";
     let gltfExporterPath = "three/GLTFExporter.js";
-    let vtkLoaderPath = "three/VTKLoader.js";
     let dynLoader = new qx.util.DynamicScriptLoader([
       threePath,
       orbitPath,
       transformPath,
       gltfLoaderPath,
-      gltfExporterPath,
-      vtkLoaderPath
+      gltfExporterPath
     ]);
 
     dynLoader.addListenerOnce("ready", function(e) {
@@ -105,20 +103,32 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       let scope = this;
 
       function onLoad(myScene) {
+        console.log(myScene.scene);
         for (let i = myScene.scene.children.length-1; i >=0; i--) {
           if (myScene.scene.children[i].type === "Mesh" ||
               myScene.scene.children[i].type === "Line") {
-            scope.fireDataEvent("EntityToBeAdded", myScene.scene.children[i]);
+            // Not really sure about this
+            myScene.scene.children[i].uuid = modelBuffer.uuid;
+            const data = {
+              name: modelBuffer.name,
+              pathNames: modelBuffer.pathNames,
+              pathUuids: modelBuffer.pathUuids,
+              uuid: modelBuffer.uuid,
+              entity: myScene.scene.children[i]
+            };
+            scope.fireDataEvent("EntityToBeAdded", data);
+          } else {
+            console.log("Will not loaded", myScene.scene.children[i]);
           }
         }
       }
 
       function onError(error) {
-        console.log("An error happened");
+        console.log("GLTFLoader An error happened");
       }
 
       let glTFLoader = new THREE.GLTFLoader();
-      glTFLoader.parse(modelBuffer, null,
+      glTFLoader.parse(modelBuffer.value, null,
         onLoad,
         onError
       );
@@ -341,11 +351,16 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       return geometry;
     },
 
-    createSpline: function(listOfPoints) {
+    createSpline: function(listOfPoints, color=null) {
+      if (listOfPoints.length === 0) {
+        return null;
+      }
+      console.log("listOfPoints", listOfPoints, color);
+      let splineColor = color ? new THREE.Color(color.r, color.g, color.b) : 0xffffff;
       let curvePoints = this.__arrayToThreePoints(listOfPoints);
       let curve = new THREE.CatmullRomCurve3(curvePoints);
       let points = curve.getPoints(listOfPoints.length * 10);
-      return this.__createLine(points);
+      return this.__createLine(points, splineColor);
     },
 
     fromEntityMeshToEntity: function(entityMesh) {
@@ -451,10 +466,10 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       return threePoints;
     },
 
-    __createLine: function(points) {
+    __createLine: function(points, lineColor) {
       let geometry = new THREE.BufferGeometry().setFromPoints(points);
       let material = new THREE.LineBasicMaterial({
-        color : 0xffffff
+        color : lineColor
       });
       let curveObject = new THREE.Line(geometry, material);
       return curveObject;
@@ -522,6 +537,24 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       this._orbitControls = new THREE.OrbitControls(this._camera, this._renderer.domElement);
       this._orbitControls.addEventListener("change", this.__updateOrbitControls.bind(this));
       this._orbitControls.update();
+    },
+
+    setOrbitPoint: function(newPos) {
+      this._orbitControls.target.set(newPos.x, newPos.y, newPos.z);
+      this._orbitControls.update();
+      this.render();
+    },
+
+    getBBox: function(obj) {
+      return new THREE.Box3().setFromObject(obj);
+    },
+
+    mergeBBoxes: function(bbox1, bbox2) {
+      return bbox1.union(bbox2);
+    },
+
+    getBBoxCenter: function(bbox) {
+      return bbox.getCenter();
     },
 
     __updateOrbitControls: function() {

@@ -2,10 +2,21 @@ import logging
 import os
 
 import pytest
-from pytest_docker import docker_ip, docker_services  # pylint:disable=W0611
 import sqlalchemy as sa
+from pytest_docker import docker_ip, docker_services  # pylint:disable=W0611
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+#
+# FIXME: this should be in sync with the original
+# which is owned by the webserver???
+_metadata = sa.MetaData()
+_tokens = sa.Table("tokens", _metadata,
+    sa.Column("token_id", sa.BigInteger, nullable=False, primary_key=True),
+    sa.Column("user_id", sa.BigInteger, nullable=False),
+    sa.Column("token_service", sa.String, nullable=False),
+    sa.Column("token_data", sa.JSON, nullable=False),
+)
 
 
 def is_responsive(url):
@@ -22,7 +33,7 @@ def is_responsive(url):
 
 # pylint:disable=redefined-outer-name
 @pytest.fixture(scope="module")
-def engine(docker_ip, docker_services): 
+def engine(docker_ip, docker_services):
     dbname = 'test'
     user = 'user'
     password = 'pwd'
@@ -42,7 +53,10 @@ def engine(docker_ip, docker_services):
         pause=1.0,
     )
 
+    # Configures db and initializes tables
+    # Uses syncrounous engine for that
     engine = create_engine(url, client_encoding='utf8')
+    _metadata.create_all(bind=engine, tables=[_tokens, ], checkfirst=True)
 
     os.environ["POSTGRES_ENDPOINT"]="{host}:{port}".format(host=host, port=port)
     os.environ["POSTGRES_USER"]="user"
@@ -51,7 +65,8 @@ def engine(docker_ip, docker_services):
     yield engine
     # cleanup
     engine.dispose()
-    
+
+
 
 # pylint:disable=redefined-outer-name
 @pytest.fixture(scope="module")
@@ -62,4 +77,3 @@ def session(engine):
     yield session
     #cleanup
     session.close()
-    

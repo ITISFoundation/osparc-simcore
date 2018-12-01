@@ -8,11 +8,13 @@ from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
 
+from .application_proxy import setup_app_proxy
 from .computation import setup_computation
 from .db import setup_db
 from .director import setup_director
 from .email import setup_email
 from .login import setup_login
+from .projects import setup_projects
 from .rest import setup_rest
 from .s3 import setup_s3
 from .security import setup_security
@@ -20,6 +22,7 @@ from .session import setup_session
 from .sockets import setup_sockets
 from .statics import setup_statics
 from .storage import setup_storage
+from .users import setup_users
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +55,11 @@ def create_application(config: dict):
     setup_director(app)
     setup_s3(app)
     setup_storage(app)
+    setup_users(app)
+    setup_projects(app, debug=True) # TODO: deactivate fakes i.e. debug=testing
+
+    if config['director']["enabled"]:
+        setup_app_proxy(app) # TODO: under development!!!
 
     return app
 

@@ -46,16 +46,12 @@ qx.Class.define("qxapp.Application", {
         qxapp.dev.fake.srv.restapi.Authentication;
       }
 
-      // openning web socket
-      qxapp.wrappers.WebSocket.getInstance().connect();
-
       // Setting up auth manager
       qxapp.auth.Manager.getInstance().addListener("logout", function() {
         this.__restart();
       }, this);
 
       this.__restart();
-      this.__schemaCheck();
     },
 
     __restart: function() {
@@ -70,6 +66,8 @@ qx.Class.define("qxapp.Application", {
       let options = null;
 
       if (isLogged) {
+        this.__connectWebSocket();
+
         view = new qxapp.desktop.LayoutManager();
 
         options = {
@@ -79,6 +77,8 @@ qx.Class.define("qxapp.Application", {
           width: "100%"
         };
       } else {
+        this.__disconnectWebSocket();
+
         view = new qxapp.auth.AuthView();
         view.addListener("done", function(msg) {
           this.__restart();
@@ -111,48 +111,14 @@ qx.Class.define("qxapp.Application", {
       this.__restart();
     },
 
-    __schemaCheck: function() {
-      /** a little ajv test */
-      let nodeCheck = new qx.io.request.Xhr("/resource/qxapp/node-meta-v0.0.1.json");
-      nodeCheck.addListener("success", e => {
-        let data = e.getTarget().getResponse();
-        try {
-          let ajv = new qxapp.wrappers.Ajv(data);
-          let map = qxapp.data.Store.getInstance().getFakeServices();
-          for (let key in map) {
-            let check = ajv.validate(map[key]);
-            console.log("services validation result " + key + ":", check);
-          }
-          /*
-          let servicesPromise = new qx.Promise(qxapp.data.Store.getInstance().getServices, this);
-          servicesPromise.then(function(map) {
-            for (let key in map) {
-              let check = ajv.validate(map[key]);
-              console.log("services validation result " + key + ":", check);
-            }
-          });
-          */
-        } catch (err) {
-          console.error(err);
-        }
-      });
-      nodeCheck.send();
-      let projectCheck = new qx.io.request.Xhr("/resource/qxapp/project-v0.0.1.json");
-      projectCheck.addListener("success", e => {
-        let data = e.getTarget().getResponse();
-        try {
-          let ajv = new qxapp.wrappers.Ajv(data);
-          let list = qxapp.data.Store.getInstance().getProjectList();
-          list.forEach((project, i) => {
-            let check = ajv.validate(project);
-            console.log("project validation result " + i + ":", check);
-          });
-        } catch (err) {
-          console.error(err);
-        }
-      });
-      projectCheck.send();
-    }
+    __connectWebSocket: function() {
+      // open web socket
+      qxapp.wrappers.WebSocket.getInstance().connect();
+    },
 
+    __disconnectWebSocket: function() {
+      // open web socket
+      qxapp.wrappers.WebSocket.getInstance().disconnect();
+    }
   }
 });

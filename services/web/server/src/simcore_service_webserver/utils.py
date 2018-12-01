@@ -1,14 +1,14 @@
 """
     General utilities and helper functions
 """
+import hashlib
 import os
 import sys
 from pathlib import Path
-
 from typing import Iterable, List
 
 from aiohttp.web import HTTPFound
-
+from yarl import URL
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -80,6 +80,13 @@ def get_thrift_api_folders(startdir):
 def redirect(*args, **kwargs):
     raise HTTPFound(*args, **kwargs)
 
+
+def gravatar_hash(email):
+    return hashlib.md5(email.lower().encode('utf-8')).hexdigest()
+
+def gravatar_url(gravatarhash, size=100, default='identicon', rating='g') -> URL:
+    url = URL('https://secure.gravatar.com/avatar/%s' % gravatarhash)
+    return url.with_query(s=size, d=default, r=rating)
 
 __all__ = (
     'redirect',

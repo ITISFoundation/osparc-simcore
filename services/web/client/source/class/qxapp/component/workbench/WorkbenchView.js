@@ -32,7 +32,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
 
     this.__desktopCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
     this.add(this.__desktopCanvas, {
-      flex : 1
+      flex: 1
     });
 
     let nodesExposedLayout = this.__outputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
@@ -96,29 +96,25 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       bottom: 10,
       right: 10
     });
-    [
-      this.__getPlusButton(),
-      this.__getRemoveButton()
-    ].forEach(widget => {
-      buttonContainer.add(widget);
-    });
+    // let addButton = this.__getPlusButton();
+    // buttonContainer.add(addButton);
+    // let removeButton = this.__getRemoveButton();
+    // buttonContainer.add(removeButton);
+    let unlinkButton = this.__unlinkButton = this.__getUnlinkButton();
+    unlinkButton.setVisibility("excluded");
+    buttonContainer.add(unlinkButton);
 
     this.addListener("dbltap", e => {
       // FIXME:
       const navBarHeight = 50;
       let x = e.getViewportLeft() - this.getBounds().left;
       let y = e.getViewportTop() - navBarHeight;
-
-      let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
-      srvCat.moveTo(x, y);
-      srvCat.open();
-      let pos = {
+      const pos = {
         x: x,
         y: y
       };
-      srvCat.addListener("AddService", ev => {
-        this.__addServiceFromCatalogue(ev, pos);
-      }, this);
+      let srvCat = this.__createServicesCatalogue(pos);
+      srvCat.open();
     }, this);
   },
 
@@ -136,6 +132,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
   },
 
   members: {
+    __unlinkButton: null,
     __nodesUI: null,
     __linksUI: null,
     __inputNodesLayout: null,
@@ -157,12 +154,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         height: BUTTON_SIZE
       });
       plusButton.addListener("execute", function() {
-        let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
-        srvCat.center();
-        srvCat.open();
-        srvCat.addListener("AddService", e => {
-          this.__addServiceFromCatalogue(e);
-        }, this);
+        this.openServicesCatalogue();
       }, this);
       return plusButton;
     },
@@ -185,13 +177,53 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return removeButton;
     },
 
+    __getUnlinkButton: function() {
+      const icon = "@FontAwesome5Solid/unlink/16";
+      let unlinkBtn = new qx.ui.form.Button(null, icon);
+      unlinkBtn.set({
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE
+      });
+      unlinkBtn.addListener("execute", function() {
+        if (this.__selectedItemId && this.__isSelectedItemALink(this.__selectedItemId)) {
+          this.__removeLink(this.__getLinkUI(this.__selectedItemId));
+          this.__selectedItemId = null;
+        }
+      }, this);
+      return unlinkBtn;
+    },
+
+    openServicesCatalogue: function() {
+      let srvCat = this.__createServicesCatalogue();
+      srvCat.open();
+    },
+
+    __createServicesCatalogue: function(pos) {
+      let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
+      if (pos) {
+        srvCat.moveTo(pos.x, pos.y);
+      } else {
+        // srvCat.center();
+        const bounds = this.getLayoutParent().getBounds();
+        const workbenchViewCenter = {
+          x: bounds.left + parseInt((bounds.left + bounds.width) / 2),
+          y: bounds.top + parseInt((bounds.top + bounds.height) / 2)
+        };
+        srvCat.moveTo(workbenchViewCenter.x - 200, workbenchViewCenter.y - 200);
+      }
+      srvCat.addListener("AddService", ev => {
+        this.__addServiceFromCatalogue(ev, pos);
+      }, this);
+      return srvCat;
+    },
+
     __addServiceFromCatalogue: function(e, pos) {
-      let data = e.getData();
-      let metaData = data.service;
+      const data = e.getData();
+      const service = data.service;
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let nodeModel = this.getWorkbenchModel().createNodeModel(metaData.key, metaData.version);
+      let nodeModel = this.getWorkbenchModel().createNodeModel(service.getKey(), service.getVersion());
       let parent = null;
       if (this.__currentModel.isContainer()) {
         parent = this.__currentModel;
@@ -220,7 +252,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       if (position === undefined || position === null) {
         position = {};
         let farthestRight = 0;
-        for (let i=0; i < this.__nodesUI.length; i++) {
+        for (let i = 0; i < this.__nodesUI.length; i++) {
           let boundPos = this.__nodesUI[i].getBounds();
           let rightPos = boundPos.left + boundPos.width;
           if (farthestRight < rightPos) {
@@ -386,24 +418,20 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         let posX = this.__pointerPosX;
         let posY = this.__pointerPosY;
         if (this.__tempLinkNodeId === dragNodeId) {
-          let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
+          const pos = {
+            x: posX,
+            y: posY
+          };
+          let srvCat = this.__createServicesCatalogue(pos);
           if (this.__tempLinkIsInput === true) {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort());
           } else {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getOutputPort());
           }
-          srvCat.moveTo(posX, posY);
-          srvCat.open();
-          let pos = {
-            x: posX,
-            y: posY
-          };
-          srvCat.addListener("AddService", function(ev) {
-            this.__addServiceFromCatalogue(ev, pos);
-          }, this);
           srvCat.addListener("close", function(ev) {
             this.__removeTempLink();
           }, this);
+          srvCat.open();
         }
         qx.bom.Element.removeListener(
           this.__desktop,
@@ -426,7 +454,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
 
     __createInputNodeUIs: function(model) {
       const inputNodes = model.getInputNodes();
-      for (let i=0; i<inputNodes.length; i++) {
+      for (let i = 0; i < inputNodes.length; i++) {
         let inputNodeModel = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
         let inputLabel = this.__createInputNodeUI(inputNodeModel);
         this.__nodesUI.push(inputLabel);
@@ -436,7 +464,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     __clearInputNodeUIs: function() {
       // remove all but the title
       while (this.__inputNodesLayout.getChildren().length > 1) {
-        this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length-1);
+        this.__inputNodesLayout.removeAt(this.__inputNodesLayout.getChildren().length - 1);
       }
     },
 
@@ -458,12 +486,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     __clearNodeExposedUIs: function() {
       // remove all but the title
       while (this.__outputNodesLayout.getChildren().length > 1) {
-        this.__outputNodesLayout.removeAt(this.__outputNodesLayout.getChildren().length-1);
+        this.__outputNodesLayout.removeAt(this.__outputNodesLayout.getChildren().length - 1);
       }
     },
 
     __removeSelectedNode: function() {
-      for (let i=0; i<this.__nodesUI.length; i++) {
+      for (let i = 0; i < this.__nodesUI.length; i++) {
         if (this.__desktop.getActiveWindow() === this.__nodesUI[i]) {
           this.__removeNode(this.__nodesUI[i]);
           return;
@@ -493,7 +521,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     __createLinkBetweenNodesAndInputNodes: function(from, to, linkId) {
       const inputNodes = this.__inputNodesLayout.getChildren();
       // Children[0] is the title
-      for (let i=1; i<inputNodes.length; i++) {
+      for (let i = 1; i < inputNodes.length; i++) {
         const inputNodeId = inputNodes[i].getNodeId();
         if (inputNodeId === from.nodeUuid) {
           let node1Id = from.nodeUuid;
@@ -643,7 +671,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
 
     __removeAllNodes: function() {
       while (this.__nodesUI.length > 0) {
-        this.__removeNode(this.__nodesUI[this.__nodesUI.length-1]);
+        this.__removeNode(this.__nodesUI[this.__nodesUI.length - 1]);
       }
     },
 
@@ -657,7 +685,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
 
     __removeAllLinks: function() {
       while (this.__linksUI.length > 0) {
-        this.__removeLink(this.__linksUI[this.__linksUI.length-1]);
+        this.__removeLink(this.__linksUI[this.__linksUI.length - 1]);
       }
     },
 
@@ -679,7 +707,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
 
     __clearAllNodes: function() {
       while (this.__nodesUI.length > 0) {
-        this.__clearNode(this.__nodesUI[this.__nodesUI.length-1].getNodeId());
+        this.__clearNode(this.__nodesUI[this.__nodesUI.length - 1].getNodeId());
       }
     },
 
@@ -693,7 +721,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
 
     __clearAllLinks: function() {
       while (this.__linksUI.length > 0) {
-        this.__clearLink(this.__linksUI[this.__linksUI.length-1]);
+        this.__clearLink(this.__linksUI[this.__linksUI.length - 1]);
       }
     },
 
@@ -732,7 +760,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         for (const nodeUuid in nodes) {
           const nodeModel = nodes[nodeUuid];
           const inputNodes = nodeModel.getInputNodes();
-          for (let i=0; i<inputNodes.length; i++) {
+          for (let i = 0; i < inputNodes.length; i++) {
             let inputNode = inputNodes[i];
             if (inputNode in nodes) {
               this.__createLinkBetweenNodes({
@@ -807,6 +835,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         const selectedColor = qxapp.theme.Color.colors["workbench-link-selected"];
         this.__svgWidget.updateColor(selectedLink.getRepresentation(), selectedColor);
       }
+
+      this.__unlinkButton.setVisibility(this.__isSelectedItemALink(newID) ? "visible" : "excluded");
     },
 
     __isSelectedItemALink: function() {

@@ -60,12 +60,7 @@ _CONFIG = dict(
         '': [
             'data/*.json',
             'data/*.yml',
-            'data/*.yaml',
-            'oas3/**/*.yaml',
-            'oas3/**/*.yml',
-            'oas3/**/components/schemas/*.json',
-            'oas3/**/components/schemas/*.yaml',
-            'oas3/**/components/schemas/*.yml'
+            'data/*.yaml'
             ],
     },
     entry_points={

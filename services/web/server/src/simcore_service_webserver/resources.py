@@ -1,5 +1,6 @@
 """ Access to data resources installed within this package
 
+
 """
 from servicelib.resources import ResourcesFacade
 
@@ -8,6 +9,7 @@ resources = ResourcesFacade(
     distribution_name="simcore-service-webserver",
     config_folder='config',
 )
+
 
 __all__ = (
     'resources',

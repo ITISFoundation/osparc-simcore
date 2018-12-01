@@ -36,7 +36,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
       }
     });
 
-    const itemList = qxapp.data.Store.getInstance().getItemList(nodeModel.getNodeId(), portKey);
+    const itemList = qxapp.data.Store.getInstance().getItemList(nodeModel.getKey(), portKey);
     const listModel = qxapp.data.Converters.fromAPIListToVirtualListModel(itemList);
     let model = qx.data.marshal.Json.createModel(listModel, true);
     list.setModel(model);
@@ -59,7 +59,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
         e.addAction("copy");
 
         // HACK
-        if (this.getNodeModel().getKey() === "services/demodec/dynamic/itis/s4l/Neuroman") {
+        if (this.getNodeModel().getKey() === "simcore/services/demodec/dynamic/itis/s4l/neuroman") {
           // Register supported types
           e.addType("osparc-port-link");
           item.nodeId = this.getNodeModel().getNodeId();

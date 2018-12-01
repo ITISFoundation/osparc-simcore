@@ -1,11 +1,16 @@
 /* global window */
 
 /* eslint newline-per-chained-call: 0 */
+/* eslint no-warning-comments: "off" */
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,
 
   construct: function(projectModel) {
     this.base(arguments, "horizontal");
+
+    qxapp.utils.UuidToName.getInstance().setProjectModel(projectModel);
+
+    this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
 
     this.setProjectModel(projectModel);
 
@@ -35,7 +40,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       nullable: false,
       init: true,
       check: "Boolean",
-      apply : "__applyCanStart"
+      apply: "__applyCanStart"
     }
   },
 
@@ -44,6 +49,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   },
 
   members: {
+    __projectResources: null,
     __pipelineId: null,
     __mainPanel: null,
     __sidePanel: null,
@@ -58,6 +64,13 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let project = this.getProjectModel();
 
       let treeView = this.__treeView = new qxapp.component.widget.TreeTool(project.getName(), project.getWorkbenchModel());
+      treeView.addListener("addNode", () => {
+        this.__addNode();
+      }, this);
+      treeView.addListener("removeNode", e => {
+        const nodeId = e.getData();
+        this.__removeNode(nodeId);
+      }, this);
       this.__sidePanel.setTopView(treeView);
 
       let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
@@ -72,17 +85,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let workbenchView = this.__workbenchView = new qxapp.component.workbench.WorkbenchView(project.getWorkbenchModel());
       workbenchView.addListener("removeNode", e => {
         const nodeId = e.getData();
-        // remove first the connected links
-        let connectedLinks = this.getProjectModel().getWorkbenchModel().getConnectedLinks(nodeId);
-        for (let i=0; i<connectedLinks.length; i++) {
-          const linkId = connectedLinks[i];
-          if (this.getProjectModel().getWorkbenchModel().removeLink(linkId)) {
-            this.__workbenchView.clearLink(linkId);
-          }
-        }
-        if (this.getProjectModel().getWorkbenchModel().removeNode(nodeId)) {
-          this.__workbenchView.clearNode(nodeId);
-        }
+        this.__removeNode(nodeId);
       }, this);
       workbenchView.addListener("removeLink", e => {
         const linkId = e.getData();
@@ -136,15 +139,22 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__stopPipeline();
       }, this);
 
-      this.getProjectModel().getWorkbenchModel().addListener("WorkbenchModelChanged", function() {
+      let workbenchModel = this.getProjectModel().getWorkbenchModel();
+      workbenchModel.addListener("WorkbenchModelChanged", function() {
         this.__workbenchModelChanged();
       }, this);
 
-      this.getProjectModel().getWorkbenchModel().addListener("ShowInLogger", e => {
-        const data = e.getData();
-        const nodeLabel = data.nodeLabel;
-        const msg = data.msg;
-        this.getLogger().info(nodeLabel, msg);
+      workbenchModel.addListener("NodeAdded", e => {
+        let nodeModel = e.getData();
+        nodeModel.addListener("UpdatePipeline", () => {
+          this.__updatePipeline(nodeModel);
+        }, this);
+        nodeModel.addListener("ShowInLogger", ev => {
+          const data = ev.getData();
+          const nodeLabel = data.nodeLabel;
+          const msg = data.msg;
+          this.getLogger().info(nodeLabel, msg);
+        }, this);
       }, this);
 
       [
@@ -166,12 +176,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__currentNodeId = nodeId;
       this.__treeView.nodeSelected(nodeId);
 
+      const workbenchModel = this.getProjectModel().getWorkbenchModel();
       if (nodeId === "root") {
-        const workbenchModel = this.getProjectModel().getWorkbenchModel();
         this.__workbenchView.loadModel(workbenchModel);
         this.showInMainView(this.__workbenchView, nodeId);
       } else {
-        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
+        let nodeModel = workbenchModel.getNodeModel(nodeId);
 
         let widget;
         if (nodeModel.isContainer()) {
@@ -195,7 +205,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (nodeId === "root") {
         this.showScreenshotInExtraView("workbench");
       } else {
-        let nodeModel = this.getProjectModel().getWorkbenchModel().getNodeModel(nodeId);
+        let nodeModel = workbenchModel.getNodeModel(nodeId);
         if (nodeModel.isContainer()) {
           this.showScreenshotInExtraView("container");
         } else {
@@ -214,6 +224,31 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
             this.showScreenshotInExtraView("form");
           }
         }
+      }
+    },
+
+    __addNode: function() {
+      if (this.__mainPanel.getMainView() !== this.__workbenchView) {
+        return;
+      }
+      this.__workbenchView.openServicesCatalogue();
+    },
+
+    __removeNode: function(nodeId) {
+      if (this.__mainPanel.getMainView() !== this.__workbenchView) {
+        return;
+      }
+      // remove first the connected links
+      let workbenchModel = this.getProjectModel().getWorkbenchModel();
+      let connectedLinks = workbenchModel.getConnectedLinks(nodeId);
+      for (let i=0; i<connectedLinks.length; i++) {
+        const linkId = connectedLinks[i];
+        if (workbenchModel.removeLink(linkId)) {
+          this.__workbenchView.clearLink(linkId);
+        }
+      }
+      if (workbenchModel.removeNode(nodeId)) {
+        this.__workbenchView.clearNode(nodeId);
       }
     },
 
@@ -241,7 +276,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     showScreenshotInExtraView: function(name) {
-      let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_"+name+".png").set({
+      let imageWidget = new qx.ui.basic.Image("qxapp/screenshot_" + name + ".png").set({
         scale: true,
         allowShrinkX: true,
         allowShrinkY: true
@@ -251,6 +286,52 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     getLogger: function() {
       return this.__loggerView;
+    },
+
+    __getCurrentPipeline: function() {
+      const saveContainers = false;
+      const savePosition = false;
+      let currentPipeline = this.getProjectModel().getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
+      for (const nodeId in currentPipeline) {
+        let currentNode = currentPipeline[nodeId];
+        if (currentNode.key.includes("/neuroman")) {
+          // HACK: Only Neuroman should enter here
+          currentNode.key = "simcore/services/dynamic/modeler/webserver";
+          currentNode.version = "2.7.0";
+          const modelSelected = currentNode.inputs["inModel"];
+          delete currentNode.inputs["inModel"];
+          currentNode.inputs["model_name"] = modelSelected;
+        }
+      }
+      return currentPipeline;
+    },
+
+    __updatePipeline: function(nodeModel) {
+      let currentPipeline = this.__getCurrentPipeline();
+      let url = "/computation/pipeline/" + encodeURIComponent(this.getProjectModel().getUuid());
+      let req = new qxapp.io.request.ApiRequest(url, "PUT");
+      let data = {};
+      data["workbench"] = currentPipeline;
+      req.set({
+        requestData: qx.util.Serializer.toJson(data)
+      });
+      console.log("updating pipeline: " + url + "\n" + data);
+
+      req.addListener("success", e => {
+        this.getLogger().debug("Workbench", "Pipeline successfully updated");
+        if (nodeModel) {
+          nodeModel.retrieveInputs();
+        }
+      }, this);
+      req.addListener("error", e => {
+        this.getLogger().error("Workbench", "Error updating pipeline");
+      }, this);
+      req.addListener("fail", e => {
+        this.getLogger().error("Workbench", "Failed updating pipeline");
+      }, this);
+      req.send();
+
+      this.getLogger().debug("Workbench", "Updating pipeline");
     },
 
     __startPipeline: function() {
@@ -276,18 +357,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         socket.on("progress", function(data) {
           let d = JSON.parse(data);
           let node = d["Node"];
-          let progress = 100*Number.parseFloat(d["Progress"]).toFixed(4);
+          let progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
           this.__workbenchView.updateProgress(node, progress);
         }, this);
       }
 
       // post pipeline
       this.__pipelineId = null;
-      const saveContainers = false;
-      const savePosition = false;
-      let currentPipeline = this.getProjectModel().getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
+      let currentPipeline = this.__getCurrentPipeline();
       let url = "/computation/pipeline/" + encodeURIComponent(this.getProjectModel().getUuid()) + "/start";
-
       let req = new qxapp.io.request.ApiRequest(url, "POST");
       let data = {};
       data["workbench"] = currentPipeline;
@@ -368,11 +446,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }
     },
 
-    __createIFrame: function(url) {
-      let iFrame = new qxapp.component.widget.PersistentIframe(url);
-      return iFrame;
-    },
-
     __addWidgetToMainView: function(widget) {
       let widgetContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
 
@@ -399,7 +472,19 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     serializeProjectDocument: function() {
-      console.log("serializeProject", this.getProjectModel().serializeProject());
+      let myPrj = this.getProjectModel().serializeProject();
+      // FIXME: server expects "projectUuid" and we have "uuid"
+      myPrj["projectUuid"] = myPrj["uuid"];
+      console.log("serializeProject", myPrj);
+
+      let resource = this.__projectResources.project;
+      resource.addListenerOnce("delSuccess", e => {
+        let resources = this.__projectResources.projects;
+        resources.post(null, myPrj);
+      }, this);
+      resource.del({
+        "project_id": myPrj["uuid"]
+      });
     }
   }
 });

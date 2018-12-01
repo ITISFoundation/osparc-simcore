@@ -14,6 +14,8 @@ services:
       target: development
     volumes:
       - './director:/home/scu/services/director'
+    stdin_open: true
+    tty: true
   #--------------------------------------------------------------------
   webclient:
     image: services_webclient:dev
@@ -32,6 +34,8 @@ services:
       - ./web/server:/home/scu/services/web/server
       - ./web/client/source-output:/home/scu/services/web/client
       - ../packages:/home/scu/packages
+    stdin_open: true
+    tty: true
     depends_on:
       - webclient
   #--------------------------------------------------------------------
@@ -42,7 +46,7 @@ services:
         - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
       target: development
     volumes:
-      - ./sidecar:/home/scu/services/sidecar      
+      - ./sidecar:/home/scu/services/sidecar
       - ./storage/client-sdk:/home/scu/services/storage/client-sdk
       - ../packages:/home/scu/packages
   #--------------------------------------------------------------------
@@ -55,3 +59,5 @@ services:
     volumes:
       - ./storage:/home/scu/services/storage
       - ../packages:/home/scu/packages
+    stdin_open: true
+    tty: true

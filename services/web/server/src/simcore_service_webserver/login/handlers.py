@@ -9,7 +9,7 @@ from servicelib.rest_utils import extract_and_validate
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..security import (authorized_userid, check_password, encrypt_password,
                         forget, remember)
-from .cfg import cfg, get_storage  # FIXME: do not use singletons!
+from .cfg import cfg, get_storage, APP_LOGIN_CONFIG # FIXME: do not use singletons!
 from .decorators import login_required
 from .storage import AsyncpgStorage
 from .utils import (common_themed, get_client_ip, is_confirmation_allowed,
@@ -45,7 +45,7 @@ async def register(request: web.Request):
         'name': username,
         'email': email,
         'password_hash': encrypt_password(password),
-        'status': CONFIRMATION_PENDING if cfg.REGISTRATION_CONFIRMATION_REQUIRED
+        'status': CONFIRMATION_PENDING if bool(cfg.REGISTRATION_CONFIRMATION_REQUIRED)
                     else ACTIVE,
         'role':  USER,
         'created_ip': get_client_ip(request),
@@ -55,7 +55,7 @@ async def register(request: web.Request):
         "You are registered successfully! To activate your account, please, "
         "click on the verification link in the email we sent you.", "INFO"))
 
-    if not cfg.REGISTRATION_CONFIRMATION_REQUIRED:
+    if not bool(cfg.REGISTRATION_CONFIRMATION_REQUIRED):
         # user is logged in
         identity = body.email
         response = web.json_response(data={
@@ -70,12 +70,13 @@ async def register(request: web.Request):
     try:
         await render_and_send_mail(
             request, email,
-            common_themed('registration_email.html'), {
+            common_themed('registration_email-v2.html'), {
                 'auth': {
                     'cfg': cfg,
                 },
                 'host': request.host,
                 'link': link,
+                'name': email.split("@")[0],
             })
     except Exception: #pylint: disable=broad-except
         log.exception('Can not send email')
@@ -312,9 +313,9 @@ async def email_confirmation(request: web.Request):
 
             # flash_response(cfg.MSG_EMAIL_CHANGED)
 
-    # TODO redirect to main page!??
-    raise web.HTTPNoContent(content_type='application/json')
-    #return redirect("/")
+    location = request.app[APP_LOGIN_CONFIG]['LOGIN_REDIRECT']
+    raise web.HTTPFound(location=location)
+
 
 # helpers -----------------------------------------------------------------
 
