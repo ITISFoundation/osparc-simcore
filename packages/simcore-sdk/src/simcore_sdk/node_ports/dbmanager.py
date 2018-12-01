@@ -49,7 +49,7 @@ class DBManager:
         node = self._db.session.query(NodeModel).filter(NodeModel.node_id == config.NODE_UUID).one()
         config.PROJECT_ID = node.project_id
 
-    def __get_node_from_db(self, node_uuid):
+    def _get_node_from_db(self, node_uuid):
         log.debug("Reading from database for node uuid %s", node_uuid)
         try:
             return self._db.session.query(NodeModel).filter(NodeModel.node_id == node_uuid).one()
@@ -58,18 +58,18 @@ class DBManager:
         except exc.MultipleResultsFound:
             log.exception("the node id %s is not unique", node_uuid)
 
-    def __get_configuration_from_db(self, node_uuid=None):
+    def _get_configuration_from_db(self, node_uuid=None):
         log.debug("Reading from database")
-        node = self.__get_node_from_db(node_uuid)
+        node = self._get_node_from_db(node_uuid)
         node_json_config = save_node_to_json(node)
         log.debug("Found and converted to json")
         return node_json_config
 
-    def __write_configuration_to_db(self, json_configuration):
+    def _write_configuration_to_db(self, json_configuration):
         log.debug("Writing to database")
 
         updated_node = create_node_from_json(json_configuration)
-        node = self.__get_node_from_db(node_uuid=config.NODE_UUID)
+        node = self._get_node_from_db(node_uuid=config.NODE_UUID)
 
         if node.schema != updated_node.schema:
             node.schema = updated_node.schema
@@ -89,7 +89,7 @@ class DBManager:
         """writes the json configuration of the node ports.
         """
         log.debug("Writing ports configuration")
-        self.__write_configuration_to_db(json_configuration)
+        self._write_configuration_to_db(json_configuration)
 
     def get_ports_configuration(self):
         """returns the json configuration of the node ports where this code is running.
@@ -98,7 +98,7 @@ class DBManager:
             string -- a json containing the ports configuration
         """
         log.debug("Getting ports configuration")
-        return self.__get_configuration_from_db(node_uuid=config.NODE_UUID)
+        return self._get_configuration_from_db(node_uuid=config.NODE_UUID)
 
     def get_ports_configuration_from_node_uuid(self, node_uuid):
         """returns the json configuration of a node with a specific node uuid in the same pipeline
@@ -110,4 +110,4 @@ class DBManager:
             string -- a json containing the ports configuration
         """
         log.debug("Getting ports configuration of node %s", node_uuid)
-        return self.__get_configuration_from_db(node_uuid=node_uuid)
+        return self._get_configuration_from_db(node_uuid=node_uuid)
