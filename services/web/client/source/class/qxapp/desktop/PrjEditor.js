@@ -220,6 +220,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
             this.showScreenshotInExtraView("notebook");
           } else if (nodeKey.includes("jupyter")) {
             this.showScreenshotInExtraView("notebook");
+          } else if (nodeKey.includes("Grid")) {
+            this.showScreenshotInExtraView("grid");
+          } else if (nodeKey.includes("Voxel")) {
+            this.showScreenshotInExtraView("voxels");
           } else {
             this.showScreenshotInExtraView("form");
           }
