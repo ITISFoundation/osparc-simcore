@@ -51,14 +51,7 @@ class _NodeModelEncoder(json.JSONEncoder):
         log.debug("Encoding object using defaults")
         return json.JSONEncoder.default(self, o)
 
-class DBManager:
-    def __init__(self):
-        self._db_settings = DbSettings()   
-        with session_scope(self._db_settings.Session) as session:
-            node = session.query(NodeModel).filter(NodeModel.node_id == config.NODE_UUID).one()
-            config.PROJECT_ID = node.project_id
-
-    def _get_node_from_db(self, node_uuid: str, session) -> NodeModel:
+def _get_node_from_db(node_uuid: str, session: sqlalchemy.orm.session.Session) -> NodeModel:
         log.debug("Reading from database for node uuid %s", node_uuid)
         try:
             return session.query(NodeModel).filter(NodeModel.node_id == node_uuid).one()
@@ -67,6 +60,13 @@ class DBManager:
         except exc.MultipleResultsFound:
             log.exception("the node id %s is not unique", node_uuid)
 
+class DBManager:
+    def __init__(self):
+        self._db_settings = DbSettings()   
+        with session_scope(self._db_settings.Session) as session:
+            node = session.query(NodeModel).filter(NodeModel.node_id == config.NODE_UUID).one()
+            config.PROJECT_ID = node.project_id    
+
     def write_ports_configuration(self, json_configuration: str, node_uuid: str):
         log.debug("Writing ports configuration")
         log.debug("Writing to database")
@@ -74,7 +74,7 @@ class DBManager:
         node_configuration = json.loads(json_configuration)
         with session_scope(self._db_settings.Session) as session:
             updated_node = NodeModel(schema=node_configuration["schema"], inputs=node_configuration["inputs"], outputs=node_configuration["outputs"])
-            node = self._get_node_from_db(node_uuid=node_uuid, session=session)
+            node = _get_node_from_db(node_uuid=node_uuid, session=session)
 
             if node.schema != updated_node.schema:
                 node.schema = updated_node.schema
@@ -92,7 +92,7 @@ class DBManager:
         log.debug("Getting ports configuration of node %s", node_uuid)
         log.debug("Reading from database")
         with session_scope(self._db_settings.Session) as session:
-            node = self._get_node_from_db(node_uuid, session)
+            node = _get_node_from_db(node_uuid, session)
             node_json_config = json.dumps(node, cls=_NodeModelEncoder)
         log.debug("Found and converted to json")
         return node_json_config
