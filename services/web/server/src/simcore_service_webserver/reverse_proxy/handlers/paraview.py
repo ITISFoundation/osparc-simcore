@@ -25,7 +25,7 @@ async def handler(req: web.Request, service_url: str, mount_point: str, proxy_pa
     #target_url = service_url + req.path_qs
 
     reqH = req.headers.copy()
-    if reqH['connection'] == 'Upgrade' and reqH['upgrade'] == 'websocket' and req.method == 'GET':
+    if reqH['connection'].lower() == 'upgrade' and reqH['upgrade'].lower() == 'websocket' and req.method == 'GET':
 
         ws_server = web.WebSocketResponse()
         await ws_server.prepare(req)
