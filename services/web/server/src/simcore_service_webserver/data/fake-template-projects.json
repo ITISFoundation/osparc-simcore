@@ -11,6 +11,8 @@
     "lastChangeDate": "2018-10-23T09:33:41.858Z",
     "workbench": {
       "template-195d-4674-b758-946151cae351": {
+        "key": "simcore/services/dynamic/itis/file-picker",
+        "version": "0.0.0",
         "label": "File Picker 0D",
         "inputs": {},
         "inputNodes": [],
@@ -20,11 +22,11 @@
         "position": {
           "x": 100,
           "y": 150
-        },
-        "key": "simcore/services/dynamic/itis/file-picker",
-        "version": "0.0.0"
+        }
       },
       "template-905b-4212-8108-c7cfab4f241e": {
+        "key": "simcore/services/dynamic/itis/file-picker",
+        "version": "0.0.0",
         "label": "File Picker 1&2 D",
         "inputs": {},
         "inputNodes": [],
@@ -34,9 +36,7 @@
         "position": {
           "x": 100,
           "y": 400
-        },
-        "key": "simcore/services/dynamic/itis/file-picker",
-        "version": "0.0.0"
+        }
       },
       "template-container0d": {
         "label": "CC 0D",
@@ -79,6 +79,8 @@
         }
       },
       "template-9f81-409d-998c-c1f04de67f8b": {
+        "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
+        "version": "0.0.1",
         "label": "DBP-Clancy-Rabbit-Single-Cell solver",
         "inputs": {
           "Na": 0,
@@ -101,11 +103,11 @@
         "position": {
           "x": 300,
           "y": 400
-        },
-        "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
-        "version": "0.0.1"
+        }
       },
       "template-9984-43e7-9fda-cf9625e59986": {
+        "key": "simcore/services/dynamic/cc-0d-viewer",
+        "version": "1.1.0"
         "label": "cc-0d-viewer",
         "inputs": {
           "vm_1Hz": {
@@ -126,11 +128,11 @@
         "position": {
           "x": 600,
           "y": 200
-        },
-        "key": "simcore/services/dynamic/cc-0d-viewer",
-        "version": "1.1.0"
+        }
       },
       "template-ee08-43f3-ab01-a58e7c49a946": {
+        "key": "simcore/services/comp/ucdavis/cardiac-oned",
+        "version": "0.0.1",
         "label": "DBP-Clancy-Rabbit-1-D solver",
         "inputs": {
           "Na": 0,
@@ -156,11 +158,11 @@
         "position": {
           "x": 300,
           "y": 400
-        },
-        "key": "simcore/services/comp/ucdavis/cardiac-oned",
-        "version": "0.0.1"
+        }
       },
       "template-b105-40ce-8d33-7d501a694550": {
+        "key": "simcore/services/comp/ucdavis/cardiac-twod",
+        "version": "0.0.1",
         "label": "DBP-Clancy-Rabbit-2-D solver",
         "inputs": {
           "Na": 0,
@@ -190,11 +192,11 @@
         "position": {
           "x": 300,
           "y": 400
-        },
-        "key": "simcore/services/comp/ucdavis/cardiac-twod",
-        "version": "0.0.1"
+        }
       },
       "template-c9c4-47f5-a089-cc4e2eec30b3": {
+        "key": "simcore/services/dynamic/cc-1d-viewer",
+        "version": "1.1.0",
         "label": "cc-1d-viewer",
         "inputs": {
           "ECGs": "null",
@@ -209,11 +211,11 @@
         "position": {
           "x": 600,
           "y": 200
-        },
-        "key": "simcore/services/dynamic/cc-1d-viewer",
-        "version": "1.1.0"
+        }
       },
       "template-324f-46b7-825c-6f0f614c54ef": {
+        "key": "simcore/services/dynamic/cc-2d-viewer",
+        "version": "1.1.0",
         "label": "cc-2d-viewer",
         "inputs": {
           "ap": "null"
@@ -227,9 +229,7 @@
         "position": {
           "x": 600,
           "y": 200
-        },
-        "key": "simcore/services/dynamic/cc-2d-viewer",
-        "version": "1.1.0"
+        }
       }
     }
   }, {
