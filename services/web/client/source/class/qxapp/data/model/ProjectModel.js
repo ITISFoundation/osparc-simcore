@@ -16,6 +16,9 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
         creationDate: new Date(prjData.creationDate) || this.getCreationDate(),
         lastChangeDate: new Date(prjData.lastChangeDate) || this.getLastChangeDate()
       });
+      if (this.getName() === "Demo December") {
+        this.setUuid("DemoDecemberUUID");
+      }
     }
 
     if (prjData && prjData.workbench) {

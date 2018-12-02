@@ -31,8 +31,8 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
     target_url = URL(service_url).origin() / req.path.lstrip('/')
 
     reqH = req.headers.copy()
-    if reqH.get('connection') == 'Upgrade' and reqH.get('upgrade') == 'websocket' and req.method == 'GET':
-
+    
+    if reqH['connection'].lower() == 'upgrade' and reqH['upgrade'].lower() == 'websocket' and req.method == 'GET':
         ws_server = web.WebSocketResponse()
         await ws_server.prepare(req)
         logger.info('##### WS_SERVER %s', pprint.pformat(ws_server))

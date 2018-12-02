@@ -261,6 +261,9 @@
         "key": "simcore/services/dynamic/modeler/webserver",
         "version": "2.7.0",
         "label": "Modeler",
+        "inputs": {
+          "model_name": "DemoDec_Head_Modeler.smash"
+        },
         "position": {
           "x": 50,
           "y": 250
@@ -387,7 +390,7 @@
         },
         "parent": "lfContainerId"
       },
-      "3DViewerId1": {
+      "visualizer1id": {
         "key": "simcore/services/dynamic/3d-viewer",
         "version": "1.0.5",
         "label": "EM-LF Solver Viewer",
@@ -526,7 +529,7 @@
         },
         "parent": "NeuronContainerId"
       },
-      "3DViewerId2": {
+      "visualizer2id": {
         "key": "simcore/services/dynamic/3d-viewer",
         "version": "1.0.5",
         "label": "Neuron Solver Viewer",
@@ -559,7 +562,7 @@
           "y": 425
         }
       },
-      "KemberId": {
+      "KemberSolverId": {
         "key": "simcore/services/comp/kember/cardiac",
         "version": "1.0.0",
         "label": "Kember Model",
@@ -569,6 +572,18 @@
         "position": {
           "x": 750,
           "y": 550
+        }
+      },
+      "kemberviewerid": {
+        "key": "simcore/services/dynamic/kember-viewer",
+        "version": "1.2.0",
+        "label": "Kember Viewer",
+        "inputNodes": [
+          "KemberSolverId"
+        ],
+        "position": {
+          "x": 900,
+          "y": 700
         }
       }
     }
