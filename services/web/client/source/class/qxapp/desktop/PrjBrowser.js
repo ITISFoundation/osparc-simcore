@@ -104,12 +104,6 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       };
       this.fireDataEvent("StartProject", data);
     },
-    
-    __replaceTemplateUUIDs: function(data) {
-      let dataStr = JSON.stringify(data);
-      data = JSON.parse(dataStr);
-      return data;
-    },
 
     __startProjectModel: function(projectId, fromTemplate = false) {
       let resource = this.__projectResources.project;
@@ -119,7 +113,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         // but it needs to be here to implemenet startProjectModel
         let projectData = e.getRequest().getResponse().data;
         if (fromTemplate && projectData.projectUuid !== "DemoDecemberUUID") {
-          projectData = this.__replaceTemplateUUIDs(projectData)
+          projectData = qxapp.utils.Utils.replaceTemplateUUIDs(projectData)
         }
         let model = new qxapp.data.model.ProjectModel(projectData);
         const data = {
