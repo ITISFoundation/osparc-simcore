@@ -113,11 +113,17 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     restartIFrameButton: {
       check: "qx.ui.form.Button",
       init: null
+    },
+
+    retrieveIFrameButton: {
+      check: "qx.ui.form.Button",
+      init: null
     }
   },
 
   events: {
-    "ShowInLogger": "qx.event.type.Event"
+    "UpdatePipeline": "qx.event.type.Event",
+    "ShowInLogger": "qx.event.type.Data"
   },
 
   members: {
@@ -420,7 +426,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         } else {
           this.getIFrame().setSource(this.getServiceUrl());
         }
-        this.__retrieveInputs();
       }
     },
 
@@ -429,17 +434,58 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       this.__restartIFrame(loadingUrl);
     },
 
+    __hasRetrieve: function() {
+      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler") || this.getKey().includes("neuroman")) {
+        return true;
+      }
+      return false;
+    },
+
+    __retrieveInputs: function() {
+      this.__updateBackendAndRetrieveInputs();
+    },
+
+    __updateBackendAndRetrieveInputs: function() {
+      // HACK: Workaround for fetching inputs in Visualizer and modeler
+      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler") || this.getKey().includes("neuroman")) {
+        this.fireEvent("UpdatePipeline");
+      }
+    },
+
+    retrieveInputs: function() {
+      let urlUpdate = this.getServiceUrl() + "/retrieve";
+      urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
+      let updReq = new qx.io.request.Xhr();
+      updReq.set({
+        url: urlUpdate,
+        method: "GET"
+      });
+      updReq.send();
+    },
+
     __startInteractiveNode: function() {
       let metaData = this.getMetaData();
       if (metaData && ("type" in metaData) && metaData.type == "dynamic") {
-        let button = new qx.ui.form.Button().set({
+        if (this.__hasRetrieve()) {
+          let retrieveBtn = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/spinner/32"
+          });
+          retrieveBtn.addListener("execute", e => {
+            this.__retrieveInputs();
+          }, this);
+          retrieveBtn.setEnabled(false);
+          this.setRetrieveIFrameButton(retrieveBtn);
+        }
+
+        let restartBtn = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/redo-alt/32"
         });
-        button.addListener("execute", e => {
+        restartBtn.addListener("execute", e => {
           this.__restartIFrame();
         }, this);
-        button.setEnabled(false);
-        this.setRestartIFrameButton(button);
+        restartBtn.setEnabled(false);
+        this.setRestartIFrameButton(restartBtn);
+
         this.__showLoadingIFrame();
 
         const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
@@ -494,14 +540,21 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         return;
       }
       const publishedPort = data["published_port"];
+      const servicePath=data["service_basepath"];
       const entryPointD = data["entry_point"];
       const nodeId = data["service_uuid"];
       if (nodeId !== this.getNodeId()) {
         return;
       }
-      if (publishedPort) {
-        const entryPoint = entryPointD ? ("/" + entryPointD) : "";
-        const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
+      if (servicePath) {
+        const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
+        let srvUrl = servicePath + entryPoint;
+        // FIXME: this is temporary until the reverse proxy works for these services
+        if (this.getKey().includes("neuroman") || this.getKey().includes("modeler")) {
+          srvUrl = "http://" + window.location.hostname + ":" + publishedPort + srvUrl;
+        } else if (this.getKey().includes("3d-viewer")) {
+          srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
+        }
         this.setServiceUrl(srvUrl);
         const msg = "Service ready on " + srvUrl;
         const msgData = {
@@ -510,25 +563,15 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         };
         this.fireDataEvent("ShowInLogger", msgData);
 
+        if (this.__hasRetrieve()) {
+          this.getRetrieveIFrameButton().setEnabled(true);
+        }
         this.getRestartIFrameButton().setEnabled(true);
         // FIXME: Apparently no all services are inmediately ready when they publish the port
         const waitFor = 4000;
         qx.event.Timer.once(ev => {
           this.__restartIFrame();
         }, this, waitFor);
-      }
-    },
-
-    __retrieveInputs: function() {
-      // HACK: Workaround for fetching inputs in Visualizer and modeler
-      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler")) {
-        let urlUpdate = this.getServiceUrl() + "/retrieve";
-        let updReq = new qx.io.request.Xhr();
-        updReq.set({
-          url: urlUpdate,
-          method: "POST"
-        });
-        updReq.send();
       }
     },
 

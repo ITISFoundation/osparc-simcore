@@ -23,6 +23,11 @@ ENV IS_CONTAINER_CONTEXT Yes
 
 EXPOSE 8080
 
+# ----------------------------------------------------------------
+COPY --chown=scu:scu scripts/docker/healthcheck_curl_host.py /healthcheck/healthcheck_curl_host.py
+# will start to run after interval every interval. fails after timeout. fail do not count if during start-period. will do # retries
+HEALTHCHECK --interval=10s --timeout=30s --start-period=1s --retries=3 CMD [ "python", "/healthcheck/healthcheck_curl_host.py", "http://localhost:8080" ]
+
 # -------------------------- Build stage -------------------
 #
 # + /home/scu/              $HOME

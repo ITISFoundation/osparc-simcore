@@ -12,8 +12,8 @@ app_schema = T.Dict({
     "python2": T.String(),
     T.Key("max_workers", default=8, optional=True) : T.Int(),
     T.Key("test_datcore", optional=True): T.Dict({
-        "api_token": T.String(),
-        "api_secret": T.String()
+        "token_key": T.String(),
+        "token_secret": T.String()
     }),
     T.Key("disable_services", default=[], optional=True): T.List(T.String())
 })

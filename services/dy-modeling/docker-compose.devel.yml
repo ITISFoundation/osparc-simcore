@@ -1,10 +1,6 @@
 # USAGE:  docker-compose -f docker-compose.yml -f docker-compose.devel.yml ...
 version: '3.6'
 services:
-  apihub:
-    image: services_apihub:latest    
-    ports:
-      - '8043:8043'
   client:
     build:
       target: development
@@ -35,12 +31,17 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - TEST_DATA_PATH=/home/node/test-data
+      - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     depends_on:
         - client
         - storage
         - postgres
         - minio
   #--------------------------------------------------------------------
+  apihub:
+    image: services_apihub:latest
+    ports:
+      - 8043:8043
   storage:
     image: services_storage:latest
     ports:
@@ -64,6 +65,7 @@ services:
     restart: always
     depends_on: 
       - postgres
+      - apihub
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10

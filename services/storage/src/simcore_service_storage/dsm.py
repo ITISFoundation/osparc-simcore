@@ -6,7 +6,7 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from operator import itemgetter
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import aiofiles
 import aiohttp
@@ -67,6 +67,16 @@ def setup_dsm(app: web.Application):
     app.cleanup_ctx.append(_setup_dsm)
 
 @attr.s(auto_attribs=True)
+class DatCoreApiToken:
+    api_token: str = None
+    api_secret: str = None
+
+    def to_tuple(self):
+        return (self.api_token, self.api_secret)
+
+
+
+@attr.s(auto_attribs=True)
 class DataStorageManager:
     """ Data storage manager
 
@@ -102,8 +112,14 @@ class DataStorageManager:
     loop: object
     pool: ThreadPoolExecutor
     simcore_bucket_name: str
+    datcore_tokens: Dict[str, DatCoreApiToken]=attr.Factory(dict)
+    # TODO: perhaps can be used a cache? add a lifetime?
 
-    # pylint: disable=R0201
+
+    def _get_datcore_tokens(self, user_id: str)->Tuple[str, str]:
+        token = self.datcore_tokens.get(user_id, DatCoreApiToken()) # pylint: disable=E1101
+        return token.to_tuple()
+
     async def locations(self, user_id: str):
         locs = []
         simcore_s3 = {
@@ -115,30 +131,36 @@ class DataStorageManager:
         ping_ok = await self.ping_datcore(user_id=user_id)
         if ping_ok:
             datcore = {
-            "name" : DATCORE_STR,
-            "id"   : DATCORE_ID
+                "name" : DATCORE_STR,
+                "id"   : DATCORE_ID
             }
             locs.append(datcore)
 
         return locs
 
-    # pylint: disable=R0201
-    def location_from_id(self, location_id : str):
+    @classmethod
+    def location_from_id(cls, location_id : str):
         return _location_from_id(location_id)
 
-    async def ping_datcore(self, user_id: str):
-        api_token, api_secret = await self._get_datcore_tokens(user_id)
+    async def ping_datcore(self, user_id: str) -> bool:
+        """ Checks whether user account in datcore is accesible
+
+        :param user_id: user identifier
+        :type user_id: str
+        :return: True if user can access his datcore account
+        :rtype: bool
+        """
+
+        api_token, api_secret = self._get_datcore_tokens(user_id)
         logger.info("token: %s, secret %s", api_token, api_secret)
         if api_token:
             dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
             profile = await dcw.ping()
             if profile:
                 return True
-
         return False
 
-    # pylint: disable=R0913
-    # too-many-arguments
+    # pylint: disable=too-many-arguments
     async def list_files(self, user_id: str, location: str, uuid_filter: str ="", regex: str="", sortby: str="") -> FileMetaDataVec:
         """ Returns a list of file paths
 
@@ -161,10 +183,9 @@ class DataStorageManager:
                     d = FileMetaData(**result_dict)
                     data.append(d)
         elif location == DATCORE_STR:
-            api_token, api_secret = await self._get_datcore_tokens(user_id)
-            logger.info("Datcore query %s %s %s", api_token, api_secret, self.python27_exec)
+            api_token, api_secret = self._get_datcore_tokens(user_id)
             dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
-            return await dcw.list_files(regex, sortby)
+            data = await dcw.list_files()
 
         if sortby:
             data = sorted(data, key=itemgetter(sortby))
@@ -203,10 +224,10 @@ class DataStorageManager:
                     d = FileMetaData(**result_dict)
                     return d
         elif location == DATCORE_STR:
-            api_token, api_secret = await self._get_datcore_tokens(user_id)
+            api_token, api_secret = self._get_datcore_tokens(user_id)
             _dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
-            raise NotImplementedError
-
+            data = await _dcw.list_files
+            return data
 
     async def delete_file(self, user_id: str, location: str, file_uuid: str):
         """ Deletes a file given its fmd and location
@@ -219,7 +240,6 @@ class DataStorageManager:
             For simcore.s3 we can use the file_name
             For datcore we need the full path
         """
-        # TODO: const strings
         if location == SIMCORE_S3_STR:
             async with self.engine.acquire() as conn:
                 query = sa.select([file_meta_data]).where(file_meta_data.c.file_uuid == file_uuid)
@@ -233,7 +253,7 @@ class DataStorageManager:
                             await conn.execute(stmt)
 
         elif location == DATCORE_STR:
-            api_token, api_secret = await self._get_datcore_tokens(user_id)
+            api_token, api_secret = self._get_datcore_tokens(user_id)
             dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
             dataset, filename = _parse_datcore(file_uuid)
 #            return await dcw.delete_file(dataset=dataset, filename=filename)
@@ -241,26 +261,11 @@ class DataStorageManager:
 
     async def upload_file_to_datcore(self, user_id: str, local_file_path: str, datcore_bucket: str, fmd: FileMetaData = None): # pylint: disable=W0613
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
-        api_token, api_secret = await self._get_datcore_tokens(user_id)
+        api_token, api_secret = self._get_datcore_tokens(user_id)
         dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
         await dcw.upload_file(datcore_bucket, local_file_path, fmd)
 
-    async def _get_datcore_tokens(self, user_id: str)->Tuple[str, str]:
         # actually we have to query the master db
-        async with self.engine.acquire() as _conn:
-            #query = sa.select([file_meta_data]).where(file_meta_data.c.user_id == user_id)
-            #_fmd = await conn.execute(query)
-            # FIXME: load from app[APP_CONFIG_KEY]["test_datcore"]
-            _aa = user_id
-            api_token = os.environ.get("BF_API_KEY", "none").strip("\"'")
-            api_secret = os.environ.get("BF_API_SECRET", "none").strip("\"'")
-            #FIXME: SAN this is a hack to prevent crashes. should be fixed together with accessing the DB correctly
-            if api_token == "none":
-                return (None, None)
-
-            return (api_token, api_secret)
-
-
     async def upload_link(self, user_id: str, file_uuid: str):
         async with self.engine.acquire() as conn:
             fmd = FileMetaData()
@@ -343,7 +348,7 @@ class DataStorageManager:
             object_name = file_uuid
             link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         elif location == DATCORE_STR:
-            api_token, api_secret = await self._get_datcore_tokens(user_id)
+            api_token, api_secret = self._get_datcore_tokens(user_id)
             dcw = DatcoreWrapper(api_token, api_secret, self.python27_exec, self.loop, self.pool)
             dataset, filename = _parse_datcore(file_uuid)
             link = await dcw.download_link(dataset, filename)

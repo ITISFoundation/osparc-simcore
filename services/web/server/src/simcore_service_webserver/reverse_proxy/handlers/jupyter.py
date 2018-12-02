@@ -1,6 +1,5 @@
 """ Reverse-proxy customized for jupyter notebooks
 
-TODO: document
 """
 
 import asyncio
@@ -9,29 +8,37 @@ import pprint
 
 import aiohttp
 from aiohttp import client, web
+from yarl import URL
 
-# TODO: find actual name in registry
-SUPPORTED_IMAGE_NAME = "jupyter"
-SUPPORTED_IMAGE_TAG = "==0.1.0"
+SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/jupyter-base-notebook"
+SUPPORTED_IMAGE_TAG = ">=1.5.0"
 
 logger = logging.getLogger(__name__)
 
 
-async def handler(req: web.Request, service_url: str, **_kwargs) -> web.StreamResponse:
-    # Resolved url pointing to backend jupyter service
-    tarfind_url = service_url + req.path_qs
+async def handler(req: web.Request, service_url: str, **_kwargs):
+    """ Redirects communication to jupyter notebook in the backend
+
+    :param req: aiohttp request
+    :type req: web.Request
+    :param service_url: Resolved url pointing to backend jupyter service. Typically http:hostname:port/x/12345/.
+    :type service_url: str
+    :raises ValueError: Unexpected web-socket message
+    """
+
+    # FIXME: hash of statics somehow get do not work. then neeed to be strip away
+    # Removing query ... which not sure is a good idea
+    target_url = URL(service_url).origin() / req.path.lstrip('/')
 
     reqH = req.headers.copy()
+    
     if reqH['connection'].lower() == 'upgrade' and reqH['upgrade'].lower() == 'websocket' and req.method == 'GET':
-
         ws_server = web.WebSocketResponse()
         await ws_server.prepare(req)
         logger.info('##### WS_SERVER %s', pprint.pformat(ws_server))
 
         client_session = aiohttp.ClientSession(cookies=req.cookies)
-        async with client_session.ws_connect(
-            tarfind_url,
-        ) as ws_client:
+        async with client_session.ws_connect(target_url) as ws_client:
             logger.info('##### WS_CLIENT %s', pprint.pformat(ws_client))
 
             async def ws_forward(ws_from, ws_to):
@@ -57,27 +64,26 @@ async def handler(req: web.Request, service_url: str, **_kwargs) -> web.StreamRe
 
             return ws_server
     else:
-
         async with client.request(
-            req.method, tarfind_url,
+            req.method, target_url,
             headers=reqH,
             allow_redirects=False,
             data=await req.read()
         ) as res:
-            headers = res.headers.copy()
             body = await res.read()
-            return web.Response(
-                headers=headers,
+            response= web.Response(
+                headers=res.headers.copy(),
                 status=res.status,
                 body=body
             )
-        return ws_server
+            return response
+
 
 
 if __name__ == "__main__":
     # dummies for manual testing
     BASE_URL = 'http://0.0.0.0:8888'
-    MOUNT_POINT = '/x/fakeUuid'
+    MOUNT_POINT = '/x/12345'
 
     def adapter(req: web.Request):
         return handler(req, service_url=BASE_URL)
