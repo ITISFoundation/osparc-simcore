@@ -231,6 +231,10 @@ qx.Class.define("qxapp.component.widget.NodeView", {
 
     __addButtons: function(nodeModel) {
       this.__buttonsLayout.removeAll();
+      let retrieveIFrameButton = nodeModel.getRetrieveIFrameButton();
+      if (retrieveIFrameButton) {
+        this.__buttonsLayout.add(retrieveIFrameButton);
+      }
       let restartIFrameButton = nodeModel.getRestartIFrameButton();
       if (restartIFrameButton) {
         this.__buttonsLayout.add(restartIFrameButton);
