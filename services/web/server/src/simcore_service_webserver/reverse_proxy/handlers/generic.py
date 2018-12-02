@@ -24,8 +24,8 @@ CHUNK = 32768
 
 
 def check_ws_in_headers(request):
-    return request.headers.get('connection') == 'Upgrade' and \
-           request.headers.get('upgrade') == 'websocket' and \
+    return request.headers.get('connection').lower() == 'upgrade' and \
+           request.headers.get('upgrade').lower() == 'websocket' and \
            request.method == 'GET'
 
 async def handle_websocket_requests(ws_server, request, target_url):
