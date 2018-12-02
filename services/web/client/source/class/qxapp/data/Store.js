@@ -181,7 +181,7 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps Model entities into Subgroups",
               type: "mapper",
               maps: {
-                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+                leaf: "simcore/services/dynamic/modeler/webserver"
               }
             }
           },
@@ -400,7 +400,7 @@ qx.Class.define("qxapp.data.Store", {
               type: "mapper",
               maps: {
                 branch: "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
-                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+                leaf: "simcore/services/dynamic/modeler/webserver"
               },
               defaultValue: [{
                 "Air-UUID": [
@@ -450,10 +450,10 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps Model entities into Boundary Conditions",
               type: "mapper",
               maps: {
-                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+                leaf: "simcore/services/dynamic/modeler/webserver"
               },
               defaultValue: [{
-                "Dirichlet-UUID": [
+                "Neumann-UUID": [
                   "Plane X+",
                   "Plane X-",
                   "Plane Y+",
@@ -505,7 +505,7 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps Model entities into Sensor Settings",
               type: "mapper",
               maps: {
-                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+                leaf: "simcore/services/dynamic/modeler/webserver"
               },
               defaultValue: [{
                 "Field-Sensor-UUID": [
@@ -546,6 +546,13 @@ qx.Class.define("qxapp.data.Store", {
               label: "Modeler",
               description: "Live Link to Modeler",
               type: "data:application/s4l-api/modeler"
+            },
+            homogeneous: {
+              displayOrder: 1,
+              label: "Homogeneous grid",
+              description: "Homogeneous grid",
+              type: "boolean",
+              defaultValue: true
             }
           },
           outputs: {
@@ -574,6 +581,27 @@ qx.Class.define("qxapp.data.Store", {
               label: "Modeler",
               description: "Live Link to Modeler",
               type: "data:application/s4l-api/modeler"
+            },
+            voxelEngine: {
+              displayOrder: 1,
+              label: "Used Voxel Engine",
+              description: "Used Voxel Engine",
+              type: "string",
+              defaultValue: "Topological Voxeler"
+            },
+            maximumFraction: {
+              displayOrder: 2,
+              label: "Maximum Fraction",
+              description: "Maximum Fraction",
+              type: "number",
+              defaultValue: 21
+            },
+            congruentSubgrid: {
+              displayOrder: 3,
+              label: "Congruent Subgrid Voxeling",
+              description: "Congruent Subgrid Voxeling",
+              type: "boolean",
+              defaultValue: true
             }
           },
           outputs: {
@@ -759,7 +787,7 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps Model entities into Neurons",
               type: "mapper",
               maps: {
-                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+                leaf: "simcore/services/dynamic/modeler/webserver"
               }
             }
           },
@@ -849,7 +877,7 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps Model entities into Point Processes",
               type: "mapper",
               maps: {
-                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+                leaf: "simcore/services/dynamic/modeler/webserver"
               }
             }
           },
@@ -894,7 +922,7 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps Model entities into Network Connection",
               type: "mapper",
               maps: {
-                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+                leaf: "simcore/services/dynamic/modeler/webserver"
               }
             }
           },
@@ -939,7 +967,7 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps Model entities into Sensors",
               type: "mapper",
               maps: {
-                leaf: "simcore/services/demodec/dynamic/itis/s4l/Modeler"
+                leaf: "simcore/services/dynamic/modeler/webserver"
               }
             }
           },
