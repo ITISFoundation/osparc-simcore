@@ -122,7 +122,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
   },
 
   events: {
-    "UpdatePipeline": "qx.event.type.Event",
+    "UpdatePipeline": "qx.event.type.Data",
     "ShowInLogger": "qx.event.type.Data"
   },
 
@@ -448,7 +448,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __updateBackendAndRetrieveInputs: function() {
       // HACK: Workaround for fetching inputs in Visualizer and modeler
       if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler") || this.getKey().includes("neuroman")) {
-        this.fireEvent("UpdatePipeline");
+        this.fireDataEvent("UpdatePipeline", this);
       }
     },
 
