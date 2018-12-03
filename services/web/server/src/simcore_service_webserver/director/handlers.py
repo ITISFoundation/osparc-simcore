@@ -61,7 +61,6 @@ async def running_interactive_services_post(request: web.Request) -> web.Respons
     # get first if already running
     async with session.get(url, ssl=False) as resp:
         if resp.status == 200:
-            resp.status = 201 
             # TODO: currently director API does not specify resp. 200
             payload = await resp.json()
         else:
