@@ -1,0 +1,158 @@
+{
+    "workbench": {
+        "f6f67f96-ad56-47ac-a658-1a8b93dde1f0": {
+            "label": "File Picker",
+            "inputs": {},
+            "inputNodes": [],
+            "outputNode": false,
+            "outputs": {
+                "outFile": {
+                    "store": "0",
+                    "path": "885f2bb2-5c6a-439a-b55d-b1c422bbf998/e92dcf7c-af2a-4a56-b62e-b72ab86e2444/allresult_1Hz.txt"
+                }
+            },
+            "parent": null,
+            "key": "simcore/services/dynamic/itis/file-picker",
+            "version": "0.0.0"
+        },
+        "10ac5ac6-ed3a-4809-8316-3294961922d9": {
+            "label": "jupyter-base-notebook",
+            "inputs": {
+                "input_1": {
+                    "nodeUuid": "f6f67f96-ad56-47ac-a658-1a8b93dde1f0",
+                    "output": "outFile"
+                },
+                "input_2": null
+            },
+            "inputNodes": [
+                "f6f67f96-ad56-47ac-a658-1a8b93dde1f0"
+            ],
+            "outputNode": false,
+            "outputs": {},
+            "parent": null,
+            "key": "simcore/services/dynamic/jupyter-base-notebook",
+            "version": "1.7.0"
+        },
+        "ee8d7b25-f203-4472-9210-86409b4364e2": {
+            "label": "sleeper",
+            "inputs": {
+                "in_1": {
+                    "nodeUuid": "10ac5ac6-ed3a-4809-8316-3294961922d9",
+                    "output": "output_1"
+                },
+                "in_2": 2
+            },
+            "inputNodes": [
+                "10ac5ac6-ed3a-4809-8316-3294961922d9"
+            ],
+            "outputNode": false,
+            "outputs": {},
+            "parent": null,
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "1.0.0"
+        },
+        "884fa617-615f-407b-ad41-88c899561cda": {
+            "label": "sleeper",
+            "inputs": {
+                "in_1": null,
+                "in_2": 2
+            },
+            "inputNodes": [],
+            "outputNode": false,
+            "outputs": {},
+            "parent": null,
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "1.0.0"
+        },
+        "d5012020-7a5d-4b04-a017-9560fa1ede7e": {
+            "label": "sleeper",
+            "inputs": {
+                "in_1": {
+                    "nodeUuid": "884fa617-615f-407b-ad41-88c899561cda",
+                    "output": "out_1"
+                },
+                "in_2": {
+                    "nodeUuid": "884fa617-615f-407b-ad41-88c899561cda",
+                    "output": "out_2"
+                }
+            },
+            "inputNodes": [
+                "884fa617-615f-407b-ad41-88c899561cda"
+            ],
+            "outputNode": false,
+            "outputs": {},
+            "parent": null,
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "1.0.0"
+        },
+        "c5ff9180-702e-4b6e-af26-b88b190dcd6f": {
+            "label": "sleeper",
+            "inputs": {
+                "in_1": {
+                    "nodeUuid": "ee8d7b25-f203-4472-9210-86409b4364e2",
+                    "output": "out_1"
+                },
+                "in_2": {
+                    "nodeUuid": "d5012020-7a5d-4b04-a017-9560fa1ede7e",
+                    "output": "out_2"
+                }
+            },
+            "inputNodes": [
+                "ee8d7b25-f203-4472-9210-86409b4364e2",
+                "d5012020-7a5d-4b04-a017-9560fa1ede7e"
+            ],
+            "outputNode": false,
+            "outputs": {},
+            "parent": null,
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "1.0.0"
+        },
+        "432fd134-fdb0-4296-9138-f05530266744": {
+            "label": "DBP-Clancy-Rabbit-1-D solver",
+            "inputs": {
+                "Na": 0,
+                "Kr": 0,
+                "BCL": 10,
+                "NBeats": 1,
+                "Ligand": 0,
+                "cAMKII": "WT",
+                "tw": 5,
+                "tl": 200,
+                "homogeneity": "heterogeneous",
+                "in_10": {
+                    "nodeUuid": "c5ff9180-702e-4b6e-af26-b88b190dcd6f",
+                    "output": "out_1"
+                }
+            },
+            "inputNodes": [
+                "c5ff9180-702e-4b6e-af26-b88b190dcd6f"
+            ],
+            "outputNode": false,
+            "outputs": {},
+            "parent": null,
+            "key": "simcore/services/comp/ucdavis/cardiac-oned",
+            "version": "1.0.0"
+        },
+        "613acb4a-caca-4b9b-9d0d-50dda32afeb7": {
+            "label": "3d-viewer",
+            "inputs": {
+                "A": {
+                    "nodeUuid": "432fd134-fdb0-4296-9138-f05530266744",
+                    "output": "out_1"
+                },
+                "B": {
+                    "nodeUuid": "432fd134-fdb0-4296-9138-f05530266744",
+                    "output": "out_2"
+                }
+            },
+            "inputNodes": [
+                "432fd134-fdb0-4296-9138-f05530266744"
+            ],
+            "outputNode": false,
+            "outputs": {},
+            "parent": null,
+            "key": "simcore/services/dynamic/3d-viewer",
+            "version": "1.0.5"
+        }
+    }
+}

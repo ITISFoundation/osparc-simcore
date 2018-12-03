@@ -29,6 +29,9 @@ from simcore_service_webserver.application_config import app_schema as app_schem
 def here():
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+@pytest.fixture(scope="session")
+def mock_dir(here):
+    return here / "mock"
 
 @pytest.fixture(scope='session')
 def osparc_simcore_root_dir(here):
