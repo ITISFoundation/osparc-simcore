@@ -47,6 +47,15 @@ qx.Class.define("qxapp.data.Store", {
         new qxapp.data.MimeType(mtA).match(new qxapp.data.MimeType(mtB));
     },
 
+    getRole: function() {
+      // FIMXE
+      const userEmail = qxapp.auth.Data.getInstance().getEmail();
+      if (userEmail.contains("itis.swiss") || userEmail.contains("oetiker.ch")) {
+        return 0;
+      }
+      return 1;
+    },
+
     areNodesCompatible: function(topLevelPort1, topLevelPort2) {
       console.log("areNodesCompatible", topLevelPort1, topLevelPort2);
       return topLevelPort1.isInput !== topLevelPort2.isInput;
