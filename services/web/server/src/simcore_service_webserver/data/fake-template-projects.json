@@ -38,7 +38,7 @@
           "y": 400
         }
       },
-      "template-uuid-container0d": {
+      "template-uuid-4452-bf18-e43e6081ff25": {
         "label": "CC 0D",
         "inputs": {},
         "outputs": {},
@@ -51,7 +51,7 @@
           "y": 50
         }
       },
-      "template-uuid-container1d": {
+      "template-uuid-4ea2-9778-2b2e0e28907a": {
         "label": "CC 1D",
         "inputs": {},
         "outputs": {},
@@ -64,13 +64,13 @@
           "y": 300
         }
       },
-      "template-uuid-container2d": {
+      "template-uuid-41c5-bb23-d55cc2cb0252": {
         "label": "CC 2D",
         "inputs": {},
         "outputs": {},
         "inputNodes": [
           "template-uuid-4212-8108-c7cfab4f241e",
-          "template-uuid-container1d"
+          "template-uuid-4ea2-9778-2b2e0e28907a"
         ],
         "outputNode": false,
         "position": {
@@ -80,7 +80,7 @@
       },
       "template-uuid-409d-998c-c1f04de67f8b": {
         "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
-        "version": "0.0.1",
+        "version": "1.0.0",
         "label": "DBP-Clancy-Rabbit-Single-Cell solver",
         "inputs": {
           "Na": 0,
@@ -99,7 +99,7 @@
         ],
         "outputNode": false,
         "outputs": {},
-        "parent": "template-uuid-container0d",
+        "parent": "template-uuid-4452-bf18-e43e6081ff25",
         "position": {
           "x": 300,
           "y": 400
@@ -107,7 +107,7 @@
       },
       "template-uuid-43e7-9fda-cf9625e59986": {
         "key": "simcore/services/dynamic/cc-0d-viewer",
-        "version": "1.1.0"
+        "version": "1.1.0",
         "label": "cc-0d-viewer",
         "inputs": {
           "vm_1Hz": {
@@ -124,7 +124,7 @@
         ],
         "outputNode": false,
         "outputs": {},
-        "parent": "template-uuid-container0d",
+        "parent": "template-uuid-4452-bf18-e43e6081ff25",
         "position": {
           "x": 600,
           "y": 200
@@ -132,7 +132,7 @@
       },
       "template-uuid-43f3-ab01-a58e7c49a946": {
         "key": "simcore/services/comp/ucdavis/cardiac-oned",
-        "version": "0.0.1",
+        "version": "1.0.0",
         "label": "DBP-Clancy-Rabbit-1-D solver",
         "inputs": {
           "Na": 0,
@@ -184,11 +184,11 @@
         },
         "inputNodes": [
           "template-uuid-4212-8108-c7cfab4f241e",
-          "template-uuid-container1d"
+          "template-uuid-4ea2-9778-2b2e0e28907a"
         ],
         "outputNode": false,
         "outputs": {},
-        "parent": "template-uuid-container2d",
+        "parent": "template-uuid-41c5-bb23-d55cc2cb0252",
         "position": {
           "x": 300,
           "y": 400
@@ -207,7 +207,7 @@
         ],
         "outputNode": false,
         "outputs": {},
-        "parent": "template-uuid-container1d",
+        "parent": "template-uuid-4ea2-9778-2b2e0e28907a",
         "position": {
           "x": 600,
           "y": 200
@@ -225,7 +225,7 @@
         ],
         "outputNode": false,
         "outputs": {},
-        "parent": "template-uuid-container2d",
+        "parent": "template-uuid-41c5-bb23-d55cc2cb0252",
         "position": {
           "x": 600,
           "y": 200
