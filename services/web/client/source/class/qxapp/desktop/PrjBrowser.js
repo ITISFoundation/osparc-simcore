@@ -113,7 +113,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         // but it needs to be here to implemenet startProjectModel
         let projectData = e.getRequest().getResponse().data;
         if (fromTemplate && projectData.projectUuid !== "DemoDecemberUUID") {
-          projectData = qxapp.utils.Utils.replaceTemplateUUIDs(projectData)
+          projectData = qxapp.utils.Utils.replaceTemplateUUIDs(projectData);
         }
         let model = new qxapp.data.model.ProjectModel(projectData);
         const data = {
