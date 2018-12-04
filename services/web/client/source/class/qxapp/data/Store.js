@@ -562,6 +562,13 @@ qx.Class.define("qxapp.data.Store", {
               description: "Homogeneous grid",
               type: "boolean",
               defaultValue: true
+            },
+            resolution: {
+              displayOrder: 2,
+              label: "Resolution (mm)",
+              description: "Resolution in mm",
+              type: "number",
+              defaultValue: 1
             }
           },
           outputs: {
@@ -731,7 +738,7 @@ qx.Class.define("qxapp.data.Store", {
               label: "Perform Titration",
               description: "Perform Titration",
               type: "boolean",
-              defaultValue: true
+              defaultValue: false
             },
             convergence: {
               displayOrder: 2,
