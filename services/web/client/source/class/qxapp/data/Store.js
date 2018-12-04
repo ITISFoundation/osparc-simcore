@@ -47,6 +47,15 @@ qx.Class.define("qxapp.data.Store", {
         new qxapp.data.MimeType(mtA).match(new qxapp.data.MimeType(mtB));
     },
 
+    getRole: function() {
+      // Temporary HACK
+      const userEmail = qxapp.auth.Data.getInstance().getEmail();
+      if (userEmail.includes("itis.swiss") || userEmail.includes("oetiker.ch")) {
+        return 0;
+      }
+      return 1;
+    },
+
     areNodesCompatible: function(topLevelPort1, topLevelPort2) {
       console.log("areNodesCompatible", topLevelPort1, topLevelPort2);
       return topLevelPort1.isInput !== topLevelPort2.isInput;
@@ -181,7 +190,7 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps Model entities into Subgroups",
               type: "mapper",
               maps: {
-                leaf: "simcore/services/dynamic/modeler/webserver"
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons"
               }
             }
           },

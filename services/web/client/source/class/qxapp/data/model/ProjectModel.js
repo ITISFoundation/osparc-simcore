@@ -1,12 +1,12 @@
 qx.Class.define("qxapp.data.model.ProjectModel", {
   extend: qx.core.Object,
 
-  construct: function(prjData, fromTemplate) {
+  construct: function(prjData) {
     this.base(arguments);
 
     if (prjData) {
       this.set({
-        uuid: fromTemplate ? qxapp.utils.Utils.uuidv4() : prjData.projectUuid || this.getUuid(),
+        uuid: prjData.projectUuid || this.getUuid(),
         name: prjData.name || this.getName(),
         description: prjData.description || this.getDescription(),
         notes: prjData.notes || this.getNotes(),
