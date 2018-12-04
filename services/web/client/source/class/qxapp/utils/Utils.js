@@ -11,8 +11,22 @@ qx.Class.define("qxapp.utils.Utils", {
     },
 
     replaceTemplateUUIDs: function(data) {
-      let dataStr = JSON.stringify(data);
-      data = JSON.parse(dataStr);
+      const tempPrefix = "template-uuid";
+      let myData = JSON.stringify(data);
+      let tempIdIdx = myData.indexOf(tempPrefix);
+      while (tempIdIdx !== -1) {
+        console.log(tempIdIdx);
+        let tempId = myData.substr(tempIdIdx, 36);
+        console.log(tempId);
+        let tempLocIdIdx = myData.indexOf(tempId);
+        let newUuid = qxapp.utils.Utils.uuidv4();
+        while (tempLocIdIdx !== -1) {
+          myData = myData.replace(tempId, newUuid);
+          tempLocIdIdx = myData.indexOf(tempId);
+        }
+        tempIdIdx = myData.indexOf(tempPrefix);
+      }
+      data = JSON.parse(myData);
       return data;
     },
 
