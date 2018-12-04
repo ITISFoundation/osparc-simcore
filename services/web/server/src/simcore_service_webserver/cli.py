@@ -5,11 +5,11 @@ Why does this file exist, and why not put this in __main__?
   You might be tempted to import things from __main__ later, but that will cause
   problems: the code will get executed twice:
 
-  - When you run `python -msimcore_service_storage` python will execute
+  - When you run `python -msimcore_service_webserver` python will execute
     ``__main__.py`` as a script. That means there won't be any
-    ``simcore_service_storage.__main__`` in ``sys.modules``.
+    ``simcore_service_webserver.__main__`` in ``sys.modules``.
   - When you import __main__ it will get executed again (as a module) because
-    there's no ``simcore_service_storage.__main__`` in ``sys.modules``.
+    there's no ``simcore_service_webserver.__main__`` in ``sys.modules``.
 
 """
 import argparse
@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 
 
 def create_default_parser():
-    return argparse.ArgumentParser(description='Service to manage data storage in simcore.')
+    return argparse.ArgumentParser(description='Service to manage data webserver in simcore.')
 
 
 def setup_parser(parser):
@@ -81,7 +81,7 @@ def parse(args, parser):
 
 
 def main(args=None):
-    parser = argparse.ArgumentParser(description='Service to manage data storage in simcore.')
+    parser = argparse.ArgumentParser(description='Service to manage data webserver in simcore.')
 
     setup_parser(parser)
     config = parse(args, parser)
