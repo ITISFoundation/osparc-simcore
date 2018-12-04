@@ -190,7 +190,7 @@ qx.Class.define("qxapp.data.Store", {
               description: "Maps Model entities into Subgroups",
               type: "mapper",
               maps: {
-                leaf: "simcore/services/dynamic/modeler/webserver"
+                leaf: "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons"
               }
             }
           },
