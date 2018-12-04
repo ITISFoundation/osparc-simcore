@@ -89,7 +89,7 @@
           "NBeats": 5,
           "Ligand": 0,
           "cAMKII": "WT",
-          "initial_WTstates": {
+          "in_7": {
             "nodeUuid": "template-uuid-4674-b758-946151cae351",
             "output": "outFile"
           }
@@ -144,7 +144,7 @@
           "tw": 5,
           "tl": 200,
           "homogeneity": "heterogeneous",
-          "initial_WTstates": {
+          "in_10": {
             "nodeUuid": "template-uuid-4212-8108-c7cfab4f241e",
             "output": "outFile"
           }
@@ -154,7 +154,7 @@
         ],
         "outputNode": true,
         "outputs": {},
-        "parent": "Container1D",
+        "parent": "template-uuid-4452-bf18-e43e6081ff25",
         "position": {
           "x": 300,
           "y": 400
@@ -162,7 +162,7 @@
       },
       "template-uuid-40ce-8d33-7d501a694550": {
         "key": "simcore/services/comp/ucdavis/cardiac-twod",
-        "version": "0.0.1",
+        "version": "1.0.0",
         "label": "DBP-Clancy-Rabbit-2-D solver",
         "inputs": {
           "Na": 0,
@@ -173,11 +173,11 @@
           "tw": 5,
           "tl": 200,
           "homogeneity": "heterogeneous",
-          "initial_WTstates": {
+          "in_9": {
             "nodeUuid": "template-uuid-4212-8108-c7cfab4f241e",
             "output": "outFile"
           },
-          "fiber": {
+          "in_10": {
             "nodeUuid": "template-uuid-43f3-ab01-a58e7c49a946",
             "output": "fiber"
           }
@@ -188,7 +188,7 @@
         ],
         "outputNode": false,
         "outputs": {},
-        "parent": "template-uuid-41c5-bb23-d55cc2cb0252",
+        "parent": "template-uuid-4ea2-9778-2b2e0e28907a",
         "position": {
           "x": 300,
           "y": 400
