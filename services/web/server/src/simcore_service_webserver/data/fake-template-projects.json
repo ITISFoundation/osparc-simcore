@@ -372,7 +372,7 @@
         "label": "Solver Settings",
         "inputNodes": [],
         "position": {
-          "x": 400,
+          "x": 300,
           "y": 250
         },
         "parent": "lfContainerId"
@@ -385,7 +385,7 @@
         "inputNodes": [],
         "outputNode": true,
         "position": {
-          "x": 650,
+          "x": 500,
           "y": 250
         },
         "parent": "lfContainerId"
@@ -429,7 +429,7 @@
         "inputNodes": [],
         "outputNode": false,
         "position": {
-          "x": 150,
+          "x": 100,
           "y": 50
         },
         "parent": "NeuronContainerId"
@@ -443,7 +443,7 @@
         ],
         "outputNode": true,
         "position": {
-          "x": 150,
+          "x": 100,
           "y": 150
         },
         "parent": "NeuronContainerId"
@@ -458,7 +458,7 @@
         ],
         "outputNode": false,
         "position": {
-          "x": 150,
+          "x": 100,
           "y": 250
         },
         "parent": "NeuronContainerId"
@@ -472,7 +472,7 @@
         ],
         "outputNode": false,
         "position": {
-          "x": 150,
+          "x": 100,
           "y": 350
         },
         "parent": "NeuronContainerId"
@@ -486,7 +486,7 @@
         ],
         "outputNode": false,
         "position": {
-          "x": 150,
+          "x": 100,
           "y": 450
         },
         "parent": "NeuronContainerId"
@@ -500,7 +500,7 @@
         ],
         "outputNode": false,
         "position": {
-          "x": 150,
+          "x": 100,
           "y": 550
         },
         "parent": "NeuronContainerId"
@@ -512,7 +512,7 @@
         "inputNodes": [],
         "outputNode": false,
         "position": {
-          "x": 400,
+          "x": 300,
           "y": 250
         },
         "parent": "NeuronContainerId"
@@ -524,7 +524,7 @@
         "inputs": {},
         "inputNodes": [],
         "position": {
-          "x": 650,
+          "x": 500,
           "y": 250
         },
         "parent": "NeuronContainerId"
@@ -560,30 +560,6 @@
         "position": {
           "x": 600,
           "y": 425
-        }
-      },
-      "KemberSolverId": {
-        "key": "simcore/services/comp/kember/cardiac",
-        "version": "1.0.0",
-        "label": "Kember Model",
-        "inputNodes": [
-          "StimulationSelectivityId"
-        ],
-        "position": {
-          "x": 750,
-          "y": 550
-        }
-      },
-      "kemberviewerid": {
-        "key": "simcore/services/dynamic/kember-viewer",
-        "version": "1.2.0",
-        "label": "Kember Viewer",
-        "inputNodes": [
-          "KemberSolverId"
-        ],
-        "position": {
-          "x": 900,
-          "y": 700
         }
       }
     }
