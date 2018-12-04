@@ -52,6 +52,7 @@ s4l_utils.connectToS4LServer().catch(function(err) {
 function socketIOConnected(socketClient) {
   console.log(`Client connected as ${socketClient.id}...`);
   connectedClient = socketClient;
+  signalEndOfTransmission(); // ensure the client is not waiting infinely in case of reconnection
 
   socketClient.on('disconnecting', function (reason) {
     console.log(`Client disconnecteding with reason ${reason}`);
