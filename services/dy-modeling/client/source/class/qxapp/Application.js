@@ -223,11 +223,13 @@ qx.Class.define("qxapp.Application", {
         this._socket.on("transmissionStarts", function(val, ackCb) {
           ackCb();
           console.log(val);
+          this.__entityList.modelLoading();
         }, this);
 
         this._socket.on("transmissionCompleted", function(val, ackCb) {
           ackCb();
           console.log(val);
+          this.__entityList.modelLoaded();
         }, this);
 
         this._socket.on("importModelScene", function(val, ackCb) {
