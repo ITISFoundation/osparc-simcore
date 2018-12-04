@@ -6,7 +6,8 @@ services:
       target: production
 #-------------------------------------------------------------------- 
   server:
-    build:
+    image: ${DOCKER_REGISTRY}/${SERVICE_PATH}:${SERVICES_VERSION}
+    build:      
       context: ../../
       dockerfile: services/dy-modeling/server/Dockerfile
       target: production
@@ -16,8 +17,8 @@ services:
         s4l_port_app: 9095
         s4l_port_mod: 9096
       labels: 
-        io.simcore.key: '{"key": "simcore/services/dynamic/modeler/webserver"}'
-        io.simcore.version: '{"version": "${MODELER_VERSION}"}'
+        io.simcore.key: '{"key": "${SERVICE_PATH}"}'
+        io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
         io.simcore.type: '{"type": "dynamic"}'
         io.simcore.name: '{"name": "modeler"}'
         io.simcore.description: '{"description": "Modeler viewer"}'

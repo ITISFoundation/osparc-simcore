@@ -213,6 +213,12 @@ paths:
         - $ref: '#/components/parameters/ServiceVersion'
         - $ref: '#/components/parameters/AssignmentUuid'
       responses:
+        "200":
+          description: Project already running
+          content:
+            application/json:
+              schema:
+                $ref: '../../shared/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
         "201":
           description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
           content:
