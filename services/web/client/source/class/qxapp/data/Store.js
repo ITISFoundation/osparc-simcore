@@ -562,6 +562,13 @@ qx.Class.define("qxapp.data.Store", {
               description: "Homogeneous grid",
               type: "boolean",
               defaultValue: true
+            },
+            resolution: {
+              displayOrder: 2,
+              label: "Resolution (mm)",
+              description: "Resolution in mm",
+              type: "number",
+              defaultValue: 1
             }
           },
           outputs: {
