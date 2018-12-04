@@ -208,7 +208,17 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
       resources.addListenerOnce("getSuccess", e => {
         let publicPrjList = e.getRequest().getResponse().data;
-        let publicPrjArrayModel = this.__getProjectArrayModel(publicPrjList);
+        let publicFilteredPrjList = [];
+        for (let i=0; i<publicPrjList.length; i++) {
+          // Temporary HACK
+          if (qxapp.data.Store.getInstance().getRole() !== 0 &&
+          publicPrjList[i].projectUuid === "DemoDecemberUUID") {
+            continue;
+          }
+          publicFilteredPrjList.push(publicPrjList[i]);
+        }
+
+        let publicPrjArrayModel = this.__getProjectArrayModel(publicFilteredPrjList);
         // controller
         let prjCtr = new qx.data.controller.List(publicPrjArrayModel, this.__publicProjectList, "name");
         const fromTemplate = true;

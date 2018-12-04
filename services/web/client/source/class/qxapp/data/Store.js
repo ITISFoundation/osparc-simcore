@@ -48,9 +48,9 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getRole: function() {
-      // FIMXE
+      // Temporary HACK
       const userEmail = qxapp.auth.Data.getInstance().getEmail();
-      if (userEmail.contains("itis.swiss") || userEmail.contains("oetiker.ch")) {
+      if (userEmail.includes("itis.swiss") || userEmail.includes("oetiker.ch")) {
         return 0;
       }
       return 1;
