@@ -18,27 +18,35 @@ endif
 
 export VCS_REF=$(shell git rev-parse --short HEAD) 
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-export MODELER_VERSION=2.7.0
-MODELER_MASU_REGISTRY_NAME=masu.speag.com/simcore/services/dynamic/modeler/webserver
+# export SERVICES_VERSION=2.7.0
+export SERVICE_PATH=simcore/services/dynamic/modeler/webserver
 
 all:
 	@echo 'run `make build-devel` to build your dev environment'
 	@echo 'run `make up-devel` to start your dev environment.'
 	@echo 'see Makefile for further targets'
 
-build-devel:
+check-env:
+ifndef SERVICES_VERSION
+	$(error SERVICES_VERSION variable is undefined)
+endif
+ifndef DOCKER_REGISTRY
+	$(error DOCKER_REGISTRY variable is undefined)
+endif
+
+build-devel: check-env
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build
 
-rebuild-devel:
+rebuild-devel: check-env
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build --no-cache
 
-up-devel:
+up-devel: check-env
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml up
 
-build:	
+build: check-env
 	${DOCKER_COMPOSE} -f docker-compose.yml build
 
-rebuild:
+rebuild: check-env
 	${DOCKER_COMPOSE} -f docker-compose.yml build --no-cache
 
 up:
@@ -48,7 +56,6 @@ down:
 	${DOCKER_COMPOSE} -f docker-compose.yml down
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml down
 
-push_service_images:
-	${DOCKER} login masu.speag.com
-	${DOCKER} tag dy-modeling_server:latest ${MODELER_MASU_REGISTRY_NAME}:${MODELER_VERSION}
-	${DOCKER} push ${MODELER_MASU_REGISTRY_NAME}:${MODELER_VERSION}
+push_service_images: check-env
+	${DOCKER} login masu.speag.com	
+	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_PATH}:${SERVICES_VERSION}

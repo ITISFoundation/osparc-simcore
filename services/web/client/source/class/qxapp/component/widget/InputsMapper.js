@@ -49,8 +49,10 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
                 // root
                 compatible = from.getIsDir() && that.__willBeBranch(fromKey);
               }
-            } else {
+            } else if (from.getModel().getChildren && from.getModel().getChildren().length>0) {
               // non root
+              compatible = true;
+            } else {
               compatible = to.getIsDir() && !from.getIsDir() && that.__willBeLeaf(fromKey);
             }
           }
@@ -64,14 +66,15 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             const fromNodeKey = from.getNodeKey();
             const fromPortKey = from.getPortKey();
             const to = e.getCurrentTarget();
-            // HACK
             if (from.getLabel() === "20181113_Yoon-sun_V4_preview") {
+              // HACK
               const mat2ent = qxapp.dev.fake.mat2ent.Data.mat2ent(from.getLabel());
               for (let i=0; i<mat2ent.length; i++) {
                 to.getModel().getChildren()
                   .push(mat2ent[i]);
               }
             } else if (from.getModel().getChildren && from.getModel().getChildren().length>0) {
+              // allow folder drag&drop
               let children = from.getModel().getChildren();
               for (let i=0; i<children.length; i++) {
                 let child = children.toArray()[i];

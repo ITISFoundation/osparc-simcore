@@ -22,14 +22,14 @@ def _check_type(item_type, value):
         if item_type in ("number", "integer"):
             return
 
-    possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
+    possible_types = [key for key, key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
     if not item_type in possible_types:
         if data_items_utils.is_file_type(item_type) and data_items_utils.is_value_on_store(value):
             return
         raise exceptions.InvalidItemTypeError(item_type, value)
 
 class Item():
-    def __init__(self, schema:SchemaItem, data:DataItem):
+    def __init__(self, schema: SchemaItem, data: DataItem):
         if not schema:
             raise exceptions.InvalidProtocolError(None, msg="empty schema or payload")
         self._schema = schema
@@ -97,7 +97,7 @@ class Item():
         """
         log.info("Setting data item with value %s", value)
         # try to guess the type and check the type set fits this (there can be more than one possibility, e.g. string)
-        possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
+        possible_types = [key for key, key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
         log.debug("possible types are for value %s are %s", value, possible_types)
         if not self.type in possible_types:
             if not data_items_utils.is_file_type(self.type) or not isinstance(value, (Path, str)):
