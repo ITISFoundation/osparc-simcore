@@ -112,8 +112,9 @@ function socketIOConnected(socketClient) {
 
 
 // S4L (thrift) stuff -----------------------------------------------------------------------------
-function failureCallback(error) {
+async function failureCallback(error) {
   console.log('Thrift error: ' + error);
+  await signalEndOfTransmission(); // ensure this gets called in case of failure
 }
 
 async function importModelS4L(modelName) {
