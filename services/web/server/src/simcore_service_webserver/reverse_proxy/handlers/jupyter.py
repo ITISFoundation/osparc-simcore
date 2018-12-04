@@ -12,8 +12,12 @@ from yarl import URL
 
 
 APP_SOCKETS_KEY = "simcore_service_webserver.reverse_proxy.settings.sockets"
-
-SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/jupyter-base-notebook"
+#FIXME: make this more generic
+SUPPORTED_IMAGE_NAME = ["simcore/services/dynamic/jupyter-base-notebook",
+                        "simcore/services/dynamic/kember-viewer", 
+                        "simcore/services/dynamic/cc-2d-viewer", 
+                        "simcore/services/dynamic/cc-1d-viewer", 
+                        "simcore/services/dynamic/cc-0d-viewer"]
 SUPPORTED_IMAGE_TAG = ">=1.5.0"
 
 logger = logging.getLogger(__name__)
@@ -83,7 +87,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
             data=await req.read()
         ) as res:
             body = await res.read()
-            response= web.Response(
+            response = web.Response(
                 headers=res.headers.copy(),
                 status=res.status,
                 body=body
@@ -91,7 +95,6 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
             return response
 
 
-#
 if __name__ == "__main__":
     # dummies for manual testing
     BASE_URL = 'http://0.0.0.0:8888'

@@ -112,7 +112,10 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         // TODO: is this listener added everytime we call ?? It does not depend on input params
         // but it needs to be here to implemenet startProjectModel
         let projectData = e.getRequest().getResponse().data;
-        let model = new qxapp.data.model.ProjectModel(projectData, fromTemplate);
+        if (fromTemplate && projectData.projectUuid !== "DemoDecemberUUID") {
+          projectData = qxapp.utils.Utils.replaceTemplateUUIDs(projectData);
+        }
+        let model = new qxapp.data.model.ProjectModel(projectData);
         const data = {
           projectModel: model
         };
@@ -205,7 +208,17 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
       resources.addListenerOnce("getSuccess", e => {
         let publicPrjList = e.getRequest().getResponse().data;
-        let publicPrjArrayModel = this.__getProjectArrayModel(publicPrjList);
+        let publicFilteredPrjList = [];
+        for (let i=0; i<publicPrjList.length; i++) {
+          // Temporary HACK
+          if (qxapp.data.Store.getInstance().getRole() !== 0 &&
+          publicPrjList[i].projectUuid === "DemoDecemberUUID") {
+            continue;
+          }
+          publicFilteredPrjList.push(publicPrjList[i]);
+        }
+
+        let publicPrjArrayModel = this.__getProjectArrayModel(publicFilteredPrjList);
         // controller
         let prjCtr = new qx.data.controller.List(publicPrjArrayModel, this.__publicProjectList, "name");
         const fromTemplate = true;
