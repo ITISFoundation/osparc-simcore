@@ -10,7 +10,12 @@ import aiohttp
 from aiohttp import client, web
 from yarl import URL
 
-SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/jupyter-base-notebook"
+#FIXME: make this more generic
+SUPPORTED_IMAGE_NAME = ["simcore/services/dynamic/jupyter-base-notebook",
+                        "simcore/services/dynamic/kember-viewer", 
+                        "simcore/services/dynamic/cc-2d-viewer", 
+                        "simcore/services/dynamic/cc-1d-viewer", 
+                        "simcore/services/dynamic/cc-0d-viewer"]
 SUPPORTED_IMAGE_TAG = ">=1.5.0"
 
 logger = logging.getLogger(__name__)
@@ -31,7 +36,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
     target_url = URL(service_url).origin() / req.path.lstrip('/')
 
     reqH = req.headers.copy()
-    
+
     if reqH['connection'].lower() == 'upgrade' and reqH['upgrade'].lower() == 'websocket' and req.method == 'GET':
         ws_server = web.WebSocketResponse()
         await ws_server.prepare(req)
@@ -71,13 +76,12 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
             data=await req.read()
         ) as res:
             body = await res.read()
-            response= web.Response(
+            response = web.Response(
                 headers=res.headers.copy(),
                 status=res.status,
                 body=body
             )
             return response
-
 
 
 if __name__ == "__main__":
