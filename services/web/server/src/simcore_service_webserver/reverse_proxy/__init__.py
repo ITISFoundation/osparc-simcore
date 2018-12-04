@@ -33,8 +33,10 @@ def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
     chooser = ReverseChooser(resolver=service_resolver)
 
     # Registers reverse proxy handlers customized for specific service types
-    chooser.register_handler(jupyter.handler,
-                             image_name=jupyter.SUPPORTED_IMAGE_NAME)
+    for name in jupyter.SUPPORTED_IMAGE_NAME:
+        chooser.register_handler(jupyter.handler,
+                             image_name=name)
+        
 
     chooser.register_handler(paraview.handler,
                              image_name=paraview.SUPPORTED_IMAGE_NAME)
