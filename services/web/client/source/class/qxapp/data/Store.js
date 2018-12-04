@@ -738,7 +738,7 @@ qx.Class.define("qxapp.data.Store", {
               label: "Perform Titration",
               description: "Perform Titration",
               type: "boolean",
-              defaultValue: true
+              defaultValue: false
             },
             convergence: {
               displayOrder: 2,
