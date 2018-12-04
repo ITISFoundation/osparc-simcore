@@ -40,7 +40,7 @@ async def services_get(request: web.Request) -> web.Response:
 
     # forward to director API
     session = get_client_session(request.app)
-    async with session.request(request.method, url, ssl=False) as resp:
+    async with session.get(url, ssl=False) as resp:
         payload = await resp.json()
         return web.json_response(payload, status=resp.status)
 
@@ -55,16 +55,24 @@ async def running_interactive_services_post(request: web.Request) -> web.Respons
 
     userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
     url = _resolve_url(request)
-    url = url.update_query( user_id=userid,
-                      service_basepath='/x/'+ query['service_uuid'] # TODO: mountpoint should be setup!!
-                    )
 
-    # forward to director API
     session = get_client_session(request.app)
-    async with session.request(request.method, url, ssl=False) as resp:
-        payload = await resp.json()
-        return web.json_response(payload, status=resp.status)
 
+    # get first if already running
+    async with session.get(url, ssl=False) as resp:
+        if resp.status == 200:
+            # TODO: currently director API does not specify resp. 200
+            payload = await resp.json()
+        else:
+            url = url.update_query( 
+                user_id=userid,
+                service_basepath='/x/'+ query['service_uuid'] # TODO: mountpoint should be setup!!
+            )
+            # otherwise, start new service
+            async with session.post(url, ssl=False) as resp:
+                payload = await resp.json()
+    
+    return web.json_response(payload, status=resp.status)
 
 
 @login_required
@@ -79,7 +87,7 @@ async def running_interactive_services_get(request: web.Request) -> web.Response
 
     # forward to director API
     session = get_client_session(request.app)
-    async with session.request(request.method, url, ssl=False) as resp:
+    async with session.get(url, ssl=False) as resp:
         payload = await resp.json()
         return web.json_response(payload, status=resp.status)
 
@@ -97,6 +105,6 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
 
     # forward to director API
     session = get_client_session(request.app)
-    async with session.request(request.method, url, ssl=False) as resp:
+    async with session.delete(url, ssl=False) as resp:
         payload = await resp.json()
         return web.json_response(payload, status=resp.status)
