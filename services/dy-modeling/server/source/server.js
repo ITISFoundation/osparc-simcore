@@ -35,7 +35,7 @@ console.log('server started on ' + config.PORT + '/app');
 // init socket.io
 let io = require('socket.io')(server, {
   pingInterval: 15000,
-  pingTimeout: 10000,
+  pingTimeout: 60000,
   path: `${config.BASEPATH}/socket.io`,
 });
 let connectedClient = null;
