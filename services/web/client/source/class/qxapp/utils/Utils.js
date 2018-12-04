@@ -15,9 +15,7 @@ qx.Class.define("qxapp.utils.Utils", {
       let myData = JSON.stringify(data);
       let tempIdIdx = myData.indexOf(tempPrefix);
       while (tempIdIdx !== -1) {
-        console.log(tempIdIdx);
         let tempId = myData.substr(tempIdIdx, 36);
-        console.log(tempId);
         let tempLocIdIdx = myData.indexOf(tempId);
         let newUuid = qxapp.utils.Utils.uuidv4();
         while (tempLocIdIdx !== -1) {
