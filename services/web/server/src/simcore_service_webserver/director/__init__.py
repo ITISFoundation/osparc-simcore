@@ -80,9 +80,10 @@ def setup(app: web.Application,* , disable_login=False):
         'running_interactive_services_post': handlers.running_interactive_services_post ,
         'running_interactive_services_get': handlers.running_interactive_services_get,
         'running_interactive_services_delete': handlers.running_interactive_services_delete,
+        'running_interactive_services_delete_all': handlers.running_interactive_services_delete_all,
         'services_get': handlers.services_get
     }
-
+    
     # Disables login_required decorator for testing purposes
     if disable_login:
         for name, hnds in handlers_dict.items():
