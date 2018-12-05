@@ -5,7 +5,6 @@ from yarl import URL
 
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_utils import extract_and_validate
-from servicelib.rest_responses import wrap_as_envelope
 
 from ..login.decorators import login_required
 from .config import get_client_session, get_config
