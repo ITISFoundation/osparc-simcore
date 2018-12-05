@@ -1,7 +1,7 @@
 version: '3.6'
 services:
   jupyter-base-notebook:
-    image: ${REGISTRY_KEY}jupyter-base-notebook:${SERVICES_VERSION}
+    image: ${DOCKER_REGISTRY}/${SERVICE_PATH}:${SERVICES_VERSION}
     build:
       context: ../../
       dockerfile: services/dy-jupyter/Dockerfile
@@ -9,7 +9,7 @@ services:
       args:
         BASE_IMAGE: jupyter/base-notebook
       labels:
-        io.simcore.key: '{"key": "simcore/services/dynamic/jupyter-base-notebook"}'
+        io.simcore.key: '{"key": "${SERVICE_PATH}"}'
         io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
         io.simcore.type: '{"type": "dynamic"}'
         io.simcore.name: '{"name": "jupyter-base-notebook"}'
