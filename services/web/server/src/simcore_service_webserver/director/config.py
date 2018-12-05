@@ -30,7 +30,7 @@ def build_api_url(config: Dict) -> URL:
     return api_baseurl
 
 def get_config(app: web.Application) -> Dict:
-    return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    return app[CONFIG_SECTION_NAME]
 
 def get_client_session(app: web.Application) -> ClientSession:
     return app[APP_DIRECTOR_SESSION_KEY]

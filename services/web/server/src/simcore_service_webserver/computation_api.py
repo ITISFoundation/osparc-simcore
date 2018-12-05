@@ -25,11 +25,7 @@ from .db_config import CONFIG_SECTION_NAME as CONFIG_DB_SECTION
 from .director import director_sdk
 from .login.decorators import login_required
 
-# TODO: this should be coordinated with postgres options from config/server.yaml
-#from simcore_sdk.config.db import Config as DbConfig
-#from simcore_sdk.config.s3 import Config as S3Config
-#-------------------------------------------------------------
-
+ANONYMOUS_USER = -1
 
 
 log = logging.getLogger(__file__)
@@ -73,7 +69,7 @@ async def init_database(_app):
             log.warning("%s: %s", str(err), msg)
             print("oops " + msg)
 
-async def _get_node_details(node_key:str, node_version:str)->dict:
+async def _get_node_details(node_key:str, node_version:str, app)->dict:
     if "file-picker" in node_key:
         # create a fake file-picker schema here!!
         fake_node_details = {"inputs":{},
@@ -104,14 +100,14 @@ async def _get_node_details(node_key:str, node_version:str)->dict:
             }
         return fake_node_details
     try:
-        services_enveloped = await director_sdk.get_director().services_by_key_version_get(node_key, node_version)
+        services_enveloped = await director_sdk.create_director_api_client(app).services_by_key_version_get(node_key, node_version)
         node_details = services_enveloped.data[0].to_dict()
         return node_details
     except ApiException as err:
         log.exception("Error could not find service %s:%s", node_key, node_version)
         raise web_exceptions.HTTPNotFound(reason=str(err))
 
-async def _build_adjacency_list(node_uuid:str, node_schema:dict, node_inputs:dict, pipeline_data:dict, dag_adjacency_list:dict)->dict:
+async def _build_adjacency_list(node_uuid:str, node_schema:dict, node_inputs:dict, pipeline_data:dict, dag_adjacency_list:dict, app: web.Application)->dict:
     if node_inputs is None or node_schema is None:
         return dag_adjacency_list
 
@@ -129,7 +125,7 @@ async def _build_adjacency_list(node_uuid:str, node_schema:dict, node_inputs:dic
             input_node_uuid = input_data["nodeUuid"]
             if "demodec" in pipeline_data[input_node_uuid]["key"]:
                 continue
-            input_node_details = await _get_node_details(pipeline_data[input_node_uuid]["key"], pipeline_data[input_node_uuid]["version"])
+            input_node_details = await _get_node_details(pipeline_data[input_node_uuid]["key"], pipeline_data[input_node_uuid]["version"], app)
             log.debug("input node details %s", input_node_details)
             if input_node_details is None:
                 continue
@@ -141,7 +137,7 @@ async def _build_adjacency_list(node_uuid:str, node_schema:dict, node_inputs:dic
                     dag_adjacency_list[input_node_uuid].append(node_uuid)
     return dag_adjacency_list
 
-async def _parse_pipeline(pipeline_data:dict): # pylint: disable=R0912
+async def _parse_pipeline(pipeline_data:dict, app: web.Application): # pylint: disable=R0912
     dag_adjacency_list = dict()
     tasks = dict()
 
@@ -166,9 +162,9 @@ async def _parse_pipeline(pipeline_data:dict): # pylint: disable=R0912
         if "demodec" in node_key:
             log.debug("skipping workbench entry containing %s:%s", node_uuid, value)
             continue
-        node_details = await _get_node_details(node_key, node_version)
+        node_details = await _get_node_details(node_key, node_version, app)
         log.debug("node %s:%s has schema:\n %s",node_key, node_version, node_details)
-        dag_adjacency_list = await _build_adjacency_list(node_uuid, node_details, node_inputs, pipeline_data, dag_adjacency_list)
+        dag_adjacency_list = await _build_adjacency_list(node_uuid, node_details, node_inputs, pipeline_data, dag_adjacency_list, app)
         log.debug("node %s:%s list updated:\n %s",node_key, node_version, dag_adjacency_list)
 
         # create the task
@@ -253,7 +249,7 @@ async def update_pipeline(request: web.Request) -> web.Response:
     _app = request.app[APP_CONFIG_KEY]
 
     log.debug("Client calls update_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
-    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data)
+    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data, _app)
     log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))
     try:
         await _set_adjacency_in_pipeline_db(project_id, dag_adjacency_list)
@@ -303,11 +299,11 @@ async def start_pipeline(request: web.Request) -> web.Response:
     project_id = request.match_info.get("project_id", None)
     assert project_id is not None
     pipeline_data = (await request.json())["workbench"]
-    userid = request[RQT_USERID_KEY]
+    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
     _app = request.app[APP_CONFIG_KEY]
 
     log.debug("Client calls start_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
-    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data)
+    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data, _app)
     log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))
     try:
         await _set_adjacency_in_pipeline_db(project_id, dag_adjacency_list)

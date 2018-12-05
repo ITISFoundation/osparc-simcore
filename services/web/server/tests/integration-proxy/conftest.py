@@ -162,7 +162,6 @@ def docker_compose_file(here, services_docker_compose, devel_environ):
         with docker_compose_path.open('wt') as f:
             yaml.dump(content, f, default_flow_style=False)
 
-    import pdb; pdb.set_trace()
     # TODO: comment when needed
     _recreate_compose_file()
 

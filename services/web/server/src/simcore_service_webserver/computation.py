@@ -22,7 +22,7 @@ from .rest_config import APP_OPENAPI_SPECS_KEY
 log = logging.getLogger(__file__)
 
 
-def setup(app: web.Application):
+def setup(app: web.Application,* , disable_login=False):
     log.debug("Setting up %s [service: %s] ...", __name__, SERVICE_NAME)
 
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
@@ -32,7 +32,6 @@ def setup(app: web.Application):
         return
 
     # subscribe to rabbit upon startup
-    # TODO: REmoved temporarily!
     # TODO: Define connection policies (e.g. {on-startup}, lazy). Could be defined in config-file
     app.on_startup.append(subscribe)
 
@@ -41,8 +40,8 @@ def setup(app: web.Application):
 
     specs = app[APP_OPENAPI_SPECS_KEY]
     routes = map_handlers_with_operations(
-        {'start_pipeline': computation_api.start_pipeline,
-        'update_pipeline': computation_api.update_pipeline},
+        {'start_pipeline': computation_api.start_pipeline.__wrapped__ if disable_login else computation_api.start_pipeline,
+        'update_pipeline': computation_api.update_pipeline.__wrapped__ if disable_login else computation_api.update_pipeline},
         filter(lambda o: "/computation" in o[1], iter_path_operations(specs)),
         strict=True
     )
