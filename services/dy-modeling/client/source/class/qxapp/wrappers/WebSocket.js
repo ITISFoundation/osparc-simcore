@@ -80,7 +80,7 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
     },
     connectTimeout: {
       nullable: true,
-      init: 10000,
+      init: 40000,
       check: "Number"
     },
     /** Reconnection delay for socket.io. */
