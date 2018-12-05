@@ -5,6 +5,7 @@ from yarl import URL
 
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_utils import extract_and_validate
+from servicelib.rest_responses import wrap_as_envelope
 
 from ..login.decorators import login_required
 from .config import get_client_session, get_config
@@ -52,6 +53,12 @@ async def services_get(request: web.Request) -> web.Response:
 
 @login_required
 async def running_interactive_services_post(request: web.Request) -> web.Response:
+    """ Starts an interactive service for a given user and
+        returns running service's metainfo
+
+        if service already renning, then returns its metainfo
+    """
+
     params, query, body = await extract_and_validate(request)
 
     assert not params
@@ -107,14 +114,17 @@ async def running_interactive_services_get(request: web.Request) -> web.Response
 
 @login_required
 async def running_interactive_services_delete(request: web.Request) -> web.Response:
+    """ Stops and removes an interactive service from the
+    
+    """
     params, query, body = await extract_and_validate(request)
 
     assert params, "DELETE expected /running_interactive_services/{service_uuid}"
     assert query
     assert not body
 
-    url = _resolve_url(request)
-    url = url.with_query(query)
+    endpoint = _resolve_url(request)
+    url = endpoint.with_query(query)
 
     registry = get_registry(request.app)
     service_uuid = query['service_uuid']
@@ -126,3 +136,37 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
         if resp.status < 400 or resp.status == 404:
             registry.as_stopped(service_uuid)
         return web.json_response(payload, status=resp.status)
+
+
+@login_required
+async def running_interactive_services_delete_all(request: web.Request) -> web.Response:
+    params, query, body = await extract_and_validate(request)
+
+    assert not params
+    assert not query
+    assert not body
+
+    registry = get_registry(request.app)
+    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
+    services = registry.user_to_services_map[userid]
+
+    if services:
+        session = get_client_session(request.app)
+        endpoint = _resolve_url(request)
+
+        errors = []
+        for service_uuid in services:
+            url = endpoint.with_query(service_uuid=service_uuid)
+            async with session.delete(url, ssl=False) as resp:
+                payload = await resp.json()
+                if resp.status < 400 or resp.status == 404:
+                    registry.as_stopped(service_uuid)
+                else:
+                    errors.append((payload, resp.status))
+
+        if errors:
+            # FIXME: append all errors
+            payload, status = errors[0]
+            return web.json_response(payload, status=status)
+
+    return web.json_response({'data': ''}, status=204)
