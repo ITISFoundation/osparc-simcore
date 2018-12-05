@@ -129,7 +129,7 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
 
     # forward to director API
     session = get_client_session(request.app)
-    async with session.delete(url, ssl=False) as resp:
+    async with session.delete(endpoint, ssl=False) as resp:
         payload = await resp.json()
         if resp.status < 400 or resp.status == 404:
             registry.as_stopped(service_uuid)
