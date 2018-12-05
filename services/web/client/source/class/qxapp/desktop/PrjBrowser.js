@@ -279,7 +279,6 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               }
               let thumbnailUrl = data.match(/^@/) ? data : "qxapp/img"+ thumbnailId +".jpg";
               thumbnailCounter++;
-              console.log(thumbnailCounter);
               return thumbnailUrl;
             }
           }, item, id);
