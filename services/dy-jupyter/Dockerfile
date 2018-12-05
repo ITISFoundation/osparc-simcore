@@ -20,7 +20,7 @@ USER $NB_USER
 # set up oSparc env variables
 ENV SIMCORE_NODE_UUID="-1" \
     SIMCORE_USER_ID="-1" \
-    SIMCORE_NODE_BASEPATH="-1" \
+    SIMCORE_NODE_BASEPATH="" \
     STORAGE_ENDPOINT="=1" \
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
@@ -43,7 +43,9 @@ RUN pip install --upgrade pip && \
     jupyter nbextension enable hide_input/main && \
     jupyter nbextension enable init_cell/main
 # ----------------------------------------------------------------
+ENV PYTHONPATH=/home/jovyan/.jupyter
 COPY --chown=jovyan:users services/dy-jupyter/notebook-customisation/custom.js /home/jovyan/.jupyter/custom/custom.js
+COPY --chown=jovyan:users services/dy-jupyter/notebook-customisation/input_retriever.py /home/jovyan/.jupyter/input_retriever.py
 
 ENV NOTEBOOK_URL="notebooks/notebook.ipynb"
 # ----------------------------------------------------------------

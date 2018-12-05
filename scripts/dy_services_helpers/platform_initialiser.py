@@ -7,6 +7,7 @@ import uuid
 from pathlib import Path
 
 import tenacity
+import sqlalchemy as sa
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -36,6 +37,14 @@ class S3Settings:
 @tenacity.retry(wait=tenacity.wait_fixed(2), stop=tenacity.stop_after_attempt(5) | tenacity.stop_after_delay(20))
 def init_db():
     db = DbSettings()    
+    _metadata = sa.MetaData()
+    _tokens = sa.Table("tokens", _metadata,
+    sa.Column("token_id", sa.BigInteger, nullable=False, primary_key=True),
+    sa.Column("user_id", sa.BigInteger, nullable=False),
+    sa.Column("token_service", sa.String, nullable=False),
+    sa.Column("token_data", sa.JSON, nullable=False),
+    )
+    _metadata.create_all(bind=db.db, tables=[_tokens, ], checkfirst=True)
     Base.metadata.create_all(db.db)
     return db
 
