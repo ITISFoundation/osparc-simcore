@@ -72,11 +72,6 @@ services:
     - output:/home/scu/output
     - log:/home/scu/log
     - /var/run/docker.sock:/var/run/docker.sock
-  flower:
-    image: ondrejit/flower:latest
-    command: --broker=amqp://simcore:simcore@rabbit:5672
-    ports:
-      - 5555:5555
 version: '3.4'
 volumes:
   input: null
