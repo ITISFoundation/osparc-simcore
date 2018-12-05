@@ -59,7 +59,7 @@ qx.Class.define("qxapp.component.EntityList", {
       if (this.indexOf(this.__progressBar) != -1) {
         this.remove(this.__progressBar);
       }
-      
+
       this.add(this.__progressBar);
     },
 
