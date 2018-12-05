@@ -14,6 +14,11 @@ then
 
   cd $HOME/
   simcore-service-webserver --config server-docker-dev.yaml
+elif [[ ${DEBUG} == "2" ]]
+then
+  echo "Booting with debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
+  python -c "import pdb, simcore_service_webserver.cli; pdb.run('simcore_service_webserver.cli.main([\'-c\',\'server-docker-prod.yaml\'])')"
+
 else
   echo "Booting in production mode ..."
   simcore-service-webserver --config server-docker-prod.yaml
