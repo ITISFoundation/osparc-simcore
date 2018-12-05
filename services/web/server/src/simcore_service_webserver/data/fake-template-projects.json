@@ -53,16 +53,16 @@
       },
       "template-uuid-43e7-9fda-cf9625e59986": {
         "key": "simcore/services/dynamic/cc-0d-viewer",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "label": "cc-0d-viewer",
         "inputs": {
           "vm_1Hz": {
             "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
-            "output": "vm_1Hz"
+            "output": "out_4"
           },
           "all_results_1Hz": {
             "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
-            "output": "allresult_1Hz"
+            "output": "out_1"
           }
         },
         "inputNodes": [
@@ -195,7 +195,7 @@
       },
       "template-uuid-47f5-a089-cc4e2eec30b3": {
         "key": "simcore/services/dynamic/cc-1d-viewer",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "label": "cc-1d-viewer",
         "inputs": {
           "ECGs": {
@@ -220,7 +220,7 @@
       },
       "template-uuid-46b7-825c-6f0f614c54ef": {
         "key": "simcore/services/dynamic/cc-2d-viewer",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "label": "cc-2d-viewer",
         "inputs": {
           "ap": {
