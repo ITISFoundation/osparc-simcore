@@ -20,7 +20,7 @@
         "outputs": {},
         "parent": null,
         "position": {
-          "x": 100,
+          "x": 50,
           "y": 150
         }
       },
@@ -47,7 +47,7 @@
         "outputs": {},
         "parent": null,
         "position": {
-          "x": 350,
+          "x": 300,
           "y": 150
         }
       },
@@ -72,7 +72,7 @@
         "outputs": {},
         "parent": null,
         "position": {
-          "x": 600,
+          "x": 550,
           "y": 150
         }
       }
@@ -98,7 +98,7 @@
         "outputs": {},
         "parent": null,
         "position": {
-          "x": 100,
+          "x": 50,
           "y": 300
         }
       },
@@ -111,8 +111,8 @@
         ],
         "outputNode": false,
         "position": {
-          "x": 400,
-          "y": 300
+          "x": 300,
+          "y": 200
         }
       },
       "template-uuid-41c5-bb23-d55cc2cb0252": {
@@ -125,8 +125,8 @@
         ],
         "outputNode": false,
         "position": {
-          "x": 700,
-          "y": 500
+          "x": 550,
+          "y": 400
         }
       },
       "template-uuid-43f3-ab01-a58e7c49a946": {
@@ -155,8 +155,33 @@
         "outputs": {},
         "parent": "template-uuid-4ea2-9778-2b2e0e28907a",
         "position": {
+          "x": 100,
+          "y": 350
+        }
+      },
+      "template-uuid-47f5-a089-cc4e2eec30b3": {
+        "key": "simcore/services/dynamic/cc-1d-viewer",
+        "version": "1.2.0",
+        "label": "cc-1d-viewer",
+        "inputs": {
+          "ECGs": {
+            "nodeUuid": "template-uuid-43f3-ab01-a58e7c49a946",
+            "output": "out_1"
+          },
+          "y_1D": {
+            "nodeUuid": "template-uuid-43f3-ab01-a58e7c49a946",
+            "output": "out_3"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-43f3-ab01-a58e7c49a946"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": "template-uuid-4ea2-9778-2b2e0e28907a",
+        "position": {
           "x": 300,
-          "y": 400
+          "y": 200
         }
       },
       "template-uuid-40ce-8d33-7d501a694550": {
@@ -189,33 +214,8 @@
         "outputs": {},
         "parent": "template-uuid-41c5-bb23-d55cc2cb0252",
         "position": {
-          "x": 300,
-          "y": 400
-        }
-      },
-      "template-uuid-47f5-a089-cc4e2eec30b3": {
-        "key": "simcore/services/dynamic/cc-1d-viewer",
-        "version": "1.2.0",
-        "label": "cc-1d-viewer",
-        "inputs": {
-          "ECGs": {
-            "nodeUuid": "template-uuid-43f3-ab01-a58e7c49a946",
-            "output": "out_1"
-          },
-          "y_1D": {
-            "nodeUuid": "template-uuid-43f3-ab01-a58e7c49a946",
-            "output": "out_3"
-          }
-        },
-        "inputNodes": [
-          "template-uuid-43f3-ab01-a58e7c49a946"
-        ],
-        "outputNode": false,
-        "outputs": {},
-        "parent": "template-uuid-4ea2-9778-2b2e0e28907a",
-        "position": {
-          "x": 600,
-          "y": 200
+          "x": 100,
+          "y": 350
         }
       },
       "template-uuid-46b7-825c-6f0f614c54ef": {
@@ -235,7 +235,7 @@
         "outputs": {},
         "parent": "template-uuid-41c5-bb23-d55cc2cb0252",
         "position": {
-          "x": 600,
+          "x": 300,
           "y": 200
         }
       }
