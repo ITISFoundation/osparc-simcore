@@ -119,14 +119,14 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
     params, query, body = await extract_and_validate(request)
 
     assert params, "DELETE expected /running_interactive_services/{service_uuid}"
-    assert query
+    assert not query
     assert not body
 
     endpoint = _resolve_url(request)
     url = endpoint.with_query(query)
 
     registry = get_registry(request.app)
-    service_uuid = query['service_uuid']
+    service_uuid = params['service_uuid']
 
     # forward to director API
     session = get_client_session(request.app)
@@ -155,7 +155,7 @@ async def running_interactive_services_delete_all(request: web.Request) -> web.R
 
         errors = []
         for service_uuid in services:
-            url = endpoint.with_query(service_uuid=service_uuid)
+            url = (endpoint / service_uuid)
             async with session.delete(url, ssl=False) as resp:
                 payload = await resp.json()
                 if resp.status < 400 or resp.status == 404:
