@@ -39,6 +39,8 @@ qx.Class.define("qxapp.component.EntityList", {
     });
     removeBtn.addListener("execute", this.__removeEntityPressed.bind(this));
 
+    this.__progressBar = new qx.ui.indicator.ProgressBar();
+
     scroller.add(this.__tree);
     this.add(removeBtn);
   },
@@ -51,6 +53,16 @@ qx.Class.define("qxapp.component.EntityList", {
 
   members: {
     __tree: null,
+    __progressBar: null,
+
+    modelLoading: function() {
+      this.remove(this.__progressBar);
+      this.add(this.__progressBar);
+    },
+
+    modelLoaded: function() {
+      this.remove(this.__progressBar);
+    },
 
     populateTree: function() {
       let data = {
