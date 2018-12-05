@@ -103,7 +103,7 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
     params, query, body = await extract_and_validate(request)
 
     assert params, "DELETE expected /running_interactive_services/{service_uuid}"
-    assert not query
+    assert query
     assert not body
 
     url = _resolve_url(request)
