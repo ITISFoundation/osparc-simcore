@@ -435,10 +435,14 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     __hasRetrieve: function() {
+      // all dynamic services will have the retrieve button;
+      return true;
+      /*
       if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler") || this.getKey().includes("neuroman")) {
         return true;
       }
       return false;
+      */
     },
 
     __retrieveInputs: function() {
