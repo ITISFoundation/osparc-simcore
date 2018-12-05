@@ -129,58 +129,6 @@
           "y": 500
         }
       },
-      "template-uuid-409d-998c-c1f04de67f8b": {
-        "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
-        "version": "1.0.0",
-        "label": "DBP-Clancy-Rabbit-Single-Cell solver",
-        "inputs": {
-          "Na": 0,
-          "Kr": 0,
-          "BCL": 200,
-          "NBeats": 5,
-          "Ligand": 0,
-          "cAMKII": "WT",
-          "in_7": {
-            "nodeUuid": "template-uuid-4674-b758-946151cae351",
-            "output": "outFile"
-          }
-        },
-        "inputNodes": [
-          "template-uuid-4674-b758-946151cae351"
-        ],
-        "outputNode": false,
-        "outputs": {},
-        "parent": "template-uuid-4452-bf18-e43e6081ff25",
-        "position": {
-          "x": 300,
-          "y": 400
-        }
-      },
-      "template-uuid-43e7-9fda-cf9625e59986": {
-        "key": "simcore/services/dynamic/cc-0d-viewer",
-        "version": "1.1.0",
-        "label": "cc-0d-viewer",
-        "inputs": {
-          "vm_1Hz": {
-            "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
-            "output": "vm_1Hz"
-          },
-          "all_results_1Hz": {
-            "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
-            "output": "allresult_1Hz"
-          }
-        },
-        "inputNodes": [
-          "template-uuid-409d-998c-c1f04de67f8b"
-        ],
-        "outputNode": false,
-        "outputs": {},
-        "parent": "template-uuid-4452-bf18-e43e6081ff25",
-        "position": {
-          "x": 600,
-          "y": 200
-        }
-      },
       "template-uuid-43f3-ab01-a58e7c49a946": {
         "key": "simcore/services/comp/ucdavis/cardiac-oned",
         "version": "1.0.0",
