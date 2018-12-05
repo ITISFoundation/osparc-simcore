@@ -1,14 +1,14 @@
 [
   {
-    "projectUuid": "template-uuid-41e9-a1a7-f7d4f3a8f26b",
-    "name": "Colleen Clancy use cases",
-    "description": "All use cases: 0D, 1D, 2D",
+    "projectUuid": "template-uuid-1234-a1a7-f7d4f3a8f26b",
+    "name": "Colleen Clancy use cases: 0D",
+    "description": "Colleen Clancy use cases: 0D",
     "notes": "Empty",
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
     "owner": "Colleen Clancy",
     "collaborators": {},
-    "creationDate": "2018-10-23T09:13:13.360Z",
-    "lastChangeDate": "2018-10-23T09:33:41.858Z",
+    "creationDate": "2018-10-22T09:13:13.360Z",
+    "lastChangeDate": "2018-10-22T09:33:41.858Z",
     "workbench": {
       "template-uuid-4674-b758-946151cae351": {
         "key": "simcore/services/dynamic/itis/file-picker",
@@ -24,6 +24,70 @@
           "y": 150
         }
       },
+      "template-uuid-409d-998c-c1f04de67f8b": {
+        "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
+        "version": "1.0.0",
+        "label": "DBP-Clancy-Rabbit-Single-Cell solver",
+        "inputs": {
+          "Na": 0,
+          "Kr": 0,
+          "BCL": 200,
+          "NBeats": 5,
+          "Ligand": 0,
+          "cAMKII": "WT",
+          "in_7": {
+            "nodeUuid": "template-uuid-4674-b758-946151cae351",
+            "output": "outFile"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-4674-b758-946151cae351"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 350,
+          "y": 150
+        }
+      },
+      "template-uuid-43e7-9fda-cf9625e59986": {
+        "key": "simcore/services/dynamic/cc-0d-viewer",
+        "version": "1.1.0",
+        "label": "cc-0d-viewer",
+        "inputs": {
+          "vm_1Hz": {
+            "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
+            "output": "vm_1Hz"
+          },
+          "all_results_1Hz": {
+            "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
+            "output": "allresult_1Hz"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-409d-998c-c1f04de67f8b"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 600,
+          "y": 150
+        }
+      }
+    }
+  }, {
+    "projectUuid": "template-uuid-41e9-a1a7-f7d4f3a8f26b",
+    "name": "Colleen Clancy use cases: 1D, 2D",
+    "description": "CC use cases: 1D and 2D collapsed",
+    "notes": "Empty",
+    "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
+    "owner": "Colleen Clancy",
+    "collaborators": {},
+    "creationDate": "2018-10-23T09:13:13.360Z",
+    "lastChangeDate": "2018-10-23T09:33:41.858Z",
+    "workbench": {
       "template-uuid-4212-8108-c7cfab4f241e": {
         "key": "simcore/services/dynamic/itis/file-picker",
         "version": "0.0.0",
@@ -35,20 +99,7 @@
         "parent": null,
         "position": {
           "x": 100,
-          "y": 400
-        }
-      },
-      "template-uuid-4452-bf18-e43e6081ff25": {
-        "label": "CC 0D",
-        "inputs": {},
-        "outputs": {},
-        "inputNodes": [
-          "template-uuid-4674-b758-946151cae351"
-        ],
-        "outputNode": false,
-        "position": {
-          "x": 400,
-          "y": 50
+          "y": 300
         }
       },
       "template-uuid-4ea2-9778-2b2e0e28907a": {
@@ -78,58 +129,6 @@
           "y": 500
         }
       },
-      "template-uuid-409d-998c-c1f04de67f8b": {
-        "key": "simcore/services/comp/ucdavis/cardiac-singlecell",
-        "version": "1.0.0",
-        "label": "DBP-Clancy-Rabbit-Single-Cell solver",
-        "inputs": {
-          "Na": 0,
-          "Kr": 0,
-          "BCL": 200,
-          "NBeats": 5,
-          "Ligand": 0,
-          "cAMKII": "WT",
-          "in_7": {
-            "nodeUuid": "template-uuid-4674-b758-946151cae351",
-            "output": "outFile"
-          }
-        },
-        "inputNodes": [
-          "template-uuid-4674-b758-946151cae351"
-        ],
-        "outputNode": false,
-        "outputs": {},
-        "parent": "template-uuid-4452-bf18-e43e6081ff25",
-        "position": {
-          "x": 300,
-          "y": 400
-        }
-      },
-      "template-uuid-43e7-9fda-cf9625e59986": {
-        "key": "simcore/services/dynamic/cc-0d-viewer",
-        "version": "1.1.0",
-        "label": "cc-0d-viewer",
-        "inputs": {
-          "vm_1Hz": {
-            "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
-            "output": "vm_1Hz"
-          },
-          "all_results_1Hz": {
-            "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
-            "output": "allresult_1Hz"
-          }
-        },
-        "inputNodes": [
-          "template-uuid-409d-998c-c1f04de67f8b"
-        ],
-        "outputNode": false,
-        "outputs": {},
-        "parent": "template-uuid-4452-bf18-e43e6081ff25",
-        "position": {
-          "x": 600,
-          "y": 200
-        }
-      },
       "template-uuid-43f3-ab01-a58e7c49a946": {
         "key": "simcore/services/comp/ucdavis/cardiac-oned",
         "version": "1.0.0",
@@ -154,7 +153,7 @@
         ],
         "outputNode": true,
         "outputs": {},
-        "parent": "template-uuid-4452-bf18-e43e6081ff25",
+        "parent": "template-uuid-4ea2-9778-2b2e0e28907a",
         "position": {
           "x": 300,
           "y": 400
@@ -179,7 +178,7 @@
           },
           "in_10": {
             "nodeUuid": "template-uuid-43f3-ab01-a58e7c49a946",
-            "output": "fiber"
+            "output": "out_2"
           }
         },
         "inputNodes": [
@@ -188,7 +187,7 @@
         ],
         "outputNode": false,
         "outputs": {},
-        "parent": "template-uuid-4ea2-9778-2b2e0e28907a",
+        "parent": "template-uuid-41c5-bb23-d55cc2cb0252",
         "position": {
           "x": 300,
           "y": 400
@@ -199,8 +198,14 @@
         "version": "1.1.0",
         "label": "cc-1d-viewer",
         "inputs": {
-          "ECGs": "null",
-          "y_1D": "null"
+          "ECGs": {
+            "nodeUuid": "template-uuid-43f3-ab01-a58e7c49a946",
+            "output": "out_1"
+          },
+          "y_1D": {
+            "nodeUuid": "template-uuid-43f3-ab01-a58e7c49a946",
+            "output": "out_3"
+          }
         },
         "inputNodes": [
           "template-uuid-43f3-ab01-a58e7c49a946"
@@ -218,7 +223,10 @@
         "version": "1.1.0",
         "label": "cc-2d-viewer",
         "inputs": {
-          "ap": "null"
+          "ap": {
+            "nodeUuid": "template-uuid-40ce-8d33-7d501a694550",
+            "output": "out_1"
+          }
         },
         "inputNodes": [
           "template-uuid-40ce-8d33-7d501a694550"
