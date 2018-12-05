@@ -56,12 +56,17 @@ qx.Class.define("qxapp.component.EntityList", {
     __progressBar: null,
 
     modelLoading: function() {
-      this.remove(this.__progressBar);
+      if (this.indexOf(this.__progressBar) != -1) {
+        this.remove(this.__progressBar);
+      }
+      
       this.add(this.__progressBar);
     },
 
     modelLoaded: function() {
-      this.remove(this.__progressBar);
+      if (this.indexOf(this.__progressBar) != -1) {
+        this.remove(this.__progressBar);
+      }
     },
 
     populateTree: function() {
