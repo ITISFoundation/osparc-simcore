@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 @web.middleware
 async def __handle_errors(request, handler):
     try:
-        log.debug("error middleware handling request %s to handler %s", request, handler)
+        # log.debug("error middleware handling request %s to handler %s", request, handler)
         response = await handler(request)
         return response
     except ValidationError as ex:

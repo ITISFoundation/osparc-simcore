@@ -13,7 +13,12 @@ from yarl import URL
 
 APP_SOCKETS_KEY = "simcore_service_webserver.reverse_proxy.settings.sockets"
 
-SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/jupyter-base-notebook"
+#FIXME: make this more generic
+SUPPORTED_IMAGE_NAME = ["simcore/services/dynamic/jupyter-base-notebook",
+                        "simcore/services/dynamic/kember-viewer", 
+                        "simcore/services/dynamic/cc-2d-viewer", 
+                        "simcore/services/dynamic/cc-1d-viewer", 
+                        "simcore/services/dynamic/cc-0d-viewer"]
 SUPPORTED_IMAGE_TAG = ">=1.5.0"
 
 logger = logging.getLogger(__name__)
@@ -36,19 +41,19 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
     target_url = URL(service_url).origin() / req.path.lstrip('/')
 
     reqH = req.headers.copy()
-    if reqH['connection'].lower() == 'upgrade' and reqH['upgrade'].lower() == 'websocket' and req.method == 'GET':
+    if reqH.get('connection', '').lower() == 'upgrade' and reqH.get('upgrade', '').lower() == 'websocket' and req.method == 'GET':
         ws_server = web.WebSocketResponse()
         available = ws_server.can_prepare(req)
         if available:
             await ws_server.prepare(req)
-            logger.debug('##### WS_SERVER %s', pprint.pformat(ws_server))
+            logger.info('##### WS_SERVER %s', pprint.pformat(ws_server))
 
             try:
                 req.app[APP_SOCKETS_KEY].append(ws_server)
 
                 client_session = aiohttp.ClientSession(cookies=req.cookies)
                 async with client_session.ws_connect(target_url) as ws_client:
-                    logger.debug('##### WS_CLIENT %s', pprint.pformat(ws_client))
+                    logger.info('##### WS_CLIENT %s', pprint.pformat(ws_client))
 
                     async def ws_forward(ws_from, ws_to):
                         async for msg in ws_from:
@@ -83,7 +88,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
             data=await req.read()
         ) as res:
             body = await res.read()
-            response= web.Response(
+            response = web.Response(
                 headers=res.headers.copy(),
                 status=res.status,
                 body=body
@@ -91,7 +96,6 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
             return response
 
 
-#
 if __name__ == "__main__":
     # dummies for manual testing
     BASE_URL = 'http://0.0.0.0:8888'

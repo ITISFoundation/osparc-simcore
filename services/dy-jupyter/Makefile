@@ -16,26 +16,36 @@ export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 endif
 
-export SERVICES_VERSION=1.7.0
+
+
+#export SERVICES_VERSION=1.7.0
 export VCS_REF=$(shell git rev-parse --short HEAD)
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-DOCKER_REGISTRY=masu.speag.com
+# DOCKER_REGISTRY=masu.speag.com
 #DOCKER_REGISTRY=registry.osparc.io
-export REGISTRY_KEY=${DOCKER_REGISTRY}/simcore/services/dynamic/
+export SERVICE_PATH=simcore/services/dynamic/jupyter-base-notebook
 
 all:
 	@echo 'run `make build` to build'
 	@echo 'run `make up` to start'
 	@echo 'see Makefile for further targets'
 
-build:
+check-env:
+ifndef SERVICES_VERSION
+	$(error SERVICES_VERSION variable is undefined)
+endif
+ifndef DOCKER_REGISTRY
+	$(error DOCKER_REGISTRY variable is undefined)
+endif
+
+build: check-env
 	${DOCKER_COMPOSE} -f docker-compose.yml build
 
-build-devel:
+build-devel: check-env
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build
 
-rebuild:
+rebuild: check-env
 	${DOCKER_COMPOSE} -f docker-compose.yml build --no-cache
 
 up:
@@ -48,8 +58,6 @@ down:
 	${DOCKER_COMPOSE} -f docker-compose.yml down
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml down
 
-
-
-push_service_images:
+push_service_images: check_env
 	${DOCKER} login ${DOCKER_REGISTRY}
-	${DOCKER} push ${DOCKER_REGISTRY}/simcore/services/dynamic/jupyter-base-notebook:${SERVICES_VERSION}
+	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_PATH}:${SERVICES_VERSION}
