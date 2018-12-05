@@ -12,7 +12,6 @@ from yarl import URL
 
 
 APP_SOCKETS_KEY = "simcore_service_webserver.reverse_proxy.settings.sockets"
-
 #FIXME: make this more generic
 SUPPORTED_IMAGE_NAME = ["simcore/services/dynamic/jupyter-base-notebook",
                         "simcore/services/dynamic/kember-viewer", 
