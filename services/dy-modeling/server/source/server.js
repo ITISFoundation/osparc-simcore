@@ -35,7 +35,7 @@ console.log('server started on ' + config.PORT + '/app');
 // init socket.io
 let io = require('socket.io')(server, {
   pingInterval: 15000,
-  pingTimeout: 10000,
+  pingTimeout: 60000,
   path: `${config.BASEPATH}/socket.io`,
 });
 let connectedClient = null;
@@ -52,6 +52,7 @@ s4l_utils.connectToS4LServer().catch(function(err) {
 function socketIOConnected(socketClient) {
   console.log(`Client connected as ${socketClient.id}...`);
   connectedClient = socketClient;
+  signalEndOfTransmission(); // ensure the client is not waiting infinely in case of reconnection
 
   socketClient.on('disconnecting', function (reason) {
     console.log(`Client disconnecteding with reason ${reason}`);
@@ -112,17 +113,20 @@ function socketIOConnected(socketClient) {
 
 
 // S4L (thrift) stuff -----------------------------------------------------------------------------
-function failureCallback(error) {
+async function failureCallback(error) {
   console.log('Thrift error: ' + error);
+  await signalEndOfTransmission(); // ensure this gets called in case of failure
 }
 
 async function importModelS4L(modelName) {
   try {
+    await signalStartTransmission();
     await s4l_utils.loadModelInS4L(modelName);
     const solid_entities = await s4l_utils.getEntitiesFromS4L(s4l_utils.entityType.SOLID_BODY_AND_MESH);
     await transmitEntities(solid_entities);
     const splineEntities = await s4l_utils.getEntitiesFromS4L(s4l_utils.entityType.WIRE);
     await transmitSplines(splineEntities);    
+    await signalEndOfTransmission();
   } 
   catch (error) {
     console.log(`Error while importing model: ${error}`);
@@ -164,6 +168,34 @@ async function transmitEntities(entities) {
   console.log(`Sent all GLTF scene: ${totalTransmittedMB}MB`);
 }
 
+function signalStartTransmission() {
+  return new Promise(function (resolve, reject) {
+    if (!connectedClient) {
+      console.log("no client...");
+      reject("no connected client");
+    }
+    console.log(`signaling client that transfer is starting...`);
+    connectedClient.emit('transmissionStarts', function() {
+      console.log(`received OK from client`);
+      resolve();
+    })
+  });
+}
+
+function signalEndOfTransmission() {
+  return new Promise(function (resolve, reject) {
+    if (!connectedClient) {
+      console.log("no client...");
+      reject("no connected client");
+    }
+    console.log(`signaling client that transfer is complete`);
+    connectedClient.emit('transmissionCompleted', function() {
+      console.log(`received OK from client`);
+      resolve();
+    })
+  });
+}
+
 function transmitScene(scene) {
   return new Promise(function (resolve, reject) {
     if (!connectedClient) {
@@ -182,6 +214,7 @@ function transmitScene(scene) {
 
 async function booleanOperationS4L(entityMeshesScene, operationType) {
   console.log('server: booleanOps4l ' + operationType);
+  await signalStartTransmission();
   await s4l_utils.newDocumentS4L();
   const uuidsList = await s4l_utils.sendEncodedSceneToS4L(entityMeshesScene);
   const newEntityUuid = await s4l_utils.booleanOperationS4L(uuidsList, operationType);
@@ -190,9 +223,11 @@ async function booleanOperationS4L(entityMeshesScene, operationType) {
     return element.uuid == newEntityUuid;
   });
   await transmitEntities([listOfEntities[index]]);  
+  await signalEndOfTransmission();
 }
 
 async function createSphereS4L(radius, center, uuid) {
+  await signalStartTransmission();
   await s4l_utils.newDocumentS4L();
   const newEntityUuid = await s4l_utils.createSphereS4L(radius, center, uuid);
   const listOfEntities = await s4l_utils.getEntitiesFromS4L(s4l_utils.entityType.MESH);
@@ -200,9 +235,11 @@ async function createSphereS4L(radius, center, uuid) {
     return element.uuid == newEntityUuid;
   });
   await transmitEntities([listOfEntities[index]]);  
+  await signalEndOfTransmission();
 }
 
 async function createSplineS4L(pointList, uuid) {
+  await signalStartTransmission();
   await s4l_utils.newDocumentS4L();
   const newEntityUuid = await s4l_utils.createSplineS4L(pointList, uuid);
   const listOfEntities = await s4l_utils.getEntitiesFromS4L(s4l_utils.entityType.WIRE);
@@ -210,6 +247,7 @@ async function createSplineS4L(pointList, uuid) {
     return element.uuid == newEntityUuid;
   });
   await transmitSplines([listOfEntities[index]]);
+  await signalEndOfTransmission();
 }
 
 // generic functions --------------------------------------------------
