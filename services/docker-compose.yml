@@ -166,6 +166,8 @@ services:
       - RUN_DOCKER_ENGINE_ROOT=${RUN_DOCKER_ENGINE_ROOT}
       - BF_API_SECRET=${BF_API_SECRET}
       - BF_API_KEY=${BF_API_KEY}
+    # stdin_open: true
+    # tty: true
     depends_on:
       - minio
       - postgres
