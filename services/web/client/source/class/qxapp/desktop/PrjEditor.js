@@ -318,7 +318,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
-      console.log("updating pipeline: " + url + "\n" + data);
+      console.log("updating pipeline: " + url);
+      console.log(data);
 
       req.addListener("success", e => {
         this.getLogger().debug("Workbench", "Pipeline successfully updated");
@@ -375,7 +376,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
-      console.log("starting pipeline: " + url + "\n" + data);
+      console.log("starting pipeline: " + url);
+      console.log(data);
 
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
