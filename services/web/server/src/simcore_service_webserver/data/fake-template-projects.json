@@ -178,7 +178,7 @@
           },
           "in_10": {
             "nodeUuid": "template-uuid-43f3-ab01-a58e7c49a946",
-            "output": "fiber"
+            "output": "out_2"
           }
         },
         "inputNodes": [
@@ -198,8 +198,14 @@
         "version": "1.1.0",
         "label": "cc-1d-viewer",
         "inputs": {
-          "ECGs": "null",
-          "y_1D": "null"
+          "ECGs": {
+            "nodeUuid": "template-uuid-43f3-ab01-a58e7c49a946",
+            "output": "out_1"
+          },
+          "y_1D": {
+            "nodeUuid": "template-uuid-43f3-ab01-a58e7c49a946",
+            "output": "out_3"
+          }
         },
         "inputNodes": [
           "template-uuid-43f3-ab01-a58e7c49a946"
@@ -217,7 +223,10 @@
         "version": "1.1.0",
         "label": "cc-2d-viewer",
         "inputs": {
-          "ap": "null"
+          "ap": {
+            "nodeUuid": "template-uuid-40ce-8d33-7d501a694550",
+            "output": "out_1"
+          }
         },
         "inputNodes": [
           "template-uuid-40ce-8d33-7d501a694550"
