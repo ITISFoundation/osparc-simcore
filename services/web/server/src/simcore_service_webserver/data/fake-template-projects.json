@@ -47,8 +47,8 @@
         "outputs": {},
         "parent": null,
         "position": {
-          "x": 300,
-          "y": 400
+          "x": 350,
+          "y": 150
         }
       },
       "template-uuid-43e7-9fda-cf9625e59986": {
@@ -73,7 +73,7 @@
         "parent": null,
         "position": {
           "x": 600,
-          "y": 200
+          "y": 150
         }
       }
     }
@@ -99,7 +99,7 @@
         "parent": null,
         "position": {
           "x": 100,
-          "y": 400
+          "y": 300
         }
       },
       "template-uuid-4ea2-9778-2b2e0e28907a": {
