@@ -220,15 +220,15 @@ qx.Class.define("qxapp.Application", {
       this._socket.addListener("connect", function() {
         console.log("connecting to server via websocket...");
 
-        this._socket.on("transmissionStarts", function(val, ackCb) {
+        this._socket.on("transmissionStarts", function(ackCb) {
           ackCb();
-          console.log(val);
+          console.log(`transmission started...`);
           this.__entityList.modelLoading();
         }, this);
 
-        this._socket.on("transmissionCompleted", function(val, ackCb) {
+        this._socket.on("transmissionCompleted", function(ackCb) {
           ackCb();
-          console.log(val);
+          console.log("transmission completed");
           this.__entityList.modelLoaded();
         }, this);
 
