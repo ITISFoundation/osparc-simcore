@@ -63,6 +63,15 @@ qx.Class.define("qxapp.component.EntityList", {
       this.add(this.__progressBar);
     },
 
+    initiateProgress: function(total) {
+      this.__progressBar.setMaximum(total);
+      this.__progressBar.setValue(0);
+    },
+
+    incrementProgress: function(value) {
+      this.__progressBar.setValue(this.__progressBar.getValue() + value);
+    },
+
     modelLoaded: function() {
       if (this.indexOf(this.__progressBar) != -1) {
         this.remove(this.__progressBar);

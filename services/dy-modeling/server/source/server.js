@@ -123,8 +123,10 @@ async function importModelS4L(modelName) {
     await signalStartTransmission();
     await s4l_utils.loadModelInS4L(modelName);
     const solid_entities = await s4l_utils.getEntitiesFromS4L(s4l_utils.entityType.SOLID_BODY_AND_MESH);
-    await transmitEntities(solid_entities);
     const splineEntities = await s4l_utils.getEntitiesFromS4L(s4l_utils.entityType.WIRE);
+    const numberEntities = solid_entities.length + splineEntities.length;
+    await signalInitiateProgress(numberEntities);
+    await transmitEntities(solid_entities);
     await transmitSplines(splineEntities);    
     await signalEndOfTransmission();
   } 
@@ -139,6 +141,7 @@ async function transmitSplines(splineEntities) {
     const wireObject = await s4l_utils.getWireFromS4l(splineEntities[splineIndex]);
     const transmittedBytes = await transmitSpline(wireObject);
     totalTransmittedMB += transmittedBytes / (1024.0 * 1024.0);
+    await signalIncrementProgress();
   }
   console.log(`Sent all spline objects: ${totalTransmittedMB}MB`);
 }
@@ -164,6 +167,7 @@ async function transmitEntities(entities) {
     const encodedScene = await s4l_utils.getEncodedSceneFromS4L(entities[i]);
     const transmittedBytes = await transmitScene(encodedScene);
     totalTransmittedMB += transmittedBytes / (1024.0 * 1024.0);
+    await signalIncrementProgress();
   }
   console.log(`Sent all GLTF scene: ${totalTransmittedMB}MB`);
 }
@@ -177,6 +181,30 @@ function signalStartTransmission() {
     console.log(`signaling client that transfer is starting...`);
     connectedClient.emit('transmissionStarts', function() {
       console.log(`received OK from client`);
+      resolve();
+    })
+  });
+}
+
+function signalInitiateProgress(total) {
+  return new Promise(function (resolve, reject) {
+    if (!connectedClient) {
+      console.log("no client...");
+      reject("no connected client");
+    }
+    connectedClient.emit('initiateProgress', total, function() {
+      resolve();
+    })
+  });
+}
+
+function signalIncrementProgress(value =1) {
+  return new Promise(function (resolve, reject) {
+    if (!connectedClient) {
+      console.log("no client...");
+      reject("no connected client");
+    }
+    connectedClient.emit('incrementProgress', value, function() {
       resolve();
     })
   });
