@@ -123,7 +123,6 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
     assert not body
 
     endpoint = _resolve_url(request)
-    url = endpoint.with_query(query)
 
     registry = get_registry(request.app)
     service_uuid = params['service_uuid']
