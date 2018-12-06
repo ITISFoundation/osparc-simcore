@@ -8,6 +8,7 @@ services:
       target: production
       args:
         BASE_IMAGE: jupyter/base-notebook
+        INSTALL_PYTHON2: 1
       labels:
         io.simcore.key: '{"key": "${SERVICE_BASE_PATH}"}'
         io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
@@ -33,12 +34,40 @@ services:
       target: production
       args:
         BASE_IMAGE: jupyter/scipy-notebook
+        INSTALL_PYTHON2: 1
       labels:
         io.simcore.key: '{"key": "${SERVICE_SCIPY_PATH}"}'
         io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
         io.simcore.type: '{"type": "dynamic"}'
         io.simcore.name: '{"name": "jupyter-scipy-notebook"}'
         io.simcore.description: '{"description": "Jupyter scipy notebook"}'
+        io.simcore.authors: '{"authors": [{"name": "sanderegg", "email": "anderegg@itis.swiss", "affiliation": "ITIS Foundation"}]}'
+        io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
+        io.simcore.inputs: '{"inputs": {"input_1":{"label": "input 1", "displayOrder":0, "description": "Input 1", "type": "data:*/*"}, "input_2":{"label": "input 2", "displayOrder":1, "description": "Input 2", "type": "data:*/*"}}}'
+        io.simcore.outputs: '{"outputs": {"output_1":{"label": "output 1", "displayOrder":0, "description": "Output 1", "type": "data:*/*"}, "output_2":{"label": "output 2", "displayOrder":1, "description": "Output 2", "type": "data:*/*"}}}'
+        simcore.service.settings: '[{"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 4000000000}}, {"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
+    ports:
+      - '8888:8888'
+
+  jupyter-r-notebook:
+    image: ${DOCKER_REGISTRY}/${SERVICE_R_PATH}:${SERVICES_VERSION}
+    build:
+      context: ../../
+      dockerfile: services/dy-jupyter/Dockerfile
+      target: production
+      args:
+        BASE_IMAGE: jupyter/r-notebook
+        INSTALL_PYTHON2: 0
+      labels:
+        io.simcore.key: '{"key": "${SERVICE_R_PATH}"}'
+        io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
+        io.simcore.type: '{"type": "dynamic"}'
+        io.simcore.name: '{"name": "jupyter-r-notebook"}'
+        io.simcore.description: '{"description": "Jupyter R notebook"}'
         io.simcore.authors: '{"authors": [{"name": "sanderegg", "email": "anderegg@itis.swiss", "affiliation": "ITIS Foundation"}]}'
         io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
         io.simcore.inputs: '{"inputs": {"input_1":{"label": "input 1", "displayOrder":0, "description": "Input 1", "type": "data:*/*"}, "input_2":{"label": "input 2", "displayOrder":1, "description": "Input 2", "type": "data:*/*"}}}'
