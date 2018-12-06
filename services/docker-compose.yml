@@ -81,6 +81,8 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
+    stdin_open: true
+    tty: true
     depends_on:
       - webclient
       - apihub
@@ -166,8 +168,8 @@ services:
       - RUN_DOCKER_ENGINE_ROOT=${RUN_DOCKER_ENGINE_ROOT}
       - BF_API_SECRET=${BF_API_SECRET}
       - BF_API_KEY=${BF_API_KEY}
-    # stdin_open: true
-    # tty: true
+    stdin_open: true
+    tty: true
     depends_on:
       - minio
       - postgres
