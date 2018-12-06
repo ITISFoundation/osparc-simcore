@@ -24,7 +24,8 @@ export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # DOCKER_REGISTRY=masu.speag.com
 #DOCKER_REGISTRY=registry.osparc.io
-export SERVICE_PATH=simcore/services/dynamic/jupyter-base-notebook
+export SERVICE_BASE_PATH=simcore/services/dynamic/jupyter-base-notebook
+export SERVICE_SCIPY_PATH=simcore/services/dynamic/jupyter-scipy-notebook
 
 all:
 	@echo 'run `make build` to build'
@@ -58,6 +59,7 @@ down:
 	${DOCKER_COMPOSE} -f docker-compose.yml down
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml down
 
-push_service_images: check_env
+push_service_images: check-env
 	${DOCKER} login ${DOCKER_REGISTRY}
-	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_PATH}:${SERVICES_VERSION}
+	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_BASE_PATH}:${SERVICES_VERSION}
+	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_SCIPY_PATH}:${SERVICES_VERSION}
