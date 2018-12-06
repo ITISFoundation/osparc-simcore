@@ -12,7 +12,8 @@ from yarl import URL
 
 #FIXME: make this more generic
 SUPPORTED_IMAGE_NAME = ["simcore/services/dynamic/jupyter-base-notebook",
-                        "simcore/services/dynamic/jupyter-scipy-notebook"
+                        "simcore/services/dynamic/jupyter-scipy-notebook",
+                        "simcore/services/dynamic/jupyter-r-notebook",
                         "simcore/services/dynamic/kember-viewer", 
                         "simcore/services/dynamic/cc-2d-viewer", 
                         "simcore/services/dynamic/cc-1d-viewer", 
