@@ -17,7 +17,8 @@ SUPPORTED_IMAGE_NAME = ["simcore/services/dynamic/jupyter-base-notebook",
                         "simcore/services/dynamic/kember-viewer", 
                         "simcore/services/dynamic/cc-2d-viewer", 
                         "simcore/services/dynamic/cc-1d-viewer", 
-                        "simcore/services/dynamic/cc-0d-viewer"]
+                        "simcore/services/dynamic/cc-0d-viewer",
+                        "simcore/services/dynamic/spat-an-app-nb"]
 SUPPORTED_IMAGE_TAG = ">=1.5.0"
 
 logger = logging.getLogger(__name__)
