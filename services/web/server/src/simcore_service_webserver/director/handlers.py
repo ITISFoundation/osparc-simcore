@@ -19,7 +19,8 @@ def _resolve_url(request: web.Request) -> URL:
 
     # director service API endpoint
     # TODO: service API endpoint could be deduced and checked upon setup (e.g. health check on startup)
-    endpoint = URL.build(scheme='http', host=cfg['host'], port=cfg['port']).with_path(cfg["version"])
+    endpoint = URL.build(
+        scheme='http', host=cfg['host'], port=cfg['port']).with_path(cfg["version"])
 
     # replace raw path, to keep the quotes and
     # strip webserver API version number from basepath
@@ -27,20 +28,22 @@ def _resolve_url(request: web.Request) -> URL:
     #    ('services', '')
     tail = "/".join(request.url.raw_parts[2:])
 
-    url = (endpoint / tail).with_query(request.query)
+    url = (endpoint / tail)
     return url
 
 # HANDLERS -------------------------------------------------------------------
+
 
 @login_required
 async def services_get(request: web.Request) -> web.Response:
     await extract_and_validate(request)
 
     url = _resolve_url(request)
+    url = url.with_query(request.query)
 
     # forward to director API
     session = get_client_session(request.app)
-    async with session.request(request.method, url, ssl=False) as resp:
+    async with session.get(url, ssl=False) as resp:
         payload = await resp.json()
         return web.json_response(payload, status=resp.status)
 
@@ -54,17 +57,27 @@ async def running_interactive_services_post(request: web.Request) -> web.Respons
     assert not body
 
     userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
-    url = _resolve_url(request)
-    url = url.update_query( user_id=userid,
-                      service_basepath='/x/'+ query['service_uuid'] # TODO: mountpoint should be setup!!
-                    )
-
-    # forward to director API
+    endpoint = _resolve_url(request)
+    
     session = get_client_session(request.app)
-    async with session.request(request.method, url, ssl=False) as resp:
-        payload = await resp.json()
-        return web.json_response(payload, status=resp.status)
 
+    # get first if already running
+    url = (endpoint / query['service_uuid'])
+    async with session.get(url, ssl=False) as resp:
+        if resp.status == 200:
+            # TODO: currently director API does not specify resp. 200
+            payload = await resp.json()
+        else:
+            url = endpoint.with_query(request.query).update_query(
+                user_id=userid,
+                # TODO: mountpoint should be setup!!
+                service_basepath='/x/' + query['service_uuid']
+            )
+            # otherwise, start new service
+            async with session.post(url, ssl=False) as resp:
+                payload = await resp.json()
+
+    return web.json_response(payload, status=resp.status)
 
 
 @login_required
@@ -76,13 +89,13 @@ async def running_interactive_services_get(request: web.Request) -> web.Response
     assert not body
 
     url = _resolve_url(request)
+    url = url.with_query(request.query)
 
     # forward to director API
     session = get_client_session(request.app)
-    async with session.request(request.method, url, ssl=False) as resp:
+    async with session.get(url, ssl=False) as resp:
         payload = await resp.json()
         return web.json_response(payload, status=resp.status)
-
 
 
 @login_required
@@ -90,13 +103,14 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
     params, query, body = await extract_and_validate(request)
 
     assert params, "DELETE expected /running_interactive_services/{service_uuid}"
-    assert not query
+    assert query
     assert not body
 
     url = _resolve_url(request)
+    url = url.with_query(request.query)
 
     # forward to director API
     session = get_client_session(request.app)
-    async with session.request(request.method, url, ssl=False) as resp:
+    async with session.delete(url, ssl=False) as resp:
         payload = await resp.json()
         return web.json_response(payload, status=resp.status)
