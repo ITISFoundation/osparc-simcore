@@ -42,6 +42,9 @@ PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg
 
 TEMPCOMPOSE := $(shell mktemp)
 
+export SERVICES_VERSION=2.8.0
+export DOCKER_REGISTRY=masu.speag.com
+
 all:
 	@echo 'run `make build-devel` to build your dev environment'
 	@echo 'run `make up-devel` to start your dev environment.'
@@ -69,6 +72,30 @@ build:
 build-client:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
+
+build-dynamic-services:
+ifndef SERVICES_VERSION
+	$(error SERVICES_VERSION variable is undefined)
+endif
+ifndef DOCKER_REGISTRY
+	$(error DOCKER_REGISTRY variable is undefined)
+endif
+	cd services/dy-jupyter && ${MAKE} build
+	cd services/dy-2Dgraph/use-cases && ${MAKE} build
+	cd services/dy-3dvis && ${MAKE} build
+	cd services/dy-modeling && ${MAKE} build
+
+push_dynamic_services:
+ifndef SERVICES_VERSION
+	$(error SERVICES_VERSION variable is undefined)
+endif
+ifndef DOCKER_REGISTRY
+	$(error DOCKER_REGISTRY variable is undefined)
+endif
+	cd services/dy-jupyter && ${MAKE} push_service_images
+	cd services/dy-2Dgraph/use-cases && ${MAKE} push_service_images
+	cd services/dy-3dvis && ${MAKE} push_service_images
+	cd services/dy-modeling && ${MAKE} push_service_images
 
 rebuild:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
@@ -158,7 +185,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.24
+PLATFORM_VERSION=3.28
 DOCKER_REGISTRY=masu.speag.com
 #DOCKER_REGISTRY=registry.osparc.io
 
@@ -179,9 +206,9 @@ push_platform_images:
   setup-check: .env .vscode/settings.json
 
 push_client_image:
-	${DOCKER} login masu.speag.com
-	${DOCKER} tag services_webserver:latest masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
-	${DOCKER} push masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
+	${DOCKER} login ${DOCKER_REGISTRY}
+	${DOCKER} tag services_webserver:latest ${DOCKER_REGISTRY}/simcore/workbench/webserver:${PLATFORM_VERSION}
+	${DOCKER} push ${DOCKER_REGISTRY}./simcore/workbench/webserver:${PLATFORM_VERSION}
 
 .env: .env-devel
 	$(info #####  $< is newer than $@ ####)

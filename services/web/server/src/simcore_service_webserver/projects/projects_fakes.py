@@ -49,7 +49,9 @@ class Fake:
 
     @classmethod
     def load_template_projects(cls):
-        with resources.stream("data/fake-template-projects.json") as f:
+        templateFile = "data/fake-template-projects.json"
+        templateFile = "data/fake-template-projects.osparc.json"
+        with resources.stream(templateFile) as f:
             projects = json.load(f)
 
         for prj in projects:
