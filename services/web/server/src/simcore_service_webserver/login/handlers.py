@@ -1,4 +1,5 @@
 import logging
+from typing import Dict
 
 import attr
 from aiohttp import web
@@ -7,8 +8,7 @@ from servicelib.rest_models import LogMessageType
 from servicelib.rest_utils import extract_and_validate
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
-from ..security import (authorized_userid, check_password, encrypt_password,
-                        forget, remember)
+from ..security import check_password, encrypt_password, forget, remember
 from .cfg import (APP_LOGIN_CONFIG, cfg,  # FIXME: do not use singletons!
                   get_storage)
 from .decorators import RQT_USERID_KEY, login_required
@@ -52,17 +52,10 @@ async def register(request: web.Request):
         'created_ip': get_client_ip(request),
     })
 
-    flash_msg =  attr.asdict(LogMessageType(
-        "You are registered successfully! To activate your account, please, "
-        "click on the verification link in the email we sent you.", "INFO"))
-
     if not bool(cfg.REGISTRATION_CONFIRMATION_REQUIRED):
         # user is logged in
         identity = body.email
-        response = web.json_response(data={
-            'data': attr.asdict(LogMessageType(cfg.MSG_LOGGED_IN, "INFO")),
-            'error': None
-        })
+        response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
         await remember(request, response, identity)
         return response
 
@@ -85,7 +78,11 @@ async def register(request: web.Request):
         await db.delete_user(user)
         raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL)
 
-    return flash_msg
+    response = flash_response(
+        "You are registered successfully! To activate your account, please, "
+        "click on the verification link in the email we sent you.", "INFO")
+    return response
+
 
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
@@ -116,20 +113,16 @@ async def login(request: web.Request):
 
     # user logs in
     identity = user['email']
-    response = web.json_response(data={
-        'data': attr.asdict(LogMessageType(cfg.MSG_LOGGED_IN, "INFO")),
-        'error': None
-    })
+    response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
     await remember(request, response, identity)
     return response
 
+
 async def logout(request: web.Request):
-    response = web.json_response(data={
-        'data': attr.asdict(LogMessageType(cfg.MSG_LOGGED_OUT, "INFO")),
-        'error': None
-    })
+    response = flash_response(cfg.MSG_LOGGED_OUT, "INFO")
     await forget(request, response)
     return response
+
 
 async def reset_password(request: web.Request):
     """
@@ -181,15 +174,20 @@ async def reset_password(request: web.Request):
         await db.delete_confirmation(confirmation_)
         raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL)
 
-    flash_msg = attr.asdict(LogMessageType("To reset your password, please, follow "
-        "the link in the email we sent you", "INFO"))
-    return flash_msg
+    response = flash_response("To reset your password, please, follow the link in the email we sent you", "INFO")
+    return response
 
-async def _reset_password_allowed(request: web.Request, confirmation):
+
+async def reset_password_allowed(request: web.Request, confirmation: Dict):
     """ Continues rest process after email after confirmation
 
         user already checked
     """
+
+
+    # while request. FIXME <--------------
+
+
     _, _, body = await extract_and_validate(request)
 
     db = get_storage(request.app)
@@ -208,6 +206,7 @@ async def _reset_password_allowed(request: web.Request, confirmation):
     #response = flash_response(cfg.MSG_PASSWORD_CHANGED + cfg.MSG_LOGGED_IN)
     #await remember(request, response, identity)
     #return response
+
 
 @login_required
 async def change_email(request: web.Request):
@@ -253,6 +252,7 @@ async def change_email(request: web.Request):
     response = flash_response(cfg.MSG_CHANGE_EMAIL_REQUESTED)
     return response
 
+
 @login_required
 async def change_password(request: web.Request):
     db = get_storage(request.app)
@@ -281,6 +281,7 @@ async def change_password(request: web.Request):
     response = flash_response(cfg.MSG_PASSWORD_CHANGED)
     return response
 
+
 async def email_confirmation(request: web.Request):
     """ Handled access from a link sent to user by email
 
@@ -307,7 +308,8 @@ async def email_confirmation(request: web.Request):
 
         elif action == RESET_PASSWORD:
             # NOTE: user is NOT logged in!
-            await _reset_password_allowed(request, confirmation)
+            # Should re-direct to front-end -
+            await reset_password_allowed(request, confirmation)
 
         elif action == CHANGE_EMAIL:
             user = await db.get_user({'id': confirmation['user_id']})

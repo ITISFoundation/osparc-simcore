@@ -62,7 +62,7 @@ paths:
 
   /auth/reset-password:
     post:
-      summary: 'non logged-in user requests a password reset'
+      summary: 'a non logged-in user requests a password reset providing an email'
       operationId: auth_reset_password
       requestBody:
         content:
