@@ -11,7 +11,7 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
         description: prjData.description || this.getDescription(),
         notes: prjData.notes || this.getNotes(),
         thumbnail: prjData.thumbnail || this.getThumbnail(),
-        owner: prjData.owner || this.getOwner(),
+        prjOwner: prjData.owner || this.getPrjOwner(),
         collaborators: prjData.collaborators || this.getCollaborators(),
         creationDate: new Date(prjData.creationDate) || this.getCreationDate(),
         lastChangeDate: new Date(prjData.lastChangeDate) || this.getLastChangeDate()
@@ -61,7 +61,7 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
       init: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round"
     },
 
-    owner: {
+    prjOwner: {
       check: "String",
       nullable: true,
       init: ""
