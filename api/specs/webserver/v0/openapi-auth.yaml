@@ -150,6 +150,12 @@ paths:
             application/json:
               schema:
                 $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+        '409':
+          description: 'mismatch between new and confirmation passwords'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yaml#/ErrorEnveloped'
         '422':
           description: current password is invalid
           content:

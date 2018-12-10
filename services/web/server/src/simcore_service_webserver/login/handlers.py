@@ -258,17 +258,22 @@ async def change_password(request: web.Request):
     db = get_storage(request.app)
 
     # TODO: add in request storage. Insert in login_required decorator
-    user = await _get_current_user(request, db)
+    user = await db.get_user({'id': request[RQT_USERID_KEY]})
     assert user, "Cannot identify user"
 
     _, _, body = await extract_and_validate(request)
 
-    cur_password = body.password
-    new_password = body.new_password
+    cur_password = body.current
+    new_password = body.new
+    confirm = body.confirm
 
     if not check_password(cur_password, user['password_hash']):
         raise web.HTTPUnprocessableEntity(reason=cfg.MSG_WRONG_PASSWORD,
                 content_type='application/json') # 422
+
+    if new_password != confirm:
+        raise web.HTTPConflict(reason=cfg.MSG_PASSWORD_MISMATCH,
+                               content_type='application/json') # 409
 
     await db.update_user(user, {'password_hash': encrypt_password(new_password)})
 
@@ -325,11 +330,6 @@ def flash_response(msg: str, level: str="INFO"):
     })
     return response
 
-async def _get_current_user(request: web.Request, db: AsyncpgStorage):
-    # TODO: add in request storage. Insert in login_required decorator
-    user_id = await authorized_userid(request)
-    user = await db.get_user({'id': user_id})
-    return user
 
 async def validate_registration(email: str, password: str, confirm: str, db: AsyncpgStorage):
     # email : required & formats
@@ -341,7 +341,7 @@ async def validate_registration(email: str, password: str, confirm: str, db: Asy
                                     content_type='application/json')
 
     if password != confirm:
-        raise web.HTTPConflict(reason="Passwords do not match",
+        raise web.HTTPConflict(reason=cfg.MSG_PASSWORD_MISMATCH,
                                content_type='application/json')
 
     # TODO: If the email field isn’t a valid email, return a 422 - HTTPUnprocessableEntity

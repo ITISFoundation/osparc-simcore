@@ -28,6 +28,7 @@ DEFAULTS = {
     'MSG_ACTIVATED': 'Your account is activated',
     'MSG_UNKNOWN_EMAIL': 'This email is not registered',
     'MSG_WRONG_PASSWORD': 'Wrong password',
+    'MSG_PASSWORD_MISMATCH': 'Password and confirmation do not match',
     'MSG_USER_BANNED': 'This user is banned',
     'MSG_ACTIVATION_REQUIRED': ('You have to activate your account via'
                                 ' email, before you can login'),
