@@ -31,8 +31,8 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
 
     base_path = openapi.get_base_path(specs)
 
-    def include_path(tup_object):
-        _method, path, _operation_id = tup_object
+    def include_path(tuple_object):
+        _method, path, _operation_id = tuple_object
         return path.startswith(base_path + "/auth/")
 
     handlers_map = {

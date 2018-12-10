@@ -9,8 +9,9 @@ from servicelib.rest_utils import extract_and_validate
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..security import (authorized_userid, check_password, encrypt_password,
                         forget, remember)
-from .cfg import cfg, get_storage, APP_LOGIN_CONFIG # FIXME: do not use singletons!
-from .decorators import login_required
+from .cfg import (APP_LOGIN_CONFIG, cfg,  # FIXME: do not use singletons!
+                  get_storage)
+from .decorators import RQT_USERID_KEY, login_required
 from .storage import AsyncpgStorage
 from .utils import (common_themed, get_client_ip, is_confirmation_allowed,
                     is_confirmation_expired, make_confirmation_link,
@@ -145,22 +146,22 @@ async def reset_password(request: web.Request):
     user = await db.get_user({'email': email})
     if not user:
         raise web.HTTPUnprocessableEntity(reason=cfg.MSG_UNKNOWN_EMAIL,
-                content_type='application/json')
+                content_type='application/json') # 422
 
     if user['status'] == BANNED:
         raise web.HTTPUnauthorized(reason=cfg.MSG_USER_BANNED.name,
-                content_type='application/json')
+                content_type='application/json') # 401
 
     elif user['status'] == CONFIRMATION_PENDING:
         raise web.HTTPUnauthorized(reason=cfg.MSG_ACTIVATION_REQUIRED,
-                content_type='application/json')
+                content_type='application/json') # 401
 
     assert user['status'] == ACTIVE
     assert user['email'] == email
 
     if not await is_confirmation_allowed(user, action=RESET_PASSWORD):
         raise web.HTTPUnauthorized(reason=cfg.MSG_OFTEN_RESET_PASSWORD,
-                content_type='application/json')
+                content_type='application/json') # 401
 
 
     confirmation_ = await db.create_confirmation(user, action=RESET_PASSWORD)
@@ -213,16 +214,15 @@ async def change_email(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
     db = get_storage(request.app)
-    email = body.new_email
+    email = body.email
 
-    # TODO: add in request storage. Insert in login_required decorator
-    user = await _get_current_user(request, db)
+    user = await db.get_user({'id': request[RQT_USERID_KEY]})
     assert user, "Cannot identify user"
 
     if user['email'] == email:
         return flash_response("Email changed")
 
-    # TODO: validate new email!!!
+    # TODO: validate new email!!! User marshmallow
 
     # Reset if previously requested
     confirmation = await db.get_confirmation({
@@ -268,7 +268,7 @@ async def change_password(request: web.Request):
 
     if not check_password(cur_password, user['password_hash']):
         raise web.HTTPUnprocessableEntity(reason=cfg.MSG_WRONG_PASSWORD,
-                content_type='application/json')
+                content_type='application/json') # 422
 
     await db.update_user(user, {'password_hash': encrypt_password(new_password)})
 
@@ -279,6 +279,7 @@ async def change_password(request: web.Request):
 async def email_confirmation(request: web.Request):
     """ Handled access from a link sent to user by email
 
+        Redirects back to UI front-end
     """
     params, _, _ = await extract_and_validate(request)
 
@@ -295,11 +296,8 @@ async def email_confirmation(request: web.Request):
         if action == REGISTRATION:
             user = await db.get_user({'id': confirmation['user_id']})
             await db.update_user(user, {'status': ACTIVE})
-            #response = flash_response(cfg.MSG_ACTIVATED + cfg.MSG_LOGGED_IN)
-            #await authorize_user(request, response, user["email"])
             await db.delete_confirmation(confirmation)
-            # raise response
-            # TODO redirect to main page!
+            #TODO: flash_response([cfg.MSG_ACTIVATED, cfg.MSG_LOGGED_IN])
 
 
         elif action == RESET_PASSWORD:
@@ -308,13 +306,14 @@ async def email_confirmation(request: web.Request):
 
         elif action == CHANGE_EMAIL:
             user = await db.get_user({'id': confirmation['user_id']})
-            await db.update_user(user, {'email': confirmation['out']})
+            await db.update_user(user, {'email': confirmation['data']})
             await db.delete_confirmation(confirmation)
+            #TODO:  flash_response(cfg.MSG_EMAIL_CHANGED)
 
-            # flash_response(cfg.MSG_EMAIL_CHANGED)
 
-    location = request.app[APP_LOGIN_CONFIG]['LOGIN_REDIRECT']
-    raise web.HTTPFound(location=location)
+    # TODO: inject flash messages to be shown by main website
+    main_url = request.app[APP_LOGIN_CONFIG]['LOGIN_REDIRECT']
+    raise web.HTTPFound(location=main_url)
 
 
 # helpers -----------------------------------------------------------------

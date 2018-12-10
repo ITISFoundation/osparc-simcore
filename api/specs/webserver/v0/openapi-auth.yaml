@@ -113,6 +113,12 @@ paths:
             application/json:
               schema:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        '401':
+          description: 'unauthorized user. Login required'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yaml#/ErrorEnveloped'
         '503':
           description: unable to send confirmation email
           content:
@@ -138,6 +144,12 @@ paths:
             application/json:
               schema:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        '401':
+          description: 'unauthorized user. Login required'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yaml#/ErrorEnveloped'
         '422':
           description: current password is invalid
           content:
