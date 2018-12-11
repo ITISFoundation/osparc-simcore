@@ -22,13 +22,14 @@ services:
       - INIT_OPTIONS=10 60 2 space
       - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     depends_on:
+      - storage
       - postgres
-      - minio
     ports:
       - '8888:8888'
     volumes:
       - ../../packages/:/home/jovyan/packages
       - ../../services/:/home/jovyan/services
+      - ./handlers:/home/jovyan/handlers
       - ./devel:/home/jovyan/devel
       - ../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./notebooks:/home/jovyan/notebooks
@@ -56,13 +57,14 @@ services:
       - INIT_OPTIONS=10 60 2 space
       - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     depends_on:
+      - storage
       - postgres
-      - minio
     ports:
       - '8889:8888'
     volumes:
       - ../../packages/:/home/jovyan/packages
       - ../../services/:/home/jovyan/services
+      - ./handlers:/home/jovyan/handlers
       - ./devel:/home/jovyan/devel
       - ../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./notebooks:/home/jovyan/notebooks
@@ -90,13 +92,14 @@ services:
       - INIT_OPTIONS=10 60 2 space
       - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     depends_on:
+      - storage
       - postgres
-      - minio
     ports:
       - '8890:8888'
     volumes:
       - ../../packages/:/home/jovyan/packages
       - ../../services/:/home/jovyan/services
+      - ./handlers:/home/jovyan/handlers
       - ./devel:/home/jovyan/devel
       - ../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./notebooks:/home/jovyan/notebooks
@@ -129,9 +132,9 @@ services:
       - APIHUB_PORT=${APIHUB_PORT}
     restart: always
     depends_on:
-      - postgres
-      - minio
       - apihub
+      - postgres
+      - minio      
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10

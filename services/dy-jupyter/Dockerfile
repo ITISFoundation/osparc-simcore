@@ -44,9 +44,8 @@ RUN pip install --upgrade pip && \
     jupyter nbextension enable hide_input/main && \
     jupyter nbextension enable init_cell/main
 # ----------------------------------------------------------------
-ENV PYTHONPATH=/home/jovyan/.jupyter
+ENV PYTHONPATH=/home/jovyan/handlers
 COPY --chown=jovyan:users services/dy-jupyter/notebook-customisation/custom.js /home/jovyan/.jupyter/custom/custom.js
-COPY --chown=jovyan:users services/dy-jupyter/notebook-customisation/input_retriever.py /home/jovyan/.jupyter/input_retriever.py
 
 ENV NOTEBOOK_URL="notebooks/notebook.ipynb"
 # ----------------------------------------------------------------
@@ -57,6 +56,10 @@ VOLUME /home/jovyan/devel
 VOLUME /home/root/scripts/dy_services_helpers
 VOLUME /home/jovyan/work
 VOLUME /home/jovyan/docker
+VOLUME /home/jovyan/handlers
+# increase development speed by pre-installing libraries
+COPY --chown=jovyan:users services/dy-jupyter/devel/requirements.txt /home/jovyan/devel/requirements.txt
+RUN pip install -r /home/jovyan/devel/requirements.txt
 ENV CREATE_DUMMY_TABLE=1
 ENV USE_CASE_CONFIG_FILE="devel/port_config.json"
 ENV INIT_OPTIONS="100 12 23 space"
@@ -71,6 +74,7 @@ COPY --chown=jovyan:users services/dy-jupyter/docker /docker
 COPY --chown=jovyan:users packages/simcore-sdk /home/jovyan/packages/simcore-sdk
 COPY --chown=jovyan:users packages/s3wrapper /home/jovyan/packages/s3wrapper
 COPY --chown=jovyan:users services/storage/client-sdk /home/jovyan/services/storage/client-sdk
+COPY --chown=jovyan:users services/dy-jupyter/handlers/input_retriever.py /home/jovyan/handlers/input_retriever.py
 # copy the default notebook
 COPY --chown=jovyan:users services/dy-jupyter/notebooks /home/jovyan/notebooks
 RUN pip install /home/jovyan/packages/simcore-sdk
