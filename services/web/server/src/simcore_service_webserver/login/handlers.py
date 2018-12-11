@@ -1,8 +1,8 @@
 import logging
-from typing import Dict
 
 import attr
 from aiohttp import web
+from yarl import URL
 
 from servicelib.rest_models import LogMessageType
 from servicelib.rest_utils import extract_and_validate
@@ -142,7 +142,7 @@ async def reset_password(request: web.Request):
                 content_type='application/json') # 422
 
     if user['status'] == BANNED:
-        raise web.HTTPUnauthorized(reason=cfg.MSG_USER_BANNED.name,
+        raise web.HTTPUnauthorized(reason=cfg.MSG_USER_BANNED,
                 content_type='application/json') # 401
 
     elif user['status'] == CONFIRMATION_PENDING:
@@ -176,36 +176,6 @@ async def reset_password(request: web.Request):
 
     response = flash_response("To reset your password, please, follow the link in the email we sent you", "INFO")
     return response
-
-
-async def reset_password_allowed(request: web.Request, confirmation: Dict):
-    """ Continues rest process after email after confirmation
-
-        user already checked
-    """
-
-
-    # while request. FIXME <--------------
-
-
-    _, _, body = await extract_and_validate(request)
-
-    db = get_storage(request.app)
-    new_password = body.password
-
-    # TODO validate good password
-    user = await db.get_user({'id': confirmation['user_id']})
-    assert user
-
-    await db.update_user(
-        user, {'password_hash': encrypt_password(new_password)})
-    await db.delete_confirmation(confirmation)
-
-    # TODO redirect!
-    #identity = user["email"]
-    #response = flash_response(cfg.MSG_PASSWORD_CHANGED + cfg.MSG_LOGGED_IN)
-    #await remember(request, response, identity)
-    #return response
 
 
 @login_required
@@ -285,31 +255,30 @@ async def change_password(request: web.Request):
 async def email_confirmation(request: web.Request):
     """ Handled access from a link sent to user by email
 
-        Redirects back to UI front-end
+        Retrieves confirmation key and redirects back to the front-end
     """
     params, _, _ = await extract_and_validate(request)
 
     db = get_storage(request.app)
     code = params['code']
 
-    confirmation = await db.get_confirmation({'code': code})
-    if confirmation and is_confirmation_expired(confirmation):
-        await db.delete_confirmation(confirmation)
-        confirmation = None
+    confirmation = await validate_confirmation_code(code, db)
 
     if confirmation:
         action = confirmation['action']
+        redirect_url = URL(request.app[APP_LOGIN_CONFIG]['LOGIN_REDIRECT'])
+
         if action == REGISTRATION:
             user = await db.get_user({'id': confirmation['user_id']})
             await db.update_user(user, {'status': ACTIVE})
             await db.delete_confirmation(confirmation)
             #TODO: flash_response([cfg.MSG_ACTIVATED, cfg.MSG_LOGGED_IN])
 
-
         elif action == RESET_PASSWORD:
-            # NOTE: user is NOT logged in!
-            # Should re-direct to front-end -
-            await reset_password_allowed(request, confirmation)
+            # Passes front-end code and this
+            # should then POST /v0/auth/confirmation/{code}
+            # with new password info
+            redirect_url = redirect_url.with_query(code=code)
 
         elif action == CHANGE_EMAIL:
             user = await db.get_user({'id': confirmation['user_id']})
@@ -319,11 +288,53 @@ async def email_confirmation(request: web.Request):
 
 
     # TODO: inject flash messages to be shown by main website
-    main_url = request.app[APP_LOGIN_CONFIG]['LOGIN_REDIRECT']
-    raise web.HTTPFound(location=main_url)
+    raise web.HTTPFound(location=redirect_url)
+
+
+async def reset_password_allowed(request: web.Request):
+    """
+    Changes password using a token code without being logged in
+    """
+    params, _, body = await extract_and_validate(request)
+    db = get_storage(request.app)
+
+    code = params['code']
+    password = body.password
+    confirm = body.confirm
+
+    # TODO validate good password
+    if password != confirm:
+        raise web.HTTPConflict(reason=cfg.MSG_PASSWORD_MISMATCH,
+                               content_type='application/json') # 409
+
+    confirmation = await validate_confirmation_code(code, db)
+
+    if confirmation:
+        user = await db.get_user({'id': confirmation['user_id']})
+        assert user
+
+        await db.update_user(user, {
+            'password_hash': encrypt_password(password)
+        })
+        await db.delete_confirmation(confirmation)
+
+        response = flash_response(cfg.MSG_PASSWORD_CHANGED)
+        return response
+
+    raise web.HTTPUnauthorized(reason="Cannot reset password. Invalid token or user",
+                               content_type='application/json') # 401
 
 
 # helpers -----------------------------------------------------------------
+
+
+async def validate_confirmation_code(code, db):
+    confirmation = await db.get_confirmation({'code': code})
+    if confirmation and is_confirmation_expired(confirmation):
+        await db.delete_confirmation(confirmation)
+        confirmation = None
+    return confirmation
+
 
 def flash_response(msg: str, level: str="INFO"):
     response = web.json_response(data={

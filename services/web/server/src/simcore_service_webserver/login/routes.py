@@ -40,6 +40,7 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
         'auth_login': login_handlers.login,
         'auth_logout': login_handlers.logout,
         'auth_reset_password': login_handlers.reset_password,
+        'auth_reset_password_allowed': login_handlers.reset_password_allowed,
         'auth_change_email': login_handlers.change_email,
         'auth_change_password': login_handlers.change_password,
         'auth_confirmation': login_handlers.email_confirmation

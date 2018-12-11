@@ -62,7 +62,7 @@ paths:
 
   /auth/reset-password:
     post:
-      summary: 'a non logged-in user requests a password reset providing an email'
+      summary: 'a non logged-in user requests a password reset'
       operationId: auth_reset_password
       requestBody:
         content:
@@ -90,6 +90,38 @@ paths:
                 $ref: './components/schemas/error.yaml#/ErrorEnveloped'
         '503':
           description: failed to send confirmation email
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+
+  /auth/reset-password/{code}:
+    post:
+      summary: changes password using a token code without being logged in
+      operationId: auth_reset_password_allowed
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            #format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/auth.yaml#/ResetPasswordForm'
+      responses:
+        '200':
+          description: password was successfully changed
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        '401':
+          description: unauthorized reset due to invalid token code
           content:
             application/json:
               schema:

@@ -46,6 +46,9 @@ paths:
   /auth/reset-password:
     $ref: './openapi-auth.yaml#/paths/~1auth~1reset-password'
 
+  /auth/reset-password/{code}:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1reset-password~1{code}'
+
   /auth/change-email:
     $ref: './openapi-auth.yaml#/paths/~1auth~1change-email'
 
