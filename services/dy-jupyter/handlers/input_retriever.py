@@ -14,6 +14,7 @@ from simcore_sdk import node_ports
 logger = logging.getLogger(__name__)
 
 _FILE_TYPE_PREFIX = "data:"
+_KEY_VALUE_FILE_NAME = "key_values.json"
 
 async def download_data(inputs_path):
     logger.info("retrieving data from simcore...")
@@ -34,10 +35,9 @@ async def download_data(inputs_path):
             shutil.move(value, dest)
             values[port.key] = {"key": port.key, "value": str(dest)}
 
-    values_file = inputs_path / "key_values.json"
-    with values_file.open('w') as fp:
-        json.dump(values, fp)
-    logger.info("all data retrieved from simcore: %s", values_file)
+    values_file = inputs_path / _KEY_VALUE_FILE_NAME
+    values_file.write_text(json.dumps(values))
+    logger.info("all data retrieved from simcore: %s", values)
 
 async def upload_data(outputs_path):
     logger.info("uploading data to simcore...")
@@ -61,17 +61,34 @@ async def upload_data(outputs_path):
                         tar_ptr.add(file_path, arcname=file_path.name, recursive=False)
             await port.set(temp_file.name)
             Path(temp_file.name).unlink()
+        else:
+            values_file = outputs_path / _KEY_VALUE_FILE_NAME
+            if values_file.exists():
+                values = json.loads(values_file.read_text())
+                if port.key in values:
+                    port.set(values[port.key])
+
     logger.info("all data uploaded to simcore")
 
-def _create_ports_sub_folders(ports: node_ports._items_list.ItemsList, parent_path: Path): # pylint: disable=protected-access
+def _create_ports_sub_folders(ports: node_ports._items_list.ItemsList, parent_path: Path): # pylint: disable=protected-access    
+    values = {}
     for port in ports:
+        values[port.key] = port.value
         if _FILE_TYPE_PREFIX in port.type:
             sub_folder = parent_path / port.key
             sub_folder.mkdir(exist_ok=True, parents=True)
+    
+    parent_path.mkdir(exist_ok=True, parents=True)    
+    values_file = parent_path / _KEY_VALUE_FILE_NAME
+    values_file.write_text(json.dumps(values))
 
 class RetrieveHandler(IPythonHandler):
+    def __init__(self):
+        super().__init__(self)
+        self.inputs_path = None
+        self.outputs_path = None
 
-    def initialize(self):
+    def initialize(self):        
         self.inputs_path = Path("~/inputs").expanduser()
         self.outputs_path = Path("~/outputs").expanduser()
         PORTS = node_ports.ports()
@@ -83,7 +100,7 @@ class RetrieveHandler(IPythonHandler):
             await download_data(self.inputs_path)
             await upload_data(self.outputs_path)
             self.set_status(204)
-        except node_ports.exceptions as exc:
+        except node_ports.exceptions.NodeportsException as exc:
             self.set_status(500, reason=exc.msg)
         finally:
             self.finish('completed retrieve!')
