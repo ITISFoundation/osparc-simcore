@@ -13,10 +13,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
     let leftSpacer = new qx.ui.core.Spacer(120);
     let mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    let scrollerMainView = new qx.ui.container.Scroll();
+    scrollerMainView.add(mainView);
     let rightSpacer = new qx.ui.core.Spacer(120);
 
     this.add(leftSpacer);
-    this.add(mainView, {
+    this.add(scrollerMainView, {
       flex: 1
     });
     this.add(rightSpacer);
