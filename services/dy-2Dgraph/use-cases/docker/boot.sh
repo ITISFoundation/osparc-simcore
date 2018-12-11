@@ -18,6 +18,7 @@ fi
 
 jupyter trust ${NOTEBOOK_URL}
 start-notebook.sh \
+    --NotebookApp.base_url=${SIMCORE_NODE_BASEPATH} \
+    --NotebookApp.extra_static_paths="['${SIMCORE_NODE_BASEPATH}/static']" \
     --NotebookApp.token='' \
-    --NotebookApp.tornado_settings="{\"headers\":{\"Content-Security-Policy\":\"frame-ancestors+'self'+http://osparc01.speag.com:9081;+report-uri/api/security/csp-report\"}}" \
     --NotebookApp.default_url=/notebooks/${NOTEBOOK_URL}
