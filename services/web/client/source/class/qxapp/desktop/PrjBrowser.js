@@ -513,7 +513,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               thumbnail: p.thumbnail,
               projectUuid: p.projectUuid,
               created: new Date(p.creationDate),
-              prjOwner: p.owner
+              prjOwner: Object.prototype.hasOwnProperty.call(p, "owner") ? p.owner : p.prjOwner
             })
           )
       );
