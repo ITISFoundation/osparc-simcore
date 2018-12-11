@@ -6,6 +6,7 @@ _MINUTES = 1./24./60./60.
 
 REQUIRED = object()
 DEFAULTS = {
+    'THEME': 'templates/osparc.io',
     'COMMON_THEME': 'templates/common',
     'PASSWORD_LEN': (6, 30),
     'LOGIN_REDIRECT': '/',

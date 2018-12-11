@@ -13,7 +13,7 @@ from .cfg import (APP_LOGIN_CONFIG, cfg,  # FIXME: do not use singletons!
                   get_storage)
 from .decorators import RQT_USERID_KEY, login_required
 from .storage import AsyncpgStorage
-from .utils import (common_themed, get_client_ip, is_confirmation_allowed,
+from .utils import (common_themed, themed, get_client_ip, is_confirmation_allowed,
                     is_confirmation_expired, make_confirmation_link,
                     render_and_send_mail)
 
@@ -64,7 +64,7 @@ async def register(request: web.Request):
     try:
         await render_and_send_mail(
             request, email,
-            common_themed('registration_email-v2.html'), {
+            themed('registration_email.html'), {
                 'auth': {
                     'cfg': cfg,
                 },
@@ -132,8 +132,10 @@ async def reset_password(request: web.Request):
         4. user clicks confirmation link -> auth/confirmation/{} -> reset_password_allowed
 
     Follows guidelines from [1]: https://postmarkapp.com/guides/password-reset-email-best-practices
-
-        - You would never want to confirm or deny the existence of an account with a given email or username.
+     - You would never want to confirm or deny the existence of an account with a given email or username.
+     - Expiration of link
+     - Support contact information
+     - Who requested the reset?
     """
     _, _, body = await extract_and_validate(request)
 
