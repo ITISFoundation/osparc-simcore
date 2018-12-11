@@ -2,6 +2,8 @@ from aiohttp import web
 
 APP_LOGIN_CONFIG = __name__ + ".config"
 
+_MINUTES = 1./24./60./60.
+
 REQUIRED = object()
 DEFAULTS = {
     'COMMON_THEME': 'templates/common',
@@ -20,7 +22,7 @@ DEFAULTS = {
 
     # email confirmation links lifetime in days
     'REGISTRATION_CONFIRMATION_LIFETIME': 5,
-    'RESET_PASSWORD_CONFIRMATION_LIFETIME': 5,
+    'RESET_PASSWORD_CONFIRMATION_LIFETIME': 5 * _MINUTES,
     'CHANGE_EMAIL_CONFIRMATION_LIFETIME': 5,
 
     'MSG_LOGGED_IN': 'You are logged in',
@@ -43,6 +45,7 @@ DEFAULTS = {
                                    ' we sent to your new email address'),
     'MSG_EMAIL_CHANGED': 'Your email is changed',
     'MSG_AUTH_FAILED': 'Authorization failed',
+    'MSG_EMAIL_SENT': 'An email has been sent to {email} with further instructions',
 
     # next settings are initialized during `setup()`, do not set it manually
     'APP': REQUIRED,

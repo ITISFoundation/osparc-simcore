@@ -4,22 +4,26 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import pytest
 from aiohttp import web
 from yarl import URL
 
 from servicelib.rest_responses import unwrap_envelope
-from simcore_service_webserver.db_models import UserStatus, ConfirmationAction
+from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login import APP_LOGIN_CONFIG
 from simcore_service_webserver.login.utils import get_random_string
-from utils_login import NewUser, parse_link
 from utils_assert import assert_status
-
+from utils_login import NewUser, parse_link, parse_test_marks
 
 EMAIL, PASSWORD = 'tester@test.com', 'password'
 
 
-async def test_unknown_email(client):
-    cfg = client.app[APP_LOGIN_CONFIG]
+@pytest.fixture
+def cfg(client):
+    return client.app[APP_LOGIN_CONFIG]
+
+
+async def test_unknown_email(client, capsys, cfg):
     reset_url = client.app.router['auth_reset_password'].url_for()
 
     rp = await client.post(reset_url, json={
@@ -27,12 +31,14 @@ async def test_unknown_email(client):
     })
     payload = await rp.text()
 
-    assert rp.status == 422, payload
     assert rp.url_obj.path == reset_url.path
-    await assert_status(rp, web.HTTPUnprocessableEntity, cfg.MSG_UNKNOWN_EMAIL)
+    await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(email=EMAIL))
+
+    out, err = capsys.readouterr()
+    assert parse_test_marks(out)["reason"] == cfg.MSG_UNKNOWN_EMAIL
 
 
-async def test_banned_user(client):
+async def test_banned_user(client, capsys, cfg):
     reset_url = client.app.router['auth_reset_password'].url_for()
 
     async with NewUser({'status': UserStatus.BANNED.name}) as user:
@@ -40,32 +46,29 @@ async def test_banned_user(client):
             'email': user['email'],
         })
 
-    payload = await rp.text()
-    assert rp.status == 401, payload
     assert rp.url_obj.path == reset_url.path
+    await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
 
-    cfg = client.app[APP_LOGIN_CONFIG]
-    await assert_status(rp, web.HTTPUnauthorized, cfg.MSG_USER_BANNED)
+    out, err = capsys.readouterr()
+    assert parse_test_marks(out)["reason"] == cfg.MSG_USER_BANNED
 
 
-
-async def test_inactive_user(client):
+async def test_inactive_user(client, capsys, cfg):
     reset_url = client.app.router['auth_reset_password'].url_for()
 
     async with NewUser({'status': UserStatus.CONFIRMATION_PENDING.name}) as user:
         rp = await client.post(reset_url, json={
             'email': user['email'],
         })
-    payload = await rp.json()
 
-    assert rp.status == 401, payload
     assert rp.url_obj.path == reset_url.path
+    await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
 
-    cfg = client.app[APP_LOGIN_CONFIG]
-    await assert_status(rp, web.HTTPUnauthorized, cfg.MSG_ACTIVATION_REQUIRED)
+    out, err = capsys.readouterr()
+    assert parse_test_marks(out)["reason"] == cfg.MSG_ACTIVATION_REQUIRED
 
 
-async def test_too_often(client):
+async def test_too_often(client, capsys, cfg):
     reset_url = client.app.router['auth_reset_password'].url_for()
 
     cfg = client.app[APP_LOGIN_CONFIG]
@@ -78,24 +81,22 @@ async def test_too_often(client):
         })
         await db.delete_confirmation(confirmation)
 
-    payload = await rp.text()
-    assert rp.status == 401, payload
     assert rp.url_obj.path == reset_url.path
+    await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
 
-    cfg = client.app[APP_LOGIN_CONFIG]
-    await assert_status(rp, web.HTTPUnauthorized, cfg.MSG_OFTEN_RESET_PASSWORD)
+    out, err = capsys.readouterr()
+    assert parse_test_marks(out)["reason"] == cfg.MSG_OFTEN_RESET_PASSWORD
 
 
-async def test_reset_and_confirm(client, capsys):
-    cfg = client.app[APP_LOGIN_CONFIG]
 
+async def test_reset_and_confirm(client, capsys, cfg):
     async with NewUser() as user:
         reset_url = client.app.router['auth_reset_password'].url_for()
         rp = await client.post(reset_url, json={
             'email': user['email'],
         })
         assert rp.url_obj.path == reset_url.path
-        await assert_status(rp, web.HTTPOk, "To reset your password")
+        await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
 
         out, err = capsys.readouterr()
         confirmation_url = parse_link(out)
@@ -135,5 +136,4 @@ async def test_reset_and_confirm(client, capsys):
 
 
 if __name__ == '__main__':
-    import pytest
     pytest.main([__file__, '--maxfail=1'])

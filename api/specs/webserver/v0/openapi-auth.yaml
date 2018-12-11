@@ -76,26 +76,12 @@ paths:
             application/json:
               schema:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
-        '401':
-          description: 'unauthorized (i.e. not active) user'
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-        '422':
-          description: email is not registered
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/error.yaml#/ErrorEnveloped'
         '503':
           description: failed to send confirmation email
           content:
             application/json:
               schema:
                 $ref: './components/schemas/error.yaml#/ErrorEnveloped'
-        default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
   /auth/reset-password/{code}:
     post:

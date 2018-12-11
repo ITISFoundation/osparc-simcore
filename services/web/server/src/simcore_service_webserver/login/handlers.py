@@ -130,6 +130,10 @@ async def reset_password(request: web.Request):
         2. check user status
         3. send email with link to reset password
         4. user clicks confirmation link -> auth/confirmation/{} -> reset_password_allowed
+
+    Follows guidelines from [1]: https://postmarkapp.com/guides/password-reset-email-best-practices
+
+        - You would never want to confirm or deny the existence of an account with a given email or username.
     """
     _, _, body = await extract_and_validate(request)
 
@@ -137,44 +141,60 @@ async def reset_password(request: web.Request):
     email = body.email
 
     user = await db.get_user({'email': email})
-    if not user:
-        raise web.HTTPUnprocessableEntity(reason=cfg.MSG_UNKNOWN_EMAIL,
-                content_type='application/json') # 422
-
-    if user['status'] == BANNED:
-        raise web.HTTPUnauthorized(reason=cfg.MSG_USER_BANNED,
-                content_type='application/json') # 401
-
-    elif user['status'] == CONFIRMATION_PENDING:
-        raise web.HTTPUnauthorized(reason=cfg.MSG_ACTIVATION_REQUIRED,
-                content_type='application/json') # 401
-
-    assert user['status'] == ACTIVE
-    assert user['email'] == email
-
-    if not await is_confirmation_allowed(user, action=RESET_PASSWORD):
-        raise web.HTTPUnauthorized(reason=cfg.MSG_OFTEN_RESET_PASSWORD,
-                content_type='application/json') # 401
-
-
-    confirmation_ = await db.create_confirmation(user, action=RESET_PASSWORD)
-    link = await make_confirmation_link(request, confirmation_)
     try:
-        await render_and_send_mail(
-            request, email,
-            common_themed('reset_password_email.html'), {
+        if not user:
+            raise web.HTTPUnprocessableEntity(reason=cfg.MSG_UNKNOWN_EMAIL,
+                    content_type='application/json') # 422
+
+        if user['status'] == BANNED:
+            raise web.HTTPUnauthorized(reason=cfg.MSG_USER_BANNED,
+                    content_type='application/json') # 401
+
+        elif user['status'] == CONFIRMATION_PENDING:
+            raise web.HTTPUnauthorized(reason=cfg.MSG_ACTIVATION_REQUIRED,
+                    content_type='application/json') # 401
+
+        assert user['status'] == ACTIVE
+        assert user['email'] == email
+
+        if not await is_confirmation_allowed(user, action=RESET_PASSWORD):
+            raise web.HTTPUnauthorized(reason=cfg.MSG_OFTEN_RESET_PASSWORD,
+                    content_type='application/json') # 401
+    except web.HTTPError as err:
+        # Email wiht be an explanation and suggest alternative approaches or ways to contact support for help
+        try:
+            await render_and_send_mail(
+               request, email,
+               common_themed('reset_password_email_failed.html'), {
                 'auth': {
                     'cfg': cfg,
                 },
                 'host': request.host,
-                'link': link,
+                'reason': err.reason,
             })
-    except Exception: #pylint: disable=broad-except
-        log.exception('Can not send email')
-        await db.delete_confirmation(confirmation_)
-        raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL)
+        except Exception: #pylint: disable=broad-except
+            log.exception("Cannot send email")
+            raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL)
+    else:
+        confirmation = await db.create_confirmation(user, action=RESET_PASSWORD)
+        link = await make_confirmation_link(request, confirmation)
+        try:
+            # primary reset email with a URL and the normal instructions.
+            await render_and_send_mail(
+                request, email,
+                common_themed('reset_password_email.html'), {
+                    'auth': {
+                        'cfg': cfg,
+                    },
+                    'host': request.host,
+                    'link': link,
+                })
+        except Exception: #pylint: disable=broad-except
+            log.exception('Can not send email')
+            await db.delete_confirmation(confirmation)
+            raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL)
 
-    response = flash_response("To reset your password, please, follow the link in the email we sent you", "INFO")
+    response = flash_response(cfg.MSG_EMAIL_SENT.format(email=email), "INFO")
     return response
 
 
@@ -227,7 +247,6 @@ async def change_email(request: web.Request):
 async def change_password(request: web.Request):
     db = get_storage(request.app)
 
-    # TODO: add in request storage. Insert in login_required decorator
     user = await db.get_user({'id': request[RQT_USERID_KEY]})
     assert user, "Cannot identify user"
 
@@ -255,7 +274,7 @@ async def change_password(request: web.Request):
 async def email_confirmation(request: web.Request):
     """ Handled access from a link sent to user by email
 
-        Retrieves confirmation key and redirects back to the front-end
+        Retrieves confirmation key and redirects back to some location front-end
     """
     params, _, _ = await extract_and_validate(request)
 
@@ -272,18 +291,21 @@ async def email_confirmation(request: web.Request):
             user = await db.get_user({'id': confirmation['user_id']})
             await db.update_user(user, {'status': ACTIVE})
             await db.delete_confirmation(confirmation)
+            log.debug("User %s registered", user)
             #TODO: flash_response([cfg.MSG_ACTIVATED, cfg.MSG_LOGGED_IN])
 
         elif action == RESET_PASSWORD:
-            # Passes front-end code and this
+            # Passes front-end code as a query. The latter
             # should then POST /v0/auth/confirmation/{code}
             # with new password info
             redirect_url = redirect_url.with_query(code=code)
+            log.debug("Reset password requested %s", confirmation)
 
         elif action == CHANGE_EMAIL:
             user = await db.get_user({'id': confirmation['user_id']})
             await db.update_user(user, {'email': confirmation['data']})
             await db.delete_confirmation(confirmation)
+            log.debug("User %s changed email", user)
             #TODO:  flash_response(cfg.MSG_EMAIL_CHANGED)
 
 
@@ -292,8 +314,8 @@ async def email_confirmation(request: web.Request):
 
 
 async def reset_password_allowed(request: web.Request):
-    """
-    Changes password using a token code without being logged in
+    """ Changes password using a token code without being logged in
+
     """
     params, _, body = await extract_and_validate(request)
     db = get_storage(request.app)
