@@ -1,5 +1,6 @@
 aiofiles~=0.4
 aiohttp~=3.3
+autopep8>=1.3.5
 certifi
 coveralls~=1.3
 docker~=3.5
