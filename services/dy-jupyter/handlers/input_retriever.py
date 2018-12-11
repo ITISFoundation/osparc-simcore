@@ -58,18 +58,17 @@ async def upload_data(outputs_path):
                 Path(temp_file).unlink()
 
 class RetrieveHandler(IPythonHandler):
-    def __init__(self):
-        self.inputs_path = Path("~/inputs").expanduser()
-        self.outputs_path = Path("~/outputs").expanduser()
 
     async def initialize(self):
+        self.inputs_path = Path("~/inputs").expanduser()
+        self.outputs_path = Path("~/outputs").expanduser()
         create_ports_sub_folders(self.inputs_path)
         create_ports_sub_folders(self.outputs_path)
 
         def create_ports_sub_folders(ports: node_ports._items_list.ItemsList, parent_path: Path):
             for port in ports:
                 if "data:" in port.type:
-                    sub_folder = self.parent_path / port.key
+                    sub_folder = parent_path / port.key
                     sub_folder.mkdir(exist_ok=True, parents=True)
 
     async def get(self):
