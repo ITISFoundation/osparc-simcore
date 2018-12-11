@@ -13,13 +13,16 @@ from simcore_sdk import node_ports
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+
+_INPUTS_FOLDER = "~/inputs"
+_OUTPUTS_FOLDER = "~/outputs"
 _FILE_TYPE_PREFIX = "data:"
 _KEY_VALUE_FILE_NAME = "key_values.json"
 
-async def download_data(inputs_path):
+async def download_data():
     logger.info("retrieving data from simcore...")
     PORTS = node_ports.ports()
-
+    inputs_path = Path(_INPUTS_FOLDER).expanduser()
     values = {}
     for port in PORTS.inputs:        
         if not port or port.value is None:
@@ -39,10 +42,10 @@ async def download_data(inputs_path):
     values_file.write_text(json.dumps(values))
     logger.info("all data retrieved from simcore: %s", values)
 
-async def upload_data(outputs_path):
+async def upload_data():
     logger.info("uploading data to simcore...")
     PORTS = node_ports.ports()
-
+    outputs_path = Path(_OUTPUTS_FOLDER).expanduser()
     for port in PORTS.outputs:        
         logger.debug("uploading data to port '%s' with value '%s'...", port.key, port.value)
         if _FILE_TYPE_PREFIX in port.type:
@@ -70,6 +73,17 @@ async def upload_data(outputs_path):
 
     logger.info("all data uploaded to simcore")
 
+class RetrieveHandler(IPythonHandler):
+    async def get(self):
+        try:
+            await download_data()
+            await upload_data()
+            self.set_status(204)
+        except node_ports.exceptions.NodeportsException as exc:
+            self.set_status(500, reason=exc.msg)
+        finally:
+            self.finish('completed retrieve!')
+
 def _create_ports_sub_folders(ports: node_ports._items_list.ItemsList, parent_path: Path): # pylint: disable=protected-access    
     values = {}
     for port in ports:
@@ -82,28 +96,12 @@ def _create_ports_sub_folders(ports: node_ports._items_list.ItemsList, parent_pa
     values_file = parent_path / _KEY_VALUE_FILE_NAME
     values_file.write_text(json.dumps(values))
 
-class RetrieveHandler(IPythonHandler):
-    def __init__(self):
-        super().__init__(self)
-        self.inputs_path = None
-        self.outputs_path = None
-
-    def initialize(self):        
-        self.inputs_path = Path("~/inputs").expanduser()
-        self.outputs_path = Path("~/outputs").expanduser()
-        PORTS = node_ports.ports()
-        _create_ports_sub_folders(PORTS.inputs, self.inputs_path)
-        _create_ports_sub_folders(PORTS.outputs, self.outputs_path)
-    
-    async def get(self):
-        try:
-            await download_data(self.inputs_path)
-            await upload_data(self.outputs_path)
-            self.set_status(204)
-        except node_ports.exceptions.NodeportsException as exc:
-            self.set_status(500, reason=exc.msg)
-        finally:
-            self.finish('completed retrieve!')
+def _init_sub_folders():
+    inputs_path = Path(_INPUTS_FOLDER).expanduser()
+    outputs_path = Path(_OUTPUTS_FOLDER).expanduser()
+    PORTS = node_ports.ports()
+    _create_ports_sub_folders(PORTS.inputs, inputs_path)
+    _create_ports_sub_folders(PORTS.outputs, outputs_path)
         
         
 
@@ -114,6 +112,8 @@ def load_jupyter_server_extension(nb_server_app):
     Args:
         nb_server_app (NotebookWebApplication): handle to the Notebook webserver instance.
     """
+    _init_sub_folders()
+
     web_app = nb_server_app.web_app
     host_pattern = '.*$'
     route_pattern = url_path_join(web_app.settings['base_url'], '/retrieve')
