@@ -77,9 +77,6 @@ def get_thrift_api_folders(startdir):
     return folders
 
 
-def redirect(*args, **kwargs):
-    raise HTTPFound(*args, **kwargs)
-
 
 def gravatar_hash(email):
     return hashlib.md5(email.lower().encode('utf-8')).hexdigest()
