@@ -56,14 +56,15 @@ async def upload_data():
                 await port.set(list_files[0])
                 continue
             # generic case let's create an archive
-            temp_file = tempfile.NamedTemporaryFile(suffix=".tgz")
-            temp_file.close()
-            for _file in list_files:
-                with tarfile.open(temp_file.name, mode='w:gz') as tar_ptr:
-                    for file_path in list_files:
-                        tar_ptr.add(file_path, arcname=file_path.name, recursive=False)
-            await port.set(temp_file.name)
-            Path(temp_file.name).unlink()
+            if len(list_files) > 1:
+                temp_file = tempfile.NamedTemporaryFile(suffix=".tgz")
+                temp_file.close()
+                for _file in list_files:
+                    with tarfile.open(temp_file.name, mode='w:gz') as tar_ptr:
+                        for file_path in list_files:
+                            tar_ptr.add(file_path, arcname=file_path.name, recursive=False)
+                await port.set(temp_file.name)
+                Path(temp_file.name).unlink()
         else:
             values_file = outputs_path / _KEY_VALUE_FILE_NAME
             if values_file.exists():
@@ -74,11 +75,16 @@ async def upload_data():
     logger.info("all data uploaded to simcore")
 
 class RetrieveHandler(IPythonHandler):
+    def initialize(self):
+        PORTS = node_ports.ports()
+        _create_ports_sub_folders(PORTS.inputs, Path(_INPUTS_FOLDER).expanduser())
+        _create_ports_sub_folders(PORTS.outputs, Path(_OUTPUTS_FOLDER).expanduser())
+
     async def get(self):
         try:
             await download_data()
             await upload_data()
-            self.set_status(204)
+            self.set_status(200)
         except node_ports.exceptions.NodeportsException as exc:
             self.set_status(500, reason=str(exc))
         finally:
@@ -97,11 +103,8 @@ def _create_ports_sub_folders(ports: node_ports._items_list.ItemsList, parent_pa
     values_file.write_text(json.dumps(values))
 
 def _init_sub_folders():
-    inputs_path = Path(_INPUTS_FOLDER).expanduser()
-    outputs_path = Path(_OUTPUTS_FOLDER).expanduser()
-    PORTS = node_ports.ports()
-    _create_ports_sub_folders(PORTS.inputs, inputs_path)
-    _create_ports_sub_folders(PORTS.outputs, outputs_path)
+    Path(_INPUTS_FOLDER).expanduser().mkdir(exist_ok=True, parents=True)
+    Path(_OUTPUTS_FOLDER).expanduser().mkdir(exist_ok=True, parents=True)
         
         
 
