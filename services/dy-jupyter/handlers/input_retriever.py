@@ -80,7 +80,7 @@ class RetrieveHandler(IPythonHandler):
             await upload_data()
             self.set_status(204)
         except node_ports.exceptions.NodeportsException as exc:
-            self.set_status(500, reason=exc.msg)
+            self.set_status(500, reason=str(exc))
         finally:
             self.finish('completed retrieve!')
 
