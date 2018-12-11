@@ -73,7 +73,5 @@ COPY --chown=jovyan:users packages/s3wrapper /home/jovyan/packages/s3wrapper
 COPY --chown=jovyan:users services/storage/client-sdk /home/jovyan/services/storage/client-sdk
 # copy the default notebook
 COPY --chown=jovyan:users services/dy-jupyter/notebooks /home/jovyan/notebooks
-RUN pip install /home/jovyan/packages/simcore-sdk &&\
-    pip install /home/jovyan/packages/s3wrapper && \
-    pip install /home/jovyan/services/storage/client-sdk/python
+RUN pip install /home/jovyan/packages/simcore-sdk
 ENTRYPOINT [ "/bin/bash", "/docker/boot.sh" ]
