@@ -1,12 +1,13 @@
 import json
+import logging
 import shutil
 import tarfile
 import tempfile
 from pathlib import Path
-import logging
 
 from notebook.base.handlers import IPythonHandler
 from notebook.utils import url_path_join
+
 from simcore_sdk import node_ports
 
 # logging.basicConfig(level=logging.DEBUG)
@@ -62,7 +63,7 @@ async def upload_data(outputs_path):
             Path(temp_file.name).unlink()
     logger.info("all data uploaded to simcore")
 
-def _create_ports_sub_folders(ports: node_ports._items_list.ItemsList, parent_path: Path):
+def _create_ports_sub_folders(ports: node_ports._items_list.ItemsList, parent_path: Path): # pylint: disable=protected-access
     for port in ports:
         if _FILE_TYPE_PREFIX in port.type:
             sub_folder = parent_path / port.key
@@ -78,18 +79,15 @@ class RetrieveHandler(IPythonHandler):
         _create_ports_sub_folders(PORTS.outputs, self.outputs_path)
     
     async def get(self):
-        await download_data(self.inputs_path)
-        await upload_data(self.outputs_path)
-        self.finish('completed retrieve!')
-
-
-class SaveHandler(IPythonHandler):
-    async def post(self):
-        notebooks_path = Path("~/notebooks").expanduser()
-        # collect all notebooks here
-        NODE = node_ports.node()
-        NODE.save_state
-        self.finish('completed save!')
+        try:
+            await download_data(self.inputs_path)
+            await upload_data(self.outputs_path)
+            self.set_status(204)
+        except node_ports.exceptions as exc:
+            self.set_status(500, reason=exc.msg)
+        finally:
+            self.finish('completed retrieve!')
+        
         
 
 def load_jupyter_server_extension(nb_server_app):
@@ -102,9 +100,5 @@ def load_jupyter_server_extension(nb_server_app):
     web_app = nb_server_app.web_app
     host_pattern = '.*$'
     route_pattern = url_path_join(web_app.settings['base_url'], '/retrieve')
-    
-    web_app.add_handlers(host_pattern, [(route_pattern, RetrieveHandler)])
-
-    route_pattern = url_path_join(web_app.settings['base_url'], '/save')
     
     web_app.add_handlers(host_pattern, [(route_pattern, RetrieveHandler)])
