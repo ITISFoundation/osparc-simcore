@@ -1,0 +1,71 @@
+[
+  {
+    "projectUuid": "template-uuid-4537-9f2d-2fbcbee4afb1",
+    "name": "SPARC Hackathon",
+    "description": "SPARC Hackathon template consisting of a FilePicker, and two notebooks",
+    "notes": "",
+    "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
+    "owner": "SIM-CORE",
+    "collaborators": {},
+    "creationDate": "2018-12-05T21:13:13.360Z",
+    "lastChangeDate": "2018-12-05T21:13:13.360Z",
+    "workbench": {
+      "template-uuid-4261-b92f-7343aecaab44": {
+        "key": "simcore/services/dynamic/itis/file-picker",
+        "version": "0.0.0",
+        "label": "File Picker",
+        "inputs": {},
+        "inputNodes": [],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 50,
+          "y": 150
+        }
+      },
+      "template-uuid-49b0-968d-a6545f9dc878": {
+        "key": "simcore/services/dynamic/jupyter-scipy-notebook",
+        "version": "1.7.0",
+        "label": "Jupyter SciPy notebook",
+        "inputs": {
+          "input_1": {
+            "nodeUuid": "template-uuid-4261-b92f-7343aecaab44",
+            "output": "outFile"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-4261-b92f-7343aecaab44"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 300,
+          "y": 150
+        }
+      },
+      "template-uuid-4a0e-bf7e-abad5e22e054": {
+        "key": "simcore/services/dynamic/jupyter-base-notebook",
+        "version": "1.7.0",
+        "label": "Jupyter base notebook",
+        "inputs": {
+          "input_1": {
+            "nodeUuid": "template-uuid-49b0-968d-a6545f9dc878",
+            "output": "output_1"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-49b0-968d-a6545f9dc878"
+        ],
+        "outputNode": false,
+        "outputs": {},
+        "parent": null,
+        "position": {
+          "x": 550,
+          "y": 150
+        }
+      }
+    }
+  }
+]

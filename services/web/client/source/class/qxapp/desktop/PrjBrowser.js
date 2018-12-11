@@ -166,7 +166,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           thumbnail: "@FontAwesome5Solid/plus-circle/80",
           projectUuid: null,
           created: null,
-          owner: null
+          prjOwner: null
         }));
         // controller
         let prjCtr = new qx.data.controller.List(userPrjArrayModel, this.__userProjectList, "name");
@@ -287,7 +287,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               return "<b>" + data + "</b>";
             }
           }, item, id);
-          controller.bindProperty("owner", "creator", {
+          controller.bindProperty("prjOwner", "creator", {
             converter: function(data, model, source, target) {
               return data ? "Created by: <b>" + data + "</b>" : null;
             }
@@ -373,7 +373,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               });
               form.add(control, this.tr("Notes"));
               break;
-            case "owner":
+            case "prjOwner":
               control = new qx.ui.form.TextField();
               form.add(control, this.tr("Owner"));
               break;
@@ -510,7 +510,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               thumbnail: p.thumbnail,
               projectUuid: p.projectUuid,
               created: new Date(p.creationDate),
-              owner: p.owner
+              prjOwner: p.owner
             })
           )
       );
