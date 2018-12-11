@@ -77,5 +77,7 @@ COPY --chown=jovyan:users services/storage/client-sdk /home/jovyan/services/stor
 COPY --chown=jovyan:users services/dy-jupyter/handlers/input_retriever.py /home/jovyan/handlers/input_retriever.py
 # copy the default notebook
 COPY --chown=jovyan:users services/dy-jupyter/notebooks /home/jovyan/notebooks
+RUN pip install /home/jovyan/packages/s3wrapper
+RUN pip install /home/jovyan/services/storage/client-sdk/python
 RUN pip install /home/jovyan/packages/simcore-sdk
 ENTRYPOINT [ "/bin/bash", "/docker/boot.sh" ]
