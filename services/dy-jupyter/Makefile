@@ -18,12 +18,10 @@ endif
 
 
 
-#export SERVICES_VERSION=1.7.0
+DEFAULT_SERVICES_VERSION=1.8.0
+DEFAULT_DOCKER_REGISTRY=masu.speag.com
 export VCS_REF=$(shell git rev-parse --short HEAD)
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-# DOCKER_REGISTRY=masu.speag.com
-#DOCKER_REGISTRY=registry.osparc.io
 export SERVICE_PATH=simcore/services/dynamic/jupyter-base-notebook
 
 all:
@@ -33,10 +31,12 @@ all:
 
 check-env:
 ifndef SERVICES_VERSION
-	$(error SERVICES_VERSION variable is undefined)
+	$(warning SERVICES_VERSION variable is undefined, using default ${DEFAULT_SERVICES_VERSION})
+	export SERVICES_VERSION=${DEFAULT_SERVICES_VERSION}
 endif
 ifndef DOCKER_REGISTRY
-	$(error DOCKER_REGISTRY variable is undefined)
+	$(warning DOCKER_REGISTRY variable is undefined, using default ${DEFAULT_DOCKER_REGISTRY})
+	export DOCKER_REGISTRY=${DEFAULT_DOCKER_REGISTRY}
 endif
 
 build: check-env
