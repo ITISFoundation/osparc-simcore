@@ -37,6 +37,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     let publicProjectList = this.__createPublicProjectList();
 
     let editPrjLayout = this.__editPrjLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+    editPrjLayout.setMaxWidth(800);
     let editPrjLabel = new qx.ui.basic.Label(this.tr("Edit Project")).set({
       font: navBarLabelFont,
       minWidth: 150
@@ -375,7 +376,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               });
               form.add(control, this.tr("Notes"));
               break;
-            case "prjOwner":
+            case "owner":
               control = new qx.ui.form.TextField();
               form.add(control, this.tr("Owner"));
               break;
