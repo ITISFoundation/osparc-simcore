@@ -3,6 +3,7 @@ import logging
 import shutil
 import tarfile
 import tempfile
+import zipfile
 from pathlib import Path
 
 from notebook.base.handlers import IPythonHandler
@@ -19,6 +20,45 @@ _OUTPUTS_FOLDER = "~/outputs"
 _FILE_TYPE_PREFIX = "data:"
 _KEY_VALUE_FILE_NAME = "key_values.json"
 
+def _compress_files_in_folder(folder: Path, one_file_not_compress: bool = True) -> Path:
+    list_files = list(folder.glob("*"))
+
+    if list_files is None:
+        return None
+
+    if one_file_not_compress and len(list_files) == 1:
+        return list_files[0]
+
+    temp_file = tempfile.NamedTemporaryFile(suffix=".tgz")
+    temp_file.close()
+    for _file in list_files:
+        with tarfile.open(temp_file.name, mode='w:gz') as tar_ptr:
+            for file_path in list_files:
+                tar_ptr.add(file_path, arcname=file_path.name, recursive=False)
+    return Path(temp_file.name)
+
+def _no_relative_path_tar(members: tarfile.TarFile):
+    for tarinfo in members:
+        path = Path(tarinfo.name)
+        if path.is_absolute():
+            # absolute path are not allowed
+            continue
+        if path.match("/../"):
+            # relative paths are not allowed
+            continue
+        yield tarinfo
+
+def _no_relative_path_zip(members: zipfile.ZipFile):
+    for zipinfo in members.infolist():
+        path = Path(zipinfo.filename)
+        if path.is_absolute():
+            # absolute path are not allowed
+            continue
+        if path.match("/../"):
+            # relative paths are not allowed
+            continue
+        yield zipinfo
+
 async def download_data():
     logger.info("retrieving data from simcore...")
     PORTS = node_ports.ports()
@@ -32,11 +72,26 @@ async def download_data():
         values[port.key] = {"key": port.key, "value": value}
 
         if _FILE_TYPE_PREFIX in port.type:
-            dest = inputs_path / port.key
-            dest.mkdir(exist_ok=True, parents=True)
-            dest = dest / Path(value).name
-            shutil.move(value, dest)
-            values[port.key] = {"key": port.key, "value": str(dest)}
+            dest_path = inputs_path / port.key
+            dest_path.mkdir(exist_ok=True, parents=True)
+            values[port.key] = {"key": port.key, "value": str(dest_path)}
+            
+            # clean up destination directory
+            for path in dest_path.iterdir():
+                if path.is_file():
+                    path.unlink()
+                elif path.is_dir():
+                    shutil.rmtree(path)
+            # check if value is a compressed file
+            if tarfile.is_tarfile(value):
+                with tarfile.open(value) as tar_file:
+                    tar_file.extractall(dest_path, members=_no_relative_path_tar(tar_file))
+            elif zipfile.is_zipfile(value):
+                with zipfile.ZipFile(value) as zip_file:
+                    zip_file.extractall(dest_path, members=_no_relative_path_zip(zip_file))
+            else:
+                dest_path = dest_path / Path(value).name
+                shutil.move(value, dest_path)
 
     values_file = inputs_path / _KEY_VALUE_FILE_NAME
     values_file.write_text(json.dumps(values))
@@ -63,14 +118,17 @@ async def upload_data():
                     with tarfile.open(temp_file.name, mode='w:gz') as tar_ptr:
                         for file_path in list_files:
                             tar_ptr.add(file_path, arcname=file_path.name, recursive=False)
-                await port.set(temp_file.name)
-                Path(temp_file.name).unlink()
+                try:
+                    await port.set(temp_file.name)                
+                finally:
+                    #clean up
+                    Path(temp_file.name).unlink()
         else:
             values_file = outputs_path / _KEY_VALUE_FILE_NAME
             if values_file.exists():
                 values = json.loads(values_file.read_text())
-                if port.key in values:
-                    port.set(values[port.key])
+                if port.key in values and values[port.key] is not None:
+                    await port.set(values[port.key])
 
     logger.info("all data uploaded to simcore")
 
