@@ -41,14 +41,7 @@ ENV PATH "${QOOXDOO_PATH}/tool/bin:${HOME}/node_modules/.bin/:${NPM_CONFIG_PREFI
 
 WORKDIR /home/scu
 
-# 1. qooxdoo-sdk from source repository.
-#  - Provides framework and generator.py tools to overcome limits of qx-compiler
-#  - TODO: This is a temporary solution
-RUN git clone --depth 1 https://github.com/qooxdoo/qooxdoo.git ${QOOXDOO_PATH} && \
-    sed 's/6.0.0-alpha[^"]*/'$(date +"6.0.0-alpha-%Y%m%d")'/' ${QOOXDOO_PATH}/framework/Manifest.json > ${QOOXDOO_PATH}/framework/Manifest.json.$$ && \
-    mv ${QOOXDOO_PATH}/framework/Manifest.json.$$ ${QOOXDOO_PATH}/framework/Manifest.json
-
-# 2. installs qx-compiler (see specs in package.json)
+# 1. installs qx-compiler (see specs in package.json)
 COPY --chown=scu:scu package*.json ./
 
 RUN npm install npm@latest && \

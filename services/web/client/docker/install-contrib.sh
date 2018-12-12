@@ -11,15 +11,17 @@ echo "- fonts dir : " ${FONTS_DIR}
 # Installs thems and iconfonts
 pushd ${CLIENT_DIR};
 
+echo "qooxdoo and compiler versions"
+npm ll qooxdoo-sdk
+npm ll qxcompiler
+
 echo "Updating contributions ..."
 qx contrib update
 
 echo "Listing contributions ..."
 qx contrib list
 
-echo "Installing contributions ..."
-qx contrib install ITISFoundation/qx-osparc-theme
-qx contrib install ITISFoundation/qx-iconfont-material
-qx contrib install ITISFoundation/qx-iconfont-fontawesome5
+echo "Installing contributions (based on information from contrib.json) ..."
+qx contrib install
 
 popd;

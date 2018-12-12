@@ -39,7 +39,7 @@
   ],
 
   "libraries": [
-    "../qooxdoo-sdk/framework",
+    "node_modules/qooxdoo-sdk/framework",
     "."
   ],
 

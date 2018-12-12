@@ -66,6 +66,13 @@ up-webclient-devel: up-swarm-devel remove-intermediate-file file-watcher
 	${DOCKER} service rm services_webclient
 	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
 
+rebuild-webclient-devel-solo:
+	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml build --no-cache qx
+
+up-webclient-devel-solo:
+	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
+
+
 build:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
 
@@ -112,7 +119,7 @@ up-swarm:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.deploy.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
 
-up-swarm-devel:
+up-swarm-devel: 
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.deploy.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
