@@ -40,6 +40,15 @@ qx.Class.define("qxapp.Application", {
         qx.log.appender.Native;
       }
 
+      // alert the users that they are about to navigate away
+      // from osparc. unfortunately it is not possible
+      // to provide our own message here
+      window.addEventListener("beforeunload", e => {
+        // Cancel the event as stated by the standard.
+        e.preventDefault();
+        // Chrome requires returnValue to be set.
+        e.returnValue = "";
+      });
       if (qx.core.Environment.get("dev.enableFakeSrv")) {
         console.debug("Fake server enabled");
         qxapp.dev.fake.srv.restapi.User;
