@@ -73,6 +73,10 @@ build-client:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
 
+rebuild-client:
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webclient
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webserver
+
 build-dynamic-services:
 ifndef SERVICES_VERSION
 	$(error SERVICES_VERSION variable is undefined)
@@ -206,9 +210,9 @@ push_platform_images:
   setup-check: .env .vscode/settings.json
 
 push_client_image:
-	${DOCKER} login masu.speag.com
-	${DOCKER} tag services_webserver:latest masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
-	${DOCKER} push masu.speag.com/simcore/workbench/webserver:${PLATFORM_VERSION}
+	${DOCKER} login ${DOCKER_REGISTRY}
+	${DOCKER} tag services_webserver:latest ${DOCKER_REGISTRY}/simcore/workbench/webserver:${PLATFORM_VERSION}
+	${DOCKER} push ${DOCKER_REGISTRY}./simcore/workbench/webserver:${PLATFORM_VERSION}
 
 .env: .env-devel
 	$(info #####  $< is newer than $@ ####)
