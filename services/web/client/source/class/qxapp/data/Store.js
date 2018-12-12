@@ -50,7 +50,8 @@ qx.Class.define("qxapp.data.Store", {
     getRole: function() {
       // Temporary HACK
       const userEmail = qxapp.auth.Data.getInstance().getEmail();
-      if (userEmail.includes("itis.swiss") || userEmail.includes("oetiker.ch")) {
+      const inHouse = ["itis.swiss", "speag.swiss", "oetiker.ch"];
+      if (inHouse.some(v => userEmail.indexOf(v) >= 0)) {
         return 0;
       }
       return 1;
