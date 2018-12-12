@@ -54,7 +54,6 @@ VOLUME /home/jovyan/packages
 VOLUME /home/jovyan/services
 VOLUME /home/jovyan/devel
 VOLUME /home/root/scripts/dy_services_helpers
-VOLUME /home/jovyan/work
 VOLUME /home/jovyan/docker
 VOLUME /home/jovyan/handlers
 # increase development speed by pre-installing libraries
@@ -70,14 +69,21 @@ CMD [ "/bin/bash", "/docker/boot.sh" ]
 FROM base AS production
 # prepare for booting
 COPY --chown=jovyan:users services/dy-jupyter/docker /docker
-# install simcore packages
+# install simcore packages. docker seems to set root:root permission to the implicitely created destination folders
 COPY --chown=jovyan:users packages/simcore-sdk /home/jovyan/packages/simcore-sdk
 COPY --chown=jovyan:users packages/s3wrapper /home/jovyan/packages/s3wrapper
 COPY --chown=jovyan:users services/storage/client-sdk /home/jovyan/services/storage/client-sdk
 COPY --chown=jovyan:users services/dy-jupyter/handlers/input_retriever.py /home/jovyan/handlers/input_retriever.py
+USER root
+RUN chown -R jovyan:users /home/jovyan/packages && \
+    chown -R jovyan:users /home/jovyan/services
+USER $NB_USER
 # copy the default notebook
 COPY --chown=jovyan:users services/dy-jupyter/notebooks /home/jovyan/notebooks
-RUN pip install /home/jovyan/packages/s3wrapper
-RUN pip install /home/jovyan/services/storage/client-sdk/python
-RUN pip install /home/jovyan/packages/simcore-sdk
+RUN pip install /home/jovyan/packages/s3wrapper && \
+    pip install /home/jovyan/services/storage/client-sdk/python && \
+    pip install /home/jovyan/packages/simcore-sdk    
+# cleanup    
+RUN rm -rf /home/jovyan/packages && \
+    rm -rf /home/jovyan/services
 ENTRYPOINT [ "/bin/bash", "/docker/boot.sh" ]
