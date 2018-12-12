@@ -11,12 +11,14 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     // this._projectResources.project
     // this._projectResources.templates
 
-    let leftSpacer = new qx.ui.core.Spacer(150);
+    let leftSpacer = new qx.ui.core.Spacer(120);
     let mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    let rightSpacer = new qx.ui.core.Spacer(150);
+    let scrollerMainView = new qx.ui.container.Scroll();
+    scrollerMainView.add(mainView);
+    let rightSpacer = new qx.ui.core.Spacer(120);
 
     this.add(leftSpacer);
-    this.add(mainView, {
+    this.add(scrollerMainView, {
       flex: 1
     });
     this.add(rightSpacer);
@@ -35,6 +37,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     let publicProjectList = this.__createPublicProjectList();
 
     let editPrjLayout = this.__editPrjLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+    editPrjLayout.setMaxWidth(800);
     let editPrjLabel = new qx.ui.basic.Label(this.tr("Edit Project")).set({
       font: navBarLabelFont,
       minWidth: 150
@@ -239,7 +242,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       let list = new qx.ui.form.List().set({
         orientation: "horizontal",
         spacing: 10,
-        height: 225,
+        height: 200,
         alignY: "middle",
         appearance: "pb-list"
       });
@@ -250,8 +253,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
      * Delegates appearance and binding of each project item
      */
     __getDelegate: function(fromTemplate) {
-      const thumbnailWidth = 246;
-      const thumbnailHeight = 144;
+      const thumbnailWidth = 200;
+      const thumbnailHeight = 120;
       const nThumbnails = 25;
       let thumbnailCounter = 0;
       let that = this;
@@ -373,7 +376,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               });
               form.add(control, this.tr("Notes"));
               break;
-            case "prjOwner":
+            case "owner":
               control = new qx.ui.form.TextField();
               form.add(control, this.tr("Owner"));
               break;
@@ -510,7 +513,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               thumbnail: p.thumbnail,
               projectUuid: p.projectUuid,
               created: new Date(p.creationDate),
-              prjOwner: p.owner
+              prjOwner: Object.prototype.hasOwnProperty.call(p, "owner") ? p.owner : p.prjOwner
             })
           )
       );
