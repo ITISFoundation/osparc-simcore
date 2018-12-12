@@ -133,7 +133,7 @@ async def upload_data():
     logger.info("all data uploaded to simcore")
 
 class RetrieveHandler(IPythonHandler):
-    def initialize(self):
+    def initialize(self): #pylint: disable=no-self-use
         PORTS = node_ports.ports()
         _create_ports_sub_folders(PORTS.inputs, Path(_INPUTS_FOLDER).expanduser())
         _create_ports_sub_folders(PORTS.outputs, Path(_OUTPUTS_FOLDER).expanduser())
