@@ -51,7 +51,7 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
-      - '8888:8888'
+      - '8889:8888'
 
   jupyter-r-notebook:
     image: ${DOCKER_REGISTRY}/${SERVICE_R_PATH}:${SERVICES_VERSION}
@@ -78,4 +78,4 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
-      - '8888:8888'
+      - '8890:8888'

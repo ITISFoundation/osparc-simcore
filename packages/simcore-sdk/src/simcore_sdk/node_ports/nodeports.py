@@ -45,20 +45,15 @@ class Nodeports:
         self._inputs_payloads = input_payloads
         self._outputs_payloads = outputs_payloads
 
-        self._inputs = ItemsList(self._input_schemas, self._inputs_payloads)
-        self._outputs = ItemsList(self._output_schemas, self._outputs_payloads)
-
-        self._inputs.change_notifier = self.save_to_json
-        self._inputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
-
-        self._outputs.change_notifier = self.save_to_json
-        self._outputs.get_node_from_node_uuid_cb = self.get_node_from_node_uuid
+        self._inputs = ItemsList(self._input_schemas, self._inputs_payloads, change_cb=self._save_to_json, get_node_from_node_uuid_cb=self._get_node_from_node_uuid)
+        self._outputs = ItemsList(self._output_schemas, self._outputs_payloads, change_cb=self._save_to_json, get_node_from_node_uuid_cb=self._get_node_from_node_uuid)
+        
 
     @property
     def inputs(self) -> ItemsList:
         log.debug("Getting inputs with autoread: %s", self.autoread)
         if self.autoread:
-            self.update_from_json()
+            self._update_from_json()
         return self._inputs
 
     @inputs.setter
@@ -72,7 +67,7 @@ class Nodeports:
     def outputs(self) -> ItemsList:
         log.debug("Getting outputs with autoread: %s", self.autoread)
         if self.autoread:
-            self.update_from_json()
+            self._update_from_json()
         return self._outputs
 
     @outputs.setter
@@ -109,7 +104,7 @@ class Nodeports:
                         return
         raise exceptions.PortNotFound(msg="output port for item {item} not found".format(item=str(item_value)))
 
-    def update_from_json(self):
+    def _update_from_json(self):
         log.debug("Updating json configuration")
         if not self.db_mgr:
             raise exceptions.NodeportsException("db manager is not initialised")
@@ -119,11 +114,11 @@ class Nodeports:
         self._copy_schemas_payloads(upd_node._input_schemas, upd_node._output_schemas, upd_node._inputs_payloads, upd_node._outputs_payloads)
         log.debug("Updated json configuration")
 
-    def save_to_json(self):
+    def _save_to_json(self):
         log.info("Saving Nodeports object to json")
         serialization.save_to_json(self)
 
-    def get_node_from_node_uuid(self, node_uuid):
+    def _get_node_from_node_uuid(self, node_uuid):
         if not self.db_mgr:
             raise exceptions.NodeportsException("db manager is not initialised")
         return serialization.create_nodeports_from_uuid(self.db_mgr, node_uuid)

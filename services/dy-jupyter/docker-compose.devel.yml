@@ -22,13 +22,84 @@ services:
       - INIT_OPTIONS=10 60 2 space
       - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     depends_on:
+      - storage
       - postgres
-      - minio
     ports:
       - '8888:8888'
     volumes:
       - ../../packages/:/home/jovyan/packages
       - ../../services/:/home/jovyan/services
+      - ./handlers:/home/jovyan/handlers
+      - ./devel:/home/jovyan/devel
+      - ../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
+      - ./notebooks:/home/jovyan/notebooks
+      - ./docker:/docker
+  #--------------------------------------------------------------------
+  jupyter-scipy-notebook:
+    image: jupyter-scipy-notebook-dev
+    build:
+      target: development
+    environment:
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - APIHUB_HOST=${APIHUB_HOST}
+      - APIHUB_PORT=${APIHUB_PORT}
+      - USE_CASE_CONFIG_FILE=devel/port_config.json
+      - INIT_OPTIONS=10 60 2 space
+      - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
+    depends_on:
+      - storage
+      - postgres
+    ports:
+      - '8889:8888'
+    volumes:
+      - ../../packages/:/home/jovyan/packages
+      - ../../services/:/home/jovyan/services
+      - ./handlers:/home/jovyan/handlers
+      - ./devel:/home/jovyan/devel
+      - ../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
+      - ./notebooks:/home/jovyan/notebooks
+      - ./docker:/docker
+  #--------------------------------------------------------------------
+  jupyter-r-notebook:
+    image: jupyter-r-notebook-dev
+    build:
+      target: development
+    environment:
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - APIHUB_HOST=${APIHUB_HOST}
+      - APIHUB_PORT=${APIHUB_PORT}
+      - USE_CASE_CONFIG_FILE=devel/port_config.json
+      - INIT_OPTIONS=10 60 2 space
+      - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
+    depends_on:
+      - storage
+      - postgres
+    ports:
+      - '8890:8888'
+    volumes:
+      - ../../packages/:/home/jovyan/packages
+      - ../../services/:/home/jovyan/services
+      - ./handlers:/home/jovyan/handlers
       - ./devel:/home/jovyan/devel
       - ../../scripts/dy_services_helpers:/home/jovyan/scripts/dy_services_helpers
       - ./notebooks:/home/jovyan/notebooks
@@ -61,8 +132,9 @@ services:
       - APIHUB_PORT=${APIHUB_PORT}
     restart: always
     depends_on:
-      - postgres
       - apihub
+      - postgres
+      - minio      
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10

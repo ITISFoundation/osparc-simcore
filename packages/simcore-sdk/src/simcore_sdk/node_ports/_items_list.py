@@ -29,7 +29,7 @@ class ItemsList(Sequence):
         except exceptions.UnboundPortError:            
             payload = None
         item = Item(schema, payload)
-        item.new_data_cb = self.__item_value_updated_cb
+        item.new_data_cb = self._item_value_updated_cb
         item.get_node_from_uuid_cb = self.get_node_from_node_uuid_cb
         return item
 
@@ -54,14 +54,14 @@ class ItemsList(Sequence):
     def get_node_from_node_uuid_cb(self, value):
         self._get_node_from_node_uuid_cb = value
 
-    def __item_value_updated_cb(self, new_data_item):
+    def _item_value_updated_cb(self, new_data_item):
         # a new item shall replace the current one
         self.__replace_item(new_data_item)
-        self.__notify_client()
+        self._notify_client()
 
     def __replace_item(self, new_data_item):
         self._payloads[new_data_item.key] = new_data_item
 
-    def __notify_client(self):
+    def _notify_client(self):
         if self.change_notifier and callable(self.change_notifier):
             self.change_notifier() #pylint: disable=not-callable
