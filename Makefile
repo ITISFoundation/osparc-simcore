@@ -235,6 +235,11 @@ push_client_image:
 	.venv/bin/virtualenv --python=python2 .venv27
 	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
 
+build-storage-base-image:
+	${DOCKER} build --target build --tag itisfoundation/storage-build:latest -f services/storage/Dockerfile.base .
 
+push-storage-base-image:
+	${DOCKER} login
+	${DOCKER} push itisfoundation/storage-build:latest
 
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel
