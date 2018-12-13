@@ -60,24 +60,10 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
       // validation
       manager.add(email, qx.util.Validate.email());
       manager.add(pass1, function(value, itemForm) {
-        const isValid = value !== null && value.length > 2;
-        if (!isValid) {
-          const msg = qx.locale.Manager.tr("Please enter a password at with least 3 characters.");
-          itemForm.setInvalidMessage(msg);
-        }
-        return isValid;
+        return qxapp.auth.core.Utils.checkPasswordSecure(value, itemForm);
       });
       manager.setValidator(function(_itemForms) {
-        const isValid = pass1.getValue() == pass2.getValue();
-        if (!isValid) {
-          [pass1, pass2].forEach(pass => {
-            pass.set({
-              invalidMessage: qx.locale.Manager.tr("Passwords do not match"),
-              valid: false
-            });
-          });
-        }
-        return isValid;
+        return qxapp.auth.core.Utils.checkSamePasswords(pass1, pass2);
       });
 
 
@@ -125,13 +111,9 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
 
       let failFun = function(msg) {
         msg = msg || this.tr("Cannot register user");
-
-        // Flashes via email
-        this.__email.set({
-          invalidMessage: msg,
-          valid: false
-        });
+        qxapp.component.widget.FlashMessenger.getInstance().logThis(msg, "ERROR", "user");
       };
+
       manager.register(userData, successFun, failFun, this);
     }
 

@@ -70,21 +70,45 @@ qx.Class.define("qxapp.auth.Manager", {
       this.fireEvent("logout");
     },
 
-    resetPassword: function(email, callback, context) {
-      console.debug("Resetting password ...");
-
-      // TODO: request server
-      let success = true;
-      let msg = "An email has been sent to you.";
-      callback.call(context, success, msg);
-    },
-
     register: function(userData, successCbk, failCbk, context) {
       console.debug("Registering user ...");
-
+      // api/specs/webserver/v0/openapi-auth.yaml
       let request = new qxapp.io.request.ApiRequest("/auth/register", "POST");
       request.set({
         requestData: userData
+      });
+
+      this.__bindDefaultSuccessCallback(request, successCbk, context);
+      this.__bindDefaultFailCallback(request, failCbk, context);
+
+      request.send();
+    },
+
+    resetPasswordRequest: function(email, successCbk, failCbk, context) {
+      console.debug("Requesting reset password ...");
+      // api/specs/webserver/v0/openapi-auth.yaml
+      let request = new qxapp.io.request.ApiRequest("/auth/reset-password", "POST");
+      request.set({
+        requestData: {
+          "email": email
+        }
+      });
+
+      this.__bindDefaultSuccessCallback(request, successCbk, context);
+      this.__bindDefaultFailCallback(request, failCbk, context);
+
+      request.send();
+    },
+
+    resetPassword: function(newPassword, confirmation, code, successCbk, failCbk, context) {
+      console.debug("Reseting password ...");
+      // api/specs/webserver/v0/openapi-auth.yaml
+      let request = new qxapp.io.request.ApiRequest("/auth/reset-password/" + encodeURIComponent(code), "POST");
+      request.set({
+        requestData: {
+          password: newPassword,
+          confirm: confirmation
+        }
       });
 
       this.__bindDefaultSuccessCallback(request, successCbk, context);
