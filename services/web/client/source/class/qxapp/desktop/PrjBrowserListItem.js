@@ -7,9 +7,9 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
   construct: function() {
     this.base(arguments);
 
-    // create a date format like "October 19, 2018 11:31 AM"
+    // create a date format like "Oct. 19, 2018 11:31 AM"
     this._dateFormat = new qx.util.format.DateFormat(
-      qx.locale.Date.getDateFormat("long") + " " +
+      qx.locale.Date.getDateFormat("medium") + " " +
       qx.locale.Date.getTimeFormat("short")
     );
 
