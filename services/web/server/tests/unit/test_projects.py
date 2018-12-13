@@ -149,7 +149,8 @@ async def test_list(client, fake_db):
 
     projects, error = unwrap_envelope(payload)
     assert not error
-    assert len(projects) == 1
+    # fake-template-projects.json + fake-template-projects.osparc.json
+    assert len(projects) == 3 + 1
 
 
 

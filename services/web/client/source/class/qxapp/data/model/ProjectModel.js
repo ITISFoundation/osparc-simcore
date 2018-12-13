@@ -6,19 +6,22 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
 
     if (prjData) {
       this.set({
-        uuid: prjData.projectUuid || this.getUuid(),
-        name: prjData.name || this.getName(),
-        description: prjData.description || this.getDescription(),
-        notes: prjData.notes || this.getNotes(),
-        thumbnail: prjData.thumbnail || this.getThumbnail(),
-        prjOwner: prjData.owner || this.getPrjOwner(),
-        collaborators: prjData.collaborators || this.getCollaborators(),
-        creationDate: new Date(prjData.creationDate) || this.getCreationDate(),
-        lastChangeDate: new Date(prjData.lastChangeDate) || this.getLastChangeDate()
+        uuid: prjData.projectUuid,
+        name: prjData.name,
+        description: prjData.description,
+        notes: prjData.notes,
+        thumbnail: prjData.thumbnail,
+        prjOwner: prjData.owner,
+        collaborators: prjData.collaborators,
+        creationDate: new Date(prjData.creationDate),
+        lastChangeDate: new Date(prjData.lastChangeDate)
       });
-      if (this.getName() === "Demo December") {
-        this.setUuid("DemoDecemberUUID");
-      }
+    } else {
+      this.set({
+        prjOwner: qxapp.auth.Data.getInstance().getUserName(),
+        creationDate: new Date(),
+        lastChangeDate: new Date()
+      });
     }
 
     if (prjData && prjData.workbench) {
@@ -46,19 +49,19 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
     description: {
       check: "String",
       nullable: true,
-      init: "Empty"
+      init: ""
     },
 
     notes: {
       check: "String",
       nullable: true,
-      init: "Empty"
+      init: ""
     },
 
     thumbnail: {
       check: "String",
       nullable: true,
-      init: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round"
+      init: ""
     },
 
     prjOwner: {
