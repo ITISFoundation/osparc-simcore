@@ -68,18 +68,6 @@ matrix:
         - pip3 install -r api/tests/requirements.txt
         - pip3 install -r services/apihub/tests/requirements.txt
 
-      env:
-        - TEST_FOLDER=api/tests
-        - TEST_FOLDER=services/apihub/tests
-        - TEST_FOLDER=packages/pytest_docker/tests
-        - TEST_FOLDER=packages/s3wrapper/tests
-        - TEST_FOLDER=packages/simcore-sdk/tests
-        - TEST_FOLDER=packages/service-library/tests
-        - TEST_FOLDER=services/web/server/tests/unit
-        - TEST_FOLDER=services/web/server/tests/login
-        - TEST_FOLDER=services/director/tests
-        - TEST_FOLDER=services/storage/tests
-
       before_script:
         - pylint --version
         - pip3 list
@@ -88,7 +76,7 @@ matrix:
         - export DOCKER_GID=1042
         - docker-compose -f services/docker-compose.yml build storage apihub
         - make pylint
-        - pytest -v $TEST_FOLDER
+        - make test
 
       after_success:
       - coveralls
