@@ -34,11 +34,10 @@ matrix:
         - python --version
         - uname -a
         - lsb_release -a
-        - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-        - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-        - sudo apt-get update
-        - sudo apt-get -y install docker-ce
-        - docker --version
+        # - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        # - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        # - sudo apt-get -y install docker-ce
+        # - docker --version
         - sudo rm /usr/local/bin/docker-compose
         - curl -L https://github.com/docker/compose/releases/download/1.23.1/docker-compose-`uname -s`-`uname -m` > docker-compose
         - chmod +x docker-compose
@@ -48,6 +47,14 @@ matrix:
         - sudo service postgresql stop
         # wait for postgresql to shutdown
         - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
+      addons:
+        apt:          
+          update: true
+          sources:
+            - sourceline: "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+              key_url: "https://download.docker.com/linux/ubuntu/gpg"
+          packages:
+            - docker-ce
 
       install:
         - pip install --upgrade pip wheel setuptools && pip3 --version
