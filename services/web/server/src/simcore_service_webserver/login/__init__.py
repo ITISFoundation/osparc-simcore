@@ -1,9 +1,10 @@
-""" Login submodule
+""" webserver's login subsystem
 
-This submodule is a modification of aiohttp-login
+This is a modification of aiohttp-login package
 
- TODO: create stand-alone fork of aiohttp-login
 """
+# TODO: create stand-alone fork of aiohttp-login
+
 import logging
 
 import asyncpg
@@ -24,7 +25,15 @@ from .config import CONFIG_SECTION_NAME
 log = logging.getLogger(__name__)
 
 
-async def pg_pool(app: web.Application):
+async def _init_config_and_postgres_pool(app: web.Application):
+    """
+        - gets input configs from different subsystems and initializes cfg (internal configuration)
+        - creates a postgress pool and asyncpg storage object
+
+    :param app: fully setup application on startup
+    :type app: web.Application
+    """
+
     login_cfg = app[APP_CONFIG_KEY].get(CONFIG_SECTION_NAME, {}) # optional!
     stmp_cfg = app[APP_CONFIG_KEY][SMTP_SECTION]
     db_cfg = app[APP_CONFIG_KEY][DB_SECTION]['postgres']
@@ -52,6 +61,12 @@ async def pg_pool(app: web.Application):
 
 
 def setup(app: web.Application):
+    """ Setting up subsystem in application
+
+    :param app: main application
+    :type app: web.Application
+    """
+
     log.debug("Setting up %s ...", __name__)
 
     # TODO: requires rest ready!
@@ -70,7 +85,7 @@ def setup(app: web.Application):
     app.router.add_routes(routes)
 
     # signals
-    app.on_startup.append(pg_pool)
+    app.on_startup.append(_init_config_and_postgres_pool)
 
 
 # alias
