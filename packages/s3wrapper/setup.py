@@ -11,6 +11,7 @@ tests_require = [
     'pytest~=3.6',
     'pytest-cov~=2.5',
     'pytest-docker~=0.6',
+    'pytest-xdist~=1.24',
     'requests~=2.19'
 ]
 

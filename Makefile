@@ -167,16 +167,16 @@ before_test:
 	${DOCKER_COMPOSE} -f packages/simcore-sdk/tests/docker-compose.yml build
 
 run_test:
-	pytest -v api/tests
-	pytest -v services/apihub/tests
-	pytest --cov=pytest_docker -v packages/pytest_docker/tests
-	pytest --cov=s3wrapper -v packages/s3wrapper/tests
-	pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
-	pytest --cov=servicelib -v packages/service-library/tests
-	pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
-	pytest --cov=simcore_service_webserver -v services/web/server/tests/login
-	pytest --cov=simcore_service_director -v services/director/tests
-	pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
+	pytest -v -n 2 api/tests
+	pytest -v  -n 2 services/apihub/tests
+	pytest --cov=pytest_docker -v -n 2 packages/pytest_docker/tests
+	pytest --cov=s3wrapper -v -n 2 packages/s3wrapper/tests
+	pytest --cov=simcore_sdk -v -n 2 packages/simcore-sdk/tests
+	pytest --cov=servicelib -v -n 2 packages/service-library/tests
+	pytest --cov=simcore_service_webserver -v -n 2 -m "not travis" services/web/server/tests/unit
+	pytest --cov=simcore_service_webserver -v -n 2 services/web/server/tests/login
+	pytest --cov=simcore_service_director -v -n 2 services/director/tests
+	pytest --cov=simcore_service_storage -v -n 2 -m "not travis" services/storage/tests
 
 after_test:
 	# leave a clean slate (not sure whether this is actually needed)
