@@ -267,7 +267,7 @@
       },
       "modelerId": {
         "key": "simcore/services/dynamic/modeler/webserver",
-        "version": "2.7.0",
+        "version": "2.8.0",
         "label": "Modeler",
         "inputs": {
           "model_name": "DemoDec_Head_Modeler.smash"
