@@ -63,144 +63,16 @@ paths:
   # DATA STORAGE SERVICES ----------------------------------------------------------
 
   /storage/locations:
-    get:
-      summary: Get available storage locations
-      operationId : get_storage_locations
-      responses:
-        '200':
-          description: 'List of availabe storage locations'
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/locations.yaml#FileLocationArray'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+    $ref: './openapi-storage.yaml#/paths/~1storage~1locations'
 
   /storage/locations/{location_id}/files/metadata:
-    get:
-      summary: Get list of file meta data
-      operationId: get_files_metadata
-      parameters:
-        - name: location_id
-          in : path
-          required: true
-          schema:
-            type: string
-        - name: uuid_filter
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: 'list of file meta-datas'
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/files.yaml#FileMetaDataArray'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-
-  /storage/locations/{location_id}/files/{fileId}/metadata:
-    get:
-      summary: Get File Metadata
-      operationId: get_file_metadata
-      parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: location_id
-        in : path
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/FileMetaData_200'
-    patch:
-      summary: Update File Metadata
-      operationId: update_file_meta_data
-      parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: location_id
-        in : path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        $ref: '#/components/requestBodies/FileMetaDataBody'
-      responses:
-        '200':
-          $ref: '#/components/responses/FileMetaData_200'
+    $ref: './openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1metadata'
 
   /storage/locations/{location_id}/files/{fileId}:
-    get:
-      summary: Returns download link for requested file
-      operationId: download_file
-      parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: location_id
-        in : path
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/PresignedLink_200'
-    put:
-      summary: Returns upload link or performs copy operation to datcore
-      operationId: upload_file
-      parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: location_id
-        in : path
-        required: true
-        schema:
-          type: string
-      - name: extra_location
-        in : query
-        required: false
-        schema:
-          type: string
-      - name: extra_source
-        in : query
-        required: false
-        schema:
-          type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/PresignedLink_200'
-    delete:
-      summary: Deletes File
-      operationId: delete_file
-      parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: location_id
-        in : path
-        required: true
-        schema:
-          type: string
-      responses:
-        '204':
-          description: ''
+    $ref: './openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1{fileId}'
+
+  /storage/locations/{location_id}/files/{fileId}/metadata:
+    $ref: './openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1{fileId}~1metadata'
 
   # COMPUTATIONAL SERVICES ----------------------------------------------------------
 
@@ -394,6 +266,14 @@ paths:
   /projects/{project_id}:
     $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}'
 
+  /nodes/{nodeInstanceUUID}/outputUi/{outputKey}:
+    $ref: './openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1outputUi~1{outputKey}'
+
+  /nodes/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}:
+    $ref: './openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1outputUi~1{outputKey}~1{apiCall}'
+
+  /nodes/{nodeInstanceUUID}/iframe:
+    $ref: './openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1iframe'
 
 components:
   parameters:
@@ -469,27 +349,7 @@ components:
           schema:
             $ref: './components/schemas/error.yaml#/ErrorEnveloped'
 
-    FileMetaData_200:
-      description: 'Returns file metadata'
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/files.yaml#/FileMetaData'
-
-    PresignedLink_200:
-      description: 'Returns presigned link'
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/presigned_link.yaml#/PresignedLink'
-
   requestBodies:
-    FileMetaDataBody:
-      content:
-        application/json:
-          schema:
-            $ref: './components/schemas/files.yaml#/FileMetaData'
-
     PipelineBody:
       content:
         application/json:
