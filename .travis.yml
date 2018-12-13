@@ -71,6 +71,7 @@ matrix:
         
       script:
         - make pylint
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - make build-push-storage-base-image
         - make build-travis
         - make test
