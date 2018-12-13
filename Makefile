@@ -241,7 +241,7 @@ build-travis:
 
 build-push-storage-base-image:
 	${DOCKER} pull itisfoundation/storage-build:latest
-	${DOCKER} build --target build --cache-from itisfoundation/storage-build:latest --tag itisfoundation/storage-build:latest -f services/storage/Dockerfile .
+	${DOCKER} build --target dependencies --cache-from itisfoundation/storage-build:latest --tag itisfoundation/storage-build:latest -f services/storage/Dockerfile .
 	${DOCKER} login
 	${DOCKER} push itisfoundation/storage-build:latest
 
