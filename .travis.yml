@@ -73,12 +73,10 @@ matrix:
           - DOCKER_GID=1042
         matrix:
           - MAKE_COMMAND=pylint
+          - MAKE_COMMAND=build-travis
           - MAKE_COMMAND=test
       script:
-        - make pylint
-        - export DOCKER_GID=1042
-        - make build-travis
-        - make test
+        - make "$MAKE_COMMAND"
         
 
       after_success:
