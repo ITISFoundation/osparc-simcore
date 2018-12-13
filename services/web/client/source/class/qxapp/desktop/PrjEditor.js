@@ -300,7 +300,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         if (currentNode.key.includes("/neuroman")) {
           // HACK: Only Neuroman should enter here
           currentNode.key = "simcore/services/dynamic/modeler/webserver";
-          currentNode.version = "2.7.0";
+          currentNode.version = "2.8.0";
           const modelSelected = currentNode.inputs["inModel"];
           delete currentNode.inputs["inModel"];
           currentNode.inputs["model_name"] = modelSelected;
