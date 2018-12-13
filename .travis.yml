@@ -68,11 +68,16 @@ matrix:
         - pylint --version
         - pip3 list
 
+      env:
+        global:
+          - DOCKER_GID=1042
+        matrix:
+          - MAKE_COMMAND=pylint
+          - MAKE_COMMAND=test
       script:
         - export DOCKER_GID=1042
-        - docker-compose -f services/docker-compose.yml build storage apihub
-        - make pylint
-        - make test
+        - make build-travis
+        - make $MAKE_COMMAND
 
       after_success:
       - coveralls
