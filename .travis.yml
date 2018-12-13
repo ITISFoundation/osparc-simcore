@@ -71,12 +71,11 @@ matrix:
       env:
         global:
           - DOCKER_GID=1042
-        matrix:
-          - MAKE_COMMAND=pylint
-          - MAKE_COMMAND=build-travis
-          - MAKE_COMMAND=test
+        
       script:
-        - make "$MAKE_COMMAND"
+        - make pylint
+        - make build-travis
+        - make test
         
 
       after_success:
