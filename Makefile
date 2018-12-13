@@ -240,6 +240,7 @@ build-travis:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build storage apihub
 
 build-push-storage-base-image:
+	$(shell echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin)
 	${DOCKER} pull itisfoundation/storage-build:latest
 	${DOCKER} build --target dependencies --cache-from itisfoundation/storage-build:latest --tag itisfoundation/storage-build:latest -f services/storage/Dockerfile .	
 	${DOCKER} push itisfoundation/storage-build:latest
