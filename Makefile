@@ -242,7 +242,7 @@ build-travis:
 build-push-storage-base-image:
 	${DOCKER} pull itisfoundation/storage-build:latest
 	${DOCKER} build --target dependencies --cache-from itisfoundation/storage-build:latest --tag itisfoundation/storage-build:latest -f services/storage/Dockerfile .
-	${DOCKER} login
+	echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 	${DOCKER} push itisfoundation/storage-build:latest
 
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel

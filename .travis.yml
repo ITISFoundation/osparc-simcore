@@ -45,10 +45,6 @@ matrix:
         - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
       addons:
         apt:          
-          update: true
-          sources:
-            - sourceline: "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-              key_url: "https://download.docker.com/linux/ubuntu/gpg"
           packages:
             - docker-ce
 
@@ -74,6 +70,7 @@ matrix:
         
       script:
         - make pylint
+        - make build-push-storage-base-image
         - make build-travis
         - make test
         
