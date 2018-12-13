@@ -19,7 +19,7 @@ CHUNK_SIZE = 1*1024*1024
 
 @contextmanager
 def api_client():
-    cfg = Configuration()    
+    cfg = Configuration()
     cfg.host = "http://{}/{}".format(config.STORAGE_ENDPOINT, config.STORAGE_VERSION)
     log.debug("api connects using %s", cfg.host)
     client = ApiClient(cfg)
@@ -38,7 +38,6 @@ def _handle_api_exception(store_id:str, err: ApiException):
         raise exceptions.StorageServerIssue(err)
     else:
         raise exceptions.StorageConnectionError(store_id, err)
-    
 
 async def _get_location_id_from_location_name(store:str, api:UsersApi):
     try:
@@ -52,13 +51,12 @@ async def _get_location_id_from_location_name(store:str, api:UsersApi):
         _handle_api_exception(store, err)
     if resp.error:
         raise exceptions.StorageConnectionError(store, resp.error.to_str())
-    
 
 async def _get_link(store_id:int, file_id:str, apifct):
     log.debug("Getting link from store id %s for %s", store_id, file_id)
     try:
         resp = await apifct(location_id=store_id, user_id=config.USER_ID, file_id=file_id)
-        
+
         if resp.error:
             raise exceptions.S3TransferError("Error getting link: {}".format(resp.error.to_str()))
         if not resp.data.link:
@@ -92,7 +90,6 @@ async def _download_link_to_file(session:aiohttp.ClientSession, url:URL, file_pa
         return await response.release()
 
 async def _file_sender(file_path:Path):
-    # with async_timeout.timeout(10):
     async with aiofiles.open(file_path, 'rb') as file_pointer:
         chunk = await file_pointer.read(CHUNK_SIZE)
         while chunk:
@@ -101,26 +98,27 @@ async def _file_sender(file_path:Path):
 
 async def _upload_file_to_link(session: aiohttp.ClientSession, url: URL, file_path: Path):
     log.debug("Uploading from %s to %s", file_path, url)
+    # TODO: PC->SAN. what to do with this?
     # with aiohttp.MultipartWriter() as writer:
     #     writer.append(await aiofiles.open(file_path, 'rb'))
 
     #     async with session.put(url, data=writer) as resp:
     #         if resp.status > 299:
     #             response_text = await resp.text()
-    #             raise exceptions.S3TransferError("Could not upload file {}:{}".format(file_path, response_text))    
+    #             raise exceptions.S3TransferError("Could not upload file {}:{}".format(file_path, response_text))
     async with session.put(url, data=file_path.open('rb')) as resp:
         if resp.status > 299:
             response_text = await resp.text()
             raise exceptions.S3TransferError("Could not upload file {}:{}".format(file_path, response_text))
-        
+
 async def download_file(*, store_name: str=None, store_id:str=None, s3_object:str, local_file_path: Path):
-    log.debug("Trying to download: store name %s, store id %s, s3 object %s, to local file name %s", 
+    log.debug("Trying to download: store name %s, store id %s, s3 object %s, to local file name %s",
                     store_name, store_id, s3_object, local_file_path)
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")
     with api_client() as client:
         api = UsersApi(client)
-        
+
         if store_name is not None:
             store_id = await _get_location_id_from_location_name(store_name, api)
         download_link = await _get_download_link(store_id, s3_object, api)
@@ -130,7 +128,7 @@ async def download_file(*, store_name: str=None, store_id:str=None, s3_object:st
             # remove an already existing file if present
             # FIXME: if possible we should compare the files if the download needs to take place or not
             if local_file_path.exists():
-                local_file_path.unlink()    
+                local_file_path.unlink()
             async with aiohttp.ClientSession() as session:
                 await _download_link_to_file(session, download_link, local_file_path, store_id, s3_object)
                 return
@@ -143,7 +141,7 @@ async def upload_file(*, store_id:str=None, store_name:str=None, s3_object:str, 
         raise exceptions.NodeportsException(msg="both store name and store id are None")
     with api_client() as client:
         api = UsersApi(client)
-        
+
         if store_name is not None:
             store_id = await _get_location_id_from_location_name(store_name, api)
         upload_link = await _get_upload_link(store_id, s3_object, api)
