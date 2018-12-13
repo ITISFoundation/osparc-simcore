@@ -77,7 +77,7 @@ matrix:
       script:
         - export DOCKER_GID=1042
         - make build-travis
-        - make $MAKE_COMMAND
+        - make "$MAKE_COMMAND"
 
       after_success:
       - coveralls
