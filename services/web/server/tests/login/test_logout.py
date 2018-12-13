@@ -1,9 +1,10 @@
-from simcore_service_webserver.login.cfg import get_storage
-
-from utils_login import LoggedUser
-from utils_assert import assert_status
-
 from aiohttp import web
+
+from simcore_service_webserver.login.cfg import get_storage
+from utils_assert import assert_status
+from utils_login import LoggedUser
+
+
 async def test_logout(client):
     db = get_storage(client.app)
 
@@ -13,7 +14,7 @@ async def test_logout(client):
     async with LoggedUser(client) as user:
 
         # try to access protected page
-        r = await client.post(protected_url, json={'new_email': user['email']})
+        r = await client.post(protected_url, json={'email': user['email']})
         assert r.url_obj.path == protected_url.path
         await assert_status(r, web.HTTPOk)
 
