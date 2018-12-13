@@ -168,7 +168,7 @@ before_test:
 
 run_test:
 	pytest -v -n 2 api/tests
-	pytest -v  -n 2 services/apihub/tests
+	pytest -v services/apihub/tests
 	pytest --cov=pytest_docker -v -n 2 packages/pytest_docker/tests
 	pytest --cov=s3wrapper -v -n 2 packages/s3wrapper/tests
 	pytest --cov=simcore_sdk -v -n 2 packages/simcore-sdk/tests
