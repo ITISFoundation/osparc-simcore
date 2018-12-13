@@ -72,7 +72,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       const metaData = this.getNodeModel().getMetaData();
       if (this.getIsInputModel()) {
         this.__createUIPorts(false, metaData.outputs);
-      } else if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
+      } else if (metaData.inputsDefault) {
         this.__createUIPorts(false, metaData.inputsDefault);
       }
     },
