@@ -7,7 +7,6 @@ pytest
 pytest-aiohttp
 pytest-cov
 pytest-docker
-pytest-xdist
 openapi_spec_validator
 pyyaml
 virtualenv
