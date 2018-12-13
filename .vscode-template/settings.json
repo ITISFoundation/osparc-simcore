@@ -23,5 +23,6 @@
     },
     "[makefile]": {
       "editor.insertSpaces": false
-    }
+    },
+    "autoDocstring.docstringFormat": "sphinx"
 }

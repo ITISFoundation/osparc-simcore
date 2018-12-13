@@ -1,5 +1,6 @@
 import json
 import logging
+from contextlib import contextmanager
 
 import sqlalchemy
 from sqlalchemy import create_engine
@@ -9,20 +10,19 @@ from sqlalchemy.orm.attributes import flag_modified
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.models.pipeline_models import ComputationalTask as NodeModel
 
-from contextlib import contextmanager
-
 from . import config
 
 log = logging.getLogger(__name__)
 
 
 @contextmanager
-def session_scope(Session):
-    """Provide a transactional scope around a series of operations."""
-    session = Session()
+def session_scope(session_factory):
+    """Provide a transactional scope around a series of operations
+
+    """
+    session = session_factory()
     try:
         yield session
-        # session.commit()
     except:
         session.rollback()
         raise
@@ -47,7 +47,7 @@ class _NodeModelEncoder(json.JSONEncoder):
                     "inputs": o.inputs,
                     "outputs": o.outputs
                     }
-            
+
         log.debug("Encoding object using defaults")
         return json.JSONEncoder.default(self, o)
 
@@ -62,10 +62,10 @@ def _get_node_from_db(node_uuid: str, session: sqlalchemy.orm.session.Session) -
 
 class DBManager:
     def __init__(self):
-        self._db_settings = DbSettings()   
+        self._db_settings = DbSettings()
         with session_scope(self._db_settings.Session) as session:
             node = session.query(NodeModel).filter(NodeModel.node_id == config.NODE_UUID).one()
-            config.PROJECT_ID = node.project_id    
+            config.PROJECT_ID = node.project_id
 
     def write_ports_configuration(self, json_configuration: str, node_uuid: str):
         log.debug("Writing ports configuration")
@@ -85,7 +85,7 @@ class DBManager:
             if node.outputs != updated_node.outputs:
                 node.outputs = updated_node.outputs
                 flag_modified(node, "outputs")
-        
+
             session.commit()
 
     def get_ports_configuration_from_node_uuid(self, node_uuid:str) -> str:
