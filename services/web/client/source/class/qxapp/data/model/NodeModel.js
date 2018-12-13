@@ -26,7 +26,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         nodeImageId: key + "-" + version
       });
       let store = qxapp.data.Store.getInstance();
-      let metaData = this.__metaData = store.getNodeMetaData(key, version);
+      let metaData = this.__metaData = qxapp.utils.Utils.deepCloneObject(store.getNodeMetaData(key, version));
       if (metaData) {
         if (Object.prototype.hasOwnProperty.call(metaData, "name")) {
           this.setLabel(metaData.name);
