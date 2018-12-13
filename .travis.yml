@@ -38,6 +38,7 @@ matrix:
         - curl -L https://github.com/docker/compose/releases/download/1.23.1/docker-compose-`uname -s`-`uname -m` > docker-compose
         - chmod +x docker-compose
         - sudo mv docker-compose /usr/local/bin
+        - docker -v
         - docker-compose --version
         # shutdown postgres because sometimes is is already up ???
         - sudo service postgresql stop
