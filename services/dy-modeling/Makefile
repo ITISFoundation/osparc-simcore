@@ -58,5 +58,5 @@ down:
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml down
 
 push_service_images: check-env
-	${DOCKER} login masu.speag.com	
+	${DOCKER} login masu.speag.com
 	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_PATH}:${SERVICES_VERSION}
