@@ -43,11 +43,21 @@ paths:
   /auth/logout:
     $ref: './openapi-auth.yaml#/paths/~1auth~1logout'
 
+  /auth/reset-password:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1reset-password'
+
+  /auth/reset-password/{code}:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1reset-password~1{code}'
+
   /auth/change-email:
     $ref: './openapi-auth.yaml#/paths/~1auth~1change-email'
 
+  /auth/change-password:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1change-password'
+
   /auth/confirmation/{code}:
     $ref: './openapi-auth.yaml#/paths/~1auth~1confirmation~1{code}'
+
 
   # USER SETTINGS ------------------------------------------------------------------
 
