@@ -82,14 +82,14 @@ qx.Class.define("qxapp.data.Store", {
             };
             delete service.outputs["output_1"];
           }
-          return service;
+          return qxapp.utils.Utils.deepCloneObject(service);
         }
         metaData = this.getFakeServices()[nodeImageId];
         if (metaData === undefined) {
           metaData = this.getBuiltInServices()[nodeImageId];
         }
       }
-      return metaData;
+      return qxapp.utils.Utils.deepCloneObject(metaData);
     },
 
     getItemList: function(nodeKey, portKey) {
