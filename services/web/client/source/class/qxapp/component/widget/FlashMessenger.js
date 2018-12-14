@@ -20,6 +20,15 @@ qx.Class.define("qxapp.component.widget.FlashMessenger", {
   },
 
   members: {
+
+    logThis: function(message, level="INFO", logger="None") {
+      this.log({
+        message: message,
+        level: level,
+        logger: logger
+      });
+    },
+
     log: function(logMessage) {
       const message = logMessage.message;
       const level = logMessage.level; // "DEBUG", "INFO", "WARNING", "ERROR"

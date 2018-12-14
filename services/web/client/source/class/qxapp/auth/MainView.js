@@ -1,8 +1,9 @@
 /**
- *  Main Authentication View
+ *  Main Authentication View:
+ *    A multi-page view that fills all page
  *
 */
-qx.Class.define("qxapp.auth.AuthView", {
+qx.Class.define("qxapp.auth.MainView", {
   extend : qx.ui.core.Widget,
 
   /*
@@ -28,10 +29,12 @@ qx.Class.define("qxapp.auth.AuthView", {
 
     let login = new qxapp.auth.ui.LoginPage();
     let register = new qxapp.auth.ui.RegistrationPage();
+    let resetRequest = new qxapp.auth.ui.ResetPassRequestPage();
     let reset = new qxapp.auth.ui.ResetPassPage();
 
     pages.add(login);
     pages.add(register);
+    pages.add(resetRequest);
     pages.add(reset);
 
     this._add(pages, {
@@ -39,15 +42,20 @@ qx.Class.define("qxapp.auth.AuthView", {
       column:0
     });
 
-    // Connections
+    const page = qxapp.auth.core.Utils.findGetParameter("page");
+    const code = qxapp.auth.core.Utils.findGetParameter("code");
+    if (page === "reset-password" && code !== null) {
+      pages.setSelection([reset]);
+    }
+
+    // Transitions between pages
     login.addListener("done", function(msg) {
-      // if msg, flash it
       login.resetValues();
       this.fireDataEvent("done", msg);
     }, this);
 
     login.addListener("toReset", function(e) {
-      pages.setSelection([reset]);
+      pages.setSelection([resetRequest]);
       login.resetValues();
     }, this);
 
@@ -56,7 +64,7 @@ qx.Class.define("qxapp.auth.AuthView", {
       login.resetValues();
     }, this);
 
-    [register, reset].forEach(srcPage => {
+    [register, resetRequest, reset].forEach(srcPage => {
       srcPage.addListener("done", function(msg) {
         pages.setSelection([login]);
         srcPage.resetValues();

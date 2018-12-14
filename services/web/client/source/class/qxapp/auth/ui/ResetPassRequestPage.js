@@ -1,7 +1,7 @@
-/** Page to reset user's password
+/** Page to request password reset for a non-logged-in user
  *
  */
-qx.Class.define("qxapp.auth.ui.ResetPassPage", {
+qx.Class.define("qxapp.auth.ui.ResetPassRequestPage", {
   extend: qxapp.auth.core.BaseAuthPage,
 
   /*
@@ -14,28 +14,17 @@ qx.Class.define("qxapp.auth.ui.ResetPassPage", {
 
     // overrides base
     _buildPage: function() {
-      let validator = new qx.ui.form.validation.Manager();
+      let manager = new qx.ui.form.validation.Manager();
 
       this._addTitleHeader(this.tr("Reset Password"));
 
-      let password = new qx.ui.form.PasswordField().set({
-        required: true,
-        placeholder: this.tr("Your new password")
-      });
-      this.add(password);
+      // email
+      let email = new qx.ui.form.TextField();
+      email.setRequired(true);
+      email.setPlaceholder(this.tr("Introduce your registration email"));
+      this.add(email);
 
-      let confirm = new qx.ui.form.PasswordField().set({
-        required: true,
-        placeholder: this.tr("Retype your new password")
-      });
-      this.add(confirm);
-
-      validator.add(password, function(value, itemForm) {
-        return qxapp.auth.core.Utils.checkPasswordSecure(value, itemForm);
-      });
-      validator.setValidator(function(_itemForms) {
-        return qxapp.auth.core.Utils.checkSamePasswords(password, confirm);
-      });
+      manager.add(email, qx.util.Validate.email());
 
       // submit and cancel buttons
       let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
@@ -52,10 +41,9 @@ qx.Class.define("qxapp.auth.ui.ResetPassPage", {
 
       // interaction
       submitBtn.addListener("execute", function(e) {
-        const valid = validator.validate();
+        const valid = manager.validate();
         if (valid) {
-          const code = qxapp.auth.core.Utils.findGetParameter("code");
-          this.__submit(password.getValue(), confirm.getValue(), code);
+          this.__submit(email);
         }
       }, this);
 
@@ -66,21 +54,22 @@ qx.Class.define("qxapp.auth.ui.ResetPassPage", {
       this.add(grp);
     },
 
-    __submit: function(password, confirm, code) {
+    __submit: function(email) {
+      console.debug("sends email to reset password to ", email);
+
       let manager = qxapp.auth.Manager.getInstance();
 
       let successFun = function(log) {
         this.fireDataEvent("done", log.message);
-        // TODO: See #465: clean all query from url: e.g. /?page=reset-password&code=qwewqefgfg
         qxapp.component.widget.FlashMessenger.getInstance().log(log);
       };
 
       let failFun = function(msg) {
-        msg = msg || this.tr("Could not reset password");
+        msg = msg || this.tr("Could not request password reset");
         qxapp.component.widget.FlashMessenger.getInstance().logThis(msg, "ERROR", "user");
       };
 
-      manager.resetPassword(password, confirm, code, successFun, failFun, this);
+      manager.resetPasswordRequest(email.getValue(), successFun, failFun, this);
     }
 
   }

@@ -88,7 +88,7 @@ qx.Class.define("qxapp.Application", {
       } else {
         this.__disconnectWebSocket();
 
-        view = new qxapp.auth.AuthView();
+        view = new qxapp.auth.MainView();
         view.addListener("done", function(msg) {
           this.__restart();
         }, this);

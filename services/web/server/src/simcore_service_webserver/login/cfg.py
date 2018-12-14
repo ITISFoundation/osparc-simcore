@@ -2,7 +2,7 @@ from aiohttp import web
 
 APP_LOGIN_CONFIG = __name__ + ".config"
 
-_MINUTES = 1./24./60./60.
+_MINUTES = 1./24./60.
 
 REQUIRED = object()
 DEFAULTS = {
