@@ -55,6 +55,8 @@ qx.Class.define("qxapp.auth.ui.ResetPassPage", {
         const valid = validator.validate();
         if (valid) {
           const code = qxapp.auth.core.Utils.findGetParameter("code");
+          qxapp.auth.core.Utils.removeParameterFromUrl("page");
+          qxapp.auth.core.Utils.removeParameterFromUrl("code");
           this.__submit(password.getValue(), confirm.getValue(), code);
         }
       }, this);

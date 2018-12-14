@@ -1,3 +1,5 @@
+/* global document */
+
 qx.Class.define("qxapp.auth.core.Utils", {
   type: "static",
 
@@ -35,6 +37,22 @@ qx.Class.define("qxapp.auth.core.Utils", {
         }
       });
       return result;
+    },
+
+    removeParameterFromUrl: function(parameterName) {
+      let url = window.location.href;
+      const value = qxapp.auth.core.Utils.findGetParameter(parameterName);
+      if (value) {
+        const removeMe = parameterName + "=" + value;
+        // In case the parameterhas an ampersand in front
+        url = url.replace("&" + removeMe, "");
+        url = url.replace(removeMe, "");
+        if (url.slice(-1) === "?") {
+          // clean remaining character if all parameters were removed
+          url = url.replace("?", "");
+        }
+        window.history.replaceState("", document.title, url);
+      }
     }
   }
 });
