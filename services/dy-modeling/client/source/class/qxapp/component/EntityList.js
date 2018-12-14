@@ -221,7 +221,7 @@ qx.Class.define("qxapp.component.EntityList", {
           }
         }
         if (!found) {
-          let folderItem = {
+          const folderItem = {
             label: labelSplitted[i],
             entityId: pathSplitted[i],
             pathId: pathSplitted.slice(0, i).join("/"),
@@ -230,7 +230,7 @@ qx.Class.define("qxapp.component.EntityList", {
             children: []
           };
           parent.getChildren().push(qx.data.marshal.Json.createModel(folderItem, true));
-          parent = parent.getChildren().toArray()[0];
+          parent = folderItem.getChildren().toArray()[0];
         }
       }
 
