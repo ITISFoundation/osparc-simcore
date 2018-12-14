@@ -18,7 +18,8 @@ endif
 
 export VCS_REF=$(shell git rev-parse --short HEAD) 
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-# export SERVICES_VERSION=2.7.0
+# export SERVICES_VERSION=2.8.0
+# export DOCKER_REGISTRY=masu.speag.com
 export SERVICE_PATH=simcore/services/dynamic/modeler/webserver
 
 all:
