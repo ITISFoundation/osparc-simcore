@@ -28,16 +28,16 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       let store = qxapp.data.Store.getInstance();
       let metaData = this.__metaData = store.getNodeMetaData(key, version);
       if (metaData) {
-        if (Object.prototype.hasOwnProperty.call(metaData, "name")) {
+        if (metaData.name) {
           this.setLabel(metaData.name);
         }
-        if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
+        if (metaData.inputsDefault) {
           this.__addInputsDefault(metaData.inputsDefault);
         }
-        if (Object.prototype.hasOwnProperty.call(metaData, "inputs")) {
+        if (metaData.inputs) {
           this.__addInputs(metaData.inputs);
         }
-        if (Object.prototype.hasOwnProperty.call(metaData, "outputs")) {
+        if (metaData.outputs) {
           this.__addOutputs(metaData.outputs);
         }
       }
@@ -176,7 +176,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     getOutputValues: function() {
       let output = {};
       for (const outputId in this.__outputs) {
-        if (Object.prototype.hasOwnProperty.call(this.__outputs[outputId], "value")) {
+        if (this.__outputs[outputId].value) {
           output[outputId] = this.__outputs[outputId].value;
         }
       }
@@ -292,7 +292,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
      */
     __addMapper: function(inputs) {
       let filteredInputs = JSON.parse(JSON.stringify(inputs));
-      if (Object.prototype.hasOwnProperty.call(filteredInputs, "mapper")) {
+      if (filteredInputs.mapper) {
         let inputsMapper = new qxapp.component.widget.InputsMapper(this, filteredInputs["mapper"]);
         this.setInputsMapper(inputsMapper);
         delete filteredInputs["mapper"];
@@ -363,7 +363,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     setOutputData: function(nodeData) {
-      if (Object.prototype.hasOwnProperty.call(nodeData, "outputs")) {
+      if (nodeData.outputs) {
         for (const outputKey in nodeData.outputs) {
           this.__outputs[outputKey].value = nodeData.outputs[outputKey];
         }

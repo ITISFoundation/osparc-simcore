@@ -146,7 +146,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       for (let i=0; i<keys.length; i++) {
         const nodeId = keys[i];
         const nodeData = workbenchData[nodeId];
-        if (Object.prototype.hasOwnProperty.call(nodeData, "parent") && nodeData["parent"] !== null) {
+        if (nodeData.parent && nodeData.parent !== null) {
           let parentNode = this.getNodeModel(nodeData.parent);
           if (parentNode === null) {
             // If parent was not yet created, delay the creation of its' children
@@ -163,14 +163,14 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
           }
         }
         let nodeModel = null;
-        if (Object.prototype.hasOwnProperty.call(nodeData, "key")) {
+        if (nodeData.key) {
           // not container
           nodeModel = this.createNodeModel(nodeData.key, nodeData.version, nodeId, nodeData);
         } else {
           // container
           nodeModel = this.createNodeModel(null, null, nodeId, nodeData);
         }
-        if (Object.prototype.hasOwnProperty.call(nodeData, "parent")) {
+        if (nodeData.parent) {
           let parentModel = this.getNodeModel(nodeData.parent);
           this.addNodeModel(nodeModel, parentModel);
         } else {
