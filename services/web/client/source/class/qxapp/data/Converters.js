@@ -197,7 +197,7 @@ qx.Class.define("qxapp.data.Converters", {
           key: listItem["key"],
           label: listItem["label"]
         };
-        if (Object.prototype.hasOwnProperty.call(listItem, "thumbnail")) {
+        if (listItem.thumbnail) {
           item["thumbnail"] = listItem["thumbnail"];
         }
         list.push(item);
