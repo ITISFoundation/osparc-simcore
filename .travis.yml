@@ -70,8 +70,8 @@ matrix:
           - DOCKER_GID=1042
         
       script:
-        - make pylint
-        - bash scripts/travis_docker_push        
+        - make pylint        
+        - bash scripts\docker\travis_docker_push
         - make build-travis
         - make test
         
