@@ -71,7 +71,7 @@ matrix:
         
       script:
         - make pylint
-        - make build-push-storage-base-image
+        - bash scripts/travis_docker_push        
         - make build-travis
         - make test
         
