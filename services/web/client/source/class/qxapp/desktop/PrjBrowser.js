@@ -215,7 +215,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         for (let i=0; i<publicPrjList.length; i++) {
           // Temporary HACK
           if (qxapp.data.Store.getInstance().getRole() !== 0 &&
-          publicPrjList[i].projectUuid === "DemoDecemberUUID") {
+          publicPrjList[i].projectUuid.includes("DemoDecember")) {
             continue;
           }
           publicFilteredPrjList.push(publicPrjList[i]);
