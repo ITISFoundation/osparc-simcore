@@ -6,7 +6,7 @@ import logging
 from collections import defaultdict, namedtuple
 from copy import deepcopy
 
-from .resources import resources
+from ..resources import resources
 
 log = logging.getLogger(__name__)
 
@@ -49,8 +49,12 @@ class Fake:
 
     @classmethod
     def load_template_projects(cls):
-        with resources.stream("data/fake-template-projects.json") as f:
+        template_file = "data/fake-template-projects.json"
+        with resources.stream(template_file) as f:
             projects = json.load(f)
+        template_osparc_file = "data/fake-template-projects.osparc.json"
+        with resources.stream(template_osparc_file) as f:
+            projects = projects + json.load(f)
 
         for prj in projects:
             pid = prj['projectUuid']

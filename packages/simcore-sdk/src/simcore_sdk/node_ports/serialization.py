@@ -30,7 +30,7 @@ def create_from_json(db_mgr, auto_read=False, auto_write=False):
     log.debug("Creating Nodeports object with io object: %s, auto read %s and auto write %s", db_mgr, auto_read, auto_write)
     if not db_mgr:
         raise exceptions.NodeportsException("io object empty, this is not allowed")
-    nodeports_dict = json.loads(db_mgr.get_ports_configuration())
+    nodeports_dict = json.loads(db_mgr.get_ports_configuration_from_node_uuid(config.NODE_UUID))
     nodeports_obj = __decodeNodePorts(nodeports_dict)
     nodeports_obj.db_mgr = db_mgr
     nodeports_obj.autoread = auto_read
@@ -64,7 +64,7 @@ def save_to_json(nodeports_obj):
         nodeports_obj.autoread = auto_update_state
 
     if nodeports_obj.autowrite:
-        nodeports_obj.db_mgr.write_ports_configuration(nodeports_json)
+        nodeports_obj.db_mgr.write_ports_configuration(nodeports_json, config.NODE_UUID)
     log.info("Saved Nodeports object to json: %s", nodeports_json)
 
 class _NodeportsEncoder(json.JSONEncoder):

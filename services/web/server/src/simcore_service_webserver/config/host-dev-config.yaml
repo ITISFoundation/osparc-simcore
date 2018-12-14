@@ -27,6 +27,9 @@ rabbit:
     progress: comp.backend.channels.progress
   password: simcore
   user: simcore
+login:
+  enabled: True
+  registration_confirmation_required: False
 smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: mail.foo.com

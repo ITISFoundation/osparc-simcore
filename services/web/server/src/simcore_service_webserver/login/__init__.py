@@ -1,9 +1,10 @@
-""" Login submodule
+""" webserver's login subsystem
 
-This submodule is a modification of aiohttp-login
+This is a modification of aiohttp-login package
 
- TODO: create stand-alone fork of aiohttp-login
 """
+# TODO: create stand-alone fork of aiohttp-login
+
 import logging
 
 import asyncpg
@@ -19,29 +20,36 @@ from ..statics import INDEX_RESOURCE_NAME
 from .cfg import APP_LOGIN_CONFIG, cfg
 from .routes import create_routes
 from .storage import AsyncpgStorage
+from .config import CONFIG_SECTION_NAME
 
 log = logging.getLogger(__name__)
 
 
-async def pg_pool(app: web.Application):
+async def _init_config_and_postgres_pool(app: web.Application):
+    """
+        - gets input configs from different subsystems and initializes cfg (internal configuration)
+        - creates a postgress pool and asyncpg storage object
 
-    smtp_config = app[APP_CONFIG_KEY][SMTP_SECTION]
-    config = {"SMTP_{}".format(k.upper()): v for k, v in smtp_config.items()}
-    # TODO: test keys!
-    #'SMTP_SENDER': None,
-    #'SMTP_HOST': REQUIRED,
-    #'SMTP_PORT': REQUIRED,
-    #'SMTP_TLS': False,
-    #'SMTP_USERNAME': None,
-    #'SMTP_PASSWORD': None,
+    :param app: fully setup application on startup
+    :type app: web.Application
+    """
 
-    config = (config or {}).copy()
+    login_cfg = app[APP_CONFIG_KEY].get(CONFIG_SECTION_NAME, {}) # optional!
+    stmp_cfg = app[APP_CONFIG_KEY][SMTP_SECTION]
+    db_cfg = app[APP_CONFIG_KEY][DB_SECTION]['postgres']
+
+    config = {}
+    for key, value in login_cfg.items():
+        config[key.upper()] = value
+
+    for key, value in stmp_cfg.items():
+        config["SMTP_{}".format(key.upper())] = value
+
     config['APP'] = app
 
-    db_config = app[APP_CONFIG_KEY][DB_SECTION]['postgres']
-    app[APP_DB_POOL_KEY] = await asyncpg.create_pool(dsn=DSN.format(**db_config), loop=app.loop)
-
+    app[APP_DB_POOL_KEY] = await asyncpg.create_pool(dsn=DSN.format(**db_cfg), loop=app.loop)
     config["STORAGE"] = AsyncpgStorage(app[APP_DB_POOL_KEY]) #NOTE: this key belongs to cfg, not settings!
+
     cfg.configure(config)
 
     if INDEX_RESOURCE_NAME in app.router:
@@ -53,6 +61,12 @@ async def pg_pool(app: web.Application):
 
 
 def setup(app: web.Application):
+    """ Setting up subsystem in application
+
+    :param app: main application
+    :type app: web.Application
+    """
+
     log.debug("Setting up %s ...", __name__)
 
     # TODO: requires rest ready!
@@ -71,7 +85,7 @@ def setup(app: web.Application):
     app.router.add_routes(routes)
 
     # signals
-    app.on_startup.append(pg_pool)
+    app.on_startup.append(_init_config_and_postgres_pool)
 
 
 # alias

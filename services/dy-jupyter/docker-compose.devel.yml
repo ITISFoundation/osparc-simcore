@@ -53,6 +53,7 @@ services:
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - S3_SECURE=${S3_SECURE}
       - RUN_DOCKER_ENGINE_ROOT=1
       - BF_API_SECRET=none
       - BF_API_KEY=none

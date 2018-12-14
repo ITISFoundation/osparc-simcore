@@ -27,7 +27,7 @@ def run(task, user_id, pipeline_id, node_id=None):
 
     for _node_id in next_task_nodes:
         task.request.id = str(int(task.request.id) + 1)
-        run(task, pipeline_id, _node_id)
+        run(task, user_id, pipeline_id, _node_id)
 
 
 def test_sleeper(sidecar_platform_fixture, postgres_service_url):

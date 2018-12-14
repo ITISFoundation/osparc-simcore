@@ -1,20 +1,26 @@
 qx.Class.define("qxapp.data.model.ProjectModel", {
   extend: qx.core.Object,
 
-  construct: function(prjData, fromTemplate) {
+  construct: function(prjData) {
     this.base(arguments);
 
     if (prjData) {
       this.set({
-        uuid: fromTemplate ? qxapp.utils.Utils.uuidv4() : prjData.projectUuid || this.getUuid(),
-        name: prjData.name || this.getName(),
-        description: prjData.description || this.getDescription(),
-        notes: prjData.notes || this.getNotes(),
-        thumbnail: prjData.thumbnail || this.getThumbnail(),
-        owner: prjData.owner || this.getOwner(),
-        collaborators: prjData.collaborators || this.getCollaborators(),
-        creationDate: new Date(prjData.creationDate) || this.getCreationDate(),
-        lastChangeDate: new Date(prjData.lastChangeDate) || this.getLastChangeDate()
+        uuid: prjData.projectUuid,
+        name: prjData.name,
+        description: prjData.description,
+        notes: prjData.notes,
+        thumbnail: prjData.thumbnail,
+        prjOwner: prjData.owner,
+        collaborators: prjData.collaborators,
+        creationDate: new Date(prjData.creationDate),
+        lastChangeDate: new Date(prjData.lastChangeDate)
+      });
+    } else {
+      this.set({
+        prjOwner: qxapp.auth.Data.getInstance().getUserName(),
+        creationDate: new Date(),
+        lastChangeDate: new Date()
       });
     }
 
@@ -43,22 +49,22 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
     description: {
       check: "String",
       nullable: true,
-      init: "Empty"
+      init: ""
     },
 
     notes: {
       check: "String",
       nullable: true,
-      init: "Empty"
+      init: ""
     },
 
     thumbnail: {
       check: "String",
       nullable: true,
-      init: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round"
+      init: ""
     },
 
-    owner: {
+    prjOwner: {
       check: "String",
       nullable: true,
       init: ""

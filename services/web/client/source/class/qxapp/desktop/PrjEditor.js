@@ -144,17 +144,16 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__workbenchModelChanged();
       }, this);
 
-      workbenchModel.addListener("NodeAdded", e => {
+      workbenchModel.addListener("UpdatePipeline", e => {
         let nodeModel = e.getData();
-        nodeModel.addListener("UpdatePipeline", () => {
-          this.__updatePipeline(nodeModel);
-        }, this);
-        nodeModel.addListener("ShowInLogger", ev => {
-          const data = ev.getData();
-          const nodeLabel = data.nodeLabel;
-          const msg = data.msg;
-          this.getLogger().info(nodeLabel, msg);
-        }, this);
+        this.__updatePipeline(nodeModel);
+      }, this);
+
+      workbenchModel.addListener("ShowInLogger", ev => {
+        const data = ev.getData();
+        const nodeLabel = data.nodeLabel;
+        const msg = data.msg;
+        this.getLogger().info(nodeLabel, msg);
       }, this);
 
       [
@@ -220,6 +219,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
             this.showScreenshotInExtraView("notebook");
           } else if (nodeKey.includes("jupyter")) {
             this.showScreenshotInExtraView("notebook");
+          } else if (nodeKey.includes("Grid")) {
+            this.showScreenshotInExtraView("grid");
+          } else if (nodeKey.includes("Voxel")) {
+            this.showScreenshotInExtraView("voxels");
           } else {
             this.showScreenshotInExtraView("form");
           }
@@ -297,7 +300,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         if (currentNode.key.includes("/neuroman")) {
           // HACK: Only Neuroman should enter here
           currentNode.key = "simcore/services/dynamic/modeler/webserver";
-          currentNode.version = "2.7.0";
+          currentNode.version = "2.8.0";
           const modelSelected = currentNode.inputs["inModel"];
           delete currentNode.inputs["inModel"];
           currentNode.inputs["model_name"] = modelSelected;
@@ -315,7 +318,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
-      console.log("updating pipeline: " + url + "\n" + data);
+      console.log("updating pipeline: " + url);
+      console.log(data);
 
       req.addListener("success", e => {
         this.getLogger().debug("Workbench", "Pipeline successfully updated");
@@ -372,7 +376,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
-      console.log("starting pipeline: " + url + "\n" + data);
+      console.log("starting pipeline: " + url);
+      console.log(data);
 
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
