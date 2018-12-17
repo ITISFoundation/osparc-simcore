@@ -79,7 +79,7 @@ qx.Class.define("qxapp.auth.ui.ResetPassPage", {
 
       let failFun = function(msg) {
         msg = msg || this.tr("Could not reset password");
-        qxapp.component.widget.FlashMessenger.getInstance().logThis(msg, "ERROR", "user");
+        qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
       };
 
       manager.resetPassword(password, confirm, code, successFun, failFun, this);

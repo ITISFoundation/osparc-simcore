@@ -21,7 +21,7 @@ qx.Class.define("qxapp.component.widget.FlashMessenger", {
 
   members: {
 
-    logThis: function(message, level="INFO", logger="None") {
+    logAs: function(message, level="INFO", logger="") {
       this.log({
         message: message,
         level: level,

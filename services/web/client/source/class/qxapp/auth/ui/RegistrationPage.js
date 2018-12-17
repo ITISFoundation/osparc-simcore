@@ -111,7 +111,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
 
       let failFun = function(msg) {
         msg = msg || this.tr("Cannot register user");
-        qxapp.component.widget.FlashMessenger.getInstance().logThis(msg, "ERROR", "user");
+        qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
       };
 
       manager.register(userData, successFun, failFun, this);
