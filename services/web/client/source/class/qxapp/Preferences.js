@@ -6,8 +6,6 @@ qx.Class.define("qxapp.Preferences", {
     this.base(arguments, this.tr("Account Settings"));
 
     this.__tokenResources = qxapp.io.rest.ResourceFactory.getInstance().createTokenResources();
-    // this.__tokenResources.token
-    // this.__tokenResources.tokens
 
     // window
     // TODO: fix-sized modal preference window
@@ -26,12 +24,12 @@ qx.Class.define("qxapp.Preferences", {
     var tabView = new qx.ui.tabview.TabView().set({
       barPosition: "left"
     });
-    tabView.add(this.__getGeneral());
-    tabView.add(this.__getSecurity());
+    tabView.add(this.__createProfile());
+    tabView.add(this.__createSecurity());
     // TODO: groups?
     // TODO: notifications?
-    tabView.add(this.__getDisplay());
-    tabView.add(this.__getAdvanced());
+    tabView.add(this.__createDisplay());
+    tabView.add(this.__createExperimental());
 
     this.add(tabView, {
       flex: 1
@@ -50,8 +48,8 @@ qx.Class.define("qxapp.Preferences", {
       }));
 
       // title
-      page.add(new qx.ui.basic.Label("<h3>" + name + " " + this.tr("Settings") + "</h3>").set({
-        rich: true
+      page.add(new qx.ui.basic.Label(name).set({
+        font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"])
       }));
 
       // spacer
@@ -59,45 +57,214 @@ qx.Class.define("qxapp.Preferences", {
       return page;
     },
 
-    __getGeneral: function() {
+    __createProfile: function() {
       const iconUrl = "@FontAwesome5Solid/sliders-h/24";
-      let page = this.__createPage(this.tr("General"), iconUrl);
+      let page = this.__createPage(this.tr("Profile"), iconUrl);
 
-      const userEmail = qxapp.auth.Data.getInstance().getEmail();
-
-      let form = new qx.ui.form.Form();
-      // content
-      let username = new qx.ui.form.TextField().set({
-        value: userEmail.split("@")[0],
-        placeholder: "User Name",
-        readOnly: true
-      });
-      form.add(username, "Username");
-
-      // let fullname = new qx.ui.form.TextField().set({
-      //   placeholder: "Full Name"
-      // });
-
-      // page.add(fullname);
-
-      let email = new qx.ui.form.TextField().set({
-        value: userEmail,
-        placeholder: "Email",
-        readOnly: true
-      });
-      form.add(email, this.tr("Email"));
-
-      page.add(new qx.ui.form.renderer.Single(form));
-
-      let img = new qx.ui.basic.Image().set({
-        source: qxapp.utils.Avatar.getUrl(email.getValue(), 200)
-      });
-      page.add(img);
+      page.add(this.__createProfileUser());
+      page.add(this.__createProfilePassword());
 
       return page;
     },
 
-    __getSecurity: function() {
+    __createProfileUser: function() {
+      // layout
+      let box = new qx.ui.groupbox.GroupBox("User");
+      box.setLayout(new qx.ui.layout.VBox(10));
+
+      let email = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Email")
+      });
+
+      let firstName = new qx.ui.form.TextField().set({
+        placeholder: this.tr("First Name")
+      });
+
+      let lastName = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Last Name")
+      });
+
+      let role = new qx.ui.form.TextField().set({
+        readOnly: true
+      });
+
+      let form = new qx.ui.form.Form();
+      form.add(email, "", null, "email");
+      form.add(firstName, "", null, "firstName");
+      form.add(lastName, "", null, "lastName");
+      form.add(role, "", null, "role");
+
+      box.add(new qx.ui.form.renderer.Single(form));
+
+      let img = new qx.ui.basic.Image().set({
+        alignX: "center"
+      });
+      box.add(img);
+
+      let updateBtn = new qx.ui.form.Button("Update Profile").set({
+        allowGrowX: false
+      });
+      box.add(updateBtn);
+
+      // binding to a model
+      let raw = {
+        "first_name": null,
+        "last_name": null,
+        "email": null,
+        "role": null
+      };
+
+      if (qx.core.Environment.get("qx.debug")) {
+        raw = {
+          "first_name": "Bizzy",
+          "last_name": "Zastrow",
+          "email": "bizzy@itis.ethz.ch",
+          "role": "Tester"
+        };
+      }
+      let model = qx.data.marshal.Json.createModel(raw);
+      let controller = new qx.data.controller.Object(model);
+
+      controller.addTarget(email, "value", "email", true);
+      controller.addTarget(firstName, "value", "first_name", true, null, {
+        converter: function(data) {
+          return data.replace(/^\w/, c => c.toUpperCase());
+        }
+      });
+      controller.addTarget(lastName, "value", "last_name", true);
+      controller.addTarget(role, "value", "role", false);
+      controller.addTarget(img, "source", "email", false, {
+        converter: function(data) {
+          return qxapp.utils.Avatar.getUrl(email.getValue(), 150);
+        }
+      });
+
+      // validation
+      let manager = new qx.ui.form.validation.Manager();
+      manager.add(email, qx.util.Validate.email());
+      manager.add(firstName, qx.util.Validate.string());
+      manager.add(lastName, qx.util.Validate.string());
+
+      // update trigger
+      updateBtn.addListenerOnce("execute", function() {
+        if (manager.validate()) {
+          let request = new qxapp.io.request.ApiRequest("/auth/change-email", "POST");
+          request.setRequestData({
+            "email": model.email
+          });
+
+          request.addListenerOnce("success", function(e) {
+            const res = e.getTarget().getResponse();
+            qxapp.component.widget.FlashMessenger.getInstance().log(res.data);
+          }, this);
+
+          request.addListenerOnce("fail", function(e) {
+            const res = e.getTarget().getResponse();
+            const msg = res.error|| "Failed to update email";
+            email.set({
+              invalidMessage: msg,
+              valid: false
+            });
+          }, this);
+
+          request.send();
+        }
+      }, this);
+
+      // get values from server
+      let request = new qxapp.io.request.ApiRequest("/me", "GET");
+      request.addListenerOnce("success", function(e) {
+        const data = e.getTarget().getResponse()["data"];
+        model.set({
+          "first_name": data["first_name"],
+          "last_name": data["last_name"],
+          "email": data["login"],
+          "role": data["role"]
+        });
+      });
+
+      request.addListenerOnce("fail", function(e) {
+        const res = e.getTarget().getResponse();
+        const msg = res.error || "Failed to update profile";
+        qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "Error", "user");
+      });
+
+      request.send();
+      return box;
+    },
+
+    __createProfilePassword: function() {
+      // layout
+      let box = new qx.ui.groupbox.GroupBox(this.tr("Password"));
+      box.setLayout(new qx.ui.layout.VBox(10));
+
+      let currentPassword = new qx.ui.form.PasswordField().set({
+        required: true,
+        placeholder: this.tr("Your current password")
+      });
+      box.add(currentPassword);
+
+      let newPassword = new qx.ui.form.PasswordField().set({
+        required: true,
+        placeholder: this.tr("Your new password")
+      });
+      box.add(newPassword);
+
+      let confirm = new qx.ui.form.PasswordField().set({
+        required: true,
+        placeholder: this.tr("Retype your new password")
+      });
+      box.add(confirm);
+
+      let manager = new qx.ui.form.validation.Manager();
+      manager.add(newPassword, function(value, itemForm) {
+        return qxapp.auth.core.Utils.checkPasswordSecure(value, itemForm);
+      });
+      manager.setValidator(function(_itemForms) {
+        return qxapp.auth.core.Utils.checkSamePasswords(newPassword, confirm);
+      });
+
+      let resetBtn = new qx.ui.form.Button("Reset Password").set({
+        allowGrowX: false
+      });
+      box.add(resetBtn);
+
+      resetBtn.addListener("execute", function() {
+        if (manager.validate()) {
+          let request = new qxapp.io.request.ApiRequest("/auth/change-password", "POST");
+          request.setRequestData({
+            "current": currentPassword.getValue(),
+            "new": newPassword.getValue(),
+            "confirm": confirm.getValue()
+          });
+
+          request.addListenerOnce("success", function(e) {
+            const res = e.getTarget().getResponse();
+            qxapp.component.widget.FlashMessenger.getInstance().log(res.data);
+
+            [currentPassword, newPassword, confirm].forEach(item => {
+              item.resetValue();
+            });
+          }, this);
+
+          request.addListenerOnce("fail", e => {
+            const res = e.getTarget().getResponse();
+            const msg = res.error || "Failed to update password";
+            qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR");
+
+            [currentPassword, newPassword, confirm].forEach(item => {
+              item.resetValue();
+            });
+          }, this);
+
+          request.send();
+        }
+      });
+
+      return box;
+    },
+
+    __createSecurity: function() {
       const iconUrl = "@FontAwesome5Solid/shield-alt/24";
       let page = this.__createPage(this.tr("Security"), iconUrl);
 
@@ -121,12 +288,12 @@ qx.Class.define("qxapp.Preferences", {
       tokens.addListenerOnce("getSuccess", e => {
         let tokensList = e.getRequest().getResponse().data;
         if (tokensList.length === 0) {
-          let emptyForm = this.__getEmptyTokenForm();
+          let emptyForm = this.__createEmptyTokenForm();
           this.__tokensList.add(new qx.ui.form.renderer.Single(emptyForm));
         } else {
           for (let i=0; i<tokensList.length; i++) {
             const token = tokensList[i];
-            let tokenForm = this.__getValidTokenForm(token["service"], token["token_key"], token["token_secret"]);
+            let tokenForm = this.__createValidTokenForm(token["service"], token["token_key"], token["token_secret"]);
             this.__tokensList.add(new qx.ui.form.renderer.Single(tokenForm));
           }
         }
@@ -137,7 +304,7 @@ qx.Class.define("qxapp.Preferences", {
       tokens.get();
     },
 
-    __getEmptyTokenForm: function() {
+    __createEmptyTokenForm: function() {
       let form = new qx.ui.form.Form();
 
       // FIXME: for the moment this is fixed since it has to be a unique id
@@ -183,7 +350,7 @@ qx.Class.define("qxapp.Preferences", {
       return form;
     },
 
-    __getValidTokenForm: function(service, key, secret) {
+    __createValidTokenForm: function(service, key, secret) {
       let form = new qx.ui.form.Form();
 
       let tokenService = new qx.ui.form.TextField().set({
@@ -227,7 +394,7 @@ qx.Class.define("qxapp.Preferences", {
       return form;
     },
 
-    __getDisplay: function() {
+    __createDisplay: function() {
       const iconUrl = "@FontAwesome5Solid/eye/24";
       let page = this.__createPage(this.tr("Display"), iconUrl);
       let themes = qx.Theme.getAll();
@@ -261,7 +428,7 @@ qx.Class.define("qxapp.Preferences", {
       return page;
     },
 
-    __getAdvanced: function() {
+    __createExperimental: function() {
       const iconUrl = "@FontAwesome5Solid/flask/24";
       let page = this.__createPage(this.tr("Experimental"), iconUrl);
 
