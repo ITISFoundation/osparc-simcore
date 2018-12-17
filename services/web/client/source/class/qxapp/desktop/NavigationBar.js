@@ -203,7 +203,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       if (!this.__aboutWin) {
         this.__aboutWin = new qx.ui.window.Window("About").set({
           layout: new qx.ui.layout.Canvas(),
-          contentPadding: 0,
+          contentPadding: 10,
+          showMaximize: false,
           showMinimize: false
         });
         this.__aboutWin.add(new qxapp.About(), {
