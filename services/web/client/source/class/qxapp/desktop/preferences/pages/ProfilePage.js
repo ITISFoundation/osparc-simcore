@@ -103,7 +103,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
             "email": model.getEmail()
           });
 
-          let profileReq = new qxapp.io.request.ApiRequest("/me", "POST");
+          let profileReq = new qxapp.io.request.ApiRequest("/me", "PUT");
           profileReq.setRequestData({
             "first_name": model.getFirstName(),
             "last_name": model.getLastName()

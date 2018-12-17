@@ -19,7 +19,7 @@ paths:
                 $ref: './components/schemas/me.yaml#/ProfileEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
-    post:
+    put:
       operationId: update_my_profile
       requestBody:
         content:
@@ -27,12 +27,8 @@ paths:
             schema:
               $ref: './components/schemas/me.yaml#/ProfileInput'
       responses:
-        '200':
-          description: current user profile
-          content:
-            application/json:
-              schema:
-                $ref: './components/schemas/me.yaml#/ProfileEnveloped'
+        '204':
+          description: updated profile
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
