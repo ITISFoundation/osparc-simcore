@@ -13,7 +13,7 @@ qx.Class.define("qxapp.About", {
 
   members: {
     __populateEntries: function() {
-      this._add(this.__createEntry("oSPARC UI", "1234"));
+      this._add(this.__createEntry("oSPARC UI", "3.38"));
       this._add(new qx.ui.core.Spacer(null, 10));
       this._add(this.__createEntry("qx-compiler", "0.2.22"));
       this._add(this.__createEntry("qooxdoo-sdk", "6.0.0-alpha-20181212"));
@@ -21,9 +21,9 @@ qx.Class.define("qxapp.About", {
       this._add(this.__createEntry("contrib/qx-iconfont-material", "0.1.0"));
       this._add(this.__createEntry("contrib/qx-iconfont-fontawesome5", "0.0.4"));
       this._add(new qx.ui.core.Spacer(null, 10));
-      this._add(this.__createEntry("Ajv", "0.0.4"));
-      this._add(this.__createEntry("Svg", "0.0.4"));
-      this._add(this.__createEntry("WebSocket", "0.0.4"));
+      this._add(this.__createEntry("Ajv", "6.5.0"));
+      this._add(this.__createEntry("svg.js", "2.6.4"));
+      this._add(this.__createEntry("socket.io", "2.1.2"));
     },
 
     __createEntry: function(item, version) {
