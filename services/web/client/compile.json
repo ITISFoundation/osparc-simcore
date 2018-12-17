@@ -49,6 +49,9 @@
         "uri" : "resource/workbench/svg*.js"
       },
       {
+        "uri" : "resource/jsondiffpatch/jsondiffpatch*.js"
+      },
+      {
         "uri" : "resource/qxapp/*.png"
       },
       {
