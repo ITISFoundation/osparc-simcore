@@ -28,6 +28,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     this.initDefault();
     this.connectEvents();
+    this.__startAutoSave();
   },
 
   properties: {
@@ -124,7 +125,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     connectEvents: function() {
       this.__mainPanel.getControls().addListener("SavePressed", function() {
-        this.serializeProjectDocument();
+        this.saveProjectDocument();
       }, this);
 
       this.__mainPanel.getControls().addListener("StartPipeline", function() {
@@ -476,7 +477,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__mainPanel.setMainView(widgetContainer);
     },
 
-    serializeProjectDocument: function() {
+    saveProjectDocument: function() {
       let myPrj = this.getProjectModel().serializeProject();
       // FIXME: server expects "projectUuid" and we have "uuid"
       myPrj["projectUuid"] = myPrj["uuid"];
@@ -490,6 +491,28 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       resource.del({
         "project_id": myPrj["uuid"]
       });
+    },
+
+    __startAutoSave: function() {
+      let diffPatcher = new qxapp.wrappers.JsonDiffPatch();
+      let oldObj = this.getProjectModel().serializeProject();
+      // Save every 5 seconds
+      const interval = 5000;
+      let timer = new qx.event.Timer(interval);
+      timer.addListener("interval", () => {
+        let newObj = this.getProjectModel().serializeProject();
+        let delta = diffPatcher.diff(oldObj, newObj);
+        if (delta) {
+          let deltaKeys = Object.keys(delta);
+          // lastChangeDate should not be taken into account as data change
+          let index = deltaKeys.indexOf("lastChangeDate");
+          if (index > -1) {
+            deltaKeys.splice(index, 1);
+          }
+        }
+        oldObj = diffPatcher.clone(newObj);
+      }, this);
+      timer.start();
     }
   }
 });

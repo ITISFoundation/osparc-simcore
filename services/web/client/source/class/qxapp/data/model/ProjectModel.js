@@ -29,8 +29,6 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
     } else {
       this.setWorkbenchModel(new qxapp.data.model.WorkbenchModel(this.getName(), {}));
     }
-
-    this.__startAutoSave();
   },
 
   properties: {
@@ -101,32 +99,6 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
       if (this.isPropertyInitialized("workbenchModel")) {
         this.getWorkbenchModel().setProjectName(newName);
       }
-    },
-
-    __startAutoSave: function() {
-      let diffPatcher = new qxapp.wrappers.JsonDiffPatch();
-      let oldObj = this.serializeProject();
-      // Save every 5 seconds
-      const interval = 5000;
-      let timer = new qx.event.Timer(interval);
-      timer.addListener("interval", () => {
-        let newObj = this.serializeProject();
-        let delta = diffPatcher.diff(oldObj, newObj);
-        if (delta) {
-          let deltaKeys = Object.keys(delta);
-          // lastChangeDate should not be taken into account as data change
-          let index = deltaKeys.indexOf("lastChangeDate");
-          if (index > -1) {
-            deltaKeys.splice(index, 1);
-          }
-          if (deltaKeys.length > 0) {
-            // send delta to backend
-            console.log("send delta to backend", delta);
-          }
-        }
-        oldObj = diffPatcher.clone(newObj);
-      }, this);
-      timer.start();
     },
 
     serializeProject: function() {
