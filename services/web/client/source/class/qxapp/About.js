@@ -13,6 +13,7 @@ qx.Class.define("qxapp.About", {
 
   members: {
     __populateEntries: function() {
+      // All these items and versions should be red from a file
       this._add(this.__createEntry("oSPARC UI", "3.38"));
       this._add(new qx.ui.core.Spacer(null, 10));
       this._add(this.__createEntry("qx-compiler", "0.2.22"));
