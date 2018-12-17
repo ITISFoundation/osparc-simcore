@@ -58,16 +58,16 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
 
       // binding to a model
       let raw = {
-        "first_name": null,
-        "last_name": null,
+        "firstName": null,
+        "lastName": null,
         "email": null,
         "role": null
       };
 
       if (qx.core.Environment.get("qx.debug")) {
         raw = {
-          "first_name": "Bizzy",
-          "last_name": "Zastrow",
+          "firstName": "Bizzy",
+          "lastName": "Zastrow",
           "email": "bizzy@itis.ethz.ch",
           "role": "Tester"
         };
@@ -76,12 +76,12 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       let controller = new qx.data.controller.Object(model);
 
       controller.addTarget(email, "value", "email", true);
-      controller.addTarget(firstName, "value", "first_name", true, null, {
+      controller.addTarget(firstName, "value", "firstName", true, null, {
         converter: function(data) {
           return data.replace(/^\w/, c => c.toUpperCase());
         }
       });
-      controller.addTarget(lastName, "value", "last_name", true);
+      controller.addTarget(lastName, "value", "lastName", true);
       controller.addTarget(role, "value", "role", false);
       controller.addTarget(img, "source", "email", false, {
         converter: function(data) {
@@ -98,26 +98,33 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       // update trigger
       updateBtn.addListener("execute", function() {
         if (manager.validate()) {
-          let request = new qxapp.io.request.ApiRequest("/auth/change-email", "POST");
-          request.setRequestData({
+          let emailReq = new qxapp.io.request.ApiRequest("/auth/change-email", "POST");
+          emailReq.setRequestData({
             "email": model.getEmail()
           });
 
-          request.addListenerOnce("success", function(e) {
-            const res = e.getTarget().getResponse();
-            qxapp.component.widget.FlashMessenger.getInstance().log(res.data);
-          }, this);
+          let profileReq = new qxapp.io.request.ApiRequest("/my", "POST");
+          profileReq.setRequestData({
+            "first_name": model.getFirstName(),
+            "last_name": model.getLastName()
+          });
 
-          request.addListenerOnce("fail", function(e) {
-            const error = e.getTarget().getResponse().error;
-            const msg = error ? error["errors"][0].message : "Failed to update profile";
-            email.set({
-              invalidMessage: msg,
-              valid: false
-            });
-          }, this);
+          [emailReq, profileReq].forEach(req => {
+            // requests
+            req.addListenerOnce("success", e => {
+              const res = e.getTarget().getResponse();
+              qxapp.component.widget.FlashMessenger.getInstance().log(res.data);
+            }, this);
 
-          request.send();
+            req.addListenerOnce("fail", e => {
+              // FIXME: should revert to old?? or GET? Store might resolve this??
+              const error = e.getTarget().getResponse().error;
+              const msg = error ? error["errors"][0].message : "Failed to update profile";
+              qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            }, this);
+
+            req.send();
+          });
         }
       }, this);
 
