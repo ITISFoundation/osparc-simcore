@@ -36,6 +36,7 @@ async def get_my_profile(request: web.Request):
         'gravatar_id': gravatar_hash(row['email'])
     }
 
+
 @login_required
 async def update_my_profile(request: web.Request):
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
@@ -60,6 +61,7 @@ async def update_my_profile(request: web.Request):
         assert resp.rowcount == 1
     
     raise web.HTTPNoContent(content_type='application/json')
+
 
 # me/tokens/ ------------------------------------------------------
 @login_required
