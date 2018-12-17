@@ -29,6 +29,13 @@ qx.Theme.define("qxapp.theme.Font", {
     "title-14": {
       size: 14,
       family: ["Roboto"],
+      color: "text",
+      bold: true
+    },
+
+    "text-14": {
+      size: 14,
+      family: ["Roboto"],
       color: "text"
     }
   }

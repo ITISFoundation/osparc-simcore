@@ -101,9 +101,9 @@ qx.Class.define("qxapp.Preferences", {
       const iconUrl = "@FontAwesome5Solid/shield-alt/24";
       let page = this.__createPage(this.tr("Security"), iconUrl);
 
-      const title14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"]);
+      const text14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"]);
       page.add(new qx.ui.basic.Label("API Tokens").set({
-        font: title14Font
+        font: text14Font
       }));
 
       this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));

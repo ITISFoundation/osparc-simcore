@@ -61,9 +61,9 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
       let control;
       switch (id) {
         case "portLabel": {
-          const title14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"]);
+          const text14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"]);
           control = new qx.ui.basic.Label().set({
-            font: title14Font,
+            font: text14Font,
             textAlign: "right",
             allowGrowX: true,
             padding: 10,
@@ -75,9 +75,9 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
           break;
         }
         case "portOutput": {
-          const title14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"]);
+          const text14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"]);
           control = new qx.ui.basic.Label().set({
-            font: title14Font,
+            font: text14Font,
             textAlign: "right",
             allowGrowX: true,
             padding: 10,
