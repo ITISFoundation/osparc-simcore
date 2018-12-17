@@ -162,10 +162,10 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       // Logout
 
       // TODO: add commands (i.e. short-cut system)
-      let preferences = new qx.ui.menu.Button("Account Settings");
+      let preferences = new qx.ui.menu.Button(this.tr("Account Settings"));
       preferences.addListener("execute", this.__onOpenAccountSettings, this);
 
-      let logout = new qx.ui.menu.Button("Logout");
+      let logout = new qx.ui.menu.Button(this.tr("Logout"));
       logout.addListener("execute", e => {
         let app = qx.core.Init.getApplication();
         app.logout();
@@ -173,11 +173,11 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
       menu.add(preferences);
       menu.addSeparator();
-      menu.add(new qx.ui.menu.Button("Groups"));
+      menu.add(new qx.ui.menu.Button(this.tr("Groups")));
       menu.addSeparator();
-      menu.add(new qx.ui.menu.Button("Help"));
-      menu.add(new qx.ui.menu.Button("Report a Problem"));
-      menu.add(new qx.ui.menu.Button("About"));
+      menu.add(new qx.ui.menu.Button(this.tr("Help")));
+      menu.add(new qx.ui.menu.Button(this.tr("Report a Problem")));
+      menu.add(new qx.ui.menu.Button(this.tr("About")));
       menu.addSeparator();
       menu.add(logout);
 
