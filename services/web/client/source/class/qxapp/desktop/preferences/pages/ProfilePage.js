@@ -103,7 +103,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
             "email": model.getEmail()
           });
 
-          let profileReq = new qxapp.io.request.ApiRequest("/my", "POST");
+          let profileReq = new qxapp.io.request.ApiRequest("/me", "POST");
           profileReq.setRequestData({
             "first_name": model.getFirstName(),
             "last_name": model.getLastName()
@@ -129,7 +129,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       }, this);
 
       // get values from server
-      let request = new qxapp.io.request.ApiRequest("/my", "GET");
+      let request = new qxapp.io.request.ApiRequest("/me", "GET");
       request.addListenerOnce("success", function(e) {
         const data = e.getTarget().getResponse()["data"];
         model.set({

@@ -89,7 +89,7 @@ async def fake_tokens(logged_user, tokens_db):
     all_tokens = []
 
     # TODO: automatically create data from oas!
-    # See api/specs/webserver/v0/components/schemas/my.yaml
+    # See api/specs/webserver/v0/components/schemas/me.yaml
     for _ in repeat(None, 5):
         # TODO: add tokens from other users
         data = {
@@ -108,12 +108,12 @@ async def fake_tokens(logged_user, tokens_db):
 
 
 
-PREFIX = "/" + API_VERSION + "/my"
+PREFIX = "/" + API_VERSION + "/me"
 
 # test R on profile ----------------------------------------------------
 async def test_get_profile(logged_user, client):
     url = client.app.router["get_my_profile"].url_for()
-    assert str(url) == "/v0/my"
+    assert str(url) == "/v0/me"
 
     resp = await client.get(url)
     payload = await resp.json()
@@ -136,7 +136,7 @@ RESOURCE_NAME = 'tokens'
 
 async def test_create(client, logged_user, tokens_db):
     url = client.app.router["create_tokens"].url_for()
-    assert '/v0/my/tokens' == str(url)
+    assert '/v0/me/tokens' == str(url)
 
     token = {
         'service': "blackfynn",
@@ -160,7 +160,7 @@ async def test_create(client, logged_user, tokens_db):
 async def test_read(client, logged_user, tokens_db, fake_tokens):
     # list all
     url = client.app.router["list_tokens"].url_for()
-    assert "/v0/my/tokens" == str(url)
+    assert "/v0/me/tokens" == str(url)
     resp = await client.get(url)
     payload = await resp.json()
     assert resp.status == 200, payload
@@ -174,7 +174,7 @@ async def test_read(client, logged_user, tokens_db, fake_tokens):
     sid = expected['service']
 
     url = client.app.router["get_token"].url_for(service=sid)
-    assert "/v0/my/tokens/%s" % sid == str(url)
+    assert "/v0/me/tokens/%s" % sid == str(url)
     resp = await client.get(url)
     payload = await resp.json()
     assert resp.status == 200, payload
@@ -190,7 +190,7 @@ async def test_update(client, logged_user, tokens_db, fake_tokens):
     sid = selected['service']
 
     url = client.app.router["get_token"].url_for(service=sid)
-    assert "/v0/my/tokens/%s" % sid == str(url)
+    assert "/v0/me/tokens/%s" % sid == str(url)
 
     resp = await client.put(url, json={
         'token_secret': 'some completely new secret'
@@ -216,7 +216,7 @@ async def test_delete(client, logged_user, tokens_db, fake_tokens):
     sid = fake_tokens[0]['service']
 
     url = client.app.router["delete_token"].url_for(service=sid)
-    assert "/v0/my/tokens/%s" % sid == str(url)
+    assert "/v0/me/tokens/%s" % sid == str(url)
 
     resp = await client.delete(url)
     payload = await resp.json()

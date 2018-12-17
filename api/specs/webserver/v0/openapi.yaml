@@ -61,14 +61,14 @@ paths:
 
   # USER SETTINGS ------------------------------------------------------------------
 
-  /my:
-    $ref: './openapi-user.yaml#/paths/~1my'
+  /me:
+    $ref: './openapi-user.yaml#/paths/~1me'
 
-  /my/tokens:
-    $ref: './openapi-user.yaml#/paths/~1my~1tokens'
+  /me/tokens:
+    $ref: './openapi-user.yaml#/paths/~1me~1tokens'
 
-  /my/tokens/{service}:
-    $ref: './openapi-user.yaml#/paths/~1my~1tokens~1{service}'
+  /me/tokens/{service}:
+    $ref: './openapi-user.yaml#/paths/~1me~1tokens~1{service}'
 
   # DATA STORAGE SERVICES ----------------------------------------------------------
 
