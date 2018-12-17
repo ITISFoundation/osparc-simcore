@@ -115,16 +115,31 @@ async def test_get_profile(logged_user, client):
     url = client.app.router["get_my_profile"].url_for()
     assert str(url) == "/v0/me"
 
-    resp = await client.get(url)
-    payload = await resp.json()
-    assert resp.status == 200, payload
-
-    data, error = unwrap_envelope(payload)
-    assert not error
-    assert data
+    resp = await client.get(url)    
+    data, _ = await assert_status(resp, web.HTTPOk)
 
     assert data['login'] == logged_user["email"]
     assert data['gravatar_id']
+    assert data['first_name'] == logged_user["name"]
+    assert data['last_name'] == ""
+    assert data['role'] == "User"
+
+
+async def test_update_profile(logged_user, client):
+    url = client.app.router["update_my_profile"].url_for()
+    assert str(url) == "/v0/me"
+
+    resp = await client.put(url, json={"last_name": "Foo"})
+    await assert_status(resp, web.HTTPNoContent)
+
+    resp = await client.get(url)
+    data, _ = await assert_status(resp, web.HTTPOk)
+
+    assert data['first_name'] == logged_user["name"]
+    assert data['last_name'] == "Foo"
+    assert data['role'] == "User"
+
+
 
 
 # Test CRUD on tokens --------------------------------------------
