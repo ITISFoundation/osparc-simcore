@@ -1,14 +1,51 @@
-Profile:
+ProfileCommon:
   type: object
   properties:
-    login:
+    first_name:
       type: string
-      format: email
-    gravatar_id:
+    last_name:
       type: string
   example:
     login: pcrespov@foo.com
+    first_name: Pedro
+    last_name: Crespo
+
+ProfileInput:
+  allOf:
+  - $ref: '#/ProfileCommon'
+  example:
+    first_name: Pedro
+    last_name: Crespo
+
+ProfileOutput:
+  allOf:
+  - $ref: '#/ProfileCommon'
+  - type: object
+    properties:
+      login:
+        type: string
+        format: email
+      role:
+        type: string
+      gravatar_id:
+        type: string
+  example:
+    login: pcrespov@foo.com
+    first_name: Pedro
+    last_name: Crespo
+    role: Admin
     gravatar_id: 205e460b479e2e5b48aec07710c08d50
+
+ProfileEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/ProfileOutput'
+    error:
+      nullable: true
+      default: null
 
 
 Token:
@@ -37,20 +74,6 @@ TokenId:
   description: toke identifier
   type: string
   # format: uuid
-
-
-# enveloped and array versions --------------------------
-
-ProfileEnveloped:
-  type: object
-  required:
-    - data
-  properties:
-    data:
-      $ref: '#/Profile'
-    error:
-      nullable: true
-      default: null
 
 
 TokenEnveloped:
