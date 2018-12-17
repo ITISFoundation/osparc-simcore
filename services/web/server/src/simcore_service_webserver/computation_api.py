@@ -221,7 +221,9 @@ async def _set_tasks_in_tasks_db(project_id, tasks):
             comp_task.image = task["image"]
             comp_task.schema = task["schema"]
             comp_task.inputs = task["inputs"]
-            comp_task.outputs = task["outputs"]
+            # HACK: skip if file picker
+            if "file-picker" in task["image"]["name"]:
+                comp_task.outputs = task["outputs"]
             comp_task.submit = datetime.datetime.utcnow()
         except sqlalchemy.orm.exc.NoResultFound:
             comp_task = ComputationalTask( \

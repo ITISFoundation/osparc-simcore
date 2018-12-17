@@ -73,6 +73,10 @@ build-client:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
 
+rebuild-client:
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webclient
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webserver
+
 build-dynamic-services:
 ifndef SERVICES_VERSION
 	$(error SERVICES_VERSION variable is undefined)
@@ -185,7 +189,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.28
+PLATFORM_VERSION=3.38
 DOCKER_REGISTRY=masu.speag.com
 #DOCKER_REGISTRY=registry.osparc.io
 

@@ -1,0 +1,87 @@
+LoginEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/LoginFormType'
+    error:
+      nullable: true
+      default: null
+
+
+LoginForm:
+  type: object
+  properties:
+    email:
+      type: string
+      #FIXME: format: email
+    password:
+      type: string
+      #FIXME: format: password
+  example:
+    email: foo@mymail.com
+    password: 'my secret'
+
+
+ChangeEmailForm:
+  type: object
+  required:
+    - email
+  properties:
+    email:
+      type: string
+      # FIXME: format: email
+  example:
+    email: foo@mymail.com
+
+
+ResetPasswordRequest:
+  type: object
+  required:
+    - email
+  properties:
+    email:
+      type: string
+      #FIXME: format: email
+  example:
+    email: foo@mymail.com
+
+
+ResetPasswordForm:
+  type: object
+  required:
+    - password
+    - confirm
+  properties:
+    password:
+      type: string
+      #FIXME: format: password
+    confirm:
+      type: string
+      #FIXME: format: password
+  example:
+    password: 'my secret'
+    confirm: 'my secret'
+
+
+ChangePasswordForm:
+  type: object
+  required:
+    - current
+    - new
+    - confirm
+  properties:
+    current:
+      type: string
+      #FIXME: format: password
+    new:
+      type: string
+      #FIXME: format: password
+    confirm:
+      type: string
+      #FIXME: format: password
+  example:
+    current: 'my secret'
+    new: 'my new secret'
+    confirm: 'my new secret'

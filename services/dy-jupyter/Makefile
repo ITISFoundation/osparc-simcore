@@ -26,6 +26,7 @@ export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 #DOCKER_REGISTRY=registry.osparc.io
 export SERVICE_BASE_PATH=simcore/services/dynamic/jupyter-base-notebook
 export SERVICE_SCIPY_PATH=simcore/services/dynamic/jupyter-scipy-notebook
+export SERVICE_R_PATH=simcore/services/dynamic/jupyter-r-notebook
 
 all:
 	@echo 'run `make build` to build'
@@ -63,3 +64,4 @@ push_service_images: check-env
 	${DOCKER} login ${DOCKER_REGISTRY}
 	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_BASE_PATH}:${SERVICES_VERSION}
 	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_SCIPY_PATH}:${SERVICES_VERSION}
+	${DOCKER} push ${DOCKER_REGISTRY}/${SERVICE_R_PATH}:${SERVICES_VERSION}

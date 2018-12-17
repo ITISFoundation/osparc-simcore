@@ -11,6 +11,9 @@ director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
   version: v0
+login:
+  enabled: true
+  registration_confirmation_required: ${LOGIN_REGISTRATION_CONFIRMATION_REQUIRED}
 main:
   client_outdir: ${SIMCORE_WEB_OUTDIR}
   host: 127.0.0.0
