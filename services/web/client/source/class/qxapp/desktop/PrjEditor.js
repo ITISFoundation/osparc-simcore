@@ -28,6 +28,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     this.initDefault();
     this.connectEvents();
+
+    this.saveProjectDocument();
     this.__startAutoSave();
   },
 
