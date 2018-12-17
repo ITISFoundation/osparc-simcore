@@ -133,8 +133,8 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       request.addListenerOnce("success", function(e) {
         const data = e.getTarget().getResponse()["data"];
         model.set({
-          "first_name": data["first_name"] || "",
-          "last_name": data["last_name"] || "",
+          "firstName": data["first_name"] || "",
+          "lastName": data["last_name"] || "",
           "email": data["login"],
           "role": data["role"] || ""
         });
