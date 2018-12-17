@@ -206,8 +206,8 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
           }, this);
 
           request.addListenerOnce("fail", e => {
-            const res = e.getTarget().getResponse();
-            const msg = res.error || "Failed to update password";
+            const error = e.getTarget().getResponse().error;
+            const msg = error ? error["errors"][0].message : "Failed to reset password";
             qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR");
 
             [currentPassword, newPassword, confirm].forEach(item => {

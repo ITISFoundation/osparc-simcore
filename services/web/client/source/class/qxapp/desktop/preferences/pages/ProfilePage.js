@@ -92,15 +92,15 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       // validation
       let manager = new qx.ui.form.validation.Manager();
       manager.add(email, qx.util.Validate.email());
-      manager.add(firstName, qx.util.Validate.string());
-      manager.add(lastName, qx.util.Validate.string());
+      manager.add(firstName, qx.util.Validate.regExp(/[^\.\d]+/), "Avoid dots or numbers in name");
+      manager.add(lastName, qx.util.Validate.regExp(/[^\.\d]+/), "Avoid dots or numbers in surname");
 
       // update trigger
-      updateBtn.addListenerOnce("execute", function() {
+      updateBtn.addListener("execute", function() {
         if (manager.validate()) {
           let request = new qxapp.io.request.ApiRequest("/auth/change-email", "POST");
           request.setRequestData({
-            "email": model.email
+            "email": model.getEmail()
           });
 
           request.addListenerOnce("success", function(e) {
@@ -109,8 +109,8 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
           }, this);
 
           request.addListenerOnce("fail", function(e) {
-            const res = e.getTarget().getResponse();
-            const msg = res.error|| "Failed to update email";
+            const error = e.getTarget().getResponse().error;
+            const msg = error ? error["errors"][0].message : "Failed to update profile";
             email.set({
               invalidMessage: msg,
               valid: false
@@ -122,20 +122,20 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       }, this);
 
       // get values from server
-      let request = new qxapp.io.request.ApiRequest("/me", "GET");
+      let request = new qxapp.io.request.ApiRequest("/my", "GET");
       request.addListenerOnce("success", function(e) {
         const data = e.getTarget().getResponse()["data"];
         model.set({
-          "first_name": data["first_name"],
-          "last_name": data["last_name"],
+          "first_name": data["first_name"] || "",
+          "last_name": data["last_name"] || "",
           "email": data["login"],
-          "role": data["role"]
+          "role": data["role"] || ""
         });
       });
 
       request.addListenerOnce("fail", function(e) {
-        const res = e.getTarget().getResponse();
-        const msg = res.error || "Failed to update profile";
+        const error = e.getTarget().getResponse().error;
+        const msg = error ? error["errors"][0].message : "Failed to get profile";
         qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "Error", "user");
       });
 
