@@ -511,10 +511,28 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           if (index > -1) {
             deltaKeys.splice(index, 1);
           }
+          if (deltaKeys.length > 0) {
+            this.__saveProjectDocumentChanges(delta);
+          }
         }
         oldObj = diffPatcher.clone(newObj);
       }, this);
       timer.start();
+    },
+
+    __saveProjectDocumentChanges: function(delta) {
+      // send delta to backend
+      console.log("send delta to backend", delta);
+
+      const prjUuid = this.getProjectModel().getUuid();
+
+      let resource = this.__projectResources.project;
+      resource.addListenerOnce("putSuccess", ev => {
+        console.log("Project updated");
+      }, this);
+      resource.put({
+        "project_id": prjUuid
+      }, delta);
     }
   }
 });
