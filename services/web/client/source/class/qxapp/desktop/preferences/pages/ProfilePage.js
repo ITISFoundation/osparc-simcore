@@ -143,7 +143,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       request.addListenerOnce("fail", function(e) {
         const error = e.getTarget().getResponse().error;
         const msg = error ? error["errors"][0].message : "Failed to get profile";
-        qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "Error", "user");
+        qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
       });
 
       request.send();
