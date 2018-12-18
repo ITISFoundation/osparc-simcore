@@ -1,12 +1,11 @@
-env:
-  - DOCKER_COMPOSE_VERSION=1.23.2
-  - DOCKER_GID=1042
-
 jobs:
   include:
     - if: branch = master
       stage: Build docker images
       language: python
+      env:
+        - DOCKER_COMPOSE_VERSION=1.23.2
+        - DOCKER_GID=1042
       python:
         - "3.6"
       services:
@@ -46,7 +45,9 @@ jobs:
       python:
         - "3.6"
       sudo: required
-
+      env:
+        - DOCKER_COMPOSE_VERSION=1.23.2
+        - DOCKER_GID=1042
       services:
         - docker
         
