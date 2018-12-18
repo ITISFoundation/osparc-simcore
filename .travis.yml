@@ -1,13 +1,14 @@
+dist: xenial
 jobs:
   include:
     - if: branch = master
       stage: Build docker images
       language: python
+      python:
+        - "3.6"
       env:
         - DOCKER_COMPOSE_VERSION=1.23.2
         - DOCKER_GID=1042
-      python:
-        - "3.6"
       services:
         - docker
       before_install:
@@ -30,6 +31,7 @@ jobs:
       cache:
         directories:
           - .npm
+          - "node_modules"
       install:
         - npm install -g npm@latest
         - npm install --save-dev eslint
@@ -42,26 +44,49 @@ jobs:
         - npm run linter
 
     - language: python      
+      name: Python linting
+      python:
+        - "3.6"
+      cache: pip
+      before_install:
+        - python --version
+        - uname -a
+        - lsb_release -a
+      install:
+        - pip install --upgrade pip wheel setuptools && pip3 --version
+        - pip3 install pylint
+      script:
+        - make pylint
+
+    - language: python      
       python:
         - "3.6"
       sudo: required
       env:
         - DOCKER_COMPOSE_VERSION=1.23.2
         - DOCKER_GID=1042
+        - TEST_SUITE_COMMAND=pytest -v api/tests
+        - TEST_SUITE_COMMAND=pytest -v services/apihub/tests
+        - TEST_SUITE_COMMAND=pytest --cov=pytest_docker -v packages/pytest_docker/tests
+        - TEST_SUITE_COMMAND=pytest --cov=s3wrapper -v packages/s3wrapper/tests
+        - TEST_SUITE_COMMAND=pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
+        - TEST_SUITE_COMMAND=pytest --cov=servicelib -v packages/service-library/tests
+        - TEST_SUITE_COMMAND=pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
+        - TEST_SUITE_COMMAND=pytest --cov=simcore_service_webserver -v services/web/server/tests/login
+        - TEST_SUITE_COMMAND=pytest --cov=simcore_service_director -v services/director/tests
+        - TEST_SUITE_COMMAND=pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
       services:
         - docker
-        
       cache: pip
-
       before_install:
         - python --version
         - uname -a
-        - lsb_release -a        
+        - lsb_release -a
+        - docker -v
         - sudo rm /usr/local/bin/docker-compose
         - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
         - chmod +x docker-compose
-        - sudo mv docker-compose /usr/local/bin
-        - docker -v
+        - sudo mv docker-compose /usr/local/bin        
         - docker-compose --version
         # shutdown postgres because sometimes is is already up ???
         - sudo service postgresql stop
@@ -71,10 +96,8 @@ jobs:
         apt:          
           packages:
             - docker-ce
-
       install:
         - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pip3 install pytest-travis-fold
         - pip3 install packages/s3wrapper[test]
         - pip3 install packages/simcore-sdk[test]
         - pushd services/director; pip3 install -r requirements/ci.txt; popd
@@ -83,20 +106,13 @@ jobs:
         - pushd services/storage; pip3 install -r requirements/dev.txt; popd
         - pip3 install -r api/tests/requirements.txt
         - pip3 install -r services/apihub/tests/requirements.txt
-
-      before_script:
-        - pylint --version
-        - pip3 list
-
       script:
-        - make pylint       
         - make travis-build
-        - make test
-
+        - "make $TEST_SUITE_COMMAND"
       after_success:
       - coveralls
 
-      notifications:
-        email:
-          on_success: never
-          on_failure: always
+notifications:
+  email:
+    on_success: never
+    on_failure: always
