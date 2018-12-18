@@ -66,7 +66,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       };
     },
 
-    createTokenResources: function() {
+    createUserResources: function() {
       // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
       // SEE: api/specs/webserver/v0/openapi-user.yaml
       const basePath = qxapp.io.rest.ResourceFactory.API;
@@ -80,6 +80,16 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
           url: basePath+"/me"
         }
       });
+
+      return {
+        "profile": profile
+      };
+    },
+
+    createTokenResources: function() {
+      // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
+      // SEE: api/specs/webserver/v0/openapi-user.yaml
+      const basePath = qxapp.io.rest.ResourceFactory.API;
 
       // Singular resource
       let token = new qxapp.io.rest.Resource({
