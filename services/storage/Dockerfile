@@ -71,7 +71,6 @@ RUN $PIP install --no-cache-dir -r requirements-base.txt
 RUN apk add --no-cache \
   linux-headers
 RUN $PIP2 install --no-cache-dir -r requirements-py27.txt
-
 # --------------------------Development stage -------------------
 FROM build as development
 
@@ -96,7 +95,7 @@ CMD docker/boot.sh
 
 # --------------------------Production multi-stage -------------------
 #FROM build as build-production
-FROM build as production
+FROM build as dependencies
 
 ENV SIMCORE_WEB_CONFIG production
 
@@ -120,10 +119,12 @@ RUN $PIP --no-cache-dir install -r requirements/prod.txt &&\
 # FIXME: temporary solution until found missing packages
 WORKDIR /home/scu
 
-RUN . $HOME/.venv/bin/activate; pip list &&\
-    rm -rf $HOME/packages &&\
-    rm -rf $HOME/services/storage
-
 ENV DEBUG 0
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD docker/boot.sh
+
+FROM dependencies as production
+# remove any unnecessary stuff
+RUN . $HOME/.venv/bin/activate; pip list &&\
+    rm -rf $HOME/packages &&\
+    rm -rf $HOME/services/storage

@@ -7,11 +7,10 @@ from os.path import join
 
 import aiosmtplib
 import passlib.hash
-from aiohttp.web import HTTPFound
 from aiohttp_jinja2 import render_string
 
 from ..resources import resources
-from .cfg import cfg
+from .cfg import cfg #TODO: remove this singleton!!!
 
 CHARS = string.ascii_uppercase + string.ascii_lowercase + string.digits
 log = getLogger(__name__)
@@ -35,7 +34,7 @@ def get_random_string(min_len, max_len=None):
 
 
 async def make_confirmation_link(request, confirmation):
-    link = url_for('auth_confirmation', code=confirmation['code'])
+    link = request.app.router['auth_confirmation'].url_for(code=confirmation['code'])
     return '{}://{}{}'.format(request.scheme, request.host, link)
 
 
@@ -55,16 +54,6 @@ def is_confirmation_expired(confirmation):
         confirmation['action'].upper())]
     lifetime = timedelta(days=lifetime_days)
     return age > lifetime
-
-
-def url_for(urlname, *args, **kwargs):
-    if str(urlname).startswith(('/', 'http://', 'https://')):
-        return urlname
-    return cfg.APP.router[urlname].url_for(*args, **kwargs)
-
-
-def redirect(urlname, *args, **kwargs):
-    return HTTPFound(url_for(urlname, *args, **kwargs))
 
 
 def get_client_ip(request):
