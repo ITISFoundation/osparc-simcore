@@ -19,8 +19,32 @@ matrix:
       script:
         - npm run linter
 
-    - language: python
+    - if: branch = master
+      stage: build docker image
+      language: python
 
+      python:
+        - "3.6"
+      services:
+        - docker
+      before_install:
+        - sudo rm /usr/local/bin/docker-compose
+        - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+        - chmod +x docker-compose
+        - sudo mv docker-compose /usr/local/bin
+      addons:
+        apt:          
+          packages:
+            - docker-ce
+      env:
+        - DOCKER_COMPOSE_VERSION=1.23.2
+        - DOCKER_GID=1042
+      cache: pip
+      script: 
+        - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash scripts/travis/push_cache_builds; fi'
+
+    - language: python
+      stage: test
       python:
         - "3.6"
       sudo: required
@@ -70,8 +94,6 @@ matrix:
 
       script:
         - make pylint       
-        # only push when building on master, as necessary env variables are only available then 
-        - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash scripts/travis/push_cache_builds; fi'
         - make travis-build
         - make test
 
