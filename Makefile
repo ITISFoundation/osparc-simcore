@@ -237,11 +237,11 @@ push_client_image:
 
 travis-build:
 	${DOCKER} pull itisfoundation/storage-build:latest	
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build storage apihub
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel storage apihub
 
 travis-push-base-images:	
 	${DOCKER} pull itisfoundation/storage-build:latest
-	${DOCKER} build --target dependencies --cache-from itisfoundation/storage-build:latest --tag itisfoundation/storage-build:latest -f services/storage/Dockerfile .	
+	${DOCKER} build --target dependencies --parallel --cache-from itisfoundation/storage-build:latest --tag itisfoundation/storage-build:latest -f services/storage/Dockerfile .	
 	${DOCKER} push itisfoundation/storage-build:latest
 
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel
