@@ -113,7 +113,9 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
             // requests
             req.addListenerOnce("success", e => {
               const res = e.getTarget().getResponse();
-              qxapp.component.widget.FlashMessenger.getInstance().log(res.data);
+              if (res && res.data) {
+                qxapp.component.widget.FlashMessenger.getInstance().log(res.data);
+              }
             }, this);
 
             req.addListenerOnce("fail", e => {
