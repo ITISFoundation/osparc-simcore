@@ -10,6 +10,15 @@ qx.Class.define("qxapp.utils.Utils", {
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     },
 
+    getLoaderUri: function(arg) {
+      let loadingUri = qx.util.ResourceManager.getInstance().toUri("qxapp/loading/loader.html");
+      if (arg) {
+        loadingUri += "?loading=- ";
+        loadingUri += arg;
+      }
+      return loadingUri;
+    },
+
     // deep clone of nested objects
     // https://medium.com/@tkssharma/objects-in-javascript-object-assign-deep-copy-64106c9aefab#eeed
     deepCloneObject: function(src) {

@@ -430,8 +430,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     __showLoadingIFrame: function() {
-      const loadingUrl = qx.util.ResourceManager.getInstance().toUri("qxapp/loading/loader.html");
-      this.__restartIFrame(loadingUrl);
+      const loadingUri = qxapp.utils.Utils.getLoaderUri();
+      this.__restartIFrame(loadingUri);
     },
 
     __hasRetrieve: function() {
