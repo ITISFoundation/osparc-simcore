@@ -146,6 +146,8 @@ services:
       # the packages directory into any docker image
       context: ../
       dockerfile: services/storage/Dockerfile
+      cache_from:
+        - itisfoundation/storage-build:latest
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
