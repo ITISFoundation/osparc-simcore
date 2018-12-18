@@ -72,12 +72,12 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       const basePath = qxapp.io.rest.ResourceFactory.API;
 
       // Singular resource
-      // api\specs\webserver\v0\components\schemas\my.yaml
+      // api\specs\webserver\v0\components\schemas\me.yaml
       let profile = new qxapp.io.rest.Resource({
         // Get token
         get: {
           method: "GET",
-          url: basePath+"/my"
+          url: basePath+"/me"
         }
       });
 
