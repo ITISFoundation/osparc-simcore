@@ -24,7 +24,6 @@ jobs:
         - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash scripts/travis/push_cache_builds; fi'
 
     - language: node_js
-      name: "Node testing"
       node_js:
         - "8"
       cache:
