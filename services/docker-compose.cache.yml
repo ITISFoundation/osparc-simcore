@@ -5,8 +5,4 @@ services:
     build:
       cache_from:
         - itisfoundation/storage-build-cache:latest
-      target: cache
-    depends_on:
-      - minio
-      - postgres
-      - apihub
+      target: cache    
