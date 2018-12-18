@@ -46,7 +46,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
         // so that the second argument contains the payload
         post: {
           method: "POST",
-          url: basePath+"/projects"
+          url: basePath+"/projects?type=user"
         }
       });
 

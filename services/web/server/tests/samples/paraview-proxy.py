@@ -17,7 +17,7 @@ async def handler(req):
     proxyPath = req.match_info.get(
         'proxyPath', 'no proxyPath placeholder defined')
     reqH = req.headers.copy()
-    if reqH['connection'] == 'Upgrade' and reqH['upgrade'] == 'websocket' and req.method == 'GET':
+    if reqH['connection'].lower() == 'upgrade' and reqH['upgrade'].lower() == 'websocket' and req.method == 'GET':
 
         ws_server = web.WebSocketResponse()
         await ws_server.prepare(req)

@@ -221,6 +221,7 @@ def __set_service_name(docker_service_runtime_parameters: Dict,
 
 
 def _get_docker_image_port_mapping(service_id: str) -> Tuple[str, str]:
+    log.debug("getting port published by service: %s", service_id)
     # TODO: It could be possible that the endpoint is also accessible using high/level client in service.attrs
     # pylint: disable=C0103
     low_level_client = docker.APIClient()
@@ -318,25 +319,27 @@ async def __wait_until_service_running_or_failed(service_id: str,
                                                  node_uuid: str):
     # pylint: disable=C0103
     log.debug("Waiting for service %s to start", service_id)
-    client = docker.APIClient()
+    client = docker.from_env()
 
     # some times one has to wait until the task info is filled
     while True:
-        task_infos_json = client.tasks(filters={'service': service_id})
+        service = client.services.get(service_id)
+        task_infos_json = service.tasks()
+        # log.debug("task infos: %s", task_infos_json)
         if task_infos_json:
             # check the status
             status_json = task_infos_json[0]["Status"]
             task_state = status_json["State"]
 
-            log.debug("%s %s", service_id, task_state)
+            # log.debug("%s %s", service_id, task_state)
             if task_state == "running":
                 break
             elif task_state in ("failed", "rejected"):
                 log.error("Error while waiting for service")
                 raise exceptions.ServiceStartTimeoutError(
                     service_name, node_uuid)
-        # would allow dealing with other events instead of wasting time here
-        await asyncio.sleep(0.005)  # 5ms
+        # allows dealing with other events instead of wasting time here
+        await asyncio.sleep(1)  # 1s
     log.debug("Waited for service %s to start", service_id)
 
 
@@ -438,7 +441,8 @@ async def _start_docker_service(client: docker.client,
         log.debug("Starting docker service %s using parameters %s", docker_image_full_path, docker_service_runtime_parameters)
         service = client.services.create(docker_image_full_path, **docker_service_runtime_parameters)
         log.debug("Service started now waiting for it to run")
-        await __wait_until_service_running_or_failed(service.id, docker_image_full_path, node_uuid)
+        if main_service:
+            await __wait_until_service_running_or_failed(service.id, docker_image_full_path, node_uuid)
         # the docker swarm opened some random port to access the service
         published_port, target_port = _get_docker_image_port_mapping(service.id)
         log.debug("Service successfully started on %s:%s", service_entrypoint, published_port)

@@ -37,6 +37,14 @@ qx.Class.define("qxapp.auth.Data", {
 
     resetToken: function() {
       this.resetAuth();
+    },
+
+    getUserName: function() {
+      const email = qxapp.auth.Data.getInstance().getEmail();
+      if (email) {
+        return email.split("@")[0];
+      }
+      return null;
     }
   }
 });

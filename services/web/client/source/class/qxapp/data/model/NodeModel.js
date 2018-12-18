@@ -28,16 +28,16 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       let store = qxapp.data.Store.getInstance();
       let metaData = this.__metaData = store.getNodeMetaData(key, version);
       if (metaData) {
-        if (Object.prototype.hasOwnProperty.call(metaData, "name")) {
+        if (metaData.name) {
           this.setLabel(metaData.name);
         }
-        if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
+        if (metaData.inputsDefault) {
           this.__addInputsDefault(metaData.inputsDefault);
         }
-        if (Object.prototype.hasOwnProperty.call(metaData, "inputs")) {
+        if (metaData.inputs) {
           this.__addInputs(metaData.inputs);
         }
-        if (Object.prototype.hasOwnProperty.call(metaData, "outputs")) {
+        if (metaData.outputs) {
           this.__addOutputs(metaData.outputs);
         }
       }
@@ -113,11 +113,16 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     restartIFrameButton: {
       check: "qx.ui.form.Button",
       init: null
+    },
+
+    retrieveIFrameButton: {
+      check: "qx.ui.form.Button",
+      init: null
     }
   },
 
   events: {
-    "UpdatePipeline": "qx.event.type.Event",
+    "UpdatePipeline": "qx.event.type.Data",
     "ShowInLogger": "qx.event.type.Data"
   },
 
@@ -171,7 +176,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     getOutputValues: function() {
       let output = {};
       for (const outputId in this.__outputs) {
-        if (Object.prototype.hasOwnProperty.call(this.__outputs[outputId], "value")) {
+        if (this.__outputs[outputId].value) {
           output[outputId] = this.__outputs[outputId].value;
         }
       }
@@ -287,7 +292,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
      */
     __addMapper: function(inputs) {
       let filteredInputs = JSON.parse(JSON.stringify(inputs));
-      if (Object.prototype.hasOwnProperty.call(filteredInputs, "mapper")) {
+      if (filteredInputs.mapper) {
         let inputsMapper = new qxapp.component.widget.InputsMapper(this, filteredInputs["mapper"]);
         this.setInputsMapper(inputsMapper);
         delete filteredInputs["mapper"];
@@ -358,7 +363,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     setOutputData: function(nodeData) {
-      if (Object.prototype.hasOwnProperty.call(nodeData, "outputs")) {
+      if (nodeData.outputs) {
         for (const outputKey in nodeData.outputs) {
           this.__outputs[outputKey].value = nodeData.outputs[outputKey];
         }
@@ -421,7 +426,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         } else {
           this.getIFrame().setSource(this.getServiceUrl());
         }
-        this.__updateBackendAndRetrieveInputs();
       }
     },
 
@@ -430,17 +434,62 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       this.__restartIFrame(loadingUrl);
     },
 
+    __hasRetrieve: function() {
+      // all dynamic services will have the retrieve button;
+      return true;
+      /*
+      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler") || this.getKey().includes("neuroman")) {
+        return true;
+      }
+      return false;
+      */
+    },
+
+    __retrieveInputs: function() {
+      this.__updateBackendAndRetrieveInputs();
+    },
+
+    __updateBackendAndRetrieveInputs: function() {
+      // HACK: Workaround for fetching inputs in Visualizer and modeler
+      if (this.__hasRetrieve()) {
+        this.fireDataEvent("UpdatePipeline", this);
+      }
+    },
+
+    retrieveInputs: function() {
+      let urlUpdate = this.getServiceUrl() + "/retrieve";
+      urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
+      let updReq = new qx.io.request.Xhr();
+      updReq.set({
+        url: urlUpdate,
+        method: "GET"
+      });
+      updReq.send();
+    },
+
     __startInteractiveNode: function() {
       let metaData = this.getMetaData();
       if (metaData && ("type" in metaData) && metaData.type == "dynamic") {
-        let button = new qx.ui.form.Button().set({
+        if (this.__hasRetrieve()) {
+          let retrieveBtn = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/spinner/32"
+          });
+          retrieveBtn.addListener("execute", e => {
+            this.__retrieveInputs();
+          }, this);
+          retrieveBtn.setEnabled(false);
+          this.setRetrieveIFrameButton(retrieveBtn);
+        }
+
+        let restartBtn = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/redo-alt/32"
         });
-        button.addListener("execute", e => {
+        restartBtn.addListener("execute", e => {
           this.__restartIFrame();
         }, this);
-        button.setEnabled(false);
-        this.setRestartIFrameButton(button);
+        restartBtn.setEnabled(false);
+        this.setRestartIFrameButton(restartBtn);
+
         this.__showLoadingIFrame();
 
         const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
@@ -455,7 +504,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         let query = "?service_key=" + encodeURIComponent(metaData.key) + "&service_tag=" + encodeURIComponent(metaData.version) + "&service_uuid=" + encodeURIComponent(this.getNodeId());
         if (metaData.key.includes("/neuroman")) {
           // HACK: Only Neuroman should enter here
-          query = "?service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver") + "&service_tag=" + encodeURIComponent("2.7.0") + "&service_uuid=" + encodeURIComponent(this.getNodeId());
+          query = "?service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver") + "&service_tag=" + encodeURIComponent("2.8.0") + "&service_uuid=" + encodeURIComponent(this.getNodeId());
         }
         let request = new qxapp.io.request.ApiRequest(url+query, "POST");
         request.addListener("success", this.__onInteractiveNodeStarted, this);
@@ -495,14 +544,21 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         return;
       }
       const publishedPort = data["published_port"];
+      const servicePath=data["service_basepath"];
       const entryPointD = data["entry_point"];
       const nodeId = data["service_uuid"];
       if (nodeId !== this.getNodeId()) {
         return;
       }
-      if (publishedPort) {
-        const entryPoint = entryPointD ? ("/" + entryPointD) : "";
-        const srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
+      if (servicePath) {
+        const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
+        let srvUrl = servicePath + entryPoint;
+        // FIXME: this is temporary until the reverse proxy works for these services
+        if (this.getKey().includes("neuroman") || this.getKey().includes("modeler")) {
+          srvUrl = "http://" + window.location.hostname + ":" + publishedPort + srvUrl;
+        } else if (this.getKey().includes("3d-viewer")) {
+          srvUrl = "http://" + window.location.hostname + ":" + publishedPort + entryPoint;
+        }
         this.setServiceUrl(srvUrl);
         const msg = "Service ready on " + srvUrl;
         const msgData = {
@@ -511,6 +567,9 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         };
         this.fireDataEvent("ShowInLogger", msgData);
 
+        if (this.__hasRetrieve()) {
+          this.getRetrieveIFrameButton().setEnabled(true);
+        }
         this.getRestartIFrameButton().setEnabled(true);
         // FIXME: Apparently no all services are inmediately ready when they publish the port
         const waitFor = 4000;
@@ -518,23 +577,6 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           this.__restartIFrame();
         }, this, waitFor);
       }
-    },
-
-    __updateBackendAndRetrieveInputs: function() {
-      // HACK: Workaround for fetching inputs in Visualizer and modeler
-      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler")) {
-        this.fireEvent("UpdatePipeline");
-      }
-    },
-
-    retrieveInputs: function() {
-      let urlUpdate = this.getServiceUrl() + "/retrieve";
-      let updReq = new qx.io.request.Xhr();
-      updReq.set({
-        url: urlUpdate,
-        method: "POST"
-      });
-      updReq.send();
     },
 
     removeNode: function() {

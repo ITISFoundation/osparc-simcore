@@ -17,9 +17,9 @@ ENV CS_S4L_HOSTNAME $s4l_ip
 ENV CS_S4L_PORT_APP $s4l_port_app
 ENV CS_S4L_PORT_MOD $s4l_port_mod
 # ----------------------------------------------------------------
-COPY scripts/docker/healthcheck_curl_host.py /healthcheck/healthcheck_curl_host.py
+# COPY scripts/docker/healthcheck_curl_host.py /healthcheck/healthcheck_curl_host.py
 # will start to run after interval every interval. fails after timeout. fail do not count if during start-period. will do # retries
-HEALTHCHECK --interval=10s --timeout=30s --start-period=1s --retries=3 CMD [ "python", "/healthcheck/healthcheck_curl_host.py", "http://localhost:9090" ]
+# HEALTHCHECK --interval=10s --timeout=30s --start-period=1s --retries=3 CMD [ "python", "/healthcheck/healthcheck_curl_host.py", "http://localhost:9090" ]
 # + /home/node/          json files
 #    + source-output/    client source files
 #    + source/  server   source files

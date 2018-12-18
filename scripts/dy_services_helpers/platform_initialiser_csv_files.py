@@ -1,5 +1,7 @@
+#pylint: disable=unused-argument
 import argparse
 import sys
+import tarfile
 import tempfile
 from pathlib import Path
 
@@ -14,6 +16,15 @@ def _create_dummy_table(number_of_rows, number_of_columns):
     fullmatrix = np.hstack((time, matrix))
     df = pd.DataFrame(fullmatrix)
     return df
+
+def _generate_one_file(rows, columns, separator)->str:
+    # on Windows you need to close the file to be sure to re-open it to get a name
+    temp_file = tempfile.NamedTemporaryFile(suffix=".csv")
+    temp_file.close()
+    df = _create_dummy_table(rows, columns)
+    with open(temp_file.name, "w") as file_pointer:
+        df.to_csv(path_or_buf=file_pointer, sep=separator, header=False, index=False)        
+        return temp_file.name    
 
 def main():
     parser = argparse.ArgumentParser(description="Initialise an oSparc database/S3 with fake data for development.")
@@ -32,17 +43,20 @@ def main():
         separator = options.separator    
     
 
-    def _file_generator(file_index: int): # pylint: disable=W0613
-        # on Windows you need to close the file to be sure to re-open it to get a name
-        temp_file = tempfile.NamedTemporaryFile(suffix=".csv")
-        temp_file.close()
-        df = _create_dummy_table(options.rows, options.columns)
-        with open(temp_file.name, "w") as file_pointer:
-            df.to_csv(path_or_buf=file_pointer, sep=separator, header=False, index=False)        
+    def _file_generator(file_index: int, file_type: str): # pylint: disable=W0613
+        if "zip" in file_type:
+            temp_file = tempfile.NamedTemporaryFile(suffix=".tgz")
+            temp_file.close()
+            with tarfile.open(temp_file.name, mode='w:gz') as tar_ptr:
+                for index in range(options.files):
+                    table_file = _generate_one_file(options.rows, options.columns, separator)
+                    file_name = "{}.dat".format(str(index))
+                    tar_ptr.add(table_file, arcname=file_name, recursive=False)
+                    Path(table_file).unlink()
             return temp_file.name
-        Path(temp_file.name).unlink()
+        return _generate_one_file(options.rows, options.columns, separator)
 
-    init_platform(port_configuration_path=options.portconfig, file_generator=_file_generator)
+    init_platform(port_configuration_path=options.portconfig, file_generator=_file_generator, delete_file=True)
 
 if __name__ == "__main__":
     main()

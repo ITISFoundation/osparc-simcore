@@ -18,7 +18,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.rest import APP_OPENAPI_SPECS_KEY, setup_rest
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.projects_handlers import Fake
+from simcore_service_webserver.projects.projects_handlers import Fake
 
 
 API_VERSION = "v0"
@@ -49,7 +49,7 @@ def client(loop, aiohttp_client, aiohttp_unused_port, api_specs_dir, fake_db):
     setup_session(app)
     setup_rest(app, debug=True)
     setup_projects(app,
-        debug=False, # no fake data
+        enable_fake_data=False, # no fake data
         disable_login=True
     )
 
@@ -133,15 +133,14 @@ async def test_list(client, fake_db):
     assert str(url) == PREFIX + "/%s" % RESOURCE_NAME
 
     # GET /v0/projects
-    resp = await client.get(url.with_query(start=1, count=3))
+    resp = await client.get(url.with_query(start=1, count=2))
     payload = await resp.json()
     assert resp.status == 200, payload
 
     projects, error = unwrap_envelope(payload)
     assert not error
     assert projects
-    assert len(projects)==3
-
+    assert len(projects)==2
 
     # list all template projects
     resp = await client.get(url.with_query(type="template"))
@@ -150,7 +149,9 @@ async def test_list(client, fake_db):
 
     projects, error = unwrap_envelope(payload)
     assert not error
-    assert projects
+    # fake-template-projects.json + fake-template-projects.osparc.json
+    assert len(projects) == 3 + 1
+
 
 
 
@@ -221,6 +222,7 @@ async def test_delete(client, fake_db, fake_project):
     assert not fake_db.projects
     assert not fake_db.user_to_projects_map
 
+
 async def test_delete_invalid_project(client, fake_db):
     resp = await client.delete("/v0/projects/some-fake-id")
     payload = await resp.json()
@@ -274,3 +276,25 @@ async def test_workfolow(client, fake_db, fake_project):
 
     assert project["name"] == "some other name"
     assert project["notes"] == "some other"
+
+
+
+
+#-----------------------------------
+@pytest.mark.skip(reason="Handlers still not implemented")
+async def test_nodes_api(client):
+    params= {
+        'nodeInstanceUUID': '12345',
+        'outputKey': 'foo',
+        'apiCall': 'bar'
+    }
+    api = {}
+
+    url = "/nodes/{nodeInstanceUUID}/outputUi/{outputKey}".format(**params)
+    resp = await client.get(url)
+
+    url = "/nodes/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}".format(**params)
+    resp = await client.post(url, json=api)
+
+    url = "/nodes/{nodeInstanceUUID}/iframe".format(**params)
+    resp = await client.get(url)

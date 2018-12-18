@@ -71,8 +71,9 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     this.add(new qx.ui.toolbar.Separator());
 
     const userEmail = qxapp.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
+    const userName = qxapp.auth.Data.getInstance().getUserName() || "bizzy";
 
-    let userLbl = new qx.ui.basic.Label(userEmail.split("@")[0]).set({
+    let userLbl = new qx.ui.basic.Label(userName).set({
       minWidth: 20
     });
     this.add(userLbl);

@@ -1,13 +1,13 @@
 version: '3.4'
 services:
   simcore-paraviewweb:
-    image: masu.speag.com/simcore/services/dynamic/3d-viewer:${SERVICES_VERSION}
+    image: ${DOCKER_REGISTRY}/${SERVICE_PATH}:${SERVICES_VERSION}
     build:
       context: ../../
       dockerfile: services/dy-3dvis/simcoreparaviewweb/Dockerfile
       target: production
       labels: 
-        io.simcore.key: '{"key": "simcore/services/dynamic/3d-viewer"}'
+        io.simcore.key: '{"key": "${SERVICE_PATH}"}'
         io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
         io.simcore.type: '{"type": "dynamic"}'
         io.simcore.name: '{"name": "3d-viewer"}'

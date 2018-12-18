@@ -1,52 +1,58 @@
-"""
+""" Creates all routes for authentication/authorization subsystem by
+    mapping all routes defined under /auth/ path and subsystem's handlers
 
-FIXME: for the moment all routings are here and done by hand
 """
 
 import logging
+from pprint import pformat
 from typing import List
 
 from aiohttp import web
 
 from servicelib import openapi
+from servicelib.rest_routing import (iter_path_operations,
+                                     map_handlers_with_operations)
 
 from . import handlers as login_handlers
-#from .login import fake_handlers as login_handlers
-
 
 log = logging.getLogger(__name__)
 
 
+
 def create(specs: openapi.Spec) -> List[web.RouteDef]:
-    # TODO: consider the case in which server creates routes for both v0 and v1!!!
-    # TODO: should this be taken from servers instead?
+    """ Creates routes mapping operators_id with handler functions
+
+    :param specs: validated oas
+    :type specs: openapi.Spec
+    :return: list of web routes for auth
+    :rtype: List[web.RouteDef]
+    """
+    log.debug("Creating %s ", __name__)
+
     base_path = openapi.get_base_path(specs)
 
-    log.debug("creating %s ", __name__)
-    routes = []
+    def include_path(tuple_object):
+        _method, path, _operation_id = tuple_object
+        return path.startswith(base_path + "/auth/")
 
-    # TODO: routing will be done automatically using operation_id/tags, etc...
+    handlers_map = {
+        'auth_register': login_handlers.register,
+        'auth_login': login_handlers.login,
+        'auth_logout': login_handlers.logout,
+        'auth_reset_password': login_handlers.reset_password,
+        'auth_reset_password_allowed': login_handlers.reset_password_allowed,
+        'auth_change_email': login_handlers.change_email,
+        'auth_change_password': login_handlers.change_password,
+        'auth_confirmation': login_handlers.email_confirmation
+    }
 
-    # auth --
-    path, handler = '/auth/register', login_handlers.register
-    operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(base_path+path, handler, name=operation_id) )
+    routes = map_handlers_with_operations(
+        handlers_map,
+        filter(include_path, iter_path_operations(specs)),
+        strict=True
+    )
 
-    path, handler = '/auth/login', login_handlers.login
-    operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(base_path+path, handler, name=operation_id) )
-
-    path, handler = '/auth/logout', login_handlers.logout
-    operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(base_path+path, handler, name=operation_id) )
-
-    path, handler = '/auth/confirmation/{code}', login_handlers.email_confirmation
-    operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(base_path+path, handler, name=operation_id) )
-
-    path, handler = '/auth/change-email', login_handlers.change_email
-    operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(base_path+path, handler, name=operation_id) )
+    log.debug("Mapped auth routes: %s", "\n".join( [pformat(r) for r in routes]) )
 
     return routes
 

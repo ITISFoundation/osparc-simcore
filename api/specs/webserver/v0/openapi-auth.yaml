@@ -30,12 +30,13 @@ paths:
 
   /auth/login:
     post:
+      summary: user logs in
       operationId: auth_login
       requestBody:
         content:
           application/json:
             schema:
-              $ref: './components/schemas/login.yaml#/LoginFormType'
+              $ref: './components/schemas/auth.yaml#/LoginForm'
       responses:
         '200':
           description: Succesfully logged in
@@ -59,34 +60,132 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
-  #TODO: /auth/reset-password:
+  /auth/reset-password:
+    post:
+      summary: 'a non logged-in user requests a password reset'
+      operationId: auth_reset_password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/auth.yaml#/ResetPasswordRequest'
+      responses:
+        '200':
+          description: confirmation email sent to user
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        '503':
+          description: failed to send confirmation email
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+
+  /auth/reset-password/{code}:
+    post:
+      summary: changes password using a token code without being logged in
+      operationId: auth_reset_password_allowed
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            #format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/auth.yaml#/ResetPasswordForm'
+      responses:
+        '200':
+          description: password was successfully changed
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        '401':
+          description: unauthorized reset due to invalid token code
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
   /auth/change-email:
     post:
+      summary: logged in user changes email
       operationId: auth_change_email
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                new_email:
-                  type: string
-                  #format: email
+              $ref: './components/schemas/auth.yaml#/ChangeEmailForm'
       responses:
         '200':
-          description: User has been succesfully registered.
+          description: confirmation sent to new email to complete operation
           content:
             application/json:
               schema:
                 $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        '401':
+          description: 'unauthorized user. Login required'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+        '503':
+          description: unable to send confirmation email
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yaml#/ErrorEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
-  #TODO: /auth/change-password:
+  /auth/change-password:
+    post:
+      summary: logged in user changes password
+      operationId: auth_change_password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/auth.yaml#/ChangePasswordForm'
+      responses:
+        '200':
+          description: password was successfully changed
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/log_message.yaml#/LogMessageEnveloped'
+        '401':
+          description: 'unauthorized user. Login required'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+        '409':
+          description: 'mismatch between new and confirmation passwords'
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+        '422':
+          description: current password is invalid
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/error.yaml#/ErrorEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
   /auth/confirmation/{code}:
     get:
+      summary: email link sent to user to confirm an action
       operationId: auth_confirmation
       parameters:
         - name: code
@@ -97,4 +196,4 @@ paths:
             #format: uuid
       responses:
         '3XX':
-          description: redirection to ui application
+          description: redirection to specific ui application page

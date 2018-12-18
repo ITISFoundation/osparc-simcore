@@ -136,8 +136,8 @@
           "x": 450,
           "y": 150
         },
-        "key": "simcore/services/demodec/comp/itis/isolve-emlf",
-        "version": "0.0.1"
+        "key": "simcore/services/comp/itis/isolve-emlf",
+        "version": "1.0.0"
       },
       "08116c6d-2c9e-4939-9c2b-67fe0ae65dc9": {
         "label": "File Picker Neuron",
@@ -171,8 +171,8 @@
           "x": 450,
           "y": 300
         },
-        "key": "simcore/services/demodec/comp/itis/neuron-isolve",
-        "version": "0.0.1"
+        "key": "simcore/services/comp/itis/neuron-isolve",
+        "version": "1.0.0"
       },
       "d2d8028c-be3f-473d-a74f-161a286a00ed": {
         "label": "Kember cardiac model",

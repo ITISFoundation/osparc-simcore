@@ -1,4 +1,6 @@
-"""this module is responsible for JSON encoding/decoding of nodeports objects."""
+""" This module is responsible for JSON encoding/decoding of nodeports objects
+
+"""
 import json
 import logging
 
@@ -11,26 +13,21 @@ from ._schema_items_list import SchemaItemsList
 log = logging.getLogger(__name__)
 
 def create_from_json(db_mgr, auto_read=False, auto_write=False):
-    """creates a Nodeports object provided a json configuration in form of a callback function.
+    """ creates a Nodeports object provided a json configuration in form of a callback function
 
-    Arguments:
-        db_mgr {object} -- interface object to connect to nodeports description.
-
-    Keyword Arguments:
-        auto_read {bool} -- the nodeports object shall automatically update itself when set to True (default: {False})
-        auto_write {bool} -- the nodeports object shall automatically write the new outputs when set to True (default: {False})
-
-    Raises:
-        exceptions.NodeportsException -- raised in case of io object is empty
-
-    Returns:
-        object -- the Nodeports object
+    :param db_mgr: interface object to connect to nodeports description
+    :param auto_read: the nodeports object shall automatically update itself when set to True, defaults to False
+    :param auto_read: bool, optional
+    :param auto_write: the nodeports object shall automatically write the new outputs when set to True, defaults to False
+    :param auto_write: bool, optional
+    :raises exceptions.NodeportsException: when io object is empty
+    :return: the Nodeports object
     """
 
     log.debug("Creating Nodeports object with io object: %s, auto read %s and auto write %s", db_mgr, auto_read, auto_write)
     if not db_mgr:
         raise exceptions.NodeportsException("io object empty, this is not allowed")
-    nodeports_dict = json.loads(db_mgr.get_ports_configuration())
+    nodeports_dict = json.loads(db_mgr.get_ports_configuration_from_node_uuid(config.NODE_UUID))
     nodeports_obj = __decodeNodePorts(nodeports_dict)
     nodeports_obj.db_mgr = db_mgr
     nodeports_obj.autoread = auto_read
@@ -48,12 +45,11 @@ def create_nodeports_from_uuid(db_mgr, node_uuid):
     return nodeports_obj
 
 def save_to_json(nodeports_obj):
-    """encodes a Nodeports object to json and calls a linked writer if available.
+    """ Encodes a Nodeports object to json and calls a linked writer if available.
 
-    Arguments:
-        nodeports_obj {Nodeports} -- the object to encode
+    :param nodeports_obj:  the object to encode
+    :type nodeports_obj: Nodeports
     """
-
     auto_update_state = nodeports_obj.autoread
     try:
         # dumping triggers a load of unwanted auto-updates
@@ -64,7 +60,7 @@ def save_to_json(nodeports_obj):
         nodeports_obj.autoread = auto_update_state
 
     if nodeports_obj.autowrite:
-        nodeports_obj.db_mgr.write_ports_configuration(nodeports_json)
+        nodeports_obj.db_mgr.write_ports_configuration(nodeports_json, config.NODE_UUID)
     log.info("Saved Nodeports object to json: %s", nodeports_json)
 
 class _NodeportsEncoder(json.JSONEncoder):
@@ -85,11 +81,11 @@ class _NodeportsEncoder(json.JSONEncoder):
                 key:{
                     item_key:item_value for item_key, item_value in item._asdict().items() if item_key != "key"
                 } for key, item in o.items()
-            }            
+            }
             return items
         if isinstance(o, DataItemsList):
             log.debug("Encoding DataItemsList object")
-            items = {key:item.value for key, item in o.items()}            
+            items = {key:item.value for key, item in o.items()}
             return items
         log.debug("Encoding object using defaults")
         return json.JSONEncoder.default(self, o)

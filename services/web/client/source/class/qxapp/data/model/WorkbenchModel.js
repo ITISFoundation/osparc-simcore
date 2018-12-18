@@ -23,7 +23,9 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
   events: {
     "WorkbenchModelChanged": "qx.event.type.Event",
-    "NodeAdded": "qx.event.type.Data"
+    "NodeAdded": "qx.event.type.Data",
+    "UpdatePipeline": "qx.event.type.Data",
+    "ShowInLogger": "qx.event.type.Data"
   },
 
   members: {
@@ -128,17 +130,26 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
         return existingNodeModel;
       }
       let nodeModel = new qxapp.data.model.NodeModel(this, key, version, uuid);
-      nodeModel.populateNodeData(nodeData);
+      nodeModel.addListener("ShowInLogger", e => {
+        this.fireDataEvent("ShowInLogger", e.getData());
+      }, this);
+      nodeModel.addListener("UpdatePipeline", e => {
+        this.fireDataEvent("UpdatePipeline", e.getData());
+      }, this);
       this.fireDataEvent("NodeAdded", nodeModel);
+      if (nodeData) {
+        nodeModel.populateNodeData(nodeData);
+      }
       return nodeModel;
     },
 
     createNodeModels: function(workbenchData) {
       let keys = Object.keys(workbenchData);
+      // Create first all the nodes
       for (let i=0; i<keys.length; i++) {
         const nodeId = keys[i];
         const nodeData = workbenchData[nodeId];
-        if (Object.prototype.hasOwnProperty.call(nodeData, "parent") && nodeData["parent"] !== null) {
+        if (nodeData.parent && nodeData.parent !== null) {
           let parentNode = this.getNodeModel(nodeData.parent);
           if (parentNode === null) {
             // If parent was not yet created, delay the creation of its' children
@@ -155,19 +166,26 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
           }
         }
         let nodeModel = null;
-        if (Object.prototype.hasOwnProperty.call(nodeData, "key")) {
+        if (nodeData.key) {
           // not container
-          nodeModel = this.createNodeModel(nodeData.key, nodeData.version, nodeId, nodeData);
+          nodeModel = this.createNodeModel(nodeData.key, nodeData.version, nodeId);
         } else {
           // container
           nodeModel = this.createNodeModel(null, null, nodeId, nodeData);
         }
-        if (Object.prototype.hasOwnProperty.call(nodeData, "parent")) {
+        if (nodeData.parent) {
           let parentModel = this.getNodeModel(nodeData.parent);
           this.addNodeModel(nodeModel, parentModel);
         } else {
           this.addNodeModel(nodeModel);
         }
+      }
+
+      // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
+      for (let i=0; i<keys.length; i++) {
+        const nodeId = keys[i];
+        const nodeData = workbenchData[nodeId];
+        this.getNodeModel(nodeId).populateNodeData(nodeData);
       }
     },
 

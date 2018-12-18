@@ -63,12 +63,14 @@ class Sidecar:
         if str(port.type).startswith("data:"):
             path = port_value
             if not path is None:
+                # the filename is not necessarily the name of the port, might be mapped
+                mapped_filename = Path(path).name
                 input_ports[port_name] = str(port_value)
-                final_path = Path(self._executor.in_dir, port_name)
-                shutil.move(str(path), str(final_path))
-                log.debug("DONWLOAD successfull %s", port_name)
+                final_path = Path(self._executor.in_dir, mapped_filename)
+                shutil.copy(str(path), str(final_path))
+                log.debug("DOWNLOAD successfull from %s to %s via %s" , str(port_name), str(final_path), str(path))
             else:
-                input_ports[port_name] = port_value    
+                input_ports[port_name] = port_value
         else:
             input_ports[port_name] = port_value
 
@@ -82,7 +84,7 @@ class Sidecar:
             as port['key']. Both end up in /input/ of the container
         """
         log.debug('Input parsing for %s and node %s from container', self._task.project_id, self._task.internal_id)
-         
+
         input_ports = dict()
         PORTS = node_ports.ports()
         for port in PORTS.inputs:
@@ -191,29 +193,30 @@ class Sidecar:
                         with open(filepath) as f:
                             output_ports = json.load(f)
                             task_outputs = PORTS.outputs
-                            for to in task_outputs:                                
+                            for to in task_outputs:
                                 if to.key in output_ports.keys():
                                     wrap_async_call(to.set(output_ports[to.key]))
                     else:
-                        port_key = name
-                        wrap_async_call(PORTS.outputs[port_key].set(Path(filepath)))
+                        wrap_async_call(PORTS.set_file_by_keymap(Path(filepath)))
 
         except (OSError, IOError) as _e:
             logging.exception("Could not process output")
 
+    # pylint: disable=no-self-use
     def _process_task_log(self):
         """ There will be some files in the /log
 
-                - put them all into S3 /log
+                - put them all into S3 /logg
         """
-        directory = self._executor.log_dir
-        if os.path.exists(directory):
-            for root, _dirs, files in os.walk(directory):
-                for name in files:
-                    filepath = os.path.join(root, name)
-                    object_name = str(self._task.project_id) + "/" + self._task.node_id + "/log/" + name
-                    if not self._s3.client.upload_file(self._s3.bucket, object_name, filepath):
-                        log.error("Error uploading file to S3")
+        return
+        #directory = self._executor.log_dir
+        #if os.path.exists(directory):
+        #    for root, _dirs, files in os.walk(directory):
+        #        for name in files:
+        #            filepath = os.path.join(root, name)
+        #            object_name = str(self._task.project_id) + "/" + self._task.node_id + "/log/" + name
+        #            # if not self._s3.client.upload_file(self._s3.bucket, object_name, filepath):
+        #            #     log.error("Error uploading file to S3")
 
     def initialize(self, task, user_id):
         self._task = task
@@ -236,7 +239,7 @@ class Sidecar:
 
         # config nodeports
         node_ports.node_config.USER_ID = user_id
-        node_ports.node_config.NODE_UUID = task.node_id        
+        node_ports.node_config.NODE_UUID = task.node_id
 
     def preprocess(self):
         log.debug('Pre-Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)

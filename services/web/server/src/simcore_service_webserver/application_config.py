@@ -26,6 +26,7 @@ from . import (computation_config, db_config, email_config, rest_config,
                storage_config)
 from .director import config as director_config
 from .resources import resources
+from .login import config as login_config
 
 log = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ def create_schema():
         email_config.CONFIG_SECTION_NAME: email_config.schema,
         computation_config.CONFIG_SECTION_NAME: computation_config.schema,
         storage_config.CONFIG_SECTION_NAME: storage_config.schema,
+        T.Key(login_config.CONFIG_SECTION_NAME, optional=True): login_config.schema
         #s3_config.CONFIG_SECTION_NAME: s3_config.schema
         #TODO: enable when sockets are refactored
     })

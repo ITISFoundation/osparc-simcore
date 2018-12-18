@@ -57,23 +57,23 @@ function createThriftConnection(host, port, thing, client, disconnectionCB) {
       });
 
       connection.on('close', function () {
-        console.log('Thrit: Connection to ' + host + ':' + port + ' closed');
+        console.log('Thrift: Connection to ' + host + ':' + port + ' closed');
         disconnectionCB();
       });
       connection.on('timeout', function () {
-        console.log('Thrit: Connection to ' + ' timed out...');
+        console.log('Thrift: Connection to ' + ' timed out...');
       });
       connection.on('reconnecting', function (delay, attempt) {
-        console.log('Thrit: Reconnecting to ' + host + ':' + port + ' delay ' + delay + ', attempt ' + attempt);
+        console.log('Thrift: Reconnecting to ' + host + ':' + port + ' delay ' + delay + ', attempt ' + attempt);
       });
       connection.on('connect', function () {
-        console.log('Thrit: connected to ' + host + ':' + port);
+        console.log('Thrift: connected to ' + host + ':' + port);
         client = thrift.createClient(thing, connection);
         console.log('Thrift: client created ' + client);
         resolve(client);
       });
       connection.on('error', function (err) {
-        console.log('Thrit: connection error to ' + host + ':' + port);
+        console.log('Thrift: connection error to ' + host + ':' + port);
         reject(err);
       });
     }

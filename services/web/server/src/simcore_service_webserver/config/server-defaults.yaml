@@ -31,6 +31,9 @@ rabbit:
 #   bucket_name: simcore
 #   endpoint: play.minio.io:9000
 #   secret_key: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
+login:
+  enabled: True
+  registration_confirmation_required: True
 smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: mail.foo.com

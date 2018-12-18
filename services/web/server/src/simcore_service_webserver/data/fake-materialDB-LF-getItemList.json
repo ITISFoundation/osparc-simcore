@@ -1,0 +1,210 @@
+[
+  {
+    "label": "Air", 
+    "key": "Air-UUID"
+  }, 
+  {
+    "label": "Cerebellum", 
+    "key": "Cerebellum-UUID"
+  }, 
+  {
+    "label": "Cerebrospinal Fluid", 
+    "key": "Cerebrospinal_Fluid-UUID"
+  }, 
+  {
+    "label": "Bronchi", 
+    "key": "Bronchi-UUID"
+  }, 
+  {
+    "label": "Commissura Posterior", 
+    "key": "Commissura_Posterior-UUID"
+  }, 
+  {
+    "label": "Blood", 
+    "key": "Blood-UUID"
+  }, 
+  {
+    "label": "Commissura Anterior", 
+    "key": "Commissura_Anterior-UUID"
+  }, 
+  {
+    "label": "Brain (White Matter)", 
+    "key": "Brain__White_Matter_-UUID"
+  }, 
+  {
+    "label": "Cartilage", 
+    "key": "Cartilage-UUID"
+  }, 
+  {
+    "label": "Brain (Grey Matter)", 
+    "key": "Brain__Grey_Matter_-UUID"
+  }, 
+  {
+    "label": "Air 1", 
+    "key": "Air_1-UUID"
+  }, 
+  {
+    "label": "Eye (Vitreous Humor)", 
+    "key": "Eye__Vitreous_Humor_-UUID"
+  }, 
+  {
+    "label": "Eye (Lens)", 
+    "key": "Eye__Lens_-UUID"
+  }, 
+  {
+    "label": "Skin", 
+    "key": "Skin-UUID"
+  }, 
+  {
+    "label": "Dura", 
+    "key": "Dura-UUID"
+  }, 
+  {
+    "label": "Esophagus Lumen", 
+    "key": "Esophagus_Lumen-UUID"
+  }, 
+  {
+    "label": "Esophagus", 
+    "key": "Esophagus-UUID"
+  }, 
+  {
+    "label": "Eye (Cornea)", 
+    "key": "Eye__Cornea_-UUID"
+  }, 
+  {
+    "label": "Eye (Sclera)", 
+    "key": "Eye__Sclera_-UUID"
+  }, 
+  {
+    "label": "Lymphnode", 
+    "key": "Lymphnode-UUID"
+  }, 
+  {
+    "label": "Fat", 
+    "key": "Fat-UUID"
+  }, 
+  {
+    "label": "Lung", 
+    "key": "Lung-UUID"
+  }, 
+  {
+    "label": "Hippocampus", 
+    "key": "Hippocampus-UUID"
+  }, 
+  {
+    "label": "Intervertebral Disc", 
+    "key": "Intervertebral_Disc-UUID"
+  }, 
+  {
+    "label": "Medulla Oblongata", 
+    "key": "Medulla_Oblongata-UUID"
+  }, 
+  {
+    "label": "Hypophysis", 
+    "key": "Hypophysis-UUID"
+  }, 
+  {
+    "label": "Midbrain", 
+    "key": "Midbrain-UUID"
+  }, 
+  {
+    "label": "Hypothalamus", 
+    "key": "Hypothalamus-UUID"
+  }, 
+  {
+    "label": "Larynx", 
+    "key": "Larynx-UUID"
+  }, 
+  {
+    "label": "Spinal Cord", 
+    "key": "Spinal_Cord-UUID"
+  }, 
+  {
+    "label": "Nerve 2", 
+    "key": "Nerve_2-UUID"
+  }, 
+  {
+    "label": "Pineal Body", 
+    "key": "Pineal_Body-UUID"
+  }, 
+  {
+    "label": "Tendon Ligament", 
+    "key": "Tendon_Ligament-UUID"
+  }, 
+  {
+    "label": "Thalamus", 
+    "key": "Thalamus-UUID"
+  }, 
+  {
+    "label": "Muscle", 
+    "key": "Muscle-UUID"
+  }, 
+  {
+    "label": "Pons", 
+    "key": "Pons-UUID"
+  }, 
+  {
+    "label": "Salivary Gland", 
+    "key": "Salivary_Gland-UUID"
+  }, 
+  {
+    "label": "Mucous Membrane", 
+    "key": "Mucous_Membrane-UUID"
+  }, 
+  {
+    "label": "SAT (Subcutaneous Fat)", 
+    "key": "SAT__Subcutaneous_Fat_-UUID"
+  }, 
+  {
+    "label": "Tongue", 
+    "key": "Tongue-UUID"
+  }, 
+  {
+    "label": "Tooth", 
+    "key": "Tooth-UUID"
+  }, 
+  {
+    "label": "Thyroid Gland", 
+    "key": "Thyroid_Gland-UUID"
+  }, 
+  {
+    "label": "Trachea Lumen", 
+    "key": "Trachea_Lumen-UUID"
+  }, 
+  {
+    "label": "Trachea", 
+    "key": "Trachea-UUID"
+  }, 
+  {
+    "label": "Bone Marrow (Yellow)", 
+    "key": "Bone_Marrow__Yellow_-UUID"
+  }, 
+  {
+    "label": "Bone (Cancellous)", 
+    "key": "Bone__Cancellous_-UUID"
+  }, 
+  {
+    "label": "Bone (Cortical)", 
+    "key": "Bone__Cortical_-UUID"
+  }, 
+  {
+    "label": "Skull Cortical", 
+    "key": "Skull_Cortical-UUID"
+  }, 
+  {
+    "label": "Skull Cancellous", 
+    "key": "Skull_Cancellous-UUID"
+  }, 
+  {
+    "label": "Silicone", 
+    "key": "Silicone-UUID"
+  }, 
+  {
+    "label": "Fascicles", 
+    "key": "Fascicles-UUID"
+  }, 
+  {
+    "label": "Epineurium", 
+    "key": "Epineurium-UUID"
+  }
+]

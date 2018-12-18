@@ -16,8 +16,9 @@ properties:
     type: object
     properties:
       request:
-        summary: oa3 json schema description of the request structure.
+        # FAILS openapi. DO NOT ADD: summary: oa3 json schema description of the request structure.
         description: |
+          oa3 json schema description of the request structure.
           If no `rootKey` is specified, the first level of the tree is returned.
           The `filter` will return any items matching the filter string as well as any
           folder items containing matching items further down the tree.

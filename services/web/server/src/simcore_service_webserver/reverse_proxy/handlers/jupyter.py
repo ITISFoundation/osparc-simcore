@@ -1,32 +1,46 @@
 """ Reverse-proxy customized for jupyter notebooks
 
-TODO: document
 """
 
 import asyncio
 import logging
 import pprint
-from yarl import URL
 
 import aiohttp
 from aiohttp import client, web
+from yarl import URL
 
-# TODO: find actual name in registry
-
-
-SUPPORTED_IMAGE_NAME = "simcore/services/dynamic/jupyter-base-notebook"
+#FIXME: make this more generic
+SUPPORTED_IMAGE_NAME = ["simcore/services/dynamic/jupyter-base-notebook",
+                        "simcore/services/dynamic/jupyter-scipy-notebook",
+                        "simcore/services/dynamic/jupyter-r-notebook",
+                        "simcore/services/dynamic/kember-viewer", 
+                        "simcore/services/dynamic/cc-2d-viewer", 
+                        "simcore/services/dynamic/cc-1d-viewer", 
+                        "simcore/services/dynamic/cc-0d-viewer",
+                        "simcore/services/dynamic/spat-an-app-nb"]
 SUPPORTED_IMAGE_TAG = ">=1.5.0"
 
 logger = logging.getLogger(__name__)
 
 
 async def handler(req: web.Request, service_url: str, **_kwargs):
-    # Resolved url pointing to backend jupyter service
-    target_url = URL(service_url).origin() / req.path_qs.lstrip('/')
+    """ Redirects communication to jupyter notebook in the backend
+
+    :param req: aiohttp request
+    :type req: web.Request
+    :param service_url: Resolved url pointing to backend jupyter service. Typically http:hostname:port/x/12345/.
+    :type service_url: str
+    :raises ValueError: Unexpected web-socket message
+    """
+
+    # FIXME: hash of statics somehow get do not work. then neeed to be strip away
+    # Removing query ... which not sure is a good idea
+    target_url = URL(service_url).origin() / req.path.lstrip('/')
 
     reqH = req.headers.copy()
-    if reqH.get('connection') == 'Upgrade' and reqH.get('upgrade') == 'websocket' and req.method == 'GET':
 
+    if reqH.get('connection', '').lower() == 'upgrade' and reqH.get('upgrade', '').lower() == 'websocket' and req.method == 'GET':
         ws_server = web.WebSocketResponse()
         await ws_server.prepare(req)
         logger.info('##### WS_SERVER %s', pprint.pformat(ws_server))
@@ -37,7 +51,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
 
             async def ws_forward(ws_from, ws_to):
                 async for msg in ws_from:
-                    logger.info('>>> msg: %s', pprint.pformat(msg))
+                    logger.debug('>>> msg: %s', pprint.pformat(msg))
                     mt = msg.type
                     md = msg.data
                     if mt == aiohttp.WSMsgType.TEXT:
@@ -65,7 +79,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
             data=await req.read()
         ) as res:
             body = await res.read()
-            response= web.Response(
+            response = web.Response(
                 headers=res.headers.copy(),
                 status=res.status,
                 body=body
@@ -73,11 +87,10 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
             return response
 
 
-
 if __name__ == "__main__":
     # dummies for manual testing
     BASE_URL = 'http://0.0.0.0:8888'
-    MOUNT_POINT = '/x/fakeUuid'
+    MOUNT_POINT = '/x/12345'
 
     def adapter(req: web.Request):
         return handler(req, service_url=BASE_URL)

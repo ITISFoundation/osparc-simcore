@@ -26,6 +26,25 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTreeItem", {
     portKey: {
       check: "String",
       nullable: false
+    },
+
+    key: {
+      check: "String",
+      nullable: false
+    }
+  },
+
+  members : {
+    _addWidgets : function() {
+      // Here's our indentation and tree-lines
+      this.addSpacer();
+      this.addOpenButton();
+
+      // The standard tree icon follows
+      this.addIcon();
+
+      // The label
+      this.addLabel();
     }
   }
 });

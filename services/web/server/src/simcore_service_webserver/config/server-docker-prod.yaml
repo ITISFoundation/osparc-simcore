@@ -31,6 +31,9 @@ rabbit:
 #   access_key: ${S3_ACCESS_KEY}
 #   secret_key: ${S3_SECRET_KEY}
 #   bucket_name: ${S3_BUCKET_NAME}
+login:
+  enabled: True
+  registration_confirmation_required: ${LOGIN_REGISTRATION_CONFIRMATION_REQUIRED}
 smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: ${SMTP_HOST}
@@ -45,6 +48,4 @@ storage:
 rest:
   version: v0
   location: http://${APIHUB_HOST}:${APIHUB_PORT}/api/specs/webserver/v0/openapi.yaml
-  extra_urls:
-    - ${OSPARC_PUBLIC_URL}
 ...
