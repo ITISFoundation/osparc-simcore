@@ -32,7 +32,7 @@ qx.Class.define("qxapp.component.widget.FlashMessenger", {
 
     log: function(logMessage) {
       let message = logMessage.message;
-      const level = logMessage.level; // "DEBUG", "INFO", "WARNING", "ERROR"
+      const level = logMessage.level.toUpperCase(); // "DEBUG", "INFO", "WARNING", "ERROR"
       let logger =logMessage.logger;
       if (logger) {
         message = logger + ": " + message;

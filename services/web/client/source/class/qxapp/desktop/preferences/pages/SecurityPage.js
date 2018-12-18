@@ -23,35 +23,39 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
   members: {
     __tokenResources: null,
 
-    __tokensBox: null,
+    __tokensList: null,
 
     __createTokensSection: function() {
       // layout
       let box = this._createSectionBox(this.tr("Access Tokens"));
-      this.__tokensBox = box;
 
       let label = this._createHelpLabel(
         "List of API tokens to access external services. Currently, \
          only <a href='https://app.blackfynn.io'>DAT-Core</a> API keys are supported."
       );
       box.add(label);
+
+      this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      this.__rebuildTokensList();
+      box.add(this.__tokensList);
+
       return box;
     },
 
     __rebuildTokensList: function() {
-      this.__tokensBox.removeAll();
+      this.__tokensList.removeAll();
 
       let tokens = this.__tokenResources.tokens;
       tokens.addListenerOnce("getSuccess", e => {
         let tokensList = e.getRequest().getResponse().data;
         if (tokensList.length === 0) {
           let emptyForm = this.__createEmptyTokenForm();
-          this.__tokensBox.add(new qx.ui.form.renderer.Single(emptyForm));
+          this.__tokensList.add(new qx.ui.form.renderer.Single(emptyForm));
         } else {
           for (let i=0; i<tokensList.length; i++) {
             const token = tokensList[i];
             let tokenForm = this.__createValidTokenForm(token["service"], token["token_key"], token["token_secret"]);
-            this.__tokensBox.add(new qx.ui.form.renderer.Single(tokenForm));
+            this.__tokensList.add(new qx.ui.form.renderer.Single(tokenForm));
           }
         }
       }, this);
