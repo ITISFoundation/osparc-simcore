@@ -65,16 +65,16 @@ jobs:
       sudo: required
       env:
         matrix:
-          - TEST_SUITE_COMMAND="pytest -v api/tests"
-          - TEST_SUITE_COMMAND="pytest -v services/apihub/tests"
-          - TEST_SUITE_COMMAND="pytest --cov=pytest_docker -v packages/pytest_docker/tests"
-          - TEST_SUITE_COMMAND="pytest --cov=s3wrapper -v packages/s3wrapper/tests"
-          - TEST_SUITE_COMMAND="pytest --cov=simcore_sdk -v packages/simcore-sdk/tests"
-          - TEST_SUITE_COMMAND="pytest --cov=servicelib -v packages/service-library/tests"
-          - TEST_SUITE_COMMAND="pytest --cov=simcore_service_webserver -v -m 'not travis' services/web/server/tests/unit"
-          - TEST_SUITE_COMMAND="pytest --cov=simcore_service_webserver -v services/web/server/tests/login"
-          - TEST_SUITE_COMMAND="pytest --cov=simcore_service_director -v services/director/tests"
-          - TEST_SUITE_COMMAND="pytest --cov=simcore_service_storage -v -m 'not travis' services/storage/tests"
+          - TEST_SUITE_COMMAND='pytest -v api/tests'
+          - TEST_SUITE_COMMAND='pytest -v services/apihub/tests'
+          - TEST_SUITE_COMMAND='pytest --cov=pytest_docker -v packages/pytest_docker/tests'
+          - TEST_SUITE_COMMAND='pytest --cov=s3wrapper -v packages/s3wrapper/tests'
+          - TEST_SUITE_COMMAND='pytest --cov=simcore_sdk -v packages/simcore-sdk/tests'
+          - TEST_SUITE_COMMAND='pytest --cov=servicelib -v packages/service-library/tests'
+          - TEST_SUITE_COMMAND='pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit'
+          - TEST_SUITE_COMMAND='pytest --cov=simcore_service_webserver -v services/web/server/tests/login'
+          - TEST_SUITE_COMMAND='pytest --cov=simcore_service_director -v services/director/tests'
+          - TEST_SUITE_COMMAND='pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests'
       services:
         - docker
       cache: pip
