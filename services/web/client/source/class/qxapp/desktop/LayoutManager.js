@@ -24,7 +24,22 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       flex: 1
     });
 
-    this.__createLoadingLayout();
+    let iframe = this.__createLoadingIFrame(this.tr("User Information"));
+    this.__prjStack.add(iframe);
+    this.__prjStack.setSelection([iframe]);
+
+    const interval = 1000;
+    let userTimer = new qx.event.Timer(interval);
+    userTimer.addListener("interval", () => {
+      if (this.__userReady) {
+        userTimer.stop();
+        this.__prjStack.remove(iframe);
+        iframe.dispose();
+        this.__createMainLayout();
+      }
+    }, this);
+    userTimer.start();
+
     this.__initResources();
   },
 
@@ -35,28 +50,14 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     __prjStack: null,
     __prjBrowser: null,
     __prjEditor: null,
-    __loadingIframe: null,
-    __servicesReady: null,
     __userReady: null,
+    __servicesReady: null,
 
-    __createLoadingLayout: function() {
-      const loadingUri = qxapp.utils.Utils.getLoaderUri(this.tr("User Information"));
-      let iframe = this.__loadingIframe = new qx.ui.embed.Iframe(loadingUri);
+    __createLoadingIFrame: function(text) {
+      const loadingUri = qxapp.utils.Utils.getLoaderUri(text);
+      let iframe = new qx.ui.embed.Iframe(loadingUri);
       iframe.setBackgroundColor("transparent");
-      this.__prjStack.add(iframe);
-      this.__prjStack.setSelection([iframe]);
-
-      const interval = 1000;
-      let loadingTimer = new qx.event.Timer(interval);
-      loadingTimer.addListener("interval", () => {
-        if (this.__userReady) {
-          loadingTimer.stop();
-          this.__prjStack.remove(iframe);
-          iframe.dispose();
-          this.__createMainLayout();
-        }
-      }, this);
-      loadingTimer.start();
+      return iframe;
     },
 
     __createMainLayout: function() {
@@ -70,21 +71,44 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       }, this);
 
       this.__prjBrowser.addListener("StartProject", e => {
-        const data = e.getData();
-        const projectModel = data.projectModel;
-        if (this.__prjEditor) {
-          this.__prjStack.remove(this.__prjEditor);
-        }
-        this.__prjEditor = new qxapp.desktop.PrjEditor(projectModel);
-        this.__prjStack.add(this.__prjEditor);
-        this.__prjStack.setSelection([this.__prjEditor]);
-        this.__navBar.setProjectModel(projectModel);
-        this.__navBar.setMainViewCaption(projectModel.getWorkbenchModel().getPathIds("root"));
+        const projectData = e.getData();
+        if (this.__servicesReady === null) {
+          let iframe = this.__createLoadingIFrame(this.tr("Services"));
+          this.__prjStack.add(iframe);
+          this.__prjStack.setSelection([iframe]);
 
-        this.__prjEditor.addListener("ChangeMainViewCaption", function(ev) {
-          const elements = ev.getData();
-          this.__navBar.setMainViewCaption(elements);
-        }, this);
+          const interval = 1000;
+          let servicesTimer = new qx.event.Timer(interval);
+          servicesTimer.addListener("interval", () => {
+            if (this.__servicesReady) {
+              servicesTimer.stop();
+              this.__prjStack.remove(iframe);
+              iframe.dispose();
+              this.__loadProjectModel(projectData);
+            }
+          }, this);
+          servicesTimer.start();
+        } else {
+          this.__loadProjectModel(projectData);
+        }
+      }, this);
+    },
+
+    __loadProjectModel: function(projectData) {
+      let projectModel = new qxapp.data.model.ProjectModel(projectData);
+
+      if (this.__prjEditor) {
+        this.__prjStack.remove(this.__prjEditor);
+      }
+      this.__prjEditor = new qxapp.desktop.PrjEditor(projectModel);
+      this.__prjStack.add(this.__prjEditor);
+      this.__prjStack.setSelection([this.__prjEditor]);
+      this.__navBar.setProjectModel(projectModel);
+      this.__navBar.setMainViewCaption(projectModel.getWorkbenchModel().getPathIds("root"));
+
+      this.__prjEditor.addListener("ChangeMainViewCaption", function(ev) {
+        const elements = ev.getData();
+        this.__navBar.setMainViewCaption(elements);
       }, this);
     },
 
