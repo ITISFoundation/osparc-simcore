@@ -300,7 +300,7 @@ async def email_confirmation(request: web.Request):
             # Passes front-end code as a query. The latter
             # should then POST /v0/auth/confirmation/{code}
             # with new password info
-            redirect_url = redirect_url.with_query(code=code)
+            redirect_url = redirect_url.with_query(page="reset-password", code=code)
             log.debug("Reset password requested %s", confirmation)
 
         elif action == CHANGE_EMAIL:

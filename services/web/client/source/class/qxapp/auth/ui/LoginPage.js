@@ -47,9 +47,10 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
       });
       this.add(atm);
 
-      let email = new qx.ui.form.TextField();
-      email.setPlaceholder(this.tr("Your email address"));
-      email.setRequired(true);
+      let email = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Your email address"),
+        required: true
+      });
       this.add(email);
       email.getContentElement().setAttribute("autocomplete", "username");
       this.__form.add(email, "", qx.util.Validate.email(), "email", null);
@@ -57,16 +58,13 @@ qx.Class.define("qxapp.auth.ui.LoginPage", {
         email.focus();
         email.activate();
       });
-      let pass = new qx.ui.form.PasswordField();
-      pass.setPlaceholder(this.tr("Your password"));
-      pass.setRequired(true);
+      let pass = new qx.ui.form.PasswordField().set({
+        placeholder: this.tr("Your password"),
+        required: true
+      });
       pass.getContentElement().setAttribute("autocomplete", "current-password");
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
-
-      // TODO: Temporary disabled. 'Remember me' implies keeping login status in server
-      // let chk = new qx.ui.form.CheckBox(this.tr("Remember me"));
-      // this.__form.add(chk, "", null, "remember", null);
 
       let loginBtn = new qx.ui.form.Button(this.tr("Log In"));
       loginBtn.addListener("execute", function() {

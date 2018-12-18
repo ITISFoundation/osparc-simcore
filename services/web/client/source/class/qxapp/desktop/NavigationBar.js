@@ -162,7 +162,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       // Logout
 
       // TODO: add commands (i.e. short-cut system)
-      let preferences = new qx.ui.menu.Button("Account Settings");
+      let preferences = new qx.ui.menu.Button("Preferences");
       preferences.addListener("execute", this.__onOpenAccountSettings, this);
 
       let logout = new qx.ui.menu.Button("Logout");
@@ -187,7 +187,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     __onOpenAccountSettings: function() {
       if (!this.__preferencesWin) {
-        this.__preferencesWin = new qxapp.Preferences();
+        this.__preferencesWin = new qxapp.desktop.preferences.DialogWindow();
       }
 
       let win = this.__preferencesWin;

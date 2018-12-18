@@ -105,7 +105,7 @@ async def test_reset_and_confirm(client, capsys, cfg):
         # emulates user click on email url
         rp = await client.get(confirmation_url)
         assert rp.status == 200
-        assert rp.url_obj.path_qs == URL(cfg.LOGIN_REDIRECT).with_query(code=code).path_qs
+        assert rp.url_obj.path_qs == URL(cfg.LOGIN_REDIRECT).with_query(page="reset-password", code=code).path_qs
 
         # api/specs/webserver/v0/components/schemas/auth.yaml#/ResetPasswordForm
         reset_allowed_url = client.app.router['auth_reset_password_allowed'].url_for(code=code)
