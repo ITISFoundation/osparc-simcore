@@ -4,6 +4,7 @@ qx.Class.define("qxapp.data.Store", {
   type : "singleton",
 
   events: {
+    "UserProfileRecieved": "qx.event.type.Event",
     "servicesRegistered": "qx.event.type.Event",
     // "FakeFiles": "qx.event.type.Event",
     "MyDocuments": "qx.event.type.Event",
@@ -49,12 +50,13 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     loadUserRole: function() {
-      this.__userResources = qxapp.io.rest.ResourceFactory.createUserResources();
+      let userResources = qxapp.io.rest.ResourceFactory.getInstance().createUserResources();
 
-      let profile = this.__userResources.profile;
+      let profile = userResources.profile;
       profile.addListenerOnce("getSuccess", e => {
         let profileData = e.getRequest().getResponse().data;
-        console.log(profileData.role);
+        this.__userRole = profileData.role;
+        this.fireDataEvent("UserProfileRecieved", true);
       }, this);
       profile.addListenerOnce("getError", e => {
         console.log(e);
