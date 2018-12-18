@@ -89,26 +89,22 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           name: data.prjTitle,
           description: data.prjDescription
         };
-        this.__startBlankProject(newPrj);
+        this.__createBlankProject(newPrj);
         win.close();
       }, this);
       win.add(newProjectDlg);
       win.open();
     },
 
-    __startBlankProject: function(newPrj) {
-      let blankProject = new qxapp.data.model.ProjectModel();
-      blankProject.set({
-        name: newPrj.name,
-        description: newPrj.description
-      });
+    __createBlankProject: function(newPrj) {
+      let blankProject = new qxapp.data.model.ProjectModel(newPrj);
       const data = {
         projectModel: blankProject
       };
       this.fireDataEvent("StartProject", data);
     },
 
-    __startProjectModel: function(projectId, fromTemplate = false) {
+    __createProjectModel: function(projectId, fromTemplate = false) {
       let resource = this.__projectResources.project;
 
       resource.addListenerOnce("getSuccess", e => {
@@ -265,7 +261,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           item.addListener("dbltap", e => {
             const prjUuid = item.getModel();
             if (prjUuid) {
-              that.__startProjectModel(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
+              that.__createProjectModel(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
             } else {
               that.__newPrjBtnClkd(); // eslint-disable-line no-underscore-dangle
             }
