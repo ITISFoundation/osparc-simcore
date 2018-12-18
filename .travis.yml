@@ -70,9 +70,10 @@ matrix:
           - DOCKER_GID=1042
         
       script:
-        - make pylint        
-        - bash scripts/docker/travis_docker_push
-        - make build-travis
+        - make pylint       
+        # only push when building on master, as necessary env variables are only available then 
+        - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash scripts/travis/push_cache_builds; fi'
+        - make travis-build
         - make test
         
 
