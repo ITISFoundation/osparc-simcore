@@ -66,6 +66,25 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       };
     },
 
+    createUserResources: function() {
+      // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
+      // SEE: api/specs/webserver/v0/openapi-user.yaml
+      const basePath = qxapp.io.rest.ResourceFactory.API;
+
+      // Singular resource
+      let profile = new qxapp.io.rest.Resource({
+        // Get token
+        get: {
+          method: "GET",
+          url: basePath+"/me"
+        }
+      });
+
+      return {
+        "profile": profile
+      };
+    },
+
     createTokenResources: function() {
       // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
       // SEE: api/specs/webserver/v0/openapi-user.yaml

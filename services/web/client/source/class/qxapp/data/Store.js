@@ -27,6 +27,7 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   members: {
+    __userRole: null,
     __servicesCached: null,
 
     __getMimeType: function(type) {
@@ -45,6 +46,20 @@ qx.Class.define("qxapp.data.Store", {
       let mtB = this.__getMimeType(typeB);
       return mtA && mtB &&
         new qxapp.data.MimeType(mtA).match(new qxapp.data.MimeType(mtB));
+    },
+
+    loadUserRole: function() {
+      this.__userResources = qxapp.io.rest.ResourceFactory.createUserResources();
+
+      let profile = this.__userResources.profile;
+      profile.addListenerOnce("getSuccess", e => {
+        let profileData = e.getRequest().getResponse().data;
+        console.log(profileData.role);
+      }, this);
+      profile.addListenerOnce("getError", e => {
+        console.log(e);
+      });
+      profile.get();
     },
 
     getRole: function() {

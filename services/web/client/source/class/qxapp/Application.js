@@ -77,6 +77,8 @@ qx.Class.define("qxapp.Application", {
       if (isLogged) {
         this.__connectWebSocket();
 
+        qxapp.data.Store.loadUserRole();
+
         view = new qxapp.desktop.LayoutManager();
 
         options = {
