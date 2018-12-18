@@ -1,7 +1,7 @@
 jobs:
   include:
     - language: node_js
-      stage: test
+      name: "Node testing"
       node_js:
         - "8"
 
@@ -20,8 +20,8 @@ jobs:
       script:
         - npm run linter
 
-    - stage: build docker image
-      if: branch = master
+    - if: branch = master
+      name: "Docker image cache build"
       language: python
 
       python:
@@ -45,7 +45,7 @@ jobs:
         - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash scripts/travis/push_cache_builds; fi'
 
     - language: python
-      stage: test
+      stage: python testing
       python:
         - "3.6"
       sudo: required
