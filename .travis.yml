@@ -1,4 +1,8 @@
 dist: xenial
+env:
+  global:
+    - DOCKER_COMPOSE_VERSION=1.23.2
+    - DOCKER_GID=1042
 jobs:
   include:
     - if: branch = master
@@ -6,9 +10,6 @@ jobs:
       language: python
       python:
         - "3.6"
-      env:
-        - DOCKER_COMPOSE_VERSION=1.23.2
-        - DOCKER_GID=1042
       services:
         - docker
       before_install:
@@ -63,18 +64,17 @@ jobs:
         - "3.6"
       sudo: required
       env:
-        - DOCKER_COMPOSE_VERSION=1.23.2
-        - DOCKER_GID=1042
-        - TEST_SUITE_COMMAND=pytest -v api/tests
-        - TEST_SUITE_COMMAND=pytest -v services/apihub/tests
-        - TEST_SUITE_COMMAND=pytest --cov=pytest_docker -v packages/pytest_docker/tests
-        - TEST_SUITE_COMMAND=pytest --cov=s3wrapper -v packages/s3wrapper/tests
-        - TEST_SUITE_COMMAND=pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
-        - TEST_SUITE_COMMAND=pytest --cov=servicelib -v packages/service-library/tests
-        - TEST_SUITE_COMMAND=pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
-        - TEST_SUITE_COMMAND=pytest --cov=simcore_service_webserver -v services/web/server/tests/login
-        - TEST_SUITE_COMMAND=pytest --cov=simcore_service_director -v services/director/tests
-        - TEST_SUITE_COMMAND=pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
+        matrix:
+          - TEST_SUITE_COMMAND="pytest -v api/tests"
+          - TEST_SUITE_COMMAND="pytest -v services/apihub/tests"
+          - TEST_SUITE_COMMAND="pytest --cov=pytest_docker -v packages/pytest_docker/tests"
+          - TEST_SUITE_COMMAND="pytest --cov=s3wrapper -v packages/s3wrapper/tests"
+          - TEST_SUITE_COMMAND="pytest --cov=simcore_sdk -v packages/simcore-sdk/tests"
+          - TEST_SUITE_COMMAND="pytest --cov=servicelib -v packages/service-library/tests"
+          - TEST_SUITE_COMMAND="pytest --cov=simcore_service_webserver -v -m 'not travis' services/web/server/tests/unit"
+          - TEST_SUITE_COMMAND="pytest --cov=simcore_service_webserver -v services/web/server/tests/login"
+          - TEST_SUITE_COMMAND="pytest --cov=simcore_service_director -v services/director/tests"
+          - TEST_SUITE_COMMAND="pytest --cov=simcore_service_storage -v -m 'not travis' services/storage/tests"
       services:
         - docker
       cache: pip
