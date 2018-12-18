@@ -236,7 +236,7 @@ push_client_image:
 	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
 
 travis-build:
-	${DOCKER} pull itisfoundation/storage-build:latest	
+	${DOCKER} pull itisfoundation/storage-build-cache:latest	
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel storage apihub
 
 travis-push-base-images:	
