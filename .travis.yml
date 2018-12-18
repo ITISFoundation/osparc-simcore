@@ -1,6 +1,7 @@
-matrix:
+jobs:
   include:
     - language: node_js
+      stage: test
       node_js:
         - "8"
 
@@ -19,8 +20,8 @@ matrix:
       script:
         - npm run linter
 
-    - if: branch = master
-      stage: build docker image
+    - stage: build docker image
+      if: branch = master
       language: python
 
       python:
