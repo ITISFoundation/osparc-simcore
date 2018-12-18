@@ -10,6 +10,20 @@ qx.Class.define("qxapp.utils.Utils", {
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     },
 
+    // deep clone of nested objects
+    // https://medium.com/@tkssharma/objects-in-javascript-object-assign-deep-copy-64106c9aefab#eeed
+    deepCloneObject: function(src) {
+      let target = {};
+      for (let key in src) {
+        if (src[key] !== null && typeof (src[key]) === "object") {
+          target[key] = qxapp.utils.Utils.deepCloneObject(src[key]);
+        } else {
+          target[key] = src[key];
+        }
+      }
+      return target;
+    },
+
     replaceTemplateUUIDs: function(data) {
       const tempPrefix = "template-uuid";
       let myData = JSON.stringify(data);
