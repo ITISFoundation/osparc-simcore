@@ -137,12 +137,15 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
         this.fireDataEvent("UpdatePipeline", e.getData());
       }, this);
       this.fireDataEvent("NodeAdded", nodeModel);
-      nodeModel.populateNodeData(nodeData);
+      if (nodeData) {
+        nodeModel.populateNodeData(nodeData);
+      }
       return nodeModel;
     },
 
     createNodeModels: function(workbenchData) {
       let keys = Object.keys(workbenchData);
+      // Create first all the nodes
       for (let i=0; i<keys.length; i++) {
         const nodeId = keys[i];
         const nodeData = workbenchData[nodeId];
@@ -165,7 +168,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
         let nodeModel = null;
         if (nodeData.key) {
           // not container
-          nodeModel = this.createNodeModel(nodeData.key, nodeData.version, nodeId, nodeData);
+          nodeModel = this.createNodeModel(nodeData.key, nodeData.version, nodeId);
         } else {
           // container
           nodeModel = this.createNodeModel(null, null, nodeId, nodeData);
@@ -176,6 +179,13 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
         } else {
           this.addNodeModel(nodeModel);
         }
+      }
+
+      // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
+      for (let i=0; i<keys.length; i++) {
+        const nodeId = keys[i];
+        const nodeData = workbenchData[nodeId];
+        this.getNodeModel(nodeId).populateNodeData(nodeData);
       }
     },
 
