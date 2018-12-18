@@ -5,6 +5,7 @@
 # pylint:disable=redefined-outer-name
 
 import collections
+from copy import deepcopy
 
 import pytest
 from aiohttp import web
@@ -180,16 +181,29 @@ async def test_update(client, fake_db, fake_project):
     fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO: create fixture
     pid = fake_project["projectUuid"]
     #-----------------
+    #
+    # In a PUT request, the enclosed entity is considered to be a modified version of
+    # the resource stored on the origin server, and the client is requesting that the
+    # stored version be replaced.
+    #
+    # With PATCH, however, the enclosed entity contains a set of instructions describing how a
+    # resource currently residing on the origin server should be modified to produce a new version.
+    #
+    # Also, another difference is that when you want to update a resource with PUT request, you have to send
+    # the full payload as the request whereas with PATCH, you only send the parameters which you want to update.
+    #
 
-    url = client.app.router["update_project"].url_for(project_id=pid)
+    url = client.app.router["replace_project"].url_for(project_id=pid)
     assert str(url) == PREFIX + "/%s/%s" % (RESOURCE_NAME, pid)
 
     # PUT /v0/projects/{project_id}
-    resp = await client.put(url, json={
-        "name": "some other name",
-        "description": "some other",
-        "notes": "some other",
-    })
+    modified = deepcopy(fake_project)
+    modified["name"] = "some other name"
+    modified["description"] = "some other"
+    modified["notes"] = "some other"
+    modified["workbench"]["newname"] = modified["workbench"].pop("Xw)F")
+
+    resp = await client.put(url, json=modified)
     payload = await resp.json()
     assert resp.status == 200, payload
 
@@ -199,6 +213,9 @@ async def test_update(client, fake_db, fake_project):
 
     assert fake_db.projects[pid].data["name"] == "some other name"
     assert fake_db.projects[pid].data["notes"] == "some other"
+    assert "newname" in fake_db.projects[pid].data["workbench"]
+    assert fake_db.projects[pid].data["workbench"]["newname"] == fake_project["workbench"]["Xw)F"]
+
 
 
 async def test_delete(client, fake_db, fake_project):
@@ -233,7 +250,7 @@ async def test_delete_invalid_project(client, fake_db):
     assert not error
 
 
-async def test_workfolow(client, fake_db, fake_project):
+async def test_workflow(client, fake_db, fake_project):
     fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO: create fixture
     #-----------------
 
@@ -250,15 +267,17 @@ async def test_workfolow(client, fake_db, fake_project):
     assert projects
 
     #-------------------------------------------------
-    pid = projects[0]["projectUuid"]
+    modified = deepcopy(projects[0])
+    pid = modified["projectUuid"]
+
+    modified["name"] = "some other name"
+    modified["notes"] = "some other"
+    modified["workbench"]["ReNamed"] =  modified["workbench"].pop("Xw)F")
+    modified["workbench"]["ReNamed"]["position"]["x"] = 0.0
 
     # PUT /v0/projects/{project_id}
-    url = client.app.router["update_project"].url_for(project_id=pid)
-    resp = await client.put(url, json={
-        "name": "some other name",
-        "description": "some other",
-        "notes": "some other",
-    })
+    url = client.app.router["replace_project"].url_for(project_id=pid)
+    resp = await client.put(url, json=modified)
     payload = await resp.json()
     assert resp.status == 200, payload
 
@@ -276,6 +295,10 @@ async def test_workfolow(client, fake_db, fake_project):
 
     assert project["name"] == "some other name"
     assert project["notes"] == "some other"
+    assert "ReNamed" in project["workbench"]
+    assert "Xw)F" not in project["workbench"]
+
+    assert project == modified
 
 
 
