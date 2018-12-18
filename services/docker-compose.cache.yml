@@ -1,0 +1,12 @@
+version: '3.4'
+services:
+  storage:
+    image: itisfoundation/storage-build-cache
+    build:
+      cache_from:
+        - itisfoundation/storage-build-cache:latest
+      target: cache
+    depends_on:
+      - minio
+      - postgres
+      - apihub

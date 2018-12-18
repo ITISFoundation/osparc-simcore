@@ -95,7 +95,7 @@ CMD docker/boot.sh
 
 # --------------------------Production multi-stage -------------------
 #FROM build as build-production
-FROM build as dependencies
+FROM build as cache
 
 ENV SIMCORE_WEB_CONFIG production
 

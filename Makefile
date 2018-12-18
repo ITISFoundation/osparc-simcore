@@ -241,7 +241,7 @@ travis-build:
 
 travis-push-base-images:	
 	${DOCKER} pull itisfoundation/storage-build:latest
-	${DOCKER} build --target dependencies --parallel --cache-from itisfoundation/storage-build:latest --tag itisfoundation/storage-build:latest -f services/storage/Dockerfile .	
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel storage
 	${DOCKER} push itisfoundation/storage-build:latest
 
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel
