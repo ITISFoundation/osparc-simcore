@@ -115,7 +115,7 @@ jobs:
         - pip3 install -r services/apihub/tests/requirements.txt
       script:
         - make travis-build
-        - "make $TEST_SUITE_COMMAND"
+        - make $TEST_SUITE_COMMAND
       after_success:
       - coveralls
 
