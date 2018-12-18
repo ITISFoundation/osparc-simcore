@@ -80,13 +80,13 @@ qx.Class.define("qxapp.Application", {
         qxapp.data.Store.loadUserRole();
 
         view = new qxapp.desktop.LayoutManager();
-
         options = {
           left: 0,
           top: 0,
           height: "100%",
           width: "100%"
         };
+        this.__loadView(view, options);
       } else {
         this.__disconnectWebSocket();
 
@@ -94,15 +94,17 @@ qx.Class.define("qxapp.Application", {
         view.addListener("done", function(msg) {
           this.__restart();
         }, this);
-
-        options ={
+        options = {
           top: "10%",
           bottom: 0,
           left: 0,
           right: 0
         };
+        this.__loadView(view, options);
       }
+    },
 
+    __loadView: function(view, options) {
       this.assert(view!==null);
       // Update root document and currentness
       let doc = this.getRoot();
