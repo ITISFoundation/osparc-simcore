@@ -76,20 +76,16 @@ qx.Class.define("qxapp.Application", {
 
       if (isLogged) {
         this.__connectWebSocket();
-
-        qxapp.data.Store.loadUserRole();
-
         view = new qxapp.desktop.LayoutManager();
         options = {
-          left: 0,
           top: 0,
-          height: "100%",
-          width: "100%"
+          bottom: 0,
+          left: 0,
+          right: 0
         };
         this.__loadView(view, options);
       } else {
         this.__disconnectWebSocket();
-
         view = new qxapp.auth.MainView();
         view.addListener("done", function(msg) {
           this.__restart();
