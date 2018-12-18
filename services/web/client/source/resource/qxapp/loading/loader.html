@@ -12,7 +12,21 @@
       <div class="loader" />
     </div>
     <div class="message">Loading oSPARC...</div>
+    <div class="message2" id="message2"></div>
     <div class="imageLogo" />​
+    <script type="text/javascript">
+      let str = null;
+      const params = window.location.search.substr(1).split("&");
+      params.forEach(function(item) {
+        let tmp = item.split("=");
+        if (tmp[0] === "loading") {
+          str = decodeURIComponent(tmp[1]);
+        }
+      });
+      if (str) {
+        document.getElementById("message2").innerHTML = str;
+      }
+    </script>
 
   </body>
 </html>
