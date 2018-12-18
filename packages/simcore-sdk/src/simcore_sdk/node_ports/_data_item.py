@@ -10,7 +10,9 @@ log = logging.getLogger(__name__)
 _DataItem = collections.namedtuple("_DataItem", config.DATA_ITEM_KEYS.keys())
 
 class DataItem(_DataItem):
-    """This class encapsulate a Data Item and provide accessors functions"""
+    """Encapsulates a Data Item and provides accessors functions
+
+    """
     def __new__(cls, **kwargs):
         new_kargs = dict.fromkeys(config.DATA_ITEM_KEYS.keys())
         for key, required in config.DATA_ITEM_KEYS.items():
