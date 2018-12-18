@@ -66,7 +66,7 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
       };
     },
 
-    createUserResources: function() {
+    createTokenResources: function() {
       // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
       // SEE: api/specs/webserver/v0/openapi-user.yaml
       const basePath = qxapp.io.rest.ResourceFactory.API;
