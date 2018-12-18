@@ -31,7 +31,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     let portOutput = this._createChildControlImpl("portOutput");
     let outputValue = "Unknown value";
     let toolTip = "";
-    if (Object.prototype.hasOwnProperty.call(port, "value")) {
+    if (port.value) {
       if (typeof port.value === "object") {
         outputValue = this.__pretifyObject(port.value, true);
         toolTip = this.__pretifyObject(port.value, false);

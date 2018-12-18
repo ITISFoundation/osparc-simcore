@@ -6,7 +6,7 @@ import logging
 
 from aiohttp import web
 
-from .login.decorators import RQT_USERID_KEY, login_required
+from ..login.decorators import RQT_USERID_KEY, login_required
 from .projects_fakes import Fake
 
 log = logging.getLogger(__name__)
