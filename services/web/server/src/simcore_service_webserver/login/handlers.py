@@ -213,6 +213,10 @@ async def change_email(request: web.Request):
     if user['email'] == email:
         return flash_response("Email changed")
 
+    other = await db.get_user({'email': email})
+    if other:
+        raise web.HTTPUnprocessableEntity(reason="This email cannot be used")
+
     # TODO: validate new email!!! User marshmallow
 
     # Reset if previously requested
@@ -223,7 +227,7 @@ async def change_email(request: web.Request):
     if confirmation:
         await db.delete_confirmation(confirmation)
 
-    # create new confirmation
+    # create new confirmation to ensure email is actually valid
     confirmation = await db.create_confirmation(user, CHANGE_EMAIL, email)
     link = await make_confirmation_link(request, confirmation)
     try:
