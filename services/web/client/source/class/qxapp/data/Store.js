@@ -64,14 +64,11 @@ qx.Class.define("qxapp.data.Store", {
       profile.get();
     },
 
-    getRole: function() {
-      // Temporary HACK
-      const userEmail = qxapp.auth.Data.getInstance().getEmail();
-      const inHouse = ["itis.swiss", "speag.swiss", "oetiker.ch"];
-      if (inHouse.some(v => userEmail.indexOf(v) >= 0)) {
-        return 0;
+    isTesterUser: function() {
+      if (this.__userRole) {
+        return this.__userRole === "Admin" || this.__userRole === "Tester";
       }
-      return 1;
+      return false;
     },
 
     areNodesCompatible: function(topLevelPort1, topLevelPort2) {

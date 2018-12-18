@@ -202,8 +202,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         let publicFilteredPrjList = [];
         for (let i=0; i<publicPrjList.length; i++) {
           // Temporary HACK
-          if (qxapp.data.Store.getInstance().getRole() !== 0 &&
-          publicPrjList[i].projectUuid.includes("DemoDecember")) {
+          if (publicPrjList[i].projectUuid.includes("DemoDecember") &&
+          !qxapp.data.Store.getInstance().isTesterUser()) {
             continue;
           }
           publicFilteredPrjList.push(publicPrjList[i]);

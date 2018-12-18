@@ -35,8 +35,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     showAll.addListener("changeValue", e => {
       this.__refilterData();
     }, this);
-    // Temporary HACK
-    if (qxapp.data.Store.getInstance().getRole() === 0) {
+    if (qxapp.data.Store.getInstance().isTesterUser()) {
       filterLayout.add(showAll);
     }
     // buttons for reloading services
