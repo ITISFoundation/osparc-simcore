@@ -205,7 +205,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
           layout: new qx.ui.layout.Canvas(),
           contentPadding: 10,
           showMaximize: false,
-          showMinimize: false
+          showMinimize: false,
+          resizable: false
         });
         this.__aboutWin.add(new qxapp.About(), {
           top: 0,
