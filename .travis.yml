@@ -1,7 +1,7 @@
 jobs:
   include:
-    # - if: branch = master
-    - stage: Build docker images
+    - if: branch = master
+      stage: Build docker images
       language: python
       env:
         - DOCKER_COMPOSE_VERSION=1.23.2
@@ -23,7 +23,8 @@ jobs:
       script: 
         - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash scripts/travis/push_cache_builds; fi'
 
-    - language: node_js
+    - stage: testing
+      language: node_js
       node_js:
         - "8"
       cache:
