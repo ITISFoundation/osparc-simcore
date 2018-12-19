@@ -3,14 +3,14 @@ qx.Class.define("qxapp.desktop.preferences.pages.BasePage", {
   extend: qx.ui.tabview.Page,
 
   construct: function(title, iconSrc = null) {
-    this.base(arguments, null, iconSrc);
+    this.base(arguments, title, iconSrc);
 
     this.setLayout(new qx.ui.layout.VBox(10).set({
       spacing: 10,
       alignX: "center"
     }));
 
-    // title
+    // Page title
     this.add(new qx.ui.basic.Label(title + " Settings").set({
       font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"])
     }));
