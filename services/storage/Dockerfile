@@ -95,7 +95,7 @@ CMD docker/boot.sh
 
 # --------------------------Production multi-stage -------------------
 #FROM build as build-production
-FROM build as dependencies
+FROM build as cache
 
 ENV SIMCORE_WEB_CONFIG production
 
@@ -123,7 +123,7 @@ ENV DEBUG 0
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD docker/boot.sh
 
-FROM dependencies as production
+FROM cache as production
 # remove any unnecessary stuff
 RUN . $HOME/.venv/bin/activate; pip list &&\
     rm -rf $HOME/packages &&\
