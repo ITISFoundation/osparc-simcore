@@ -28,6 +28,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     this.initDefault();
     this.connectEvents();
+
+    this.saveProjectDocument();
+    this.__startAutoSave();
   },
 
   properties: {
@@ -123,10 +126,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     connectEvents: function() {
-      this.__mainPanel.getControls().addListener("SavePressed", function() {
-        this.serializeProjectDocument();
-      }, this);
-
       this.__mainPanel.getControls().addListener("StartPipeline", function() {
         if (this.getCanStart()) {
           this.__startPipeline();
@@ -476,7 +475,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__mainPanel.setMainView(widgetContainer);
     },
 
-    serializeProjectDocument: function() {
+    saveProjectDocument: function() {
       let myPrj = this.getProjectModel().serializeProject();
       // FIXME: server expects "projectUuid" and we have "uuid"
       myPrj["projectUuid"] = myPrj["uuid"];
@@ -490,6 +489,43 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       resource.del({
         "project_id": myPrj["uuid"]
       });
+    },
+
+    __startAutoSave: function() {
+      let diffPatcher = new qxapp.wrappers.JsonDiffPatch();
+      let oldObj = this.getProjectModel().serializeProject();
+      // Save every 5 seconds
+      const interval = 5000;
+      let timer = new qx.event.Timer(interval);
+      timer.addListener("interval", () => {
+        const newObj = this.getProjectModel().serializeProject();
+        const delta = diffPatcher.diff(oldObj, newObj);
+        if (delta) {
+          let deltaKeys = Object.keys(delta);
+          // lastChangeDate should not be taken into account as data change
+          const index = deltaKeys.indexOf("lastChangeDate");
+          if (index > -1) {
+            deltaKeys.splice(index, 1);
+          }
+          if (deltaKeys.length > 0) {
+            this.__saveProjectDocument(newObj);
+          }
+        }
+        oldObj = diffPatcher.clone(newObj);
+      }, this);
+      timer.start();
+    },
+
+    __saveProjectDocument: function(newObj) {
+      const prjUuid = this.getProjectModel().getUuid();
+
+      let resource = this.__projectResources.project;
+      resource.addListenerOnce("putSuccess", ev => {
+        console.log("Project updated");
+      }, this);
+      resource.put({
+        "project_id": prjUuid
+      }, newObj);
     }
   }
 });
