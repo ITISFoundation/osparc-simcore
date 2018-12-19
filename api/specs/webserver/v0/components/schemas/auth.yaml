@@ -9,7 +9,6 @@ LoginEnveloped:
       nullable: true
       default: null
 
-
 LoginForm:
   type: object
   properties:
@@ -85,3 +84,39 @@ ChangePasswordForm:
     current: 'my secret'
     new: 'my new secret'
     confirm: 'my new secret'
+
+
+PasswordCheckEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/PasswordCheckSchema'
+    error:
+      nullable: true
+      default: null
+
+PasswordCheckSchema:
+  type: object
+  required:
+    - strength
+  properties:
+    strength:
+      description: The strength of the password ranges from 0 (extremely weak) and 1 (extremely strong)
+      type: number
+      format: float
+      minimum: 0.0
+      maximum: 1.0
+    rating:
+      description: Human readable rating from infinitely weak to very strong
+      type: string
+    improvements:
+      additionalProperties:
+        type: string
+  example:
+    strength: 0.202
+    rating: Extremely weak
+    improvements:
+      mixin: Use a good mix of numbers, letters and symbols
+      duplications: Minimize character duplicates and repetitions

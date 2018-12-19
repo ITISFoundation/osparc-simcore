@@ -76,19 +76,19 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
         // Get token
         get: {
           method: "GET",
-          url: basePath+"/my/tokens/{service}"
+          url: basePath+"/me/tokens/{service}"
         },
 
         // Update token
         put: {
           method: "PUT",
-          url: basePath+"/my/tokens/{service}"
+          url: basePath+"/me/tokens/{service}"
         },
 
         // Delete token
         del: {
           method: "DELETE",
-          url: basePath+"/my/tokens/{service}"
+          url: basePath+"/me/tokens/{service}"
         }
       });
 
@@ -97,13 +97,13 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
         // Retrieve tokens
         get: {
           method: "GET",
-          url: basePath+"/my/tokens"
+          url: basePath+"/me/tokens"
         },
 
         // Create token
         post: {
           method: "POST",
-          url: basePath+"/my/tokens"
+          url: basePath+"/me/tokens"
         }
       });
 

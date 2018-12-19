@@ -74,14 +74,18 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     const userName = qxapp.auth.Data.getInstance().getUserName() || "bizzy";
 
     let userLbl = new qx.ui.basic.Label(userName).set({
-      minWidth: 20
+      minWidth: 10
     });
     this.add(userLbl);
 
     let userBtn = this.__createUserBtn();
     userBtn.set(commonBtnSettings);
-
-    userBtn.setIcon(qxapp.utils.Avatar.getUrl(userEmail, NAVIGATION_BUTTON_HEIGHT));
+    userBtn.set({
+      decorator: new qx.ui.decoration.Decorator().set({
+        radius: 50,
+        backgroundImage: qxapp.utils.Avatar.getUrl(userEmail, NAVIGATION_BUTTON_HEIGHT)
+      })
+    });
     this.add(userBtn);
   },
 
@@ -162,7 +166,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       // Logout
 
       // TODO: add commands (i.e. short-cut system)
-      let preferences = new qx.ui.menu.Button("Account Settings");
+      let preferences = new qx.ui.menu.Button("Preferences");
       preferences.addListener("execute", this.__onOpenAccountSettings, this);
 
       let logout = new qx.ui.menu.Button("Logout");
@@ -187,7 +191,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     __onOpenAccountSettings: function() {
       if (!this.__preferencesWin) {
-        this.__preferencesWin = new qxapp.Preferences();
+        this.__preferencesWin = new qxapp.desktop.preferences.DialogWindow();
       }
 
       let win = this.__preferencesWin;
