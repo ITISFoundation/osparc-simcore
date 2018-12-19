@@ -78,6 +78,7 @@ RUN chmod +x docker/*.sh
 
 # 4. Installs qooxdoo contributions in $WORKDIR/contrib/ within container
 COPY --chown=scu:scu compile.json compile.json
+COPY --chown=scu:scu contrib.json contrib.json
 RUN ./docker/install-contrib.sh
 
 # 5. compiles source -> build-output/
