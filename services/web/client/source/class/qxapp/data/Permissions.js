@@ -42,9 +42,9 @@ qx.Class.define("qxapp.data.Permissions", {
       },
       user: {
         can: [],
-        inherits: ["anonimous"]
+        inherits: ["anonymous"]
       },
-      anonimous: {
+      anonymous: {
         can: []
       }
     }
