@@ -4,6 +4,7 @@ env:
     - DOCKER_GID=1042
 jobs:
   include:
+    # build cache images
     - if: branch = master
       stage: Build docker cache images
       language: python
@@ -20,8 +21,9 @@ jobs:
       cache: pip
       script: 
         - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash ops\travis\push_cache_builds; fi'
-
-    - stage: testing
+    # test node, linting
+    - stage: unit testing
+      name: node linting
       language: node_js
       node_js:
         - "8"
@@ -40,8 +42,9 @@ jobs:
       script:
         - npm run linter
 
-    - language: python      
-      name: Python linting
+    # test python, linting
+    - name: Python linting
+      language: python
       python:
         - "3.6"
       cache: pip
@@ -59,15 +62,85 @@ jobs:
         - pushd services/storage; pip3 install -r requirements/dev.txt; popd
         - pip3 install -r api/tests/requirements.txt
         - pip3 install -r services/apihub/tests/requirements.txt
-      before_script:
         - pip freeze
       script:
         - make pylint
 
-    - language: python      
+    # test python, director
+    - name: director
+      language: python      
       python:
         - "3.6"
-      name: apihub
+      sudo: required
+      services:
+        - docker
+      cache: pip
+      before_install:
+        - python --version
+        - uname -a
+        - lsb_release -a
+        - docker -v
+        - bash ops/travis/install_docker_compose
+        # shutdown postgres because sometimes is is already up ???
+        - sudo service postgresql stop
+        # wait for postgresql to shutdown
+        - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
+      addons:
+        apt:          
+          packages:
+            - docker-ce
+      install:
+        - pip install --upgrade pip wheel setuptools && pip3 --version
+        - pushd services/director; pip3 install -r requirements/ci.txt; popd        
+        - pip freeze
+      before_script:        
+        - make travis-build
+      script:        
+        - pytest --cov=simcore_service_director -v services/director/tests
+      after_success:
+      - coveralls
+
+    # test python, storage
+    - name: storage
+      language: python      
+      python:
+        - "3.6"
+      sudo: required
+      services:
+        - docker
+      cache: pip
+      before_install:
+        - python --version
+        - uname -a
+        - lsb_release -a
+        - docker -v
+        - bash ops/travis/install_docker_compose
+        # shutdown postgres because sometimes is is already up ???
+        - sudo service postgresql stop
+        # wait for postgresql to shutdown
+        - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
+      addons:
+        apt:          
+          packages:
+            - docker-ce
+      install:
+        - pip install --upgrade pip wheel setuptools && pip3 --version
+        - pushd services/storage; pip3 install -r requirements/prod.txt; popd
+        - pushd services/storage; pip3 install -r tests/requirements.txt; popd
+        - pip3 install services/storage/client-sdk/python
+        - pip freeze
+      before_script:        
+        - make travis-build
+      script:        
+        - pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
+      after_success:
+      - coveralls
+
+    # test python, apihub
+    - name: apihub
+      language: python      
+      python:
+        - "3.6"
       sudo: required
       services:
         - docker
@@ -90,8 +163,8 @@ jobs:
         - pip install --upgrade pip wheel setuptools && pip3 --version
         - pip3 install -r api/tests/requirements.txt
         - pip3 install -r services/apihub/tests/requirements.txt
-      before_script:
         - pip freeze
+      before_script:
         - make travis-build
       script:        
         - pytest -v api/tests
@@ -99,11 +172,12 @@ jobs:
       after_success:
       - coveralls
 
-    - language: python      
+    # test python, simcore-sdk
+    - name: simcore-sdk
+      language: python      
       python:
         - "3.6"
       sudo: required
-      name: simcore-sdk
       services:
         - docker
       cache: pip
@@ -127,8 +201,8 @@ jobs:
         - pip3 install packages/s3wrapper[test]
         - pip3 install packages/simcore-sdk[test]
         - pip3 install services/storage/client-sdk/python
-      before_script:
         - pip freeze
+      before_script:        
         - make travis-build
       script:        
         - pytest --cov=pytest_docker -v packages/pytest_docker/tests
@@ -138,11 +212,12 @@ jobs:
       after_success:
       - coveralls
 
-    - language: python      
+    # test python, webserver
+    - name: webserver
+      language: python      
       python:
         - "3.6"
-      sudo: required
-      name: webserver      
+      sudo: required      
       services:
         - docker
       cache: pip
@@ -165,83 +240,15 @@ jobs:
         - pip3 install packages/s3wrapper[test]
         - pip3 install packages/simcore-sdk[test]        
         - pip3 install packages/director-sdk/python
-        - pushd services/web/server; pip3 install -r requirements/ci.txt; popd                
-      before_script:
+        - pushd services/web/server; pip3 install -r requirements/ci.txt; popd
         - pip freeze
+      before_script:        
         - make travis-build
       script:
         - pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
         - pytest --cov=simcore_service_webserver -v services/web/server/tests/login
       after_success:
-      - coveralls
-
-    - language: python      
-      python:
-        - "3.6"
-      sudo: required
-      name: director      
-      services:
-        - docker
-      cache: pip
-      before_install:
-        - python --version
-        - uname -a
-        - lsb_release -a
-        - docker -v
-        - bash ops/travis/install_docker_compose
-        # shutdown postgres because sometimes is is already up ???
-        - sudo service postgresql stop
-        # wait for postgresql to shutdown
-        - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
-      addons:
-        apt:          
-          packages:
-            - docker-ce
-      install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pushd services/director; pip3 install -r requirements/ci.txt; popd        
-      before_script:
-        - pip freeze
-        - make travis-build
-      script:        
-        - pytest --cov=simcore_service_director -v services/director/tests
-      after_success:
-      - coveralls
-
-    - language: python      
-      python:
-        - "3.6"
-      sudo: required
-      name: storage
-      services:
-        - docker
-      cache: pip
-      before_install:
-        - python --version
-        - uname -a
-        - lsb_release -a
-        - docker -v
-        - bash ops/travis/install_docker_compose
-        # shutdown postgres because sometimes is is already up ???
-        - sudo service postgresql stop
-        # wait for postgresql to shutdown
-        - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
-      addons:
-        apt:          
-          packages:
-            - docker-ce
-      install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pushd services/storage; pip3 install -r requirements/prod.txt; popd
-        - pushd services/storage; pip3 install -r tests/requirements.txt; popd
-        - pip3 install services/storage/client-sdk/python
-      before_script:
-        - pip freeze
-        - make travis-build
-      script:        
-        - pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
-      after_success:
-      - coveralls
+      - coveralls    
 
 notifications:
   email:
