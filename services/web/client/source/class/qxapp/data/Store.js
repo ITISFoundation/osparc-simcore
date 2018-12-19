@@ -4,7 +4,6 @@ qx.Class.define("qxapp.data.Store", {
   type : "singleton",
 
   events: {
-    "UserProfileRecieved": "qx.event.type.Event",
     "servicesRegistered": "qx.event.type.Event",
     // "FakeFiles": "qx.event.type.Event",
     "MyDocuments": "qx.event.type.Event",
@@ -28,7 +27,6 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   members: {
-    __userRole: null,
     __servicesCached: null,
 
     __getMimeType: function(type) {
@@ -47,28 +45,6 @@ qx.Class.define("qxapp.data.Store", {
       let mtB = this.__getMimeType(typeB);
       return mtA && mtB &&
         new qxapp.data.MimeType(mtA).match(new qxapp.data.MimeType(mtB));
-    },
-
-    loadUserRole: function() {
-      let userResources = qxapp.io.rest.ResourceFactory.getInstance().createUserResources();
-
-      let profile = userResources.profile;
-      profile.addListenerOnce("getSuccess", e => {
-        let profileData = e.getRequest().getResponse().data;
-        this.__userRole = profileData.role;
-        this.fireDataEvent("UserProfileRecieved", true);
-      }, this);
-      profile.addListenerOnce("getError", e => {
-        console.log(e);
-      });
-      profile.get();
-    },
-
-    isTesterUser: function() {
-      if (this.__userRole) {
-        return this.__userRole === "Admin" || this.__userRole === "Tester";
-      }
-      return false;
     },
 
     areNodesCompatible: function(topLevelPort1, topLevelPort2) {
