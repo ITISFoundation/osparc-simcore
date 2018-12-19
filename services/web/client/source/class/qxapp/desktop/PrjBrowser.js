@@ -529,7 +529,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             (p, i) => qx.data.marshal.Json.createModel({
               name: p.name,
               thumbnail: p.thumbnail,
-              projectUuid: p.projectUuid,
+              // FIXME
+              projectUuid: p.projectUuid || p.uuid,
               lastChangeDate: new Date(p.lastChangeDate),
               prjOwner: Object.prototype.hasOwnProperty.call(p, "owner") ? p.owner : p.prjOwner
             })
