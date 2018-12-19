@@ -178,7 +178,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       menu.add(new qx.ui.menu.Button(this.tr("Help")));
       menu.add(new qx.ui.menu.Button(this.tr("Report a Problem")));
       let aboutBtn = new qx.ui.menu.Button(this.tr("About"));
-      aboutBtn.addListener("execute", this.__onOpenAbout, this);
+      aboutBtn.addListener("execute", e => qxapp.About.getInstance().open());
       menu.add(aboutBtn);
       menu.addSeparator();
       menu.add(logout);
@@ -193,30 +193,6 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       }
 
       let win = this.__preferencesWin;
-      if (win) {
-        win.center();
-        win.open();
-      }
-    },
-
-    __onOpenAbout: function() {
-      if (!this.__aboutWin) {
-        this.__aboutWin = new qx.ui.window.Window("About").set({
-          layout: new qx.ui.layout.Canvas(),
-          contentPadding: 10,
-          showMaximize: false,
-          showMinimize: false,
-          resizable: false
-        });
-        this.__aboutWin.add(new qxapp.About(), {
-          top: 0,
-          right: 0,
-          bottom: 0,
-          left: 0
-        });
-      }
-
-      let win = this.__aboutWin;
       if (win) {
         win.center();
         win.open();

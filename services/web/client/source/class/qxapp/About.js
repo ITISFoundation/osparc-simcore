@@ -1,34 +1,47 @@
 /* eslint no-warning-comments: "off" */
 qx.Class.define("qxapp.About", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.window.Window,
+  type: "singleton",
 
   construct: function() {
-    this.base(arguments);
-
-    let versionsLayout = new qx.ui.layout.VBox();
-    this._setLayout(versionsLayout);
-
+    this.base(arguments, this.tr("About"));
+    this.set({
+      layout: new qx.ui.layout.VBox(),
+      contentPadding: 20,
+      showMaximize: false,
+      showMinimize: false,
+      resizable: false,
+      centerOnAppear: true
+    });
     this.__populateEntries();
   },
 
   members: {
     __populateEntries: function() {
       // All these items and versions should be red from a file
-      this._add(this.__createEntry("oSPARC UI", "3.38"));
-      this._add(new qx.ui.core.Spacer(null, 10));
-      this._add(this.__createEntry("qx-compiler", "0.2.14"));
-      this._add(this.__createEntry("qooxdoo-sdk", "6.0.0-alpha-20181212"));
-      this._add(this.__createEntry("contrib/qx-osparc-theme", "0.3.0"));
-      this._add(this.__createEntry("contrib/qx-iconfont-material", "0.1.0"));
-      this._add(this.__createEntry("contrib/qx-iconfont-fontawesome5", "0.0.4"));
-      this._add(new qx.ui.core.Spacer(null, 10));
-      this._add(this.__createEntry("Ajv", "6.5.0"));
-      this._add(this.__createEntry("svg.js", "2.6.4"));
-      this._add(this.__createEntry("socket.io", "2.1.2"));
+      this.add(this.__createEntry("oSPARC UI", "3.38"));
+      this.add(new qx.ui.core.Spacer(null, 10));
+      let libInfo = qx.core.Environment.get("qx.libraryInfoMap");
+      if (libInfo) {
+        for (let key in libInfo) {
+          let lib = libInfo[key];
+          this.add(this.__createEntry(lib.name || "unknown library", lib.version || "unknown-version"));
+        }
+        this.add(new qx.ui.core.Spacer(null, 10));
+      }
+      [
+        ["Ajv", "6.5.0"],
+        ["svg.js", "2.6.4"],
+        ["socket.io", "2.1.2"]
+      ].forEach(r => this.add(this.__createEntry(r[0], r[1])));
+      this.add(new qx.ui.core.Spacer(null, 10));
+      this.add(this.__createEntry("qooxdoo-compiler", qx.core.Environment.get("qx.compilerVersion")));
     },
 
     __createEntry: function(item, version) {
-      let entryLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      let entryLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+        marginBottom: 4
+      });
 
       const title14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"]);
       let entryLabel = new qx.ui.basic.Label(item).set({
