@@ -36,7 +36,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       this.__refilterData();
     }, this);
     // Temporary HACK: Backend should do the filtering
-    if (qxapp.data.Store.getInstance().isTesterUser()) {
+    if (qxapp.data.Permissions.getInstance().canDo("test")) {
       filterLayout.add(showAll);
     }
     // buttons for reloading services
