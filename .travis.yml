@@ -12,7 +12,7 @@ jobs:
       services:
         - docker
       before_install:
-        - bash ops\travis\install_docker_compose        
+        - bash ops/travis/install_docker_compose        
       addons:
         apt:          
           packages:
@@ -78,7 +78,7 @@ jobs:
         - uname -a
         - lsb_release -a
         - docker -v
-        - bash ops\travis\install_docker_compose
+        - bash ops/travis/install_docker_compose
         # shutdown postgres because sometimes is is already up ???
         - sudo service postgresql stop
         # wait for postgresql to shutdown
@@ -115,7 +115,7 @@ jobs:
         - uname -a
         - lsb_release -a
         - docker -v
-        - bash ops\travis\install_docker_compose
+        - bash ops/travis/install_docker_compose
         # shutdown postgres because sometimes is is already up ???
         - sudo service postgresql stop
         # wait for postgresql to shutdown
@@ -150,7 +150,7 @@ jobs:
         - uname -a
         - lsb_release -a
         - docker -v
-        - bash ops\travis\install_docker_compose
+        - bash ops/travis/install_docker_compose
         # shutdown postgres because sometimes is is already up ???
         - sudo service postgresql stop
         # wait for postgresql to shutdown
@@ -186,7 +186,7 @@ jobs:
         - uname -a
         - lsb_release -a
         - docker -v
-        - bash ops\travis\install_docker_compose
+        - bash ops/travis/install_docker_compose
         # shutdown postgres because sometimes is is already up ???
         - sudo service postgresql stop
         # wait for postgresql to shutdown
@@ -219,7 +219,7 @@ jobs:
         - uname -a
         - lsb_release -a
         - docker -v
-        - bash ops\travis\install_docker_compose
+        - bash ops/travis/install_docker_compose
         # shutdown postgres because sometimes is is already up ???
         - sudo service postgresql stop
         # wait for postgresql to shutdown
