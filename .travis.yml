@@ -230,8 +230,8 @@ jobs:
             - docker-ce
       install:
         - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pip3 install -r services/storage/requirements/prod.txt
-        - pip3 install -r services/storage/tests/requirements.txt
+        - pushd services/storage; pip3 install -r requirements/prod.txt; popd
+        - pushd services/storage; pip3 install -r tests/requirements.txt; popd
       script:
         - make travis-build
         - $TEST_SUITE_COMMAND
