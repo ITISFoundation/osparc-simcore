@@ -9,7 +9,7 @@ servers:
 paths:
   /projects:
     get:
-      summary: List projects
+      summary: List all projects
       operationId: list_projects
       parameters:
         - name: type
@@ -40,7 +40,7 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
     post:
-      summary: Create projects
+      summary: Create new project
       operationId: create_projects
       requestBody:
         content:
@@ -65,7 +65,7 @@ paths:
         schema:
           type: string
     get:
-      summary: Gets specific project
+      summary: Gets given project
       operationId: get_project
       responses:
         '200':
@@ -77,8 +77,8 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
     put:
-      summary: Updates project
-      operationId: update_project
+      summary: Enclosed entity replaces given project
+      operationId: replace_project
       requestBody:
         content:
           application/json:
@@ -94,7 +94,7 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
     delete:
-      summary: Delete project
+      summary: Delete given project
       operationId: delete_project
       responses:
         '204':
