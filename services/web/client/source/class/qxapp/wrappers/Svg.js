@@ -6,7 +6,7 @@
 /* global SVG */
 /* eslint new-cap: [2, {capIsNewExceptions: ["SVG", "M", "C"]}] */
 
-qx.Class.define("qxapp.wrappers.SvgWrapper", {
+qx.Class.define("qxapp.wrappers.Svg", {
   extend: qx.core.Object,
 
   construct: function() {

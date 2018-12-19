@@ -15,7 +15,7 @@
     "lastChangeDate": "2018-07-02T16:02:22Z",
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?0.jpg",
     "workbench": {
-      "EyRyp1uaS": {
+      "91ec95ec-fad5-45be-a253-ce1aa523e0e0": {
         "key": "simcore/services/dynamic/itis/file-picker",
         "version": "0.0.0",
         "outputs": {
@@ -29,7 +29,7 @@
           "y": 10
         }
       },
-      "4ygzpkd6B": {
+      "d49d771b-824f-4767-bcd3-e77d2143ec53": {
         "key": "simcore/services/computational/itis/sleeper",
         "version": "0.0.0",
         "label": "Sleeper 1",
@@ -44,7 +44,7 @@
           "y": 10
         }
       },
-      "VyU461Oar": {
+      "06938447-726c-473f-9368-dfec2bff7873": {
         "key": "simcore/services/computational/itis/sleeper",
         "version": "0.0.0",
         "label": "Sleeper 2",
@@ -59,12 +59,12 @@
           "y": 300
         }
       },
-      "Vy6Bp1dpH": {
+      "a1415ee9-74f5-4427-94a0-2b53b52cc5a1": {
         "key": "simcore/services/computational/itis/tutti",
         "version": "0.0.0-alpha",
         "inputs": {
           "inNumber": {
-            "nodeUuid": "VyU461Oar",
+            "nodeUuid": "06938447-726c-473f-9368-dfec2bff7873",
             "output": "outNumber"
           },
           "inInt": 372,
@@ -73,18 +73,18 @@
           "inArea": "some\nmore",
           "inSb": "cat",
           "inFile": {
-            "nodeUuid": "EyRyp1uaS",
+            "nodeUuid": "91ec95ec-fad5-45be-a253-ce1aa523e0e0",
             "output": "outFile"
           },
           "inImage": {
-            "nodeUuid": "EyRyp1uaS",
+            "nodeUuid": "91ec95ec-fad5-45be-a253-ce1aa523e0e0",
             "output": "outFile"
           }
         },
         "inputNodes": [
-          "4ygzpkd6B",
-          "VyU461Oar",
-          "EyRyp1uaS"
+          "d49d771b-824f-4767-bcd3-e77d2143ec53",
+          "06938447-726c-473f-9368-dfec2bff7873",
+          "91ec95ec-fad5-45be-a253-ce1aa523e0e0"
         ],
         "position": {
           "x": 400,

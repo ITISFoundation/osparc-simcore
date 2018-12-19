@@ -21,7 +21,7 @@ qx.Class.define("qxapp.data.Store", {
       name: "New Project",
       description: "Empty",
       thumbnail: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round",
-      created: new Date(),
+      lastChangeDate: new Date(),
       projectId: qxapp.utils.Utils.uuidv4()
     })
   },
