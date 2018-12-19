@@ -143,11 +143,11 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     },
 
     __getUserProfile: function() {
-      let store = qxapp.data.Store.getInstance();
-      store.addListener("UserProfileRecieved", e => {
+      let permissions = qxapp.data.Permissions.getInstance();
+      permissions.addListener("UserProfileRecieved", e => {
         this.__userReady = e.getData();
       }, this);
-      store.loadUserRole();
+      permissions.loadUserRole();
     },
 
     __getServicesPreload: function() {
