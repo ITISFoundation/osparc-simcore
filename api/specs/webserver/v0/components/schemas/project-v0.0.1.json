@@ -6,7 +6,7 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "projectUuid",
+    "uuid",
     "name",
     "description",
     "notes",
@@ -18,7 +18,7 @@
     "workbench"
   ],
   "properties": {
-    "projectUuid": {
+    "uuid": {
       "type": "string",
       "description": "project unique identifier",
       "examples": [

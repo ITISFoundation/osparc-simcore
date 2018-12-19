@@ -6,7 +6,7 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
 
     if (prjData) {
       this.set({
-        uuid: prjData.projectUuid || prjData.uuid,
+        uuid: prjData.uuid,
         name: prjData.name,
         description: prjData.description,
         notes: prjData.notes,

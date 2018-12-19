@@ -3,7 +3,7 @@ description: Description of a simcore project
 type: object
 additionalProperties: false
 required:
-  - projectUuid
+  - uuid
   - name
   - description
   - notes
@@ -14,7 +14,7 @@ required:
   - thumbnail
   - workbench
 properties:
-  projectUuid:
+  uuid:
     type: string
     description: project unique identifier
     example:

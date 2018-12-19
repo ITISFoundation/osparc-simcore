@@ -1,6 +1,6 @@
 [
   {
-    "projectUuid": "cb9188ae-1438-4d5e-9b09-ddcc63121ef4",
+    "uuid": "cb9188ae-1438-4d5e-9b09-ddcc63121ef4",
     "name": "Sleepers",
     "description": null,
     "notes": "",
@@ -124,7 +124,7 @@
       }
     }
   }, {
-    "projectUuid": "template-uuid-1234-a1a7-f7d4f3a8f26b",
+    "uuid": "template-uuid-1234-a1a7-f7d4f3a8f26b",
     "name": "Colleen Clancy use cases: 0D",
     "description": "Colleen Clancy use cases: 0D",
     "notes": "Empty",
@@ -202,7 +202,7 @@
       }
     }
   }, {
-    "projectUuid": "template-uuid-41e9-a1a7-f7d4f3a8f26b",
+    "uuid": "template-uuid-41e9-a1a7-f7d4f3a8f26b",
     "name": "Colleen Clancy use cases: 1D, 2D",
     "description": "CC use cases: 1D and 2D collapsed",
     "notes": "Empty",
@@ -365,7 +365,7 @@
       }
     }
   }, {
-    "projectUuid": "template-uuid-4ea2-9778-DemoDecember",
+    "uuid": "template-uuid-4ea2-9778-DemoDecember",
     "name": "Demo December",
     "description": "",
     "notes": "",
