@@ -71,6 +71,7 @@ RUN addgroup -g $HOST_GID_ARG hgrp &&\
     chown -R scu:scu $HOME/.venv
 
 VOLUME /home/scu/services/director
+VOLUME /home/scu/packages/service-library
 
 ENV DEBUG 1
 ENV RUN_DOCKER_ENGINE_ROOT=0
@@ -83,9 +84,13 @@ FROM build as production
 ENV DEBUG 0
 ENV RUN_DOCKER_ENGINE_ROOT=0
 COPY --chown=scu:scu services/director $HOME/services/director
+COPY --chown=scu:scu packages/service-library $HOME/packages/service-library
 WORKDIR $HOME/services/director
 RUN $PIP install --no-cache-dir -r requirements/prod.txt \
     && rm -rf $HOME/services/director
+WORKDIR $HOME/packages/service-library
+RUN $PIP install --no-cache-dir -r requirements/dev.txt \
+    && rm -rf $HOME/packages/service-library
 WORKDIR $HOME
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD ["/bin/sh", "docker/boot.sh"]
