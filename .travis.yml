@@ -5,24 +5,21 @@ env:
 jobs:
   include:
     - if: branch = master
-      stage: Build docker images
+      stage: Build docker cache images
       language: python
       python:
         - "3.6"
       services:
         - docker
       before_install:
-        - sudo rm /usr/local/bin/docker-compose
-        - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-        - chmod +x docker-compose
-        - sudo mv docker-compose /usr/local/bin
+        - bash ops\travis\install_docker_compose        
       addons:
         apt:          
           packages:
             - docker-ce
       cache: pip
       script: 
-        - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash scripts/travis/push_cache_builds; fi'
+        - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash ops\travis\push_cache_builds; fi'
 
     - stage: testing
       language: node_js
@@ -81,11 +78,7 @@ jobs:
         - uname -a
         - lsb_release -a
         - docker -v
-        - sudo rm /usr/local/bin/docker-compose
-        - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-        - chmod +x docker-compose
-        - sudo mv docker-compose /usr/local/bin        
-        - docker-compose --version
+        - bash ops\travis\install_docker_compose
         # shutdown postgres because sometimes is is already up ???
         - sudo service postgresql stop
         # wait for postgresql to shutdown
@@ -100,7 +93,7 @@ jobs:
         - pip3 install -r services/apihub/tests/requirements.txt
       script:
         - make travis-build
-        - make $TEST_SUITE_COMMAND
+        - $TEST_SUITE_COMMAND
       after_success:
       - coveralls
 
@@ -122,11 +115,7 @@ jobs:
         - uname -a
         - lsb_release -a
         - docker -v
-        - sudo rm /usr/local/bin/docker-compose
-        - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-        - chmod +x docker-compose
-        - sudo mv docker-compose /usr/local/bin        
-        - docker-compose --version
+        - bash ops\travis\install_docker_compose
         # shutdown postgres because sometimes is is already up ???
         - sudo service postgresql stop
         # wait for postgresql to shutdown
@@ -141,7 +130,7 @@ jobs:
         - pip3 install packages/simcore-sdk[test]
       script:
         - make travis-build
-        - make $TEST_SUITE_COMMAND
+        - $TEST_SUITE_COMMAND
       after_success:
       - coveralls
 
@@ -161,11 +150,7 @@ jobs:
         - uname -a
         - lsb_release -a
         - docker -v
-        - sudo rm /usr/local/bin/docker-compose
-        - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-        - chmod +x docker-compose
-        - sudo mv docker-compose /usr/local/bin        
-        - docker-compose --version
+        - bash ops\travis\install_docker_compose
         # shutdown postgres because sometimes is is already up ???
         - sudo service postgresql stop
         # wait for postgresql to shutdown
@@ -182,7 +167,7 @@ jobs:
         - pushd services/web/server; pip3 install -r requirements/ci.txt; popd                
       script:
         - make travis-build
-        - make $TEST_SUITE_COMMAND
+        - $TEST_SUITE_COMMAND
       after_success:
       - coveralls
 
@@ -201,11 +186,7 @@ jobs:
         - uname -a
         - lsb_release -a
         - docker -v
-        - sudo rm /usr/local/bin/docker-compose
-        - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-        - chmod +x docker-compose
-        - sudo mv docker-compose /usr/local/bin        
-        - docker-compose --version
+        - bash ops\travis\install_docker_compose
         # shutdown postgres because sometimes is is already up ???
         - sudo service postgresql stop
         # wait for postgresql to shutdown
@@ -219,7 +200,7 @@ jobs:
         - pushd services/director; pip3 install -r requirements/ci.txt; popd
       script:
         - make travis-build
-        - make $TEST_SUITE_COMMAND
+        - $TEST_SUITE_COMMAND
       after_success:
       - coveralls
 
@@ -238,11 +219,7 @@ jobs:
         - uname -a
         - lsb_release -a
         - docker -v
-        - sudo rm /usr/local/bin/docker-compose
-        - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-        - chmod +x docker-compose
-        - sudo mv docker-compose /usr/local/bin        
-        - docker-compose --version
+        - bash ops\travis\install_docker_compose
         # shutdown postgres because sometimes is is already up ???
         - sudo service postgresql stop
         # wait for postgresql to shutdown
@@ -257,7 +234,7 @@ jobs:
         - pip3 install packages/simcore-sdk[test]
       script:
         - make travis-build
-        - make $TEST_SUITE_COMMAND
+        - $TEST_SUITE_COMMAND
       after_success:
       - coveralls
 
