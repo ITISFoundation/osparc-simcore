@@ -179,9 +179,6 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
       box.add(confirm);
 
       let manager = new qx.ui.form.validation.Manager();
-      manager.add(newPassword, function(value, itemForm) {
-        return qxapp.auth.core.Utils.checkPasswordSecure(value, itemForm);
-      });
       manager.setValidator(function(_itemForms) {
         return qxapp.auth.core.Utils.checkSamePasswords(newPassword, confirm);
       });

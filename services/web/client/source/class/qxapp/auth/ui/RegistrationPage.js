@@ -59,9 +59,6 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
 
       // validation
       manager.add(email, qx.util.Validate.email());
-      manager.add(pass1, function(value, itemForm) {
-        return qxapp.auth.core.Utils.checkPasswordSecure(value, itemForm);
-      });
       manager.setValidator(function(_itemForms) {
         return qxapp.auth.core.Utils.checkSamePasswords(pass1, pass2);
       });
