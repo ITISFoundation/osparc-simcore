@@ -52,9 +52,9 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       nullable : true
     },
 
-    created: {
+    lastChangeDate: {
       check : "Date",
-      apply : "_applyCreated",
+      apply : "_applylastChangeDate",
       nullable : true
     }
   },
@@ -94,7 +94,7 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
           });
           this._addAt(control);
           break;
-        case "created":
+        case "lastChangeDate":
           control = new qx.ui.basic.Label().set({
             rich: true,
             allowGrowY: false
@@ -124,11 +124,11 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       label.setValue(value);
     },
 
-    _applyCreated: function(value, old) {
-      let label = this.getChildControl("created");
+    _applylastChangeDate: function(value, old) {
+      let label = this.getChildControl("lastChangeDate");
       if (value) {
         const dateStr = this._dateFormat.format(value);
-        label.setValue("Created on: <b>" + dateStr + "</b>");
+        label.setValue("Last change: <b>" + dateStr + "</b>");
       } else {
         label.resetValue();
       }

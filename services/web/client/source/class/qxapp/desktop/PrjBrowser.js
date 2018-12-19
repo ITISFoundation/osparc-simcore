@@ -168,7 +168,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           name: this.tr("New Project"),
           thumbnail: "@FontAwesome5Solid/plus-circle/80",
           projectUuid: null,
-          created: null,
+          lastChangeDate: null,
           prjOwner: null
         }));
         // controller
@@ -295,7 +295,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               return data ? "Created by: <b>" + data + "</b>" : null;
             }
           }, item, id);
-          controller.bindProperty("created", "created", {
+          controller.bindProperty("lastChangeDate", "lastChangeDate", {
             converter: function(data) {
               return data ? new Date(data) : null;
             }
@@ -306,7 +306,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             }
           }, item, id);
         },
-        configureItem : function(item) {
+        configureItem: function(item) {
           item.getChildControl("icon").set({
             width: thumbnailWidth,
             height: thumbnailHeight,
@@ -512,11 +512,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               name: p.name,
               thumbnail: p.thumbnail,
               projectUuid: p.projectUuid,
-              created: new Date(p.creationDate),
+              lastChangeDate: new Date(p.lastChangeDate),
               prjOwner: Object.prototype.hasOwnProperty.call(p, "owner") ? p.owner : p.prjOwner
             })
           )
       );
+      return prjArray;
     }
   }
 });
