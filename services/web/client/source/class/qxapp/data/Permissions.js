@@ -32,24 +32,24 @@ qx.Class.define("qxapp.data.Permissions", {
     ACTIONS: {},
 
     ROLES: {
-      admin: {
-        can: [],
-        inherits: ["moderator"]
-      },
-      moderator: {
-        can: [],
-        inherits: ["tester"]
-      },
-      tester: {
-        can: [],
-        inherits: ["user"]
+      anonymous: {
+        can: []
       },
       user: {
         can: [],
         inherits: ["anonymous"]
       },
-      anonymous: {
-        can: []
+      tester: {
+        can: [],
+        inherits: ["user"]
+      },
+      moderator: {
+        can: [],
+        inherits: ["tester"]
+      },
+      admin: {
+        can: [],
+        inherits: ["moderator"]
       }
     }
   },
