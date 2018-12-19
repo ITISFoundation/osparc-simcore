@@ -12,7 +12,7 @@ from simcore_service_webserver.login import APP_LOGIN_CONFIG
 from utils_assert import assert_status
 from utils_login import LoggedUser, parse_link
 
-NEW_PASSWORD = 'newpassword'
+NEW_PASSWORD = 'NewPassword1*&^'
 
 
 async def test_unauthorized(client):
@@ -65,27 +65,44 @@ async def test_success(client):
     logout_url = client.app.router['auth_logout'].url_for()
 
     async with LoggedUser(client) as user:
-        r = await client.post(url, json={
+        rp = await client.post(url, json={
             'current': user['raw_password'],
             'new': NEW_PASSWORD,
             'confirm': NEW_PASSWORD,
         })
-        assert r.url_obj.path == url.path
-        assert r.status == 200
-        assert cfg.MSG_PASSWORD_CHANGED in await r.text()
-        await assert_status(r, web.HTTPOk, cfg.MSG_PASSWORD_CHANGED)
+        assert rp.url_obj.path == url.path
+        assert rp.status == 200
+        assert cfg.MSG_PASSWORD_CHANGED in await rp.text()
+        await assert_status(rp, web.HTTPOk, cfg.MSG_PASSWORD_CHANGED)
 
-        r = await client.get(logout_url)
-        assert r.status == 200
-        assert r.url_obj.path == logout_url.path
+        rp = await client.get(logout_url)
+        assert rp.status == 200
+        assert rp.url_obj.path == logout_url.path
 
-        r = await client.post(login_url, json={
+        rp = await client.post(login_url, json={
             'email': user['email'],
             'password': NEW_PASSWORD,
         })
-        assert r.status == 200
-        assert r.url_obj.path == login_url.path
-        await assert_status(r, web.HTTPOk, cfg.MSG_LOGGED_IN)
+        assert rp.status == 200
+        assert rp.url_obj.path == login_url.path
+        await assert_status(rp, web.HTTPOk, cfg.MSG_LOGGED_IN)
+
+
+
+async def test_password_strength(client):
+    cfg = client.app[APP_LOGIN_CONFIG]
+    route = client.app.router['auth_check_password_strength']
+
+    async with LoggedUser(client) as user:
+        url = route.url_for(password=NEW_PASSWORD)
+        rp = client.get(url)
+
+        assert rp.url_obj.path == url.path
+        data, error = await assert_status(rp, web.HTTPOk)
+
+        assert data["strength"]>0.9
+        assert data["rating"] == "Very strong"
+        assert data["improvements"]
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 import logging
 
 import attr
+import passwordmeter
 from aiohttp import web
 from yarl import URL
 
@@ -9,13 +10,14 @@ from servicelib.rest_utils import extract_and_validate
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..security import check_password, encrypt_password, forget, remember
-from .cfg import (APP_LOGIN_CONFIG, cfg,  # FIXME: do not use singletons!
-                  get_storage)
+from .cfg import APP_LOGIN_CONFIG, cfg, get_storage
 from .decorators import RQT_USERID_KEY, login_required
 from .storage import AsyncpgStorage
-from .utils import (common_themed, themed, get_client_ip, is_confirmation_allowed,
+from .utils import (common_themed, get_client_ip, is_confirmation_allowed,
                     is_confirmation_expired, make_confirmation_link,
-                    render_and_send_mail)
+                    render_and_send_mail, themed)
+
+ # FIXME: do not use cfg singleton. use instead cfg = request.app[APP_LOGIN_CONFIG]
 
 log = logging.getLogger(__name__)
 
@@ -279,8 +281,18 @@ async def change_password(request: web.Request):
 
 async def email_confirmation(request: web.Request):
     """ Handled access from a link sent to user by email
-
         Retrieves confirmation key and redirects back to some location front-end
+
+        * registration, change-email:
+            - sets user as active
+            - redirects to login
+        * reset-password:
+            - redirects to login
+            - attaches page and token info onto the url
+            - info appended as fragment, e.g. https://osparc.io#page=reset-password;code=131234
+            - front-end should interpret that info as:
+                - show the reset-password page
+                - use the token to submit a POST /v0/auth/confirmation/{code} and finalize reset action
     """
     params, _, _ = await extract_and_validate(request)
 
@@ -300,19 +312,17 @@ async def email_confirmation(request: web.Request):
             log.debug("User %s registered", user)
             #TODO: flash_response([cfg.MSG_ACTIVATED, cfg.MSG_LOGGED_IN])
 
-        elif action == RESET_PASSWORD:
-            # Passes front-end code as a query. The latter
-            # should then POST /v0/auth/confirmation/{code}
-            # with new password info
-            redirect_url = redirect_url.with_query(page="reset-password", code=code)
-            log.debug("Reset password requested %s", confirmation)
-
         elif action == CHANGE_EMAIL:
             user = await db.get_user({'id': confirmation['user_id']})
             await db.update_user(user, {'email': confirmation['data']})
             await db.delete_confirmation(confirmation)
             log.debug("User %s changed email", user)
             #TODO:  flash_response(cfg.MSG_EMAIL_CHANGED)
+
+        elif action == RESET_PASSWORD:
+            # NOTE: By using fragments (instead of queries or path parameters), the browser does NOT reloads page
+            redirect_url = redirect_url.with_fragment("page=reset-password;code=%s" % code )
+            log.debug("Reset password requested %s", confirmation)
 
 
     # TODO: inject flash messages to be shown by main website
@@ -352,6 +362,40 @@ async def reset_password_allowed(request: web.Request):
     raise web.HTTPUnauthorized(reason="Cannot reset password. Invalid token or user",
                                content_type='application/json') # 401
 
+async def check_password_strength(request: web.Request):
+    """ evaluates password strength and suggests some recommendations
+
+        The strength of the password in the range from 0 (extremely weak) and 1 (extremely strong).
+
+        The recommendations is a dictionary of ways the password could be improved.
+        The keys of the dict are general "categories" of ways to improve the password (e.g. "length")
+        that are fixed strings, and the values are internationalizable strings that are human-friendly descriptions
+        and possibly tailored to the specific password
+    """
+    params, _, _ = await extract_and_validate(request)
+    password = params['password']
+
+    #TODO: locale = params.get('locale') and translate message accordingly
+    strength, improvements = passwordmeter.test(password)
+    ratings = (
+        'Infinitely weak',
+        'Extremely weak',
+        'Very weak',
+        'Weak',
+        'Moderately strong',
+        'Strong',
+        'Very strong'
+    )
+
+    data = {
+        'strength': strength,
+        'rating': ratings[min(len(ratings) - 1, int(strength * len(ratings)))]
+        }
+    if improvements:
+        data['improvements'] = improvements
+    return data
+
+
 
 # helpers -----------------------------------------------------------------
 
@@ -373,6 +417,7 @@ def flash_response(msg: str, level: str="INFO"):
 
 
 async def validate_registration(email: str, password: str, confirm: str, db: AsyncpgStorage):
+
     # email : required & formats
     # password: required & secure[min length, ...]
 
@@ -386,7 +431,8 @@ async def validate_registration(email: str, password: str, confirm: str, db: Asy
                                content_type='application/json')
 
     # TODO: If the email field isn’t a valid email, return a 422 - HTTPUnprocessableEntity
-    #TODO: If the password field is too short, return a 422 - HTTPUnprocessableEntity
+    # TODO: If the password field is too short, return a 422 - HTTPUnprocessableEntity
+    # TODO: use passwordmeter to enforce good passwords, but first create helper in front-end
 
     user = await db.get_user({'email': email})
     if user:
