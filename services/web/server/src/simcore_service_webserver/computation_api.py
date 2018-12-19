@@ -11,16 +11,17 @@ import logging
 
 import sqlalchemy.exc
 from aiohttp import web, web_exceptions
+from celery import Celery
 from sqlalchemy import and_, create_engine
 from sqlalchemy.orm import sessionmaker
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_director_sdk.rest import ApiException
+from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 
-from .computation_worker import celery
 from .db_config import CONFIG_SECTION_NAME as CONFIG_DB_SECTION
 from .director import director_sdk
 from .login.decorators import login_required
@@ -34,6 +35,10 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 db_session = None
 computation_routes = web.RouteTableDef()
+
+rabbit_config = rabbit_config()
+celery = Celery(rabbit_config.name, broker=rabbit_config.broker, backend=rabbit_config.backend)
+
 
 async def init_database(_app):
     #pylint: disable=W0603
