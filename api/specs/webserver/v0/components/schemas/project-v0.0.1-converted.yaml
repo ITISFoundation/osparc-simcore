@@ -7,7 +7,7 @@ required:
   - name
   - description
   - notes
-  - owner
+  - prjOwner
   - collaborators
   - creationDate
   - lastChangeDate
@@ -37,7 +37,7 @@ properties:
       - |-
         # title
         Some Text `with` common mark markup
-  owner:
+  prjOwner:
     type: string
     description: user uuid
   collaborators:

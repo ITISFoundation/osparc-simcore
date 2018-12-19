@@ -11,7 +11,7 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
         description: prjData.description,
         notes: prjData.notes,
         thumbnail: prjData.thumbnail,
-        prjOwner: prjData.owner || prjData.prjOwner,
+        prjOwner: prjData.prjOwner,
         collaborators: prjData.collaborators,
         creationDate: new Date(prjData.creationDate),
         lastChangeDate: new Date(prjData.lastChangeDate)

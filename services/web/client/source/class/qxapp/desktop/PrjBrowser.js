@@ -355,7 +355,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         this.__editPrjLayout.removeAt(1);
       }
 
-      const itemsToBeDisplayed = ["name", "description", "notes", "owner", "collaborators", "creationDate", "lastChangeDate"];
+      const itemsToBeDisplayed = ["name", "description", "notes", "prjOwner", "collaborators", "creationDate", "lastChangeDate"];
       const itemsToBeModified = fromTemplate ? [] : ["name", "description", "notes"];
       let form = new qx.ui.form.Form();
       let control;
@@ -376,7 +376,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               });
               form.add(control, this.tr("Notes"));
               break;
-            case "owner":
+            case "prjOwner":
               control = new qx.ui.form.TextField();
               form.add(control, this.tr("Owner"));
               break;
@@ -532,7 +532,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               // FIXME
               projectUuid: p.projectUuid || p.uuid,
               lastChangeDate: new Date(p.lastChangeDate),
-              prjOwner: Object.prototype.hasOwnProperty.call(p, "owner") ? p.owner : p.prjOwner
+              prjOwner: p.prjOwner
             })
           )
       );

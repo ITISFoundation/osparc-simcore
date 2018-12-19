@@ -68,7 +68,7 @@ def fake_project():
         "name": "ex",
         "description": "anim sint pariatur do dolore",
         "notes": "enim nisi consequat",
-        "owner": "dolore ad do consectetur",
+        "prjOwner": "dolore ad do consectetur",
         "collaborators": {
             "WS(q": [
             "write"

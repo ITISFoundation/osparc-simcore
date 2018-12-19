@@ -9,7 +9,7 @@
     "name",
     "description",
     "notes",
-    "owner",
+    "prjOwner",
     "collaborators",
     "creationDate",
     "lastChangeDate",
@@ -46,7 +46,7 @@
         "# title\nSome Text `with` common mark markup"
       ]
     },
-    "owner": {
+    "prjOwner": {
       "type": "string",
       "description": "user uuid"
     },
