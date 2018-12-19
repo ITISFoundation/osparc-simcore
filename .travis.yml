@@ -69,9 +69,6 @@ jobs:
         - "3.6"
       name: apihub
       sudo: required
-      env:
-        - TEST_SUITE_COMMAND='pytest -v api/tests'
-        - TEST_SUITE_COMMAND='pytest -v services/apihub/tests'          
       services:
         - docker
       cache: pip
@@ -97,7 +94,8 @@ jobs:
         - pip freeze
       script:
         - make travis-build
-        - $TEST_SUITE_COMMAND
+        - pytest -v api/tests
+        - pytest -v services/apihub/tests
       after_success:
       - coveralls
 
@@ -106,11 +104,6 @@ jobs:
         - "3.6"
       sudo: required
       name: simcore-sdk
-      env:
-        - TEST_SUITE_COMMAND='pytest --cov=pytest_docker -v packages/pytest_docker/tests'
-        - TEST_SUITE_COMMAND='pytest --cov=s3wrapper -v packages/s3wrapper/tests'
-        - TEST_SUITE_COMMAND='pytest --cov=simcore_sdk -v packages/simcore-sdk/tests'
-        - TEST_SUITE_COMMAND='pytest --cov=servicelib -v packages/service-library/tests'
       services:
         - docker
       cache: pip
@@ -137,7 +130,10 @@ jobs:
         - pip freeze
       script:
         - make travis-build
-        - $TEST_SUITE_COMMAND
+        - pytest --cov=pytest_docker -v packages/pytest_docker/tests
+        - pytest --cov=s3wrapper -v packages/s3wrapper/tests
+        - pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
+        - pytest --cov=servicelib -v packages/service-library/tests
       after_success:
       - coveralls
 
@@ -145,10 +141,7 @@ jobs:
       python:
         - "3.6"
       sudo: required
-      name: webserver
-      env:
-        - TEST_SUITE_COMMAND='pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit'
-        - TEST_SUITE_COMMAND='pytest --cov=simcore_service_webserver -v services/web/server/tests/login'          
+      name: webserver      
       services:
         - docker
       cache: pip
@@ -176,7 +169,8 @@ jobs:
         - pip freeze
       script:
         - make travis-build
-        - $TEST_SUITE_COMMAND
+        - pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
+        - pytest --cov=simcore_service_webserver -v services/web/server/tests/login
       after_success:
       - coveralls
 
@@ -184,9 +178,7 @@ jobs:
       python:
         - "3.6"
       sudo: required
-      name: director
-      env:
-        - TEST_SUITE_COMMAND='pytest --cov=simcore_service_director -v services/director/tests'
+      name: director      
       services:
         - docker
       cache: pip
@@ -212,7 +204,7 @@ jobs:
         - pip freeze
       script:
         - make travis-build
-        - $TEST_SUITE_COMMAND
+        - pytest --cov=simcore_service_director -v services/director/tests
       after_success:
       - coveralls
 
@@ -221,8 +213,6 @@ jobs:
         - "3.6"
       sudo: required
       name: storage
-      env:
-        - TEST_SUITE_COMMAND='pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests'
       services:
         - docker
       cache: pip
@@ -249,7 +239,7 @@ jobs:
         - pip freeze
       script:
         - make travis-build
-        - $TEST_SUITE_COMMAND
+        - pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
       after_success:
       - coveralls
 
