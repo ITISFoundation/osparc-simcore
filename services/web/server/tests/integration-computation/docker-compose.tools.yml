@@ -10,10 +10,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
   #----------------------------------------------
-  # TODO: Pedro reviews
-  #wdb:
-  #  image: kozea/wdb
-  #  ports:
-  #    - "1984:1984"
+  flower:
+    image: ondrejit/flower:latest
+    command: --broker=amqp://simcore:simcore@rabbit:5672
+    ports:
+      - 5555:5555
+    depends_on:
+      - rabbit
 volumes:
   portainer_data:
