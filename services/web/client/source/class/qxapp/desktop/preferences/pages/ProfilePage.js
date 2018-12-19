@@ -92,8 +92,9 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       // validation
       let manager = new qx.ui.form.validation.Manager();
       manager.add(email, qx.util.Validate.email());
-      manager.add(firstName, qx.util.Validate.regExp(/[^\.\d]+/), "Avoid dots or numbers in name");
-      manager.add(lastName, qx.util.Validate.regExp(/[^\.\d]+/), "Avoid dots or numbers in surname");
+      [firstName, lastName].forEach(field => {
+        manager.add(field, qx.util.Validate.regExp(/[^\.\d]+/), this.tr("Avoid dots or numbers in text"));
+      });
 
       // update trigger
       updateBtn.addListener("execute", function() {
@@ -121,7 +122,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
             req.addListenerOnce("fail", e => {
               // FIXME: should revert to old?? or GET? Store might resolve this??
               const error = e.getTarget().getResponse().error;
-              const msg = error ? error["errors"][0].message : "Failed to update profile";
+              const msg = error ? error["errors"][0].message : this.tr("Failed to update profile");
               qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR");
             }, this);
 
@@ -144,7 +145,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
 
       request.addListenerOnce("fail", function(e) {
         const error = e.getTarget().getResponse().error;
-        const msg = error ? error["errors"][0].message : "Failed to get profile";
+        const msg = error ? error["errors"][0].message : this.tr("Failed to get profile");
         qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
       });
 

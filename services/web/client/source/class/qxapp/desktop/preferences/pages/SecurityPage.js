@@ -29,10 +29,10 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
       // layout
       let box = this._createSectionBox(this.tr("Access Tokens"));
 
-      let label = this._createHelpLabel(
+      let label = this._createHelpLabel(this.tr(
         "List of API tokens to access external services. Currently, \
          only <a href='https://app.blackfynn.io'>DAT-Core</a> API keys are supported."
-      );
+      ));
       box.add(label);
 
       this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
@@ -80,13 +80,13 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
       // TODO:
       let newTokenKey = new qx.ui.form.TextField();
       newTokenKey.set({
-        placeholder: "introduce token key here"
+        placeholder: this.tr("Introduce token key here")
       });
       form.add(newTokenKey, this.tr("Key"));
 
       let newTokenSecret = new qx.ui.form.TextField();
       newTokenSecret.set({
-        placeholder: "introduce token secret here"
+        placeholder: this.tr("Introduce token secret here")
       });
       form.add(newTokenSecret, this.tr("Secret"));
 
@@ -211,7 +211,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
 
           request.addListenerOnce("fail", e => {
             const error = e.getTarget().getResponse().error;
-            const msg = error ? error["errors"][0].message : "Failed to reset password";
+            const msg = error ? error["errors"][0].message : this.tr("Failed to reset password");
             qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR");
 
             [currentPassword, newPassword, confirm].forEach(item => {
