@@ -230,8 +230,8 @@ jobs:
             - docker-ce
       install:
         - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pip3 install packages/s3wrapper[test]
-        - pip3 install packages/simcore-sdk[test]
+        - pip3 install -r services/storage/requirements/prod.txt
+        - pip3 install -r services/storage/tests/requirements.txt
       script:
         - make travis-build
         - $TEST_SUITE_COMMAND
