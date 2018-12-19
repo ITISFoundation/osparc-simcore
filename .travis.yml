@@ -1,13 +1,35 @@
-matrix:
+jobs:
   include:
-    - language: node_js
+    - if: branch = master
+      stage: Build docker images
+      language: python
+      env:
+        - DOCKER_COMPOSE_VERSION=1.23.2
+        - DOCKER_GID=1042
+      python:
+        - "3.6"
+      services:
+        - docker
+      before_install:
+        - sudo rm /usr/local/bin/docker-compose
+        - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+        - chmod +x docker-compose
+        - sudo mv docker-compose /usr/local/bin
+      addons:
+        apt:          
+          packages:
+            - docker-ce
+      cache: pip
+      script: 
+        - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash scripts/travis/push_cache_builds; fi'
+
+    - stage: testing
+      language: node_js
       node_js:
         - "8"
-
       cache:
         directories:
           - .npm
-
       install:
         - npm install -g npm@latest
         - npm install --save-dev eslint
@@ -19,17 +41,15 @@ matrix:
       script:
         - npm run linter
 
-    - language: python
-
+    - language: python      
       python:
         - "3.6"
       sudo: required
-
-      services:
-        - docker
       env:
         - DOCKER_COMPOSE_VERSION=1.23.2
         - DOCKER_GID=1042
+      services:
+        - docker
         
       cache: pip
 
@@ -68,15 +88,10 @@ matrix:
         - pylint --version
         - pip3 list
 
-      
-        
       script:
         - make pylint       
-        # only push when building on master, as necessary env variables are only available then 
-        - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash scripts/travis/push_cache_builds; fi'
         - make travis-build
         - make test
-        
 
       after_success:
       - coveralls
