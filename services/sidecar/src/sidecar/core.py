@@ -6,18 +6,16 @@ import time
 from pathlib import Path
 from typing import Dict
 
-import docker
 import pika
 from celery.states import SUCCESS as CSUCCESS
 from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
 
+import docker
+from simcore_sdk import node_ports
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
-
-from simcore_sdk import node_ports
-
 
 from .utils import (DbSettings, DockerSettings, ExecutorSettings,
                     RabbitSettings, S3Settings, delete_contents,
