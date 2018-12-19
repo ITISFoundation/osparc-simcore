@@ -137,7 +137,6 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             icon: "@FontAwesome5Solid/unlink/16"
           });
           unlinkBtn.addListener("execute", function() {
-            console.log("Unlink", portId);
             this.fireDataEvent("RemoveLink", portId);
           }, this);
           hBox.add(unlinkBtn);

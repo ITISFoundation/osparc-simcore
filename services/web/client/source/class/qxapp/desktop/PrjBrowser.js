@@ -115,7 +115,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         // TODO: is this listener added everytime we call ?? It does not depend on input params
         // but it needs to be here to implemenet startProjectModel
         let projectData = e.getRequest().getResponse().data;
-        if (fromTemplate && projectData.projectUuid !== "DemoDecemberUUID") {
+        if (fromTemplate) {
           projectData = qxapp.utils.Utils.replaceTemplateUUIDs(projectData);
         }
         let model = new qxapp.data.model.ProjectModel(projectData);
@@ -168,7 +168,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           name: this.tr("New Project"),
           thumbnail: "@FontAwesome5Solid/plus-circle/80",
           projectUuid: null,
-          created: null,
+          lastChangeDate: null,
           prjOwner: null
         }));
         // controller
@@ -215,7 +215,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         for (let i=0; i<publicPrjList.length; i++) {
           // Temporary HACK
           if (qxapp.data.Store.getInstance().getRole() !== 0 &&
-          publicPrjList[i].projectUuid === "DemoDecemberUUID") {
+          publicPrjList[i].projectUuid.includes("DemoDecember")) {
             continue;
           }
           publicFilteredPrjList.push(publicPrjList[i]);
@@ -295,7 +295,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               return data ? "Created by: <b>" + data + "</b>" : null;
             }
           }, item, id);
-          controller.bindProperty("created", "created", {
+          controller.bindProperty("lastChangeDate", "lastChangeDate", {
             converter: function(data) {
               return data ? new Date(data) : null;
             }
@@ -306,7 +306,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             }
           }, item, id);
         },
-        configureItem : function(item) {
+        configureItem: function(item) {
           item.getChildControl("icon").set({
             width: thumbnailWidth,
             height: thumbnailHeight,
@@ -505,18 +505,38 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     },
 
     __getProjectArrayModel: function(prjList) {
-      return new qx.data.Array(
+      let sortByProperty = function(prop) {
+        return function(a, b) {
+          if (prop === "lastChangeDate") {
+            return new Date(b[prop]) - new Date(a[prop]);
+          }
+          if (typeof a[prop] == "number") {
+            return a[prop] - b[prop];
+          }
+          if (a[prop] < b[prop]) {
+            return -1;
+          } else if (a[prop] > b[prop]) {
+            return 1;
+          }
+          return 0;
+        };
+      };
+      prjList.sort(sortByProperty("lastChangeDate"));
+
+      let prjArray = new qx.data.Array(
         prjList
           .map(
             (p, i) => qx.data.marshal.Json.createModel({
               name: p.name,
               thumbnail: p.thumbnail,
-              projectUuid: p.projectUuid,
-              created: new Date(p.creationDate),
+              // FIXME
+              projectUuid: p.projectUuid || p.uuid,
+              lastChangeDate: new Date(p.lastChangeDate),
               prjOwner: Object.prototype.hasOwnProperty.call(p, "owner") ? p.owner : p.prjOwner
             })
           )
       );
+      return prjArray;
     }
   }
 });
