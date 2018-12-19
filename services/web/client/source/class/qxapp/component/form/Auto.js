@@ -389,7 +389,6 @@ qx.Class.define("qxapp.component.form.Auto", {
       if (s.defaultValue) {
         s.set.value = [s.defaultValue];
       }
-      // console.log(cfg.structure);
       let sbModel = qx.data.marshal.Json.createModel(cfg.structure);
       controller.setModel(sbModel);
     },
