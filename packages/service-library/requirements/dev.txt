@@ -1,6 +1,4 @@
 -e .
+-r test.txt
 
 bumpversion
-coverage
-
--r ../tests/requirements.txt

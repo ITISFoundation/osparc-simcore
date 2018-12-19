@@ -1,5 +1,5 @@
-pyyaml
-pytest
-pytest-runner
-pytest-aiohttp
-pytest-cov
+pytest==4.0.2
+PyYAML==3.13
+pytest-runner==4.2
+pytest-aiohttp==0.3.0
+pytest-cov==2.6.0

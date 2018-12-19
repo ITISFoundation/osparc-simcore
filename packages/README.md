@@ -6,7 +6,7 @@ Folder for [simcore] python packages (libraries, client-sdks, programs, ... )
 
 Every folder contains a python package with the following properties:
 
-- it is *pip-installable* python packages
+- it is *[pip]-installable* python packages
 
 ```cmd
   # creates and activates venv
@@ -38,9 +38,23 @@ Every folder contains a python package with the following properties:
   ```
 
 
+## Package Managemenent
+
+ - We use [pip] as main package manager for python
+ -
+
 ## TODO
 
   - [ ] cookiecutters to assist creation of modules w/ or w/o entrypoints
 
 
-[simcore]:https://github.com/pcrespov/osparc-simcore
+
+<!--
+Doc reference links below
+-->
+[simcore]:https://github.com/itisfoundation/osparc-simcore
+[pip]: https://pip.pypa.io/en/stable/reference/
+[pipreqs]:https://github.com/bndr/pipreqs
+[piptools]:https://github.com/jazzband/pip-tools
+[pipdeptree]:https://github.com/naiquevin/pipdeptree
+[hashin]:https://github.com/peterbe/hashin
