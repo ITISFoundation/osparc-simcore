@@ -18,7 +18,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
 
     // overrides base
     _buildPage: function() {
-      let manager = new qx.ui.form.validation.Manager();
+      let validator = new qx.ui.form.validation.Manager();
 
       this._addTitleHeader(this.tr("Registration"));
 
@@ -49,6 +49,25 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
       this.add(pass2);
 
       // interaction
+      pass1.addListener("changeValue", e => {
+        qxapp.auth.Manager.getInstance().evalPasswordStrength(e.getData(), (strength, rating, improvement) => {
+          let msg = "Password is " + rating.toLowerCase() + ".";
+          let level = "INFO";
+
+          if (strength < 0.4) {
+            level = "WARNING";
+            msg += "\n";
+            if (improvement) {
+              msg += "Possible improvements: \n";
+              for (var key in improvement) {
+                msg += "- " + improvement[key] + "\n";
+              }
+            }
+          }
+          qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, level);
+        });
+      }, this);
+
       // email.addListener("changeValue", function(e) {
       //   // Auto-guess
       //   if (uname.getValue()=== null) {
@@ -57,9 +76,11 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
       //   }
       // }, this);
 
+
+
       // validation
-      manager.add(email, qx.util.Validate.email());
-      manager.setValidator(function(_itemForms) {
+      validator.add(email, qx.util.Validate.email());
+      validator.setValidator(function(_itemForms) {
         return qxapp.auth.core.Utils.checkSamePasswords(pass1, pass2);
       });
 
@@ -70,6 +91,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
       let submitBtn = new qx.ui.form.Button(this.tr("Submit"));
       grp.add(submitBtn, {
         flex:1
+
       });
 
       let cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
@@ -79,7 +101,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
 
       // interaction
       submitBtn.addListener("execute", function(e) {
-        const valid = manager.validate();
+        const valid = validator.validate();
         if (valid) {
           this.__submit({
             email: email.getValue(),
