@@ -32,7 +32,8 @@ qx.Class.define("qxapp.About", {
       [
         ["Ajv", "6.5.0"],
         ["svg.js", "2.6.4"],
-        ["socket.io", "2.1.2"]
+        ["socket.io", "2.1.2"],
+        ["jsondiffpatch", "0.3.11"]
       ].forEach(r => this.add(this.__createEntry(r[0], r[1])));
       this.add(new qx.ui.core.Spacer(null, 10));
       this.add(this.__createEntry("qooxdoo-compiler", qx.core.Environment.get("qx.compilerVersion")));
