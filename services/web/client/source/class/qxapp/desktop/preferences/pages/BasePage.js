@@ -3,7 +3,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.BasePage", {
   extend: qx.ui.tabview.Page,
 
   construct: function(title, iconSrc = null) {
-    this.base(arguments, title, iconSrc);
+    this.base(arguments, null, iconSrc);
 
     this.setLayout(new qx.ui.layout.VBox(10).set({
       spacing: 10,
