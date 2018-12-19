@@ -59,6 +59,8 @@ jobs:
         - pushd services/storage; pip3 install -r requirements/dev.txt; popd
         - pip3 install -r api/tests/requirements.txt
         - pip3 install -r services/apihub/tests/requirements.txt
+      before_script:
+        - pip freeze
       script:
         - make pylint
 
@@ -91,6 +93,8 @@ jobs:
         - pip install --upgrade pip wheel setuptools && pip3 --version
         - pip3 install -r api/tests/requirements.txt
         - pip3 install -r services/apihub/tests/requirements.txt
+      before_script:
+        - pip freeze
       script:
         - make travis-build
         - $TEST_SUITE_COMMAND
@@ -126,8 +130,11 @@ jobs:
             - docker-ce
       install:
         - pip install --upgrade pip wheel setuptools && pip3 --version
+        - pushd packages/service-library; pip3 install -r requirements/dev.txt; popd
         - pip3 install packages/s3wrapper[test]
-        - pip3 install packages/simcore-sdk[test]
+        - pip3 install packages/simcore-sdk[test]        
+      before_script:
+        - pip freeze
       script:
         - make travis-build
         - $TEST_SUITE_COMMAND
@@ -165,6 +172,8 @@ jobs:
         - pip3 install packages/simcore-sdk[test]        
         - pip3 install packages/director-sdk/python
         - pushd services/web/server; pip3 install -r requirements/ci.txt; popd                
+      before_script:
+        - pip freeze
       script:
         - make travis-build
         - $TEST_SUITE_COMMAND
@@ -198,6 +207,8 @@ jobs:
       install:
         - pip install --upgrade pip wheel setuptools && pip3 --version
         - pushd services/director; pip3 install -r requirements/ci.txt; popd
+      before_script:
+        - pip freeze
       script:
         - make travis-build
         - $TEST_SUITE_COMMAND
@@ -232,6 +243,8 @@ jobs:
         - pip install --upgrade pip wheel setuptools && pip3 --version
         - pushd services/storage; pip3 install -r requirements/prod.txt; popd
         - pushd services/storage; pip3 install -r tests/requirements.txt; popd
+      before_script:
+        - pip freeze
       script:
         - make travis-build
         - $TEST_SUITE_COMMAND
