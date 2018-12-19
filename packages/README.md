@@ -41,8 +41,13 @@ Every folder contains a python package with the following properties:
 ## Package Managemenent
 
  - We use [pip] as main package manager for python
- -
 
+ - [hashin]
+  ```cmd
+  cat requirements/base.txt | xargs hashin -r requirements/base.txt --dry-run
+  cat requirements/base.txt | xargs hashin -r requirements/base.txt --verbose
+
+  ```
 ## TODO
 
   - [ ] cookiecutters to assist creation of modules w/ or w/o entrypoints
