@@ -92,8 +92,8 @@ jobs:
         - pip3 install -r services/apihub/tests/requirements.txt
       before_script:
         - pip freeze
-      script:
         - make travis-build
+      script:        
         - pytest -v api/tests
         - pytest -v services/apihub/tests
       after_success:
@@ -129,8 +129,8 @@ jobs:
         - pip3 install services/storage/client-sdk/python
       before_script:
         - pip freeze
-      script:
         - make travis-build
+      script:        
         - pytest --cov=pytest_docker -v packages/pytest_docker/tests
         - pytest --cov=s3wrapper -v packages/s3wrapper/tests
         - pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
@@ -168,8 +168,8 @@ jobs:
         - pushd services/web/server; pip3 install -r requirements/ci.txt; popd                
       before_script:
         - pip freeze
-      script:
         - make travis-build
+      script:
         - pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
         - pytest --cov=simcore_service_webserver -v services/web/server/tests/login
       after_success:
@@ -202,8 +202,8 @@ jobs:
         - pushd services/director; pip3 install -r requirements/ci.txt; popd        
       before_script:
         - pip freeze
-      script:
         - make travis-build
+      script:        
         - pytest --cov=simcore_service_director -v services/director/tests
       after_success:
       - coveralls
@@ -237,8 +237,8 @@ jobs:
         - pip3 install services/storage/client-sdk/python
       before_script:
         - pip freeze
-      script:
         - make travis-build
+      script:        
         - pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
       after_success:
       - coveralls
