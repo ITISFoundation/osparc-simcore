@@ -125,7 +125,8 @@ jobs:
         - pip install --upgrade pip wheel setuptools && pip3 --version
         - pushd packages/service-library; pip3 install -r requirements/dev.txt; popd
         - pip3 install packages/s3wrapper[test]
-        - pip3 install packages/simcore-sdk[test]        
+        - pip3 install packages/simcore-sdk[test]
+        - pip3 install services/storage/client-sdk/python
       before_script:
         - pip freeze
       script:
@@ -198,8 +199,7 @@ jobs:
             - docker-ce
       install:
         - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pushd services/director; pip3 install -r requirements/ci.txt; popd
-        - pip3 install attrs
+        - pushd services/director; pip3 install -r requirements/ci.txt; popd        
       before_script:
         - pip freeze
       script:
