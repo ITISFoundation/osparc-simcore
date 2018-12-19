@@ -201,7 +201,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         let publicPrjList = e.getRequest().getResponse().data;
         let publicFilteredPrjList = [];
         for (let i=0; i<publicPrjList.length; i++) {
-          // Temporary HACK
+          // Temporary HACK: Backend should do the filtering
           if (publicPrjList[i].projectUuid.includes("DemoDecember") &&
           !qxapp.data.Store.getInstance().isTesterUser()) {
             continue;
