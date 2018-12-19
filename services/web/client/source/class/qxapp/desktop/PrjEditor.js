@@ -502,17 +502,17 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       const interval = 5000;
       let timer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
-        let newObj = this.getProjectModel().serializeProject();
-        let delta = diffPatcher.diff(oldObj, newObj);
+        const newObj = this.getProjectModel().serializeProject();
+        const delta = diffPatcher.diff(oldObj, newObj);
         if (delta) {
           let deltaKeys = Object.keys(delta);
           // lastChangeDate should not be taken into account as data change
-          let index = deltaKeys.indexOf("lastChangeDate");
+          const index = deltaKeys.indexOf("lastChangeDate");
           if (index > -1) {
             deltaKeys.splice(index, 1);
           }
           if (deltaKeys.length > 0) {
-            this.__saveProjectDocumentChanges(delta);
+            this.__saveProjectDocument(newObj);
           }
         }
         oldObj = diffPatcher.clone(newObj);
@@ -520,10 +520,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       timer.start();
     },
 
-    __saveProjectDocumentChanges: function(delta) {
-      // send delta to backend
-      console.log("send delta to backend", delta);
-
+    __saveProjectDocument: function(newObj) {
       const prjUuid = this.getProjectModel().getUuid();
 
       let resource = this.__projectResources.project;
@@ -532,7 +529,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }, this);
       resource.put({
         "project_id": prjUuid
-      }, delta);
+      }, newObj);
     }
   }
 });
