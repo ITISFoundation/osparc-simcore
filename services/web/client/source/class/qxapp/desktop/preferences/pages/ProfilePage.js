@@ -47,6 +47,9 @@ qx.Class.define("qxapp.desktop.preferences.pages.ProfilePage", {
       box.add(new qx.ui.form.renderer.Single(form));
 
       let img = new qx.ui.basic.Image().set({
+        decorator: new qx.ui.decoration.Decorator().set({
+          radius: 50
+        }),
         alignX: "center"
       });
       box.add(img);

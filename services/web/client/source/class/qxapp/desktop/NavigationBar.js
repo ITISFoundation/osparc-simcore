@@ -74,14 +74,18 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     const userName = qxapp.auth.Data.getInstance().getUserName() || "bizzy";
 
     let userLbl = new qx.ui.basic.Label(userName).set({
-      minWidth: 20
+      minWidth: 10
     });
     this.add(userLbl);
 
     let userBtn = this.__createUserBtn();
     userBtn.set(commonBtnSettings);
-
-    userBtn.setIcon(qxapp.utils.Avatar.getUrl(userEmail, NAVIGATION_BUTTON_HEIGHT));
+    userBtn.set({
+      decorator: new qx.ui.decoration.Decorator().set({
+        radius: 50,
+        backgroundImage: qxapp.utils.Avatar.getUrl(userEmail, NAVIGATION_BUTTON_HEIGHT)
+      })
+    });
     this.add(userBtn);
   },
 
