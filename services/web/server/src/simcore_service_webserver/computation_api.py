@@ -22,6 +22,7 @@ from simcore_sdk.config.rabbit import Config as rabbit_config
 from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
                                                 ComputationalTask)
 
+from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
 from .db_config import CONFIG_SECTION_NAME as CONFIG_DB_SECTION
 from .director import director_sdk
 from .login.decorators import login_required
@@ -36,8 +37,11 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 db_session = None
 computation_routes = web.RouteTableDef()
 
-rabbit_config = rabbit_config()
-celery = Celery(rabbit_config.name, broker=rabbit_config.broker, backend=rabbit_config.backend)
+def get_celery(_app):
+    config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
+    rabbit = rabbit_config(config=config)
+    celery = Celery(rabbit.name, broker=rabbit.broker, backend=rabbit.backend)
+    return celery
 
 
 async def init_database(_app):
@@ -289,6 +293,8 @@ async def start_pipeline(request: web.Request) -> web.Response:
     global db_session
     if db_session is None:
         await init_database(request.app)
+    
+
 
     # params, query, body = await extract_and_validate(request)
     
@@ -317,7 +323,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
         await _set_tasks_in_tasks_db(project_id, tasks)
         db_session.commit()
         # commit the tasks to celery
-        _ = celery.send_task("comp.task", args=(userid, project_id,), kwargs={})
+        _ = get_celery(request.app).send_task("comp.task", args=(userid, project_id,), kwargs={})
         log.debug("Task commited")
         # answer the client
         pipeline_name = "request_data"
@@ -326,7 +332,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
         "project_id": project_id
         }
         log.debug("END OF ROUTINE. Response %s", response)
-        return web.json_response(response, status=201)
+        return web.json_response(response, status=200)
     except sqlalchemy.exc.InvalidRequestError as err:
         log.exception("Alchemy error: Invalid request. Rolling back db.")
         db_session.rollback()
