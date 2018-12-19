@@ -56,7 +56,7 @@ qx.Class.define("qxapp.data.Permissions", {
     },
 
     // https://blog.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1#2405
-    __canRoleDo: function(role, operation) {
+    __canRoleDo: function(role, action) {
       role = role.toLowerCase();
       // Check if role exists
       const roles = this.self().ROLES;
@@ -65,7 +65,7 @@ qx.Class.define("qxapp.data.Permissions", {
       }
       let roleObj = roles[role];
       // Check if this role has access
-      if (roleObj.can.indexOf(operation) !== -1) {
+      if (roleObj.can.indexOf(action) !== -1) {
         return true;
       }
       // Check if there are any parents
@@ -73,12 +73,12 @@ qx.Class.define("qxapp.data.Permissions", {
         return false;
       }
       // Check child roles until one returns true or all return false
-      return roleObj.inherits.some(childRole => this.__canRoleDo(childRole, operation));
+      return roleObj.inherits.some(childRole => this.__canRoleDo(childRole, action));
     },
 
-    canDo: function(operation) {
+    canDo: function(action) {
       if (this.__userRole) {
-        return this.__canRoleDo(this.__userRole, operation);
+        return this.__canRoleDo(this.__userRole, action);
       }
       return false;
     },
