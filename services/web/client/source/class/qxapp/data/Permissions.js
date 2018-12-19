@@ -34,6 +34,10 @@ qx.Class.define("qxapp.data.Permissions", {
     ROLES: {
       admin: {
         can: [],
+        inherits: ["moderator"]
+      },
+      moderator: {
+        can: [],
         inherits: ["tester"]
       },
       tester: {
