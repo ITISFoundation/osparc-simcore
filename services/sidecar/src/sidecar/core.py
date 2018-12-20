@@ -238,6 +238,7 @@ class Sidecar:
         # config nodeports
         node_ports.node_config.USER_ID = user_id
         node_ports.node_config.NODE_UUID = task.node_id
+        node_ports.node_config.PROJECT_ID = task.project_id
 
     def preprocess(self):
         log.debug('Pre-Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
