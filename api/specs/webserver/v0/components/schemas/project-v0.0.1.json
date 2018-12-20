@@ -6,11 +6,11 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "projectUuid",
+    "uuid",
     "name",
     "description",
     "notes",
-    "owner",
+    "prjOwner",
     "collaborators",
     "creationDate",
     "lastChangeDate",
@@ -18,7 +18,7 @@
     "workbench"
   ],
   "properties": {
-    "projectUuid": {
+    "uuid": {
       "type": "string",
       "description": "project unique identifier",
       "examples": [
@@ -47,7 +47,7 @@
         "# title\nSome Text `with` common mark markup"
       ]
     },
-    "owner": {
+    "prjOwner": {
       "type": "string",
       "description": "user uuid"
     },
