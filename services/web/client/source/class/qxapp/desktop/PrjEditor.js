@@ -477,10 +477,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     saveProjectDocument: function() {
       let myPrj = this.getProjectModel().serializeProject();
-      // FIXME: server expects "projectUuid" and we have "uuid"
-      myPrj["projectUuid"] = myPrj["uuid"];
-      console.log("serializeProject", myPrj);
-
       let resource = this.__projectResources.project;
       resource.addListenerOnce("delSuccess", e => {
         let resources = this.__projectResources.projects;

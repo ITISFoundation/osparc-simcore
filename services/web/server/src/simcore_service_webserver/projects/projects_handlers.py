@@ -43,7 +43,7 @@ async def create_projects(request: web.Request):
     # TODO: validate here
     #TODO: create as template .. ?type=template
 
-    pid, uid = project['projectUuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+    pid, uid = project['uuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
     Fake.projects[pid] = Fake.ProjectItem(id=pid, template=False, data=project)
     Fake.user_to_projects_map[uid].append(pid)
