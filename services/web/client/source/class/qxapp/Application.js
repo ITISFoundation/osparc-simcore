@@ -1,11 +1,20 @@
 /* ************************************************************************
 
-   Copyright: 2018 undefined
+   qxapp - the simcore frontend
 
-   License: MIT license
+   https://osparc.io
 
-   Authors: undefined
-TODO: change name of app: osparc instead of qxapp
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+     * Tobias Oetiker (oetiker)
+     * Pedro Crespo (pcrespov)
+
 ************************************************************************ */
 
 /**

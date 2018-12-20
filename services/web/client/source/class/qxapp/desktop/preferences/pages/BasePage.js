@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Pedro Crespo (pcrespov)
+
+************************************************************************ */
+
 /* eslint no-warning-comments: "off" */
 qx.Class.define("qxapp.desktop.preferences.pages.BasePage", {
   extend: qx.ui.tabview.Page,
