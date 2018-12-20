@@ -3,7 +3,7 @@ import logging
 from contextlib import contextmanager
 
 import sqlalchemy
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import exc, sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -54,7 +54,9 @@ class _NodeModelEncoder(json.JSONEncoder):
 def _get_node_from_db(node_uuid: str, session: sqlalchemy.orm.session.Session) -> NodeModel:
     log.debug("Reading from database for node uuid %s", node_uuid)
     try:
-        return session.query(NodeModel).filter(NodeModel.node_id == node_uuid).one()
+        # project id should be also defined but was not the case before
+        criteria = (NodeModel.node_id == node_uuid if config.PROJECT_ID == 'undefined' else and_(NodeModel.node_id == node_uuid, NodeModel.project_id == config.PROJECT_ID))
+        return session.query(NodeModel).filter(criteria).one()
     except exc.NoResultFound:
         log.exception("the node id %s was not found", node_uuid)
     except exc.MultipleResultsFound:
@@ -64,8 +66,11 @@ class DBManager:
     def __init__(self):
         self._db_settings = DbSettings()
         with session_scope(self._db_settings.Session) as session:
-            node = session.query(NodeModel).filter(NodeModel.node_id == config.NODE_UUID).one()
-            config.PROJECT_ID = node.project_id
+            # project id should be also defined but was not the case before
+            criteria = (NodeModel.node_id == config.NODE_UUID if config.PROJECT_ID == 'undefined' else and_(NodeModel.node_id == config.NODE_UUID, NodeModel.project_id == config.PROJECT_ID))
+            node = session.query(NodeModel).filter(criteria).one()
+            if config.PROJECT_ID == 'undefined':
+                config.PROJECT_ID = node.project_id
 
     def write_ports_configuration(self, json_configuration: str, node_uuid: str):
         log.debug("Writing ports configuration")

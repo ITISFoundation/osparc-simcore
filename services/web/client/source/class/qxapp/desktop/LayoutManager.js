@@ -1,3 +1,21 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
+/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.desktop.LayoutManager", {
   extend: qx.ui.container.Composite,
@@ -9,11 +27,9 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       layout: new qx.ui.layout.VBox()
     });
 
-    this.__servicesPreload();
-
     this.__navBar = this.__createNavigationBar();
     this.__navBar.setHeight(100);
-    this.__navBar.addListener("NodeDoubleClicked", e => {
+    this.__navBar.addListener("nodeDoubleClicked", e => {
       if (this.__prjEditor) {
         let nodeId = e.getData();
         this.__prjEditor.nodeSelected(nodeId);
@@ -22,37 +38,27 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     this.add(this.__navBar);
 
     let prjStack = this.__prjStack = new qx.ui.container.Stack();
-
-    this.__prjBrowser = new qxapp.desktop.PrjBrowser();
-    prjStack.add(this.__prjBrowser);
-
-    this.add(this.__prjStack, {
+    this.add(prjStack, {
       flex: 1
     });
 
-    this.__navBar.addListener("DashboardPressed", function() {
-      this.__prjStack.setSelection([this.__prjBrowser]);
-      this.__prjBrowser.reloadUserProjects();
-      this.__navBar.setMainViewCaption("Dashboard");
-    }, this);
+    let iframe = this.__createLoadingIFrame(this.tr("User Information"));
+    this.__prjStack.add(iframe);
+    this.__prjStack.setSelection([iframe]);
 
-    this.__prjBrowser.addListener("StartProject", e => {
-      const data = e.getData();
-      const projectModel = data.projectModel;
-      if (this.__prjEditor) {
-        this.__prjStack.remove(this.__prjEditor);
+    const interval = 1000;
+    let userTimer = new qx.event.Timer(interval);
+    userTimer.addListener("interval", () => {
+      if (this.__userReady) {
+        userTimer.stop();
+        this.__prjStack.remove(iframe);
+        iframe.dispose();
+        this.__createMainLayout();
       }
-      this.__prjEditor = new qxapp.desktop.PrjEditor(projectModel);
-      this.__prjStack.add(this.__prjEditor);
-      this.__prjStack.setSelection([this.__prjEditor]);
-      this.__navBar.setProjectModel(projectModel);
-      this.__navBar.setMainViewCaption(projectModel.getWorkbenchModel().getPathIds("root"));
-
-      this.__prjEditor.addListener("ChangeMainViewCaption", function(ev) {
-        const elements = ev.getData();
-        this.__navBar.setMainViewCaption(elements);
-      }, this);
     }, this);
+    userTimer.start();
+
+    this.__initResources();
   },
 
   events: {},
@@ -62,6 +68,67 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     __prjStack: null,
     __prjBrowser: null,
     __prjEditor: null,
+    __userReady: null,
+    __servicesReady: null,
+
+    __createLoadingIFrame: function(text) {
+      const loadingUri = qxapp.utils.Utils.getLoaderUri(text);
+      let iframe = new qx.ui.embed.Iframe(loadingUri);
+      iframe.setBackgroundColor("transparent");
+      return iframe;
+    },
+
+    __createMainLayout: function() {
+      this.__prjBrowser = new qxapp.desktop.PrjBrowser();
+      this.__prjStack.add(this.__prjBrowser);
+
+      this.__navBar.addListener("dashboardPressed", function() {
+        this.__prjStack.setSelection([this.__prjBrowser]);
+        this.__prjBrowser.reloadUserProjects();
+        this.__navBar.setMainViewCaption(this.tr("Dashboard"));
+      }, this);
+
+      this.__prjBrowser.addListener("startProject", e => {
+        const projectData = e.getData();
+        if (this.__servicesReady === null) {
+          let iframe = this.__createLoadingIFrame(this.tr("Services"));
+          this.__prjStack.add(iframe);
+          this.__prjStack.setSelection([iframe]);
+
+          const interval = 1000;
+          let servicesTimer = new qx.event.Timer(interval);
+          servicesTimer.addListener("interval", () => {
+            if (this.__servicesReady) {
+              servicesTimer.stop();
+              this.__prjStack.remove(iframe);
+              iframe.dispose();
+              this.__loadProjectModel(projectData);
+            }
+          }, this);
+          servicesTimer.start();
+        } else {
+          this.__loadProjectModel(projectData);
+        }
+      }, this);
+    },
+
+    __loadProjectModel: function(projectData) {
+      let projectModel = new qxapp.data.model.ProjectModel(projectData);
+
+      if (this.__prjEditor) {
+        this.__prjStack.remove(this.__prjEditor);
+      }
+      this.__prjEditor = new qxapp.desktop.PrjEditor(projectModel);
+      this.__prjStack.add(this.__prjEditor);
+      this.__prjStack.setSelection([this.__prjEditor]);
+      this.__navBar.setProjectModel(projectModel);
+      this.__navBar.setMainViewCaption(projectModel.getWorkbenchModel().getPathIds("root"));
+
+      this.__prjEditor.addListener("changeMainViewCaption", function(ev) {
+        const elements = ev.getData();
+        this.__navBar.setMainViewCaption(elements);
+      }, this);
+    },
 
     __createNavigationBar: function() {
       let navBar = new qxapp.desktop.NavigationBar();
@@ -88,10 +155,25 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       nodeCheck.send();
     },
 
-    __servicesPreload: function() {
+    __initResources: function() {
+      this.__getUserProfile();
+      this.__getServicesPreload();
+    },
+
+    __getUserProfile: function() {
+      let permissions = qxapp.data.Permissions.getInstance();
+      permissions.addListener("userProfileRecieved", e => {
+        this.__userReady = e.getData();
+      }, this);
+      permissions.loadUserRoleFromBackend();
+    },
+
+    __getServicesPreload: function() {
       let store = qxapp.data.Store.getInstance();
       store.addListener("servicesRegistered", e => {
-        this.__nodeCheck(e.getData());
+        // Do not validate if are not taking actions
+        // this.__nodeCheck(e.getData());
+        this.__servicesReady = e.getData();
       }, this);
       store.getServices(true);
     }

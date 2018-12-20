@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /**
  * @asset(workbench/svg.*js)
  * @ignore(SVG)
@@ -42,7 +59,7 @@ qx.Class.define("qxapp.wrappers.Svg", {
 
       dynLoader.addListener("failed", e => {
         let data = e.getData();
-        console.log("failed to load " + data.script);
+        console.error("failed to load " + data.script);
         this.fireDataEvent("SvgLibReady", false);
       }, this);
 

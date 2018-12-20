@@ -6,18 +6,16 @@ import time
 from pathlib import Path
 from typing import Dict
 
-import docker
 import pika
 from celery.states import SUCCESS as CSUCCESS
 from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
 
+import docker
+from simcore_sdk import node_ports
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
-
-from simcore_sdk import node_ports
-
 
 from .utils import (DbSettings, DockerSettings, ExecutorSettings,
                     RabbitSettings, S3Settings, delete_contents,
@@ -240,6 +238,7 @@ class Sidecar:
         # config nodeports
         node_ports.node_config.USER_ID = user_id
         node_ports.node_config.NODE_UUID = task.node_id
+        node_ports.node_config.PROJECT_ID = task.project_id
 
     def preprocess(self):
         log.debug('Pre-Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)

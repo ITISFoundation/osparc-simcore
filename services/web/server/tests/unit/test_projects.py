@@ -64,11 +64,11 @@ def fake_project():
     # generated from api/specs/webserver/v0/components/schemas/project-v0.0.1.json
     # using http://json-schema-faker.js.org/
     return {
-        "projectUuid": "f298d06b-707a-6257-a462-d7bf73b76c0c",
+        "uuid": "f298d06b-707a-6257-a462-d7bf73b76c0c",
         "name": "ex",
         "description": "anim sint pariatur do dolore",
         "notes": "enim nisi consequat",
-        "owner": "dolore ad do consectetur",
+        "prjOwner": "dolore ad do consectetur",
         "collaborators": {
             "WS(q": [
             "write"
@@ -101,7 +101,7 @@ PREFIX = "/" + API_VERSION
 
 async def test_create(client, fake_db, fake_project):
     # TODO: create fixture
-    pid = fake_project["projectUuid"]
+    pid = fake_project["uuid"]
     #--------------------------
 
     url = client.app.router["create_projects"].url_for()
@@ -158,7 +158,7 @@ async def test_list(client, fake_db):
 
 async def test_get(client, fake_db, fake_project):
     fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO: create fixture
-    pid = fake_project["projectUuid"]
+    pid = fake_project["uuid"]
     #-----------------
 
     # get one
@@ -179,7 +179,7 @@ async def test_get(client, fake_db, fake_project):
 
 async def test_update(client, fake_db, fake_project):
     fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO: create fixture
-    pid = fake_project["projectUuid"]
+    pid = fake_project["uuid"]
     #-----------------
     #
     # In a PUT request, the enclosed entity is considered to be a modified version of
@@ -220,7 +220,7 @@ async def test_update(client, fake_db, fake_project):
 
 async def test_delete(client, fake_db, fake_project):
     fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO:
-    pid = fake_project["projectUuid"]
+    pid = fake_project["uuid"]
     # -------------
 
     url = client.app.router["delete_project"].url_for(project_id=pid)
@@ -268,7 +268,7 @@ async def test_workflow(client, fake_db, fake_project):
 
     #-------------------------------------------------
     modified = deepcopy(projects[0])
-    pid = modified["projectUuid"]
+    pid = modified["uuid"]
 
     modified["name"] = "some other name"
     modified["notes"] = "some other"

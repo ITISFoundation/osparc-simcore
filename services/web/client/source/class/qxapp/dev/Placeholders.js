@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Pedro Crespo (pcrespov)
+
+************************************************************************ */
+
 /* eslint new-cap: [2, {capIsNewExceptions: ["B", "D", "J", "K", "L", "MD5"]}] */
 /* eslint operator-assignment: ["off"] */
 
