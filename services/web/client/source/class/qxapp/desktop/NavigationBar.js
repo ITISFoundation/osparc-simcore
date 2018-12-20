@@ -177,6 +177,10 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
       menu.add(preferences);
       menu.addSeparator();
+      menu.add(new qx.ui.menu.Button(this.tr("Groups")));
+      menu.addSeparator();
+      menu.add(new qx.ui.menu.Button(this.tr("Help")));
+      menu.add(new qx.ui.menu.Button(this.tr("Report a Problem")));
       let aboutBtn = new qx.ui.menu.Button(this.tr("About"));
       aboutBtn.addListener("execute", e => qxapp.About.getInstance().open());
       menu.add(aboutBtn);
