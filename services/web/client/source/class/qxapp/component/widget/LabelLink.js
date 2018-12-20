@@ -27,7 +27,7 @@ qx.Class.define("qxapp.component.widget.LabelLink", {
       url: url
     });
 
-    this.addListener("tap", this._onTap);
+    this.addListener("click", this._onClick);
   },
 
   properties: {
@@ -38,7 +38,7 @@ qx.Class.define("qxapp.component.widget.LabelLink", {
   },
 
   members: {
-    _onTap: function() {
+    _onClick: function(e) {
       window.open(this.getUrl());
     }
   }
