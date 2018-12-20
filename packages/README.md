@@ -42,6 +42,8 @@ Every folder contains a python package with the following properties:
 
  - We use [pip] as main package manager for python
  - [pipreqs] -
+ - [pip-tools] -
+  ![image](https://raw.githubusercontent.com/jazzband/pip-tools/master/img/pip-tools-overview.png)
  - [hashin] - Helps you write your requirements.txt with hashes so you can install with ``pip install --require-hashes -r`` ...
   ```cmd
   cat requirements/base.txt | xargs hashin -r requirements/base.txt --dry-run
@@ -65,7 +67,7 @@ Doc reference links below
 [simcore]:https://github.com/itisfoundation/osparc-simcore
 [pip]: https://pip.pypa.io/en/stable/reference/
 [pipreqs]:https://github.com/bndr/pipreqs
-[piptools]:https://github.com/jazzband/pip-tools
+[pip-tools]:https://github.com/jazzband/pip-tools
 [pipdeptree]:https://github.com/naiquevin/pipdeptree
 [hashin]:https://github.com/peterbe/hashin
 [pyup]:https://pyup.io

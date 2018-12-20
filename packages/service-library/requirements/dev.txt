@@ -1,4 +1,13 @@
--e .
--r test.txt
+# package management tools
+pip-tools==3.2.0
+pipdeptree==0.13.1
 
-bumpversion
+# versioning
+bumpversion==0.5.3
+
+# linting
+pylint==2.2.2
+
+
+-e .
+-r tests.txt

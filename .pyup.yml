@@ -19,7 +19,6 @@ search: False
 # Specify requirement files by hand, default is empty
 # allowed: list
 requirements:
-  - packages/service-library/requirements/build.txt:
+  - packages/service-library/requirements/staging.txt:
   - packages/service-library/requirements/tests.txt:
   - packages/service-library/requirements/dev.txt:
-    update: all

@@ -1,35 +1,38 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""The setup script."""
-import io
 import sys
 import re
-from os.path import join
 from pathlib import Path
 from setuptools import setup, find_packages
 
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-COMMENT = re.compile(r'^\s*#')
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+comment_pattern = re.compile(r'^\s*#')
 
-def list_packages(*parts):
-    pkg_names = []
-    with io.open(join(CURRENT_DIR, *parts)) as f:
-        pkg_names = [line.strip() for line in f.readlines() if not COMMENT.match(line)]
-    return pkg_names
+def list_packages(fpath: Path):
+    with fpath.open() as f:
+        return [line.strip() for line in f.readlines() if not comment_pattern.match(line)]
 
-with io.open(CURRENT_DIR/'README.rst') as readme_file:
-    readme = readme_file.read()
+readme = (current_dir/'README.rst').read_text()
+history = (current_dir/'HISTORY.rst').read_text()
 
-with io.open(CURRENT_DIR/'HISTORY.rst') as history_file:
-    history = history_file.read()
-
-# TODO: load from base
-requirements = list_packages(CURRENT_DIR, 'requirements', 'base.txt')
-
+install_requirements = [
+    'aiohttp==3.4.4',
+    'aiohttp_session==2.7.0', # FIXME: should go, since not all service might have sessions
+    'aiopg==0.15.0',          # chosen asyncio client tool to interact with postgres
+    'attr==0.3.1',
+    'cryptography==2.4.2',
+    'openapi_core==0.7.1',
+    'psycopg2==2.7.6.1',
+    'SQLAlchemy==1.2.15',
+    'typing==3.6.6',
+    'Werkzeug==0.14.1',
+    'PyYAML==3.13',
+    'yarl==1.3.0',
+]
+test_requirements = list_packages(current_dir/ "requirements" / "tests.txt")
 setup_requirements = ['pytest-runner', ]
 
-test_requirements = list_packages(CURRENT_DIR, 'tests', 'requirements.txt')
 
 setup(
     name='simcore-service-library',
@@ -45,7 +48,7 @@ setup(
     ],
     long_description=readme + '\n\n' + history,
     license="MIT license",
-    install_requires=requirements,
+    install_requires=install_requirements,
     packages=find_packages(where='src'),
     package_dir={
         '': 'src',
