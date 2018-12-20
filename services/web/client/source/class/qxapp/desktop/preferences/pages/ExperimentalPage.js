@@ -21,9 +21,10 @@ qx.Class.define("qxapp.desktop.preferences.pages.ExperimentalPage", {
       // layout
       let box = this._createSectionBox("UI Theme");
 
-      let label = this._createHelpLabel("This is a list of experimental themes for the UI. \
-        By default the <a href=https://github.com/ITISFoundation/qx-osparc-theme>osparc-theme</a> is \
-        selected");
+      let label = this._createHelpLabel(this.tr(
+        "This is a list of experimental themes for the UI. By default the \
+         <a href=https://github.com/ITISFoundation/qx-osparc-theme>osparc-theme</a> is selected"
+      ));
       box.add(label);
 
       let select = new qx.ui.form.SelectBox("Theme");

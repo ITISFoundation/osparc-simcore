@@ -104,15 +104,23 @@ qx.Class.define("qxapp.auth.Manager", {
       console.debug("Reseting password ...");
       // api/specs/webserver/v0/openapi-auth.yaml
       let request = new qxapp.io.request.ApiRequest("/auth/reset-password/" + encodeURIComponent(code), "POST");
-      request.set({
-        requestData: {
-          password: newPassword,
-          confirm: confirmation
-        }
+      request.setRequestData({
+        password: newPassword,
+        confirm: confirmation
       });
 
       this.__bindDefaultSuccessCallback(request, successCbk, context);
       this.__bindDefaultFailCallback(request, failCbk, context);
+
+      request.send();
+    },
+
+    evalPasswordStrength: function(password, callback, context=null) {
+      let request = new qxapp.io.request.ApiRequest("/auth/check-password/" + encodeURIComponent(password), "GET");
+      request.addListener("success", evt => {
+        let payload = evt.getTarget().getResponse();
+        callback.call(context, payload.strength, payload.rating, payload.improvements);
+      }, this);
 
       request.send();
     },

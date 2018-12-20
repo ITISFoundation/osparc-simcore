@@ -10,7 +10,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.BasePage", {
       alignX: "center"
     }));
 
-    // title
+    // Page title
     this.add(new qx.ui.basic.Label(title + " Settings").set({
       font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-16"])
     }));

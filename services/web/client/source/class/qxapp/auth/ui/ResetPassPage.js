@@ -1,6 +1,7 @@
 /** Page to reset user's password
  *
  */
+/* eslint no-warning-comments: "off" */
 qx.Class.define("qxapp.auth.ui.ResetPassPage", {
   extend: qxapp.auth.core.BaseAuthPage,
 
@@ -30,9 +31,6 @@ qx.Class.define("qxapp.auth.ui.ResetPassPage", {
       });
       this.add(confirm);
 
-      validator.add(password, function(value, itemForm) {
-        return qxapp.auth.core.Utils.checkPasswordSecure(value, itemForm);
-      });
       validator.setValidator(function(_itemForms) {
         return qxapp.auth.core.Utils.checkSamePasswords(password, confirm);
       });
@@ -54,9 +52,9 @@ qx.Class.define("qxapp.auth.ui.ResetPassPage", {
       submitBtn.addListener("execute", function(e) {
         const valid = validator.validate();
         if (valid) {
-          const code = qxapp.auth.core.Utils.findGetParameter("code");
-          qxapp.auth.core.Utils.removeParameterFromUrl("page");
-          qxapp.auth.core.Utils.removeParameterFromUrl("code");
+          const code = qxapp.auth.core.Utils.findParameterInFragment("code");
+          qxapp.auth.core.Utils.removeParameterInFragment("page");
+          qxapp.auth.core.Utils.removeParameterInFragment("code");
           this.__submit(password.getValue(), confirm.getValue(), code);
         }
       }, this);
