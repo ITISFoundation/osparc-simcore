@@ -200,6 +200,7 @@ def postgres_client(app_config):
     yield engine
 
     metadata.drop_all(engine)
+    Base.metadata.drop_all(engine)
     engine.dispose()
 
 @pytest.fixture(scope='session')
