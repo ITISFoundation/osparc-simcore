@@ -17,5 +17,11 @@ services:
       - 5555:5555
     depends_on:
       - rabbit
+  adminer:
+    image: adminer
+    ports:
+      - 18080:8080
+    depends_on:
+      - postgres
 volumes:
   portainer_data:
