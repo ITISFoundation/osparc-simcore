@@ -116,7 +116,7 @@ async def _get_node_details(node_key:str, node_version:str, app)->dict:
         log.exception("Error could not find service %s:%s", node_key, node_version)
         raise web_exceptions.HTTPNotFound(reason=str(err))
 
-async def _build_adjacency_list(node_uuid:str, node_schema:dict, node_inputs:dict, pipeline_data:dict, dag_adjacency_list:dict, app: web.Application)->dict:
+async def _build_adjacency_list(node_uuid:str, node_schema:dict, node_inputs:dict, pipeline_data:dict, dag_adjacency_list:dict, app: web.Application)->dict: # pylint: disable=too-many-arguments
     if node_inputs is None or node_schema is None:
         return dag_adjacency_list
 

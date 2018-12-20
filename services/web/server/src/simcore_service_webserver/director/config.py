@@ -9,8 +9,6 @@ import trafaret as T
 from aiohttp import ClientSession, web
 from yarl import URL
 
-from servicelib.application_keys import APP_CONFIG_KEY
-
 APP_DIRECTOR_SESSION_KEY = __name__ + ".director_session"
 APP_DIRECTOR_API_KEY = __name__ + ".director_api"
 
