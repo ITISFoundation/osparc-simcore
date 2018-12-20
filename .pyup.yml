@@ -2,7 +2,7 @@
 
 # configure updates globally
 # allowed: [all], insecure, False
-update: all
+update: insecure
 
 # configure dependency pinning globally
 # allowed: [True], False
@@ -10,8 +10,16 @@ pin: True
 
 # update schedule
 # allowed: "every day", "every week", ..
-schedule: "every day"
+schedule: "every week"
 
 # search for requirement files
 # allowed: [True], False
-search: True
+search: False
+
+# Specify requirement files by hand, default is empty
+# allowed: list
+requirements:
+  - packages/service-library/requirements/build.txt:
+  - packages/service-library/requirements/tests.txt:
+  - packages/service-library/requirements/dev.txt:
+    update: all
