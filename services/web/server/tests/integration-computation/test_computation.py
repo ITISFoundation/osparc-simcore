@@ -13,6 +13,7 @@ import pytest
 from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.rest import setup_rest
@@ -71,7 +72,7 @@ async def test_check_health(client):
     payload = await resp.json()
 
     assert resp.status == 200, str(payload)
-    data, error = tuple(payload.get(k) for k in ('data', 'error'))
+    data, error = unwrap_envelope(payload)
 
     assert data
     assert not error
@@ -79,7 +80,7 @@ async def test_check_health(client):
     assert data['name'] == 'simcore_service_webserver'
     assert data['status'] == 'SERVICE_RUNNING'
 
-async def test_start_pipeline(client, project_id:str, mock_workbench_payload):
+async def test_start_pipeline(client, project_id:str, mock_workbench_payload, postgres_client):
     import pdb; pdb.set_trace()
     resp = await client.post("/v0/computation/pipeline/{}/start".format(project_id),
         json = mock_workbench_payload,
@@ -87,12 +88,13 @@ async def test_start_pipeline(client, project_id:str, mock_workbench_payload):
     payload = await resp.json()
 
     assert resp.status == 200, str(payload)
-    data, error = tuple(payload.get(k) for k in ('data', 'error'))
+    data, error = unwrap_envelope(payload)
 
     assert data
     assert not error
 
     assert "pipeline_name" in data
-    assert "pipeline_id" in data
-    # assert data['pipeline_name'] == 'simcore_service_webserver'
-    assert data['pipeline_id'] == project_id
+    assert "project_id" in data
+    assert data['project_id'] == project_id
+
+    
