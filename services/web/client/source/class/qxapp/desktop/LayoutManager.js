@@ -148,7 +148,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       permissions.addListener("UserProfileRecieved", e => {
         this.__userReady = e.getData();
       }, this);
-      permissions.loadUserRole();
+      permissions.loadUserRoleFromBackend();
     },
 
     __getServicesPreload: function() {

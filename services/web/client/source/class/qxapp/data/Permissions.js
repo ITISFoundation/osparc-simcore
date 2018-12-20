@@ -104,7 +104,7 @@ qx.Class.define("qxapp.data.Permissions", {
       return false;
     },
 
-    loadUserRole: function() {
+    loadUserRoleFromBackend: function() {
       let userResources = qxapp.io.rest.ResourceFactory.getInstance().createUserResources();
 
       let profile = userResources.profile;
