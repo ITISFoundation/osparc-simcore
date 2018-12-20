@@ -1,3 +1,4 @@
+/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.desktop.LayoutManager", {
   extend: qx.ui.container.Composite,
@@ -153,7 +154,8 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     __getServicesPreload: function() {
       let store = qxapp.data.Store.getInstance();
       store.addListener("servicesRegistered", e => {
-        this.__nodeCheck(e.getData());
+        // Do not validate if are not taking actions
+        // this.__nodeCheck(e.getData());
         this.__servicesReady = e.getData();
       }, this);
       store.getServices(true);

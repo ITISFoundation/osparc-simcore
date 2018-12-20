@@ -5,12 +5,12 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
     this.base(arguments);
 
     this.set({
-      uuid: prjData.projectUuid || prjData.uuid || this.getUuid(),
+      uuid: prjData.uuid || this.getUuid(),
       name: prjData.name || this.getName(),
       description: prjData.description || this.getDescription(),
       notes: prjData.notes || this.getNotes(),
       thumbnail: prjData.thumbnail || this.getThumbnail(),
-      prjOwner: prjData.owner || prjData.prjOwner || qxapp.auth.Data.getInstance().getUserName(),
+      prjOwner: prjData.prjOwner || qxapp.auth.Data.getInstance().getUserName(),
       collaborators: prjData.collaborators || this.getCollaborators(),
       creationDate: prjData.creationDate ? new Date(prjData.creationDate) : this.getCreationDate(),
       lastChangeDate: prjData.lastChangeDate ? new Date(prjData.lastChangeDate) : this.getLastChangeDate()
