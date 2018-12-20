@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
   extend: qx.ui.core.Widget,
 
@@ -24,8 +41,8 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
   },
 
   events: {
-    "StartPipeline": "qx.event.type.Event",
-    "StopPipeline": "qx.event.type.Event"
+    "startPipeline": "qx.event.type.Event",
+    "stopPipeline": "qx.event.type.Event"
   },
 
   members: {
@@ -45,7 +62,7 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
       });
 
       startButton.addListener("execute", function() {
-        this.fireEvent("StartPipeline");
+        this.fireEvent("startPipeline");
       }, this);
 
       return startButton;
@@ -57,7 +74,7 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
       });
 
       stopButton.addListener("execute", function() {
-        this.fireEvent("StopPipeline");
+        this.fireEvent("stopPipeline");
       }, this);
       return stopButton;
     },
