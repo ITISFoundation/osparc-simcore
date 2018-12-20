@@ -1,3 +1,21 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Pedro Crespo (pcrespov)
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 qx.Class.define("qxapp.io.rest.ResourceFactory", {
   extend: qx.core.Object,
   type : "singleton",
@@ -63,6 +81,25 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
         "project": project,
         "projects": projects,
         "templates": templates
+      };
+    },
+
+    createUserResources: function() {
+      // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
+      // SEE: api/specs/webserver/v0/openapi-user.yaml
+      const basePath = qxapp.io.rest.ResourceFactory.API;
+
+      // Singular resource
+      let profile = new qxapp.io.rest.Resource({
+        // Get token
+        get: {
+          method: "GET",
+          url: basePath+"/me"
+        }
+      });
+
+      return {
+        "profile": profile
       };
     },
 

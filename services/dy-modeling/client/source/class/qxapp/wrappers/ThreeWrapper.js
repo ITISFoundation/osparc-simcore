@@ -56,7 +56,7 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
 
     dynLoader.addListener("failed", function(e) {
       let data = e.getData();
-      console.log("failed to load " + data.script);
+      console.error("failed to load " + data.script);
       this.fireDataEvent("ThreeLibReady", false);
     }, this);
 
