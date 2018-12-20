@@ -1,3 +1,4 @@
+# Packages needed to run the app
 setuptools==40.6.3 \
     --hash=sha256:e2c1ce9a832f34cf7a31ed010aabcab5008eb65ce8f2aadc04622232c14bdd0b \
     --hash=sha256:3b474dad69c49f0d2d86696b68105f3a6f195f7ab655af12ef9a9c326d2b08f8
@@ -53,7 +54,8 @@ cryptography==2.4.2 \
     --hash=sha256:1b1f136d74f411f587b07c076149c4436a169dc19532e587460d9ced24adcc13 \
     --hash=sha256:418e7a5ec02a7056d3a4f0c0e7ea81df374205f25f4720bb0e84189aa5fd2515 \
     --hash=sha256:05a6052c6a9f17ff78ba78f8e6eb1d777d25db3b763343a1ae89a7a8670386dd
-openapi_core==0.7.1
+openapi_core==0.7.1 \
+    --hash=sha256:979ef8c8c4950d05b1fd95e0288e852e2474a74a13d10d0bb5710b55e4e15eb7
 psycopg2==2.7.6.1 \
     --hash=sha256:3fb18e0e52807fe3a300dc1b5421aa492d5e759550918f597d61863419482535 \
     --hash=sha256:55eab94de96ee9702f23283e9c8b03cfdb0001e2b14d5d2e1bd5ff8114b96b9f \

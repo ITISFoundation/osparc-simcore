@@ -41,13 +41,18 @@ Every folder contains a python package with the following properties:
 ## Package Managemenent
 
  - We use [pip] as main package manager for python
-
- - [hashin]
+ - [pipreqs] -
+ - [hashin] - Helps you write your requirements.txt with hashes so you can install with ``pip install --require-hashes -r`` ...
   ```cmd
   cat requirements/base.txt | xargs hashin -r requirements/base.txt --dry-run
   cat requirements/base.txt | xargs hashin -r requirements/base.txt --verbose
-
   ```
+ - ``requirements`` folder
+   - production packages pins version and [hash](https://pip.pypa.io/en/stable/reference/pip_install/#hash-checking-mode): ``pip install --require-hashes -r requirements.txt``
+   -
+
+
+
 ## TODO
 
   - [ ] cookiecutters to assist creation of modules w/ or w/o entrypoints
@@ -63,3 +68,4 @@ Doc reference links below
 [piptools]:https://github.com/jazzband/pip-tools
 [pipdeptree]:https://github.com/naiquevin/pipdeptree
 [hashin]:https://github.com/peterbe/hashin
+[pyup]:https://pyup.io
