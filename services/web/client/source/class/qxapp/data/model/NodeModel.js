@@ -434,26 +434,12 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       this.__restartIFrame(loadingUri);
     },
 
-    __hasRetrieve: function() {
-      // all dynamic services will have the retrieve button;
-      return true;
-      /*
-      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler") || this.getKey().includes("neuroman")) {
-        return true;
-      }
-      return false;
-      */
-    },
-
     __retrieveInputs: function() {
       this.__updateBackendAndRetrieveInputs();
     },
 
     __updateBackendAndRetrieveInputs: function() {
-      // HACK: Workaround for fetching inputs in Visualizer and modeler
-      if (this.__hasRetrieve()) {
-        this.fireDataEvent("updatePipeline", this);
-      }
+      this.fireDataEvent("updatePipeline", this);
     },
 
     retrieveInputs: function() {
@@ -470,16 +456,14 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __startInteractiveNode: function() {
       let metaData = this.getMetaData();
       if (metaData && ("type" in metaData) && metaData.type == "dynamic") {
-        if (this.__hasRetrieve()) {
-          let retrieveBtn = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/spinner/32"
-          });
-          retrieveBtn.addListener("execute", e => {
-            this.__retrieveInputs();
-          }, this);
-          retrieveBtn.setEnabled(false);
-          this.setRetrieveIFrameButton(retrieveBtn);
-        }
+        let retrieveBtn = new qx.ui.form.Button().set({
+          icon: "@FontAwesome5Solid/spinner/32"
+        });
+        retrieveBtn.addListener("execute", e => {
+          this.__retrieveInputs();
+        }, this);
+        retrieveBtn.setEnabled(false);
+        this.setRetrieveIFrameButton(retrieveBtn);
 
         let restartBtn = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/redo-alt/32"
@@ -567,9 +551,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         };
         this.fireDataEvent("showInLogger", msgData);
 
-        if (this.__hasRetrieve()) {
-          this.getRetrieveIFrameButton().setEnabled(true);
-        }
+        this.getRetrieveIFrameButton().setEnabled(true);
         this.getRestartIFrameButton().setEnabled(true);
         // FIXME: Apparently no all services are inmediately ready when they publish the port
         const waitFor = 4000;
