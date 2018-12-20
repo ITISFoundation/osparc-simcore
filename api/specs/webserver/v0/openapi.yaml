@@ -58,17 +58,19 @@ paths:
   /auth/confirmation/{code}:
     $ref: './openapi-auth.yaml#/paths/~1auth~1confirmation~1{code}'
 
+  /auth/check-password/{password}:
+    $ref: './openapi-auth.yaml#/paths/~1auth~1check-password~1{password}'
 
   # USER SETTINGS ------------------------------------------------------------------
 
-  /my:
-    $ref: './openapi-user.yaml#/paths/~1my'
+  /me:
+    $ref: './openapi-user.yaml#/paths/~1me'
 
-  /my/tokens:
-    $ref: './openapi-user.yaml#/paths/~1my~1tokens'
+  /me/tokens:
+    $ref: './openapi-user.yaml#/paths/~1me~1tokens'
 
-  /my/tokens/{service}:
-    $ref: './openapi-user.yaml#/paths/~1my~1tokens~1{service}'
+  /me/tokens/{service}:
+    $ref: './openapi-user.yaml#/paths/~1me~1tokens~1{service}'
 
   # DATA STORAGE SERVICES ----------------------------------------------------------
 
