@@ -327,12 +327,12 @@ async def start_pipeline(request: web.Request) -> web.Response:
         log.debug("Task commited")
         # answer the client
         pipeline_name = "request_data"
-        response = {
+        data = {
         "pipeline_name":pipeline_name,
         "project_id": project_id
         }
-        log.debug("END OF ROUTINE. Response %s", response)
-        return web.json_response(response, status=200)
+        log.debug("END OF ROUTINE. Response %s", data)
+        return data
     except sqlalchemy.exc.InvalidRequestError as err:
         log.exception("Alchemy error: Invalid request. Rolling back db.")
         db_session.rollback()
