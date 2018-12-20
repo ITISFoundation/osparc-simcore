@@ -162,7 +162,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
       switch (keyEvent.getKeyIdentifier()) {
         case "F2": {
           let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
-          treeItemRenamer.addListener("LabelChanged", e => {
+          treeItemRenamer.addListener("labelChanged", e => {
             let newLabel = e.getData()["newLabel"];
             selectedItem.setLabel(newLabel);
           }, this);

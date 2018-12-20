@@ -50,10 +50,10 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
   },
 
   events: {
-    "LinkDragStart": "qx.event.type.Data",
-    "LinkDragOver": "qx.event.type.Data",
-    "LinkDrop": "qx.event.type.Data",
-    "LinkDragEnd": "qx.event.type.Data"
+    "linkDragStart": "qx.event.type.Data",
+    "linkDragOver": "qx.event.type.Data",
+    "linkDrop": "qx.event.type.Data",
+    "linkDragEnd": "qx.event.type.Data"
   },
 
   members: {
@@ -104,10 +104,10 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
 
     __createUIPortConnections: function(uiPort, isInput) {
       [
-        ["dragstart", "LinkDragStart"],
-        ["dragover", "LinkDragOver"],
-        ["drop", "LinkDrop"],
-        ["dragend", "LinkDragEnd"]
+        ["dragstart", "linkDragStart"],
+        ["dragover", "linkDragOver"],
+        ["drop", "linkDrop"],
+        ["dragend", "linkDragEnd"]
       ].forEach(eventPair => {
         uiPort.addListener(eventPair[0], e => {
           const eData = {

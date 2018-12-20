@@ -113,7 +113,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
   },
 
   events: {
-    "AddService": "qx.event.type.Data"
+    "addService": "qx.event.type.Data"
   },
 
   members: {
@@ -230,7 +230,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
             contextNodeId: this.__contextNodeId,
             contextPort: this.__contextPort
           };
-          this.fireDataEvent("AddService", eData);
+          this.fireDataEvent("addService", eData);
           break;
         }
       }

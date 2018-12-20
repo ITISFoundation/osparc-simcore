@@ -24,8 +24,8 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
   },
 
   events: {
-    "StartPipeline": "qx.event.type.Event",
-    "StopPipeline": "qx.event.type.Event"
+    "startPipeline": "qx.event.type.Event",
+    "stopPipeline": "qx.event.type.Event"
   },
 
   members: {
@@ -45,7 +45,7 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
       });
 
       startButton.addListener("execute", function() {
-        this.fireEvent("StartPipeline");
+        this.fireEvent("startPipeline");
       }, this);
 
       return startButton;
@@ -57,7 +57,7 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
       });
 
       stopButton.addListener("execute", function() {
-        this.fireEvent("StopPipeline");
+        this.fireEvent("stopPipeline");
       }, this);
       return stopButton;
     },

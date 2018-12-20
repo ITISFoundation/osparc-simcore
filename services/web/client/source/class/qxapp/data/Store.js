@@ -5,12 +5,12 @@ qx.Class.define("qxapp.data.Store", {
 
   events: {
     "servicesRegistered": "qx.event.type.Event",
-    // "FakeFiles": "qx.event.type.Event",
-    "MyDocuments": "qx.event.type.Event",
-    "NodeFiles": "qx.event.type.Event",
-    "PresginedLink": "qx.event.type.Event",
-    "FileCopied": "qx.event.type.Event",
-    "DeleteFile": "qx.event.type.Event"
+    // "fakeFiles": "qx.event.type.Event",
+    "myDocuments": "qx.event.type.Event",
+    "nodeFiles": "qx.event.type.Event",
+    "presginedLink": "qx.event.type.Event",
+    "fileCopied": "qx.event.type.Event",
+    "deleteFile": "qx.event.type.Event"
   },
 
   statics: {
@@ -1105,7 +1105,7 @@ qx.Class.define("qxapp.data.Store", {
     getFakeFiles: function() {
       let data = qxapp.dev.fake.Data.getObjectList();
       console.log("Fake Files", data);
-      this.fireDataEvent("FakeFiles", data);
+      this.fireDataEvent("fakeFiles", data);
     },
 
     getNodeFiles: function(nodeId) {
@@ -1119,7 +1119,7 @@ qx.Class.define("qxapp.data.Store", {
           .data;
         console.log("Node Files", files);
         if (files && files.length>0) {
-          this.fireDataEvent("NodeFiles", files);
+          this.fireDataEvent("nodeFiles", files);
         }
       }, this);
 
@@ -1155,7 +1155,7 @@ qx.Class.define("qxapp.data.Store", {
                 location: locationId,
                 files: files
               };
-              this.fireDataEvent("MyDocuments", data);
+              this.fireDataEvent("myDocuments", data);
             }
           }, this);
 
@@ -1198,8 +1198,8 @@ qx.Class.define("qxapp.data.Store", {
           locationId: locationId,
           fileUuid: fileUuid
         };
-        console.log("PresginedLink", presginedLinkData);
-        this.fireDataEvent("PresginedLink", presginedLinkData);
+        console.log("presginedLink", presginedLinkData);
+        this.fireDataEvent("presginedLink", presginedLinkData);
       }, this);
 
       req.addListener("fail", e => {
@@ -1229,7 +1229,7 @@ qx.Class.define("qxapp.data.Store", {
         const {
           data
         } = e.getTarget().getResponse();
-        this.fireDataEvent("FileCopied", data);
+        this.fireDataEvent("fileCopied", data);
       }, this);
 
       req.addListener("fail", e => {
@@ -1253,7 +1253,7 @@ qx.Class.define("qxapp.data.Store", {
         const {
           data
         } = e.getTarget().getResponse();
-        this.fireDataEvent("DeleteFile", data);
+        this.fireDataEvent("deleteFile", data);
       }, this);
 
       req.addListener("fail", e => {

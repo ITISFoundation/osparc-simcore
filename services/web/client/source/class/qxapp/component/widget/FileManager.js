@@ -193,7 +193,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
           let store = qxapp.data.Store.getInstance();
           console.log("Copy", from.getFileId(), "to", to.getPath());
           store.copyFile(from.getLocation(), from.getFileId(), to.getLocation(), to.getPath());
-          store.addListenerOnce("FileCopied", ev => {
+          store.addListenerOnce("fileCopied", ev => {
             this.__reloadUserTree();
           }, this);
         }
@@ -246,7 +246,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
         let fileName = fileId.split("/");
         fileName = fileName[fileName.length-1];
         let store = qxapp.data.Store.getInstance();
-        store.addListenerOnce("PresginedLink", e => {
+        store.addListenerOnce("presginedLink", e => {
           const presginedLinkData = e.getData();
           console.log(presginedLinkData.presginedLink);
           if (presginedLinkData.presginedLink) {
@@ -285,7 +285,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
         const fileId = selection.getFileId();
         const locationId = selection.getLocation();
         let store = qxapp.data.Store.getInstance();
-        store.addListenerOnce("DeleteFile", e => {
+        store.addListenerOnce("deleteFile", e => {
           this.__reloadNodeTree();
           this.__reloadUserTree();
         }, this);

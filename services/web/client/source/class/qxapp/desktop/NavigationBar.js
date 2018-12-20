@@ -49,7 +49,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     let dashboardBtn = new qx.ui.form.Button(this.tr("Dashboard"));
     dashboardBtn.set(commonBtnSettings);
     dashboardBtn.addListener("execute", function() {
-      this.fireEvent("DashboardPressed");
+      this.fireEvent("dashboardPressed");
     }, this);
     this.add(dashboardBtn);
 
@@ -90,8 +90,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
   },
 
   events: {
-    "NodeDoubleClicked": "qx.event.type.Data",
-    "DashboardPressed": "qx.event.type.Event"
+    "nodeDoubleClicked": "qx.event.type.Data",
+    "dashboardPressed": "qx.event.type.Event"
   },
 
   properties: {
@@ -139,7 +139,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
           }
         }
         btn.addListener("execute", function() {
-          this.fireDataEvent("NodeDoubleClicked", nodeId);
+          this.fireDataEvent("nodeDoubleClicked", nodeId);
         }, this);
         this.__mainViewCaptionLayout.add(btn);
 

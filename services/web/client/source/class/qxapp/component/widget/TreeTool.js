@@ -28,7 +28,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
   },
 
   events: {
-    "NodeDoubleClicked": "qx.event.type.Data",
+    "nodeDoubleClicked": "qx.event.type.Data",
     "addNode": "qx.event.type.Event",
     "removeNode": "qx.event.type.Data"
   },
@@ -106,7 +106,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
         let currentSelection = selection.toArray();
         if (currentSelection.length > 0) {
           let selectedRow = currentSelection[0];
-          this.fireDataEvent("NodeDoubleClicked", selectedRow.getNodeId());
+          this.fireDataEvent("nodeDoubleClicked", selectedRow.getNodeId());
         }
       }, this);
       return tree;
@@ -201,7 +201,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       }
 
       let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
-      treeItemRenamer.addListener("LabelChanged", e => {
+      treeItemRenamer.addListener("labelChanged", e => {
         const data = e.getData();
         const newLabel = data.newLabel;
         const nodeId = selectedItem.getNodeId();

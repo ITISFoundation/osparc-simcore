@@ -12,7 +12,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     this.__navBar = this.__createNavigationBar();
     this.__navBar.setHeight(100);
-    this.__navBar.addListener("NodeDoubleClicked", e => {
+    this.__navBar.addListener("nodeDoubleClicked", e => {
       if (this.__prjEditor) {
         let nodeId = e.getData();
         this.__prjEditor.nodeSelected(nodeId);
@@ -65,13 +65,13 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjBrowser = new qxapp.desktop.PrjBrowser();
       this.__prjStack.add(this.__prjBrowser);
 
-      this.__navBar.addListener("DashboardPressed", function() {
+      this.__navBar.addListener("dashboardPressed", function() {
         this.__prjStack.setSelection([this.__prjBrowser]);
         this.__prjBrowser.reloadUserProjects();
-        this.__navBar.setMainViewCaption("Dashboard");
+        this.__navBar.setMainViewCaption(this.tr("Dashboard"));
       }, this);
 
-      this.__prjBrowser.addListener("StartProject", e => {
+      this.__prjBrowser.addListener("startProject", e => {
         const projectData = e.getData();
         if (this.__servicesReady === null) {
           let iframe = this.__createLoadingIFrame(this.tr("Services"));
@@ -107,7 +107,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__navBar.setProjectModel(projectModel);
       this.__navBar.setMainViewCaption(projectModel.getWorkbenchModel().getPathIds("root"));
 
-      this.__prjEditor.addListener("ChangeMainViewCaption", function(ev) {
+      this.__prjEditor.addListener("changeMainViewCaption", function(ev) {
         const elements = ev.getData();
         this.__navBar.setMainViewCaption(elements);
       }, this);
@@ -145,7 +145,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     __getUserProfile: function() {
       let permissions = qxapp.data.Permissions.getInstance();
-      permissions.addListener("UserProfileRecieved", e => {
+      permissions.addListener("userProfileRecieved", e => {
         this.__userReady = e.getData();
       }, this);
       permissions.loadUserRoleFromBackend();

@@ -62,7 +62,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   },
 
   events: {
-    "StartProject": "qx.event.type.Data"
+    "startProject": "qx.event.type.Data"
   },
 
   members: {
@@ -97,7 +97,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     },
 
     __startProjetModel: function(prjData) {
-      this.fireDataEvent("StartProject", prjData);
+      this.fireDataEvent("startProject", prjData);
     },
 
     __createProjectModel: function(projectId, fromTemplate = false) {

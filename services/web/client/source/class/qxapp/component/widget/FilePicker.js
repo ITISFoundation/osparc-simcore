@@ -65,7 +65,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
   },
 
   events: {
-    "Finished": "qx.event.type.Event"
+    "finished": "qx.event.type.Event"
   },
 
   members: {
@@ -122,7 +122,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
     // Request to the server an upload URL.
     __retrieveURLAndUpload: function(file) {
       let store = qxapp.data.Store.getInstance();
-      store.addListenerOnce("PresginedLink", e => {
+      store.addListenerOnce("presginedLink", e => {
         const presginedLinkData = e.getData();
         // presginedLinkData.locationId;
         // presginedLinkData.fileUuid;
@@ -202,7 +202,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
         path: selectedItem.getFileId()
       };
       this.getNodeModel().repopulateOutputPortData();
-      this.fireEvent("Finished");
+      this.fireEvent("finished");
     }
   }
 });

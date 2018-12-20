@@ -65,7 +65,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       // Will be called only the first time Svg lib is loaded
       this.removeAll();
       this.loadModel(this.getWorkbenchModel());
-      this.fireDataEvent("NodeDoubleClicked", "root");
+      this.fireDataEvent("nodeDoubleClicked", "root");
     });
 
     this.__desktop.add(this.__svgWidget, {
@@ -119,7 +119,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
   },
 
   events: {
-    "NodeDoubleClicked": "qx.event.type.Data",
+    "nodeDoubleClicked": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
     "removeLink": "qx.event.type.Data"
   },
@@ -211,7 +211,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         };
         srvCat.moveTo(workbenchViewCenter.x - 200, workbenchViewCenter.y - 200);
       }
-      srvCat.addListener("AddService", ev => {
+      srvCat.addListener("addService", ev => {
         this.__addServiceFromCatalogue(ev, pos);
       }, this);
       return srvCat;
@@ -267,7 +267,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       this.addWindowToDesktop(nodeUI);
       this.__nodesUI.push(nodeUI);
 
-      nodeUI.addListener("NodeMoving", function() {
+      nodeUI.addListener("nodeMoving", function() {
         this.__updateLinks(nodeUI);
         this.__updatePosition(nodeUI);
       }, this);
@@ -277,7 +277,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       }, this);
 
       nodeUI.addListener("dbltap", e => {
-        this.fireDataEvent("NodeDoubleClicked", nodeUI.getNodeId());
+        this.fireDataEvent("nodeDoubleClicked", nodeUI.getNodeId());
         e.stopPropagation();
       }, this);
 
@@ -334,7 +334,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
 
     __createDragDropMechanism: function(nodeBase) {
       const evType = "pointermove";
-      nodeBase.addListener("LinkDragStart", e => {
+      nodeBase.addListener("linkDragStart", e => {
         let data = e.getData();
         let event = data.event;
         let dragNodeId = data.nodeId;
@@ -361,7 +361,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         );
       }, this);
 
-      nodeBase.addListener("LinkDragOver", e => {
+      nodeBase.addListener("linkDragOver", e => {
         let data = e.getData();
         let event = data.event;
         let dropNodeId = data.nodeId;
@@ -383,7 +383,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         }
       }, this);
 
-      nodeBase.addListener("LinkDrop", e => {
+      nodeBase.addListener("linkDrop", e => {
         let data = e.getData();
         let event = data.event;
         let dropNodeId = data.nodeId;
@@ -411,7 +411,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         }
       }, this);
 
-      nodeBase.addListener("LinkDragEnd", e => {
+      nodeBase.addListener("linkDragEnd", e => {
         let data = e.getData();
         let dragNodeId = data.nodeId;
 

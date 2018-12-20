@@ -25,7 +25,7 @@ qx.Class.define("qxapp.data.Permissions", {
   },
 
   events: {
-    "UserProfileRecieved": "qx.event.type.Event"
+    "userProfileRecieved": "qx.event.type.Event"
   },
 
   statics: {
@@ -111,7 +111,7 @@ qx.Class.define("qxapp.data.Permissions", {
       profile.addListenerOnce("getSuccess", e => {
         let profileData = e.getRequest().getResponse().data;
         this.__userRole = profileData.role;
-        this.fireDataEvent("UserProfileRecieved", true);
+        this.fireDataEvent("userProfileRecieved", true);
       }, this);
       profile.addListenerOnce("getError", e => {
         console.log(e);

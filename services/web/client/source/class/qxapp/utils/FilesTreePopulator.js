@@ -15,7 +15,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       this.__resetTree(treeName);
 
       let store = qxapp.data.Store.getInstance();
-      store.addListenerOnce("NodeFiles", e => {
+      store.addListenerOnce("nodeFiles", e => {
         const files = e.getData();
         const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
         this.__addTreeData(newChildren);
@@ -29,7 +29,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
 
       let locationsAdded = [];
       let store = qxapp.data.Store.getInstance();
-      store.addListener("MyDocuments", e => {
+      store.addListener("myDocuments", e => {
         const {
           location,
           files
@@ -43,7 +43,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       store.getMyDocuments();
 
       /*
-      store.addListenerOnce("FakeFiles", e => {
+      store.addListenerOnce("fakeFiles", e => {
         const files = e.getData();
         const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
         this.__addTreeData(newChildren);

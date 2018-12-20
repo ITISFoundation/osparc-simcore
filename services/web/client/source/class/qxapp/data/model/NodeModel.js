@@ -122,8 +122,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
   },
 
   events: {
-    "UpdatePipeline": "qx.event.type.Data",
-    "ShowInLogger": "qx.event.type.Data"
+    "updatePipeline": "qx.event.type.Data",
+    "showInLogger": "qx.event.type.Data"
   },
 
   members: {
@@ -452,7 +452,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __updateBackendAndRetrieveInputs: function() {
       // HACK: Workaround for fetching inputs in Visualizer and modeler
       if (this.__hasRetrieve()) {
-        this.fireDataEvent("UpdatePipeline", this);
+        this.fireDataEvent("updatePipeline", this);
       }
     },
 
@@ -497,7 +497,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           nodeLabel: this.getLabel(),
           msg: msg
         };
-        this.fireDataEvent("ShowInLogger", msgData);
+        this.fireDataEvent("showInLogger", msgData);
 
         // start the service
         const url = "/running_interactive_services";
@@ -514,7 +514,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             nodeLabel: this.getLabel(),
             msg: errorMsg
           };
-          this.fireDataEvent("ShowInLogger", errorMsgData);
+          this.fireDataEvent("showInLogger", errorMsgData);
         }, this);
         request.addListener("fail", e => {
           const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
@@ -522,7 +522,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             nodeLabel: this.getLabel(),
             msg: failMsg
           };
-          this.fireDataEvent("ShowInLogger", failMsgData);
+          this.fireDataEvent("showInLogger", failMsgData);
         }, this);
         request.send();
       }
@@ -540,7 +540,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           nodeLabel: this.getLabel(),
           msg: msg
         };
-        this.fireDataEvent("ShowInLogger", msgData);
+        this.fireDataEvent("showInLogger", msgData);
         return;
       }
       const publishedPort = data["published_port"];
@@ -565,7 +565,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           nodeLabel: this.getLabel(),
           msg: msg
         };
-        this.fireDataEvent("ShowInLogger", msgData);
+        this.fireDataEvent("showInLogger", msgData);
 
         if (this.__hasRetrieve()) {
           this.getRetrieveIFrameButton().setEnabled(true);

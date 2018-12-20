@@ -21,7 +21,7 @@ qx.Class.define("qxapp.component.widget.TreeItemRenamer", {
   },
 
   events: {
-    "LabelChanged": "qx.event.type.Data"
+    "labelChanged": "qx.event.type.Data"
   },
 
   members: {
@@ -50,7 +50,7 @@ qx.Class.define("qxapp.component.widget.TreeItemRenamer", {
         const data = {
           newLabel: newLabel
         };
-        this.fireDataEvent("LabelChanged", data);
+        this.fireDataEvent("labelChanged", data);
 
         this.close();
       }, this);
