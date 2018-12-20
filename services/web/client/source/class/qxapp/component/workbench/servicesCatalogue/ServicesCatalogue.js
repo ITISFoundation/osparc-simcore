@@ -35,7 +35,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     showAll.addListener("changeValue", e => {
       this.__refilterData();
     }, this);
-    // Temporary HACK: Backend should do the filtering
+    // FIXME: Backend should do the filtering
     if (qxapp.data.Permissions.getInstance().canDo("test")) {
       filterLayout.add(showAll);
     }
