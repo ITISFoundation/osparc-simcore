@@ -19,7 +19,7 @@ qx.Class.define("qxapp.About", {
   members: {
     __populateEntries: function() {
       // All these items and versions should be red from a file
-      this.add(this.__createEntry("oSPARC UI", "3.38"));
+      this.add(this.__createEntry("oSPARC UI", "3.38", "https://github.com/ITISFoundation/osparc-simcore"));
       this.add(new qx.ui.core.Spacer(null, 10));
       let libInfo = qx.core.Environment.get("qx.libraryInfoMap");
       if (libInfo) {
@@ -30,22 +30,28 @@ qx.Class.define("qxapp.About", {
         this.add(new qx.ui.core.Spacer(null, 10));
       }
       [
-        ["Ajv", "6.5.0"],
-        ["svg.js", "2.6.4"],
-        ["socket.io", "2.1.2"],
-        ["jsondiffpatch", "0.3.11"]
-      ].forEach(r => this.add(this.__createEntry(r[0], r[1])));
+        ["Ajv", "6.5.0", "https://github.com/epoberezkin/ajv"],
+        ["svg.js", "2.6.4", "https://github.com/svgdotjs/svg.js"],
+        ["socket.io", "2.1.2", "https://github.com/socketio/socket.io"],
+        ["jsondiffpatch", "0.3.11", "https://github.com/benjamine/jsondiffpatch"]
+      ].forEach(r => this.add(this.__createEntry(r[0], r[1], r[2])));
       this.add(new qx.ui.core.Spacer(null, 10));
-      this.add(this.__createEntry("qooxdoo-compiler", qx.core.Environment.get("qx.compilerVersion")));
+      this.add(this.__createEntry("qooxdoo-compiler", qx.core.Environment.get("qx.compilerVersion"), "https://github.com/qooxdoo/qooxdoo-compiler"));
     },
 
-    __createEntry: function(item, version) {
+    __createEntry: function(item, version, url) {
       let entryLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         marginBottom: 4
       });
 
+      let entryLabel = null;
+      if (url) {
+        entryLabel = new qxapp.component.widget.LabelLink(item, url);
+      } else {
+        entryLabel = new qx.ui.basic.Label(item);
+      }
       const title14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"]);
-      let entryLabel = new qx.ui.basic.Label(item).set({
+      entryLayout.set({
         font: title14Font
       });
       entryLayout.add(entryLabel);
