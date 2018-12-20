@@ -1,10 +1,10 @@
 [
   {
-    "projectUuid": "07640335-a91f-468c-ab69-a374fa82078d",
+    "uuid": "07640335-a91f-468c-ab69-a374fa82078d",
     "name": "Sample Project",
     "description": "A little fake project without actual backend",
     "notes": "# title\nThere be dragons inside",
-    "owner": "TOBI",
+    "prjOwner": "TOBI",
     "collaborators": {
       "PEDRO": [
         "read",
@@ -93,12 +93,12 @@
       }
     }
   }, {
-    "projectUuid": "89a92ea1-ce5e-488e-9fd8-933a263c6219",
+    "uuid": "89a92ea1-ce5e-488e-9fd8-933a263c6219",
     "name": "3 pipelines",
     "description": "Empty",
     "notes": "Empty",
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?25.jpg",
-    "owner": "MANUEL",
+    "prjOwner": "MANUEL",
     "collaborators": {},
     "creationDate": "2018-10-31T12:11:53.179Z",
     "lastChangeDate": "2018-10-31T12:24:32.660Z",
@@ -215,11 +215,11 @@
       }
     }
   }, {
-    "projectUuid": "80363288-84c2-49db-95d1-22e1ea78043e",
+    "uuid": "80363288-84c2-49db-95d1-22e1ea78043e",
     "name": "Macros",
     "description": "Project containing nested custom macros",
     "notes": "# title\nBlah",
-    "owner": "ODEI",
+    "prjOwner": "ODEI",
     "collaborators": {
       "ODEI": [
         "read",

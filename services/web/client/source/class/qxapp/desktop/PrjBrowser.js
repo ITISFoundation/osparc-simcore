@@ -167,7 +167,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         userPrjArrayModel.unshift(qx.data.marshal.Json.createModel({
           name: this.tr("New Project"),
           thumbnail: "@FontAwesome5Solid/plus-circle/80",
-          projectUuid: null,
+          uuid: null,
           lastChangeDate: null,
           prjOwner: null
         }));
@@ -215,7 +215,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         for (let i=0; i<publicPrjList.length; i++) {
           // Temporary HACK
           if (qxapp.data.Store.getInstance().getRole() !== 0 &&
-          publicPrjList[i].projectUuid.includes("DemoDecember")) {
+          publicPrjList[i].uuid.includes("DemoDecember")) {
             continue;
           }
           publicFilteredPrjList.push(publicPrjList[i]);
@@ -300,7 +300,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               return data ? new Date(data) : null;
             }
           }, item, id);
-          controller.bindProperty("projectUuid", "model", {
+          controller.bindProperty("uuid", "model", {
             converter: function(data) {
               return data;
             }
@@ -355,7 +355,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         this.__editPrjLayout.removeAt(1);
       }
 
-      const itemsToBeDisplayed = ["name", "description", "notes", "owner", "collaborators", "creationDate", "lastChangeDate"];
+      const itemsToBeDisplayed = ["name", "description", "notes", "prjOwner", "collaborators", "creationDate", "lastChangeDate"];
       const itemsToBeModified = fromTemplate ? [] : ["name", "description", "notes"];
       let form = new qx.ui.form.Form();
       let control;
@@ -376,7 +376,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               });
               form.add(control, this.tr("Notes"));
               break;
-            case "owner":
+            case "prjOwner":
               control = new qx.ui.form.TextField();
               form.add(control, this.tr("Owner"));
               break;
@@ -429,7 +429,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         }, this);
 
         resource.put({
-          "project_id": projectData["projectUuid"]
+          "project_id": projectData["uuid"]
         }, projectData);
 
         this.__itemSelected(null);
@@ -459,7 +459,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             }, this);
 
             resource.del({
-              "project_id": projectData["projectUuid"]
+              "project_id": projectData["uuid"]
             });
 
             this.__itemSelected(null);
@@ -529,10 +529,9 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             (p, i) => qx.data.marshal.Json.createModel({
               name: p.name,
               thumbnail: p.thumbnail,
-              // FIXME
-              projectUuid: p.projectUuid || p.uuid,
+              uuid: p.uuid,
               lastChangeDate: new Date(p.lastChangeDate),
-              prjOwner: Object.prototype.hasOwnProperty.call(p, "owner") ? p.owner : p.prjOwner
+              prjOwner: p.prjOwner
             })
           )
       );
