@@ -25,11 +25,11 @@ import trafaret_config
 import yaml
 from sqlalchemy.orm import sessionmaker
 
-from simcore_sdk.models.pipeline_models import Base
+from simcore_sdk.models.pipeline_models import metadata
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
 from simcore_service_webserver.db import DSN
-from simcore_service_webserver.db_models import confirmations, metadata, users
+from simcore_service_webserver.db_models import confirmations, users
 from simcore_service_webserver.resources import resources as app_resources
 
 SERVICES = ['director', 'apihub', 'rabbit', 'postgres', 'sidecar', 'storage', 'minio']
@@ -220,13 +220,11 @@ def postgres_db(app_config, webserver_environ, docker_stack):
     # Configures db and initializes tables
     # Uses syncrounous engine for that
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
-    metadata.create_all(bind=engine, tables=[users, confirmations], checkfirst=True)
-    Base.metadata.create_all(engine)
+    metadata.create_all(bind=engine, checkfirst=True)
 
     yield engine
 
     metadata.drop_all(engine)
-    Base.metadata.drop_all(engine)
     engine.dispose()
 
 @pytest.fixture(scope='session')
