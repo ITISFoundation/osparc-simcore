@@ -6,12 +6,12 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
 
     if (prjData) {
       this.set({
-        uuid: prjData.projectUuid || prjData.uuid,
+        uuid: prjData.uuid,
         name: prjData.name,
         description: prjData.description,
         notes: prjData.notes,
         thumbnail: prjData.thumbnail,
-        prjOwner: prjData.owner || prjData.prjOwner,
+        prjOwner: prjData.prjOwner,
         collaborators: prjData.collaborators,
         creationDate: new Date(prjData.creationDate),
         lastChangeDate: new Date(prjData.lastChangeDate)
