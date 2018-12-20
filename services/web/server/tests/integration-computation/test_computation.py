@@ -75,7 +75,7 @@ def mock_workbench_adjacency_list(here):
         return json.load(fp)
 # ------------------------------------------
 
-async def test_check_health(client):
+async def test_check_health(docker_stack, client):
     resp = await client.get("/v0/")
     payload = await resp.json()
 
@@ -88,23 +88,7 @@ async def test_check_health(client):
     assert data['name'] == 'simcore_service_webserver'
     assert data['status'] == 'SERVICE_RUNNING'
 
-async def test_start_pipeline(docker_stack, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session):
-    # import pdb; pdb.set_trace()
-    resp = await client.post("/v0/computation/pipeline/{}/start".format(project_id),
-        json = mock_workbench_payload,
-    )
-    payload = await resp.json()
-
-    assert resp.status == 200, str(payload)
-    data, error = unwrap_envelope(payload)
-
-    assert data
-    assert not error
-
-    assert "pipeline_name" in data
-    assert "project_id" in data
-    assert data['project_id'] == project_id
-    # check db comp_pipeline
+def _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list):
     pipeline_db = postgres_session.query(ComputationalPipeline).filter(ComputationalPipeline.project_id == project_id).one()
     assert pipeline_db.project_id == project_id
     assert pipeline_db.dag_adjacency_list == mock_workbench_adjacency_list
@@ -128,3 +112,35 @@ async def test_start_pipeline(docker_stack, client, project_id:str, mock_workben
             assert task_db.outputs == None
         assert task_db.image["name"] == mock_pipeline[task_db.node_id]["key"]
         assert task_db.image["tag"] == mock_pipeline[task_db.node_id]["version"]
+
+async def test_start_pipeline(docker_stack, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session):
+    resp = await client.post("/v0/computation/pipeline/{}/start".format(project_id),
+        json = mock_workbench_payload,
+    )
+    payload = await resp.json()
+
+    assert resp.status == 200, str(payload)
+    data, error = unwrap_envelope(payload)
+
+    assert data
+    assert not error
+
+    assert "pipeline_name" in data
+    assert "project_id" in data
+    assert data['project_id'] == project_id
+    # check db comp_pipeline
+    _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list)
+
+async def test_update_pipeline(docker_stack, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session):
+    resp = await client.put("/v0/computation/pipeline/{}".format(project_id),
+        json = mock_workbench_payload,
+    )
+    payload = await resp.json()
+
+    assert resp.status == 204, str(payload)
+    data, error = unwrap_envelope(payload)
+
+    assert not data
+    assert not error
+    # check db comp_pipeline
+    _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list)
