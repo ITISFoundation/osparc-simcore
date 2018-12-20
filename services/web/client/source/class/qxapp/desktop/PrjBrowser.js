@@ -167,8 +167,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         userPrjArrayModel.unshift(qx.data.marshal.Json.createModel({
           name: this.tr("New Project"),
           thumbnail: "@FontAwesome5Solid/plus-circle/80",
-          projectUuid: null,
-          created: null,
+          uuid: null,
+          lastChangeDate: null,
           prjOwner: null
         }));
         // controller
@@ -215,7 +215,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         for (let i=0; i<publicPrjList.length; i++) {
           // Temporary HACK
           if (qxapp.data.Store.getInstance().getRole() !== 0 &&
-          publicPrjList[i].projectUuid.includes("DemoDecember")) {
+          publicPrjList[i].uuid.includes("DemoDecember")) {
             continue;
           }
           publicFilteredPrjList.push(publicPrjList[i]);
@@ -295,18 +295,18 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               return data ? "Created by: <b>" + data + "</b>" : null;
             }
           }, item, id);
-          controller.bindProperty("created", "created", {
+          controller.bindProperty("lastChangeDate", "lastChangeDate", {
             converter: function(data) {
               return data ? new Date(data) : null;
             }
           }, item, id);
-          controller.bindProperty("projectUuid", "model", {
+          controller.bindProperty("uuid", "model", {
             converter: function(data) {
               return data;
             }
           }, item, id);
         },
-        configureItem : function(item) {
+        configureItem: function(item) {
           item.getChildControl("icon").set({
             width: thumbnailWidth,
             height: thumbnailHeight,
@@ -355,7 +355,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         this.__editPrjLayout.removeAt(1);
       }
 
-      const itemsToBeDisplayed = ["name", "description", "notes", "owner", "collaborators", "creationDate", "lastChangeDate"];
+      const itemsToBeDisplayed = ["name", "description", "notes", "prjOwner", "collaborators", "creationDate", "lastChangeDate"];
       const itemsToBeModified = fromTemplate ? [] : ["name", "description", "notes"];
       let form = new qx.ui.form.Form();
       let control;
@@ -376,7 +376,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
               });
               form.add(control, this.tr("Notes"));
               break;
-            case "owner":
+            case "prjOwner":
               control = new qx.ui.form.TextField();
               form.add(control, this.tr("Owner"));
               break;
@@ -429,7 +429,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         }, this);
 
         resource.put({
-          "project_id": projectData["projectUuid"]
+          "project_id": projectData["uuid"]
         }, projectData);
 
         this.__itemSelected(null);
@@ -459,7 +459,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             }, this);
 
             resource.del({
-              "project_id": projectData["projectUuid"]
+              "project_id": projectData["uuid"]
             });
 
             this.__itemSelected(null);
@@ -505,18 +505,37 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     },
 
     __getProjectArrayModel: function(prjList) {
-      return new qx.data.Array(
+      let sortByProperty = function(prop) {
+        return function(a, b) {
+          if (prop === "lastChangeDate") {
+            return new Date(b[prop]) - new Date(a[prop]);
+          }
+          if (typeof a[prop] == "number") {
+            return a[prop] - b[prop];
+          }
+          if (a[prop] < b[prop]) {
+            return -1;
+          } else if (a[prop] > b[prop]) {
+            return 1;
+          }
+          return 0;
+        };
+      };
+      prjList.sort(sortByProperty("lastChangeDate"));
+
+      let prjArray = new qx.data.Array(
         prjList
           .map(
             (p, i) => qx.data.marshal.Json.createModel({
               name: p.name,
               thumbnail: p.thumbnail,
-              projectUuid: p.projectUuid,
-              created: new Date(p.creationDate),
-              prjOwner: Object.prototype.hasOwnProperty.call(p, "owner") ? p.owner : p.prjOwner
+              uuid: p.uuid,
+              lastChangeDate: new Date(p.lastChangeDate),
+              prjOwner: p.prjOwner
             })
           )
       );
+      return prjArray;
     }
   }
 });

@@ -7,7 +7,7 @@ servers:
   - description: API server
     url: '/v0'
 paths:
-  /my:
+  /me:
     get:
       operationId: get_my_profile
       responses:
@@ -16,11 +16,23 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/my.yaml#/ProfileEnveloped'
+                $ref: './components/schemas/me.yaml#/ProfileEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    put:
+      operationId: update_my_profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './components/schemas/me.yaml#/ProfileInput'
+      responses:
+        '204':
+          description: updated profile
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
-  /my/tokens:
+  /me/tokens:
     get:
       summary: List tokens
       operationId: list_tokens
@@ -30,7 +42,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/my.yaml#/TokensArrayEnveloped'
+                $ref: './components/schemas/me.yaml#/TokensArrayEnveloped'
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
     post:
@@ -40,19 +52,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './components/schemas/my.yaml#/TokenEnveloped'
+              # FIXME: this body should NOT be enveloped!
+              $ref: './components/schemas/me.yaml#/TokenEnveloped'
       responses:
         '201':
           description: token created
           content:
             application/json:
               schema:
-                $ref: './components/schemas/my.yaml#/TokenIdEnveloped'
+                $ref: './components/schemas/me.yaml#/TokenIdEnveloped'
 
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
 
-  /my/tokens/{service}:
+  /me/tokens/{service}:
     parameters:
       - name: service
         in: path
@@ -68,7 +81,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/my.yaml#/TokenEnveloped'
+                $ref: './components/schemas/me.yaml#/TokenEnveloped'
     put:
       summary: Updates token
       operationId: update_token
@@ -78,7 +91,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/my.yaml#/TokenEnveloped'
+                $ref: './components/schemas/me.yaml#/TokenEnveloped'
     delete:
       summary: Delete token
       operationId: delete_token

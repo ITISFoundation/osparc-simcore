@@ -44,7 +44,7 @@ def devel_environ(env_devel_file):
 from simcore_service_storage.cli import create_environ
 
 @pytest.fixture("session")
-def container_environ(services_docker_compose_file, devel_environ):
+def container_environ(services_docker_compose_file, devel_environ, osparc_simcore_root_dir):
     """ Creates a dict with the environment variables
         inside of a webserver container
     """
@@ -54,7 +54,8 @@ def container_environ(services_docker_compose_file, devel_environ):
 
     container_environ = create_environ(skip_system_environ=True)
     container_environ.update({
-        'VENV2': '/home/scu/.venv27/' # defined in Dockerfile
+        'VENV2': '/home/scu/.venv27/', # defined in Dockerfile
+        'OSPARC_SIMCORE_REPO_ROOTDIR':str(osparc_simcore_root_dir)
     })
 
     environ_items = dc["services"][THIS_SERVICE].get("environment", list())

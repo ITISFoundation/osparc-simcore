@@ -9,6 +9,9 @@ async def assert_status(response: web.Response, expected_cls:web.HTTPException, 
 
     if issubclass(expected_cls, web.HTTPError):
         do_assert_error(data, error, expected_cls, expected_msg)
+    elif issubclass(expected_cls, web.HTTPNoContent):
+        assert not data
+        assert not error
     else:
         assert data
         assert not error

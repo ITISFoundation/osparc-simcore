@@ -13,7 +13,8 @@ services:
     build:
       target: development
     volumes:
-      - './director:/home/scu/services/director'
+      - ./director:/home/scu/services/director
+      - ../packages/service-library:/home/scu/packages/service-library
     stdin_open: true
     tty: true
   #--------------------------------------------------------------------
