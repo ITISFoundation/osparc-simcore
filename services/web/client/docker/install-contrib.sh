@@ -8,12 +8,17 @@ echo "- script dir: " ${SCRIPT_DIR}
 echo "- client dir: " ${CLIENT_DIR}
 echo "- fonts dir : " ${FONTS_DIR}
 
-# Installs thems and iconfonts
-pushd ${CLIENT_DIR};
+# Installs themes and icon fonts
+pushd ${HOME};
 
 echo "qooxdoo and compiler versions"
 npm ll qooxdoo-sdk
 npm ll qxcompiler
+
+popd
+
+
+pushd ${CLIENT_DIR};
 
 echo "Updating contributions ..."
 qx contrib update
@@ -24,4 +29,4 @@ qx contrib list
 echo "Installing contributions (based on information from contrib.json) ..."
 qx contrib install
 
-popd;
+popd

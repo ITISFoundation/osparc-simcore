@@ -11,19 +11,29 @@ from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.login import APP_LOGIN_CONFIG
 from simcore_service_webserver.statics import INDEX_RESOURCE_NAME
 from utils_assert import assert_status
-from utils_login import LoggedUser, parse_link
+from utils_login import LoggedUser, NewUser, parse_link
 
-NEW_EMAIL = 'new@gmail.com'
+NEW_EMAIL = 'new@mail.com'
 
 
 async def test_unauthorized(client):
     url = client.app.router['auth_change_email'].url_for()
-    r = await client.post(url, json={
+    rsp = await client.post(url, json={
             'email': NEW_EMAIL,
     })
-    assert r.status == 401
-    await assert_status(r, web.HTTPUnauthorized)
+    assert rsp.status == 401
+    await assert_status(rsp, web.HTTPUnauthorized)
 
+
+async def test_change_to_existing_email(client):
+    url = client.app.router['auth_change_email'].url_for()
+
+    async with LoggedUser(client) as user:
+        async with NewUser() as other:
+            rsp = await client.post(url, json={
+                    'email': other['email'],
+            })
+            await assert_status(rsp, web.HTTPUnprocessableEntity, "This email cannot be used")
 
 
 async def test_change_and_confirm(client, capsys):
@@ -37,39 +47,37 @@ async def test_change_and_confirm(client, capsys):
     assert index_url.path == URL(cfg.LOGIN_REDIRECT).path
 
     async with LoggedUser(client) as user:
-        r = await client.post(url, json={
+        # request change email
+        rsp = await client.post(url, json={
             'email': NEW_EMAIL,
         })
-        payload = await r.json()
-        assert r.status == 200, payload
-        assert r.url_obj.path == url.path
+        assert rsp.url_obj.path == url.path
+        await assert_status(rsp, web.HTTPOk, cfg.MSG_CHANGE_EMAIL_REQUESTED)
 
-
-        assert cfg.MSG_CHANGE_EMAIL_REQUESTED in await r.text()
-        await assert_status(r, web.HTTPOk, cfg.MSG_CHANGE_EMAIL_REQUESTED)
-
+        # email sent
         out, err = capsys.readouterr()
         link = parse_link(out)
 
-        r = await client.get(link)
-        assert r.status == 200, await r.json()
-        assert r.url_obj.path == index_url.path
-        # assert cfg.MSG_EMAIL_CHANGED in await r.text()
-        # await assert_status(r, web.HTTPOk, cfg.MSG_EMAIL_CHANGED)
+        # click email's link
+        rsp = await client.get(link)
+        txt = await rsp.text()
 
-        r = await client.get(logout_url)
-        assert r.status == 200
-        assert r.url_obj.path == logout_url.path
+        assert rsp.url_obj.path == index_url.path
+        assert "welcome to fake web front-end" in txt
 
-        r = await client.post(login_url, json={
+        # try new email but logout first
+        rsp = await client.get(logout_url)
+        assert rsp.url_obj.path == logout_url.path
+        await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_OUT)
+
+        rsp = await client.post(login_url, json={
             'email': NEW_EMAIL,
             'password': user['raw_password'],
         })
-        payload = await r.json()
-        assert r.status == 200, payload
-        assert r.url_obj.path == login_url.path
-        assert cfg.MSG_LOGGED_IN in await r.text()
-        await assert_status(r, web.HTTPOk, cfg.MSG_LOGGED_IN)
+        payload = await rsp.json()
+        assert rsp.url_obj.path == login_url.path
+        await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_IN)
+
 
 
 if __name__ == '__main__':

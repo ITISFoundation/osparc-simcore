@@ -16,22 +16,54 @@ from .utils import gravatar_hash
 logger = logging.getLogger(__name__)
 
 
-# my/ -----------------------------------------------------------
+# me/ -----------------------------------------------------------
 @login_required
 async def get_my_profile(request: web.Request):
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
 
     async with engine.acquire() as conn:
-        stmt = sa.select([users.c.email]).where(users.c.id == uid)
-        email = await conn.scalar(stmt)
+        query = sa.select([users.c.email, users.c.role, users.c.name]).where(users.c.id == uid)
+        result = await conn.execute(query)
+        row = await result.first()
+
+    parts = row['name'].split(".") + [""]
 
     return {
-        'login': email,
-        'gravatar_id': gravatar_hash(email)
+        'login': row['email'],
+        'first_name': parts[0],
+        'last_name': parts[1],
+        'role': row['role'].name.capitalize(),
+        'gravatar_id': gravatar_hash(row['email'])
     }
 
 
-# my/tokens/ ------------------------------------------------------
+@login_required
+async def update_my_profile(request: web.Request):
+    uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
+    
+    # TODO: validate
+    body = await request.json()
+
+    async with engine.acquire() as conn:
+        query = sa.select([users.c.name]).where(
+            users.c.id == uid)
+        default_name = await conn.scalar(query)
+        parts = default_name.split(".") + [""]
+
+    name = body.get('first_name', parts[0]) + "." + body.get('last_name', parts[1])
+
+    async with engine.acquire() as conn:
+        query = (users.update()
+                    .where(users.c.id == uid)
+                    .values(name=name)
+                )
+        resp = await conn.execute(query)
+        assert resp.rowcount == 1
+    
+    raise web.HTTPNoContent(content_type='application/json')
+
+
+# me/tokens/ ------------------------------------------------------
 @login_required
 async def create_tokens(request: web.Request):
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
