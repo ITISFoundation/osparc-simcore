@@ -22,7 +22,7 @@ main:
   client_outdir: undefined
   host: 127.0.0.1
   log_level: DEBUG
-  port: 53846
+  port: 59559
   testing: true
 rabbit:
   channels:
@@ -32,6 +32,7 @@ rabbit:
     progress: comp.backend.channels.progress
   enabled: true
   host: 127.0.0.1
+  name: tasks
   password: simcore
   port: 5672
   user: simcore
