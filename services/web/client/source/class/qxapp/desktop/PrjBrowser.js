@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.desktop.PrjBrowser", {
@@ -62,7 +79,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   },
 
   events: {
-    "StartProject": "qx.event.type.Data"
+    "startProject": "qx.event.type.Data"
   },
 
   members: {
@@ -89,26 +106,18 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           name: data.prjTitle,
           description: data.prjDescription
         };
-        this.__startBlankProject(newPrj);
+        this.__startProjetModel(newPrj);
         win.close();
       }, this);
       win.add(newProjectDlg);
       win.open();
     },
 
-    __startBlankProject: function(newPrj) {
-      let blankProject = new qxapp.data.model.ProjectModel();
-      blankProject.set({
-        name: newPrj.name,
-        description: newPrj.description
-      });
-      const data = {
-        projectModel: blankProject
-      };
-      this.fireDataEvent("StartProject", data);
+    __startProjetModel: function(prjData) {
+      this.fireDataEvent("startProject", prjData);
     },
 
-    __startProjectModel: function(projectId, fromTemplate = false) {
+    __createProjectModel: function(projectId, fromTemplate = false) {
       let resource = this.__projectResources.project;
 
       resource.addListenerOnce("getSuccess", e => {
@@ -118,15 +127,11 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         if (fromTemplate) {
           projectData = qxapp.utils.Utils.replaceTemplateUUIDs(projectData);
         }
-        let model = new qxapp.data.model.ProjectModel(projectData);
-        const data = {
-          projectModel: model
-        };
-        this.fireDataEvent("StartProject", data);
+        this.__startProjetModel(projectData);
       }, this);
 
       resource.addListener("getError", e => {
-        console.log(e);
+        console.error(e);
       });
 
       resource.get({
@@ -179,7 +184,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }, this);
 
       resources.addListener("getError", e => {
-        console.log(e);
+        console.error(e);
       }, this);
 
       resources.get();
@@ -213,9 +218,9 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         let publicPrjList = e.getRequest().getResponse().data;
         let publicFilteredPrjList = [];
         for (let i=0; i<publicPrjList.length; i++) {
-          // Temporary HACK
-          if (qxapp.data.Store.getInstance().getRole() !== 0 &&
-          publicPrjList[i].uuid.includes("DemoDecember")) {
+          // FIXME: Backend should do the filtering
+          if (publicPrjList[i].projectUuid.includes("DemoDecember") &&
+          !qxapp.data.Permissions.getInstance().canDo("test")) {
             continue;
           }
           publicFilteredPrjList.push(publicPrjList[i]);
@@ -230,7 +235,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }, this);
 
       resources.addListener("getError", e => {
-        console.log(e);
+        console.error(e);
       }, this);
 
       resources.get();
@@ -265,7 +270,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           item.addListener("dbltap", e => {
             const prjUuid = item.getModel();
             if (prjUuid) {
-              that.__startProjectModel(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
+              that.__createProjectModel(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
             } else {
               that.__newPrjBtnClkd(); // eslint-disable-line no-underscore-dangle
             }
@@ -342,7 +347,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }, this);
 
       resource.addListener("getError", e => {
-        console.log(e);
+        console.error(e);
       });
 
       resource.get({

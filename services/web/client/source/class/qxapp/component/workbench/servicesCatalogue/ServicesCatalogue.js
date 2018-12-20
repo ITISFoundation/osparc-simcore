@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue", {
@@ -35,8 +52,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     showAll.addListener("changeValue", e => {
       this.__refilterData();
     }, this);
-    // Temporary HACK
-    if (qxapp.data.Store.getInstance().getRole() === 0) {
+    // FIXME: Backend should do the filtering
+    if (qxapp.data.Permissions.getInstance().canDo("test")) {
       filterLayout.add(showAll);
     }
     // buttons for reloading services
@@ -113,7 +130,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
   },
 
   events: {
-    "AddService": "qx.event.type.Data"
+    "addService": "qx.event.type.Data"
   },
 
   members: {
@@ -230,7 +247,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
             contextNodeId: this.__contextNodeId,
             contextPort: this.__contextPort
           };
-          this.fireDataEvent("AddService", eData);
+          this.fireDataEvent("addService", eData);
           break;
         }
       }

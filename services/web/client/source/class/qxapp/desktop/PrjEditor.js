@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* global window */
 
 /* eslint newline-per-chained-call: 0 */
@@ -48,7 +65,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   },
 
   events: {
-    "ChangeMainViewCaption": "qx.event.type.Data"
+    "changeMainViewCaption": "qx.event.type.Data"
   },
 
   members: {
@@ -126,7 +143,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     connectEvents: function() {
-      this.__mainPanel.getControls().addListener("StartPipeline", function() {
+      this.__mainPanel.getControls().addListener("startPipeline", function() {
         if (this.getCanStart()) {
           this.__startPipeline();
         } else {
@@ -134,21 +151,21 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }
       }, this);
 
-      this.__mainPanel.getControls().addListener("StopPipeline", function() {
+      this.__mainPanel.getControls().addListener("stopPipeline", function() {
         this.__stopPipeline();
       }, this);
 
       let workbenchModel = this.getProjectModel().getWorkbenchModel();
-      workbenchModel.addListener("WorkbenchModelChanged", function() {
+      workbenchModel.addListener("workbenchModelChanged", function() {
         this.__workbenchModelChanged();
       }, this);
 
-      workbenchModel.addListener("UpdatePipeline", e => {
+      workbenchModel.addListener("updatePipeline", e => {
         let nodeModel = e.getData();
         this.__updatePipeline(nodeModel);
       }, this);
 
-      workbenchModel.addListener("ShowInLogger", ev => {
+      workbenchModel.addListener("showInLogger", ev => {
         const data = ev.getData();
         const nodeLabel = data.nodeLabel;
         const msg = data.msg;
@@ -159,7 +176,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__treeView,
         this.__workbenchView
       ].forEach(wb => {
-        wb.addListener("NodeDoubleClicked", e => {
+        wb.addListener("nodeDoubleClicked", e => {
           let nodeId = e.getData();
           this.nodeSelected(nodeId);
         }, this);
@@ -262,7 +279,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     showInMainView: function(widget, nodeId) {
       if (this.__mainPanel.isPropertyInitialized("mainView")) {
         let previousWidget = this.__mainPanel.getMainView();
-        widget.addListener("Finished", function() {
+        widget.addListener("finished", function() {
           this.__mainPanel.setMainView(previousWidget);
         }, this);
       }
@@ -270,7 +287,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__mainPanel.setMainView(widget);
 
       let nodesPath = this.getProjectModel().getWorkbenchModel().getPathIds(nodeId);
-      this.fireDataEvent("ChangeMainViewCaption", nodesPath);
+      this.fireDataEvent("changeMainViewCaption", nodesPath);
     },
 
     showInExtraView: function(widget) {
