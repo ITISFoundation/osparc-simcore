@@ -3,6 +3,7 @@
 ##    pip install --requirement=requirements.txt
 ##
 coveralls
+pylint
 pytest
 pytest-aiohttp
 pytest-cov

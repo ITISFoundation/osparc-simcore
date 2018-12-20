@@ -1,5 +1,6 @@
 # Common third party packages
 aiohttp==3.3.2
+attrs~=18.0
 docker==3.5.0
 requests==2.20.1
 tenacity==4.12.0
