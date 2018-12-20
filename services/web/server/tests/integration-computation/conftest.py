@@ -25,7 +25,7 @@ import trafaret_config
 import yaml
 from sqlalchemy.orm import sessionmaker
 
-from simcore_sdk.models.pipeline_models import metadata
+from simcore_sdk.models import metadata
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
 from simcore_service_webserver.db import DSN
@@ -258,7 +258,7 @@ def resolve_environ(service, environ):
         _environs[key] = value
     return _environs
 
-@tenacity.retry(wait=tenacity.wait_fixed(0.1), stop=tenacity.stop_after_delay(30))
+@tenacity.retry(wait=tenacity.wait_fixed(0.1), stop=tenacity.stop_after_delay(60))
 def wait_till_postgres_responsive(url):
     """Check if something responds to ``url`` """
     try:

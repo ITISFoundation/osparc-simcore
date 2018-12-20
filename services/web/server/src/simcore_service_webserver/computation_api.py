@@ -5,25 +5,24 @@
 """
 # pylint: disable=C0103
 
-import asyncio
 import datetime
 import logging
+from typing import Dict
 
-import sqlalchemy.exc
 from aiohttp import web, web_exceptions
 from celery import Celery
-from sqlalchemy import and_, create_engine
-from sqlalchemy.orm import sessionmaker
+import sqlalchemy as sa
+from sqlalchemy import and_
+from aiopg.sa import Engine
 
-from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_director_sdk.rest import ApiException
 from simcore_sdk.config.rabbit import Config as rabbit_config
-from simcore_sdk.models.pipeline_models import (Base, ComputationalPipeline,
+from simcore_sdk.models.pipeline_models import (ComputationalPipeline,
                                                 ComputationalTask)
 
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
-from .db_config import CONFIG_SECTION_NAME as CONFIG_DB_SECTION
 from .director import director_sdk
 from .login.decorators import login_required
 
@@ -34,7 +33,6 @@ log = logging.getLogger(__file__)
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 
-db_session = None
 computation_routes = web.RouteTableDef()
 
 def get_celery(_app):
@@ -42,41 +40,6 @@ def get_celery(_app):
     rabbit = rabbit_config(config=config)
     celery = Celery(rabbit.name, broker=rabbit.broker, backend=rabbit.backend)
     return celery
-
-
-async def init_database(_app):
-    #pylint: disable=W0603
-    global db_session
-
-    # TODO: use here persist module to keep everything homogeneous
-    RETRY_WAIT_SECS = 2
-    RETRY_COUNT = 20
-
-    # db config
-    db_config = _app[APP_CONFIG_KEY][CONFIG_DB_SECTION]["postgres"]
-    endpoint = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(**db_config)
-
-    db_engine = create_engine(endpoint,
-        client_encoding="utf8",
-        connect_args={"connect_timeout": 30},
-        pool_pre_ping=True)
-
-    # FIXME: the db tables are created here, this only works when postgres is up and running.
-    # For now lets just try a couple of times.
-    # This should NOT be executed upon importing the module but as a separate function that is called async
-    # upon initialization of the web app (e.g. like subscriber)
-    # The system should not stop because session is not connect. it should report error when a db operation
-    # is required but not stop the entire application.
-    DatabaseSession = sessionmaker(db_engine)
-    db_session = DatabaseSession()
-    for i in range(RETRY_COUNT):
-        try:
-            Base.metadata.create_all(db_engine)
-        except sqlalchemy.exc.SQLAlchemyError as err:
-            await asyncio.sleep(RETRY_WAIT_SECS)
-            msg = "Retrying to create database %d/%d ..." % (i+1, RETRY_COUNT)
-            log.warning("%s: %s", str(err), msg)
-            print("oops " + msg)
 
 async def _get_node_details(node_key:str, node_version:str, app)->dict:
     if "file-picker" in node_key:
@@ -195,107 +158,99 @@ async def _parse_pipeline(pipeline_data:dict, app: web.Application): # pylint: d
         log.debug("task stored")
     return dag_adjacency_list, tasks
 
-async def _set_adjacency_in_pipeline_db(project_id, dag_adjacency_list):
-    try:
-        pipeline = db_session.query(ComputationalPipeline).filter(ComputationalPipeline.project_id==project_id).one()
-        log.debug("Pipeline object found")
-        pipeline.state = 0
-        pipeline.dag_adjacency_list = dag_adjacency_list
-    except sqlalchemy.orm.exc.NoResultFound:
-        # let's create one then
-        pipeline = ComputationalPipeline(project_id=project_id, dag_adjacency_list=dag_adjacency_list, state=0)
-        log.debug("Pipeline object created")
-        db_session.add(pipeline)
-    except sqlalchemy.orm.exc.MultipleResultsFound:
-        log.exception("the computation pipeline %s is not unique", project_id)
-        raise
+async def _set_adjacency_in_pipeline_db(db_engine: Engine, project_id: str, dag_adjacency_list: Dict):
+    async with db_engine.acquire() as conn:
+        query = sa.select([ComputationalPipeline]).\
+                    where(ComputationalPipeline.__table__.c.project_id==project_id)
+        result = await conn.execute(query)
+        pipeline = await result.first()
+        if pipeline is None:
+            # let's create one then
+            query = ComputationalPipeline.__table__.insert().\
+                    values(project_id=project_id, 
+                            dag_adjacency_list=dag_adjacency_list, 
+                            state=0)
+            
+            log.debug("Pipeline object created")
+        else:
+            # let's modify it
+            log.debug("Pipeline object found")
+            query = ComputationalPipeline.__table__.update().\
+                        where(ComputationalPipeline.__table__.c.project_id == project_id).\
+                        values(state=0, 
+                                dag_adjacency_list=dag_adjacency_list)
+        await conn.execute(query)
 
-async def _set_tasks_in_tasks_db(project_id, tasks):
-    tasks_db = db_session.query(ComputationalTask).filter(ComputationalTask.project_id==project_id).all()
-    # delete tasks that were deleted from the db
-    for task_db in tasks_db:
-        if not task_db.node_id in tasks:
-            db_session.delete(task_db)
-    internal_id = 1
-    for node_id in tasks:
-        task = tasks[node_id]
-        try:
-            comp_task = db_session.query(ComputationalTask).filter(and_(ComputationalTask.project_id==project_id, ComputationalTask.node_id==node_id)).one()
-            comp_task.job_id = None
-            comp_task.state = 0
-            comp_task.image = task["image"]
-            comp_task.schema = task["schema"]
-            comp_task.inputs = task["inputs"]
-            # HACK: skip if file picker
-            if "file-picker" in task["image"]["name"]:
-                comp_task.outputs = task["outputs"]
-            comp_task.submit = datetime.datetime.utcnow()
-        except sqlalchemy.orm.exc.NoResultFound:
-            comp_task = ComputationalTask( \
-                project_id=project_id,
-                node_id=node_id,
-                internal_id=internal_id,
-                image=task["image"],
-                schema=task["schema"],
-                inputs=task["inputs"],
-                outputs=task["outputs"],
-                submit=datetime.datetime.utcnow()
-                )
-            internal_id = internal_id+1
-            db_session.add(comp_task)
+async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict):
+    async with db_engine.acquire() as conn:
+        query = sa.select([ComputationalTask]).\
+                where(ComputationalTask.__table__.c.project_id == project_id)
+        result = await conn.execute(query)
+        tasks_db = await result.fetchall()
+        # delete tasks that were deleted from the db
+        for task_db in tasks_db:
+            if not task_db.node_id in tasks:
+                query = ComputationalTask.__table__.delete().\
+                        where(and_(ComputationalTask.__table__.c.project_id == project_id,
+                                    ComputationalTask.__table__.c.node_id == task_db.node_id))
+                await conn.execute(query)
+        internal_id = 1
+        for node_id in tasks:
+            task = tasks[node_id]
+            query = sa.select([ComputationalTask]).\
+                    where(and_(ComputationalTask.__table__.c.project_id == project_id, 
+                                ComputationalTask.__table__.c.node_id == node_id))
+            result = await conn.execute(query)
+            comp_task = await result.fetchone()
+            if comp_task is None:
+                # add a new one
+                query = ComputationalTask.__table__.insert().\
+                        values(project_id=project_id,
+                                node_id=node_id,
+                                internal_id=internal_id,
+                                image = task["image"],
+                                schema = task["schema"],
+                                inputs = task["inputs"],
+                                outputs = task["outputs"],
+                                submit = datetime.datetime.utcnow())
+                internal_id = internal_id+1
+            else:
+                query = ComputationalTask.__table__.update().\
+                        where(and_(ComputationalTask.__table__.c.project_id==project_id, 
+                                ComputationalTask.__table__.c.node_id==node_id)).\
+                        values(job_id = None,
+                                state = 0,
+                                image = task["image"],
+                                schema = task["schema"],
+                                inputs = task["inputs"],
+                                outputs = task["outputs"] if "file-picker" in task["image"]["name"] else comp_task.outputs,
+                                submit = datetime.datetime.utcnow())
+            await conn.execute(query)
+
+async def _update_pipeline_db(app, project_id, pipeline_data):    
+    app_config = app[APP_CONFIG_KEY]
+    db_engine = app[APP_DB_ENGINE_KEY]
+
+    log.debug("Client calls update_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
+    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data, app_config)
+    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))
+    await _set_adjacency_in_pipeline_db(db_engine, project_id, dag_adjacency_list)
+    await _set_tasks_in_tasks_db(db_engine, project_id, tasks)
+    log.debug("END OF ROUTINE.")
 
 @login_required
 async def update_pipeline(request: web.Request) -> web.Response:
-    #pylint:disable=broad-except
-    # FIXME: this should be implemented generaly using async lazy initialization of db_session??
-    #pylint: disable=W0603
-    global db_session
-    if db_session is None:
-        await init_database(request.app)
-
     # retrieve the data
     project_id = request.match_info.get("project_id", None)
     assert project_id is not None
     pipeline_data = (await request.json())["workbench"]
-    _app = request.app[APP_CONFIG_KEY]
-
-    log.debug("Client calls update_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
-    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data, _app)
-    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))
-    try:
-        await _set_adjacency_in_pipeline_db(project_id, dag_adjacency_list)
-        await _set_tasks_in_tasks_db(project_id, tasks)
-        db_session.commit()
-
-        log.debug("END OF ROUTINE.")
-        return web.json_response(status=204)
-    except sqlalchemy.exc.InvalidRequestError as err:
-        log.exception("Alchemy error: Invalid request. Rolling back db.")
-        db_session.rollback()
-        raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
-    except sqlalchemy.exc.SQLAlchemyError as err:
-        log.exception("Alchemy error: General error. Rolling back db.")
-        db_session.rollback()
-        raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
-    except Exception as err:
-        log.exception("Unexpected error.")
-        raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
-    finally:
-        log.debug("Close session")
-        db_session.close()
+    app = request.app
+    await _update_pipeline_db(app, project_id, pipeline_data)
+    return web.json_response(status=204)
 
 # pylint:disable=too-many-branches, too-many-statements
 @login_required
 async def start_pipeline(request: web.Request) -> web.Response:
-    #pylint:disable=broad-except
-    # FIXME: this should be implemented generaly using async lazy initialization of db_session??
-    #pylint: disable=W0603
-    global db_session
-    if db_session is None:
-        await init_database(request.app)
-    
-
-
     # params, query, body = await extract_and_validate(request)
     
     # if params is not None:
@@ -313,37 +268,15 @@ async def start_pipeline(request: web.Request) -> web.Response:
     assert project_id is not None
     pipeline_data = (await request.json())["workbench"]
     userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
-    _app = request.app[APP_CONFIG_KEY]
-
-    log.debug("Client calls start_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
-    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data, _app)
-    log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))
-    try:
-        await _set_adjacency_in_pipeline_db(project_id, dag_adjacency_list)
-        await _set_tasks_in_tasks_db(project_id, tasks)
-        db_session.commit()
-        # commit the tasks to celery
-        _ = get_celery(request.app).send_task("comp.task", args=(userid, project_id,), kwargs={})
-        log.debug("Task commited")
-        # answer the client
-        pipeline_name = "request_data"
-        data = {
-        "pipeline_name":pipeline_name,
-        "project_id": project_id
-        }
-        log.debug("END OF ROUTINE. Response %s", data)
-        return data
-    except sqlalchemy.exc.InvalidRequestError as err:
-        log.exception("Alchemy error: Invalid request. Rolling back db.")
-        db_session.rollback()
-        raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
-    except sqlalchemy.exc.SQLAlchemyError as err:
-        log.exception("Alchemy error: General error. Rolling back db.")
-        db_session.rollback()
-        raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
-    except Exception as err:
-        log.exception("Unexpected error.")
-        raise web_exceptions.HTTPInternalServerError(reason=str(err)) from err
-    finally:
-        log.debug("Close session")
-        db_session.close()
+    app = request.app
+    await _update_pipeline_db(app, project_id, pipeline_data)
+    # commit the tasks to celery
+    _ = get_celery(request.app).send_task("comp.task", args=(userid, project_id,), kwargs={})
+    log.debug("Task commited")
+    # answer the client
+    data = {
+    "pipeline_name":"request_data",
+    "project_id": project_id
+    }
+    log.debug("END OF ROUTINE. Response %s", data)
+    return data
