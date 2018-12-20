@@ -114,7 +114,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }, this);
 
       resource.addListener("getError", e => {
-        console.log(e);
+        console.error(e);
       });
 
       resource.get({
@@ -167,7 +167,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }, this);
 
       resources.addListener("getError", e => {
-        console.log(e);
+        console.error(e);
       }, this);
 
       resources.get();
@@ -218,7 +218,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }, this);
 
       resources.addListener("getError", e => {
-        console.log(e);
+        console.error(e);
       }, this);
 
       resources.get();
@@ -330,7 +330,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       }, this);
 
       resource.addListener("getError", e => {
-        console.log(e);
+        console.error(e);
       });
 
       resource.get({

@@ -114,7 +114,7 @@ qx.Class.define("qxapp.data.Permissions", {
         this.fireDataEvent("userProfileRecieved", true);
       }, this);
       profile.addListenerOnce("getError", e => {
-        console.log(e);
+        console.error(e);
       });
       profile.get();
     }

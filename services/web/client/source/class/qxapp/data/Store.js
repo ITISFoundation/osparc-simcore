@@ -1088,7 +1088,7 @@ qx.Class.define("qxapp.data.Store", {
           const {
             error
           } = e.getTarget().getResponse();
-          console.log("getServices failed", error);
+          console.error("getServices failed", error);
           let services = this.getFakeServices();
           if (this.__servicesCached === null) {
             this.__servicesCached = {};
@@ -1127,7 +1127,7 @@ qx.Class.define("qxapp.data.Store", {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log("Failed getting Node Files list", error);
+        console.error("Failed getting Node Files list", error);
       });
 
       reqFiles.send();
@@ -1163,7 +1163,7 @@ qx.Class.define("qxapp.data.Store", {
             const {
               error
             } = e.getTarget().getResponse();
-            console.log("Failed getting Files list", error);
+            console.error("Failed getting Files list", error);
           });
 
           reqFiles.send();
@@ -1174,7 +1174,7 @@ qx.Class.define("qxapp.data.Store", {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log("Failed getting Storage Locations", error);
+        console.error("Failed getting Storage Locations", error);
       });
 
       reqLoc.send();
@@ -1206,7 +1206,7 @@ qx.Class.define("qxapp.data.Store", {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log("Failed getting Presgined Link", error);
+        console.error("Failed getting Presgined Link", error);
       });
 
       req.send();
@@ -1236,8 +1236,8 @@ qx.Class.define("qxapp.data.Store", {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log(error);
-        console.log("Failed copying file", fileUuid, "to", pathId);
+        console.error(error);
+        console.error("Failed copying file", fileUuid, "to", pathId);
       });
 
       req.send();
@@ -1260,7 +1260,7 @@ qx.Class.define("qxapp.data.Store", {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log("Failed deleting file", error);
+        console.error("Failed deleting file", error);
       });
 
       req.send();
