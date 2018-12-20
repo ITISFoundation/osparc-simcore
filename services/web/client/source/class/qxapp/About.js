@@ -27,6 +27,7 @@ qx.Class.define("qxapp.About", {
       this.add(this.__createEntry("qooxdoo-compiler", qx.core.Environment.get("qx.compilerVersion"), "https://github.com/qooxdoo/qooxdoo-compiler"));
       let libInfo = qx.core.Environment.get("qx.libraryInfoMap");
       if (libInfo) {
+        this.assert(libInfo, "remove harcoded part");
         for (let key in libInfo) {
           let lib = libInfo[key];
           this.add(this.__createEntry(lib.name || "unknown library", lib.version || "unknown-version", lib.homepage));
