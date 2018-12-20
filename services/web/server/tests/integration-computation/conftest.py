@@ -18,6 +18,7 @@ from typing import Dict
 
 import pytest
 import sqlalchemy as sa
+from sqlalchemy.orm import sessionmaker
 import trafaret_config
 import yaml
 
@@ -184,7 +185,7 @@ def postgres_service(docker_services, docker_ip):
     return docker_ip, docker_services.port_for('postgres', 5432)
 
 @pytest.fixture(scope='session')
-def postgres_client(app_config):
+def postgres_db(app_config):
     cfg = app_config["db"]["postgres"]
     url = DSN.format(**cfg)
 
@@ -202,6 +203,13 @@ def postgres_client(app_config):
     metadata.drop_all(engine)
     Base.metadata.drop_all(engine)
     engine.dispose()
+
+@pytest.fixture(scope='session')
+def postgres_session(postgres_db):
+    Session = sessionmaker(postgres_db)
+    session = Session()
+    yield session
+    session.close()
 
 @pytest.fixture(scope='session')
 def rabbit_service(docker_services, docker_ip):
