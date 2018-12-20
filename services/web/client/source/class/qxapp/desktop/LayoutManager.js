@@ -1,4 +1,4 @@
-/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.desktop.LayoutManager", {
   extend: qx.ui.container.Composite,
 
@@ -91,8 +91,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     __servicesPreload: function() {
       let store = qxapp.data.Store.getInstance();
       store.addListener("servicesRegistered", e => {
-        // TODO: Ask webserver for node and proejct schemas for validation
-        // this.__nodeCheck(e.getData());
+        this.__nodeCheck(e.getData());
       }, this);
       store.getServices(true);
     }
