@@ -1,27 +1,25 @@
-version: '3.4'
 services:
-  #--------------------------------------------------------------------
-  portainer:
-    image: portainer/portainer
-    ports:
-      - "9000:9000"
-    command: -H unix:///var/run/docker.sock
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
-  #----------------------------------------------
-  flower:
-    image: ondrejit/flower:latest
-    command: --broker=amqp://simcore:simcore@rabbit:5672
-    ports:
-      - 5555:5555
-    depends_on:
-      - rabbit
   adminer:
+    depends_on:
+    - postgres
     image: adminer
     ports:
-      - 18080:8080
+    - 18080:8080
+  flower:
+    command: --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbit:5672
     depends_on:
-      - postgres
+    - rabbit
+    image: ondrejit/flower:latest
+    ports:
+    - 5555:5555
+  portainer:
+    command: -H unix:///var/run/docker.sock
+    image: portainer/portainer
+    ports:
+    - 9000:9000
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - portainer_data:/data
+version: '3.4'
 volumes:
-  portainer_data:
+  portainer_data: null

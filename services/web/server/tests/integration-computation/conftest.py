@@ -11,26 +11,29 @@
 # pylint:disable=redefined-outer-name
 
 import os
+import subprocess
 import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Dict
 
+import docker
 import pytest
 import sqlalchemy as sa
-from sqlalchemy.orm import sessionmaker
+import tenacity
 import trafaret_config
 import yaml
+from sqlalchemy.orm import sessionmaker
 
+from simcore_sdk.models.pipeline_models import Base
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
 from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, metadata, users
 from simcore_service_webserver.resources import resources as app_resources
-from simcore_sdk.models.pipeline_models import Base
 
 SERVICES = ['director', 'apihub', 'rabbit', 'postgres', 'sidecar', 'storage', 'minio']
-
+TOOLS = ['adminer', 'flower', 'portainer']
 
 @pytest.fixture(scope="session")
 def here() -> Path:
@@ -55,6 +58,16 @@ def env_devel_file(osparc_simcore_root_dir) -> Path:
 @pytest.fixture("session")
 def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose.yml"
+    assert docker_compose_path.exists()
+
+    content = {}
+    with docker_compose_path.open() as f:
+        content = yaml.safe_load(f)
+    return content
+
+@pytest.fixture("session")
+def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
+    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose.tools.yml"
     assert docker_compose_path.exists()
 
     content = {}
@@ -136,6 +149,45 @@ def app_config(here, webserver_environ) -> Dict:
 
 
 ## EXTERNAL SERVICES ------------------------------------------------------------
+@pytest.fixture(scope='session')
+def docker_client():
+    client = docker.from_env()
+    yield client
+
+@pytest.fixture(scope='session')
+def docker_swarm(docker_client):
+    docker_client.swarm.init()
+    yield
+    # teardown
+    assert docker_client.swarm.leave(force=True) == True
+
+def _recreate_compose_file(keep, services_compose, docker_compose_path, devel_environ):
+    # reads service/docker-compose.yml
+    content = deepcopy(services_compose)
+
+    # remove unnecessary services    
+    remove = [name for name in content['services'] if name not in keep]
+    for name in remove:
+        content['services'].pop(name, None)
+
+    for name in keep:
+        service = content['services'][name]
+        # remove builds
+        if "build" in service:
+            service.pop("build", None)
+            service['image'] = "services_{}:latest".format(name)
+        # replaces environs
+        if "environment" in service:
+            _environs = {}
+            for item in service["environment"]:
+                key, value = item.split("=")
+                if value.startswith("${") and value.endswith("}"):
+                    value = devel_environ.get(value[2:-1], value)
+                _environs[key] = value
+            service["environment"] = [ "{}={}".format(k,v) for k,v in _environs.items() ]
+    # updates current docker-compose (also versioned ... do not change by hand)
+    with docker_compose_path.open('wt') as f:
+        yaml.dump(content, f, default_flow_style=False)
 
 @pytest.fixture(scope='session')
 def docker_compose_file(here, services_docker_compose, devel_environ):
@@ -143,54 +195,27 @@ def docker_compose_file(here, services_docker_compose, devel_environ):
 
     """
     docker_compose_path = here / 'docker-compose.yml'
-
-    def _recreate_compose_file():
-        # reads service/docker-compose.yml
-        content = deepcopy(services_docker_compose)
-
-        # remove unnecessary services
-        keep = SERVICES
-        remove = [name for name in content['services'] if name not in keep]
-        for name in remove:
-            content['services'].pop(name, None)
-
-        for name in keep:
-            service = content['services'][name]
-            # remove builds
-            if "build" in service:
-                service.pop("build", None)
-                service['image'] = "services_{}:latest".format(name)
-            # replaces environs
-            if "environment" in service:
-                _environs = {}
-                for item in service["environment"]:
-                    key, value = item.split("=")
-                    if value.startswith("${") and value.endswith("}"):
-                        value = devel_environ.get(value[2:-1], value)
-                    _environs[key] = value
-                service["environment"] = [ "{}={}".format(k,v) for k,v in _environs.items() ]
-        # updates current docker-compose (also versioned ... do not change by hand)
-        with docker_compose_path.open('wt') as f:
-            yaml.dump(content, f, default_flow_style=False)
-
-    # TODO: comment when needed
-    _recreate_compose_file()
+    _recreate_compose_file(SERVICES, services_docker_compose, docker_compose_path, devel_environ)
 
     yield docker_compose_path
 
 @pytest.fixture(scope='session')
-def postgres_service(docker_services, docker_ip):
-    """ Returns (host, port) to the director accessible from host """
-    # No need to wait... webserver should do that
-    return docker_ip, docker_services.port_for('postgres', 5432)
+def tools_docker_compose_file(here, tools_docker_compose, devel_environ):
+    """ Overrides pytest-docker fixture
+
+    """
+    docker_compose_path = here / 'docker-compose.tools.yml'
+    _recreate_compose_file(TOOLS, tools_docker_compose, docker_compose_path, devel_environ)
+
+    yield docker_compose_path
 
 @pytest.fixture(scope='session')
-def postgres_db(app_config):
+def postgres_db(app_config, webserver_environ, docker_stack):
     cfg = app_config["db"]["postgres"]
     url = DSN.format(**cfg)
 
     # NOTE: Comment this to avoid postgres_service
-    # url = postgres_service
+    wait_till_postgres_responsive(url)
 
     # Configures db and initializes tables
     # Uses syncrounous engine for that
@@ -212,35 +237,12 @@ def postgres_session(postgres_db):
     session.close()
 
 @pytest.fixture(scope='session')
-def rabbit_service(docker_services, docker_ip):
-    """ Returns (host, port) to the director accessible from host """
-    # No need to wait... webserver should do that
-    return docker_ip, docker_services.port_for('rabbit', 15672)
-
-@pytest.fixture(scope='session')
-def minio_service(docker_services, docker_ip):
-    """ Returns (host, port) to the director accessible from host """
-    # No need to wait... webserver should do that
-    return docker_ip, docker_services.port_for('minio', 9000)
-
-@pytest.fixture(scope='session')
-def director_service(docker_services, docker_ip):
-    """ Returns (host, port) to the director accessible from host """
-    # No need to wait... webserver should do that
-    return docker_ip, docker_services.port_for('director', 8001)
-
-@pytest.fixture(scope='session')
-def storage_service(docker_services, docker_ip):
-    """ Returns (host, port) to the director accessible from host """
-    # No need to wait... webserver should do that
-    return docker_ip, docker_services.port_for('storage', 8080)
-
-
-@pytest.fixture(scope='session')
-def apihub_service(docker_services, docker_ip):
-    """ Returns (host, port) to the apihub accessible from host """
-    # No need to wait... webserver/director should do that
-    return docker_ip, docker_services.port_for('apihub', 8043)
+def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, tools_docker_compose_file: Path):
+    assert subprocess.run("docker-compose -f {} -f {} config > docker-compose.ignore.yml".format(docker_compose_file.name, tools_docker_compose_file.name), shell=True, cwd=docker_compose_file.parent).returncode == 0
+    assert subprocess.run("docker stack deploy -c docker-compose.ignore.yml services", shell=True, cwd=docker_compose_file.parent).returncode == 0
+    yield
+    # clean up
+    assert subprocess.run("docker stack rm services", shell=True).returncode == 0
 
 # HELPERS ---------------------------------------------
 def resolve_environ(service, environ):
@@ -257,3 +259,14 @@ def resolve_environ(service, environ):
 
         _environs[key] = value
     return _environs
+
+@tenacity.retry(wait=tenacity.wait_fixed(0.1), stop=tenacity.stop_after_delay(30))
+def wait_till_postgres_responsive(url):
+    """Check if something responds to ``url`` """
+    try:
+        engine = sa.create_engine(url)
+        conn = engine.connect()
+        conn.close()
+    except sa.exc.OperationalError:
+        return False
+    return True
