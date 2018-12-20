@@ -17,14 +17,18 @@ from pathlib import Path
 from typing import Dict
 
 import pytest
+import sqlalchemy as sa
 import trafaret_config
 import yaml
 
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
+from simcore_service_webserver.db import DSN
+from simcore_service_webserver.db_models import confirmations, metadata, users
 from simcore_service_webserver.resources import resources as app_resources
+from simcore_sdk.models.pipeline_models import Base
 
-SERVICES = ['director', 'apihub', 'rabbit', 'postgres', 'sidecar']
+SERVICES = ['director', 'apihub', 'rabbit', 'postgres', 'sidecar', 'storage', 'minio']
 
 
 @pytest.fixture(scope="session")
@@ -68,6 +72,9 @@ def devel_environ(env_devel_file) -> Dict[str, str]:
             if line and not line.startswith("#"):
                 key, value = line.split("=")
                 env_devel[key] = str(value)
+    # ensure the test runs not as root if not under linux
+    if 'RUN_DOCKER_ENGINE_ROOT' in env_devel:
+        env_devel['RUN_DOCKER_ENGINE_ROOT'] = '0' if os.name == 'posix' else '1'
     return env_devel
 
 
@@ -99,7 +106,7 @@ def webserver_environ(devel_environ, services_docker_compose) -> Dict[str, str]:
     return environ
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def app_config(here, webserver_environ) -> Dict:
     config_file_path = here / "config.yaml"
     def _recreate_config_file():
@@ -174,36 +181,59 @@ def docker_compose_file(here, services_docker_compose, devel_environ):
 def postgres_service(docker_services, docker_ip):
     """ Returns (host, port) to the director accessible from host """
     # No need to wait... webserver should do that
-
     return docker_ip, docker_services.port_for('postgres', 5432)
+
+@pytest.fixture(scope='session')
+def postgres_client(app_config):
+    cfg = app_config["db"]["postgres"]
+    url = DSN.format(**cfg)
+
+    # NOTE: Comment this to avoid postgres_service
+    # url = postgres_service
+
+    # Configures db and initializes tables
+    # Uses syncrounous engine for that
+    engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
+    metadata.create_all(bind=engine, tables=[users, confirmations], checkfirst=True)
+    Base.metadata.create_all(engine)
+
+    yield engine
+
+    metadata.drop_all(engine)
+    engine.dispose()
 
 @pytest.fixture(scope='session')
 def rabbit_service(docker_services, docker_ip):
     """ Returns (host, port) to the director accessible from host """
     # No need to wait... webserver should do that
-
     return docker_ip, docker_services.port_for('rabbit', 15672)
+
+@pytest.fixture(scope='session')
+def minio_service(docker_services, docker_ip):
+    """ Returns (host, port) to the director accessible from host """
+    # No need to wait... webserver should do that
+    return docker_ip, docker_services.port_for('minio', 9000)
 
 @pytest.fixture(scope='session')
 def director_service(docker_services, docker_ip):
     """ Returns (host, port) to the director accessible from host """
-
     # No need to wait... webserver should do that
-
     return docker_ip, docker_services.port_for('director', 8001)
+
+@pytest.fixture(scope='session')
+def storage_service(docker_services, docker_ip):
+    """ Returns (host, port) to the director accessible from host """
+    # No need to wait... webserver should do that
+    return docker_ip, docker_services.port_for('storage', 8080)
 
 
 @pytest.fixture(scope='session')
 def apihub_service(docker_services, docker_ip):
     """ Returns (host, port) to the apihub accessible from host """
-
     # No need to wait... webserver/director should do that
-
     return docker_ip, docker_services.port_for('apihub', 8043)
 
-
 # HELPERS ---------------------------------------------
-
 def resolve_environ(service, environ):
     _environs = {}
     for item in service.get("environment", list()):
