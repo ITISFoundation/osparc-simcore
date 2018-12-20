@@ -26,7 +26,7 @@ qx.Class.define("qxapp.About", {
       if (libInfo) {
         for (let key in libInfo) {
           let lib = libInfo[key];
-          this.add(this.__createEntry(lib.name || "unknown library", lib.version || "unknown-version"));
+          this.add(this.__createEntry(lib.name || "unknown library", lib.version || "unknown-version", lib.homepage));
         }
       } else {
         // as soon as we upgrade the qooxdoo compiler (v0.2.31) all this info will be in qx.libraryInfoMap
