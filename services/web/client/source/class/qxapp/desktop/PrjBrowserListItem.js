@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* eslint "qx-rules/no-refs-in-members": "warn" */
 qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
   extend: qx.ui.core.Widget,
@@ -7,9 +24,9 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
   construct: function() {
     this.base(arguments);
 
-    // create a date format like "October 19, 2018 11:31 AM"
+    // create a date format like "Oct. 19, 2018 11:31 AM"
     this._dateFormat = new qx.util.format.DateFormat(
-      qx.locale.Date.getDateFormat("long") + " " +
+      qx.locale.Date.getDateFormat("medium") + " " +
       qx.locale.Date.getTimeFormat("short")
     );
 
@@ -52,9 +69,9 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       nullable : true
     },
 
-    created: {
+    lastChangeDate: {
       check : "Date",
-      apply : "_applyCreated",
+      apply : "_applylastChangeDate",
       nullable : true
     }
   },
@@ -94,7 +111,7 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
           });
           this._addAt(control);
           break;
-        case "created":
+        case "lastChangeDate":
           control = new qx.ui.basic.Label().set({
             rich: true,
             allowGrowY: false
@@ -124,11 +141,11 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       label.setValue(value);
     },
 
-    _applyCreated: function(value, old) {
-      let label = this.getChildControl("created");
+    _applylastChangeDate: function(value, old) {
+      let label = this.getChildControl("lastChangeDate");
       if (value) {
         const dateStr = this._dateFormat.format(value);
-        label.setValue("Created on: <b>" + dateStr + "</b>");
+        label.setValue("Last change: <b>" + dateStr + "</b>");
       } else {
         label.resetValue();
       }

@@ -9,9 +9,9 @@ export DOCKER=docker
 endif
 
 # export SERVICES_VERSION=1.2.0
-export VCS_REF=$(shell git rev-parse --short HEAD) 
+export VCS_REF=$(shell git rev-parse --short HEAD)
 export BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-export BASE_IMAGE=masu.speag.com/simcore/services/dynamic/jupyter-base-notebook:1.7.0
+export BASE_IMAGE=masu.speag.com/simcore/services/dynamic/jupyter-base-notebook:${SERVICES_VERSION}
 # export SERVICE_PATH=simcore/services/dynamic/3d-viewer
 all:
 	@echo 'run `make build-devel` to build your dev environment'
@@ -25,7 +25,7 @@ endif
 ifndef DOCKER_REGISTRY
 	$(error DOCKER_REGISTRY variable is undefined)
 endif
-	
+
 build-devel: check-env
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build
 

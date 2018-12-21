@@ -1,3 +1,19 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Pedro Crespo (pcrespov)
+
+************************************************************************ */
 
 /**
  *
@@ -18,7 +34,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
 
     // overrides base
     _buildPage: function() {
-      let manager = new qx.ui.form.validation.Manager();
+      let validator = new qx.ui.form.validation.Manager();
 
       this._addTitleHeader(this.tr("Registration"));
 
@@ -49,6 +65,25 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
       this.add(pass2);
 
       // interaction
+      pass1.addListener("changeValue", e => {
+        qxapp.auth.Manager.getInstance().evalPasswordStrength(e.getData(), (strength, rating, improvement) => {
+          let msg = "Password is " + rating.toLowerCase() + ".";
+          let level = "INFO";
+
+          if (strength < 0.4) {
+            level = "WARNING";
+            msg += "\n";
+            if (improvement) {
+              msg += "Possible improvements: \n";
+              for (var key in improvement) {
+                msg += "- " + improvement[key] + "\n";
+              }
+            }
+          }
+          qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, level);
+        });
+      }, this);
+
       // email.addListener("changeValue", function(e) {
       //   // Auto-guess
       //   if (uname.getValue()=== null) {
@@ -57,27 +92,12 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
       //   }
       // }, this);
 
+
+
       // validation
-      manager.add(email, qx.util.Validate.email());
-      manager.add(pass1, function(value, itemForm) {
-        const isValid = value !== null && value.length > 2;
-        if (!isValid) {
-          const msg = qx.locale.Manager.tr("Please enter a password at with least 3 characters.");
-          itemForm.setInvalidMessage(msg);
-        }
-        return isValid;
-      });
-      manager.setValidator(function(_itemForms) {
-        const isValid = pass1.getValue() == pass2.getValue();
-        if (!isValid) {
-          [pass1, pass2].forEach(pass => {
-            pass.set({
-              invalidMessage: qx.locale.Manager.tr("Passwords do not match"),
-              valid: false
-            });
-          });
-        }
-        return isValid;
+      validator.add(email, qx.util.Validate.email());
+      validator.setValidator(function(_itemForms) {
+        return qxapp.auth.core.Utils.checkSamePasswords(pass1, pass2);
       });
 
 
@@ -87,6 +107,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
       let submitBtn = new qx.ui.form.Button(this.tr("Submit"));
       grp.add(submitBtn, {
         flex:1
+
       });
 
       let cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
@@ -96,7 +117,7 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
 
       // interaction
       submitBtn.addListener("execute", function(e) {
-        const valid = manager.validate();
+        const valid = validator.validate();
         if (valid) {
           this.__submit({
             email: email.getValue(),
@@ -125,13 +146,9 @@ qx.Class.define("qxapp.auth.ui.RegistrationPage", {
 
       let failFun = function(msg) {
         msg = msg || this.tr("Cannot register user");
-
-        // Flashes via email
-        this.__email.set({
-          invalidMessage: msg,
-          valid: false
-        });
+        qxapp.component.widget.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
+
       manager.register(userData, successFun, failFun, this);
     }
 

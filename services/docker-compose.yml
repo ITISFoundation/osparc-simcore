@@ -5,6 +5,11 @@ services:
       context: ../
       dockerfile: services/apihub/Dockerfile
       target: production
+      labels: 
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '8043:8043'
 #--------------------------------------------------------------------
@@ -15,6 +20,11 @@ services:
       target: production
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
+      labels: 
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '8001:8001'
     environment:
@@ -48,12 +58,22 @@ services:
       context: ./web/client/
       dockerfile: Dockerfile
       target: build
+      labels: 
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
     command: /bin/bash -c "echo 'built with qx' && cat build-output/version.txt"
   webserver:
     build:
       context: ../
       dockerfile: services/web/Dockerfile
       target: production
+      labels: 
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '9081:8080'
     environment:
@@ -115,6 +135,11 @@ services:
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
+      labels: 
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
     volumes:
       - input:/home/scu/input
       - output:/home/scu/output
@@ -146,9 +171,16 @@ services:
       # the packages directory into any docker image
       context: ../
       dockerfile: services/storage/Dockerfile
+      cache_from:
+        - itisfoundation/storage-build-cache:latest
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
+      labels: 
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - "11111:8080"
     environment:

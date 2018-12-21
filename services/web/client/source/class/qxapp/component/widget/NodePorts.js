@@ -1,8 +1,18 @@
 /* ************************************************************************
-   Copyright: 2018 ITIS Foundation
-   License:   MIT
-   Authors:   Odei Maiz <maiz@itis.swiss>
-   Utf8Check: äöü
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
 ************************************************************************ */
 
 /**
@@ -72,7 +82,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       const metaData = this.getNodeModel().getMetaData();
       if (this.getIsInputModel()) {
         this.__createUIPorts(false, metaData.outputs);
-      } else if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
+      } else if (metaData.inputsDefault) {
         this.__createUIPorts(false, metaData.inputsDefault);
       }
     },

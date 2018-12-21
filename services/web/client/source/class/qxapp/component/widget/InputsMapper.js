@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__willBeBranch", "__willBeLeaf", "__tree"] }] */
 
 qx.Class.define("qxapp.component.widget.InputsMapper", {
@@ -111,7 +128,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
       isRoot: true,
       children: []
     };
-    if (Object.prototype.hasOwnProperty.call(mapper, "defaultValue")) {
+    if (mapper.defaultValue) {
       const defValues = mapper["defaultValue"];
       for (let i=0; i<defValues.length; i++) {
         const defValue = defValues[i];
@@ -162,7 +179,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
       switch (keyEvent.getKeyIdentifier()) {
         case "F2": {
           let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
-          treeItemRenamer.addListener("LabelChanged", e => {
+          treeItemRenamer.addListener("labelChanged", e => {
             let newLabel = e.getData()["newLabel"];
             selectedItem.setLabel(newLabel);
           }, this);
@@ -227,7 +244,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
     __willBeBranch: function(candidate) {
       let isBranch = false;
       const maps = this.getMapper().maps;
-      if (Object.prototype.hasOwnProperty.call(maps, "branch")) {
+      if (maps.branch) {
         if (maps["branch"] === candidate) {
           isBranch = true;
         }
@@ -239,7 +256,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
     __willBeLeaf: function(candidate) {
       let isLeave = false;
       const maps = this.getMapper().maps;
-      if (Object.prototype.hasOwnProperty.call(maps, "leaf")) {
+      if (maps.leaf) {
         if (maps["leaf"] === candidate) {
           isLeave = true;
         }
@@ -257,7 +274,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
         return;
       }
       let selectedItem = selectedItems.toArray()[0];
-      if (Object.prototype.hasOwnProperty.call(selectedItem, "propsWidget")) {
+      if (selectedItem.propsWidget) {
         this._add(selectedItem["propsWidget"]);
       }
     }
