@@ -75,6 +75,16 @@
   color: white;
 }
 
+.message2 {
+  position: absolute;
+  text-align: center;
+  width: 100%;
+  top: calc(50% + 100px);
+  font-size: 150%;
+  user-select: none;
+  color: white;
+}
+
 @-webkit-keyframes spin {
   0% {
     -webkit-transform: rotate(0deg); /* Chrome, Opera 15+, Safari 3.1+ */

@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 qx.Class.define("qxapp.component.widget.TreeItemRenamer", {
   extend: qx.ui.window.Window,
 
@@ -21,7 +38,7 @@ qx.Class.define("qxapp.component.widget.TreeItemRenamer", {
   },
 
   events: {
-    "LabelChanged": "qx.event.type.Data"
+    "labelChanged": "qx.event.type.Data"
   },
 
   members: {
@@ -50,7 +67,7 @@ qx.Class.define("qxapp.component.widget.TreeItemRenamer", {
         const data = {
           newLabel: newLabel
         };
-        this.fireDataEvent("LabelChanged", data);
+        this.fireDataEvent("labelChanged", data);
 
         this.close();
       }, this);

@@ -3,18 +3,18 @@ description: Description of a simcore project
 type: object
 additionalProperties: false
 required:
-  - projectUuid
+  - uuid
   - name
   - description
   - notes
-  - owner
+  - prjOwner
   - collaborators
   - creationDate
   - lastChangeDate
   - thumbnail
   - workbench
 properties:
-  projectUuid:
+  uuid:
     type: string
     description: project unique identifier
     example:
@@ -37,7 +37,7 @@ properties:
       - |-
         # title
         Some Text `with` common mark markup
-  owner:
+  prjOwner:
     type: string
     description: user uuid
   collaborators:

@@ -32,7 +32,8 @@ class UserRole(enum.IntEnum):
     """
     ANONYMOUS = 0
     USER = 1
-    MODERATOR = 2
+    TESTER = 2
+    MODERATOR = 10
     ADMIN = 100
 
 
