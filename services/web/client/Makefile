@@ -19,7 +19,7 @@ build:
 	BUILD_TARGET=build; docker-compose build
 
 compile:
-	docker-compose run --service-ports qx compile --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
+	docker-compose run --service-ports qx compile --set osparc.vcsRef='"${VCS_REF}"' --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
 
 serve:
-	docker-compose run --service-ports qx serve --set qx.allowUrlSettings=true --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
+	docker-compose run --service-ports qx serve --set qx.allowUrlSettings=true --set osparc.vcsRef='"${VCS_REF}"' --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
