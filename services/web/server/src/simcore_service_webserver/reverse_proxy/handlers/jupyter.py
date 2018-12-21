@@ -12,7 +12,6 @@ from yarl import URL
 
 
 APP_SOCKETS_KEY = "simcore_service_webserver.reverse_proxy.settings.sockets"
-
 #FIXME: make this more generic
 SUPPORTED_IMAGE_NAME = ["simcore/services/dynamic/jupyter-base-notebook",
                         "simcore/services/dynamic/jupyter-scipy-notebook",
@@ -49,14 +48,14 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
         available = ws_server.can_prepare(req)
         if available:
             await ws_server.prepare(req)
-            logger.debug('##### WS_SERVER %s', pprint.pformat(ws_server))
+            logger.info('##### WS_SERVER %s', pprint.pformat(ws_server))
 
             try:
                 req.app[APP_SOCKETS_KEY].append(ws_server)
 
                 client_session = aiohttp.ClientSession(cookies=req.cookies)
                 async with client_session.ws_connect(target_url) as ws_client:
-                    logger.debug('##### WS_CLIENT %s', pprint.pformat(ws_client))
+                    logger.info('##### WS_CLIENT %s', pprint.pformat(ws_client))
 
                     async def ws_forward(ws_from, ws_to):
                         async for msg in ws_from:
