@@ -29,8 +29,12 @@ logger = logging.getLogger(__name__)
 
 @attr.s(auto_attribs=True)
 class ServiceMonitor(ServiceResolutionPolicy):
-    director_api: ClientSession
+    app: web.Application
     base_url: URL
+
+    @property
+    def session(self):
+        return self.app[MY_CLIENT_SESSION]
 
     async def _request_info(self, service_identifier: str):
         data = {}
@@ -38,7 +42,7 @@ class ServiceMonitor(ServiceResolutionPolicy):
 
         # TODO: see if client can cache consecutive calls. SEE self.cli.api_client.last_response is a
         # https://docs.aiohttp.org/en/stable/client_reference.html#response-object
-        async with self.director_api.get(url, ssl=False) as resp:
+        async with self.session.get(url, ssl=False) as resp:
             payload = await resp.json()
             data, error = unwrap_envelope(payload)
             if error:
@@ -70,24 +74,22 @@ class ServiceMonitor(ServiceResolutionPolicy):
         return base_url
 
 
-
-async def cleanup(app: web.Application):
-    session =  app.get(MY_CLIENT_SESSION)
+async def _cleanup_ctx(app: web.Application):
+    app[MY_CLIENT_SESSION] = session = ClientSession(loop=app.loop)
+    yield 
+    session = app.get(MY_CLIENT_SESSION)
     if session:
         await session.close()
 
 
 def setup(app: web.Application):
-    app[MY_CLIENT_SESSION] = session = ClientSession(loop=app.loop)
-
-    monitor = ServiceMonitor(session, base_url=app[APP_DIRECTOR_API_KEY])
+    monitor = ServiceMonitor(app, base_url=app[APP_DIRECTOR_API_KEY])
     setup_reverse_proxy(app, monitor)
 
     assert "reverse_proxy" in app.router
     app["reverse_proxy.basemount"] = monitor.base_mountpoint
 
-    app.on_cleanup.append(cleanup)
-
+    app.cleanup_ctx.append(_cleanup_ctx)
 
 # alias
 setup_app_proxy = setup
