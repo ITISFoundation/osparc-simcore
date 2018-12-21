@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* global window */
 
 /* eslint newline-per-chained-call: 0 */
@@ -28,6 +45,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     this.initDefault();
     this.connectEvents();
+
+    this.saveProjectDocument();
+    this.__startAutoSave();
   },
 
   properties: {
@@ -45,7 +65,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   },
 
   events: {
-    "ChangeMainViewCaption": "qx.event.type.Data"
+    "changeMainViewCaption": "qx.event.type.Data"
   },
 
   members: {
@@ -123,11 +143,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     connectEvents: function() {
-      this.__mainPanel.getControls().addListener("SavePressed", function() {
-        this.serializeProjectDocument();
-      }, this);
-
-      this.__mainPanel.getControls().addListener("StartPipeline", function() {
+      this.__mainPanel.getControls().addListener("startPipeline", function() {
         if (this.getCanStart()) {
           this.__startPipeline();
         } else {
@@ -135,21 +151,21 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }
       }, this);
 
-      this.__mainPanel.getControls().addListener("StopPipeline", function() {
+      this.__mainPanel.getControls().addListener("stopPipeline", function() {
         this.__stopPipeline();
       }, this);
 
       let workbenchModel = this.getProjectModel().getWorkbenchModel();
-      workbenchModel.addListener("WorkbenchModelChanged", function() {
+      workbenchModel.addListener("workbenchModelChanged", function() {
         this.__workbenchModelChanged();
       }, this);
 
-      workbenchModel.addListener("UpdatePipeline", e => {
+      workbenchModel.addListener("updatePipeline", e => {
         let nodeModel = e.getData();
         this.__updatePipeline(nodeModel);
       }, this);
 
-      workbenchModel.addListener("ShowInLogger", ev => {
+      workbenchModel.addListener("showInLogger", ev => {
         const data = ev.getData();
         const nodeLabel = data.nodeLabel;
         const msg = data.msg;
@@ -160,7 +176,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__treeView,
         this.__workbenchView
       ].forEach(wb => {
-        wb.addListener("NodeDoubleClicked", e => {
+        wb.addListener("nodeDoubleClicked", e => {
           let nodeId = e.getData();
           this.nodeSelected(nodeId);
         }, this);
@@ -263,7 +279,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     showInMainView: function(widget, nodeId) {
       if (this.__mainPanel.isPropertyInitialized("mainView")) {
         let previousWidget = this.__mainPanel.getMainView();
-        widget.addListener("Finished", function() {
+        widget.addListener("finished", function() {
           this.__mainPanel.setMainView(previousWidget);
         }, this);
       }
@@ -271,7 +287,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__mainPanel.setMainView(widget);
 
       let nodesPath = this.getProjectModel().getWorkbenchModel().getPathIds(nodeId);
-      this.fireDataEvent("ChangeMainViewCaption", nodesPath);
+      this.fireDataEvent("changeMainViewCaption", nodesPath);
     },
 
     showInExtraView: function(widget) {
@@ -300,7 +316,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         if (currentNode.key.includes("/neuroman")) {
           // HACK: Only Neuroman should enter here
           currentNode.key = "simcore/services/dynamic/modeler/webserver";
-          currentNode.version = "2.7.0";
+          currentNode.version = "2.8.0";
           const modelSelected = currentNode.inputs["inModel"];
           delete currentNode.inputs["inModel"];
           currentNode.inputs["model_name"] = modelSelected;
@@ -476,12 +492,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__mainPanel.setMainView(widgetContainer);
     },
 
-    serializeProjectDocument: function() {
+    saveProjectDocument: function() {
       let myPrj = this.getProjectModel().serializeProject();
-      // FIXME: server expects "projectUuid" and we have "uuid"
-      myPrj["projectUuid"] = myPrj["uuid"];
-      console.log("serializeProject", myPrj);
-
       let resource = this.__projectResources.project;
       resource.addListenerOnce("delSuccess", e => {
         let resources = this.__projectResources.projects;
@@ -490,6 +502,43 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       resource.del({
         "project_id": myPrj["uuid"]
       });
+    },
+
+    __startAutoSave: function() {
+      let diffPatcher = new qxapp.wrappers.JsonDiffPatch();
+      let oldObj = this.getProjectModel().serializeProject();
+      // Save every 5 seconds
+      const interval = 5000;
+      let timer = new qx.event.Timer(interval);
+      timer.addListener("interval", () => {
+        const newObj = this.getProjectModel().serializeProject();
+        const delta = diffPatcher.diff(oldObj, newObj);
+        if (delta) {
+          let deltaKeys = Object.keys(delta);
+          // lastChangeDate should not be taken into account as data change
+          const index = deltaKeys.indexOf("lastChangeDate");
+          if (index > -1) {
+            deltaKeys.splice(index, 1);
+          }
+          if (deltaKeys.length > 0) {
+            this.__saveProjectDocument(newObj);
+          }
+        }
+        oldObj = diffPatcher.clone(newObj);
+      }, this);
+      timer.start();
+    },
+
+    __saveProjectDocument: function(newObj) {
+      const prjUuid = this.getProjectModel().getUuid();
+
+      let resource = this.__projectResources.project;
+      resource.addListenerOnce("putSuccess", ev => {
+        console.log("Project updated");
+      }, this);
+      resource.put({
+        "project_id": prjUuid
+      }, newObj);
     }
   }
 });

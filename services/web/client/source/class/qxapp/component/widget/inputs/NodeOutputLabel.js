@@ -1,8 +1,18 @@
 /* ************************************************************************
-   Copyright: 2018 ITIS Foundation
-   License:   MIT
-   Authors:   Odei Maiz <maiz@itis.swiss>
-   Utf8Check: äöü
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
 ************************************************************************ */
 
 /**
@@ -31,7 +41,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     let portOutput = this._createChildControlImpl("portOutput");
     let outputValue = "Unknown value";
     let toolTip = "";
-    if (Object.prototype.hasOwnProperty.call(port, "value")) {
+    if (port.value) {
       if (typeof port.value === "object") {
         outputValue = this.__pretifyObject(port.value, true);
         toolTip = this.__pretifyObject(port.value, false);

@@ -105,7 +105,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       let data = this._form.getData();
       for (const portId in data) {
         let ctrl = this._form.getControl(portId);
-        if (ctrl && Object.prototype.hasOwnProperty.call(ctrl, "link")) {
+        if (ctrl && ctrl.link) {
           if (this.getNodeModel().getKey()
             .includes("/neuroman")) {
             // HACK: Only Neuroman should enter here
@@ -137,7 +137,6 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             icon: "@FontAwesome5Solid/unlink/16"
           });
           unlinkBtn.addListener("execute", function() {
-            console.log("Unlink", portId);
             this.fireDataEvent("RemoveLink", portId);
           }, this);
           hBox.add(unlinkBtn);

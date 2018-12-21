@@ -6,7 +6,7 @@ import logging
 from collections import defaultdict, namedtuple
 from copy import deepcopy
 
-from .resources import resources
+from ..resources import resources
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class Fake:
 
         """
         for prj in projects:
-            pid = prj['projectUuid']
+            pid = prj['uuid']
             cls.projects[pid] = cls.ProjectItem(id=pid, template=user_id is None, data=deepcopy(prj))
             if user_id is not None:
                 cls.user_to_projects_map[user_id].append(pid)
@@ -43,19 +43,21 @@ class Fake:
             projects = json.load(f)
 
         for i, prj in enumerate(projects):
-            pid, uid = prj['projectUuid'], i if not user_id else user_id
+            pid, uid = prj['uuid'], i if not user_id else user_id
             cls.projects[pid] = cls.ProjectItem(id=pid, template=False, data=prj)
             cls.user_to_projects_map[uid].append(pid)
 
     @classmethod
     def load_template_projects(cls):
-        templateFile = "data/fake-template-projects.json"
-        templateFile = "data/fake-template-projects.osparc.json"
-        with resources.stream(templateFile) as f:
+        template_file = "data/fake-template-projects.json"
+        with resources.stream(template_file) as f:
             projects = json.load(f)
+        template_osparc_file = "data/fake-template-projects.osparc.json"
+        with resources.stream(template_osparc_file) as f:
+            projects = projects + json.load(f)
 
         for prj in projects:
-            pid = prj['projectUuid']
+            pid = prj['uuid']
             cls.projects[pid] =  cls.ProjectItem(id=pid, template=True, data=prj)
 
     @classmethod

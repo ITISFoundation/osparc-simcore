@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 qx.Class.define("qxapp.data.Store", {
   extend: qx.core.Object,
 
@@ -5,12 +22,12 @@ qx.Class.define("qxapp.data.Store", {
 
   events: {
     "servicesRegistered": "qx.event.type.Event",
-    // "FakeFiles": "qx.event.type.Event",
-    "MyDocuments": "qx.event.type.Event",
-    "NodeFiles": "qx.event.type.Event",
-    "PresginedLink": "qx.event.type.Event",
-    "FileCopied": "qx.event.type.Event",
-    "DeleteFile": "qx.event.type.Event"
+    // "fakeFiles": "qx.event.type.Event",
+    "myDocuments": "qx.event.type.Event",
+    "nodeFiles": "qx.event.type.Event",
+    "presginedLink": "qx.event.type.Event",
+    "fileCopied": "qx.event.type.Event",
+    "deleteFile": "qx.event.type.Event"
   },
 
   statics: {
@@ -21,7 +38,7 @@ qx.Class.define("qxapp.data.Store", {
       name: "New Project",
       description: "Empty",
       thumbnail: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round",
-      created: new Date(),
+      lastChangeDate: new Date(),
       projectId: qxapp.utils.Utils.uuidv4()
     })
   },
@@ -45,15 +62,6 @@ qx.Class.define("qxapp.data.Store", {
       let mtB = this.__getMimeType(typeB);
       return mtA && mtB &&
         new qxapp.data.MimeType(mtA).match(new qxapp.data.MimeType(mtB));
-    },
-
-    getRole: function() {
-      // Temporary HACK
-      const userEmail = qxapp.auth.Data.getInstance().getEmail();
-      if (userEmail.includes("itis.swiss") || userEmail.includes("oetiker.ch")) {
-        return 0;
-      }
-      return 1;
     },
 
     areNodesCompatible: function(topLevelPort1, topLevelPort2) {
@@ -81,14 +89,14 @@ qx.Class.define("qxapp.data.Store", {
             };
             delete service.outputs["output_1"];
           }
-          return service;
+          return qxapp.utils.Utils.deepCloneObject(service);
         }
         metaData = this.getFakeServices()[nodeImageId];
         if (metaData === undefined) {
           metaData = this.getBuiltInServices()[nodeImageId];
         }
       }
-      return metaData;
+      return qxapp.utils.Utils.deepCloneObject(metaData);
     },
 
     getItemList: function(nodeKey, portKey) {
@@ -1097,7 +1105,7 @@ qx.Class.define("qxapp.data.Store", {
           const {
             error
           } = e.getTarget().getResponse();
-          console.log("getServices failed", error);
+          console.error("getServices failed", error);
           let services = this.getFakeServices();
           if (this.__servicesCached === null) {
             this.__servicesCached = {};
@@ -1114,7 +1122,7 @@ qx.Class.define("qxapp.data.Store", {
     getFakeFiles: function() {
       let data = qxapp.dev.fake.Data.getObjectList();
       console.log("Fake Files", data);
-      this.fireDataEvent("FakeFiles", data);
+      this.fireDataEvent("fakeFiles", data);
     },
 
     getNodeFiles: function(nodeId) {
@@ -1128,7 +1136,7 @@ qx.Class.define("qxapp.data.Store", {
           .data;
         console.log("Node Files", files);
         if (files && files.length>0) {
-          this.fireDataEvent("NodeFiles", files);
+          this.fireDataEvent("nodeFiles", files);
         }
       }, this);
 
@@ -1136,7 +1144,7 @@ qx.Class.define("qxapp.data.Store", {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log("Failed getting Node Files list", error);
+        console.error("Failed getting Node Files list", error);
       });
 
       reqFiles.send();
@@ -1164,7 +1172,7 @@ qx.Class.define("qxapp.data.Store", {
                 location: locationId,
                 files: files
               };
-              this.fireDataEvent("MyDocuments", data);
+              this.fireDataEvent("myDocuments", data);
             }
           }, this);
 
@@ -1172,7 +1180,7 @@ qx.Class.define("qxapp.data.Store", {
             const {
               error
             } = e.getTarget().getResponse();
-            console.log("Failed getting Files list", error);
+            console.error("Failed getting Files list", error);
           });
 
           reqFiles.send();
@@ -1183,7 +1191,7 @@ qx.Class.define("qxapp.data.Store", {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log("Failed getting Storage Locations", error);
+        console.error("Failed getting Storage Locations", error);
       });
 
       reqLoc.send();
@@ -1207,15 +1215,15 @@ qx.Class.define("qxapp.data.Store", {
           locationId: locationId,
           fileUuid: fileUuid
         };
-        console.log("PresginedLink", presginedLinkData);
-        this.fireDataEvent("PresginedLink", presginedLinkData);
+        console.log("presginedLink", presginedLinkData);
+        this.fireDataEvent("presginedLink", presginedLinkData);
       }, this);
 
       req.addListener("fail", e => {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log("Failed getting Presgined Link", error);
+        console.error("Failed getting Presgined Link", error);
       });
 
       req.send();
@@ -1238,15 +1246,15 @@ qx.Class.define("qxapp.data.Store", {
         const {
           data
         } = e.getTarget().getResponse();
-        this.fireDataEvent("FileCopied", data);
+        this.fireDataEvent("fileCopied", data);
       }, this);
 
       req.addListener("fail", e => {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log(error);
-        console.log("Failed copying file", fileUuid, "to", pathId);
+        console.error(error);
+        console.error("Failed copying file", fileUuid, "to", pathId);
       });
 
       req.send();
@@ -1262,14 +1270,14 @@ qx.Class.define("qxapp.data.Store", {
         const {
           data
         } = e.getTarget().getResponse();
-        this.fireDataEvent("DeleteFile", data);
+        this.fireDataEvent("deleteFile", data);
       }, this);
 
       req.addListener("fail", e => {
         const {
           error
         } = e.getTarget().getResponse();
-        console.log("Failed deleting file", error);
+        console.error("Failed deleting file", error);
       });
 
       req.send();

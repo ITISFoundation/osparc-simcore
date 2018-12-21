@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 qx.Class.define("qxapp.component.workbench.SvgWidget", {
   extend: qx.ui.core.Widget,
 
@@ -6,7 +23,7 @@ qx.Class.define("qxapp.component.workbench.SvgWidget", {
     this.addListenerOnce("appear", () => {
       let el = this.getContentElement().getDomElement();
       qx.bom.element.Attribute.set(el, "id", svgLayerId);
-      this.__svgWrapper = new qxapp.wrappers.SvgWrapper();
+      this.__svgWrapper = new qxapp.wrappers.Svg();
       this.__svgWrapper.addListener(("SvgLibReady"), () => {
         this.__linksCanvas = this.__svgWrapper.createEmptyCanvas(svgLayerId);
         this.fireDataEvent("SvgWidgetReady", true);

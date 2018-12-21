@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 qx.Class.define("qxapp.component.widget.FlashMessenger", {
   extend: qx.ui.window.Window,
 
@@ -14,18 +31,31 @@ qx.Class.define("qxapp.component.widget.FlashMessenger", {
       showStatusbar: false,
       resizable: false,
       contentPadding: 0,
-      caption: "Logger",
-      layout: new qx.ui.layout.VBox()
+      layout: new qx.ui.layout.VBox(2),
+      width: 600,
+      zIndex: 1000
     });
   },
 
   members: {
-    log: function(logMessage) {
-      const message = logMessage.message;
-      const level = logMessage.level; // "DEBUG", "INFO", "WARNING", "ERROR"
-      const logger = logMessage.logger;
 
-      let label = new qx.ui.basic.Label(logger + ": " + message).set({
+    logAs: function(message, level="INFO", logger=null) {
+      this.log({
+        message: message,
+        level: level.toUpperCase(),
+        logger: logger
+      });
+    },
+
+    log: function(logMessage) {
+      let message = logMessage.message;
+      const level = logMessage.level.toUpperCase(); // "DEBUG", "INFO", "WARNING", "ERROR"
+      let logger =logMessage.logger;
+      if (logger) {
+        message = logger + ": " + message;
+      }
+
+      let label = new qx.ui.basic.Label(message).set({
         allowGrowX: true,
         allowGrowY: true,
         alignX: "center",
@@ -73,8 +103,8 @@ qx.Class.define("qxapp.component.widget.FlashMessenger", {
         const bounds = parent.getBounds();
         if (bounds) {
           const hint = this.getSizeHint();
-          const left = Math.round((bounds.width - hint.width) / 2);
-          const top = 50;
+          const left = Math.round((bounds.width - hint.width)/2);
+          const top = 1;
           this.moveTo(left, top);
           return;
         }
