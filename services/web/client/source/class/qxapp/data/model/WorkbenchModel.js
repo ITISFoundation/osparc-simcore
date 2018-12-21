@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.data.model.WorkbenchModel", {
@@ -22,10 +39,10 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
   },
 
   events: {
-    "WorkbenchModelChanged": "qx.event.type.Event",
+    "workbenchModelChanged": "qx.event.type.Event",
     "NodeAdded": "qx.event.type.Data",
-    "UpdatePipeline": "qx.event.type.Data",
-    "ShowInLogger": "qx.event.type.Data"
+    "updatePipeline": "qx.event.type.Data",
+    "showInLogger": "qx.event.type.Data"
   },
 
   members: {
@@ -120,7 +137,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       let exists = this.getLinkModel(linkId, node1Id, node2Id);
       if (!exists) {
         this.__links[linkId] = linkModel;
-        // this.fireEvent("WorkbenchModelChanged");
+        // this.fireEvent("workbenchModelChanged");
       }
     },
 
@@ -130,11 +147,11 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
         return existingNodeModel;
       }
       let nodeModel = new qxapp.data.model.NodeModel(this, key, version, uuid);
-      nodeModel.addListener("ShowInLogger", e => {
-        this.fireDataEvent("ShowInLogger", e.getData());
+      nodeModel.addListener("showInLogger", e => {
+        this.fireDataEvent("showInLogger", e.getData());
       }, this);
-      nodeModel.addListener("UpdatePipeline", e => {
-        this.fireDataEvent("UpdatePipeline", e.getData());
+      nodeModel.addListener("updatePipeline", e => {
+        this.fireDataEvent("updatePipeline", e.getData());
       }, this);
       this.fireDataEvent("NodeAdded", nodeModel);
       if (nodeData) {
@@ -197,7 +214,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       } else {
         this.__nodesTopLevel[uuid] = nodeModel;
       }
-      this.fireEvent("WorkbenchModelChanged");
+      this.fireEvent("workbenchModelChanged");
     },
 
     removeNode: function(nodeId) {
@@ -213,7 +230,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
           parentNodeModel.removeInnerNode(nodeId);
         }
         nodeModel.removeNode();
-        this.fireEvent("WorkbenchModelChanged");
+        this.fireEvent("workbenchModelChanged");
         return true;
       }
       return false;

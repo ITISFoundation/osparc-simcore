@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 const nodeWidth = 180;
 const portHeight = 16;
 
@@ -30,11 +47,11 @@ qx.Class.define("qxapp.component.workbench.NodeBase", {
   },
 
   events: {
-    "LinkDragStart": "qx.event.type.Data",
-    "LinkDragOver": "qx.event.type.Data",
-    "LinkDrop": "qx.event.type.Data",
-    "LinkDragEnd": "qx.event.type.Data",
-    "NodeMoving": "qx.event.type.Event"
+    "linkDragStart": "qx.event.type.Data",
+    "linkDragOver": "qx.event.type.Data",
+    "linkDrop": "qx.event.type.Data",
+    "linkDragEnd": "qx.event.type.Data",
+    "nodeMoving": "qx.event.type.Event"
   },
 
   members: {
@@ -153,10 +170,10 @@ qx.Class.define("qxapp.component.workbench.NodeBase", {
 
     __createUIPortConnections: function(uiPort, isInput) {
       [
-        ["dragstart", "LinkDragStart"],
-        ["dragover", "LinkDragOver"],
-        ["drop", "LinkDrop"],
-        ["dragend", "LinkDragEnd"]
+        ["dragstart", "linkDragStart"],
+        ["dragover", "linkDragOver"],
+        ["drop", "linkDrop"],
+        ["dragend", "linkDragEnd"]
       ].forEach(eventPair => {
         uiPort.addListener(eventPair[0], e => {
           const eData = {
@@ -228,7 +245,7 @@ qx.Class.define("qxapp.component.workbench.NodeBase", {
     _onMovePointerMove: function(e) {
       this.base(arguments, e);
       if (e.getPropagationStopped() === true) {
-        this.fireEvent("NodeMoving");
+        this.fireEvent("nodeMoving");
       }
     }
   }

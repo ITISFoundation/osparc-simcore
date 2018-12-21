@@ -1,11 +1,20 @@
 /* ************************************************************************
 
-   Copyright: 2018 undefined
+   qxapp - the simcore frontend
 
-   License: MIT license
+   https://osparc.io
 
-   Authors: undefined
-TODO: change name of app: osparc instead of qxapp
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+     * Tobias Oetiker (oetiker)
+     * Pedro Crespo (pcrespov)
+
 ************************************************************************ */
 
 /**
@@ -76,31 +85,31 @@ qx.Class.define("qxapp.Application", {
 
       if (isLogged) {
         this.__connectWebSocket();
-
         view = new qxapp.desktop.LayoutManager();
-
         options = {
-          left: 0,
           top: 0,
-          height: "100%",
-          width: "100%"
+          bottom: 0,
+          left: 0,
+          right: 0
         };
+        this.__loadView(view, options);
       } else {
         this.__disconnectWebSocket();
-
         view = new qxapp.auth.MainView();
         view.addListener("done", function(msg) {
           this.__restart();
         }, this);
-
-        options ={
+        options = {
           top: "10%",
           bottom: 0,
           left: 0,
           right: 0
         };
+        this.__loadView(view, options);
       }
+    },
 
+    __loadView: function(view, options) {
       this.assert(view!==null);
       // Update root document and currentness
       let doc = this.getRoot();
