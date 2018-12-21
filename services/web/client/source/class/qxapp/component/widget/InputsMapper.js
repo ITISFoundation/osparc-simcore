@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__willBeBranch", "__willBeLeaf", "__tree"] }] */
 
 qx.Class.define("qxapp.component.widget.InputsMapper", {
@@ -162,7 +179,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
       switch (keyEvent.getKeyIdentifier()) {
         case "F2": {
           let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
-          treeItemRenamer.addListener("LabelChanged", e => {
+          treeItemRenamer.addListener("labelChanged", e => {
             let newLabel = e.getData()["newLabel"];
             selectedItem.setLabel(newLabel);
           }, this);

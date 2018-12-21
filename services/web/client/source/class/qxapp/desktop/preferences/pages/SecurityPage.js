@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Pedro Crespo (pcrespov)
+
+************************************************************************ */
+
 /**
  *  Security page
  *
@@ -61,7 +78,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
       }, this);
 
       tokens.addListenerOnce("getError", e => {
-        console.log(e);
+        console.error(e);
       });
       tokens.get();
     },
@@ -98,7 +115,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
           this.__rebuildTokensList();
         }, this);
         tokens.addListenerOnce("getError", ev => {
-          console.log(ev);
+          console.error(ev);
         });
         const newTokenInfo = {
           "service": newTokenService.getValue(),

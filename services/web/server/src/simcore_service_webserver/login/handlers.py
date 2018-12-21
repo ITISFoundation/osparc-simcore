@@ -25,8 +25,8 @@ log = logging.getLogger(__name__)
 # FIXME: with asyncpg need to user NAMES
 CONFIRMATION_PENDING, ACTIVE, BANNED = [getattr(UserStatus, att).name
                                 for att in 'CONFIRMATION_PENDING ACTIVE BANNED'.split()]
-ANONYMOUS, USER, MODERATOR, ADMIN = [getattr(UserRole, att).name
-                                for att in 'ANONYMOUS USER MODERATOR ADMIN'.split()]
+ANONYMOUS, USER, TESTER, MODERATOR, ADMIN = [getattr(UserRole, att).name
+                                for att in 'ANONYMOUS USER TESTER MODERATOR ADMIN'.split()]
 REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = [getattr(ConfirmationAction, att).name
                                 for att in 'REGISTRATION RESET_PASSWORD CHANGE_EMAIL'.split()]
 
