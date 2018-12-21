@@ -18,13 +18,10 @@ qx.Class.define("qxapp.About", {
 
   members: {
     __populateEntries: function() {
-      // All these items and versions should be red from a file
-      // TODO: see #487
-
-      // FIXME: remove this
-      console.log("=====>>>", qx.core.Environment.get('osparc.vcsRefClient'));
-      
-      this.add(this.__createEntry("oSPARC UI", "3.38", "https://github.com/ITISFoundation/osparc-simcore"));
+      const vcsRef = qx.core.Environment.get("osparc.vcsRef") || "not found";
+      const vcsRefClient = qx.core.Environment.get("osparc.vcsRefClient") || "not found";
+      this.add(this.__createEntry("oSPARC", vcsRef, "htt>ps://github.com/ITISFoundation/osparc-simcore"));
+      this.add(this.__createEntry("oSPARC UI", vcsRefClient, "https://github.com/ITISFoundation/osparc-simcore/services/web/client"));
 
       this.add(new qx.ui.core.Spacer(null, 10));
 
