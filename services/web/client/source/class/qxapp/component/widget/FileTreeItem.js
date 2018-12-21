@@ -2,7 +2,7 @@
 
    qxapp - the simcore frontend
 
-   https://simcore.io
+   https://osparc.io
 
    Copyright:
      2019 IT'IS Foundation, https://itis.swiss

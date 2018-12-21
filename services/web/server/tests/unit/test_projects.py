@@ -5,6 +5,7 @@
 # pylint:disable=redefined-outer-name
 
 import collections
+from copy import deepcopy
 
 import pytest
 from aiohttp import web
@@ -18,7 +19,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.rest import APP_OPENAPI_SPECS_KEY, setup_rest
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.projects_handlers import Fake
+from simcore_service_webserver.projects.projects_handlers import Fake
 
 
 API_VERSION = "v0"
@@ -49,7 +50,7 @@ def client(loop, aiohttp_client, aiohttp_unused_port, api_specs_dir, fake_db):
     setup_session(app)
     setup_rest(app, debug=True)
     setup_projects(app,
-        debug=False, # no fake data
+        enable_fake_data=False, # no fake data
         disable_login=True
     )
 
@@ -63,11 +64,11 @@ def fake_project():
     # generated from api/specs/webserver/v0/components/schemas/project-v0.0.1.json
     # using http://json-schema-faker.js.org/
     return {
-        "projectUuid": "f298d06b-707a-6257-a462-d7bf73b76c0c",
+        "uuid": "f298d06b-707a-6257-a462-d7bf73b76c0c",
         "name": "ex",
         "description": "anim sint pariatur do dolore",
         "notes": "enim nisi consequat",
-        "owner": "dolore ad do consectetur",
+        "prjOwner": "dolore ad do consectetur",
         "collaborators": {
             "WS(q": [
             "write"
@@ -100,7 +101,7 @@ PREFIX = "/" + API_VERSION
 
 async def test_create(client, fake_db, fake_project):
     # TODO: create fixture
-    pid = fake_project["projectUuid"]
+    pid = fake_project["uuid"]
     #--------------------------
 
     url = client.app.router["create_projects"].url_for()
@@ -149,15 +150,15 @@ async def test_list(client, fake_db):
 
     projects, error = unwrap_envelope(payload)
     assert not error
-    assert len(projects) == 3
-
+    # fake-template-projects.json + fake-template-projects.osparc.json
+    assert len(projects) == 4 + 1
 
 
 
 
 async def test_get(client, fake_db, fake_project):
     fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO: create fixture
-    pid = fake_project["projectUuid"]
+    pid = fake_project["uuid"]
     #-----------------
 
     # get one
@@ -178,18 +179,31 @@ async def test_get(client, fake_db, fake_project):
 
 async def test_update(client, fake_db, fake_project):
     fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO: create fixture
-    pid = fake_project["projectUuid"]
+    pid = fake_project["uuid"]
     #-----------------
+    #
+    # In a PUT request, the enclosed entity is considered to be a modified version of
+    # the resource stored on the origin server, and the client is requesting that the
+    # stored version be replaced.
+    #
+    # With PATCH, however, the enclosed entity contains a set of instructions describing how a
+    # resource currently residing on the origin server should be modified to produce a new version.
+    #
+    # Also, another difference is that when you want to update a resource with PUT request, you have to send
+    # the full payload as the request whereas with PATCH, you only send the parameters which you want to update.
+    #
 
-    url = client.app.router["update_project"].url_for(project_id=pid)
+    url = client.app.router["replace_project"].url_for(project_id=pid)
     assert str(url) == PREFIX + "/%s/%s" % (RESOURCE_NAME, pid)
 
     # PUT /v0/projects/{project_id}
-    resp = await client.put(url, json={
-        "name": "some other name",
-        "description": "some other",
-        "notes": "some other",
-    })
+    modified = deepcopy(fake_project)
+    modified["name"] = "some other name"
+    modified["description"] = "some other"
+    modified["notes"] = "some other"
+    modified["workbench"]["newname"] = modified["workbench"].pop("Xw)F")
+
+    resp = await client.put(url, json=modified)
     payload = await resp.json()
     assert resp.status == 200, payload
 
@@ -199,11 +213,14 @@ async def test_update(client, fake_db, fake_project):
 
     assert fake_db.projects[pid].data["name"] == "some other name"
     assert fake_db.projects[pid].data["notes"] == "some other"
+    assert "newname" in fake_db.projects[pid].data["workbench"]
+    assert fake_db.projects[pid].data["workbench"]["newname"] == fake_project["workbench"]["Xw)F"]
+
 
 
 async def test_delete(client, fake_db, fake_project):
     fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO:
-    pid = fake_project["projectUuid"]
+    pid = fake_project["uuid"]
     # -------------
 
     url = client.app.router["delete_project"].url_for(project_id=pid)
@@ -222,6 +239,7 @@ async def test_delete(client, fake_db, fake_project):
     assert not fake_db.projects
     assert not fake_db.user_to_projects_map
 
+
 async def test_delete_invalid_project(client, fake_db):
     resp = await client.delete("/v0/projects/some-fake-id")
     payload = await resp.json()
@@ -232,7 +250,7 @@ async def test_delete_invalid_project(client, fake_db):
     assert not error
 
 
-async def test_workfolow(client, fake_db, fake_project):
+async def test_workflow(client, fake_db, fake_project):
     fake_db.add_projects([fake_project, ], user_id=ANONYMOUS_UID) # TODO: create fixture
     #-----------------
 
@@ -249,15 +267,17 @@ async def test_workfolow(client, fake_db, fake_project):
     assert projects
 
     #-------------------------------------------------
-    pid = projects[0]["projectUuid"]
+    modified = deepcopy(projects[0])
+    pid = modified["uuid"]
+
+    modified["name"] = "some other name"
+    modified["notes"] = "some other"
+    modified["workbench"]["ReNamed"] =  modified["workbench"].pop("Xw)F")
+    modified["workbench"]["ReNamed"]["position"]["x"] = 0.0
 
     # PUT /v0/projects/{project_id}
-    url = client.app.router["update_project"].url_for(project_id=pid)
-    resp = await client.put(url, json={
-        "name": "some other name",
-        "description": "some other",
-        "notes": "some other",
-    })
+    url = client.app.router["replace_project"].url_for(project_id=pid)
+    resp = await client.put(url, json=modified)
     payload = await resp.json()
     assert resp.status == 200, payload
 
@@ -275,3 +295,29 @@ async def test_workfolow(client, fake_db, fake_project):
 
     assert project["name"] == "some other name"
     assert project["notes"] == "some other"
+    assert "ReNamed" in project["workbench"]
+    assert "Xw)F" not in project["workbench"]
+
+    assert project == modified
+
+
+
+
+#-----------------------------------
+@pytest.mark.skip(reason="Handlers still not implemented")
+async def test_nodes_api(client):
+    params= {
+        'nodeInstanceUUID': '12345',
+        'outputKey': 'foo',
+        'apiCall': 'bar'
+    }
+    api = {}
+
+    url = "/nodes/{nodeInstanceUUID}/outputUi/{outputKey}".format(**params)
+    resp = await client.get(url)
+
+    url = "/nodes/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}".format(**params)
+    resp = await client.post(url, json=api)
+
+    url = "/nodes/{nodeInstanceUUID}/iframe".format(**params)
+    resp = await client.get(url)

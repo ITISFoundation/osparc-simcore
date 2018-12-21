@@ -20,8 +20,8 @@ def _resolve_url(request: web.Request) -> URL:
     # director service API endpoint
     # TODO: service API endpoint could be deduced and checked upon setup (e.g. health check on startup)
     endpoint = URL.build(
-        scheme='http', 
-        host=cfg['host'], 
+        scheme='http',
+        host=cfg['host'],
         port=cfg['port']).with_path(cfg["version"])
 
     # replace raw path, to keep the quotes and
@@ -114,22 +114,22 @@ async def running_interactive_services_get(request: web.Request) -> web.Response
 @login_required
 async def running_interactive_services_delete(request: web.Request) -> web.Response:
     """ Stops and removes an interactive service from the
-    
+
     """
     params, query, body = await extract_and_validate(request)
 
     assert params, "DELETE expected /running_interactive_services/{service_uuid}"
-    assert not query
+    assert query
     assert not body
-
-    endpoint = _resolve_url(request)
 
     registry = get_registry(request.app)
     service_uuid = params['service_uuid']
+    endpoint = _resolve_url(request)
 
     # forward to director API
     session = get_client_session(request.app)
-    async with session.delete(endpoint, ssl=False) as resp:
+    url = endpoint.with_query(service_uuid)
+    async with session.delete(url, ssl=False) as resp:
         payload = await resp.json()
         if resp.status < 400 or resp.status == 404:
             registry.as_stopped(service_uuid)

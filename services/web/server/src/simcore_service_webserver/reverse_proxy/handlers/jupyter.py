@@ -12,10 +12,13 @@ from yarl import URL
 
 #FIXME: make this more generic
 SUPPORTED_IMAGE_NAME = ["simcore/services/dynamic/jupyter-base-notebook",
+                        "simcore/services/dynamic/jupyter-scipy-notebook",
+                        "simcore/services/dynamic/jupyter-r-notebook",
                         "simcore/services/dynamic/kember-viewer", 
                         "simcore/services/dynamic/cc-2d-viewer", 
                         "simcore/services/dynamic/cc-1d-viewer", 
-                        "simcore/services/dynamic/cc-0d-viewer"]
+                        "simcore/services/dynamic/cc-0d-viewer",
+                        "simcore/services/dynamic/spat-an-app-nb"]
 SUPPORTED_IMAGE_TAG = ">=1.5.0"
 
 logger = logging.getLogger(__name__)
@@ -37,7 +40,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
 
     reqH = req.headers.copy()
 
-    if reqH['connection'].lower() == 'upgrade' and reqH['upgrade'].lower() == 'websocket' and req.method == 'GET':
+    if reqH.get('connection', '').lower() == 'upgrade' and reqH.get('upgrade', '').lower() == 'websocket' and req.method == 'GET':
         ws_server = web.WebSocketResponse()
         await ws_server.prepare(req)
         logger.info('##### WS_SERVER %s', pprint.pformat(ws_server))
@@ -48,7 +51,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
 
             async def ws_forward(ws_from, ws_to):
                 async for msg in ws_from:
-                    logger.info('>>> msg: %s', pprint.pformat(msg))
+                    logger.debug('>>> msg: %s', pprint.pformat(msg))
                     mt = msg.type
                     md = msg.data
                     if mt == aiohttp.WSMsgType.TEXT:

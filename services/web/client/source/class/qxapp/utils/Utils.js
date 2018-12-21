@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* global window */
 
 qx.Class.define("qxapp.utils.Utils", {
@@ -8,6 +25,29 @@ qx.Class.define("qxapp.utils.Utils", {
     uuidv4: function() {
       return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+    },
+
+    getLoaderUri: function(arg) {
+      let loadingUri = qx.util.ResourceManager.getInstance().toUri("qxapp/loading/loader.html");
+      if (arg) {
+        loadingUri += "?loading=- ";
+        loadingUri += arg;
+      }
+      return loadingUri;
+    },
+
+    // deep clone of nested objects
+    // https://medium.com/@tkssharma/objects-in-javascript-object-assign-deep-copy-64106c9aefab#eeed
+    deepCloneObject: function(src) {
+      let target = {};
+      for (let key in src) {
+        if (src[key] !== null && typeof (src[key]) === "object") {
+          target[key] = qxapp.utils.Utils.deepCloneObject(src[key]);
+        } else {
+          target[key] = src[key];
+        }
+      }
+      return target;
     },
 
     replaceTemplateUUIDs: function(data) {

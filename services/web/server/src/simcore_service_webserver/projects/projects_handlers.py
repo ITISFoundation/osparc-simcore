@@ -6,7 +6,7 @@ import logging
 
 from aiohttp import web
 
-from .login.decorators import RQT_USERID_KEY, login_required
+from ..login.decorators import RQT_USERID_KEY, login_required
 from .projects_fakes import Fake
 
 log = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ async def create_projects(request: web.Request):
     # TODO: validate here
     #TODO: create as template .. ?type=template
 
-    pid, uid = project['projectUuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
+    pid, uid = project['uuid'], request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
     Fake.projects[pid] = Fake.ProjectItem(id=pid, template=False, data=project)
     Fake.user_to_projects_map[uid].append(pid)
@@ -66,12 +66,25 @@ async def get_project(request: web.Request):
 
 
 @login_required
-async def update_project(request: web.Request):
+async def replace_project(request: web.Request):
+    """ Implements PUT /projects
+
+     In a PUT request, the enclosed entity is considered to be a modified version of
+     the resource stored on the origin server, and the client is requesting that the
+     stored version be replaced.
+
+     With PATCH, however, the enclosed entity contains a set of instructions describing how a
+     resource currently residing on the origin server should be modified to produce a new version.
+
+     Also, another difference is that when you want to update a resource with PUT request, you have to send
+     the full payload as the request whereas with PATCH, you only send the parameters which you want to update.
+
+    :raises web.HTTPNotFound: cannot find project id in repository
+    """
     pid, uid = request.match_info.get("project_id"), request.get(RQT_USERID_KEY, ANONYMOUS_UID)
 
     new_values = await request.json()
     # TODO: validate project data
-
 
     current_project = Fake.projects.get(pid)
     if not current_project:
@@ -79,9 +92,9 @@ async def update_project(request: web.Request):
 
     assert_ownership(pid, uid)
 
-    # FIXME: limited to updates in first level!
-    current_project.data.update(new_values)
-
+    new_project = current_project._asdict()
+    new_project['data'] = new_values
+    Fake.projects[pid] = Fake.ProjectItem(**new_project)
 
 @login_required
 async def delete_project(request: web.Request):

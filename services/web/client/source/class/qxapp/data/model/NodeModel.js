@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.data.model.NodeModel", {
@@ -28,16 +45,16 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       let store = qxapp.data.Store.getInstance();
       let metaData = this.__metaData = store.getNodeMetaData(key, version);
       if (metaData) {
-        if (Object.prototype.hasOwnProperty.call(metaData, "name")) {
+        if (metaData.name) {
           this.setLabel(metaData.name);
         }
-        if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
+        if (metaData.inputsDefault) {
           this.__addInputsDefault(metaData.inputsDefault);
         }
-        if (Object.prototype.hasOwnProperty.call(metaData, "inputs")) {
+        if (metaData.inputs) {
           this.__addInputs(metaData.inputs);
         }
-        if (Object.prototype.hasOwnProperty.call(metaData, "outputs")) {
+        if (metaData.outputs) {
           this.__addOutputs(metaData.outputs);
         }
       }
@@ -122,8 +139,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
   },
 
   events: {
-    "UpdatePipeline": "qx.event.type.Data",
-    "ShowInLogger": "qx.event.type.Data"
+    "updatePipeline": "qx.event.type.Data",
+    "showInLogger": "qx.event.type.Data"
   },
 
   members: {
@@ -176,7 +193,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     getOutputValues: function() {
       let output = {};
       for (const outputId in this.__outputs) {
-        if (Object.prototype.hasOwnProperty.call(this.__outputs[outputId], "value")) {
+        if (this.__outputs[outputId].value) {
           output[outputId] = this.__outputs[outputId].value;
         }
       }
@@ -292,7 +309,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
      */
     __addMapper: function(inputs) {
       let filteredInputs = JSON.parse(JSON.stringify(inputs));
-      if (Object.prototype.hasOwnProperty.call(filteredInputs, "mapper")) {
+      if (filteredInputs.mapper) {
         let inputsMapper = new qxapp.component.widget.InputsMapper(this, filteredInputs["mapper"]);
         this.setInputsMapper(inputsMapper);
         delete filteredInputs["mapper"];
@@ -363,7 +380,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     setOutputData: function(nodeData) {
-      if (Object.prototype.hasOwnProperty.call(nodeData, "outputs")) {
+      if (nodeData.outputs) {
         for (const outputKey in nodeData.outputs) {
           this.__outputs[outputKey].value = nodeData.outputs[outputKey];
         }
@@ -430,15 +447,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     __showLoadingIFrame: function() {
-      const loadingUrl = qx.util.ResourceManager.getInstance().toUri("qxapp/loading/loader.html");
-      this.__restartIFrame(loadingUrl);
-    },
-
-    __hasRetrieve: function() {
-      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler") || this.getKey().includes("neuroman")) {
-        return true;
-      }
-      return false;
+      const loadingUri = qxapp.utils.Utils.getLoaderUri();
+      this.__restartIFrame(loadingUri);
     },
 
     __retrieveInputs: function() {
@@ -446,10 +456,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     },
 
     __updateBackendAndRetrieveInputs: function() {
-      // HACK: Workaround for fetching inputs in Visualizer and modeler
-      if (this.getKey().includes("3d-viewer") || this.getKey().includes("modeler") || this.getKey().includes("neuroman")) {
-        this.fireDataEvent("UpdatePipeline", this);
-      }
+      this.fireDataEvent("updatePipeline", this);
     },
 
     retrieveInputs: function() {
@@ -466,16 +473,14 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __startInteractiveNode: function() {
       let metaData = this.getMetaData();
       if (metaData && ("type" in metaData) && metaData.type == "dynamic") {
-        if (this.__hasRetrieve()) {
-          let retrieveBtn = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/spinner/32"
-          });
-          retrieveBtn.addListener("execute", e => {
-            this.__retrieveInputs();
-          }, this);
-          retrieveBtn.setEnabled(false);
-          this.setRetrieveIFrameButton(retrieveBtn);
-        }
+        let retrieveBtn = new qx.ui.form.Button().set({
+          icon: "@FontAwesome5Solid/spinner/32"
+        });
+        retrieveBtn.addListener("execute", e => {
+          this.__retrieveInputs();
+        }, this);
+        retrieveBtn.setEnabled(false);
+        this.setRetrieveIFrameButton(retrieveBtn);
 
         let restartBtn = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/redo-alt/32"
@@ -493,14 +498,14 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           nodeLabel: this.getLabel(),
           msg: msg
         };
-        this.fireDataEvent("ShowInLogger", msgData);
+        this.fireDataEvent("showInLogger", msgData);
 
         // start the service
         const url = "/running_interactive_services";
         let query = "?service_key=" + encodeURIComponent(metaData.key) + "&service_tag=" + encodeURIComponent(metaData.version) + "&service_uuid=" + encodeURIComponent(this.getNodeId());
         if (metaData.key.includes("/neuroman")) {
           // HACK: Only Neuroman should enter here
-          query = "?service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver") + "&service_tag=" + encodeURIComponent("2.7.0") + "&service_uuid=" + encodeURIComponent(this.getNodeId());
+          query = "?service_key=" + encodeURIComponent("simcore/services/dynamic/modeler/webserver") + "&service_tag=" + encodeURIComponent("2.8.0") + "&service_uuid=" + encodeURIComponent(this.getNodeId());
         }
         let request = new qxapp.io.request.ApiRequest(url+query, "POST");
         request.addListener("success", this.__onInteractiveNodeStarted, this);
@@ -510,7 +515,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             nodeLabel: this.getLabel(),
             msg: errorMsg
           };
-          this.fireDataEvent("ShowInLogger", errorMsgData);
+          this.fireDataEvent("showInLogger", errorMsgData);
         }, this);
         request.addListener("fail", e => {
           const failMsg = "Failed starting " + metaData.key + ":" + metaData.version + ": " + e.getTarget().getResponse()["error"];
@@ -518,7 +523,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
             nodeLabel: this.getLabel(),
             msg: failMsg
           };
-          this.fireDataEvent("ShowInLogger", failMsgData);
+          this.fireDataEvent("showInLogger", failMsgData);
         }, this);
         request.send();
       }
@@ -536,7 +541,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           nodeLabel: this.getLabel(),
           msg: msg
         };
-        this.fireDataEvent("ShowInLogger", msgData);
+        this.fireDataEvent("showInLogger", msgData);
         return;
       }
       const publishedPort = data["published_port"];
@@ -561,11 +566,9 @@ qx.Class.define("qxapp.data.model.NodeModel", {
           nodeLabel: this.getLabel(),
           msg: msg
         };
-        this.fireDataEvent("ShowInLogger", msgData);
+        this.fireDataEvent("showInLogger", msgData);
 
-        if (this.__hasRetrieve()) {
-          this.getRetrieveIFrameButton().setEnabled(true);
-        }
+        this.getRetrieveIFrameButton().setEnabled(true);
         this.getRestartIFrameButton().setEnabled(true);
         // FIXME: Apparently no all services are inmediately ready when they publish the port
         const waitFor = 4000;

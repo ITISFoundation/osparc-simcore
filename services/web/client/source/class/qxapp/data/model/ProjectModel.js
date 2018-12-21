@@ -1,25 +1,37 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 qx.Class.define("qxapp.data.model.ProjectModel", {
   extend: qx.core.Object,
 
   construct: function(prjData) {
     this.base(arguments);
 
-    if (prjData) {
-      this.set({
-        uuid: prjData.projectUuid || this.getUuid(),
-        name: prjData.name || this.getName(),
-        description: prjData.description || this.getDescription(),
-        notes: prjData.notes || this.getNotes(),
-        thumbnail: prjData.thumbnail || this.getThumbnail(),
-        owner: prjData.owner || this.getOwner(),
-        collaborators: prjData.collaborators || this.getCollaborators(),
-        creationDate: new Date(prjData.creationDate) || this.getCreationDate(),
-        lastChangeDate: new Date(prjData.lastChangeDate) || this.getLastChangeDate()
-      });
-      if (this.getName() === "Demo December") {
-        this.setUuid("DemoDecemberUUID");
-      }
-    }
+    this.set({
+      uuid: prjData.uuid || this.getUuid(),
+      name: prjData.name || this.getName(),
+      description: prjData.description || this.getDescription(),
+      notes: prjData.notes || this.getNotes(),
+      thumbnail: prjData.thumbnail || this.getThumbnail(),
+      prjOwner: prjData.prjOwner || qxapp.auth.Data.getInstance().getUserName(),
+      collaborators: prjData.collaborators || this.getCollaborators(),
+      creationDate: prjData.creationDate ? new Date(prjData.creationDate) : this.getCreationDate(),
+      lastChangeDate: prjData.lastChangeDate ? new Date(prjData.lastChangeDate) : this.getLastChangeDate()
+    });
 
     if (prjData && prjData.workbench) {
       this.setWorkbenchModel(new qxapp.data.model.WorkbenchModel(this.getName(), prjData.workbench));
@@ -46,22 +58,22 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
     description: {
       check: "String",
       nullable: true,
-      init: "Empty"
+      init: ""
     },
 
     notes: {
       check: "String",
       nullable: true,
-      init: "Empty"
+      init: ""
     },
 
     thumbnail: {
       check: "String",
       nullable: true,
-      init: "https://imgplaceholder.com/171x96/cccccc/757575/ion-plus-round"
+      init: ""
     },
 
-    owner: {
+    prjOwner: {
       check: "String",
       nullable: true,
       init: ""

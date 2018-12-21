@@ -12,7 +12,7 @@
         "outputs":{}
     },
     "inputs": {
-        "model_name": "DemoDec_OnlyHead_Clean_Neuron.smash"
+        "model_name": "DemoDec_Head_Neuroman.smash"
     },
     "outputs": {}
 }

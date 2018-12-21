@@ -25,10 +25,9 @@ def setup(app: web.Application, *, debug=False):
 
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]
-
     routes = map_handlers_with_operations(
             get_handlers_from_namespace(users_handlers),
-            filter(lambda o: "/my" in o[1],  iter_path_operations(specs)),
+            filter(lambda o: "me" in o[1].split("/"),  iter_path_operations(specs)),
             strict=True
     )
     app.router.add_routes(routes)

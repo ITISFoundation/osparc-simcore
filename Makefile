@@ -66,12 +66,23 @@ up-webclient-devel: up-swarm-devel remove-intermediate-file file-watcher
 	${DOCKER} service rm services_webclient
 	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
 
+rebuild-webclient-devel-solo:
+	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml build --no-cache qx
+
+up-webclient-devel-solo:
+	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
+
+
 build:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
 
 build-client:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
+
+rebuild-client:
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webclient
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webserver
 
 build-dynamic-services:
 ifndef SERVICES_VERSION
@@ -108,7 +119,7 @@ up-swarm:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.deploy.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
 
-up-swarm-devel:
+up-swarm-devel: 
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.deploy.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
@@ -185,7 +196,7 @@ test:
 	make run_test
 	make after_test
 
-PLATFORM_VERSION=3.28
+PLATFORM_VERSION=3.38
 DOCKER_REGISTRY=masu.speag.com
 #DOCKER_REGISTRY=registry.osparc.io
 
@@ -231,6 +242,13 @@ push_client_image:
 	.venv/bin/virtualenv --python=python2 .venv27
 	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
 
+travis-build:
+	${DOCKER} pull itisfoundation/storage-build-cache:latest	
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel storage apihub
 
+travis-push-base-images:	
+	${DOCKER} pull itisfoundation/storage-build-cache:latest
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel storage
+	${DOCKER} push itisfoundation/storage-build-cache:latest
 
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel

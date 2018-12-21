@@ -1,9 +1,20 @@
 /* ************************************************************************
-   Copyright: 2018 ITIS Foundation
-   License:   MIT
-   Authors:   Odei Maiz <maiz@itis.swiss>
-   Utf8Check: äöü
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
 ************************************************************************ */
+
 
 /**
  *  Creates the widget that represents an input node.
@@ -50,10 +61,10 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
   },
 
   events: {
-    "LinkDragStart": "qx.event.type.Data",
-    "LinkDragOver": "qx.event.type.Data",
-    "LinkDrop": "qx.event.type.Data",
-    "LinkDragEnd": "qx.event.type.Data"
+    "linkDragStart": "qx.event.type.Data",
+    "linkDragOver": "qx.event.type.Data",
+    "linkDrop": "qx.event.type.Data",
+    "linkDragEnd": "qx.event.type.Data"
   },
 
   members: {
@@ -104,10 +115,10 @@ qx.Class.define("qxapp.component.widget.NodeInput", {
 
     __createUIPortConnections: function(uiPort, isInput) {
       [
-        ["dragstart", "LinkDragStart"],
-        ["dragover", "LinkDragOver"],
-        ["drop", "LinkDrop"],
-        ["dragend", "LinkDragEnd"]
+        ["dragstart", "linkDragStart"],
+        ["dragover", "linkDragOver"],
+        ["drop", "linkDrop"],
+        ["dragend", "linkDragEnd"]
       ].forEach(eventPair => {
         uiPort.addListener(eventPair[0], e => {
           const eData = {

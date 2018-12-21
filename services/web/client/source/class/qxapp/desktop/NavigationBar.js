@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* eslint no-warning-comments: "off" */
 
 const NAVIGATION_BUTTON_HEIGHT = 32;
@@ -49,7 +66,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     let dashboardBtn = new qx.ui.form.Button(this.tr("Dashboard"));
     dashboardBtn.set(commonBtnSettings);
     dashboardBtn.addListener("execute", function() {
-      this.fireEvent("DashboardPressed");
+      this.fireEvent("dashboardPressed");
     }, this);
     this.add(dashboardBtn);
 
@@ -71,22 +88,27 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     this.add(new qx.ui.toolbar.Separator());
 
     const userEmail = qxapp.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
+    const userName = qxapp.auth.Data.getInstance().getUserName() || "bizzy";
 
-    let userLbl = new qx.ui.basic.Label(userEmail.split("@")[0]).set({
-      minWidth: 20
+    let userLbl = new qx.ui.basic.Label(userName).set({
+      minWidth: 10
     });
     this.add(userLbl);
 
     let userBtn = this.__createUserBtn();
     userBtn.set(commonBtnSettings);
-
-    userBtn.setIcon(qxapp.utils.Avatar.getUrl(userEmail, NAVIGATION_BUTTON_HEIGHT));
+    userBtn.set({
+      decorator: new qx.ui.decoration.Decorator().set({
+        radius: 50,
+        backgroundImage: qxapp.utils.Avatar.getUrl(userEmail, NAVIGATION_BUTTON_HEIGHT)
+      })
+    });
     this.add(userBtn);
   },
 
   events: {
-    "NodeDoubleClicked": "qx.event.type.Data",
-    "DashboardPressed": "qx.event.type.Event"
+    "nodeDoubleClicked": "qx.event.type.Data",
+    "dashboardPressed": "qx.event.type.Event"
   },
 
   properties: {
@@ -134,7 +156,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
           }
         }
         btn.addListener("execute", function() {
-          this.fireDataEvent("NodeDoubleClicked", nodeId);
+          this.fireDataEvent("nodeDoubleClicked", nodeId);
         }, this);
         this.__mainViewCaptionLayout.add(btn);
 
@@ -161,7 +183,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       // Logout
 
       // TODO: add commands (i.e. short-cut system)
-      let preferences = new qx.ui.menu.Button("Account Settings");
+      let preferences = new qx.ui.menu.Button("Preferences");
       preferences.addListener("execute", this.__onOpenAccountSettings, this);
 
       let logout = new qx.ui.menu.Button("Logout");
@@ -186,7 +208,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     __onOpenAccountSettings: function() {
       if (!this.__preferencesWin) {
-        this.__preferencesWin = new qxapp.Preferences();
+        this.__preferencesWin = new qxapp.desktop.preferences.DialogWindow();
       }
 
       let win = this.__preferencesWin;
