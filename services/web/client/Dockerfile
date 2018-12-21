@@ -24,6 +24,8 @@ FROM node:8.9.2 as base-stage
 #
 LABEL maintainer=pcrespov
 
+ARG VCS_REF_CLIENT
+
 # non-root user uid=1000
 # TODO: create instead uid=5000.
 RUN groupmod --new-name scu node && \
@@ -71,7 +73,6 @@ CMD ["serve", "--set", "qx.allowUrlSettings=true"]
 # ------------------------------------------------------------------------------------------
 FROM base-stage as build
 
-
 # 3. prepares docker
 COPY --chown=scu:scu docker docker
 RUN chmod +x docker/*.sh
@@ -84,7 +85,7 @@ RUN ./docker/install-contrib.sh
 # 5. compiles source -> build-output/
 COPY --chown=scu:scu source source
 COPY --chown=scu:scu Manifest.json Manifest.json
-RUN qx compile --target=build
+RUN qx compile --target=build --set osparc.vcsRefClient='"$(VCS_REF_CLIENT)"'
 
 ENTRYPOINT []
 
