@@ -20,6 +20,10 @@ qx.Class.define("qxapp.About", {
     __populateEntries: function() {
       // All these items and versions should be red from a file
       // TODO: see #487
+
+      // FIXME: remove this
+      console.log("=====>>>", qx.core.Environment.get('osparc.vcsRefClient'));
+      
       this.add(this.__createEntry("oSPARC UI", "3.38", "https://github.com/ITISFoundation/osparc-simcore"));
 
       this.add(new qx.ui.core.Spacer(null, 10));

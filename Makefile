@@ -45,6 +45,20 @@ TEMPCOMPOSE := $(shell mktemp)
 export SERVICES_VERSION=2.8.0
 export DOCKER_REGISTRY=masu.speag.com
 
+VCS_REF:=$(shell git rev-parse --short HEAD)
+VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
+BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+export VCS_REF
+export VCS_REF_CLIENT
+export BUILD_DATE
+
+info:
+	@echo '+ vcs ref '
+	@echo '  - all       : ${VCS_REF}'
+	@echo '  - web/client: ${VCS_REF_CLIENT}'
+	@echo '+ date        : ${BUILD_DATE}'
+
 all:
 	@echo 'run `make build-devel` to build your dev environment'
 	@echo 'run `make up-devel` to start your dev environment.'
