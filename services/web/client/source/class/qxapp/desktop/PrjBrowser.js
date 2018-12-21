@@ -219,7 +219,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         let publicFilteredPrjList = [];
         for (let i=0; i<publicPrjList.length; i++) {
           // FIXME: Backend should do the filtering
-          if (publicPrjList[i].projectUuid.includes("DemoDecember") &&
+          if (publicPrjList[i].uuid.includes("DemoDecember") &&
           !qxapp.data.Permissions.getInstance().canDo("test")) {
             continue;
           }

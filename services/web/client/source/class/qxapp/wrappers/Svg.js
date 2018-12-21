@@ -26,6 +26,12 @@
 qx.Class.define("qxapp.wrappers.Svg", {
   extend: qx.core.Object,
 
+  statics: {
+    NAME: "svg.js",
+    VERSION: "2.6.4",
+    URL: "https://github.com/svgdotjs/svg.js"
+  },
+
   construct: function() {
   },
 
@@ -38,7 +44,7 @@ qx.Class.define("qxapp.wrappers.Svg", {
   },
 
   events: {
-    "SvgLibReady": "qx.event.type.Data"
+    "svgLibReady": "qx.event.type.Data"
   },
 
   members: {
@@ -54,13 +60,13 @@ qx.Class.define("qxapp.wrappers.Svg", {
       dynLoader.addListenerOnce("ready", e => {
         console.log(svgPath + " loaded");
         this.setLibReady(true);
-        this.fireDataEvent("SvgLibReady", true);
+        this.fireDataEvent("svgLibReady", true);
       }, this);
 
       dynLoader.addListener("failed", e => {
         let data = e.getData();
         console.error("failed to load " + data.script);
-        this.fireDataEvent("SvgLibReady", false);
+        this.fireDataEvent("svgLibReady", false);
       }, this);
 
       dynLoader.start();
