@@ -86,8 +86,9 @@ RUN ./docker/install-contrib.sh
 # 5. compiles source -> build-output/
 COPY --chown=scu:scu source source
 COPY --chown=scu:scu Manifest.json Manifest.json
-RUN qx compile --target=build --set osparc.vcsRef='"$(VCS_REF)"' --set osparc.vcsRefClient='"$(VCS_REF_CLIENT)"'
+RUN qx compile --target=build \
+        --set osparc.vcsRef='"$(VCS_REF)"' \
+        --set osparc.vcsRefClient='"$(VCS_REF_CLIENT)"'
 
 ENTRYPOINT []
-
-CMD ["qx", "serve", "--set", "qx.allowUrlSettings=true"]
+CMD []
