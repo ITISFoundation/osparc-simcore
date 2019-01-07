@@ -10,7 +10,7 @@ qx.Class.define("qxapp.About", {
       contentPadding: 20,
       showMaximize: false,
       showMinimize: false,
-      vresizable: false,
+      resizable: false,
       centerOnAppear: true
     });
     this.__populateEntries();
