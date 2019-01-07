@@ -110,11 +110,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       workbenchUI.addListener("removeLink", e => {
         const linkId = e.getData();
         let workbench = this.getProject().getWorkbench();
-        let currentNode = workbench.getNode(this.__currentNodeId);
-        let linkModel = workbench.getLinkModel(linkId);
+        const currentNode = workbench.getNode(this.__currentNodeId);
+        const link = workbench.getLink(linkId);
         let removed = false;
-        if (currentNode && currentNode.isContainer() && linkModel.getOutputNodeId() === currentNode.getNodeId()) {
-          let inputNode = workbench.getNode(linkModel.getInputNodeId());
+        if (currentNode && currentNode.isContainer() && link.getOutputNodeId() === currentNode.getNodeId()) {
+          let inputNode = workbench.getNode(link.getInputNodeId());
           inputNode.setIsOutputNode(false);
 
           // Remove also dependencies from outter nodes

@@ -27,8 +27,8 @@ qx.Class.define("qxapp.data.model.Workbench", {
     this.__links = {};
 
     this.setProjectName(prjName);
-    this.createNodes(wbData);
-    this.createLinks(wbData);
+    this.__createNodes(wbData);
+    this.__createLinks(wbData);
   },
 
   properties: {
@@ -95,48 +95,48 @@ qx.Class.define("qxapp.data.model.Workbench", {
     getConnectedLinks: function(nodeId) {
       let connectedLinks = [];
       for (const linkId in this.__links) {
-        const linkModel = this.__links[linkId];
-        if (linkModel.getInputNodeId() === nodeId) {
-          connectedLinks.push(linkModel.getLinkId());
+        const link = this.__links[linkId];
+        if (link.getInputNodeId() === nodeId) {
+          connectedLinks.push(link.getLinkId());
         }
-        if (linkModel.getOutputNodeId() === nodeId) {
-          connectedLinks.push(linkModel.getLinkId());
+        if (link.getOutputNodeId() === nodeId) {
+          connectedLinks.push(link.getLinkId());
         }
       }
       return connectedLinks;
     },
 
-    getLinkModel: function(linkId, node1Id, node2Id) {
+    getLink: function(linkId, node1Id, node2Id) {
       const exists = Object.prototype.hasOwnProperty.call(this.__links, linkId);
       if (exists) {
         return this.__links[linkId];
       }
       for (const id in this.__links) {
-        const linkModel = this.__links[id];
-        if (linkModel.getInputNodeId() === node1Id &&
-          linkModel.getOutputNodeId() === node2Id) {
+        const link = this.__links[id];
+        if (link.getInputNodeId() === node1Id &&
+          link.getOutputNodeId() === node2Id) {
           return this.__links[id];
         }
       }
       return null;
     },
 
-    createLinkModel: function(linkId, node1Id, node2Id) {
-      let existingLinkModel = this.getLinkModel(linkId, node1Id, node2Id);
-      if (existingLinkModel) {
-        return existingLinkModel;
+    createLink: function(linkId, node1Id, node2Id) {
+      let existingLink = this.getLink(linkId, node1Id, node2Id);
+      if (existingLink) {
+        return existingLink;
       }
-      let linkModel = new qxapp.data.model.LinkModel(linkId, node1Id, node2Id);
-      return linkModel;
+      let link = new qxapp.data.model.Link(linkId, node1Id, node2Id);
+      return link;
     },
 
-    addLinkModel: function(linkModel) {
-      const linkId = linkModel.getLinkId();
-      const node1Id = linkModel.getInputNodeId();
-      const node2Id = linkModel.getOutputNodeId();
-      let exists = this.getLinkModel(linkId, node1Id, node2Id);
+    addLink: function(link) {
+      const linkId = link.getLinkId();
+      const node1Id = link.getInputNodeId();
+      const node2Id = link.getOutputNodeId();
+      let exists = this.getLink(linkId, node1Id, node2Id);
       if (!exists) {
-        this.__links[linkId] = linkModel;
+        this.__links[linkId] = link;
       }
     },
 
@@ -159,7 +159,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
       return node;
     },
 
-    createNodes: function(workbenchData) {
+    __createNodes: function(workbenchData) {
       let keys = Object.keys(workbenchData);
       // Create first all the nodes
       for (let i=0; i<keys.length; i++) {
@@ -235,30 +235,30 @@ qx.Class.define("qxapp.data.model.Workbench", {
       return false;
     },
 
-    createLink: function(outputNodeId, inputNodeId) {
+    __createLink: function(outputNodeId, inputNodeId) {
       let node = this.getNode(inputNodeId);
       if (node) {
         node.addInputNode(outputNodeId);
       }
     },
 
-    createLinks: function(workbenchData) {
+    __createLinks: function(workbenchData) {
       for (const nodeId in workbenchData) {
         const nodeData = workbenchData[nodeId];
         if (nodeData.inputNodes) {
           for (let i=0; i < nodeData.inputNodes.length; i++) {
             const outputNodeId = nodeData.inputNodes[i];
-            this.createLink(outputNodeId, nodeId);
+            this.__createLink(outputNodeId, nodeId);
           }
         }
       }
     },
 
     removeLink: function(linkId) {
-      let linkModel = this.getLinkModel(linkId);
-      if (linkModel) {
-        const inputNodeId = linkModel.getInputNodeId();
-        const outputNodeId = linkModel.getOutputNodeId();
+      let link = this.getLink(linkId);
+      if (link) {
+        const inputNodeId = link.getInputNodeId();
+        const outputNodeId = link.getOutputNodeId();
         let node = this.getNode(outputNodeId);
         if (node) {
           node.removeInputNode(inputNodeId);

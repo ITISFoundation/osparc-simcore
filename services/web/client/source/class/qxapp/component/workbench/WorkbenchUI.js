@@ -313,8 +313,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __createLinkUI: function(node1Id, node2Id, linkId) {
-      let linkModel = this.getWorkbench().createLinkModel(linkId, node1Id, node2Id);
-      this.getWorkbench().addLinkModel(linkModel);
+      let link = this.getWorkbench().createLink(linkId, node1Id, node2Id);
+      this.getWorkbench().addLink(link);
 
       // build representation
       let node1 = this.getNodeUI(node1Id);
@@ -333,7 +333,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       const y2 = pointList[1] ? pointList[1][1] : 0;
       let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
 
-      let linkUI = new qxapp.component.workbench.LinkUI(linkModel, linkRepresentation);
+      let linkUI = new qxapp.component.workbench.LinkUI(link, linkRepresentation);
       this.__linksUI.push(linkUI);
 
       linkUI.getRepresentation().node.addEventListener("click", e => {
@@ -566,9 +566,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       linksInvolved.forEach(linkId => {
         let linkUI = this.__getLinkUI(linkId);
         if (linkUI) {
-          let node1 = this.getNodeUI(linkUI.getLinkModel().getInputNodeId());
+          let node1 = this.getNodeUI(linkUI.getLink().getInputNodeId());
           let port1 = node1.getOutputPort();
-          let node2 = this.getNodeUI(linkUI.getLinkModel().getOutputNodeId());
+          let node2 = this.getNodeUI(linkUI.getLink().getOutputNodeId());
           let port2 = node2.getInputPort();
           const pointList = this.__getLinkPoints(node1, port1, node2, port2);
           const x1 = pointList[0][0];

@@ -18,10 +18,10 @@
 qx.Class.define("qxapp.component.workbench.LinkUI", {
   extend: qx.core.Object,
 
-  construct: function(linkModel, representation) {
+  construct: function(link, representation) {
     this.base();
 
-    this.setLinkModel(linkModel);
+    this.setLink(link);
     this.setRepresentation(representation);
   },
 
@@ -30,8 +30,8 @@ qx.Class.define("qxapp.component.workbench.LinkUI", {
   },
 
   properties: {
-    linkModel: {
-      check: "qxapp.data.model.LinkModel",
+    link: {
+      check: "qxapp.data.model.Link",
       nullable: false
     },
 
@@ -42,7 +42,7 @@ qx.Class.define("qxapp.component.workbench.LinkUI", {
 
   members: {
     getLinkId: function() {
-      return this.getLinkModel().getLinkId();
+      return this.getLink().getLinkId();
     }
   }
 });
