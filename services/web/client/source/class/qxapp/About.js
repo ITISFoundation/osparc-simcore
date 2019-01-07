@@ -18,10 +18,8 @@ qx.Class.define("qxapp.About", {
 
   members: {
     __populateEntries: function() {
-      const vcsRef = qx.core.Environment.get("osparc.vcsRef");
-      const vcsRefClient = qx.core.Environment.get("osparc.vcsRefClient");
-      this.add(this.__createEntry("oSPARC", vcsRef, "https://github.com/ITISFoundation/osparc-simcore"));
-      this.add(this.__createEntry("oSPARC UI", vcsRefClient, "https://github.com/ITISFoundation/osparc-simcore/services/web/client"));
+      this.add(this.__createEntry("oSPARC", qx.core.Environment.get("osparc.vcsRef"), "https://github.com/ITISFoundation/osparc-simcore"));
+      this.add(this.__createEntry("oSPARC UI", qx.core.Environment.get("osparc.vcsRefClient"), "https://github.com/ITISFoundation/osparc-simcore/services/web/client"));
 
       this.add(new qx.ui.core.Spacer(null, 10));
 
