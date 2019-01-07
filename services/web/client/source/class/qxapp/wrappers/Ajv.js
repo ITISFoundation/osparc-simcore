@@ -13,11 +13,19 @@
 
 qx.Class.define("qxapp.wrappers.Ajv", {
   extend: qx.core.Object,
+
+  statics: {
+    NAME: "Ajv",
+    VERSION: "6.5.0",
+    URL: "https://github.com/epoberezkin/ajv"
+  },
+
   construct: function(schema, opts) {
     this.base(arguments);
     this.__ajv = new Ajv(opts);
     this.__validator = this.__ajv.compile(schema);
   },
+
   members: {
     __ajv: null,
     __validator: null,

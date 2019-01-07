@@ -1,10 +1,18 @@
 /* ************************************************************************
 
-   Copyright: 2018 undefined
+   qxapp - the simcore frontend
 
-   License: MIT license
+   https://osparc.io
 
-   Authors: undefined
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Tobias Oetiker (oetiker)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
@@ -27,6 +35,13 @@ qx.Theme.define("qxapp.theme.Font", {
     },
 
     "title-14": {
+      size: 14,
+      family: ["Roboto"],
+      color: "text",
+      bold: true
+    },
+
+    "text-14": {
       size: 14,
       family: ["Roboto"],
       color: "text"

@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* eslint no-warning-comments: "off" */
 
 const NAVIGATION_BUTTON_HEIGHT = 32;
@@ -49,7 +66,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     let dashboardBtn = new qx.ui.form.Button(this.tr("Dashboard"));
     dashboardBtn.set(commonBtnSettings);
     dashboardBtn.addListener("execute", function() {
-      this.fireEvent("DashboardPressed");
+      this.fireEvent("dashboardPressed");
     }, this);
     this.add(dashboardBtn);
 
@@ -90,8 +107,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
   },
 
   events: {
-    "NodeDoubleClicked": "qx.event.type.Data",
-    "DashboardPressed": "qx.event.type.Event"
+    "nodeDoubleClicked": "qx.event.type.Data",
+    "dashboardPressed": "qx.event.type.Event"
   },
 
   properties: {
@@ -139,7 +156,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
           }
         }
         btn.addListener("execute", function() {
-          this.fireDataEvent("NodeDoubleClicked", nodeId);
+          this.fireDataEvent("nodeDoubleClicked", nodeId);
         }, this);
         this.__mainViewCaptionLayout.add(btn);
 
@@ -166,10 +183,10 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       // Logout
 
       // TODO: add commands (i.e. short-cut system)
-      let preferences = new qx.ui.menu.Button("Preferences");
+      let preferences = new qx.ui.menu.Button(this.tr("Preferences"));
       preferences.addListener("execute", this.__onOpenAccountSettings, this);
 
-      let logout = new qx.ui.menu.Button("Logout");
+      let logout = new qx.ui.menu.Button(this.tr("Logout"));
       logout.addListener("execute", e => {
         let app = qx.core.Init.getApplication();
         app.logout();
@@ -177,11 +194,13 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
       menu.add(preferences);
       menu.addSeparator();
-      menu.add(new qx.ui.menu.Button("Groups"));
+      menu.add(new qx.ui.menu.Button(this.tr("Groups")));
       menu.addSeparator();
-      menu.add(new qx.ui.menu.Button("Help"));
-      menu.add(new qx.ui.menu.Button("Report a Problem"));
-      menu.add(new qx.ui.menu.Button("About"));
+      menu.add(new qx.ui.menu.Button(this.tr("Help")));
+      menu.add(new qx.ui.menu.Button(this.tr("Report a Problem")));
+      let aboutBtn = new qx.ui.menu.Button(this.tr("About"));
+      aboutBtn.addListener("execute", e => qxapp.About.getInstance().open());
+      menu.add(aboutBtn);
       menu.addSeparator();
       menu.add(logout);
 

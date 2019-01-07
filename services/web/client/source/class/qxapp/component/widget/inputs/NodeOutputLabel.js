@@ -1,8 +1,18 @@
 /* ************************************************************************
-   Copyright: 2018 ITIS Foundation
-   License:   MIT
-   Authors:   Odei Maiz <maiz@itis.swiss>
-   Utf8Check: äöü
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
 ************************************************************************ */
 
 /**
@@ -61,9 +71,9 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
       let control;
       switch (id) {
         case "portLabel": {
-          const title14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"]);
+          const text14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"]);
           control = new qx.ui.basic.Label().set({
-            font: title14Font,
+            font: text14Font,
             textAlign: "right",
             allowGrowX: true,
             padding: 10,
@@ -75,9 +85,9 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
           break;
         }
         case "portOutput": {
-          const title14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"]);
+          const text14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"]);
           control = new qx.ui.basic.Label().set({
-            font: title14Font,
+            font: text14Font,
             textAlign: "right",
             allowGrowX: true,
             padding: 10,

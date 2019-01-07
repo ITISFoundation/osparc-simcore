@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* eslint "qx-rules/no-refs-in-members": "warn" */
 qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
   extend: qx.ui.core.Widget,

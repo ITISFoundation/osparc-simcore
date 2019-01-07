@@ -66,7 +66,7 @@ qx.Class.define("qxapp.component.widget.PersistentIframe", {
       });
       let actionButton = this.__actionButton = new qx.ui.form.Button(null, osparc.theme.osparcdark.Image.URLS["window-maximize"]+"/20").set({
         zIndex: 1001,
-        backgroundColor: null,
+        backgroundColor: "transparent",
         decorator: null
       });
       appRoot.add(actionButton, {

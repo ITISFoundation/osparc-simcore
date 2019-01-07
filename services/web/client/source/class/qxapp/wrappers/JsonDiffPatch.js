@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /**
  * @asset(jsondiffpatch/jsondiffpatch.*js)
  * @ignore(jsondiffpatch)
@@ -8,6 +25,12 @@
 
 qx.Class.define("qxapp.wrappers.JsonDiffPatch", {
   extend: qx.core.Object,
+
+  statics: {
+    NAME: "jsondiffpatch",
+    VERSION: "0.3.11",
+    URL: "https://github.com/benjamine/jsondiffpatch"
+  },
 
   construct: function() {
     this.base(arguments);
@@ -21,10 +44,6 @@ qx.Class.define("qxapp.wrappers.JsonDiffPatch", {
       init: false,
       check: "Boolean"
     }
-  },
-
-  events: {
-    "JsonDiffPatchLibReady": "qx.event.type.Data"
   },
 
   members: {
@@ -43,13 +62,11 @@ qx.Class.define("qxapp.wrappers.JsonDiffPatch", {
         this.__diffPatcher = jsondiffpatch.create();
 
         this.setLibReady(true);
-        this.fireDataEvent("JsonDiffPatchLibReady", true);
       }, this);
 
       dynLoader.addListener("failed", e => {
         let data = e.getData();
-        console.log("failed to load " + data.script);
-        this.fireDataEvent("JsonDiffPatchLibReady", false);
+        console.error("failed to load " + data.script);
       }, this);
 
       dynLoader.start();
