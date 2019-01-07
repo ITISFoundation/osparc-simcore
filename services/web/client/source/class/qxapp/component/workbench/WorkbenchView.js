@@ -584,15 +584,15 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       if (this.__tempLinkNodeId === null) {
         return;
       }
-      let node = this.getNodeUI(this.__tempLinkNodeId);
-      if (node === null) {
+      let nodeUI = this.getNodeUI(this.__tempLinkNodeId);
+      if (nodeUI === null) {
         return;
       }
       let port;
       if (this.__tempLinkIsInput) {
-        port = node.getInputPort();
+        port = nodeUI.getInputPort();
       } else {
-        port = node.getOutputPort();
+        port = nodeUI.getOutputPort();
       }
       if (port === null) {
         return;
@@ -602,7 +602,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       let y1;
       let x2;
       let y2;
-      const portPos = node.getLinkPoint(port);
+      const portPos = nodeUI.getLinkPoint(port);
       // FIXME:
       const navBarHeight = 50;
       const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
@@ -712,11 +712,11 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     },
 
     __clearNode: function(nodeId) {
-      let node = this.getNodeUI(nodeId);
-      if (this.__desktop.getChildren().includes(node)) {
-        this.__desktop.remove(node);
+      let nodeUI = this.getNodeUI(nodeId);
+      if (this.__desktop.getChildren().includes(nodeUI)) {
+        this.__desktop.remove(nodeUI);
       }
-      let index = this.__nodesUI.indexOf(node);
+      let index = this.__nodesUI.indexOf(nodeUI);
       if (index > -1) {
         this.__nodesUI.splice(index, 1);
       }
@@ -826,9 +826,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     },
 
     updateProgress: function(nodeId, progress) {
-      let node = this.getNodeUI(nodeId);
-      if (node) {
-        node.setProgress(progress);
+      let nodeUI = this.getNodeUI(nodeId);
+      if (nodeUI) {
+        nodeUI.setProgress(progress);
       }
     },
 
