@@ -95,12 +95,12 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     getConnectedLinks: function(nodeId) {
       let connectedLinks = [];
       for (const linkId in this.__links) {
-        const link = this.__links[linkId];
-        if (link.getInputNodeId() === nodeId) {
-          connectedLinks.push(link.getLinkId());
+        const linkModel = this.__links[linkId];
+        if (linkModel.getInputNodeId() === nodeId) {
+          connectedLinks.push(linkModel.getLinkId());
         }
-        if (link.getOutputNodeId() === nodeId) {
-          connectedLinks.push(link.getLinkId());
+        if (linkModel.getOutputNodeId() === nodeId) {
+          connectedLinks.push(linkModel.getLinkId());
         }
       }
       return connectedLinks;
@@ -112,9 +112,9 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
         return this.__links[linkId];
       }
       for (const id in this.__links) {
-        const link = this.__links[id];
-        if (link.getInputNodeId() === node1Id &&
-          link.getOutputNodeId() === node2Id) {
+        const linkModel = this.__links[id];
+        if (linkModel.getInputNodeId() === node1Id &&
+          linkModel.getOutputNodeId() === node2Id) {
           return this.__links[id];
         }
       }
@@ -137,7 +137,6 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       let exists = this.getLinkModel(linkId, node1Id, node2Id);
       if (!exists) {
         this.__links[linkId] = linkModel;
-        // this.fireEvent("workbenchModelChanged");
       }
     },
 

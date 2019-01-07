@@ -111,10 +111,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         const linkId = e.getData();
         let workbenchModel = this.getProjectModel().getWorkbenchModel();
         let currentNodeModel = workbenchModel.getNodeModel(this.__currentNodeId);
-        let link = workbenchModel.getLinkModel(linkId);
+        let linkModel = workbenchModel.getLinkModel(linkId);
         let removed = false;
-        if (currentNodeModel && currentNodeModel.isContainer() && link.getOutputNodeId() === currentNodeModel.getNodeId()) {
-          let inputNode = workbenchModel.getNodeModel(link.getInputNodeId());
+        if (currentNodeModel && currentNodeModel.isContainer() && linkModel.getOutputNodeId() === currentNodeModel.getNodeId()) {
+          let inputNode = workbenchModel.getNodeModel(linkModel.getInputNodeId());
           inputNode.setIsOutputNode(false);
 
           // Remove also dependencies from outter nodes

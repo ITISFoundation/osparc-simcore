@@ -15,34 +15,17 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.component.workbench.LinkBase", {
+qx.Class.define("qxapp.data.model.NodeStatus", {
   extend: qx.core.Object,
 
-  construct: function(linkModel, representation) {
+  construct: function() {
     this.base();
-
-    this.setLinkModel(linkModel);
-    this.setRepresentation(representation);
-  },
-
-  events: {
-    "linkSelected": "qx.event.type.Data"
   },
 
   properties: {
-    linkModel: {
-      check: "qxapp.data.model.LinkModel",
+    node: {
+      check: "qxapp.data.model.Node",
       nullable: false
-    },
-
-    representation: {
-      init: null
-    }
-  },
-
-  members: {
-    getLinkId: function() {
-      return this.getLinkModel().getLinkId();
     }
   }
 });

@@ -333,20 +333,20 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       const y2 = pointList[1] ? pointList[1][1] : 0;
       let linkRepresentation = this.__svgWidget.drawCurve(x1, y1, x2, y2);
 
-      let link = new qxapp.component.workbench.LinkBase(linkModel, linkRepresentation);
-      this.__linksUI.push(link);
+      let linkUI = new qxapp.component.workbench.LinkUI(linkModel, linkRepresentation);
+      this.__linksUI.push(linkUI);
 
-      link.getRepresentation().node.addEventListener("click", e => {
+      linkUI.getRepresentation().node.addEventListener("click", e => {
         // this is needed to get out of the context of svg
-        link.fireDataEvent("linkSelected", link.getLinkId());
+        linkUI.fireDataEvent("linkSelected", linkUI.getLinkId());
         e.stopPropagation();
       }, this);
 
-      link.addListener("linkSelected", e => {
-        this.__selectedItemChanged(link.getLinkId());
+      linkUI.addListener("linkSelected", e => {
+        this.__selectedItemChanged(linkUI.getLinkId());
       }, this);
 
-      return link;
+      return linkUI;
     },
 
     __createDragDropMechanism: function(nodeBase) {
@@ -564,18 +564,18 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       let linksInvolved = this.getWorkbenchModel().getConnectedLinks(node.getNodeId());
 
       linksInvolved.forEach(linkId => {
-        let link = this.__getLinkUI(linkId);
-        if (link) {
-          let node1 = this.getNodeUI(link.getLinkModel().getInputNodeId());
+        let linkUI = this.__getLinkUI(linkId);
+        if (linkUI) {
+          let node1 = this.getNodeUI(linkUI.getLinkModel().getInputNodeId());
           let port1 = node1.getOutputPort();
-          let node2 = this.getNodeUI(link.getLinkModel().getOutputNodeId());
+          let node2 = this.getNodeUI(linkUI.getLinkModel().getOutputNodeId());
           let port2 = node2.getInputPort();
           const pointList = this.__getLinkPoints(node1, port1, node2, port2);
           const x1 = pointList[0][0];
           const y1 = pointList[0][1];
           const x2 = pointList[1][0];
           const y2 = pointList[1][1];
-          this.__svgWidget.updateCurve(link.getRepresentation(), x1, y1, x2, y2);
+          this.__svgWidget.updateCurve(linkUI.getRepresentation(), x1, y1, x2, y2);
         }
       });
     },
