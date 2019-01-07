@@ -110,19 +110,19 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       workbenchView.addListener("removeLink", e => {
         const linkId = e.getData();
         let workbenchModel = this.getProjectModel().getWorkbenchModel();
-        let currentNodeModel = workbenchModel.getNodeModel(this.__currentNodeId);
+        let currentNode = workbenchModel.getNode(this.__currentNodeId);
         let linkModel = workbenchModel.getLinkModel(linkId);
         let removed = false;
-        if (currentNodeModel && currentNodeModel.isContainer() && linkModel.getOutputNodeId() === currentNodeModel.getNodeId()) {
-          let inputNode = workbenchModel.getNodeModel(linkModel.getInputNodeId());
+        if (currentNode && currentNode.isContainer() && linkModel.getOutputNodeId() === currentNode.getNodeId()) {
+          let inputNode = workbenchModel.getNode(linkModel.getInputNodeId());
           inputNode.setIsOutputNode(false);
 
           // Remove also dependencies from outter nodes
           const cNodeId = inputNode.getNodeId();
-          const allNodes = workbenchModel.getNodeModels(true);
+          const allNodes = workbenchModel.getNodes(true);
           for (const nodeId in allNodes) {
             let node = allNodes[nodeId];
-            if (node.isInputNode(cNodeId) && !currentNodeModel.isInnerNode(node.getNodeId())) {
+            if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
               workbenchModel.removeLink(linkId);
             }
           }
@@ -161,8 +161,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }, this);
 
       workbenchModel.addListener("updatePipeline", e => {
-        let nodeModel = e.getData();
-        this.__updatePipeline(nodeModel);
+        let node = e.getData();
+        this.__updatePipeline(node);
       }, this);
 
       workbenchModel.addListener("showInLogger", ev => {
@@ -196,23 +196,23 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__workbenchView.loadModel(workbenchModel);
         this.showInMainView(this.__workbenchView, nodeId);
       } else {
-        let nodeModel = workbenchModel.getNodeModel(nodeId);
+        let node = workbenchModel.getNode(nodeId);
 
         let widget;
-        if (nodeModel.isContainer()) {
+        if (node.isContainer()) {
           widget = this.__workbenchView;
         } else {
-          this.__nodeView.setNodeModel(nodeModel);
-          if (nodeModel.getMetaData().key.includes("file-picker")) {
-            widget = new qxapp.component.widget.FilePicker(nodeModel, this.getProjectModel().getUuid());
+          this.__nodeView.setNode(node);
+          if (node.getMetaData().key.includes("file-picker")) {
+            widget = new qxapp.component.widget.FilePicker(node, this.getProjectModel().getUuid());
           } else {
             widget = this.__nodeView;
           }
         }
         this.showInMainView(widget, nodeId);
 
-        if (nodeModel.isContainer()) {
-          this.__workbenchView.loadModel(nodeModel);
+        if (node.isContainer()) {
+          this.__workbenchView.loadModel(node);
         }
       }
 
@@ -220,11 +220,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (nodeId === "root") {
         this.showScreenshotInExtraView("workbench");
       } else {
-        let nodeModel = workbenchModel.getNodeModel(nodeId);
-        if (nodeModel.isContainer()) {
+        let node = workbenchModel.getNode(nodeId);
+        if (node.isContainer()) {
           this.showScreenshotInExtraView("container");
         } else {
-          let nodeKey = nodeModel.getKey();
+          let nodeKey = node.getKey();
           if (nodeKey.includes("file-picker")) {
             this.showScreenshotInExtraView("file-picker");
           } else if (nodeKey.includes("modeler")) {
@@ -325,7 +325,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       return currentPipeline;
     },
 
-    __updatePipeline: function(nodeModel) {
+    __updatePipeline: function(node) {
       let currentPipeline = this.__getCurrentPipeline();
       let url = "/computation/pipeline/" + encodeURIComponent(this.getProjectModel().getUuid());
       let req = new qxapp.io.request.ApiRequest(url, "PUT");
@@ -339,8 +339,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       req.addListener("success", e => {
         this.getLogger().debug("Workbench", "Pipeline successfully updated");
-        if (nodeModel) {
-          nodeModel.retrieveInputs();
+        if (node) {
+          node.retrieveInputs();
         }
       }, this);
       req.addListener("error", e => {

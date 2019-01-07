@@ -34,7 +34,7 @@ qx.Class.define("qxapp.utils.UuidToName", {
           return prj.getName();
         }
         const wrkb = prj.getWorkbenchModel();
-        const allNodes = wrkb.getNodeModels(true);
+        const allNodes = wrkb.getNodes(true);
         for (const nodeId in allNodes) {
           const node = allNodes[nodeId];
           if (itemUuid === node.getNodeId()) {

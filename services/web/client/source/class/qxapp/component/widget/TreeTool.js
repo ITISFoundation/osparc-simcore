@@ -130,7 +130,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
     },
 
     populateTree: function() {
-      const topLevelNodes = this.getWorkbenchModel().getNodeModels();
+      const topLevelNodes = this.getWorkbenchModel().getNodes();
       let data = {
         label: this.getProjectName(),
         children: this.__convertModel(topLevelNodes),
@@ -222,8 +222,8 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
         const data = e.getData();
         const newLabel = data.newLabel;
         const nodeId = selectedItem.getNodeId();
-        let nodeModel = this.getWorkbenchModel().getNodeModel(nodeId);
-        nodeModel.setLabel(newLabel);
+        let node = this.getWorkbenchModel().getNode(nodeId);
+        node.setLabel(newLabel);
       }, this);
       const bounds = this.getLayoutParent().getBounds();
       treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);

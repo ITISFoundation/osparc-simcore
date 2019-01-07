@@ -20,13 +20,13 @@
 qx.Class.define("qxapp.component.widget.InputsMapper", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeModel, mapper) {
+  construct: function(node, mapper) {
     this.base();
 
     let widgetLayout = new qx.ui.layout.VBox(5);
     this._setLayout(widgetLayout);
 
-    this.setNodeModel(nodeModel);
+    this.setNode(node);
     this.setMapper(mapper);
 
     let tree = this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
@@ -124,7 +124,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
     });
 
     let data = {
-      label: nodeModel.getLabel(),
+      label: node.getLabel(),
       isRoot: true,
       children: []
     };
@@ -136,15 +136,15 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
           let newBranch = {
             key: defValueId,
             label: defValueId.replace("-UUID", ""),
-            nodeKey: nodeModel.getKey(),
+            nodeKey: node.getKey(),
             portKey: "myPort",
             isDir: true,
             children: []
           };
           let newItemBranch = qx.data.marshal.Json.createModel(newBranch, true);
-          const itemProps = qxapp.data.Store.getInstance().getItem(null, Object.keys(nodeModel.getInputsDefault())[0], defValueId);
+          const itemProps = qxapp.data.Store.getInstance().getItem(null, Object.keys(node.getInputsDefault())[0], defValueId);
           if (itemProps) {
-            let form = new qxapp.component.form.Auto(itemProps, this.getNodeModel());
+            let form = new qxapp.component.form.Auto(itemProps, this.getNode());
             let propsWidget = new qxapp.component.form.renderer.PropForm(form);
             newItemBranch["propsWidget"] = propsWidget;
           }
@@ -154,7 +154,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
             let newLeaf = {
               key: values[j],
               label: values[j],
-              nodeKey: nodeModel.getKey(),
+              nodeKey: node.getKey(),
               portKey: "myPort",
               isDir: true
             };
@@ -209,8 +209,8 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
   },
 
   properties: {
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel",
+    node: {
+      check: "qxapp.data.model.Node",
       nullable: false
     },
 
@@ -234,7 +234,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
         // Hmmmm not sure about the double getKey :(
         const itemProps = qxapp.data.Store.getInstance().getItem(null, fromPortKey, newItem.getKey().getKey());
         if (itemProps) {
-          let form = new qxapp.component.form.Auto(itemProps, this.getNodeModel());
+          let form = new qxapp.component.form.Auto(itemProps, this.getNode());
           let propsWidget = new qxapp.component.form.renderer.PropForm(form);
           newItem["propsWidget"] = propsWidget;
         }
@@ -249,7 +249,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
           isBranch = true;
         }
       }
-      const isDefault = candidate === this.getNodeModel().getKey();
+      const isDefault = candidate === this.getNode().getKey();
       return isDefault || isBranch;
     },
 

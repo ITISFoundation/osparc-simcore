@@ -21,17 +21,17 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
      *
      * @param vizWidget {Widget} visualization widget to embedd
      */
-  construct: function(form, workbenchModel, nodeModel) {
-    // workbenchModel and nodeModel are necessary for creating links
+  construct: function(form, workbenchModel, node) {
+    // workbenchModel and node are necessary for creating links
     if (workbenchModel) {
       this.setWorkbenchModel(workbenchModel);
     } else {
       this.setWorkbenchModel(null);
     }
-    if (nodeModel) {
-      this.setNodeModel(nodeModel);
+    if (node) {
+      this.setNode(node);
     } else {
-      this.setNodeModel(null);
+      this.setNode(null);
     }
 
     this.base(arguments, form);
@@ -53,8 +53,8 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       nullable: true
     },
 
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel",
+    node: {
+      check: "qxapp.data.model.Node",
       nullable: true
     }
   },
@@ -106,7 +106,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       for (const portId in data) {
         let ctrl = this._form.getControl(portId);
         if (ctrl && ctrl.link) {
-          if (this.getNodeModel().getKey()
+          if (this.getNode().getKey()
             .includes("/neuroman")) {
             // HACK: Only Neuroman should enter here
             data[portId] = ctrl.link["output"];
@@ -166,9 +166,9 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
 
     __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
       if (this.getWorkbenchModel()) {
-        const node1 = this.getWorkbenchModel().getNodeModel(node1Id);
+        const node1 = this.getWorkbenchModel().getNode(node1Id);
         const port1 = node1.getOutput(port1Id);
-        const node2 = this.getWorkbenchModel().getNodeModel(node2Id);
+        const node2 = this.getWorkbenchModel().getNode(node2Id);
         const port2 = node2.getInput(port2Id);
         return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
       }
@@ -176,9 +176,9 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     },
 
     __createDropMechanism: function(uiElement, portId) {
-      if (this.getNodeModel()) {
+      if (this.getNode()) {
         uiElement.setDroppable(true);
-        uiElement.nodeId = this.getNodeModel().getNodeId();
+        uiElement.nodeId = this.getNode().getNodeId();
         uiElement.portId = portId;
 
         uiElement.addListener("dragover", e => {
@@ -205,7 +205,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             const to = e.getCurrentTarget();
             // let dropNodeId = to.nodeId;
             let dropPortId = to.portId;
-            this.getNodeModel().addPortLink(dropPortId, dragNodeId, dragPortId);
+            this.getNode().addPortLink(dropPortId, dragNodeId, dragPortId);
           }
         }, this);
       }

@@ -18,10 +18,10 @@
 qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeModel, port, portKey) {
+  construct: function(node, port, portKey) {
     this.base();
 
-    this.setNodeModel(nodeModel);
+    this.setNode(node);
 
     let tree = this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children");
 
@@ -34,7 +34,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
       configureItem: item => {
         item.set({
           isDir: !portKey.includes("modeler") && !portKey.includes("sensorSettingAPI") && !portKey.includes("neuronsSetting"),
-          nodeKey: nodeModel.getKey(),
+          nodeKey: node.getKey(),
           portKey: portKey,
           draggable: true
         });
@@ -47,7 +47,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
       }
     });
 
-    const itemList = qxapp.data.Store.getInstance().getItemList(nodeModel.getKey(), portKey);
+    const itemList = qxapp.data.Store.getInstance().getItemList(node.getKey(), portKey);
     const showAsDirs = !portKey.includes("modeler") && !portKey.includes("sensorSettingAPI") && !portKey.includes("neuronsSetting");
     const children = qxapp.data.Converters.fromAPITreeToVirtualTreeModel(itemList, showAsDirs);
     let data = {
@@ -59,8 +59,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
   },
 
   properties: {
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel",
+    node: {
+      check: "qxapp.data.model.Node",
       nullable: false
     }
   },

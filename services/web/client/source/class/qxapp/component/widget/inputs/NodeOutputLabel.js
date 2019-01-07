@@ -25,10 +25,10 @@
 qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeModel, port, portKey) {
+  construct: function(node, port, portKey) {
     this.base();
 
-    this.setNodeModel(nodeModel);
+    this.setNode(node);
 
     this._setLayout(new qx.ui.layout.HBox(5));
 
@@ -60,8 +60,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
   },
 
   properties: {
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel",
+    node: {
+      check: "qxapp.data.model.Node",
       nullable: false
     }
   },
@@ -104,7 +104,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
 
     __createDragMechanism: function(uiPort, portKey) {
       uiPort.setDraggable(true);
-      uiPort.nodeId = this.getNodeModel().getNodeId();
+      uiPort.nodeId = this.getNode().getNodeId();
       uiPort.portId = portKey;
 
       uiPort.addListener("dragstart", e => {

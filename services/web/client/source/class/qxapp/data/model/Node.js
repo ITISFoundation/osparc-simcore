@@ -17,7 +17,7 @@
 
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.data.model.NodeModel", {
+qx.Class.define("qxapp.data.model.Node", {
   extend: qx.core.Object,
 
   construct: function(workbenchModel, key, version, uuid) {
@@ -211,8 +211,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return innerNodes;
     },
 
-    addInnerNode: function(innerNodeId, innerNodeModel) {
-      this.__innerNodes[innerNodeId] = innerNodeModel;
+    addInnerNode: function(innerNodeId, innerNode) {
+      this.__innerNodes[innerNodeId] = innerNode;
     },
 
     removeInnerNode: function(innerNodeId) {

@@ -27,7 +27,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     this.__links = {};
 
     this.setProjectName(prjName);
-    this.createNodeModels(wbData);
+    this.createNodes(wbData);
     this.createLinks(wbData);
   },
 
@@ -53,8 +53,8 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return false;
     },
 
-    getNodeModel: function(nodeId) {
-      const allNodes = this.getNodeModels(true);
+    getNode: function(nodeId) {
+      const allNodes = this.getNodes(true);
       const exists = Object.prototype.hasOwnProperty.call(allNodes, nodeId);
       if (exists) {
         return allNodes[nodeId];
@@ -62,7 +62,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       return null;
     },
 
-    getNodeModels: function(recursive = false) {
+    getNodes: function(recursive = false) {
       let nodes = Object.assign({}, this.__nodesTopLevel);
       if (recursive) {
         for (const nodeId in this.__nodesTopLevel) {
@@ -79,10 +79,10 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       }
       let nodePath = [];
       nodePath.unshift(nodeId);
-      const nodeModel = this.getNodeModel(nodeId);
-      let parentNodeId = nodeModel.getParentNodeId();
+      const node = this.getNode(nodeId);
+      let parentNodeId = node.getParentNodeId();
       while (parentNodeId) {
-        const checkThisNode = this.getNodeModel(parentNodeId);
+        const checkThisNode = this.getNode(parentNodeId);
         if (checkThisNode) {
           nodePath.unshift(parentNodeId);
           parentNodeId = checkThisNode.getParentNodeId();
@@ -140,33 +140,33 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       }
     },
 
-    createNodeModel: function(key, version, uuid, nodeData) {
-      let existingNodeModel = this.getNodeModel(uuid);
-      if (existingNodeModel) {
-        return existingNodeModel;
+    createNode: function(key, version, uuid, nodeData) {
+      let existingNode = this.getNode(uuid);
+      if (existingNode) {
+        return existingNode;
       }
-      let nodeModel = new qxapp.data.model.NodeModel(this, key, version, uuid);
-      nodeModel.addListener("showInLogger", e => {
+      let node = new qxapp.data.model.Node(this, key, version, uuid);
+      node.addListener("showInLogger", e => {
         this.fireDataEvent("showInLogger", e.getData());
       }, this);
-      nodeModel.addListener("updatePipeline", e => {
+      node.addListener("updatePipeline", e => {
         this.fireDataEvent("updatePipeline", e.getData());
       }, this);
-      this.fireDataEvent("NodeAdded", nodeModel);
+      this.fireDataEvent("NodeAdded", node);
       if (nodeData) {
-        nodeModel.populateNodeData(nodeData);
+        node.populateNodeData(nodeData);
       }
-      return nodeModel;
+      return node;
     },
 
-    createNodeModels: function(workbenchData) {
+    createNodes: function(workbenchData) {
       let keys = Object.keys(workbenchData);
       // Create first all the nodes
       for (let i=0; i<keys.length; i++) {
         const nodeId = keys[i];
         const nodeData = workbenchData[nodeId];
         if (nodeData.parent && nodeData.parent !== null) {
-          let parentNode = this.getNodeModel(nodeData.parent);
+          let parentNode = this.getNode(nodeData.parent);
           if (parentNode === null) {
             // If parent was not yet created, delay the creation of its' children
             keys.push(nodeId);
@@ -181,19 +181,19 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
             continue;
           }
         }
-        let nodeModel = null;
+        let node = null;
         if (nodeData.key) {
           // not container
-          nodeModel = this.createNodeModel(nodeData.key, nodeData.version, nodeId);
+          node = this.createNode(nodeData.key, nodeData.version, nodeId);
         } else {
           // container
-          nodeModel = this.createNodeModel(null, null, nodeId, nodeData);
+          node = this.createNode(null, null, nodeId, nodeData);
         }
         if (nodeData.parent) {
-          let parentModel = this.getNodeModel(nodeData.parent);
-          this.addNodeModel(nodeModel, parentModel);
+          let parentModel = this.getNode(nodeData.parent);
+          this.addNode(node, parentModel);
         } else {
-          this.addNodeModel(nodeModel);
+          this.addNode(node);
         }
       }
 
@@ -201,34 +201,34 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       for (let i=0; i<keys.length; i++) {
         const nodeId = keys[i];
         const nodeData = workbenchData[nodeId];
-        this.getNodeModel(nodeId).populateNodeData(nodeData);
+        this.getNode(nodeId).populateNodeData(nodeData);
       }
     },
 
-    addNodeModel: function(nodeModel, parentNodeModel) {
-      const uuid = nodeModel.getNodeId();
-      if (parentNodeModel) {
-        parentNodeModel.addInnerNode(uuid, nodeModel);
-        nodeModel.setParentNodeId(parentNodeModel.getNodeId());
+    addNode: function(node, parentNode) {
+      const uuid = node.getNodeId();
+      if (parentNode) {
+        parentNode.addInnerNode(uuid, node);
+        node.setParentNodeId(parentNode.getNodeId());
       } else {
-        this.__nodesTopLevel[uuid] = nodeModel;
+        this.__nodesTopLevel[uuid] = node;
       }
       this.fireEvent("workbenchModelChanged");
     },
 
     removeNode: function(nodeId) {
-      let nodeModel = this.getNodeModel(nodeId);
-      if (nodeModel) {
+      let node = this.getNode(nodeId);
+      if (node) {
         const isTopLevel = Object.prototype.hasOwnProperty.call(this.__nodesTopLevel, nodeId);
         if (isTopLevel) {
           delete this.__nodesTopLevel[nodeId];
         }
-        const parentNodeId = nodeModel.getParentNodeId();
+        const parentNodeId = node.getParentNodeId();
         if (parentNodeId) {
-          let parentNodeModel = this.getNodeModel(parentNodeId);
-          parentNodeModel.removeInnerNode(nodeId);
+          let parentNode = this.getNode(parentNodeId);
+          parentNode.removeInnerNode(nodeId);
         }
-        nodeModel.removeNode();
+        node.removeNode();
         this.fireEvent("workbenchModelChanged");
         return true;
       }
@@ -236,7 +236,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
     },
 
     createLink: function(outputNodeId, inputNodeId) {
-      let node = this.getNodeModel(inputNodeId);
+      let node = this.getNode(inputNodeId);
       if (node) {
         node.addInputNode(outputNodeId);
       }
@@ -259,7 +259,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       if (linkModel) {
         const inputNodeId = linkModel.getInputNodeId();
         const outputNodeId = linkModel.getOutputNodeId();
-        let node = this.getNodeModel(outputNodeId);
+        let node = this.getNode(outputNodeId);
         if (node) {
           node.removeInputNode(inputNodeId);
           delete this.__links[linkId];
@@ -271,34 +271,34 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
 
     serializeWorkbench: function(saveContainers = true, savePosition = true) {
       let workbench = {};
-      const allModels = this.getNodeModels(true);
+      const allModels = this.getNodes(true);
       for (const nodeId in allModels) {
-        const nodeModel = allModels[nodeId];
-        if (!saveContainers && nodeModel.isContainer()) {
+        const node = allModels[nodeId];
+        if (!saveContainers && node.isContainer()) {
           continue;
         }
 
         // node generic
-        let node = workbench[nodeModel.getNodeId()] = {
-          label: nodeModel.getLabel(),
-          inputs: nodeModel.getInputValues(), // can a container have inputs?
-          inputNodes: nodeModel.getInputNodes(),
-          outputNode: nodeModel.getIsOutputNode(),
-          outputs: nodeModel.getOutputValues(), // can a container have outputs?
-          parent: nodeModel.getParentNodeId()
+        let nodeEntry = workbench[node.getNodeId()] = {
+          label: node.getLabel(),
+          inputs: node.getInputValues(), // can a container have inputs?
+          inputNodes: node.getInputNodes(),
+          outputNode: node.getIsOutputNode(),
+          outputs: node.getOutputValues(), // can a container have outputs?
+          parent: node.getParentNodeId()
         };
 
         if (savePosition) {
-          node.position = {
-            x: nodeModel.getPosition().x,
-            y: nodeModel.getPosition().y
+          nodeEntry.position = {
+            x: node.getPosition().x,
+            y: node.getPosition().y
           };
         }
 
         // node especific
-        if (!nodeModel.isContainer()) {
-          node.key = nodeModel.getKey();
-          node.version = nodeModel.getVersion();
+        if (!node.isContainer()) {
+          nodeEntry.key = node.getKey();
+          nodeEntry.version = node.getVersion();
         }
       }
       return workbench;

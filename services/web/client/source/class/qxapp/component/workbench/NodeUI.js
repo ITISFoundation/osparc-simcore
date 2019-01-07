@@ -21,7 +21,7 @@ const portHeight = 16;
 qx.Class.define("qxapp.component.workbench.NodeUI", {
   extend: qx.ui.window.Window,
 
-  construct: function(nodeModel) {
+  construct: function(node) {
     this.base();
 
     this.set({
@@ -36,12 +36,12 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       maxWidth: nodeWidth
     });
 
-    this.setNodeModel(nodeModel);
+    this.setNode(node);
   },
 
   properties: {
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel",
+    node: {
+      check: "qxapp.data.model.Node",
       nullable: false
     }
   },
@@ -63,11 +63,11 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     __progressBar: null,
 
     getNodeId: function() {
-      return this.getNodeModel().getNodeId();
+      return this.getNode().getNodeId();
     },
 
     getMetaData: function() {
-      return this.getNodeModel().getMetaData();
+      return this.getNode().getMetaData();
     },
 
     createNodeLayout: function() {
@@ -112,14 +112,14 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     },
 
     populateNodeLayout: function() {
-      const nodeModel = this.getNodeModel();
-      nodeModel.bind("label", this, "caption");
-      if (nodeModel.isContainer()) {
+      const node = this.getNode();
+      node.bind("label", this, "caption");
+      if (node.isContainer()) {
         this.setIcon("@FontAwesome5Solid/folder-open/14");
       }
       this.__inputPort = {};
       this.__outputPort = {};
-      const metaData = nodeModel.getMetaData();
+      const metaData = node.getMetaData();
       if (metaData) {
         this.__createUIPorts(true, metaData.inputs);
         this.__createUIPorts(false, metaData.outputs);
@@ -136,7 +136,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
 
     __createUIPorts: function(isInput, ports) {
       // Always create ports if node is a container
-      if (!this.getNodeModel().isContainer() && Object.keys(ports).length < 1) {
+      if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
         return;
       }
       let portUI = this.__createUIPort(isInput);
