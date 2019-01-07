@@ -112,8 +112,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
   },
 
   properties: {
-    projectModel: {
-      check: "qxapp.data.model.ProjectModel",
+    project: {
+      check: "qxapp.data.model.Project",
       nullable: true
     }
   },
@@ -147,9 +147,9 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
         });
         const nodeId = nodeIds[i];
         if (nodeId === "root") {
-          this.getProjectModel().bind("name", btn, "label");
+          this.getProject().bind("name", btn, "label");
         } else {
-          const node = this.getProjectModel().getWorkbench()
+          const node = this.getProject().getWorkbench()
             .getNode(nodeId);
           if (node) {
             node.bind("label", btn, "label");

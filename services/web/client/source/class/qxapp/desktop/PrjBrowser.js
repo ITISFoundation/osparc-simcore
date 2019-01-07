@@ -106,28 +106,28 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           name: data.prjTitle,
           description: data.prjDescription
         };
-        this.__startProjetModel(newPrj);
+        this.__startProject(newPrj);
         win.close();
       }, this);
       win.add(newProjectDlg);
       win.open();
     },
 
-    __startProjetModel: function(prjData) {
+    __startProject: function(prjData) {
       this.fireDataEvent("startProject", prjData);
     },
 
-    __createProjectModel: function(projectId, fromTemplate = false) {
+    __createProject: function(projectId, fromTemplate = false) {
       let resource = this.__projectResources.project;
 
       resource.addListenerOnce("getSuccess", e => {
         // TODO: is this listener added everytime we call ?? It does not depend on input params
-        // but it needs to be here to implemenet startProjectModel
+        // but it needs to be here to implemenet startProject
         let projectData = e.getRequest().getResponse().data;
         if (fromTemplate) {
           projectData = qxapp.utils.Utils.replaceTemplateUUIDs(projectData);
         }
-        this.__startProjetModel(projectData);
+        this.__startProject(projectData);
       }, this);
 
       resource.addListener("getError", e => {
@@ -270,7 +270,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           item.addListener("dbltap", e => {
             const prjUuid = item.getModel();
             if (prjUuid) {
-              that.__createProjectModel(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
+              that.__createProject(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
             } else {
               that.__newPrjBtnClkd(); // eslint-disable-line no-underscore-dangle
             }

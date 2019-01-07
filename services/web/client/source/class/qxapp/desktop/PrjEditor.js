@@ -22,14 +22,14 @@
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function(projectModel) {
+  construct: function(project) {
     this.base(arguments, "horizontal");
 
-    qxapp.utils.UuidToName.getInstance().setProjectModel(projectModel);
+    qxapp.utils.UuidToName.getInstance().setProject(project);
 
     this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
 
-    this.setProjectModel(projectModel);
+    this.setProject(project);
 
     let mainPanel = this.__mainPanel = new qxapp.desktop.mainPanel.MainPanel().set({
       minWidth: 1000
@@ -51,8 +51,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   },
 
   properties: {
-    projectModel: {
-      check: "qxapp.data.model.ProjectModel",
+    project: {
+      check: "qxapp.data.model.Project",
       nullable: false
     },
 
@@ -81,7 +81,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __currentNodeId: null,
 
     initDefault: function() {
-      let project = this.getProjectModel();
+      let project = this.getProject();
 
       let treeView = this.__treeView = new qxapp.component.widget.TreeTool(project.getName(), project.getWorkbench());
       treeView.addListener("addNode", () => {
@@ -109,7 +109,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }, this);
       workbenchUI.addListener("removeLink", e => {
         const linkId = e.getData();
-        let workbench = this.getProjectModel().getWorkbench();
+        let workbench = this.getProject().getWorkbench();
         let currentNode = workbench.getNode(this.__currentNodeId);
         let linkModel = workbench.getLinkModel(linkId);
         let removed = false;
@@ -155,7 +155,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__stopPipeline();
       }, this);
 
-      let workbench = this.getProjectModel().getWorkbench();
+      let workbench = this.getProject().getWorkbench();
       workbench.addListener("workbenchChanged", function() {
         this.__workbenchChanged();
       }, this);
@@ -191,7 +191,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__currentNodeId = nodeId;
       this.__treeView.nodeSelected(nodeId);
 
-      const workbench = this.getProjectModel().getWorkbench();
+      const workbench = this.getProject().getWorkbench();
       if (nodeId === "root") {
         this.__workbenchUI.loadModel(workbench);
         this.showInMainView(this.__workbenchUI, nodeId);
@@ -204,7 +204,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         } else {
           this.__nodeView.setNode(node);
           if (node.getMetaData().key.includes("file-picker")) {
-            widget = new qxapp.component.widget.FilePicker(node, this.getProjectModel().getUuid());
+            widget = new qxapp.component.widget.FilePicker(node, this.getProject().getUuid());
           } else {
             widget = this.__nodeView;
           }
@@ -258,7 +258,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         return;
       }
       // remove first the connected links
-      let workbench = this.getProjectModel().getWorkbench();
+      let workbench = this.getProject().getWorkbench();
       let connectedLinks = workbench.getConnectedLinks(nodeId);
       for (let i=0; i<connectedLinks.length; i++) {
         const linkId = connectedLinks[i];
@@ -286,7 +286,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       this.__mainPanel.setMainView(widget);
 
-      let nodesPath = this.getProjectModel().getWorkbench().getPathIds(nodeId);
+      let nodesPath = this.getProject().getWorkbench().getPathIds(nodeId);
       this.fireDataEvent("changeMainViewCaption", nodesPath);
     },
 
@@ -310,7 +310,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __getCurrentPipeline: function() {
       const saveContainers = false;
       const savePosition = false;
-      let currentPipeline = this.getProjectModel().getWorkbench().serializeWorkbench(saveContainers, savePosition);
+      let currentPipeline = this.getProject().getWorkbench().serializeWorkbench(saveContainers, savePosition);
       for (const nodeId in currentPipeline) {
         let currentNode = currentPipeline[nodeId];
         if (currentNode.key.includes("/neuroman")) {
@@ -327,7 +327,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     __updatePipeline: function(node) {
       let currentPipeline = this.__getCurrentPipeline();
-      let url = "/computation/pipeline/" + encodeURIComponent(this.getProjectModel().getUuid());
+      let url = "/computation/pipeline/" + encodeURIComponent(this.getProject().getUuid());
       let req = new qxapp.io.request.ApiRequest(url, "PUT");
       let data = {};
       data["workbench"] = currentPipeline;
@@ -385,7 +385,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       // post pipeline
       this.__pipelineId = null;
       let currentPipeline = this.__getCurrentPipeline();
-      let url = "/computation/pipeline/" + encodeURIComponent(this.getProjectModel().getUuid()) + "/start";
+      let url = "/computation/pipeline/" + encodeURIComponent(this.getProject().getUuid()) + "/start";
       let req = new qxapp.io.request.ApiRequest(url, "POST");
       let data = {};
       data["workbench"] = currentPipeline;
@@ -412,7 +412,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __stopPipeline: function() {
       let req = new qxapp.io.request.ApiRequest("/stop_pipeline", "POST");
       let data = {};
-      data["project_id"] = this.getProjectModel().getUuid();
+      data["project_id"] = this.getProject().getUuid();
       req.set({
         requestData: qx.util.Serializer.toJson(data)
       });
@@ -493,7 +493,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     saveProjectDocument: function() {
-      let myPrj = this.getProjectModel().serializeProject();
+      let myPrj = this.getProject().serializeProject();
       let resource = this.__projectResources.project;
       resource.addListenerOnce("delSuccess", e => {
         let resources = this.__projectResources.projects;
@@ -506,12 +506,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     __startAutoSave: function() {
       let diffPatcher = new qxapp.wrappers.JsonDiffPatch();
-      let oldObj = this.getProjectModel().serializeProject();
+      let oldObj = this.getProject().serializeProject();
       // Save every 5 seconds
       const interval = 5000;
       let timer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
-        const newObj = this.getProjectModel().serializeProject();
+        const newObj = this.getProject().serializeProject();
         const delta = diffPatcher.diff(oldObj, newObj);
         if (delta) {
           let deltaKeys = Object.keys(delta);
@@ -530,7 +530,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __saveProjectDocument: function(newObj) {
-      const prjUuid = this.getProjectModel().getUuid();
+      const prjUuid = this.getProject().getUuid();
 
       let resource = this.__projectResources.project;
       resource.addListenerOnce("putSuccess", ev => {

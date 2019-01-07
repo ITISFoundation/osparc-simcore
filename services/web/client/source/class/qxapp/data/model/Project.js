@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.data.model.ProjectModel", {
+qx.Class.define("qxapp.data.model.Project", {
   extend: qx.core.Object,
 
   construct: function(prjData) {

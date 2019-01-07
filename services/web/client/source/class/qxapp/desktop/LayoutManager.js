@@ -102,27 +102,27 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
               servicesTimer.stop();
               this.__prjStack.remove(iframe);
               iframe.dispose();
-              this.__loadProjectModel(projectData);
+              this.__loadProject(projectData);
             }
           }, this);
           servicesTimer.start();
         } else {
-          this.__loadProjectModel(projectData);
+          this.__loadProject(projectData);
         }
       }, this);
     },
 
-    __loadProjectModel: function(projectData) {
-      let projectModel = new qxapp.data.model.ProjectModel(projectData);
+    __loadProject: function(projectData) {
+      let project = new qxapp.data.model.Project(projectData);
 
       if (this.__prjEditor) {
         this.__prjStack.remove(this.__prjEditor);
       }
-      this.__prjEditor = new qxapp.desktop.PrjEditor(projectModel);
+      this.__prjEditor = new qxapp.desktop.PrjEditor(project);
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
-      this.__navBar.setProjectModel(projectModel);
-      this.__navBar.setMainViewCaption(projectModel.getWorkbench().getPathIds("root"));
+      this.__navBar.setProject(project);
+      this.__navBar.setMainViewCaption(project.getWorkbench().getPathIds("root"));
 
       this.__prjEditor.addListener("changeMainViewCaption", function(ev) {
         const elements = ev.getData();
