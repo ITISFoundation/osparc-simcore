@@ -305,11 +305,11 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
     __createNodeUI: function(nodeId) {
       let nodeModel = this.getWorkbenchModel().getNodeModel(nodeId);
 
-      let nodeBase = new qxapp.component.workbench.NodeBase(nodeModel);
-      nodeBase.createNodeLayout();
-      nodeBase.populateNodeLayout();
-      this.__createDragDropMechanism(nodeBase);
-      return nodeBase;
+      let nodeUI = new qxapp.component.workbench.NodeUI(nodeModel);
+      nodeUI.createNodeLayout();
+      nodeUI.populateNodeLayout();
+      this.__createDragDropMechanism(nodeUI);
+      return nodeUI;
     },
 
     __createLinkUI: function(node1Id, node2Id, linkId) {
@@ -349,9 +349,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       return linkUI;
     },
 
-    __createDragDropMechanism: function(nodeBase) {
+    __createDragDropMechanism: function(nodeUI) {
       const evType = "pointermove";
-      nodeBase.addListener("linkDragStart", e => {
+      nodeUI.addListener("linkDragStart", e => {
         let data = e.getData();
         let event = data.event;
         let dragNodeId = data.nodeId;
@@ -378,7 +378,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         );
       }, this);
 
-      nodeBase.addListener("linkDragOver", e => {
+      nodeUI.addListener("linkDragOver", e => {
         let data = e.getData();
         let event = data.event;
         let dropNodeId = data.nodeId;
@@ -400,7 +400,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         }
       }, this);
 
-      nodeBase.addListener("linkDrop", e => {
+      nodeUI.addListener("linkDrop", e => {
         let data = e.getData();
         let event = data.event;
         let dropNodeId = data.nodeId;
@@ -428,7 +428,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
         }
       }, this);
 
-      nodeBase.addListener("linkDragEnd", e => {
+      nodeUI.addListener("linkDragEnd", e => {
         let data = e.getData();
         let dragNodeId = data.nodeId;
 
