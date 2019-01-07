@@ -30,6 +30,7 @@ qx.Class.define("qxapp.data.model.Node", {
     this.__inputNodes = [];
     this.__inputsDefault = {};
     this.__outputs = {};
+    this.__logs = [];
 
     this.set({
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
@@ -160,6 +161,11 @@ qx.Class.define("qxapp.data.model.Node", {
     __outputWidget: null,
     __posX: null,
     __posY: null,
+    __logs: null,
+
+    addLog: function(log) {
+      this.__logs.push(log);
+    },
 
     isContainer: function() {
       return (this.getNodeImageId() === null);

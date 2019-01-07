@@ -363,10 +363,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       const slotName = "logger";
       if (!socket.slotExists(slotName)) {
         socket.on(slotName, function(data) {
-          let d = JSON.parse(data);
-          let node = d["Node"];
-          let msg = d["Message"];
-          this.__updateLogger(node, msg);
+          const d = JSON.parse(data);
+          const nodeId = d["Node"];
+          const msg = d["Message"];
+          const workbench = this.getProject().getWorkbench();
+          let node = workbench.getNode(nodeId);
+          this.getLogger().info(node.getLabel(), msg);
+          if (node) {
+            node.addLog(msg);
+          }
         }, this);
       }
       socket.emit(slotName);
@@ -461,13 +466,6 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     __applyCanStart: function(value, old) {
       this.__mainPanel.getControls().setCanStart(value);
-    },
-
-    __updateLogger: function(nodeId, msg) {
-      let node = this.__workbenchUI.getNodeUI(nodeId);
-      if (node) {
-        this.getLogger().info(node.getCaption(), msg);
-      }
     },
 
     __addWidgetToMainView: function(widget) {
