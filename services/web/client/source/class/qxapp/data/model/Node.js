@@ -135,6 +135,12 @@ qx.Class.define("qxapp.data.model.Node", {
     retrieveIFrameButton: {
       check: "qx.ui.form.Button",
       init: null
+    },
+
+    progress: {
+      check: "Number",
+      init: 0,
+      event: "changeProgress"
     }
   },
 
