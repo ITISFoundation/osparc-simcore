@@ -22,7 +22,7 @@ const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
 const NODE_INPUTS_WIDTH = 200;
 
-qx.Class.define("qxapp.component.workbench.WorkbenchView", {
+qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
   extend: qx.ui.container.Composite,
 
   construct: function(workbenchModel) {
@@ -222,11 +222,11 @@ qx.Class.define("qxapp.component.workbench.WorkbenchView", {
       } else {
         // srvCat.center();
         const bounds = this.getLayoutParent().getBounds();
-        const workbenchViewCenter = {
+        const workbenchUICenter = {
           x: bounds.left + parseInt((bounds.left + bounds.width) / 2),
           y: bounds.top + parseInt((bounds.top + bounds.height) / 2)
         };
-        srvCat.moveTo(workbenchViewCenter.x - 200, workbenchViewCenter.y - 200);
+        srvCat.moveTo(workbenchUICenter.x - 200, workbenchUICenter.y - 200);
       }
       srvCat.addListener("addService", ev => {
         this.__addServiceFromCatalogue(ev, pos);
