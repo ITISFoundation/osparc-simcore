@@ -10,7 +10,7 @@ qx.Class.define("qxapp.About", {
       contentPadding: 20,
       showMaximize: false,
       showMinimize: false,
-      resizable: false,
+      vresizable: false,
       centerOnAppear: true
     });
     this.__populateEntries();
@@ -18,20 +18,21 @@ qx.Class.define("qxapp.About", {
 
   members: {
     __populateEntries: function() {
-      const vcsRef = qx.core.Environment.get("osparc.vcsRef") || "not found";
-      const vcsRefClient = qx.core.Environment.get("osparc.vcsRefClient") || "not found";
+      const vcsRef = qx.core.Environment.get("osparc.vcsRef");
+      const vcsRefClient = qx.core.Environment.get("osparc.vcsRefClient");
       this.add(this.__createEntry("oSPARC", vcsRef, "https://github.com/ITISFoundation/osparc-simcore"));
       this.add(this.__createEntry("oSPARC UI", vcsRefClient, "https://github.com/ITISFoundation/osparc-simcore/services/web/client"));
 
       this.add(new qx.ui.core.Spacer(null, 10));
 
       this.add(this.__createEntry("qooxdoo-compiler", qx.core.Environment.get("qx.compilerVersion"), "https://github.com/qooxdoo/qooxdoo-compiler"));
+
       let libInfo = qx.core.Environment.get("qx.libraryInfoMap");
       if (libInfo) {
         this.assert(libInfo, "remove harcoded part");
         for (let key in libInfo) {
           let lib = libInfo[key];
-          this.add(this.__createEntry(lib.name || "unknown library", lib.version || "unknown-version", lib.homepage));
+          this.add(this.__createEntry(lib.name, lib.version, lib.homepage));
         }
       } else {
         // as soon as we upgrade the qooxdoo compiler (v0.2.31) all this info will be in qx.libraryInfoMap
@@ -49,7 +50,7 @@ qx.Class.define("qxapp.About", {
       });
     },
 
-    __createEntry: function(item, version, url) {
+    __createEntry: function(item = "unknown library", version = "unknown-version", url) {
       let entryLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         marginBottom: 4
       });
