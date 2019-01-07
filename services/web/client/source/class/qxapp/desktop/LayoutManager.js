@@ -122,7 +122,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
       this.__navBar.setProjectModel(projectModel);
-      this.__navBar.setMainViewCaption(projectModel.getWorkbenchModel().getPathIds("root"));
+      this.__navBar.setMainViewCaption(projectModel.getWorkbench().getPathIds("root"));
 
       this.__prjEditor.addListener("changeMainViewCaption", function(ev) {
         const elements = ev.getData();

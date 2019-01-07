@@ -34,9 +34,9 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
     });
 
     if (prjData && prjData.workbench) {
-      this.setWorkbenchModel(new qxapp.data.model.WorkbenchModel(this.getName(), prjData.workbench));
+      this.setWorkbench(new qxapp.data.model.Workbench(this.getName(), prjData.workbench));
     } else {
-      this.setWorkbenchModel(new qxapp.data.model.WorkbenchModel(this.getName(), {}));
+      this.setWorkbench(new qxapp.data.model.Workbench(this.getName(), {}));
     }
   },
 
@@ -97,16 +97,16 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
       init: new Date()
     },
 
-    workbenchModel: {
-      check: "qxapp.data.model.WorkbenchModel",
+    workbench: {
+      check: "qxapp.data.model.Workbench",
       nullable: false
     }
   },
 
   members: {
     __applyName: function(newName) {
-      if (this.isPropertyInitialized("workbenchModel")) {
-        this.getWorkbenchModel().setProjectName(newName);
+      if (this.isPropertyInitialized("workbench")) {
+        this.getWorkbench().setProjectName(newName);
       }
     },
 
@@ -116,11 +116,7 @@ qx.Class.define("qxapp.data.model.ProjectModel", {
       let jsonObject = {};
       let properties = this.constructor.$$properties;
       for (let key in properties) {
-        if (key === "workbenchModel") {
-          jsonObject["workbench"] = this.getWorkbenchModel().serializeWorkbench();
-        } else {
-          jsonObject[key] = this.get(key);
-        }
+        jsonObject[key] = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
       }
       return jsonObject;
     }

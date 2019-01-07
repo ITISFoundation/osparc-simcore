@@ -83,7 +83,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     initDefault: function() {
       let project = this.getProjectModel();
 
-      let treeView = this.__treeView = new qxapp.component.widget.TreeTool(project.getName(), project.getWorkbenchModel());
+      let treeView = this.__treeView = new qxapp.component.widget.TreeTool(project.getName(), project.getWorkbench());
       treeView.addListener("addNode", () => {
         this.__addNode();
       }, this);
@@ -102,33 +102,33 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView();
       this.__sidePanel.setBottomView(loggerView);
 
-      let workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(project.getWorkbenchModel());
+      let workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(project.getWorkbench());
       workbenchUI.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
       workbenchUI.addListener("removeLink", e => {
         const linkId = e.getData();
-        let workbenchModel = this.getProjectModel().getWorkbenchModel();
-        let currentNode = workbenchModel.getNode(this.__currentNodeId);
-        let linkModel = workbenchModel.getLinkModel(linkId);
+        let workbench = this.getProjectModel().getWorkbench();
+        let currentNode = workbench.getNode(this.__currentNodeId);
+        let linkModel = workbench.getLinkModel(linkId);
         let removed = false;
         if (currentNode && currentNode.isContainer() && linkModel.getOutputNodeId() === currentNode.getNodeId()) {
-          let inputNode = workbenchModel.getNode(linkModel.getInputNodeId());
+          let inputNode = workbench.getNode(linkModel.getInputNodeId());
           inputNode.setIsOutputNode(false);
 
           // Remove also dependencies from outter nodes
           const cNodeId = inputNode.getNodeId();
-          const allNodes = workbenchModel.getNodes(true);
+          const allNodes = workbench.getNodes(true);
           for (const nodeId in allNodes) {
             let node = allNodes[nodeId];
             if (node.isInputNode(cNodeId) && !currentNode.isInnerNode(node.getNodeId())) {
-              workbenchModel.removeLink(linkId);
+              workbench.removeLink(linkId);
             }
           }
           removed = true;
         } else {
-          removed = workbenchModel.removeLink(linkId);
+          removed = workbench.removeLink(linkId);
         }
         if (removed) {
           this.__workbenchUI.clearLink(linkId);
@@ -139,7 +139,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let nodeView = this.__nodeView = new qxapp.component.widget.NodeView().set({
         minHeight: 200
       });
-      nodeView.setWorkbenchModel(project.getWorkbenchModel());
+      nodeView.setWorkbench(project.getWorkbench());
     },
 
     connectEvents: function() {
@@ -155,17 +155,17 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         this.__stopPipeline();
       }, this);
 
-      let workbenchModel = this.getProjectModel().getWorkbenchModel();
-      workbenchModel.addListener("workbenchModelChanged", function() {
-        this.__workbenchModelChanged();
+      let workbench = this.getProjectModel().getWorkbench();
+      workbench.addListener("workbenchChanged", function() {
+        this.__workbenchChanged();
       }, this);
 
-      workbenchModel.addListener("updatePipeline", e => {
+      workbench.addListener("updatePipeline", e => {
         let node = e.getData();
         this.__updatePipeline(node);
       }, this);
 
-      workbenchModel.addListener("showInLogger", ev => {
+      workbench.addListener("showInLogger", ev => {
         const data = ev.getData();
         const nodeLabel = data.nodeLabel;
         const msg = data.msg;
@@ -191,12 +191,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__currentNodeId = nodeId;
       this.__treeView.nodeSelected(nodeId);
 
-      const workbenchModel = this.getProjectModel().getWorkbenchModel();
+      const workbench = this.getProjectModel().getWorkbench();
       if (nodeId === "root") {
-        this.__workbenchUI.loadModel(workbenchModel);
+        this.__workbenchUI.loadModel(workbench);
         this.showInMainView(this.__workbenchUI, nodeId);
       } else {
-        let node = workbenchModel.getNode(nodeId);
+        let node = workbench.getNode(nodeId);
 
         let widget;
         if (node.isContainer()) {
@@ -220,7 +220,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       if (nodeId === "root") {
         this.showScreenshotInExtraView("workbench");
       } else {
-        let node = workbenchModel.getNode(nodeId);
+        let node = workbench.getNode(nodeId);
         if (node.isContainer()) {
           this.showScreenshotInExtraView("container");
         } else {
@@ -258,20 +258,20 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         return;
       }
       // remove first the connected links
-      let workbenchModel = this.getProjectModel().getWorkbenchModel();
-      let connectedLinks = workbenchModel.getConnectedLinks(nodeId);
+      let workbench = this.getProjectModel().getWorkbench();
+      let connectedLinks = workbench.getConnectedLinks(nodeId);
       for (let i=0; i<connectedLinks.length; i++) {
         const linkId = connectedLinks[i];
-        if (workbenchModel.removeLink(linkId)) {
+        if (workbench.removeLink(linkId)) {
           this.__workbenchUI.clearLink(linkId);
         }
       }
-      if (workbenchModel.removeNode(nodeId)) {
+      if (workbench.removeNode(nodeId)) {
         this.__workbenchUI.clearNode(nodeId);
       }
     },
 
-    __workbenchModelChanged: function() {
+    __workbenchChanged: function() {
       this.__treeView.populateTree();
       this.__treeView.nodeSelected(this.__currentNodeId);
     },
@@ -286,7 +286,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       this.__mainPanel.setMainView(widget);
 
-      let nodesPath = this.getProjectModel().getWorkbenchModel().getPathIds(nodeId);
+      let nodesPath = this.getProjectModel().getWorkbench().getPathIds(nodeId);
       this.fireDataEvent("changeMainViewCaption", nodesPath);
     },
 
@@ -310,7 +310,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __getCurrentPipeline: function() {
       const saveContainers = false;
       const savePosition = false;
-      let currentPipeline = this.getProjectModel().getWorkbenchModel().serializeWorkbench(saveContainers, savePosition);
+      let currentPipeline = this.getProjectModel().getWorkbench().serializeWorkbench(saveContainers, savePosition);
       for (const nodeId in currentPipeline) {
         let currentNode = currentPipeline[nodeId];
         if (currentNode.key.includes("/neuroman")) {

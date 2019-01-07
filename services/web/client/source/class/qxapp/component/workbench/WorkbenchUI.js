@@ -25,7 +25,7 @@ const NODE_INPUTS_WIDTH = 200;
 qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
   extend: qx.ui.container.Composite,
 
-  construct: function(workbenchModel) {
+  construct: function(workbench) {
     this.base();
 
     let hBox = new qx.ui.layout.HBox();
@@ -73,7 +73,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       bottom: 0
     });
 
-    this.setWorkbenchModel(workbenchModel);
+    this.setWorkbench(workbench);
     this.__svgWidget = new qxapp.component.workbench.SvgWidget("SvgWidgetLayer");
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
@@ -81,7 +81,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     this.__svgWidget.addListenerOnce("SvgWidgetReady", () => {
       // Will be called only the first time Svg lib is loaded
       this.removeAll();
-      this.loadModel(this.getWorkbenchModel());
+      this.loadModel(this.getWorkbench());
       this.fireDataEvent("nodeDoubleClicked", "root");
     });
 
@@ -142,8 +142,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
   },
 
   properties: {
-    workbenchModel: {
-      check: "qxapp.data.model.WorkbenchModel",
+    workbench: {
+      check: "qxapp.data.model.Workbench",
       nullable: false
     }
   },
@@ -240,12 +240,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let node = this.getWorkbenchModel().createNode(service.getKey(), service.getVersion());
+      let node = this.getWorkbench().createNode(service.getKey(), service.getVersion());
       let parent = null;
       if (this.__currentModel.isContainer()) {
         parent = this.__currentModel;
       }
-      this.getWorkbenchModel().addNode(node, parent);
+      this.getWorkbench().addNode(node, parent);
 
       let nodeUI = this.__createNodeUI(node.getNodeId());
       this.__addNodeToWorkbench(nodeUI, pos);
@@ -303,7 +303,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __createNodeUI: function(nodeId) {
-      let node = this.getWorkbenchModel().getNode(nodeId);
+      let node = this.getWorkbench().getNode(nodeId);
 
       let nodeUI = new qxapp.component.workbench.NodeUI(node);
       nodeUI.createNodeLayout();
@@ -313,8 +313,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     },
 
     __createLinkUI: function(node1Id, node2Id, linkId) {
-      let linkModel = this.getWorkbenchModel().createLinkModel(linkId, node1Id, node2Id);
-      this.getWorkbenchModel().addLinkModel(linkModel);
+      let linkModel = this.getWorkbench().createLinkModel(linkId, node1Id, node2Id);
+      this.getWorkbench().addLinkModel(linkModel);
 
       // build representation
       let node1 = this.getNodeUI(node1Id);
@@ -472,7 +472,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     __createInputNodeUIs: function(model) {
       const inputNodes = model.getInputNodes();
       for (let i = 0; i < inputNodes.length; i++) {
-        let inputNode = this.getWorkbenchModel().getNode(inputNodes[i]);
+        let inputNode = this.getWorkbench().getNode(inputNodes[i]);
         let inputLabel = this.__createInputNodeUI(inputNode);
         this.__nodesUI.push(inputLabel);
       }
@@ -556,12 +556,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
 
     __updatePosition: function(nodeUI) {
       const cBounds = nodeUI.getCurrentBounds();
-      let node = this.getWorkbenchModel().getNode(nodeUI.getNodeId());
+      let node = this.getWorkbench().getNode(nodeUI.getNodeId());
       node.setPosition(cBounds.left, cBounds.top);
     },
 
     __updateLinks: function(nodeUI) {
-      let linksInvolved = this.getWorkbenchModel().getConnectedLinks(nodeUI.getNodeId());
+      let linksInvolved = this.getWorkbench().getConnectedLinks(nodeUI.getNodeId());
 
       linksInvolved.forEach(linkId => {
         let linkUI = this.__getLinkUI(linkId);

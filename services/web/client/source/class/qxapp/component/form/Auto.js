@@ -544,8 +544,8 @@ qx.Class.define("qxapp.component.form.Auto", {
         output: fromPortId
       };
 
-      const workbenchModel = this.getNode().getWorkbenchModel();
-      const fromNode = workbenchModel.getNode(fromNodeId);
+      const workbench = this.getNode().getWorkbench();
+      const fromNode = workbench.getNode(fromNodeId);
       const fromNodeLabel = fromNode.getLabel();
       const port = fromNode.getOutput(fromPortId);
       let fromPortLabel = port ? port.label : null;

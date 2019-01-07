@@ -149,7 +149,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
         if (nodeId === "root") {
           this.getProjectModel().bind("name", btn, "label");
         } else {
-          const node = this.getProjectModel().getWorkbenchModel()
+          const node = this.getProjectModel().getWorkbench()
             .getNode(nodeId);
           if (node) {
             node.bind("label", btn, "label");

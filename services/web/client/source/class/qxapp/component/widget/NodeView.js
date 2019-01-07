@@ -70,8 +70,8 @@ qx.Class.define("qxapp.component.widget.NodeView", {
   },
 
   properties: {
-    workbenchModel: {
-      check: "qxapp.data.model.WorkbenchModel",
+    workbench: {
+      check: "qxapp.data.model.Workbench",
       nullable: false
     },
 
@@ -151,7 +151,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       // Add the representations for the inputs
       const inputNodes = node.getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
-        let inputNode = this.getWorkbenchModel().getNode(inputNodes[i]);
+        let inputNode = this.getWorkbench().getNode(inputNodes[i]);
         if (inputNode.isContainer()) {
           for (const exposedInnerNodeId in inputNode.getExposedInnerNodes()) {
             const exposedInnerNode = inputNode.getExposedInnerNodes()[exposedInnerNodeId];

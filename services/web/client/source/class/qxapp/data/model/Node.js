@@ -20,8 +20,8 @@
 qx.Class.define("qxapp.data.model.Node", {
   extend: qx.core.Object,
 
-  construct: function(workbenchModel, key, version, uuid) {
-    this.setWorkbenchModel(workbenchModel);
+  construct: function(workbench, key, version, uuid) {
+    this.setWorkbench(workbench);
 
     this.base(arguments);
 
@@ -62,8 +62,8 @@ qx.Class.define("qxapp.data.model.Node", {
   },
 
   properties: {
-    workbenchModel: {
-      check: "qxapp.data.model.WorkbenchModel",
+    workbench: {
+      check: "qxapp.data.model.Workbench",
       nullable: false
     },
 
@@ -332,7 +332,7 @@ qx.Class.define("qxapp.data.model.Node", {
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbenchModel(), this);
+      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbench(), this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("RemoveLink", e => {
         let changedField = e.getData();

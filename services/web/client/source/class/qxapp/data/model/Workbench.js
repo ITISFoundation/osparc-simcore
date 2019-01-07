@@ -17,7 +17,7 @@
 
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.data.model.WorkbenchModel", {
+qx.Class.define("qxapp.data.model.Workbench", {
   extend: qx.core.Object,
 
   construct: function(prjName, wbData) {
@@ -39,7 +39,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
   },
 
   events: {
-    "workbenchModelChanged": "qx.event.type.Event",
+    "workbenchChanged": "qx.event.type.Event",
     "NodeAdded": "qx.event.type.Data",
     "updatePipeline": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
@@ -213,7 +213,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
       } else {
         this.__nodesTopLevel[uuid] = node;
       }
-      this.fireEvent("workbenchModelChanged");
+      this.fireEvent("workbenchChanged");
     },
 
     removeNode: function(nodeId) {
@@ -229,7 +229,7 @@ qx.Class.define("qxapp.data.model.WorkbenchModel", {
           parentNode.removeInnerNode(nodeId);
         }
         node.removeNode();
-        this.fireEvent("workbenchModelChanged");
+        this.fireEvent("workbenchChanged");
         return true;
       }
       return false;
