@@ -124,6 +124,12 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
         this.__createUIPorts(true, metaData.inputs);
         this.__createUIPorts(false, metaData.outputs);
       }
+      node.bind("progress", this.__progressLabel, "value", {
+        converter: function(value) {
+          return value + "%";
+        }
+      });
+      node.bind("progress", this.__progressBar, "value");
     },
 
     getInputPort: function() {
@@ -230,15 +236,6 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       // bounds.left = this.getContentLocation().left;
       // bounds.top = this.getContentLocation().top;
       return bounds;
-    },
-
-    setProgress: function(progress) {
-      this.__progressLabel.setValue(progress + "%");
-      this.__progressBar.setValue(progress);
-    },
-
-    getProgress: function() {
-      return this.__progressBar.getValue();
     },
 
     // override qx.ui.window.Window "move" event listener

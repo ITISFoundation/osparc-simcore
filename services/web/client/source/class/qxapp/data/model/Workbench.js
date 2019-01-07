@@ -269,6 +269,13 @@ qx.Class.define("qxapp.data.model.Workbench", {
       return false;
     },
 
+    clearProgressData: function() {
+      const allModels = this.getNodes(true);
+      for (const nodeId in allModels) {
+        allModels[nodeId].setProgress(0);
+      }
+    },
+
     serializeWorkbench: function(saveContainers = true, savePosition = true) {
       let workbench = {};
       const allModels = this.getNodes(true);

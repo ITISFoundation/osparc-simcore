@@ -355,8 +355,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __startPipeline: function() {
-      // ui start pipeline
-      // this.clearProgressData();
+      this.getProject().getWorkbench().clearProgressData();
 
       let socket = qxapp.wrappers.WebSocket.getInstance();
 
@@ -375,10 +374,14 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       // callback for incoming progress
       if (!socket.slotExists("progress")) {
         socket.on("progress", function(data) {
-          let d = JSON.parse(data);
-          let node = d["Node"];
-          let progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
-          this.__workbenchUI.updateProgress(node, progress);
+          const d = JSON.parse(data);
+          const nodeId = d["Node"];
+          const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
+          const workbench = this.getProject().getWorkbench();
+          let node = workbench.getNode(nodeId);
+          if (node) {
+            node.setProgress(progress);
+          }
         }, this);
       }
 
@@ -451,7 +454,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __onPipelineStopped: function(e) {
-      this.__workbenchUI.clearProgressData();
+      this.getProject().getWorkbench().clearProgressData();
 
       this.setCanStart(true);
     },

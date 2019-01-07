@@ -819,19 +819,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       // qx.ui.core.queue.Widget.flush();
     },
 
-    clearProgressData: function() {
-      for (let i = 0; i < this.__nodesUI.length; i++) {
-        this.__nodesUI[i].setProgress(0);
-      }
-    },
-
-    updateProgress: function(nodeId, progress) {
-      let nodeUI = this.getNodeUI(nodeId);
-      if (nodeUI) {
-        nodeUI.setProgress(progress);
-      }
-    },
-
     __selectedItemChanged: function(newID) {
       if (newID === this.__selectedItemId) {
         return;
