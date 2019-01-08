@@ -4,6 +4,9 @@ services:
     build:
       context: ../
       dockerfile: services/apihub/Dockerfile
+      cache_from:
+        - itisfoundation/apihub-build-cache:latest
+        - services_apihub
       target: production
       labels: 
         org.label-schema.schema-version: "1.0"
@@ -17,9 +20,12 @@ services:
     build:
       context: ../
       dockerfile: services/director/Dockerfile
+      cache_from:
+        - itisfoundation/director-build-cache:latest
+        - services_director
       target: production
       args:
-        - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
+        - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}      
       labels: 
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
@@ -136,6 +142,9 @@ services:
       # the packages directory into any docker image
       context: ../
       dockerfile: services/sidecar/Dockerfile
+      cache_from:
+        - itisfoundation/sidecar-build-cache:latest
+        - services_sidecar
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
@@ -177,6 +186,7 @@ services:
       dockerfile: services/storage/Dockerfile
       cache_from:
         - itisfoundation/storage-build-cache:latest
+        - services_storage
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
