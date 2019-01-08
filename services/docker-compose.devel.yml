@@ -24,7 +24,7 @@ services:
       target: development
     volumes:
       - './web/client:/home/scu/client'
-    command: compile --watch
+    command: compile --watch --set osparc.vcsRef='"${VCS_REF}"' --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
   webserver:
     image: services_webserver:dev
     build:

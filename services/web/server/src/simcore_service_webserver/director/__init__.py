@@ -1,41 +1,55 @@
 """ director subsystem
 
-    Provides interactivity with the director service
+    Provides access to the director backend service
 """
 
 import logging
 
-from aiohttp import web, ClientSession
+from aiohttp import ClientSession, web
+from yarl import URL
 
 from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.rest_routing import (get_handlers_from_namespace,
+                                     iter_path_operations,
+                                     map_handlers_with_operations)
 
-from .config import CONFIG_SECTION_NAME, APP_DIRECTOR_SESSION_KEY, APP_DIRECTOR_API_KEY, build_api_url
 from . import handlers
-from servicelib.rest_routing import get_handlers_from_namespace, map_handlers_with_operations, iter_path_operations
 from ..rest_config import APP_OPENAPI_SPECS_KEY
+from .config import (APP_DIRECTOR_API_KEY, APP_DIRECTOR_SESSION_KEY,
+                     CONFIG_SECTION_NAME, build_api_url)
+from .registry import InteractiveServiceLocalRegistry, set_registry
 
-from yarl import URL
 
 logger = logging.getLogger(__name__)
 
-async def director_client_ctx(app: web.Application):
-    # TODO: deduce base url from configuration and add to session
-    # TODO: test if ready!
 
-    session = ClientSession(loop=app.loop)
-    app[APP_DIRECTOR_SESSION_KEY] = session
+async def director_client_ctx(app: web.Application):
+    """
+        - Resolves director service base url, e.g. http://director:8080/v0
+        - Creates client session to query this API
+
+    :param app: main application
+    :type app: web.Application
+    """
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
     # TODO: create instead a class that wraps the session and hold all information known upon setup
-    session.base_url = app[APP_DIRECTOR_API_KEY]
+    session = ClientSession(loop=app.loop)
+    session.base_url = build_api_url(cfg)
+
+    # TODO: test if service health via API healthcheck call
+
+    app[APP_DIRECTOR_SESSION_KEY] = session
 
     yield
 
     session.close()
-    logger.debug("cleanup session")
+    app.pop(APP_DIRECTOR_SESSION_KEY, None)
+
 
 
 def setup(app: web.Application,* , disable_login=False):
-    """
+    """ Sets up director's subsystem
 
     :param app: main application
     :type app: web.Application
@@ -50,10 +64,12 @@ def setup(app: web.Application,* , disable_login=False):
         logger.warning("'%s' explicitly disabled in config", __name__)
         return
 
-    # director service API endpoint
+    # director service API base url, e.g. http://director:8081/v0
     app[APP_DIRECTOR_API_KEY] = build_api_url(cfg)
 
-    # Setup routes
+    set_registry(app, InteractiveServiceLocalRegistry())
+
+    # setup routes ------------
     specs = app[APP_OPENAPI_SPECS_KEY]
 
     def include_path(tup_object):
@@ -64,9 +80,10 @@ def setup(app: web.Application,* , disable_login=False):
         'running_interactive_services_post': handlers.running_interactive_services_post ,
         'running_interactive_services_get': handlers.running_interactive_services_get,
         'running_interactive_services_delete': handlers.running_interactive_services_delete,
+        'running_interactive_services_delete_all': handlers.running_interactive_services_delete_all,
         'services_get': handlers.services_get
     }
-
+    
     # Disables login_required decorator for testing purposes
     if disable_login:
         for name, hnds in handlers_dict.items():
@@ -80,6 +97,7 @@ def setup(app: web.Application,* , disable_login=False):
     )
     app.router.add_routes(routes)
 
+    # setup cleanup context --------------
     app.cleanup_ctx.append(director_client_ctx)
 
 
