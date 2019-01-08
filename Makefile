@@ -257,7 +257,7 @@ push_client_image:
 	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
 
 travis-build:
-	${DOCKER} pull itisfoundation/storage-build-cache:latest	
+	${DOCKER} pull itisfoundation/apihub-build-cache:latest	
 	${DOCKER} pull itisfoundation/director-build-cache:latest
 	${DOCKER} pull itisfoundation/sidecar-build-cache:latest
 	${DOCKER} pull itisfoundation/storage-build-cache:latest

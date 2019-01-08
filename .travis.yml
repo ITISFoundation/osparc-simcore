@@ -257,7 +257,7 @@ jobs:
 
     # integrate apihub, webserver, director, sidecar, storage, minio, postgres, rabbit  ----------------------------------------------------------------------
     - stage: integration testing
-      name: webserver
+      name: apihub, director, sidecar, storage, minio, postgres, rabbit
       language: python
       python:
         - "3.6"
