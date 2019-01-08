@@ -355,7 +355,6 @@ qx.Class.define("qxapp.wrappers.ThreeWrapper", {
       if (listOfPoints.length === 0) {
         return null;
       }
-      console.log("listOfPoints", listOfPoints, color);
       let splineColor = color ? new THREE.Color(color.r, color.g, color.b) : 0xffffff;
       let curvePoints = this.__arrayToThreePoints(listOfPoints);
       let curve = new THREE.CatmullRomCurve3(curvePoints);

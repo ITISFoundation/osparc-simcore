@@ -234,7 +234,6 @@ qx.Class.define("qxapp.Application", {
 
         this._socket.on("incrementProgress", function(value, ackCb) {
           ackCb();
-          console.log(`progress ${value}...`);
           this.__entityList.incrementProgress(value);
         }, this);
 
