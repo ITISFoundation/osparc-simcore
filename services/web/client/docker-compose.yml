@@ -7,12 +7,20 @@ services:
       context: .
       dockerfile: Dockerfile
       target: ${BUILD_TARGET:-development}
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
+      args:
+        - VCS_REF=${VCS_REF}
+        - VCS_REF_CLIENT=${VCS_REF_CLIENT}
     volumes:
       - '.:/home/scu/client'
     ports:
       - '8080:8080'
     working_dir: /home/scu/client
-    command: serve --set qx.allowUrlSettings=true
+    command: serve --set qx.allowUrlSettings=true --set osparc.vcsRef='"${VCS_REF}"' --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
   #---------------------------------------------------------
   test:
     image: client_qx:${BUILD_TARGET:-development}

@@ -26,6 +26,12 @@
 qx.Class.define("qxapp.wrappers.JsonDiffPatch", {
   extend: qx.core.Object,
 
+  statics: {
+    NAME: "jsondiffpatch",
+    VERSION: "0.3.11",
+    URL: "https://github.com/benjamine/jsondiffpatch"
+  },
+
   construct: function() {
     this.base(arguments);
 
@@ -38,10 +44,6 @@ qx.Class.define("qxapp.wrappers.JsonDiffPatch", {
       init: false,
       check: "Boolean"
     }
-  },
-
-  events: {
-    "JsonDiffPatchLibReady": "qx.event.type.Data"
   },
 
   members: {
@@ -60,13 +62,11 @@ qx.Class.define("qxapp.wrappers.JsonDiffPatch", {
         this.__diffPatcher = jsondiffpatch.create();
 
         this.setLibReady(true);
-        this.fireDataEvent("JsonDiffPatchLibReady", true);
       }, this);
 
       dynLoader.addListener("failed", e => {
         let data = e.getData();
         console.error("failed to load " + data.script);
-        this.fireDataEvent("JsonDiffPatchLibReady", false);
       }, this);
 
       dynLoader.start();
