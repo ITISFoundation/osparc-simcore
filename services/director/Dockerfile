@@ -78,19 +78,21 @@ ENV RUN_DOCKER_ENGINE_ROOT=0
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD ["/bin/sh", "docker/boot.sh"]
 
-# --------------------------Production stage -------------------
-FROM build as production
-
-ENV DEBUG 0
-ENV RUN_DOCKER_ENGINE_ROOT=0
+# --------------------------Cache stage -------------------
+FROM build as cache
 COPY --chown=scu:scu services/director $HOME/services/director
 COPY --chown=scu:scu packages/service-library $HOME/packages/service-library
 WORKDIR $HOME/services/director
-RUN $PIP install --no-cache-dir -r requirements/prod.txt \
-    && rm -rf $HOME/services/director
+RUN $PIP install --no-cache-dir -r requirements/prod.txt
 WORKDIR $HOME/packages/service-library
-RUN $PIP install --no-cache-dir -r requirements/dev.txt \
-    && rm -rf $HOME/packages/service-library
+RUN $PIP install --no-cache-dir -r requirements/dev.txt
+
+# --------------------------Production stage -------------------
+FROM cache as production
 WORKDIR $HOME
+ENV DEBUG 0
+ENV RUN_DOCKER_ENGINE_ROOT=0
+RUN rm -rf $HOME/services \
+      && rm -rf $HOME/packages
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD ["/bin/sh", "docker/boot.sh"]
