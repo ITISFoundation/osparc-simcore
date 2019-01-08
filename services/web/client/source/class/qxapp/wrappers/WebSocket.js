@@ -29,6 +29,12 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
 
   type : "singleton",
 
+  statics: {
+    NAME: "socket.io",
+    VERSION: "2.1.2",
+    URL: "https://github.com/socketio/socket.io"
+  },
+
   // Socket.io events
   events: {
     /** socket.io connect event */

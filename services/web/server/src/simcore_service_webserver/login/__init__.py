@@ -5,12 +5,13 @@ This is a modification of aiohttp-login package
 """
 # TODO: create stand-alone fork of aiohttp-login
 
+import asyncio
 import logging
 
 import asyncpg
 from aiohttp import web
 
-from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_POOL_KEY
+from servicelib.application_keys import APP_CONFIG_KEY
 
 from ..db import DSN
 from ..db_config import CONFIG_SECTION_NAME as DB_SECTION
@@ -18,14 +19,15 @@ from ..email_config import CONFIG_SECTION_NAME as SMTP_SECTION
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from ..statics import INDEX_RESOURCE_NAME
 from .cfg import APP_LOGIN_CONFIG, cfg
+from .config import CONFIG_SECTION_NAME
 from .routes import create_routes
 from .storage import AsyncpgStorage
-from .config import CONFIG_SECTION_NAME
 
 log = logging.getLogger(__name__)
 
+TIMEOUT_SECS = 5
 
-async def _init_config_and_postgres_pool(app: web.Application):
+async def _setup_config_and_pgpool(app: web.Application):
     """
         - gets input configs from different subsystems and initializes cfg (internal configuration)
         - creates a postgress pool and asyncpg storage object
@@ -33,11 +35,15 @@ async def _init_config_and_postgres_pool(app: web.Application):
     :param app: fully setup application on startup
     :type app: web.Application
     """
-
     login_cfg = app[APP_CONFIG_KEY].get(CONFIG_SECTION_NAME, {}) # optional!
     stmp_cfg = app[APP_CONFIG_KEY][SMTP_SECTION]
     db_cfg = app[APP_CONFIG_KEY][DB_SECTION]['postgres']
 
+    # db
+    pool = await asyncpg.create_pool(dsn=DSN.format(**db_cfg), loop=app.loop)
+    storage = AsyncpgStorage(pool) #NOTE: this key belongs to cfg, not settings!
+
+    # config
     config = {}
     for key, value in login_cfg.items():
         config[key.upper()] = value
@@ -46,18 +52,25 @@ async def _init_config_and_postgres_pool(app: web.Application):
         config["SMTP_{}".format(key.upper())] = value
 
     config['APP'] = app
-
-    app[APP_DB_POOL_KEY] = await asyncpg.create_pool(dsn=DSN.format(**db_cfg), loop=app.loop)
-    config["STORAGE"] = AsyncpgStorage(app[APP_DB_POOL_KEY]) #NOTE: this key belongs to cfg, not settings!
+    config["STORAGE"] = storage
 
     cfg.configure(config)
 
     if INDEX_RESOURCE_NAME in app.router:
         cfg['LOGIN_REDIRECT'] = app.router[INDEX_RESOURCE_NAME].url_for()
     else:
-        log.warning("Unknown location for login page. Defaulting redirection to %s", cfg['LOGIN_REDIRECT'] )
+        log.warning("Unknown location for login page. Defaulting redirection to %s",
+                        cfg['LOGIN_REDIRECT'] )
 
     app[APP_LOGIN_CONFIG] = cfg
+
+    yield
+
+    try:
+        await asyncio.wait_for( pool.close(), timeout=TIMEOUT_SECS, loop=app.loop)
+    except asyncio.TimeoutError:
+        log.exception("Failed to close login storage loop")
+
 
 
 def setup(app: web.Application):
@@ -85,7 +98,7 @@ def setup(app: web.Application):
     app.router.add_routes(routes)
 
     # signals
-    app.on_startup.append(_init_config_and_postgres_pool)
+    app.cleanup_ctx.append(_setup_config_and_pgpool)
 
 
 # alias
