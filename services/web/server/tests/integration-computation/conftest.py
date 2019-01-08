@@ -145,7 +145,10 @@ def app_config(here, webserver_environ) -> Dict:
     # validates
     cfg_dict = trafaret_config.read_and_validate(config_file_path, app_schema, vars=config_environ)
 
-    return cfg_dict
+    yield cfg_dict
+
+    # remove file
+    config_file_path.unlink()
 
 
 ## EXTERNAL SERVICES ------------------------------------------------------------
@@ -198,6 +201,8 @@ def docker_compose_file(here, services_docker_compose, devel_environ):
     _recreate_compose_file(SERVICES, services_docker_compose, docker_compose_path, devel_environ)
 
     yield docker_compose_path
+    # cleanup
+    docker_compose_path.unlink()
 
 @pytest.fixture(scope='session')
 def tools_docker_compose_file(here, tools_docker_compose, devel_environ):
@@ -208,6 +213,8 @@ def tools_docker_compose_file(here, tools_docker_compose, devel_environ):
     _recreate_compose_file(TOOLS, tools_docker_compose, docker_compose_path, devel_environ)
 
     yield docker_compose_path
+    # cleanup
+    docker_compose_path.unlink()
 
 @pytest.fixture(scope='session')
 def postgres_db(app_config, webserver_environ, docker_stack):
@@ -241,6 +248,7 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, tools_d
     yield
     # clean up
     assert subprocess.run("docker stack rm services", shell=True).returncode == 0
+    Path("docker-compose.ignore.yml").unlink()
 
 # HELPERS ---------------------------------------------
 def resolve_environ(service, environ):
