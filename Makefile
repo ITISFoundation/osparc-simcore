@@ -258,7 +258,7 @@ push_client_image:
 
 travis-build:
 	${DOCKER} pull itisfoundation/storage-build-cache:latest	
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel storage apihub
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel apihub director sidecar storage
 
 travis-push-base-images:	
 	${DOCKER} pull itisfoundation/apihub-build-cache:latest
