@@ -38,8 +38,8 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, her
     app_config["db"]["init_tables"] = True # inits postgres_service
 
     # TODO: parse_and_validate
-    with (here / "config.app.yaml").open('wt') as f:
-        yaml.dump(app_config, f, default_flow_style=False)
+    # with (here / "config.app.yaml").open('wt') as f:
+    #     yaml.dump(app_config, f, default_flow_style=False)
 
     # fake config
     app = web.Application()
@@ -117,9 +117,8 @@ async def test_start_pipeline(docker_stack, client, project_id:str, mock_workben
     resp = await client.post("/v0/computation/pipeline/{}/start".format(project_id),
         json = mock_workbench_payload,
     )
+    assert resp.status == 200, str(await resp.text())
     payload = await resp.json()
-
-    assert resp.status == 200, str(payload)
     data, error = unwrap_envelope(payload)
 
     assert data
@@ -135,9 +134,8 @@ async def test_update_pipeline(docker_stack, client, project_id:str, mock_workbe
     resp = await client.put("/v0/computation/pipeline/{}".format(project_id),
         json = mock_workbench_payload,
     )
+    assert resp.status == 204, str(await resp.text())
     payload = await resp.json()
-
-    assert resp.status == 204, str(payload)
     data, error = unwrap_envelope(payload)
 
     assert not data
