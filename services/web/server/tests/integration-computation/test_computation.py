@@ -115,7 +115,7 @@ def _check_db_contents(project_id, postgres_session, mock_workbench_payload, moc
         assert task_db.image["tag"] == mock_pipeline[task_db.node_id]["version"]
 
 async def test_start_pipeline(docker_stack, sleeper_service, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session):
-    import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     resp = await client.post("/v0/computation/pipeline/{}/start".format(project_id),
         json = mock_workbench_payload,
     )
