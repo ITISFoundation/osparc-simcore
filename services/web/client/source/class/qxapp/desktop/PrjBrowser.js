@@ -23,6 +23,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   construct: function() {
     this.base(arguments, new qx.ui.layout.HBox());
 
+    qxapp.wrappers.JsonDiffPatch.getInstance().init();
+
     this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
     // this._projectResources.projects
     // this._projectResources.project

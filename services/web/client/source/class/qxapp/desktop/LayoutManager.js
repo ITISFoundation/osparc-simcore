@@ -83,6 +83,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjStack.add(this.__prjBrowser);
 
       this.__navBar.addListener("dashboardPressed", function() {
+        this.__prjEditor.updateProjectDocument();
         this.__prjStack.setSelection([this.__prjBrowser]);
         this.__prjBrowser.reloadUserProjects();
         this.__navBar.setMainViewCaption(this.tr("Dashboard"));

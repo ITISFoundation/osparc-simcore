@@ -46,7 +46,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     this.initDefault();
     this.connectEvents();
 
-    this.saveProjectDocument();
+    this.replaceProjectDocument();
     this.__startAutoSaveTimer();
   },
 
@@ -493,27 +493,14 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__mainPanel.setMainView(widgetContainer);
     },
 
-    saveProjectDocument: function() {
-      let myPrj = this.getProject().serializeProject();
-      let resource = this.__projectResources.project;
-      resource.addListenerOnce("delSuccess", e => {
-        let resources = this.__projectResources.projects;
-        resources.post(null, myPrj);
-      }, this);
-      resource.del({
-        "project_id": myPrj["uuid"]
-      });
-    },
-
     __startAutoSaveTimer: function() {
-      let diffPatcher = new qxapp.wrappers.JsonDiffPatch();
-      let oldObj = this.getProject().serializeProject();
+      let diffPatcher = qxapp.wrappers.JsonDiffPatch.getInstance();
       // Save every 5 seconds
       const interval = 5000;
       let timer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
         const newObj = this.getProject().serializeProject();
-        const delta = diffPatcher.diff(oldObj, newObj);
+        const delta = diffPatcher.diff(this.__lastSavedPrj, newObj);
         if (delta) {
           let deltaKeys = Object.keys(delta);
           // lastChangeDate should not be taken into account as data change
@@ -522,20 +509,42 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
             deltaKeys.splice(index, 1);
           }
           if (deltaKeys.length > 0) {
-            this.__saveProjectDocument(newObj);
+            this.updateProjectDocument(newObj);
           }
         }
-        oldObj = diffPatcher.clone(newObj);
       }, this);
       timer.start();
     },
 
-    __saveProjectDocument: function(newObj) {
+    replaceProjectDocument: function(newObj) {
+      if (newObj === undefined) {
+        newObj = this.getProject().serializeProject();
+      }
+      const prjUuid = this.getProject().getUuid();
+      let resource = this.__projectResources.project;
+      resource.addListenerOnce("delSuccess", e => {
+        let resources = this.__projectResources.projects;
+        resources.addListenerOnce("postSuccess", ev => {
+          console.log("Project replaced");
+          this.__lastSavedPrj = qxapp.wrappers.JsonDiffPatch.getInstance().clone(newObj);
+        }, this);
+        resources.post(null, newObj);
+      }, this);
+      resource.del({
+        "project_id": prjUuid
+      });
+    },
+
+    updateProjectDocument: function(newObj) {
+      if (newObj === undefined) {
+        newObj = this.getProject().serializeProject();
+      }
       const prjUuid = this.getProject().getUuid();
 
       let resource = this.__projectResources.project;
       resource.addListenerOnce("putSuccess", ev => {
         console.log("Project updated");
+        this.__lastSavedPrj = qxapp.wrappers.JsonDiffPatch.getInstance().clone(newObj);
       }, this);
       resource.put({
         "project_id": prjUuid
