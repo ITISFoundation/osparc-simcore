@@ -30,7 +30,7 @@ routes.eventEmitter.on("retrieveModel", function(modelName){
 });
 // start server
 server.listen(config.PORT, config.HOSTNAME);
-console.log('server started on ' + config.PORT + '/app');
+console.log('server started on ' + config.PORT + `${config.BASEPATH}`);
 
 // init socket.io
 let io = require('socket.io')(server, {

@@ -17,4 +17,5 @@ module.exports = {
   S4L_PORT_APP: process.env.CS_S4L_PORT_APP || 9095,
   S4L_PORT_MOD: process.env.CS_S4L_PORT_MOD || 9096,
   S4L_DATA_PATH: 'c:/app/data/',
+  // S4L_DATA_PATH: 'd:/xrpcapp/data/',
 };
