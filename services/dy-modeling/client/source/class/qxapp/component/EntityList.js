@@ -89,9 +89,6 @@ qx.Class.define("qxapp.component.EntityList", {
       };
       let model = qx.data.marshal.Json.createModel(data, true);
 
-      // configure model for triState usage
-      this.__configureTriState(model);
-
       // data binding
       this.__tree.setModel(model);
       this.__tree.setDelegate({
