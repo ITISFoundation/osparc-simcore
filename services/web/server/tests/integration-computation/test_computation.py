@@ -64,13 +64,13 @@ def project_id() -> str:
 
 @pytest.fixture
 def mock_workbench_payload(here):
-    file_path = here / "workbench_payload.json"
+    file_path = here / "workbench_sleeper_payload.json"
     with file_path.open() as fp:
         return json.load(fp)
 
 @pytest.fixture
 def mock_workbench_adjacency_list(here):
-    file_path = here / "workbench_dag_adjacency_list.json"
+    file_path = here / "workbench_sleeper_dag_adjacency_list.json"
     with file_path.open() as fp:
         return json.load(fp)
 # ------------------------------------------
@@ -88,7 +88,7 @@ async def test_check_health(docker_stack, client):
     assert data['name'] == 'simcore_service_webserver'
     assert data['status'] == 'SERVICE_RUNNING'
 
-def _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list):
+def _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs:bool):
     pipeline_db = postgres_session.query(ComputationalPipeline).filter(ComputationalPipeline.project_id == project_id).one()
     assert pipeline_db.project_id == project_id
     assert pipeline_db.dag_adjacency_list == mock_workbench_adjacency_list
@@ -101,19 +101,21 @@ def _check_db_contents(project_id, postgres_session, mock_workbench_payload, moc
         task_db = tasks_db[i]
         # assert task_db.task_id == (i+1)
         assert task_db.project_id == project_id
-        assert task_db.node_id == list(mock_pipeline.keys())[i]
+        assert task_db.node_id in mock_pipeline.keys()
         if "inputs" in mock_pipeline[task_db.node_id]:
             assert task_db.inputs == mock_pipeline[task_db.node_id]["inputs"]
         else:
             assert task_db.inputs == None
-        if "outputs" in mock_pipeline[task_db.node_id]:
-            assert task_db.outputs == mock_pipeline[task_db.node_id]["outputs"]
-        else:
-            assert task_db.outputs == None
+        if check_outputs:
+            if "outputs" in mock_pipeline[task_db.node_id]:
+                assert task_db.outputs == mock_pipeline[task_db.node_id]["outputs"]
+            else:
+                assert task_db.outputs == None
         assert task_db.image["name"] == mock_pipeline[task_db.node_id]["key"]
         assert task_db.image["tag"] == mock_pipeline[task_db.node_id]["version"]
 
-async def test_start_pipeline(docker_stack, docker_registry, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session):
+async def test_start_pipeline(docker_stack, sleeper_service, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session):
+    import pdb; pdb.set_trace()
     resp = await client.post("/v0/computation/pipeline/{}/start".format(project_id),
         json = mock_workbench_payload,
     )
@@ -128,7 +130,7 @@ async def test_start_pipeline(docker_stack, docker_registry, client, project_id:
     assert "project_id" in data
     assert data['project_id'] == project_id
     # check db comp_pipeline
-    _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list)
+    _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs=False)
 
 async def test_update_pipeline(docker_stack, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session):    
     resp = await client.put("/v0/computation/pipeline/{}".format(project_id),
@@ -141,4 +143,4 @@ async def test_update_pipeline(docker_stack, client, project_id:str, mock_workbe
     assert not data
     assert not error
     # check db comp_pipeline
-    _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list)
+    _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs=True)

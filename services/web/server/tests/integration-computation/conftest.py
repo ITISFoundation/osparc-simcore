@@ -32,6 +32,8 @@ from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, users
 from simcore_service_webserver.resources import resources as app_resources
 
+pytest_plugins = ["fixtures.docker_registry"]
+
 SERVICES = ['director', 'apihub', 'rabbit', 'postgres', 'sidecar', 'storage', 'minio', 'registry']
 TOOLS = ['adminer', 'flower', 'portainer']
 
@@ -230,35 +232,7 @@ def postgres_session(postgres_db):
     session.close()
 
 # REGISTRY
-@pytest.fixture(scope="session")
-def docker_registry(docker_stack):
-    cfg = docker_stack
-    # import pdb; pdb.set_trace()
-    host = "127.0.0.1" #cfg["services"]["director"]["environment"]["REGISTRY_URL"]
-    port = cfg["services"]["registry"]["ports"][0]["published"]
-    url = "{host}:{port}".format(host=host, port=port)
-    # Wait until we can connect
-    assert wait_till_registry_is_responsive(url)
 
-    # test the registry
-    docker_client = docker.from_env()
-    # get the hello world example from docker hub
-    hello_world_image = docker_client.images.pull("hello-world","latest")
-    # login to private registry
-    docker_client.login(registry=url, username=cfg["services"]["director"]["environment"]["REGISTRY_USER"])
-    # tag the image
-    repo = url + "/hello-world:dev"
-    assert hello_world_image.tag(repo) == True
-    # push the image to the private registry
-    docker_client.images.push(repo)
-    # wipe the images
-    docker_client.images.remove(image="hello-world:latest")
-    docker_client.images.remove(image=hello_world_image.id)
-    # pull the image from the private registry
-    private_image = docker_client.images.pull(repo)
-    docker_client.images.remove(image=private_image.id)
-
-    yield url
 
 # HELPERS ---------------------------------------------
 def resolve_environ(service, environ):
@@ -317,11 +291,3 @@ def wait_till_postgres_responsive(url):
     return True
 
 
-@tenacity.retry(wait=tenacity.wait_fixed(0.1), stop=tenacity.stop_after_delay(60))
-def wait_till_registry_is_responsive(url):
-    try:
-        docker_client = docker.from_env()
-        docker_client.login(registry=url, username="test")
-    except docker.errors.APIError:
-        return False
-    return True
