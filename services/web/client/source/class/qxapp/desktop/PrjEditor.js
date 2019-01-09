@@ -22,7 +22,7 @@
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function(project) {
+  construct: function(project, isNew) {
     this.base(arguments, "horizontal");
 
     qxapp.utils.UuidToName.getInstance().setProject(project);
@@ -46,7 +46,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     this.initDefault();
     this.connectEvents();
 
-    this.replaceProjectDocument();
+    if (isNew) {
+      this.replaceProjectDocument();
+    } else {
+      this.updateProjectDocument();
+    }
     this.__startAutoSaveTimer();
   },
 

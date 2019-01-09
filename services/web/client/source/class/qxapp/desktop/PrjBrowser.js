@@ -108,15 +108,19 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           name: data.prjTitle,
           description: data.prjDescription
         };
-        this.__startProject(newPrj);
+        this.__startProject(newPrj, true);
         win.close();
       }, this);
       win.add(newProjectDlg);
       win.open();
     },
 
-    __startProject: function(prjData) {
-      this.fireDataEvent("startProject", prjData);
+    __startProject: function(prjData, isNew = false) {
+      const data = {
+        prjData: prjData,
+        isNew: isNew
+      };
+      this.fireDataEvent("startProject", data);
     },
 
     __createProject: function(projectId, fromTemplate = false) {
@@ -129,7 +133,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         if (fromTemplate) {
           projectData = qxapp.utils.Utils.replaceTemplateUUIDs(projectData);
         }
-        this.__startProject(projectData);
+        this.__startProject(projectData, fromTemplate);
       }, this);
 
       resource.addListener("getError", e => {
