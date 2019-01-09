@@ -88,8 +88,9 @@ qx.Class.define("qxapp.component.EntityList", {
         children: []
       };
       let model = qx.data.marshal.Json.createModel(data, true);
+
       // configure model for triState usage
-      this.configureTriState(model);
+      this.__configureTriState(model);
 
       // data binding
       this.__tree.setModel(model);
@@ -108,51 +109,6 @@ qx.Class.define("qxapp.component.EntityList", {
           }, this);
         }
       });
-    },
-
-    // from http://www.qooxdoo.org/current/demobrowser/#virtual~Tree_Columns.html
-    // TODO: It's not working
-    configureTriState: function(item) {
-      item.getModel = function() {
-        return this;
-      };
-
-      if (item.getChildren != null) { // eslint-disable-line no-eq-null
-        let children = item.getChildren();
-        for (let i = 0; i < children.getLength(); i++) {
-          let child = children.getItem(i);
-          this.configureTriState(child);
-
-          // bind parent with child
-          item.bind("checked", child, "checked", {
-            converter: function(value, child2) {
-              // when parent is set to null than the child should keep it's value
-              if (value === null) {
-                return child2.getChecked();
-              }
-              return value;
-            }
-          });
-
-          // bind child with parent
-          child.bind("checked", item, "checked", {
-            converter: function(value, parent) {
-              let children2 = parent.getChildren().toArray();
-              let isAllChecked = children2.every(function(item2) {
-                return item2.getChecked();
-              });
-              let isOneChecked = children2.some(function(item2) {
-                return item.getChecked() || item2.getChecked() === null;
-              });
-              // Set triState (on parent node) when one child is checked
-              if (isOneChecked) {
-                return isAllChecked ? true : null;
-              }
-              return false;
-            }
-          });
-        }
-      }
     },
 
     __onSelectionChanged: function(e) {
@@ -239,7 +195,6 @@ qx.Class.define("qxapp.component.EntityList", {
       let newItemModel = qx.data.marshal.Json.createModel(newItem, true);
       this.__pushAlphabeticallySorted(parent, newItemModel);
 
-      this.configureTriState(rootModel);
       this.__tree.setModel(rootModel);
 
       // select new item

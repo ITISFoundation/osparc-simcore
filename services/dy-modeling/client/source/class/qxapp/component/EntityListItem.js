@@ -57,23 +57,27 @@ qx.Class.define("qxapp.component.EntityListItem", {
       this.addIcon();
 
       // A checkbox comes right after the tree icon
-      var checkbox = this.__checkbox = new qx.ui.form.CheckBox();
+      let checkbox = this.__checkbox = new qx.ui.form.CheckBox();
       this.bind("checked", checkbox, "value");
       checkbox.bind("value", this, "checked");
       checkbox.setFocusable(false);
-      checkbox.setTriState(true);
+      // checkbox.setTriState(true);
       checkbox.setMarginRight(4);
       checkbox.addListener("changeValue", e => {
-        const data = {
-          entityId: this.getEntityId(),
-          show: e.getData()
-        };
-        this.fireDataEvent("visibilityChanged", data);
+        this.__changeEntVisibility(this, e.getData());
       }, this);
       this.addWidget(checkbox);
 
       // The label
       this.addLabel();
+    },
+
+    __changeEntVisibility: function(entity, show) {
+      const data = {
+        entityId: entity.getEntityId(),
+        show: show
+      };
+      this.fireDataEvent("visibilityChanged", data);
     }
   }
 });
