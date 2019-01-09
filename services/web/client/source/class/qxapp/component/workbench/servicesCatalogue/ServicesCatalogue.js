@@ -204,8 +204,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     __clearData: function() {
       this.__allServices = [];
-      let clearData = new qx.data.Array([]);
-      this.__controller.setModel(clearData);
+      this.__refilterData();
     },
 
     __refilterData: function() {
