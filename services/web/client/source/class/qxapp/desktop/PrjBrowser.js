@@ -132,6 +132,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         let projectData = e.getRequest().getResponse().data;
         if (fromTemplate) {
           projectData = qxapp.utils.Utils.replaceTemplateUUIDs(projectData);
+          projectData["prjOwner"] = qxapp.auth.Data.getInstance().getUserName();
         }
         this.__startProject(projectData, fromTemplate);
       }, this);
