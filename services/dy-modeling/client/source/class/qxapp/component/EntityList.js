@@ -213,8 +213,9 @@ qx.Class.define("qxapp.component.EntityList", {
       // i=0 is always there
       for (let i=1; i<pathSplitted.length-1; i++) {
         let found = false;
+        const entId = pathSplitted[i];
         for (let j=0; j<parent.getChildren().length; j++) {
-          if (parent.getChildren().toArray()[j].getEntityId() === pathSplitted[i]) {
+          if (parent.getChildren().toArray()[j].getEntityId() === entId) {
             parent = parent.getChildren().toArray()[j];
             found = true;
             break;
@@ -223,19 +224,20 @@ qx.Class.define("qxapp.component.EntityList", {
         if (!found) {
           const folderItem = {
             label: labelSplitted[i],
-            entityId: pathSplitted[i],
+            entityId: entId,
             pathId: pathSplitted.slice(0, i).join("/"),
             pathLabel: labelSplitted.slice(0, i).join("/"),
             checked: true,
             children: []
           };
-          parent.getChildren().push(qx.data.marshal.Json.createModel(folderItem, true));
-          parent = folderItem.getChildren().toArray()[0];
+          let folderItemModel = qx.data.marshal.Json.createModel(folderItem, true);
+          this.__pushAlphabeticallySorted(parent, folderItemModel);
+          parent = folderItemModel;
         }
       }
 
       let newItemModel = qx.data.marshal.Json.createModel(newItem, true);
-      parent.getChildren().push(newItemModel);
+      this.__pushAlphabeticallySorted(parent, newItemModel);
 
       this.configureTriState(rootModel);
       this.__tree.setModel(rootModel);
@@ -243,6 +245,14 @@ qx.Class.define("qxapp.component.EntityList", {
       // select new item
       let newSelection = new qx.data.Array([newItemModel]);
       this.__tree.setSelection(newSelection);
+    },
+
+    __pushAlphabeticallySorted: function(parent, newItem) {
+      parent.getChildren().push(newItem);
+      parent.getChildren().toArray()
+        .sort(function(a, b) {
+          return a.getLabel().localeCompare(b.getLabel());
+        });
     },
 
     __getLeafList: function(item, leaves) {
