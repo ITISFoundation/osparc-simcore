@@ -38,9 +38,10 @@ services:
     # currently needs to set $Env:COMPOSE_CONVERT_WINDOWS_PATHS=1 in powershell to make this works
     # on a windows machine
       - REGISTRY_URL=${REGISTRY_URL}
-      - REGISTRY_AUTH=True
-      - REGISTRY_USER=z43
-      - REGISTRY_PW=z43
+      - REGISTRY_AUTH=${REGISTRY_AUTH}
+      - REGISTRY_USER=${REGISTRY_USER}
+      - REGISTRY_PW=${REGISTRY_PW}
+      - REGISTRY_SSL=${REGISTRY_SSL}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -53,7 +54,7 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - RUN_DOCKER_ENGINE_ROOT=${RUN_DOCKER_ENGINE_ROOT}
-      - EXTRA_HOSTS_SUFFX=osparc.io
+      - EXTRA_HOSTS_SUFFIX=osparc.io
       - PUBLISHED_HOST_NAME=${PUBLISHED_HOST_NAME}
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
