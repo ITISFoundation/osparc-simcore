@@ -15,7 +15,7 @@ REGISTRY_AUTH = os.environ.get("REGISTRY_AUTH", False) in ["true", "True"]
 REGISTRY_USER = os.environ.get("REGISTRY_USER", "")
 REGISTRY_PW = os.environ.get("REGISTRY_PW", "")
 REGISTRY_URL = os.environ.get("REGISTRY_URL", "")
-REGISTRY_SSL = os.environ.get("REGISTRY_SSL", True)
+REGISTRY_SSL = os.environ.get("REGISTRY_SSL", True) in ["true", "True"]
 EXTRA_HOSTS_SUFFIX = os.environ.get("EXTRA_HOSTS_SUFFIX", "undefined")
 
 # these are the envs passed to the dynamic services by default
