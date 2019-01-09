@@ -47,7 +47,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     this.connectEvents();
 
     this.saveProjectDocument();
-    this.__startAutoSave();
+    this.__startAutoSaveTimer();
   },
 
   properties: {
@@ -505,7 +505,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       });
     },
 
-    __startAutoSave: function() {
+    __startAutoSaveTimer: function() {
       let diffPatcher = new qxapp.wrappers.JsonDiffPatch();
       let oldObj = this.getProject().serializeProject();
       // Save every 5 seconds
