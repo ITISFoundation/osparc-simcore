@@ -243,12 +243,13 @@ def postgres_session(postgres_db):
 
 @pytest.fixture(scope='session')
 def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, tools_docker_compose_file: Path):
-    assert subprocess.run("docker-compose -f {} -f {} config > docker-compose.ignore.yml".format(docker_compose_file.name, tools_docker_compose_file.name), shell=True, cwd=docker_compose_file.parent).returncode == 0
+    docker_compose_ignore_file = docker_compose_file.parent / "docker-compose.ignore.yml"
+    assert subprocess.run("docker-compose -f {} -f {} config > {}".format(docker_compose_file.name, tools_docker_compose_file.name, docker_compose_ignore_file.name), shell=True, cwd=docker_compose_file.parent).returncode == 0
     assert subprocess.run("docker stack deploy -c docker-compose.ignore.yml services", shell=True, cwd=docker_compose_file.parent).returncode == 0
     yield
     # clean up
     assert subprocess.run("docker stack rm services", shell=True).returncode == 0
-    Path("docker-compose.ignore.yml").unlink()
+    docker_compose_ignore_file.unlink()
 
 # HELPERS ---------------------------------------------
 def resolve_environ(service, environ):
