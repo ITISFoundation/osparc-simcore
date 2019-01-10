@@ -11,6 +11,7 @@
 # pylint:disable=redefined-outer-name
 
 import os
+import socket
 import subprocess
 import sys
 from copy import deepcopy
@@ -23,19 +24,31 @@ import sqlalchemy as sa
 import tenacity
 import trafaret_config
 import yaml
-from sqlalchemy.orm import sessionmaker
-
 from simcore_sdk.models import metadata
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
 from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, users
 from simcore_service_webserver.resources import resources as app_resources
+from sqlalchemy.orm import sessionmaker
 
 pytest_plugins = ["fixtures.docker_registry"]
 
-SERVICES = ['director', 'apihub', 'rabbit', 'postgres', 'sidecar', 'storage', 'minio', 'registry']
+SERVICES = ['director', 'apihub', 'rabbit', 'postgres', 'sidecar', 'storage', 'minio']
 TOOLS = ['adminer', 'flower', 'portainer']
+
+def _get_ip()->str:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception: #pylint: disable=W0703
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
 
 @pytest.fixture(scope="session")
 def here() -> Path:
@@ -93,6 +106,8 @@ def devel_environ(env_devel_file) -> Dict[str, str]:
         env_devel['RUN_DOCKER_ENGINE_ROOT'] = '0' if os.name == 'posix' else '1'
     if 'REGISTRY_SSL' in env_devel:
         env_devel['REGISTRY_SSL'] = 'False'
+    if 'REGISTRY_URL' in env_devel:
+        env_devel['REGISTRY_URL'] = "{}:5000".format(_get_ip())
     return env_devel
 
 
@@ -289,5 +304,3 @@ def wait_till_postgres_responsive(url):
     except sa.exc.OperationalError:
         return False
     return True
-
-
