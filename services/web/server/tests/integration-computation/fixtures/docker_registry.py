@@ -1,7 +1,12 @@
+# pylint:disable=wildcard-import
+# pylint:disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 import docker
 import pytest
 import tenacity
-import socket
 
 @pytest.fixture(scope="session")
 def docker_registry():
