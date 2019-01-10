@@ -1,14 +1,15 @@
 import docker
 import pytest
 import tenacity
-
+import socket
 
 @pytest.fixture(scope="session")
-def docker_registry(docker_stack):
-    cfg = docker_stack
-    # import pdb; pdb.set_trace()
-    host = "127.0.0.1" #cfg["services"]["director"]["environment"]["REGISTRY_URL"]
-    port = cfg["services"]["registry"]["ports"][0]["published"]
+def docker_registry():
+    # run the registry outside of the stack
+    docker_client = docker.from_env()
+    container = docker_client.containers.run("registry:2", ports={"5000":"5000"}, restart_policy={"Name":"always"}, detach=True)
+    host = "127.0.0.1"
+    port = 5000
     url = "{host}:{port}".format(host=host, port=port)
     # Wait until we can connect
     assert _wait_till_registry_is_responsive(url)
@@ -18,7 +19,7 @@ def docker_registry(docker_stack):
     # get the hello world example from docker hub
     hello_world_image = docker_client.images.pull("hello-world","latest")
     # login to private registry
-    docker_client.login(registry=url, username=cfg["services"]["director"]["environment"]["REGISTRY_USER"])
+    docker_client.login(registry=url, username="simcore")
     # tag the image
     repo = url + "/hello-world:dev"
     assert hello_world_image.tag(repo) == True
@@ -33,13 +34,12 @@ def docker_registry(docker_stack):
 
     yield url
 
-@tenacity.retry(wait=tenacity.wait_fixed(0.1), stop=tenacity.stop_after_delay(60))
+    container.stop()
+
+@tenacity.retry(wait=tenacity.wait_fixed(1), stop=tenacity.stop_after_delay(120))
 def _wait_till_registry_is_responsive(url):
-    try:
-        docker_client = docker.from_env()
-        docker_client.login(registry=url, username="test")
-    except docker.errors.APIError:
-        return False
+    docker_client = docker.from_env()
+    docker_client.login(registry=url, username="simcore")
     return True
 
 #pull from itisfoundation/sleeper and push into local registry
