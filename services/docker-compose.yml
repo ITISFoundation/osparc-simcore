@@ -176,6 +176,9 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - RUN_DOCKER_ENGINE_ROOT=${RUN_DOCKER_ENGINE_ROOT}
+      - REGISTRY_URL=${REGISTRY_URL}
+      - REGISTRY_USER=${REGISTRY_USER}
+      - REGISTRY_PW=${REGISTRY_PW}
     depends_on:
       - rabbit
   #--------------------------------------------------------------------
@@ -230,17 +233,10 @@ services:
     ports:
       - "9001:9000"
     command: server /data
-  #--------------------------------------------------------------------
-  registry:
-    image: registry:2
-    ports:
-      - "5000:5000"
-    volumes:
-      - registry:/var/lib/registry
+  
     #--------------------------------------------------------------------
 volumes:
   input:
   output:
   log:
   postgres:
-  registry:
