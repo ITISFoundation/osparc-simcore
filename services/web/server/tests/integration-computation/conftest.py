@@ -18,6 +18,10 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Dict
 
+import celery
+import celery.bin.base
+import celery.bin.celery
+import celery.platforms
 import docker
 import pytest
 import sqlalchemy as sa
@@ -32,7 +36,7 @@ from simcore_service_webserver.db_models import confirmations, users
 from simcore_service_webserver.resources import resources as app_resources
 from sqlalchemy.orm import sessionmaker
 
-pytest_plugins = ["fixtures.docker_registry"]
+pytest_plugins = ["fixtures.docker_registry", "fixtures.celery_service"]
 
 SERVICES = ['director', 'apihub', 'rabbit', 'postgres', 'sidecar', 'storage', 'minio']
 TOOLS = ['adminer', 'flower', 'portainer']
@@ -101,6 +105,7 @@ def devel_environ(env_devel_file) -> Dict[str, str]:
             if line and not line.startswith("#"):
                 key, value = line.split("=")
                 env_devel[key] = str(value)
+    # change some of the environ to accomodate the test case            
     # ensure the test runs not as root if not under linux
     if 'RUN_DOCKER_ENGINE_ROOT' in env_devel:
         env_devel['RUN_DOCKER_ENGINE_ROOT'] = '0' if os.name == 'posix' else '1'
@@ -108,6 +113,12 @@ def devel_environ(env_devel_file) -> Dict[str, str]:
         env_devel['REGISTRY_SSL'] = 'False'
     if 'REGISTRY_URL' in env_devel:
         env_devel['REGISTRY_URL'] = "{}:5000".format(_get_ip())
+    if 'REGISTRY_USER' in env_devel:
+        env_devel['REGISTRY_USER'] = "simcore"
+    if 'REGISTRY_PW' in env_devel:
+        env_devel['REGISTRY_PW'] = ""
+    if 'REGISTRY_AUTH' in env_devel:
+        env_devel['REGISTRY_AUTH'] = False
     return env_devel
 
 
@@ -246,9 +257,6 @@ def postgres_session(postgres_db):
     yield session
     session.close()
 
-# REGISTRY
-
-
 # HELPERS ---------------------------------------------
 def resolve_environ(service, environ):
     _environs = {}
@@ -297,10 +305,7 @@ def _recreate_compose_file(keep, services_compose, docker_compose_path, devel_en
 @tenacity.retry(wait=tenacity.wait_fixed(0.1), stop=tenacity.stop_after_delay(60))
 def wait_till_postgres_responsive(url):
     """Check if something responds to ``url`` """
-    try:
-        engine = sa.create_engine(url)
-        conn = engine.connect()
-        conn.close()
-    except sa.exc.OperationalError:
-        return False
+    engine = sa.create_engine(url)
+    conn = engine.connect()
+    conn.close()
     return True

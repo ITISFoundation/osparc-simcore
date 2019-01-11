@@ -37,9 +37,9 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, her
 
     app_config["db"]["init_tables"] = True # inits postgres_service
 
-    # TODO: parse_and_validate
-    # with (here / "config.app.yaml").open('wt') as f:
-    #     yaml.dump(app_config, f, default_flow_style=False)
+    final_config_path = here / "config.app.yaml"
+    with final_config_path.open('wt') as f:
+        yaml.dump(app_config, f, default_flow_style=False)
 
     # fake config
     app = web.Application()
@@ -50,7 +50,9 @@ def webserver_service(loop, aiohttp_unused_port, aiohttp_server, app_config, her
     setup_computation(app, disable_login=True)
 
     server = loop.run_until_complete(aiohttp_server(app, port=port))
-    return server
+    yield server
+    # cleanup
+    final_config_path.unlink()
 
 
 @pytest.fixture
@@ -114,7 +116,7 @@ def _check_db_contents(project_id, postgres_session, mock_workbench_payload, moc
         assert task_db.image["name"] == mock_pipeline[task_db.node_id]["key"]
         assert task_db.image["tag"] == mock_pipeline[task_db.node_id]["version"]
 
-async def test_start_pipeline(sleeper_service, docker_stack, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session):
+async def test_start_pipeline(sleeper_service, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session, celery_service):
     # import pdb; pdb.set_trace()
     resp = await client.post("/v0/computation/pipeline/{}/start".format(project_id),
         json = mock_workbench_payload,
