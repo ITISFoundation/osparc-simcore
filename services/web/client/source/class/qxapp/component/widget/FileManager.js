@@ -23,11 +23,11 @@
 qx.Class.define("qxapp.component.widget.FileManager", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeModel) {
+  construct: function(node) {
     this.base(arguments);
 
     this.set({
-      nodeModel: nodeModel
+      node: node
     });
 
     let fileManagerLayout = new qx.ui.layout.VBox(10);
@@ -88,8 +88,8 @@ qx.Class.define("qxapp.component.widget.FileManager", {
   },
 
   properties: {
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel"
+    node: {
+      check: "qxapp.data.model.Node"
     }
   },
 
@@ -133,7 +133,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
 
     __reloadNodeTree: function() {
       let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__nodeTree);
-      filesTreePopulator.populateNodeFiles(this.getNodeModel().getNodeId());
+      filesTreePopulator.populateNodeFiles(this.getNode().getNodeId());
 
       let that = this;
       let delegate = this.__nodeTree.getDelegate();

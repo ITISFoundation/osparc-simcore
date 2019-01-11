@@ -18,12 +18,12 @@
 qx.Class.define("qxapp.component.widget.TreeTool", {
   extend: qx.ui.core.Widget,
 
-  construct: function(projectName, workbenchModel) {
+  construct: function(projectName, workbench) {
     this.base(arguments);
 
     this.set({
       projectName: projectName,
-      workbenchModel: workbenchModel
+      workbench: workbench
     });
 
     this._setLayout(new qx.ui.layout.VBox());
@@ -51,8 +51,8 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
   },
 
   properties: {
-    workbenchModel: {
-      check: "qxapp.data.model.WorkbenchModel",
+    workbench: {
+      check: "qxapp.data.model.Workbench",
       nullable: false
     },
 
@@ -130,7 +130,7 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
     },
 
     populateTree: function() {
-      const topLevelNodes = this.getWorkbenchModel().getNodeModels();
+      const topLevelNodes = this.getWorkbench().getNodes();
       let data = {
         label: this.getProjectName(),
         children: this.__convertModel(topLevelNodes),
@@ -222,8 +222,8 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
         const data = e.getData();
         const newLabel = data.newLabel;
         const nodeId = selectedItem.getNodeId();
-        let nodeModel = this.getWorkbenchModel().getNodeModel(nodeId);
-        nodeModel.setLabel(newLabel);
+        let node = this.getWorkbench().getNode(nodeId);
+        node.setLabel(newLabel);
       }, this);
       const bounds = this.getLayoutParent().getBounds();
       treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);

@@ -17,11 +17,11 @@
 
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.data.model.NodeModel", {
+qx.Class.define("qxapp.data.model.Node", {
   extend: qx.core.Object,
 
-  construct: function(workbenchModel, key, version, uuid) {
-    this.setWorkbenchModel(workbenchModel);
+  construct: function(workbench, key, version, uuid) {
+    this.setWorkbench(workbench);
 
     this.base(arguments);
 
@@ -30,6 +30,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     this.__inputNodes = [];
     this.__inputsDefault = {};
     this.__outputs = {};
+    this.__logs = [];
 
     this.set({
       nodeId: uuid || qxapp.utils.Utils.uuidv4()
@@ -62,8 +63,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
   },
 
   properties: {
-    workbenchModel: {
-      check: "qxapp.data.model.WorkbenchModel",
+    workbench: {
+      check: "qxapp.data.model.Workbench",
       nullable: false
     },
 
@@ -135,6 +136,12 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     retrieveIFrameButton: {
       check: "qx.ui.form.Button",
       init: null
+    },
+
+    progress: {
+      check: "Number",
+      init: 0,
+      event: "changeProgress"
     }
   },
 
@@ -154,6 +161,11 @@ qx.Class.define("qxapp.data.model.NodeModel", {
     __outputWidget: null,
     __posX: null,
     __posY: null,
+    __logs: null,
+
+    addLog: function(log) {
+      this.__logs.push(log);
+    },
 
     isContainer: function() {
       return (this.getNodeImageId() === null);
@@ -211,8 +223,8 @@ qx.Class.define("qxapp.data.model.NodeModel", {
       return innerNodes;
     },
 
-    addInnerNode: function(innerNodeId, innerNodeModel) {
-      this.__innerNodes[innerNodeId] = innerNodeModel;
+    addInnerNode: function(innerNodeId, innerNode) {
+      this.__innerNodes[innerNodeId] = innerNode;
     },
 
     removeInnerNode: function(innerNodeId) {
@@ -332,7 +344,7 @@ qx.Class.define("qxapp.data.model.NodeModel", {
         this.getPropsWidget().linkRemoved(changedField);
       }, this);
 
-      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbenchModel(), this);
+      let propsWidget = new qxapp.component.form.renderer.PropForm(form, this.getWorkbench(), this);
       this.setPropsWidget(propsWidget);
       propsWidget.addListener("RemoveLink", e => {
         let changedField = e.getData();
