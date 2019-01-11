@@ -32,7 +32,7 @@ def session_scope(session_factory):
     session = session_factory()
     try:
         yield session
-    except: # pylint: disable=W072
+    except: # pylint: disable=W0702
         log.exception("DB access error, rolling back")
         session.rollback()
     finally:
