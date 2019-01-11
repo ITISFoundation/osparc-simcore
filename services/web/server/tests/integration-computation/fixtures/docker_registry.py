@@ -41,7 +41,7 @@ def docker_registry():
 
     container.stop()
 
-@tenacity.retry(wait=tenacity.wait_fixed(1), stop=tenacity.stop_after_delay(120))
+@tenacity.retry(wait=tenacity.wait_fixed(1), stop=tenacity.stop_after_delay(60))
 def _wait_till_registry_is_responsive(url):
     docker_client = docker.from_env()
     docker_client.login(registry=url, username="simcore")
@@ -56,4 +56,6 @@ def sleeper_service(docker_registry):
     repo = "{}/simcore/services/comp/itis/sleeper:1.0.0".format(docker_registry)
     assert image.tag(repo) == True
     client.images.push(repo)
+    image = client.images.pull(repo)
+    assert image
     yield repo
