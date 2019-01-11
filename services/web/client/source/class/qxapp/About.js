@@ -33,7 +33,7 @@ qx.Class.define("qxapp.About", {
           this.add(this.__createEntry(lib.name, lib.version, lib.homepage));
         }
       } else {
-        // as soon as we upgrade the qooxdoo compiler (v0.2.31) all this info will be in qx.libraryInfoMap
+        // TODO: as soon as we upgrade the qooxdoo compiler (v0.2.31) all this info will be in qx.libraryInfoMap
         this.add(this.__createEntry("qooxdoo-sdk", "6.0.0-alpha-20181212"));
         this.add(this.__createEntry("contrib/qx-osparc-theme", "0.3.0"));
         this.add(this.__createEntry("contrib/qx-iconfont-material", "0.1.0"));
@@ -48,7 +48,7 @@ qx.Class.define("qxapp.About", {
       });
     },
 
-    __createEntry: function(item = "unknown library", version = "unknown-version", url) {
+    __createEntry: function(item = "unknown-library", version = "unknown-version", url) {
       let entryLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         marginBottom: 4
       });
