@@ -59,17 +59,23 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     __createMainViewLayout: function() {
       let tabView = new qx.ui.tabview.TabView();
 
-      let page1 = new qx.ui.tabview.Page("Studies");
-      page1.setLayout(new qx.ui.layout.VBox());
-      {
-        let mainView = this.__createStudiesLayout();
+      [
+        ["Studies", this.__createStudiesLayout],
+        ["Services", this.__createServicesLayout],
+        ["File Manager", this.__createFileManagerLayout]
+      ].forEach(tuple => {
+        let tabPage = new qx.ui.tabview.Page(tuple[0]);
+        tabPage.setLayout(new qx.ui.layout.VBox());
+
+        let viewLayout = tuple[1].call(this);
         let scrollerMainView = new qx.ui.container.Scroll();
-        scrollerMainView.add(mainView);
-        page1.add(scrollerMainView, {
+        scrollerMainView.add(viewLayout);
+        tabPage.add(scrollerMainView, {
           flex: 1
         });
-      }
-      tabView.add(page1);
+
+        tabView.add(tabPage);
+      }, this);
 
       return tabView;
     },
@@ -109,6 +115,16 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       studiesView.add(this.__editPrjLayout);
 
       return studiesView;
+    },
+
+    __createServicesLayout: function() {
+      let servicesView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      return servicesView;
+    },
+
+    __createFileManagerLayout: function() {
+      let fileManagerView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      return fileManagerView;
     },
 
     __newPrjBtnClkd: function() {
