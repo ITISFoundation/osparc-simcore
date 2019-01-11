@@ -31,48 +31,14 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     // this._projectResources.templates
 
     let leftSpacer = new qx.ui.core.Spacer(120);
-    let mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    let scrollerMainView = new qx.ui.container.Scroll();
-    scrollerMainView.add(mainView);
+    let mainView = this.__createMainViewLayout();
     let rightSpacer = new qx.ui.core.Spacer(120);
 
     this.add(leftSpacer);
-    this.add(scrollerMainView, {
+    this.add(mainView, {
       flex: 1
     });
     this.add(rightSpacer);
-
-    const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-    let myPrjsLabel = new qx.ui.basic.Label(this.tr("My Projects")).set({
-      font: navBarLabelFont,
-      minWidth: 150
-    });
-    let userProjectList = this.__createUserProjectList();
-
-    let pubPrjsLabel = new qx.ui.basic.Label(this.tr("Template Projects")).set({
-      font: navBarLabelFont,
-      minWidth: 150
-    });
-    let publicProjectList = this.__createPublicProjectList();
-
-    let editPrjLayout = this.__editPrjLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-    editPrjLayout.setMaxWidth(800);
-    let editPrjLabel = new qx.ui.basic.Label(this.tr("Edit Project")).set({
-      font: navBarLabelFont,
-      minWidth: 150
-    });
-    editPrjLayout.add(editPrjLabel);
-    editPrjLayout.setVisibility("excluded");
-
-
-    mainView.add(new qx.ui.core.Spacer(null, 5));
-    mainView.add(myPrjsLabel);
-    mainView.add(userProjectList);
-    mainView.add(new qx.ui.core.Spacer(null, 5));
-    mainView.add(pubPrjsLabel);
-    mainView.add(publicProjectList);
-    mainView.add(new qx.ui.core.Spacer(null, 5));
-    mainView.add(this.__editPrjLayout);
 
     let commandEsc = new qx.ui.command.Command("Esc");
     commandEsc.addListener("execute", e => {
@@ -90,8 +56,63 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     __publicProjectList: null,
     __editPrjLayout: null,
 
+    __createMainViewLayout: function() {
+      let tabView = new qx.ui.tabview.TabView();
+
+      let page1 = new qx.ui.tabview.Page("Studies");
+      page1.setLayout(new qx.ui.layout.VBox());
+      {
+        let mainView = this.__createStudiesLayout();
+        let scrollerMainView = new qx.ui.container.Scroll();
+        scrollerMainView.add(mainView);
+        page1.add(scrollerMainView, {
+          flex: 1
+        });
+      }
+      tabView.add(page1);
+
+      return tabView;
+    },
+
+    __createStudiesLayout: function() {
+      let studiesView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
+      let myPrjsLabel = new qx.ui.basic.Label(this.tr("My Studies")).set({
+        font: navBarLabelFont,
+        minWidth: 150
+      });
+      let userProjectList = this.__createUserProjectList();
+
+      let pubPrjsLabel = new qx.ui.basic.Label(this.tr("Template Studies")).set({
+        font: navBarLabelFont,
+        minWidth: 150
+      });
+      let publicProjectList = this.__createPublicProjectList();
+
+      let editPrjLayout = this.__editPrjLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      editPrjLayout.setMaxWidth(800);
+      let editPrjLabel = new qx.ui.basic.Label(this.tr("Edit Study")).set({
+        font: navBarLabelFont,
+        minWidth: 150
+      });
+      editPrjLayout.add(editPrjLabel);
+      editPrjLayout.setVisibility("excluded");
+
+      studiesView.add(new qx.ui.core.Spacer(null, 5));
+      studiesView.add(myPrjsLabel);
+      studiesView.add(userProjectList);
+      studiesView.add(new qx.ui.core.Spacer(null, 5));
+      studiesView.add(pubPrjsLabel);
+      studiesView.add(publicProjectList);
+      studiesView.add(new qx.ui.core.Spacer(null, 5));
+      studiesView.add(this.__editPrjLayout);
+
+      return studiesView;
+    },
+
     __newPrjBtnClkd: function() {
-      let win = new qx.ui.window.Window(this.tr("Create New Project")).set({
+      let win = new qx.ui.window.Window(this.tr("Create New Study")).set({
         layout: new qx.ui.layout.Grow(),
         contentPadding: 0,
         showMinimize: false,
@@ -177,7 +198,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         let userPrjList = e.getRequest().getResponse().data;
         let userPrjArrayModel = this.__getProjectArrayModel(userPrjList);
         userPrjArrayModel.unshift(qx.data.marshal.Json.createModel({
-          name: this.tr("New Project"),
+          name: this.tr("New Study"),
           thumbnail: "@FontAwesome5Solid/plus-circle/80",
           uuid: null,
           lastChangeDate: null,
