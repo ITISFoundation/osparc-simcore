@@ -25,7 +25,7 @@
 qx.Class.define("qxapp.component.widget.NodeExposed", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeModel) {
+  construct: function(node) {
     this.base();
 
     let nodeExposedLayout = new qx.ui.layout.VBox(10);
@@ -44,7 +44,7 @@ qx.Class.define("qxapp.component.widget.NodeExposed", {
     atom.getChildControl("label").set({
       textAlign: "center"
     });
-    nodeModel.bind("label", atom, "label", {
+    node.bind("label", atom, "label", {
       converter: function(data) {
         return data + "'s<br>outputs";
       }
@@ -54,12 +54,12 @@ qx.Class.define("qxapp.component.widget.NodeExposed", {
       flex: 1
     });
 
-    this.setNodeModel(nodeModel);
+    this.setNode(node);
   },
 
   properties: {
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel",
+    node: {
+      check: "qxapp.data.model.Node",
       nullable: false
     }
   },
@@ -76,15 +76,15 @@ qx.Class.define("qxapp.component.widget.NodeExposed", {
     __outputPort: null,
 
     getNodeId: function() {
-      return this.getNodeModel().getNodeId();
+      return this.getNode().getNodeId();
     },
 
     getMetaData: function() {
-      return this.getNodeModel().getMetaData();
+      return this.getNode().getMetaData();
     },
 
     populateNodeLayout: function() {
-      const metaData = this.getNodeModel().getMetaData();
+      const metaData = this.getNode().getMetaData();
       this.__inputPort = {};
       this.__outputPort = {};
       this.__createUIPorts(true, metaData.inputs);
@@ -100,7 +100,7 @@ qx.Class.define("qxapp.component.widget.NodeExposed", {
 
     __createUIPorts: function(isInput, ports) {
       // Always create ports if node is a container
-      if (!this.getNodeModel().isContainer() && Object.keys(ports).length < 1) {
+      if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
         return;
       }
       this.__createUIPortConnections(this, isInput);

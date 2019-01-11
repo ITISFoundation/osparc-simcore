@@ -25,6 +25,7 @@
 
 qx.Class.define("qxapp.wrappers.JsonDiffPatch", {
   extend: qx.core.Object,
+  type: "singleton",
 
   statics: {
     NAME: "jsondiffpatch",
@@ -34,8 +35,6 @@ qx.Class.define("qxapp.wrappers.JsonDiffPatch", {
 
   construct: function() {
     this.base(arguments);
-
-    this.init();
   },
 
   properties: {

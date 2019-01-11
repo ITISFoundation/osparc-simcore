@@ -23,6 +23,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   construct: function() {
     this.base(arguments, new qx.ui.layout.HBox());
 
+    qxapp.wrappers.JsonDiffPatch.getInstance().init();
+
     this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
     // this._projectResources.projects
     // this._projectResources.project
@@ -106,28 +108,33 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           name: data.prjTitle,
           description: data.prjDescription
         };
-        this.__startProjetModel(newPrj);
+        this.__startProject(newPrj, true);
         win.close();
       }, this);
       win.add(newProjectDlg);
       win.open();
     },
 
-    __startProjetModel: function(prjData) {
-      this.fireDataEvent("startProject", prjData);
+    __startProject: function(prjData, isNew = false) {
+      const data = {
+        prjData: prjData,
+        isNew: isNew
+      };
+      this.fireDataEvent("startProject", data);
     },
 
-    __createProjectModel: function(projectId, fromTemplate = false) {
+    __createProject: function(projectId, fromTemplate = false) {
       let resource = this.__projectResources.project;
 
       resource.addListenerOnce("getSuccess", e => {
         // TODO: is this listener added everytime we call ?? It does not depend on input params
-        // but it needs to be here to implemenet startProjectModel
+        // but it needs to be here to implemenet startProject
         let projectData = e.getRequest().getResponse().data;
         if (fromTemplate) {
           projectData = qxapp.utils.Utils.replaceTemplateUUIDs(projectData);
+          projectData["prjOwner"] = qxapp.auth.Data.getInstance().getUserName();
         }
-        this.__startProjetModel(projectData);
+        this.__startProject(projectData, fromTemplate);
       }, this);
 
       resource.addListener("getError", e => {
@@ -270,7 +277,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
           item.addListener("dbltap", e => {
             const prjUuid = item.getModel();
             if (prjUuid) {
-              that.__createProjectModel(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
+              that.__createProject(prjUuid, fromTemplate); // eslint-disable-line no-underscore-dangle
             } else {
               that.__newPrjBtnClkd(); // eslint-disable-line no-underscore-dangle
             }

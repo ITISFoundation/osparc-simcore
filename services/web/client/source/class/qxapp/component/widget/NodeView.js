@@ -70,13 +70,13 @@ qx.Class.define("qxapp.component.widget.NodeView", {
   },
 
   properties: {
-    workbenchModel: {
-      check: "qxapp.data.model.WorkbenchModel",
+    workbench: {
+      check: "qxapp.data.model.Workbench",
       nullable: false
     },
 
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel",
+    node: {
+      check: "qxapp.data.model.Node",
       apply: "__applyNode"
     }
   },
@@ -102,9 +102,9 @@ qx.Class.define("qxapp.component.widget.NodeView", {
         icon: "@FontAwesome5Solid/folder-open/32"
       });
       openFolder.addListener("execute", function() {
-        let fileManager = new qxapp.component.widget.FileManager(this.getNodeModel());
+        let fileManager = new qxapp.component.widget.FileManager(this.getNode());
 
-        let win = new qx.ui.window.Window(this.getNodeModel().getLabel()).set({
+        let win = new qx.ui.window.Window(this.getNode().getLabel()).set({
           layout: new qx.ui.layout.Canvas(),
           contentPadding: 0,
           showMinimize: false,
@@ -125,12 +125,12 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       buttonsLayout.add(openFolder);
     },
 
-    __createInputPortsUI: function(inputNodeModel, isInputModel = true) {
+    __createInputPortsUI: function(inputNode, isInputModel = true) {
       let nodePorts = null;
       if (isInputModel) {
-        nodePorts = inputNodeModel.getOutputWidget();
+        nodePorts = inputNode.getOutputWidget();
       } else {
-        nodePorts = inputNodeModel.getInputsDefaultWidget();
+        nodePorts = inputNode.getInputsDefaultWidget();
       }
       if (nodePorts) {
         this.__inputNodesLayout.add(nodePorts, {
@@ -140,25 +140,25 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       return nodePorts;
     },
 
-    __addInputPortsUIs: function(nodeModel) {
+    __addInputPortsUIs: function(node) {
       this.__clearInputPortsUIs();
 
       // Add the default inputs if any
-      if (Object.keys(this.getNodeModel().getInputsDefault()).length > 0) {
-        this.__createInputPortsUI(this.getNodeModel(), false);
+      if (Object.keys(this.getNode().getInputsDefault()).length > 0) {
+        this.__createInputPortsUI(this.getNode(), false);
       }
 
       // Add the representations for the inputs
-      const inputNodes = nodeModel.getInputNodes();
+      const inputNodes = node.getInputNodes();
       for (let i=0; i<inputNodes.length; i++) {
-        let inputNodeModel = this.getWorkbenchModel().getNodeModel(inputNodes[i]);
-        if (inputNodeModel.isContainer()) {
-          for (const exposedInnerNodeId in inputNodeModel.getExposedInnerNodes()) {
-            const exposedInnerNode = inputNodeModel.getExposedInnerNodes()[exposedInnerNodeId];
+        let inputNode = this.getWorkbench().getNode(inputNodes[i]);
+        if (inputNode.isContainer()) {
+          for (const exposedInnerNodeId in inputNode.getExposedInnerNodes()) {
+            const exposedInnerNode = inputNode.getExposedInnerNodes()[exposedInnerNodeId];
             this.__createInputPortsUI(exposedInnerNode);
           }
         } else {
-          this.__createInputPortsUI(inputNodeModel);
+          this.__createInputPortsUI(inputNode);
         }
       }
     },
@@ -239,13 +239,13 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__buttonsLayout.setVisibility(othersStatus);
     },
 
-    __addButtons: function(nodeModel) {
+    __addButtons: function(node) {
       this.__buttonsLayout.removeAll();
-      let retrieveIFrameButton = nodeModel.getRetrieveIFrameButton();
+      let retrieveIFrameButton = node.getRetrieveIFrameButton();
       if (retrieveIFrameButton) {
         this.__buttonsLayout.add(retrieveIFrameButton);
       }
-      let restartIFrameButton = nodeModel.getRestartIFrameButton();
+      let restartIFrameButton = node.getRestartIFrameButton();
       if (restartIFrameButton) {
         this.__buttonsLayout.add(restartIFrameButton);
       }
@@ -253,12 +253,12 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       this.__mainLayout.add(this.__buttonsLayout);
     },
 
-    __applyNode: function(nodeModel, oldNode, propertyName) {
-      this.__addInputPortsUIs(nodeModel);
-      this.__addSettings(nodeModel.getPropsWidget());
-      this.__addMapper(nodeModel.getInputsMapper());
-      this.__addIFrame(nodeModel.getIFrame());
-      this.__addButtons(nodeModel);
+    __applyNode: function(node, oldNode, propertyName) {
+      this.__addInputPortsUIs(node);
+      this.__addSettings(node.getPropsWidget());
+      this.__addMapper(node.getInputsMapper());
+      this.__addIFrame(node.getIFrame());
+      this.__addButtons(node);
     }
   }
 });
