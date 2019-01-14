@@ -28,7 +28,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     // this._projectResources.project
     // this._projectResources.templates
 
-    let prjBrowserLayout = new qx.ui.layout.VBox(10);
+    let prjBrowserLayout = new qx.ui.layout.VBox(20);
     this._setLayout(prjBrowserLayout);
 
     let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Studies"));
@@ -92,12 +92,18 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         minWidth: 150
       });
       let userProjectList = this.__createUserProjectList();
+      let userProjectsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      userProjectsLayout.add(myPrjsLabel);
+      userProjectsLayout.add(userProjectList);
 
       let pubPrjsLabel = new qx.ui.basic.Label(this.tr("Template Studies")).set({
         font: navBarLabelFont,
         minWidth: 150
       });
       let publicProjectList = this.__createPublicProjectList();
+      let publicProjectsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      publicProjectsLayout.add(pubPrjsLabel);
+      publicProjectsLayout.add(publicProjectList);
 
       let editPrjLayout = this.__editPrjLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       editPrjLayout.setMaxWidth(800);
@@ -108,13 +114,8 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       editPrjLayout.add(editPrjLabel);
       editPrjLayout.setVisibility("excluded");
 
-      this._add(new qx.ui.core.Spacer(null, 5));
-      this._add(myPrjsLabel);
-      this._add(userProjectList);
-      this._add(new qx.ui.core.Spacer(null, 5));
-      this._add(pubPrjsLabel);
-      this._add(publicProjectList);
-      this._add(new qx.ui.core.Spacer(null, 5));
+      this._add(userProjectsLayout);
+      this._add(publicProjectsLayout);
       this._add(this.__editPrjLayout);
     },
 
@@ -152,9 +153,11 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
     __startProject: function(prjData, isNew = false) {
       if (this.__servicesReady === null) {
-        this._removeAll();
+        this.__showChildren(false);
         let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Services"));
-        this._add(iframe);
+        this._add(iframe, {
+          flex: 1
+        });
 
         const interval = 1000;
         let servicesTimer = new qx.event.Timer(interval);
@@ -163,12 +166,24 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             servicesTimer.stop();
             this._remove(iframe);
             iframe.dispose();
+            this.__showChildren(true);
             this.__loadProject(prjData, isNew);
           }
         }, this);
         servicesTimer.start();
       } else {
         this.__loadProject(prjData, isNew);
+      }
+    },
+
+    __showChildren: function(show) {
+      let children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        if (show) {
+          children[i].setVisibility("visible");
+        } else {
+          children[i].setVisibility("excluded");
+        }
       }
     },
 
