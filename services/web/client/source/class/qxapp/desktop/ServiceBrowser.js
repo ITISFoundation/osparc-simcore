@@ -26,10 +26,43 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     let prjBrowserLayout = new qx.ui.layout.VBox(10);
     this._setLayout(prjBrowserLayout);
 
-    this.__createServicesLayout();
+    let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Services"));
+    this._add(iframe, {
+      flex: 1
+    });
+
+    const interval = 1000;
+    let userTimer = new qx.event.Timer(interval);
+    userTimer.addListener("interval", () => {
+      if (this.__servicesReady) {
+        userTimer.stop();
+        this._removeAll();
+        iframe.dispose();
+        this.__createServicesLayout();
+      }
+    }, this);
+    userTimer.start();
+
+    this.__initResources();
   },
 
   members: {
+    __servicesReady: null,
+
+    __initResources: function() {
+      this.__getServicesPreload();
+    },
+
+    __getServicesPreload: function() {
+      let store = qxapp.data.Store.getInstance();
+      store.addListener("servicesRegistered", e => {
+        // Do not validate if are not taking actions
+        // this.__nodeCheck(e.getData());
+        this.__servicesReady = e.getData();
+      }, this);
+      store.getServices(true);
+    },
+
     __createServicesLayout: function() {
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
       let servicesLabel = new qx.ui.basic.Label(this.tr("Services")).set({
@@ -66,6 +99,25 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       controller1.bind("selection[0].files", controller2, "model");
       */
       this._add(servicesLayout);
+    },
+
+    __nodeCheck: function(services) {
+      /** a little ajv test */
+      let nodeCheck = new qx.io.request.Xhr("/resource/qxapp/node-meta-v0.0.1.json");
+      nodeCheck.addListener("success", e => {
+        let data = e.getTarget().getResponse();
+        try {
+          let ajv = new qxapp.wrappers.Ajv(data);
+          for (const srvId in services) {
+            const service = services[srvId];
+            let check = ajv.validate(service);
+            console.log("services validation result " + service.key + ":", check);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }, this);
+      nodeCheck.send();
     }
   }
 });
