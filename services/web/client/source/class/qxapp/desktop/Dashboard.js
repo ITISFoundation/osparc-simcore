@@ -38,9 +38,14 @@ qx.Class.define("qxapp.desktop.Dashboard", {
 
   members: {
     __prjBrowser: null,
+    __serviceBrowser: null,
 
     getPrjBrowser: function() {
       return this.__prjBrowser;
+    },
+
+    getServiceBrowser: function() {
+      return this.__serviceBrowser;
     },
 
     __createMainViewLayout: function() {
@@ -73,15 +78,7 @@ qx.Class.define("qxapp.desktop.Dashboard", {
     },
 
     __createServicesLayout: function() {
-      let servicesView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
-      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-      let servicesLabel = new qx.ui.basic.Label(this.tr("Services")).set({
-        font: navBarLabelFont,
-        minWidth: 150
-      });
-      servicesView.add(servicesLabel);
-
+      let servicesView = this.__serviceBrowser = new qxapp.desktop.ServiceBrowser();
       return servicesView;
     },
 
