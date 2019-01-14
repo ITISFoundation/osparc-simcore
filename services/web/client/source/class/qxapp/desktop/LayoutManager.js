@@ -64,7 +64,9 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjStack.add(this.__dashboard);
 
       this.__navBar.addListener("dashboardPressed", function() {
-        this.__prjEditor.updateProjectDocument();
+        if (this.__prjEditor) {
+          this.__prjEditor.updateProjectDocument();
+        }
         this.__showDashboard();
       }, this);
 
