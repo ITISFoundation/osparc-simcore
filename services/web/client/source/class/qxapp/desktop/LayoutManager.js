@@ -71,6 +71,12 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     __userReady: null,
     __servicesReady: null,
 
+    __createNavigationBar: function() {
+      let navBar = new qxapp.desktop.NavigationBar();
+      navBar.setMainViewCaption("Dashboard");
+      return navBar;
+    },
+
     __createLoadingIFrame: function(text) {
       const loadingUri = qxapp.utils.Utils.getLoaderUri(text);
       let iframe = new qx.ui.embed.Iframe(loadingUri);
@@ -92,34 +98,37 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__dashboard.getPrjBrowser().addListener("startProject", e => {
         const projectData = e.getData()["prjData"];
         const isNew = e.getData()["isNew"];
-        if (this.__servicesReady === null) {
-          let iframe = this.__createLoadingIFrame(this.tr("Services"));
-          this.__prjStack.add(iframe);
-          this.__prjStack.setSelection([iframe]);
-
-          const interval = 1000;
-          let servicesTimer = new qx.event.Timer(interval);
-          servicesTimer.addListener("interval", () => {
-            if (this.__servicesReady) {
-              servicesTimer.stop();
-              this.__prjStack.remove(iframe);
-              iframe.dispose();
-              this.__loadProject(projectData, isNew);
-            }
-          }, this);
-          servicesTimer.start();
-        } else {
-          this.__loadProject(projectData, isNew);
-        }
+        this.__startProject(projectData, isNew);
       }, this);
     },
 
-    __loadProject: function(projectData, isNew) {
-      let project = new qxapp.data.model.Project(projectData);
+    __startProject: function(projectData, isNew) {
+      if (this.__servicesReady === null) {
+        let iframe = this.__createLoadingIFrame(this.tr("Services"));
+        this.__prjStack.add(iframe);
+        this.__prjStack.setSelection([iframe]);
 
+        const interval = 1000;
+        let servicesTimer = new qx.event.Timer(interval);
+        servicesTimer.addListener("interval", () => {
+          if (this.__servicesReady) {
+            servicesTimer.stop();
+            this.__prjStack.remove(iframe);
+            iframe.dispose();
+            this.__loadProject(projectData, isNew);
+          }
+        }, this);
+        servicesTimer.start();
+      } else {
+        this.__loadProject(projectData, isNew);
+      }
+    },
+
+    __loadProject: function(projectData, isNew) {
       if (this.__prjEditor) {
         this.__prjStack.remove(this.__prjEditor);
       }
+      let project = new qxapp.data.model.Project(projectData);
       this.__prjEditor = new qxapp.desktop.PrjEditor(project, isNew);
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
@@ -130,12 +139,6 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
         const elements = ev.getData();
         this.__navBar.setMainViewCaption(elements);
       }, this);
-    },
-
-    __createNavigationBar: function() {
-      let navBar = new qxapp.desktop.NavigationBar();
-      navBar.setMainViewCaption("Dashboard");
-      return navBar;
     },
 
     __nodeCheck: function(services) {
