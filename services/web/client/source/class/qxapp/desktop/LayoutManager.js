@@ -42,23 +42,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       flex: 1
     });
 
-    let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("User Information"));
-    this.__prjStack.add(iframe);
-    this.__prjStack.setSelection([iframe]);
-
-    const interval = 1000;
-    let userTimer = new qx.event.Timer(interval);
-    userTimer.addListener("interval", () => {
-      if (this.__userReady) {
-        userTimer.stop();
-        this.__prjStack.remove(iframe);
-        iframe.dispose();
-        this.__createMainLayout();
-      }
-    }, this);
-    userTimer.start();
-
-    this.__initResources();
+    this.__createMainLayout();
   },
 
   events: {},
@@ -68,8 +52,6 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     __prjStack: null,
     __dashboard: null,
     __prjEditor: null,
-    __userReady: null,
-    __servicesReady: null,
 
     __createNavigationBar: function() {
       let navBar = new qxapp.desktop.NavigationBar();
@@ -83,46 +65,27 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
       this.__navBar.addListener("dashboardPressed", function() {
         this.__prjEditor.updateProjectDocument();
-        this.__prjStack.setSelection([this.__dashboard]);
-        this.__dashboard.getPrjBrowser().reloadUserProjects();
-        this.__navBar.setMainViewCaption(this.tr("Dashboard"));
       }, this);
 
       this.__dashboard.getPrjBrowser().addListener("startProject", e => {
-        const projectData = e.getData()["prjData"];
-        const isNew = e.getData()["isNew"];
-        this.__startProject(projectData, isNew);
+        const projectEditor = e.getData();
+        this.__showProjectEditor(projectEditor);
       }, this);
     },
 
-    __startProject: function(projectData, isNew) {
-      if (this.__servicesReady === null) {
-        let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Services"));
-        this.__prjStack.add(iframe);
-        this.__prjStack.setSelection([iframe]);
-
-        const interval = 1000;
-        let servicesTimer = new qx.event.Timer(interval);
-        servicesTimer.addListener("interval", () => {
-          if (this.__servicesReady) {
-            servicesTimer.stop();
-            this.__prjStack.remove(iframe);
-            iframe.dispose();
-            this.__loadProject(projectData, isNew);
-          }
-        }, this);
-        servicesTimer.start();
-      } else {
-        this.__loadProject(projectData, isNew);
-      }
+    __showDashboard: function() {
+      this.__prjStack.setSelection([this.__dashboard]);
+      this.__dashboard.getPrjBrowser().reloadUserProjects();
+      this.__navBar.setMainViewCaption(this.tr("Dashboard"));
     },
 
-    __loadProject: function(projectData, isNew) {
+    __showProjectEditor: function(projectEditor) {
       if (this.__prjEditor) {
         this.__prjStack.remove(this.__prjEditor);
       }
-      let project = new qxapp.data.model.Project(projectData);
-      this.__prjEditor = new qxapp.desktop.PrjEditor(project, isNew);
+
+      this.__prjEditor = projectEditor;
+      let project = projectEditor.getProject();
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
       this.__navBar.setProject(project);
@@ -132,48 +95,6 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
         const elements = ev.getData();
         this.__navBar.setMainViewCaption(elements);
       }, this);
-    },
-
-    __nodeCheck: function(services) {
-      /** a little ajv test */
-      let nodeCheck = new qx.io.request.Xhr("/resource/qxapp/node-meta-v0.0.1.json");
-      nodeCheck.addListener("success", e => {
-        let data = e.getTarget().getResponse();
-        try {
-          let ajv = new qxapp.wrappers.Ajv(data);
-          for (const srvId in services) {
-            const service = services[srvId];
-            let check = ajv.validate(service);
-            console.log("services validation result " + service.key + ":", check);
-          }
-        } catch (err) {
-          console.error(err);
-        }
-      }, this);
-      nodeCheck.send();
-    },
-
-    __initResources: function() {
-      this.__getUserProfile();
-      this.__getServicesPreload();
-    },
-
-    __getUserProfile: function() {
-      let permissions = qxapp.data.Permissions.getInstance();
-      permissions.addListener("userProfileRecieved", e => {
-        this.__userReady = e.getData();
-      }, this);
-      permissions.loadUserRoleFromBackend();
-    },
-
-    __getServicesPreload: function() {
-      let store = qxapp.data.Store.getInstance();
-      store.addListener("servicesRegistered", e => {
-        // Do not validate if are not taking actions
-        // this.__nodeCheck(e.getData());
-        this.__servicesReady = e.getData();
-      }, this);
-      store.getServices(true);
     }
   }
 });

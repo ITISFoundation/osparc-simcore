@@ -31,8 +31,25 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     let prjBrowserLayout = new qx.ui.layout.VBox(10);
     this._setLayout(prjBrowserLayout);
 
-    this.__createStudiesLayout();
-    this.__createCommandEvents();
+    let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Studies"));
+    this._add(iframe, {
+      flex: 1
+    });
+
+    const interval = 1000;
+    let userTimer = new qx.event.Timer(interval);
+    userTimer.addListener("interval", () => {
+      if (this.__userReady) {
+        userTimer.stop();
+        this._removeAll();
+        iframe.dispose();
+        this.__createStudiesLayout();
+        this.__createCommandEvents();
+      }
+    }, this);
+    userTimer.start();
+
+    this.__initResources();
   },
 
   events: {
@@ -40,10 +57,33 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
   },
 
   members: {
+    __userReady: null,
+    __servicesReady: null,
     __projectResources: null,
     __userProjectList: null,
     __publicProjectList: null,
     __editPrjLayout: null,
+
+    __initResources: function() {
+      this.__getUserProfile();
+      this.__getServicesPreload();
+    },
+
+    __getUserProfile: function() {
+      let permissions = qxapp.data.Permissions.getInstance();
+      permissions.addListener("userProfileRecieved", e => {
+        this.__userReady = e.getData();
+      }, this);
+      permissions.loadUserRoleFromBackend();
+    },
+
+    __getServicesPreload: function() {
+      let store = qxapp.data.Store.getInstance();
+      store.addListener("servicesRegistered", e => {
+        this.__servicesReady = e.getData();
+      }, this);
+      store.getServices(true);
+    },
 
     __createStudiesLayout: function() {
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
@@ -111,11 +151,31 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     },
 
     __startProject: function(prjData, isNew = false) {
-      const data = {
-        prjData: prjData,
-        isNew: isNew
-      };
-      this.fireDataEvent("startProject", data);
+      if (this.__servicesReady === null) {
+        this._removeAll();
+        let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Services"));
+        this._add(iframe);
+
+        const interval = 1000;
+        let servicesTimer = new qx.event.Timer(interval);
+        servicesTimer.addListener("interval", () => {
+          if (this.__servicesReady) {
+            servicesTimer.stop();
+            this._remove(iframe);
+            iframe.dispose();
+            this.__loadProject(prjData, isNew);
+          }
+        }, this);
+        servicesTimer.start();
+      } else {
+        this.__loadProject(prjData, isNew);
+      }
+    },
+
+    __loadProject: function(projectData, isNew) {
+      let project = new qxapp.data.model.Project(projectData);
+      let prjEditor = new qxapp.desktop.PrjEditor(project, isNew);
+      this.fireDataEvent("startProject", prjEditor);
     },
 
     __createProject: function(projectId, fromTemplate = false) {
