@@ -60,9 +60,9 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       let tabView = new qx.ui.tabview.TabView();
 
       [
-        ["Studies", this.__createStudiesLayout],
-        ["Services", this.__createServicesLayout],
-        ["File Manager", this.__createFileManagerLayout]
+        [this.tr("Studies"), this.__createStudiesLayout],
+        [this.tr("Services"), this.__createServicesLayout],
+        [this.tr("File Manager"), this.__createFileManagerLayout]
       ].forEach(tuple => {
         let tabPage = new qx.ui.tabview.Page(tuple[0]);
         tabPage.setLayout(new qx.ui.layout.VBox());
@@ -119,11 +119,27 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
 
     __createServicesLayout: function() {
       let servicesView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
+      let servicesLabel = new qx.ui.basic.Label(this.tr("Services")).set({
+        font: navBarLabelFont,
+        minWidth: 150
+      });
+      servicesView.add(servicesLabel);
+
       return servicesView;
     },
 
     __createFileManagerLayout: function() {
       let fileManagerView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
+      let fileManagerLabel = new qx.ui.basic.Label(this.tr("File Manager")).set({
+        font: navBarLabelFont,
+        minWidth: 150
+      });
+      fileManagerView.add(fileManagerLabel);
+
       return fileManagerView;
     },
 
