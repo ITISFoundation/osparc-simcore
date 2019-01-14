@@ -42,7 +42,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       flex: 1
     });
 
-    let iframe = this.__createLoadingIFrame(this.tr("User Information"));
+    let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("User Information"));
     this.__prjStack.add(iframe);
     this.__prjStack.setSelection([iframe]);
 
@@ -77,13 +77,6 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       return navBar;
     },
 
-    __createLoadingIFrame: function(text) {
-      const loadingUri = qxapp.utils.Utils.getLoaderUri(text);
-      let iframe = new qx.ui.embed.Iframe(loadingUri);
-      iframe.setBackgroundColor("transparent");
-      return iframe;
-    },
-
     __createMainLayout: function() {
       this.__dashboard = new qxapp.desktop.Dashboard();
       this.__prjStack.add(this.__dashboard);
@@ -104,7 +97,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     __startProject: function(projectData, isNew) {
       if (this.__servicesReady === null) {
-        let iframe = this.__createLoadingIFrame(this.tr("Services"));
+        let iframe = qxapp.utils.Utils.createLoadingIFrame(this.tr("Services"));
         this.__prjStack.add(iframe);
         this.__prjStack.setSelection([iframe]);
 

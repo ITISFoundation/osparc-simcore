@@ -66,13 +66,6 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       controller1.bind("selection[0].files", controller2, "model");
       */
       this._add(servicesLayout);
-    },
-
-    __createLoadingIFrame: function(text) {
-      const loadingUri = qxapp.utils.Utils.getLoaderUri(text);
-      let iframe = new qx.ui.embed.Iframe(loadingUri);
-      iframe.setBackgroundColor("transparent");
-      return iframe;
     }
   }
 });

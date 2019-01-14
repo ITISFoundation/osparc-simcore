@@ -20,8 +20,7 @@
 qx.Class.define("qxapp.utils.Utils", {
   type: "static",
 
-  statics:
-  {
+  statics: {
     uuidv4: function() {
       return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
@@ -34,6 +33,13 @@ qx.Class.define("qxapp.utils.Utils", {
         loadingUri += arg;
       }
       return loadingUri;
+    },
+
+    createLoadingIFrame: function(text) {
+      const loadingUri = qxapp.utils.Utils.getLoaderUri(text);
+      let iframe = new qx.ui.embed.Iframe(loadingUri);
+      iframe.setBackgroundColor("transparent");
+      return iframe;
     },
 
     // deep clone of nested objects
