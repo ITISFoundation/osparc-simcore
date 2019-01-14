@@ -9,29 +9,32 @@ from setuptools import setup, find_packages
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 comment_pattern = re.compile(r'^\s*#')
 
-def list_packages(fpath: Path):
-    with fpath.open() as f:
-        return [line.strip() for line in f.readlines() if not comment_pattern.match(line)]
 
 readme = (current_dir/'README.rst').read_text()
 history = (current_dir/'HISTORY.rst').read_text()
 
 install_requirements = [
-    'aiohttp==3.4.4',
-    'aiohttp_session==2.7.0', # FIXME: should go, since not all service might have sessions
-    'aiopg==0.15.0',          # chosen asyncio client tool to interact with postgres
-    'attr==0.3.1',
-    'cryptography==2.4.2',
-    'openapi_core==0.7.1',
-    'psycopg2==2.7.6.1',
-    'SQLAlchemy==1.2.15',
-    'typing==3.6.6',
-    'Werkzeug==0.14.1',
-    'PyYAML==3.13',
-    'yarl==1.3.0',
+    'aiohttp',
+    'aiohttp_session', # FIXME: should go, since not all service might have sessions
+    'aiopg',           # chosen asyncio client tool to interact with postgres
+    'cryptography',
+    'openapi_core',
+    'psycopg2',
+    'SQLAlchemy',
+    'typing',
+    'Werkzeug',
+    'pyyaml>=4.2b1', # https://nvd.nist.gov/vuln/detail/CVE-2017-18342
+    'yarl',
 ]
-test_requirements = list_packages(current_dir/ "requirements" / "tests.txt")
-setup_requirements = ['pytest-runner', ]
+
+test_requirements = [
+    'pytest',
+    'pytest-aiohttp', 'pytest-cov',
+]
+
+setup_requirements = [
+    'pytest-runner',
+]
 
 
 setup(
@@ -57,5 +60,8 @@ setup(
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
+    extras_require={
+        'test': test_requirements
+    },
     zip_safe=False
 )
