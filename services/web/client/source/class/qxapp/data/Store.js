@@ -20,6 +20,11 @@ qx.Class.define("qxapp.data.Store", {
 
   type : "singleton",
 
+  construct: function() {
+    this.__reloadingServices = false;
+    this.__servicesCached = {};
+  },
+
   events: {
     "servicesRegistered": "qx.event.type.Event",
     // "fakeFiles": "qx.event.type.Event",
@@ -44,6 +49,7 @@ qx.Class.define("qxapp.data.Store", {
   },
 
   members: {
+    __reloadingServices: null,
     __servicesCached: null,
 
     __getMimeType: function(type) {
@@ -1080,7 +1086,8 @@ qx.Class.define("qxapp.data.Store", {
     },
 
     getServices: function(reload) {
-      if (reload || Object.keys(this.__servicesCached).length === 0) {
+      if (!this.__reloadingServices && reload || Object.keys(this.__servicesCached).length === 0) {
+        this.__reloadingServices = true;
         let req = new qxapp.io.request.ApiRequest("/services", "GET");
         req.addListener("success", e => {
           let requ = e.getTarget();
@@ -1094,11 +1101,7 @@ qx.Class.define("qxapp.data.Store", {
             const nodeImageId = service.key + "-" + service.version;
             services[nodeImageId] = service;
           }
-          if (this.__servicesCached === null) {
-            this.__servicesCached = {};
-          }
-          this.__servicesCached = Object.assign(this.__servicesCached, services);
-          this.fireDataEvent("servicesRegistered", services);
+          this.__servicesToCache(services);
         }, this);
 
         req.addListener("fail", e => {
@@ -1107,16 +1110,19 @@ qx.Class.define("qxapp.data.Store", {
           } = e.getTarget().getResponse();
           console.error("getServices failed", error);
           let services = this.getFakeServices();
-          if (this.__servicesCached === null) {
-            this.__servicesCached = {};
-          }
-          this.__servicesCached = Object.assign(this.__servicesCached, services);
-          this.fireDataEvent("servicesRegistered", services);
+          this.__servicesToCache(services);
         }, this);
         req.send();
         return null;
       }
       return this.__servicesCached;
+    },
+
+    __servicesToCache: function(services) {
+      this.__servicesCached = {};
+      this.__servicesCached = Object.assign(this.__servicesCached, services);
+      this.fireDataEvent("servicesRegistered", services);
+      this.__reloadingServices = false;
     },
 
     getFakeFiles: function() {
