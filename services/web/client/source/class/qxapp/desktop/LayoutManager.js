@@ -65,6 +65,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
       this.__navBar.addListener("dashboardPressed", function() {
         this.__prjEditor.updateProjectDocument();
+        this.__showDashboard();
       }, this);
 
       this.__dashboard.getPrjBrowser().addListener("startProject", e => {
