@@ -18,32 +18,21 @@
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.desktop.PrjBrowser", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    this.base(arguments, new qx.ui.layout.HBox());
-
-    qxapp.wrappers.JsonDiffPatch.getInstance().init();
+    this.base(arguments);
 
     this.__projectResources = qxapp.io.rest.ResourceFactory.getInstance().createProjectResources();
     // this._projectResources.projects
     // this._projectResources.project
     // this._projectResources.templates
 
-    let leftSpacer = new qx.ui.core.Spacer(120);
-    let mainView = this.__createMainViewLayout();
-    let rightSpacer = new qx.ui.core.Spacer(120);
+    let prjBrowserLayout = new qx.ui.layout.VBox(10);
+    this._setLayout(prjBrowserLayout);
 
-    this.add(leftSpacer);
-    this.add(mainView, {
-      flex: 1
-    });
-    this.add(rightSpacer);
-
-    let commandEsc = new qx.ui.command.Command("Esc");
-    commandEsc.addListener("execute", e => {
-      this.__itemSelected(null);
-    });
+    this.__createStudiesLayout();
+    this.__createCommandEvents();
   },
 
   events: {
@@ -56,33 +45,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     __publicProjectList: null,
     __editPrjLayout: null,
 
-    __createMainViewLayout: function() {
-      let tabView = new qx.ui.tabview.TabView();
-
-      [
-        [this.tr("Studies"), this.__createStudiesLayout],
-        [this.tr("Services"), this.__createServicesLayout],
-        [this.tr("File Manager"), this.__createFileManagerLayout]
-      ].forEach(tuple => {
-        let tabPage = new qx.ui.tabview.Page(tuple[0]);
-        tabPage.setLayout(new qx.ui.layout.VBox());
-
-        let viewLayout = tuple[1].call(this);
-        let scrollerMainView = new qx.ui.container.Scroll();
-        scrollerMainView.add(viewLayout);
-        tabPage.add(scrollerMainView, {
-          flex: 1
-        });
-
-        tabView.add(tabPage);
-      }, this);
-
-      return tabView;
-    },
-
     __createStudiesLayout: function() {
-      let studiesView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
       let myPrjsLabel = new qx.ui.basic.Label(this.tr("My Studies")).set({
         font: navBarLabelFont,
@@ -105,42 +68,21 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       editPrjLayout.add(editPrjLabel);
       editPrjLayout.setVisibility("excluded");
 
-      studiesView.add(new qx.ui.core.Spacer(null, 5));
-      studiesView.add(myPrjsLabel);
-      studiesView.add(userProjectList);
-      studiesView.add(new qx.ui.core.Spacer(null, 5));
-      studiesView.add(pubPrjsLabel);
-      studiesView.add(publicProjectList);
-      studiesView.add(new qx.ui.core.Spacer(null, 5));
-      studiesView.add(this.__editPrjLayout);
-
-      return studiesView;
+      this._add(new qx.ui.core.Spacer(null, 5));
+      this._add(myPrjsLabel);
+      this._add(userProjectList);
+      this._add(new qx.ui.core.Spacer(null, 5));
+      this._add(pubPrjsLabel);
+      this._add(publicProjectList);
+      this._add(new qx.ui.core.Spacer(null, 5));
+      this._add(this.__editPrjLayout);
     },
 
-    __createServicesLayout: function() {
-      let servicesView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
-      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-      let servicesLabel = new qx.ui.basic.Label(this.tr("Services")).set({
-        font: navBarLabelFont,
-        minWidth: 150
+    __createCommandEvents: function() {
+      let commandEsc = new qx.ui.command.Command("Esc");
+      commandEsc.addListener("execute", e => {
+        this.__itemSelected(null);
       });
-      servicesView.add(servicesLabel);
-
-      return servicesView;
-    },
-
-    __createFileManagerLayout: function() {
-      let fileManagerView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
-      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-      let fileManagerLabel = new qx.ui.basic.Label(this.tr("File Manager")).set({
-        font: navBarLabelFont,
-        minWidth: 150
-      });
-      fileManagerView.add(fileManagerLabel);
-
-      return fileManagerView;
     },
 
     __newPrjBtnClkd: function() {

@@ -66,7 +66,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
   members: {
     __navBar: null,
     __prjStack: null,
-    __prjBrowser: null,
+    __dashboard: null,
     __prjEditor: null,
     __userReady: null,
     __servicesReady: null,
@@ -79,17 +79,17 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     },
 
     __createMainLayout: function() {
-      this.__prjBrowser = new qxapp.desktop.PrjBrowser();
-      this.__prjStack.add(this.__prjBrowser);
+      this.__dashboard = new qxapp.desktop.Dashboard();
+      this.__prjStack.add(this.__dashboard);
 
       this.__navBar.addListener("dashboardPressed", function() {
         this.__prjEditor.updateProjectDocument();
-        this.__prjStack.setSelection([this.__prjBrowser]);
-        this.__prjBrowser.reloadUserProjects();
+        this.__prjStack.setSelection([this.__dashboard]);
+        this.__dashboard.getPrjBrowser().reloadUserProjects();
         this.__navBar.setMainViewCaption(this.tr("Dashboard"));
       }, this);
 
-      this.__prjBrowser.addListener("startProject", e => {
+      this.__dashboard.getPrjBrowser().addListener("startProject", e => {
         const projectData = e.getData()["prjData"];
         const isNew = e.getData()["isNew"];
         if (this.__servicesReady === null) {
