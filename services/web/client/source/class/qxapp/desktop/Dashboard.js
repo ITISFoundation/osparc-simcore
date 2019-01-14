@@ -54,7 +54,7 @@ qx.Class.define("qxapp.desktop.Dashboard", {
       [
         [this.tr("Studies"), this.__createStudiesView],
         [this.tr("Services"), this.__createServicesLayout],
-        [this.tr("File Manager"), this.__createFileManagerLayout]
+        [this.tr("Files"), this.__createFileManagerLayout]
       ].forEach(tuple => {
         let tabPage = new qx.ui.tabview.Page(tuple[0]);
         tabPage.setLayout(new qx.ui.layout.VBox());
@@ -86,7 +86,7 @@ qx.Class.define("qxapp.desktop.Dashboard", {
       let fileManagerView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-      let fileManagerLabel = new qx.ui.basic.Label(this.tr("File Manager")).set({
+      let fileManagerLabel = new qx.ui.basic.Label(this.tr("Files")).set({
         font: navBarLabelFont,
         minWidth: 150
       });
