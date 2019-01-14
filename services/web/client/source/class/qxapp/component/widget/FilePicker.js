@@ -19,10 +19,10 @@
 qx.Class.define("qxapp.component.widget.FilePicker", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeModel, projectId) {
+  construct: function(node, projectId) {
     this.base(arguments);
 
-    this.setNodeModel(nodeModel);
+    this.setNode(node);
     this.setProjectId(projectId);
 
     let filePickerLayout = new qx.ui.layout.VBox(10);
@@ -71,8 +71,8 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
   },
 
   properties: {
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel"
+    node: {
+      check: "qxapp.data.model.Node"
     },
 
     projectId: {
@@ -151,7 +151,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       const download = false;
       const locationId = 0;
       const projectId = this.getProjectId();
-      const nodeId = this.getNodeModel().getNodeId();
+      const nodeId = this.getNode().getNodeId();
       const fileId = file.name;
       const fileUuid = projectId +"/"+ nodeId +"/"+ fileId;
       store.getPresginedLink(download, locationId, fileUuid);
@@ -213,12 +213,12 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       if (!this.__isFile(selectedItem)) {
         return;
       }
-      let outputs = this.getNodeModel().getOutputs();
+      let outputs = this.getNode().getOutputs();
       outputs["outFile"].value = {
         store: selectedItem.getLocation(),
         path: selectedItem.getFileId()
       };
-      this.getNodeModel().repopulateOutputPortData();
+      this.getNode().repopulateOutputPortData();
       this.fireEvent("finished");
     }
   }

@@ -83,13 +83,15 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjStack.add(this.__prjBrowser);
 
       this.__navBar.addListener("dashboardPressed", function() {
+        this.__prjEditor.updateProjectDocument();
         this.__prjStack.setSelection([this.__prjBrowser]);
         this.__prjBrowser.reloadUserProjects();
         this.__navBar.setMainViewCaption(this.tr("Dashboard"));
       }, this);
 
       this.__prjBrowser.addListener("startProject", e => {
-        const projectData = e.getData();
+        const projectData = e.getData()["prjData"];
+        const isNew = e.getData()["isNew"];
         if (this.__servicesReady === null) {
           let iframe = this.__createLoadingIFrame(this.tr("Services"));
           this.__prjStack.add(iframe);
@@ -102,27 +104,27 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
               servicesTimer.stop();
               this.__prjStack.remove(iframe);
               iframe.dispose();
-              this.__loadProjectModel(projectData);
+              this.__loadProject(projectData, isNew);
             }
           }, this);
           servicesTimer.start();
         } else {
-          this.__loadProjectModel(projectData);
+          this.__loadProject(projectData, isNew);
         }
       }, this);
     },
 
-    __loadProjectModel: function(projectData) {
-      let projectModel = new qxapp.data.model.ProjectModel(projectData);
+    __loadProject: function(projectData, isNew) {
+      let project = new qxapp.data.model.Project(projectData);
 
       if (this.__prjEditor) {
         this.__prjStack.remove(this.__prjEditor);
       }
-      this.__prjEditor = new qxapp.desktop.PrjEditor(projectModel);
+      this.__prjEditor = new qxapp.desktop.PrjEditor(project, isNew);
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
-      this.__navBar.setProjectModel(projectModel);
-      this.__navBar.setMainViewCaption(projectModel.getWorkbenchModel().getPathIds("root"));
+      this.__navBar.setProject(project);
+      this.__navBar.setMainViewCaption(project.getWorkbench().getPathIds("root"));
 
       this.__prjEditor.addListener("changeMainViewCaption", function(ev) {
         const elements = ev.getData();

@@ -15,6 +15,8 @@
 
 ************************************************************************ */
 
+/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", {
   extend : qx.core.Object,
 
@@ -65,6 +67,11 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
 
     __applySearchString : function(value, old) {
       this.__controller.update();
+      if (this.__controller.getSelection().length === 0) {
+        console.debug("Bug in qooxdoo");
+        // TODO: The first time a string is typed, the list doesn't properly change the selected entry
+        // Workaround: use "changleValue" on controller instead of "changeSelection" on list
+      }
     }
   },
 

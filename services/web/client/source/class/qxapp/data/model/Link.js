@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.data.model.LinkModel", {
+qx.Class.define("qxapp.data.model.Link", {
   extend: qx.core.Object,
 
   construct: function(linkId, node1Id, node2Id) {
