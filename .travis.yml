@@ -255,6 +255,41 @@ jobs:
       script:
         - npm run linter
 
+    # integrate apihub, webserver, director, sidecar, storage, minio, postgres, rabbit  ----------------------------------------------------------------------
+    - stage: integration testing
+      name: apihub, director, sidecar, storage, minio, postgres, rabbit
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      services:
+        - docker
+      cache: pip
+      before_install:
+        - python --version
+        - uname -a
+        - lsb_release -a
+        - docker -v
+        - bash ops/travis/install_docker_compose
+        # shutdown postgres because sometimes is is already up ???
+        - sudo service postgresql stop
+        # wait for postgresql to shutdown
+        - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
+      addons:
+        apt:
+          packages:
+            - docker-ce
+      install:
+        - pip install --upgrade pip wheel setuptools && pip3 --version
+        - pushd services/web/server/tests; pip3 install -r requirements.txt; popd
+        - pushd services/web/server/tests/integration-computation; pip3 install -r requirements.txt; popd
+        - pip freeze
+      before_script:
+        - make travis-build
+      script:
+        - pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-computation
+      after_success:
+      - coveralls
 
 notifications:
   email:

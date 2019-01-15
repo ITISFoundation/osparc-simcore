@@ -1,8 +1,18 @@
 version: '3.4'
 services:
+  apihub:
+    image: itisfoundation/apihub-build-cache
+    build:
+      target: production
+  director:
+    image: itisfoundation/director-build-cache
+    build:
+      target: cache
+  sidecar:
+    image: itisfoundation/sidecar-build-cache
+    build:
+      target: cache
   storage:
     image: itisfoundation/storage-build-cache
     build:
-      cache_from:
-        - itisfoundation/storage-build-cache:latest
       target: cache    

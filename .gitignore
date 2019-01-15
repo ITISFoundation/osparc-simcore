@@ -124,6 +124,7 @@ services/docker-compose.stack.*.yml
 # key-words in filename to ignore them
 *secret*
 *ignore*
+!.dockerignore
 
 # Any generated output folder (e.g. codegen, build, ...)
 out/
@@ -141,3 +142,4 @@ pytest.ini
 
 # pylint-profile output
 prof/
+

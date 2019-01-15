@@ -12,6 +12,7 @@ import trafaret as T
 # TODO: adapt all data below!
 # TODO: can use venv as defaults? e.g. $RABBITMQ_LOG_CHANNEL
 CONFIG_SCHEMA = T.Dict({
+    T.Key("name", default="tasks", optional=True): T.String(),
     T.Key("enabled", default=True, optional=True): T.Bool(),
     T.Key("host", default='rabbit', optional=True): T.String(),
     T.Key("port", default=5672, optional=True): T.Int(),
@@ -66,18 +67,6 @@ def eval_broker(config):
 
 # TODO: deprecate! -----------------------------------------------------------------------------
 # TODO: uniform config classes . see server.config file
-# RABBITMQ_USER = env.get('RABBITMQ_USER','simcore')
-# RABBITMQ_PASSWORD = env.get('RABBITMQ_PASSWORD','simcore')
-# RABBITMQ_HOST=env.get('RABBITMQ_HOST','rabbit')
-# RABBITMQ_PORT=env.get('RABBITMQ_PORT', 5672)
-# RABBITMQ_LOG_CHANNEL = env.get('RABBITMQ_LOG_CHANNEL','comp.backend.channels.log')
-# RABBITMQ_PROGRESS_CHANNEL = env.get('RABBITMQ_PROGRESS_CHANNEL','comp.backend.channels.progress')
-#
-# AMQ_URL = 'amqp://{user}:{pw}@{url}:{port}'.format(user=RABBITMQ_USER, pw=RABBITMQ_PASSWORD, url=RABBITMQ_HOST, port=RABBITMQ_PORT)
-#
-# CELERY_BROKER_URL = AMQ_URL
-# CELERY_RESULT_BACKEND=env.get('CELERY_RESULT_BACKEND','rpc://')
-# -------------------------------------
 
 class Config:
     def __init__(self, config=None):
@@ -85,27 +74,24 @@ class Config:
             CONFIG_SCHEMA.check(config) # raise exception
         else:
             config = {}
-
+        
         RABBITMQ_USER = env.get('RABBITMQ_USER','simcore')
         RABBITMQ_PASSWORD = env.get('RABBITMQ_PASSWORD','simcore')
         RABBITMQ_HOST=env.get('RABBITMQ_HOST','rabbit')
         RABBITMQ_PORT=int(env.get('RABBITMQ_PORT', 5672))
         RABBITMQ_LOG_CHANNEL = env.get('RABBITMQ_LOG_CHANNEL','comp.backend.channels.log')
         RABBITMQ_PROGRESS_CHANNEL = env.get('RABBITMQ_PROGRESS_CHANNEL','comp.backend.channels.progress')
-
-        AMQ_URL = 'amqp://{user}:{pw}@{url}:{port}'.format(user=RABBITMQ_USER, pw=RABBITMQ_PASSWORD, url=RABBITMQ_HOST, port=RABBITMQ_PORT)
-
-        CELERY_BROKER_URL = AMQ_URL
         CELERY_RESULT_BACKEND=env.get('CELERY_RESULT_BACKEND','rpc://')
         # FIXME: get variables via config.get('') or
         # rabbit
+        
         try:
             self._broker_url = eval_broker(config)
         except:                                     # pylint: disable=W0702
-            self._broker_url = CELERY_BROKER_URL
+            self._broker_url = 'amqp://{user}:{pw}@{url}:{port}'.format(user=RABBITMQ_USER, pw=RABBITMQ_PASSWORD, url=RABBITMQ_HOST, port=RABBITMQ_PORT)
 
         self._result_backend = config.get("celery", {}).get("result_backend") or CELERY_RESULT_BACKEND
-        self._module_name = "tasks"
+        self._module_name = config.get("name") or "tasks"
 
         # pika
         self._pika_credentials = pika.PlainCredentials(
