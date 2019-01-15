@@ -2,8 +2,8 @@
 
 before_install() {
     if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
-        ops/travis/generic/install_docker_compose
-        ops/travis/generic/show_system_versions
+        bash ops/travis/generic/install_docker_compose
+        bash ops/travis/generic/show_system_versions
     fi    
 }
 
@@ -12,19 +12,19 @@ install() {
 
 before_script() {
     if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
-        ops/travis/build-cache/pull_cache_builds; 
+        bash ops/travis/build-cache/pull_cache_builds; 
     fi
 }
 
 script() {
     if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
-        ops/travis/build-cache/build_cache_builds; 
+        bash ops/travis/build-cache/build_cache_builds; 
     fi
 }
 
 after_success() {
     if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
-        ops/travis/build-cache/push_cache_builds; 
+        bash ops/travis/build-cache/push_cache_builds; 
     fi
 }
 
