@@ -1,8 +1,8 @@
 #!/bin/bash
 
-before_install() {
-    bash ops/travis/generic/show_system_versions
+before_install() {    
     bash ops/travis/generic/install_docker_compose
+    bash ops/travis/generic/show_system_versions
 }
 
 install() {
