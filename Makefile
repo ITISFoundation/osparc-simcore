@@ -264,7 +264,7 @@ travis-build:
 	${DOCKER} pull itisfoundation/sidecar-build-cache:latest
 	${DOCKER} pull itisfoundation/storage-build-cache:latest
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --pull --parallel apihub director sidecar storage
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --pull webclient webserver
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient webserver
 
 travis-pull-cache-images:
 	${DOCKER} pull itisfoundation/apihub-build-cache:latest
