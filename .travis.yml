@@ -47,7 +47,7 @@ jobs:
       script:
         - bash ops/travis/webserver/unit-testing script
       after_success:
-      - coveralls
+        - coveralls
 
     # test python, director ----------------------------------------------------------------------
     - stage: unit testing
@@ -56,26 +56,17 @@ jobs:
       python:
         - "3.6"
       sudo: required
-      services:
-        - docker
       cache: pip
       before_install:
-        - bash ops/travis/before_install/show_system_versions
-        - bash ops/travis/before_install/install_docker_compose
-      addons:
-        apt:
-          packages:
-            - docker-ce
+        - bash ops/travis/director/unit-testing before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pushd services/director; pip3 install -r requirements/ci.txt; popd
-        - pip freeze
+        - bash ops/travis/director/unit-testing install        
       before_script:
-        - make travis-build
+        - bash ops/travis/director/unit-testing before_script
       script:
-        - pytest --cov=simcore_service_director -v services/director/tests
+        - bash ops/travis/director/unit-testing script
       after_success:
-      - coveralls
+        - coveralls
     # test python, simcore-sdk ----------------------------------------------------------------------
     - stage: unit testing
       name: simcore-sdk
