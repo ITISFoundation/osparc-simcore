@@ -1,0 +1,4 @@
+docker~=3.5
+pytest~=3.6
+pytest-cov~=2.5
+pyyaml~=3.13

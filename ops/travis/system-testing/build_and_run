@@ -6,16 +6,22 @@ before_install() {
 }
 
 install() {
+    pip3 install --upgrade pip wheel setuptools && pip3 --version
+    pip3 install -r ops/travis/system-testing/requirements
     make travis-pull-cache-images
     make build
 }
 
 before_script() {
+    pip freeze
+    docker images
     make up-swarm
 }
 
 script() {
-    docker ps
+    # wait for a minute to let the swarm warm up...
+    sleep 1m
+    pytest -v ops/travis/system-testing/tests
 }
 
 after_success() {
