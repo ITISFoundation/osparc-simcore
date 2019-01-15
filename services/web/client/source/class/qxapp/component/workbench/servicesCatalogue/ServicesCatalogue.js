@@ -287,7 +287,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       if (serviceVersion == this.tr(LATEST).toString()) {
         serviceVersion = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
       }
-      let service = qxapp.utils.Utils.getServiceFromArray(this.__allServicesList, serviceKey, serviceVersion)
+      let service = qxapp.utils.Utils.getServiceFromArray(this.__allServicesList, serviceKey, serviceVersion);
       if (service) {
         let serviceModel = qx.data.marshal.Json.createModel(service, true);
         const eData = {
