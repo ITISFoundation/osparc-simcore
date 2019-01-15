@@ -61,8 +61,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
   },
 
   members: {
-    __allServices: null,
-    __groupedServices: null,
+    __allServicesList: null,
+    __allServicesObj: null,
     __textfield: null,
     __showAll: null,
     __list: null,
@@ -84,7 +84,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       let showAll = this.__showAll = new qx.ui.form.CheckBox(this.tr("Show all"));
       showAll.setValue(false);
       showAll.addListener("changeValue", e => {
-        this.__refilterData();
+        this.__updateList();
       }, this);
       // FIXME: Backend should do the filtering
       if (qxapp.data.Permissions.getInstance().canDo("test")) {
@@ -104,8 +104,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     __createListLayout: function() {
       // Services list
-      this.__allServices = [];
-      this.__groupedServices = {};
+      this.__allServicesList = [];
+      this.__allServicesObj = {};
 
       let list = this.__list = new qx.ui.form.List();
       list.setSelectionMode("one");
@@ -194,8 +194,14 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       }, this);
     },
 
+    setContext: function(nodeId, port) {
+      this.__contextNodeId = nodeId;
+      this.__contextPort = port;
+      this.__updateList();
+    },
+
     __populateList: function(reload = false) {
-      this.__allServices = [];
+      this.__allServicesList = [];
       let store = qxapp.data.Store.getInstance();
       let services = store.getServices(reload);
       if (services === null) {
@@ -207,91 +213,35 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       }
     },
 
-    setContext: function(nodeId, port) {
-      this.__contextNodeId = nodeId;
-      this.__contextPort = port;
-      this.__updateCompatibleList();
+    __addNewData: function(newData) {
+      this.__allServicesList = qxapp.utils.Utils.convertServicesObjectToArray(newData);
+      this.__updateList(this.__allServicesList);
     },
 
     __reloadServices: function() {
-      this.__clearData();
+      this.__allServicesList = [];
+      this.__updateList();
       this.__populateList(true);
     },
 
-    __updateCompatibleList: function() {
-      let newData = [];
-      const checkComptibility = false;
-      if (checkComptibility && this.__contextNodeId !== null && this.__contextPort !== null) {
-        for (let i = 0; i < this.__allServices.length; i++) {
-          if (this.__contextPort.isInput === true) {
-            let outputsMap = this.__allServices[i].outputs;
-            for (let key in outputsMap) {
-              if (this.__areNodesCompatible(outputsMap[key], this.__contextPort)) {
-                newData.push(this.__allServices[i]);
-                break;
-              }
-            }
-          } else {
-            let inputsMap = this.__allServices[i].inputs;
-            for (let key in inputsMap) {
-              if (this.__areNodesCompatible(inputsMap[key], this.__contextPort)) {
-                newData.push(this.__allServices[i]);
-                break;
-              }
-            }
-          }
-        }
-      } else {
-        for (let i = 0; i < this.__allServices.length; i++) {
-          newData.push(this.__allServices[i]);
-        }
-      }
-      this.__setNewData(newData);
-    },
-
-
-    __areNodesCompatible: function(topLevelPort1, topLevelPort2) {
-      return qxapp.data.Store.getInstance().areNodesCompatible(topLevelPort1, topLevelPort2);
-    },
-
-    __clearData: function() {
-      this.__allServices = [];
-      this.__refilterData();
-    },
-
-    __refilterData: function() {
-      this.__setNewData(this.__allServices);
-    },
-
-    __setNewData: function(newData) {
+    __updateList: function() {
       let filteredServices = [];
-      for (let i = 0; i < newData.length; i++) {
-        const service = newData[i];
-        if (this.__showAll.getValue() || !service.getKey().includes("demodec")) {
+      for (let i = 0; i < this.__allServicesList.length; i++) {
+        const service = this.__allServicesList[i];
+        if (this.__showAll.getValue() || !service.key.includes("demodec")) {
           filteredServices.push(service);
         }
       }
 
-
-      let groupedServices = this.__groupedServices = {};
-      for (let i = 0; i < filteredServices.length; i++) {
-        const service = filteredServices[i];
-        if (!Object.prototype.hasOwnProperty.call(groupedServices, service.getKey())) {
-          groupedServices[service.getKey()] = [];
-        }
-        groupedServices[service.getKey()].push({
-          [service.getVersion()]: service
-        });
-        groupedServices[service.getKey()].sort(function(a, b) {
-          return qxapp.utils.Utils.compareVersionNumbers(Object.keys(a)[0], Object.keys(b)[0]);
-        });
-      }
+      let groupedServices = this.__allServicesObj = qxapp.utils.Utils.convertServicesArrayToObject(filteredServices);
 
       let groupedServicesList = [];
       for (const serviceKey in groupedServices) {
+        let versions = this.__getVersions(serviceKey);
         const services = groupedServices[serviceKey];
-        const service = services[services.length - 1];
-        groupedServicesList.push(Object.values(service)[0]);
+        const service = services[versions[versions.length - 1]];
+        let newModel = qx.data.marshal.Json.createModel(service, true);
+        groupedServicesList.push(newModel);
       }
 
 
@@ -304,7 +254,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       if (this.__versionsBox) {
         let selectBox = this.__versionsBox;
         selectBox.removeAll();
-        if (serviceKey in this.__groupedServices) {
+        if (serviceKey in this.__allServicesObj) {
           let versions = this.__getVersions(serviceKey);
           const latest = new qx.ui.form.ListItem(this.tr(LATEST));
           selectBox.add(latest);
@@ -318,21 +268,12 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
 
     __getVersions: function(serviceKey) {
       let versions = [];
-      if (serviceKey in this.__groupedServices) {
-        const groupedService = this.__groupedServices[serviceKey];
-        for (let i = 0; i < groupedService.length; i++) {
-          versions.push(Object.keys(groupedService[i])[0]);
-        }
+      if (serviceKey in this.__allServicesObj) {
+        const serviceVersions = this.__allServicesObj[serviceKey];
+        versions = versions.concat(Object.keys(serviceVersions));
+        versions.sort(qxapp.utils.Utils.compareVersionNumbers);
       }
       return versions;
-    },
-
-    __addNewData: function(newData) {
-      for (const serviceKey in newData) {
-        let newModel = qx.data.marshal.Json.createModel(newData[serviceKey], true);
-        this.__allServices.push(newModel);
-      }
-      this.__updateCompatibleList();
     },
 
     __onAddService: function() {
@@ -346,16 +287,15 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       if (serviceVersion == this.tr(LATEST).toString()) {
         serviceVersion = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
       }
-      for (let i = 0; i < this.__allServices.length; i++) {
-        if (serviceKey === this.__allServices[i].getKey() && serviceVersion === this.__allServices[i].getVersion()) {
-          const eData = {
-            service: this.__allServices[i],
-            contextNodeId: this.__contextNodeId,
-            contextPort: this.__contextPort
-          };
-          this.fireDataEvent("addService", eData);
-          break;
-        }
+      let service = qxapp.utils.Utils.getServiceFromArray(this.__allServicesList, serviceKey, serviceVersion)
+      if (service) {
+        let serviceModel = qx.data.marshal.Json.createModel(service, true);
+        const eData = {
+          service: serviceModel,
+          contextNodeId: this.__contextNodeId,
+          contextPort: this.__contextPort
+        };
+        this.fireDataEvent("addService", eData);
       }
       this.close();
     },
