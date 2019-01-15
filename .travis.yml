@@ -185,25 +185,21 @@ jobs:
     - stage: system testing, staging
       sudo: required
       before_install:
-        - sudo bash ops/travis/system-testing before_install
+        - sudo bash ops/travis/system-testing/build_and_run before_install
       install:
-        - bash ops/travis/system-testing install        
+        - bash ops/travis/system-testing/build_and_run install        
       before_script:
-        - bash ops/travis/system-testing before_script
+        - bash ops/travis/system-testing/build_and_run before_script
       script:
-        - bash ops/travis/system-testing script
+        - bash ops/travis/system-testing/build_and_run script
       after_success:
-        - bash ops/travis/system-testing after_success
-
-    - stage: deploy to staging
-      script: skip
+        - bash ops/travis/system-testing/build_and_run after_success
       deploy:
         provider: script
         script: ops/travis/staging/deploy
         on:
           branch: master
           condition: $TRAVIS_PULL_REQUEST = "false"
-
 
 notifications:
   email:
