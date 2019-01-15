@@ -1,0 +1,22 @@
+#!/bin/bash
+
+install() {
+    pip install --upgrade pip wheel setuptools && pip3 --version;
+    pip3 install packages/s3wrapper[test];
+    pip3 install packages/simcore-sdk[test];
+    pip3 install packages/director-sdk/python;
+    pushd services/web/server; pip3 install -r requirements/ci.txt; popd;    
+}
+
+after_install() {
+    pip freeze;
+}
+
+before_script() {
+    make travis-build;
+}
+
+script() {
+    pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
+    pytest --cov=simcore_service_webserver -v services/web/server/tests/login
+}
