@@ -42,6 +42,51 @@ qx.Class.define("qxapp.utils.Utils", {
       return iframe;
     },
 
+    convertServicesArrayToObject: function(servicesArray) {
+      let services = {};
+      for (let i = 0; i < servicesArray.length; i++) {
+        const service = servicesArray[i];
+        if (!Object.prototype.hasOwnProperty.call(services, service.key)) {
+          services[service.key] = {};
+        }
+        if (!Object.prototype.hasOwnProperty.call(services[service.key], service.version)) {
+          services[service.key][service.version] = {};
+        }
+        services[service.key][service.version] = service;
+      }
+      return services;
+    },
+
+    convertServicesObjectToArray: function(servicesObject) {
+      let services = [];
+      for (const serviceKey in servicesObject) {
+        const serviceVersions = servicesObject[serviceKey];
+        for (const serviceVersion in serviceVersions) {
+          services.push(serviceVersions[serviceVersion]);
+        }
+      }
+      return services;
+    },
+
+    getServiceFromObject: function(services, key, version) {
+      if (key in services) {
+        const serviceVersions = services[key];
+        if (version in serviceVersions) {
+          return serviceVersions[version];
+        }
+      }
+      return null;
+    },
+
+    getServiceFromArray: function(services, key, version) {
+      for (let i=0; i<services.length; i++) {
+        if (services[i].key === key && services[i].version === version) {
+          return services[i];
+        }
+      }
+      return null;
+    },
+
     // deep clone of nested objects
     // https://medium.com/@tkssharma/objects-in-javascript-object-assign-deep-copy-64106c9aefab#eeed
     deepCloneObject: function(src) {
