@@ -1,8 +1,8 @@
 #!/bin/bash
 
 before_install() {
-    ops/travis/before_install/install_docker_compose
-    ops/travis/before_install/show_system_versions
+    ops/travis/generic/install_docker_compose
+    ops/travis/generic/show_system_versions
 }
 
 install() {
@@ -22,6 +22,10 @@ before_script() {
 script() {
     pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
     pytest --cov=simcore_service_webserver -v services/web/server/tests/login
+}
+
+after_success() {
+    coveralls
 }
 
 # Check if the function exists (bash specific)

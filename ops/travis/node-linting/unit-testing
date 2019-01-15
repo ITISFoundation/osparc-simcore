@@ -2,26 +2,25 @@
 
 before_install() {
     ops/travis/generic/show_system_versions
-    ops/travis/generic/install_docker_compose
 }
 
 install() {
-    pip install --upgrade pip wheel setuptools && pip3 --version
-    pushd services/director; pip3 install -r requirements/ci.txt; popd
+    npm install -g npm@latest
+    npm install --save-dev eslint
+    npm install --save-dev babel-eslint
+    npm install --save-dev eslint-config-qx
+    npm install --save-dev eslint-plugin-qx-rules
 }
 
 before_script() {
-    pip freeze
-    make travis-build
-    docker images
+    eslint --version
 }
 
 script() {
-    pytest --cov=simcore_service_director -v services/director/tests
+    npm run linter
 }
 
 after_success() {
-    coveralls
 }
 
 # Check if the function exists (bash specific)

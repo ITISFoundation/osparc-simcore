@@ -47,7 +47,7 @@ jobs:
       script:
         - bash ops/travis/webserver/unit-testing script
       after_success:
-        - coveralls
+        - bash ops/travis/webserver/unit-testing after_success
 
     # test python, director ----------------------------------------------------------------------
     - stage: unit testing
@@ -66,7 +66,8 @@ jobs:
       script:
         - bash ops/travis/director/unit-testing script
       after_success:
-        - coveralls
+        - bash ops/travis/director/unit-testing after_success
+
     # test python, simcore-sdk ----------------------------------------------------------------------
     - stage: unit testing
       name: simcore-sdk
@@ -74,32 +75,17 @@ jobs:
       python:
         - "3.6"
       sudo: required
-      services:
-        - docker
       cache: pip
       before_install:
-        - bash ops/travis/before_install/show_system_versions
-        - bash ops/travis/before_install/install_docker_compose
-      addons:
-        apt:
-          packages:
-            - docker-ce
+        - bash ops/travis/simcore-sdk/unit-testing before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pushd packages/service-library; pip3 install -r requirements/dev.txt; popd
-        - pip3 install packages/s3wrapper[test]
-        - pip3 install packages/simcore-sdk[test]
-        - pip3 install services/storage/client-sdk/python
-        - pip freeze
+        - bash ops/travis/simcore-sdk/unit-testing install        
       before_script:
-        - make travis-build
+        - bash ops/travis/simcore-sdk/unit-testing before_script
       script:
-        - pytest --cov=pytest_docker -v packages/pytest_docker/tests
-        - pytest --cov=s3wrapper -v packages/s3wrapper/tests
-        - pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
-        - pytest --cov=servicelib -v packages/service-library/tests
+        - bash ops/travis/simcore-sdk/unit-testing script
       after_success:
-      - coveralls
+        - bash ops/travis/simcore-sdk/unit-testing after_success
 
     # test python, storage ----------------------------------------------------------------------
     - stage: unit testing
@@ -112,24 +98,15 @@ jobs:
         - docker
       cache: pip
       before_install:
-        - bash ops/travis/before_install/show_system_versions
-        - bash ops/travis/before_install/install_docker_compose
-      addons:
-        apt:
-          packages:
-            - docker-ce
+        - bash ops/travis/storage/unit-testing before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pushd services/storage; pip3 install -r requirements/prod.txt; popd
-        - pushd services/storage; pip3 install -r tests/requirements.txt; popd
-        - pip3 install services/storage/client-sdk/python
-        - pip freeze
+        - bash ops/travis/storage/unit-testing install        
       before_script:
-        - make travis-build
+        - bash ops/travis/storage/unit-testing before_script
       script:
-        - pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
+        - bash ops/travis/storage/unit-testing script
       after_success:
-      - coveralls
+        - bash ops/travis/storage/unit-testing after_success
 
     # test python, apihub ----------------------------------------------------------------------
     - stage: unit testing
@@ -138,28 +115,17 @@ jobs:
       python:
         - "3.6"
       sudo: required
-      services:
-        - docker
       cache: pip
       before_install:
-        - bash ops/travis/before_install/show_system_versions
-        - bash ops/travis/before_install/install_docker_compose
-      addons:
-        apt:
-          packages:
-            - docker-ce
+        - bash ops/travis/apihub/unit-testing before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pip3 install -r api/tests/requirements.txt
-        - pip3 install -r services/apihub/tests/requirements.txt
-        - pip freeze
+        - bash ops/travis/apihub/unit-testing install        
       before_script:
-        - make travis-build
+        - bash ops/travis/apihub/unit-testing before_script
       script:
-        - pytest -v api/tests
-        - pytest -v services/apihub/tests
+        - bash ops/travis/apihub/unit-testing script
       after_success:
-      - coveralls
+        - bash ops/travis/apihub/unit-testing after_success
     # test python, linting ----------------------------------------------------------------------
     - stage: unit testing
       name: Python linting
@@ -168,20 +134,15 @@ jobs:
         - "3.6"
       cache: pip
       before_install:
-        - bash ops/travis/before_install/show_system_versions
+        - bash ops/travis/python-linting/unit-testing before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pip3 install packages/s3wrapper[test]
-        - pip3 install packages/simcore-sdk[test]
-        - pushd services/director; pip3 install -r requirements/ci.txt; popd
-        - pip3 install packages/director-sdk/python
-        - pushd services/web/server; pip3 install -r requirements/ci.txt; popd
-        - pushd services/storage; pip3 install -r requirements/dev.txt; popd
-        - pip3 install -r api/tests/requirements.txt
-        - pip3 install -r services/apihub/tests/requirements.txt
-        - pip freeze
+        - bash ops/travis/python-linting/unit-testing install        
+      before_script:
+        - bash ops/travis/python-linting/unit-testing before_script
       script:
-        - make pylint
+        - bash ops/travis/python-linting/unit-testing script
+      after_success:
+        - bash ops/travis/python-linting/unit-testing after_success
 
     # test node, linting ----------------------------------------------------------------------
     - stage: unit testing
@@ -194,46 +155,35 @@ jobs:
           - .npm
           - "node_modules"
       before_install:
-        - bash ops/travis/before_install/show_system_versions
+        - bash ops/travis/node-linting/unit-testing before_install
       install:
-        - npm install -g npm@latest
-        - npm install --save-dev eslint
-        - npm install --save-dev babel-eslint
-        - npm install --save-dev eslint-config-qx
-        - npm install --save-dev eslint-plugin-qx-rules
+        - bash ops/travis/node-linting/unit-testing install        
       before_script:
-        - eslint --version
+        - bash ops/travis/node-linting/unit-testing before_script
       script:
-        - npm run linter
+        - bash ops/travis/node-linting/unit-testing script
+      after_success:
+        - bash ops/travis/node-linting/unit-testing after_success
 
     # integrate apihub, webserver, director, sidecar, storage, minio, postgres, rabbit  ----------------------------------------------------------------------
     - stage: integration testing
-      name: apihub, director, sidecar, storage, minio, postgres, rabbit
+      name: all but webserver
       language: python
       python:
         - "3.6"
-      sudo: required
-      services:
-        - docker
+      sudo: required      
       cache: pip
+
       before_install:
-        - bash ops/travis/before_install/show_system_versions
-        - bash ops/travis/before_install/install_docker_compose
-      addons:
-        apt:
-          packages:
-            - docker-ce
+        - bash ops/travis/webserver/unit-testing before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pushd services/web/server/tests; pip3 install -r requirements.txt; popd
-        - pushd services/web/server/tests/integration-computation; pip3 install -r requirements.txt; popd
-        - pip freeze
+        - bash ops/travis/webserver/unit-testing install        
       before_script:
-        - make travis-build
+        - bash ops/travis/webserver/unit-testing before_script
       script:
-        - pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-computation
+        - bash ops/travis/webserver/unit-testing script
       after_success:
-      - coveralls
+        - bash ops/travis/webserver/unit-testing after_success
 
 notifications:
   email:
