@@ -10,3 +10,7 @@ fi
 if command -v docker; then
     docker -v
 fi
+
+if command -v docker-compose; then
+    docker-compose version
+fi

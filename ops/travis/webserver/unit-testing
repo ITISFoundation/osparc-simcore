@@ -1,5 +1,10 @@
 #!/bin/bash
 
+before_install() {
+    ops/travis/before_install/install_docker_compose
+    ops/travis/before_install/show_system_versions
+}
+
 install() {
     pip install --upgrade pip wheel setuptools && pip3 --version;
     pip3 install packages/s3wrapper[test];
@@ -8,12 +13,10 @@ install() {
     pushd services/web/server; pip3 install -r requirements/ci.txt; popd;    
 }
 
-after_install() {
-    pip freeze
-}
-
 before_script() {
-    make travis-build;
+    pip freeze
+    make travis-build
+    docker images
 }
 
 script() {

@@ -3,6 +3,14 @@ env:
   global:
     - DOCKER_COMPOSE_VERSION=1.23.2
     - DOCKER_GID=1042
+services:
+  - docker
+addons:
+  apt:
+    packages:
+      - docker-ce
+
+
 jobs:
   include:
     # build cache images ----------------------------------------------------------------------
@@ -11,26 +19,16 @@ jobs:
       language: python
       python:
         - "3.6"
-      services:
-        - docker
       before_install:
-        - bash ops/travis/before_install/install_docker_compose
-      addons:
-        apt:
-          packages:
-            - docker-ce
+        - bash ops/travis/build-cache/scripts before_install
+      install:
+        - bash ops/travis/build-cache/scripts install
       before_script:
-        - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
-          bash ops/travis/before_script/pull_cache_builds; 
-          fi
+        - bash ops/travis/build-cache/scripts before_script
       script:
-        - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
-          bash ops/travis/script/build_cache_builds; 
-          fi
+        - bash ops/travis/build-cache/scripts script
       after_success:
-        - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
-          bash ops/travis/deploy/push_cache_builds; 
-          fi
+        - bash ops/travis/build-cache/scripts after_success
 
     # test python, webserver ----------------------------------------------------------------------
     - stage: unit testing
@@ -39,24 +37,15 @@ jobs:
       python:
         - "3.6"
       sudo: required
-      services:
-        - docker
       cache: pip
       before_install:
-        - bash ops/travis/before_install/show_system_versions
-        - bash ops/travis/before_install/install_docker_compose
-      addons:
-        apt:
-          packages:
-            - docker-ce
+        - bash ops/travis/webserver/unit-testing before_install
       install:
-        - bash ops/travis/webserver/scripts install        
-      after_install:
-        - bash ops/travis/webserver/scripts after_install
+        - bash ops/travis/webserver/unit-testing install        
       before_script:
-        - bash ops/travis/webserver/scripts before_script
+        - bash ops/travis/webserver/unit-testing before_script
       script:
-        - bash ops/travis/webserver/scripts script
+        - bash ops/travis/webserver/unit-testing script
       after_success:
       - coveralls
 
