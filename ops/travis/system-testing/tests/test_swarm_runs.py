@@ -69,6 +69,6 @@ def test_services_running(docker_client, services_docker_compose, tools_docker_c
         task_infos = running_service.tasks()
         assert task_infos is not None
 
-        status_json = task_infos[0]["Status"]
-        task_state = status_json["State"]
-        assert task_state == "running"
+        status_json = task_infos[len(task_infos)-1]["Status"]
+        task_state = status_json["State"]        
+        assert task_state in ["running", "complete"], "service {} has state {}".format(service_name, task_state)
