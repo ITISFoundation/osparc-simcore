@@ -15,19 +15,16 @@ jobs:
     # build cache images ----------------------------------------------------------------------
     - if: branch = master
       stage: Build docker cache images
-      language: python
-      python:
-        - "3.6"
       before_install:
-        - sudo ops/travis/build-cache/scripts before_install
+        - sudo bash ops/travis/build-cache/scripts before_install
       install:
-        - ops/travis/build-cache/scripts install
+        - bash ops/travis/build-cache/scripts install
       before_script:
-        - ops/travis/build-cache/scripts before_script
+        - bash ops/travis/build-cache/scripts before_script
       script:
-        - ops/travis/build-cache/scripts script
+        - bash ops/travis/build-cache/scripts script
       after_success:
-        - ops/travis/build-cache/scripts after_success
+        - bash ops/travis/build-cache/scripts after_success
 
     # test python, webserver ----------------------------------------------------------------------
     - stage: unit testing
@@ -38,15 +35,15 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - sudo ops/travis/webserver/unit-testing before_install
+        - sudo bash ops/travis/webserver/unit-testing before_install
       install:
-        - ops/travis/webserver/unit-testing install        
+        - bash ops/travis/webserver/unit-testing install        
       before_script:
-        - ops/travis/webserver/unit-testing before_script
+        - bash ops/travis/webserver/unit-testing before_script
       script:
-        - ops/travis/webserver/unit-testing script
+        - bash ops/travis/webserver/unit-testing script
       after_success:
-        - ops/travis/webserver/unit-testing after_success
+        - bash ops/travis/webserver/unit-testing after_success
 
     # test python, director ----------------------------------------------------------------------
     - stage: unit testing
@@ -57,15 +54,15 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - sudo ops/travis/director/unit-testing before_install
+        - sudo bash ops/travis/director/unit-testing before_install
       install:
-        - ops/travis/director/unit-testing install        
+        - bash ops/travis/director/unit-testing install        
       before_script:
-        - ops/travis/director/unit-testing before_script
+        - bash ops/travis/director/unit-testing before_script
       script:
-        - ops/travis/director/unit-testing script
+        - bash ops/travis/director/unit-testing script
       after_success:
-        - ops/travis/director/unit-testing after_success
+        - bash ops/travis/director/unit-testing after_success
 
     # test python, simcore-sdk ----------------------------------------------------------------------
     - stage: unit testing
@@ -76,15 +73,15 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - sudo ops/travis/simcore-sdk/unit-testing before_install
+        - sudo bash ops/travis/simcore-sdk/unit-testing before_install
       install:
-        - ops/travis/simcore-sdk/unit-testing install        
+        - bash ops/travis/simcore-sdk/unit-testing install        
       before_script:
-        - ops/travis/simcore-sdk/unit-testing before_script
+        - bash ops/travis/simcore-sdk/unit-testing before_script
       script:
-        - ops/travis/simcore-sdk/unit-testing script
+        - bash ops/travis/simcore-sdk/unit-testing script
       after_success:
-        - ops/travis/simcore-sdk/unit-testing after_success
+        - bash ops/travis/simcore-sdk/unit-testing after_success
 
     # test python, storage ----------------------------------------------------------------------
     - stage: unit testing
@@ -97,15 +94,15 @@ jobs:
         - docker
       cache: pip
       before_install:
-        - sudo ops/travis/storage/unit-testing before_install
+        - sudo bash ops/travis/storage/unit-testing before_install
       install:
-        - ops/travis/storage/unit-testing install        
+        - bash ops/travis/storage/unit-testing install        
       before_script:
-        - ops/travis/storage/unit-testing before_script
+        - bash ops/travis/storage/unit-testing before_script
       script:
-        - ops/travis/storage/unit-testing script
+        - bash ops/travis/storage/unit-testing script
       after_success:
-        - ops/travis/storage/unit-testing after_success
+        - bash ops/travis/storage/unit-testing after_success
 
     # test python, apihub ----------------------------------------------------------------------
     - stage: unit testing
@@ -116,15 +113,15 @@ jobs:
       sudo: required
       cache: pip
       before_install:
-        - sudo ops/travis/apihub/unit-testing before_install
+        - sudo bash ops/travis/apihub/unit-testing before_install
       install:
-        - ops/travis/apihub/unit-testing install        
+        - bash ops/travis/apihub/unit-testing install        
       before_script:
-        - ops/travis/apihub/unit-testing before_script
+        - bash ops/travis/apihub/unit-testing before_script
       script:
-        - ops/travis/apihub/unit-testing script
+        - bash ops/travis/apihub/unit-testing script
       after_success:
-        - ops/travis/apihub/unit-testing after_success
+        - bash ops/travis/apihub/unit-testing after_success
     # test python, linting ----------------------------------------------------------------------
     - stage: unit testing
       name: Python linting
@@ -133,15 +130,15 @@ jobs:
         - "3.6"
       cache: pip
       before_install:
-        - sudo ops/travis/python-linting/unit-testing before_install
+        - sudo bash ops/travis/python-linting/unit-testing before_install
       install:
-        - ops/travis/python-linting/unit-testing install        
+        - bash ops/travis/python-linting/unit-testing install        
       before_script:
-        - ops/travis/python-linting/unit-testing before_script
+        - bash ops/travis/python-linting/unit-testing before_script
       script:
-        - ops/travis/python-linting/unit-testing script
+        - bash ops/travis/python-linting/unit-testing script
       after_success:
-        - ops/travis/python-linting/unit-testing after_success
+        - bash ops/travis/python-linting/unit-testing after_success
 
     # test node, linting ----------------------------------------------------------------------
     - stage: unit testing
@@ -154,15 +151,15 @@ jobs:
           - .npm
           - "node_modules"
       before_install:
-        - ops/travis/node-linting/unit-testing before_install
+        - bash ops/travis/node-linting/unit-testing before_install
       install:
-        - ops/travis/node-linting/unit-testing install        
+        - bash ops/travis/node-linting/unit-testing install        
       before_script:
-        - ops/travis/node-linting/unit-testing before_script
+        - bash ops/travis/node-linting/unit-testing before_script
       script:
-        - ops/travis/node-linting/unit-testing script
+        - bash ops/travis/node-linting/unit-testing script
       after_success:
-        - ops/travis/node-linting/unit-testing after_success
+        - bash ops/travis/node-linting/unit-testing after_success
 
     # integrate apihub, webserver, director, sidecar, storage, minio, postgres, rabbit  ----------------------------------------------------------------------
     - stage: integration testing
@@ -173,15 +170,22 @@ jobs:
       sudo: required      
       cache: pip
       before_install:
-        - sudo ops/travis/webserver/unit-testing before_install
+        - sudo bash ops/travis/webserver/unit-testing before_install
       install:
-        - ops/travis/webserver/unit-testing install        
+        - bash ops/travis/webserver/unit-testing install        
       before_script:
-        - ops/travis/webserver/unit-testing before_script
+        - bash ops/travis/webserver/unit-testing before_script
       script:
-        - ops/travis/webserver/unit-testing script
+        - bash ops/travis/webserver/unit-testing script
       after_success:
-        - ops/travis/webserver/unit-testing after_success
+        - bash ops/travis/webserver/unit-testing after_success
+
+    - stage: deploy to staging
+      script: skip
+      # deploy:
+      #   provider: script
+      #   script: ops/travis/staging/deploy
+
 
 notifications:
   email:
