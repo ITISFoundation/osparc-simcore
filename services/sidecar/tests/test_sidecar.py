@@ -1,4 +1,4 @@
-#pylint: disable=unused-argument, unused-import
+#pylint: disable=unused-argument, unused-import, no-name-in-module
 import pytest
 
 from utils import create_tables, setup_sleepers
