@@ -21,6 +21,7 @@ script() {
 }
 
 after_success() {
+    echo "linting successful"
 }
 
 # Check if the function exists (bash specific)

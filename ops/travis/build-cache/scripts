@@ -2,12 +2,13 @@
 
 before_install() {
     if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
-        bash ops/travis/generic/install_docker_compose
-        bash ops/travis/generic/show_system_versions
+        bash ops/travis/generic/install_docker_compose;
+        bash ops/travis/generic/show_system_versions;
     fi    
 }
 
 install() {
+    echo "nothing to install..."
 }
 
 before_script() {

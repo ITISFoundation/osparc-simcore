@@ -14,7 +14,9 @@ jobs:
   include:
     # build cache images ----------------------------------------------------------------------
     - if: branch = master
-      stage: Build docker cache images
+      stage: Preparing docker cache images
+      name: build cache
+      sudo: required
       before_install:
         - sudo bash ops/travis/build-cache/scripts before_install
       install:
@@ -180,11 +182,27 @@ jobs:
       after_success:
         - bash ops/travis/webserver/unit-testing after_success
 
+    - stage: system testing, staging
+      sudo: required
+      before_install:
+        - sudo bash ops/travis/system-testing before_install
+      install:
+        - bash ops/travis/system-testing install        
+      before_script:
+        - bash ops/travis/system-testing before_script
+      script:
+        - bash ops/travis/system-testing script
+      after_success:
+        - bash ops/travis/system-testing after_success
+
     - stage: deploy to staging
       script: skip
-      # deploy:
-      #   provider: script
-      #   script: ops/travis/staging/deploy
+      deploy:
+        provider: script
+        script: ops/travis/staging/deploy
+        on:
+          branch: master
+          condition: $TRAVIS_PULL_REQUEST = "false"
 
 
 notifications:
