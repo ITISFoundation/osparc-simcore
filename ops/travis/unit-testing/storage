@@ -1,14 +1,15 @@
 #!/bin/bash
 
-before_install() {    
-    bash ops/travis/generic/install_docker_compose
-    bash ops/travis/generic/show_system_versions
+before_install() {
+    bash ops/travis/helpers/show_system_versions
+    bash ops/travis/helpers/install_docker_compose
 }
 
 install() {
     pip install --upgrade pip wheel setuptools && pip3 --version
-    pip3 install -r api/tests/requirements.txt
-    pip3 install -r services/apihub/tests/requirements.txt
+    pushd services/storage; pip3 install -r requirements/prod.txt; popd
+    pushd services/storage; pip3 install -r tests/requirements.txt; popd
+    pip3 install services/storage/client-sdk/python
 }
 
 before_script() {
@@ -18,8 +19,7 @@ before_script() {
 }
 
 script() {
-    pytest -v api/tests
-    pytest -v services/apihub/tests
+    pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
 }
 
 after_success() {
