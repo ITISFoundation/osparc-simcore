@@ -18,9 +18,18 @@ jobs:
         apt:
           packages:
             - docker-ce
-      cache: pip
+      before_script:
+        - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
+          bash ops/travis/before_script/pull_cache_builds; 
+          fi
       script:
-        - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash ops/travis/push_cache_builds; fi'
+        - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
+          bash ops/travis/script/build_cache_builds; 
+          fi
+      after_success:
+        - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
+          bash ops/travis/deploy/push_cache_builds; 
+          fi
 
     # test python, webserver ----------------------------------------------------------------------
     - stage: unit testing

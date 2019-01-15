@@ -256,19 +256,26 @@ push_client_image:
 	.venv/bin/virtualenv --python=python2 .venv27
 	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
 
+
+# ----------TRAVIS ------------------------------------------------------------------------------------
 travis-build:
 	${DOCKER} pull itisfoundation/apihub-build-cache:latest	
 	${DOCKER} pull itisfoundation/director-build-cache:latest
 	${DOCKER} pull itisfoundation/sidecar-build-cache:latest
 	${DOCKER} pull itisfoundation/storage-build-cache:latest
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel apihub director sidecar storage
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --pull --parallel apihub director sidecar storage
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --pull webclient webserver
 
-travis-push-base-images:	
+travis-pull-cache-images:
 	${DOCKER} pull itisfoundation/apihub-build-cache:latest
 	${DOCKER} pull itisfoundation/director-build-cache:latest
 	${DOCKER} pull itisfoundation/sidecar-build-cache:latest
 	${DOCKER} pull itisfoundation/storage-build-cache:latest
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage
+
+travis-build-base-images:	
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --pull --parallel apihub director sidecar storage
+
+travis-push-cache-images:
 	${DOCKER} push itisfoundation/apihub-build-cache:latest
 	${DOCKER} push itisfoundation/director-build-cache:latest
 	${DOCKER} push itisfoundation/sidecar-build-cache:latest
