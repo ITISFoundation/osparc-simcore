@@ -83,7 +83,7 @@ qx.Class.define("qxapp.data.Store", {
     getNodeMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
-        metaData = qxapp.utils.Utils.getServiceFromObject(this.__servicesCached, key, version);
+        metaData = qxapp.utils.Services.getFromObject(this.__servicesCached, key, version);
         if (metaData) {
           metaData = qxapp.utils.Utils.deepCloneObject(metaData);
           if (metaData.key === "simcore/services/dynamic/modeler/webserver") {
@@ -98,7 +98,7 @@ qx.Class.define("qxapp.data.Store", {
           return metaData;
         }
         const moreServices = this.getFakeServices().concat(this.getBuiltInServices());
-        metaData = qxapp.utils.Utils.getServiceFromArray(moreServices, key, version);
+        metaData = qxapp.utils.Services.getFromArray(moreServices, key, version);
         if (metaData) {
           return qxapp.utils.Utils.deepCloneObject(metaData);
         }
@@ -1063,7 +1063,7 @@ qx.Class.define("qxapp.data.Store", {
             data
           } = requ.getResponse();
           const newServices = data.concat(this.getBuiltInServices());
-          const services = qxapp.utils.Utils.convertServicesArrayToObject(newServices);
+          const services = qxapp.utils.Services.convertArrayToObject(newServices);
           this.__servicesToCache(services, true);
         }, this);
 
@@ -1073,7 +1073,7 @@ qx.Class.define("qxapp.data.Store", {
           } = e.getTarget().getResponse();
           console.error("getServices failed", error);
           const moreServices = this.getFakeServices().concat(this.getBuiltInServices());
-          const services = qxapp.utils.Utils.convertServicesArrayToObject(moreServices);
+          const services = qxapp.utils.Services.convertArrayToObject(moreServices);
           this.__servicesToCache(services, false);
         }, this);
         req.send();

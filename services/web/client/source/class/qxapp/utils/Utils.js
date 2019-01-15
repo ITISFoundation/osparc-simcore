@@ -42,49 +42,29 @@ qx.Class.define("qxapp.utils.Utils", {
       return iframe;
     },
 
-    convertServicesArrayToObject: function(servicesArray) {
-      let services = {};
-      for (let i = 0; i < servicesArray.length; i++) {
-        const service = servicesArray[i];
-        if (!Object.prototype.hasOwnProperty.call(services, service.key)) {
-          services[service.key] = {};
-        }
-        if (!Object.prototype.hasOwnProperty.call(services[service.key], service.version)) {
-          services[service.key][service.version] = {};
-        }
-        services[service.key][service.version] = service;
-      }
-      return services;
-    },
+    compareVersionNumbers: function(v1, v2) {
+      // https://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number/47500834
+      let v1parts = v1.split(".");
+      let v2parts = v2.split(".");
 
-    convertServicesObjectToArray: function(servicesObject) {
-      let services = [];
-      for (const serviceKey in servicesObject) {
-        const serviceVersions = servicesObject[serviceKey];
-        for (const serviceVersion in serviceVersions) {
-          services.push(serviceVersions[serviceVersion]);
+      for (let i = 0; i < v1parts.length; ++i) {
+        if (v2parts.length === i) {
+          return 1;
         }
+        if (v1parts[i] === v2parts[i]) {
+          continue;
+        }
+        if (v1parts[i] > v2parts[i]) {
+          return 1;
+        }
+        return -1;
       }
-      return services;
-    },
 
-    getServiceFromObject: function(services, key, version) {
-      if (key in services) {
-        const serviceVersions = services[key];
-        if (version in serviceVersions) {
-          return serviceVersions[version];
-        }
+      if (v1parts.length != v2parts.length) {
+        return -1;
       }
-      return null;
-    },
 
-    getServiceFromArray: function(services, key, version) {
-      for (let i=0; i<services.length; i++) {
-        if (services[i].key === key && services[i].version === version) {
-          return services[i];
-        }
-      }
-      return null;
+      return 0;
     },
 
     // deep clone of nested objects
@@ -117,31 +97,6 @@ qx.Class.define("qxapp.utils.Utils", {
       }
       data = JSON.parse(myData);
       return data;
-    },
-
-    compareVersionNumbers: function(v1, v2) {
-      // https://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number/47500834
-      let v1parts = v1.split(".");
-      let v2parts = v2.split(".");
-
-      for (let i = 0; i < v1parts.length; ++i) {
-        if (v2parts.length === i) {
-          return 1;
-        }
-        if (v1parts[i] === v2parts[i]) {
-          continue;
-        }
-        if (v1parts[i] > v2parts[i]) {
-          return 1;
-        }
-        return -1;
-      }
-
-      if (v1parts.length != v2parts.length) {
-        return -1;
-      }
-
-      return 0;
     },
 
     getRandomColor: function() {

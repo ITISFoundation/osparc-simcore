@@ -95,7 +95,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         icon: "@FontAwesome5Solid/sync-alt/16"
       });
       reloadBtn.addListener("execute", function() {
-        this.__reloadServices();
+        this.__populateList(true);
       }, this);
       filterLayout.add(reloadBtn);
 
@@ -206,7 +206,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       let services = store.getServices(reload);
       if (services === null) {
         store.addListener("servicesRegistered", e => {
-          this.__addNewData(e.getData());
+          const data = e.getData();
+          this.__addNewData(data["services"]);
         }, this);
       } else {
         this.__addNewData(services);
@@ -214,14 +215,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
     },
 
     __addNewData: function(newData) {
-      this.__allServicesList = qxapp.utils.Utils.convertServicesObjectToArray(newData);
+      this.__allServicesList = qxapp.utils.Services.convertObjectToArray(newData);
       this.__updateList(this.__allServicesList);
-    },
-
-    __reloadServices: function() {
-      this.__allServicesList = [];
-      this.__updateList();
-      this.__populateList(true);
     },
 
     __updateList: function() {
@@ -233,14 +228,12 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         }
       }
 
-      let groupedServices = this.__allServicesObj = qxapp.utils.Utils.convertServicesArrayToObject(filteredServices);
+      let groupedServices = this.__allServicesObj = qxapp.utils.Services.convertArrayToObject(filteredServices);
 
       let groupedServicesList = [];
       for (const serviceKey in groupedServices) {
-        let versions = this.__getVersions(serviceKey);
-        const services = groupedServices[serviceKey];
-        const service = services[versions[versions.length - 1]];
-        let newModel = qx.data.marshal.Json.createModel(service, true);
+        let service = qxapp.utils.Services.getLatest(groupedServices, serviceKey);
+        let newModel = qx.data.marshal.Json.createModel(service);
         groupedServicesList.push(newModel);
       }
 
@@ -255,7 +248,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
         let selectBox = this.__versionsBox;
         selectBox.removeAll();
         if (serviceKey in this.__allServicesObj) {
-          let versions = this.__getVersions(serviceKey);
+          let versions = qxapp.utils.Services.getVersions(this.__allServicesObj, serviceKey);
           const latest = new qx.ui.form.ListItem(this.tr(LATEST));
           selectBox.add(latest);
           for (let i = versions.length; i--;) {
@@ -266,15 +259,6 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       }
     },
 
-    __getVersions: function(serviceKey) {
-      let versions = [];
-      if (serviceKey in this.__allServicesObj) {
-        const serviceVersions = this.__allServicesObj[serviceKey];
-        versions = versions.concat(Object.keys(serviceVersions));
-        versions.sort(qxapp.utils.Utils.compareVersionNumbers);
-      }
-      return versions;
-    },
 
     __onAddService: function() {
       if (this.__list.isSelectionEmpty()) {
@@ -287,9 +271,9 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       if (serviceVersion == this.tr(LATEST).toString()) {
         serviceVersion = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
       }
-      let service = qxapp.utils.Utils.getServiceFromArray(this.__allServicesList, serviceKey, serviceVersion);
+      let service = qxapp.utils.Services.getFromArray(this.__allServicesList, serviceKey, serviceVersion);
       if (service) {
-        let serviceModel = qx.data.marshal.Json.createModel(service, true);
+        let serviceModel = qx.data.marshal.Json.createModel(service);
         const eData = {
           service: serviceModel,
           contextNodeId: this.__contextNodeId,
