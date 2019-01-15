@@ -184,6 +184,10 @@ jobs:
 
     - stage: system testing, staging
       sudo: required
+      language: python
+      python:
+        - "3.6"
+      cache: pip
       before_install:
         - sudo bash ops/travis/system-testing/build_and_run before_install
       install:
