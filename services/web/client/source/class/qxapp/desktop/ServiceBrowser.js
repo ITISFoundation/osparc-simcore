@@ -48,6 +48,9 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
 
   members: {
     __servicesReady: null,
+    __allServices: null,
+    __servicesList: null,
+    __versionsList: null,
 
     __initResources: function() {
       this.__getServicesPreload();
@@ -64,24 +67,41 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createServicesLayout: function() {
-      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-      let servicesLabel = new qx.ui.basic.Label(this.tr("Services")).set({
-        font: navBarLabelFont,
-        minWidth: 150
+      let servicesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
+
+      let servicesList = this.__createServicesList();
+      servicesLayout.add(servicesList);
+
+      let versionsList = this.__createVersionsList();
+      servicesLayout.add(versionsList);
+
+      let serviceDescription = this.__createServiceDescription();
+      servicesLayout.add(serviceDescription, {
+        flex: 1
       });
-      this._add(servicesLabel);
 
-      let servicesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      this._add(servicesLayout);
+    },
 
-      let servicesList = new qx.ui.form.List().set({
+    __createServicesList: function() {
+      let servicesLayout = this.__createVBox(this.tr("Services"));
+
+      let servicesList = this.__servicesList = new qx.ui.form.List().set({
         orientation: "vertical",
         spacing: 10,
         minWidth: 500,
+        height: 400,
         appearance: "pb-list"
       });
+      servicesList.addListener("changeSelection", e => {
+        if (e.getData() && e.getData().length>0) {
+          const selectedKey = e.getData()[0].getModel();
+          this.__serviceSelected(selectedKey, true);
+        }
+      }, this);
       let store = qxapp.data.Store.getInstance();
       let latestServices = [];
-      let services = store.getServices();
+      let services = this.__allServices = store.getServices();
       for (const serviceKey in services) {
         latestServices.push(qxapp.utils.Services.getLatest(services, serviceKey));
       }
@@ -93,11 +113,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
         createItem: () => new qxapp.desktop.ServiceBrowserListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "model", null, item, id);
-          ctrl.bindProperty("key", "title", {
-            converter: function(data) {
-              return "<b>" + data + "</b>";
-            }
-          }, item, id);
+          ctrl.bindProperty("key", "title", null, item, id);
           ctrl.bindProperty("name", "name", null, item, id);
           ctrl.bindProperty("type", "type", null, item, id);
           ctrl.bindProperty("contact", "contact", null, item, id);
@@ -105,7 +121,92 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       });
       servicesLayout.add(servicesList);
 
-      this._add(servicesLayout);
+      return servicesLayout;
+    },
+
+    __createVersionsList: function() {
+      let versionsLayout = this.__createVBox(this.tr("Versions"));
+
+      let versionsList = this.__versionsList = new qx.ui.form.List().set({
+        orientation: "vertical",
+        spacing: 10,
+        minWidth: 100,
+        height: 400,
+        appearance: "pb-list"
+      });
+      versionsList.addListener("changeSelection", e => {
+        if (e.getData() && e.getData().length>0) {
+          const selectedVersion = e.getData()[0].getLabel();
+          this.__versionSelected(selectedVersion, true);
+        }
+      }, this);
+      versionsLayout.add(versionsList);
+
+      return versionsLayout;
+    },
+
+    __createServiceDescription: function() {
+      let descriptionLayout = this.__createVBox(this.tr("Description"));
+
+      let serviceDescriptionGrid = new qx.ui.layout.Grid();
+      serviceDescriptionGrid.setSpacing(5);
+      serviceDescriptionGrid.setColumnFlex(0, 0);
+      serviceDescriptionGrid.setColumnFlex(1, 0);
+      serviceDescriptionGrid.setColumnAlign(0, "right", "top");
+      serviceDescriptionGrid.setColumnAlign(1, "left", "top");
+      let serviceDescription = this.__serviceDescription = new qx.ui.container.Composite(serviceDescriptionGrid);
+
+      const tagsOrder = qxapp.utils.Services.getTagsOrder();
+      for (let i=0; i<tagsOrder.length; i++) {
+        let label = new qx.ui.basic.Label(tagsOrder[i] + ":").set({
+          font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"])
+        });
+        serviceDescription.add(label, {
+          row: i,
+          column: 0
+        });
+      }
+      descriptionLayout.add(serviceDescription);
+
+      return descriptionLayout;
+    },
+
+    __createVBox: function(text) {
+      let vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      let label = new qx.ui.basic.Label(text).set({
+        font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]),
+        minWidth: 150
+      });
+      vBoxLayout.add(label);
+
+      return vBoxLayout;
+    },
+
+    __serviceSelected: function(serviceKey) {
+      if (this.__versionsList) {
+        let versionsList = this.__versionsList;
+        versionsList.removeAll();
+        if (serviceKey in this.__allServices) {
+          let versions = qxapp.utils.Services.getVersions(this.__allServices, serviceKey);
+          for (let i = versions.length; i--;) {
+            let listItem = new qx.ui.form.ListItem(versions[i]);
+            versionsList.add(listItem);
+            if (i === versions.length-1) {
+              versionsList.setSelection([listItem]);
+            }
+          }
+        }
+      }
+    },
+
+    __versionSelected: function(versionKey) {
+      const serviceSelection = this.__servicesList.getSelection();
+      if (serviceSelection.length > 0) {
+        const serviceKey = serviceSelection[0].getModel();
+        const selectedService = qxapp.utils.Services.getFromObject(this.__allServices, serviceKey, versionKey);
+        console.log(selectedService);
+      }
     },
 
     __nodeCheck: function(services) {
