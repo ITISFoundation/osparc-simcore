@@ -9,6 +9,7 @@ install() {
     pip3 install --upgrade pip wheel setuptools && pip3 --version
     pip3 install -r ops/travis/system-testing/requirements.txt
     make travis-pull-cache-images
+    cp .env-devel .env
     make build
 }
 
@@ -20,7 +21,6 @@ before_script() {
 
 script() {
     # wait for a minute to let the swarm warm up...
-    sleep 1m
     pytest -v ops/travis/system-testing/tests
 }
 

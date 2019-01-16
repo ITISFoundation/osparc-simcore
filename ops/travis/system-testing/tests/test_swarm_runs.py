@@ -11,7 +11,7 @@ from typing import Dict
 import docker
 import pytest
 import yaml
-
+import tenacity
 
 @pytest.fixture(scope="session")
 def here() -> Path:
@@ -51,9 +51,11 @@ def docker_client():
     client = docker.from_env()
     yield client
 
+@tenacity.retry(tenacity.stop_after_delay(60))
+def try_checking_task_state(task_state, service_name):
+    assert task_state in ["running", "complete"], "service {} has state {}".format(service_name, task_state)
 
 # the swarm should be up prior to testing... using make up-swarm
-
 def test_services_running(docker_client, services_docker_compose, tools_docker_compose):
     running_services = docker_client.services.list()
 
@@ -70,5 +72,5 @@ def test_services_running(docker_client, services_docker_compose, tools_docker_c
         assert task_infos is not None
 
         status_json = task_infos[len(task_infos)-1]["Status"]
-        task_state = status_json["State"]        
-        assert task_state in ["running", "complete"], "service {} has state {}".format(service_name, task_state)
+        task_state = status_json["State"]     
+        try_checking_task_state(task_state, service_name)        
