@@ -257,12 +257,22 @@ push_client_image:
 	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
 
 travis-build:
-	${DOCKER} pull itisfoundation/storage-build-cache:latest	
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel storage apihub
+	${DOCKER} pull itisfoundation/apihub-build-cache:latest	
+	${DOCKER} pull itisfoundation/director-build-cache:latest
+	${DOCKER} pull itisfoundation/sidecar-build-cache:latest
+	${DOCKER} pull itisfoundation/storage-build-cache:latest
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel apihub director sidecar storage
 
 travis-push-base-images:	
+	${DOCKER} pull itisfoundation/apihub-build-cache:latest
+	${DOCKER} pull itisfoundation/director-build-cache:latest
+	${DOCKER} pull itisfoundation/sidecar-build-cache:latest
 	${DOCKER} pull itisfoundation/storage-build-cache:latest
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel storage
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage
+	${DOCKER} push itisfoundation/apihub-build-cache:latest
+	${DOCKER} push itisfoundation/director-build-cache:latest
+	${DOCKER} push itisfoundation/sidecar-build-cache:latest
 	${DOCKER} push itisfoundation/storage-build-cache:latest
+
 
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel

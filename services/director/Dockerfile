@@ -25,7 +25,7 @@ ENV EXTRA_HOSTS_SUFFIX = 'undefined'
 # ----------------------------------------------------------------
 COPY --chown=scu:scu scripts/docker/healthcheck_curl_host.py /healthcheck/healthcheck_curl_host.py
 # will start to run after interval every interval. fails after timeout. fail do not count if during start-period. will do # retries
-HEALTHCHECK --interval=10s --timeout=30s --start-period=1s --retries=3 CMD [ "python3", "/healthcheck/healthcheck_curl_host.py", "http://localhost:8001/v0/" ]
+HEALTHCHECK --interval=10s --timeout=30s --start-period=20s --retries=3 CMD [ "python3", "/healthcheck/healthcheck_curl_host.py", "http://localhost:8001/v0/" ]
 
 WORKDIR /home/scu
 
@@ -78,19 +78,21 @@ ENV RUN_DOCKER_ENGINE_ROOT=0
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD ["/bin/sh", "docker/boot.sh"]
 
-# --------------------------Production stage -------------------
-FROM build as production
-
-ENV DEBUG 0
-ENV RUN_DOCKER_ENGINE_ROOT=0
+# --------------------------Cache stage -------------------
+FROM build as cache
 COPY --chown=scu:scu services/director $HOME/services/director
 COPY --chown=scu:scu packages/service-library $HOME/packages/service-library
 WORKDIR $HOME/services/director
-RUN $PIP install --no-cache-dir -r requirements/prod.txt \
-    && rm -rf $HOME/services/director
+RUN $PIP install --no-cache-dir -r requirements/prod.txt
 WORKDIR $HOME/packages/service-library
-RUN $PIP install --no-cache-dir -r requirements/dev.txt \
-    && rm -rf $HOME/packages/service-library
+RUN $PIP install --no-cache-dir -r requirements/dev.txt
+
+# --------------------------Production stage -------------------
+FROM cache as production
 WORKDIR $HOME
+ENV DEBUG 0
+ENV RUN_DOCKER_ENGINE_ROOT=0
+RUN rm -rf $HOME/services \
+      && rm -rf $HOME/packages
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD ["/bin/sh", "docker/boot.sh"]

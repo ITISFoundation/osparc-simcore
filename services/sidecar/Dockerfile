@@ -72,10 +72,8 @@ ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD ["/bin/sh", "boot.sh"]
 
 
-# --------------------------Production multi-stage -------------------
-#FROM build as build-production
-FROM build as production
-
+# --------------------------Cache stage -------------------
+FROM build as cache
 # TODO: check if scu:scu copy is necessary in all cases!? since we are just installing?
 COPY --chown=scu:scu packages $HOME/packages
 COPY --chown=scu:scu services/sidecar $HOME/services/sidecar
@@ -84,6 +82,12 @@ COPY --chown=scu:scu services/storage/client-sdk $HOME/services/storage/client-s
 WORKDIR /home/scu/services/sidecar
 RUN $PIP --no-cache-dir install -r requirements/prod.txt ;\
     $PIP list
+
+
+# --------------------------Production multi-stage -------------------
+#FROM build as build-production
+FROM cache as production
+
 
 #-------------------
 #FROM base as production

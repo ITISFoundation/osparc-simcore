@@ -1,0 +1,8 @@
+docker~=3.6
+sqlalchemy==1.2.9
+tenacity~=4.12
+
+./../..
+./../../../../../packages/simcore-sdk
+./../../../../../packages/service-library
+./../../../../../packages/director-sdk/python
