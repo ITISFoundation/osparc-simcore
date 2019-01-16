@@ -368,12 +368,12 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             }
           }, item, id);
           controller.bindProperty("name", "prjTitle", {
-            converter: function(data, model, source, target) {
+            converter: function(data) {
               return "<b>" + data + "</b>";
             }
           }, item, id);
           controller.bindProperty("prjOwner", "creator", {
-            converter: function(data, model, source, target) {
+            converter: function(data) {
               return data ? "Created by: <b>" + data + "</b>" : null;
             }
           }, item, id);
@@ -388,7 +388,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             }
           }, item, id);
         },
-        configureItem: function(item) {
+        configureItem: item => {
           item.getChildControl("icon").set({
             width: thumbnailWidth,
             height: thumbnailHeight,
