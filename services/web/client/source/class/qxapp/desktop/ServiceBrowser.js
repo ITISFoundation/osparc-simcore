@@ -84,7 +84,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createServicesList: function() {
-      let servicesLayout = this.__createVBox(this.tr("Services"));
+      let servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
 
       let servicesList = this.__servicesList = new qx.ui.form.List().set({
         orientation: "vertical",
@@ -125,7 +125,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createVersionsList: function() {
-      let versionsLayout = this.__createVBox(this.tr("Versions"));
+      let versionsLayout = this.__createVBoxWLabel(this.tr("Versions"));
 
       let versionsList = this.__versionsList = new qx.ui.form.List().set({
         orientation: "vertical",
@@ -146,7 +146,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     },
 
     __createServiceDescription: function() {
-      let descriptionLayout = this.__createVBox(this.tr("Description"));
+      let descriptionLayout = this.__createVBoxWLabel(this.tr("Description"));
 
       let serviceDescriptionGrid = new qx.ui.layout.Grid();
       serviceDescriptionGrid.setSpacing(5);
@@ -171,7 +171,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       return descriptionLayout;
     },
 
-    __createVBox: function(text) {
+    __createVBoxWLabel: function(text) {
       let vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
       let label = new qx.ui.basic.Label(text).set({
