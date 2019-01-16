@@ -280,17 +280,17 @@ travis-push-cache-images:
 	${DOCKER} push itisfoundation/sidecar-build-cache:latest
 	${DOCKER} push itisfoundation/storage-build-cache:latest
 
-TRAVIS_VERSION=production
-travis-push-platform-images:
-	${DOCKER} tag services_apihub:latest itisfoundation/apihub:${TRAVIS_VERSION}
-	${DOCKER} push itisfoundation/apihub:${TRAVIS_VERSION}
-	${DOCKER} tag services_webserver:latest itisfoundation/webserver:${TRAVIS_VERSION}
-	${DOCKER} push itisfoundation/webserver:${TRAVIS_VERSION}
-	${DOCKER} tag services_sidecar:latest itisfoundation/sidecar:${TRAVIS_VERSION}
-	${DOCKER} push itisfoundation/sidecar:${TRAVIS_VERSION}
-	${DOCKER} tag services_director:latest itisfoundation/director:${TRAVIS_VERSION}
-	${DOCKER} push itisfoundation/director:${TRAVIS_VERSION}
-	${DOCKER} tag services_storage:latest itisfoundation/storage:${TRAVIS_VERSION}
-	${DOCKER} push itisfoundation/storage:${TRAVIS_VERSION}
+TRAVIS_PLATFORM_VERSION=$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
+travis-push-staging-images:
+	${DOCKER} tag services_apihub:latest itisfoundation/apihub-staging:${TRAVIS_PLATFORM_VERSION}
+	${DOCKER} tag services_webserver:latest itisfoundation/webserver-staging:${TRAVIS_PLATFORM_VERSION}
+	${DOCKER} tag services_sidecar:latest itisfoundation/sidecar-staging:${TRAVIS_PLATFORM_VERSION}
+	${DOCKER} tag services_director:latest itisfoundation/director-staging:${TRAVIS_PLATFORM_VERSION}
+	${DOCKER} tag services_storage:latest itisfoundation/storage-staging:${TRAVIS_PLATFORM_VERSION}
+	${DOCKER} push itisfoundation/apihub-staging:${TRAVIS_PLATFORM_VERSION}
+	${DOCKER} push itisfoundation/webserver-staging:${TRAVIS_PLATFORM_VERSION}
+	${DOCKER} push itisfoundation/sidecar-staging:${TRAVIS_PLATFORM_VERSION}
+	${DOCKER} push itisfoundation/director-staging:${TRAVIS_PLATFORM_VERSION}
+	${DOCKER} push itisfoundation/storage-staging:${TRAVIS_PLATFORM_VERSION}
 
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel
