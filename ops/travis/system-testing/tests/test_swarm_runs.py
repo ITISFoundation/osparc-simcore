@@ -51,7 +51,7 @@ def docker_client():
     client = docker.from_env()
     yield client
 
-@tenacity.retry(tenacity.stop_after_delay(60))
+@tenacity.retry(stop=tenacity.stop_after_delay(60), wait=tenacity.wait_fixed(5))
 def try_checking_task_state(task_state, service_name):
     assert task_state in ["running", "complete"], "service {} has state {}".format(service_name, task_state)
 
