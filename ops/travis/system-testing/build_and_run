@@ -25,6 +25,8 @@ script() {
 }
 
 after_success() {
+    # TEMP
+    docker service logs services_webserver
     make down-swarm
 }
 
