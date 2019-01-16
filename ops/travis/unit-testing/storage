@@ -14,7 +14,7 @@ install() {
 
 before_script() {
     pip freeze
-    make travis-build
+    # make travis-build
     docker images
 }
 
