@@ -33,8 +33,6 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
     this._add(this.getChildControl("title"));
     this._add(this.getChildControl("subtitle"));
 
-    this.__subtitleData = new Array(3);
-
     this.addListener("pointerover", this._onPointerOver, this);
     this.addListener("pointerout", this._onPointerOut, this);
   },
@@ -77,8 +75,6 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members
-    __subtitleData: null,
-
     // overridden
     _forwardStates: {
       focused : true,
@@ -118,22 +114,22 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       return control || this.base(arguments, id);
     },
 
-    _applyTitle: function(value, old) {
+    _applyTitle: function(value) {
       let label = this.getChildControl("title");
       label.setValue(value);
     },
 
-    _applyName: function(value, old) {
+    _applyName: function(value) {
       this.setName(value);
       this.__updateSubtitle();
     },
 
-    _applyType: function(value, old) {
+    _applyType: function(value) {
       this.setType(value);
       this.__updateSubtitle();
     },
 
-    _applyContact: function(value, old) {
+    _applyContact: function(value) {
       this.setContact(value);
       this.__updateSubtitle();
     },
@@ -142,9 +138,9 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       let subtitle = this.getChildControl("subtitle");
       let textToShow = "Name: ";
       textToShow += this.getName();
-      textToShow += "  Type: ";
+      textToShow += ", Type: ";
       textToShow += this.getType();
-      textToShow += "  Contact: ";
+      textToShow += ", Contact: ";
       textToShow += this.getContact();
       subtitle.setValue(textToShow);
     }
