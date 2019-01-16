@@ -25,9 +25,9 @@ qx.Class.define("qxapp.desktop.Dashboard", {
 
     qxapp.wrappers.JsonDiffPatch.getInstance().init();
 
-    let leftSpacer = new qx.ui.core.Spacer(120);
+    let leftSpacer = new qx.ui.core.Spacer(60);
     let mainView = this.__createMainViewLayout();
-    let rightSpacer = new qx.ui.core.Spacer(120);
+    let rightSpacer = new qx.ui.core.Spacer(60);
 
     this.add(leftSpacer);
     this.add(mainView, {
