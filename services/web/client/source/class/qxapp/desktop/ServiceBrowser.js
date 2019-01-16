@@ -72,32 +72,39 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       this._add(servicesLabel);
 
       let servicesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      /*
-      // create and add the lists
-      var serviceNamesList = new qx.ui.form.List();
-      servicesLayout.add(serviceNamesList);
-      var serviceVersionsList = new qx.ui.form.List();
-      servicesLayout.add(serviceVersionsList);
-      let serviceInfoLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      servicesLayout.add(serviceInfoLayout);
 
+      let servicesList = new qx.ui.form.List().set({
+        orientation: "vertical",
+        spacing: 10,
+        minWidth: 500,
+        appearance: "pb-list"
+      });
+      let store = qxapp.data.Store.getInstance();
+      let latestServices = [];
+      let services = store.getServices();
+      for (const serviceKey in services) {
+        latestServices.push(qxapp.utils.Services.getLatest(services, serviceKey));
+      }
+      let latestServicesModel = new qx.data.Array(
+        latestServices.map(s => qx.data.marshal.Json.createModel(s))
+      );
+      let prjCtr = new qx.data.controller.List(latestServicesModel, servicesList, "name");
+      prjCtr.setDelegate({
+        createItem: () => new qxapp.desktop.ServiceBrowserListItem(),
+        bindItem: (ctrl, item, id) => {
+          ctrl.bindProperty("key", "model", null, item, id);
+          ctrl.bindProperty("key", "title", {
+            converter: function(data) {
+              return "<b>" + data + "</b>";
+            }
+          }, item, id);
+          ctrl.bindProperty("name", "name", null, item, id);
+          ctrl.bindProperty("type", "type", null, item, id);
+          ctrl.bindProperty("contact", "contact", null, item, id);
+        }
+      });
+      servicesLayout.add(servicesList);
 
-      // create the controllers, one for each list
-      // and set the name in the data for the label
-      var controller1 = new qx.data.controller.List(null, serviceNamesList);
-      controller1.setLabelPath("name");
-      var controller2 = new qx.data.controller.List(null, serviceVersionsList);
-      controller2.setLabelPath("name");
-
-      // create the data store
-      var url = qx.util.ResourceManager.getInstance().toUri("demobrowser/demo/data/finder.json");
-      var store = new qx.data.store.Json(url);
-
-      // connect the store and the first controller
-      store.bind("model.files", controller1, "model");
-      // connect the rest of the controllers
-      controller1.bind("selection[0].files", controller2, "model");
-      */
       this._add(servicesLayout);
     },
 
