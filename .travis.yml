@@ -199,12 +199,18 @@ jobs:
       after_success:
         - bash ops/travis/system-testing/build_and_run after_success
       deploy:
-        provider: script
-        script: ops/travis/staging/deploy
-        on:
-          branch: master
-          condition: $TRAVIS_PULL_REQUEST = "false"
-
+        - provider: script
+          skip_cleanup: true
+          script: ops/travis/staging/deploy
+          on:
+            branch: master
+        - provider: script
+          skip_cleanup: true
+          script: ops/travis/production/deploy
+          on:
+            branch: master
+            tags: true
+            condition: "$TRAVIS_TAG =~ -release$"
 notifications:
   email:
     on_success: never
