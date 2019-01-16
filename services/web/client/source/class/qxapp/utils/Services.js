@@ -94,6 +94,20 @@ qx.Class.define("qxapp.utils.Services", {
         "inputs",
         "outputs"
       ];
+    },
+
+    tagDescriptiontoString: function(tagDescription) {
+      return JSON.stringify(tagDescription, null, 2);
+      /*
+      let descStr = "";
+      if (Array.isArray(tagDescription)) {
+        continue;
+      } else if (tagDescription instanceof Object) {
+        continue;
+      }
+      descStr = tagDescription;
+      return descStr;
+      */
     }
   }
 });

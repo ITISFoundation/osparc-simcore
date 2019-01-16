@@ -155,17 +155,6 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       serviceDescriptionGrid.setColumnAlign(0, "right", "top");
       serviceDescriptionGrid.setColumnAlign(1, "left", "top");
       let serviceDescription = this.__serviceDescription = new qx.ui.container.Composite(serviceDescriptionGrid);
-
-      const tagsOrder = qxapp.utils.Services.getTagsOrder();
-      for (let i=0; i<tagsOrder.length; i++) {
-        let label = new qx.ui.basic.Label(tagsOrder[i] + ":").set({
-          font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"])
-        });
-        serviceDescription.add(label, {
-          row: i,
-          column: 0
-        });
-      }
       descriptionLayout.add(serviceDescription);
 
       return descriptionLayout;
@@ -205,7 +194,39 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       if (serviceSelection.length > 0) {
         const serviceKey = serviceSelection[0].getModel();
         const selectedService = qxapp.utils.Services.getFromObject(this.__allServices, serviceKey, versionKey);
-        console.log(selectedService);
+        this.__updateServciceDescription(selectedService);
+      }
+    },
+
+    __updateServciceDescription: function(selectedService) {
+      let serviceDescription = this.__serviceDescription;
+      serviceDescription.removeAll();
+      if (selectedService && serviceDescription) {
+        const tagsOrder = qxapp.utils.Services.getTagsOrder();
+        for (let i=0; i<tagsOrder.length; i++) {
+          const tag = tagsOrder[i];
+
+          // titles
+          let label = new qx.ui.basic.Label(tag + ":").set({
+            font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"])
+          });
+          serviceDescription.add(label, {
+            row: i,
+            column: 0
+          });
+
+          // titles
+          if (tag in selectedService) {
+            let description = qxapp.utils.Services.tagDescriptiontoString(selectedService[tag]);
+            let labelDesc = new qx.ui.basic.Label(description).set({
+              font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"])
+            });
+            serviceDescription.add(labelDesc, {
+              row: i,
+              column: 1
+            });
+          }
+        }
       }
     },
 
