@@ -1,5 +1,5 @@
 #!/bin/bash
-
+echo "test for changes started!!"
 # CHANGES=$(git --no-pager diff --name-only FETCH_HEAD $(git merge-base FETCH_HEAD master))
 CHANGES=$(git --no-pager diff --name-only $TRAVIS_COMMIT_RANGE) 
 echo "$CHANGES"
