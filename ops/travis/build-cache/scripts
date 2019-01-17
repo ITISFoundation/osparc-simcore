@@ -12,9 +12,7 @@ install() {
 }
 
 before_script() {
-    if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
-        make travis-pull-cache-images
-    fi
+    echo "nothing to do..."
 }
 
 script() {
