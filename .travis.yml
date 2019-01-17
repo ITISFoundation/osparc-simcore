@@ -197,8 +197,7 @@ jobs:
       script:
         - bash ops/travis/system-testing/build_and_run script
       after_success:
-        - bash ops/travis/system-testing/build_and_run after_success
-        - bash ops/travis/staging/deploy
+        - bash ops/travis/system-testing/build_and_run after_success        
       after_failure:
         - bash ops/travis/system-testing/build_and_run after_failure
       deploy:
