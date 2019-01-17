@@ -148,14 +148,12 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     __createServiceDescription: function() {
       let descriptionLayout = this.__createVBoxWLabel(this.tr("Description"));
 
-      let serviceDescriptionGrid = new qx.ui.layout.Grid();
-      serviceDescriptionGrid.setSpacing(5);
-      serviceDescriptionGrid.setColumnFlex(0, 0);
-      serviceDescriptionGrid.setColumnFlex(1, 0);
-      serviceDescriptionGrid.setColumnAlign(0, "right", "top");
-      serviceDescriptionGrid.setColumnAlign(1, "left", "top");
-      let serviceDescription = this.__serviceDescription = new qx.ui.container.Composite(serviceDescriptionGrid);
-      descriptionLayout.add(serviceDescription);
+      let serviceDescription = this.__serviceDescription = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      let scroller = new qx.ui.container.Scroll();
+      scroller.add(serviceDescription);
+      descriptionLayout.add(scroller, {
+        flex: 1
+      });
 
       return descriptionLayout;
     },
@@ -202,31 +200,13 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       let serviceDescription = this.__serviceDescription;
       serviceDescription.removeAll();
       if (selectedService && serviceDescription) {
-        const tagsOrder = qxapp.utils.Services.getTagsOrder();
-        for (let i=0; i<tagsOrder.length; i++) {
-          const tag = tagsOrder[i];
-
-          // titles
-          let label = new qx.ui.basic.Label(tag + ":").set({
-            font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"])
-          });
-          serviceDescription.add(label, {
-            row: i,
-            column: 0
-          });
-
-          // titles
-          if (tag in selectedService) {
-            let description = qxapp.utils.Services.tagDescriptiontoString(selectedService[tag]);
-            let labelDesc = new qx.ui.basic.Label(description).set({
-              font: qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"])
-            });
-            serviceDescription.add(labelDesc, {
-              row: i,
-              column: 1
-            });
-          }
-        }
+        let jsonTreeWidget = new qxapp.component.widget.JsonTreeWidget(selectedService, "serviceDescription");
+        serviceDescription.add(jsonTreeWidget, {
+          top: -30,
+          right: 0,
+          bottom: 0,
+          left: -60
+        });
       }
     },
 
