@@ -5,8 +5,8 @@ services:
       context: ../
       dockerfile: services/apihub/Dockerfile
       cache_from:
-        - itisfoundation/apihub
-        - services_apihub
+        - itisfoundation/apihub:cache
+        - services_apihub:latest
       target: production
       labels: 
         org.label-schema.schema-version: "1.0"
@@ -21,8 +21,8 @@ services:
       context: ../
       dockerfile: services/director/Dockerfile
       cache_from:
-        - itisfoundation/director
-        - services_director
+        - itisfoundation/director:cache
+        - services_director:latest
       target: production
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}      
@@ -65,8 +65,8 @@ services:
       context: ./web/client/
       dockerfile: Dockerfile
       cache_from:
-        - itisfoundation/webclient
-        - services_webclient
+        - itisfoundation/webclient:cache
+        - services_webclient:latest
       target: build
       labels: 
         org.label-schema.schema-version: "1.0"
@@ -82,8 +82,8 @@ services:
       context: ../
       dockerfile: services/web/Dockerfile
       cache_from:
-        - itisfoundation/webserver
-        - services_webserver
+        - itisfoundation/webserver:cache
+        - services_webserver:latest
       target: production
       labels: 
         org.label-schema.schema-version: "1.0"
@@ -150,8 +150,8 @@ services:
       context: ../
       dockerfile: services/sidecar/Dockerfile
       cache_from:
-        - itisfoundation/sidecar
-        - services_sidecar
+        - itisfoundation/sidecar:cache
+        - services_sidecar:latest
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
@@ -195,8 +195,8 @@ services:
       context: ../
       dockerfile: services/storage/Dockerfile
       cache_from:
-        - itisfoundation/storage
-        - services_storage
+        - itisfoundation/storage:cache
+        - services_storage:latest
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
