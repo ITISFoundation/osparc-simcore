@@ -91,7 +91,7 @@ CMD docker/boot.sh
 
 # --------------------------Production multi-stage -------------------
 #FROM build as build-production
-FROM build as production
+FROM build as cache
 
 ENV SIMCORE_WEB_CONFIG production
 
@@ -106,6 +106,7 @@ WORKDIR /home/scu/services/web/server
 RUN $PIP --no-cache-dir install -r requirements/prod.txt &&\
     $PIP list
 
+FROM cache as production
 #-------------------
 #FROM base as production
 # TODO: PC some basic package missing
