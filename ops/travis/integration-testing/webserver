@@ -17,8 +17,7 @@ before_script() {
     docker images
 }
 
-script() {
-    bash ops/travis/integration-testing/test_for_changes
+script() {    
     pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-computation
 }
 
