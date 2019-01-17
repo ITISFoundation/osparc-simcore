@@ -90,7 +90,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
         orientation: "vertical",
         spacing: 10,
         minWidth: 500,
-        height: 400,
+        height: 600,
         appearance: "pb-list"
       });
       servicesList.addListener("changeSelection", e => {
@@ -131,7 +131,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
         orientation: "vertical",
         spacing: 10,
         minWidth: 100,
-        height: 400,
+        height: 600,
         appearance: "pb-list"
       });
       versionsList.addListener("changeSelection", e => {
