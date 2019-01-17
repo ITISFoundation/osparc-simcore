@@ -1,0 +1,4 @@
+#!/bin/bash
+# these variable must be available securely from travis
+echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+make travis-push-staging-images

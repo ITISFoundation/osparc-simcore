@@ -1,26 +1,32 @@
+dist: xenial
 env:
   global:
     - DOCKER_COMPOSE_VERSION=1.23.2
     - DOCKER_GID=1042
+services:
+  - docker
+addons:
+  apt:
+    packages:
+      - docker-ce
+
 jobs:
   include:
     # build cache images ----------------------------------------------------------------------
     - if: branch = master
-      stage: Build docker cache images
-      language: python
-      python:
-        - "3.6"
-      services:
-        - docker
+      stage: Preparing docker cache images
+      name: build cache
+      sudo: required
       before_install:
-        - bash ops/travis/install_docker_compose
-      addons:
-        apt:
-          packages:
-            - docker-ce
-      cache: pip
+        - sudo bash ops/travis/build-cache/scripts before_install
+      install:
+        - bash ops/travis/build-cache/scripts install
+      before_script:
+        - bash ops/travis/build-cache/scripts before_script
       script:
-        - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash ops/travis/push_cache_builds; fi'
+        - bash ops/travis/build-cache/scripts script
+      after_success:
+        - bash ops/travis/build-cache/scripts after_success
 
     # test python, webserver ----------------------------------------------------------------------
     - stage: unit testing
@@ -29,37 +35,17 @@ jobs:
       python:
         - "3.6"
       sudo: required
-      services:
-        - docker
       cache: pip
       before_install:
-        - python --version
-        - uname -a
-        - lsb_release -a
-        - docker -v
-        - bash ops/travis/install_docker_compose
-        # shutdown postgres because sometimes is is already up ???
-        - sudo service postgresql stop
-        # wait for postgresql to shutdown
-        - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
-      addons:
-        apt:
-          packages:
-            - docker-ce
+        - sudo bash ops/travis/unit-testing/webserver before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pip3 install packages/s3wrapper[test]
-        - pip3 install packages/simcore-sdk[test]
-        - pip3 install packages/director-sdk/python
-        - pushd services/web/server; pip3 install -r requirements/ci.txt; popd
-        - pip freeze
+        - bash ops/travis/unit-testing/webserver install        
       before_script:
-        - make travis-build
+        - bash ops/travis/unit-testing/webserver before_script
       script:
-        - pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
-        - pytest --cov=simcore_service_webserver -v services/web/server/tests/login
+        - bash ops/travis/unit-testing/webserver script
       after_success:
-      - coveralls
+        - bash ops/travis/unit-testing/webserver after_success
 
     # test python, director ----------------------------------------------------------------------
     - stage: unit testing
@@ -68,33 +54,18 @@ jobs:
       python:
         - "3.6"
       sudo: required
-      services:
-        - docker
       cache: pip
       before_install:
-        - python --version
-        - uname -a
-        - lsb_release -a
-        - docker -v
-        - bash ops/travis/install_docker_compose
-        # shutdown postgres because sometimes is is already up ???
-        - sudo service postgresql stop
-        # wait for postgresql to shutdown
-        - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
-      addons:
-        apt:
-          packages:
-            - docker-ce
+        - sudo bash ops/travis/unit-testing/director before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pushd services/director; pip3 install -r requirements/ci.txt; popd
-        - pip freeze
+        - bash ops/travis/unit-testing/director install        
       before_script:
-        - make travis-build
+        - bash ops/travis/unit-testing/director before_script
       script:
-        - pytest --cov=simcore_service_director -v services/director/tests
+        - bash ops/travis/unit-testing/director script
       after_success:
-      - coveralls
+        - bash ops/travis/unit-testing/director after_success
+
     # test python, simcore-sdk ----------------------------------------------------------------------
     - stage: unit testing
       name: simcore-sdk
@@ -102,39 +73,17 @@ jobs:
       python:
         - "3.6"
       sudo: required
-      services:
-        - docker
       cache: pip
       before_install:
-        - python --version
-        - uname -a
-        - lsb_release -a
-        - docker -v
-        - bash ops/travis/install_docker_compose
-        # shutdown postgres because sometimes is is already up ???
-        - sudo service postgresql stop
-        # wait for postgresql to shutdown
-        - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
-      addons:
-        apt:
-          packages:
-            - docker-ce
+        - sudo bash ops/travis/unit-testing/simcore-sdk before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pushd packages/service-library; pip3 install -r requirements/dev.txt; popd
-        - pip3 install packages/s3wrapper[test]
-        - pip3 install packages/simcore-sdk[test]
-        - pip3 install services/storage/client-sdk/python
-        - pip freeze
+        - bash ops/travis/unit-testing/simcore-sdk install        
       before_script:
-        - make travis-build
+        - bash ops/travis/unit-testing/simcore-sdk before_script
       script:
-        - pytest --cov=pytest_docker -v packages/pytest_docker/tests
-        - pytest --cov=s3wrapper -v packages/s3wrapper/tests
-        - pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
-        - pytest --cov=servicelib -v packages/service-library/tests
+        - bash ops/travis/unit-testing/simcore-sdk script
       after_success:
-      - coveralls
+        - bash ops/travis/unit-testing/simcore-sdk after_success
 
     # test python, storage ----------------------------------------------------------------------
     - stage: unit testing
@@ -147,31 +96,15 @@ jobs:
         - docker
       cache: pip
       before_install:
-        - python --version
-        - uname -a
-        - lsb_release -a
-        - docker -v
-        - bash ops/travis/install_docker_compose
-        # shutdown postgres because sometimes is is already up ???
-        - sudo service postgresql stop
-        # wait for postgresql to shutdown
-        - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
-      addons:
-        apt:
-          packages:
-            - docker-ce
+        - sudo bash ops/travis/unit-testing/storage before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pushd services/storage; pip3 install -r requirements/prod.txt; popd
-        - pushd services/storage; pip3 install -r tests/requirements.txt; popd
-        - pip3 install services/storage/client-sdk/python
-        - pip freeze
+        - bash ops/travis/unit-testing/storage install        
       before_script:
-        - make travis-build
+        - bash ops/travis/unit-testing/storage before_script
       script:
-        - pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
+        - bash ops/travis/unit-testing/storage script
       after_success:
-      - coveralls
+        - bash ops/travis/unit-testing/storage after_success
 
     # test python, apihub ----------------------------------------------------------------------
     - stage: unit testing
@@ -180,35 +113,17 @@ jobs:
       python:
         - "3.6"
       sudo: required
-      services:
-        - docker
       cache: pip
       before_install:
-        - python --version
-        - uname -a
-        - lsb_release -a
-        - docker -v
-        - bash ops/travis/install_docker_compose
-        # shutdown postgres because sometimes is is already up ???
-        - sudo service postgresql stop
-        # wait for postgresql to shutdown
-        - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
-      addons:
-        apt:
-          packages:
-            - docker-ce
+        - sudo bash ops/travis/unit-testing/apihub before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pip3 install -r api/tests/requirements.txt
-        - pip3 install -r services/apihub/tests/requirements.txt
-        - pip freeze
+        - bash ops/travis/unit-testing/apihub install        
       before_script:
-        - make travis-build
+        - bash ops/travis/unit-testing/apihub before_script
       script:
-        - pytest -v api/tests
-        - pytest -v services/apihub/tests
+        - bash ops/travis/unit-testing/apihub script
       after_success:
-      - coveralls
+        - bash ops/travis/unit-testing/apihub after_success
     # test python, linting ----------------------------------------------------------------------
     - stage: unit testing
       name: Python linting
@@ -217,22 +132,15 @@ jobs:
         - "3.6"
       cache: pip
       before_install:
-        - python --version
-        - uname -a
-        - lsb_release -a
+        - sudo bash ops/travis/unit-testing/python-linting before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pip3 install packages/s3wrapper[test]
-        - pip3 install packages/simcore-sdk[test]
-        - pushd services/director; pip3 install -r requirements/ci.txt; popd
-        - pip3 install packages/director-sdk/python
-        - pushd services/web/server; pip3 install -r requirements/ci.txt; popd
-        - pushd services/storage; pip3 install -r requirements/dev.txt; popd
-        - pip3 install -r api/tests/requirements.txt
-        - pip3 install -r services/apihub/tests/requirements.txt
-        - pip freeze
+        - bash ops/travis/unit-testing/python-linting install        
+      before_script:
+        - bash ops/travis/unit-testing/python-linting before_script
       script:
-        - make pylint
+        - bash ops/travis/unit-testing/python-linting script
+      after_success:
+        - bash ops/travis/unit-testing/python-linting after_success
 
     # test node, linting ----------------------------------------------------------------------
     - stage: unit testing
@@ -244,53 +152,67 @@ jobs:
         directories:
           - .npm
           - "node_modules"
+      before_install:
+        - bash ops/travis/unit-testing/node-linting before_install
       install:
-        - npm install -g npm@latest
-        - npm install --save-dev eslint
-        - npm install --save-dev babel-eslint
-        - npm install --save-dev eslint-config-qx
-        - npm install --save-dev eslint-plugin-qx-rules
+        - bash ops/travis/unit-testing/node-linting install        
       before_script:
-        - eslint --version
+        - bash ops/travis/unit-testing/node-linting before_script
       script:
-        - npm run linter
+        - bash ops/travis/unit-testing/node-linting script
+      after_success:
+        - bash ops/travis/unit-testing/node-linting after_success
 
     # integrate apihub, webserver, director, sidecar, storage, minio, postgres, rabbit  ----------------------------------------------------------------------
     - stage: integration testing
-      name: apihub, director, sidecar, storage, minio, postgres, rabbit
+      name: all but webserver
       language: python
       python:
         - "3.6"
-      sudo: required
-      services:
-        - docker
+      sudo: required      
       cache: pip
       before_install:
-        - python --version
-        - uname -a
-        - lsb_release -a
-        - docker -v
-        - bash ops/travis/install_docker_compose
-        # shutdown postgres because sometimes is is already up ???
-        - sudo service postgresql stop
-        # wait for postgresql to shutdown
-        - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
-      addons:
-        apt:
-          packages:
-            - docker-ce
+        - sudo bash ops/travis/integration-testing/webserver before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pushd services/web/server/tests; pip3 install -r requirements.txt; popd
-        - pushd services/web/server/tests/integration-computation; pip3 install -r requirements.txt; popd
-        - pip freeze
+        - bash ops/travis/integration-testing/webserver install        
       before_script:
-        - make travis-build
+        - bash ops/travis/integration-testing/webserver before_script
       script:
-        - pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-computation
+        - bash ops/travis/integration-testing/webserver script
       after_success:
-      - coveralls
+        - bash ops/travis/integration-testing/webserver after_success
 
+    - stage: system testing, staging
+      sudo: required
+      language: python
+      python:
+        - "3.6"
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/system-testing/build_and_run before_install
+      install:
+        - bash ops/travis/system-testing/build_and_run install        
+      before_script:
+        - bash ops/travis/system-testing/build_and_run before_script
+      script:
+        - bash ops/travis/system-testing/build_and_run script
+      after_success:
+        - bash ops/travis/system-testing/build_and_run after_success        
+      after_failure:
+        - bash ops/travis/system-testing/build_and_run after_failure
+      deploy:
+        - provider: script
+          skip_cleanup: true
+          script: ops/travis/staging/deploy
+          on:
+            branch: master
+        - provider: script
+          skip_cleanup: true
+          script: ops/travis/production/deploy
+          on:
+            branch: master
+            tags: true
+            condition: "$TRAVIS_TAG =~ -release$"
 notifications:
   email:
     on_success: never

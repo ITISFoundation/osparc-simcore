@@ -5,7 +5,7 @@ services:
       context: ../
       dockerfile: services/apihub/Dockerfile
       cache_from:
-        - itisfoundation/apihub-build-cache:latest
+        - itisfoundation/apihub
         - services_apihub
       target: production
       labels: 
@@ -21,7 +21,7 @@ services:
       context: ../
       dockerfile: services/director/Dockerfile
       cache_from:
-        - itisfoundation/director-build-cache:latest
+        - itisfoundation/director
         - services_director
       target: production
       args:
@@ -64,6 +64,9 @@ services:
     build:
       context: ./web/client/
       dockerfile: Dockerfile
+      cache_from:
+        - itisfoundation/webclient
+        - services_webclient
       target: build
       labels: 
         org.label-schema.schema-version: "1.0"
@@ -78,6 +81,9 @@ services:
     build:
       context: ../
       dockerfile: services/web/Dockerfile
+      cache_from:
+        - itisfoundation/webserver
+        - services_webserver
       target: production
       labels: 
         org.label-schema.schema-version: "1.0"
@@ -144,7 +150,7 @@ services:
       context: ../
       dockerfile: services/sidecar/Dockerfile
       cache_from:
-        - itisfoundation/sidecar-build-cache:latest
+        - itisfoundation/sidecar
         - services_sidecar
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
@@ -189,7 +195,7 @@ services:
       context: ../
       dockerfile: services/storage/Dockerfile
       cache_from:
-        - itisfoundation/storage-build-cache:latest
+        - itisfoundation/storage
         - services_storage
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
