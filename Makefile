@@ -280,16 +280,27 @@ travis-push-cache-images:
 	${DOCKER} push itisfoundation/storage-build-cache:latest
 
 TRAVIS_PLATFORM_STAGE_VERSION=staging-$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
+TRAVIS_PLATFORM_STAGE_LATEST=staging-latest
 travis-push-staging-images:
 	${DOCKER} tag services_apihub:latest itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_VERSION}
 	${DOCKER} tag services_webserver:latest itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_VERSION}
 	${DOCKER} tag services_sidecar:latest itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_VERSION}
 	${DOCKER} tag services_director:latest itisfoundation/director:${TRAVIS_PLATFORM_STAGE_VERSION}
 	${DOCKER} tag services_storage:latest itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_VERSION}
+	${DOCKER} tag services_apihub:latest itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} tag services_webserver:latest itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} tag services_sidecar:latest itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} tag services_director:latest itisfoundation/director:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} tag services_storage:latest itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_LATEST}
 	${DOCKER} push itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_VERSION}
 	${DOCKER} push itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_VERSION}
 	${DOCKER} push itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_VERSION}
 	${DOCKER} push itisfoundation/director:${TRAVIS_PLATFORM_STAGE_VERSION}
 	${DOCKER} push itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_VERSION}
+	${DOCKER} push itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} push itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} push itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} push itisfoundation/director:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} push itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_LATEST}
 
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel
