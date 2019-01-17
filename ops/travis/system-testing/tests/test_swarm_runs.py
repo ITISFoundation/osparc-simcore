@@ -53,7 +53,7 @@ def docker_client():
     client = docker.from_env()
     yield client
 
-@tenacity.retry(stop=tenacity.stop_after_delay(120), wait=tenacity.wait_fixed(5), retry=tenacity.retry_if_exception_type(AssertionError))
+@tenacity.retry(stop=tenacity.stop_after_delay(240), wait=tenacity.wait_fixed(5), retry=tenacity.retry_if_exception_type(AssertionError))
 def try_checking_task_state(running_service, service_name):
     tasks = running_service.tasks()
     assert tasks is not None
