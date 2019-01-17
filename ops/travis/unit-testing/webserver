@@ -1,32 +1,46 @@
 #!/bin/bash
 
 before_install() {
-    bash ops/travis/helpers/install_docker_compose
-    bash ops/travis/helpers/show_system_versions
-    
+    if [ -n "$(ops/travis/helpers/test_for_changes webserver)" ];
+    then
+        bash ops/travis/helpers/install_docker_compose
+        bash ops/travis/helpers/show_system_versions    
+    fi
 }
 
 install() {
+    if [ -n "$(ops/travis/helpers/test_for_changes webserver)" ];
+    then
     pip install --upgrade pip wheel setuptools && pip3 --version;
     pip3 install packages/s3wrapper[test];
     pip3 install packages/simcore-sdk[test];
     pip3 install packages/director-sdk/python;
     pushd services/web/server; pip3 install -r requirements/ci.txt; popd;    
+    fi
 }
 
 before_script() {
+    if [ -n "$(ops/travis/helpers/test_for_changes webserver)" ];
+    then
     pip freeze
     make travis-build
     docker images
+    fi
 }
 
 script() {
+    if [ -n "$(ops/travis/helpers/test_for_changes webserver)" ];
+    then
     pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
     pytest --cov=simcore_service_webserver -v services/web/server/tests/login
+    fi
 }
 
 after_success() {
+    if [ -n "$(ops/travis/helpers/test_for_changes webserver)" ];
+    then
     coveralls
+    fi
 }
 
 # Check if the function exists (bash specific)
