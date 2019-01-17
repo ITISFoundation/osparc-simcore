@@ -88,7 +88,6 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
   members: {
     __tree: null,
     __selectBtn: null,
-    __currentUserId: "ODEI-UUID",
 
     _createChildControlImpl: function(id) {
       let control;

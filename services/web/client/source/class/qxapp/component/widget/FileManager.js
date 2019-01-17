@@ -96,7 +96,6 @@ qx.Class.define("qxapp.component.widget.FileManager", {
   members: {
     __nodeTree: null,
     __userTree: null,
-    __currentUserId: "ODEI-UUID",
     __selectedLabel: null,
     __selection: null,
     __closeBtn: null,
