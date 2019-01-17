@@ -203,7 +203,7 @@ jobs:
       deploy:
         - provider: script
           skip_cleanup: true
-          script: ops/travis/staging/deploy
+          script: bash ops/travis/staging/deploy
           on:
             branch: master
         - provider: script
