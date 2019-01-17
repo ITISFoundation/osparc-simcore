@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FOLDER_CHECKS=webserver
+FOLDER_CHECKS="api\/ webserver packages\/ services\/web"
 
 before_install() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
@@ -13,35 +13,37 @@ before_install() {
 install() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
     then
-    pip install --upgrade pip wheel setuptools && pip3 --version;
-    pip3 install packages/s3wrapper[test];
-    pip3 install packages/simcore-sdk[test];
-    pip3 install packages/director-sdk/python;
-    pushd services/web/server; pip3 install -r requirements/ci.txt; popd;    
+        pip install --upgrade pip wheel setuptools && pip3 --version;
+        pip3 install packages/s3wrapper[test];
+        pip3 install packages/simcore-sdk[test];
+        pip3 install packages/director-sdk/python;
+        pushd services/web/server; pip3 install -r requirements/ci.txt; popd;    
     fi
 }
 
 before_script() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
     then
-    pip freeze
-    make travis-build
-    docker images
+        pip freeze
+        make travis-build
+        docker images
     fi
 }
 
 script() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
     then
-    pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
-    pytest --cov=simcore_service_webserver -v services/web/server/tests/login
+        pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
+        pytest --cov=simcore_service_webserver -v services/web/server/tests/login
+    else
+        echo "no changes detected... not executing anything..."
     fi
 }
 
 after_success() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
     then
-    coveralls
+        coveralls
     fi
 }
 

@@ -1,29 +1,48 @@
 #!/bin/bash
 
+FOLDER_CHECKS="api\/ storage packages\/"
+
 before_install() {
-    bash ops/travis/helpers/show_system_versions
-    bash ops/travis/helpers/install_docker_compose
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        bash ops/travis/helpers/show_system_versions
+        bash ops/travis/helpers/install_docker_compose
+    fi
 }
 
 install() {
-    pip install --upgrade pip wheel setuptools && pip3 --version
-    pushd services/storage; pip3 install -r requirements/prod.txt; popd
-    pushd services/storage; pip3 install -r tests/requirements.txt; popd
-    pip3 install services/storage/client-sdk/python
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        pip install --upgrade pip wheel setuptools && pip3 --version
+        pushd services/storage; pip3 install -r requirements/prod.txt; popd
+        pushd services/storage; pip3 install -r tests/requirements.txt; popd
+        pip3 install services/storage/client-sdk/python
+    fi
 }
 
 before_script() {
-    pip freeze
-    # make travis-build
-    docker images
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        pip freeze
+        # make travis-build
+        docker images
+    fi
 }
 
 script() {
-    pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
+    else
+        echo "no changes detected... not executing anything..."
+    fi
 }
 
 after_success() {
-    coveralls
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        coveralls
+    fi
 }
 
 # Check if the function exists (bash specific)

@@ -1,29 +1,48 @@
 #!/bin/bash
 
+FOLDER_CHECKS="api\/ apihub"
+
 before_install() {    
-    bash ops/travis/helpers/install_docker_compose
-    bash ops/travis/helpers/show_system_versions
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        bash ops/travis/helpers/install_docker_compose
+        bash ops/travis/helpers/show_system_versions
+    fi
 }
 
 install() {
-    pip install --upgrade pip wheel setuptools && pip3 --version
-    pip3 install -r api/tests/requirements.txt
-    pip3 install -r services/apihub/tests/requirements.txt
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        pip install --upgrade pip wheel setuptools && pip3 --version
+        pip3 install -r api/tests/requirements.txt
+        pip3 install -r services/apihub/tests/requirements.txt
+    fi
 }
 
 before_script() {
-    pip freeze
-    # make travis-build
-    docker images
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        pip freeze
+        # make travis-build
+        docker images
+    fi
 }
 
 script() {
-    pytest -v api/tests
-    pytest -v services/apihub/tests
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        pytest -v api/tests
+        pytest -v services/apihub/tests
+    else
+        echo "no changes detected... not executing anything..."
+    fi
 }
 
 after_success() {
-    coveralls
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        coveralls
+    fi
 }
 
 # Check if the function exists (bash specific)
