@@ -86,23 +86,23 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "addButton":
-          control = new qx.ui.form.Button(this.tr("Add file(s)"));
-          this._add(control);
-          break;
         case "filesTree":
           control = new qxapp.component.widget.FilesTree();
           this._add(control, {
             flex: 1
           });
           break;
-        case "selectButton":
-          control = new qx.ui.form.Button(this.tr("Select"));
-          this._add(control);
-          break;
         case "progressBox":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
           this._addAt(control, 1);
+          break;
+        case "addButton":
+          control = new qx.ui.form.Button(this.tr("Add file(s)"));
+          this._add(control);
+          break;
+        case "selectButton":
+          control = new qx.ui.form.Button(this.tr("Select"));
+          this._add(control);
           break;
       }
 
