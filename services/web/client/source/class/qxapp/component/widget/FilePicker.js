@@ -191,6 +191,6 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       };
       xhr.open("PUT", url, true);
       xhr.send(file);
-    },
+    }
   }
 });
