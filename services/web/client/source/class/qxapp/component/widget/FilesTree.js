@@ -36,8 +36,8 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
   },
 
   events: {
-    "selectionChanged": "qx.event.type.Data",
-    "itemSelected": "qx.event.type.Data"
+    "selectionChanged": "qx.event.type.Event",
+    "itemSelected": "qx.event.type.Event"
   },
 
   members: {
@@ -114,23 +114,28 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
     __selectionChanged: function() {
       let selectedItem = this.__getSelectedItem();
       if (selectedItem) {
-        const isFile = this.__isFile(selectedItem);
-        const data = {
-          selectedItem: selectedItem,
-          isFile: isFile
-        };
-        this.fireDataEvent("selectionChanged", data);
+        this.fireEvent("selectionChanged");
       }
     },
 
     __itemSelected: function() {
       let selectedItem = this.__getSelectedItem();
       if (selectedItem) {
-        if (!this.__isFile(selectedItem)) {
-          return;
-        }
-        this.fireDataEvent("itemSelected", selectedItem);
+        this.fireEvent("itemSelected");
       }
+    },
+
+    getSelection: function() {
+      let selectedItem = this.__getSelectedItem();
+      if (selectedItem) {
+        const isFile = this.__isFile(selectedItem);
+        const data = {
+          selectedItem: selectedItem,
+          isFile: isFile
+        };
+        return data;
+      }
+      return null;
     }
   }
 });
