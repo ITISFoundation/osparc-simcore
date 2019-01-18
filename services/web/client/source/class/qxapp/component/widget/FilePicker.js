@@ -123,7 +123,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
 
     __getFiles: function() {
       let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__tree);
-      filesTreePopulator.populateMyDocuments();
+      filesTreePopulator.populateMyData();
 
       let that = this;
       let delegate = this.__tree.getDelegate();

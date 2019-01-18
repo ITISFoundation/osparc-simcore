@@ -34,14 +34,13 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       let store = qxapp.data.Store.getInstance();
       store.addListenerOnce("nodeFiles", e => {
         const files = e.getData();
-        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-        this.__addTreeData(newChildren);
+        this.__filesToTree(files);
       }, this);
       store.getNodeFiles(nodeId);
     },
 
-    populateMyDocuments: function() {
-      const treeName = "My Documents";
+    populateMyData: function() {
+      const treeName = "My Data";
       this.__resetTree(treeName);
 
       let locationsAdded = [];
@@ -53,8 +52,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
         } = e.getData();
         if (!locationsAdded.includes(location)) {
           locationsAdded.push(location);
-          const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-          this.__addTreeData(newChildren);
+          this.__filesToTree(files);
         }
       }, this);
       store.getMyDocuments();
@@ -62,8 +60,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       /*
       store.addListenerOnce("fakeFiles", e => {
         const files = e.getData();
-        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-        this.__addTreeData(newChildren);
+        this.__filesToTree(files);
       }, this);
       store.getFakeFiles();
       */
@@ -90,6 +87,11 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
           c.bindProperty("size", "size", null, item, id);
         }
       });
+    },
+
+    __filesToTree: function(files) {
+      const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+      this.__addTreeData(newChildren);
     },
 
     __addTreeData: function(data) {
