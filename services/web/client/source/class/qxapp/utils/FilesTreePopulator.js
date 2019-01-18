@@ -56,14 +56,6 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
         }
       }, this);
       store.getMyDocuments();
-
-      /*
-      store.addListenerOnce("fakeFiles", e => {
-        const files = e.getData();
-        this.__filesToTree(files);
-      }, this);
-      store.getFakeFiles();
-      */
     },
 
     __resetTree: function(treeName) {

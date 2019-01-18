@@ -40,6 +40,7 @@ qx.Class.define("qxapp.desktop.Dashboard", {
   members: {
     __prjBrowser: null,
     __serviceBrowser: null,
+    __dataManager: null,
 
     getPrjBrowser: function() {
       return this.__prjBrowser;
@@ -49,13 +50,17 @@ qx.Class.define("qxapp.desktop.Dashboard", {
       return this.__serviceBrowser;
     },
 
+    getDataManager: function() {
+      return this.__dataManager;
+    },
+
     __createMainViewLayout: function() {
       let tabView = new qx.ui.tabview.TabView();
 
       [
         [this.tr("Studies"), this.__createStudiesView],
         [this.tr("Services"), this.__createServicesLayout],
-        [this.tr("Files"), this.__createFileManagerLayout]
+        [this.tr("Data"), this.__createDataManagerLayout]
       ].forEach(tuple => {
         let tabPage = new qx.ui.tabview.Page(tuple[0]);
         tabPage.setLayout(new qx.ui.layout.VBox());
@@ -83,17 +88,9 @@ qx.Class.define("qxapp.desktop.Dashboard", {
       return servicesView;
     },
 
-    __createFileManagerLayout: function() {
-      let fileManagerView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
-      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-      let fileManagerLabel = new qx.ui.basic.Label(this.tr("Files")).set({
-        font: navBarLabelFont,
-        minWidth: 150
-      });
-      fileManagerView.add(fileManagerLabel);
-
-      return fileManagerView;
+    __createDataManagerLayout: function() {
+      let dataManagerView = this.__dataManager = new qxapp.desktop.DataManager();
+      return dataManagerView;
     }
   }
 });
