@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from sqlalchemy import and_
 from aiopg.sa import Engine
 
-from servicelib.application_keys import APP_DB_ENGINE_KEY
+from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_director_sdk.rest import ApiException
 from simcore_sdk.config.rabbit import Config as rabbit_config
