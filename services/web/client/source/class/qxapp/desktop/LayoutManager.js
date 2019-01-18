@@ -63,7 +63,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__dashboard = new qxapp.desktop.Dashboard();
       this.__prjStack.add(this.__dashboard);
 
-      this.__navBar.addListener("dashboardPressed", function() {
+      this.__navBar.addListener("dashboardPressed", () => {
         if (this.__prjEditor) {
           this.__prjEditor.updateProjectDocument();
         }
@@ -94,7 +94,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__navBar.setProject(project);
       this.__navBar.setMainViewCaption(project.getWorkbench().getPathIds("root"));
 
-      this.__prjEditor.addListener("changeMainViewCaption", function(ev) {
+      this.__prjEditor.addListener("changeMainViewCaption", ev => {
         const elements = ev.getData();
         this.__navBar.setMainViewCaption(elements);
       }, this);

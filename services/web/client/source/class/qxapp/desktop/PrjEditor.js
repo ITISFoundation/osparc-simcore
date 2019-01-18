@@ -147,7 +147,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     connectEvents: function() {
-      this.__mainPanel.getControls().addListener("startPipeline", function() {
+      this.__mainPanel.getControls().addListener("startPipeline", () => {
         if (this.getCanStart()) {
           this.__startPipeline();
         } else {
@@ -155,14 +155,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }
       }, this);
 
-      this.__mainPanel.getControls().addListener("stopPipeline", function() {
-        this.__stopPipeline();
-      }, this);
+      this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
 
       let workbench = this.getProject().getWorkbench();
-      workbench.addListener("workbenchChanged", function() {
-        this.__workbenchChanged();
-      }, this);
+      workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
       workbench.addListener("updatePipeline", e => {
         let node = e.getData();
