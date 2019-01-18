@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from sqlalchemy import and_
 from aiopg.sa import Engine
 
-from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
+from servicelib.application_keys import APP_DB_ENGINE_KEY
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_director_sdk.rest import ApiException
 from simcore_sdk.config.rabbit import Config as rabbit_config
@@ -35,13 +35,13 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 computation_routes = web.RouteTableDef()
 
-def get_celery(_app):
+def get_celery(_app: web.Application):
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = rabbit_config(config=config)
     celery = Celery(rabbit.name, broker=rabbit.broker, backend=rabbit.backend)
     return celery
 
-async def _get_node_details(node_key:str, node_version:str, app)->dict:
+async def _get_node_details(node_key:str, node_version:str, app: web.Application)->dict:
     if "file-picker" in node_key:
         # create a fake file-picker schema here!!
         fake_node_details = {"inputs":{},
@@ -227,12 +227,11 @@ async def _set_tasks_in_tasks_db(db_engine: Engine, project_id: str, tasks: Dict
                                 submit = datetime.datetime.utcnow())
             await conn.execute(query)
 
-async def _update_pipeline_db(app, project_id, pipeline_data):    
-    app_config = app[APP_CONFIG_KEY]
+async def _update_pipeline_db(app: web.Application, project_id, pipeline_data):        
     db_engine = app[APP_DB_ENGINE_KEY]
 
     log.debug("Client calls update_pipeline with project id: %s, pipeline data %s", project_id, pipeline_data)
-    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data, app_config)
+    dag_adjacency_list, tasks = await _parse_pipeline(pipeline_data, app)
     log.debug("Pipeline parsed:\nlist: %s\ntasks: %s", str(dag_adjacency_list), str(tasks))
     await _set_adjacency_in_pipeline_db(db_engine, project_id, dag_adjacency_list)
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks)
