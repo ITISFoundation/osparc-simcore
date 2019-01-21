@@ -16,6 +16,9 @@
 ************************************************************************ */
 
 /* global window */
+/* global document */
+/* global XMLHttpRequest */
+/* global Blob */
 
 qx.Class.define("qxapp.utils.Utils", {
   type: "static",
@@ -116,6 +119,25 @@ qx.Class.define("qxapp.utils.Utils", {
 
     getKeyByValue(object, value) {
       return Object.keys(object).find(key => object[key] === value);
+    },
+
+    downloadLink: function(url, fileName) {
+      let xhr = new XMLHttpRequest();
+      xhr.open("GET", url, true);
+      xhr.responseType = "blob";
+      xhr.onload = () => {
+        console.log("onload", xhr);
+        if (xhr.status == 200) {
+          let blob = new Blob([xhr.response]);
+          let urlBlob = window.URL.createObjectURL(blob);
+          let downloadAnchorNode = document.createElement("a");
+          downloadAnchorNode.setAttribute("href", urlBlob);
+          downloadAnchorNode.setAttribute("download", fileName);
+          downloadAnchorNode.click();
+          downloadAnchorNode.remove();
+        }
+      };
+      xhr.send();
     }
   }
 });

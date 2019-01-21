@@ -205,25 +205,6 @@ qx.Class.define("qxapp.component.widget.FileManager", {
       }
     },
 
-    __downloadFile: function(url, fileName) {
-      let xhr = new XMLHttpRequest();
-      xhr.open("GET", url, true);
-      xhr.responseType = "blob";
-      xhr.onload = () => {
-        console.log("onload", xhr);
-        if (xhr.status == 200) {
-          let blob = new Blob([xhr.response]);
-          let urlBlob = window.URL.createObjectURL(blob);
-          let downloadAnchorNode = document.createElement("a");
-          downloadAnchorNode.setAttribute("href", urlBlob);
-          downloadAnchorNode.setAttribute("download", fileName);
-          downloadAnchorNode.click();
-          downloadAnchorNode.remove();
-        }
-      };
-      xhr.send();
-    },
-
     __deleteFile: function() {
       let selection = this.__getItemSelected();
       if (selection) {
