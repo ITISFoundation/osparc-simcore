@@ -133,22 +133,22 @@ qx.Class.define("qxapp.component.widget.FileManager", {
       this.__nodeTree.populateTree(this.getNode().getNodeId());
 
       let that = this;
-      let delegate = this.__nodeTree.getTree().getDelegate();
       delegate["configureItem"] = function(item) {
         that.__createDragMechanism(item); // eslint-disable-line no-underscore-dangle
+      let delegate = this.__nodeTree.getDelegate();
       };
-      this.__nodeTree.getTree().setDelegate(delegate);
+      this.__nodeTree.setDelegate(delegate);
     },
 
     __reloadUserTree: function() {
       this.__userTree.populateTree();
 
       let that = this;
-      let delegate = this.__userTree.getTree().getDelegate();
       delegate["configureItem"] = function(item) {
         that.__createDropMechanism(item); // eslint-disable-line no-underscore-dangle
+      let delegate = this.__userTree.getDelegate();
       };
-      this.__userTree.getTree().setDelegate(delegate);
+      this.__userTree.setDelegate(delegate);
     },
 
     __isFile: function(item) {
@@ -216,11 +216,11 @@ qx.Class.define("qxapp.component.widget.FileManager", {
     __selectionChanged: function(selectedTree) {
       let selectionData = null;
       if (selectedTree === "user") {
-        this.__nodeTree.getTree().resetSelection();
-        selectionData = this.__userTree.getSelection();
+        this.__nodeTree.resetSelection();
+        selectionData = this.__userTree.getSelectedFile();
       } else {
-        this.__userTree.getTree().resetSelection();
-        selectionData = this.__nodeTree.getSelection();
+        this.__userTree.resetSelection();
+        selectionData = this.__nodeTree.getSelectedFile();
       }
       if (selectionData) {
         this.__itemSelected(selectionData["selectedItem"], selectionData["isFile"]);

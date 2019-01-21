@@ -16,16 +16,16 @@
 ************************************************************************ */
 
 qx.Class.define("qxapp.component.widget.FilesTree", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.tree.VirtualTree,
 
   construct: function() {
-    this.base(arguments);
+    this.base(arguments, null, "label", "children");
 
-    let fileTreeLayout = new qx.ui.layout.Canvas();
-    this._setLayout(fileTreeLayout);
+    this.set({
+      openMode: "none"
+    });
 
-    let tree = this.__tree = this._createChildControlImpl("filesTree");
-    tree.getSelection().addListener("change", this.__selectionChanged, this);
+    this.getSelection().addListener("change", this.__selectionChanged, this);
 
     // Listen to "Enter" key
     this.addListener("keypress", function(keyEvent) {
@@ -43,56 +43,34 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
   members: {
     __tree: null,
 
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "filesTree":
-          control = this.__createFilesTree();
-          this._add(control, {
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0
-          });
-          break;
-      }
-
-      return control || this.base(arguments, id);
-    },
-
-    __createFilesTree: function() {
-      let filesTree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
-        openMode: "none"
-      });
-
-      /*
-      let that = this;
-      let delegate = filesTree.getDelegate();
-      delegate["configureItem"] = function(item) {
-        item.addListener("dbltap", e => {
-          that.__itemSelected(); // eslint-disable-line no-underscore-dangle
-        }, that);
-      };
-      filesTree.setDelegate(delegate);
-      */
-      filesTree.setDelegate({
-        configureItem: item => {
-          item.addListener("dbltap", e => {
-            this.__itemSelected();
-          }, this);
-        }
-      });
-
-      return filesTree;
-    },
-
     populateTree: function(nodeId = null) {
-      let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__tree);
+      let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this);
       if (nodeId) {
         filesTreePopulator.populateNodeFiles(nodeId);
       } else {
         filesTreePopulator.populateMyData();
       }
+
+      let delegate = this.getDelegate();
+      delegate["configureItem"] = item => {
+        item.addListener("dbltap", e => {
+          this.__itemSelected();
+        }, this);
+      };
+      this.setDelegate(delegate);
+    },
+
+    getSelectedFile: function() {
+      let selectedItem = this.__getSelectedItem();
+      if (selectedItem) {
+        const isFile = this.__isFile(selectedItem);
+        const data = {
+          selectedItem: selectedItem,
+          isFile: isFile
+        };
+        return data;
+      }
+      return null;
     },
 
     __isFile: function(item) {
@@ -104,7 +82,7 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
     },
 
     __getSelectedItem: function() {
-      let selection = this.__tree.getSelection().toArray();
+      let selection = this.getSelection().toArray();
       if (selection.length > 0) {
         return selection[0];
       }
@@ -123,23 +101,6 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
       if (selectedItem) {
         this.fireEvent("itemSelected");
       }
-    },
-
-    getTree: function() {
-      return this.__tree;
-    },
-
-    getSelection: function() {
-      let selectedItem = this.__getSelectedItem();
-      if (selectedItem) {
-        const isFile = this.__isFile(selectedItem);
-        const data = {
-          selectedItem: selectedItem,
-          isFile: isFile
-        };
-        return data;
-      }
-      return null;
     }
   }
 });
