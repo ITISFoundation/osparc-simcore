@@ -15,9 +15,6 @@
 
 ************************************************************************ */
 
-/* global document */
-/* global XMLHttpRequest */
-/* global Blob */
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.component.widget.FileManager", {
@@ -59,40 +56,10 @@ qx.Class.define("qxapp.component.widget.FileManager", {
       flex: 1
     });
 
-    let selectedFileLayout = this._createChildControlImpl("selectedFileLayout");
-    {
-      let selectedLabel = this.__selectedLabel = new qx.ui.basic.Label().set({
-        decorator: "main",
-        backgroundColor: "white",
-        allowGrowX: true,
-        height: 24
-      });
-
-      let downloadBtn = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/cloud-download-alt/24"
-      });
-      downloadBtn.addListener("execute", e => {
-        this.__retrieveURLAndDownload();
-      }, this);
-
-      let deleteBtn = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/trash-alt/24"
-      });
-      deleteBtn.addListener("execute", e => {
-        this.__deleteFile();
-      }, this);
-
-      selectedFileLayout.add(selectedLabel, {
-        flex: 1
-      });
-      selectedFileLayout.add(downloadBtn);
-      selectedFileLayout.add(deleteBtn);
-    }
-
-    let closeBtn = this.__closeBtn = this._createChildControlImpl("closeButton");
-    closeBtn.setEnabled(false);
-    closeBtn.addListener("execute", function() {
-      console.log("close");
+    let selectedFileLayout = this.__selectedFileLayout = this._createChildControlImpl("selectedFileLayout");
+    selectedFileLayout.addListener("fileDeleted", () => {
+      this.__reloadNodeTree();
+      this.__reloadUserTree();
     }, this);
 
     this.__reloadNodeTree();
@@ -108,9 +75,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
   members: {
     __nodeTree: null,
     __userTree: null,
-    __selectedLabel: null,
-    __selection: null,
-    __closeBtn: null,
+    __selectedFileLayout: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -120,13 +85,9 @@ qx.Class.define("qxapp.component.widget.FileManager", {
           control = new qxapp.component.widget.FilesTree();
           break;
         case "selectedFileLayout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+          control = new qxapp.component.widget.FileLabelWithActions().set({
             alignY: "middle"
           });
-          this._add(control);
-          break;
-        case "closeButton":
-          control = new qx.ui.form.Button(this.tr("Close"));
           this._add(control);
           break;
       }
@@ -142,16 +103,6 @@ qx.Class.define("qxapp.component.widget.FileManager", {
       this.__userTree.populateTree();
     },
 
-    __isFile: function(item) {
-      let isFile = false;
-      if (item["get"+qx.lang.String.firstUp("fileId")]) {
-        if (item.getFileId() !== null) {
-          isFile = true;
-        }
-      }
-      return isFile;
-    },
-
     __selectionChanged: function(selectedTree) {
       let selectionData = null;
       if (selectedTree === "user") {
@@ -162,61 +113,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
         selectionData = this.__nodeTree.getSelectedFile();
       }
       if (selectionData) {
-        this.__itemSelected(selectionData["selectedItem"], selectionData["isFile"]);
-      }
-    },
-
-    __itemSelected: function(selectedItem, isFile) {
-      if (isFile) {
-        this.__selection = selectedItem;
-        this.__selectedLabel.setValue(selectedItem.getFileId());
-      } else {
-        this.__selection = null;
-        this.__selectedLabel.setValue("");
-      }
-    },
-
-    __getItemSelected: function() {
-      let selectedItem = this.__selection;
-      if (selectedItem && qxapp.component.widget.FilesTree.isFile(selectedItem)) {
-        return selectedItem;
-      }
-      return null;
-    },
-
-    // Request to the server an download
-    __retrieveURLAndDownload: function() {
-      let selection = this.__getItemSelected();
-      if (selection) {
-        const fileId = selection.getFileId();
-        let fileName = fileId.split("/");
-        fileName = fileName[fileName.length-1];
-        let store = qxapp.data.Store.getInstance();
-        store.addListenerOnce("presginedLink", e => {
-          const presginedLinkData = e.getData();
-          console.log(presginedLinkData.presginedLink);
-          if (presginedLinkData.presginedLink) {
-            this.__downloadFile(presginedLinkData.presginedLink.link, fileName);
-          }
-        }, this);
-        const download = true;
-        const locationId = selection.getLocation();
-        store.getPresginedLink(download, locationId, fileId);
-      }
-    },
-
-    __deleteFile: function() {
-      let selection = this.__getItemSelected();
-      if (selection) {
-        console.log("Delete ", selection);
-        const fileId = selection.getFileId();
-        const locationId = selection.getLocation();
-        let store = qxapp.data.Store.getInstance();
-        store.addListenerOnce("deleteFile", e => {
-          this.__reloadNodeTree();
-          this.__reloadUserTree();
-        }, this);
-        store.deleteFile(locationId, fileId);
+        this.__selectedFileLayout.itemSelected(selectionData["selectedItem"], selectionData["isFile"]);
       }
     }
   }
