@@ -132,10 +132,9 @@ qx.Class.define("qxapp.component.widget.FileManager", {
     __reloadNodeTree: function() {
       this.__nodeTree.populateTree(this.getNode().getNodeId());
 
-      let that = this;
-      delegate["configureItem"] = function(item) {
-        that.__createDragMechanism(item); // eslint-disable-line no-underscore-dangle
       let delegate = this.__nodeTree.getDelegate();
+      delegate["configureItem"] = item => {
+        this.__createDragMechanism(item);
       };
       this.__nodeTree.setDelegate(delegate);
     },
@@ -143,10 +142,9 @@ qx.Class.define("qxapp.component.widget.FileManager", {
     __reloadUserTree: function() {
       this.__userTree.populateTree();
 
-      let that = this;
-      delegate["configureItem"] = function(item) {
-        that.__createDropMechanism(item); // eslint-disable-line no-underscore-dangle
       let delegate = this.__userTree.getDelegate();
+      delegate["configureItem"] = item => {
+        this.__createDropMechanism(item);
       };
       this.__userTree.setDelegate(delegate);
     },
