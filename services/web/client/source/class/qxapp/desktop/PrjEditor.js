@@ -361,34 +361,33 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       // callback for incoming logs
       const slotName = "logger";
-      if (!socket.slotExists(slotName)) {
-        socket.on(slotName, function(data) {
-          const d = JSON.parse(data);
-          const nodeId = d["Node"];
-          const msg = d["Message"];
-          const workbench = this.getProject().getWorkbench();
-          let node = workbench.getNode(nodeId);
-          this.getLogger().info(node.getLabel(), msg);
-          if (node) {
-            node.addLog(msg);
-          }
-        }, this);
-      }
+      socket.removeSlot(slotName);
+      socket.on(slotName, function(data) {
+        const d = JSON.parse(data);
+        const nodeId = d["Node"];
+        const msg = d["Message"];
+        const workbench = this.getProject().getWorkbench();
+        let node = workbench.getNode(nodeId);
+        this.getLogger().info(node.getLabel(), msg);
+        if (node) {
+          node.addLog(msg);
+        }
+      }, this);
       socket.emit(slotName);
 
       // callback for incoming progress
-      if (!socket.slotExists("progress")) {
-        socket.on("progress", function(data) {
-          const d = JSON.parse(data);
-          const nodeId = d["Node"];
-          const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
-          const workbench = this.getProject().getWorkbench();
-          let node = workbench.getNode(nodeId);
-          if (node) {
-            node.setProgress(progress);
-          }
-        }, this);
-      }
+      const slotName2 = "progress";
+      socket.removeSlot(slotName2);
+      socket.on(slotName2, function(data) {
+        const d = JSON.parse(data);
+        const nodeId = d["Node"];
+        const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
+        const workbench = this.getProject().getWorkbench();
+        let node = workbench.getNode(nodeId);
+        if (node) {
+          node.setProgress(progress);
+        }
+      }, this);
 
       // post pipeline
       this.__pipelineId = null;
