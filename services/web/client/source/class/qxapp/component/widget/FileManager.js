@@ -33,19 +33,26 @@ qx.Class.define("qxapp.component.widget.FileManager", {
     let fileManagerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(fileManagerLayout);
 
-    let treesLayout = this._createChildControlImpl("treesLayout");
+    let treesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+    this._add(treesLayout, {
+      flex: 1
+    });
 
     let nodeTree = this.__nodeTree = this._createChildControlImpl("nodeTree");
     treesLayout.add(nodeTree, {
       flex: 1
     });
-    nodeTree.getSelection().addListener("change", this.__nodeItemSelected, this);
+    nodeTree.addListener("selectionChanged", () => {
+      this.__selectionChanged("node");
+    }, this);
 
     let userTree = this.__userTree = this._createChildControlImpl("userTree");
     treesLayout.add(userTree, {
       flex: 1
     });
-    userTree.getSelection().addListener("change", this.__userItemSelected, this);
+    userTree.addListener("selectionChanged", () => {
+      this.__selectionChanged("user");
+    }, this);
 
     let selectedFileLayout = this._createChildControlImpl("selectedFileLayout");
     {
@@ -103,17 +110,9 @@ qx.Class.define("qxapp.component.widget.FileManager", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "treesLayout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-          this._add(control, {
-            flex: 1
-          });
-          break;
         case "nodeTree":
         case "userTree":
-          control = new qx.ui.tree.VirtualTree(null, "label", "children").set({
-            openMode: "none"
-          });
+          control = new qxapp.component.widget.FilesTree();
           break;
         case "selectedFileLayout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
@@ -131,27 +130,25 @@ qx.Class.define("qxapp.component.widget.FileManager", {
     },
 
     __reloadNodeTree: function() {
-      let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__nodeTree);
-      filesTreePopulator.populateNodeFiles(this.getNode().getNodeId());
+      this.__nodeTree.populateTree(this.getNode().getNodeId());
 
       let that = this;
-      let delegate = this.__nodeTree.getDelegate();
+      let delegate = this.__nodeTree.getTree().getDelegate();
       delegate["configureItem"] = function(item) {
         that.__createDragMechanism(item); // eslint-disable-line no-underscore-dangle
       };
-      this.__nodeTree.setDelegate(delegate);
+      this.__nodeTree.getTree().setDelegate(delegate);
     },
 
     __reloadUserTree: function() {
-      let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__userTree);
-      filesTreePopulator.populateMyData();
+      this.__userTree.populateTree();
 
       let that = this;
-      let delegate = this.__userTree.getDelegate();
+      let delegate = this.__userTree.getTree().getDelegate();
       delegate["configureItem"] = function(item) {
         that.__createDropMechanism(item); // eslint-disable-line no-underscore-dangle
       };
-      this.__userTree.setDelegate(delegate);
+      this.__userTree.getTree().setDelegate(delegate);
     },
 
     __isFile: function(item) {
@@ -216,28 +213,22 @@ qx.Class.define("qxapp.component.widget.FileManager", {
       }, this);
     },
 
-    __nodeItemSelected: function() {
-      let selectedItem = this.__nodeTree.getSelection();
-      if (selectedItem.length < 1) {
-        return;
+    __selectionChanged: function(selectedTree) {
+      let selectionData = null;
+      if (selectedTree === "user") {
+        this.__nodeTree.getTree().resetSelection();
+        selectionData = this.__userTree.getSelection();
+      } else {
+        this.__userTree.getTree().resetSelection();
+        selectionData = this.__nodeTree.getSelection();
       }
-      this.__userTree.resetSelection();
-      selectedItem = selectedItem.toArray();
-      this.__itemSelected(selectedItem[0]);
+      if (selectionData) {
+        this.__itemSelected(selectionData["selectedItem"], selectionData["isFile"]);
+      }
     },
 
-    __userItemSelected: function() {
-      let selectedItem = this.__userTree.getSelection();
-      if (selectedItem.length < 1) {
-        return;
-      }
-      this.__nodeTree.resetSelection();
-      selectedItem = selectedItem.toArray();
-      this.__itemSelected(selectedItem[0]);
-    },
-
-    __itemSelected: function(selectedItem) {
-      if (this.__isFile(selectedItem)) {
+    __itemSelected: function(selectedItem, isFile) {
+      if (isFile) {
         this.__selection = selectedItem;
         this.__selectedLabel.setValue(selectedItem.getFileId());
       } else {

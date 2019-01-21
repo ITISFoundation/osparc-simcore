@@ -125,6 +125,10 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
       }
     },
 
+    getTree: function() {
+      return this.__tree;
+    },
+
     getSelection: function() {
       let selectedItem = this.__getSelectedItem();
       if (selectedItem) {
