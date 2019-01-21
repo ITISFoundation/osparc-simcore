@@ -292,7 +292,8 @@ qx.Class.define("qxapp.data.model.Workbench", {
           inputNodes: node.getInputNodes(),
           outputNode: node.getIsOutputNode(),
           outputs: node.getOutputValues(), // can a container have outputs?
-          parent: node.getParentNodeId()
+          parent: node.getParentNodeId(),
+          progress: node.getProgress()
         };
 
         if (savePosition) {
