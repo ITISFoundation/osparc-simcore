@@ -46,6 +46,7 @@ qx.Class.define("qxapp.component.widget.FileTreeItem", {
   },
 
   members : {
+    // overridden
     _addWidgets : function() {
       // Here's our indentation and tree-lines
       this.addSpacer();
@@ -64,27 +65,31 @@ qx.Class.define("qxapp.component.widget.FileTreeItem", {
 
       // Add size
       var sizeWidget = new qx.ui.basic.Label().set({
-        width: 50,
-        maxWidth: 50,
-        alignX: "right"
+        width: 70,
+        maxWidth: 70,
+        textAlign: "right"
       });
       this.bind("size", sizeWidget, "value");
       this.addWidget(sizeWidget);
+
+      this.addWidget(new qx.ui.core.Spacer(10));
 
       // Add Path
       var pathWidget = new qx.ui.basic.Label().set({
         width: 300,
         maxWidth: 300,
-        alignX: "right"
+        textAlign: "right"
       });
       this.bind("path", pathWidget, "value");
       this.addWidget(pathWidget);
+
+      this.addWidget(new qx.ui.core.Spacer(10));
 
       // Add NodeId
       var fileIdWidget = new qx.ui.basic.Label().set({
         width: 300,
         maxWidth: 300,
-        alignX: "right"
+        textAlign: "right"
       });
       this.bind("fileId", fileIdWidget, "value");
       this.addWidget(fileIdWidget);
