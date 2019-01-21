@@ -32,6 +32,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
 
   members: {
     __tree: null,
+    __selectedFileLayout: null,
 
     __initResources: function() {
       this.__tree.populateTree();
@@ -54,11 +55,28 @@ qx.Class.define("qxapp.desktop.DataManager", {
       let filesTree = this.__tree = new qxapp.component.widget.FilesTree().set({
         minHeight: 600
       });
+      filesTree.addListener("selectionChanged", () => {
+        this.__selectionChanged();
+      }, this);
       vBoxLayout.add(filesTree, {
         flex: 1
       });
 
+      let selectedFileLayout = this.__selectedFileLayout = new qxapp.component.widget.FileLabelWithActions();
+      selectedFileLayout.addListener("fileDeleted", () => {
+        this.__initResources();
+      }, this);
+      vBoxLayout.add(selectedFileLayout);
+
       this._add(dataManagerLayout);
+    },
+
+    __selectionChanged: function() {
+      this.__tree.resetSelection();
+      let selectionData = this.__tree.getSelectedFile();
+      if (selectionData) {
+        this.__selectedFileLayout.itemSelected(selectionData["selectedItem"], selectionData["isFile"]);
+      }
     }
   }
 });
