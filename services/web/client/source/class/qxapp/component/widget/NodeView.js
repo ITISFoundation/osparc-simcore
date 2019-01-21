@@ -102,7 +102,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
         icon: "@FontAwesome5Solid/folder-open/32"
       });
       openFolder.addListener("execute", function() {
-        let fileManager = new qxapp.component.widget.FileManager(this.getNode());
+        let nodeDataManager = new qxapp.component.widget.NodeDataManager(this.getNode());
 
         let win = new qx.ui.window.Window(this.getNode().getLabel()).set({
           layout: new qx.ui.layout.Canvas(),
@@ -111,7 +111,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
           width: 900,
           height: 600
         });
-        win.add(fileManager, {
+        win.add(nodeDataManager, {
           top: 0,
           right: 0,
           bottom: 0,

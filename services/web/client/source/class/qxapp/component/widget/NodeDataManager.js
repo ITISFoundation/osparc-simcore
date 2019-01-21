@@ -17,7 +17,7 @@
 
 /* eslint no-warning-comments: "off" */
 
-qx.Class.define("qxapp.component.widget.FileManager", {
+qx.Class.define("qxapp.component.widget.NodeDataManager", {
   extend: qx.ui.core.Widget,
 
   construct: function(node) {
