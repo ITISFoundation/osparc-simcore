@@ -1,30 +1,12 @@
-import os
-import logging
+#pylint: disable=C0111
+from aiohttp import web
+from yarl import URL
+
 import simcore_director_sdk
 from simcore_director_sdk import UsersApi
-from simcore_director_sdk.rest import ApiException #pylint: disable=W0611
+from simcore_director_sdk.rest import ApiException  # pylint: disable=W0611
 
 from .config import get_config
-from yarl import URL
-from aiohttp import web
-
-logger = logging.getLogger(__file__)
-
-# TODO: deprecate!!!
-_DIRECTOR_HOST = os.environ.get("DIRECTOR_HOST", "0.0.0.0")
-_DIRECTOR_PORT = os.environ.get("DIRECTOR_PORT", "8001")
-_DIRECTOR_PATH = "v0"
-
-
-def get_director():
-    # TODO: deprecate, use instead create_client!!!
-    configuration = simcore_director_sdk.Configuration()
-    configuration.host = "http://{}:{}/{}".format(
-            _DIRECTOR_HOST,
-            _DIRECTOR_PORT,
-            _DIRECTOR_PATH)
-    api_instance = UsersApi(simcore_director_sdk.ApiClient(configuration))
-    return api_instance
 
 
 def create_director_api_client(app: web.Application):

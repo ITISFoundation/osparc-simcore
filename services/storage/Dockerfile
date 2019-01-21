@@ -121,7 +121,7 @@ WORKDIR /home/scu
 
 ENV DEBUG 0
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD docker/boot.sh
+CMD ["/bin/sh", "docker/boot.sh"]
 
 FROM cache as production
 # remove any unnecessary stuff

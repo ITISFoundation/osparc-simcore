@@ -4,11 +4,11 @@ import os
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 
-import docker
 import tenacity
 from sqlalchemy import and_, create_engine
 from sqlalchemy.orm import sessionmaker
 
+import docker
 from s3wrapper.s3_client import S3Client
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.config.docker import Config as docker_config

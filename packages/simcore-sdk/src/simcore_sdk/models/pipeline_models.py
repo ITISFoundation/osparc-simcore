@@ -2,9 +2,8 @@ import uuid
 
 import networkx as nx
 from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+from .base import Base
 
 UNKNOWN = 0
 PENDING = 1

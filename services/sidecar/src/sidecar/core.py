@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict
 
@@ -10,14 +11,11 @@ import docker
 import pika
 from celery.states import SUCCESS as CSUCCESS
 from celery.utils.log import get_task_logger
-from sqlalchemy import and_, exc
-
+from simcore_sdk import node_ports
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
-
-from simcore_sdk import node_ports
-
+from sqlalchemy import and_, exc
 
 from .utils import (DbSettings, DockerSettings, ExecutorSettings,
                     RabbitSettings, S3Settings, delete_contents,
@@ -26,6 +24,19 @@ from .utils import (DbSettings, DockerSettings, ExecutorSettings,
 log = get_task_logger(__name__)
 log.setLevel(logging.DEBUG) # FIXME: set level via config
 
+@contextmanager
+def session_scope(session_factory):
+    """Provide a transactional scope around a series of operations
+
+    """
+    session = session_factory()
+    try:
+        yield session
+    except: # pylint: disable=W0702
+        log.exception("DB access error, rolling back")
+        session.rollback()
+    finally:
+        session.close()
 
 class Sidecar:
     def __init__(self):
@@ -240,6 +251,7 @@ class Sidecar:
         # config nodeports
         node_ports.node_config.USER_ID = user_id
         node_ports.node_config.NODE_UUID = task.node_id
+        node_ports.node_config.PROJECT_ID = task.project_id
 
     def preprocess(self):
         log.debug('Pre-Processing Pipeline %s and node %s from container', self._task.project_id, self._task.internal_id)
@@ -332,8 +344,7 @@ class Sidecar:
         next_task_nodes = []
         do_run = False
 
-        try:
-            _session = self._db.Session()
+        with session_scope(self._db.Session) as _session:
             _pipeline =_session.query(ComputationalPipeline).filter_by(project_id=project_id).one()
 
             graph = _pipeline.execution_graph
@@ -388,13 +399,6 @@ class Sidecar:
                 log.debug("Next task nodes %s", next_task_nodes)
 
             celery_task.update_state(state=CSUCCESS)
-
-        except exc.SQLAlchemyError:
-            log.exception("DB error")
-            _session.rollback()
-
-        finally:
-            _session.close()
 
         # now proceed actually running the task (we do that after the db session has been closed)
         if do_run:
