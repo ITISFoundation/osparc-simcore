@@ -39,20 +39,25 @@ qx.Class.define("qxapp.component.widget.FileManager", {
     });
 
     let nodeTree = this.__nodeTree = this._createChildControlImpl("nodeTree");
-    treesLayout.add(nodeTree, {
-      flex: 1
-    });
+    nodeTree.setDragMechnism(true);
     nodeTree.addListener("selectionChanged", () => {
       this.__selectionChanged("node");
     }, this);
-
-    let userTree = this.__userTree = this._createChildControlImpl("userTree");
-    treesLayout.add(userTree, {
+    treesLayout.add(nodeTree, {
       flex: 1
     });
+
+    let userTree = this.__userTree = this._createChildControlImpl("userTree");
+    userTree.setDropMechnism(true);
     userTree.addListener("selectionChanged", () => {
       this.__selectionChanged("user");
     }, this);
+    userTree.addListener("fileCopied", e => {
+      this.__reloadUserTree();
+    }, this);
+    treesLayout.add(userTree, {
+      flex: 1
+    });
 
     let selectedFileLayout = this._createChildControlImpl("selectedFileLayout");
     {
@@ -131,22 +136,10 @@ qx.Class.define("qxapp.component.widget.FileManager", {
 
     __reloadNodeTree: function() {
       this.__nodeTree.populateTree(this.getNode().getNodeId());
-
-      let delegate = this.__nodeTree.getDelegate();
-      delegate["configureItem"] = item => {
-        this.__createDragMechanism(item);
-      };
-      this.__nodeTree.setDelegate(delegate);
     },
 
     __reloadUserTree: function() {
       this.__userTree.populateTree();
-
-      let delegate = this.__userTree.getDelegate();
-      delegate["configureItem"] = item => {
-        this.__createDropMechanism(item);
-      };
-      this.__userTree.setDelegate(delegate);
     },
 
     __isFile: function(item) {
@@ -157,58 +150,6 @@ qx.Class.define("qxapp.component.widget.FileManager", {
         }
       }
       return isFile;
-    },
-
-    __isDir: function(item) {
-      let isDir = false;
-      if (item["get"+qx.lang.String.firstUp("path")]) {
-        if (item.getPath() !== null) {
-          isDir = true;
-        }
-      }
-      return isDir;
-    },
-
-    __createDragMechanism: function(treeItem) {
-      treeItem.setDraggable(true);
-      treeItem.addListener("dragstart", e => {
-        if (this.__isFile(e.getOriginalTarget())) {
-          // Register supported actions
-          e.addAction("copy");
-          // Register supported types
-          e.addType("osparc-filePath");
-        } else {
-          e.preventDefault();
-        }
-      }, this);
-    },
-
-    __createDropMechanism: function(treeItem) {
-      treeItem.setDroppable(true);
-      treeItem.addListener("dragover", e => {
-        let compatible = false;
-        if (this.__isDir(e.getOriginalTarget())) {
-          if (e.supportsType("osparc-filePath")) {
-            compatible = true;
-          }
-        }
-        if (!compatible) {
-          e.preventDefault();
-        }
-      }, this);
-
-      treeItem.addListener("drop", e => {
-        if (e.supportsType("osparc-filePath")) {
-          const from = e.getRelatedTarget();
-          const to = e.getCurrentTarget();
-          let store = qxapp.data.Store.getInstance();
-          console.log("Copy", from.getFileId(), "to", to.getPath());
-          store.copyFile(from.getLocation(), from.getFileId(), to.getLocation(), to.getPath());
-          store.addListenerOnce("fileCopied", ev => {
-            this.__reloadUserTree();
-          }, this);
-        }
-      }, this);
     },
 
     __selectionChanged: function(selectedTree) {
@@ -237,7 +178,7 @@ qx.Class.define("qxapp.component.widget.FileManager", {
 
     __getItemSelected: function() {
       let selectedItem = this.__selection;
-      if (selectedItem && this.__isFile(selectedItem)) {
+      if (selectedItem && qxapp.component.widget.FilesTree.isFile(selectedItem)) {
         return selectedItem;
       }
       return null;

@@ -35,9 +35,42 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
     }, this);
   },
 
+  properties: {
+    dragMechnism: {
+      check: "Boolean",
+      init: false
+    },
+
+    dropMechnism: {
+      check: "Boolean",
+      init: false
+    }
+  },
+
   events: {
     "selectionChanged": "qx.event.type.Event",
-    "itemSelected": "qx.event.type.Event"
+    "itemSelected": "qx.event.type.Event",
+    "fileCopied": "qx.event.type.Event"
+  },
+
+  statics: {
+    isDir: function(item) {
+      let isDir = false;
+      if (item["get"+qx.lang.String.firstUp("path")]) {
+        if (item.getPath() !== null) {
+          isDir = true;
+        }
+      }
+      return isDir;
+    },
+
+    isFile: function(item) {
+      let isFile = false;
+      if (item["set"+qx.lang.String.firstUp("fileId")]) {
+        isFile = true;
+      }
+      return isFile;
+    }
   },
 
   members: {
@@ -56,6 +89,8 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
         item.addListener("dbltap", e => {
           this.__itemSelected();
         }, this);
+
+        this.__addDragAndDropMechanisms(item);
       };
       this.setDelegate(delegate);
     },
@@ -63,7 +98,7 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
     getSelectedFile: function() {
       let selectedItem = this.__getSelectedItem();
       if (selectedItem) {
-        const isFile = this.__isFile(selectedItem);
+        const isFile = qxapp.component.widget.FilesTree.isFile(selectedItem);
         const data = {
           selectedItem: selectedItem,
           isFile: isFile
@@ -71,14 +106,6 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
         return data;
       }
       return null;
-    },
-
-    __isFile: function(item) {
-      let isFile = false;
-      if (item["set"+qx.lang.String.firstUp("fileId")]) {
-        isFile = true;
-      }
-      return isFile;
     },
 
     __getSelectedItem: function() {
@@ -101,6 +128,58 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
       if (selectedItem) {
         this.fireEvent("itemSelected");
       }
+    },
+
+    __addDragAndDropMechanisms: function(item) {
+      if (this.getDragMechnism()) {
+        this.__createDragMechanism(item);
+      }
+
+      if (this.getDropMechnism()) {
+        this.__createDropMechanism(item);
+      }
+    },
+
+    __createDragMechanism: function(treeItem) {
+      treeItem.setDraggable(true);
+      treeItem.addListener("dragstart", e => {
+        if (qxapp.component.widget.FilesTree.isFile(e.getOriginalTarget())) {
+          // Register supported actions
+          e.addAction("copy");
+          // Register supported types
+          e.addType("osparc-filePath");
+        } else {
+          e.preventDefault();
+        }
+      }, this);
+    },
+
+    __createDropMechanism: function(treeItem) {
+      treeItem.setDroppable(true);
+      treeItem.addListener("dragover", e => {
+        let compatible = false;
+        if (qxapp.component.widget.FilesTree.isDir(e.getOriginalTarget())) {
+          if (e.supportsType("osparc-filePath")) {
+            compatible = true;
+          }
+        }
+        if (!compatible) {
+          e.preventDefault();
+        }
+      }, this);
+
+      treeItem.addListener("drop", e => {
+        if (e.supportsType("osparc-filePath")) {
+          const from = e.getRelatedTarget();
+          const to = e.getCurrentTarget();
+          let store = qxapp.data.Store.getInstance();
+          console.log("Copy", from.getFileId(), "to", to.getPath());
+          store.copyFile(from.getLocation(), from.getFileId(), to.getLocation(), to.getPath());
+          store.addListenerOnce("fileCopied", ev => {
+            this.fireDataEvent("fileCopied", ev.getData());
+          }, this);
+        }
+      }, this);
     }
   }
 });
