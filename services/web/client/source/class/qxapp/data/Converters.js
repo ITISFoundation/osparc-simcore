@@ -94,11 +94,12 @@ qx.Class.define("qxapp.data.Converters", {
                   label: nodeLabel,
                   location: file["location_id"],
                   path: prjId +"/"+ nodeId,
-                  children: [{
-                    label: fileName,
-                    location: file["location_id"],
-                    fileId: file["file_uuid"]
-                  }]
+                  children: [this.__createFileEntry(
+                    fileName,
+                    file["location_id"],
+                    file["file_uuid"],
+                    file["size"])
+                  ]
                 }]
               });
               this.__mergeFileTreeChildren(children, fileInTree);
@@ -117,11 +118,11 @@ qx.Class.define("qxapp.data.Converters", {
               parent.children.push(newItem);
               parent = newItem;
             }
-            let fileInfo = {
-              label: splitted[splitted.length-1],
-              location: file["location_id"],
-              fileId: file["file_uuid"]
-            };
+            let fileInfo = this.__createFileEntry(
+              splitted[splitted.length-1],
+              file["location_id"],
+              file["file_uuid"],
+              file["size"]);
             parent.children.push(fileInfo);
             this.__mergeFileTreeChildren(children, fileInTree);
           }
@@ -129,6 +130,27 @@ qx.Class.define("qxapp.data.Converters", {
       }
 
       return children;
+    },
+
+    __createFileEntry: function(label, location, fileId, size) {
+      if (label === undefined) {
+        label = "Unknown label";
+      }
+      if (location === undefined) {
+        location = "Unknown location";
+      }
+      if (fileId === undefined) {
+        fileId = "Unknown fileId";
+      }
+      if (size === undefined) {
+        size = (Math.floor(Math.random()*1000)+1).toString() + " KB*";
+      }
+      return {
+        label: label,
+        location: location,
+        fileId: fileId,
+        size: size
+      };
     },
 
     __mergeAPITreeChildren: function(one, two) {
