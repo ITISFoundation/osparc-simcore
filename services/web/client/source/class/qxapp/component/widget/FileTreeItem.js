@@ -62,33 +62,32 @@ qx.Class.define("qxapp.component.widget.FileTreeItem", {
         flex: 1
       });
 
+      // Add size
+      var sizeWidget = new qx.ui.basic.Label().set({
+        width: 50,
+        maxWidth: 50,
+        alignX: "right"
+      });
+      this.bind("size", sizeWidget, "value");
+      this.addWidget(sizeWidget);
+
       // Add Path
-      var pathWidget = new qx.ui.basic.Label();
+      var pathWidget = new qx.ui.basic.Label().set({
+        width: 300,
+        maxWidth: 300,
+        alignX: "right"
+      });
       this.bind("path", pathWidget, "value");
-      pathWidget.setMaxWidth(300);
       this.addWidget(pathWidget);
 
-      // All else should be right justified
-      this.addWidget(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
       // Add NodeId
-      var fileIdWidget = new qx.ui.basic.Label();
-      this.bind("fileId", fileIdWidget, "value");
-      fileIdWidget.setMaxWidth(300);
-      this.addWidget(fileIdWidget);
-
-      // All else should be right justified
-      this.addWidget(new qx.ui.core.Spacer(), {
-        flex: 1
+      var fileIdWidget = new qx.ui.basic.Label().set({
+        width: 300,
+        maxWidth: 300,
+        alignX: "right"
       });
-
-      // Add size
-      var sizeWidget = new qx.ui.basic.Label();
-      this.bind("size", sizeWidget, "value");
-      sizeWidget.setMaxWidth(100);
-      this.addWidget(sizeWidget);
+      this.bind("fileId", fileIdWidget, "value");
+      this.addWidget(fileIdWidget);
     }
   }
 });
