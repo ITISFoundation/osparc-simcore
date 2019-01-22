@@ -62,18 +62,26 @@ qx.Class.define("qxapp.wrappers.Plotly", {
 
     createEmptyPlot: function(id) {
       this.__plotId = id;
-      const margin = 60;
+      const margin = 20;
       this.__layout = {
         title: "My Title",
+        titlefont: {
+          color: "#bfbfbf",
+          size: qxapp.theme.Font.fonts["text-14"]["size"],
+          family: qxapp.theme.Font.fonts["text-14"]["family"].toString()
+        },
+        font: {
+          color: "#bfbfbf",
+          size: qxapp.theme.Font.fonts["text-12"]["size"],
+          family: qxapp.theme.Font.fonts["text-12"]["family"].toString()
+        },
         margin: {
           l: margin,
           r: margin,
           t: margin,
           b: margin,
-          pad: 25
+          pad: 0
         },
-        height: 400,
-        width: 500,
         "plot_bgcolor": "rgba(0, 0, 0, 0)",
         "paper_bgcolor": "rgba(0, 0, 0, 0)"
       };
