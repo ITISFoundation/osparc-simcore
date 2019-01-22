@@ -141,7 +141,6 @@ qx.Class.define("qxapp.desktop.DataManager", {
     __getDataInfo: function(pathId) {
       const context = pathId || "/";
       const children = this.__tree.getModel().getChildren();
-      console.log(context, children);
 
       let data = {
         "ids": [],
