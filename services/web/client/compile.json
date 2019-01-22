@@ -57,6 +57,9 @@
         "uri" : "resource/jsontreeviewer/jsonTree.js"
       },
       {
+        "uri" : "resource/plotly/plotly.min.js"
+      },
+      {
         "uri" : "resource/qxapp/*.png"
       },
       {
