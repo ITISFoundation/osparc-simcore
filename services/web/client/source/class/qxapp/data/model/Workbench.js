@@ -153,7 +153,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
         this.fireDataEvent("updatePipeline", e.getData());
       }, this);
       this.fireDataEvent("NodeAdded", node);
-      node.populateNodeData(nodeData);      
+      node.populateNodeData(nodeData);
       return node;
     },
 
