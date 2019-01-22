@@ -64,7 +64,7 @@ qx.Class.define("qxapp.wrappers.Plotly", {
       this.__plotId = id;
       const margin = 20;
       this.__layout = {
-        title: "My Title",
+        title: "My Data",
         titlefont: {
           color: "#bfbfbf",
           size: qxapp.theme.Font.fonts["text-14"]["size"],
