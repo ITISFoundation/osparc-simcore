@@ -95,13 +95,6 @@ qx.Class.define("qxapp.wrappers.Plotly", {
       Plotly.Plots.resize(gd);
     },
 
-    __setTitle: function(title) {
-      const update = {
-        title: title
-      };
-      Plotly.relayout(this.__plotId, update);
-    },
-
     setData: function(ids, labels, values, tooltips, title) {
       this.__data = [{
         ids: ids,
@@ -113,7 +106,7 @@ qx.Class.define("qxapp.wrappers.Plotly", {
         showlegend: false,
         type: "pie"
       }];
-      this.__setTitle(title);
+      this.__layout["title"] = title;
 
       Plotly.react(this.__plotId, this.__data, this.__layout);
     }
