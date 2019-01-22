@@ -121,6 +121,15 @@ qx.Class.define("qxapp.utils.Utils", {
       return Object.keys(object).find(key => object[key] === value);
     },
 
+    bytesToSize: function(bytes) {
+      const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+      if (bytes == 0) {
+        return "0 Byte";
+      }
+      const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+      return Math.round(bytes / Math.pow(1024, i), 2) + " " + sizes[i];
+    },
+
     downloadLink: function(url, fileName) {
       let xhr = new XMLHttpRequest();
       xhr.open("GET", url, true);

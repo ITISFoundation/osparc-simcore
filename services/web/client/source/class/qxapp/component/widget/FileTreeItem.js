@@ -69,7 +69,14 @@ qx.Class.define("qxapp.component.widget.FileTreeItem", {
         maxWidth: 70,
         textAlign: "right"
       });
-      this.bind("size", sizeWidget, "value");
+      this.bind("size", sizeWidget, "value", {
+        converter: function(value) {
+          if (value === null) {
+            return "";
+          }
+          return qxapp.utils.Utils.bytesToSize(value);
+        }
+      });
       this.addWidget(sizeWidget);
 
       this.addWidget(new qx.ui.core.Spacer(10));

@@ -143,7 +143,7 @@ qx.Class.define("qxapp.data.Converters", {
         fileId = "Unknown fileId";
       }
       if (size === undefined) {
-        size = (Math.floor(Math.random()*1000)+1).toString() + " KB*";
+        size = (Math.floor(Math.random()*1000000)+1).toString();
       }
       return {
         label: label,
