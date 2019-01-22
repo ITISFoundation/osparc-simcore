@@ -16,9 +16,10 @@ qx.Class.define("qxapp.component.widget.PlotlyWidget", {
           this.getContentElement().getDomElement()
             .appendChild(plotlyPlaceholder);
           this.__plotlyWrapper.createEmptyPlot(elemId);
-          this.__plotlyWrapper.setData();
+          this.fireDataEvent("plotlyWidgetReady", true);
         } else {
           console.debug("plotly.js was not loaded");
+          this.fireDataEvent("plotlyWidgetReady", false);
         }
       }, this);
 
@@ -32,6 +33,10 @@ qx.Class.define("qxapp.component.widget.PlotlyWidget", {
     }, this);
   },
 
+  events: {
+    "plotlyWidgetReady": "qx.event.type.Data"
+  },
+
   members: {
     __plotlyWrapper: null,
 
@@ -39,12 +44,8 @@ qx.Class.define("qxapp.component.widget.PlotlyWidget", {
       this.__plotlyWrapper.resize();
     },
 
-    setData: function(xVals, yVals, xLabel = "no label", yLabel = "no label") {
-      this.__plotlyWrapper.setData(xVals, yVals, xLabel, yLabel);
-    },
-
-    setDataY2: function(xVals, y2Vals, xLabel = "no label", y2Label = "no label") {
-      this.__plotlyWrapper.setDataY2(xVals, y2Vals, xLabel, y2Label);
+    setData: function(ids, labels, values) {
+      this.__plotlyWrapper.setData(ids, labels, values);
     }
   }
 });

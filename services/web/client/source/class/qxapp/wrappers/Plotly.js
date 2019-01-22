@@ -101,10 +101,11 @@ qx.Class.define("qxapp.wrappers.Plotly", {
       Plotly.relayout(this.__plotId, this.__layout);
     },
 
-    setData: function(xVals, yVals, xLabel, yLabel) {
+    setData: function(ids, labels, values) {
       this.__data = [{
-        values: [19, 26, 55],
-        labels: ["Residential", "Non-Residential", "Utility"],
+        ids: ids,
+        labels: labels,
+        values: values,
         type: "pie"
       }];
 
