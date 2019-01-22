@@ -101,11 +101,15 @@ qx.Class.define("qxapp.wrappers.Plotly", {
       Plotly.relayout(this.__plotId, this.__layout);
     },
 
-    setData: function(ids, labels, values) {
+    setData: function(ids, labels, values, tooltips) {
       this.__data = [{
         ids: ids,
         labels: labels,
         values: values,
+        text: tooltips,
+        textinfo: "label+percent",
+        hoverinfo: "text",
+        showlegend: false,
         type: "pie"
       }];
 

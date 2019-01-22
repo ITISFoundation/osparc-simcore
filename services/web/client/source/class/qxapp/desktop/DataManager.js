@@ -106,7 +106,8 @@ qx.Class.define("qxapp.desktop.DataManager", {
           const ids = ["FreeSpaceId", "SimcoreS3Id", "DatcoreId"];
           const labels = ["Free space", "simcore.s3", "datcore"];
           const values = [40, 16, 44];
-          plotly.setData(ids, labels, values);
+          const tooltips = ["40KB", "16KB", "44KB"];
+          plotly.setData(ids, labels, values, tooltips);
         }
       }, this);
       chartLayout.add(plotly, {

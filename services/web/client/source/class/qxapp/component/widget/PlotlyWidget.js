@@ -44,8 +44,8 @@ qx.Class.define("qxapp.component.widget.PlotlyWidget", {
       this.__plotlyWrapper.resize();
     },
 
-    setData: function(ids, labels, values) {
-      this.__plotlyWrapper.setData(ids, labels, values);
+    setData: function(ids, labels, values, tooltips) {
+      this.__plotlyWrapper.setData(ids, labels, values, tooltips);
     }
   }
 });
