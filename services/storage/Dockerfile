@@ -90,7 +90,7 @@ VOLUME /home/scu/services/storage/
 
 ENV DEBUG 1
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD docker/boot.sh
+CMD ["/bin/sh", "docker/boot.sh"]
 
 
 # --------------------------Production multi-stage -------------------
