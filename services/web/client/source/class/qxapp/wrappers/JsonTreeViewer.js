@@ -17,6 +17,7 @@
 
 /**
  * @asset(jsontreeviewer/jsonTree.*)
+ * @asset(jsontreeviewer/icons.svg)
  * @ignore(jsonTree)
  */
 
@@ -52,7 +53,6 @@ qx.Class.define("qxapp.wrappers.JsonTreeViewer", {
       let jsonTreeViewerCssUri = qx.util.ResourceManager.getInstance().toUri(jsonTreeViewerCss);
       qx.module.Css.includeStylesheet(jsonTreeViewerCssUri);
       let dynLoader = new qx.util.DynamicScriptLoader([
-        // jsonTreeViewerCss,
         jsonTreeViewerPath
       ]);
 
