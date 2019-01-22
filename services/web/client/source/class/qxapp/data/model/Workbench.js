@@ -151,7 +151,9 @@ qx.Class.define("qxapp.data.model.Workbench", {
       node.addListener("updatePipeline", e => {
         this.fireDataEvent("updatePipeline", e.getData());
       }, this);
-      node.populateNodeData(nodeData);
+      if (nodeData) {
+        node.populateNodeData(nodeData);
+      }
       return node;
     },
 
