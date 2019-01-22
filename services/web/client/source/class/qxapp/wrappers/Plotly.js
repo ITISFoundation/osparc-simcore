@@ -45,13 +45,13 @@ qx.Class.define("qxapp.wrappers.Plotly", {
         plotlyPath
       ]);
 
-      dynLoader.addListenerOnce("ready", function(e) {
+      dynLoader.addListenerOnce("ready", e => {
         console.log(plotlyPath + " loaded");
         this.setLibReady(true);
         this.fireDataEvent("plotlyLibReady", true);
       }, this);
 
-      dynLoader.addListener("failed", function(e) {
+      dynLoader.addListener("failed", e => {
         let data = e.getData();
         console.log("failed to load " + data.script);
         this.fireDataEvent("plotlyLibReady", false);
@@ -95,9 +95,11 @@ qx.Class.define("qxapp.wrappers.Plotly", {
       Plotly.Plots.resize(gd);
     },
 
-    setTitle: function(title) {
-      this.__layout["title"] = title;
-      Plotly.relayout(this.__plotId, this.__layout);
+    __setTitle: function(title) {
+      const update = {
+        title: title
+      };
+      Plotly.relayout(this.__plotId, update);
     },
 
     setData: function(ids, labels, values, tooltips, title) {
@@ -111,7 +113,7 @@ qx.Class.define("qxapp.wrappers.Plotly", {
         showlegend: false,
         type: "pie"
       }];
-      this.__layout["title"] = title;
+      this.__setTitle(title);
 
       Plotly.react(this.__plotId, this.__data, this.__layout);
     }
