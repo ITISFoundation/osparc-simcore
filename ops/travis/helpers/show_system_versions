@@ -1,0 +1,16 @@
+#!/bin/bash
+
+uname -a
+lsb_release -a
+
+if command -v python; then
+    python --version
+fi
+
+if command -v docker; then
+    docker -v
+fi
+
+if command -v docker-compose; then
+    docker-compose version
+fi

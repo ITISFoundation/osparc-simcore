@@ -90,7 +90,7 @@ VOLUME /home/scu/services/storage/
 
 ENV DEBUG 1
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD docker/boot.sh
+CMD ["/bin/sh", "docker/boot.sh"]
 
 
 # --------------------------Production multi-stage -------------------
@@ -120,11 +120,13 @@ RUN $PIP --no-cache-dir install -r requirements/prod.txt &&\
 WORKDIR /home/scu
 
 ENV DEBUG 0
-ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD docker/boot.sh
 
 FROM cache as production
 # remove any unnecessary stuff
 RUN . $HOME/.venv/bin/activate; pip list &&\
     rm -rf $HOME/packages &&\
     rm -rf $HOME/services/storage
+
+ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
+CMD ["/bin/sh", "docker/boot.sh"]
+

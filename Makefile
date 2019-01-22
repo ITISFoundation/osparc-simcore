@@ -179,36 +179,6 @@ pylint:
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 	/bin/bash -c "pylint --rcfile=.pylintrc $(PY_FILES)"
 
-before_test:
-	${DOCKER_COMPOSE} -f packages/pytest_docker/tests/docker-compose.yml pull
-	${DOCKER_COMPOSE} -f packages/pytest_docker/tests/docker-compose.yml build
-	${DOCKER_COMPOSE} -f packages/s3wrapper/tests/docker-compose.yml pull
-	${DOCKER_COMPOSE} -f packages/s3wrapper/tests/docker-compose.yml build
-	${DOCKER_COMPOSE} -f packages/simcore-sdk/tests/docker-compose.yml pull
-	${DOCKER_COMPOSE} -f packages/simcore-sdk/tests/docker-compose.yml build
-
-run_test:
-	pytest -v api/tests
-	pytest -v services/apihub/tests
-	pytest --cov=pytest_docker -v packages/pytest_docker/tests
-	pytest --cov=s3wrapper -v packages/s3wrapper/tests
-	pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
-	pytest --cov=servicelib -v packages/service-library/tests
-	pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
-	pytest --cov=simcore_service_webserver -v services/web/server/tests/login
-	pytest --cov=simcore_service_director -v services/director/tests
-	pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
-
-after_test:
-	# leave a clean slate (not sure whether this is actually needed)
-	${DOCKER_COMPOSE} -f packages/pytest_docker/tests/docker-compose.yml down
-	${DOCKER_COMPOSE} -f packages/s3wrapper/tests/docker-compose.yml down
-	${DOCKER_COMPOSE} -f packages/simcore-sdk/tests/docker-compose.yml down
-
-test:
-	make before_test
-	make run_test
-	make after_test
 
 PLATFORM_VERSION=3.38
 DOCKER_REGISTRY=masu.speag.com
@@ -256,23 +226,66 @@ push_client_image:
 	.venv/bin/virtualenv --python=python2 .venv27
 	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
 
+
+# ----------TRAVIS ------------------------------------------------------------------------------------
+travis-pull-cache-images:
+	${DOCKER} pull itisfoundation/apihub:cache || true
+	${DOCKER} pull itisfoundation/director:cache || true
+	${DOCKER} pull itisfoundation/sidecar:cache || true
+	${DOCKER} pull itisfoundation/storage:cache || true
+	${DOCKER} pull itisfoundation/webclient:cache || true
+	${DOCKER} pull itisfoundation/webserver:cache || true
+	
 travis-build:
-	${DOCKER} pull itisfoundation/apihub-build-cache:latest	
-	${DOCKER} pull itisfoundation/director-build-cache:latest
-	${DOCKER} pull itisfoundation/sidecar-build-cache:latest
-	${DOCKER} pull itisfoundation/storage-build-cache:latest
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel apihub director sidecar storage
+	#TODO: preferably there should be only one build script. the problem is the --parallel flag and the webclient/webserver docker that is multistage in 2 files
+	# it should be ideally only docker-compose build --parallel
+	${MAKE} travis-pull-cache-images
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel apihub director sidecar storage webclient
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
 
-travis-push-base-images:	
-	${DOCKER} pull itisfoundation/apihub-build-cache:latest
-	${DOCKER} pull itisfoundation/director-build-cache:latest
-	${DOCKER} pull itisfoundation/sidecar-build-cache:latest
-	${DOCKER} pull itisfoundation/storage-build-cache:latest
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage
-	${DOCKER} push itisfoundation/apihub-build-cache:latest
-	${DOCKER} push itisfoundation/director-build-cache:latest
-	${DOCKER} push itisfoundation/sidecar-build-cache:latest
-	${DOCKER} push itisfoundation/storage-build-cache:latest
+travis-build-cache-images:
+	${MAKE} travis-pull-cache-images
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
+travis-push-cache-images:
+	${DOCKER} tag services_apihub:latest itisfoundation/apihub:cache
+	${DOCKER} tag services_webserver:latest itisfoundation/webserver:cache
+	${DOCKER} tag services_sidecar:latest itisfoundation/sidecar:cache
+	${DOCKER} tag services_director:latest itisfoundation/director:cache
+	${DOCKER} tag services_storage:latest itisfoundation/storage:cache
+	${DOCKER} tag services_webclient:build itisfoundation/webclient:cache
+	${DOCKER} tag services_webserver:latest itisfoundation/webserver:cache
+
+	${DOCKER} push itisfoundation/apihub:cache
+	${DOCKER} push itisfoundation/director:cache
+	${DOCKER} push itisfoundation/sidecar:cache
+	${DOCKER} push itisfoundation/storage:cache
+	${DOCKER} push itisfoundation/webclient:cache
+	${DOCKER} push itisfoundation/webserver:cache
+
+TRAVIS_PLATFORM_STAGE_VERSION=staging-$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
+TRAVIS_PLATFORM_STAGE_LATEST=staging-latest
+travis-push-staging-images:
+	${DOCKER} tag services_apihub:latest itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_VERSION}
+	${DOCKER} tag services_webserver:latest itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_VERSION}
+	${DOCKER} tag services_sidecar:latest itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_VERSION}
+	${DOCKER} tag services_director:latest itisfoundation/director:${TRAVIS_PLATFORM_STAGE_VERSION}
+	${DOCKER} tag services_storage:latest itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_VERSION}
+	${DOCKER} tag services_apihub:latest itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} tag services_webserver:latest itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} tag services_sidecar:latest itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} tag services_director:latest itisfoundation/director:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} tag services_storage:latest itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} push itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_VERSION}
+	${DOCKER} push itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_VERSION}
+	${DOCKER} push itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_VERSION}
+	${DOCKER} push itisfoundation/director:${TRAVIS_PLATFORM_STAGE_VERSION}
+	${DOCKER} push itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_VERSION}
+	${DOCKER} push itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} push itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} push itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} push itisfoundation/director:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} push itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_LATEST}
 
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel

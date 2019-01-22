@@ -1,0 +1,55 @@
+#!/bin/bash
+
+FOLDER_CHECKS=".js .eslintrc"
+
+before_install() {
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        bash ops/travis/helpers/show_system_versions
+    fi
+}
+
+install() {
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        npm install -g npm@latest
+        npm install --save-dev eslint
+        npm install --save-dev babel-eslint
+        npm install --save-dev eslint-config-qx
+        npm install --save-dev eslint-plugin-qx-rules
+    fi
+}
+
+before_script() {
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        eslint --version
+    fi
+}
+
+script() {
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        npm run linter
+    else
+        echo "no changes detected... not executing anything..."
+    fi
+}
+
+after_success() {
+    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    then
+        echo "linting successful"
+    fi
+}
+
+# Check if the function exists (bash specific)
+if declare -f "$1" > /dev/null
+then
+  # call arguments verbatim
+  "$@"
+else
+  # Show a helpful error
+  echo "'$1' is not a known function name" >&2
+  exit 1
+fi
