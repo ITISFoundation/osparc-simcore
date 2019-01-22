@@ -38,9 +38,6 @@ qx.Class.define("qxapp.desktop.DataManager", {
 
     __initResources: function() {
       this.__tree.populateTree();
-      this.__tree.addListener("modelChanged", () => {
-        this.__reloadChartData();
-      }, this);
     },
 
     __createDataManagerLayout: function() {
@@ -72,10 +69,18 @@ qx.Class.define("qxapp.desktop.DataManager", {
       let treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
       let filesTree = this.__tree = new qxapp.component.widget.FilesTree().set({
+        dragMechnism: true,
+        dropMechnism: true,
         minHeight: 600
       });
       filesTree.addListener("selectionChanged", () => {
         this.__selectionChanged();
+      }, this);
+      filesTree.addListener("fileCopied", e => {
+        this.__initResources();
+      }, this);
+      filesTree.addListener("modelChanged", () => {
+        this.__reloadChartData();
       }, this);
       treeLayout.add(filesTree, {
         flex: 1
