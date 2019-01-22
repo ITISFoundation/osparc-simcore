@@ -34,9 +34,13 @@ qx.Class.define("qxapp.desktop.DataManager", {
   members: {
     __tree: null,
     __selectedFileLayout: null,
+    __pieChart: null,
 
     __initResources: function() {
       this.__tree.populateTree();
+      this.__tree.addListener("modelChanged", () => {
+        this.__reloadChartData();
+      }, this);
     },
 
     __createDataManagerLayout: function() {
@@ -99,15 +103,12 @@ qx.Class.define("qxapp.desktop.DataManager", {
       let plotly = new qxapp.component.widget.PlotlyWidget(plotlyDivId);
       plotly.addListener("plotlyWidgetReady", e => {
         if (e.getData()) {
+          this.__pieChart = plotly;
           let myPlot = document.getElementById(plotlyDivId);
           myPlot.on("plotly_click", data => {
-            console.log(data);
+            this.__reloadChartData(data["points"][0]["id"][0]);
           }, this);
-          const ids = ["FreeSpaceId", "SimcoreS3Id", "DatcoreId"];
-          const labels = ["Free space", "simcore.s3", "datcore"];
-          const values = [40, 16, 44];
-          const tooltips = ["40KB", "16KB", "44KB"];
-          plotly.setData(ids, labels, values, tooltips);
+          this.__reloadChartData();
         }
       }, this);
       chartLayout.add(plotly, {
@@ -125,24 +126,44 @@ qx.Class.define("qxapp.desktop.DataManager", {
       }
     },
 
-    __getDataInfo: function(path) {
-      const dataInfo = {
-        freeSpaceId: {
-          label: "Free Space",
-          value: "40"
-        },
-        simcoreId: {
-          label: "simcore.s3",
-          value: "5"
-        },
-        datcoreId: {
-          label: "datcore",
-          value: "50"
-        }
+    __reloadChartData: function(pathId) {
+      if (this.__pieChart) {
+        const dataInfo = this.__getDataInfo(pathId);
+        const ids = dataInfo["ids"];
+        const labels = dataInfo["labels"];
+        const values = dataInfo["values"];
+        const tooltips = dataInfo["tooltips"];
+        const title = dataInfo["title"];
+        this.__pieChart.setData(ids, labels, values, tooltips, title);
+      }
+    },
+
+    __getDataInfo: function(pathId) {
+      const context = pathId || "/";
+      const children = this.__tree.getModel().getChildren();
+      console.log(context, children);
+
+      let data = {
+        "ids": [],
+        "labels": [],
+        "values": [],
+        "tooltips": [],
+        "title": context
       };
-      let data = {};
-      if (path === undefined) {
-        data["ids"] = Object.keys(dataInfo);
+      if (pathId === undefined) {
+        data["ids"].push("FreeSpaceId");
+        data["labels"].push("Free space");
+        const value = (Math.floor(Math.random()*1000000)+1);
+        data["values"].push(value);
+        data["tooltips"].push(qxapp.utils.Utils.bytesToSize(value));
+      }
+      for (let i=0; i<children.length; i++) {
+        const child = children.toArray()[i];
+        data["ids"].push(child.getLabel());
+        data["labels"].push(child.getLabel());
+        const value2 = (Math.floor(Math.random()*1000000)+1);
+        data["values"].push(value2);
+        data["tooltips"].push(qxapp.utils.Utils.bytesToSize(value2));
       }
       return data;
     }

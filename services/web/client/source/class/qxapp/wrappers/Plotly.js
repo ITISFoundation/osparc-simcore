@@ -62,9 +62,8 @@ qx.Class.define("qxapp.wrappers.Plotly", {
 
     createEmptyPlot: function(id) {
       this.__plotId = id;
-      const margin = 20;
+      const margin = 25;
       this.__layout = {
-        title: "My Data",
         titlefont: {
           color: "#bfbfbf",
           size: qxapp.theme.Font.fonts["text-14"]["size"],
@@ -101,7 +100,7 @@ qx.Class.define("qxapp.wrappers.Plotly", {
       Plotly.relayout(this.__plotId, this.__layout);
     },
 
-    setData: function(ids, labels, values, tooltips) {
+    setData: function(ids, labels, values, tooltips, title) {
       this.__data = [{
         ids: ids,
         labels: labels,
@@ -112,6 +111,7 @@ qx.Class.define("qxapp.wrappers.Plotly", {
         showlegend: false,
         type: "pie"
       }];
+      this.__layout["title"] = title;
 
       Plotly.react(this.__plotId, this.__data, this.__layout);
     }
