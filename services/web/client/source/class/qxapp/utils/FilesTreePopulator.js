@@ -91,6 +91,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       let currentModel = this.__tree.getModel();
       currentModel.getChildren().append(newModelToAdd);
       this.__tree.setModel(currentModel);
+      this.__tree.fireEvent("modelChanged");
     }
   }
 });

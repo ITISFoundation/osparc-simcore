@@ -50,7 +50,8 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
   events: {
     "selectionChanged": "qx.event.type.Event",
     "itemSelected": "qx.event.type.Event",
-    "fileCopied": "qx.event.type.Event"
+    "fileCopied": "qx.event.type.Event",
+    "modelChanged": "qx.event.type.Event"
   },
 
   statics: {
