@@ -41,14 +41,17 @@ endif
 build: check-env
 	${DOCKER_COMPOSE} -f docker-compose.yml build
 
-build-devel: check-env
-	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build
-
 rebuild: check-env
 	${DOCKER_COMPOSE} -f docker-compose.yml build --no-cache
 
 up:
 	${DOCKER_COMPOSE} -f docker-compose.yml up
+
+build-devel: check-env
+	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build
+
+rebuild-devel: check-env
+	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build --no-cache
 
 up-devel:
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml up
