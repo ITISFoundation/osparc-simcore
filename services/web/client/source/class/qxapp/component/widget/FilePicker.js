@@ -115,12 +115,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
 
     __selectionChanged: function() {
       const data = this.__tree.getSelectedFile();
-      if (data) {
-        const isFile = data["isFile"];
-        this.__selectBtn.setEnabled(isFile);
-      } else {
-        this.__selectBtn.setEnabled(false);
-      }
+      this.__selectBtn.setEnabled(data ? data["isFile"] : false);
     },
 
     __itemSelected: function() {
