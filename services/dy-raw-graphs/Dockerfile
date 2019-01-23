@@ -24,9 +24,9 @@ ENTRYPOINT ["/bin/sh", "docker/boot.sh"]
 #-----------------Development-----------------------
 FROM base as development
 
-VOLUME $HOME/scu/raw
-VOLUME $HOME/scu/docker
-VOLUME $HOME/scu/inputs
+VOLUME $HOME/raw
+VOLUME $HOME/docker
+VOLUME $HOME/inputs
 
 #-----------------Production----------------------
 FROM base AS production
