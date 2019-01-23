@@ -6,11 +6,9 @@ services:
       dockerfile: services/apihub/Dockerfile
       cache_from:
         - itisfoundation/apihub:cache
-        - services_apihub:latest
+        - itisfoundation/apihub:staging-latest
+        - services_apihub:latest        
       target: production
-
-
-      
       labels: 
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
@@ -22,11 +20,10 @@ services:
   director:
     build:
       context: ../
-      dockerfile: services/director/Dockerfile
-
-      
+      dockerfile: services/director/Dockerfile      
       cache_from:
         - itisfoundation/director:cache
+        - itisfoundation/director:staging-latest
         - services_director:latest
       target: production
       args:
@@ -70,7 +67,7 @@ services:
       context: ./web/client/
       dockerfile: Dockerfile
       cache_from:
-        - itisfoundation/webclient:cache
+        - itisfoundation/webclient:cache        
         - services_webclient:latest
       target: build
       labels: 
@@ -88,6 +85,7 @@ services:
       dockerfile: services/web/Dockerfile
       cache_from:
         - itisfoundation/webserver:cache
+        - itisfoundation/webserver:staging-latest
         - services_webserver:latest
       target: production
       labels: 
@@ -156,6 +154,7 @@ services:
       dockerfile: services/sidecar/Dockerfile
       cache_from:
         - itisfoundation/sidecar:cache
+        - itisfoundation/sidecar:staging-latest
         - services_sidecar:latest
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
@@ -201,6 +200,7 @@ services:
       dockerfile: services/storage/Dockerfile
       cache_from:
         - itisfoundation/storage:cache
+        - itisfoundation/storage:staging-latest
         - services_storage:latest
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
