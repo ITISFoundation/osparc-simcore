@@ -1,0 +1,31 @@
+# USAGE:  docker-compose -f docker-compose.yml -f docker-compose.deploy.yml ...
+version: '3.4'
+services:
+  apihub:
+    image: itisfoundation/apihub:staging-latest
+    deploy:
+      placement:
+       constraints:
+          - node.platform.os == linux
+  director:
+    image: itisfoundation/director:staging-latest
+    deploy:
+      placement:
+       constraints:
+          - node.platform.os == linux
+          - node.role == manager
+  webserver:
+    image: itisfoundation/webserver:staging-latest
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == manager
+  sidecar:
+    image: itisfoundation/sidecar:staging-latest
+  storage:
+    image: itisfoundation/storage:staging-latest
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
