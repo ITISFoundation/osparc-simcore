@@ -288,4 +288,11 @@ travis-push-staging-images:
 	${DOCKER} push itisfoundation/director:${TRAVIS_PLATFORM_STAGE_LATEST}
 	${DOCKER} push itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_LATEST}
 
+pull-staging-images:
+	${DOCKER} pull itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} pull itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} pull itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} pull itisfoundation/director:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER} pull itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_LATEST}
+
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel
