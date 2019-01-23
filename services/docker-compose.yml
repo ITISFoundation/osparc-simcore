@@ -8,6 +8,9 @@ services:
         - itisfoundation/apihub:cache
         - services_apihub:latest
       target: production
+
+
+      
       labels: 
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
