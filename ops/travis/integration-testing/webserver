@@ -1,6 +1,6 @@
 #!/bin/bash
 
-before_install() {    
+before_install() {
     bash ops/travis/helpers/install_docker_compose
     bash ops/travis/helpers/show_system_versions
 }
@@ -17,7 +17,7 @@ before_script() {
     docker images
 }
 
-script() {    
+script() {
     pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-computation
 }
 

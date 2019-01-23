@@ -14,7 +14,7 @@ jobs:
   include:
     # build cache images ----------------------------------------------------------------------
     - if: branch = master
-      stage: Preparing docker cache images
+      stage: preparing docker cache images
       name: build cache
       sudo: required
       before_install:
@@ -39,7 +39,7 @@ jobs:
       before_install:
         - sudo bash ops/travis/unit-testing/webserver before_install
       install:
-        - bash ops/travis/unit-testing/webserver install        
+        - bash ops/travis/unit-testing/webserver install
       before_script:
         - bash ops/travis/unit-testing/webserver before_script
       script:
@@ -58,7 +58,7 @@ jobs:
       before_install:
         - sudo bash ops/travis/unit-testing/director before_install
       install:
-        - bash ops/travis/unit-testing/director install        
+        - bash ops/travis/unit-testing/director install
       before_script:
         - bash ops/travis/unit-testing/director before_script
       script:
@@ -77,7 +77,7 @@ jobs:
       before_install:
         - sudo bash ops/travis/unit-testing/simcore-sdk before_install
       install:
-        - bash ops/travis/unit-testing/simcore-sdk install        
+        - bash ops/travis/unit-testing/simcore-sdk install
       before_script:
         - bash ops/travis/unit-testing/simcore-sdk before_script
       script:
@@ -98,7 +98,7 @@ jobs:
       before_install:
         - sudo bash ops/travis/unit-testing/storage before_install
       install:
-        - bash ops/travis/unit-testing/storage install        
+        - bash ops/travis/unit-testing/storage install
       before_script:
         - bash ops/travis/unit-testing/storage before_script
       script:
@@ -117,13 +117,14 @@ jobs:
       before_install:
         - sudo bash ops/travis/unit-testing/apihub before_install
       install:
-        - bash ops/travis/unit-testing/apihub install        
+        - bash ops/travis/unit-testing/apihub install
       before_script:
         - bash ops/travis/unit-testing/apihub before_script
       script:
         - bash ops/travis/unit-testing/apihub script
       after_success:
         - bash ops/travis/unit-testing/apihub after_success
+
     # test python, linting ----------------------------------------------------------------------
     - stage: unit testing
       name: Python linting
@@ -134,7 +135,7 @@ jobs:
       before_install:
         - sudo bash ops/travis/unit-testing/python-linting before_install
       install:
-        - bash ops/travis/unit-testing/python-linting install        
+        - bash ops/travis/unit-testing/python-linting install
       before_script:
         - bash ops/travis/unit-testing/python-linting before_script
       script:
@@ -155,7 +156,7 @@ jobs:
       before_install:
         - bash ops/travis/unit-testing/node-linting before_install
       install:
-        - bash ops/travis/unit-testing/node-linting install        
+        - bash ops/travis/unit-testing/node-linting install
       before_script:
         - bash ops/travis/unit-testing/node-linting before_script
       script:
@@ -169,12 +170,12 @@ jobs:
       language: python
       python:
         - "3.6"
-      sudo: required      
+      sudo: required
       cache: pip
       before_install:
         - sudo bash ops/travis/integration-testing/webserver before_install
       install:
-        - bash ops/travis/integration-testing/webserver install        
+        - bash ops/travis/integration-testing/webserver install
       before_script:
         - bash ops/travis/integration-testing/webserver before_script
       script:
@@ -191,13 +192,13 @@ jobs:
       before_install:
         - sudo bash ops/travis/system-testing/build_and_run before_install
       install:
-        - bash ops/travis/system-testing/build_and_run install        
+        - bash ops/travis/system-testing/build_and_run install
       before_script:
         - bash ops/travis/system-testing/build_and_run before_script
       script:
         - bash ops/travis/system-testing/build_and_run script
       after_success:
-        - bash ops/travis/system-testing/build_and_run after_success        
+        - bash ops/travis/system-testing/build_and_run after_success
       after_failure:
         - bash ops/travis/system-testing/build_and_run after_failure
       deploy:
