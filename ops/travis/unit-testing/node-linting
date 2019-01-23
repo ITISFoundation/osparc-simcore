@@ -32,7 +32,7 @@ script() {
     then
         npm run linter
     else
-        echo "no changes detected... not executing anything..."
+        echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
     fi
 }
 

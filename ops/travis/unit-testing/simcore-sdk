@@ -2,7 +2,7 @@
 
 FOLDER_CHECKS="packages\/ simcore-sdk"
 
-before_install() {    
+before_install() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
     then
         bash ops/travis/helpers/install_docker_compose
@@ -25,7 +25,6 @@ before_script() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
     then
         pip freeze
-        # make travis-build
         docker images
     fi
 }
@@ -38,7 +37,7 @@ script() {
         pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
         pytest --cov=servicelib -v packages/service-library/tests
     else
-        echo "no changes detected... not executing anything..."
+        echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
     fi
 }
 
