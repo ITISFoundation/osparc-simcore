@@ -1,0 +1,12 @@
+version: '3.6'
+services:
+  raw-graphs:
+    image: raw-graphs
+    build:
+      target: development
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./raw:/home/scu/raw
+      - ./inputs:/home/scu/inputs
+      - ./docker:/home/scu/docker
