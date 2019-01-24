@@ -2,7 +2,8 @@
 version: '3.4'
 services:
   apihub:
-    image: itisfoundation/apihub:staging-latest
+    #TODO: temp for testing auto deployment
+    image: itisfoundation/apihub:testing_watcher
     deploy:
       placement:
        constraints:
