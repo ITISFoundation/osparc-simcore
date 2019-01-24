@@ -4,7 +4,6 @@ services:
   apihub:
     #TODO: temp for testing auto deployment
     image: itisfoundation/apihub:testing_watcher
-    
     deploy:
       placement:
        constraints:
