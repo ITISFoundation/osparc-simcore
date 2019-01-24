@@ -31,7 +31,7 @@ VOLUME $HOME/inputs
 #-----------------Production----------------------
 FROM base AS production
 
-RUN git clone --branch v1.3.0 https://github.com/ITISFoundation/raw.git
+RUN git clone https://github.com/ITISFoundation/raw.git
 WORKDIR $HOME/raw
 
 RUN npm install -g bower
