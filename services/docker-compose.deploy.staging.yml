@@ -8,7 +8,6 @@ services:
       placement:
        constraints:
           - node.platform.os == linux
-          
   director:
     image: itisfoundation/director:staging-latest
     deploy:
