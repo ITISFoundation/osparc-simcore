@@ -16,6 +16,7 @@ services:
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '8043:8043'
+      
 #--------------------------------------------------------------------
   director:
     build:
