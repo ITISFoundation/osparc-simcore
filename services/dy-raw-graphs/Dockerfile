@@ -23,7 +23,8 @@ RUN npm install express
 
 # ----------------------------------------------------------------
 # set up oSparc env variables
-ENV SIMCORE_NODE_BASEPATH="/raw"
+ENV RAWGRAPHS_BASEPATH="/raw"
+ENV RAWGRAPHS_INPUTS="/inputs"
 
 #-----------------Development-----------------------
 FROM base as development
