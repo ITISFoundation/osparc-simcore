@@ -8,7 +8,8 @@ const path = require('path');
 let appRouter = express.Router();
 const events = require('events');
 const config = require('./config');
-const fs = require('fs')
+const fs = require('fs');
+const spawn = require("child_process").spawn;
 
 let eventEmitter = new events.EventEmitter()
 
@@ -45,6 +46,7 @@ function getInputFiles(request, response) {
     }
     response.send(metadata);
   });
+  callInputRetriever(request, response)
 }
 
 function getInputFile(request, response) {
@@ -60,7 +62,31 @@ function getInputFile(request, response) {
 }
 
 function callInputRetriever(request, response) {
-  console.log('Received a call to retrieve the data on input ports from ' + request.ip);
+  var pyProcess = spawn("python", ["/home/node/server/input-retriever.py"]);
+
+  pyProcess.on("error", (err) => {
+    console.log(`ERROR: ${err}`);
+    // response.sendStatus("500");
+  });
+
+  pyProcess.stdout.setEncoding("utf8");
+  pyProcess.stdout.on("data", (data) => {
+    console.log(`stdout: ${data}`);
+  });
+
+  pyProcess.stderr.on("data", (data) => {
+    console.log(`stderr: ${data}`);
+  });
+
+  pyProcess.on("close", (code) => {
+    console.log(`Function completed with code ${code}.`);
+    if (code === 0) {
+      console.log("All went fine");
+    } else {
+      // response.sendStatus("500");
+      console.log(code, ":(");
+    }
+  });
 }
 
 module.exports.eventEmitter = eventEmitter;
