@@ -19,6 +19,8 @@ RUN apk update && \
     apk add python3 && \
     apk add git
 
+RUN npm install express
+
 # ----------------------------------------------------------------
 # set up oSparc env variables
 ENV SIMCORE_NODE_BASEPATH="/raw"
