@@ -19,6 +19,9 @@ RUN apk update && \
     apk add python3 && \
     apk add git
 
+# ----------------------------------------------------------------
+# set up oSparc env variables
+ENV SIMCORE_NODE_BASEPATH="/raw"
 
 #-----------------Development-----------------------
 FROM base as development
