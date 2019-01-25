@@ -39,8 +39,6 @@ WORKDIR $HOME/raw
 RUN npm install -g bower
 RUN bower install --allow-root
 
-RUN cp js/analytics.sample.js js/analytics.js
-
 WORKDIR $HOME
 COPY --chown=scu:scu docker docker
 COPY --chown=scu:scu server server
