@@ -19,7 +19,6 @@ RUN apk update && \
     apk add python3 && \
     apk add git
 
-ENTRYPOINT ["/bin/sh", "docker/boot.sh"]
 
 #-----------------Development-----------------------
 FROM base as development
@@ -27,16 +26,24 @@ FROM base as development
 VOLUME $HOME/raw
 VOLUME $HOME/docker
 VOLUME $HOME/inputs
+VOLUME $HOME/server
+
+WORKDIR $HOME/raw
+ENTRYPOINT ["/bin/sh", "../docker/boot.sh"]
 
 #-----------------Production----------------------
 FROM base AS production
 
 RUN git clone https://github.com/ITISFoundation/raw.git
 WORKDIR $HOME/raw
-
 RUN npm install -g bower
 RUN bower install --allow-root
 
 RUN cp js/analytics.sample.js js/analytics.js
 
+WORKDIR $HOME
 COPY --chown=scu:scu docker docker
+COPY --chown=scu:scu server server
+
+WORKDIR $HOME/raw
+CMD ["/bin/sh", "../docker/boot.sh"]

@@ -10,3 +10,4 @@ services:
       - ./raw:/home/scu/raw
       - ./inputs:/home/scu/inputs
       - ./docker:/home/scu/docker
+      - ./server:/home/scu/server
