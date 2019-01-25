@@ -44,7 +44,7 @@ build: check-env
 rebuild: check-env
 	${DOCKER_COMPOSE} -f docker-compose.yml build --no-cache
 
-up:
+up: down
 	${DOCKER_COMPOSE} -f docker-compose.yml up
 
 build-devel: check-env
@@ -53,7 +53,7 @@ build-devel: check-env
 rebuild-devel: check-env
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml build --no-cache
 
-up-devel:
+up-devel: down
 	${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.devel.yml up
 
 down:
