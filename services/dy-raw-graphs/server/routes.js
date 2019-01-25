@@ -82,7 +82,8 @@ function callInputRetriever(request, response) {
     console.log(`Function completed with code ${code}.`);
     if (code === 0) {
       console.log("All went fine");
-    } else {
+    }
+    else {
       // response.sendStatus("500");
       console.log(code, ":(");
     }
