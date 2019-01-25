@@ -62,7 +62,7 @@ function getInputFile(request, response) {
 }
 
 function callInputRetriever(request, response) {
-  var pyProcess = spawn("python", ["/home/node/server/input-retriever.py"]);
+  var pyProcess = spawn("python", ["/home/scu/server/input-retriever.py"]);
 
   pyProcess.on("error", (err) => {
     console.log(`ERROR: ${err}`);
