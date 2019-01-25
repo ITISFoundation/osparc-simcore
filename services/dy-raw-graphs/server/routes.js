@@ -46,7 +46,7 @@ function getInputFiles(request, response) {
     }
     response.send(metadata);
   });
-  callInputRetriever(request, response)
+  // callInputRetriever(request, response)
 }
 
 function getInputFile(request, response) {
