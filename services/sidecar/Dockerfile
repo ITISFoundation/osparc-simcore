@@ -12,7 +12,9 @@ RUN adduser -D -u 8004 scu &&\
     addgroup -g $DOCKER_GID_ARG docker
 
 ENV HOME /home/scu
-ENV PIP  /home/scu/.venv/bin/pip3
+# TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
+# - Added explicit --cache-dir that is removed at the end of the build
+ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/pipcache
 
 EXPOSE 8000
 VOLUME /home/scu/input
@@ -38,14 +40,14 @@ RUN apk add --no-cache \
       libc-dev
 
 RUN python3 -m venv $HOME/.venv &&\
-    $PIP install --no-cache-dir --upgrade \
+    $PIP install --upgrade \
       pip \
       wheel \
       setuptools
 
 # TODO: check if scu:scu copy is necessary!?
 COPY --chown=scu:scu services/sidecar/requirements/base.txt requirements-base.txt
-RUN $PIP install --no-cache-dir -r requirements-base.txt &&\
+RUN $PIP install -r requirements-base.txt &&\
     rm requirements-base.txt
 
 COPY --chown=scu:scu services/sidecar/docker docker
@@ -80,7 +82,7 @@ COPY --chown=scu:scu services/sidecar $HOME/services/sidecar
 COPY --chown=scu:scu services/storage/client-sdk $HOME/services/storage/client-sdk
 
 WORKDIR /home/scu/services/sidecar
-RUN $PIP --no-cache-dir install -r requirements/prod.txt ;\
+RUN $PIP install -r requirements/prod.txt ;\
     $PIP list
 
 
@@ -101,7 +103,8 @@ FROM cache as production
 WORKDIR /home/scu/
 
 RUN . $HOME/.venv/bin/activate; pip list &&\
-    rm -rf $HOME/services
+    rm -rf $HOME/services &&\
+    rm -rf /pipcache
 
 ENV DEBUG 0
 ENV RUN_DOCKER_ENGINE_ROOT=0
