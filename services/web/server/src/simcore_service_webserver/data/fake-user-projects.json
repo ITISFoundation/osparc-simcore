@@ -61,7 +61,7 @@
       },
       "a1415ee9-74f5-4427-94a0-2b53b52cc5a1": {
         "key": "simcore/services/computational/itis/tutti",
-        "version": "0.0.0-alpha",
+        "version": "0.0.0",
         "inputs": {
           "inNumber": {
             "nodeUuid": "06938447-726c-473f-9368-dfec2bff7873",

@@ -36,7 +36,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
         c.bindProperty("key", "model", null, item, id);
         c.bindProperty("thumbnail", "icon", null, item, id);
         c.bindProperty("label", "label", {
-          converter: function(data, model, source, target) {
+          converter: function(data) {
             // return "<b>" + data + "</b>";
             return data;
           }
