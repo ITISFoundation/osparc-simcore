@@ -61,7 +61,7 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
         icon: "@FontAwesome5Solid/play/32"
       });
 
-      startButton.addListener("execute", function() {
+      startButton.addListener("execute", () => {
         this.fireEvent("startPipeline");
       }, this);
 
@@ -73,7 +73,7 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
         icon: "@FontAwesome5Solid/stop-circle/32"
       });
 
-      stopButton.addListener("execute", function() {
+      stopButton.addListener("execute", () => {
         this.fireEvent("stopPipeline");
       }, this);
       return stopButton;

@@ -28,7 +28,7 @@ before_script() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
     then
         pip freeze
-        pylint --version    
+        pylint --version
     fi
 }
 
@@ -37,13 +37,13 @@ script() {
     then
         make pylint
     else
-        echo "no changes detected... not executing anything..."
+        echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
     fi
 }
 
 after_success() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
-    then    
+    then
         echo "linting successful"
     fi
 }
