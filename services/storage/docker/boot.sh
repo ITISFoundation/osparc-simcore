@@ -9,8 +9,8 @@ then
   echo "DEBUG: Workdir :`pwd`"
 
   cd $HOME/services/storage
-  pip install -r requirements/dev.txt
-  pip list
+  $PIP install -r requirements/dev.txt
+  $PIP list
 
   cd $HOME/
   simcore-service-storage --config docker-dev-config.yaml

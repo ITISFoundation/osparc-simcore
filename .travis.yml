@@ -127,7 +127,7 @@ jobs:
 
     # test python, linting ----------------------------------------------------------------------
     - stage: unit testing
-      name: Python linting
+      name: python linting
       language: python
       python:
         - "3.6"
