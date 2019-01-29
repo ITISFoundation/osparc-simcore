@@ -7,6 +7,8 @@ services:
     ports:
       - '4000:4000'
     volumes:
+      - ../../services/storage/client-sdk:/home/scu/services/storage/client-sdk
+      - ../../packages:/home/scu/packages
       - ./raw:/home/scu/raw
       - ./inputs:/home/scu/inputs
       - ./docker:/home/scu/docker

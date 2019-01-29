@@ -21,7 +21,7 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     environment: 
-      - RAWGRAPHS_BASEPATH=${RAWGRAPHS_BASEPATH}
-      - RAWGRAPHS_INPUTS=${RAWGRAPHS_INPUTS}
+      - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
+      - RAWGRAPHS_INPUT_PATH=${RAWGRAPHS_INPUT_PATH}
     ports:
       - '4000:4000'

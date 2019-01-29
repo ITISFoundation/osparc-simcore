@@ -11,7 +11,7 @@ from simcore_sdk import node_ports
 
 log = logging.getLogger(__name__)
 
-_INPUT_PATH = Path(os.environ.get("RAWGRAPHS_INPUTS"))
+_INPUT_PATH = Path(os.environ.get("RAWGRAPHS_INPUT_PATH"))
 
 # clean the directory
 shutil.rmtree(str(_INPUT_PATH), ignore_errors=True)
