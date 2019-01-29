@@ -9,8 +9,8 @@ then
   echo "DEBUG: Sidecar running groups `groups`"
 
   cd $HOME/services/sidecar
-  pip3 install --no-cache-dir -r requirements/dev.txt
-  pip3 list
+  $PIP install -r requirements/dev.txt
+  $PIP list
 
   cd $HOME
   celery worker --app sidecar.celery:app --concurrency 2 --loglevel=debug
