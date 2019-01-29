@@ -10,7 +10,7 @@ async def retrieve_data():
     PORTS = node_ports.ports()
 
     values = {}
-    for node_input in PORTS.inputs:        
+    for node_input in PORTS.inputs:
         if not node_input or node_input.value is None:
             continue
         print("getting data from port '{}' with value '{}'...".format(node_input.key, node_input.value))

@@ -21,16 +21,19 @@ if not _INPUT_PATH.exists():
     log.debug("Created input folder at %s", _INPUT_PATH)
 
 async def retrieve_data():
+    log.debug("retrieving data...")
+    print("retrieving data...")
+
     # get all files in the local system and copy them to the input folder
     start_time = time.time()
     PORTS = node_ports.ports()
     download_tasks = []
     for node_input in PORTS.inputs:
         if not node_input or node_input.value is None:
-            continue                
+            continue
         
         # collect coroutines
-        download_tasks.append(node_input.get())        
+        download_tasks.append(node_input.get())
     if download_tasks:
         downloaded_files = await asyncio.gather(*download_tasks)
         print("downloaded {} files /tmp <br>".format(len(download_tasks)))

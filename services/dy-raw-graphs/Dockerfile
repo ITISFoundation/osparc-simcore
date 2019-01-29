@@ -6,7 +6,7 @@ LABEL maintainer=odeimaiz
 RUN adduser -D -u 8004 scu
 
 RUN apk add --no-cache \
-      su-exec
+    su-exec
 
 ENV HOME /home/scu
 
@@ -23,8 +23,8 @@ RUN npm install express
 
 # ----------------------------------------------------------------
 # set up oSparc env variables
-ENV RAWGRAPHS_BASEPATH="/raw"
-ENV RAWGRAPHS_INPUTS="/inputs"
+ENV RAWGRAPHS_BASEPATH="/raw" \
+    RAWGRAPHS_INPUTS="/inputs"
 
 #-----------------Development-----------------------
 FROM base as development
