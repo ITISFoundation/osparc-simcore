@@ -3,8 +3,8 @@ services:
   raw-graphs:
     image: ${DOCKER_REGISTRY}/${SERVICE_BASE_PATH}:${SERVICES_VERSION}
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../../
+      dockerfile: services/dy-raw-graphs/Dockerfile
       labels:
         io.simcore.key: '{"key": "${SERVICE_BASE_PATH}"}'
         io.simcore.version: '{"version": "${SERVICES_VERSION}"}'

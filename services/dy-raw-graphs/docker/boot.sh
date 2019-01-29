@@ -5,7 +5,6 @@ pip3 -V
 
 if [[ -v CREATE_DUMMY_TABLE ]];
 then
-    pip3 install -r $HOME/scripts/dy_services_helpers/requirements.txt
     pushd $HOME/packages/simcore-sdk; pip3 install -r requirements-dev.txt; popd
     pushd $HOME/packages/s3wrapper; pip3 install -r requirements-dev.txt; popd
     pushd $HOME/scripts/dy_services_helpers; pip3 install -r requirements.txt; popd

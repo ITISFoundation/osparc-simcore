@@ -62,6 +62,9 @@ VOLUME $HOME/inputs
 VOLUME $HOME/server
 VOLUME $HOME/devel
 
+COPY --chown=scu /scripts/dy_services_helpers/requirements.txt $HOME/scripts/dy_services_helpers/requirements.txt
+RUN pip3 install -r $HOME/scripts/dy_services_helpers/requirements.txt
+
 ENV CREATE_DUMMY_TABLE 1
 ENV USE_CASE_CONFIG_FILE="/home/scu/devel/port_config.json"
 ENV INIT_OPTIONS="50 6 1 tab"
@@ -87,8 +90,8 @@ RUN npm install -g bower
 RUN bower install --allow-root
 
 WORKDIR $HOME
-COPY --chown=scu:scu docker docker
-COPY --chown=scu:scu server server
+COPY --chown=scu:scu services/dy-raw-graphs/docker $HOME/docker
+COPY --chown=scu:scu services/dy-raw-graphs/server $HOME/server
 
 WORKDIR $HOME/raw
 CMD ["/bin/bash", "../docker/boot.sh"]
