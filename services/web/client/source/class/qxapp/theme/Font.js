@@ -50,6 +50,13 @@ qx.Theme.define("qxapp.theme.Font", {
     "title-12": {
       size: 12,
       family: ["Roboto"],
+      color: "text",
+      bold: true
+    },
+
+    "text-12": {
+      size: 12,
+      family: ["Roboto"],
       color: "text"
     }
   }

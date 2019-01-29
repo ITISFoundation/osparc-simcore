@@ -65,7 +65,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     let dashboardBtn = new qx.ui.form.Button(this.tr("Dashboard"));
     dashboardBtn.set(commonBtnSettings);
-    dashboardBtn.addListener("execute", function() {
+    dashboardBtn.addListener("execute", () => {
       this.fireEvent("dashboardPressed");
     }, this);
     this.add(dashboardBtn);
@@ -73,7 +73,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     this.add(new qx.ui.toolbar.Separator());
 
     let forumBtn = new qx.ui.form.Button(this.tr("Forum"));
-    forumBtn.addListener("execute", function() {
+    forumBtn.addListener("execute", () => {
       window.open("https://forum.zmt.swiss/");
     }, this);
     forumBtn.set(commonBtnSettings);

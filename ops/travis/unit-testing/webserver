@@ -6,7 +6,7 @@ before_install() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
     then
         bash ops/travis/helpers/install_docker_compose
-        bash ops/travis/helpers/show_system_versions    
+        bash ops/travis/helpers/show_system_versions
     fi
 }
 
@@ -17,7 +17,7 @@ install() {
         pip3 install packages/s3wrapper[test];
         pip3 install packages/simcore-sdk[test];
         pip3 install packages/director-sdk/python;
-        pushd services/web/server; pip3 install -r requirements/ci.txt; popd;    
+        pushd services/web/server; pip3 install -r requirements/ci.txt; popd;
     fi
 }
 
@@ -36,7 +36,7 @@ script() {
         pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
         pytest --cov=simcore_service_webserver -v services/web/server/tests/login
     else
-        echo "no changes detected... not executing anything..."
+        echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
     fi
 }
 

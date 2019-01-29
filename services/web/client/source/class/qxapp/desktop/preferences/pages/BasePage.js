@@ -56,7 +56,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.BasePage", {
       let label = new qx.ui.basic.Label().set({
         value: message,
         rich : true,
-        font : qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-12"])
+        font : qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-12"])
       });
       return label;
     }

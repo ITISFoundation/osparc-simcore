@@ -12,6 +12,7 @@
 
    Authors:
      * Odei Maiz (odeimaiz)
+     * Tobias Oetiker (oetiker)
 
 ************************************************************************ */
 
