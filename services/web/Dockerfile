@@ -17,7 +17,9 @@ RUN apk add --no-cache \
       su-exec
 
 ENV HOME /home/scu
-ENV PIP  /home/scu/.venv/bin/pip3
+# TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
+# - Added explicit --cache-dir that is removed at the end of the build
+ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/pipcache
 ENV SIMCORE_WEB_OUTDIR $HOME/services/web/client
 ENV IS_CONTAINER_CONTEXT Yes
 
@@ -53,7 +55,7 @@ RUN apk add --no-cache \
       libffi-dev
 
 RUN python3 -m venv $HOME/.venv &&\
-    $PIP install --no-cache-dir --upgrade \
+    $PIP install --upgrade \
       pip \
       wheel \
       setuptools
@@ -63,7 +65,7 @@ WORKDIR /home/scu
 # install base 3rd party packages to accelerate runtime installs
 COPY --chown=scu:scu services/web/server/requirements/base.txt requirements-base.txt
 COPY --chown=scu:scu services/web/server/docker docker
-RUN $PIP install --no-cache-dir -r requirements-base.txt
+RUN $PIP install -r requirements-base.txt
 
 # --------------------------Development stage -------------------
 FROM build as development
@@ -72,7 +74,7 @@ ARG HOST_GID_ARG=1000
 
 # install test 3rd party packages to accelerate runtime installs
 COPY --chown=scu:scu services/web/server/tests/requirements.txt requirements-tests.txt
-RUN $PIP install --no-cache-dir -r requirements-tests.txt
+RUN $PIP install -r requirements-tests.txt
 
 # in dev mode we give access to `scu` to host's mapped volumes
 RUN addgroup -g $HOST_GID_ARG hgrp &&\
@@ -103,7 +105,7 @@ COPY --from=services_webclient:build --chown=scu:scu /home/scu/client/build-outp
 COPY --chown=scu:scu services/web/server $HOME/services/web/server
 
 WORKDIR /home/scu/services/web/server
-RUN $PIP --no-cache-dir install -r requirements/prod.txt &&\
+RUN $PIP install -r requirements/prod.txt &&\
     $PIP list
 
 FROM cache as production
@@ -120,7 +122,8 @@ WORKDIR /home/scu
 
 RUN . $HOME/.venv/bin/activate; pip list &&\
     rm -rf $HOME/packages &&\
-    rm -rf $HOME/services/web/server
+    rm -rf $HOME/services/web/server &&\
+    rm -rf /pipcache
 
 ENV DEBUG 0
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]

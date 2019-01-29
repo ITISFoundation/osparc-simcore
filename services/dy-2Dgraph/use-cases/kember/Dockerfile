@@ -4,7 +4,10 @@ LABEL maintainer="sanderegg"
 
 # install requirements --------------------------------------------------------
 COPY --chown=jovyan:users kember/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
+RUN pip --cache-dir=/pipcache install -r requirements.txt &&\
+    rm -rf /pipcache
+
 
 # prepare for booting ---------------------------------------------------------
 COPY --chown=jovyan:users docker /docker
