@@ -1,0 +1,16 @@
+{
+    "version":"0.1",
+    "schema": {
+        "inputs":{
+            "input_1": {
+                "displayOrder": 0,
+                "label": "The input file name",
+                "description": "Some 3D data",
+                "type": "data:*/*"
+            }
+        },
+        "outputs":{}
+    },
+    "inputs": {},
+    "outputs": {}
+}

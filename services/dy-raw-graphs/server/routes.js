@@ -20,16 +20,15 @@ appRouter.get('/', function (request, response) {
   response.sendFile(path.resolve(config.APP_PATH, 'index.html'));
 });
 
-appRouter.get('/inputs', getInputFiles);
-
 appRouter.get('/input', getInputFile);
 
-appRouter.get('/retrieve', callInputRetriever);
+appRouter.get('/retrieve', getInputFiles);
 
 module.exports = appRouter;
 
 function getInputFiles(request, response) {
   console.log('getInputFiles');
+  callInputRetriever(request, response);
   const inputsDir = '../inputs/'
   fs.readdir(inputsDir, (err, files) => {
     if (err) {
@@ -62,7 +61,7 @@ function getInputFile(request, response) {
 }
 
 function callInputRetriever(request, response) {
-  var pyProcess = spawn("python", ["/home/scu/server/input-retriever.py"]);
+  var pyProcess = spawn("python3", ["/home/scu/server/input-retriever.py"]);
 
   pyProcess.on("error", (err) => {
     console.log(`ERROR: ${err}`);

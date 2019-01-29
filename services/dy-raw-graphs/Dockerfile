@@ -15,11 +15,12 @@ EXPOSE 4000
 WORKDIR $HOME
 
 RUN apk update && \
-    apk upgrade && \
     apk add python3 && \
-    apk add git
+    apk add bash && \
+    apk add git && \
+    apk add py-pip
 
-RUN pip install --upgrade pip wheel setuptools
+RUN pip3 install --upgrade pip wheel setuptools
 
 RUN npm install express
 
@@ -42,16 +43,31 @@ ENV SIMCORE_NODE_UUID="-1" \
 #-----------------Development-----------------------
 FROM base as development
 
+RUN apk add --no-cache \
+    gcc \
+    subversion \
+    postgresql-dev \
+    g++ \
+    libc-dev \
+    libffi-dev \
+    python3-dev
+
 VOLUME $HOME/packages
+VOLUME $HOME/scripts
 VOLUME $HOME/services/storage/client-sdk
 
 VOLUME $HOME/raw
 VOLUME $HOME/docker
 VOLUME $HOME/inputs
 VOLUME $HOME/server
+VOLUME $HOME/devel
+
+ENV CREATE_DUMMY_TABLE 1
+ENV USE_CASE_CONFIG_FILE="/home/scu/devel/port_config.json"
+ENV INIT_OPTIONS="50 6 1 tab"
 
 WORKDIR $HOME/raw
-ENTRYPOINT ["/bin/sh", "../docker/boot.sh"]
+ENTRYPOINT ["/bin/bash", "../docker/boot.sh"]
 
 #-----------------Production----------------------
 FROM base AS production
@@ -61,9 +77,9 @@ COPY packages/simcore-sdk $HOME/packages/simcore-sdk
 COPY packages/s3wrapper $HOME/packages/s3wrapper
 COPY services/storage/client-sdk $HOME/services/storage/client-sdk
 # install packages but beware we need to use python 3.6 through pyenv
-RUN pip install $HOME/packages/simcore-sdk &&\
-    pip install $HOME/packages/s3wrapper && \
-    pip install $HOME/services/storage/client-sdk/python
+RUN pip3 install $HOME/packages/simcore-sdk &&\
+    pip3 install $HOME/packages/s3wrapper && \
+    pip3 install $HOME/services/storage/client-sdk/python
 
 RUN git clone https://github.com/ITISFoundation/raw.git
 WORKDIR $HOME/raw
@@ -75,4 +91,4 @@ COPY --chown=scu:scu docker docker
 COPY --chown=scu:scu server server
 
 WORKDIR $HOME/raw
-CMD ["/bin/sh", "../docker/boot.sh"]
+CMD ["/bin/bash", "../docker/boot.sh"]
