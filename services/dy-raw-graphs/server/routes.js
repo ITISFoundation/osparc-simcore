@@ -22,13 +22,26 @@ appRouter.get('/', function (request, response) {
 
 appRouter.get('/input', getInputFile);
 
-appRouter.get('/retrieve', getInputFiles);
+appRouter.get('/inputs', getInputFiles);
+
+appRouter.get('/retrieve', callInputRetriever);
 
 module.exports = appRouter;
 
+function getInputFile(request, response) {
+  const fileName = request.query["fileName"]
+  console.log('getInputFile', fileName);
+  fs.readFile(fileName, (err, data) => {
+    if (err) {
+      console.error(err);
+      return;
+    }
+    response.send(data);
+  });
+}
+
 function getInputFiles(request, response) {
   console.log('getInputFiles');
-  callInputRetriever(request, response);
   const inputsDir = '../inputs/'
   fs.readdir(inputsDir, (err, files) => {
     if (err) {
@@ -44,19 +57,6 @@ function getInputFiles(request, response) {
       });
     }
     response.send(metadata);
-  });
-  // callInputRetriever(request, response)
-}
-
-function getInputFile(request, response) {
-  const fileName = request.query["fileName"]
-  console.log('getInputFile', fileName);
-  fs.readFile(fileName, (err, data) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
-    response.send(data);
   });
 }
 
