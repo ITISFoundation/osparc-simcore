@@ -67,7 +67,44 @@ COPY --chown=scu:scu services/web/server/requirements/base.txt requirements-base
 COPY --chown=scu:scu services/web/server/docker docker
 RUN $PIP install -r requirements-base.txt
 
+# --------------------------Cache stage -------------------
+# CI in master buils & pushes this target to speed-up image build
+#
+FROM build as cache
+
+ENV SIMCORE_WEB_CONFIG production
+
+# 2nd party packages
+COPY --chown=scu:scu packages $HOME/packages
+# client
+COPY --from=services_webclient:build --chown=scu:scu /home/scu/client/build-output $HOME/services/web/client
+# server
+COPY --chown=scu:scu services/web/server $HOME/services/web/server
+
+WORKDIR /home/scu/services/web/server
+RUN $PIP install -r requirements/prod.txt &&\
+    $PIP list
+
+# --------------------------Production stage -------------------
+# Final cleanup up to reduce image size and startup setup
+#
+FROM cache as production
+
+WORKDIR /home/scu
+
+RUN . $HOME/.venv/bin/activate; pip list &&\
+    rm -rf $HOME/packages &&\
+    rm -rf $HOME/services/web/server &&\
+    rm -rf /pipcache
+
+ENV DEBUG 0
+ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
+CMD docker/boot.sh
+
+
 # --------------------------Development stage -------------------
+# Source code accessible in host but runs in container
+#
 FROM build as development
 
 ARG HOST_GID_ARG=1000
@@ -87,44 +124,5 @@ VOLUME /home/scu/services/web/client/
 
 ENV SIMCORE_WEB_CONFIG development
 ENV DEBUG 1
-ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD docker/boot.sh
-
-
-# --------------------------Production multi-stage -------------------
-#FROM build as build-production
-FROM build as cache
-
-ENV SIMCORE_WEB_CONFIG production
-
-# 2nd party packages
-COPY --chown=scu:scu packages $HOME/packages
-# client
-COPY --from=services_webclient:build --chown=scu:scu /home/scu/client/build-output $HOME/services/web/client
-# server
-COPY --chown=scu:scu services/web/server $HOME/services/web/server
-
-WORKDIR /home/scu/services/web/server
-RUN $PIP install -r requirements/prod.txt &&\
-    $PIP list
-
-FROM cache as production
-#-------------------
-#FROM base as production
-# TODO: PC some basic package missing
-
-#COPY --from=build-production --chown=scu:scu $HOME/services/web/server/boot.sh $HOME
-#COPY --from=build-production --chown=scu:scu $HOME/.venv $HOME/.venv
-#RUN . $HOME/.venv/bin/activate; pip list
-
-# FIXME: temporary solution until found missing packages
-WORKDIR /home/scu
-
-RUN . $HOME/.venv/bin/activate; pip list &&\
-    rm -rf $HOME/packages &&\
-    rm -rf $HOME/services/web/server &&\
-    rm -rf /pipcache
-
-ENV DEBUG 0
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD docker/boot.sh

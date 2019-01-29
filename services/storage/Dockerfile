@@ -19,12 +19,10 @@ ENV HOME /home/scu
 ENV VENV /home/scu/.venv/
 ENV VENV3 $VENV
 ENV VENV2 /home/scu/.venv27/
-
 # TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
 # - Added explicit --cache-dir that is removed at the end of the build
 ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/pipcache
 ENV PIP2 $VENV2/bin/pip --cache-dir=/pipcache2
-# -----
 
 EXPOSE 8080
 
@@ -66,7 +64,6 @@ RUN $PIP install virtualenv &&\
 
 WORKDIR /home/scu
 
-
 # install base 3rd party packages to accelerate runtime installs
 COPY --chown=scu:scu services/storage/requirements/py27.txt requirements-py27.txt
 COPY --chown=scu:scu services/storage/requirements/base.txt requirements-base.txt
@@ -76,29 +73,10 @@ RUN $PIP install -r requirements-base.txt
 RUN $PIP2 install numpy==1.16.0 &&\
     $PIP2 install -r requirements-py27.txt
 
-# --------------------------Development stage -------------------
-FROM build as development
 
-ARG HOST_GID_ARG=1000
-
-# install test 3rd party packages to accelerate runtime installs
-COPY --chown=scu:scu services/storage/tests/requirements.txt requirements-tests.txt
-RUN $PIP install -r requirements-tests.txt
-
-# in dev mode we give access to `scu` to host's mapped volumes
-RUN addgroup -g $HOST_GID_ARG hgrp &&\
-    addgroup scu hgrp &&\
-    chown -R scu:scu $HOME/.venv
-
-VOLUME /home/scu/packages
-VOLUME /home/scu/services/storage
-
-ENV DEBUG 1
-ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD ["/bin/sh", "docker/boot.sh"]
-
-
-# --------------------------Production multi-stage -------------------
+# --------------------------Cache stage -------------------
+# CI in master buils & pushes this target to speed-up image build
+#
 FROM build as cache
 
 ENV SIMCORE_WEB_CONFIG production
@@ -116,6 +94,9 @@ RUN $PIP install -r requirements/prod.txt &&\
 WORKDIR /home/scu
 ENV DEBUG 0
 
+# --------------------------Production stage -------------------
+# Final cleanup up to reduce image size and startup setup
+#
 FROM cache as production
 
 # remove any unnecessary stuff
@@ -126,5 +107,29 @@ RUN . $HOME/.venv/bin/activate; pip list &&\
     rm -rf /pipcache2
 
 
+ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
+CMD ["/bin/sh", "docker/boot.sh"]
+
+
+# --------------------------Development stage -------------------
+# Source code accessible in host but runs in container
+#
+FROM build as development
+
+ARG HOST_GID_ARG=1000
+
+# install test 3rd party packages to accelerate runtime installs
+COPY --chown=scu:scu services/storage/tests/requirements.txt requirements-tests.txt
+RUN $PIP install -r requirements-tests.txt
+
+# in dev mode we give access to `scu` to host's mapped volumes
+RUN addgroup -g $HOST_GID_ARG hgrp &&\
+    addgroup scu hgrp &&\
+    chown -R scu:scu $HOME/.venv
+
+VOLUME /home/scu/packages
+VOLUME /home/scu/services/storage
+
+ENV DEBUG 1
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD ["/bin/sh", "docker/boot.sh"]
