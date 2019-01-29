@@ -5,6 +5,7 @@
 # pylint:disable=redefined-outer-name
 
 import datetime
+import logging
 import sys
 from pathlib import Path
 from typing import Dict
@@ -14,6 +15,9 @@ import pytest
 import tenacity
 import yaml
 
+WAIT_TIME_SECS = 5
+
+logger = logging.getLogger(__name__)
 
 @pytest.fixture(scope="session")
 def here() -> Path:
@@ -54,7 +58,8 @@ def docker_client():
     yield client
 
 @tenacity.retry(stop=tenacity.stop_after_delay(240),
-                wait=tenacity.wait_fixed(5),
+                wait=tenacity.wait_fixed(WAIT_TIME_SECS),
+                before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
                 retry=tenacity.retry_if_exception_type(AssertionError))
 def try_checking_task_state(running_service, service_name):
     tasks = running_service.tasks()
@@ -68,11 +73,11 @@ def try_checking_task_state(running_service, service_name):
         previous_task_state = tasks[len(tasks) - 1]["Status"]["State"]
         assert previous_task_state == "complete", "service {} has state {}".format(service_name, task_state)
 
-    # also check it's running since at least 5sec
+    # also check it's running since at least $WAIT_TIME_SECS sec
     creation_time = datetime.datetime.strptime(task_info["CreatedAt"].split(".")[0], "%Y-%m-%dT%H:%M:%S")
     now = datetime.datetime.now()
     difference = now - creation_time
-    assert difference.total_seconds() > 5
+    assert difference.total_seconds() > WAIT_TIME_SECS
 
 
 def test_services_running(docker_client, services_docker_compose, tools_docker_compose):
