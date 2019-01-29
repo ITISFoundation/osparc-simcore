@@ -3,7 +3,7 @@ version: '3.4'
 services:
   apihub:
     #TODO: temp for testing auto deployment
-    image: itisfoundation/apihub:testing
+    image: itisfoundation/apihub:staging-latest
     deploy:
       placement:
        constraints:
@@ -30,5 +30,3 @@ services:
       placement:
         constraints:
           - node.platform.os == linux
-  testing:
-    image: ubuntu
