@@ -11,7 +11,7 @@ services:
       target: cache
   storage:
     build:
-      target: cache    
+      target: cache
   webclient:
     build:
       target: build

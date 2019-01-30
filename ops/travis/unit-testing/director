@@ -2,7 +2,7 @@
 
 FOLDER_CHECKS="api\/ director packages\/"
 
-before_install() {    
+before_install() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
     then
         bash ops/travis/helpers/install_docker_compose
@@ -32,7 +32,7 @@ script() {
     then
         pytest --cov=simcore_service_director -v services/director/tests
     else
-        echo "no changes detected... not executing anything..."
+        echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
     fi
 }
 
