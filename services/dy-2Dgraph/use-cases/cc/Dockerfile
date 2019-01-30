@@ -12,8 +12,8 @@ USER $NB_USER
 # install requirements --------------------------------------------------------
 COPY --chown=jovyan:users cc/requirements.txt .
 # TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
-RUN pip --cache-dir=/pipcache install -r requirements.txt &&\
-    rm -rf /pipcache
+RUN pip --cache-dir=/tmp/.pipcache install -r requirements.txt &&\
+    rm -rf /tmp/.pipcache
 # prepare for booting ---------------------------------------------------------
 COPY --chown=jovyan:users docker /docker
 # set of arguments to copy the right notebook ---------------------------------
