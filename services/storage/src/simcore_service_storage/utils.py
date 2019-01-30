@@ -16,7 +16,8 @@ CONNECT_TIMEOUT_SECS = 30
     wait=tenacity.wait_fixed(RETRY_WAIT_SECS),
     stop=tenacity.stop_after_attempt(RETRY_COUNT),
     before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
-    retry=tenacity.retry_if_exception_type(AssertionError))
+    #retry=tenacity.retry_if_exception_type(AssertionError)
+    )
 async def assert_enpoint_is_ok(url: URL, expected_response:int =200):
     """ Tenace check to GET given url endpoint
 
