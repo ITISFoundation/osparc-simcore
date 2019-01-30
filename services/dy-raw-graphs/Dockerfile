@@ -18,6 +18,7 @@ RUN apk update && \
     apk add python3 && \
     apk add bash && \
     apk add git && \
+    apk add postgresql-dev && \
     apk add py-pip
 
 RUN pip3 install --upgrade pip wheel setuptools
@@ -46,7 +47,6 @@ FROM base as development
 RUN apk add --no-cache \
     gcc \
     subversion \
-    postgresql-dev \
     g++ \
     libc-dev \
     libffi-dev \

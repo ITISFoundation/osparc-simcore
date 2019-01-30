@@ -65,7 +65,7 @@ function callInputRetriever(request, response) {
 
   pyProcess.on("error", (err) => {
     console.log(`ERROR: ${err}`);
-    // response.sendStatus("500");
+    response.sendStatus("500");
   });
 
   pyProcess.stdout.setEncoding("utf8");
@@ -83,7 +83,7 @@ function callInputRetriever(request, response) {
       console.log("All went fine");
     }
     else {
-      // response.sendStatus("500");
+      response.sendStatus("500");
       console.log(code, ":(");
     }
   });
