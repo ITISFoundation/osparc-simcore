@@ -14,7 +14,7 @@ RUN adduser -D -u 8004 scu &&\
 ENV HOME /home/scu
 # TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
 # - Added explicit --cache-dir that is removed at the end of the build
-ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/pipcache
+ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/tmp/.pipcache
 
 EXPOSE 8000
 VOLUME /home/scu/input
@@ -62,7 +62,8 @@ ARG HOST_GID_ARG=1000
 # FIXME: files created by scu cannot be deleted by host! we need to do the same group in host?
 RUN addgroup -g $HOST_GID_ARG hgrp &&\
     addgroup scu hgrp && \
-    chown -R scu:scu $HOME/.venv
+    chown -R scu:scu $HOME/.venv &&\
+    rm -rf /tmp/.pipcache
 
 VOLUME /home/scu/packages
 VOLUME /home/scu/services/sidecar
@@ -87,24 +88,14 @@ RUN $PIP install -r requirements/prod.txt ;\
 
 
 # --------------------------Production multi-stage -------------------
-#FROM build as build-production
-FROM cache as production
-
-
-#-------------------
-#FROM base as production
-
 # TODO: PC Reduce docker size by installing only non-dev
-
-#COPY --from=build-production --chown=scu:scu $HOME/boot.sh boot.sh
-#COPY --from=build-production --chown=scu:scu $HOME/.venv .venv
-#COPY --from=build-production --chown=scu:scu $HOME/docker docker
+FROM cache as production
 
 WORKDIR /home/scu/
 
-RUN . $HOME/.venv/bin/activate; pip list &&\
+RUN . $HOME/.venv/bin/activate; $PIP list &&\
     rm -rf $HOME/services &&\
-    rm -rf /pipcache
+    rm -rf /tmp/.pipcache
 
 ENV DEBUG 0
 ENV RUN_DOCKER_ENGINE_ROOT=0

@@ -21,8 +21,8 @@ ENV VENV3 $VENV
 ENV VENV2 /home/scu/.venv27/
 # TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
 # - Added explicit --cache-dir that is removed at the end of the build
-ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/pipcache
-ENV PIP2 $VENV2/bin/pip --cache-dir=/pipcache2
+ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/tmp/.pipcache
+ENV PIP2 $VENV2/bin/pip --cache-dir=/tmp/.pipcache2
 
 EXPOSE 8080
 
@@ -100,11 +100,11 @@ ENV DEBUG 0
 FROM cache as production
 
 # remove any unnecessary stuff
-RUN . $HOME/.venv/bin/activate; pip list &&\
+RUN . $HOME/.venv/bin/activate; $PIP list &&\
     rm -rf $HOME/packages &&\
     rm -rf $HOME/services/storage &&\
-    rm -rf /pipcache &&\
-    rm -rf /pipcache2
+    rm -rf /tmp/.pipcache &&\
+    rm -rf /tmp/.pipcache2
 
 
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
@@ -126,6 +126,8 @@ RUN $PIP install -r requirements-tests.txt
 RUN addgroup -g $HOST_GID_ARG hgrp &&\
     addgroup scu hgrp &&\
     chown -R scu:scu $HOME/.venv
+
+RUN rm -rf /tmp/.pipcache*
 
 VOLUME /home/scu/packages
 VOLUME /home/scu/services/storage
