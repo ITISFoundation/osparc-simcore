@@ -61,6 +61,8 @@ function getInputFiles(request, response) {
 }
 
 function callInputRetriever(request, response) {
+  console.log('Received a call to retrieve the data on input ports from ' + request.ip);
+
   var pyProcess = spawn("python3", ["/home/scu/server/input-retriever.py"]);
 
   pyProcess.on("error", (err) => {
