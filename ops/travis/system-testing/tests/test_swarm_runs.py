@@ -109,7 +109,7 @@ def test_all_services_up(docker_client, services_docker_compose, tools_docker_co
     # TODO: check names instead
 
 
-async def test_core_service_running(core_service_name, docker_client):
+async def test_core_service_running(core_service_name, docker_client, loop):
     """
         NOTE: Assumes `make up-swarm` executed
     """
