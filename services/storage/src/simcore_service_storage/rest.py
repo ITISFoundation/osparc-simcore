@@ -13,7 +13,7 @@ from servicelib.rest_middlewares import append_rest_middlewares
 from . import rest_routes
 from .rest_config import CONFIG_SECTION_NAME
 from .settings import API_VERSION_TAG, APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
-from .utils import check_endpoint, is_url
+from .utils import assert_enpoint_is_ok, is_url
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def setup(app: web.Application):
     loop = asyncio.get_event_loop()
     location = "{}/storage/{}/openapi.yaml".format(cfg["oas_repo"], API_VERSION_TAG)
     if is_url(location):
-        loop.run_until_complete( check_endpoint(URL(location)) )
+        loop.run_until_complete( assert_enpoint_is_ok(URL(location)) )
     api_specs = loop.run_until_complete( create_openapi_specs(location) )
 
     # validated openapi specs
