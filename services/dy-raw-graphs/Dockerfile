@@ -31,7 +31,7 @@ ENV SIMCORE_NODE_UUID="-1" \
     SIMCORE_USER_ID="-1" \
     SIMCORE_NODE_BASEPATH="/raw" \
     STORAGE_ENDPOINT="=1" \
-    RAWGRAPHS_INPUT_PATH="/inputs" \
+    RAWGRAPHS_INPUT_PATH="../inputs" \
     S3_ENDPOINT="=1" \
     S3_ACCESS_KEY="-1" \
     S3_SECRET_KEY="-1" \
