@@ -143,6 +143,8 @@ async def test_core_service_running(core_service_name, docker_client):
         if task['Status']['State'].upper() in pre_states:
             print("Waiting ... %s" % get_tasks_summary(tasks) )
             await asyncio.sleep(WAIT_TIME_SECS)
+        else:
+            break
 
     # should be running
     assert task['Status']['State'].upper() == "RUNNING", \
