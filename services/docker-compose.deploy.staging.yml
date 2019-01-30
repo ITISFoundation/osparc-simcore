@@ -30,3 +30,5 @@ services:
       placement:
         constraints:
           - node.platform.os == linux
+  testit:
+    image: ubuntu
