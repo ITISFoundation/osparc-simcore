@@ -30,6 +30,3 @@ services:
       placement:
         constraints:
           - node.platform.os == linux
-
-  ubuntu22:
-    image: ubuntu
