@@ -19,7 +19,7 @@ RUN apk add --no-cache \
 ENV HOME /home/scu
 # TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
 # - Added explicit --cache-dir that is removed at the end of the build
-ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/pipcache
+ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/tmp/.pipcache
 ENV SIMCORE_WEB_OUTDIR $HOME/services/web/client
 ENV IS_CONTAINER_CONTEXT Yes
 
@@ -83,7 +83,8 @@ COPY --chown=scu:scu services/web/server $HOME/services/web/server
 
 WORKDIR /home/scu/services/web/server
 RUN $PIP install -r requirements/prod.txt &&\
-    $PIP list
+    $PIP list &&\
+    rm -rf /tmp/.pipcache
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
@@ -92,10 +93,9 @@ FROM cache as production
 
 WORKDIR /home/scu
 
-RUN . $HOME/.venv/bin/activate; pip list &&\
-    rm -rf $HOME/packages &&\
+RUN rm -rf $HOME/packages &&\
     rm -rf $HOME/services/web/server &&\
-    rm -rf /pipcache
+    rm -rf /tmp/.pipcache
 
 ENV DEBUG 0
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
@@ -116,7 +116,8 @@ RUN $PIP install -r requirements-tests.txt
 # in dev mode we give access to `scu` to host's mapped volumes
 RUN addgroup -g $HOST_GID_ARG hgrp &&\
     addgroup scu hgrp && \
-    chown -R scu:scu $HOME/.venv
+    chown -R scu:scu $HOME/.venv &&\
+    rm -rf /tmp/.pipcache
 
 VOLUME /home/scu/packages
 VOLUME /home/scu/services/web/server/
