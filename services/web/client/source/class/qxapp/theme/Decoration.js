@@ -18,5 +18,12 @@
 qx.Theme.define("qxapp.theme.Decoration", {
   extend: osparc.theme.osparcdark.Decoration,
 
-  decorations: {}
+  decorations: {
+    "droppableWidget": {
+      style: {
+        borderWidth: "5px",
+        borderStyle: "dashed"
+      }
+    }
+  }
 });
