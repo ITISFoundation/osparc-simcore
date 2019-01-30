@@ -21,6 +21,15 @@ RUN apk update && \
     apk add postgresql-dev && \
     apk add py-pip
 
+# TODO: Move the devel specific packages to develoment stage
+RUN apk add --no-cache \
+    gcc \
+    subversion \
+    g++ \
+    libc-dev \
+    libffi-dev \
+    python3-dev
+
 RUN pip3 install --upgrade pip wheel setuptools
 
 RUN npm install express
@@ -43,14 +52,6 @@ ENV SIMCORE_NODE_UUID="-1" \
 
 #-----------------Development-----------------------
 FROM base as development
-
-RUN apk add --no-cache \
-    gcc \
-    subversion \
-    g++ \
-    libc-dev \
-    libffi-dev \
-    python3-dev
 
 VOLUME $HOME/packages
 VOLUME $HOME/scripts
