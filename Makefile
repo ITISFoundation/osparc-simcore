@@ -42,6 +42,10 @@ PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg
 
 TEMPCOMPOSE := $(shell mktemp)
 
+SERVICES_LIST = apihub director sidecar storage webserver
+CACHED_SERVICES_LIST = ${SERVICES_LIST} webclient
+DYNAMIC_SERVICE_FOLDERS_LIST = services/dy-jupyter services/dy-2Dgraph/use-cases services/dy-3dvis services/dy-modeling
+
 export SERVICES_VERSION=2.8.0
 export DOCKER_REGISTRY=masu.speag.com
 
@@ -105,10 +109,9 @@ endif
 ifndef DOCKER_REGISTRY
 	$(error DOCKER_REGISTRY variable is undefined)
 endif
-	cd services/dy-jupyter && ${MAKE} build
-	cd services/dy-2Dgraph/use-cases && ${MAKE} build
-	cd services/dy-3dvis && ${MAKE} build
-	cd services/dy-modeling && ${MAKE} build
+	for i in $(DYNAMIC_SERVICE_FOLDERS_LIST); do \
+		cd $$i && ${MAKE} build; \
+	done
 
 push_dynamic_services:
 ifndef SERVICES_VERSION
@@ -117,10 +120,9 @@ endif
 ifndef DOCKER_REGISTRY
 	$(error DOCKER_REGISTRY variable is undefined)
 endif
-	cd services/dy-jupyter && ${MAKE} push_service_images
-	cd services/dy-2Dgraph/use-cases && ${MAKE} push_service_images
-	cd services/dy-3dvis && ${MAKE} push_service_images
-	cd services/dy-modeling && ${MAKE} push_service_images
+	for i in $(DYNAMIC_SERVICE_FOLDERS_LIST); do \
+		cd $$i && ${MAKE} push_service_images; \
+	done
 
 rebuild:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
@@ -165,16 +167,6 @@ down:
 down-swarm:
 	${DOCKER} swarm leave -f
 
-stack-up:
-	${DOCKER} swarm init
-
-stack-down:
-	${DOCKER} stack rm osparc
-	${DOCKER} swarm leave -f
-
-deploy:
-	${DOCKER} stack deploy -c services/docker-compose.swarm.yml services --with-registry-auth
-
 pylint:
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 	/bin/bash -c "pylint --rcfile=.pylintrc $(PY_FILES)"
@@ -187,16 +179,10 @@ DOCKER_REGISTRY=masu.speag.com
 
 push_platform_images:
 	${DOCKER} login ${DOCKER_REGISTRY}
-	${DOCKER} tag services_apihub:latest ${DOCKER_REGISTRY}/simcore/workbench/apihub:${PLATFORM_VERSION}
-	${DOCKER} push ${DOCKER_REGISTRY}/simcore/workbench/apihub:${PLATFORM_VERSION}
-	${DOCKER} tag services_webserver:latest ${DOCKER_REGISTRY}/simcore/workbench/webserver:${PLATFORM_VERSION}
-	${DOCKER} push ${DOCKER_REGISTRY}/simcore/workbench/webserver:${PLATFORM_VERSION}
-	${DOCKER} tag services_sidecar:latest ${DOCKER_REGISTRY}/simcore/workbench/sidecar:${PLATFORM_VERSION}
-	${DOCKER} push ${DOCKER_REGISTRY}/simcore/workbench/sidecar:${PLATFORM_VERSION}
-	${DOCKER} tag services_director:latest ${DOCKER_REGISTRY}/simcore/workbench/director:${PLATFORM_VERSION}
-	${DOCKER} push ${DOCKER_REGISTRY}/simcore/workbench/director:${PLATFORM_VERSION}
-	${DOCKER} tag services_storage:latest ${DOCKER_REGISTRY}/simcore/workbench/storage:${PLATFORM_VERSION}
-	${DOCKER} push ${DOCKER_REGISTRY}/simcore/workbench/storage:${PLATFORM_VERSION}
+	for i in $(SERVICES_LIST); do \
+		${DOCKER} tag services_$$i:latest ${DOCKER_REGISTRY}/simcore/workbench/$$i:${PLATFORM_VERSION}; \
+		${DOCKER} push ${DOCKER_REGISTRY}/simcore/workbench/$$i:${PLATFORM_VERSION}; \
+	done
 
   setup-check: .env .vscode/settings.json
 
@@ -229,19 +215,14 @@ push_client_image:
 
 # ----------TRAVIS ------------------------------------------------------------------------------------
 travis-pull-cache-images:
-	${DOCKER} pull itisfoundation/apihub:cache || true
-	${DOCKER} pull itisfoundation/director:cache || true
-	${DOCKER} pull itisfoundation/sidecar:cache || true
-	${DOCKER} pull itisfoundation/storage:cache || true
-	${DOCKER} pull itisfoundation/webclient:cache || true
-	${DOCKER} pull itisfoundation/webserver:cache || true
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull --ignore-pull-failures
 	
 travis-build:
 	#TODO: preferably there should be only one build script. the problem is the --parallel flag and the webclient/webserver docker that is multistage in 2 files
 	# it should be ideally only docker-compose build --parallel
 	${MAKE} travis-pull-cache-images
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --parallel apihub director sidecar storage webclient
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.staging.yml build --parallel apihub director sidecar storage webclient
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.staging.yml build webserver
 
 travis-build-cache-images:
 	${MAKE} travis-pull-cache-images
@@ -249,50 +230,22 @@ travis-build-cache-images:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
 travis-push-cache-images:
-	${DOCKER} tag services_apihub:latest itisfoundation/apihub:cache
-	${DOCKER} tag services_webserver:latest itisfoundation/webserver:cache
-	${DOCKER} tag services_sidecar:latest itisfoundation/sidecar:cache
-	${DOCKER} tag services_director:latest itisfoundation/director:cache
-	${DOCKER} tag services_storage:latest itisfoundation/storage:cache
-	${DOCKER} tag services_webclient:build itisfoundation/webclient:cache
-	${DOCKER} tag services_webserver:latest itisfoundation/webserver:cache
-
-	${DOCKER} push itisfoundation/apihub:cache
-	${DOCKER} push itisfoundation/director:cache
-	${DOCKER} push itisfoundation/sidecar:cache
-	${DOCKER} push itisfoundation/storage:cache
-	${DOCKER} push itisfoundation/webclient:cache
-	${DOCKER} push itisfoundation/webserver:cache
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
 
 TRAVIS_PLATFORM_STAGE_VERSION=staging-$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
-TRAVIS_PLATFORM_STAGE_LATEST=staging-latest
 travis-push-staging-images:
-	${DOCKER} tag services_apihub:latest itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_VERSION}
-	${DOCKER} tag services_webserver:latest itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_VERSION}
-	${DOCKER} tag services_sidecar:latest itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_VERSION}
-	${DOCKER} tag services_director:latest itisfoundation/director:${TRAVIS_PLATFORM_STAGE_VERSION}
-	${DOCKER} tag services_storage:latest itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_VERSION}
-	${DOCKER} tag services_apihub:latest itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_LATEST}
-	${DOCKER} tag services_webserver:latest itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_LATEST}
-	${DOCKER} tag services_sidecar:latest itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_LATEST}
-	${DOCKER} tag services_director:latest itisfoundation/director:${TRAVIS_PLATFORM_STAGE_LATEST}
-	${DOCKER} tag services_storage:latest itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_LATEST}
-	${DOCKER} push itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_VERSION}
-	${DOCKER} push itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_VERSION}
-	${DOCKER} push itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_VERSION}
-	${DOCKER} push itisfoundation/director:${TRAVIS_PLATFORM_STAGE_VERSION}
-	${DOCKER} push itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_VERSION}
-	${DOCKER} push itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_LATEST}
-	${DOCKER} push itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_LATEST}
-	${DOCKER} push itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_LATEST}
-	${DOCKER} push itisfoundation/director:${TRAVIS_PLATFORM_STAGE_LATEST}
-	${DOCKER} push itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_LATEST}
-
+	# pushes the staging-latest images
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.staging.yml push ${SERVICES_LIST}
+	# pushes the staging-versioned images
+	for i in $(SERVICES_LIST); do \
+		${DOCKER} tag services_$$i:staging-latest itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
+		${DOCKER} push itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
+	done
+	
 pull-staging-images:
-	${DOCKER} pull itisfoundation/apihub:${TRAVIS_PLATFORM_STAGE_LATEST}
-	${DOCKER} pull itisfoundation/webserver:${TRAVIS_PLATFORM_STAGE_LATEST}
-	${DOCKER} pull itisfoundation/sidecar:${TRAVIS_PLATFORM_STAGE_LATEST}
-	${DOCKER} pull itisfoundation/director:${TRAVIS_PLATFORM_STAGE_LATEST}
-	${DOCKER} pull itisfoundation/storage:${TRAVIS_PLATFORM_STAGE_LATEST}
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.staging.yml pull
+
+create-staging-stack-file:
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.staging.yml
 
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel
