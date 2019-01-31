@@ -244,13 +244,13 @@ travis-push-staging-images:
 	done
 	
 pull-staging-images:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/ \
-	export DOCKER_IMAGE_TAG=staging-latest \
+	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
+	export DOCKER_IMAGE_TAG=staging-latest; \
 	${DOCKER_COMPOSE} -f services/docker-compose.yml pull
 
 create-staging-stack-file:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/ \
-	export DOCKER_IMAGE_TAG=staging-latest \
-	${DOCKER_COMPOSE} -f services/docker-compose.yml config > stack.yml
+	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
+	export DOCKER_IMAGE_TAG=staging-latest; \
+	${DOCKER_COMPOSE} -f services/docker-compose.yml config > $(output_file)
 
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel
