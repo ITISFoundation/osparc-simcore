@@ -1,9 +1,3 @@
-#!/pyenv/versions/3.6.7/bin/python
-# Note: this shebang is the one where the python 3.6 interpreter is installed by pyenv
-import cgitb
-cgitb.enable()
-# this MUST come first
-
 import asyncio
 
 import logging
@@ -17,13 +11,7 @@ from simcore_sdk import node_ports
 
 log = logging.getLogger(__name__)
 
-# necessary for CGI scripting compatiblity
-# https://docs.python.org/3/library/cgi.html
-print("Content-Type: text/html;charset=utf-8")
-print()
-
-
-_INPUT_PATH = Path(os.environ.get("PARAVIEW_INPUT_PATH"))
+_INPUT_PATH = Path(os.environ.get("RAWGRAPHS_INPUT_PATH"))
 
 # clean the directory
 shutil.rmtree(str(_INPUT_PATH), ignore_errors=True)
@@ -33,6 +21,9 @@ if not _INPUT_PATH.exists():
     log.debug("Created input folder at %s", _INPUT_PATH)
 
 async def retrieve_data():
+    log.debug("retrieving data...")
+    print("retrieving data...")
+
     # get all files in the local system and copy them to the input folder
     start_time = time.time()
     PORTS = node_ports.ports()
@@ -40,7 +31,7 @@ async def retrieve_data():
     for node_input in PORTS.inputs:
         if not node_input or node_input.value is None:
             continue
-
+        
         # collect coroutines
         download_tasks.append(node_input.get())
     if download_tasks:
