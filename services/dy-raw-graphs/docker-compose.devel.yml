@@ -1,23 +1,20 @@
-# USAGE:  docker-compose -f docker-compose.yml -f docker-compose.devel.yml ...
 version: '3.6'
 services:
-  client:
+  raw-graphs:
+    image: raw-graphs
     build:
       target: development
+    ports:
+      - '4000:4000'
     volumes:
-      - './client:/home/scu/client'
-  server:
-    build:
-      target: development
-    volumes: 
-      - ./server/source:/home/node/source
-      - ./client/source-output:/home/node/source-output
-      - ../../packages:/home/node/packages
-      - ../../services:/home/node/services
-      - ../../scripts/dy_services_helpers:/home/node/scripts/dy_services_helpers
-      - ./server/docker:/home/node/docker
-      - ./server/devel:/home/node/devel
-      - ./test-data:/home/node/test-data
+      - ../../services/storage/client-sdk:/home/scu/services/storage/client-sdk
+      - ../../packages:/home/scu/packages
+      - ../../scripts:/home/scu/scripts
+      - ./raw:/home/scu/raw
+      - ./inputs:/home/scu/inputs
+      - ./docker:/home/scu/docker
+      - ./server:/home/scu/server
+      - ./devel:/home/scu/devel
     environment: 
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - S3_ENDPOINT=${S3_ENDPOINT}
@@ -30,10 +27,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
-      - TEST_DATA_PATH=/home/node/test-data
       - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
     depends_on:
-        - client
         - storage
         - postgres
         - minio

@@ -1,0 +1,27 @@
+version: '3.6'
+services:
+  raw-graphs:
+    image: ${DOCKER_REGISTRY}/${SERVICE_BASE_PATH}:${SERVICES_VERSION}
+    build:
+      context: ../../
+      dockerfile: services/dy-raw-graphs/Dockerfile
+      labels:
+        io.simcore.key: '{"key": "${SERVICE_BASE_PATH}"}'
+        io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
+        io.simcore.type: '{"type": "dynamic"}'
+        io.simcore.name: '{"name": "2D analysis"}'
+        io.simcore.description: '{"description": "2D analysis powered by RAW Graphs"}'
+        io.simcore.authors: '{"authors": [{"name": "odeimaiz", "email": "odeimaiz@itis.swiss", "affiliation": "ITIS Foundation"}]}'
+        io.simcore.contact: '{"contact": "odeimaiz@itis.swiss"}'
+        io.simcore.inputs: '{"inputs": {"input_1":{"label": "input 1", "displayOrder":0, "description": "Input 1", "type": "data:*/*"}}}'
+        io.simcore.outputs: '{"outputs": {}}'
+        simcore.service.settings: '[{"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 4000000000}}, {"name": "ports", "type": "int", "value": 4000}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
+    environment: 
+      - SIMCORE_NODE_BASEPATH=${SIMCORE_NODE_BASEPATH}
+      - RAWGRAPHS_INPUT_PATH=${RAWGRAPHS_INPUT_PATH}
+    ports:
+      - '4000:4000'
