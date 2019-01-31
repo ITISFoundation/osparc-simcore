@@ -20,10 +20,10 @@ def create(config):
     app = web.Application()
     app[APP_CONFIG_KEY] = config
 
-    setup_db(app)
-    setup_rest(app)
-    setup_s3(app)
-    setup_dsm(app)
+    setup_db(app)   # -> postgres service
+    setup_s3(app)   # -> minio service
+    setup_dsm(app)  # core subsystem. Needs s3 and db setups done
+    setup_rest(app) # lastly, we expose API to the world
 
     return app
 

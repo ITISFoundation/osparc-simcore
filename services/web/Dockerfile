@@ -19,7 +19,7 @@ RUN apk add --no-cache \
 ENV HOME /home/scu
 # TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
 # - Added explicit --cache-dir that is removed at the end of the build
-ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/pipcache
+ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/tmp/.pipcache
 ENV SIMCORE_WEB_OUTDIR $HOME/services/web/client
 ENV IS_CONTAINER_CONTEXT Yes
 
@@ -67,32 +67,9 @@ COPY --chown=scu:scu services/web/server/requirements/base.txt requirements-base
 COPY --chown=scu:scu services/web/server/docker docker
 RUN $PIP install -r requirements-base.txt
 
-# --------------------------Development stage -------------------
-FROM build as development
-
-ARG HOST_GID_ARG=1000
-
-# install test 3rd party packages to accelerate runtime installs
-COPY --chown=scu:scu services/web/server/tests/requirements.txt requirements-tests.txt
-RUN $PIP install -r requirements-tests.txt
-
-# in dev mode we give access to `scu` to host's mapped volumes
-RUN addgroup -g $HOST_GID_ARG hgrp &&\
-    addgroup scu hgrp && \
-    chown -R scu:scu $HOME/.venv
-
-VOLUME /home/scu/packages
-VOLUME /home/scu/services/web/server/
-VOLUME /home/scu/services/web/client/
-
-ENV SIMCORE_WEB_CONFIG development
-ENV DEBUG 1
-ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD docker/boot.sh
-
-
-# --------------------------Production multi-stage -------------------
-#FROM build as build-production
+# --------------------------Cache stage -------------------
+# CI in master buils & pushes this target to speed-up image build
+#
 FROM build as cache
 
 ENV SIMCORE_WEB_CONFIG production
@@ -106,25 +83,47 @@ COPY --chown=scu:scu services/web/server $HOME/services/web/server
 
 WORKDIR /home/scu/services/web/server
 RUN $PIP install -r requirements/prod.txt &&\
-    $PIP list
+    $PIP list &&\
+    rm -rf /tmp/.pipcache
 
+# --------------------------Production stage -------------------
+# Final cleanup up to reduce image size and startup setup
+#
 FROM cache as production
-#-------------------
-#FROM base as production
-# TODO: PC some basic package missing
 
-#COPY --from=build-production --chown=scu:scu $HOME/services/web/server/boot.sh $HOME
-#COPY --from=build-production --chown=scu:scu $HOME/.venv $HOME/.venv
-#RUN . $HOME/.venv/bin/activate; pip list
-
-# FIXME: temporary solution until found missing packages
 WORKDIR /home/scu
 
-RUN . $HOME/.venv/bin/activate; pip list &&\
-    rm -rf $HOME/packages &&\
+RUN rm -rf $HOME/packages &&\
     rm -rf $HOME/services/web/server &&\
-    rm -rf /pipcache
+    rm -rf /tmp/.pipcache
 
 ENV DEBUG 0
+ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
+CMD docker/boot.sh
+
+
+# --------------------------Development stage -------------------
+# Source code accessible in host but runs in container
+#
+FROM build as development
+
+ARG HOST_GID_ARG=1000
+
+# install test 3rd party packages to accelerate runtime installs
+COPY --chown=scu:scu services/web/server/tests/requirements.txt requirements-tests.txt
+RUN $PIP install -r requirements-tests.txt
+
+# in dev mode we give access to `scu` to host's mapped volumes
+RUN addgroup -g $HOST_GID_ARG hgrp &&\
+    addgroup scu hgrp && \
+    chown -R scu:scu $HOME/.venv &&\
+    rm -rf /tmp/.pipcache
+
+VOLUME /home/scu/packages
+VOLUME /home/scu/services/web/server/
+VOLUME /home/scu/services/web/client/
+
+ENV SIMCORE_WEB_CONFIG development
+ENV DEBUG 1
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD docker/boot.sh

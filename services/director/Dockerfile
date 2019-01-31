@@ -14,7 +14,7 @@ RUN adduser -D -u 8004 scu &&\
 ENV HOME /home/scu
 # TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
 # - Added explicit --cache-dir that is removed at the end of the build
-ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/pipcache
+ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/tmp/.pipcache
 # -----
 
 EXPOSE 8001
@@ -71,7 +71,8 @@ ARG HOST_GID_ARG=1000
 # FIXME: files created by scu cannot be deleted by host! we need to do the same group in host?
 RUN addgroup -g $HOST_GID_ARG hgrp &&\
     addgroup scu hgrp && \
-    chown -R scu:scu $HOME/.venv
+    chown -R scu:scu $HOME/.venv &&\
+    rm -rf /tmp/.pipcache
 
 VOLUME /home/scu/services/director
 VOLUME /home/scu/packages/service-library
@@ -88,7 +89,9 @@ COPY --chown=scu:scu packages/service-library $HOME/packages/service-library
 WORKDIR $HOME/services/director
 RUN $PIP install -r requirements/prod.txt
 WORKDIR $HOME/packages/service-library
+# FIXME: is this really requirements/dev or rather requirements/prod.txt?
 RUN $PIP install -r requirements/dev.txt
+
 
 # --------------------------Production stage -------------------
 FROM cache as production
@@ -97,7 +100,7 @@ ENV DEBUG 0
 ENV RUN_DOCKER_ENGINE_ROOT=0
 RUN rm -rf $HOME/services &&\
     rm -rf $HOME/packages &&\
-    rm -rf /pipcache
+    rm -rf /tmp/.pipcache
 
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD ["/bin/sh", "docker/boot.sh"]
