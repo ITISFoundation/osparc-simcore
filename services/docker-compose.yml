@@ -1,7 +1,7 @@
 version: '3.4'
 services:
   apihub:
-    image: services_apihub:latest
+    image: ${DOCKER_IMAGE_PREFIX}apihub:${DOCKER_IMAGE_TAG}
     build:
       context: ../
       dockerfile: services/apihub/Dockerfile
@@ -23,7 +23,7 @@ services:
           - node.platform.os == linux
 #--------------------------------------------------------------------
   director:
-    image: services_director:latest
+    image: ${DOCKER_IMAGE_PREFIX}director:${DOCKER_IMAGE_TAG}
     build:
       context: ../
       dockerfile: services/director/Dockerfile      
@@ -91,7 +91,7 @@ services:
         - VCS_REF_CLIENT=${VCS_REF_CLIENT}
     command: /bin/bash -c "echo 'built with qx' && cat build-output/version.txt"
   webserver:
-    image: services_webserver:latest
+    image: ${DOCKER_IMAGE_PREFIX}webserver:${DOCKER_IMAGE_TAG}
     build:
       context: ../
       dockerfile: services/web/Dockerfile
@@ -146,7 +146,7 @@ services:
           - node.role == manager
   #--------------------------------------------------------------------
   sidecar:
-    image: services_sidecar:latest
+    image: ${DOCKER_IMAGE_PREFIX}sidecar:${DOCKER_IMAGE_TAG}
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
@@ -197,7 +197,7 @@ services:
       - minio
   #--------------------------------------------------------------------
   storage:
-    image: services_storage:latest
+    image: ${DOCKER_IMAGE_PREFIX}storage:${DOCKER_IMAGE_TAG}
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image

@@ -217,25 +217,26 @@ push_client_image:
 travis-pull-cache-images:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull --ignore-pull-failures
 	
-travis-build:
-	#TODO: preferably there should be only one build script. the problem is the --parallel flag and the webclient/webserver docker that is multistage in 2 files
-	# it should be ideally only docker-compose build --parallel
-	${MAKE} travis-pull-cache-images
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.staging.yml build --parallel apihub director sidecar storage webclient
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.staging.yml build webserver
-
-travis-build-cache-images:
-	${MAKE} travis-pull-cache-images
+travis-build-cache-images: travis-pull-cache-images	
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
 travis-push-cache-images:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
 
+
+# staging ----------------
+travis-build:
+	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
+	export DOCKER_IMAGE_TAG=staging-latest; \
+	${MAKE} build
+
 TRAVIS_PLATFORM_STAGE_VERSION=staging-$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
 travis-push-staging-images:
+	export DOCKER_IMAGE_PREFIX=itisfoundation/ \
+	export DOCKER_IMAGE_TAG=staging-latest \
 	# pushes the staging-latest images
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.staging.yml push ${SERVICES_LIST}
+	${DOCKER_COMPOSE} -f services/docker-compose.yml push ${SERVICES_LIST}
 	# pushes the staging-versioned images
 	for i in $(SERVICES_LIST); do \
 		${DOCKER} tag services_$$i:staging-latest itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
@@ -243,9 +244,13 @@ travis-push-staging-images:
 	done
 	
 pull-staging-images:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.staging.yml pull
+	export DOCKER_IMAGE_PREFIX=itisfoundation/ \
+	export DOCKER_IMAGE_TAG=staging-latest \
+	${DOCKER_COMPOSE} -f services/docker-compose.yml pull
 
 create-staging-stack-file:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.staging.yml
+	export DOCKER_IMAGE_PREFIX=itisfoundation/ \
+	export DOCKER_IMAGE_TAG=staging-latest \
+	${DOCKER_COMPOSE} -f services/docker-compose.yml config > stack.yml
 
 .PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel
