@@ -20,8 +20,7 @@ import yaml
 logger = logging.getLogger(__name__)
 
 WAIT_TIME_SECS = 10
-RETRY_COUNT = 3
-MAX_WAIT_TIME=240
+RETRY_COUNT = 6
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +140,7 @@ async def test_core_service_running(core_service_name, docker_client, loop):
     for n in range(RETRY_COUNT):
         task = running_service.tasks()[0]
         if task['Status']['State'].upper() in pre_states:
-            print("Waiting ... %s" % get_tasks_summary(tasks) )
+            print("Waiting [{}/{}}] ...\n{}".format(n, RETRY_COUNT, get_tasks_summary(tasks) )
             await asyncio.sleep(WAIT_TIME_SECS)
         else:
             break
