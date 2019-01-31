@@ -1,6 +1,7 @@
 version: '3.4'
 services:
   apihub:
+    image: services_apihub:latest
     build:
       context: ../
       dockerfile: services/apihub/Dockerfile
@@ -13,11 +14,16 @@ services:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.label-schema.vcs-ref: "${VCS_REF}"        
     ports:
       - '8043:8043'
+    deploy:
+      placement:
+       constraints:
+          - node.platform.os == linux
 #--------------------------------------------------------------------
   director:
+    image: services_director:latest
     build:
       context: ../
       dockerfile: services/director/Dockerfile      
@@ -32,7 +38,7 @@ services:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.label-schema.vcs-ref: "${VCS_REF}"    
     ports:
       - '8001:8001'
     environment:
@@ -60,6 +66,11 @@ services:
       - PUBLISHED_HOST_NAME=${PUBLISHED_HOST_NAME}
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
+    deploy:
+      placement:
+       constraints:
+          - node.platform.os == linux
+          - node.role == manager
   #--------------------------------------------------------------------
   webclient:
     image: services_webclient:build
@@ -80,6 +91,7 @@ services:
         - VCS_REF_CLIENT=${VCS_REF_CLIENT}
     command: /bin/bash -c "echo 'built with qx' && cat build-output/version.txt"
   webserver:
+    image: services_webserver:latest
     build:
       context: ../
       dockerfile: services/web/Dockerfile
@@ -125,6 +137,11 @@ services:
     depends_on:
       - webclient
       - apihub
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == manager
   #--------------------------------------------------------------------
   rabbit:
     image: rabbitmq:3-management
@@ -147,6 +164,7 @@ services:
       - "5432:5432"
   #--------------------------------------------------------------------
   sidecar:
+    image: services_sidecar:latest
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
@@ -195,6 +213,7 @@ services:
       - rabbit
   #--------------------------------------------------------------------
   storage:
+    image: services_storage:latest
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
@@ -237,6 +256,10 @@ services:
       - minio
       - postgres
       - apihub
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
   #--------------------------------------------------------------------
   minio:
     image: minio/minio

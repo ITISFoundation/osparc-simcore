@@ -130,12 +130,12 @@ up:
 
 up-swarm:
 	${DOCKER} swarm init
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.deploy.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
 
 up-swarm-devel: 
 	${DOCKER} swarm init
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.deploy.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
 
 ifeq ($(WINDOWS_MODE),ON)
