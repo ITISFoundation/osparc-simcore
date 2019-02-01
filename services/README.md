@@ -56,34 +56,29 @@ When the user closes a node or disconnects, any running service will be automati
 To build images for development
 
 ```!bash
-  cd /path/to/services
-  docker-compose -f docker-compose.yml -f docker-compose.debug.yml build
+  make build-devel
+  make up-devel
 ```
 
 To build images for production (w/o tagging)
 
 ```!bash
-  cd /path/to/services
-  docker-compose -f docker-compose.yml build
+  make build
+  make up
 ```
 
 ## Deploying Services
 
-``docker-compose.deploy.yml`` defines the exact images tags to be used in the swarm.
-
 To build and tag these images:
 
 ```!bash
-  cd /path/to/services
-  docker-compose -f docker-compose.yml -f docker-compose.deploy.yml build
+  make build
 ```
 
 To deploy the application in a single-node swarm
 
 ```!bash
-  cd /path/to/services
-  docker swarm init
-  docker-compose -f docker-compose.yml -f docker-compose.deploy.yml up
+  make up-swarm
 ```
 ## Credentials
 

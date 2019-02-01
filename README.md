@@ -11,16 +11,14 @@
 
 
 ```bash
-  git clone git@github.com:ITISFoundation/osparc-simcore.git
-
-  # Set environment variable by copying & editing `.env` file
+  # clone repo
+  git clone https://github.com/ITISFoundation/osparc-simcore.git
   cd osparc-simcore
-  cp .env-devel .env
 
-  # builds
+  # build core services
   make build
 
-  # starts
+  # starts swarm and deploys services
   make up
 
   # open browser in:

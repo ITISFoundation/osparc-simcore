@@ -17,14 +17,14 @@ before_script() {
 
 script() {
     if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
-        make travis-build-cache-images
+        make build-cache
     fi
 }
 
 after_success() {
     if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        make travis-push-cache-images
+        make push-cache
     fi
 }
 
