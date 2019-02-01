@@ -42,20 +42,16 @@ PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg
 
 TEMPCOMPOSE := $(shell mktemp)
 
-SERVICES_LIST = apihub director sidecar storage webserver
-CACHED_SERVICES_LIST = ${SERVICES_LIST} webclient
-DYNAMIC_SERVICE_FOLDERS_LIST = services/dy-jupyter services/dy-2Dgraph/use-cases services/dy-3dvis services/dy-modeling
+SERVICES_LIST := apihub director sidecar storage webserver
+CACHED_SERVICES_LIST := ${SERVICES_LIST} webclient
+DYNAMIC_SERVICE_FOLDERS_LIST := services/dy-jupyter services/dy-2Dgraph/use-cases services/dy-3dvis services/dy-modeling
 
 export SERVICES_VERSION=2.8.0
 export DOCKER_REGISTRY=masu.speag.com
 
-VCS_REF:=$(shell git rev-parse --short HEAD)
-VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
-BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-export VCS_REF
-export VCS_REF_CLIENT
-export BUILD_DATE
+export VCS_REF:=$(shell git rev-parse --short HEAD)
+export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
+export BUILD_DATE :=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 info:
 	@echo '+ vcs ref '
@@ -90,8 +86,7 @@ rebuild-webclient-devel-solo:
 up-webclient-devel-solo:
 	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
 
-
-build: pull-cache
+build: .env pull-cache
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
 
 build-client: pull-cache
@@ -192,9 +187,13 @@ push_client_image:
 	${DOCKER} push ${DOCKER_REGISTRY}./simcore/workbench/webserver:${PLATFORM_VERSION}
 
 .env: .env-devel
-	$(info #####  $< is newer than $@ ####)
-	@diff -uN $@ $<
-	@false
+	if [ ! -f $@ ]	; then \
+		cp $< $@; \
+	else \
+		echo "#####  $< is newer than $@ ####"; \
+		diff -uN $@ $<; \
+		false; \
+	fi
 
 .vscode/settings.json: .vscode-template/settings.json
 	$(info #####  $< is newer than $@ ####)
