@@ -226,7 +226,7 @@ travis-push-cache-images:
 
 
 # staging ----------------
-travis-build:
+travis-build: travis-pull-cache-images
 	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
 	export DOCKER_IMAGE_TAG=staging-latest; \
 	${MAKE} build
