@@ -1,10 +1,10 @@
 #!/bin/bash
 
 before_install() {
-    if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
+    if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         bash ops/travis/helpers/install_docker_compose;
         bash ops/travis/helpers/show_system_versions;
-    fi    
+    fi
 }
 
 install() {
@@ -16,13 +16,13 @@ before_script() {
 }
 
 script() {
-    if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
+    if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         make build-cache
     fi
 }
 
 after_success() {
-    if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
+    if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         make push-cache
     fi

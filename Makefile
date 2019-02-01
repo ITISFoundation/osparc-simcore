@@ -184,7 +184,9 @@ pull-cache:
 # target: build-cache – Builds service images and tags them as 'cache'
 build-cache: pull-cache
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
+	${DOCKER} tag itisfoundation/webclient:cache services_webclient:build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
+
 
 .PHONY: push-cache
 push-cache:
