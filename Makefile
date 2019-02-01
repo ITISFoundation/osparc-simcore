@@ -52,6 +52,11 @@ VCS_REF:=$(shell git rev-parse --short HEAD)
 VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
 BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+
+PLATFORM_VERSION=3.38
+DOCKER_REGISTRY=masu.speag.com
+#DOCKER_REGISTRY=registry.osparc.io
+
 export VCS_REF
 export VCS_REF_CLIENT
 export BUILD_DATE
@@ -82,38 +87,28 @@ endif
 
 
 ## -------------------------------
-# Framework services build and composition
+# Docker build and composition
 
-.PHONY: build-devel
-# target: build-devel: – Builds images of core services for development
-build-devel: .env pull-cache
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build
-
-.PHONY: rebuild-devel
-# target: rebuild-devel: – As build-devel but w/o cache
-rebuild-devel:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
-
-.PHONY: up-devel
-# target: up-devel: – Start containers of core services in development mode
-up-devel:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml up
-
-up-webclient-devel: up-swarm-devel remove-intermediate-file file-watcher
-	${DOCKER} service rm services_webclient
-	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
-
-rebuild-webclient-devel-solo:
-	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml build --no-cache qx
-
-up-webclient-devel-solo:
-	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
-
-.PHONY: build
-# target: build: – Builds images for production
+.PHONY: build rebuild
+# target: build, rebuild: – Builds all core service images. Use `rebuild` to build w/o cache.
 build: .env pull-cache
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
 
+rebuild:
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
+
+
+.PHONY: build-devel rebuild-devel up-devel
+# target: build-devel, rebuild-devel: – Builds images of core services for development. Use `rebuild` to build w/o cache.
+build-devel: .env pull-cache
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build
+
+rebuild-devel:
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
+
+
+.PHONY: build-client rebuild-client
+# target: build-client, rebuild-client: – Builds only webclient and webserver images. Use `rebuild` to build w/o cache
 build-client: pull-cache
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
@@ -122,33 +117,11 @@ rebuild-client:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webserver
 
-build-dynamic-services:
-ifndef SERVICES_VERSION
-	$(error SERVICES_VERSION variable is undefined)
-endif
-ifndef DOCKER_REGISTRY
-	$(error DOCKER_REGISTRY variable is undefined)
-endif
-	for i in $(DYNAMIC_SERVICE_FOLDERS_LIST); do \
-		cd $$i && ${MAKE} build; \
-	done
 
-push_dynamic_services:
-ifndef SERVICES_VERSION
-	$(error SERVICES_VERSION variable is undefined)
-endif
-ifndef DOCKER_REGISTRY
-	$(error DOCKER_REGISTRY variable is undefined)
-endif
-	for i in $(DYNAMIC_SERVICE_FOLDERS_LIST); do \
-		cd $$i && ${MAKE} push_service_images; \
-	done
-
-rebuild:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
-
-up:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml up
+.PHONY: up up-devel up-swarm up-swarm-devel remove-intermediate-file down down-swarm
+# target: up, up-devel: – init swarm and deploys all core and tool services up [-devel suffix uses container in development mode]
+up: up-swarm
+up-devel: up-swarm-devel
 
 up-swarm:
 	${DOCKER} swarm init
@@ -165,76 +138,97 @@ remove-intermediate-file:
 	$(info    .tmp-compose.yml not removed)
 else
 remove-intermediate-file:
-	rm $(TEMPCOMPOSE).tmp-compose.yml
+	rm $(TEMPCOMPOSE).tmp-compose.yml || true
 endif
 
-ifeq ($(WINDOWS_MODE),ON)
-file-watcher:
-	pip install docker-windows-volume-watcher
-	# unfortunately this is not working properly at the moment
-	# docker-windows-volume-watcher python package will be installed but not executed
-	# you will have to run 'docker-volume-watcher *qx*' in a different process in ./services/web/client/source
-	# docker-volume-watcher &
-else
-file-watcher:
-	true
-endif
-
-down:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml down
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml down
-
+# target: down: – stops `up`
+down: down-swarm
 down-swarm:
 	${DOCKER} swarm leave -f
 
-PLATFORM_VERSION=3.38
-DOCKER_REGISTRY=masu.speag.com
-#DOCKER_REGISTRY=registry.osparc.io
 
-
-push_platform_images:
-	${DOCKER} login ${DOCKER_REGISTRY}
-	for i in $(SERVICES_LIST); do \
-		${DOCKER} tag services_$$i:latest ${DOCKER_REGISTRY}/simcore/workbench/$$i:${PLATFORM_VERSION}; \
-		${DOCKER} push ${DOCKER_REGISTRY}/simcore/workbench/$$i:${PLATFORM_VERSION}; \
+.PHONY: build-dynamic-services push-dynamic-services
+# target: build-dynamic-services: – Builds all dynamic service images (i.e. non-core services)
+build-dynamic-services:
+ifndef SERVICES_VERSION
+	$(error SERVICES_VERSION variable is undefined)
+endif
+ifndef DOCKER_REGISTRY
+	$(error DOCKER_REGISTRY variable is undefined)
+endif
+	for i in $(DYNAMIC_SERVICE_FOLDERS_LIST); do \
+		cd $$i && ${MAKE} build; \
 	done
 
-  setup-check: .env .vscode/settings.json
+# target: push-dynamic-services: – Builds images from dynamic services (i.e. non-core services) into registry
+push-dynamic-services:
+ifndef SERVICES_VERSION
+	$(error SERVICES_VERSION variable is undefined)
+endif
+ifndef DOCKER_REGISTRY
+	$(error DOCKER_REGISTRY variable is undefined)
+endif
+	for i in $(DYNAMIC_SERVICE_FOLDERS_LIST); do \
+		cd $$i && ${MAKE} push_service_images; \
+	done
 
-push_client_image:
-	${DOCKER} login ${DOCKER_REGISTRY}
-	${DOCKER} tag services_webserver:latest ${DOCKER_REGISTRY}/simcore/workbench/webserver:${PLATFORM_VERSION}
-	${DOCKER} push ${DOCKER_REGISTRY}./simcore/workbench/webserver:${PLATFORM_VERSION}
 
 ## -------------------------------
-# Virtual Environments
+# Cache
 
-.env: .env-devel
-	# first check if file exists, copies it
-	if [ ! -f $@ ]	; then \
-		echo "##### $@ does not exist, copying $< ############"; \
-		cp $< $@; \
-	else \
-		echo "#####  $< is newer than $@ ####"; \
-		diff -uN $@ $<; \
-		false; \
-	fi
+.PHONY: pull-cache
+pull-cache:
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull --ignore-pull-failures
 
-.vscode/settings.json: .vscode-template/settings.json
-	$(info #####  $< is newer than $@ ####)
-	@diff -uN $@ $<
-	@false
+.PHONY: build-cache
+# target: build-cache – Builds service images and tags them as 'cache'
+build-cache: pull-cache
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
-.venv:
-	python3 -m venv .venv
-	.venv/bin/pip3 install --upgrade pip wheel setuptools
-	.venv/bin/pip3 install pylint autopep8 virtualenv
-	@echo "To activate the venv, execute 'source .venv/bin/activate' or '.venv/bin/activate.bat' (WIN)"
+.PHONY: push-cache
+push-cache:
+# target: push-cache – Pushes service images tagged as 'cache' into the registry
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
 
-.venv27: .venv
-	@python2 --version
-	.venv/bin/virtualenv --python=python2 .venv27
-	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
+
+
+## -------------------------------
+# Staging
+
+
+.PHONY: build-staging push-staging pull-staging create-staging-stack-file
+# target: build-staging – Builds service images and tags them as 'staging'
+build-staging:
+	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
+	export DOCKER_IMAGE_TAG=staging-latest; \
+	${MAKE} build
+
+TRAVIS_PLATFORM_STAGE_VERSION := staging-$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
+# target: push-staging – Tags service images with version and 'latest'; and pushes them into registry
+push-staging:
+	export DOCKER_IMAGE_PREFIX=itisfoundation/ \
+	export DOCKER_IMAGE_TAG=staging-latest \
+	${DOCKER_COMPOSE} -f services/docker-compose.yml push ${SERVICES_LIST}
+	for i in $(SERVICES_LIST); do \
+		${DOCKER} tag services_$$i:staging-latest itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
+		${DOCKER} push itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
+	done
+
+# target: pull-staging – pulls images tagged as 'staging' from registry
+pull-staging:
+	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
+	export DOCKER_IMAGE_TAG=staging-latest; \
+	${DOCKER_COMPOSE} -f services/docker-compose.yml pull
+
+# target: create-staging-stack-file – use as 'make creat-staging-stack-file output_file=stack.yaml'
+create-staging-stack-file:
+	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
+	export DOCKER_IMAGE_TAG=staging-latest; \
+	${DOCKER_COMPOSE} -f services/docker-compose.yml config > $(output_file)
+
+## -------------------------------
+# Tools
 
 .PHONY: info
 # target: info – Displays some parameters of makefile environments
@@ -253,57 +247,47 @@ pylint:
 
 
 .PHONY: new-service
-# target: new-service – Bakes a new service from cookiecutter-simcore-pyservice and creates it under services/
+# target: new-service – Bakes a new project from cookiecutter-simcore-pyservice and drops it under services/
 new-service:
 	.venv/bin/cookiecutter gh:itisfoundation/cookiecutter-simcore-pyservice --output-dir $(CURDIR)/services
 
-# cache ------------------------------------------------------------------------------------
-.PHONY: pull-cache
-pull-cache:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull --ignore-pull-failures
-
-.PHONY: build-cache	
-build-cache: pull-cache	
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
-
-.PHONY: push-cache	
-push-cache:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
 
 
-# staging ----------------
-.PHONY: build-staging
-build-staging:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=staging-latest; \
-	${MAKE} build
+## -------------------------------
+# Virtual Environments
 
-TRAVIS_PLATFORM_STAGE_VERSION := staging-$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
-.PHONY: push-staging
-push-staging:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/ \
-	export DOCKER_IMAGE_TAG=staging-latest \
-	# pushes the staging-latest images
-	${DOCKER_COMPOSE} -f services/docker-compose.yml push ${SERVICES_LIST}
-	# pushes the staging-versioned images
-	for i in $(SERVICES_LIST); do \
-		${DOCKER} tag services_$$i:staging-latest itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
-		${DOCKER} push itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
-	done
+.env: .env-devel
+	# first check if file exists, copies it
+	@if [ ! -f $@ ]	; then \
+		echo "##### $@ does not exist, copying $< ############"; \
+		cp $< $@; \
+	else \
+		echo "#####  $< is newer than $@ ####"; \
+		diff -uN $@ $<; \
+		false; \
+	fi
 
-.PHONY: pull-staging	
-pull-staging:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=staging-latest; \
-	${DOCKER_COMPOSE} -f services/docker-compose.yml pull
+.vscode/settings.json: .vscode-template/settings.json
+	$(info #####  $< is newer than $@ ####)
+	@diff -uN $@ $<
+	@false
 
-.PHONY: create-staging-stack-file
-create-staging-stack-file:
-	# Usage: make creat-staging-stack-file output_file=stack.yaml
-	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
-	export DOCKER_IMAGE_TAG=staging-latest; \
-	${DOCKER_COMPOSE} -f services/docker-compose.yml config > $(output_file)
+PHONY: setup-check
+# target: setup-check – Checks whether setup is in sync with templates (e.g. vscode settings or .env file)
+setup-check: .env .vscode/settings.json
+
+.venv:
+# target: .venv – Creates a python virtual environment with dev tools (pip, pylint, ...)
+	python3 -m venv .venv
+	.venv/bin/pip3 install --upgrade pip wheel setuptools
+	.venv/bin/pip3 install pylint autopep8 virtualenv
+	@echo "To activate the venv, execute 'source .venv/bin/activate' or '.venv/bin/activate.bat' (WIN)"
+
+.venv27: .venv
+# target: .venv27 – Creates a python2.7 virtual environment with dev tools
+	@python2 --version
+	.venv/bin/virtualenv --python=python2 .venv27
+	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
 
 
 ## -------------------------------
@@ -311,13 +295,14 @@ create-staging-stack-file:
 
 .PHONY: clean
 # target: clean – Cleans all unversioned files in project
-clean:
+clean: remove-intermediate-file
 	@git clean -dxf -e .vscode/
 
 
 .PHONY: help
 # target: help – Display all callable targets
 help:
+	@echo "Make targets in osparc-simcore:"
 	@echo
 	@egrep "^\s*#\s*target\s*:\s*" [Mm]akefile \
 	| $(SED) -r "s/^\s*#\s*target\s*:\s*//g"
