@@ -2,6 +2,7 @@
 
 # TODO: add flavours by combinging docker-compose files. Namely development, test and production.
 VERSION := $(shell uname -a)
+
 # SAN this is a hack so that docker-compose works in the linux virtual environment under Windows
 WINDOWS_MODE=OFF
 ifneq (,$(findstring Microsoft,$(VERSION)))
@@ -38,6 +39,7 @@ export HOST_GID=1000
 # TODO: Add a meaningfull call to retrieve the local docker group ID and the user ID in linux.
 endif
 
+
 PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*-sdk/python*" -not -path "*generated_code*" -not -path "*datcore.py" -not -path "*web/server*"))
 
 TEMPCOMPOSE := $(shell mktemp)
@@ -46,33 +48,54 @@ SERVICES_LIST := apihub director sidecar storage webserver
 CACHED_SERVICES_LIST := ${SERVICES_LIST} webclient
 DYNAMIC_SERVICE_FOLDERS_LIST := services/dy-jupyter services/dy-2Dgraph/use-cases services/dy-3dvis services/dy-modeling
 
+VCS_REF:=$(shell git rev-parse --short HEAD)
+VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
+BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+export VCS_REF
+export VCS_REF_CLIENT
+export BUILD_DATE
 export SERVICES_VERSION=2.8.0
 export DOCKER_REGISTRY=masu.speag.com
 
-export VCS_REF:=$(shell git rev-parse --short HEAD)
-export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
-export BUILD_DATE :=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-info:
-	@echo '+ vcs ref '
-	@echo '  - all       : ${VCS_REF}'
-	@echo '  - web/client: ${VCS_REF_CLIENT}'
-	@echo '+ date        : ${BUILD_DATE}'
+## Tools
+tools =
 
-all:
-	@echo 'run `make build-devel` to build your dev environment'
-	@echo 'run `make up-devel` to start your dev environment.'
-	@echo 'see Makefile for further targets'
+ifeq ($(shell uname -s),Darwin)
+	SED = gsed
+else
+	SED = sed
+endif
 
-clean:
-	@git clean -dxf -e .vscode/
+ifeq ($(shell which ${SED}),)
+	tools += $(SED)
+endif
 
-build-devel: pull-cache
+
+## ------------------------------------------------------------------------------------------------------
+.PHONY: all
+all: help
+ifdef tools
+	$(error "Can't find tools:${tools}")
+endif
+
+
+## -------------------------------
+# Framework services build and composition
+
+.PHONY: build-devel
+# target: build-devel: – Builds images of core services for development
+build-devel: .env pull-cache
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build
 
+.PHONY: rebuild-devel
+# target: rebuild-devel: – As build-devel but w/o cache
 rebuild-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
 
+.PHONY: up-devel
+# target: up-devel: – Start containers of core services in development mode
 up-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml up
 
@@ -86,6 +109,8 @@ rebuild-webclient-devel-solo:
 up-webclient-devel-solo:
 	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
 
+.PHONY: build
+# target: build: – Builds images for production
 build: .env pull-cache
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
 
@@ -130,7 +155,7 @@ up-swarm:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
 
-up-swarm-devel: 
+up-swarm-devel:
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
@@ -162,11 +187,6 @@ down:
 down-swarm:
 	${DOCKER} swarm leave -f
 
-pylint:
-	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
-	/bin/bash -c "pylint --rcfile=.pylintrc $(PY_FILES)"
-
-
 PLATFORM_VERSION=3.38
 DOCKER_REGISTRY=masu.speag.com
 #DOCKER_REGISTRY=registry.osparc.io
@@ -186,8 +206,13 @@ push_client_image:
 	${DOCKER} tag services_webserver:latest ${DOCKER_REGISTRY}/simcore/workbench/webserver:${PLATFORM_VERSION}
 	${DOCKER} push ${DOCKER_REGISTRY}./simcore/workbench/webserver:${PLATFORM_VERSION}
 
+## -------------------------------
+# Virtual Environments
+
 .env: .env-devel
+	# first check if file exists, copies it
 	if [ ! -f $@ ]	; then \
+		echo "##### $@ does not exist, copying $< ############"; \
 		cp $< $@; \
 	else \
 		echo "#####  $< is newer than $@ ####"; \
@@ -211,26 +236,51 @@ push_client_image:
 	.venv/bin/virtualenv --python=python2 .venv27
 	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
 
+.PHONY: info
+# target: info – Displays some parameters of makefile environments
+info:
+	@echo '+ vcs ref '
+	@echo '  - all       : ${VCS_REF}'
+	@echo '  - web/client: ${VCS_REF_CLIENT}'
+	@echo '+ date        : ${BUILD_DATE}'
 
-# ----------TRAVIS ------------------------------------------------------------------------------------
+
+.PHONY: pylint
+# target: pylint – Runs python linter framework's wide
+pylint:
+	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
+	/bin/bash -c "pylint --rcfile=.pylintrc $(PY_FILES)"
+
+
+.PHONY: new-service
+# target: new-service – Bakes a new service from cookiecutter-simcore-pyservice and creates it under services/
+new-service:
+	.venv/bin/cookiecutter gh:itisfoundation/cookiecutter-simcore-pyservice --output-dir $(CURDIR)/services
+
+# cache ------------------------------------------------------------------------------------
+.PHONY: pull-cache
 pull-cache:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull --ignore-pull-failures
-	
+
+.PHONY: build-cache	
 build-cache: pull-cache	
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
+.PHONY: push-cache	
 push-cache:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
 
 
 # staging ----------------
+.PHONY: build-staging
 build-staging:
 	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
 	export DOCKER_IMAGE_TAG=staging-latest; \
 	${MAKE} build
 
-TRAVIS_PLATFORM_STAGE_VERSION=staging-$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
+TRAVIS_PLATFORM_STAGE_VERSION := staging-$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
+.PHONY: push-staging
 push-staging:
 	export DOCKER_IMAGE_PREFIX=itisfoundation/ \
 	export DOCKER_IMAGE_TAG=staging-latest \
@@ -241,16 +291,34 @@ push-staging:
 		${DOCKER} tag services_$$i:staging-latest itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
 		${DOCKER} push itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
 	done
-	
+
+.PHONY: pull-staging	
 pull-staging:
 	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
 	export DOCKER_IMAGE_TAG=staging-latest; \
 	${DOCKER_COMPOSE} -f services/docker-compose.yml pull
 
+.PHONY: create-staging-stack-file
 create-staging-stack-file:
 	# Usage: make creat-staging-stack-file output_file=stack.yaml
 	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
 	export DOCKER_IMAGE_TAG=staging-latest; \
 	${DOCKER_COMPOSE} -f services/docker-compose.yml config > $(output_file)
 
-.PHONY: all clean build-devel rebuild-devel up-devel build up down test after_test push_platform_images file-watcher up-webclient-devel
+
+## -------------------------------
+# Auxiliary targets.
+
+.PHONY: clean
+# target: clean – Cleans all unversioned files in project
+clean:
+	@git clean -dxf -e .vscode/
+
+
+.PHONY: help
+# target: help – Display all callable targets
+help:
+	@echo
+	@egrep "^\s*#\s*target\s*:\s*" [Mm]akefile \
+	| $(SED) -r "s/^\s*#\s*target\s*:\s*//g"
+	@echo
