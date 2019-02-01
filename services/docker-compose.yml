@@ -8,13 +8,13 @@ services:
       cache_from:
         - itisfoundation/apihub:cache
         - itisfoundation/apihub:staging-latest
-        - services_apihub:latest        
+        - services_apihub:latest
       target: production
-      labels: 
+      labels:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
-        org.label-schema.vcs-ref: "${VCS_REF}"        
+        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '8043:8043'
     deploy:
@@ -26,19 +26,19 @@ services:
     image: ${DOCKER_IMAGE_PREFIX}director:${DOCKER_IMAGE_TAG}
     build:
       context: ../
-      dockerfile: services/director/Dockerfile      
+      dockerfile: services/director/Dockerfile
       cache_from:
         - itisfoundation/director:cache
         - itisfoundation/director:staging-latest
         - services_director:latest
       target: production
       args:
-        - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}      
-      labels: 
+        - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
+      labels:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
-        org.label-schema.vcs-ref: "${VCS_REF}"    
+        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '8001:8001'
     environment:
@@ -78,10 +78,10 @@ services:
       context: ./web/client/
       dockerfile: Dockerfile
       cache_from:
-        - itisfoundation/webclient:cache        
+        - itisfoundation/webclient:cache
         - services_webclient:latest
       target: build
-      labels: 
+      labels:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
@@ -100,7 +100,7 @@ services:
         - itisfoundation/webserver:staging-latest
         - services_webserver:latest
       target: production
-      labels: 
+      labels:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
@@ -159,7 +159,7 @@ services:
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
-      labels: 
+      labels:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
@@ -210,7 +210,7 @@ services:
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
-      labels: 
+      labels:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
@@ -252,7 +252,7 @@ services:
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
     ports:
       - "5672:5672"
-      - "15672:15672"      
+      - "15672:15672"
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10
