@@ -71,7 +71,7 @@ all:
 clean:
 	@git clean -dxf -e .vscode/
 
-build-devel:
+build-devel: pull-cache
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build
 
 rebuild-devel:
@@ -91,10 +91,10 @@ up-webclient-devel-solo:
 	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
 
 
-build:
+build: pull-cache
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build
 
-build-client:
+build-client: pull-cache
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
 
@@ -214,25 +214,25 @@ push_client_image:
 
 
 # ----------TRAVIS ------------------------------------------------------------------------------------
-travis-pull-cache-images:
+pull-cache:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml pull --ignore-pull-failures
 	
-travis-build-cache-images: travis-pull-cache-images	
+build-cache: pull-cache	
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build --parallel apihub director sidecar storage webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml build webserver
 
-travis-push-cache-images:
+push-cache:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.cache.yml push ${CACHED_SERVICES_LIST}
 
 
 # staging ----------------
-travis-build: travis-pull-cache-images
+build-staging:
 	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
 	export DOCKER_IMAGE_TAG=staging-latest; \
 	${MAKE} build
 
 TRAVIS_PLATFORM_STAGE_VERSION=staging-$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
-travis-push-staging-images:
+push-staging:
 	export DOCKER_IMAGE_PREFIX=itisfoundation/ \
 	export DOCKER_IMAGE_TAG=staging-latest \
 	# pushes the staging-latest images
@@ -243,12 +243,13 @@ travis-push-staging-images:
 		${DOCKER} push itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
 	done
 	
-pull-staging-images:
+pull-staging:
 	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
 	export DOCKER_IMAGE_TAG=staging-latest; \
 	${DOCKER_COMPOSE} -f services/docker-compose.yml pull
 
 create-staging-stack-file:
+	# Usage: make creat-staging-stack-file output_file=stack.yaml
 	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
 	export DOCKER_IMAGE_TAG=staging-latest; \
 	${DOCKER_COMPOSE} -f services/docker-compose.yml config > $(output_file)
