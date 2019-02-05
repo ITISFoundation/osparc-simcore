@@ -25,20 +25,25 @@ MAX_WAIT_TIME=240
 
 logger = logging.getLogger(__name__)
 
-@pytest.fixture(scope="session")
-def here() -> Path:
+def _here() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+@pytest.fixture(scope="session")
+def here() -> Path:
+    return _here()
 
-@pytest.fixture(scope='session')
-def osparc_simcore_root_dir(here) -> Path:
+def _osparc_simcore_root_dir(here) -> Path:
     root_dir = here.parent.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
     assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
     return root_dir
 
-@pytest.fixture("session")
-def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
+@pytest.fixture(scope='session')
+def osparc_simcore_root_dir(here) -> Path:
+    return _osparc_simcore_root_dir(here)
+
+
+def _services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose.yml"
     assert docker_compose_path.exists()
 
@@ -46,6 +51,11 @@ def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     with docker_compose_path.open() as f:
         content = yaml.safe_load(f)
     return content
+
+@pytest.fixture("session")
+def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
+    return _services_docker_compose(osparc_simcore_root_dir)
+
 
 @pytest.fixture("session")
 def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
@@ -57,13 +67,13 @@ def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
         content = yaml.safe_load(f)
     return content
 
-def list_core_services():
+def _list_core_services():
     exclude = ["webclient"]
-    content = services_docker_compose(osparc_simcore_root_dir(here()))
+    content = _services_docker_compose(_osparc_simcore_root_dir(_here()))
     return [name for name in content["services"].keys() if name not in exclude]
 
 @pytest.fixture(scope="session",
-                params=list_core_services())
+                params=_list_core_services())
 def core_service_name(request, services_docker_compose):
     return str(request.param)
 
