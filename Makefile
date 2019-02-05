@@ -197,7 +197,7 @@ push-cache:
 
 ## -------------------------------
 # Staging
-
+# TODO: PC->SAN: see ops/travis/system-testing/build_and_run. Could move images FREFIX and TAG there
 
 .PHONY: build-staging push-staging pull-staging create-staging-stack-file
 # target: build-staging – Builds service images and tags them as 'staging'
