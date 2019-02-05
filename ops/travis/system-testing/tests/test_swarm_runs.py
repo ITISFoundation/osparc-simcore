@@ -25,15 +25,9 @@ MAX_WAIT_TIME=240
 
 logger = logging.getLogger(__name__)
 
-def get_current_dir() -> Path:
-    # DEV NOTE: Avoids Warning: RemovedInPytest4Warning: Fixture "here" called directly.
-    # Fixtures are not meant to be called directly, are created automatically when test functions request them as parameters.
-    #  See https://docs.pytest.org/en/latest/fixture.html for more information.
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 @pytest.fixture(scope="session")
 def here() -> Path:
-    return get_current_dir()
+    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture(scope='session')
@@ -65,7 +59,7 @@ def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
 
 def list_core_services():
     exclude = ["webclient"]
-    content = services_docker_compose(osparc_simcore_root_dir(get_current_dir()))
+    content = services_docker_compose(osparc_simcore_root_dir(here()))
     return [name for name in content["services"].keys() if name not in exclude]
 
 @pytest.fixture(scope="session",
@@ -95,9 +89,12 @@ def get_failed_tasks_logs(service, docker_client):
     for t in service.tasks():
         if t['Status']['State'].upper() in failed_states:
             cid = t['Status']['ContainerStatus']['ContainerID']
-            container = docker_client.containers.get(cid)
             failed_logs += "{2} {0} - {1} BEGIN {2}\n".format(service.name, t['ID'], "="*10)
-            failed_logs += container.logs().decode('utf-8')
+            if cid:
+                container = docker_client.containers.get(cid)
+                failed_logs += container.logs().decode('utf-8')
+            else:
+                failed_logs += "  log unavailable. container does not exists\n"
             failed_logs += "{2} {0} - {1} END {2}\n".format(service.name, t['ID'], "="*10)
 
     return failed_logs
