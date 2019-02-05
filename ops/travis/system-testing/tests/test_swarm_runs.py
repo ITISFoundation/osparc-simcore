@@ -25,9 +25,15 @@ MAX_WAIT_TIME=240
 
 logger = logging.getLogger(__name__)
 
+def get_current_dir() -> Path:
+    # DEV NOTE: Avoids Warning: RemovedInPytest4Warning: Fixture "here" called directly.
+    # Fixtures are not meant to be called directly, are created automatically when test functions request them as parameters.
+    #  See https://docs.pytest.org/en/latest/fixture.html for more information.
+    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
 @pytest.fixture(scope="session")
 def here() -> Path:
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+    return get_current_dir()
 
 
 @pytest.fixture(scope='session')
@@ -59,7 +65,7 @@ def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
 
 def list_core_services():
     exclude = ["webclient"]
-    content = services_docker_compose(osparc_simcore_root_dir(here()))
+    content = services_docker_compose(osparc_simcore_root_dir(get_current_dir()))
     return [name for name in content["services"].keys() if name not in exclude]
 
 @pytest.fixture(scope="session",

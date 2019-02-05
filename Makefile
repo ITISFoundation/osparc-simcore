@@ -209,8 +209,8 @@ build-staging:
 TRAVIS_PLATFORM_STAGE_VERSION := staging-$(shell date +"%Y-%m-%d").${TRAVIS_BUILD_NUMBER}.$(shell git rev-parse HEAD)
 # target: push-staging – Tags service images with version and 'latest'; and pushes them into registry
 push-staging:
-	export DOCKER_IMAGE_PREFIX=itisfoundation/ \
-	export DOCKER_IMAGE_TAG=staging-latest \
+	export DOCKER_IMAGE_PREFIX=itisfoundation/; \
+	export DOCKER_IMAGE_TAG=staging-latest; \
 	${DOCKER_COMPOSE} -f services/docker-compose.yml push ${SERVICES_LIST}
 	for i in $(SERVICES_LIST); do \
 		${DOCKER} tag services_$$i:staging-latest itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
