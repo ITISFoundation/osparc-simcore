@@ -19,26 +19,31 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
-WAIT_TIME_SECS = 10
-RETRY_COUNT = 3
+WAIT_TIME_SECS = 20
+RETRY_COUNT = 7
 MAX_WAIT_TIME=240
 
 logger = logging.getLogger(__name__)
 
-@pytest.fixture(scope="session")
-def here() -> Path:
+def _here() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+@pytest.fixture(scope="session")
+def here() -> Path:
+    return _here()
 
-@pytest.fixture(scope='session')
-def osparc_simcore_root_dir(here) -> Path:
+def _osparc_simcore_root_dir(here) -> Path:
     root_dir = here.parent.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
     assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
     return root_dir
 
-@pytest.fixture("session")
-def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
+@pytest.fixture(scope='session')
+def osparc_simcore_root_dir(here) -> Path:
+    return _osparc_simcore_root_dir(here)
+
+
+def _services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose.yml"
     assert docker_compose_path.exists()
 
@@ -46,6 +51,11 @@ def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     with docker_compose_path.open() as f:
         content = yaml.safe_load(f)
     return content
+
+@pytest.fixture("session")
+def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
+    return _services_docker_compose(osparc_simcore_root_dir)
+
 
 @pytest.fixture("session")
 def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
@@ -57,13 +67,13 @@ def tools_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
         content = yaml.safe_load(f)
     return content
 
-def list_core_services():
+def _list_core_services():
     exclude = ["webclient"]
-    content = services_docker_compose(osparc_simcore_root_dir(here()))
+    content = _services_docker_compose(_osparc_simcore_root_dir(_here()))
     return [name for name in content["services"].keys() if name not in exclude]
 
 @pytest.fixture(scope="session",
-                params=list_core_services())
+                params=_list_core_services())
 def core_service_name(request, services_docker_compose):
     return str(request.param)
 
@@ -89,9 +99,12 @@ def get_failed_tasks_logs(service, docker_client):
     for t in service.tasks():
         if t['Status']['State'].upper() in failed_states:
             cid = t['Status']['ContainerStatus']['ContainerID']
-            container = docker_client.containers.get(cid)
             failed_logs += "{2} {0} - {1} BEGIN {2}\n".format(service.name, t['ID'], "="*10)
-            failed_logs += container.logs().decode('utf-8')
+            if cid:
+                container = docker_client.containers.get(cid)
+                failed_logs += container.logs().decode('utf-8')
+            else:
+                failed_logs += "  log unavailable. container does not exists\n"
             failed_logs += "{2} {0} - {1} END {2}\n".format(service.name, t['ID'], "="*10)
 
     return failed_logs
@@ -109,9 +122,10 @@ def test_all_services_up(docker_client, services_docker_compose, tools_docker_co
     # TODO: check names instead
 
 
-async def test_core_service_running(core_service_name, docker_client):
+async def test_core_service_running(core_service_name, docker_client, loop):
     """
         NOTE: Assumes `make up-swarm` executed
+        NOTE: loop fixture makes this test async
     """
     running_services = docker_client.services.list()
 
@@ -141,7 +155,7 @@ async def test_core_service_running(core_service_name, docker_client):
     for n in range(RETRY_COUNT):
         task = running_service.tasks()[0]
         if task['Status']['State'].upper() in pre_states:
-            print("Waiting ... %s" % get_tasks_summary(tasks) )
+            print("Waiting [{}/{}] ...\n{}".format(n, RETRY_COUNT, get_tasks_summary(tasks)))
             await asyncio.sleep(WAIT_TIME_SECS)
         else:
             break

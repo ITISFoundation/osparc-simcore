@@ -1,6 +1,10 @@
 #!/bin/bash
 
-before_install() {    
+export DOCKER_IMAGE_PREFIX=itisfoundation/
+export DOCKER_IMAGE_TAG=staging-latest
+
+
+before_install() {
     bash ops/travis/helpers/install_docker_compose
     bash ops/travis/helpers/show_system_versions
 }
@@ -9,13 +13,14 @@ install() {
     pip3 install --upgrade pip wheel setuptools && pip3 --version
     pip3 install -r ops/travis/system-testing/requirements.txt
     cp .env-devel .env
-    make build-staging
+    #make build-staging
+    make build
 }
 
 before_script() {
     pip freeze
     docker images
-    make up-swarm
+    make up
 }
 
 script() {
@@ -24,13 +29,11 @@ script() {
 }
 
 after_success() {
-    make down-swarm
+    make down
 }
 
 after_failure() {
-    # TEMP
-    docker service logs services_webserver
-    make down-swarm
+    make down
 }
 
 # Check if the function exists (bash specific)
