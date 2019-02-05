@@ -19,8 +19,8 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
-WAIT_TIME_SECS = 10
-RETRY_COUNT = 3
+WAIT_TIME_SECS = 20
+RETRY_COUNT = 7
 MAX_WAIT_TIME=240
 
 logger = logging.getLogger(__name__)
@@ -115,9 +115,10 @@ def test_all_services_up(docker_client, services_docker_compose, tools_docker_co
     # TODO: check names instead
 
 
-async def test_core_service_running(core_service_name, docker_client):
+async def test_core_service_running(core_service_name, docker_client, loop):
     """
         NOTE: Assumes `make up-swarm` executed
+        NOTE: loop fixture makes this test async
     """
     running_services = docker_client.services.list()
 
@@ -147,7 +148,7 @@ async def test_core_service_running(core_service_name, docker_client):
     for n in range(RETRY_COUNT):
         task = running_service.tasks()[0]
         if task['Status']['State'].upper() in pre_states:
-            print("Waiting ... %s" % get_tasks_summary(tasks) )
+            print("Waiting [{}/{}] ...\n{}".format(n, RETRY_COUNT, get_tasks_summary(tasks)))
             await asyncio.sleep(WAIT_TIME_SECS)
         else:
             break
