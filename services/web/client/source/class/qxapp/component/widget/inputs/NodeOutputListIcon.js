@@ -1,10 +1,27 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeModel, port, portKey) {
+  construct: function(node, port, portKey) {
     this.base();
 
-    this.setNodeModel(nodeModel);
+    this.setNode(node);
 
     let list = this.__list = new qx.ui.list.List().set({
       labelPath: "label",
@@ -19,7 +36,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
         c.bindProperty("key", "model", null, item, id);
         c.bindProperty("thumbnail", "icon", null, item, id);
         c.bindProperty("label", "label", {
-          converter: function(data, model, source, target) {
+          converter: function(data) {
             // return "<b>" + data + "</b>";
             return data;
           }
@@ -36,15 +53,15 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
       }
     });
 
-    const itemList = qxapp.data.Store.getInstance().getItemList(nodeModel.getNodeId(), portKey);
+    const itemList = qxapp.data.Store.getInstance().getItemList(node.getKey(), portKey);
     const listModel = qxapp.data.Converters.fromAPIListToVirtualListModel(itemList);
     let model = qx.data.marshal.Json.createModel(listModel, true);
     list.setModel(model);
   },
 
   properties: {
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel",
+    node: {
+      check: "qxapp.data.model.Node",
       nullable: false
     }
   },
@@ -59,10 +76,10 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
         e.addAction("copy");
 
         // HACK
-        if (this.getNodeModel().getKey() === "simcore/services/demodec/dynamic/itis/s4l/neuroman") {
+        if (this.getNode().getKey() === "simcore/services/demodec/dynamic/itis/s4l/neuroman") {
           // Register supported types
           e.addType("osparc-port-link");
-          item.nodeId = this.getNodeModel().getNodeId();
+          item.nodeId = this.getNode().getNodeId();
           item.portId = item.getLabel();
         } else {
           // Register supported types

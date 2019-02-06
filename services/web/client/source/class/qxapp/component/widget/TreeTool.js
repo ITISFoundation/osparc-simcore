@@ -1,12 +1,29 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 qx.Class.define("qxapp.component.widget.TreeTool", {
   extend: qx.ui.core.Widget,
 
-  construct: function(projectName, workbenchModel) {
+  construct: function(projectName, workbench) {
     this.base(arguments);
 
     this.set({
       projectName: projectName,
-      workbenchModel: workbenchModel
+      workbench: workbench
     });
 
     this._setLayout(new qx.ui.layout.VBox());
@@ -28,14 +45,14 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
   },
 
   events: {
-    "NodeDoubleClicked": "qx.event.type.Data",
+    "nodeDoubleClicked": "qx.event.type.Data",
     "addNode": "qx.event.type.Event",
     "removeNode": "qx.event.type.Data"
   },
 
   properties: {
-    workbenchModel: {
-      check: "qxapp.data.model.WorkbenchModel",
+    workbench: {
+      check: "qxapp.data.model.Workbench",
       nullable: false
     },
 
@@ -106,14 +123,14 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
         let currentSelection = selection.toArray();
         if (currentSelection.length > 0) {
           let selectedRow = currentSelection[0];
-          this.fireDataEvent("NodeDoubleClicked", selectedRow.getNodeId());
+          this.fireDataEvent("nodeDoubleClicked", selectedRow.getNodeId());
         }
       }, this);
       return tree;
     },
 
     populateTree: function() {
-      const topLevelNodes = this.getWorkbenchModel().getNodeModels();
+      const topLevelNodes = this.getWorkbench().getNodes();
       let data = {
         label: this.getProjectName(),
         children: this.__convertModel(topLevelNodes),
@@ -201,12 +218,12 @@ qx.Class.define("qxapp.component.widget.TreeTool", {
       }
 
       let treeItemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
-      treeItemRenamer.addListener("LabelChanged", e => {
+      treeItemRenamer.addListener("labelChanged", e => {
         const data = e.getData();
         const newLabel = data.newLabel;
         const nodeId = selectedItem.getNodeId();
-        let nodeModel = this.getWorkbenchModel().getNodeModel(nodeId);
-        nodeModel.setLabel(newLabel);
+        let node = this.getWorkbench().getNode(nodeId);
+        node.setLabel(newLabel);
       }, this);
       const bounds = this.getLayoutParent().getBounds();
       treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);

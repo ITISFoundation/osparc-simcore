@@ -66,12 +66,12 @@ qx.Class.define("qxapp.component.form.Auto", {
   /**
      * @param structure {Array} form structure
      */
-  construct : function(content, nodeModel) {
-    // nodeModel is necessary for creating links
-    if (nodeModel) {
-      this.setNodeModel(nodeModel);
+  construct : function(content, node) {
+    // node is necessary for creating links
+    if (node) {
+      this.setNode(node);
     } else {
-      this.setNodeModel(null);
+      this.setNode(null);
     }
 
     this.base(arguments);
@@ -94,8 +94,8 @@ qx.Class.define("qxapp.component.form.Auto", {
   },
 
   properties: {
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel",
+    node: {
+      check: "qxapp.data.model.Node",
       nullable: true
     }
   },
@@ -389,7 +389,6 @@ qx.Class.define("qxapp.component.form.Auto", {
       if (s.defaultValue) {
         s.set.value = [s.defaultValue];
       }
-      // console.log(cfg.structure);
       let sbModel = qx.data.marshal.Json.createModel(cfg.structure);
       controller.setModel(sbModel);
     },
@@ -545,8 +544,8 @@ qx.Class.define("qxapp.component.form.Auto", {
         output: fromPortId
       };
 
-      const workbenchModel = this.getNodeModel().getWorkbenchModel();
-      const fromNode = workbenchModel.getNodeModel(fromNodeId);
+      const workbench = this.getNode().getWorkbench();
+      const fromNode = workbench.getNode(fromNodeId);
       const fromNodeLabel = fromNode.getLabel();
       const port = fromNode.getOutput(fromPortId);
       let fromPortLabel = port ? port.label : null;

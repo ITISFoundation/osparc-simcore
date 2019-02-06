@@ -7,6 +7,7 @@ import enum
 from datetime import datetime
 
 import sqlalchemy as sa
+from simcore_sdk.models import metadata
 
 # ENUM TYPES ----------------------------------------------------------------
 
@@ -32,7 +33,8 @@ class UserRole(enum.IntEnum):
     """
     ANONYMOUS = 0
     USER = 1
-    MODERATOR = 2
+    TESTER = 2
+    MODERATOR = 10
     ADMIN = 100
 
 
@@ -47,8 +49,6 @@ class ConfirmationAction(enum.Enum):
 #  We use a classical Mapping w/o using a Declarative system.
 #
 # See https://docs.sqlalchemy.org/en/latest/orm/mapping_styles.html#classical-mappings
-
-metadata = sa.MetaData()
 
 users = sa.Table("users", metadata,
     sa.Column("id", sa.BigInteger, nullable=False),

@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from aiohttp import web
 from yarl import URL
@@ -9,19 +8,21 @@ from servicelib.rest_utils import extract_and_validate
 
 from ..login.decorators import login_required
 from .config import get_client_session, get_config
+from .registry import get_registry
+ANONYMOUS_USER = -1
 
 log = logging.getLogger(__name__)
 
 
-async def _request_director(request: web.Request, method: Optional[str] = None) -> web.Response:
-    params, query, body = await extract_and_validate(request)
-    method = method or request.method
-
+def _resolve_url(request: web.Request) -> URL:
     cfg = get_config(request.app)
 
     # director service API endpoint
     # TODO: service API endpoint could be deduced and checked upon setup (e.g. health check on startup)
-    endpoint = URL.build(scheme='http', host=cfg['host'], port=cfg['port']).with_path(cfg["version"])
+    endpoint = URL.build(
+        scheme='http',
+        host=cfg['host'],
+        port=cfg['port']).with_path(cfg["version"])
 
     # replace raw path, to keep the quotes and
     # strip webserver API version number from basepath
@@ -29,39 +30,141 @@ async def _request_director(request: web.Request, method: Optional[str] = None) 
     #    ('services', '')
     tail = "/".join(request.url.raw_parts[2:])
 
-    # add the user id
-    userid = request[RQT_USERID_KEY]
-    query["user_id"] = userid
-    url = (endpoint / tail).with_query(query)
+    url = (endpoint / tail)
+    return url
 
-    # forward the call
-    session = get_client_session(request.app)
-    async with session.request(str(method).upper(), url, ssl=False, params=params, data=body) as resp:
-        payload = await resp.json()
-        return payload
+# HANDLERS -------------------------------------------------------------------
 
-@login_required
-async def running_interactive_services_post(request: web.Request) -> web.Response:
-    payload = await _request_director(request)
-    # if payload.status == 200:
-    #     # TODO: add the service to the list of service for this user
-    #     pass
-    return payload
-
-@login_required
-async def running_interactive_services_get(request: web.Request) -> web.Response:
-    payload = await _request_director(request)
-    return payload
-
-@login_required
-async def running_interactive_services_delete(request: web.Request) -> web.Response:
-    payload = await _request_director(request)
-    # if payload.status == 204:
-    #     #TODO: remove the service from the list of services for this user
-    #     pass
-    return payload
 
 @login_required
 async def services_get(request: web.Request) -> web.Response:
-    payload = await _request_director(request)
-    return payload
+    await extract_and_validate(request)
+
+    url = _resolve_url(request)
+    url = url.with_query(request.query)
+
+    # forward to director API
+    session = get_client_session(request.app)
+    async with session.get(url, ssl=False) as resp:
+        payload = await resp.json()
+        return web.json_response(payload, status=resp.status)
+
+
+@login_required
+async def running_interactive_services_post(request: web.Request) -> web.Response:
+    """ Starts an interactive service for a given user and
+        returns running service's metainfo
+
+        if service already renning, then returns its metainfo
+    """
+
+    params, query, body = await extract_and_validate(request)
+
+    assert not params
+    assert query, "POST expected /running_interactive_services? ... "
+    assert not body
+
+    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
+    endpoint = _resolve_url(request)
+
+    session = get_client_session(request.app)
+
+    registry = get_registry(request.app)
+    service_uuid = query['service_uuid']
+
+    # get first if already running
+    url = (endpoint / service_uuid)
+    async with session.get(url, ssl=False) as resp:
+        if resp.status == 200:
+            # TODO: currently director API does not specify resp. 200
+            payload = await resp.json()
+        else:
+            url = endpoint.with_query(request.query).update_query(
+                user_id=userid,
+                # TODO: mountpoint should be setup!!
+                service_basepath='/x/' + service_uuid
+            )
+            # otherwise, start new service
+            async with session.post(url, ssl=False) as resp:
+                if resp.status < 400:
+                    registry.as_started(userid, service_uuid)
+                payload = await resp.json()
+
+    return web.json_response(payload, status=resp.status)
+
+
+@login_required
+async def running_interactive_services_get(request: web.Request) -> web.Response:
+    params, query, body = await extract_and_validate(request)
+
+    assert params, "GET expected /running_interactive_services/{service_uuid}"
+    assert not query
+    assert not body
+
+    url = _resolve_url(request)
+    url = url.with_query(request.query)
+
+    # forward to director API
+    session = get_client_session(request.app)
+    async with session.get(url, ssl=False) as resp:
+        payload = await resp.json()
+        return web.json_response(payload, status=resp.status)
+
+
+@login_required
+async def running_interactive_services_delete(request: web.Request) -> web.Response:
+    """ Stops and removes an interactive service from the
+
+    """
+    params, query, body = await extract_and_validate(request)
+
+    assert params, "DELETE expected /running_interactive_services/{service_uuid}"
+    assert query
+    assert not body
+
+    registry = get_registry(request.app)
+    service_uuid = params['service_uuid']
+    endpoint = _resolve_url(request)
+
+    # forward to director API
+    session = get_client_session(request.app)
+    url = endpoint.with_query(service_uuid)
+    async with session.delete(url, ssl=False) as resp:
+        payload = await resp.json()
+        if resp.status < 400 or resp.status == 404:
+            registry.as_stopped(service_uuid)
+        return web.json_response(payload, status=resp.status)
+
+
+@login_required
+async def running_interactive_services_delete_all(request: web.Request) -> web.Response:
+    params, query, body = await extract_and_validate(request)
+
+    assert not params
+    assert not query
+    assert not body
+
+    registry = get_registry(request.app)
+    userid = request.get(RQT_USERID_KEY, ANONYMOUS_USER)
+    services = registry.user_to_services_map[userid]
+
+    if services:
+        session = get_client_session(request.app)
+        endpoint = _resolve_url(request)
+
+        errors = []
+        for service_uuid in services:
+            url = (endpoint / service_uuid)
+            async with session.delete(url, ssl=False) as resp:
+                payload = await resp.json()
+                if resp.status < 400 or resp.status == 404:
+                    registry.as_stopped(service_uuid)
+                else:
+                    errors.append((payload, resp.status))
+
+        if errors:
+            # FIXME: append all errors
+            payload, status = errors[0]
+            return web.json_response(payload, status=status)
+
+    return web.json_response({'data': ''}, status=204)

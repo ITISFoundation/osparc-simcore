@@ -16,7 +16,7 @@ from simcore_sdk.node_ports import exceptions
 
 
 
-def check_port_valid(ports, config_dict: dict, port_type:str, key_name: str, key):
+def _check_port_valid(ports, config_dict: dict, port_type:str, key_name: str, key):
     assert getattr(ports, port_type)[key].key == key_name
     # check required values
     assert getattr(ports, port_type)[key].label == config_dict["schema"][port_type][key_name]["label"]
@@ -45,18 +45,18 @@ def check_port_valid(ports, config_dict: dict, port_type:str, key_name: str, key
         assert getattr(ports, port_type)[key].value == None
 
 
-def check_ports_valid(ports, config_dict: dict, port_type:str):
+def _check_ports_valid(ports, config_dict: dict, port_type:str):
     for key in config_dict["schema"][port_type].keys():
         # test using "key" name
-        check_port_valid(ports, config_dict, port_type, key, key)
+        _check_port_valid(ports, config_dict, port_type, key, key)
         # test using index
         key_index = list(config_dict["schema"][port_type].keys()).index(key)
-        check_port_valid(ports, config_dict, port_type, key, key_index)
+        _check_port_valid(ports, config_dict, port_type, key, key_index)
 
 
 def check_config_valid(ports, config_dict: dict):
-    check_ports_valid(ports, config_dict, "inputs")
-    check_ports_valid(ports, config_dict, "outputs")
+    _check_ports_valid(ports, config_dict, "inputs")
+    _check_ports_valid(ports, config_dict, "outputs")
 
 
 def test_default_configuration(default_configuration): # pylint: disable=W0613, W0621

@@ -4,11 +4,11 @@ import os
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 
-import docker
 import tenacity
 from sqlalchemy import and_, create_engine
 from sqlalchemy.orm import sessionmaker
 
+import docker
 from s3wrapper.s3_client import S3Client
 from simcore_sdk.config.db import Config as db_config
 from simcore_sdk.config.docker import Config as docker_config
@@ -74,7 +74,7 @@ class S3Settings:
             access_key=self._config.access_key, secret_key=self._config.secret_key, secure=self._config.secure)
         self.bucket = self._config.bucket_name
 
-        self.__create_bucket()
+        #self.__create_bucket()
 
 
     @tenacity.retry(wait=tenacity.wait_fixed(2), stop=tenacity.stop_after_attempt(15))

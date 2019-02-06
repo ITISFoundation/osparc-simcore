@@ -40,7 +40,6 @@ def create_environ(skip_system_environ=False):
     if rootdir is not None:
         environ['OSPARC_SIMCORE_REPO_ROOTDIR'] = str(rootdir)
 
-
     return environ
 
 
@@ -72,7 +71,6 @@ def main(args=None):
 
     log_level = config["main"]["log_level"]
     logging.basicConfig(level=getattr(logging, log_level))
-    print("hello, iam")
 
     application.run(config)
 

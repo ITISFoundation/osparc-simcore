@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
   extend: qx.ui.core.Widget,
 
@@ -24,9 +41,8 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
   },
 
   events: {
-    "SavePressed": "qx.event.type.Event",
-    "StartPipeline": "qx.event.type.Event",
-    "StopPipeline": "qx.event.type.Event"
+    "startPipeline": "qx.event.type.Event",
+    "stopPipeline": "qx.event.type.Event"
   },
 
   members: {
@@ -34,21 +50,10 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
     __stopButton: null,
 
     __initDefault: function() {
-      let saveBtn = this.__createSaveButton();
-      this.__rightSide.add(saveBtn);
       let playBtn = this.__startButton = this.__createStartButton();
       let stopButton = this.__stopButton = this.__createStopButton();
       this.__rightSide.add(playBtn);
       this.__rightSide.add(stopButton);
-    },
-
-    __createSaveButton: function() {
-      let saveBtn = this.__saveButton = new qx.ui.form.Button();
-      saveBtn.setIcon("@FontAwesome5Solid/save/32");
-      saveBtn.addListener("execute", function() {
-        this.fireEvent("SavePressed");
-      }, this);
-      return saveBtn;
     },
 
     __createStartButton: function() {
@@ -56,8 +61,8 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
         icon: "@FontAwesome5Solid/play/32"
       });
 
-      startButton.addListener("execute", function() {
-        this.fireEvent("StartPipeline");
+      startButton.addListener("execute", () => {
+        this.fireEvent("startPipeline");
       }, this);
 
       return startButton;
@@ -68,8 +73,8 @@ qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
         icon: "@FontAwesome5Solid/stop-circle/32"
       });
 
-      stopButton.addListener("execute", function() {
-        this.fireEvent("StopPipeline");
+      stopButton.addListener("execute", () => {
+        this.fireEvent("stopPipeline");
       }, this);
       return stopButton;
     },

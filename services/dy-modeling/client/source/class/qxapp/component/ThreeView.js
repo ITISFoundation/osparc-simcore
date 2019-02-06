@@ -305,7 +305,7 @@ qx.Class.define("qxapp.component.ThreeView", {
           }
           const bBox = this.__threeWrapper.getBBox(ent);
           if (unionBBox === null) {
-            unionBBox = this.__threeWrapper.getBBox(ent);
+            unionBBox = bBox;
           }
           unionBBox = this.__threeWrapper.mergeBBoxes(bBox, unionBBox);
         }

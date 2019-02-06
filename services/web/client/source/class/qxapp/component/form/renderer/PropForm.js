@@ -21,17 +21,17 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
      *
      * @param vizWidget {Widget} visualization widget to embedd
      */
-  construct: function(form, workbenchModel, nodeModel) {
-    // workbenchModel and nodeModel are necessary for creating links
-    if (workbenchModel) {
-      this.setWorkbenchModel(workbenchModel);
+  construct: function(form, workbench, node) {
+    // workbench and node are necessary for creating links
+    if (workbench) {
+      this.setWorkbench(workbench);
     } else {
-      this.setWorkbenchModel(null);
+      this.setWorkbench(null);
     }
-    if (nodeModel) {
-      this.setNodeModel(nodeModel);
+    if (node) {
+      this.setNode(node);
     } else {
-      this.setNodeModel(null);
+      this.setNode(null);
     }
 
     this.base(arguments, form);
@@ -48,13 +48,13 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
   },
 
   properties: {
-    workbenchModel: {
-      check: "qxapp.data.model.WorkbenchModel",
+    workbench: {
+      check: "qxapp.data.model.Workbench",
       nullable: true
     },
 
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel",
+    node: {
+      check: "qxapp.data.model.Node",
       nullable: true
     }
   },
@@ -105,8 +105,8 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
       let data = this._form.getData();
       for (const portId in data) {
         let ctrl = this._form.getControl(portId);
-        if (ctrl && Object.prototype.hasOwnProperty.call(ctrl, "link")) {
-          if (this.getNodeModel().getKey()
+        if (ctrl && ctrl.link) {
+          if (this.getNode().getKey()
             .includes("/neuroman")) {
             // HACK: Only Neuroman should enter here
             data[portId] = ctrl.link["output"];
@@ -137,7 +137,6 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             icon: "@FontAwesome5Solid/unlink/16"
           });
           unlinkBtn.addListener("execute", function() {
-            console.log("Unlink", portId);
             this.fireDataEvent("RemoveLink", portId);
           }, this);
           hBox.add(unlinkBtn);
@@ -166,10 +165,10 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     },
 
     __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
-      if (this.getWorkbenchModel()) {
-        const node1 = this.getWorkbenchModel().getNodeModel(node1Id);
+      if (this.getWorkbench()) {
+        const node1 = this.getWorkbench().getNode(node1Id);
         const port1 = node1.getOutput(port1Id);
-        const node2 = this.getWorkbenchModel().getNodeModel(node2Id);
+        const node2 = this.getWorkbench().getNode(node2Id);
         const port2 = node2.getInput(port2Id);
         return qxapp.data.Store.getInstance().arePortsCompatible(port1, port2);
       }
@@ -177,9 +176,9 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
     },
 
     __createDropMechanism: function(uiElement, portId) {
-      if (this.getNodeModel()) {
+      if (this.getNode()) {
         uiElement.setDroppable(true);
-        uiElement.nodeId = this.getNodeModel().getNodeId();
+        uiElement.nodeId = this.getNode().getNodeId();
         uiElement.portId = portId;
 
         uiElement.addListener("dragover", e => {
@@ -206,7 +205,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             const to = e.getCurrentTarget();
             // let dropNodeId = to.nodeId;
             let dropPortId = to.portId;
-            this.getNodeModel().addPortLink(dropPortId, dragNodeId, dragPortId);
+            this.getNode().addPortLink(dropPortId, dragNodeId, dragPortId);
           }
         }, this);
       }

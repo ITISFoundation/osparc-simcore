@@ -25,10 +25,10 @@ async def handler(request: web.Request, service_url: str, **_kwargs) -> web.Stre
     start = time.time()
     try:
         # FIXME: service_url should be service_endpoint or service_origins
-        tarfind_url = URL(service_url).origin().with_path(
-            request.path).with_query(request.query)
+        target_url = URL(service_url).origin().with_path(request.path).with_query(request.query)
+
         async with aiohttp.client.request(
-            request.method, tarfind_url,
+            request.method, target_url,
             headers=request.headers,
             chunked=CHUNK,
             # response_class=ReverseProxyResponse,

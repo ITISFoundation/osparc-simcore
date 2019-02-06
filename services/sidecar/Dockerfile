@@ -12,7 +12,9 @@ RUN adduser -D -u 8004 scu &&\
     addgroup -g $DOCKER_GID_ARG docker
 
 ENV HOME /home/scu
-ENV PIP  /home/scu/.venv/bin/pip3
+# TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
+# - Added explicit --cache-dir that is removed at the end of the build
+ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/tmp/.pipcache
 
 EXPOSE 8000
 VOLUME /home/scu/input
@@ -38,14 +40,14 @@ RUN apk add --no-cache \
       libc-dev
 
 RUN python3 -m venv $HOME/.venv &&\
-    $PIP install --no-cache-dir --upgrade \
+    $PIP install --upgrade \
       pip \
       wheel \
       setuptools
 
 # TODO: check if scu:scu copy is necessary!?
 COPY --chown=scu:scu services/sidecar/requirements/base.txt requirements-base.txt
-RUN $PIP install --no-cache-dir -r requirements-base.txt &&\
+RUN $PIP install -r requirements-base.txt &&\
     rm requirements-base.txt
 
 COPY --chown=scu:scu services/sidecar/docker docker
@@ -60,7 +62,8 @@ ARG HOST_GID_ARG=1000
 # FIXME: files created by scu cannot be deleted by host! we need to do the same group in host?
 RUN addgroup -g $HOST_GID_ARG hgrp &&\
     addgroup scu hgrp && \
-    chown -R scu:scu $HOME/.venv
+    chown -R scu:scu $HOME/.venv &&\
+    rm -rf /tmp/.pipcache
 
 VOLUME /home/scu/packages
 VOLUME /home/scu/services/sidecar
@@ -72,32 +75,27 @@ ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD ["/bin/sh", "boot.sh"]
 
 
-# --------------------------Production multi-stage -------------------
-#FROM build as build-production
-FROM build as production
-
+# --------------------------Cache stage -------------------
+FROM build as cache
 # TODO: check if scu:scu copy is necessary in all cases!? since we are just installing?
 COPY --chown=scu:scu packages $HOME/packages
 COPY --chown=scu:scu services/sidecar $HOME/services/sidecar
 COPY --chown=scu:scu services/storage/client-sdk $HOME/services/storage/client-sdk
 
 WORKDIR /home/scu/services/sidecar
-RUN $PIP --no-cache-dir install -r requirements/prod.txt ;\
+RUN $PIP install -r requirements/prod.txt ;\
     $PIP list
 
-#-------------------
-#FROM base as production
 
+# --------------------------Production multi-stage -------------------
 # TODO: PC Reduce docker size by installing only non-dev
-
-#COPY --from=build-production --chown=scu:scu $HOME/boot.sh boot.sh
-#COPY --from=build-production --chown=scu:scu $HOME/.venv .venv
-#COPY --from=build-production --chown=scu:scu $HOME/docker docker
+FROM cache as production
 
 WORKDIR /home/scu/
 
-RUN . $HOME/.venv/bin/activate; pip list &&\
-    rm -rf $HOME/services
+RUN . $HOME/.venv/bin/activate; $PIP list &&\
+    rm -rf $HOME/services &&\
+    rm -rf /tmp/.pipcache
 
 ENV DEBUG 0
 ENV RUN_DOCKER_ENGINE_ROOT=0

@@ -1,8 +1,18 @@
 /* ************************************************************************
-   Copyright: 2018 ITIS Foundation
-   License:   MIT
-   Authors:   Odei Maiz <maiz@itis.swiss>
-   Utf8Check: äöü
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
 ************************************************************************ */
 
 /**
@@ -15,7 +25,7 @@
 qx.Class.define("qxapp.component.widget.NodePorts", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeModel, isInputModel = true) {
+  construct: function(node, isInputModel = true) {
     this.base();
 
     let nodeInputLayout = new qx.ui.layout.VBox(10);
@@ -31,7 +41,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       alignX: "center",
       alignY: "middle"
     });
-    nodeModel.bind("label", label, "value");
+    node.bind("label", label, "value");
     this._add(label);
 
     let nodeUIPorts = this.__nodeUIPorts = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
@@ -40,7 +50,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     });
 
     this.setIsInputModel(isInputModel);
-    this.setNodeModel(nodeModel);
+    this.setNode(node);
   },
 
   properties: {
@@ -50,8 +60,8 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
       nullable: false
     },
 
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel",
+    node: {
+      check: "qxapp.data.model.Node",
       nullable: false
     }
   },
@@ -60,26 +70,26 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
     __nodeUIPorts: null,
 
     getNodeId: function() {
-      return this.getNodeModel().getNodeId();
+      return this.getNode().getNodeId();
     },
 
     getMetaData: function() {
-      return this.getNodeModel().getMetaData();
+      return this.getNode().getMetaData();
     },
 
     populatePortsData: function() {
       this.__nodeUIPorts.removeAll();
-      const metaData = this.getNodeModel().getMetaData();
+      const metaData = this.getNode().getMetaData();
       if (this.getIsInputModel()) {
         this.__createUIPorts(false, metaData.outputs);
-      } else if (Object.prototype.hasOwnProperty.call(metaData, "inputsDefault")) {
+      } else if (metaData.inputsDefault) {
         this.__createUIPorts(false, metaData.inputsDefault);
       }
     },
 
     __createUIPorts: function(isInput, ports) {
       // Always create ports if node is a container
-      if (!this.getNodeModel().isContainer() && Object.keys(ports).length < 1) {
+      if (!this.getNode().isContainer() && Object.keys(ports).length < 1) {
         return;
       }
       for (const portKey in ports) {
@@ -88,12 +98,12 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
           let widget = null;
           switch (port.type) {
             case "node-output-list-api-v0.0.1": {
-              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputListIcon(this.getNodeModel(), port, portKey);
+              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputListIcon(this.getNode(), port, portKey);
               widget = nodeOutputList.getOutputWidget();
               break;
             }
             case "node-output-tree-api-v0.0.1": {
-              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputTree(this.getNodeModel(), port, portKey);
+              let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputTree(this.getNode(), port, portKey);
               widget = nodeOutputList.getOutputWidget();
               break;
             }
@@ -104,7 +114,7 @@ qx.Class.define("qxapp.component.widget.NodePorts", {
             });
           }
         } else {
-          let nodeOutputLabel = new qxapp.component.widget.inputs.NodeOutputLabel(this.getNodeModel(), port, portKey);
+          let nodeOutputLabel = new qxapp.component.widget.inputs.NodeOutputLabel(this.getNode(), port, portKey);
           let widget = nodeOutputLabel.getOutputWidget();
           this.__nodeUIPorts.add(widget);
           let label = {

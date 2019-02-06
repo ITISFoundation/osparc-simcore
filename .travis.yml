@@ -1,80 +1,220 @@
-matrix:
+dist: xenial
+env:
+  global:
+    - DOCKER_COMPOSE_VERSION=1.23.2
+    - DOCKER_GID=1042
+services:
+  - docker
+addons:
+  apt:
+    packages:
+      - docker-ce
+
+jobs:
   include:
-    - language: node_js
-      node_js:
-        - "8"
-
-      cache:
-        directories:
-          - .npm
-
+    # build cache images ----------------------------------------------------------------------
+    - if: branch = master
+      stage: preparing docker cache images
+      name: build cache
+      sudo: required
+      before_install:
+        - sudo bash ops/travis/build-cache/scripts before_install
       install:
-        - npm install -g npm@latest
-        - npm install --save-dev eslint
-        - npm install --save-dev babel-eslint
-        - npm install --save-dev eslint-config-qx
-        - npm install --save-dev eslint-plugin-qx-rules
+        - bash ops/travis/build-cache/scripts install
       before_script:
-        - eslint --version
+        - bash ops/travis/build-cache/scripts before_script
       script:
-        - npm run linter
+        - bash ops/travis/build-cache/scripts script
+      after_success:
+        - bash ops/travis/build-cache/scripts after_success
 
-    - language: python
-
+    # test python, webserver ----------------------------------------------------------------------
+    - stage: unit testing
+      name: webserver
+      language: python
       python:
         - "3.6"
       sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/unit-testing/webserver before_install
+      install:
+        - bash ops/travis/unit-testing/webserver install
+      before_script:
+        - bash ops/travis/unit-testing/webserver before_script
+      script:
+        - bash ops/travis/unit-testing/webserver script
+      after_success:
+        - bash ops/travis/unit-testing/webserver after_success
 
+    # test python, director ----------------------------------------------------------------------
+    - stage: unit testing
+      name: director
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/unit-testing/director before_install
+      install:
+        - bash ops/travis/unit-testing/director install
+      before_script:
+        - bash ops/travis/unit-testing/director before_script
+      script:
+        - bash ops/travis/unit-testing/director script
+      after_success:
+        - bash ops/travis/unit-testing/director after_success
+
+    # test python, simcore-sdk ----------------------------------------------------------------------
+    - stage: unit testing
+      name: simcore-sdk
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/unit-testing/simcore-sdk before_install
+      install:
+        - bash ops/travis/unit-testing/simcore-sdk install
+      before_script:
+        - bash ops/travis/unit-testing/simcore-sdk before_script
+      script:
+        - bash ops/travis/unit-testing/simcore-sdk script
+      after_success:
+        - bash ops/travis/unit-testing/simcore-sdk after_success
+
+    # test python, storage ----------------------------------------------------------------------
+    - stage: unit testing
+      name: storage
+      language: python
+      python:
+        - "3.6"
+      sudo: required
       services:
         - docker
-
       cache: pip
-
       before_install:
-        - python --version
-        - uname -a
-        - lsb_release -a
-        - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-        - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-        - sudo apt-get update
-        - sudo apt-get -y install docker-ce
-        - docker --version
-        - sudo rm /usr/local/bin/docker-compose
-        - curl -L https://github.com/docker/compose/releases/download/1.23.1/docker-compose-`uname -s`-`uname -m` > docker-compose
-        - chmod +x docker-compose
-        - sudo mv docker-compose /usr/local/bin
-        - docker-compose --version
-        # shutdown postgres because sometimes is is already up ???
-        - sudo service postgresql stop
-        # wait for postgresql to shutdown
-        - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
-
+        - sudo bash ops/travis/unit-testing/storage before_install
       install:
-        - pip install --upgrade pip wheel setuptools && pip3 --version
-        - pip3 install pytest-travis-fold
-        - pip3 install packages/s3wrapper[test]
-        - pip3 install packages/simcore-sdk[test]
-        - pushd services/director; pip3 install -r requirements/ci.txt; popd
-        - pip3 install packages/director-sdk/python
-        - pushd services/web/server; pip3 install -r requirements/ci.txt; popd
-        - pushd services/storage; pip3 install -r requirements/dev.txt; popd
-        - pip3 install -r api/tests/requirements.txt
-        - pip3 install -r services/apihub/tests/requirements.txt
-
+        - bash ops/travis/unit-testing/storage install
       before_script:
-        - pylint --version
-        - pip3 list
-
+        - bash ops/travis/unit-testing/storage before_script
       script:
-        - export DOCKER_GID=1042
-        - docker-compose -f services/docker-compose.yml build storage apihub
-        - make pylint
-        - make test
-
+        - bash ops/travis/unit-testing/storage script
       after_success:
-      - coveralls
+        - bash ops/travis/unit-testing/storage after_success
 
-      notifications:
-        email:
-          on_success: never
-          on_failure: always
+    # test python, apihub ----------------------------------------------------------------------
+    - stage: unit testing
+      name: apihub
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/unit-testing/apihub before_install
+      install:
+        - bash ops/travis/unit-testing/apihub install
+      before_script:
+        - bash ops/travis/unit-testing/apihub before_script
+      script:
+        - bash ops/travis/unit-testing/apihub script
+      after_success:
+        - bash ops/travis/unit-testing/apihub after_success
+
+    # test python, linting ----------------------------------------------------------------------
+    - stage: unit testing
+      name: python linting
+      language: python
+      python:
+        - "3.6"
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/unit-testing/python-linting before_install
+      install:
+        - bash ops/travis/unit-testing/python-linting install
+      before_script:
+        - bash ops/travis/unit-testing/python-linting before_script
+      script:
+        - bash ops/travis/unit-testing/python-linting script
+      after_success:
+        - bash ops/travis/unit-testing/python-linting after_success
+
+    # test node, linting ----------------------------------------------------------------------
+    - stage: unit testing
+      name: node linting
+      language: node_js
+      node_js:
+        - "8"
+      cache:
+        directories:
+          - .npm
+          - "node_modules"
+      before_install:
+        - bash ops/travis/unit-testing/node-linting before_install
+      install:
+        - bash ops/travis/unit-testing/node-linting install
+      before_script:
+        - bash ops/travis/unit-testing/node-linting before_script
+      script:
+        - bash ops/travis/unit-testing/node-linting script
+      after_success:
+        - bash ops/travis/unit-testing/node-linting after_success
+
+    # integrate apihub, webserver, director, sidecar, storage, minio, postgres, rabbit  ----------------------------------------------------------------------
+    - stage: integration testing
+      name: all but webserver
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/integration-testing/webserver before_install
+      install:
+        - bash ops/travis/integration-testing/webserver install
+      before_script:
+        - bash ops/travis/integration-testing/webserver before_script
+      script:
+        - bash ops/travis/integration-testing/webserver script
+      after_success:
+        - bash ops/travis/integration-testing/webserver after_success
+
+    - stage: system testing, staging
+      sudo: required
+      language: python
+      python:
+        - "3.6"
+      cache: pip
+      before_install:
+        - sudo bash ops/travis/system-testing/build_and_run before_install
+      install:
+        - bash ops/travis/system-testing/build_and_run install
+      before_script:
+        - bash ops/travis/system-testing/build_and_run before_script
+      script:
+        - bash ops/travis/system-testing/build_and_run script
+      after_success:
+        - bash ops/travis/system-testing/build_and_run after_success
+      after_failure:
+        - bash ops/travis/system-testing/build_and_run after_failure
+      deploy:
+        - provider: script
+          skip_cleanup: true
+          script: bash ops/travis/staging/deploy
+          on:
+            branch: master
+        - provider: script
+          skip_cleanup: true
+          script: ops/travis/production/deploy
+          on:
+            branch: master
+            tags: true
+            condition: "$TRAVIS_TAG =~ -release$"
+notifications:
+  email:
+    on_success: never
+    on_failure: always

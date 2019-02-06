@@ -1,19 +1,19 @@
 version: '3.4'
 services:
   simcore-paraviewweb:
-    image: masu.speag.com/simcore/services/dynamic/3d-viewer:${SERVICES_VERSION}
+    image: ${DOCKER_REGISTRY}/${SERVICE_PATH}:${SERVICES_VERSION}
     build:
       context: ../../
       dockerfile: services/dy-3dvis/simcoreparaviewweb/Dockerfile
       target: production
       labels: 
-        io.simcore.key: '{"key": "simcore/services/dynamic/3d-viewer"}'
+        io.simcore.key: '{"key": "${SERVICE_PATH}"}'
         io.simcore.version: '{"version": "${SERVICES_VERSION}"}'
         io.simcore.type: '{"type": "dynamic"}'
         io.simcore.name: '{"name": "3d-viewer"}'
         io.simcore.description: '{"description": "Paraview Web-based Visualizer"}'
-        io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email": "anderegg@itis.swiss.ch", "affiliation": "ITIS Foundation"}]}'
-        io.simcore.contact: '{"contact": "anderegg@itis.swiss.ch"}'
+        io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email": "anderegg@itis.swiss", "affiliation": "ITIS Foundation"}]}'
+        io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
         io.simcore.inputs: '{"inputs": {"A":{"displayOrder":1, "label": "some 3D dataset", "description": "A mesh, volume data", "type": "data:*/*"}, "B":{"displayOrder":2, "label": "some 3D dataset", "description": "A mesh, volume data", "type": "data:*/*"}}}'
         io.simcore.outputs: '{"outputs": {}}'
         simcore.service.settings: '[{"name": "ports", "type": "int", "value": 80}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'

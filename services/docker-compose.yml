@@ -1,20 +1,44 @@
 version: '3.4'
 services:
   apihub:
+    image: ${DOCKER_IMAGE_PREFIX}apihub:${DOCKER_IMAGE_TAG}
     build:
       context: ../
       dockerfile: services/apihub/Dockerfile
+      cache_from:
+        - itisfoundation/apihub:cache
+        - itisfoundation/apihub:staging-latest
+        - services_apihub:latest
       target: production
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '8043:8043'
+    deploy:
+      placement:
+       constraints:
+          - node.platform.os == linux
 #--------------------------------------------------------------------
   director:
+    image: ${DOCKER_IMAGE_PREFIX}director:${DOCKER_IMAGE_TAG}
     build:
       context: ../
       dockerfile: services/director/Dockerfile
+      cache_from:
+        - itisfoundation/director:cache
+        - itisfoundation/director:staging-latest
+        - services_director:latest
       target: production
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '8001:8001'
     environment:
@@ -22,9 +46,10 @@ services:
     # currently needs to set $Env:COMPOSE_CONVERT_WINDOWS_PATHS=1 in powershell to make this works
     # on a windows machine
       - REGISTRY_URL=${REGISTRY_URL}
-      - REGISTRY_AUTH=True
-      - REGISTRY_USER=z43
-      - REGISTRY_PW=z43
+      - REGISTRY_AUTH=${REGISTRY_AUTH}
+      - REGISTRY_USER=${REGISTRY_USER}
+      - REGISTRY_PW=${REGISTRY_PW}
+      - REGISTRY_SSL=${REGISTRY_SSL}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -37,22 +62,49 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - RUN_DOCKER_ENGINE_ROOT=${RUN_DOCKER_ENGINE_ROOT}
+      - EXTRA_HOSTS_SUFFIX=osparc.io
       - PUBLISHED_HOST_NAME=${PUBLISHED_HOST_NAME}
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
+    deploy:
+      placement:
+       constraints:
+          - node.platform.os == linux
+          - node.role == manager
   #--------------------------------------------------------------------
   webclient:
     image: services_webclient:build
     build:
       context: ./web/client/
       dockerfile: Dockerfile
+      cache_from:
+        - itisfoundation/webclient:cache
+        - services_webclient:latest
       target: build
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
+      args:
+        - VCS_REF=${VCS_REF}
+        - VCS_REF_CLIENT=${VCS_REF_CLIENT}
     command: /bin/bash -c "echo 'built with qx' && cat build-output/version.txt"
   webserver:
+    image: ${DOCKER_IMAGE_PREFIX}webserver:${DOCKER_IMAGE_TAG}
     build:
       context: ../
       dockerfile: services/web/Dockerfile
+      cache_from:
+        - itisfoundation/webserver:cache
+        - itisfoundation/webserver:staging-latest
+        - services_webserver:latest
       target: production
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - '9081:8080'
     environment:
@@ -62,6 +114,7 @@ services:
       - DIRECTOR_PORT=8001
       - STORAGE_HOST=storage
       - STORAGE_PORT=8080
+      - LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=${LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:-1}
       - OSPARC_PUBLIC_URL=${OSPARC_PUBLIC_URL}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -79,38 +132,38 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
+    stdin_open: true
+    tty: true
     depends_on:
       - webclient
       - apihub
-  #--------------------------------------------------------------------
-  rabbit:
-    image: rabbitmq:3-management
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
-    ports:
-      - "15672:15672"
-  #--------------------------------------------------------------------
-  postgres:
-    image: postgres:10
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-    volumes:
-      - postgres:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - postgres
+      - minio
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == manager
   #--------------------------------------------------------------------
   sidecar:
+    image: ${DOCKER_IMAGE_PREFIX}sidecar:${DOCKER_IMAGE_TAG}
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
       context: ../
       dockerfile: services/sidecar/Dockerfile
+      cache_from:
+        - itisfoundation/sidecar:cache
+        - itisfoundation/sidecar:staging-latest
+        - services_sidecar:latest
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
     volumes:
       - input:/home/scu/input
       - output:/home/scu/output
@@ -121,6 +174,8 @@ services:
     environment:
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_LOG_CHANNEL=${RABBITMQ_LOG_CHANNEL}
+      - RABBITMQ_PROGRESS_CHANNEL=${RABBITMQ_PROGRESS_CHANNEL}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -133,18 +188,33 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - RUN_DOCKER_ENGINE_ROOT=${RUN_DOCKER_ENGINE_ROOT}
+      - REGISTRY_URL=${REGISTRY_URL}
+      - REGISTRY_USER=${REGISTRY_USER}
+      - REGISTRY_PW=${REGISTRY_PW}
     depends_on:
       - rabbit
+      - postgres
+      - minio
   #--------------------------------------------------------------------
   storage:
+    image: ${DOCKER_IMAGE_PREFIX}storage:${DOCKER_IMAGE_TAG}
     build:
       # the context for the build is the git repo root directory, this allows to copy
       # the packages directory into any docker image
       context: ../
       dockerfile: services/storage/Dockerfile
+      cache_from:
+        - itisfoundation/storage:cache
+        - itisfoundation/storage:staging-latest
+        - services_storage:latest
       args:
         - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
+        org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
       - "11111:8080"
     environment:
@@ -164,10 +234,36 @@ services:
       - RUN_DOCKER_ENGINE_ROOT=${RUN_DOCKER_ENGINE_ROOT}
       - BF_API_SECRET=${BF_API_SECRET}
       - BF_API_KEY=${BF_API_KEY}
+    stdin_open: true
+    tty: true
     depends_on:
       - minio
       - postgres
       - apihub
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+#--------------------------------------------------------------------
+  rabbit:
+    image: rabbitmq:3-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+  #--------------------------------------------------------------------
+  postgres:
+    image: postgres:10
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
   #--------------------------------------------------------------------
   minio:
     image: minio/minio
@@ -177,17 +273,8 @@ services:
     ports:
       - "9001:9000"
     command: server /data
-  #--------------------------------------------------------------------
-  registry:
-    image: registry:2
-    ports:
-      - "5000:5000"
-    volumes:
-      - registry:/var/lib/registry
-    #--------------------------------------------------------------------
 volumes:
   input:
   output:
   log:
   postgres:
-  registry:

@@ -1,8 +1,18 @@
 /* ************************************************************************
-   Copyright: 2018 ITIS Foundation
-   License:   MIT
-   Authors:   Odei Maiz <maiz@itis.swiss>
-   Utf8Check: äöü
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
 ************************************************************************ */
 
 /**
@@ -15,10 +25,10 @@
 qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeModel, port, portKey) {
+  construct: function(node, port, portKey) {
     this.base();
 
-    this.setNodeModel(nodeModel);
+    this.setNode(node);
 
     this._setLayout(new qx.ui.layout.HBox(5));
 
@@ -31,7 +41,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     let portOutput = this._createChildControlImpl("portOutput");
     let outputValue = "Unknown value";
     let toolTip = "";
-    if (Object.prototype.hasOwnProperty.call(port, "value")) {
+    if (port.value) {
       if (typeof port.value === "object") {
         outputValue = this.__pretifyObject(port.value, true);
         toolTip = this.__pretifyObject(port.value, false);
@@ -50,8 +60,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
   },
 
   properties: {
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel",
+    node: {
+      check: "qxapp.data.model.Node",
       nullable: false
     }
   },
@@ -61,9 +71,9 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
       let control;
       switch (id) {
         case "portLabel": {
-          const title14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"]);
+          const text14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"]);
           control = new qx.ui.basic.Label().set({
-            font: title14Font,
+            font: text14Font,
             textAlign: "right",
             allowGrowX: true,
             padding: 10,
@@ -75,9 +85,9 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
           break;
         }
         case "portOutput": {
-          const title14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["title-14"]);
+          const text14Font = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["text-14"]);
           control = new qx.ui.basic.Label().set({
-            font: title14Font,
+            font: text14Font,
             textAlign: "right",
             allowGrowX: true,
             padding: 10,
@@ -94,7 +104,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
 
     __createDragMechanism: function(uiPort, portKey) {
       uiPort.setDraggable(true);
-      uiPort.nodeId = this.getNodeModel().getNodeId();
+      uiPort.nodeId = this.getNode().getNodeId();
       uiPort.portId = portKey;
 
       uiPort.addListener("dragstart", e => {

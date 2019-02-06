@@ -1,3 +1,21 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
+/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.desktop.LayoutManager", {
   extend: qx.ui.container.Composite,
@@ -9,11 +27,9 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       layout: new qx.ui.layout.VBox()
     });
 
-    this.__servicesPreload();
-
     this.__navBar = this.__createNavigationBar();
     this.__navBar.setHeight(100);
-    this.__navBar.addListener("NodeDoubleClicked", e => {
+    this.__navBar.addListener("nodeDoubleClicked", e => {
       if (this.__prjEditor) {
         let nodeId = e.getData();
         this.__prjEditor.nodeSelected(nodeId);
@@ -22,37 +38,11 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     this.add(this.__navBar);
 
     let prjStack = this.__prjStack = new qx.ui.container.Stack();
-
-    this.__prjBrowser = new qxapp.desktop.PrjBrowser();
-    prjStack.add(this.__prjBrowser);
-
-    this.add(this.__prjStack, {
+    this.add(prjStack, {
       flex: 1
     });
 
-    this.__navBar.addListener("DashboardPressed", function() {
-      this.__prjStack.setSelection([this.__prjBrowser]);
-      this.__prjBrowser.reloadUserProjects();
-      this.__navBar.setMainViewCaption("Dashboard");
-    }, this);
-
-    this.__prjBrowser.addListener("StartProject", e => {
-      const data = e.getData();
-      const projectModel = data.projectModel;
-      if (this.__prjEditor) {
-        this.__prjStack.remove(this.__prjEditor);
-      }
-      this.__prjEditor = new qxapp.desktop.PrjEditor(projectModel);
-      this.__prjStack.add(this.__prjEditor);
-      this.__prjStack.setSelection([this.__prjEditor]);
-      this.__navBar.setProjectModel(projectModel);
-      this.__navBar.setMainViewCaption(projectModel.getWorkbenchModel().getPathIds("root"));
-
-      this.__prjEditor.addListener("ChangeMainViewCaption", function(ev) {
-        const elements = ev.getData();
-        this.__navBar.setMainViewCaption(elements);
-      }, this);
-    }, this);
+    this.__createMainLayout();
   },
 
   events: {},
@@ -60,7 +50,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
   members: {
     __navBar: null,
     __prjStack: null,
-    __prjBrowser: null,
+    __dashboard: null,
     __prjEditor: null,
 
     __createNavigationBar: function() {
@@ -69,31 +59,45 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       return navBar;
     },
 
-    __nodeCheck: function(services) {
-      /** a little ajv test */
-      let nodeCheck = new qx.io.request.Xhr("/resource/qxapp/node-meta-v0.0.1.json");
-      nodeCheck.addListener("success", e => {
-        let data = e.getTarget().getResponse();
-        try {
-          let ajv = new qxapp.wrappers.Ajv(data);
-          for (const srvId in services) {
-            const service = services[srvId];
-            let check = ajv.validate(service);
-            console.log("services validation result " + service.key + ":", check);
-          }
-        } catch (err) {
-          console.error(err);
+    __createMainLayout: function() {
+      this.__dashboard = new qxapp.desktop.Dashboard();
+      this.__prjStack.add(this.__dashboard);
+
+      this.__navBar.addListener("dashboardPressed", () => {
+        if (this.__prjEditor) {
+          this.__prjEditor.updateProjectDocument();
         }
+        this.__showDashboard();
       }, this);
-      nodeCheck.send();
+
+      this.__dashboard.getPrjBrowser().addListener("startProject", e => {
+        const projectEditor = e.getData();
+        this.__showProjectEditor(projectEditor);
+      }, this);
     },
 
-    __servicesPreload: function() {
-      let store = qxapp.data.Store.getInstance();
-      store.addListener("servicesRegistered", e => {
-        this.__nodeCheck(e.getData());
+    __showDashboard: function() {
+      this.__prjStack.setSelection([this.__dashboard]);
+      this.__dashboard.getPrjBrowser().reloadUserProjects();
+      this.__navBar.setMainViewCaption(this.tr("Dashboard"));
+    },
+
+    __showProjectEditor: function(projectEditor) {
+      if (this.__prjEditor) {
+        this.__prjStack.remove(this.__prjEditor);
+      }
+
+      this.__prjEditor = projectEditor;
+      let project = projectEditor.getProject();
+      this.__prjStack.add(this.__prjEditor);
+      this.__prjStack.setSelection([this.__prjEditor]);
+      this.__navBar.setProject(project);
+      this.__navBar.setMainViewCaption(project.getWorkbench().getPathIds("root"));
+
+      this.__prjEditor.addListener("changeMainViewCaption", ev => {
+        const elements = ev.getData();
+        this.__navBar.setMainViewCaption(elements);
       }, this);
-      store.getServices(true);
     }
   }
 });

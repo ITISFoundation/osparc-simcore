@@ -2,7 +2,7 @@
 
    qxapp - the simcore frontend
 
-   https://simcore.io
+   https://osparc.io
 
    Copyright:
      2019 IT'IS Foundation, https://itis.swiss
@@ -46,6 +46,7 @@ qx.Class.define("qxapp.component.widget.FileTreeItem", {
   },
 
   members : {
+    // overridden
     _addWidgets : function() {
       // Here's our indentation and tree-lines
       this.addSpacer();
@@ -62,33 +63,43 @@ qx.Class.define("qxapp.component.widget.FileTreeItem", {
         flex: 1
       });
 
+      // Add size
+      var sizeWidget = new qx.ui.basic.Label().set({
+        width: 70,
+        maxWidth: 70,
+        textAlign: "right"
+      });
+      this.bind("size", sizeWidget, "value", {
+        converter: function(value) {
+          if (value === null) {
+            return "";
+          }
+          return qxapp.utils.Utils.bytesToSize(value);
+        }
+      });
+      this.addWidget(sizeWidget);
+
+      this.addWidget(new qx.ui.core.Spacer(10));
+
       // Add Path
-      var pathWidget = new qx.ui.basic.Label();
+      var pathWidget = new qx.ui.basic.Label().set({
+        width: 300,
+        maxWidth: 300,
+        textAlign: "right"
+      });
       this.bind("path", pathWidget, "value");
-      pathWidget.setMaxWidth(300);
       this.addWidget(pathWidget);
 
-      // All else should be right justified
-      this.addWidget(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
+      this.addWidget(new qx.ui.core.Spacer(10));
 
       // Add NodeId
-      var fileIdWidget = new qx.ui.basic.Label();
-      this.bind("fileId", fileIdWidget, "value");
-      fileIdWidget.setMaxWidth(300);
-      this.addWidget(fileIdWidget);
-
-      // All else should be right justified
-      this.addWidget(new qx.ui.core.Spacer(), {
-        flex: 1
+      var fileIdWidget = new qx.ui.basic.Label().set({
+        width: 300,
+        maxWidth: 300,
+        textAlign: "right"
       });
-
-      // Add size
-      var sizeWidget = new qx.ui.basic.Label();
-      this.bind("size", sizeWidget, "value");
-      sizeWidget.setMaxWidth(100);
-      this.addWidget(sizeWidget);
+      this.bind("fileId", fileIdWidget, "value");
+      this.addWidget(fileIdWidget);
     }
   }
 });

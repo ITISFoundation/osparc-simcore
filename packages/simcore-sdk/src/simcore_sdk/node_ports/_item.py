@@ -1,6 +1,5 @@
 import logging
 import shutil
-
 from pathlib import Path
 
 from . import config, data_items_utils, exceptions, filemanager
@@ -16,15 +15,28 @@ def _check_type(item_type, value):
         return
     if data_items_utils.is_value_link(value):
         return
-    
-    possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
+
+
+    if isinstance(value, (int, float)):
+        if item_type in ("number", "integer"):
+            return
+
+    possible_types = [key for key, key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
     if not item_type in possible_types:
         if data_items_utils.is_file_type(item_type) and data_items_utils.is_value_on_store(value):
             return
         raise exceptions.InvalidItemTypeError(item_type, value)
 
-class Item():
-    def __init__(self, schema:SchemaItem, data:DataItem):
+class Item:
+    """An item contains data (DataItem) and an schema (SchemaItem)
+
+    :raises exceptions.InvalidProtocolError: [description]
+    :raises AttributeError: [description]
+    :raises exceptions.InvalidProtocolError: [description]
+    :raises exceptions.InvalidItemTypeError: [description]
+    :raises exceptions.NodeportsException: [description]
+    """
+    def __init__(self, schema: SchemaItem, data: DataItem):
         if not schema:
             raise exceptions.InvalidProtocolError(None, msg="empty schema or payload")
         self._schema = schema
@@ -35,23 +47,25 @@ class Item():
         _check_type(self.type, self.value)
 
     def __getattr__(self, name):
+
+        # schema attributes first
         if hasattr(self._schema, name):
             return getattr(self._schema, name)
+
+        # data attributes then
         if hasattr(self._data, name):
             return getattr(self._data, name)
 
         if "value" in name and not self._data:
-            if hasattr(self._schema, "defaultValue"):
-                return getattr(self._schema, "defaultValue")
-            return None
+            return getattr(self._schema, "defaultValue", None)
+
         raise AttributeError
 
     async def get(self):
-        """returns the data converted to the underlying type.
+        """ gets data converted to the underlying type
 
-            Can throw InvalidPtrotocolError if the underling type is unknown.
-            Can throw ValueError if the conversion fails.
-            returns the converted value or None if no value is defined
+        :raises exceptions.InvalidProtocolError: if the underlying type is unknown
+        :return: the converted value or None if no value is defined
         """
         log.debug("Getting item %s", self.key)
         if self.type not in config.TYPE_TO_PYTHON_TYPE_MAP and not data_items_utils.is_file_type(self.type):
@@ -63,9 +77,16 @@ class Item():
 
         if data_items_utils.is_value_link(self.value):
             value = await self.__get_value_from_link(self.value)
+            if value is None:
+                return value
             if data_items_utils.is_file_type(self.type):
                 # move the file to the right location
                 file_name = Path(value).name
+
+                # if a file alias is present use it
+                if self._schema.fileToKeyMap:
+                    file_name = next(iter(self._schema.fileToKeyMap))
+
                 file_path = data_items_utils.create_file_path(self.key, file_name)
                 if file_path.exists():
                     file_path.unlink()
@@ -78,16 +99,19 @@ class Item():
             return await self.__get_value_from_store(self.value)
         # the value is not a link, let's directly convert it to the right type
         return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["type"](config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value))
-    
-    async def set(self, value):
-        """sets the data to the underlying port
 
-        Arguments:
-            value {any type} -- must be convertible to a string, or an exception will be thrown.
+    async def set(self, value):
+        """ sets the data to the underlying port
+
+        :param value: must be convertible to a string, or an exception will be thrown.
+        :type value: [type]
+        :raises exceptions.InvalidItemTypeError: [description]
+        :raises exceptions.InvalidItemTypeError: [description]
         """
-        log.info("Setting data item with value %s", value)        
+
+        log.info("Setting data item with value %s", value)
         # try to guess the type and check the type set fits this (there can be more than one possibility, e.g. string)
-        possible_types = [key for key,key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
+        possible_types = [key for key, key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items() if isinstance(value, key_type["type"])]
         log.debug("possible types are for value %s are %s", value, possible_types)
         if not self.type in possible_types:
             if not data_items_utils.is_file_type(self.type) or not isinstance(value, (Path, str)):
@@ -111,8 +135,8 @@ class Item():
             log.debug("calling new data callback to update database")
             self.new_data_cb(new_data) #pylint: disable=not-callable
             log.debug("database updated")
-    
-    async def __get_value_from_link(self, value):    # pylint: disable=R1710
+
+    async def __get_value_from_link(self, value): # pylint: disable=R1710
         log.debug("Getting value %s", value)
         node_uuid, port_key = data_items_utils.decode_link(value)
         if not self.get_node_from_uuid_cb:
@@ -135,5 +159,3 @@ class Item():
         file_path = data_items_utils.create_file_path(self.key, file_name)
         await filemanager.download_file(store_id=store_id, s3_object=s3_path, local_file_path=file_path)
         return file_path
-
-

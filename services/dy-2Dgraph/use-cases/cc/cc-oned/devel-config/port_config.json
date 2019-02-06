@@ -2,13 +2,13 @@
     "version":"0.1",
     "schema": {
         "inputs": {
-            "in_1": {                
+            "in_1": {
                 "label": "ECGs",
                 "displayOrder":0,
                 "description": "these are computed data out of a pipeline",
                 "type": "data:*/*"
             },
-            "in_2": {                
+            "in_2": {
                 "label": "all results 1Hz",
                 "displayOrder":1,
                 "description": "computed data out of a pipeline",
@@ -22,7 +22,7 @@
                 "description": "The output 1",
                 "type": "data:*/*"
             },
-            "output_2": {                
+            "output_2": {
                 "label": "Output 2",
                 "displayOrder":1,
                 "description": "The output 2",

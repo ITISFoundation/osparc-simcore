@@ -62,7 +62,8 @@ def _locations():
     return [simcore_s3, datcore]
 
 def _location_from_id(location_id : str) ->str:
-    loc_str = "undefinded"
+    # TODO create a map to sync _location_from_id and _location_from_str
+    loc_str = "undefined"
     if location_id == "0":
         loc_str = SIMCORE_S3_STR
     elif location_id == "1":

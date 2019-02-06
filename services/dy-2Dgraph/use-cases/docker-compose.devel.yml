@@ -100,6 +100,11 @@ services:
       - postgres
       - minio
   #--------------------------------------------------------------------
+  apihub:
+    image: services_apihub:latest
+    ports:
+      - 8043:8043
+  #--------------------------------------------------------------------
   storage:
     image: services_storage:latest
     ports:
@@ -115,12 +120,17 @@ services:
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - S3_SECURE=${S3_SECURE}
       - RUN_DOCKER_ENGINE_ROOT=1
       - BF_API_SECRET=none
       - BF_API_KEY=none
+      - APIHUB_HOST=${APIHUB_HOST}
+      - APIHUB_PORT=${APIHUB_PORT}
+      
     restart: always
     depends_on: 
       - postgres
+      - apihub
   #--------------------------------------------------------------------
   postgres:
     image: postgres:10

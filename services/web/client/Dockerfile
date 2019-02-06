@@ -24,6 +24,9 @@ FROM node:8.9.2 as base-stage
 #
 LABEL maintainer=pcrespov
 
+ARG VCS_REF
+ARG VCS_REF_CLIENT
+
 # non-root user uid=1000
 # TODO: create instead uid=5000.
 RUN groupmod --new-name scu node && \
@@ -41,14 +44,7 @@ ENV PATH "${QOOXDOO_PATH}/tool/bin:${HOME}/node_modules/.bin/:${NPM_CONFIG_PREFI
 
 WORKDIR /home/scu
 
-# 1. qooxdoo-sdk from source repository.
-#  - Provides framework and generator.py tools to overcome limits of qx-compiler
-#  - TODO: This is a temporary solution
-RUN git clone --depth 1 https://github.com/qooxdoo/qooxdoo.git ${QOOXDOO_PATH} && \
-    sed 's/6.0.0-alpha[^"]*/'$(date +"6.0.0-alpha-%Y%m%d")'/' ${QOOXDOO_PATH}/framework/Manifest.json > ${QOOXDOO_PATH}/framework/Manifest.json.$$ && \
-    mv ${QOOXDOO_PATH}/framework/Manifest.json.$$ ${QOOXDOO_PATH}/framework/Manifest.json
-
-# 2. installs qx-compiler (see specs in package.json)
+# 1. installs qx-compiler (see specs in package.json)
 COPY --chown=scu:scu package*.json ./
 
 RUN npm install npm@latest && \
@@ -78,20 +74,21 @@ CMD ["serve", "--set", "qx.allowUrlSettings=true"]
 # ------------------------------------------------------------------------------------------
 FROM base-stage as build
 
-
 # 3. prepares docker
 COPY --chown=scu:scu docker docker
 RUN chmod +x docker/*.sh
 
 # 4. Installs qooxdoo contributions in $WORKDIR/contrib/ within container
 COPY --chown=scu:scu compile.json compile.json
+COPY --chown=scu:scu contrib.json contrib.json
 RUN ./docker/install-contrib.sh
 
 # 5. compiles source -> build-output/
 COPY --chown=scu:scu source source
 COPY --chown=scu:scu Manifest.json Manifest.json
-RUN qx compile --target=build
+RUN qx compile --target=build \
+        --set osparc.vcsRef='"$(VCS_REF)"' \
+        --set osparc.vcsRefClient='"$(VCS_REF_CLIENT)"'
 
 ENTRYPOINT []
-
-CMD ["qx", "serve", "--set", "qx.allowUrlSettings=true"]
+CMD []

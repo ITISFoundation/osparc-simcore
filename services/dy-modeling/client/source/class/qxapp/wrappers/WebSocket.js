@@ -49,6 +49,11 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
       init: "http://".concat(window.location.hostname),
       check: "String"
     },
+    pathname: {
+      nullable: false,
+      init: window.location.pathname,
+      check: "String"
+    },
     /** The port used to connect */
     port: {
       nullable: false,
@@ -75,7 +80,7 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
     },
     connectTimeout: {
       nullable: true,
-      init: 10000,
+      init: 40000,
       check: "Number"
     },
     /** Reconnection delay for socket.io. */
@@ -137,7 +142,8 @@ qx.Class.define("qxapp.wrappers.WebSocket", {
           "connect timeout": this.getConnectTimeout(),
           "reconnection delay": this.getReconnectionDelay(),
           "max reconnection attempts": this.getMaxReconnectionAttemps(),
-          "force new connection": true
+          "force new connection": true,
+          "path": this.getPathname() + "socket.io"
         });
         this.setSocket(mySocket);
 

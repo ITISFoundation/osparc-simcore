@@ -13,7 +13,10 @@ services:
     build:
       target: development
     volumes:
-      - './director:/home/scu/services/director'
+      - ./director:/home/scu/services/director
+      - ../packages/service-library:/home/scu/packages/service-library
+    stdin_open: true
+    tty: true
   #--------------------------------------------------------------------
   webclient:
     image: services_webclient:dev
@@ -21,7 +24,7 @@ services:
       target: development
     volumes:
       - './web/client:/home/scu/client'
-    command: compile --watch
+    command: compile --watch --set osparc.vcsRef='"${VCS_REF}"' --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
   webserver:
     image: services_webserver:dev
     build:
@@ -32,6 +35,8 @@ services:
       - ./web/server:/home/scu/services/web/server
       - ./web/client/source-output:/home/scu/services/web/client
       - ../packages:/home/scu/packages
+    stdin_open: true
+    tty: true
     depends_on:
       - webclient
   #--------------------------------------------------------------------
@@ -42,7 +47,7 @@ services:
         - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
       target: development
     volumes:
-      - ./sidecar:/home/scu/services/sidecar      
+      - ./sidecar:/home/scu/services/sidecar
       - ./storage/client-sdk:/home/scu/services/storage/client-sdk
       - ../packages:/home/scu/packages
   #--------------------------------------------------------------------
@@ -55,3 +60,5 @@ services:
     volumes:
       - ./storage:/home/scu/services/storage
       - ../packages:/home/scu/packages
+    stdin_open: true
+    tty: true

@@ -86,6 +86,11 @@ class ReverseChooser:
         # TODO: director might be non-responding
         # TODO: service might be down
 
+        # FIXME: add version as well
         handler = self.handlers.get(image_name, default_handler)
-        response = await handler(request, service_url, mountpoint=mountpoint, proxy_path=proxy_path)
+
+
+        response = await handler(request, service_url,
+                                 mountpoint=mountpoint,
+                                 proxy_path=proxy_path)
         return response

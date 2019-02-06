@@ -1,3 +1,20 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.utils.FilesTreePopulator", {
@@ -15,41 +32,30 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       this.__resetTree(treeName);
 
       let store = qxapp.data.Store.getInstance();
-      store.addListenerOnce("NodeFiles", e => {
+      store.addListenerOnce("nodeFiles", e => {
         const files = e.getData();
-        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-        this.__addTreeData(newChildren);
+        this.__filesToTree(files);
       }, this);
       store.getNodeFiles(nodeId);
     },
 
-    populateMyDocuments: function() {
-      const treeName = "My Documents";
+    populateMyData: function() {
+      const treeName = "My Data";
       this.__resetTree(treeName);
 
       let locationsAdded = [];
       let store = qxapp.data.Store.getInstance();
-      store.addListenerOnce("MyDocuments", e => {
+      store.addListener("myDocuments", e => {
         const {
           location,
           files
         } = e.getData();
         if (!locationsAdded.includes(location)) {
           locationsAdded.push(location);
-          const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-          this.__addTreeData(newChildren);
+          this.__filesToTree(files);
         }
       }, this);
       store.getMyDocuments();
-
-      /*
-      store.addListenerOnce("FakeFiles", e => {
-        const files = e.getData();
-        const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
-        this.__addTreeData(newChildren);
-      }, this);
-      store.getFakeFiles();
-      */
     },
 
     __resetTree: function(treeName) {
@@ -57,7 +63,6 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       this.__tree.resetModel();
       let data = {
         label: treeName,
-        fileId: null,
         location: null,
         path: null,
         children: []
@@ -76,11 +81,17 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       });
     },
 
+    __filesToTree: function(files) {
+      const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+      this.__addTreeData(newChildren);
+    },
+
     __addTreeData: function(data) {
       let newModelToAdd = qx.data.marshal.Json.createModel(data, true);
       let currentModel = this.__tree.getModel();
       currentModel.getChildren().append(newModelToAdd);
       this.__tree.setModel(currentModel);
+      this.__tree.fireEvent("modelChanged");
     }
   }
 });

@@ -10,12 +10,16 @@ components:
         error:
           nullable: true
           default: null
-          
+
     RunningServiceType:
       type: object
       required:
         - published_port
         - service_uuid
+        - service_key
+        - service_version
+        - service_host
+        - service_port
       properties:
         published_port:
           description: The ports where the service provides its interface
@@ -30,5 +34,34 @@ components:
         service_uuid:
           description: The UUID attached to this service
           type: string
-          format: UUID
+          # format: UUID
           example: 123e4567-e89b-12d3-a456-426655440000
+        service_key:
+          type: string
+          description: distinctive name for the node based on the docker registry path
+          pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+          example:
+            - simcore/services/comp/itis/sleeper
+            - simcore/services/dynamic/3dviewer
+        service_version:
+          type: string
+          description: semantic version number
+          pattern: >-
+            ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          example:
+            - 1.0.0
+            - 0.0.1
+        service_host:
+          description: service host name within the network
+          type: string
+          example: jupyter_E1O2E-LAH
+        service_port:
+          description: port to access the service within the network
+          type: integer
+          minimum: 1
+          example: 8081
+        service_basepath:
+          description: different base path where current service is mounted otherwise defaults to root
+          type: string
+          example: '/x/E1O2E-LAH'
+          default: ''
