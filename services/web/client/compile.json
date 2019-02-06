@@ -35,6 +35,11 @@
   ],
 
   "common" : {
+    "add-css": [
+      {
+        "uri" : "resource/jsontreeviewer/jsonTree.css"
+      }
+    ],
     "add-script": [
       {
         "uri" : "resource/socketio/socket.io.js"
@@ -47,6 +52,12 @@
       },
       {
         "uri" : "resource/jsondiffpatch/jsondiffpatch*.js"
+      },
+      {
+        "uri" : "resource/jsontreeviewer/jsonTree.js"
+      },
+      {
+        "uri" : "resource/plotly/plotly.min.js"
       },
       {
         "uri" : "resource/qxapp/*.png"

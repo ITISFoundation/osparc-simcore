@@ -21,7 +21,7 @@ TEST_REQUIRE = [
     'pytest-cov~=2.5',
     'pytest-docker~=0.6',
     'requests~=2.19',
-    'docker~=3.5'
+    'docker~=3.7'
 ]
 # NOTE: pytest-aiohttp and pytest-asyncio incompatible
 # https://github.com/pytest-dev/pytest-asyncio/issues/76

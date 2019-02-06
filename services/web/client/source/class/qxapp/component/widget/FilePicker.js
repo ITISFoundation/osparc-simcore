@@ -19,17 +19,18 @@
 qx.Class.define("qxapp.component.widget.FilePicker", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeModel, projectId) {
+  construct: function(node, projectId) {
     this.base(arguments);
 
-    this.setNodeModel(nodeModel);
+    this.setNode(node);
     this.setProjectId(projectId);
 
     let filePickerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(filePickerLayout);
 
-    let tree = this.__tree = this._createChildControlImpl("treeMenu");
-    tree.getSelection().addListener("change", this.__selectionChanged, this);
+    let tree = this.__tree = this._createChildControlImpl("filesTree");
+    tree.addListener("selectionChanged", this.__selectionChanged, this);
+    tree.addListener("itemSelected", this.__itemSelected, this);
 
     // Create a button
     let input = new qx.html.Input("file", {
@@ -60,19 +61,12 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       this.__itemSelected();
     }, this);
 
-    // Listen to "Enter" key
-    this.addListener("keypress", function(keyEvent) {
-      if (keyEvent.getKeyIdentifier() === "Enter") {
-        this.__itemSelected();
-      }
-    }, this);
-
-    this.buildTree();
+    this.__initResources();
   },
 
   properties: {
-    nodeModel: {
-      check: "qxapp.data.model.NodeModel"
+    node: {
+      check: "qxapp.data.model.Node"
     },
 
     projectId: {
@@ -88,52 +82,54 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
   members: {
     __tree: null,
     __selectBtn: null,
-    __currentUserId: "ODEI-UUID",
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "addButton":
-          control = new qx.ui.form.Button(this.tr("Add file(s)"));
-          this._add(control);
-          break;
-        case "treeMenu":
-          control = new qx.ui.tree.VirtualTree(null, "label", "children").set({
-            openMode: "none"
-          });
+        case "filesTree":
+          control = new qxapp.component.widget.FilesTree();
           this._add(control, {
             flex: 1
           });
           break;
-        case "selectButton":
-          control = new qx.ui.form.Button(this.tr("Select"));
-          this._add(control);
-          break;
         case "progressBox":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
           this._addAt(control, 1);
+          break;
+        case "addButton":
+          control = new qx.ui.form.Button(this.tr("Add file(s)"));
+          this._add(control);
+          break;
+        case "selectButton":
+          control = new qx.ui.form.Button(this.tr("Select"));
+          this._add(control);
           break;
       }
 
       return control || this.base(arguments, id);
     },
 
-    buildTree: function() {
-      this.__getFiles();
+    __initResources: function() {
+      this.__tree.populateTree();
     },
 
-    __getFiles: function() {
-      let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this.__tree);
-      filesTreePopulator.populateMyDocuments();
+    __selectionChanged: function() {
+      const data = this.__tree.getSelectedFile();
+      this.__selectBtn.setEnabled(data ? data["isFile"] : false);
+    },
 
-      let that = this;
-      let delegate = this.__tree.getDelegate();
-      delegate["configureItem"] = function(item) {
-        item.addListener("dbltap", e => {
-          that.__itemSelected(); // eslint-disable-line no-underscore-dangle
-        }, that);
-      };
-      this.__tree.setDelegate(delegate);
+    __itemSelected: function() {
+      let data = this.__tree.getSelectedFile();
+      if (data && data["isFile"]) {
+        let selectedItem = data["selectedItem"];
+        let outputs = this.getNode().getOutputs();
+        outputs["outFile"].value = {
+          store: selectedItem.getLocation(),
+          path: selectedItem.getFileId()
+        };
+        this.getNode().repopulateOutputPortData();
+        this.fireEvent("finished");
+      }
     },
 
     // Request to the server an upload URL.
@@ -151,7 +147,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       const download = false;
       const locationId = 0;
       const projectId = this.getProjectId();
-      const nodeId = this.getNodeModel().getNodeId();
+      const nodeId = this.getNode().getNodeId();
       const fileId = file.name;
       const fileUuid = projectId +"/"+ nodeId +"/"+ fileId;
       store.getPresginedLink(download, locationId, fileUuid);
@@ -183,43 +179,13 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
           hBox.destroy();
-          this.buildTree();
+          this.__initResources();
         } else {
           console.log(xhr.response);
         }
       };
       xhr.open("PUT", url, true);
       xhr.send(file);
-    },
-
-    __isFile: function(item) {
-      let isFile = false;
-      if (item["set"+qx.lang.String.firstUp("fileId")]) {
-        isFile = true;
-      }
-      return isFile;
-    },
-
-    __selectionChanged: function() {
-      let selection = this.__tree.getSelection();
-      let selectedItem = selection.toArray()[0];
-      let enabled = this.__isFile(selectedItem);
-      this.__selectBtn.setEnabled(enabled);
-    },
-
-    __itemSelected: function() {
-      let selection = this.__tree.getSelection();
-      let selectedItem = selection.toArray()[0];
-      if (!this.__isFile(selectedItem)) {
-        return;
-      }
-      let outputs = this.getNodeModel().getOutputs();
-      outputs["outFile"].value = {
-        store: selectedItem.getLocation(),
-        path: selectedItem.getFileId()
-      };
-      this.getNodeModel().repopulateOutputPortData();
-      this.fireEvent("finished");
     }
   }
 });

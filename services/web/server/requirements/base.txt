@@ -1,8 +1,8 @@
 # List of packages for setup.install_requires
 #   Outsourced here so can be installed in base-stage of the web/Dockerfile
-psycopg2-binary==2.7.5
+psycopg2-binary~=2.7.5
 aiohttp==3.3.2
-aiohttp_session[secure]==2.5.1
+aiohttp_session[secure]==2.7.0
 aiohttp-security==0.2.0
 aiopg[sa]
 aio-pika==2.9.0
@@ -18,7 +18,7 @@ networkx==2.1
 passlib==1.7.1
 python-socketio==1.9.0
 requests==2.20.1
-sqlalchemy==1.2.9
+sqlalchemy~=1.2
 tenacity==4.12.0
 trafaret-config==2.0.1
 semantic_version==2.6.0

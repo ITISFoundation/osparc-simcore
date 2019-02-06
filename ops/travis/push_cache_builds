@@ -1,7 +1,0 @@
-#!/bin/bash
-
-BASEDIR=$(dirname "$0")
-ROOTDIR=$BASEDIR/../..
-echo $ROOTDIR
-echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-pushd $ROOTDIR; make travis-push-base-images; popd

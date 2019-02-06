@@ -91,4 +91,4 @@ services:
       - MINIO_SECRET_KEY=${S3_SECRET_KEY}
     ports:
       - "9001:9000"
-    command: server /data      
+    command: server /data

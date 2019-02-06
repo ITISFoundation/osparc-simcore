@@ -65,7 +65,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     let dashboardBtn = new qx.ui.form.Button(this.tr("Dashboard"));
     dashboardBtn.set(commonBtnSettings);
-    dashboardBtn.addListener("execute", function() {
+    dashboardBtn.addListener("execute", () => {
       this.fireEvent("dashboardPressed");
     }, this);
     this.add(dashboardBtn);
@@ -73,7 +73,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
     this.add(new qx.ui.toolbar.Separator());
 
     let forumBtn = new qx.ui.form.Button(this.tr("Forum"));
-    forumBtn.addListener("execute", function() {
+    forumBtn.addListener("execute", () => {
       window.open("https://forum.zmt.swiss/");
     }, this);
     forumBtn.set(commonBtnSettings);
@@ -112,8 +112,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
   },
 
   properties: {
-    projectModel: {
-      check: "qxapp.data.model.ProjectModel",
+    project: {
+      check: "qxapp.data.model.Project",
       nullable: true
     }
   },
@@ -147,12 +147,12 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
         });
         const nodeId = nodeIds[i];
         if (nodeId === "root") {
-          this.getProjectModel().bind("name", btn, "label");
+          this.getProject().bind("name", btn, "label");
         } else {
-          const nodeModel = this.getProjectModel().getWorkbenchModel()
-            .getNodeModel(nodeId);
-          if (nodeModel) {
-            nodeModel.bind("label", btn, "label");
+          const node = this.getProject().getWorkbench()
+            .getNode(nodeId);
+          if (node) {
+            node.bind("label", btn, "label");
           }
         }
         btn.addListener("execute", function() {
@@ -183,10 +183,10 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       // Logout
 
       // TODO: add commands (i.e. short-cut system)
-      let preferences = new qx.ui.menu.Button("Preferences");
+      let preferences = new qx.ui.menu.Button(this.tr("Preferences"));
       preferences.addListener("execute", this.__onOpenAccountSettings, this);
 
-      let logout = new qx.ui.menu.Button("Logout");
+      let logout = new qx.ui.menu.Button(this.tr("Logout"));
       logout.addListener("execute", e => {
         let app = qx.core.Init.getApplication();
         app.logout();
@@ -194,11 +194,13 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
       menu.add(preferences);
       menu.addSeparator();
-      menu.add(new qx.ui.menu.Button("Groups"));
+      menu.add(new qx.ui.menu.Button(this.tr("Groups")));
       menu.addSeparator();
-      menu.add(new qx.ui.menu.Button("Help"));
-      menu.add(new qx.ui.menu.Button("Report a Problem"));
-      menu.add(new qx.ui.menu.Button("About"));
+      menu.add(new qx.ui.menu.Button(this.tr("Help")));
+      menu.add(new qx.ui.menu.Button(this.tr("Report a Problem")));
+      let aboutBtn = new qx.ui.menu.Button(this.tr("About"));
+      aboutBtn.addListener("execute", e => qxapp.About.getInstance().open());
+      menu.add(aboutBtn);
       menu.addSeparator();
       menu.add(logout);
 

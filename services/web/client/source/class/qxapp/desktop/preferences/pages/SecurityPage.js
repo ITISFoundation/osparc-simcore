@@ -205,7 +205,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
       });
       box.add(resetBtn);
 
-      resetBtn.addListener("execute", function() {
+      resetBtn.addListener("execute", () => {
         if (manager.validate()) {
           let request = new qxapp.io.request.ApiRequest("/auth/change-password", "POST");
           request.setRequestData({

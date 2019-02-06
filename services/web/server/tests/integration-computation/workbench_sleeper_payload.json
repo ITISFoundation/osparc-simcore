@@ -1,0 +1,90 @@
+{
+    "workbench": {
+        "f6f67f96-ad56-47ac-a658-1a8b93dde1f0": {
+            "label": "File Picker",
+            "inputs": {},
+            "inputNodes": [],
+            "outputNode": false,
+            "outputs": {
+                "outFile": {
+                    "store": "0",
+                    "path": "885f2bb2-5c6a-439a-b55d-b1c422bbf998/e92dcf7c-af2a-4a56-b62e-b72ab86e2444/allresult_1Hz.txt"
+                }
+            },
+            "parent": null,
+            "key": "simcore/services/dynamic/itis/file-picker",
+            "version": "0.0.0"
+        },
+        "ee8d7b25-f203-4472-9210-86409b4364e2": {
+            "label": "sleeper",
+            "inputs": {
+                "in_1": null,
+                "in_2": 2
+            },
+            "inputNodes": [
+                "f6f67f96-ad56-47ac-a658-1a8b93dde1f0"
+            ],
+            "outputNode": false,
+            "outputs": {},
+            "parent": null,
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "1.0.0"
+        },
+        "884fa617-615f-407b-ad41-88c899561cda": {
+            "label": "sleeper",
+            "inputs": {
+                "in_1": null,
+                "in_2": 2
+            },
+            "inputNodes": [],
+            "outputNode": false,
+            "outputs": {},
+            "parent": null,
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "1.0.0"
+        },
+        "d5012020-7a5d-4b04-a017-9560fa1ede7e": {
+            "label": "sleeper",
+            "inputs": {
+                "in_1": {
+                    "nodeUuid": "884fa617-615f-407b-ad41-88c899561cda",
+                    "output": "out_1"
+                },
+                "in_2": {
+                    "nodeUuid": "884fa617-615f-407b-ad41-88c899561cda",
+                    "output": "out_2"
+                }
+            },
+            "inputNodes": [
+                "884fa617-615f-407b-ad41-88c899561cda"
+            ],
+            "outputNode": false,
+            "outputs": {},
+            "parent": null,
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "1.0.0"
+        },
+        "c5ff9180-702e-4b6e-af26-b88b190dcd6f": {
+            "label": "sleeper",
+            "inputs": {
+                "in_1": {
+                    "nodeUuid": "ee8d7b25-f203-4472-9210-86409b4364e2",
+                    "output": "out_1"
+                },
+                "in_2": {
+                    "nodeUuid": "d5012020-7a5d-4b04-a017-9560fa1ede7e",
+                    "output": "out_2"
+                }
+            },
+            "inputNodes": [
+                "ee8d7b25-f203-4472-9210-86409b4364e2",
+                "d5012020-7a5d-4b04-a017-9560fa1ede7e"
+            ],
+            "outputNode": false,
+            "outputs": {},
+            "parent": null,
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "1.0.0"
+        }        
+    }
+}
