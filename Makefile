@@ -213,7 +213,7 @@ push-staging:
 	export DOCKER_IMAGE_TAG=staging-latest; \
 	${DOCKER_COMPOSE} -f services/docker-compose.yml push ${SERVICES_LIST}
 	for i in $(SERVICES_LIST); do \
-		# ${DOCKER} tag services_$$i:staging-latest itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
+		${DOCKER} tag itisfoundation/$$i:staging-latest itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
 		${DOCKER} push itisfoundation/$$i:${TRAVIS_PLATFORM_STAGE_VERSION}; \
 	done
 
