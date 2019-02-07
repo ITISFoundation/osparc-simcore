@@ -133,6 +133,10 @@ up-swarm-devel:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
 
+up-webclient-devel: up-swarm-devel remove-intermediate-file
+	${DOCKER} service rm services_webclient
+	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
+
 ifeq ($(WINDOWS_MODE),ON)
 remove-intermediate-file:
 	$(info    .tmp-compose.yml not removed)
