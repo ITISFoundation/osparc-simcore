@@ -96,7 +96,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             item: items[i]
           });
         }
-        this.__createDropMechanism(label, item.key);
+        // this.__createDropMechanism(label, item.key);
         this.__createDropMechanism(item, item.key);
       }
     },

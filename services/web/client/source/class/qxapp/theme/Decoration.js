@@ -20,9 +20,19 @@ qx.Theme.define("qxapp.theme.Decoration", {
 
   decorations: {
     "droppableWidget": {
+      decorator: qx.ui.decoration.MSingleBorder,
       style: {
-        borderWidth: "5px",
-        borderStyle: "dashed"
+        style: "dashed",
+        color: "#828282",
+        width: 1
+      }
+    },
+
+    "draggableWidget": {
+      decorator: qx.ui.decoration.MSingleBorder,
+      style: {
+        color: "#828282",
+        width: 1
       }
     }
   }
