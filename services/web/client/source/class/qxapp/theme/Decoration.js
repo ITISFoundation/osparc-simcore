@@ -12,6 +12,7 @@
 
    Authors:
      * Tobias Oetiker (oetiker)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
@@ -20,7 +21,7 @@ qx.Theme.define("qxapp.theme.Decoration", {
 
   decorations: {
     "droppableWidget": {
-      decorator: qx.ui.decoration.MSingleBorder,
+      decorator: qx.ui.decoration.Decorator,
       style: {
         style: "dashed",
         color: "#828282",
@@ -29,7 +30,7 @@ qx.Theme.define("qxapp.theme.Decoration", {
     },
 
     "draggableWidget": {
-      decorator: qx.ui.decoration.MSingleBorder,
+      decorator: qx.ui.decoration.Decorator,
       style: {
         color: "#828282",
         width: 1
