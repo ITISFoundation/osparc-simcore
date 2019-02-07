@@ -12,7 +12,10 @@ RUN adduser -D -u 8004 scu &&\
     addgroup -g $DOCKER_GID_ARG docker
 
 ENV HOME /home/scu
-ENV PIP  /home/scu/.venv/bin/pip3
+# TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
+# - Added explicit --cache-dir that is removed at the end of the build
+ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/tmp/.pipcache
+# -----
 
 EXPOSE 8001
 ENV REGISTRY_AUTH = ''
@@ -47,14 +50,14 @@ RUN apk add --no-cache \
 
 # create virtual environment
 RUN python3 -m venv $HOME/.venv &&\
-    $PIP install --no-cache-dir --upgrade \
+    $PIP install --upgrade \
       pip \
       wheel \
       setuptools
 
 # this is done to accelerate installation of director later on
 COPY --chown=scu:scu services/director/requirements/base.txt requirements-base.txt
-RUN $PIP install --no-cache-dir -r requirements-base.txt &&\
+RUN $PIP install -r requirements-base.txt &&\
     rm requirements-base.txt
 
 COPY --chown=scu:scu services/director/docker docker
@@ -68,7 +71,8 @@ ARG HOST_GID_ARG=1000
 # FIXME: files created by scu cannot be deleted by host! we need to do the same group in host?
 RUN addgroup -g $HOST_GID_ARG hgrp &&\
     addgroup scu hgrp && \
-    chown -R scu:scu $HOME/.venv
+    chown -R scu:scu $HOME/.venv &&\
+    rm -rf /tmp/.pipcache
 
 VOLUME /home/scu/services/director
 VOLUME /home/scu/packages/service-library
@@ -83,16 +87,20 @@ FROM build as cache
 COPY --chown=scu:scu services/director $HOME/services/director
 COPY --chown=scu:scu packages/service-library $HOME/packages/service-library
 WORKDIR $HOME/services/director
-RUN $PIP install --no-cache-dir -r requirements/prod.txt
+RUN $PIP install -r requirements/prod.txt
 WORKDIR $HOME/packages/service-library
-RUN $PIP install --no-cache-dir -r requirements/dev.txt
+# FIXME: is this really requirements/dev or rather requirements/prod.txt?
+RUN $PIP install -r requirements/dev.txt
+
 
 # --------------------------Production stage -------------------
 FROM cache as production
 WORKDIR $HOME
 ENV DEBUG 0
 ENV RUN_DOCKER_ENGINE_ROOT=0
-RUN rm -rf $HOME/services \
-      && rm -rf $HOME/packages
+RUN rm -rf $HOME/services &&\
+    rm -rf $HOME/packages &&\
+    rm -rf /tmp/.pipcache
+
 ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
 CMD ["/bin/sh", "docker/boot.sh"]

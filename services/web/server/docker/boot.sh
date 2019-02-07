@@ -9,8 +9,8 @@ then
   echo "DEBUG: Workdir :`pwd`"
 
   cd $HOME/services/web/server
-  pip install -r requirements/dev.txt
-  pip list
+  $PIP install -r requirements/dev.txt
+  $PIP list
 
   cd $HOME/
   simcore-service-webserver --config server-docker-dev.yaml
