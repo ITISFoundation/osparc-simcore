@@ -26,7 +26,6 @@ API_VERSION = 'v0'
 #def webserver_service(loop, app_config, director_service, aiohttp_unused_port, aiohttp_server, here):
 #def webserver_service(loop, app_config, aiohttp_unused_port, aiohttp_server, here):
 def webserver_service(docker_stack, loop, app_config, aiohttp_unused_port, aiohttp_server, here):
-
     # OVERRIDES app_config:
     #  - server lives with the testing framework
     port = app_config['main']['port'] = aiohttp_unused_port()

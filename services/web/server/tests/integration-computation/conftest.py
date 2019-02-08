@@ -244,7 +244,10 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, tools_d
     assert subprocess.run("docker stack rm services", shell=True).returncode == 0
     docker_compose_ignore_file.unlink()
 
-## EXTERNAL SERVICES ------------------------------------------------------------
+
+
+
+## CORE SERVICES ------------------------------------------------------------
 # POSTGRES
 @pytest.fixture(scope='session')
 def postgres_db(app_config, webserver_environ, docker_stack):

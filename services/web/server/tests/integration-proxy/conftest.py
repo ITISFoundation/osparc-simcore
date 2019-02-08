@@ -12,6 +12,7 @@ import logging
 import os
 import subprocess
 import sys
+import time
 from copy import deepcopy
 from pathlib import Path
 from typing import Dict
@@ -27,6 +28,10 @@ from simcore_service_webserver.resources import resources as app_resources
 
 logger = logging.getLogger(__name__)
 
+
+# Maximum time expected for booting core services
+MAX_BOOT_TIME_SECS = 20
+
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
     'director',
@@ -38,7 +43,6 @@ tool_services = [
     'flower',
     'portainer'
 ]
-
 
 
 @pytest.fixture(scope="session")
@@ -199,13 +203,18 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path):
             shell=True,
             cwd=docker_compose_file.parent
         ).returncode == 0
+    # NOTE:
+    # ``failed to create service services_apihub: Error response from daemon: network services_default not found```
+    # workaround is to restart daemon: ``sudo systemctl restart docker```
+
+    time.sleep(MAX_BOOT_TIME_SECS)
 
     with docker_compose_file.open() as fp:
         docker_stack_cfg = yaml.safe_load(fp)
-        yield docker_stack_cfg
+
+    yield docker_stack_cfg
 
     # clean up
-
     assert subprocess.run("docker stack rm services", shell=True).returncode == 0
 
 
