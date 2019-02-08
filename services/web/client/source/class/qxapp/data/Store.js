@@ -1215,12 +1215,14 @@ qx.Class.define("qxapp.data.Store", {
         }
       };
       for (const serviceKey in services) {
-        let service = services[serviceKey];
-        if (serviceKey in cats) {
-          for (const version in service) {
-            if (Object.prototype.hasOwnProperty.call(service, version)) {
-              let serv = service[version];
-              serv["category"] = cats[serviceKey]["category"];
+        if (Object.prototype.hasOwnProperty.call(services, serviceKey)) {
+          let service = services[serviceKey];
+          if (serviceKey in cats) {
+            for (const version in service) {
+              if (Object.prototype.hasOwnProperty.call(service, version)) {
+                let serv = service[version];
+                serv["category"] = cats[serviceKey]["category"];
+              }
             }
           }
         }
