@@ -25,6 +25,8 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
     // store the controller
     this.__controller = controller;
 
+    this.clearFilters();
+
     // apply the filter funtion on creation time because the 'this' context
     // needs to be bound to the function
     this.filter = qx.lang.Function.bind(data => {
@@ -33,10 +35,11 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
         return false;
       }
       for (let i=0; i<props.length; i++) {
-        let getter = "get" + qx.lang.String.firstUp(props[i]);
-        const prop = data[getter]();
+        const prop = this.__getPropValue(data, props[i]);
         if (qxapp.utils.Utils.stringsMatch(prop, this.getSearchString())) {
-          return true;
+          if (this.__checkExtraFilters(data)) {
+            return true;
+          }
         }
       }
       return false;
@@ -53,11 +56,17 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
 
   members: {
     __controller: null,
+    __extraFilters: null,
     filter: null,
 
     // Item's data sorting
     sorter: function(a, b) {
       return a > b;
+    },
+
+    __getPropValue: function(data, propName) {
+      let getter = "get" + qx.lang.String.firstUp(propName);
+      return data[getter]();
     },
 
     __applySearchString: function(value, old) {
@@ -67,6 +76,30 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
         // TODO: The first time a string is typed, the list doesn't properly change the selected entry
         // Workaround: use "changleValue" on controller instead of "changeSelection" on list
       }
+    },
+
+    __checkExtraFilters: function(data) {
+      if (Object.keys(this.__extraFilters).length > 0) {
+        for (const filterKey in this.__extraFilters) {
+          const prop = this.__getPropValue(data, filterKey);
+          if (prop.toLowerCase() !== this.__extraFilters[filterKey]) {
+            return false;
+          }
+        }
+      }
+      return true;
+    },
+
+    clearFilters: function() {
+      this.__extraFilters = {};
+    },
+
+    addFilter: function(propName, propValue) {
+      this.__extraFilters[propName.toLowerCase()] = propValue.toLowerCase();
+    },
+
+    removeFilter: function(propName) {
+      delete this.__extraFilters[propName.toLowerCase()];
     }
   },
 
