@@ -98,22 +98,28 @@ rebuild:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
 
 
-.PHONY: build-devel rebuild-devel up-devel
+.PHONY: build-devel rebuild-devel .tmp-webclient-build
 # target: build-devel, rebuild-devel: – Builds images of core services for development. Use `rebuild` to build w/o cache.
-build-devel: .env pull-cache
+build-devel: .env pull-cache .tmp-webclient-build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build
 
-rebuild-devel:
+rebuild-devel: .env .tmp-webclient-build
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
+
+.tmp-webclient-build:
+	# TODO: fixes having services_webclient:build present for services_webserver:production when
+	# targeting services_webserver:development
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 
 
 .PHONY: build-client rebuild-client
 # target: build-client, rebuild-client: – Builds only webclient and webserver images. Use `rebuild` to build w/o cache
-build-client: pull-cache
+build-client: .env pull-cache
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
 
-rebuild-client:
+rebuild-client: .env
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webserver
 
