@@ -12,7 +12,7 @@ from yarl import URL
 
 
 APP_SOCKETS_KEY = "simcore_service_webserver.reverse_proxy.settings.sockets"
-#FIXME: make this more generic
+#FIXME: Image tag should determine the handler instead of the opposite!!!
 SUPPORTED_IMAGE_NAME = ["simcore/services/dynamic/jupyter-base-notebook",
                         "simcore/services/dynamic/jupyter-scipy-notebook",
                         "simcore/services/dynamic/jupyter-r-notebook",
@@ -20,7 +20,9 @@ SUPPORTED_IMAGE_NAME = ["simcore/services/dynamic/jupyter-base-notebook",
                         "simcore/services/dynamic/cc-2d-viewer",
                         "simcore/services/dynamic/cc-1d-viewer",
                         "simcore/services/dynamic/cc-0d-viewer",
-                        "simcore/services/dynamic/spat-an-app-nb"]
+                        "simcore/services/dynamic/spat-an-app-nb",
+                        "simcore/services/dynamic/raw-graphs"
+                        ]
 SUPPORTED_IMAGE_TAG = ">=1.5.0"
 
 logger = logging.getLogger(__name__)
