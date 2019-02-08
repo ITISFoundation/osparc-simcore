@@ -96,7 +96,7 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
             item: items[i]
           });
         }
-        this.__createDropMechanism(label, item.key);
+        // this.__createDropMechanism(label, item.key);
         this.__createDropMechanism(item, item.key);
       }
     },
@@ -177,7 +177,10 @@ qx.Class.define("qxapp.component.form.renderer.PropForm", {
 
     __createDropMechanism: function(uiElement, portId) {
       if (this.getNode()) {
-        uiElement.setDroppable(true);
+        uiElement.set({
+          droppable: true,
+          decorator: "droppableWidget"
+        });
         uiElement.nodeId = this.getNode().getNodeId();
         uiElement.portId = portId;
 
