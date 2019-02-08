@@ -15,7 +15,7 @@ async def root_get(request):  # pylint:disable=unused-argument
     log.debug("Client does root_get request %s", request)
     distb = pkg_resources.get_distribution('simcore-service-director')
     with resources.stream(resources.RESOURCE_OPEN_API) as file_ptr:
-        api_dict = yaml.load(file_ptr)
+        api_dict = yaml.safe_load(file_ptr)
 
     service_health = dict(
         name=distb.project_name,
