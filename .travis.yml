@@ -164,9 +164,9 @@ jobs:
       after_success:
         - bash ops/travis/unit-testing/node-linting after_success
 
-    # integrate apihub, webserver, director, sidecar, storage, minio, postgres, rabbit  ----------------------------------------------------------------------
+    # integrate webserver in swarm -------------------------------------------------------------
     - stage: integration testing
-      name: all but webserver
+      name: webserver in swarm
       language: python
       python:
         - "3.6"
