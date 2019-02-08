@@ -22,19 +22,20 @@ import celery
 import celery.bin.base
 import celery.bin.celery
 import celery.platforms
-import docker
 import pytest
 import sqlalchemy as sa
 import tenacity
 import trafaret_config
 import yaml
+from sqlalchemy.orm import sessionmaker
+
+import docker
 from simcore_sdk.models import metadata
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
 from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, users
 from simcore_service_webserver.resources import resources as app_resources
-from sqlalchemy.orm import sessionmaker
 
 pytest_plugins = ["fixtures.docker_registry", "fixtures.celery_service"]
 
@@ -105,7 +106,7 @@ def devel_environ(env_devel_file) -> Dict[str, str]:
             if line and not line.startswith("#"):
                 key, value = line.split("=")
                 env_devel[key] = str(value)
-    # change some of the environ to accomodate the test case            
+    # change some of the environ to accomodate the test case
     # ensure the test runs not as root if not under linux
     if 'RUN_DOCKER_ENGINE_ROOT' in env_devel:
         env_devel['RUN_DOCKER_ENGINE_ROOT'] = '0' if os.name == 'posix' else '1'
@@ -157,7 +158,7 @@ def app_config(here, webserver_environ) -> Dict:
         with app_resources.stream("config/server-docker-dev.yaml") as f:
             cfg = yaml.safe_load(f)
             # test webserver works in host
-            cfg["main"]['host'] = '127.0.0.0'
+            cfg["main"]['host'] = '127.0.0.1'
             cfg["rabbit"]["host"] = '127.0.0.1'
             cfg["rabbit"]["port"] = "5672"
             cfg["director"]["host"] = "127.0.0.1"
@@ -268,8 +269,7 @@ def resolve_environ(service, environ):
                 variable, default = value.split(":")
                 value = environ.get(variable, default[1:])
             else:
-                value = environ.get(value, value)   
-
+                value = environ.get(value, value)
         _environs[key] = value
     return _environs
 
@@ -277,7 +277,7 @@ def _recreate_compose_file(keep, services_compose, docker_compose_path, devel_en
     # reads service/docker-compose.yml
     content = deepcopy(services_compose)
 
-    # remove unnecessary services    
+    # remove unnecessary services
     remove = [name for name in content['services'] if name not in keep]
     for name in remove:
         content['services'].pop(name, None)

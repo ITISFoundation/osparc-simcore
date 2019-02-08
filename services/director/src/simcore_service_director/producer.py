@@ -6,9 +6,9 @@ import logging
 from typing import Dict, List, Tuple
 
 import aiohttp
-import tenacity
-
 import docker
+import tenacity
+from docker.client import DockerClient
 
 from . import config, exceptions, registry_proxy
 from .system_utils import get_system_extra_hosts
@@ -19,12 +19,12 @@ SERVICE_RUNTIME_BOOTSETTINGS = 'simcore.service.bootsettings'
 log = logging.getLogger(__name__)
 
 
-def __get_docker_client() -> docker.client:
+def __get_docker_client() -> DockerClient:
     log.debug("Initiializing docker client")
     return docker.from_env()
 
 
-def __login_docker_registry(client: docker.client):
+def __login_docker_registry(client: DockerClient):
     try:
         # login
         registry_url = config.REGISTRY_URL
@@ -40,7 +40,7 @@ def __login_docker_registry(client: docker.client):
             "Error while logging to docker registry", err) from err
 
 
-def __check_node_uuid_available(client: docker.client, node_uuid: str):
+def __check_node_uuid_available(client: DockerClient, node_uuid: str):
     log.debug("Checked if UUID %s is already in use", node_uuid)
     # check if service with same uuid already exists
     try:
@@ -126,7 +126,7 @@ def __get_service_entrypoint(service_boot_parameters_labels: Dict) -> str:
 
 
 def __add_to_swarm_network_if_ports_published(
-        client: docker.client,
+        client: DockerClient,
         docker_service_runtime_parameters: Dict):
     # TODO: SAN this is a brain killer... change services to something better...
     if "endpoint_spec" in docker_service_runtime_parameters:
@@ -159,9 +159,7 @@ def __add_main_service_label_to_service_runtime_params(
         main_service: bool):
     # pylint: disable=C0103
     # add the service uuid to the docker service
-    service_type = "main"
-    if not main_service:
-        service_type = "dependency"
+    service_type = "main" if main_service else "dependency"
     if "labels" in docker_service_runtime_parameters:
         docker_service_runtime_parameters["labels"]["type"] = service_type
     else:
@@ -278,7 +276,7 @@ def __create_network_name(service_name: str, node_uuid: str) -> str:
     return service_name + '_' + node_uuid
 
 
-def __create_overlay_network_in_swarm(client: docker.client,
+def __create_overlay_network_in_swarm(client: DockerClient,
                                       service_name: str,
                                       node_uuid: str) -> docker.models.networks.Network:
     log.debug("Creating overlay network for service %s with uuid %s",
@@ -297,7 +295,7 @@ def __create_overlay_network_in_swarm(client: docker.client,
             "Error while creating network", err) from err
 
 
-def __remove_overlay_network_of_swarm(client: docker.client, node_uuid: str):
+def __remove_overlay_network_of_swarm(client: DockerClient, node_uuid: str):
     log.debug("Removing overlay network for service with uuid %s", node_uuid)
     try:
         networks = client.networks.list(
@@ -393,7 +391,7 @@ async def __prepare_runtime_parameters(user_id: str,
                                        main_service: bool,
                                        node_uuid: str,
                                        node_base_path: str,
-                                       client: docker.client
+                                       client: DockerClient
                                        ) -> Dict:
     # get the docker runtime labels
     service_runtime_parameters_labels = await __get_service_runtime_parameters_labels(service_key, service_tag)
@@ -411,7 +409,7 @@ async def __prepare_runtime_parameters(user_id: str,
     return docker_service_runtime_parameters
 
 
-async def _start_docker_service(client: docker.client,
+async def _start_docker_service(client: DockerClient,
                                 user_id: str,
                                 service_key: str,
                                 service_tag: str,
@@ -483,7 +481,7 @@ async def _silent_service_cleanup(node_uuid):
         pass
 
 
-async def __create_node(client: docker.client,
+async def __create_node(client: DockerClient,
                         user_id: str,
                         list_of_services: List[Dict],
                         service_name: str,
