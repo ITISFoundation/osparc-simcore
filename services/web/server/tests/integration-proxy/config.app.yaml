@@ -15,11 +15,14 @@ director:
   host: 127.0.0.1
   port: 8001
   version: v0
+login:
+  enabled: true
+  registration_confirmation_required: 1
 main:
   client_outdir: undefined
   host: 127.0.0.1
   log_level: DEBUG
-  port: 47569
+  port: 36525
   testing: true
 rabbit:
   channels:
@@ -29,12 +32,11 @@ rabbit:
     progress: comp.backend.channels.progress
   enabled: false
   host: rabbit
+  name: tasks
   password: simcore
   port: 5672
   user: simcore
 rest:
-  extra_urls:
-  - http://osparc01.itis.ethz.ch:9081
   location: http://127.0.0.1:8043/api/specs/webserver/v0/openapi.yaml
   version: v0
 smtp:

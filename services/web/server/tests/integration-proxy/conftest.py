@@ -105,7 +105,7 @@ def app_config(here, webserver_environ) -> Dict:
         with app_resources.stream("config/server-docker-dev.yaml") as f:
             cfg = yaml.safe_load(f)
             # test webserver works in host
-            cfg["main"]['host'] = '127.0.0.0'
+            cfg["main"]['host'] = '127.0.0.1'
 
         with config_file_path.open('wt') as f:
             yaml.dump(cfg, f, default_flow_style=False)
@@ -132,40 +132,14 @@ def docker_compose_file(here, services_docker_compose, devel_environ):
     """
     docker_compose_path = here / 'docker-compose.yml'
 
-    def _recreate_compose_file():
-        # reads service/docker-compose.yml
-        content = deepcopy(services_docker_compose)
-
-        # remove unnecessary services
-        keep = SERVICES
-        remove = [name for name in content['services'] if name not in keep]
-        for name in remove:
-            content['services'].pop(name, None)
-
-        for name in keep:
-            service = content['services'][name]
-            # remove builds
-            if "build" in service:
-                service.pop("build", None)
-                service['image'] = "services_{}:latest".format(name)
-            # replaces environs
-            if "environment" in service:
-                _environs = {}
-                for item in service["environment"]:
-                    key, value = item.split("=")
-                    if value.startswith("${") and value.endswith("}"):
-                        value = devel_environ.get(value[2:-1], value)
-                    _environs[key] = value
-                service["environment"] = [ "{}={}".format(k,v) for k,v in _environs.items() ]
-
-        # updates current docker-compose (also versioned ... do not change by hand)
-        with docker_compose_path.open('wt') as f:
-            yaml.dump(content, f, default_flow_style=False)
-
-    # TODO: comment when needed
-    _recreate_compose_file()
+    # creates a docker-compose file only with SERVICES and replaces environ
+    _recreate_compose_file(SERVICES, services_docker_compose, docker_compose_path, devel_environ)
 
     yield docker_compose_path
+
+    # cleanup
+    docker_compose_path.unlink()
+
 
 
 @pytest.fixture(scope='session')
@@ -187,12 +161,48 @@ def apihub_service(docker_services, docker_ip):
 
 
 # HELPERS ---------------------------------------------
+# TODO: should be reused integration-*
 
 def resolve_environ(service, environ):
     _environs = {}
     for item in service.get("environment", list()):
         key, value = item.split("=")
         if value.startswith("${") and value.endswith("}"):
-            value = environ.get(value[2:-1], value)
+            value = value[2:-1]
+            if ":" in value:
+                variable, default = value.split(":")
+                value = environ.get(variable, default[1:])
+            else:
+                value = environ.get(value, value)
+
         _environs[key] = value
     return _environs
+
+
+def _recreate_compose_file(keep, services_compose, docker_compose_path, devel_environ):
+    # reads service/docker-compose.yml
+    content = deepcopy(services_compose)
+
+    # remove unnecessary services
+    remove = [name for name in content['services'] if name not in keep]
+    for name in remove:
+        content['services'].pop(name, None)
+
+    for name in keep:
+        service = content['services'][name]
+        # remove builds
+        if "build" in service:
+            service.pop("build", None)
+            service['image'] = "services_{}:latest".format(name)
+        # replaces environs
+        if "environment" in service:
+            _environs = {}
+            for item in service["environment"]:
+                key, value = item.split("=")
+                if value.startswith("${") and value.endswith("}"):
+                    value = devel_environ.get(value[2:-1], value)
+                _environs[key] = value
+            service["environment"] = [ "{}={}".format(k,v) for k,v in _environs.items() ]
+    # updates current docker-compose (also versioned ... do not change by hand)
+    with docker_compose_path.open('wt') as f:
+        yaml.dump(content, f, default_flow_style=False)
