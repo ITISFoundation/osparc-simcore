@@ -19,6 +19,7 @@ before_script() {
 
 script() {
     pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-computation
+    pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-proxy
 }
 
 after_success() {
