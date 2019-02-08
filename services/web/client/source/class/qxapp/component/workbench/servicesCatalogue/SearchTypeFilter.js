@@ -81,9 +81,11 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", 
     __checkExtraFilters: function(data) {
       if (Object.keys(this.__extraFilters).length > 0) {
         for (const filterKey in this.__extraFilters) {
-          const prop = this.__getPropValue(data, filterKey);
-          if (prop.toLowerCase() !== this.__extraFilters[filterKey]) {
-            return false;
+          if (Object.prototype.hasOwnProperty.call(this.__extraFilters, filterKey)) {
+            const prop = this.__getPropValue(data, filterKey);
+            if (prop.toLowerCase() !== this.__extraFilters[filterKey]) {
+              return false;
+            }
           }
         }
       }
