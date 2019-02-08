@@ -24,7 +24,8 @@ API_VERSION = 'v0'
 
 @pytest.fixture
 #def webserver_service(loop, app_config, director_service, aiohttp_unused_port, aiohttp_server, here):
-def webserver_service(loop, app_config, aiohttp_unused_port, aiohttp_server, here):
+#def webserver_service(loop, app_config, aiohttp_unused_port, aiohttp_server, here):
+def webserver_service(docker_stack, loop, app_config, aiohttp_unused_port, aiohttp_server, here):
 
     # OVERRIDES app_config:
     #  - server lives with the testing framework
@@ -37,7 +38,8 @@ def webserver_service(loop, app_config, aiohttp_unused_port, aiohttp_server, her
     app_config['storage']['enabled'] = False
 
     # TODO: parse_and_validate
-    with (here / "config.app.yaml").open('wt') as f:
+    config_app_path = here / "config.app.yaml"
+    with (config_app_path).open('wt') as f:
         yaml.dump(app_config, f, default_flow_style=False)
 
     # app
@@ -49,7 +51,10 @@ def webserver_service(loop, app_config, aiohttp_unused_port, aiohttp_server, her
     setup_app_proxy(app) # <-----------|UNDER TEST
 
     server = loop.run_until_complete(aiohttp_server(app, port=port))
-    return server
+
+    yield server
+
+    config_app_path.unlink()
 
 @pytest.fixture
 def client(loop, webserver_service,  aiohttp_client):
