@@ -1,8 +1,6 @@
 
-""" Tests computation within an environment having a
-    - director service
-    - celery
-    - apihub service
+""" Tests webserver.computation subsystem having a docker-stack composed of
+    a selection of core and tool services running in a swarm
 """
 # pylint:disable=wildcard-import
 # pylint:disable=unused-import
@@ -37,22 +35,27 @@ from simcore_service_webserver.db import DSN
 from simcore_service_webserver.db_models import confirmations, users
 from simcore_service_webserver.resources import resources as app_resources
 
-pytest_plugins = ["fixtures.docker_registry", "fixtures.celery_service"]
+pytest_plugins = [
+    "fixtures.docker_registry",
+    "fixtures.celery_service"
+]
 
-SERVICES = ['director', 'apihub', 'rabbit', 'postgres', 'sidecar', 'storage', 'minio']
-TOOLS = ['adminer', 'flower', 'portainer']
+# Selection of core and tool services started in this swarm fixture (integration)
+core_services = [
+    'director',
+    'apihub',
+    'rabbit',
+    'postgres',
+    'sidecar',
+    'storage',
+    'minio'
+]
 
-def _get_ip()->str:
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # doesn't even have to be reachable
-        s.connect(('10.255.255.255', 1))
-        IP = s.getsockname()[0]
-    except Exception: #pylint: disable=W0703
-        IP = '127.0.0.1'
-    finally:
-        s.close()
-    return IP
+tool_services = [
+    'adminer',
+    'flower',
+    'portainer'
+]
 
 
 @pytest.fixture(scope="session")
@@ -107,8 +110,8 @@ def devel_environ(env_devel_file) -> Dict[str, str]:
                 key, value = line.split("=")
                 env_devel[key] = str(value)
     # change some of the environ to accomodate the test case
-    # ensure the test runs not as root if not under linux
     if 'RUN_DOCKER_ENGINE_ROOT' in env_devel:
+        # ensure the test runs not as root if not under linux
         env_devel['RUN_DOCKER_ENGINE_ROOT'] = '0' if os.name == 'posix' else '1'
     if 'REGISTRY_SSL' in env_devel:
         env_devel['REGISTRY_SSL'] = 'False'
@@ -189,7 +192,7 @@ def docker_compose_file(here, services_docker_compose, devel_environ):
 
     """
     docker_compose_path = here / 'docker-compose.yml'
-    _recreate_compose_file(SERVICES, services_docker_compose, docker_compose_path, devel_environ)
+    _recreate_compose_file(core_services, services_docker_compose, docker_compose_path, devel_environ)
 
     yield docker_compose_path
     # cleanup
@@ -201,7 +204,7 @@ def tools_docker_compose_file(here, tools_docker_compose, devel_environ):
 
     """
     docker_compose_path = here / 'docker-compose.tools.yml'
-    _recreate_compose_file(TOOLS, tools_docker_compose, docker_compose_path, devel_environ)
+    _recreate_compose_file(tool_services, tools_docker_compose, docker_compose_path, devel_environ)
 
     yield docker_compose_path
     # cleanup
@@ -222,11 +225,21 @@ def docker_swarm(docker_client):
 @pytest.fixture(scope='session')
 def docker_stack(docker_swarm, docker_client, docker_compose_file: Path, tools_docker_compose_file: Path):
     docker_compose_ignore_file = docker_compose_file.parent / "docker-compose.ignore.yml"
-    assert subprocess.run("docker-compose -f {} -f {} config > {}".format(docker_compose_file.name, tools_docker_compose_file.name, docker_compose_ignore_file.name), shell=True, cwd=docker_compose_file.parent).returncode == 0
-    assert subprocess.run("docker stack deploy -c {} services".format(docker_compose_ignore_file.name), shell=True, cwd=docker_compose_file.parent).returncode == 0
+    assert subprocess.run(
+            "docker-compose -f {} -f {} config > {}".format(docker_compose_file.name, tools_docker_compose_file.name, docker_compose_ignore_file.name),
+            shell=True,
+            cwd=docker_compose_file.parent
+        ).returncode == 0
+    assert subprocess.run(
+            "docker stack deploy -c {} services".format(docker_compose_ignore_file.name),
+            shell=True,
+            cwd=docker_compose_file.parent
+        ).returncode == 0
+
     with docker_compose_ignore_file.open() as fp:
         docker_stack_cfg = yaml.safe_load(fp)
         yield docker_stack_cfg
+
     # clean up
     assert subprocess.run("docker stack rm services", shell=True).returncode == 0
     docker_compose_ignore_file.unlink()
@@ -259,6 +272,19 @@ def postgres_session(postgres_db):
     session.close()
 
 # HELPERS ---------------------------------------------
+def _get_ip()->str:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception: #pylint: disable=W0703
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
+
 def resolve_environ(service, environ):
     _environs = {}
     for item in service.get("environment", list()):
