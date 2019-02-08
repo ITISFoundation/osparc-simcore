@@ -56,6 +56,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
       })
     });
 
+    this._createChildControlImpl("dragIcon");
+
     this.__createDragMechanism(this, portKey);
   },
 
@@ -97,13 +99,25 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
           this._add(control);
           break;
         }
+        case "dragIcon": {
+          control = new qx.ui.basic.Atom().set({
+            icon: "@FontAwesome5Solid/arrows-alt/14",
+            // icon: "@FontAwesome5Solid/grip-vertical/16"
+            paddingRight: 5
+          });
+          this._add(control);
+          break;
+        }
       }
 
       return control || this.base(arguments, id);
     },
 
     __createDragMechanism: function(uiPort, portKey) {
-      uiPort.setDraggable(true);
+      uiPort.set({
+        draggable: true,
+        decorator: "draggableWidget"
+      });
       uiPort.nodeId = this.getNode().getNodeId();
       uiPort.portId = portKey;
 
