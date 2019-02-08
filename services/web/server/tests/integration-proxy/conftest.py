@@ -200,8 +200,6 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path):
             cwd=docker_compose_file.parent
         ).returncode == 0
 
-    import pdb; pdb.set_trace()
-
     with docker_compose_file.open() as fp:
         docker_stack_cfg = yaml.safe_load(fp)
         yield docker_stack_cfg
@@ -209,7 +207,6 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path):
     # clean up
 
     assert subprocess.run("docker stack rm services", shell=True).returncode == 0
-    #docker_compose_file.unlink()
 
 
 
