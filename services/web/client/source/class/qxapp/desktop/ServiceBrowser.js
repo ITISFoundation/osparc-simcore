@@ -87,8 +87,30 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     __createServicesList: function() {
       let servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
 
-      let filterLayout = this.__createFilterLayout();
-      servicesLayout.add(filterLayout);
+      let filterStrLayout = this.__createFilterStringLayout();
+      servicesLayout.add(filterStrLayout);
+
+      const typeBtns = [
+        "Computational",
+        "Dynamic"
+      ];
+      let typeResp = this.__createFilterByLayout(this.tr("Type"), typeBtns);
+      let filterTypeLayout = typeResp["layout"];
+      this.__filterByType = typeResp["radioGroup"];
+      servicesLayout.add(filterTypeLayout);
+
+      const catBtns = [
+        "Data",
+        "Modeling",
+        "Simulator",
+        "Solver",
+        "PostPro",
+        "Notebook"
+      ];
+      let catResp = this.__createFilterByLayout(this.tr("Category"), catBtns);
+      let filterCatLayout = catResp["layout"];
+      this.__filterByCategory = catResp["radioGroup"];
+      servicesLayout.add(filterCatLayout);
 
       let servicesList = this.__servicesList = new qx.ui.form.List().set({
         orientation: "vertical",
@@ -120,6 +142,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
           ctrl.bindProperty("key", "title", null, item, id);
           ctrl.bindProperty("name", "name", null, item, id);
           ctrl.bindProperty("type", "type", null, item, id);
+          ctrl.bindProperty("category", "category", null, item, id);
           ctrl.bindProperty("contact", "contact", null, item, id);
         }
       });
@@ -141,7 +164,8 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
         "key",
         "name",
         "type",
-        "contact"
+        "contact",
+        "category"
       ];
       let filterObj = new qxapp.component.workbench.servicesCatalogue.SearchTypeFilter(servCtrl, searchIn);
       let dlgt = servCtrl.getDelegate();
@@ -152,20 +176,62 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       // make every input in the textfield update the controller
       this.__searchTextfield.bind("changeValue", filterObj, "searchString");
 
+      this.__filterByType.addListener("changeValue", e => {
+        const sel = e.getData();
+        filterObj.removeFilter("type");
+        if (sel) {
+          filterObj.addFilter("type", sel.getLabel());
+        }
+        servCtrl.update();
+      }, this);
+
+      this.__filterByCategory.addListener("changeValue", e => {
+        const sel = e.getData();
+        filterObj.removeFilter("category");
+        if (sel) {
+          filterObj.addFilter("category", sel.getLabel());
+        }
+        servCtrl.update();
+      }, this);
 
       return servicesLayout;
     },
 
-    __createFilterLayout: function() {
+    __createFilterStringLayout: function() {
       let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       let searchLabel = new qx.ui.basic.Label(this.tr("Search"));
       filterLayout.add(searchLabel);
+
       let textfield = this.__searchTextfield = new qx.ui.form.TextField();
       textfield.setLiveUpdate(true);
       filterLayout.add(textfield, {
         flex: 1
       });
       return filterLayout;
+    },
+
+    __createFilterByLayout: function(label, btns) {
+      let filterTypeLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      let typeLabel = new qx.ui.basic.Label(label);
+      filterTypeLayout.add(typeLabel);
+
+      let group = new qx.ui.form.RadioGroup().set({
+        allowEmptySelection: true
+      });
+      btns.forEach(cat => {
+        let button = new qx.ui.form.ToggleButton(cat).set({
+          maxWidth: 150
+        });
+        group.add(button);
+        filterTypeLayout.add(button, {
+          flex: 1
+        });
+      }, this);
+
+      return {
+        layout: filterTypeLayout,
+        radioGroup: group
+      };
     },
 
     __createVersionsList: function() {
