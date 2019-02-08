@@ -51,6 +51,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     __allServices: null,
     __servicesList: null,
     __versionsList: null,
+    __searchTextfield: null,
 
     __initResources: function() {
       this.__getServicesPreload();
@@ -86,6 +87,9 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     __createServicesList: function() {
       let servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
 
+      let filterLayout = this.__createFilterLayout();
+      servicesLayout.add(filterLayout);
+
       let servicesList = this.__servicesList = new qx.ui.form.List().set({
         orientation: "vertical",
         spacing: 10,
@@ -108,8 +112,8 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       let latestServicesModel = new qx.data.Array(
         latestServices.map(s => qx.data.marshal.Json.createModel(s))
       );
-      let prjCtr = new qx.data.controller.List(latestServicesModel, servicesList, "name");
-      prjCtr.setDelegate({
+      let servCtrl = new qx.data.controller.List(latestServicesModel, servicesList, "name");
+      servCtrl.setDelegate({
         createItem: () => new qxapp.desktop.ServiceBrowserListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "model", null, item, id);
@@ -121,7 +125,47 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       });
       servicesLayout.add(servicesList);
 
+
+      // Workaround to the list.changeSelection
+      servCtrl.addListener("changeValue", e => {
+        if (e.getData() && e.getData().length>0) {
+          const selectedService = e.getData().toArray()[0];
+          this.__serviceSelected(selectedService);
+        } else {
+          this.__serviceSelected(null);
+        }
+      }, this);
+
+      // create the filter
+      const searchIn = [
+        "key",
+        "name",
+        "type",
+        "contact"
+      ];
+      let filterObj = new qxapp.component.workbench.servicesCatalogue.SearchTypeFilter(servCtrl, searchIn);
+      let dlgt = servCtrl.getDelegate();
+      dlgt["filter"] = filterObj["filter"];
+      // set the filter
+      servCtrl.setDelegate(dlgt);
+
+      // make every input in the textfield update the controller
+      this.__searchTextfield.bind("changeValue", filterObj, "searchString");
+
+
       return servicesLayout;
+    },
+
+    __createFilterLayout: function() {
+      let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      let searchLabel = new qx.ui.basic.Label(this.tr("Search"));
+      filterLayout.add(searchLabel);
+      let textfield = this.__searchTextfield = new qx.ui.form.TextField();
+      textfield.setLiveUpdate(true);
+      filterLayout.add(textfield, {
+        flex: 1
+      });
+      return filterLayout;
     },
 
     __createVersionsList: function() {
