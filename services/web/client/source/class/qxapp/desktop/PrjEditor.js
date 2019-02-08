@@ -147,7 +147,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     connectEvents: function() {
-      this.__mainPanel.getControls().addListener("startPipeline", function() {
+      this.__mainPanel.getControls().addListener("startPipeline", () => {
         if (this.getCanStart()) {
           this.__startPipeline();
         } else {
@@ -155,14 +155,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         }
       }, this);
 
-      this.__mainPanel.getControls().addListener("stopPipeline", function() {
-        this.__stopPipeline();
-      }, this);
+      this.__mainPanel.getControls().addListener("stopPipeline", this.__stopPipeline, this);
 
       let workbench = this.getProject().getWorkbench();
-      workbench.addListener("workbenchChanged", function() {
-        this.__workbenchChanged();
-      }, this);
+      workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
       workbench.addListener("updatePipeline", e => {
         let node = e.getData();
@@ -365,34 +361,33 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       // callback for incoming logs
       const slotName = "logger";
-      if (!socket.slotExists(slotName)) {
-        socket.on(slotName, function(data) {
-          const d = JSON.parse(data);
-          const nodeId = d["Node"];
-          const msg = d["Message"];
-          const workbench = this.getProject().getWorkbench();
-          let node = workbench.getNode(nodeId);
-          this.getLogger().info(node.getLabel(), msg);
-          if (node) {
-            node.addLog(msg);
-          }
-        }, this);
-      }
+      socket.removeSlot(slotName);
+      socket.on(slotName, function(data) {
+        const d = JSON.parse(data);
+        const nodeId = d["Node"];
+        const msg = d["Message"];
+        const workbench = this.getProject().getWorkbench();
+        let node = workbench.getNode(nodeId);
+        this.getLogger().info(node.getLabel(), msg);
+        if (node) {
+          node.addLog(msg);
+        }
+      }, this);
       socket.emit(slotName);
 
       // callback for incoming progress
-      if (!socket.slotExists("progress")) {
-        socket.on("progress", function(data) {
-          const d = JSON.parse(data);
-          const nodeId = d["Node"];
-          const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
-          const workbench = this.getProject().getWorkbench();
-          let node = workbench.getNode(nodeId);
-          if (node) {
-            node.setProgress(progress);
-          }
-        }, this);
-      }
+      const slotName2 = "progress";
+      socket.removeSlot(slotName2);
+      socket.on(slotName2, function(data) {
+        const d = JSON.parse(data);
+        const nodeId = d["Node"];
+        const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
+        const workbench = this.getProject().getWorkbench();
+        let node = workbench.getNode(nodeId);
+        if (node) {
+          node.setProgress(progress);
+        }
+      }, this);
 
       // post pipeline
       this.__pipelineId = null;

@@ -273,6 +273,10 @@ qx.Class.define("qxapp.data.model.Node", {
         if (nodeData.position) {
           this.setPosition(nodeData.position.x, nodeData.position.y);
         }
+
+        if (nodeData.progress) {
+          this.setProgress(nodeData.progress);
+        }
       }
 
       if (this.__inputsDefaultWidget) {

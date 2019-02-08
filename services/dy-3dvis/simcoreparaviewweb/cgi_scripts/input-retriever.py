@@ -39,10 +39,10 @@ async def retrieve_data():
     download_tasks = []
     for node_input in PORTS.inputs:
         if not node_input or node_input.value is None:
-            continue                
-        
+            continue
+
         # collect coroutines
-        download_tasks.append(node_input.get())        
+        download_tasks.append(node_input.get())
     if download_tasks:
         downloaded_files = await asyncio.gather(*download_tasks)
         print("downloaded {} files /tmp <br>".format(len(download_tasks)))

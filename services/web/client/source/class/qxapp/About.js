@@ -18,10 +18,11 @@ qx.Class.define("qxapp.About", {
 
   members: {
     __populateEntries: function() {
-      this.add(this.__createEntry("oSPARC", qx.core.Environment.get("osparc.vcsRef"), "https://github.com/ITISFoundation/osparc-simcore"));
-      this.add(this.__createEntry("oSPARC UI", qx.core.Environment.get("osparc.vcsRefClient"), "https://github.com/ITISFoundation/osparc-simcore/services/web/client"));
+      // FIXME: In deployment mode these env variables are not properly initialized and it break client compilation
+      // this.add(this.__createEntry("oSPARC", qx.core.Environment.get("osparc.vcsRef"), "https://github.com/ITISFoundation/osparc-simcore"));
+      // this.add(this.__createEntry("oSPARC UI", qx.core.Environment.get("osparc.vcsRefClient"), "https://github.com/ITISFoundation/osparc-simcore/services/web/client"));
 
-      this.add(new qx.ui.core.Spacer(null, 10));
+      // this.add(new qx.ui.core.Spacer(null, 10));
 
       this.add(this.__createEntry("qooxdoo-compiler", qx.core.Environment.get("qx.compilerVersion"), "https://github.com/qooxdoo/qooxdoo-compiler"));
 

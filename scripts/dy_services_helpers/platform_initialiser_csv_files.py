@@ -23,8 +23,8 @@ def _generate_one_file(rows, columns, separator)->str:
     temp_file.close()
     df = _create_dummy_table(rows, columns)
     with open(temp_file.name, "w") as file_pointer:
-        df.to_csv(path_or_buf=file_pointer, sep=separator, header=False, index=False)        
-        return temp_file.name    
+        df.to_csv(path_or_buf=file_pointer, sep=separator, header=False, index=False)
+        return temp_file.name
 
 def main():
     parser = argparse.ArgumentParser(description="Initialise an oSparc database/S3 with fake data for development.")
@@ -40,7 +40,7 @@ def main():
     elif "space" in options.separator:
         separator = " "
     else:
-        separator = options.separator    
+        separator = options.separator
     
 
     def _file_generator(file_index: int, file_type: str): # pylint: disable=W0613

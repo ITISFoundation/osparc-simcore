@@ -1,0 +1,6 @@
+#!/bin/bash
+# these variable must be available securely from travis
+echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+make push-staging
+
+# TODO: PC->SAN: why not moving `push-staging` makefile command directly here?

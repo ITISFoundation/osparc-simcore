@@ -1,8 +1,26 @@
 version: '3.4'
 services:
-  storage:
-    image: itisfoundation/storage-build-cache
+  apihub:
+    image: itisfoundation/apihub:cache
     build:
-      cache_from:
-        - itisfoundation/storage-build-cache:latest
-      target: cache    
+      target: production
+  director:
+    image: itisfoundation/director:cache
+    build:
+      target: cache
+  sidecar:
+    image: itisfoundation/sidecar:cache
+    build:
+      target: cache
+  storage:
+    image: itisfoundation/storage:cache
+    build:
+      target: cache
+  webclient:
+    image: itisfoundation/webclient:cache
+    build:
+      target: build
+  webserver:
+    image: itisfoundation/webserver:cache
+    build:
+      target: cache

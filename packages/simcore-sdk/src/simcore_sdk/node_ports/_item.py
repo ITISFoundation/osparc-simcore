@@ -64,7 +64,7 @@ class Item:
     async def get(self):
         """ gets data converted to the underlying type
 
-        :raises exceptions.InvalidProtocolError: if the underlying type is known
+        :raises exceptions.InvalidProtocolError: if the underlying type is unknown
         :return: the converted value or None if no value is defined
         """
         log.debug("Getting item %s", self.key)
@@ -77,6 +77,8 @@ class Item:
 
         if data_items_utils.is_value_link(self.value):
             value = await self.__get_value_from_link(self.value)
+            if value is None:
+                return value
             if data_items_utils.is_file_type(self.type):
                 # move the file to the right location
                 file_name = Path(value).name
