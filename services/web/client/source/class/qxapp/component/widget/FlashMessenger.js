@@ -88,7 +88,7 @@ qx.Class.define("qxapp.component.widget.FlashMessenger", {
         this.open();
       }
 
-      const time = 3000;
+      const time = Math.max(4000, message.length*100);
       qx.event.Timer.once(e => {
         this.remove(label);
         if (this.getChildren().length === 0) {
