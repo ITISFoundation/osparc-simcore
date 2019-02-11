@@ -49,6 +49,15 @@ qx.Class.define("qxapp.desktop.DataManager", {
       });
       dataManagerMainLayout.add(label);
 
+      let toDatCore = new qx.ui.form.Button(this.tr("To DAT-Core")).set({
+        width: 120,
+        allowGrowX: false
+      });
+      toDatCore.addListener("execute", () => {
+        window.open("https://app.blackfynn.io");
+      }, this);
+      dataManagerMainLayout.add(toDatCore);
+
       let dataManagerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
       dataManagerMainLayout.add(dataManagerLayout, {
         flex: 1
