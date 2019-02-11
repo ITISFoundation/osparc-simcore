@@ -5,6 +5,13 @@
 [![Requirements Status](https://requires.io/github/ITISFoundation/osparc-simcore/requirements.svg?branch=master)](https://requires.io/github/ITISFoundation/osparc-simcore/requirements/?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master)](https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master)
 
+
+![](https://img.shields.io/docker/pulls/itisfoundation/webserver.svg?label=webserver&style=plastic)
+![](https://img.shields.io/docker/pulls/itisfoundation/director.svg?label=director&style=plastic)
+![](https://img.shields.io/docker/pulls/itisfoundation/sidecar.svg?label=sidecar&style=plastic)
+![](https://img.shields.io/docker/pulls/itisfoundation/storage.svg?label=storage&style=plastic)
+
+
 ## Overview
 
 ![service-web](docs/img/service-interaction.svg)
