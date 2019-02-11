@@ -51,6 +51,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     __allServices: null,
     __servicesList: null,
     __versionsList: null,
+    __searchTextfield: null,
 
     __initResources: function() {
       this.__getServicesPreload();
@@ -86,6 +87,31 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
     __createServicesList: function() {
       let servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
 
+      let filterStrLayout = this.__createFilterStringLayout();
+      servicesLayout.add(filterStrLayout);
+
+      const typeBtns = [
+        "Computational",
+        "Dynamic"
+      ];
+      let typeResp = this.__createFilterByLayout(this.tr("Type"), typeBtns);
+      let filterTypeLayout = typeResp["layout"];
+      this.__filterByType = typeResp["radioGroup"];
+      servicesLayout.add(filterTypeLayout);
+
+      const catBtns = [
+        "Data",
+        "Modeling",
+        "Simulator",
+        "Solver",
+        "PostPro",
+        "Notebook"
+      ];
+      let catResp = this.__createFilterByLayout(this.tr("Category"), catBtns);
+      let filterCatLayout = catResp["layout"];
+      this.__filterByCategory = catResp["radioGroup"];
+      servicesLayout.add(filterCatLayout);
+
       let servicesList = this.__servicesList = new qx.ui.form.List().set({
         orientation: "vertical",
         spacing: 10,
@@ -108,20 +134,104 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       let latestServicesModel = new qx.data.Array(
         latestServices.map(s => qx.data.marshal.Json.createModel(s))
       );
-      let prjCtr = new qx.data.controller.List(latestServicesModel, servicesList, "name");
-      prjCtr.setDelegate({
+      let servCtrl = new qx.data.controller.List(latestServicesModel, servicesList, "name");
+      servCtrl.setDelegate({
         createItem: () => new qxapp.desktop.ServiceBrowserListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "model", null, item, id);
           ctrl.bindProperty("key", "title", null, item, id);
           ctrl.bindProperty("name", "name", null, item, id);
           ctrl.bindProperty("type", "type", null, item, id);
+          ctrl.bindProperty("category", "category", null, item, id);
           ctrl.bindProperty("contact", "contact", null, item, id);
         }
       });
       servicesLayout.add(servicesList);
 
+
+      // Workaround to the list.changeSelection
+      servCtrl.addListener("changeValue", e => {
+        if (e.getData() && e.getData().length>0) {
+          const selectedService = e.getData().toArray()[0];
+          this.__serviceSelected(selectedService);
+        } else {
+          this.__serviceSelected(null);
+        }
+      }, this);
+
+      // create the filter
+      const searchIn = [
+        "key",
+        "name",
+        "type",
+        "contact",
+        "category"
+      ];
+      let filterObj = new qxapp.component.workbench.servicesCatalogue.SearchTypeFilter(servCtrl, searchIn);
+      let dlgt = servCtrl.getDelegate();
+      dlgt["filter"] = filterObj["filter"];
+      // set the filter
+      servCtrl.setDelegate(dlgt);
+
+      // make every input in the textfield update the controller
+      this.__searchTextfield.bind("changeValue", filterObj, "searchString");
+
+      this.__filterByType.addListener("changeValue", e => {
+        const sel = e.getData();
+        filterObj.removeFilter("type");
+        if (sel) {
+          filterObj.addFilter("type", sel.getLabel());
+        }
+        servCtrl.update();
+      }, this);
+
+      this.__filterByCategory.addListener("changeValue", e => {
+        const sel = e.getData();
+        filterObj.removeFilter("category");
+        if (sel) {
+          filterObj.addFilter("category", sel.getLabel());
+        }
+        servCtrl.update();
+      }, this);
+
       return servicesLayout;
+    },
+
+    __createFilterStringLayout: function() {
+      let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      let searchLabel = new qx.ui.basic.Label(this.tr("Search"));
+      filterLayout.add(searchLabel);
+
+      let textfield = this.__searchTextfield = new qx.ui.form.TextField();
+      textfield.setLiveUpdate(true);
+      filterLayout.add(textfield, {
+        flex: 1
+      });
+      return filterLayout;
+    },
+
+    __createFilterByLayout: function(label, btns) {
+      let filterTypeLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      let typeLabel = new qx.ui.basic.Label(label);
+      filterTypeLayout.add(typeLabel);
+
+      let group = new qx.ui.form.RadioGroup().set({
+        allowEmptySelection: true
+      });
+      btns.forEach(cat => {
+        let button = new qx.ui.form.ToggleButton(cat).set({
+          maxWidth: 150
+        });
+        group.add(button);
+        filterTypeLayout.add(button, {
+          flex: 1
+        });
+      }, this);
+
+      return {
+        layout: filterTypeLayout,
+        radioGroup: group
+      };
     },
 
     __createVersionsList: function() {

@@ -101,6 +101,7 @@ qx.Class.define("qxapp.component.EntityList", {
           c.bindProperty("pathId", "pathId", null, item, id);
           c.bindProperty("pathLabel", "pathLabel", null, item, id);
           c.bindProperty("checked", "checked", null, item, id);
+          c.bindPropertyReverse("checked", "checked", null, item, id);
         },
         configureItem: item => {
           item.addListener("visibilityChanged", e => {
