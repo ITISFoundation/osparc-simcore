@@ -1,5 +1,10 @@
 # director
 
+[![](https://images.microbadger.com/badges/image/itisfoundation/director.svg)](https://microbadger.com/images/itisfoundation/director "More on service image in registry")
+[![](https://images.microbadger.com/badges/version/itisfoundation/director.svg)](https://microbadger.com/images/itisfoundation/director "More on service image in registry")
+[![](https://images.microbadger.com/badges/commit/itisfoundation/director.svg)](https://microbadger.com/images/itisfoundation/director "More on service image in registry")
+
+
 ## Usage
 
 ```bash

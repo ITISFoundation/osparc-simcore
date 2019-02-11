@@ -5,6 +5,12 @@
 [![Requirements Status](https://requires.io/github/ITISFoundation/osparc-simcore/requirements.svg?branch=master)](https://requires.io/github/ITISFoundation/osparc-simcore/requirements/?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master)](https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master)
 
+
+[![](https://img.shields.io/microbadger/image-size/itisfoundation/webserver/staging-latest.svg?label=webserver&style=flat)](https://microbadger.com/images/itisfoundation/webserver "More on itisfoundation/webserver:staging-latest image")
+[![](https://img.shields.io/microbadger/image-size/itisfoundation/director/staging-latest.svg?label=director&style=flat)](https://microbadger.com/images/itisfoundation/director "More on itisfoundation/director:staging-latest image")
+[![](https://img.shields.io/microbadger/image-size/itisfoundation/sidecar/staging-latest.svg?label=sidecar&style=flat)](https://microbadger.com/images/itisfoundation/sidecar "More on itisfoundation/sidecar:staging-latest image")
+[![](https://img.shields.io/microbadger/image-size/itisfoundation/storage/staging-latest.svg?label=storage&style=flat)](https://microbadger.com/images/itisfoundation/director "More on itisfoundation/director:staging-latest image")
+
 ## Overview
 
 ![service-web](docs/img/service-interaction.svg)
