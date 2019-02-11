@@ -6,11 +6,10 @@
 [![Coverage Status](https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master)](https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master)
 
 
-![](https://img.shields.io/docker/pulls/itisfoundation/webserver.svg?label=webserver&style=plastic)
-![](https://img.shields.io/docker/pulls/itisfoundation/director.svg?label=director&style=plastic)
-![](https://img.shields.io/docker/pulls/itisfoundation/sidecar.svg?label=sidecar&style=plastic)
-![](https://img.shields.io/docker/pulls/itisfoundation/storage.svg?label=storage&style=plastic)
-
+[![](https://img.shields.io/microbadger/image-size/itisfoundation/webserver/staging-latest.svg?label=webserver&style=flat)](https://microbadger.com/images/itisfoundation/webserver "More on itisfoundation/webserver:staging-latest image")
+[![](https://img.shields.io/microbadger/image-size/itisfoundation/director/staging-latest.svg?label=director&style=flat)](https://microbadger.com/images/itisfoundation/director "More on itisfoundation/director:staging-latest image")
+[![](https://img.shields.io/microbadger/image-size/itisfoundation/sidecar/staging-latest.svg?label=sidecar&style=flat)](https://microbadger.com/images/itisfoundation/sidecar "More on itisfoundation/sidecar:staging-latest image")
+[![](https://img.shields.io/microbadger/image-size/itisfoundation/storage/staging-latest.svg?label=storage&style=flat)](https://microbadger.com/images/itisfoundation/director "More on itisfoundation/director:staging-latest image")
 
 ## Overview
 
