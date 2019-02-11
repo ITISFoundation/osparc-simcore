@@ -1,10 +1,10 @@
 # web/server
 
+[![](https://images.microbadger.com/badges/image/itisfoundation/webserver.svg)](https://microbadger.com/images/itisfoundation/webserver "More on service image in registry")
+[![](https://images.microbadger.com/badges/version/itisfoundation/webserver.svg)](https://microbadger.com/images/itisfoundation/webserver "More on service image in registry")
+[![](https://images.microbadger.com/badges/commit/itisfoundation/webserver.svg)](https://microbadger.com/images/itisfoundation/webserver "More on service image in registry")
+
 Corresponds to the ```webserver``` service (see all services in ``services/docker-compose.yml``)
-
-
-
-
 
 
 ## Development
