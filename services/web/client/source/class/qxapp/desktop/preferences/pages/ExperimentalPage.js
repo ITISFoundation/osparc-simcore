@@ -40,7 +40,7 @@ qx.Class.define("qxapp.desktop.preferences.pages.ExperimentalPage", {
 
       let label = this._createHelpLabel(this.tr(
         "This is a list of experimental themes for the UI. By default the \
-         <a href=>osparc-theme</a> is selected"
+         osparc-theme is selected"
       ));
       box.add(label);
 
