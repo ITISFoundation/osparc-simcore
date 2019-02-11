@@ -29,7 +29,8 @@ appRouter.get('/retrieve', callInputRetriever);
 module.exports = appRouter;
 
 function getInputFile(request, response) {
-  const fileName = request.query["fileName"]
+  const inputsDir = '../inputs/'
+  const fileName = inputsDir + request.query["fileName"]
   console.log('getInputFile', fileName);
   fs.readFile(fileName, (err, data) => {
     if (err) {
@@ -53,7 +54,7 @@ function getInputFiles(request, response) {
       metadata.push({
         title: files[i],
         type: 'Other',
-        url: inputsDir + files[i]
+        url: files[i]
       });
     }
     response.send(metadata);
