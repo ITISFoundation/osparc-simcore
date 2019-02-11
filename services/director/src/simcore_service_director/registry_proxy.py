@@ -2,6 +2,7 @@
 import json
 import logging
 from typing import Dict, List
+
 import aiohttp
 
 from . import config, exceptions
@@ -9,6 +10,7 @@ from . import config, exceptions
 INTERACTIVE_SERVICES_PREFIX = 'simcore/services/dynamic/'
 COMPUTATIONAL_SERVICES_PREFIX = 'simcore/services/comp/'
 DEPENDENCIES_LABEL_KEY = 'simcore.service.dependencies'
+
 _logger = logging.getLogger(__name__)
 
 async def list_computational_services() -> List[List[Dict]]:

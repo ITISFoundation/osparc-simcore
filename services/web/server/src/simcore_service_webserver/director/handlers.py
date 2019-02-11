@@ -119,7 +119,7 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
     params, query, body = await extract_and_validate(request)
 
     assert params, "DELETE expected /running_interactive_services/{service_uuid}"
-    assert query
+    assert not query
     assert not body
 
     registry = get_registry(request.app)
@@ -128,6 +128,7 @@ async def running_interactive_services_delete(request: web.Request) -> web.Respo
 
     # forward to director API
     session = get_client_session(request.app)
+    # FIXME: composing url might be url = endpoint instead of url = endpoint.with_query()
     url = endpoint.with_query(service_uuid)
     async with session.delete(url, ssl=False) as resp:
         payload = await resp.json()

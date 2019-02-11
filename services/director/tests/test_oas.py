@@ -15,7 +15,7 @@ def test_openapi_specs(version):
     name = "{root}/{version}/openapi.yaml".format(root=resources.RESOURCE_OPENAPI_ROOT, version=version)
     openapi_path = resources.get_path(name)
     with resources.stream(name) as fh:
-        specs = yaml.load(fh)
+        specs = yaml.safe_load(fh)
         try:
             validate_spec(specs, spec_url=openapi_path.as_uri())
         except OpenAPIValidationError as err:
@@ -25,7 +25,7 @@ def test_openapi_specs(version):
 def test_server_specs(version):
     name = "{root}/{version}/openapi.yaml".format(root=resources.RESOURCE_OPENAPI_ROOT, version=version)
     with resources.stream(name) as fh:
-        specs = yaml.load(fh)
+        specs = yaml.safe_load(fh)
 
         # client-sdk current limitation
         #  - hooks to first server listed in oas
