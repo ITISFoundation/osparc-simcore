@@ -143,7 +143,7 @@ qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue",
       // create the filter
       let filterObj = new qxapp.component.workbench.servicesCatalogue.SearchTypeFilter(this.__controller, ["name"]);
       // set the filter
-      filterObj["bindItem"] = (ctrl, item, id) => {
+      filterObj.bindItem = (ctrl, item, id) => {
         controller.bindDefaultProperties(item, id);
       };
       this.__controller.setDelegate(filterObj);
