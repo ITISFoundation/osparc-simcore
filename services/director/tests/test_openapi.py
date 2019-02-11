@@ -25,7 +25,7 @@ def test_specifications(spec_basepath, version):
     spec_path = spec_basepath / "{}/openapi.yaml".format(version)
 
     with spec_path.open() as fh:
-        specs = yaml.load(fh)
+        specs = yaml.safe_load(fh)
         try:
             validate_spec(specs, spec_url=spec_path.as_uri())
         except OpenAPIValidationError as err:

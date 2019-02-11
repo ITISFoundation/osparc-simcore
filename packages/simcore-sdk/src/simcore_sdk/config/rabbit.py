@@ -28,7 +28,7 @@ CONFIG_SCHEMA = T.Dict({
 })
 
 
-CONFIG_EXAMPLES = map(yaml.load,[
+CONFIG_EXAMPLES = map(yaml.safe_load,[
 """
   user: simcore
   password: simcore
@@ -74,7 +74,7 @@ class Config:
             CONFIG_SCHEMA.check(config) # raise exception
         else:
             config = {}
-        
+
         RABBITMQ_USER = env.get('RABBITMQ_USER','simcore')
         RABBITMQ_PASSWORD = env.get('RABBITMQ_PASSWORD','simcore')
         RABBITMQ_HOST=env.get('RABBITMQ_HOST','rabbit')
@@ -84,7 +84,7 @@ class Config:
         CELERY_RESULT_BACKEND=env.get('CELERY_RESULT_BACKEND','rpc://')
         # FIXME: get variables via config.get('') or
         # rabbit
-        
+
         try:
             self._broker_url = eval_broker(config)
         except:                                     # pylint: disable=W0702

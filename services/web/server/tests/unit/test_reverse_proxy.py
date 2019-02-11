@@ -15,12 +15,15 @@ import attr
 import pytest
 from aiohttp import web
 from aiohttp.client_reqrep import ClientResponse
-from aiohttp.test_utils import TestClient as DTestClient # renaming avoid pytest to collect
+from aiohttp.test_utils import TestClient as DTestClient  # renaming avoid pytest to collect
+from yarl import URL
+
+import simcore_service_webserver.reverse_proxy.handlers as reverse_proxy_handlers
 from servicelib.application_keys import APP_CONFIG_KEY
+from simcore_service_webserver import reverse_proxy
 from simcore_service_webserver.reverse_proxy import setup_reverse_proxy
 from simcore_service_webserver.reverse_proxy.abc import ServiceResolutionPolicy
 from simcore_service_webserver.reverse_proxy.settings import PROXY_MOUNTPOINT
-from yarl import URL
 
 
 def create_backend_app(name, image, basepath):
@@ -339,3 +342,7 @@ async def test_spawned_from_client(client):
         url = URL(data["received"]["url"])
         assert url.relative() == tail
         assert not data["received"]["body"]
+
+
+def test_module_configs():
+    assert reverse_proxy_handlers.jupyter.APP_SOCKETS_KEY == reverse_proxy.APP_SOCKETS_KEY
