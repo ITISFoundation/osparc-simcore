@@ -50,7 +50,9 @@ qx.Class.define("qxapp.desktop.DataManager", {
       dataManagerMainLayout.add(label);
 
       let toDatCore = new qx.ui.form.Button(this.tr("To DAT-Core")).set({
-        width: 120,
+        icon: "@FontAwesome5Solid/external-link-alt/14",
+        iconPosition: "right",
+        width: 150,
         allowGrowX: false
       });
       toDatCore.addListener("execute", () => {
@@ -94,6 +96,12 @@ qx.Class.define("qxapp.desktop.DataManager", {
       treeLayout.add(filesTree, {
         flex: 1
       });
+
+      let addBtn = new qxapp.component.widget.FilesAdd(this.tr("Add file(s)"));
+      addBtn.addListener("fileAdded", e => {
+        this.__initResources();
+      }, this);
+      treeLayout.add(addBtn);
 
       let selectedFileLayout = this.__selectedFileLayout = new qxapp.component.widget.FileLabelWithActions();
       selectedFileLayout.addListener("fileDeleted", () => {
