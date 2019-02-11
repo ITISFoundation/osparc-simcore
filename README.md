@@ -9,7 +9,7 @@
 [![](https://img.shields.io/microbadger/image-size/itisfoundation/webserver/staging-latest.svg?label=webserver&style=flat)](https://microbadger.com/images/itisfoundation/webserver "More on itisfoundation/webserver:staging-latest image")
 [![](https://img.shields.io/microbadger/image-size/itisfoundation/director/staging-latest.svg?label=director&style=flat)](https://microbadger.com/images/itisfoundation/director "More on itisfoundation/director:staging-latest image")
 [![](https://img.shields.io/microbadger/image-size/itisfoundation/sidecar/staging-latest.svg?label=sidecar&style=flat)](https://microbadger.com/images/itisfoundation/sidecar "More on itisfoundation/sidecar:staging-latest image")
-[![](https://img.shields.io/microbadger/image-size/itisfoundation/storage/staging-latest.svg?label=storage&style=flat)](https://microbadger.com/images/itisfoundation/director "More on itisfoundation/director:staging-latest image")
+[![](https://img.shields.io/microbadger/image-size/itisfoundation/storage/staging-latest.svg?label=storage&style=flat)](https://microbadger.com/images/itisfoundation/storage "More on itisfoundation/storage:staging-latest image")
 
 ## Overview
 
