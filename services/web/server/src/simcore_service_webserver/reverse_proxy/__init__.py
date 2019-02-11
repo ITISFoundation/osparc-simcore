@@ -16,12 +16,17 @@ from aiohttp import web
 from .abc import ServiceResolutionPolicy
 from .routing import ReverseChooser
 from .handlers import jupyter, paraview
-from .settings import URL_PATH
+from .settings import URL_PATH, APP_SOCKETS_KEY
 
 logger = logging.getLogger(__name__)
 
 MODULE_NAME = __name__.split(".")[-1]
 ROUTE_NAME = MODULE_NAME
+
+
+async def _on_shutdown(app: web.Application):
+    for ws in app[APP_SOCKETS_KEY]:
+        await ws.close()
 
 
 def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
@@ -47,6 +52,11 @@ def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
 
     # chooser has same lifetime as the application
     app[__name__] = {"chooser": chooser}
+
+
+    # cleans up all sockets created by the proxy
+    app[APP_SOCKETS_KEY] = list()
+    app.on_shutdown.append(_on_shutdown)
 
 
 # alias

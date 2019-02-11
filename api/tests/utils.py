@@ -39,7 +39,7 @@ def load_specs(spec_file_path: Path) -> dict:
         if ".json" in  spec_file_path.suffix:
             schema_specs = json.load(file_ptr)
         else:
-            schema_specs = yaml.load(file_ptr)
+            schema_specs = yaml.safe_load(file_ptr)
         return schema_specs
 
 

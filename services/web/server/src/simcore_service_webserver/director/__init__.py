@@ -38,7 +38,7 @@ async def director_client_ctx(app: web.Application):
     session.base_url = build_api_url(cfg)
 
     # TODO: test if service health via API healthcheck call
-
+    # TODO: fix warning osparc-simcore/services/web/server/src/simcore_service_webserver/director/__init__.py:46: RuntimeWarning: coroutine 'ClientSession.close' was never awaited
     app[APP_DIRECTOR_SESSION_KEY] = session
 
     yield
@@ -83,7 +83,7 @@ def setup(app: web.Application,* , disable_login=False):
         'running_interactive_services_delete_all': handlers.running_interactive_services_delete_all,
         'services_get': handlers.services_get
     }
-    
+
     # Disables login_required decorator for testing purposes
     if disable_login:
         for name, hnds in handlers_dict.items():
