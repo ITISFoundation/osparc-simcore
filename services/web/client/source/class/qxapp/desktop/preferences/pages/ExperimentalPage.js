@@ -40,9 +40,12 @@ qx.Class.define("qxapp.desktop.preferences.pages.ExperimentalPage", {
 
       let label = this._createHelpLabel(this.tr(
         "This is a list of experimental themes for the UI. By default the \
-         <a href=https://github.com/ITISFoundation/qx-osparc-theme>osparc-theme</a> is selected"
+         osparc-theme is selected"
       ));
       box.add(label);
+
+      let linkBtn = new qxapp.component.widget.LinkButton(this.tr("To qx-osparc-theme"), "https://github.com/ITISFoundation/qx-osparc-theme");
+      box.add(linkBtn);
 
       let select = new qx.ui.form.SelectBox("Theme");
       box.add(select);
