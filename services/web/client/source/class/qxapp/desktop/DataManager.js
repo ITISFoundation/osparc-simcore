@@ -49,15 +49,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
       });
       dataManagerMainLayout.add(label);
 
-      let toDatCore = new qx.ui.form.Button(this.tr("To DAT-Core")).set({
-        icon: "@FontAwesome5Solid/external-link-alt/14",
-        iconPosition: "right",
-        width: 150,
-        allowGrowX: false
-      });
-      toDatCore.addListener("execute", () => {
-        window.open("https://app.blackfynn.io");
-      }, this);
+      let toDatCore = new qxapp.component.widget.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
       dataManagerMainLayout.add(toDatCore);
 
       let dataManagerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
