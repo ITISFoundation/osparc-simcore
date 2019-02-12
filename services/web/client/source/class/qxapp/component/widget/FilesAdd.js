@@ -35,8 +35,8 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filePicker = new qxapp.component.widget.FilesAdd(this.tr("Add file(s)"));
- *   this.getRoot().add(filePicker);
+ *   let filesAdd = new qxapp.component.widget.FilesAdd(this.tr("Add file(s)"));
+ *   this.getRoot().add(filesAdd);
  * </pre>
  */
 

@@ -15,6 +15,27 @@
 
 ************************************************************************ */
 
+/**
+ * VirtualTree that uses FilesTreePopulator class to build the content.
+ *
+ *   Elements in the tree also accept Drag and/or Drop mechanisms which are implemented here.
+ * "osparc-filePath" type is used for the Drag&Drop.
+ *
+ *   If a file is dropped into a folder, this class will start the copying proccess fireing
+ * "fileCopied" event if successful
+ *
+ * Also provides two static methods for checking whether en entry in the tree is File/Directory
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let filesTree = new qxapp.component.widget.FilesTree();
+ *   this.getRoot().add(filesTree);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.widget.FilesTree", {
   extend: qx.ui.tree.VirtualTree,
 
