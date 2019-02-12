@@ -15,16 +15,28 @@
 
 ************************************************************************ */
 
-
 /**
- *  Creates the widget that represents an input node.
- * It shows nothing more than the name of the input node in the middle of a box.
+ * Widget that represents an input node in a container.
  *
+ * It offers Drag&Drop mechanism for connecting input nodes to inner nodes.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let nodeInput = new qxapp.component.widget.NodeInput(node);
+ *   nodeInput.populateNodeLayout();
+ *   this.getRoot().add(nodeInput);
+ * </pre>
  */
 
 qx.Class.define("qxapp.component.widget.NodeInput", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param node {qxapp.data.model.Node} Node owning the widget
+  */
   construct: function(node) {
     this.setNode(node);
 

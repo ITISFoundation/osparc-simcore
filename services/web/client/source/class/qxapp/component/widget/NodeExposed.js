@@ -18,7 +18,7 @@
 /**
  * Widget that represents what nodes need to be exposed to outside the container.
  *
- * It offers Drag&Drop mechanism for exposing nodes.
+ * It offers Drag&Drop mechanism for exposing inner nodes.
  *
  * *Example*
  *
