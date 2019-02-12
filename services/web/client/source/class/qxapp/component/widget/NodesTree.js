@@ -15,9 +15,33 @@
 
 ************************************************************************ */
 
+/**
+ * Widget that shows workbench hierarchy in tree view.
+ *
+ * It contains:
+ * - Toolbar for adding, removing or renaming nodes
+ * - VirtualTree populated with NodeTreeItems
+ *
+ *   Helps the user navigating through nodes and gives a hierarchical view of containers. Also allows
+ * some operations.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let nodesTree = new qxapp.component.widget.NodesTree(project.getName(), project.getWorkbench());
+ *   this.getRoot().add(nodesTree);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.widget.NodesTree", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param projectName {String} Project Name for displaying as root of the tree
+    * @param workbench {qxapp.data.model.Workbench} Workbench owning the widget
+  */
   construct: function(projectName, workbench) {
     this.base(arguments);
 
@@ -86,6 +110,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
     __buildToolbar: function() {
       const iconSize = 16;
       let toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
+
       let newButton = new qx.ui.toolbar.Button("New", "@FontAwesome5Solid/plus/"+iconSize);
       newButton.addListener("execute", e => {
         this.__addNode();
@@ -103,14 +128,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
       part2.add(deleteButton);
       part2.add(renameButton);
       toolbar.add(part2);
-      /*
-      let part3 = new qx.ui.toolbar.Part();
-      let moveUpButton = new qx.ui.toolbar.Button("Up", "@FontAwesome5Solid/arrow-up/"+iconSize);
-      let moveDownButton = new qx.ui.toolbar.Button("Down", "@FontAwesome5Solid/arrow-down/"+iconSize);
-      part3.add(moveUpButton);
-      part3.add(moveDownButton);
-      toolbar.add(part3);
-      */
+
       return toolbar;
     },
 
