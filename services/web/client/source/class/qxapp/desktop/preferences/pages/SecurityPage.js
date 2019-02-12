@@ -48,9 +48,12 @@ qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
 
       let label = this._createHelpLabel(this.tr(
         "List of API tokens to access external services. Currently, \
-         only <a href='https://app.blackfynn.io'>DAT-Core</a> API keys are supported."
+         only DAT-Core API keys are supported."
       ));
       box.add(label);
+
+      let linkBtn = new qxapp.component.widget.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
+      box.add(linkBtn);
 
       this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       this.__rebuildTokensList();

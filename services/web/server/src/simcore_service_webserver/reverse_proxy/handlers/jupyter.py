@@ -84,6 +84,7 @@ async def handler(req: web.Request, service_url: str, **_kwargs):
             finally:
                 req.app[APP_SOCKETS_KEY].remove(ws_server)
     else:
+        target_url = URL(service_url).origin().with_path(req.path).with_query(req.query)
         async with client.request(
             req.method, target_url,
             headers=reqH,
