@@ -38,7 +38,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param node {qxapp.data.model.Node} Node containing the FilePicker
+    * @param node {qxapp.data.model.Node} Node owning the widget
     * @param projectId {String} ProjectID of the project that node belongs to
   */
   construct: function(node, projectId) {

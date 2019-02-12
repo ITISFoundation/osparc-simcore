@@ -39,7 +39,7 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param node {qxapp.data.model.Node} Json object to be displayed by JsonTreeViewer
+    * @param node {qxapp.data.model.Node} Node owning the widget
   */
   construct: function(node) {
     this.base(arguments);
