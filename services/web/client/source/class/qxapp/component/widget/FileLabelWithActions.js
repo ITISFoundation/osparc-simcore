@@ -21,7 +21,7 @@
  *   It is used together with a virtual tree of files where the selection is displayed
  * in the text field and the download and delete are related to that selection.
  * Download and deleted methods are also provided.
- * If a file is deleted it fires "fileDeleted" event
+ * If a file is deleted it fires "fileDeleted" data event
  *
  * *Example*
  *
