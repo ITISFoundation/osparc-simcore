@@ -58,7 +58,7 @@ qx.Class.define("qxapp.component.widget.InputsMapper", {
 
   /**
     * @param node {qxapp.data.model.Node} Node containing the InputsMapper
-    * @param mapper {Object} mapper object provided my service's metadata
+    * @param mapper {Object} mapper object provided by service's metadata
   */
   construct: function(node, mapper) {
     this.base();
