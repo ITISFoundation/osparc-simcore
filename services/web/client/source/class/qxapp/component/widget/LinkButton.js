@@ -14,7 +14,18 @@
      * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
-
+/**
+ * A button with low optical impact presenting as a simple weblink
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   var link = new qxapp.component.widget.LinkButton(this.tr("oSparc"),"https://osparc.io");
+ *   this.getRoot().add(link);
+ * </pre>
+ */
 qx.Class.define("qxapp.component.widget.LinkButton", {
   extend: qx.ui.form.Button,
 /**
