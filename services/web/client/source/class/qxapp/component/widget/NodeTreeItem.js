@@ -15,6 +15,27 @@
 
 ************************************************************************ */
 
+/**
+ * VirtualTreeItem used mainly by NodesTree
+ *
+ *   It consists of an entry icon, label and Node id
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   tree.setDelegate({
+ *     createItem: () => new qxapp.component.widget.NodeTreeItem(),
+ *     bindItem: (c, item, id) => {
+ *       c.bindDefaultProperties(item, id);
+ *       c.bindProperty("label", "label", null, item, id);
+ *       c.bindProperty("nodeId", "nodeId", null, item, id);
+ *     }
+ *   });
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.widget.NodeTreeItem", {
   extend : qx.ui.tree.VirtualTreeItem,
 
