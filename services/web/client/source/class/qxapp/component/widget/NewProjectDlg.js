@@ -15,6 +15,28 @@
 
 ************************************************************************ */
 
+/**
+ * Widget that provides the form for creating a new project
+ *
+ * After doing some Project title validation the following data event is fired:
+ * <pre class='javascript'>
+ *   {
+ *     prjTitle: title,
+ *     prjDescription: desc,
+ *     prjTemplate: templ
+ *   };
+ * </pre>
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let newProjectDlg = new qxapp.component.widget.NewProjectDlg();
+ *   this.getRoot().add(newProjectDlg);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.widget.NewProjectDlg", {
   extend: qx.ui.core.Widget,
 
