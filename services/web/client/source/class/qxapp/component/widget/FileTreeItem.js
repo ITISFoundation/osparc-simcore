@@ -16,6 +16,29 @@
 
 ************************************************************************ */
 
+/**
+ * VirtualTreeItem used mainly by FilesTreePopulator
+ *
+ *   It consists of an entry icon, label, size, path/location and uuid that can be set through props
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   tree.setDelegate({
+ *     createItem: () => new qxapp.component.widget.FileTreeItem(),
+ *     bindItem: (c, item, id) => {
+ *       c.bindDefaultProperties(item, id);
+ *       c.bindProperty("fileId", "fileId", null, item, id);
+ *       c.bindProperty("location", "location", null, item, id);
+ *       c.bindProperty("path", "path", null, item, id);
+ *       c.bindProperty("size", "size", null, item, id);
+ *     }
+ *   });
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.widget.FileTreeItem", {
   extend : qx.ui.tree.VirtualTreeItem,
 
