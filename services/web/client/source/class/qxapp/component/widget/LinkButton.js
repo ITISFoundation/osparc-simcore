@@ -26,13 +26,15 @@
  *   this.getRoot().add(link);
  * </pre>
  */
+
 qx.Class.define("qxapp.component.widget.LinkButton", {
   extend: qx.ui.form.Button,
-/**
- * @param label {String} Label to use
- * @param url {String} Url to point to
- * @param height {Integer?12} Height of the link icon
- */
+
+  /**
+    * @param label {String} Label to use
+    * @param url {String} Url to point to
+    * @param height {Integer?12} Height of the link icon
+  */
   construct: function(label, url, height = 12) {
     this.base(arguments, label);
 
