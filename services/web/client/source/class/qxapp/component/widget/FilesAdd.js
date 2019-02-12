@@ -16,9 +16,36 @@
 ************************************************************************ */
 
 /* global XMLHttpRequest */
+
+/**
+ * Widget that provides a way to upload files to S3
+ *
+ *   It consists of a VBox containing a button that pops up a dialogue for selecting multiple files and
+ * progerss bars for showing the uploading status.
+ *
+ *   When selecting the file to be uploaded this widget will ask for a presigned link where the file can be put
+ * and start the file transimision via XMLHttpRequest. If the uplaod is successful, "fileAdded" data event will
+ * be fired.
+ *
+ *   This class also accepts a Node and ProjectID that are used for putting the file in the correct folder strucutre.
+ * If are not provided, random uuids will be used.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let filePicker = new qxapp.component.widget.FilesAdd(this.tr("Add file(s)"));
+ *   this.getRoot().add(filePicker);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.widget.FilesAdd", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param label {String} Text to be displayed in the button
+  */
   construct: function(label = this.tr("Add file(s)")) {
     this.base(arguments);
 
@@ -103,6 +130,7 @@ qx.Class.define("qxapp.component.widget.FilesAdd", {
       const fileUuid = projectId +"/"+ nodeId +"/"+ fileId;
       store.getPresginedLink(download, locationId, fileUuid);
     },
+
     // Use XMLHttpRequest to upload the file to S3.
     __uploadFile: function(file, url) {
       let hBox = this._createChildControlImpl("progressBox");
