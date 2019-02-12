@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.component.widget.TreeTool", {
+qx.Class.define("qxapp.component.widget.NodesTree", {
   extend: qx.ui.core.Widget,
 
   construct: function(projectName, workbench) {

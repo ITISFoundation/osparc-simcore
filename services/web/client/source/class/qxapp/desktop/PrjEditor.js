@@ -87,7 +87,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     initDefault: function() {
       let project = this.getProject();
 
-      let treeView = this.__treeView = new qxapp.component.widget.TreeTool(project.getName(), project.getWorkbench());
+      let treeView = this.__treeView = new qxapp.component.widget.NodesTree(project.getName(), project.getWorkbench());
       treeView.addListener("addNode", () => {
         this.__addNode();
       }, this);
