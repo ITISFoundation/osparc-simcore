@@ -56,7 +56,7 @@ qx.Class.define("qxapp.About", {
 
       let entryLabel = null;
       if (url) {
-        entryLabel = new qxapp.component.widget.LabelLink(item, url);
+        entryLabel = new qxapp.component.widget.LinkLabel(item, url);
       } else {
         entryLabel = new qx.ui.basic.Label(item);
       }
