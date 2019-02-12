@@ -28,7 +28,7 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
   },
 
   events: {
-    "CreatePrj": "qx.event.type.Data"
+    "createPrj": "qx.event.type.Data"
   },
 
   members: {
@@ -145,7 +145,7 @@ qx.Class.define("qxapp.component.widget.NewProjectDlg", {
           prjDescription: desc,
           prjTemplate: templ
         };
-        this.fireDataEvent("CreatePrj", data);
+        this.fireDataEvent("createPrj", data);
       }, this);
 
       let createBtn = new qx.ui.form.Button(this.tr("Create"));

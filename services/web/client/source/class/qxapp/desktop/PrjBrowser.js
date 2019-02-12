@@ -138,7 +138,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       });
 
       let newProjectDlg = new qxapp.component.widget.NewProjectDlg();
-      newProjectDlg.addListenerOnce("CreatePrj", e => {
+      newProjectDlg.addListenerOnce("createPrj", e => {
         const data = e.getData();
         const newPrj = {
           name: data.prjTitle,
