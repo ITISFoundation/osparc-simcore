@@ -1,25 +1,40 @@
 /* ************************************************************************
 
-   qooxdoo - the new era of web development
+   qxapp - the simcore frontend
 
-   http://qooxdoo.org
+   https://osparc.io
 
    Copyright:
-     2004-2010 1&1 Internet AG, Germany, http://www.1und1.de
+     2018 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
-     See the LICENSE file in the project's top-level directory for details.
 
    Authors:
-     * Tobias Oetiker
-     * martinwittemann (martinwittemann)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
-/* ************************************************************************
 
+/**
+ * Remote table model for showing log messages
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let tableModel = this.__logModel = new qxapp.component.widget.logger.RemoteTableModel();
+ *   tableModel.setColumns(["Origin", "Message"], ["whoRich", "whatRich"]);
+ *   let custom = {
+ *     tableColumnModel : function(obj) {
+ *       return new qx.ui.table.columnmodel.Resize(obj);
+ *     }
+ *   };
+ *   let table = new qx.ui.table.Table(tableModel, custom);
+ *   this.getRoot().add(table);
+ * </pre>
+ */
 
-************************************************************************ */
 /**
  *
  * @asset(demobrowser/backend/remote_table.php)
