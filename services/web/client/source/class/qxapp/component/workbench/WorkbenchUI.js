@@ -23,15 +23,16 @@ const BUTTON_SPACING = 10;
 const NODE_INPUTS_WIDTH = 200;
 
 qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.core.Widget,
 
+  /**
+    * @param workbench {qxapp.data.model.Workbench} Workbench owning the widget
+  */
   construct: function(workbench) {
-    this.base();
+    this.base(arguments);
 
     let hBox = new qx.ui.layout.HBox();
-    this.set({
-      layout: hBox
-    });
+    this._setLayout(hBox);
 
     let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     inputNodesLayout.set({
@@ -45,10 +46,10 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       alignX: "center"
     });
     inputNodesLayout.add(inputLabel);
-    this.add(inputNodesLayout);
+    this._add(inputNodesLayout);
 
     this.__desktopCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-    this.add(this.__desktopCanvas, {
+    this._add(this.__desktopCanvas, {
       flex: 1
     });
 
@@ -63,7 +64,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       alignX: "center"
     });
     nodesExposedLayout.add(outputLabel);
-    this.add(nodesExposedLayout);
+    this._add(nodesExposedLayout);
 
     this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
     this.__desktopCanvas.add(this.__desktop, {
