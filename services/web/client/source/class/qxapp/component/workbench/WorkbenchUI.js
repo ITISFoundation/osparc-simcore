@@ -15,6 +15,20 @@
 
 ************************************************************************ */
 
+/**
+ *   Widget containing the layout where NodeUIs and LinkUIs, and when the model loaded
+ * is a container-node, also NodeInput and NodeExposed are rendered.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let workbenchUI = new qxapp.component.workbench.WorkbenchUI(workbench);
+ *   this.getRoot().add(workbenchUI);
+ * </pre>
+ */
+
 /* eslint no-warning-comments: "off" */
 /* global window */
 
@@ -113,10 +127,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       bottom: 10,
       right: 10
     });
-    // let addButton = this.__getPlusButton();
-    // buttonContainer.add(addButton);
-    // let removeButton = this.__getRemoveButton();
-    // buttonContainer.add(removeButton);
     let unlinkButton = this.__unlinkButton = this.__getUnlinkButton();
     unlinkButton.setVisibility("excluded");
     buttonContainer.add(unlinkButton);
