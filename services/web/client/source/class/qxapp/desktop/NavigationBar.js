@@ -130,6 +130,20 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       }
     },
 
+    projectSaved: function() {
+      for (let i=0; i<this.__mainViewCaptionLayout.getChildren().length; i++) {
+        let widget = this.__mainViewCaptionLayout.getChildren()[i];
+        if (widget instanceof qx.ui.form.Button) {
+          const waitFor = 500;
+          qx.event.Timer.once(ev => {
+            widget.removeState("hovered");
+          }, this, waitFor);
+          widget.addState("hovered");
+          return;
+        }
+      }
+    },
+
     __showMainViewCaptionAsText: function(newLabel) {
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
       let mainViewCaption = this.__mainViewCaption = new qx.ui.basic.Label(newLabel).set({

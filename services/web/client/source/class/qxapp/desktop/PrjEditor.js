@@ -69,7 +69,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
   },
 
   events: {
-    "changeMainViewCaption": "qx.event.type.Data"
+    "changeMainViewCaption": "qx.event.type.Data",
+    "projectSaved": "qx.event.type.Data"
   },
 
   members: {
@@ -542,7 +543,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       let resource = this.__projectResources.project;
       resource.addListenerOnce("putSuccess", ev => {
-        console.log("Project updated");
+        this.fireDataEvent("projectSaved", true);
         this.__lastSavedPrj = qxapp.wrappers.JsonDiffPatch.getInstance().clone(newObj);
       }, this);
       resource.put({

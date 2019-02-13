@@ -98,6 +98,13 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
         const elements = ev.getData();
         this.__navBar.setMainViewCaption(elements);
       }, this);
+
+      this.__prjEditor.addListener("projectSaved", ev => {
+        const wasSaved = ev.getData();
+        if (wasSaved) {
+          this.__navBar.projectSaved();
+        }
+      }, this);
     }
   }
 });
