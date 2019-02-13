@@ -16,15 +16,29 @@
 ************************************************************************ */
 
 /**
- *  Creates the widget that shows the outputs of the node in a key: value way.
+ *   Widget that shows the outputs of the node in a [key : value] way.
  * If the value is an object, it will show the internal key-value pairs
- * [PortLabel]: [PortValue]
+ * [PortLabel]: [PortValue]. It provides Drag mechanism.
  *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputLabel(node, port, portKey);
+ *   widget = nodeOutputList.getOutputWidget();
+ *   this.getRoot().add(widget);
+ * </pre>
  */
 
 qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param node {qxapp.data.model.Node} Node owning the widget
+    * @param port {Object} Port owning the widget
+    * @param portKey {String} Port Key
+  */
   construct: function(node, port, portKey) {
     this.base();
 
