@@ -2,10 +2,10 @@
   "libraries": [
     {
       "library_name": "qx-osparc-theme",
-      "library_version": "0.3.0",
+      "library_version": "0.4.1",
       "repo_name": "ITISFoundation/qx-osparc-theme",
-      "repo_tag": "v0.3.0",
-      "path": "contrib/ITISFoundation_qx-osparc-theme_v0.3.0"
+      "repo_tag": "v0.4.1",
+      "path": "contrib/ITISFoundation_qx-osparc-theme_v0.4.1"
     },
     {
       "library_name": "qx-iconfont-material",
