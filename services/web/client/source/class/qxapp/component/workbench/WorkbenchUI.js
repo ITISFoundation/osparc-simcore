@@ -31,6 +31,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
   construct: function(workbench) {
     this.base(arguments);
 
+    this.__nodesUI = [];
+    this.__linksUI = [];
+
     let hBox = new qx.ui.layout.HBox();
     this._setLayout(hBox);
 
@@ -74,7 +77,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       bottom: 0
     });
 
-    this.setWorkbench(workbench);
     this.__svgWidget = new qxapp.component.workbench.SvgWidget("SvgWidgetLayer");
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
@@ -82,7 +84,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     this.__svgWidget.addListenerOnce("SvgWidgetReady", () => {
       // Will be called only the first time Svg lib is loaded
       this.removeAll();
-      this.loadModel(this.getWorkbench());
+      this.setWorkbench(workbench);
       this.fireDataEvent("nodeDoubleClicked", "root");
     });
 
@@ -105,9 +107,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         this.__selectedItemChanged(null);
       }
     }, this);
-
-    this.__nodesUI = [];
-    this.__linksUI = [];
 
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
     this.__desktopCanvas.add(buttonContainer, {
@@ -145,7 +144,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
   properties: {
     workbench: {
       check: "qxapp.data.model.Workbench",
-      nullable: false
+      nullable: false,
+      apply: "loadModel"
     }
   },
 
@@ -751,6 +751,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     loadModel: function(model) {
       this.clearAll();
 
+      if (!model) {
+        model = this.getWorkbench();
+      }
       this.__currentModel = model;
 
       if (model) {

@@ -193,7 +193,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
       const workbench = this.getProject().getWorkbench();
       if (nodeId === "root") {
-        this.__workbenchUI.loadModel(workbench);
+        this.__workbenchUI.setWorkbench(workbench);
         this.showInMainView(this.__workbenchUI, nodeId);
       } else {
         let node = workbench.getNode(nodeId);
