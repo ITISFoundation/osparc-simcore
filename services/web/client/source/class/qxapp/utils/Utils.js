@@ -102,6 +102,16 @@ qx.Class.define("qxapp.utils.Utils", {
       return data;
     },
 
+    stringsMatch: function(a, b, caseSensitive = false) {
+      let data = a;
+      let searchString = b;
+      if (caseSensitive === false) {
+        data = data.toUpperCase();
+        searchString = searchString.toUpperCase();
+      }
+      return data.search(searchString) != -1;
+    },
+
     getRandomColor: function() {
       let letters = "0123456789ABCDEF";
       let color = "#";

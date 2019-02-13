@@ -1084,6 +1084,7 @@ qx.Class.define("qxapp.data.Store", {
 
     __servicesToCache: function(services, fromServer) {
       this.__servicesCached = {};
+      this.__addCategoryToServices(services);
       this.__servicesCached = Object.assign(this.__servicesCached, services);
       const data = {
         services: services,
@@ -1091,6 +1092,141 @@ qx.Class.define("qxapp.data.Store", {
       };
       this.fireDataEvent("servicesRegistered", data);
       this.__reloadingServices = false;
+    },
+
+    __addCategoryToServices: function(services) {
+      const cats = {
+        "simcore/services/comp/itis/isolve-emlf": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/itis/neuron-isolve": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/itis/sleeper": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/kember/cardiac": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/ucdavis/cardiac-oned": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/ucdavis/cardiac-singlecell": {
+          "category": "Solver"
+        },
+        "simcore/services/comp/ucdavis/cardiac-twod": {
+          "category": "Solver"
+        },
+        "simcore/services/demodec/computational/itis/Solver-LF": {
+          "category": "Solver"
+        },
+        "simcore/services/demodec/container/itis/s4l/Simulator/LF": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/MaterialDB": {
+          "category": "Solver"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Modeler": {
+          "category": "Modeling"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/PointProcesses": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources": {
+          "category": "Simulator"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/StimulationSelectivity": {
+          "category": "PostPro"
+        },
+        "simcore/services/demodec/dynamic/itis/s4l/neuroman": {
+          "category": "Modeling"
+        },
+        "simcore/services/dynamic/3d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/cc-0d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/cc-1d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/cc-2d-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/itis/file-picker": {
+          "category": "Data"
+        },
+        "simcore/services/dynamic/jupyter-base-notebook": {
+          "category": "Notebook"
+        },
+        "simcore/services/dynamic/jupyter-r-notebook": {
+          "category": "Notebook"
+        },
+        "simcore/services/dynamic/jupyter-scipy-notebook": {
+          "category": "Notebook"
+        },
+        "simcore/services/dynamic/kember-viewer": {
+          "category": "PostPro"
+        },
+        "simcore/services/dynamic/modeler/webserver": {
+          "category": "Modeling"
+        },
+        "simcore/services/dynamic/modeler/webserverwithrat": {
+          "category": "Modeling"
+        },
+        "simcore/services/dynamic/raw-graphs": {
+          "category": "PostPro"
+        }
+      };
+      for (const serviceKey in services) {
+        if (Object.prototype.hasOwnProperty.call(services, serviceKey)) {
+          let service = services[serviceKey];
+          if (serviceKey in cats) {
+            for (const version in service) {
+              if (Object.prototype.hasOwnProperty.call(service, version)) {
+                let serv = service[version];
+                serv["category"] = cats[serviceKey]["category"];
+              }
+            }
+          }
+        }
+      }
     },
 
     getItemList: function(nodeKey, portKey) {

@@ -31,11 +31,14 @@ export DOCKER_GID=1042
 export HOST_GID=1000
 else
 $(info    detected native linux)
+# TODO: DO NOT TOUCH THIS CONFIG --- (ask mguidon)
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
 export RUN_DOCKER_ENGINE_ROOT=0
 export DOCKER_GID=1042
 export HOST_GID=1000
+# TODO: DO NOT TOUCH THIS CONFIG --- (ask mguidon)
+# FIXME: DOCKER_GID and HOST_GID should be removed when issue #90 is resolved
 # TODO: Add a meaningfull call to retrieve the local docker group ID and the user ID in linux.
 endif
 
@@ -98,22 +101,27 @@ rebuild:
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache
 
 
-.PHONY: build-devel rebuild-devel up-devel
+.PHONY: build-devel rebuild-devel .tmp-webclient-build
 # target: build-devel, rebuild-devel: – Builds images of core services for development. Use `rebuild` to build w/o cache.
-build-devel: .env pull-cache
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build
+build-devel: .env pull-cache .tmp-webclient-build
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --parallel
 
-rebuild-devel:
-	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache
+rebuild-devel: .env .tmp-webclient-build
+	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache --parallel
+
+.tmp-webclient-build:
+	# TODO: fixes having services_webclient:build present for services_webserver:production when
+	# targeting services_webserver:development
+	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 
 
 .PHONY: build-client rebuild-client
 # target: build-client, rebuild-client: – Builds only webclient and webserver images. Use `rebuild` to build w/o cache
-build-client: pull-cache
+build-client: .env pull-cache
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webserver
 
-rebuild-client:
+rebuild-client: .env
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webclient
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build --no-cache webserver
 
@@ -132,6 +140,14 @@ up-swarm-devel:
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
+
+
+.PHONY: up-webclient-devel
+# target: up-webclient-devel: – init swarm and deploys all core and tool services up in development mode. Then it stops the webclient service and starts it again with the watcher attached.
+up-webclient-devel: up-swarm-devel remove-intermediate-file
+	${DOCKER} service rm services_webclient
+	${DOCKER_COMPOSE} -f services/web/client/docker-compose.yml up qx
+
 
 ifeq ($(WINDOWS_MODE),ON)
 remove-intermediate-file:
@@ -229,6 +245,7 @@ create-staging-stack-file:
 	export DOCKER_IMAGE_TAG=staging-latest; \
 	${DOCKER_COMPOSE} -f services/docker-compose.yml config > $(output_file)
 
+
 ## -------------------------------
 # Tools
 
@@ -252,7 +269,6 @@ pylint:
 # target: new-service – Bakes a new project from cookiecutter-simcore-pyservice and drops it under services/
 new-service:
 	.venv/bin/cookiecutter gh:itisfoundation/cookiecutter-simcore-pyservice --output-dir $(CURDIR)/services
-
 
 
 ## -------------------------------
@@ -290,6 +306,7 @@ setup-check: .env .vscode/settings.json
 	@python2 --version
 	.venv/bin/virtualenv --python=python2 .venv27
 	@echo "To activate the venv27, execute 'source .venv27/bin/activate' or '.venv27/bin/activate.bat' (WIN)"
+
 
 
 ## -------------------------------

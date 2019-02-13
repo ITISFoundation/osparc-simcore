@@ -15,7 +15,7 @@ import attr
 from aiohttp import web
 
 from .abc import ServiceResolutionPolicy
-from .handlers.default import handler as default_handler
+from .handlers.generic import handler as default_handler
 from .settings import PROXY_PATH_KEY, SERVICE_ID_KEY
 
 logger = logging.getLogger(__name__)

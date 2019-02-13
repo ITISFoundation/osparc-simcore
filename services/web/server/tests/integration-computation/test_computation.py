@@ -13,6 +13,9 @@ from pathlib import Path
 import pytest
 import yaml
 from aiohttp import web
+
+from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.rest_responses import unwrap_envelope
 from simcore_sdk.models.pipeline_models import (SUCCESS, ComputationalPipeline,
                                                 ComputationalTask)
 from simcore_service_webserver.computation import setup_computation
@@ -21,9 +24,6 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
-
-from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.rest_responses import unwrap_envelope
 
 API_VERSION = "v0"
 
@@ -119,7 +119,7 @@ def _check_db_contents(project_id, postgres_session, mock_workbench_payload, moc
         assert task_db.image["tag"] == mock_pipeline[task_db.node_id]["version"]
 
 def _check_sleeper_services_completed(project_id, postgres_session):
-    # we wait 15 secs before testing...    
+    # we wait 15 secs before testing...
     time.sleep(15)
     pipeline_db = postgres_session.query(ComputationalPipeline).filter(ComputationalPipeline.project_id == project_id).one()
     tasks_db = postgres_session.query(ComputationalTask).filter(ComputationalTask.project_id == project_id).all()
@@ -147,7 +147,7 @@ async def test_start_pipeline(sleeper_service, client, project_id:str, mock_work
     _check_db_contents(project_id, postgres_session, mock_workbench_payload, mock_workbench_adjacency_list, check_outputs=False)
     # _check_sleeper_services_completed(project_id, postgres_session)
 
-async def test_update_pipeline(docker_stack, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session):    
+async def test_update_pipeline(docker_stack, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session):
     resp = await client.put("/v0/computation/pipeline/{}".format(project_id),
         json = mock_workbench_payload,
     )

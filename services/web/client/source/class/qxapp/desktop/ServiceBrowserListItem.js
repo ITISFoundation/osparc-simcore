@@ -71,6 +71,11 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       check : "String",
       apply : "_applyContact",
       nullable : true
+    },
+
+    category: {
+      check : "String",
+      nullable : true
     }
   },
 
@@ -138,8 +143,6 @@ qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
       let subtitle = this.getChildControl("subtitle");
       let textToShow = "Name: ";
       textToShow += this.getName();
-      textToShow += ", Type: ";
-      textToShow += this.getType();
       textToShow += ", Contact: ";
       textToShow += this.getContact();
       subtitle.setValue(textToShow);

@@ -19,6 +19,8 @@ before_script() {
 
 script() {
     pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-computation
+    # TODO: https://github.com/ITISFoundation/osparc-simcore/issues/560
+    #pytest --cov=simcore_service_webserver -v services/web/server/tests/integration-proxy
 }
 
 after_success() {

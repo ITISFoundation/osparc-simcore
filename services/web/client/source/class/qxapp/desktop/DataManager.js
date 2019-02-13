@@ -49,6 +49,9 @@ qx.Class.define("qxapp.desktop.DataManager", {
       });
       dataManagerMainLayout.add(label);
 
+      let toDatCore = new qxapp.component.widget.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
+      dataManagerMainLayout.add(toDatCore);
+
       let dataManagerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
       dataManagerMainLayout.add(dataManagerLayout, {
         flex: 1
@@ -85,6 +88,12 @@ qx.Class.define("qxapp.desktop.DataManager", {
       treeLayout.add(filesTree, {
         flex: 1
       });
+
+      let addBtn = new qxapp.component.widget.FilesAdd(this.tr("Add file(s)"));
+      addBtn.addListener("fileAdded", e => {
+        this.__initResources();
+      }, this);
+      treeLayout.add(addBtn);
 
       let selectedFileLayout = this.__selectedFileLayout = new qxapp.component.widget.FileLabelWithActions();
       selectedFileLayout.addListener("fileDeleted", () => {
