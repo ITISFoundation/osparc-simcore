@@ -15,9 +15,31 @@
 
 ************************************************************************ */
 
+/**
+ *   Widget used for displaying an output port data of an input node. It contains a List populated
+ * with NodeOutputListItemIcons. It implements Drag&Drop mechanism.
+ *
+ * It is meant to fit "node-output-list-api" input/output port type
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputListIcon(node, port, portKey);
+ *   widget = nodeOutputList.getOutputWidget();
+ *   this.getRoot().add(widget);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param node {qxapp.data.model.Node} Node owning the widget
+    * @param port {Object} Port owning the widget
+    * @param portKey {String} Port Key
+  */
   construct: function(node, port, portKey) {
     this.base();
 
