@@ -15,6 +15,24 @@
 
 ************************************************************************ */
 
+/**
+ *   Window that shows a list of filter as you type services. For the selected service, below the list
+ * a dropdown menu is populated with al the available versions of the selection (by default latest
+ * is selected).
+ *
+ *   When the user really selects the service an "addService" data event is fired.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let srvCat = new qxapp.component.workbench.servicesCatalogue.ServicesCatalogue();
+ *   srvCat.center();
+ *   srvCat.open();
+ * </pre>
+ */
+
 /* eslint no-warning-comments: "off" */
 
 const LATEST = "latest";
