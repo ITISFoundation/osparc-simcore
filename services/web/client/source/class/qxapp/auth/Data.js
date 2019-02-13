@@ -19,7 +19,9 @@
  *
  *  - Keeps data and state of current authenticated (logged in) user
 */
+
 /* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.auth.Data", {
   extend: qx.core.Object,
   type: "singleton",

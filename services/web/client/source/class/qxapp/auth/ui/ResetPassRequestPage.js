@@ -18,6 +18,7 @@
 /** Page to request password reset for a non-logged-in user
  *
  */
+
 qx.Class.define("qxapp.auth.ui.ResetPassRequestPage", {
   extend: qxapp.auth.core.BaseAuthPage,
 
