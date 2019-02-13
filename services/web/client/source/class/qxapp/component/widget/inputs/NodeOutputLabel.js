@@ -25,8 +25,8 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeOutputList = new qxapp.component.widget.inputs.NodeOutputLabel(node, port, portKey);
- *   widget = nodeOutputList.getOutputWidget();
+ *   let nodeOutputLabel = new qxapp.component.widget.inputs.NodeOutputLabel(node, port, portKey);
+ *   widget = nodeOutputLabel.getOutputWidget();
  *   this.getRoot().add(widget);
  * </pre>
  */
