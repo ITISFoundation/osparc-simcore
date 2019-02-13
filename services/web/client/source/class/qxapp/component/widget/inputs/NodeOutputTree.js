@@ -47,25 +47,19 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
 
     let tree = this.__tree = new qx.ui.tree.VirtualTree(null, "label", "children");
 
+    let that = this;
     tree.setDelegate({
       createItem: () => new qxapp.component.widget.inputs.NodeOutputTreeItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
-        // c.bindProperty("key", "model", null, item, id);
       },
       configureItem: item => {
         item.set({
           isDir: !portKey.includes("modeler") && !portKey.includes("sensorSettingAPI") && !portKey.includes("neuronsSetting"),
           nodeKey: node.getKey(),
-          portKey: portKey,
-          draggable: true
+          portKey: portKey
         });
-        item.addListener("dragstart", e => {
-          // Register supported actions
-          e.addAction("copy");
-          // Register supported types
-          e.addType("osparc-mapping");
-        });
+        that.__createDragMechanism(item); // eslint-disable-line no-underscore-dangle
       }
     });
 
@@ -89,6 +83,16 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputTree", {
 
   members: {
     __tree: null,
+
+    __createDragMechanism: function(item) {
+      item.setDraggable(true);
+      item.addListener("dragstart", e => {
+        // Register supported actions
+        e.addAction("copy");
+        // Register supported types
+        e.addType("osparc-mapping");
+      });
+    },
 
     getOutputWidget: function() {
       return this.__tree;
