@@ -17,7 +17,7 @@
 
 /**
  *   Widget used for displaying an output port data of an input node. It contains a List populated
- * with NodeOutputListItemIcons. It implements Drag&Drop mechanism.
+ * with NodeOutputListIconItems. It implements Drag mechanism.
  *
  * It is meant to fit "node-output-list-api" input/output port type
  *
@@ -52,7 +52,7 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIcon", {
 
     let that = this;
     list.setDelegate({
-      createItem: () => new qxapp.component.widget.inputs.NodeOutputListItemIcon(),
+      createItem: () => new qxapp.component.widget.inputs.NodeOutputListIconItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         c.bindProperty("key", "model", null, item, id);
