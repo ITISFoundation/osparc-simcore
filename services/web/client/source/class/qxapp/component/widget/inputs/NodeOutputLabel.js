@@ -57,8 +57,8 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
     let toolTip = "";
     if (port.value) {
       if (typeof port.value === "object") {
-        outputValue = this.__pretifyObject(port.value, true);
-        toolTip = this.__pretifyObject(port.value, false);
+        outputValue = qxapp.utils.Utils.pretifyObject(port.value, true);
+        toolTip = qxapp.utils.Utils.pretifyObject(port.value, false);
       } else {
         outputValue = JSON.stringify(port.value);
       }
@@ -141,31 +141,6 @@ qx.Class.define("qxapp.component.widget.inputs.NodeOutputLabel", {
         // Register supported types
         e.addType("osparc-port-link");
       }, this);
-    },
-
-    __pretifyObject: function(object, short) {
-      let uuidToName = qxapp.utils.UuidToName.getInstance();
-      let myText = "";
-      const entries = Object.entries(object);
-      for (let i=0; i<entries.length; i++) {
-        const entry = entries[i];
-        myText += String(entry[0]);
-        myText += ": ";
-        // entry[1] might me a path of uuids
-        let entrySplitted = String(entry[1]).split("/");
-        if (short) {
-          myText += entrySplitted[entrySplitted.length-1];
-        } else {
-          for (let j=0; j<entrySplitted.length; j++) {
-            myText += uuidToName.convertToName(entrySplitted[j]);
-            if (j !== entrySplitted.length-1) {
-              myText += "/";
-            }
-          }
-        }
-        myText += "<br/>";
-      }
-      return myText;
     },
 
     getOutputWidget: function() {
