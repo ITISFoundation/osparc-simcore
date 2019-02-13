@@ -16,27 +16,27 @@
 ************************************************************************ */
 
 /**
- * VirtualTreeItem used mainly by NodeOutputTreeItem
+ * ListItem used mainly by NodeOutputListIcon
  *
- *   It consists of an entry icon and label and contains more information like: isDir,
- * isRoot, nodeKey, portKey, key
+ *   It consists of an entry thumbnail and label.
  *
  * *Example*
  *
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   tree.setDelegate({
- *     createItem: () => new qxapp.component.widget.inputs.NodeOutputTreeItem(),
+ *   list.setDelegate({
+ *     createItem: () => new qxapp.component.widget.inputs.NodeOutputListIconItem(),
  *     bindItem: (c, item, id) => {
- *      c.bindDefaultProperties(item, id);
+ *       c.bindDefaultProperties(item, id);
+ *       c.bindProperty("key", "model", null, item, id);
+ *       c.bindProperty("thumbnail", "icon", null, item, id);
+ *       c.bindProperty("label", "label", {
+ *         converter: function(data) {
+ *           return data;
+ *         }
+ *       }, item, id);
  *     },
- *     configureItem: item => {
- *       item.set({
- *       isDir: !portKey.includes("modeler") && !portKey.includes("sensorSettingAPI") && !portKey.includes("neuronsSetting"),
- *       nodeKey: node.getKey(),
- *       portKey: portKey
- *     });
  *   });
  * </pre>
  */

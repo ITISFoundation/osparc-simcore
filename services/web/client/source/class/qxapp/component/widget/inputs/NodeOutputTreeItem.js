@@ -19,7 +19,7 @@
  * VirtualTreeItem used mainly by NodeOutputTreeItem
  *
  *   It consists of an entry icon and label and contains more information like: isDir,
- * isRoot, nodeKey, portKey, key
+ * isRoot, nodeKey, portKey, key.
  *
  * *Example*
  *
