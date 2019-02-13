@@ -82,7 +82,6 @@ qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
       return this.__filteredData.length;
     },
 
-
     // overloaded - called whenever the table requests the row count
     _loadRowCount : function() {
       this.__filteredData = [];
@@ -98,7 +97,6 @@ qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
     _loadRowData : function(firstRow, lastRow) {
       this.__rowDataLoadded(firstRow, lastRow);
     },
-
 
     __filterByString: function(msg) {
       let searchString = this.getFilterString();
@@ -128,14 +126,11 @@ qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
       return ((showStrWho || showStrWhat) && showLog);
     },
 
-
     // Fake the server localy
-
     __setRowCount : function(number) {
       var self = this;
       self._onRowCountLoaded(number);
     },
-
 
     __rowDataLoadded : function(firstRow, lastRow) {
       var self = this;
