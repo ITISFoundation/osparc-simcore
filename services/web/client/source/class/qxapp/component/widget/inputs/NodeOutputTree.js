@@ -17,7 +17,7 @@
 
 /**
  *   Widget used for displaying an output port data of an input node. It contains a VirtualTree
- * populated with NodeOutputTreeItems.
+ * populated with NodeOutputTreeItems. It implements Drag mechanism.
  *
  * It is meant to fit "node-output-tree-api" input/output port type
  *
