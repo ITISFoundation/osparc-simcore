@@ -106,10 +106,6 @@ qx.Class.define("qxapp.wrappers.Svg", {
       return path;
     },
 
-    drawCurveMini: function(draw, controls) {
-      return this.drawCurve(draw, controls, 2);
-    },
-
     updateCurve: function(curve, controls) {
       if (curve.type === "path") {
         let mSegment = curve.getSegment(0);

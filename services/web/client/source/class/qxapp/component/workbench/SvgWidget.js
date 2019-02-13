@@ -15,9 +15,29 @@
 
 ************************************************************************ */
 
+/**
+ * Widget that provides a SVG painting layer that goes on top of the WorkbenchUI.
+ *
+ * In this layer arrows that represent internode connections are drawn.
+ *
+ * Also provides access to the SVG Wrapper.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let svgWidget = new qxapp.component.workbench.SvgWidget("SvgWidgetLayer");
+ *   this.getRoot().add(svgWidget);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.workbench.SvgWidget", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param svgLayerId {String} Element id to set it as dom attribute
+  */
   construct: function(svgLayerId) {
     this.base();
     this.addListenerOnce("appear", () => {
@@ -59,12 +79,6 @@ qx.Class.define("qxapp.component.workbench.SvgWidget", {
     drawCurve: function(x1, y1, x2, y2) {
       const controls = this.__getControls(x1, y1, x2, y2);
       return this.__svgWrapper.drawCurve(this.__linksCanvas, controls);
-    },
-
-    drawCurveMini: function(x1, y1, x2, y2) {
-      const offset = 20;
-      const controls = this.__getControls(x1, y1, x2, y2, offset);
-      return this.__svgWrapper.drawCurveMini(this.__linksCanvas, controls);
     },
 
     updateCurve: function(curve, x1, y1, x2, y2) {
