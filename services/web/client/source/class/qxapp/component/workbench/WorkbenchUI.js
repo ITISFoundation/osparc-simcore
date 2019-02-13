@@ -307,7 +307,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       let node = this.getWorkbench().getNode(nodeId);
 
       let nodeUI = new qxapp.component.workbench.NodeUI(node);
-      nodeUI.createNodeLayout();
       nodeUI.populateNodeLayout();
       this.__createDragDropMechanism(nodeUI);
       return nodeUI;
