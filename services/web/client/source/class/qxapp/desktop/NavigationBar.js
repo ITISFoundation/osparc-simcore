@@ -41,12 +41,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       minHeight: NAVIGATION_BUTTON_HEIGHT
     };
 
-
-    let logo = new qx.ui.basic.Image("qxapp/osparc-white.svg").set({
-      width: 92,
-      height: NAVIGATION_BUTTON_HEIGHT,
-      scale: true
-    });
+    let logo = qxapp.component.widget.LogoOnOff.getInstance();
     this.add(logo);
 
     this.add(new qx.ui.toolbar.Separator());
