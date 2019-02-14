@@ -43,10 +43,6 @@ qx.Class.define("qxapp.io.WatchDog", {
     const interval = 2000;
     this.__timer = new qx.event.Timer(interval);
 
-    window.addEventListener("load", function() {
-      window.addEventListener("online", this.__updateOnlineStatus);
-      window.addEventListener("offline", this.__updateOnlineStatus);
-    }, this);
     window.addEventListener("online", this.__updateOnlineStatus);
     window.addEventListener("offline", this.__updateOnlineStatus);
   },
@@ -86,16 +82,7 @@ qx.Class.define("qxapp.io.WatchDog", {
       }
     },
 
-    __updateOnlineStatus2: function(ev) {
-      this.setOnLine(window.navigator.onLine);
-      if (this.getOnLine()) {
-        qxapp.component.widget.FlashMessenger.getInstance().info("Internet is back");
-      } else {
-        qxapp.component.widget.FlashMessenger.getInstance().error("Internet is down");
-      }
-    },
-
-    __updateOnlineStatus: function(ev) {
+    __updateOnlineStatus: function(e) {
       this.setOnLine(window.navigator.onLine);
       if (this.getOnLine()) {
         qxapp.component.widget.FlashMessenger.getInstance().info("Internet is back");
