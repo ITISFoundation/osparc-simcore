@@ -15,6 +15,25 @@
 
 ************************************************************************ */
 
+/**
+ * Singleton class for building Permission table and check doable operations.
+ *
+ * It implements HRBAC (Hierarchical Role Based Access Control) permission model.
+ *
+ * It is able to:
+ * - add Actions to build a table of permissions
+ * - load User's Role from the backend
+ * - check whether a role can do a specific actions
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the class.
+ *
+ * <pre class='javascript'>
+ *   qxapp.data.Permissions.getInstance().canDo("test")
+ * </pre>
+ */
+
 qx.Class.define("qxapp.data.Permissions", {
   extend: qx.core.Object,
 
