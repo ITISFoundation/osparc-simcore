@@ -82,6 +82,17 @@ qx.Class.define("qxapp.io.WatchDog", {
       }
     },
 
+    __checkHealthCheckAsync: function() {
+      let resources = this.__healthCheckResource;
+      resources.addListener("getSuccess", e => {
+        this.__updateHealthCheckStatus(true);
+      }, this);
+      resources.addListener("getError", e => {
+        this.__updateHealthCheckStatus(false);
+      }, this);
+      resources.get();
+    },
+
     __updateOnlineStatus: function(e) {
       this.setOnLine(window.navigator.onLine);
       if (this.getOnLine()) {
@@ -91,21 +102,12 @@ qx.Class.define("qxapp.io.WatchDog", {
       }
     },
 
-    __checkHealthCheckAsync: function() {
-      let resources = this.__healthCheckResource;
-      resources.addListener("getSuccess", e => {
-        let logo = qxapp.component.widget.LogoOnOff.getInstance();
-        if (logo) {
-          logo.online(true);
-        }
-      }, this);
-      resources.addListener("getError", e => {
-        let logo = qxapp.component.widget.LogoOnOff.getInstance();
-        if (logo) {
-          logo.online(false);
-        }
-      }, this);
-      resources.get();
+    __updateHealthCheckStatus: function(status) {
+      this.setHealthCheck(status);
+      let logo = qxapp.component.widget.LogoOnOff.getInstance();
+      if (logo) {
+        logo.online(status);
+      }
     }
   } // members
 });
