@@ -44,7 +44,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     this.__createMainLayout();
 
-    this.__startHealthChecking();
+    qxapp.io.WatchDog.getInstance().startCheck();
   },
 
   events: {},
@@ -76,32 +76,6 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
         const projectEditor = e.getData();
         this.__showProjectEditor(projectEditor);
       }, this);
-    },
-
-    __startHealthChecking: function() {
-      this.__healthCheckResource = qxapp.io.rest.ResourceFactory.getInstance().createHealthCheck();
-
-      let resources = this.__healthCheckResource.healthCheck;
-      resources.addListener("getSuccess", e => {
-        let logo = qxapp.component.widget.LogoOnOff.getInstance();
-        if (logo) {
-          logo.online(true);
-        }
-      }, this);
-      resources.addListener("getError", e => {
-        let logo = qxapp.component.widget.LogoOnOff.getInstance();
-        if (logo) {
-          logo.online(false);
-        }
-      }, this);
-      resources.get();
-
-      const interval = 2000;
-      let timer = new qx.event.Timer(interval);
-      timer.addListener("interval", () => {
-        resources.get();
-      }, this);
-      timer.start();
     },
 
     __showDashboard: function() {
