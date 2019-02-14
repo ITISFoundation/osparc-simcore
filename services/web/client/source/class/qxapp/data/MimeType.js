@@ -37,6 +37,9 @@ qx.Class.define("qxapp.data.MimeType", {
     parameters: {}
   },
 
+  /**
+    * @param string {String} source string
+  */
   construct: function(string) {
     this.base(arguments);
     this.parse(string);
