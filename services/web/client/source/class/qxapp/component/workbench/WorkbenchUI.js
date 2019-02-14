@@ -30,7 +30,6 @@
  */
 
 /* eslint no-warning-comments: "off" */
-/* global window */
 
 const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;

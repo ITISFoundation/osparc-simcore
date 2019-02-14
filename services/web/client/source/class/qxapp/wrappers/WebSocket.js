@@ -21,7 +21,6 @@
  * @ignore(io)
  */
 
-/* global window */
 /* global io */
 
 qx.Class.define("qxapp.wrappers.WebSocket", {
