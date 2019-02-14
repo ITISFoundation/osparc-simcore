@@ -15,6 +15,25 @@
 
 ************************************************************************ */
 
+/**
+ *   Collection of static methods for converting data coming from the webserver into suitable
+ * data for the frontend.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let store = qxapp.data.Store.getInstance();
+ *   store.addListenerOnce("nodeFiles", e => {
+ *     const files = e.getData();
+ *     const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+ *     this.__addTreeData(newChildren);
+ *   }, this);
+ *   store.getNodeFiles(nodeId);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.data.Converters", {
   type: "static",
 
