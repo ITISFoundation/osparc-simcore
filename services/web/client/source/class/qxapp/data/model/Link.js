@@ -26,7 +26,7 @@
  *   let link = new qxapp.data.model.Link(linkId, node1Id, node2Id);
  * </pre>
  */
-§
+
 qx.Class.define("qxapp.data.model.Link", {
   extend: qx.core.Object,
 
