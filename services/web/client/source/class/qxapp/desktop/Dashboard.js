@@ -18,10 +18,12 @@
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.desktop.Dashboard", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    this.base(arguments, new qx.ui.layout.HBox());
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.HBox());
 
     qxapp.wrapper.JsonDiffPatch.getInstance().init();
     qxapp.wrapper.JsonTreeViewer.getInstance().init();
@@ -30,11 +32,11 @@ qx.Class.define("qxapp.desktop.Dashboard", {
     let mainView = this.__createMainViewLayout();
     let rightSpacer = new qx.ui.core.Spacer(60);
 
-    this.add(leftSpacer);
-    this.add(mainView, {
+    this._add(leftSpacer);
+    this._add(mainView, {
       flex: 1
     });
-    this.add(rightSpacer);
+    this._add(rightSpacer);
   },
 
   members: {

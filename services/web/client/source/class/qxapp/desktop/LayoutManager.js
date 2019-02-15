@@ -18,14 +18,12 @@
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.desktop.LayoutManager", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
     this.base();
 
-    this.set({
-      layout: new qx.ui.layout.VBox()
-    });
+    this._setLayout(new qx.ui.layout.VBox());
 
     this.__navBar = this.__createNavigationBar();
     this.__navBar.setHeight(100);
@@ -35,10 +33,10 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
         this.__prjEditor.nodeSelected(nodeId);
       }
     }, this);
-    this.add(this.__navBar);
+    this._add(this.__navBar);
 
     let prjStack = this.__prjStack = new qx.ui.container.Stack();
-    this.add(prjStack, {
+    this._add(prjStack, {
       flex: 1
     });
 

@@ -37,14 +37,13 @@
 const PORT_INPUTS_WIDTH = 300;
 
 qx.Class.define("qxapp.component.widget.NodeView", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
     this.base();
 
-    let hBox = new qx.ui.layout.HBox(10);
+    this._setLayout(new qx.ui.layout.HBox(10));
     this.set({
-      layout: hBox,
       padding: 10
     });
 
@@ -60,7 +59,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       alignX: "center"
     });
     inputNodesLayout.add(inputLabel);
-    this.add(inputNodesLayout);
+    this._add(inputNodesLayout);
 
 
     let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
@@ -68,7 +67,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       alignX: "center",
       padding: 5
     });
-    this.add(mainLayout, {
+    this._add(mainLayout, {
       flex: 1
     });
 
