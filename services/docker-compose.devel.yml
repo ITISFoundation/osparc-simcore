@@ -28,13 +28,11 @@ services:
   webserver:
     image: services_webserver:dev
     build:
-      args:
-        - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
       target: development
     volumes:
-      - ./web/server:/home/scu/services/web/server
-      - ./web/client/source-output:/home/scu/services/web/client
-      - ../packages:/home/scu/packages
+      - ./web/server:/devel/services/web/server
+      - ./web/client/source-output:/devel/services/web/client
+      - ../packages:/devel/packages
     stdin_open: true
     tty: true
     depends_on:
