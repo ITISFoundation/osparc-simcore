@@ -13,13 +13,16 @@ info:
 	@echo '+ date        : ${BUILD_DATE}'
 
 build-devel:
-	BUILD_TARGET=development; docker-compose build
+	export BUILD_TARGET=development; docker-compose build
 
 build:
-	BUILD_TARGET=build; docker-compose build
+	export BUILD_TARGET=build; docker-compose build
 
 compile:
-	docker-compose run --service-ports qx compile --set osparc.vcsRef='"${VCS_REF}"' --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
+	docker-compose run qx compile --set osparc.vcsRef='"${VCS_REF}"' --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
+
+api:
+	docker-compose run qx api
 
 serve:
 	docker-compose run --service-ports qx serve --set qx.allowUrlSettings=true --set osparc.vcsRef='"${VCS_REF}"' --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'

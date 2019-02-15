@@ -35,8 +35,8 @@ services:
   doc:
     image: client_qx:${BUILD_TARGET:-development}
     volumes:
-      - '.:/user/src/client'
+      - '.:/home/scu/client'
     ports:
       - '8082:8080'
-    working_dir: /user/src/client
+    working_dir: /home/scu/client
     command: srv api -p 8080
