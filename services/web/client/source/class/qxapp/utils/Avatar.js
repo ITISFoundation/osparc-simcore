@@ -15,6 +15,18 @@
 
 ************************************************************************ */
 
+/**
+ * Static class for getting the avatar related information for the given user/email.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let image = qxapp.utils.Avatar.getUrl(userEmail);
+ * </pre>
+ */
+
 /* eslint new-cap: [2, {capIsNewExceptions: ["B", "D", "J", "K", "L", "MD5"]}] */
 /* eslint operator-assignment: ["off"] */
 
@@ -22,7 +34,6 @@ qx.Class.define("qxapp.utils.Avatar", {
   type: "static",
 
   statics: {
-
     getUrl: function(email, size = 100, defIcon = "identicon", rating = "g") {
       // MD5 (Message-Digest Algorithm) by WebToolkit
       let MD5 = function(s) {
