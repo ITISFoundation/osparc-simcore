@@ -22,6 +22,7 @@
  * - List of buttons for node navigation (only study editing)
  * - User menu
  *   - Preferences
+ *   - Help
  *   - About
  *   - Logout
  *
