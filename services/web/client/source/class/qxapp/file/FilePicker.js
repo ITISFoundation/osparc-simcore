@@ -29,12 +29,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filePicker = new qxapp.component.widget.FilePicker(node, projectId);
+ *   let filePicker = new qxapp.file.FilePicker(node, projectId);
  *   this.getRoot().add(filePicker);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.FilePicker", {
+qx.Class.define("qxapp.file.FilePicker", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -91,7 +91,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       let control;
       switch (id) {
         case "filesTree":
-          control = new qxapp.component.widget.FilesTree();
+          control = new qxapp.file.FilesTree();
           this._add(control, {
             flex: 1
           });
@@ -101,7 +101,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
           this._addAt(control, 1);
           break;
         case "addButton":
-          control = new qxapp.component.widget.FilesAdd(this.tr("Add file(s)")).set({
+          control = new qxapp.file.FilesAdd(this.tr("Add file(s)")).set({
             node: this.getNode(),
             projectId: this.getProjectId()
           });

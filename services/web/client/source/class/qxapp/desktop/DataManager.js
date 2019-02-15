@@ -71,7 +71,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
     __createTreeLayout: function() {
       let treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      let filesTree = this.__tree = new qxapp.component.widget.FilesTree().set({
+      let filesTree = this.__tree = new qxapp.file.FilesTree().set({
         dragMechnism: true,
         dropMechnism: true,
         minHeight: 600
@@ -89,13 +89,13 @@ qx.Class.define("qxapp.desktop.DataManager", {
         flex: 1
       });
 
-      let addBtn = new qxapp.component.widget.FilesAdd(this.tr("Add file(s)"));
+      let addBtn = new qxapp.file.FilesAdd(this.tr("Add file(s)"));
       addBtn.addListener("fileAdded", e => {
         this.__initResources();
       }, this);
       treeLayout.add(addBtn);
 
-      let selectedFileLayout = this.__selectedFileLayout = new qxapp.component.widget.FileLabelWithActions();
+      let selectedFileLayout = this.__selectedFileLayout = new qxapp.file.FileLabelWithActions();
       selectedFileLayout.addListener("fileDeleted", () => {
         this.__initResources();
       }, this);

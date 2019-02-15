@@ -28,12 +28,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let hBox = new qxapp.component.widget.FileLabelWithActions();
+ *   let hBox = new qxapp.file.FileLabelWithActions();
  *   this.getRoot().add(hBox);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.FileLabelWithActions", {
+qx.Class.define("qxapp.file.FileLabelWithActions", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -104,7 +104,7 @@ qx.Class.define("qxapp.component.widget.FileLabelWithActions", {
 
     __getItemSelected: function() {
       let selectedItem = this.__selection;
-      if (selectedItem && qxapp.component.widget.FilesTree.isFile(selectedItem)) {
+      if (selectedItem && qxapp.file.FilesTree.isFile(selectedItem)) {
         return selectedItem;
       }
       return null;

@@ -103,10 +103,10 @@ qx.Class.define("qxapp.component.widget.NodeDataManager", {
       switch (id) {
         case "nodeTree":
         case "userTree":
-          control = new qxapp.component.widget.FilesTree();
+          control = new qxapp.file.FilesTree();
           break;
         case "selectedFileLayout":
-          control = new qxapp.component.widget.FileLabelWithActions().set({
+          control = new qxapp.file.FileLabelWithActions().set({
             alignY: "middle"
           });
           this._add(control);

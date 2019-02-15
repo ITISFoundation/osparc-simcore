@@ -35,12 +35,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filesAdd = new qxapp.component.widget.FilesAdd(this.tr("Add file(s)"));
+ *   let filesAdd = new qxapp.file.FilesAdd(this.tr("Add file(s)"));
  *   this.getRoot().add(filesAdd);
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.FilesAdd", {
+qx.Class.define("qxapp.file.FilesAdd", {
   extend: qx.ui.core.Widget,
 
   /**

@@ -27,7 +27,7 @@
  *
  * <pre class='javascript'>
  *   tree.setDelegate({
- *     createItem: () => new qxapp.component.widget.FileTreeItem(),
+ *     createItem: () => new qxapp.file.FileTreeItem(),
  *     bindItem: (c, item, id) => {
  *       c.bindDefaultProperties(item, id);
  *       c.bindProperty("fileId", "fileId", null, item, id);
@@ -39,7 +39,7 @@
  * </pre>
  */
 
-qx.Class.define("qxapp.component.widget.FileTreeItem", {
+qx.Class.define("qxapp.file.FileTreeItem", {
   extend : qx.ui.tree.VirtualTreeItem,
 
   properties : {
