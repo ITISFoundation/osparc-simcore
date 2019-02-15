@@ -18,7 +18,7 @@
 /**
  * Widget used mainly by ServiceBrowser for displaying service related information
  *
- *   It consists of an key as title, and name and contact as caption
+ *   It consists of a key as title, and name and contact as caption
  *
  * *Example*
  *

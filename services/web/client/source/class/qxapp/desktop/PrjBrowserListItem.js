@@ -16,7 +16,14 @@
 
 ************************************************************************ */
 
+/**
+ * Widget used mainly by PrjBrowser for displaying Studies
+ *
+ * It consists of a thumbnail and creator and last change as caption
+ */
+
 /* eslint "qx-rules/no-refs-in-members": "warn" */
+
 qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
   extend: qx.ui.core.Widget,
   implement : [qx.ui.form.IModel],
@@ -79,6 +86,12 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members
     _dateFormat: null,
+    _forwardStates: {
+      focused : true,
+      hovered : true,
+      selected : true,
+      dragover : true
+    },
 
     // overridden
     _createChildControlImpl: function(id) {
@@ -151,12 +164,6 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
         label.resetValue();
       }
     },
-    _forwardStates: {
-      focused : true,
-      hovered : true,
-      selected : true,
-      dragover : true
-    },
 
     /**
      * Event handler for the pointer over event.
@@ -165,7 +172,6 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       this.addState("hovered");
     },
 
-
     /**
      * Event handler for the pointer out event.
      */
@@ -173,6 +179,7 @@ qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
       this.removeState("hovered");
     }
   },
+
   destruct : function() {
     this._dateFormat.dispose();
     this._dateFormat = null;
