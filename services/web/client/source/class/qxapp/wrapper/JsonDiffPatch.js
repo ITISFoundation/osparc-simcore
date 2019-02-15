@@ -16,9 +16,12 @@
 ************************************************************************ */
 
 /**
+ * A qooxdoo wrapper for JsonDiffPatch (https://github.com/benjamine/jsondiffpatch)
+ */
+
+/**
  * @asset(jsondiffpatch/jsondiffpatch.*js)
  * @ignore(jsondiffpatch)
- * https://github.com/benjamine/jsondiffpatch
  */
 
 /* global jsondiffpatch */

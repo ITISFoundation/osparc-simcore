@@ -16,6 +16,10 @@
 ************************************************************************ */
 
 /**
+ * A qooxdoo wrapper for SVG (https://github.com/svgdotjs/svg.js)
+ */
+
+/**
  * @asset(workbench/svg.*js)
  * @ignore(SVG)
  */

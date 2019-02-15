@@ -16,6 +16,10 @@
 ************************************************************************ */
 
 /**
+ * A qooxdoo wrapper for JsonTreeViewer (https://github.com/summerstyle/jsonTreeViewer)
+ */
+
+/**
  * @asset(jsontreeviewer/jsonTree.*)
  * @asset(jsontreeviewer/icons.svg)
  * @ignore(jsonTree)

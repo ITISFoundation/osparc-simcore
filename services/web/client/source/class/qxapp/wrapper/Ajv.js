@@ -4,6 +4,7 @@
    Authors:   Tobi Oetiker <oetiker@itis.ethz.ch>
    Utf8Check: äöü
 ************************************************************************ */
+
 /**
  * A qooxdoo wrapper for Ajv (https://github.com/epoberezkin/ajv)
  */

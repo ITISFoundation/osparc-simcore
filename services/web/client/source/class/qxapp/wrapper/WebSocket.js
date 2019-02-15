@@ -16,6 +16,10 @@
 ************************************************************************ */
 
 /**
+ * A qooxdoo wrapper for WebSocket (https://github.com/socketio/socket.io)
+ */
+
+/**
  * This class is a direct link with socketio.
  * @asset(socketio/socket.io.js)
  * @ignore(io)

@@ -1,3 +1,24 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
+/**
+ * A qooxdoo wrapper for Plotly (https://github.com/plotly/plotly.js)
+ */
+
 /**
  * @asset(plotly/plotly.min.js)
  * @ignore(Plotly)
