@@ -2,3 +2,6 @@ ancillary/
 docs/
 ops/
 .*/
+
+**/Dockerfile
+**/docker-compose*
