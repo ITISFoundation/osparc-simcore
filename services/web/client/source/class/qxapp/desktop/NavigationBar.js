@@ -118,7 +118,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     setMainViewCaption: function(newLabel) {
       this.__mainViewCaptionLayout.removeAll();
-      if (typeof newLabel === "string") {
+      if (typeof newLabel === "string" || newLabel instanceof qx.locale.LocalizedString) {
         this.__showMainViewCaptionAsText(newLabel);
       } else if (Array.isArray(newLabel)) {
         this.__showMainViewCaptionAsButtons(newLabel);

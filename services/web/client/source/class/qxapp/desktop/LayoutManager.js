@@ -15,6 +15,24 @@
 
 ************************************************************************ */
 
+/**
+ * Widget managing the layout once the user is logged in.
+ *
+ * It offers a:
+ * - NavigationBar
+ * - Main View (Stack).
+ *   - Dashboard (Stack):
+ *     - PrjBrowser
+ *     - ServiceBrowser
+ *     - DataManager
+ *   - PrjEditor
+ *
+ * <pre class='javascript'>
+ *   let layoutManager = new qxapp.desktop.LayoutManager();
+ *   this.getRoot().add(layoutManager);
+ * </pre>
+ */
+
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.desktop.LayoutManager", {
@@ -25,22 +43,13 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    this.__navBar = this.__createNavigationBar();
-    this.__navBar.setHeight(100);
-    this.__navBar.addListener("nodeDoubleClicked", e => {
-      if (this.__prjEditor) {
-        let nodeId = e.getData();
-        this.__prjEditor.nodeSelected(nodeId);
-      }
-    }, this);
-    this._add(this.__navBar);
+    let navBar = this.__navBar = this.__createNavigationBar();
+    this._add(navBar);
 
-    let prjStack = this.__prjStack = new qx.ui.container.Stack();
+    let prjStack = this.__prjStack = this.__createMainView();
     this._add(prjStack, {
       flex: 1
     });
-
-    this.__createMainLayout();
 
     qxapp.io.WatchDog.getInstance().startCheck();
   },
@@ -54,26 +63,38 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     __prjEditor: null,
 
     __createNavigationBar: function() {
-      let navBar = new qxapp.desktop.NavigationBar();
+      let navBar = new qxapp.desktop.NavigationBar().set({
+        height: 100
+      });
       navBar.setMainViewCaption("Dashboard");
-      return navBar;
-    },
 
-    __createMainLayout: function() {
-      this.__dashboard = new qxapp.desktop.Dashboard();
-      this.__prjStack.add(this.__dashboard);
-
-      this.__navBar.addListener("dashboardPressed", () => {
+      navBar.addListener("dashboardPressed", () => {
         if (this.__prjEditor) {
           this.__prjEditor.updateProjectDocument();
         }
         this.__showDashboard();
       }, this);
 
-      this.__dashboard.getPrjBrowser().addListener("startProject", e => {
+      navBar.addListener("nodeDoubleClicked", e => {
+        if (this.__prjEditor) {
+          let nodeId = e.getData();
+          this.__prjEditor.nodeSelected(nodeId);
+        }
+      }, this);
+      return navBar;
+    },
+
+    __createMainView: function() {
+      let prjStack = new qx.ui.container.Stack();
+
+      let dashboard = this.__dashboard = new qxapp.desktop.Dashboard();
+      dashboard.getPrjBrowser().addListener("startProject", e => {
         const projectEditor = e.getData();
         this.__showProjectEditor(projectEditor);
       }, this);
+      prjStack.add(dashboard);
+
+      return prjStack;
     },
 
     __showDashboard: function() {
