@@ -15,6 +15,21 @@
 
 ************************************************************************ */
 
+/**
+ * Widget containing a Vertical Box with a MainView and ControlsBar.
+ * Used as Main View in the project editor.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let mainPanel = this.__mainPanel = new qxapp.desktop.MainPanel();
+ *   mainPanel.setMainView(widget);
+ *   this.getRoot().add(mainPanel);
+ * </pre>
+ */
+
 /* eslint no-underscore-dangle: 0 */
 
 qx.Class.define("qxapp.desktop.MainPanel", {
@@ -25,18 +40,17 @@ qx.Class.define("qxapp.desktop.MainPanel", {
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    let controlsBar = this.__controlsBar = new qxapp.desktop.mainPanel.ControlsBar();
-    controlsBar.set({
-      height: 60,
-      allowGrowY: false
-    });
-
     let hBox = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
       allowGrowY: true
     });
-
     this._add(hBox, {
       flex: 1
+    });
+
+    let controlsBar = this.__controlsBar = new qxapp.desktop.ControlsBar();
+    controlsBar.set({
+      height: 60,
+      allowGrowY: false
     });
     this._add(controlsBar);
   },

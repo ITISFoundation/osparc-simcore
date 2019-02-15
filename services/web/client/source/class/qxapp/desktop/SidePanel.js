@@ -16,7 +16,8 @@
 ************************************************************************ */
 
 /**
- * Widget containing a Vertical Box equaly sized. Used for the side panel in the project editor.
+ * Widget containing a Vertical Box with three widgets equaly sized.
+ * Used for the side panel in the project editor.
  *
  * *Example*
  *
