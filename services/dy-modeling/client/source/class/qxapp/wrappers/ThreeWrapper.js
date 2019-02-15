@@ -10,7 +10,7 @@
 /* eslint new-cap: [2, {capIsNewExceptions: ["THREE", "Blob"]}] */
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true, "allow": ["__downloadBinJSON", "__downloadJSON"] }] */
 
-qx.Class.define("qxapp.wrappers.ThreeWrapper", {
+qx.Class.define("qxapp.wrapper.ThreeWrapper", {
   extend: qx.core.Object,
 
   construct: function() {

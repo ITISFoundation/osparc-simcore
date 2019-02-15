@@ -11,7 +11,7 @@
 /* global Ajv */
 /* eslint new-cap: [2, {capIsNewExceptions: ["Ajv"]}] */
 
-qx.Class.define("qxapp.wrappers.Ajv", {
+qx.Class.define("qxapp.wrapper.Ajv", {
   extend: qx.core.Object,
 
   statics: {

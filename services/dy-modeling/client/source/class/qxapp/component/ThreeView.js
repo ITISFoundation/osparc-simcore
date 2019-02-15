@@ -18,7 +18,7 @@ qx.Class.define("qxapp.component.ThreeView", {
     this.__entities = [];
 
     this.addListenerOnce("appear", () => {
-      this.__threeWrapper = new qxapp.wrappers.ThreeWrapper();
+      this.__threeWrapper = new qxapp.wrapper.ThreeWrapper();
       this.__threeWrapper.addListener("ThreeLibReady", e => {
         let ready = e.getData();
         if (ready) {

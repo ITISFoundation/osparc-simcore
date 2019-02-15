@@ -77,7 +77,7 @@ qx.Class.define("qxapp.Application", {
       let layout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
 
       // openning web socket
-      this._socket = new qxapp.wrappers.WebSocket("app");
+      this._socket = new qxapp.wrapper.WebSocket("app");
       this._socket.connect();
 
       let body = document.body;

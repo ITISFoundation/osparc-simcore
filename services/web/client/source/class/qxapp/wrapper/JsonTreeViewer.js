@@ -23,7 +23,7 @@
 
 /* global jsonTree */
 
-qx.Class.define("qxapp.wrappers.JsonTreeViewer", {
+qx.Class.define("qxapp.wrapper.JsonTreeViewer", {
   extend: qx.core.Object,
   type: "singleton",
 

@@ -23,7 +23,7 @@
 
 /* global jsondiffpatch */
 
-qx.Class.define("qxapp.wrappers.JsonDiffPatch", {
+qx.Class.define("qxapp.wrapper.JsonDiffPatch", {
   extend: qx.core.Object,
   type: "singleton",
 

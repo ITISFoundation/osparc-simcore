@@ -5,7 +5,7 @@
 
 /* global Plotly */
 
-qx.Class.define("qxapp.wrappers.Plotly", {
+qx.Class.define("qxapp.wrapper.Plotly", {
   extend: qx.core.Object,
 
   statics: {

@@ -131,12 +131,12 @@ qx.Class.define("qxapp.Application", {
 
     __connectWebSocket: function() {
       // open web socket
-      qxapp.wrappers.WebSocket.getInstance().connect();
+      qxapp.wrapper.WebSocket.getInstance().connect();
     },
 
     __disconnectWebSocket: function() {
       // open web socket
-      qxapp.wrappers.WebSocket.getInstance().disconnect();
+      qxapp.wrapper.WebSocket.getInstance().disconnect();
     }
   }
 });

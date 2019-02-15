@@ -40,7 +40,7 @@ qx.Class.define("qxapp.component.widget.PlotlyWidget", {
     this.base();
 
     this.addListenerOnce("appear", () => {
-      this.__plotlyWrapper = new qxapp.wrappers.Plotly();
+      this.__plotlyWrapper = new qxapp.wrapper.Plotly();
       this.__plotlyWrapper.addListener(("plotlyLibReady"), e => {
         let ready = e.getData();
         if (ready) {

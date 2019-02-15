@@ -43,7 +43,7 @@ qx.Class.define("qxapp.component.workbench.SvgWidget", {
     this.addListenerOnce("appear", () => {
       let el = this.getContentElement().getDomElement();
       qx.bom.element.Attribute.set(el, "id", svgLayerId);
-      this.__svgWrapper = new qxapp.wrappers.Svg();
+      this.__svgWrapper = new qxapp.wrapper.Svg();
       this.__svgWrapper.addListener(("svgLibReady"), () => {
         this.__linksCanvas = this.__svgWrapper.createEmptyCanvas(svgLayerId);
         this.fireDataEvent("SvgWidgetReady", true);

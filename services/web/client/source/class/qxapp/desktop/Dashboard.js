@@ -23,8 +23,8 @@ qx.Class.define("qxapp.desktop.Dashboard", {
   construct: function() {
     this.base(arguments, new qx.ui.layout.HBox());
 
-    qxapp.wrappers.JsonDiffPatch.getInstance().init();
-    qxapp.wrappers.JsonTreeViewer.getInstance().init();
+    qxapp.wrapper.JsonDiffPatch.getInstance().init();
+    qxapp.wrapper.JsonTreeViewer.getInstance().init();
 
     let leftSpacer = new qx.ui.core.Spacer(60);
     let mainView = this.__createMainViewLayout();

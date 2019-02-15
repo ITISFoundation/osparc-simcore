@@ -326,7 +326,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       nodeCheck.addListener("success", e => {
         let data = e.getTarget().getResponse();
         try {
-          let ajv = new qxapp.wrappers.Ajv(data);
+          let ajv = new qxapp.wrapper.Ajv(data);
           for (const srvId in services) {
             const service = services[srvId];
             let check = ajv.validate(service);

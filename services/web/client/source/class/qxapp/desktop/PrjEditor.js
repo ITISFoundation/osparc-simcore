@@ -356,7 +356,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     __startPipeline: function() {
       this.getProject().getWorkbench().clearProgressData();
 
-      let socket = qxapp.wrappers.WebSocket.getInstance();
+      let socket = qxapp.wrapper.WebSocket.getInstance();
 
       // callback for incoming logs
       const slotName = "logger";
@@ -492,7 +492,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
     },
 
     __startAutoSaveTimer: function() {
-      let diffPatcher = qxapp.wrappers.JsonDiffPatch.getInstance();
+      let diffPatcher = qxapp.wrapper.JsonDiffPatch.getInstance();
       // Save every 5 seconds
       const interval = 5000;
       let timer = new qx.event.Timer(interval);
@@ -524,7 +524,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         let resources = this.__projectResources.projects;
         resources.addListenerOnce("postSuccess", ev => {
           console.log("Project replaced");
-          this.__lastSavedPrj = qxapp.wrappers.JsonDiffPatch.getInstance().clone(newObj);
+          this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
         }, this);
         resources.post(null, newObj);
       }, this);
@@ -542,7 +542,7 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       let resource = this.__projectResources.project;
       resource.addListenerOnce("putSuccess", ev => {
         this.fireDataEvent("projectSaved", true);
-        this.__lastSavedPrj = qxapp.wrappers.JsonDiffPatch.getInstance().clone(newObj);
+        this.__lastSavedPrj = qxapp.wrapper.JsonDiffPatch.getInstance().clone(newObj);
       }, this);
       resource.put({
         "project_id": prjUuid

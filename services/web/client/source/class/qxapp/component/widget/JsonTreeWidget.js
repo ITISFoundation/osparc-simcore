@@ -41,7 +41,7 @@ qx.Class.define("qxapp.component.widget.JsonTreeWidget", {
     this.addListenerOnce("appear", () => {
       let elem = this.getContentElement().getDomElement();
       qx.bom.element.Attribute.set(elem, "id", elemId);
-      let jsonTreeViewer = qxapp.wrappers.JsonTreeViewer.getInstance();
+      let jsonTreeViewer = qxapp.wrapper.JsonTreeViewer.getInstance();
       if (jsonTreeViewer.getLibReady()) {
         jsonTreeViewer.print(data, elem);
       }
