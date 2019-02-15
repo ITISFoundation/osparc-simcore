@@ -43,8 +43,8 @@ qx.Class.define("qxapp.About", {
 
       this.add(new qx.ui.core.Spacer(null, 10));
 
-      Object.keys(qxapp.wrappers).forEach(className => {
-        const wrapper = qxapp.wrappers[className];
+      Object.keys(qxapp.wrapper).forEach(className => {
+        const wrapper = qxapp.wrapper[className];
         this.add(this.__createEntry(wrapper.NAME, wrapper.VERSION, wrapper.URL));
       });
     },
