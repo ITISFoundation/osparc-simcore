@@ -66,7 +66,6 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       let navBar = new qxapp.desktop.NavigationBar().set({
         height: 100
       });
-      navBar.setMainViewCaption("Dashboard");
 
       navBar.addListener("dashboardPressed", () => {
         if (this.__prjEditor) {
@@ -100,7 +99,7 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
     __showDashboard: function() {
       this.__prjStack.setSelection([this.__dashboard]);
       this.__dashboard.getPrjBrowser().reloadUserProjects();
-      this.__navBar.setMainViewCaption(this.tr("Dashboard"));
+      this.__navBar.setPathButtons([]);
     },
 
     __showProjectEditor: function(projectEditor) {
@@ -113,11 +112,11 @@ qx.Class.define("qxapp.desktop.LayoutManager", {
       this.__prjStack.add(this.__prjEditor);
       this.__prjStack.setSelection([this.__prjEditor]);
       this.__navBar.setProject(project);
-      this.__navBar.setMainViewCaption(project.getWorkbench().getPathIds("root"));
+      this.__navBar.setPathButtons(project.getWorkbench().getPathIds("root"));
 
       this.__prjEditor.addListener("changeMainViewCaption", ev => {
         const elements = ev.getData();
-        this.__navBar.setMainViewCaption(elements);
+        this.__navBar.setPathButtons(elements);
       }, this);
 
       this.__prjEditor.addListener("projectSaved", ev => {

@@ -63,20 +63,7 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     let logo = qxapp.component.widget.LogoOnOff.getInstance();
     this._add(logo);
-
     this._add(new qx.ui.toolbar.Separator());
-
-    let hBox = new qx.ui.layout.HBox(5).set({
-      alignY: "middle"
-    });
-    let mainViewCaptionLayout = this.__mainViewCaptionLayout = new qx.ui.container.Composite(hBox);
-    this._add(mainViewCaptionLayout);
-
-
-    this._add(new qx.ui.core.Spacer(5), {
-      flex: 1
-    });
-
 
     let dashboardBtn = new qx.ui.form.Button(this.tr("Dashboard"));
     dashboardBtn.set(commonBtnSettings);
@@ -87,24 +74,18 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
     this._add(new qx.ui.toolbar.Separator());
 
-    let forumBtn = new qx.ui.form.Button(this.tr("Forum"));
-    forumBtn.addListener("execute", () => {
-      window.open("https://forum.zmt.swiss/");
-    }, this);
-    forumBtn.set(commonBtnSettings);
-    this._add(forumBtn);
+    let hBox = new qx.ui.layout.HBox(5).set({
+      alignY: "middle"
+    });
+    let mainViewCaptionLayout = this.__mainViewCaptionLayout = new qx.ui.container.Composite(hBox);
+    this._add(mainViewCaptionLayout);
 
-    this._add(new qx.ui.toolbar.Separator());
-
-    let helpBtn = new qx.ui.form.Button(this.tr("Help"));
-    helpBtn.set(commonBtnSettings);
-    this._add(helpBtn);
-
-    this._add(new qx.ui.toolbar.Separator());
+    this._add(new qx.ui.core.Spacer(5), {
+      flex: 1
+    });
 
     const userEmail = qxapp.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
     const userName = qxapp.auth.Data.getInstance().getUserName() || "bizzy";
-
     let userLbl = new qx.ui.basic.Label(userName).set({
       minWidth: 10
     });
@@ -136,39 +117,8 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
   members: {
     __mainViewCaptionLayout: null,
 
-    setMainViewCaption: function(newLabel) {
+    setPathButtons: function(nodeIds) {
       this.__mainViewCaptionLayout.removeAll();
-      if (typeof newLabel === "string" || newLabel instanceof qx.locale.LocalizedString) {
-        this.__showMainViewCaptionAsText(newLabel);
-      } else if (Array.isArray(newLabel)) {
-        this.__showMainViewCaptionAsButtons(newLabel);
-      }
-    },
-
-    projectSaved: function() {
-      for (let i=0; i<this.__mainViewCaptionLayout.getChildren().length; i++) {
-        let widget = this.__mainViewCaptionLayout.getChildren()[i];
-        if (widget instanceof qx.ui.form.Button) {
-          const waitFor = 500;
-          qx.event.Timer.once(ev => {
-            widget.removeState("hovered");
-          }, this, waitFor);
-          widget.addState("hovered");
-          return;
-        }
-      }
-    },
-
-    __showMainViewCaptionAsText: function(newLabel) {
-      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
-      let mainViewCaption = this.__mainViewCaption = new qx.ui.basic.Label(newLabel).set({
-        font: navBarLabelFont,
-        minWidth: 150
-      });
-      this.__mainViewCaptionLayout.add(mainViewCaption);
-    },
-
-    __showMainViewCaptionAsButtons: function(nodeIds) {
       const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
       for (let i=0; i<nodeIds.length; i++) {
         let btn = new qx.ui.form.Button().set({
@@ -198,15 +148,35 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
       }
     },
 
+    projectSaved: function() {
+      for (let i=0; i<this.__mainViewCaptionLayout.getChildren().length; i++) {
+        let widget = this.__mainViewCaptionLayout.getChildren()[i];
+        if (widget instanceof qx.ui.form.Button) {
+          const waitFor = 500;
+          qx.event.Timer.once(ev => {
+            widget.removeState("hovered");
+          }, this, waitFor);
+          widget.addState("hovered");
+          return;
+        }
+      }
+    },
+
+    __showMainViewCaptionAsText: function(newLabel) {
+      const navBarLabelFont = qx.bom.Font.fromConfig(qxapp.theme.Font.fonts["nav-bar-label"]);
+      let mainViewCaption = this.__mainViewCaption = new qx.ui.basic.Label(newLabel).set({
+        font: navBarLabelFont,
+        minWidth: 150
+      });
+      this.__mainViewCaptionLayout.add(mainViewCaption);
+    },
+
     __createUserBtn: function() {
       var menu = new qx.ui.menu.Menu();
 
       // Account Settings
       // ---
-      // Groups
-      // ---
       // Help
-      // Report a Problem
       // About
       // ---
       // Logout
@@ -223,12 +193,11 @@ qx.Class.define("qxapp.desktop.NavigationBar", {
 
       menu.add(preferences);
       menu.addSeparator();
-      menu.add(new qx.ui.menu.Button(this.tr("Groups")));
-      menu.addSeparator();
-      menu.add(new qx.ui.menu.Button(this.tr("Help")));
-      menu.add(new qx.ui.menu.Button(this.tr("Report a Problem")));
+      let helpBtn = new qx.ui.menu.Button(this.tr("Help"));
+      helpBtn.addListener("execute", () => window.open("https://forum.zmt.swiss/"));
+      menu.add(helpBtn);
       let aboutBtn = new qx.ui.menu.Button(this.tr("About"));
-      aboutBtn.addListener("execute", e => qxapp.About.getInstance().open());
+      aboutBtn.addListener("execute", () => qxapp.About.getInstance().open());
       menu.add(aboutBtn);
       menu.addSeparator();
       menu.add(logout);
