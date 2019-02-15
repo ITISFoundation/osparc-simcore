@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Qooxdoo object that stores Project/Study data. It is also able to serialize itself
+ * Class that stores Project/Study data. It is also able to serialize itself.
  *
  * *Example*
  *

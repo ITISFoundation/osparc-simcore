@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Qooxdoo object that stores link data
+ * Class that stores link data.
  *
  * *Example*
  *
