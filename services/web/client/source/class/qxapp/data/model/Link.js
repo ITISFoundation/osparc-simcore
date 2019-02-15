@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Class that stores link data.
+ * Class that stores Link data.
  *
  *                                    -> {NODES}
  * PROJECT -> METADATA + WORKBENCH ->|

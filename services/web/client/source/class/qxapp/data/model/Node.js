@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Class that stores node data.
+ * Class that stores Node data.
  *
  *                                    -> {NODES}
  * PROJECT -> METADATA + WORKBENCH ->|
