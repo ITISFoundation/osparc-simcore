@@ -24,8 +24,8 @@ then
   APP_CONFIG=server-docker-dev.yaml
 
 elif [[ ${MY_BUILD_TARGET} == "production" ]]
+then
   APP_CONFIG=server-docker-prod.yaml
-
 fi
 
 
