@@ -15,6 +15,21 @@
 
 ************************************************************************ */
 
+/**
+ * Widget that provides access to the data belonging to the active user.
+ * - On the left side: myData FilesTree with the FileLabelWithActions
+ * - On the right side: a pie chart reflecting the data resources consumed
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let dataManager = new qxapp.desktop.DataManager();
+ *   this.getRoot().add(dataManager);
+ * </pre>
+ */
+
 /* global document */
 /* eslint no-warning-comments: "off" */
 
