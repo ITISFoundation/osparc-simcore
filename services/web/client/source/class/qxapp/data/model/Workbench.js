@@ -15,6 +15,13 @@
 
 ************************************************************************ */
 
+/**
+ * Class that stores Workbench data.
+ *
+ *                                    -> {NODES}
+ * PROJECT -> METADATA + WORKBENCH ->|
+ *                                    -> {LINKS}
+ *
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.data.model.Workbench", {

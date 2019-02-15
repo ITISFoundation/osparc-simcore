@@ -18,6 +18,10 @@
 /**
  * Class that stores Project/Study data. It is also able to serialize itself.
  *
+ *                                    -> {NODES}
+ * PROJECT -> METADATA + WORKBENCH ->|
+ *                                    -> {LINKS}
+ *
  * *Example*
  *
  * Here is a little example of how to use the widget.

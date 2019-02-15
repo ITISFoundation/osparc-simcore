@@ -18,6 +18,10 @@
 /**
  * Class that stores link data.
  *
+ *                                    -> {NODES}
+ * PROJECT -> METADATA + WORKBENCH ->|
+ *                                    -> {LINKS}
+ *
  * *Example*
  *
  * Here is a little example of how to use the widget.
