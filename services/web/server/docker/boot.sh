@@ -4,7 +4,8 @@
 # BOOTING application ---------------------------------------------
 echo "Booting in ${MY_BOOT_MODE} mode ..."
 
-APP_CONFIG=server-docker-prod.yaml
+PATH="$HOME/.local/bin:$PATH"
+export PATH
 
 if [[ ${MY_BUILD_TARGET} == "development" ]]
 then
@@ -13,15 +14,19 @@ then
   echo "  Environment :"
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
 
-  $MY_PIP install --user --editable services/web/server
+  #------------
+  APP_CONFIG=server-docker-dev.yaml
 
+  cd services/web/server
+  $MY_PIP install --user -r requirements/dev.txt
+  cd /devel
+
+  #------------
   echo "  Python :"
   python --version | sed 's/^/    /'
   which python | sed 's/^/    /'
   echo "  PIP :"
   $MY_PIP list | sed 's/^/    /'
-
-  APP_CONFIG=server-docker-dev.yaml
 
 elif [[ ${MY_BUILD_TARGET} == "production" ]]
 then
