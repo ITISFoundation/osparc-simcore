@@ -15,6 +15,26 @@
 
 ************************************************************************ */
 
+/**
+ * Widget containing:
+ * - LogoOnOff
+ * - Dashboard button
+ * - List of buttons for node navigation (only study editing)
+ * - User menu
+ *   - Preferences
+ *   - About
+ *   - Logout
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let navBar = new qxapp.desktop.NavigationBar();
+ *   this.getRoot().add(navBar);
+ * </pre>
+ */
+
 /* eslint no-warning-comments: "off" */
 
 const NAVIGATION_BUTTON_HEIGHT = 32;
