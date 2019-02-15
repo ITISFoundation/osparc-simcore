@@ -15,6 +15,22 @@
 
 ************************************************************************ */
 
+/**
+ * Widget containing a Vertical Box equaly sized. Used for the side panel in the project editor.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let sidePanel = new qxapp.desktop.SidePanel();
+ *   sidePanel.setTopView(widget1);
+ *   sidePanel.setMidView(widget2);
+ *   sidePanel.setBottomView(widget3);
+ *   this.getRoot().add(sidePanel);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.desktop.SidePanel", {
   extend: qx.ui.core.Widget,
 
