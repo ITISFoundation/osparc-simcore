@@ -15,9 +15,24 @@
 
 ************************************************************************ */
 
+/**
+ * Qooxdoo object that stores Project/Study data. It is also able to serialize itself
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let link = new qxapp.data.model.Link(linkId, node1Id, node2Id);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.data.model.Project", {
   extend: qx.core.Object,
 
+  /**
+    * @param prjData {String} uuid if the link. If not provided, a random one will be assigned
+  */
   construct: function(prjData) {
     this.base(arguments);
 
