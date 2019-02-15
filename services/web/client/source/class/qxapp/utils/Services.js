@@ -80,20 +80,6 @@ qx.Class.define("qxapp.utils.Services", {
         return services[key][versions[versions.length - 1]];
       }
       return null;
-    },
-
-    getTagsOrder: function() {
-      return [
-        "key",
-        "version",
-        "type",
-        "name",
-        "description",
-        "authors",
-        "contact",
-        "inputs",
-        "outputs"
-      ];
     }
   }
 });
