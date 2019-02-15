@@ -19,7 +19,7 @@
  * Widget that shows all the information available regarding services.
  *
  * It has three main focuses:
- * - Services list on the left side with some filter
+ * - Services list (ServiceBrowserListItem) on the left side with some filter
  *   - Filter as you type
  *   - Filter by service type
  *   - Filter by service type
