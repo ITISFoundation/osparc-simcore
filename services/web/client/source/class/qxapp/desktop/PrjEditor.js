@@ -29,10 +29,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
 
     this.setProject(project);
 
-    let mainPanel = this.__mainPanel = new qxapp.desktop.mainPanel.MainPanel().set({
+    let mainPanel = this.__mainPanel = new qxapp.desktop.MainPanel().set({
       minWidth: 1000
     });
-    let sidePanel = this.__sidePanel = new qxapp.desktop.sidePanel.SidePanel().set({
+    let sidePanel = this.__sidePanel = new qxapp.desktop.SidePanel().set({
       minWidth: 0,
       maxWidth: 800,
       width: 600
