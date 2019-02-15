@@ -15,6 +15,19 @@
 
 ************************************************************************ */
 
+/**
+ *   Collection of methods for dealing with services data type convertions, extract
+ * specific information.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let latestSrv = qxapp.utils.Services.getLatest(services, serviceKey);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.utils.Services", {
   type: "static",
 
