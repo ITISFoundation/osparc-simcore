@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
+qx.Class.define("qxapp.desktop.ControlsBar", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

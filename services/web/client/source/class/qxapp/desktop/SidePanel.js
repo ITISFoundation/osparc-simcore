@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.desktop.sidePanel.SidePanel", {
+qx.Class.define("qxapp.desktop.SidePanel", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

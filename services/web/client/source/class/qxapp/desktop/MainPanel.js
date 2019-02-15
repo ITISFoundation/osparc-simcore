@@ -17,7 +17,7 @@
 
 /* eslint no-underscore-dangle: 0 */
 
-qx.Class.define("qxapp.desktop.mainPanel.MainPanel", {
+qx.Class.define("qxapp.desktop.MainPanel", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
