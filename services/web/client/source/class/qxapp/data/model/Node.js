@@ -18,12 +18,12 @@
 /**
  * Class that stores Node data.
  *
+ *   For the given version-key, this class will take care of pulling the metadata, store it and
+ * fill in all the information.
+ *
  *                                    -> {NODES}
  * PROJECT -> METADATA + WORKBENCH ->|
  *                                    -> {LINKS}
- *
- *   For the given version-key, this class will take care of pulling the metadata, store it and
- * fill in all the information.
  *
  * *Example*
  *
