@@ -15,11 +15,32 @@
 
 ************************************************************************ */
 
+/**
+ * Class that stores node data.
+ *
+ *   For the given version-key, this class will take care of pulling the metadata, store it and
+ * fill in all the information.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let link = new qxapp.data.model.Link(linkId, node1Id, node2Id);
+ * </pre>
+ */
+
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.data.model.Node", {
   extend: qx.core.Object,
 
+  /**
+    * @param workbench {qxapp.data.model.Workbench} workbench owning the widget the node
+    * @param key {String} key of the service represented by the node (not needed for Containers)
+    * @param version {String} version of the service represented by the node (not needed for Containers)
+    * @param uuid {String} uuid of the service represented by the node (not needed fpr new Nodes)
+  */
   construct: function(workbench, key, version, uuid) {
     this.setWorkbench(workbench);
 
@@ -40,8 +61,7 @@ qx.Class.define("qxapp.data.model.Node", {
       // not container
       this.set({
         key: key,
-        version: version,
-        nodeImageId: key + "-" + version
+        version: version
       });
       let store = qxapp.data.Store.getInstance();
       let metaData = this.__metaData = store.getNodeMetaData(key, version);
@@ -70,23 +90,17 @@ qx.Class.define("qxapp.data.model.Node", {
 
     key: {
       check: "String",
-      nullable: false
+      nullable: true
     },
 
     version: {
       check: "String",
-      nullable: false
+      nullable: true
     },
 
     nodeId: {
       check: "String",
       nullable: false
-    },
-
-    nodeImageId: {
-      check: "String",
-      init: null,
-      nullable: true
     },
 
     label: {
@@ -168,7 +182,7 @@ qx.Class.define("qxapp.data.model.Node", {
     },
 
     isContainer: function() {
-      return (this.getNodeImageId() === null);
+      return (this.getKey() === null);
     },
 
     getMetaData: function() {
