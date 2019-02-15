@@ -15,6 +15,22 @@
 
 ************************************************************************ */
 
+/**
+ * Widget containing a TabView including:
+ * - PrjBrowser
+ * - ServiceBrowser
+ * - DataManager
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let dashboard = new qxapp.desktop.Dashboard();
+ *   this.getRoot().add(dashboard);
+ * </pre>
+ */
+
 /* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.desktop.Dashboard", {
