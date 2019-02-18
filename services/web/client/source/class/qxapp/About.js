@@ -17,12 +17,12 @@ qx.Class.define("qxapp.About", {
   },
 
   members: {
-
     __populateEntries: function() {
       var remoteUrl = qx.core.Environment.get("osparc.vcsOriginUrl");
 
       if (remoteUrl) {
-        remoteUrl = remoteUrl.replace("git@github.com:", "https://github.com/");
+        remoteUrl = remoteUrl.replace("git@github.com:", "https://github.com/")
+        remoteUrl = remoteUrl.replace(".git", "");
       } else {
         remoteUrl = "https://github.com/ITISFoundation/osparc-simcore";
       }
