@@ -31,8 +31,15 @@ build-devel:
 # target: build: – Builds container
 build:
 	export BUILD_TARGET=build; docker-compose build
-	docker run -it client_qx:build \
-		cat build-output/version.txt && ls -l build-output
+	docker run -it client_qx:build /bin/sh -c "ls -l build-output;cat build-output/version.txt"
+
+
+.PHONY: clean
+# target: clean: – Cleans images and current dir outputs
+clean:
+	@docker image rm -f client_qx:build 2> /dev/null
+	@docker image rm -f client_qx:development 2> /dev/null
+	@git clean -dxf ${CURDIR}
 
 
 .PHONY: compile
