@@ -27,7 +27,7 @@ qx.Class.define("qxapp.About", {
         remoteUrl = "https://github.com/ITISFoundation/osparc-simcore";
       }
 
-      var name = "oSPARC";
+      var name = "osparc-simcore";
       var commitId = qx.core.Environment.get("osparc.vcsRef");
       var url = remoteUrl;
 
@@ -36,7 +36,7 @@ qx.Class.define("qxapp.About", {
       }
       this.add(this.__createEntry(name, commitId, url));
 
-      name = "oSPARC UI";
+      name = "osparc-simcore UI";
       commitId = qx.core.Environment.get("osparc.vcsRefClient");
       if (commitId) {
         url = remoteUrl + "/tree/" + String(commitId) + "/services/web/client/";
@@ -47,7 +47,7 @@ qx.Class.define("qxapp.About", {
       }
       this.add(this.__createEntry(name, commitId, url));
 
-      // this.add(new qx.ui.core.Spacer(null, 10));
+      this.add(new qx.ui.core.Spacer(null, 10));
 
       this.add(this.__createEntry("qooxdoo-compiler", qx.core.Environment.get("qx.compilerVersion"), "https://github.com/qooxdoo/qooxdoo-compiler"));
 
