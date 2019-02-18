@@ -74,6 +74,7 @@ services:
   #--------------------------------------------------------------------
   webclient:
     image: services_webclient:build
+    restart: on-failure
     build:
       context: ./web/client/
       dockerfile: Dockerfile
@@ -91,7 +92,9 @@ services:
         - VCS_REF=${VCS_REF}
         - VCS_REF_CLIENT=${VCS_REF_CLIENT}
         - VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT}
-    command: /bin/bash -c "echo 'built with qx' && cat build-output/version.txt"
+    command: >
+      /bin/sh -c "ls -l build-output;cat build-output/version.txt"
+
   webserver:
     image: ${DOCKER_IMAGE_PREFIX}webserver:${DOCKER_IMAGE_TAG}
     build:
@@ -136,10 +139,10 @@ services:
     stdin_open: true
     tty: true
     depends_on:
-      - webclient
       - apihub
       - postgres
       - minio
+      - rabbit
     deploy:
       placement:
         constraints:
