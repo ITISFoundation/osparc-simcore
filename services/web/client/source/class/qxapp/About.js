@@ -17,10 +17,35 @@ qx.Class.define("qxapp.About", {
   },
 
   members: {
+
     __populateEntries: function() {
-      // FIXME: In deployment mode these env variables are not properly initialized and it break client compilation
-      // this.add(this.__createEntry("oSPARC", qx.core.Environment.get("osparc.vcsRef"), "https://github.com/ITISFoundation/osparc-simcore"));
-      // this.add(this.__createEntry("oSPARC UI", qx.core.Environment.get("osparc.vcsRefClient"), "https://github.com/ITISFoundation/osparc-simcore/services/web/client"));
+      var remoteUrl = qx.core.Environment.get("osparc.vcsOriginUrl");
+
+      if (remoteUrl) {
+        remoteUrl = remoteUrl.replace("git@github.com:", "https://github.com/");
+      } else {
+        remoteUrl = "https://github.com/ITISFoundation/osparc-simcore";
+      }
+
+      var name = "oSPARC";
+      var commitId = qx.core.Environment.get("osparc.vcsRef");
+      var url = remoteUrl;
+
+      if (commitId) {
+        url = remoteUrl + "/tree/" + String(commitId) + "/";
+      }
+      this.add(this.__createEntry(name, commitId, url));
+
+      name = "oSPARC UI";
+      commitId = qx.core.Environment.get("osparc.vcsRefClient");
+      if (commitId) {
+        url = remoteUrl + "/tree/" + String(commitId) + "/services/web/client/";
+      }
+      var status = qx.core.Environment.get("osparc.vcsStatusClient");
+      if (status) {
+        name = name + " [" + status + "]";
+      }
+      this.add(this.__createEntry(name, commitId, url));
 
       // this.add(new qx.ui.core.Spacer(null, 10));
 

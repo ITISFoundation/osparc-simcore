@@ -73,6 +73,8 @@ FROM base-stage as build
 
 ARG VCS_REF
 ARG VCS_REF_CLIENT
+ARG VCS_STATUS_CLIENT
+ARG VCS_URL
 
 # 3. prepares docker
 COPY --chown=scu:scu docker docker
@@ -90,7 +92,8 @@ COPY --chown=scu:scu Manifest.json Manifest.json
 RUN qx compile --target=build \
         --set osparc.vcsRef=\"$VCS_REF\" \
         --set osparc.vcsRefClient=\"$VCS_REF_CLIENT\" \
-        --set osparc.vcsStatusClient=\"${VCS_STATUS_CLIENT}\"
+        --set osparc.vcsStatusClient=\"${VCS_STATUS_CLIENT}\" \
+        --set osparc.vcsOriginUrl=\"${VCS_URL}\"
 
 ENTRYPOINT []
 CMD []

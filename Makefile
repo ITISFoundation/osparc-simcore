@@ -51,18 +51,21 @@ SERVICES_LIST := apihub director sidecar storage webserver
 CACHED_SERVICES_LIST := ${SERVICES_LIST} webclient
 DYNAMIC_SERVICE_FOLDERS_LIST := services/dy-jupyter services/dy-2Dgraph/use-cases services/dy-3dvis services/dy-modeling
 
-BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+VCS_URL:=$(shell git config --get remote.origin.url)
 VCS_REF:=$(shell git rev-parse --short HEAD)
 VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
 VCS_STATUS_CLIENT:=$(shell if [[ -z $(git status -s services/web/client) ]]; then echo clean; else echo 'modified/untracked'; fi)
 
+BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 PLATFORM_VERSION=3.38
 DOCKER_REGISTRY=masu.speag.com
 #DOCKER_REGISTRY=registry.osparc.io
 
+export VCS_URL
 export VCS_REF
 export VCS_REF_CLIENT
+export VCS_STATUS_CLIENT
 export BUILD_DATE
 export SERVICES_VERSION=2.8.0
 export DOCKER_REGISTRY=masu.speag.com
@@ -254,6 +257,7 @@ create-staging-stack-file:
 # target: info – Displays some parameters of makefile environments
 info:
 	@echo '+ vcs ref '
+	@echo '  - origin    : ${VCS_URL}'
 	@echo '  - all       : ${VCS_REF}'
 	@echo '  - web/client (${VCS_STATUS_CLIENT}): ${VCS_REF_CLIENT}'
 	@echo '+ date        : ${BUILD_DATE}'

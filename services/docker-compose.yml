@@ -87,6 +87,7 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
       args:
+        - VCS_URL=${VCS_URL}
         - VCS_REF=${VCS_REF}
         - VCS_REF_CLIENT=${VCS_REF_CLIENT}
         - VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT}
