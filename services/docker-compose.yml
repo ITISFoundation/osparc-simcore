@@ -32,8 +32,6 @@ services:
         - itisfoundation/director:staging-latest
         - services_director:latest
       target: production
-      args:
-        - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       labels:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
@@ -160,8 +158,6 @@ services:
         - itisfoundation/sidecar:cache
         - itisfoundation/sidecar:staging-latest
         - services_sidecar:latest
-      args:
-        - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -211,8 +207,6 @@ services:
         - itisfoundation/storage:cache
         - itisfoundation/storage:staging-latest
         - services_storage:latest
-      args:
-        - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
