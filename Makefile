@@ -51,9 +51,10 @@ SERVICES_LIST := apihub director sidecar storage webserver
 CACHED_SERVICES_LIST := ${SERVICES_LIST} webclient
 DYNAMIC_SERVICE_FOLDERS_LIST := services/dy-jupyter services/dy-2Dgraph/use-cases services/dy-3dvis services/dy-modeling
 
+BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 VCS_REF:=$(shell git rev-parse --short HEAD)
 VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
-BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+VCS_STATUS_CLIENT:=$(shell if [[ -z $(git status -s services/web/client) ]]; then echo clean; else echo 'modified/untracked'; fi)
 
 
 PLATFORM_VERSION=3.38
@@ -254,7 +255,7 @@ create-staging-stack-file:
 info:
 	@echo '+ vcs ref '
 	@echo '  - all       : ${VCS_REF}'
-	@echo '  - web/client: ${VCS_REF_CLIENT}'
+	@echo '  - web/client (${VCS_STATUS_CLIENT}): ${VCS_REF_CLIENT}'
 	@echo '+ date        : ${BUILD_DATE}'
 
 

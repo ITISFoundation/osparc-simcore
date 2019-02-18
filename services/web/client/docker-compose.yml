@@ -15,12 +15,13 @@ services:
       args:
         - VCS_REF=${VCS_REF}
         - VCS_REF_CLIENT=${VCS_REF_CLIENT}
+        - VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT}
     volumes:
       - '.:/home/scu/client'
     ports:
       - '8080:8080'
     working_dir: /home/scu/client
-    command: serve --set qx.allowUrlSettings=true --set osparc.vcsRef='"${VCS_REF}"' --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'
+    command: serve --set qx.allowUrlSettings=true --set osparc.vcsRef='"${VCS_REF}"' --set osparc.vcsRefClient='"${VCS_REF_CLIENT}"' --set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"'
   #---------------------------------------------------------
   test:
     image: client_qx:${BUILD_TARGET:-development}

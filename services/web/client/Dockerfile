@@ -89,7 +89,8 @@ COPY --chown=scu:scu Manifest.json Manifest.json
 
 RUN qx compile --target=build \
         --set osparc.vcsRef=\"$VCS_REF\" \
-        --set osparc.vcsRefClient=\"$VCS_REF_CLIENT\"
+        --set osparc.vcsRefClient=\"$VCS_REF_CLIENT\" \
+        --set osparc.vcsStatusClient=\"${VCS_STATUS_CLIENT}\"
 
 ENTRYPOINT []
 CMD []
