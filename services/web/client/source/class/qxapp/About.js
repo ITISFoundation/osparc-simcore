@@ -1,4 +1,21 @@
-/* eslint no-warning-comments: "off" */
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+     * Pedro Crespo (pcrespov)
+
+************************************************************************ */
+
 qx.Class.define("qxapp.About", {
   extend: qx.ui.window.Window,
   type: "singleton",

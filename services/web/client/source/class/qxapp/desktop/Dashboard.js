@@ -31,8 +31,6 @@
  * </pre>
  */
 
-/* eslint no-warning-comments: "off" */
-
 qx.Class.define("qxapp.desktop.Dashboard", {
   extend: qx.ui.core.Widget,
 

@@ -23,8 +23,6 @@
  * @asset(qxapp/*)
  */
 
-/* eslint no-warning-comments: "off" */
-
 qx.Class.define("qxapp.Application", {
   extend: qx.application.Standalone,
   include: [

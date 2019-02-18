@@ -37,8 +37,6 @@
  * </pre>
  */
 
-/* eslint no-warning-comments: "off" */
-
 qx.Class.define("qxapp.data.model.Node", {
   extend: qx.core.Object,
 

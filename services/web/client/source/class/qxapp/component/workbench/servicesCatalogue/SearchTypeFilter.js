@@ -33,8 +33,6 @@
  * </pre>
  */
 
-/* eslint no-warning-comments: "off" */
-
 qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", {
   extend : qx.core.Object,
 

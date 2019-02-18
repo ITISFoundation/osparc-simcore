@@ -35,8 +35,6 @@
  * </pre>
  */
 
-/* eslint no-warning-comments: "off" */
-
 qx.Class.define("qxapp.desktop.PrjBrowser", {
   extend: qx.ui.core.Widget,
 

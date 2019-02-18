@@ -22,7 +22,7 @@
  *  - reset password (logged in)
  *
  */
-/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.desktop.preferences.pages.SecurityPage", {
   extend:qxapp.desktop.preferences.pages.BasePage,
 

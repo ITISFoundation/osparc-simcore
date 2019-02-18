@@ -15,6 +15,8 @@
 
 ************************************************************************ */
 
+/* eslint no-underscore-dangle: "off" */
+
 /**
  * Remote table model for showing log messages
  *
@@ -39,8 +41,6 @@
  *
  * @asset(demobrowser/backend/remote_table.php)
  */
-
-/* eslint no-underscore-dangle: "off" */
 
 qx.Class.define("qxapp.component.widget.logger.RemoteTableModel", {
 

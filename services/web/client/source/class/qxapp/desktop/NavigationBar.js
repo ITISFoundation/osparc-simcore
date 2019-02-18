@@ -36,8 +36,6 @@
  * </pre>
  */
 
-/* eslint no-warning-comments: "off" */
-
 const NAVIGATION_BUTTON_HEIGHT = 32;
 
 qx.Class.define("qxapp.desktop.NavigationBar", {

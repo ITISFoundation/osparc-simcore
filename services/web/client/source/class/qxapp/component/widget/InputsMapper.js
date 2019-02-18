@@ -15,6 +15,8 @@
 
 ************************************************************************ */
 
+/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__willBeBranch", "__willBeLeaf", "__tree"] }] */
+
 /**
  *   This widget contains a VirtualTree populated with InputsMapperTreeItems. It represents a mapping
  * of different inputs that can be either branches or leaves. Also implements a Drag&Drop mechanism.
@@ -50,8 +52,6 @@
  *   this.getRoot().add(inputsMapper);
  * </pre>
  */
-
-/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__willBeBranch", "__willBeLeaf", "__tree"] }] */
 
 qx.Class.define("qxapp.component.widget.InputsMapper", {
   extend: qx.ui.core.Widget,

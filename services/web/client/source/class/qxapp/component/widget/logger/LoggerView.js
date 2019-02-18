@@ -41,8 +41,6 @@
  * </pre>
  */
 
-/* eslint no-warning-comments: "off" */
-
 const LOG_LEVEL = {
   debug: -1,
   info: 0,

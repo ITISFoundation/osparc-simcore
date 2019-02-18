@@ -31,7 +31,6 @@
  */
 
 /* global document */
-/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.desktop.DataManager", {
   extend: qx.ui.core.Widget,

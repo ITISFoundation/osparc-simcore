@@ -22,8 +22,6 @@
  *  - Keeps authentication header for future requests to the backend
 */
 
-/* eslint no-warning-comments: "off" */
-
 qx.Class.define("qxapp.auth.Manager", {
   extend: qx.core.Object,
   type: "singleton",

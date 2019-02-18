@@ -33,8 +33,6 @@
  * </pre>
  */
 
-/* eslint no-warning-comments: "off" */
-
 qx.Class.define("qxapp.data.model.Workbench", {
   extend: qx.core.Object,
 

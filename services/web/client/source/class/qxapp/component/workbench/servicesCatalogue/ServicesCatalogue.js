@@ -33,8 +33,6 @@
  * </pre>
  */
 
-/* eslint no-warning-comments: "off" */
-
 const LATEST = "latest";
 
 qx.Class.define("qxapp.component.workbench.servicesCatalogue.ServicesCatalogue", {

@@ -16,7 +16,6 @@
 ************************************************************************ */
 
 /* eslint newline-per-chained-call: 0 */
-/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.desktop.PrjEditor", {
   extend: qx.ui.splitpane.Pane,

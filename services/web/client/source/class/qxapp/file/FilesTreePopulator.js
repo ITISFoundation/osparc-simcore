@@ -28,8 +28,6 @@
  * </pre>
  */
 
-/* eslint no-warning-comments: "off" */
-
 qx.Class.define("qxapp.file.FilesTreePopulator", {
   extend: qx.core.Object,
 

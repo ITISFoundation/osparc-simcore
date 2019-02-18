@@ -20,7 +20,7 @@
  *  - multi-page modal window
  *
 */
-/* eslint no-warning-comments: "off" */
+
 qx.Class.define("qxapp.desktop.preferences.DialogWindow", {
   extend: qx.ui.window.Window,
 

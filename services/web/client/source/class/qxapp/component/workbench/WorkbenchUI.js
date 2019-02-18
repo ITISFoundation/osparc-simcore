@@ -29,8 +29,6 @@
  * </pre>
  */
 
-/* eslint no-warning-comments: "off" */
-
 const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
 const NODE_INPUTS_WIDTH = 200;
