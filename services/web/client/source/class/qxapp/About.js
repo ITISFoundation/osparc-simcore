@@ -18,18 +18,18 @@ qx.Class.define("qxapp.About", {
 
   members: {
     __populateEntries: function() {
-      var remoteUrl = qx.core.Environment.get("osparc.vcsOriginUrl");
+      let remoteUrl = qx.core.Environment.get("osparc.vcsOriginUrl");
 
       if (remoteUrl) {
-        remoteUrl = remoteUrl.replace("git@github.com:", "https://github.com/")
+        remoteUrl = remoteUrl.replace("git@github.com:", "https://github.com/");
         remoteUrl = remoteUrl.replace(".git", "");
       } else {
         remoteUrl = "https://github.com/ITISFoundation/osparc-simcore";
       }
 
-      var name = "osparc-simcore";
-      var commitId = qx.core.Environment.get("osparc.vcsRef");
-      var url = remoteUrl;
+      let name = "osparc-simcore";
+      let commitId = qx.core.Environment.get("osparc.vcsRef");
+      let url = remoteUrl;
 
       if (commitId) {
         url = remoteUrl + "/tree/" + String(commitId) + "/";
@@ -41,7 +41,7 @@ qx.Class.define("qxapp.About", {
       if (commitId) {
         url = remoteUrl + "/tree/" + String(commitId) + "/services/web/client/";
       }
-      var status = qx.core.Environment.get("osparc.vcsStatusClient");
+      let status = qx.core.Environment.get("osparc.vcsStatusClient");
       if (status) {
         name = name + " [" + status + "]";
       }
