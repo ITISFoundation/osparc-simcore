@@ -23,7 +23,6 @@ ENV MY_BUILD_TARGET base
 
 EXPOSE 8080
 
-
 VOLUME /home/scu/input
 VOLUME /home/scu/output
 VOLUME /home/scu/log
