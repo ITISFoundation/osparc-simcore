@@ -2,15 +2,31 @@
 
 # This entrypoint script:
 #
-# - Executes with root privileges *inside* of the container upon start
-# - Allows starting the container as root to perform some root-level operations at runtime
-#  (e.g. on volumes mapped inside)
-# - Notice that this way, the container *starts* as root but *runs* as scu (non-root user)
+# - Executes *inside* of the container upon start as --user [default root]
+# - Notice that the container *starts* as --user [default root] but
+#   *runs* as non-root user [scu]
 #
-# See https://stackoverflow.com/questions/39397548/how-to-give-non-root-user-in-docker-container-access-to-a-volume-mounted-on-the
+echo "Entrypoint for stage ${MY_BUILD_TARGET} ..."
+
+if [[ ${MY_BUILD_TARGET} == "development" ]]
+then
+    echo "  User    :`id $(whoami)`"
+    echo "  Workdir :`pwd`"
+
+    # NOTE: expects docker run ... -v $(pwd):/devel/services/storage
+    DEVEL_MOUNT=/devel/services/storage
+
+    stat $DEVEL_MOUNT &> /dev/null || \
+        (echo "ERROR: You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1) # FIXME: exit does not stop script
+
+    USERID=$(stat -c %u $DEVEL_MOUNT)
+    GROUPID=$(stat -c %g $DEVEL_MOUNT)
+
+    deluser scu &> /dev/null
+    addgroup -g $GROUPID scu
+    adduser -u $USERID -G scu -D -s /bin/sh scu
+fi
 
 
-# HERE we have root priveleges
-
-
+echo "Starting boot ..."
 su-exec scu "$@"
