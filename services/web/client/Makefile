@@ -37,6 +37,7 @@ build:
 .PHONY: clean
 # target: clean: – Cleans images and current dir outputs
 clean:
+	@docker-compose down
 	@docker image rm -f client_qx:build 2> /dev/null
 	@docker image rm -f client_qx:development 2> /dev/null
 	@git clean -dxf ${CURDIR}
