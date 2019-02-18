@@ -25,13 +25,7 @@ ENV MY_PIP pip3 --no-cache-dir
 ENV MY_PIP2 pip2 --no-cache-dir
 ENV MY_BUILD_TARGET base
 
-ENV VENV /home/scu/.venv/
-ENV VENV3 $VENV
-ENV VENV2 /home/scu/.venv27/
-
-
 EXPOSE 8080
-
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
@@ -70,7 +64,6 @@ RUN $MY_PIP install \
 
 RUN $MY_PIP2 install numpy==1.16.0 &&\
     $MY_PIP2 install -r services/storage/requirements/py27.txt
-
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
