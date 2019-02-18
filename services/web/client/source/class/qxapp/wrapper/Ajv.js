@@ -5,11 +5,13 @@
    Utf8Check: äöü
 ************************************************************************ */
 
-/* global Ajv */
 /* eslint new-cap: [2, {capIsNewExceptions: ["Ajv"]}] */
 
+/* global Ajv */
+
 /**
- * A qooxdoo wrapper for Ajv (https://github.com/epoberezkin/ajv)
+ * A qooxdoo wrapper for
+ * <a href='https://github.com/epoberezkin/ajv' target='_blank'>Ajv</a>
  */
 
 qx.Class.define("qxapp.wrapper.Ajv", {

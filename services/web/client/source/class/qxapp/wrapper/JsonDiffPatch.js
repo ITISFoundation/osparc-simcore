@@ -16,15 +16,16 @@
 ************************************************************************ */
 
 /**
- * A qooxdoo wrapper for JsonDiffPatch (https://github.com/benjamine/jsondiffpatch)
- */
-
-/**
  * @asset(jsondiffpatch/jsondiffpatch.*js)
  * @ignore(jsondiffpatch)
  */
 
 /* global jsondiffpatch */
+
+/**
+ * A qooxdoo wrapper for
+ * <a href='https://github.com/benjamine/jsondiffpatch' target='_blank'>JsonDiffPatch</a>
+ */
 
 qx.Class.define("qxapp.wrapper.JsonDiffPatch", {
   extend: qx.core.Object,

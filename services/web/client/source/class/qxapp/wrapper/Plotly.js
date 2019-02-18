@@ -15,16 +15,17 @@
 
 ************************************************************************ */
 
-/**
- * A qooxdoo wrapper for Plotly (https://github.com/plotly/plotly.js)
- */
+/* global Plotly */
 
 /**
  * @asset(plotly/plotly.min.js)
  * @ignore(Plotly)
  */
 
-/* global Plotly */
+/**
+ * A qooxdoo wrapper for
+ * <a href='https://github.com/plotly/plotly.js' target='_blank'>Plotly</a>
+ */
 
 qx.Class.define("qxapp.wrapper.Plotly", {
   extend: qx.core.Object,

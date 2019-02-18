@@ -15,17 +15,17 @@
 
 ************************************************************************ */
 
-/**
- * A qooxdoo wrapper for WebSocket (https://github.com/socketio/socket.io)
- */
+/* global io */
 
 /**
- * This class is a direct link with socketio.
  * @asset(socketio/socket.io.js)
  * @ignore(io)
  */
 
-/* global io */
+/**
+ * A qooxdoo wrapper for
+ * <a href='https://github.com/socketio/socket.io' target='_blank'>WebSocket</a>
+ */
 
 qx.Class.define("qxapp.wrapper.WebSocket", {
   extend: qx.core.Object,

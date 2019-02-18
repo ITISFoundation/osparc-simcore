@@ -24,7 +24,8 @@
  */
 
 /**
- * A qooxdoo wrapper for SVG (https://github.com/svgdotjs/svg.js)
+ * A qooxdoo wrapper for
+ * <a href='https://github.com/svgdotjs/svg.js' target='_blank'>SVG</a>
  */
 
 qx.Class.define("qxapp.wrapper.Svg", {

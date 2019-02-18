@@ -15,9 +15,7 @@
 
 ************************************************************************ */
 
-/**
- * A qooxdoo wrapper for JsonTreeViewer (https://github.com/summerstyle/jsonTreeViewer)
- */
+/* global jsonTree */
 
 /**
  * @asset(jsontreeviewer/jsonTree.*)
@@ -25,7 +23,10 @@
  * @ignore(jsonTree)
  */
 
-/* global jsonTree */
+/**
+ * A qooxdoo wrapper for
+ * <a href='https://github.com/summerstyle/jsonTreeViewer' target='_blank'>JsonTreeViewer</a>
+ */
 
 qx.Class.define("qxapp.wrapper.JsonTreeViewer", {
   extend: qx.core.Object,
