@@ -16,13 +16,13 @@
 
 ************************************************************************ */
 
+/* eslint "qx-rules/no-refs-in-members": "warn" */
+
 /**
  * Widget used mainly by PrjBrowser for displaying Studies
  *
  * It consists of a thumbnail and creator and last change as caption
  */
-
-/* eslint "qx-rules/no-refs-in-members": "warn" */
 
 qx.Class.define("qxapp.desktop.PrjBrowserListItem", {
   extend: qx.ui.core.Widget,

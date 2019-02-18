@@ -15,6 +15,8 @@
 
 ************************************************************************ */
 
+/* eslint no-underscore-dangle: 0 */
+
 /**
  * Widget containing a Vertical Box with a MainView and ControlsBar.
  * Used as Main View in the project editor.
@@ -29,8 +31,6 @@
  *   this.getRoot().add(mainPanel);
  * </pre>
  */
-
-/* eslint no-underscore-dangle: 0 */
 
 qx.Class.define("qxapp.desktop.MainPanel", {
   extend: qx.ui.core.Widget,

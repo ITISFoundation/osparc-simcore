@@ -15,17 +15,17 @@
 
 ************************************************************************ */
 
-/**
- * A qooxdoo wrapper for SVG (https://github.com/svgdotjs/svg.js)
- */
+/* global SVG */
+/* eslint new-cap: [2, {capIsNewExceptions: ["SVG", "M", "C"]}] */
 
 /**
  * @asset(workbench/svg.*js)
  * @ignore(SVG)
  */
 
-/* global SVG */
-/* eslint new-cap: [2, {capIsNewExceptions: ["SVG", "M", "C"]}] */
+/**
+ * A qooxdoo wrapper for SVG (https://github.com/svgdotjs/svg.js)
+ */
 
 qx.Class.define("qxapp.wrapper.Svg", {
   extend: qx.core.Object,

@@ -15,6 +15,8 @@
 
 ************************************************************************ */
 
+/* eslint "qx-rules/no-refs-in-members": "warn" */
+
 /**
  * Widget used mainly by ServiceBrowser for displaying service related information
  *
@@ -38,8 +40,6 @@
  *   });
  * </pre>
  */
-
-/* eslint "qx-rules/no-refs-in-members": "warn" */
 
 qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
   extend: qx.ui.core.Widget,

@@ -15,6 +15,9 @@
 
 ************************************************************************ */
 
+/* eslint new-cap: [2, {capIsNewExceptions: ["B", "D", "J", "K", "L", "MD5"]}] */
+/* eslint operator-assignment: ["off"] */
+
 /**
  * Static class for getting the avatar related information for the given user/email.
  *
@@ -26,9 +29,6 @@
  *   let image = qxapp.utils.Avatar.getUrl(userEmail);
  * </pre>
  */
-
-/* eslint new-cap: [2, {capIsNewExceptions: ["B", "D", "J", "K", "L", "MD5"]}] */
-/* eslint operator-assignment: ["off"] */
 
 qx.Class.define("qxapp.utils.Avatar", {
   type: "static",
