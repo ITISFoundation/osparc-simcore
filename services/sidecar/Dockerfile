@@ -1,104 +1,137 @@
 FROM python:3.6-alpine as base
+#
+#  USAGE:
+#     cd sercices/sidecar
+#     docker build -f Dockerfile -t sidecar:prod --target production ../../
+#     docker run sidecar:prod
+#
+#  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
 LABEL maintainer=mguidon
 
-ARG DOCKER_GID_ARG=1001
+# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
+RUN adduser -D -u 8004 -s /bin/sh -h /home/scu scu
 
 RUN apk add --no-cache \
       su-exec
 
-# create user `scu` and `docker` group (with same id as in host)
-RUN adduser -D -u 8004 scu &&\
-    addgroup -g $DOCKER_GID_ARG docker
+ENV PATH "/home/scu/.local/bin:$PATH"
 
-ENV HOME /home/scu
-# TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
-# - Added explicit --cache-dir that is removed at the end of the build
-ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/tmp/.pipcache
+# All MY_ variables are customized
+ENV MY_PIP pip3 --no-cache-dir
+ENV MY_BUILD_TARGET base
 
-EXPOSE 8000
+EXPOSE 8080
+
+
 VOLUME /home/scu/input
 VOLUME /home/scu/output
 VOLUME /home/scu/log
 
-WORKDIR /home/scu
-
 # -------------------------- Build stage -------------------
+# Installs build/package management tools and third party dependencies
 #
-# - Preserves relative folder structure
+# + /build             WORKDIR
 #
-# + /home/scu/              $HOME
-#    + services/sidecar
-#        ...
-#    + packages
-#        ...
+
 FROM base as build
+
+ENV MY_BUILD_TARGET build
+
 
 RUN apk add --no-cache \
       postgresql-dev \
       gcc \
       libc-dev
 
-RUN python3 -m venv $HOME/.venv &&\
-    $PIP install --upgrade \
+RUN $MY_PIP install --upgrade \
       pip \
       wheel \
       setuptools
 
-# TODO: check if scu:scu copy is necessary!?
-COPY --chown=scu:scu services/sidecar/requirements/base.txt requirements-base.txt
-RUN $PIP install -r requirements-base.txt &&\
-    rm requirements-base.txt
+WORKDIR /build
 
-COPY --chown=scu:scu services/sidecar/docker docker
-COPY --chown=scu:scu services/sidecar/boot.sh boot.sh
+# install base 3rd party dependencies
+COPY  services/sidecar/requirements/*.txt \
+      services/sidecar/requirements/
 
-# --------------------------Development stage -------------------
-FROM build as development
-
-ARG HOST_GID_ARG=1000
-
-# in dev-mode we give access to `scu` to host's mapped volumes
-# FIXME: files created by scu cannot be deleted by host! we need to do the same group in host?
-RUN addgroup -g $HOST_GID_ARG hgrp &&\
-    addgroup scu hgrp && \
-    chown -R scu:scu $HOME/.venv &&\
-    rm -rf /tmp/.pipcache
-
-VOLUME /home/scu/packages
-VOLUME /home/scu/services/sidecar
-
-ENV DEBUG 1
-ENV RUN_DOCKER_ENGINE_ROOT=0
-USER root
-ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD ["/bin/sh", "boot.sh"]
+RUN $MY_PIP install \
+      -r services/sidecar/requirements/base.txt
 
 
 # --------------------------Cache stage -------------------
+# CI in master buils & pushes this target to speed-up image build
+#
+#  + /build
+#    + services/sidecar [scu:scu] WORKDIR
+#
 FROM build as cache
-# TODO: check if scu:scu copy is necessary in all cases!? since we are just installing?
-COPY --chown=scu:scu packages $HOME/packages
-COPY --chown=scu:scu services/sidecar $HOME/services/sidecar
-COPY --chown=scu:scu services/storage/client-sdk $HOME/services/storage/client-sdk
 
-WORKDIR /home/scu/services/sidecar
-RUN $PIP install -r requirements/prod.txt ;\
-    $PIP list
+ENV MY_BUILD_TARGET cache
 
 
-# --------------------------Production multi-stage -------------------
-# TODO: PC Reduce docker size by installing only non-dev
+COPY --chown=scu:scu packages /build/packages
+COPY --chown=scu:scu services/sidecar /build/services/sidecar
+COPY --chown=scu:scu services/storage/client-sdk /build/services/storage/client-sdk
+
+WORKDIR /build/services/sidecar
+
+
+RUN $MY_PIP install -r requirements/prod.txt &&\
+    $MY_PIP list -v
+
+
+
+# --------------------------Production stage -------------------
+# Final cleanup up to reduce image size and startup setup
+# Runs as scu (non-root user)
+#
+#  + /home/scu     $HOME = WORKDIR
+#    + services/sidecar [scu:scu]
+#
 FROM cache as production
 
-WORKDIR /home/scu/
 
-RUN . $HOME/.venv/bin/activate; $PIP list &&\
-    rm -rf $HOME/services &&\
-    rm -rf /tmp/.pipcache
+ENV MY_BUILD_TARGET production
+ENV MY_BOOT_MODE production
 
-ENV DEBUG 0
-ENV RUN_DOCKER_ENGINE_ROOT=0
-USER root
-ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD ["/bin/sh", "boot.sh"]
+WORKDIR /home/scu
+
+RUN mkdir -p services/sidecar &&\
+    chown scu:scu services/sidecar &&\
+    mv /build/services/sidecar/docker services/sidecar/docker &&\
+    rm -rf /build
+
+RUN apk del --no-cache\
+      gcc
+
+
+ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]
+
+
+# --------------------------Development stage -------------------
+# Source code accessible in host but runs in container
+# Runs as myu with same gid/uid as host
+# Placed at the end to speed-up the build if images targeting production
+#
+#  + /devel         WORKDIR
+#    + services  (mounted volume)
+#
+FROM build as development
+
+ENV MY_BUILD_TARGET development
+ENV MY_BOOT_MODE development
+
+
+#  TODO: consider installing tooling in a separate virtualenv?
+#  TODO: really necesary???
+WORKDIR /build
+
+
+WORKDIR /devel
+VOLUME  /devel/packages
+VOLUME  /devel/services/sidecar/
+
+ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]
