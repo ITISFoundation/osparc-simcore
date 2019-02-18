@@ -4,9 +4,6 @@
 # BOOTING application ---------------------------------------------
 echo "Booting in ${MY_BOOT_MODE} mode ..."
 
-PATH="$HOME/.local/bin:$PATH"
-export PATH
-
 if [[ ${MY_BUILD_TARGET} == "development" ]]
 then
   echo "  User    :`id $(whoami)`"

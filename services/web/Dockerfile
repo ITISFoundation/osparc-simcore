@@ -16,24 +16,15 @@ RUN adduser -D -u 8004 -s /bin/sh -h /home/scu scu
 RUN apk add --no-cache \
       su-exec
 
+ENV PATH "/home/scu/.local/bin:$PATH"
+
 ENV MY_PIP  pip --no-cache-dir
+# TODO: rename with common prefix!
 ENV SIMCORE_WEB_OUTDIR /home/scu/services/web/client
+# TODO: eliminate this variable!
 ENV IS_CONTAINER_CONTEXT Yes
 
 EXPOSE 8080
-
-# TODO: change healthcheck
-COPY --chown=scu:scu \
-    scripts/docker/healthcheck_curl_host.py \
-    /healthcheck/curl_host.py
-
-HEALTHCHECK --interval=30s \
-            --timeout=120s \
-            --start-period=30s \
-            --retries=3 \
-            CMD [ "python", "/healthcheck/curl_host.py", "http://localhost:8080" ]
-
-
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
@@ -121,6 +112,12 @@ RUN mkdir -p services/web/server &&\
 RUN apk del --no-cache\
       gcc \
       git
+
+HEALTHCHECK --interval=30s \
+            --timeout=120s \
+            --start-period=30s \
+            --retries=3 \
+            CMD ["python3", "$HOME/services/web/server/docker/healthcheck.py", "http://localhost:8080"]
 
 ENTRYPOINT [ "/bin/sh", "services/web/server/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/web/server/docker/boot.sh"]
