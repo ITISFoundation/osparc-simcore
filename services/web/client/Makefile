@@ -1,8 +1,6 @@
 VCS_URL:=$(shell git config --get remote.origin.url)
 VCS_REF:=$(shell git rev-parse --short HEAD)
 VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 .)
-#VCS_STATUS_CLIENT:=$(shell if [[ -z $(git status -s) ]]; then echo clean; else echo 'modified/untracked'; fi)
-
 VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
 BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
@@ -11,6 +9,7 @@ export VCS_REF
 export VCS_REF_CLIENT
 export VCS_STATUS_CLIENT
 export BUILD_DATE
+
 
 .PHONY: info
 # target: info: – Displays environ variables
@@ -22,25 +21,33 @@ info:
 	@echo '+ date        : ${BUILD_DATE}'
 
 
-.PHONY: info
-# target: info: – Displays environ variables
+.PHONY: build-devel
+# target: build-devel: – Builds dev container
 build-devel:
 	export BUILD_TARGET=development; docker-compose build
 
+
+.PHONY: build
+# target: build: – Builds container
 build:
 	export BUILD_TARGET=build; docker-compose build
+	docker run -it client_qx:build \
+		cat build-output/version.txt && ls -l build-output
 
+
+.PHONY: compile
+# target: compile: – Compiles front-end's code [dev]
 compile:
-	docker-compose run --service-ports qx compile \
-		--set osparc.vcsRef='"${VCS_REF}"' \
-		--set osparc.vcsRefClient='"${VCS_REF_CLIENT}"' \
-		--set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"'
-		--set osparc.vcsOriginUrl='"${VCS_URL}"'
+	export BUILD_TARGET=development; \
+		docker-compose run --service-ports qx compile \
+			--set osparc.vcsRef='"${VCS_REF}"' \
+			--set osparc.vcsRefClient='"${VCS_REF_CLIENT}"' \
+			--set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"' \
+			--set osparc.vcsOriginUrl='"${VCS_URL}"'
 
+
+.PHONY: serve
+# target: serve: – Compiles, watches and serves front-end's code [dev]
 serve:
-	docker-compose run --service-ports qx serve \
-		--set qx.allowUrlSettings=true \
-		--set osparc.vcsRef='"${VCS_REF}"' \
-		--set osparc.vcsRefClient='"${VCS_REF_CLIENT}"'\
-		--set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"' \
-		--set osparc.vcsOriginUrl='"${VCS_URL}"'
+	export BUILD_TARGET=development; \
+		docker-compose run --service-ports qx

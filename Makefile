@@ -54,7 +54,7 @@ DYNAMIC_SERVICE_FOLDERS_LIST := services/dy-jupyter services/dy-2Dgraph/use-case
 VCS_URL:=$(shell git config --get remote.origin.url)
 VCS_REF:=$(shell git rev-parse --short HEAD)
 VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
-VCS_STATUS_CLIENT:=$(shell if [[ -z $(git status -s services/web/client) ]]; then echo clean; else echo 'modified/untracked'; fi)
+VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
 
 BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
