@@ -1,20 +1,44 @@
 #!/bin/sh
-echo "activating python virtual env..."
-source $HOME/.venv/bin/activate
+#
 
-if [[ ${DEBUG} == "1" ]]
+# BOOTING application ---------------------------------------------
+echo "Booting in ${MY_BOOT_MODE} mode ..."
+
+
+if [[ ${MY_BUILD_TARGET} == "development" ]]
 then
-  echo "INFO: Booting in development mode ..."
-  echo "DEBUG: Director running as `id $(whoami)`"
-  echo "DEBUG: Director running groups `groups`"
+  echo "  User    :`id $(whoami)`"
+  echo "  Workdir :`pwd`"
+  echo "  Environment :"
+  printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
+  #--------------------
 
-  echo "Installing director service ..."
-  cd $HOME/services/director
-  $PIP install -r requirements/dev.txt
-  $PIP list
-  cd $HOME
-  simcore-service-director --loglevel=debug
+  APP_CONFIG=config-host-dev.yaml
+  $MY_PIP install --user -e services/director
+
+  #--------------------
+  echo "  Python :"
+  python --version | sed 's/^/    /'
+  which python | sed 's/^/    /'
+  echo "  PIP :"
+  $MY_PIP list | sed 's/^/    /'
+
+
+elif [[ ${MY_BUILD_TARGET} == "production" ]]
+then
+  APP_CONFIG=config-host-dev.yaml
+
+fi
+
+
+# RUNNING application ----------------------------------------
+if [[ ${BOOT_MODE} == "debug" ]]
+then
+  echo "Debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
+  echo "Running: import pdb, simcore_service_director.cli; pdb.run('simcore_service_director.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
+  python -c "import pdb, simcore_service_director.cli; \
+             pdb.run('simcore_service_director.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
+
 else
-  echo "INFO: Booting in production mode ..."
-  simcore-service-director --loglevel=info
+  simcore-service-director --config $APP_CONFIG
 fi
