@@ -18,7 +18,7 @@
 ************************************************************************ */
 
 /**
- * This is the main application class of "app"
+ * This is the main application class of "qxapp"
  *
  * @asset(qxapp/*)
  */
