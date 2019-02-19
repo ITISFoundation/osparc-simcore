@@ -1,7 +1,5 @@
 FROM python:3.6-alpine as base
-
-LABEL maintainer=pcrespov
-
+#
 #  USAGE:
 #     cd sercices/web
 #     docker build -f Dockerfile -t web:prod --target production ../../
@@ -10,29 +8,28 @@ LABEL maintainer=pcrespov
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 #  REQUIRED: client_qx:build image ready
 
-# create user 'scu'
-RUN adduser -D -u 8004 scu
+LABEL maintainer=pcrespov
+
+# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
+RUN adduser -D -u 8004 -s /bin/sh -h /home/scu scu
 
 RUN apk add --no-cache \
       su-exec
 
-ENV HOME /home/scu
-# TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
-# - Added explicit --cache-dir that is removed at the end of the build
-ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/tmp/.pipcache
-ENV SIMCORE_WEB_OUTDIR $HOME/services/web/client
+ENV PATH "/home/scu/.local/bin:$PATH"
+
+ENV MY_PIP  pip --no-cache-dir
+# TODO: rename with common prefix!
+ENV SIMCORE_WEB_OUTDIR /home/scu/services/web/client
+# TODO: eliminate this variable!
 ENV IS_CONTAINER_CONTEXT Yes
 
 EXPOSE 8080
 
-# ----------------------------------------------------------------
-COPY --chown=scu:scu scripts/docker/healthcheck_curl_host.py /healthcheck/healthcheck_curl_host.py
-# will start to run after interval every interval. fails after timeout. fail do not count if during start-period. will do # retries
-HEALTHCHECK --interval=10s --timeout=30s --start-period=20s --retries=3 CMD [ "python", "/healthcheck/healthcheck_curl_host.py", "http://localhost:8080" ]
-
 # -------------------------- Build stage -------------------
+# Installs build/package management tools and third party dependencies
 #
-# + /home/scu/              $HOME
+# + /build             WORKDIR
 #    + packages
 #    + services/web/client         $SIMCORE_WEB_OUTDIR
 #       - index.html
@@ -40,13 +37,10 @@ HEALTHCHECK --interval=10s --timeout=30s --start-period=20s --retries=3 CMD [ "p
 #    + services/web/server
 #       + src
 #       + tests
-#
-#
-# TODO: straight copying python packages bring unnecessary files (e.g. __pycache__) -> dockerignore!
-#       could copy and then python setup.py install OR git clone into the container.
-#       This applies for both
-#
+
 FROM base as build
+
+ENV MY_BUILD_TARGET build
 
 RUN apk add --no-cache \
       postgresql-dev \
@@ -54,76 +48,100 @@ RUN apk add --no-cache \
       libc-dev \
       libffi-dev
 
-RUN python3 -m venv $HOME/.venv &&\
-    $PIP install --upgrade \
+RUN $MY_PIP install --upgrade \
       pip \
       wheel \
       setuptools
 
-WORKDIR /home/scu
+WORKDIR /build
 
-# install base 3rd party packages to accelerate runtime installs
-COPY --chown=scu:scu services/web/server/requirements/base.txt requirements-base.txt
-COPY --chown=scu:scu services/web/server/docker docker
-RUN $PIP install -r requirements-base.txt
+# install base 3rd party dependencies
+COPY  services/web/server/requirements/*.txt \
+      services/web/server/requirements/
+
+RUN $MY_PIP install \
+      -r services/web/server/requirements/base.txt
+
 
 # --------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build
 #
+#  + /build
+#    + services/web/server [scu:scu] WORKDIR
+#
 FROM build as cache
 
-ENV SIMCORE_WEB_CONFIG production
+ENV MY_BUILD_TARGET cache
 
 # 2nd party packages
-COPY --chown=scu:scu packages $HOME/packages
-# client
-COPY --from=services_webclient:build --chown=scu:scu /home/scu/client/build-output $HOME/services/web/client
-# server
-COPY --chown=scu:scu services/web/server $HOME/services/web/server
+COPY --chown=scu:scu packages /build/packages
+COPY --chown=scu:scu services/web/server /build/services/web/server
 
-WORKDIR /home/scu/services/web/server
-RUN $PIP install -r requirements/prod.txt &&\
-    $PIP list &&\
-    rm -rf /tmp/.pipcache
+# front-end client
+COPY --from=services_webclient:build --chown=scu:scu \
+      /home/scu/client/build-output \
+      /build/services/web/client
+
+
+WORKDIR /build/services/web/server
+
+RUN $MY_PIP install -r requirements/prod.txt &&\
+    $MY_PIP list -v
+
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
+# Runs as scu (non-root user)
+#
+#  + /home/scu     $HOME = WORKDIR
+#    + docker
 #
 FROM cache as production
 
+ENV MY_BUILD_TARGET production
+ENV MY_BOOT_MODE production
+
 WORKDIR /home/scu
 
-RUN rm -rf $HOME/packages &&\
-    rm -rf $HOME/services/web/server &&\
-    rm -rf /tmp/.pipcache
+RUN mkdir -p services/web/server &&\
+    chown scu:scu services/web/server &&\
+    mv /build/services/web/server/docker services/web/server/docker &&\
+    mv /build/services/web/client ${SIMCORE_WEB_OUTDIR} &&\
+    rm -rf /build
 
-ENV DEBUG 0
-ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD docker/boot.sh
+RUN apk del --no-cache\
+      gcc \
+      git
+
+HEALTHCHECK --interval=30s \
+            --timeout=120s \
+            --start-period=30s \
+            --retries=3 \
+            CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/"]
+
+ENTRYPOINT [ "/bin/sh", "services/web/server/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/web/server/docker/boot.sh"]
+
 
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
+# Runs as myu with same gid/uid as host
+# Placed at the end to speed-up the build if images targeting production
+#
+#  + /devel         WORKDIR
+#    + services  (mounted volume)
 #
 FROM build as development
 
-ARG HOST_GID_ARG=1000
+ENV MY_BUILD_TARGET development
+ENV MY_BOOT_MODE development
 
-# install test 3rd party packages to accelerate runtime installs
-COPY --chown=scu:scu services/web/server/tests/requirements.txt requirements-tests.txt
-RUN $PIP install -r requirements-tests.txt
 
-# in dev mode we give access to `scu` to host's mapped volumes
-RUN addgroup -g $HOST_GID_ARG hgrp &&\
-    addgroup scu hgrp && \
-    chown -R scu:scu $HOME/.venv &&\
-    rm -rf /tmp/.pipcache
+WORKDIR /devel
+VOLUME  /devel/packages
+VOLUME  /devel/services/web/server/
+VOLUME  /devel/services/web/client/
 
-VOLUME /home/scu/packages
-VOLUME /home/scu/services/web/server/
-VOLUME /home/scu/services/web/client/
-
-ENV SIMCORE_WEB_CONFIG development
-ENV DEBUG 1
-ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD docker/boot.sh
+ENTRYPOINT [ "/bin/sh", "services/web/server/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/web/server/docker/boot.sh"]
