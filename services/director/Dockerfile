@@ -61,33 +61,6 @@ COPY  services/director/requirements/*.txt \
 RUN $SC_PIP install \
       -r services/director/requirements/base.txt
 
-
-# --------------------------Development stage -------------------
-# Source code accessible in host but runs in container
-# Runs as myu with same gid/uid as host
-# Placed at the end to speed-up the build if images targeting production
-#
-#  + /devel         WORKDIR
-#    + services  (mounted volume)
-#
-FROM build as development
-
-ENV SC_BUILD_TARGET development
-ENV SC_BOOT_MODE development
-
-
-#  TODO: consider installing tooling in a separate virtualenv?
-#  TODO: really necesary???
-WORKDIR /build
-
-WORKDIR /devel
-VOLUME  /devel/packages
-VOLUME  /devel/services/director/
-
-ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/director/docker/boot.sh"]
-
-
 #--------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build
 #
@@ -138,6 +111,31 @@ HEALTHCHECK --interval=30s \
             --start-period=30s \
             --retries=3 \
             CMD ["python3", "/home/scu/services/director/docker/healthcheck.py", "http://localhost:8080/v0/"]
+
+ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/director/docker/boot.sh"]
+
+
+# --------------------------Development stage -------------------
+# Source code accessible in host but runs in container
+# Runs as myu with same gid/uid as host
+# Placed at the end to speed-up the build if images targeting production
+#
+#  + /devel         WORKDIR
+#    + services  (mounted volume)
+#
+FROM build as development
+
+ENV SC_BUILD_TARGET development
+ENV SC_BOOT_MODE development
+
+
+# WORKDIR /build
+# NOTE: can copy from /build if necessary
+
+WORKDIR /devel
+VOLUME  /devel/packages
+VOLUME  /devel/services/director/
 
 ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/director/docker/boot.sh"]
