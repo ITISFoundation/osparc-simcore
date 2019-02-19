@@ -9,36 +9,23 @@ ifneq (,$(findstring Microsoft,$(VERSION)))
 $(info    detected WSL)
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
-export RUN_DOCKER_ENGINE_ROOT=1
 # Windows does not have these things defined... but they are needed to execute a local swarm
-export DOCKER_GID=1042
-export HOST_GID=1000
 WINDOWS_MODE=ON
 else ifeq ($(OS), Windows_NT)
 $(info    detected Powershell/CMD)
 export DOCKER_COMPOSE=docker-compose.exe
 export DOCKER=docker.exe
-export RUN_DOCKER_ENGINE_ROOT=1
-export DOCKER_GID=1042
-export HOST_GID=1000
 WINDOWS_MODE=ON
 else ifneq (,$(findstring Darwin,$(VERSION)))
 $(info    detected OSX)
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
-export RUN_DOCKER_ENGINE_ROOT=1
-export DOCKER_GID=1042
-export HOST_GID=1000
 else
 $(info    detected native linux)
 # TODO: DO NOT TOUCH THIS CONFIG --- (ask mguidon)
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
-export RUN_DOCKER_ENGINE_ROOT=0
-export DOCKER_GID=1042
-export HOST_GID=1000
 # TODO: DO NOT TOUCH THIS CONFIG --- (ask mguidon)
-# FIXME: DOCKER_GID and HOST_GID should be removed when issue #90 is resolved
 # TODO: Add a meaningfull call to retrieve the local docker group ID and the user ID in linux.
 endif
 
