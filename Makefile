@@ -243,6 +243,7 @@ info:
 	@echo '+ WINDOWS_MODE         : ${WINDOWS_MODE}'
 	@echo '+ DOCKER_REGISTRY      : ${DOCKER_REGISTRY}'
 	@echo '+ SERVICES_VERSION     : ${SERVICES_VERSION}'
+
 .PHONY: pylint
 # target: pylint – Runs python linter framework's wide
 pylint:
