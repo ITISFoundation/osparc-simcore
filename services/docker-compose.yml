@@ -74,6 +74,7 @@ services:
   #--------------------------------------------------------------------
   webclient:
     image: services_webclient:build
+    restart: on-failure
     build:
       context: ./web/client/
       dockerfile: Dockerfile
@@ -87,9 +88,13 @@ services:
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
       args:
+        - VCS_URL=${VCS_URL}
         - VCS_REF=${VCS_REF}
         - VCS_REF_CLIENT=${VCS_REF_CLIENT}
-    command: /bin/bash -c "echo 'built with qx' && cat build-output/version.txt"
+        - VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT}
+    command: >
+      /bin/sh -c "ls -l build-output;cat build-output/version.txt"
+
   webserver:
     image: ${DOCKER_IMAGE_PREFIX}webserver:${DOCKER_IMAGE_TAG}
     build:
@@ -115,7 +120,6 @@ services:
       - STORAGE_HOST=storage
       - STORAGE_PORT=8080
       - LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=${LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:-1}
-      - OSPARC_PUBLIC_URL=${OSPARC_PUBLIC_URL}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -135,10 +139,10 @@ services:
     stdin_open: true
     tty: true
     depends_on:
-      - webclient
       - apihub
       - postgres
       - minio
+      - rabbit
     deploy:
       placement:
         constraints:
