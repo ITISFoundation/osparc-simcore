@@ -26,19 +26,17 @@ then
 
 elif [[ ${MY_BUILD_TARGET} == "production" ]]
 then
-  APP_CONFIG=config-host-dev.yaml
-
+  LOG_LEVEL=info
 fi
 
 
 # RUNNING application ----------------------------------------
 if [[ ${BOOT_MODE} == "debug" ]]
 then
-  echo "Debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
-  echo "Running: import pdb, simcore_service_director.cli; pdb.run('simcore_service_director.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
-  python -c "import pdb, simcore_service_director.cli; \
-             pdb.run('simcore_service_director.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
-
+  LOG_LEVEL=debug
 else
-  simcore-service-director --config $APP_CONFIG
+  LOG_LEVEL=info
 fi
+
+# FIXME: arguments were never wired!
+simcore-service-director --loglevel=$LOG_LEVEL
