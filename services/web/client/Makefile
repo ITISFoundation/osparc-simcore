@@ -33,6 +33,7 @@ build:
 	export BUILD_TARGET=build; docker-compose build
 	docker run -it client_qx:build /bin/sh -c "ls -l build-output;cat build-output/version.txt"
 
+
 .PHONY: clean
 # target: clean: – Cleans images and current dir outputs
 clean:
@@ -51,6 +52,7 @@ compile:
 			--set osparc.vcsRefClient='"${VCS_REF_CLIENT}"' \
 			--set osparc.vcsStatusClient='"${VCS_STATUS_CLIENT}"' \
 			--set osparc.vcsOriginUrl='"${VCS_URL}"'
+
 
 .PHONY: serve
 # target: serve: – Compiles, watches and serves front-end's code [dev]
