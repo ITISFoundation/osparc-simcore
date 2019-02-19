@@ -28,7 +28,13 @@ endif
 export DOCKER_REGISTRY=masu.speag.com
 export SERVICES_VERSION=2.8.0
 
-PY_FILES := $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*-sdk/python*" -not -path "*generated_code*" -not -path "*datcore.py" -not -path "*web/server*"))
+PY_FILES := $(strip $(shell find services packages -iname '*.py' \
+											-not -path "*egg*" \
+											-not -path "*contrib*" \
+											-not -path "*-sdk/python*" \
+											-not -path "*generated_code*" \
+											-not -path "*datcore.py" \
+											-not -path "*web/server*"))
 TEMPCOMPOSE := $(shell mktemp)
 
 SERVICES_LIST := apihub director sidecar storage webserver
@@ -243,6 +249,8 @@ info:
 	@echo '+ WINDOWS_MODE         : ${WINDOWS_MODE}'
 	@echo '+ DOCKER_REGISTRY      : ${DOCKER_REGISTRY}'
 	@echo '+ SERVICES_VERSION     : ${SERVICES_VERSION}'
+	@echo '+ PY_FILES             : $(shell echo $(PY_FILES) | wc -w) files'
+
 
 .PHONY: pylint
 # target: pylint – Runs python linter framework's wide
