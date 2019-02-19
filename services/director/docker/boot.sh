@@ -2,10 +2,10 @@
 #
 
 # BOOTING application ---------------------------------------------
-echo "Booting in ${MY_BOOT_MODE} mode ..."
+echo "Booting in ${SC_BOOT_MODE} mode ..."
 
 
-if [[ ${MY_BUILD_TARGET} == "development" ]]
+if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
   echo "  User    :`id $(whoami)`"
   echo "  Workdir :`pwd`"
@@ -14,24 +14,24 @@ then
   #--------------------
 
   APP_CONFIG=config-host-dev.yaml
-  $MY_PIP install --user -e services/director
+  $SC_PIP install --user -e services/director
 
   #--------------------
   echo "  Python :"
   python --version | sed 's/^/    /'
   which python | sed 's/^/    /'
   echo "  PIP :"
-  $MY_PIP list | sed 's/^/    /'
+  $SC_PIP list | sed 's/^/    /'
 
 
-elif [[ ${MY_BUILD_TARGET} == "production" ]]
+elif [[ ${SC_BUILD_TARGET} == "production" ]]
 then
   LOG_LEVEL=info
 fi
 
 
 # RUNNING application ----------------------------------------
-if [[ ${BOOT_MODE} == "debug" ]]
+if [[ ${SC_BOOT_MODE} == "debug" ]]
 then
   LOG_LEVEL=debug
 else

@@ -18,7 +18,7 @@ RUN apk add --no-cache \
 
 ENV PATH "/home/scu/.local/bin:$PATH"
 
-ENV MY_PIP  pip --no-cache-dir
+ENV SC_PIP  pip --no-cache-dir
 # TODO: rename with common prefix!
 ENV SIMCORE_WEB_OUTDIR /home/scu/services/web/client
 # TODO: eliminate this variable!
@@ -40,7 +40,7 @@ EXPOSE 8080
 
 FROM base as build
 
-ENV MY_BUILD_TARGET build
+ENV SC_BUILD_TARGET build
 
 RUN apk add --no-cache \
       postgresql-dev \
@@ -48,7 +48,7 @@ RUN apk add --no-cache \
       libc-dev \
       libffi-dev
 
-RUN $MY_PIP install --upgrade \
+RUN $SC_PIP install --upgrade \
       pip \
       wheel \
       setuptools
@@ -59,7 +59,7 @@ WORKDIR /build
 COPY  services/web/server/requirements/*.txt \
       services/web/server/requirements/
 
-RUN $MY_PIP install \
+RUN $SC_PIP install \
       -r services/web/server/requirements/base.txt
 
 
@@ -71,7 +71,7 @@ RUN $MY_PIP install \
 #
 FROM build as cache
 
-ENV MY_BUILD_TARGET cache
+ENV SC_BUILD_TARGET cache
 
 # 2nd party packages
 COPY --chown=scu:scu packages /build/packages
@@ -85,8 +85,8 @@ COPY --from=services_webclient:build --chown=scu:scu \
 
 WORKDIR /build/services/web/server
 
-RUN $MY_PIP install -r requirements/prod.txt &&\
-    $MY_PIP list -v
+RUN $SC_PIP install -r requirements/prod.txt &&\
+    $SC_PIP list -v
 
 
 # --------------------------Production stage -------------------
@@ -98,8 +98,8 @@ RUN $MY_PIP install -r requirements/prod.txt &&\
 #
 FROM cache as production
 
-ENV MY_BUILD_TARGET production
-ENV MY_BOOT_MODE production
+ENV SC_BUILD_TARGET production
+ENV SC_BOOT_MODE production
 
 WORKDIR /home/scu
 
@@ -134,8 +134,8 @@ CMD ["/bin/sh", "services/web/server/docker/boot.sh"]
 #
 FROM build as development
 
-ENV MY_BUILD_TARGET development
-ENV MY_BOOT_MODE development
+ENV SC_BUILD_TARGET development
+ENV SC_BOOT_MODE development
 
 
 WORKDIR /devel

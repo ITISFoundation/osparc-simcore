@@ -20,10 +20,10 @@ RUN apk add --no-cache \
 ENV PATH "/home/scu/.local/bin:$PATH"
 ENV HOME /home/scu
 
-# All MY_ variables are customized
-ENV MY_PIP pip3 --no-cache-dir
-ENV MY_PIP2 pip2 --no-cache-dir
-ENV MY_BUILD_TARGET base
+# All SC_ variables are customized
+ENV SC_PIP pip3 --no-cache-dir
+ENV SC_PIP2 pip2 --no-cache-dir
+ENV SC_BUILD_TARGET base
 
 EXPOSE 8080
 
@@ -43,7 +43,7 @@ RUN apk add --no-cache \
       libffi-dev \
       linux-headers
 
-RUN $MY_PIP install --upgrade \
+RUN $SC_PIP install --upgrade \
       pip \
       wheel \
       setuptools
@@ -51,7 +51,7 @@ RUN $MY_PIP install --upgrade \
 RUN apk add --no-cache python2 python2-dev  && \
     python2 -m ensurepip && \
     rm -r /usr/lib/python*/ensurepip && \
-    $MY_PIP2 install --upgrade pip setuptools
+    $SC_PIP2 install --upgrade pip setuptools
 
 WORKDIR /build
 
@@ -59,11 +59,11 @@ WORKDIR /build
 COPY  services/storage/requirements/*.txt \
       services/storage/requirements/
 
-RUN $MY_PIP install \
+RUN $SC_PIP install \
       -r services/storage/requirements/base.txt
 
-RUN $MY_PIP2 install numpy==1.16.0 &&\
-    $MY_PIP2 install -r services/storage/requirements/py27.txt
+RUN $SC_PIP2 install numpy==1.16.0 &&\
+    $SC_PIP2 install -r services/storage/requirements/py27.txt
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
@@ -75,8 +75,8 @@ RUN $MY_PIP2 install numpy==1.16.0 &&\
 #
 FROM build as development
 
-ENV MY_BUILD_TARGET development
-ENV MY_BOOT_MODE development
+ENV SC_BUILD_TARGET development
+ENV SC_BOOT_MODE development
 
 WORKDIR /devel
 VOLUME  /devel/packages
@@ -94,23 +94,23 @@ CMD ["/bin/sh", "services/storage/docker/boot.sh"]
 #
 FROM build as cache
 
-ENV MY_BUILD_TARGET cache
+ENV SC_BUILD_TARGET cache
 
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/storage /build/services/storage
 
 WORKDIR /build/services/storage
 
-RUN $MY_PIP install -r requirements/prod.txt &&\
-    $MY_PIP list -v
+RUN $SC_PIP install -r requirements/prod.txt &&\
+    $SC_PIP list -v
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
 #
 FROM cache as production
 
-ENV MY_BUILD_TARGET production
-ENV MY_BOOT_MODE production
+ENV SC_BUILD_TARGET production
+ENV SC_BOOT_MODE production
 
 
 WORKDIR /home/scu

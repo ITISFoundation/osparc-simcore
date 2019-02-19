@@ -6,8 +6,8 @@
 # - Notice that the container *starts* as --user [default root] but
 #   *runs* as non-root user [scu]
 #
-echo "Entrypoint for stage ${MY_BUILD_TARGET} ..."
-if [[ ${MY_BUILD_TARGET} == "development" ]]
+echo "Entrypoint for stage ${SC_BUILD_TARGET} ..."
+if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
     echo "  User    :`id $(whoami)`"
     echo "  Workdir :`pwd`"

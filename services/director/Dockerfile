@@ -17,9 +17,9 @@ RUN apk add --no-cache \
 
 ENV PATH "/home/scu/.local/bin:$PATH"
 
-# All MY_ variables are customized
-ENV MY_PIP pip3 --no-cache-dir
-ENV MY_BUILD_TARGET base
+# All SC_ variables are customized
+ENV SC_PIP pip3 --no-cache-dir
+ENV SC_BUILD_TARGET base
 
 # TODO: update environs
 ENV REGISTRY_AUTH = ''
@@ -40,14 +40,14 @@ EXPOSE 8080
 
 FROM base as build
 
-ENV MY_BUILD_TARGET build
+ENV SC_BUILD_TARGET build
 
 RUN apk add --no-cache \
     gcc \
     libc-dev \
     git
 
-RUN $MY_PIP install --upgrade \
+RUN $SC_PIP install --upgrade \
       pip \
       wheel \
       setuptools
@@ -58,7 +58,7 @@ WORKDIR /build
 COPY  services/director/requirements/*.txt \
       services/director/requirements/
 
-RUN $MY_PIP install \
+RUN $SC_PIP install \
       -r services/director/requirements/base.txt
 
 
@@ -72,8 +72,8 @@ RUN $MY_PIP install \
 #
 FROM build as development
 
-ENV MY_BUILD_TARGET development
-ENV MY_BOOT_MODE development
+ENV SC_BUILD_TARGET development
+ENV SC_BOOT_MODE development
 
 
 #  TODO: consider installing tooling in a separate virtualenv?
@@ -96,7 +96,7 @@ CMD ["/bin/sh", "services/director/docker/boot.sh"]
 #
 FROM build as cache
 
-ENV MY_BUILD_TARGET cache
+ENV SC_BUILD_TARGET cache
 
 
 COPY --chown=scu:scu packages/service-library /build/packages/service-library
@@ -105,8 +105,8 @@ COPY --chown=scu:scu services/director /build/services/director
 WORKDIR /build/services/director
 
 
-RUN $MY_PIP install -r requirements/prod.txt &&\
-    $MY_PIP list -v
+RUN $SC_PIP install -r requirements/prod.txt &&\
+    $SC_PIP list -v
 
 
 # --------------------------Production stage -------------------
@@ -119,8 +119,8 @@ RUN $MY_PIP install -r requirements/prod.txt &&\
 FROM cache as production
 
 
-ENV MY_BUILD_TARGET production
-ENV MY_BOOT_MODE production
+ENV SC_BUILD_TARGET production
+ENV SC_BOOT_MODE production
 
 WORKDIR /home/scu
 

@@ -17,9 +17,9 @@ RUN apk add --no-cache \
 
 ENV PATH "/home/scu/.local/bin:$PATH"
 
-# All MY_ variables are customized
-ENV MY_PIP pip3 --no-cache-dir
-ENV MY_BUILD_TARGET base
+# All SC_ variables are customized
+ENV SC_PIP pip3 --no-cache-dir
+ENV SC_BUILD_TARGET base
 
 EXPOSE 8080
 
@@ -35,7 +35,7 @@ VOLUME /home/scu/log
 
 FROM base as build
 
-ENV MY_BUILD_TARGET build
+ENV SC_BUILD_TARGET build
 
 
 RUN apk add --no-cache \
@@ -43,7 +43,7 @@ RUN apk add --no-cache \
       gcc \
       libc-dev
 
-RUN $MY_PIP install --upgrade \
+RUN $SC_PIP install --upgrade \
       pip \
       wheel \
       setuptools
@@ -54,7 +54,7 @@ WORKDIR /build
 COPY  services/sidecar/requirements/*.txt \
       services/sidecar/requirements/
 
-RUN $MY_PIP install \
+RUN $SC_PIP install \
       -r services/sidecar/requirements/base.txt
 
 
@@ -66,7 +66,7 @@ RUN $MY_PIP install \
 #
 FROM build as cache
 
-ENV MY_BUILD_TARGET cache
+ENV SC_BUILD_TARGET cache
 
 
 COPY --chown=scu:scu packages /build/packages
@@ -76,8 +76,8 @@ COPY --chown=scu:scu services/storage/client-sdk /build/services/storage/client-
 WORKDIR /build/services/sidecar
 
 
-RUN $MY_PIP install -r requirements/prod.txt &&\
-    $MY_PIP list -v
+RUN $SC_PIP install -r requirements/prod.txt &&\
+    $SC_PIP list -v
 
 
 
@@ -91,8 +91,8 @@ RUN $MY_PIP install -r requirements/prod.txt &&\
 FROM cache as production
 
 
-ENV MY_BUILD_TARGET production
-ENV MY_BOOT_MODE production
+ENV SC_BUILD_TARGET production
+ENV SC_BOOT_MODE production
 
 WORKDIR /home/scu
 
@@ -119,8 +119,8 @@ CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]
 #
 FROM build as development
 
-ENV MY_BUILD_TARGET development
-ENV MY_BOOT_MODE development
+ENV SC_BUILD_TARGET development
+ENV SC_BOOT_MODE development
 
 
 #  TODO: consider installing tooling in a separate virtualenv?

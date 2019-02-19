@@ -27,7 +27,7 @@ except ImportError:
 SUCCESS, UNHEALTHY = 0, 1
 
  # Disabled if boots with debugger
-if os.environ.get("BOOT_MODE") == "debug":
+if os.environ.get("SC_BOOT_MODE") == "debug":
     print(SUCCESS)
 else:
     ok = urlopen("{host}{baseurl}".format(
