@@ -16,8 +16,32 @@
 ************************************************************************ */
 
 /* eslint "qx-rules/no-refs-in-members": "warn" */
+
+/**
+ * Widget used mainly by ServiceBrowser for displaying service related information
+ *
+ *   It consists of a key as title, and name and contact as caption
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   tree.setDelegate({
+ *     createItem: () => new qxapp.desktop.ServiceBrowserListItem(),
+ *     bindItem: (c, item, id) => {
+ *       c.bindProperty("key", "model", null, item, id);
+ *       c.bindProperty("key", "title", null, item, id);
+ *       c.bindProperty("name", "name", null, item, id);
+ *       c.bindProperty("type", "type", null, item, id);
+ *       c.bindProperty("category", "category", null, item, id);
+ *       c.bindProperty("contact", "contact", null, item, id);
+ *     }
+ *   });
+ * </pre>
+ */
+
 qx.Class.define("qxapp.desktop.ServiceBrowserListItem", {
-  // extend: qx.ui.form.ListItem,
   extend: qx.ui.core.Widget,
   implement : [qx.ui.form.IModel],
   include : [qx.ui.form.MModelProperty],

@@ -15,15 +15,20 @@
 
 ************************************************************************ */
 
+/* global SVG */
+/* eslint new-cap: [2, {capIsNewExceptions: ["SVG", "M", "C"]}] */
+
 /**
  * @asset(workbench/svg.*js)
  * @ignore(SVG)
  */
 
-/* global SVG */
-/* eslint new-cap: [2, {capIsNewExceptions: ["SVG", "M", "C"]}] */
+/**
+ * A qooxdoo wrapper for
+ * <a href='https://github.com/svgdotjs/svg.js' target='_blank'>SVG</a>
+ */
 
-qx.Class.define("qxapp.wrappers.Svg", {
+qx.Class.define("qxapp.wrapper.Svg", {
   extend: qx.core.Object,
 
   statics: {
@@ -104,10 +109,6 @@ qx.Class.define("qxapp.wrappers.Svg", {
       path.markers = [marker1, marker2];
 
       return path;
-    },
-
-    drawCurveMini: function(draw, controls) {
-      return this.drawCurve(draw, controls, 2);
     },
 
     updateCurve: function(curve, controls) {

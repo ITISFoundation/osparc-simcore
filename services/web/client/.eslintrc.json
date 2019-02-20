@@ -22,6 +22,7 @@
         "allowAfterThis": true,
         "enforceInMethodNames": true
       }
-    ]
+    ],
+    "no-warning-comments": "off"
   }
 }

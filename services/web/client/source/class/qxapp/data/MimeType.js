@@ -15,7 +15,19 @@
 
 ************************************************************************ */
 
-// https://en.wikipedia.org/wiki/Media_type
+/**
+ * Collection of methods for doing MymeType operations.
+ * https://en.wikipedia.org/wiki/Media_type
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   const sameType = qxapp.data.MimeType(mtA).match(new qxapp.data.MimeType(mtB));
+ * </pre>
+ */
+
 qx.Class.define("qxapp.data.MimeType", {
   extend: qx.core.Object,
 
@@ -25,6 +37,9 @@ qx.Class.define("qxapp.data.MimeType", {
     parameters: {}
   },
 
+  /**
+    * @param string {String} source string
+  */
   construct: function(string) {
     this.base(arguments);
     this.parse(string);

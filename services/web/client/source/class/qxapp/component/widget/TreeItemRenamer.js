@@ -15,6 +15,27 @@
 
 ************************************************************************ */
 
+/**
+ *   Window that shows a text field with the input item label
+ * that can be used for renaming it
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let itemRenamer = new qxapp.component.widget.TreeItemRenamer(selectedItem);
+ *   itemRenamer.addListener("labelChanged", e => {
+ *     const data = e.getData();
+ *     const newLabel = data.newLabel;
+ *     const nodeId = selectedItem.getNodeId();
+ *     let node = this.getWorkbench().getNode(nodeId);
+ *     node.setLabel(newLabel);
+ *   }, this);
+ *   itemRenamer.open();
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.widget.TreeItemRenamer", {
   extend: qx.ui.window.Window,
 

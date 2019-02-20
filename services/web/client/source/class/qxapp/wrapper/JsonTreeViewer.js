@@ -15,15 +15,20 @@
 
 ************************************************************************ */
 
+/* global jsonTree */
+
 /**
  * @asset(jsontreeviewer/jsonTree.*)
  * @asset(jsontreeviewer/icons.svg)
  * @ignore(jsonTree)
  */
 
-/* global jsonTree */
+/**
+ * A qooxdoo wrapper for
+ * <a href='https://github.com/summerstyle/jsonTreeViewer' target='_blank'>JsonTreeViewer</a>
+ */
 
-qx.Class.define("qxapp.wrappers.JsonTreeViewer", {
+qx.Class.define("qxapp.wrapper.JsonTreeViewer", {
   extend: qx.core.Object,
   type: "singleton",
 

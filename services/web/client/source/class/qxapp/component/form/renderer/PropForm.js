@@ -6,13 +6,12 @@
    Utf8Check: äöü
 ************************************************************************ */
 
+/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__ctrlMap"] }] */
+
 /**
  * A special renderer for AutoForms which includes notes below the section header
  * widget and next to the individual form widgets.
  */
-
-/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__ctrlMap"] }] */
-/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.component.form.renderer.PropForm", {
   extend : qx.ui.form.renderer.Single,
