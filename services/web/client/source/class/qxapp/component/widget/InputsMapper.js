@@ -17,9 +17,49 @@
 
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "allow": ["__willBeBranch", "__willBeLeaf", "__tree"] }] */
 
+/**
+ *   This widget contains a VirtualTree populated with InputsMapperTreeItems. It represents a mapping
+ * of different inputs that can be either branches or leaves. Also implements a Drag&Drop mechanism.
+ *
+ *   When dropping an entry into the tree, this class asks the backend for further information for the given id,
+ * if any, it renders it as a PropForm.
+ *
+ *   If the second argument in the constructor contains a defualt value entry, a by default entry will be added
+ * to the VirtualTree.
+ *
+ * mapper: {
+ *   displayOrder: 1,
+ *   label: "Material Settings",
+ *   description: "Maps Model entities into Materials",
+ *   type: "mapper",
+ *   maps: {
+ *     branch: "simcore/services/demodec/dynamic/itis/s4l/MaterialDB",
+ *     leaf: "simcore/services/dynamic/modeler/webserver"
+ *   },
+ *   defaultValue: [{
+ *    "Air-UUID": [
+ *       "Background"
+ *      ]
+ *   }]
+ * }
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let inputsMapper = new qxapp.component.widget.InputsMapper(node, inputs["mapper"]);
+ *   this.getRoot().add(inputsMapper);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.component.widget.InputsMapper", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param node {qxapp.data.model.Node} Node owning the widget
+    * @param mapper {Object} mapper object provided by service's metadata
+  */
   construct: function(node, mapper) {
     this.base();
 

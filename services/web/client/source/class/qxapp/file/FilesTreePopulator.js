@@ -15,9 +15,20 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
+/**
+ * Object used for populating file trees: node and user file trees.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let filesTreePopulator = new qxapp.file.FilesTreePopulator(tree);
+ *   filesTreePopulator.populateNodeFiles(nodeId);
+ * </pre>
+ */
 
-qx.Class.define("qxapp.utils.FilesTreePopulator", {
+qx.Class.define("qxapp.file.FilesTreePopulator", {
   extend: qx.core.Object,
 
   construct: function(tree) {
@@ -70,7 +81,7 @@ qx.Class.define("qxapp.utils.FilesTreePopulator", {
       let emptyModel = qx.data.marshal.Json.createModel(data, true);
       this.__tree.setModel(emptyModel);
       this.__tree.setDelegate({
-        createItem: () => new qxapp.component.widget.FileTreeItem(),
+        createItem: () => new qxapp.file.FileTreeItem(),
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
           c.bindProperty("fileId", "fileId", null, item, id);

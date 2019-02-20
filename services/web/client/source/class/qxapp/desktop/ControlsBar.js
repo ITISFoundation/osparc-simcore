@@ -15,7 +15,20 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.desktop.mainPanel.ControlsBar", {
+/**
+ * Widget that shows the play/stop study button.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let controlsBar = new qxapp.desktop.ControlsBar();
+ *   this.getRoot().add(controlsBar);
+ * </pre>
+ */
+
+qx.Class.define("qxapp.desktop.ControlsBar", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

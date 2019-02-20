@@ -1,11 +1,33 @@
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
+/* global Plotly */
+
 /**
  * @asset(plotly/plotly.min.js)
  * @ignore(Plotly)
  */
 
-/* global Plotly */
+/**
+ * A qooxdoo wrapper for
+ * <a href='https://github.com/plotly/plotly.js' target='_blank'>Plotly</a>
+ */
 
-qx.Class.define("qxapp.wrappers.Plotly", {
+qx.Class.define("qxapp.wrapper.Plotly", {
   extend: qx.core.Object,
 
   statics: {

@@ -15,11 +15,31 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
+/**
+ * Object used as filtering delegate
+ *
+ *   It does a string match filtering via the searchString prop and also accepts extra filters for
+ * type (complete string match) filtering.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let filterObj = new qxapp.component.workbench.servicesCatalogue.SearchTypeFilter(cntrl, ["name"]);
+ *   let dlgt = cntrl.getDelegate();
+ *   cntrl["filter"] = filterObj["filter"];
+ *   cntrl.setDelegate(dlgt);
+ * </pre>
+ */
 
 qx.Class.define("qxapp.component.workbench.servicesCatalogue.SearchTypeFilter", {
   extend : qx.core.Object,
 
+  /**
+    * @param projectName {controller} Controller
+    * @param workbench {Array} propKeys where to check the typeFilter
+  */
   construct: function(controller, props = ["key"]) {
     this.base(arguments);
     // store the controller

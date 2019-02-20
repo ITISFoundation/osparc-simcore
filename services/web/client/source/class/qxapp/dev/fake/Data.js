@@ -21,8 +21,6 @@
  * TODO: Use faker https://scotch.io/tutorials/generate-fake-data-for-your-javascript-applications-using-faker
  */
 
-/* global window */
-
 qx.Class.define("qxapp.dev.fake.Data", {
   type: "static",
 

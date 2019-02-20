@@ -15,7 +15,28 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.component.widget.FilesTree", {
+/**
+ * VirtualTree that uses FilesTreePopulator class to build the content.
+ *
+ *   Elements in the tree also accept Drag and/or Drop mechanisms which are implemented here.
+ * "osparc-filePath" type is used for the Drag&Drop.
+ *
+ *   If a file is dropped into a folder, this class will start the copying proccess fireing
+ * "fileCopied" event if successful
+ *
+ * Also provides two static methods for checking whether en entry in the tree is File/Directory
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let filesTree = new qxapp.file.FilesTree();
+ *   this.getRoot().add(filesTree);
+ * </pre>
+ */
+
+qx.Class.define("qxapp.file.FilesTree", {
   extend: qx.ui.tree.VirtualTree,
 
   construct: function() {
@@ -78,7 +99,7 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
     __tree: null,
 
     populateTree: function(nodeId = null) {
-      let filesTreePopulator = new qxapp.utils.FilesTreePopulator(this);
+      let filesTreePopulator = new qxapp.file.FilesTreePopulator(this);
       if (nodeId) {
         filesTreePopulator.populateNodeFiles(nodeId);
       } else {
@@ -99,7 +120,7 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
     getSelectedFile: function() {
       let selectedItem = this.__getSelectedItem();
       if (selectedItem) {
-        const isFile = qxapp.component.widget.FilesTree.isFile(selectedItem);
+        const isFile = qxapp.file.FilesTree.isFile(selectedItem);
         const data = {
           selectedItem: selectedItem,
           isFile: isFile
@@ -144,7 +165,7 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
     __createDragMechanism: function(treeItem) {
       treeItem.setDraggable(true);
       treeItem.addListener("dragstart", e => {
-        if (qxapp.component.widget.FilesTree.isFile(e.getOriginalTarget())) {
+        if (qxapp.file.FilesTree.isFile(e.getOriginalTarget())) {
           // Register supported actions
           e.addAction("copy");
           // Register supported types
@@ -159,7 +180,7 @@ qx.Class.define("qxapp.component.widget.FilesTree", {
       treeItem.setDroppable(true);
       treeItem.addListener("dragover", e => {
         let compatible = false;
-        if (qxapp.component.widget.FilesTree.isDir(e.getOriginalTarget())) {
+        if (qxapp.file.FilesTree.isDir(e.getOriginalTarget())) {
           if (e.supportsType("osparc-filePath")) {
             compatible = true;
           }

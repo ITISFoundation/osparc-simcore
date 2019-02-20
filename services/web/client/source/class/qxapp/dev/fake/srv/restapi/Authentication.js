@@ -1,4 +1,3 @@
-/* eslint no-warning-comments: "off" */
 qx.Class.define("qxapp.dev.fake.srv.restapi.Authentication", {
   type: "static",
 

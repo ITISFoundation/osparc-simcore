@@ -4,6 +4,7 @@
    Authors:   Tobi Oetiker <tobi@oetiker.ch>
    Utf8Check: äöü
 ************************************************************************ */
+
 /**
  * When moving an iframe node in the dom, it reloads its content. This is
  * rather unfortunate when the content is another web application.

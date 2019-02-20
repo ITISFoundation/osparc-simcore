@@ -15,7 +15,25 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.component.widget.FileLabelWithActions", {
+/**
+ * A HBox containing a text field, download button and delete button.
+ *
+ *   It is used together with a virtual tree of files where the selection is displayed
+ * in the text field and the download and delete are related to that selection.
+ * Download and deleted methods are also provided.
+ * If a file is deleted it fires "fileDeleted" data event
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let hBox = new qxapp.file.FileLabelWithActions();
+ *   this.getRoot().add(hBox);
+ * </pre>
+ */
+
+qx.Class.define("qxapp.file.FileLabelWithActions", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -86,7 +104,7 @@ qx.Class.define("qxapp.component.widget.FileLabelWithActions", {
 
     __getItemSelected: function() {
       let selectedItem = this.__selection;
-      if (selectedItem && qxapp.component.widget.FilesTree.isFile(selectedItem)) {
+      if (selectedItem && qxapp.file.FilesTree.isFile(selectedItem)) {
         return selectedItem;
       }
       return null;

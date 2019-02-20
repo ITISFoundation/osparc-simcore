@@ -15,12 +15,31 @@
 
 ************************************************************************ */
 
+/**
+ * Window that is used to represent a node in the WorkbenchUI.
+ *
+ * It implements Drag&Drop mechanism to provide internode connections.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let nodeUI = new qxapp.component.workbench.NodeUI(node);
+ *   nodeUI.populateNodeLayout();
+ *   workbench.add(nodeUI)
+ * </pre>
+ */
+
 const nodeWidth = 180;
 const portHeight = 16;
 
 qx.Class.define("qxapp.component.workbench.NodeUI", {
   extend: qx.ui.window.Window,
 
+  /**
+    * @param node {qxapp.data.model.Node} Node owning the widget
+  */
   construct: function(node) {
     this.base();
 
@@ -37,6 +56,8 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
     });
 
     this.setNode(node);
+
+    this.__createNodeLayout();
   },
 
   properties: {
@@ -70,7 +91,7 @@ qx.Class.define("qxapp.component.workbench.NodeUI", {
       return this.getNode().getMetaData();
     },
 
-    createNodeLayout: function() {
+    __createNodeLayout: function() {
       let nodeLayout = new qx.ui.layout.VBox(5, null, "separator-vertical");
       this.setLayout(nodeLayout);
 
