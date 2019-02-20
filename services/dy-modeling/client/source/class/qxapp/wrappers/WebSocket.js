@@ -7,7 +7,7 @@
 /* global window */
 /* global io */
 
-qx.Class.define("qxapp.wrappers.WebSocket", {
+qx.Class.define("qxapp.wrapper.WebSocket", {
   extend: qx.core.Object,
 
   // Socket.io events

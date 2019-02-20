@@ -25,6 +25,25 @@ qx.Class.define("qxapp.io.rest.ResourceFactory", {
   },
 
   members: {
+    createHealthCheck: function() {
+      // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
+      // SEE: api/specs/webserver/v0/openapi-user.yaml
+      const basePath = qxapp.io.rest.ResourceFactory.API;
+
+      // Singular resource
+      let healthCheck = new qxapp.io.rest.Resource({
+        // Get token
+        get: {
+          method: "GET",
+          url: basePath+"/"
+        }
+      });
+
+      return {
+        "healthCheck": healthCheck
+      };
+    },
+
     createProjectResources: function() {
       // SEE: https://www.qooxdoo.org/current/pages/communication/rest.html
       // SEE: api/specs/webserver/v0/openapi-projects.yaml

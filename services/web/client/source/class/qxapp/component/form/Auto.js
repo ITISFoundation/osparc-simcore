@@ -10,32 +10,29 @@
  * Create a form. The argument to the form
  * widget defines the structure of the form.
  *
- *     {
- *          key: {
- *            displayOrder: 5,
-              label: "Widget SelectBox Test",
-              description: "Test Input for SelectBox",
-              defaultValue: "dog",
-              type: "string",
-              widget: {
-                type: "SelectBox",
-                structure: [
-                  {
-                    key: "dog",
-                    label: "A Dog"
-                  },
-                  {
-                    key: "cat",
-                    label: "A Cat"
-                  }
-                ]
-              }
- *          },
- *          ...
- *     }
+ * <pre class='javascript'>
+ *   {
+ *     key: {
+ *       displayOrder: 5,
+ *       label: "Widget SelectBox Test",
+ *       description: "Test Input for SelectBox",
+ *       defaultValue: "dog",
+ *       type: "string",
+ *       widget: {
+ *         type: "SelectBox",
+ *         structure: [{
+ *           key: "dog",
+ *           label: "A Dog"
+ *         }, {
+ *           key: "cat",
+ *           label: "A Cat"
+ *         }]
+ *       }
+ *     },
+ *   }
+ * </pre>
  *
  * The default widgets for data types are as follows:
- *
  *     string: text
  *     integer: spinner
  *     bool:  checkBox
@@ -56,8 +53,6 @@
  * with the required data.
  *
  */
-
-/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.component.form.Auto", {
   extend : qx.ui.form.Form,

@@ -15,23 +15,38 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
-/* global window */
+/**
+ *   Widget containing the layout where NodeUIs and LinkUIs, and when the model loaded
+ * is a container-node, also NodeInput and NodeExposed are rendered.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let workbenchUI = new qxapp.component.workbench.WorkbenchUI(workbench);
+ *   this.getRoot().add(workbenchUI);
+ * </pre>
+ */
 
 const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
 const NODE_INPUTS_WIDTH = 200;
 
 qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.core.Widget,
 
+  /**
+    * @param workbench {qxapp.data.model.Workbench} Workbench owning the widget
+  */
   construct: function(workbench) {
-    this.base();
+    this.base(arguments);
+
+    this.__nodesUI = [];
+    this.__linksUI = [];
 
     let hBox = new qx.ui.layout.HBox();
-    this.set({
-      layout: hBox
-    });
+    this._setLayout(hBox);
 
     let inputNodesLayout = this.__inputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     inputNodesLayout.set({
@@ -45,10 +60,10 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       alignX: "center"
     });
     inputNodesLayout.add(inputLabel);
-    this.add(inputNodesLayout);
+    this._add(inputNodesLayout);
 
     this.__desktopCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-    this.add(this.__desktopCanvas, {
+    this._add(this.__desktopCanvas, {
       flex: 1
     });
 
@@ -63,7 +78,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       alignX: "center"
     });
     nodesExposedLayout.add(outputLabel);
-    this.add(nodesExposedLayout);
+    this._add(nodesExposedLayout);
 
     this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
     this.__desktopCanvas.add(this.__desktop, {
@@ -73,7 +88,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       bottom: 0
     });
 
-    this.setWorkbench(workbench);
     this.__svgWidget = new qxapp.component.workbench.SvgWidget("SvgWidgetLayer");
     // this gets fired once the widget has appeared and the library has been loaded
     // due to the qx rendering, this will always happen after setup, so we are
@@ -81,7 +95,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     this.__svgWidget.addListenerOnce("SvgWidgetReady", () => {
       // Will be called only the first time Svg lib is loaded
       this.removeAll();
-      this.loadModel(this.getWorkbench());
+      this.setWorkbench(workbench);
       this.fireDataEvent("nodeDoubleClicked", "root");
     });
 
@@ -105,18 +119,11 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       }
     }, this);
 
-    this.__nodesUI = [];
-    this.__linksUI = [];
-
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
     this.__desktopCanvas.add(buttonContainer, {
       bottom: 10,
       right: 10
     });
-    // let addButton = this.__getPlusButton();
-    // buttonContainer.add(addButton);
-    // let removeButton = this.__getRemoveButton();
-    // buttonContainer.add(removeButton);
     let unlinkButton = this.__unlinkButton = this.__getUnlinkButton();
     unlinkButton.setVisibility("excluded");
     buttonContainer.add(unlinkButton);
@@ -144,7 +151,8 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
   properties: {
     workbench: {
       check: "qxapp.data.model.Workbench",
-      nullable: false
+      nullable: false,
+      apply: "loadModel"
     }
   },
 
@@ -307,7 +315,6 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       let node = this.getWorkbench().getNode(nodeId);
 
       let nodeUI = new qxapp.component.workbench.NodeUI(node);
-      nodeUI.createNodeLayout();
       nodeUI.populateNodeLayout();
       this.__createDragDropMechanism(nodeUI);
       return nodeUI;
@@ -751,6 +758,9 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     loadModel: function(model) {
       this.clearAll();
 
+      if (!model) {
+        model = this.getWorkbench();
+      }
       this.__currentModel = model;
 
       if (model) {

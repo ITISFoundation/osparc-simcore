@@ -15,7 +15,26 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
+/**
+ * Widget that shows all the information available regarding services.
+ *
+ * It has three main focuses:
+ * - Services list (ServiceBrowserListItem) on the left side with some filter
+ *   - Filter as you type
+ *   - Filter by service type
+ *   - Filter by service type
+ * - List of versions of the selected service
+ * - Description of the selected service using JsonTreeWidget
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let servicesView = this.__serviceBrowser = new qxapp.desktop.ServiceBrowser();
+ *   this.getRoot().add(servicesView);
+ * </pre>
+ */
 
 qx.Class.define("qxapp.desktop.ServiceBrowser", {
   extend: qx.ui.core.Widget,
@@ -326,7 +345,7 @@ qx.Class.define("qxapp.desktop.ServiceBrowser", {
       nodeCheck.addListener("success", e => {
         let data = e.getTarget().getResponse();
         try {
-          let ajv = new qxapp.wrappers.Ajv(data);
+          let ajv = new qxapp.wrapper.Ajv(data);
           for (const srvId in services) {
             const service = services[srvId];
             let check = ajv.validate(service);

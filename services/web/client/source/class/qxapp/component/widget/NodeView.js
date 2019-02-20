@@ -16,22 +16,34 @@
 ************************************************************************ */
 
 /**
- *  Node Main view
+ * Widget that displays the main view of a node.
  * - On the left side shows the default inputs if any and also what the input nodes offer
  * - In the center the content of the node: settings, mapper, iframe...
+ *
+ * When a node is set the layout is built
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let nodeView = new qxapp.component.widget.NodeView();
+ *   nodeView.setWorkbench(workbench);
+ *   nodeView.setNode(workbench.getNode1());
+ *   this.getRoot().add(nodeView);
+ * </pre>
  */
 
 const PORT_INPUTS_WIDTH = 300;
 
 qx.Class.define("qxapp.component.widget.NodeView", {
-  extend: qx.ui.container.Composite,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
     this.base();
 
-    let hBox = new qx.ui.layout.HBox(10);
+    this._setLayout(new qx.ui.layout.HBox(10));
     this.set({
-      layout: hBox,
       padding: 10
     });
 
@@ -47,7 +59,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       alignX: "center"
     });
     inputNodesLayout.add(inputLabel);
-    this.add(inputNodesLayout);
+    this._add(inputNodesLayout);
 
 
     let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
@@ -55,7 +67,7 @@ qx.Class.define("qxapp.component.widget.NodeView", {
       alignX: "center",
       padding: 5
     });
-    this.add(mainLayout, {
+    this._add(mainLayout, {
       flex: 1
     });
 
@@ -63,10 +75,6 @@ qx.Class.define("qxapp.component.widget.NodeView", {
     this.__mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__initButtons();
-  },
-
-  events: {
-    "ShowViewer": "qx.event.type.Data"
   },
 
   properties: {

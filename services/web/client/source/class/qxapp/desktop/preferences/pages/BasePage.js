@@ -15,7 +15,6 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
 qx.Class.define("qxapp.desktop.preferences.pages.BasePage", {
   extend: qx.ui.tabview.Page,
 

@@ -1,4 +1,21 @@
-/* eslint no-warning-comments: "off" */
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+     * Pedro Crespo (pcrespov)
+
+************************************************************************ */
+
 qx.Class.define("qxapp.About", {
   extend: qx.ui.window.Window,
   type: "singleton",
@@ -18,11 +35,36 @@ qx.Class.define("qxapp.About", {
 
   members: {
     __populateEntries: function() {
-      // FIXME: In deployment mode these env variables are not properly initialized and it break client compilation
-      // this.add(this.__createEntry("oSPARC", qx.core.Environment.get("osparc.vcsRef"), "https://github.com/ITISFoundation/osparc-simcore"));
-      // this.add(this.__createEntry("oSPARC UI", qx.core.Environment.get("osparc.vcsRefClient"), "https://github.com/ITISFoundation/osparc-simcore/services/web/client"));
+      let remoteUrl = qx.core.Environment.get("osparc.vcsOriginUrl");
 
-      // this.add(new qx.ui.core.Spacer(null, 10));
+      if (remoteUrl) {
+        remoteUrl = remoteUrl.replace("git@github.com:", "https://github.com/");
+        remoteUrl = remoteUrl.replace(".git", "");
+      } else {
+        remoteUrl = "https://github.com/ITISFoundation/osparc-simcore";
+      }
+
+      let name = "osparc-simcore";
+      let commitId = qx.core.Environment.get("osparc.vcsRef");
+      let url = remoteUrl;
+
+      if (commitId) {
+        url = remoteUrl + "/tree/" + String(commitId) + "/";
+      }
+      this.add(this.__createEntry(name, commitId, url));
+
+      name = "osparc-simcore UI";
+      commitId = qx.core.Environment.get("osparc.vcsRefClient");
+      if (commitId) {
+        url = remoteUrl + "/tree/" + String(commitId) + "/services/web/client/";
+      }
+      let status = qx.core.Environment.get("osparc.vcsStatusClient");
+      if (status) {
+        name = name + " [" + status + "]";
+      }
+      this.add(this.__createEntry(name, commitId, url));
+
+      this.add(new qx.ui.core.Spacer(null, 10));
 
       this.add(this.__createEntry("qooxdoo-compiler", qx.core.Environment.get("qx.compilerVersion"), "https://github.com/qooxdoo/qooxdoo-compiler"));
 
@@ -43,8 +85,8 @@ qx.Class.define("qxapp.About", {
 
       this.add(new qx.ui.core.Spacer(null, 10));
 
-      Object.keys(qxapp.wrappers).forEach(className => {
-        const wrapper = qxapp.wrappers[className];
+      Object.keys(qxapp.wrapper).forEach(className => {
+        const wrapper = qxapp.wrapper[className];
         this.add(this.__createEntry(wrapper.NAME, wrapper.VERSION, wrapper.URL));
       });
     },
@@ -56,7 +98,7 @@ qx.Class.define("qxapp.About", {
 
       let entryLabel = null;
       if (url) {
-        entryLabel = new qxapp.component.widget.LabelLink(item, url);
+        entryLabel = new qxapp.component.widget.LinkLabel(item, url);
       } else {
         entryLabel = new qx.ui.basic.Label(item);
       }

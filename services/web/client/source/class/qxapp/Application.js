@@ -18,12 +18,10 @@
 ************************************************************************ */
 
 /**
- * This is the main application class of "app"
+ * This is the main application class of "qxapp"
  *
  * @asset(qxapp/*)
  */
-
-/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.Application", {
   extend: qx.application.Standalone,
@@ -131,12 +129,12 @@ qx.Class.define("qxapp.Application", {
 
     __connectWebSocket: function() {
       // open web socket
-      qxapp.wrappers.WebSocket.getInstance().connect();
+      qxapp.wrapper.WebSocket.getInstance().connect();
     },
 
     __disconnectWebSocket: function() {
       // open web socket
-      qxapp.wrappers.WebSocket.getInstance().disconnect();
+      qxapp.wrapper.WebSocket.getInstance().disconnect();
     }
   }
 });

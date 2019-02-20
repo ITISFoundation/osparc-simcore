@@ -15,9 +15,32 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.component.widget.FilePicker", {
+/**
+ * Built-in service used for selecting a single file from storage and make it available in the workflow
+ *
+ *   It consists of a VBox containing a FilesTree, Add button and Select button:
+ * - FilesTree will be populated with data provided by storage service (simcore.S3 and datcore)
+ * - Add button will open a dialogue where the selected file will be upload to S3
+ * - Select button puts the file in the output of the FilePicker node so that connected nodes can access it.
+ * When the selection is made "finished" event will be fired
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let filePicker = new qxapp.file.FilePicker(node, projectId);
+ *   this.getRoot().add(filePicker);
+ * </pre>
+ */
+
+qx.Class.define("qxapp.file.FilePicker", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param node {qxapp.data.model.Node} Node owning the widget
+    * @param projectId {String} ProjectID of the project that node belongs to
+  */
   construct: function(node, projectId) {
     this.base(arguments);
 
@@ -68,7 +91,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
       let control;
       switch (id) {
         case "filesTree":
-          control = new qxapp.component.widget.FilesTree();
+          control = new qxapp.file.FilesTree();
           this._add(control, {
             flex: 1
           });
@@ -78,7 +101,7 @@ qx.Class.define("qxapp.component.widget.FilePicker", {
           this._addAt(control, 1);
           break;
         case "addButton":
-          control = new qxapp.component.widget.FilesAdd(this.tr("Add file(s)")).set({
+          control = new qxapp.file.FilesAdd(this.tr("Add file(s)")).set({
             node: this.getNode(),
             projectId: this.getProjectId()
           });

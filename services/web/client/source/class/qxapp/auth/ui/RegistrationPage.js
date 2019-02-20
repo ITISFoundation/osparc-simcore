@@ -19,6 +19,7 @@
  *
  *  TODO: add a check to prevent bots to register users
 */
+
 qx.Class.define("qxapp.auth.ui.RegistrationPage", {
   extend: qxapp.auth.core.BaseAuthPage,
 

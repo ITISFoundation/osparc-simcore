@@ -16,15 +16,27 @@
 ************************************************************************ */
 
 /**
- *  Creates the widget that represents the output of an input node.
+ * Widget that represents the output of an input node.
  * It creates a VBox with widgets representing each of the output ports of the node.
  * It can also create widget for representing default inputs (isInputModel = false).
  *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let nodePorts = new qxapp.component.widget.NodePorts(node, isInputModel);
+ *   this.getRoot().add(nodePorts);
+ * </pre>
  */
 
 qx.Class.define("qxapp.component.widget.NodePorts", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param node {qxapp.data.model.Node} Node owning the widget
+    * @param isInputModel {Boolean} false for representing defaultInputs
+  */
   construct: function(node, isInputModel = true) {
     this.base();
 

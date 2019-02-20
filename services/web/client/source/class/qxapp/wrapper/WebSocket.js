@@ -15,16 +15,19 @@
 
 ************************************************************************ */
 
+/* global io */
+
 /**
- * This class is a direct link with socketio.
  * @asset(socketio/socket.io.js)
  * @ignore(io)
  */
 
-/* global window */
-/* global io */
+/**
+ * A qooxdoo wrapper for
+ * <a href='https://github.com/socketio/socket.io' target='_blank'>WebSocket</a>
+ */
 
-qx.Class.define("qxapp.wrappers.WebSocket", {
+qx.Class.define("qxapp.wrapper.WebSocket", {
   extend: qx.core.Object,
 
   type : "singleton",

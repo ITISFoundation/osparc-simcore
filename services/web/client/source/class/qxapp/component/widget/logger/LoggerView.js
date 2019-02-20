@@ -1,4 +1,45 @@
-/* eslint no-warning-comments: "off" */
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
+/**
+ * Widget that shows a logging view.
+ *
+ * It consists of:
+ * - a toolbar containing:
+ *   - clear button
+ *   - filter as you type textfiled
+ *   - some log type filtering buttons
+ * - log messages table
+ *
+ * Log messages have two inputs: "Origin" and "Message".
+ *
+ *   Depending on the log level, "Origin"'s color will change, also "Message"s coming from the same
+ * origin will be rendered with the same color.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let loggerView = new qxapp.component.widget.logger.LoggerView();
+ *   this.getRoot().add(loggerView);
+ *   loggerView.info("Workbench", "Hello world");
+ * </pre>
+ */
 
 const LOG_LEVEL = {
   debug: -1,
@@ -16,75 +57,10 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-
-    let clearButton = new qx.ui.form.Button("Clear");
-    clearButton.addListener("execute", e => {
-      this.clearLogger();
-    }, this);
-    filterLayout.add(clearButton);
-
-    let searchLabel = new qx.ui.basic.Label(this.tr("Filter"));
-    filterLayout.add(searchLabel);
-    this.__textfield = new qx.ui.form.TextField();
-    this.__textfield.setLiveUpdate(true);
-    filterLayout.add(this.__textfield, {
-      flex: 1
-    });
-
-    let logLevelButtons = new qx.ui.toolbar.Part();
-    let logLevelBtns = [];
-    for (var key in LOG_LEVEL) {
-      let text = String(key)[0].toUpperCase() + String(key).slice(1);
-      let filterButton = new qx.ui.form.ToggleButton(text);
-      filterButton.logLevel = LOG_LEVEL[key];
-      logLevelButtons.add(filterButton);
-      logLevelBtns.push(filterButton);
-    }
-
-    filterLayout.add(logLevelButtons);
-
-    let group = new qx.ui.form.RadioGroup();
-    let defSelected = [];
-    for (let i=0; i<logLevelBtns.length; i++) {
-      let logLevelBtn = logLevelBtns[i];
-      group.add(logLevelBtn);
-      if (this.getLogLevel() === logLevelBtn.logLevel) {
-        defSelected.push(logLevelBtn);
-      }
-      logLevelBtn.addListener("changeValue", e => {
-        if (e.getData() === true) {
-          this.setLogLevel(logLevelBtn.logLevel);
-        }
-      }, this);
-    }
-    group.setSelection(defSelected);
-    group.setAllowEmptySelection(false);
-
+    let filterLayout = this.__createFilterLayout();
     this._add(filterLayout);
 
-    // let tableModel = this.__logModel = new qx.ui.table.model.Filtered();
-    let tableModel = this.__logModel = new qxapp.component.widget.logger.RemoteTableModel();
-    tableModel.setColumns(["Origin", "Message"], ["whoRich", "whatRich"]);
-
-    let custom = {
-      tableColumnModel : function(obj) {
-        return new qx.ui.table.columnmodel.Resize(obj);
-      }
-    };
-
-    // table
-    let table = this.__logView = new qx.ui.table.Table(tableModel, custom).set({
-      selectable: true,
-      statusBarVisible: false
-    });
-    var colModel = table.getTableColumnModel();
-    colModel.setDataCellRenderer(0, new qx.ui.table.cellrenderer.Html());
-    colModel.setDataCellRenderer(1, new qx.ui.table.cellrenderer.Html());
-    let resizeBehavior = colModel.getBehavior();
-    resizeBehavior.setWidth(0, "15%");
-    resizeBehavior.setWidth(1, "85%");
-
+    let table = this.__createTableLayout();
     this._add(table, {
       flex: 1
     });
@@ -119,6 +95,80 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
     __logModel: null,
     __logView: null,
     __messengerColors: null,
+
+    __createFilterLayout: function() {
+      let filterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+      let clearButton = new qx.ui.form.Button("Clear");
+      clearButton.addListener("execute", e => {
+        this.clearLogger();
+      }, this);
+      filterLayout.add(clearButton);
+
+      let searchLabel = new qx.ui.basic.Label(this.tr("Filter"));
+      filterLayout.add(searchLabel);
+      this.__textfield = new qx.ui.form.TextField();
+      this.__textfield.setLiveUpdate(true);
+      filterLayout.add(this.__textfield, {
+        flex: 1
+      });
+
+      let logLevelButtons = new qx.ui.toolbar.Part();
+      let logLevelBtns = [];
+      for (var key in LOG_LEVEL) {
+        let text = String(key)[0].toUpperCase() + String(key).slice(1);
+        let filterButton = new qx.ui.form.ToggleButton(text);
+        filterButton.logLevel = LOG_LEVEL[key];
+        logLevelButtons.add(filterButton);
+        logLevelBtns.push(filterButton);
+      }
+      filterLayout.add(logLevelButtons);
+
+      let group = new qx.ui.form.RadioGroup();
+      let defSelected = [];
+      for (let i=0; i<logLevelBtns.length; i++) {
+        let logLevelBtn = logLevelBtns[i];
+        group.add(logLevelBtn);
+        if (this.getLogLevel() === logLevelBtn.logLevel) {
+          defSelected.push(logLevelBtn);
+        }
+        logLevelBtn.addListener("changeValue", e => {
+          if (e.getData() === true) {
+            this.setLogLevel(logLevelBtn.logLevel);
+          }
+        }, this);
+      }
+      group.setSelection(defSelected);
+      group.setAllowEmptySelection(false);
+
+      return filterLayout;
+    },
+
+    __createTableLayout: function() {
+      // let tableModel = this.__logModel = new qx.ui.table.model.Filtered();
+      let tableModel = this.__logModel = new qxapp.component.widget.logger.RemoteTableModel();
+      tableModel.setColumns(["Origin", "Message"], ["whoRich", "whatRich"]);
+
+      let custom = {
+        tableColumnModel : function(obj) {
+          return new qx.ui.table.columnmodel.Resize(obj);
+        }
+      };
+
+      // table
+      let table = this.__logView = new qx.ui.table.Table(tableModel, custom).set({
+        selectable: true,
+        statusBarVisible: false
+      });
+      var colModel = table.getTableColumnModel();
+      colModel.setDataCellRenderer(0, new qx.ui.table.cellrenderer.Html());
+      colModel.setDataCellRenderer(1, new qx.ui.table.cellrenderer.Html());
+      let resizeBehavior = colModel.getBehavior();
+      resizeBehavior.setWidth(0, "15%");
+      resizeBehavior.setWidth(1, "85%");
+
+      return table;
+    },
 
     debug: function(who = "System", what = "") {
       this.__addLog(who, what, LOG_LEVEL.debug);
