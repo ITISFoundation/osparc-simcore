@@ -1,5 +1,5 @@
 docker~=3.7
-sqlalchemy==1.2.9
+sqlalchemy==1.2.18
 tenacity~=4.12
 
 ./../..
