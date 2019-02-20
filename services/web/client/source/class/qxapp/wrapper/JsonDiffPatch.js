@@ -18,12 +18,16 @@
 /**
  * @asset(jsondiffpatch/jsondiffpatch.*js)
  * @ignore(jsondiffpatch)
- * https://github.com/benjamine/jsondiffpatch
  */
 
 /* global jsondiffpatch */
 
-qx.Class.define("qxapp.wrappers.JsonDiffPatch", {
+/**
+ * A qooxdoo wrapper for
+ * <a href='https://github.com/benjamine/jsondiffpatch' target='_blank'>JsonDiffPatch</a>
+ */
+
+qx.Class.define("qxapp.wrapper.JsonDiffPatch", {
   extend: qx.core.Object,
   type: "singleton",
 

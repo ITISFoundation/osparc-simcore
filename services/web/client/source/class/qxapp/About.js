@@ -1,4 +1,21 @@
-/* eslint no-warning-comments: "off" */
+/* ************************************************************************
+
+   qxapp - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2018 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+     * Pedro Crespo (pcrespov)
+
+************************************************************************ */
+
 qx.Class.define("qxapp.About", {
   extend: qx.ui.window.Window,
   type: "singleton",
@@ -68,8 +85,8 @@ qx.Class.define("qxapp.About", {
 
       this.add(new qx.ui.core.Spacer(null, 10));
 
-      Object.keys(qxapp.wrappers).forEach(className => {
-        const wrapper = qxapp.wrappers[className];
+      Object.keys(qxapp.wrapper).forEach(className => {
+        const wrapper = qxapp.wrapper[className];
         this.add(this.__createEntry(wrapper.NAME, wrapper.VERSION, wrapper.URL));
       });
     },
@@ -81,7 +98,7 @@ qx.Class.define("qxapp.About", {
 
       let entryLabel = null;
       if (url) {
-        entryLabel = new qxapp.component.widget.LabelLink(item, url);
+        entryLabel = new qxapp.component.widget.LinkLabel(item, url);
       } else {
         entryLabel = new qx.ui.basic.Label(item);
       }

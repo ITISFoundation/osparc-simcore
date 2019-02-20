@@ -15,7 +15,33 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.component.widget.inputs.NodeOutputListItemIcon", {
+/**
+ * ListItem used mainly by NodeOutputListIcon
+ *
+ *   It consists of an entry thumbnail and label.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   list.setDelegate({
+ *     createItem: () => new qxapp.component.widget.inputs.NodeOutputListIconItem(),
+ *     bindItem: (c, item, id) => {
+ *       c.bindDefaultProperties(item, id);
+ *       c.bindProperty("key", "model", null, item, id);
+ *       c.bindProperty("thumbnail", "icon", null, item, id);
+ *       c.bindProperty("label", "label", {
+ *         converter: function(data) {
+ *           return data;
+ *         }
+ *       }, item, id);
+ *     },
+ *   });
+ * </pre>
+ */
+
+qx.Class.define("qxapp.component.widget.inputs.NodeOutputListIconItem", {
   extend: qx.ui.form.ListItem,
 
   construct: function() {

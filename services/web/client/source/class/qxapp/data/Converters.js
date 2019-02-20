@@ -15,31 +15,29 @@
 
 ************************************************************************ */
 
+/**
+ *   Collection of static methods for converting data coming from the webserver into suitable
+ * data for the frontend.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let store = qxapp.data.Store.getInstance();
+ *   store.addListenerOnce("nodeFiles", e => {
+ *     const files = e.getData();
+ *     const newChildren = qxapp.data.Converters.fromDSMToVirtualTreeModel(files);
+ *     this.__addTreeData(newChildren);
+ *   }, this);
+ *   store.getNodeFiles(nodeId);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.data.Converters", {
   type: "static",
 
   statics: {
-    registryToMetaData: function(data) {
-      let metaData = {};
-      [
-        "key",
-        "version",
-        "type",
-        "name",
-        "description",
-        "authors",
-        "contact",
-        "inputs",
-        "outputs"
-      ].forEach(field => {
-        metaData[field] = null;
-        if (Object.prototype.hasOwnProperty.call(data, field)) {
-          metaData[field] = data[field];
-        }
-      });
-      return metaData;
-    },
-
     __mergeFileTreeChildren: function(one, two) {
       let newDir = true;
       for (let i=0; i<one.length; i++) {

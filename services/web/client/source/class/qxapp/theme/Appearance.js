@@ -15,8 +15,6 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
-
 qx.Theme.define("qxapp.theme.Appearance", {
   extend: osparc.theme.osparcdark.Appearance,
 

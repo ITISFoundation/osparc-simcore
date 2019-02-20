@@ -15,6 +15,20 @@
 
 ************************************************************************ */
 
+/**
+ * Singleton class that is used as entrypoint to the webserver.
+ *
+ * All data transfer communication goes through the qxapp.data.Store.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the class.
+ *
+ * <pre class='javascript'>
+ *   let services = qxapp.data.Store.getInstance().getServices();
+ * </pre>
+ */
+
 qx.Class.define("qxapp.data.Store", {
   extend: qx.core.Object,
 
