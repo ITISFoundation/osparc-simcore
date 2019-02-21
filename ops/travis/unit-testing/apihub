@@ -33,7 +33,7 @@ script() {
         pytest -v api/tests
         pytest -v services/apihub/tests
     else
-        echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
+        echo "No changes detected. Skipping unit-testing of apihub."
     fi
 }
 
