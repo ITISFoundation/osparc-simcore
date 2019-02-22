@@ -15,16 +15,28 @@
 
 ************************************************************************ */
 
-
 /**
- *  Creates the widget that represents what needs to be exposed
- * to outsise the container.
+ * Widget that represents what nodes need to be exposed to outside the container.
  *
+ * It offers Drag&Drop mechanism for exposing inner nodes.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let nodeOutput = new qxapp.component.widget.NodeExposed(node);
+ *   nodeOutput.populateNodeLayout();
+ *   this.getRoot().add(nodeOutput);
+ * </pre>
  */
 
 qx.Class.define("qxapp.component.widget.NodeExposed", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param node {qxapp.data.model.Node} Node owning the widget
+  */
   construct: function(node) {
     this.base();
 

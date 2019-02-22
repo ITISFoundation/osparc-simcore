@@ -1,25 +1,44 @@
 #!/bin/sh
-echo "Activating python virtual env..."
-source $HOME/.venv/bin/activate
+#
 
-if [[ ${DEBUG} == "1" ]]
+# BOOTING application ---------------------------------------------
+echo "Booting in ${MY_BOOT_MODE} mode ..."
+
+if [[ ${MY_BUILD_TARGET} == "development" ]]
 then
-  echo "Booting in development mode ..."
-  echo "DEBUG: User    :`id $(whoami)`"
-  echo "DEBUG: Workdir :`pwd`"
+  echo "  User    :`id $(whoami)`"
+  echo "  Workdir :`pwd`"
+  echo "  Environment :"
+  printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
 
-  cd $HOME/services/web/server
-  $PIP install -r requirements/dev.txt
-  $PIP list
+  #------------
+  APP_CONFIG=server-docker-dev.yaml
 
-  cd $HOME/
-  simcore-service-webserver --config server-docker-dev.yaml
-elif [[ ${DEBUG} == "2" ]]
+  cd services/web/server
+  $MY_PIP install --user -r requirements/dev.txt
+  cd /devel
+
+  #------------
+  echo "  Python :"
+  python --version | sed 's/^/    /'
+  which python | sed 's/^/    /'
+  echo "  PIP :"
+  $MY_PIP list | sed 's/^/    /'
+
+elif [[ ${MY_BUILD_TARGET} == "production" ]]
 then
-  echo "Booting with debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
-  python -c "import pdb, simcore_service_webserver.cli; pdb.run('simcore_service_webserver.cli.main([\'-c\',\'server-docker-prod.yaml\'])')"
+  APP_CONFIG=server-docker-prod.yaml
+fi
+
+
+# RUNNING application ----------------------------------------
+if [[ ${BOOT_MODE} == "debug" ]]
+then
+  echo "Debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
+  echo "Running: import pdb, simcore_service_server.cli; pdb.run('simcore_service_server.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
+  python -c "import pdb, simcore_service_server.cli; \
+             pdb.run('simcore_service_server.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
 
 else
-  echo "Booting in production mode ..."
-  simcore-service-webserver --config server-docker-prod.yaml
+  simcore-service-webserver --config $APP_CONFIG
 fi

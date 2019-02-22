@@ -15,7 +15,25 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
+/**
+ * Widget that shows two lists of studies and study editor form:
+ * - List1: User's studies (PrjBrowserListItem)
+ * - List2: Template studies to start from (PrjBrowserListItem)
+ * - Form: Extra editable information of the selected study
+ *
+ * It is the entry point to start editing or creatina new study.
+ *
+ * Also takes care of retrieveing the list of services and pushing the changes in the metadata.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let prjBrowser = this.__serviceBrowser = new qxapp.desktop.PrjBrowser();
+ *   this.getRoot().add(prjBrowser);
+ * </pre>
+ */
 
 qx.Class.define("qxapp.desktop.PrjBrowser", {
   extend: qx.ui.core.Widget,
@@ -138,7 +156,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
       });
 
       let newProjectDlg = new qxapp.component.widget.NewProjectDlg();
-      newProjectDlg.addListenerOnce("CreatePrj", e => {
+      newProjectDlg.addListenerOnce("createPrj", e => {
         const data = e.getData();
         const newPrj = {
           name: data.prjTitle,

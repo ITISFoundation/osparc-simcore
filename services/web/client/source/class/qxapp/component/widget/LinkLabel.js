@@ -15,7 +15,20 @@
 
 ************************************************************************ */
 
-qx.Class.define("qxapp.component.widget.LabelLink", {
+/**
+ * A Label with low optical impact presenting as a simple weblink
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   var link = new qxapp.component.widget.LinkLabel(this.tr("oSparc"),"https://osparc.io");
+ *   this.getRoot().add(link);
+ * </pre>
+ */
+
+qx.Class.define("qxapp.component.widget.LinkLabel", {
   extend: qx.ui.basic.Label,
 
   construct: function(label, url) {

@@ -4,14 +4,17 @@
    Authors:   Tobi Oetiker <oetiker@itis.ethz.ch>
    Utf8Check: äöü
 ************************************************************************ */
-/**
- * A qooxdoo wrapper for Ajv (https://github.com/epoberezkin/ajv)
- */
 
-/* global Ajv */
 /* eslint new-cap: [2, {capIsNewExceptions: ["Ajv"]}] */
 
-qx.Class.define("qxapp.wrappers.Ajv", {
+/* global Ajv */
+
+/**
+ * A qooxdoo wrapper for
+ * <a href='https://github.com/epoberezkin/ajv' target='_blank'>Ajv</a>
+ */
+
+qx.Class.define("qxapp.wrapper.Ajv", {
   extend: qx.core.Object,
 
   statics: {

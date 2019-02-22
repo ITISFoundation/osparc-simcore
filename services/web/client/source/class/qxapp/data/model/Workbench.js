@@ -15,11 +15,31 @@
 
 ************************************************************************ */
 
-/* eslint no-warning-comments: "off" */
+/**
+ * Class that stores Workbench data.
+ *
+ * It takes care of creating, storing and managing nodes and links.
+ *
+ *                                    -> {NODES}
+ * PROJECT -> METADATA + WORKBENCH ->|
+ *                                    -> {LINKS}
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let link = new qxapp.data.model.Link(linkId, node1Id, node2Id);
+ * </pre>
+ */
 
 qx.Class.define("qxapp.data.model.Workbench", {
   extend: qx.core.Object,
 
+  /**
+    * @param prjName {String} uuid if the link. If not provided, a random one will be assigned
+    * @param wbData {String} uuid of the node where the link comes from
+  */
   construct: function(prjName, wbData) {
     this.base(arguments);
 

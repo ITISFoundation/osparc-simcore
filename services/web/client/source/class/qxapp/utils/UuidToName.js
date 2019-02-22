@@ -15,6 +15,18 @@
 
 ************************************************************************ */
 
+/**
+ * Singleton for trying to convert a (file) uuid into a human readable text.
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let image = qxapp.utils.Avatar.getUrl(userEmail);
+ * </pre>
+ */
+
 qx.Class.define("qxapp.utils.UuidToName", {
   extend: qx.core.Object,
   type: "singleton",

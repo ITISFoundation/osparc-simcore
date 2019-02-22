@@ -15,8 +15,22 @@
 
 ************************************************************************ */
 
+/**
+ * Widget that provides access to the data belonging to the active user.
+ * - On the left side: myData FilesTree with the FileLabelWithActions
+ * - On the right side: a pie chart reflecting the data resources consumed
+ *
+ * *Example*
+ *
+ * Here is a little example of how to use the widget.
+ *
+ * <pre class='javascript'>
+ *   let dataManager = new qxapp.desktop.DataManager();
+ *   this.getRoot().add(dataManager);
+ * </pre>
+ */
+
 /* global document */
-/* eslint no-warning-comments: "off" */
 
 qx.Class.define("qxapp.desktop.DataManager", {
   extend: qx.ui.core.Widget,
@@ -71,7 +85,7 @@ qx.Class.define("qxapp.desktop.DataManager", {
     __createTreeLayout: function() {
       let treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      let filesTree = this.__tree = new qxapp.component.widget.FilesTree().set({
+      let filesTree = this.__tree = new qxapp.file.FilesTree().set({
         dragMechnism: true,
         dropMechnism: true,
         minHeight: 600
@@ -89,13 +103,13 @@ qx.Class.define("qxapp.desktop.DataManager", {
         flex: 1
       });
 
-      let addBtn = new qxapp.component.widget.FilesAdd(this.tr("Add file(s)"));
+      let addBtn = new qxapp.file.FilesAdd(this.tr("Add file(s)"));
       addBtn.addListener("fileAdded", e => {
         this.__initResources();
       }, this);
       treeLayout.add(addBtn);
 
-      let selectedFileLayout = this.__selectedFileLayout = new qxapp.component.widget.FileLabelWithActions();
+      let selectedFileLayout = this.__selectedFileLayout = new qxapp.file.FileLabelWithActions();
       selectedFileLayout.addListener("fileDeleted", () => {
         this.__initResources();
       }, this);
