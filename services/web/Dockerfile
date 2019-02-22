@@ -136,7 +136,7 @@ FROM build as development
 
 ENV SC_BUILD_TARGET development
 ENV SC_BOOT_MODE development
-
+ENV SIMCORE_WEB_OUTDIR /devel/services/web/client
 
 WORKDIR /devel
 VOLUME  /devel/packages
