@@ -10,6 +10,7 @@ The recommended extensions are:
 - Docker extension
 - Python extension
 - vscode-icons extension (cool icons on the file browser)
+- Babel JavaScript
 
 Install those with the following commands:
 ```
