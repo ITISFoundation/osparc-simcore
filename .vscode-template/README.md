@@ -16,6 +16,7 @@ Install those with the following commands:
 code --install-extension PeterJausovec.vscode-docker
 code --install-extension robertohuertasm.vscode-icons
 code --install-extension ms-python.python
+code --install-extension mgmcdermott.vscode-language-babel
 ```
 If VSCode was already running, you need to reload to see them installed. For that you can hit ``Ctrl+Shift+P`` and execute the command ``Reload Window``.
 
