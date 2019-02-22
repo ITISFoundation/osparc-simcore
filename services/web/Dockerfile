@@ -136,7 +136,7 @@ FROM build as development
 
 ENV MY_BUILD_TARGET development
 ENV MY_BOOT_MODE development
-
+ENV SIMCORE_WEB_OUTDIR /devel/services/web/client
 
 WORKDIR /devel
 VOLUME  /devel/packages
