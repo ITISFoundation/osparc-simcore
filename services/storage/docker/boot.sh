@@ -14,7 +14,10 @@ then
   #--------------------
 
   APP_CONFIG=docker-dev-config.yaml
-  $SC_PIP install --user -e services/storage
+
+  cd services/storage
+  $SC_PIP install --user -r requirements/dev.txt
+  cd /devel
 
   #--------------------
   echo "  Python :"
