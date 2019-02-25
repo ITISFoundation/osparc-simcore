@@ -7,11 +7,12 @@
 #   *runs* as non-root user [scu]
 #
 echo "Entrypoint for stage ${SC_BUILD_TARGET} ..."
+echo "  User    :`id $(whoami)`"
+echo "  Workdir :`pwd`"
+
 
 if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
-    echo "  User    :`id $(whoami)`"
-    echo "  Workdir :`pwd`"
 
     # NOTE: expects docker run ... -v $(pwd):/devel/services/sidecar
     DEVEL_MOUNT=/devel/services/sidecar
@@ -21,10 +22,24 @@ then
 
     USERID=$(stat -c %u $DEVEL_MOUNT)
     GROUPID=$(stat -c %g $DEVEL_MOUNT)
+    GROUPNAME=$(getent group ${GROUPID} | cut -d: -f1)
 
-    deluser scu &> /dev/null
-    addgroup -g $GROUPID scu
-    adduser -u $USERID -G scu -D -s /bin/sh scu
+    if [[ $USERID -eq 0 ]]
+    then
+        addgroup scu root
+    else
+        # take host's credentials in myu
+        if [[ -z "$GROUPNAME" ]]
+        then
+            GROUPNAME=myu
+            addgroup -g $GROUPID $GROUPNAME
+        else
+            addgroup scu $GROUPNAME
+        fi
+
+        deluser scu &> /dev/null
+        adduser -u $USERID -G $GROUPNAME -D -s /bin/sh scu
+    fi
 fi
 
 
@@ -38,7 +53,7 @@ then
     GROUPID=$(stat -c %g $DOCKER_MOUNT)
     GROUPNAME=docker
 
-    addgroup -g $GROUPID $GROUPNAME
+    addgroup -g $GROUPID $GROUPNAME &> /dev/null
     if [[ $? -gt 0 ]]
     then
         # if group already exists in container, then reuse name
