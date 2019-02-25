@@ -71,7 +71,7 @@ endif
 
 ## ------------------------------------------------------------------------------------------------------
 .PHONY: all
-all: help
+all: help info
 ifdef tools
 	$(error "Can't find tools:${tools}")
 endif
@@ -99,7 +99,8 @@ rebuild-devel: .env .tmp-webclient-build
 
 .tmp-webclient-build:
 	# TODO: fixes having services_webclient:build present for services_webserver:production when
-	# targeting services_webserver:development
+	# targeting services_webserver:development and ensures source-output folder at host
+	mkdir -p services\web\client\source-output
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
 
 
