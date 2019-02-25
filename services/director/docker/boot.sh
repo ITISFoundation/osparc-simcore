@@ -3,18 +3,20 @@
 
 # BOOTING application ---------------------------------------------
 echo "Booting in ${SC_BOOT_MODE} mode ..."
-
+echo "  User    :`id $(whoami)`"
+echo "  Workdir :`pwd`"
 
 if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
-  echo "  User    :`id $(whoami)`"
-  echo "  Workdir :`pwd`"
   echo "  Environment :"
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
   #--------------------
 
   APP_CONFIG=config-host-dev.yaml
-  $SC_PIP install --user -e services/director
+  
+  cd services/director
+  $SC_PIP install --user -r requirements/dev.txt
+  cd /devel
 
   #--------------------
   echo "  Python :"
