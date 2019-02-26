@@ -98,13 +98,15 @@ qx.Class.define("qxapp.test.DemoTest",
 
         this.require(["chrome", "guiApp"]);
         this.debug("this is running");
-      },
+      }//  ,
 
       /*
       ---------------------- -----------------------------------------------------
         TESTS async
       ---------------------------------------------------------------------------
       */
+
+      /*
       "test: GET api/auth async": function() {
         this.useFakeXMLHttpRequest();
 
@@ -133,6 +135,6 @@ qx.Class.define("qxapp.test.DemoTest",
 
         this.assertEquals(fakeReq, req.getTransport().getRequest());
         this.wait(10000);
-      }
+      } */
     }
   });

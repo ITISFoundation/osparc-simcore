@@ -41,7 +41,7 @@ script() {
         while ! nc -z localhost 8080; do
           sleep 1 # wait for 10 second before check again
         done
-        node build-output/resource/qxl/testtapper/run.js http://localhost:8080/build/testtapper/
+        node build-output/resource/qxl/testtapper/run.js --diag --verbose http://localhost:8080/build/testtapper/
         kill $SERVER_PID
         rm build-output/*.json
     else
