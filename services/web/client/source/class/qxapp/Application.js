@@ -140,7 +140,7 @@ qx.Class.define("qxapp.Application", {
 
     __preventAutofillBrowserSyles: function() {
       const stylesheet = qx.ui.style.Stylesheet.getInstance();
-      if (qx.bom.client.Engine.getName() === 'webkit') {
+      if (qx.bom.client.Browser.getName() === 'chrome' && qx.bom.client.Browser.getVersion() >= 71) {
         stylesheet.addRule(
           'input:-internal-autofill-previewed,' +
           'input:-internal-autofill-selected,' +
@@ -152,7 +152,7 @@ qx.Class.define("qxapp.Application", {
           'transition: background-color 0s linear 5000s, color 0s linear 5000s'
         );
       }
-      if (qx.bom.client.Browser.getName() === 'chrome' && qx.bom.client.Browser.getVersion() >= 70.1) {
+      if (qx.bom.client.Engine.getName() === 'webkit') {
         stylesheet.addRule(
           'input:-webkit-autofill,' +
           'input:-webkit-autofill:hover,' +
