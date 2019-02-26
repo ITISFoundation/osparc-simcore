@@ -1,4 +1,6 @@
 #!/bin/bash
+# die on non 0 exit code
+set -e
 
 FOLDER_CHECKS="api\/ apihub"
 

@@ -1,8 +1,9 @@
 #!/bin/bash
-FOLDER_CHECKS="js eslintrc json"
 
 # die on non 0 exit code
 set -e
+
+FOLDER_CHECKS="js eslintrc json"
 
 before_install() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
