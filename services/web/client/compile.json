@@ -51,7 +51,7 @@
     {
       "class": "qxl.testtapper.Application",
       "theme": "qxapp.theme.Theme",
-      "name": "testapper",
+      "name": "testtapper",
       "title": "Qooxdoo TestTAPper",
       "include": [
         "qxapp.test.*"
