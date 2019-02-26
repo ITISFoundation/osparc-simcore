@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -x
 FOLDER_CHECKS="js eslintrc json"
 
 before_install() {
@@ -16,10 +16,11 @@ install() {
         npm install
         cd services/web/client
         npm install
-        node_modules/.bin/qx compile --target=build --machine-readable
         node_modules/.bin/qx serve --machine-readable --target=build  --listen-port=8080 &
         SERVER_PID=$!
-        sleep 20
+        while ! nc -z localhost 8080; do
+          sleep 1 # wait for 1 second before check again
+        done
         node build-output/resource/qxl/testtapper/run.js http://localhost:8080
         kill $SERVER_PID
         rm build-output/*.json
