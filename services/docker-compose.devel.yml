@@ -13,8 +13,8 @@ services:
     build:
       target: development
     volumes:
-      - ./director:/home/scu/services/director
-      - ../packages/service-library:/home/scu/packages/service-library
+      - ./director:/devel/services/director
+      - ../packages/service-library:/devel/packages/service-library
     stdin_open: true
     tty: true
   #--------------------------------------------------------------------
@@ -46,22 +46,18 @@ services:
   sidecar:
     image: services_sidecar:dev
     build:
-      args:
-        - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
       target: development
     volumes:
-      - ./sidecar:/home/scu/services/sidecar
-      - ./storage/client-sdk:/home/scu/services/storage/client-sdk
-      - ../packages:/home/scu/packages
+      - ./sidecar:/devel/services/sidecar
+      - ./storage/client-sdk:/devel/services/storage/client-sdk
+      - ../packages:/devel/packages
   #--------------------------------------------------------------------
   storage:
     image: services_storage:dev
     build:
-      args:
-        - HOST_GID_ARG=${HOST_GID:?Undefined host gid}
       target: development
     volumes:
-      - ./storage:/home/scu/services/storage
-      - ../packages:/home/scu/packages
+      - ./storage:/devel/services/storage
+      - ../packages:/devel/packages
     stdin_open: true
     tty: true

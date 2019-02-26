@@ -44,7 +44,7 @@ async def _setup_dsm(app: web.Application):
     main_cfg = cfg["main"]
 
     main_cfg = cfg["main"]
-    python27_exec = Path(main_cfg["python2"]) / "bin" / "python2"
+    python27_exec = Path(main_cfg["python2"])
 
     engine = app.get(APP_DB_ENGINE_KEY)
     loop = app.loop

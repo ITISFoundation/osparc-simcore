@@ -1,23 +1,27 @@
 FROM python:3.6-alpine as base
+#
+#  USAGE:
+#     cd sercices/director
+#     docker build -f Dockerfile -t director:prod --target production ../../
+#     docker run director:prod
+#
+#  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
 LABEL maintainer=sanderegg
 
-ARG DOCKER_GID_ARG=1001
+# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
+RUN adduser -D -u 8004 -s /bin/sh -h /home/scu scu
 
 RUN apk add --no-cache \
-    su-exec
+      su-exec
 
-# create user `scu` and `docker` group (with same id as in host)
-RUN adduser -D -u 8004 scu &&\
-    addgroup -g $DOCKER_GID_ARG docker
+ENV PATH "/home/scu/.local/bin:$PATH"
 
-ENV HOME /home/scu
-# TODO: tmp workaround for https://github.com/pypa/pip/issues/6197
-# - Added explicit --cache-dir that is removed at the end of the build
-ENV PIP  /home/scu/.venv/bin/pip3 --cache-dir=/tmp/.pipcache
-# -----
+# All SC_ variables are customized
+ENV SC_PIP pip3 --no-cache-dir
+ENV SC_BUILD_TARGET base
 
-EXPOSE 8001
+# TODO: update environs
 ENV REGISTRY_AUTH = ''
 ENV REGISTRY_USER = ''
 ENV REGISTRY_PW = ''
@@ -25,82 +29,113 @@ ENV REGISTRY_URL = ''
 ENV PUBLISHED_HOST_NAME=''
 ENV EXTRA_HOSTS_SUFFIX = 'undefined'
 
-# ----------------------------------------------------------------
-COPY --chown=scu:scu scripts/docker/healthcheck_curl_host.py /healthcheck/healthcheck_curl_host.py
-# will start to run after interval every interval. fails after timeout. fail do not count if during start-period. will do # retries
-HEALTHCHECK --interval=10s --timeout=30s --start-period=20s --retries=3 CMD [ "python3", "/healthcheck/healthcheck_curl_host.py", "http://localhost:8001/v0/" ]
 
-WORKDIR /home/scu
+EXPOSE 8080
 
 # -------------------------- Build stage -------------------
+# Installs build/package management tools and third party dependencies
 #
-# - Preserves relative folder structure
+# + /build             WORKDIR
 #
-# + /home/scu/              $HOME
-#    + services/director
-#        ...
-#    + packages
-#        ...
+
 FROM base as build
+
+ENV SC_BUILD_TARGET build
 
 RUN apk add --no-cache \
     gcc \
     libc-dev \
     git
 
-# create virtual environment
-RUN python3 -m venv $HOME/.venv &&\
-    $PIP install --upgrade \
+RUN $SC_PIP install --upgrade \
       pip \
       wheel \
       setuptools
 
-# this is done to accelerate installation of director later on
-COPY --chown=scu:scu services/director/requirements/base.txt requirements-base.txt
-RUN $PIP install -r requirements-base.txt &&\
-    rm requirements-base.txt
+WORKDIR /build
 
-COPY --chown=scu:scu services/director/docker docker
+# install base 3rd party dependencies
+COPY  services/director/requirements/*.txt \
+      services/director/requirements/
 
-# --------------------------Development stage -------------------
-FROM build as development
+RUN $SC_PIP install \
+      -r services/director/requirements/base.txt
 
-ARG HOST_GID_ARG=1000
-
-# in dev-mode we give access to `scu` to host's mapped volumes
-# FIXME: files created by scu cannot be deleted by host! we need to do the same group in host?
-RUN addgroup -g $HOST_GID_ARG hgrp &&\
-    addgroup scu hgrp && \
-    chown -R scu:scu $HOME/.venv &&\
-    rm -rf /tmp/.pipcache
-
-VOLUME /home/scu/services/director
-VOLUME /home/scu/packages/service-library
-
-ENV DEBUG 1
-ENV RUN_DOCKER_ENGINE_ROOT=0
-ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD ["/bin/sh", "docker/boot.sh"]
-
-# --------------------------Cache stage -------------------
+#--------------------------Cache stage -------------------
+# CI in master buils & pushes this target to speed-up image build
+#
+#  + /build
+#    + services/director [scu:scu] WORKDIR
+#
 FROM build as cache
-COPY --chown=scu:scu services/director $HOME/services/director
-COPY --chown=scu:scu packages/service-library $HOME/packages/service-library
-WORKDIR $HOME/services/director
-RUN $PIP install -r requirements/prod.txt
-WORKDIR $HOME/packages/service-library
-# FIXME: is this really requirements/dev or rather requirements/prod.txt?
-RUN $PIP install -r requirements/dev.txt
+
+ENV SC_BUILD_TARGET cache
+
+
+COPY --chown=scu:scu packages/service-library /build/packages/service-library
+COPY --chown=scu:scu services/director /build/services/director
+
+WORKDIR /build/services/director
+
+
+RUN $SC_PIP install -r requirements/prod.txt &&\
+    $SC_PIP list -v
 
 
 # --------------------------Production stage -------------------
+# Final cleanup up to reduce image size and startup setup
+# Runs as scu (non-root user)
+#
+#  + /home/scu     $HOME = WORKDIR
+#    + services/director [scu:scu]
+#
 FROM cache as production
-WORKDIR $HOME
-ENV DEBUG 0
-ENV RUN_DOCKER_ENGINE_ROOT=0
-RUN rm -rf $HOME/services &&\
-    rm -rf $HOME/packages &&\
-    rm -rf /tmp/.pipcache
 
-ENTRYPOINT [ "/bin/sh", "docker/entrypoint.sh" ]
-CMD ["/bin/sh", "docker/boot.sh"]
+
+ENV SC_BUILD_TARGET production
+ENV SC_BOOT_MODE production
+
+WORKDIR /home/scu
+
+RUN mkdir -p services/director &&\
+    chown scu:scu services/director &&\
+    mv /build/services/director/docker services/director/docker &&\
+    rm -rf /build
+
+RUN apk del --no-cache\
+      gcc \
+      git
+
+HEALTHCHECK --interval=30s \
+            --timeout=120s \
+            --start-period=30s \
+            --retries=3 \
+            CMD ["python3", "/home/scu/services/director/docker/healthcheck.py", "http://localhost:8080/v0/"]
+
+ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/director/docker/boot.sh"]
+
+
+# --------------------------Development stage -------------------
+# Source code accessible in host but runs in container
+# Runs as myu with same gid/uid as host
+# Placed at the end to speed-up the build if images targeting production
+#
+#  + /devel         WORKDIR
+#    + services  (mounted volume)
+#
+FROM build as development
+
+ENV SC_BUILD_TARGET development
+ENV SC_BOOT_MODE development
+
+
+# WORKDIR /build
+# NOTE: can copy from /build if necessary
+
+WORKDIR /devel
+VOLUME  /devel/packages
+VOLUME  /devel/services/director/
+
+ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/director/docker/boot.sh"]
