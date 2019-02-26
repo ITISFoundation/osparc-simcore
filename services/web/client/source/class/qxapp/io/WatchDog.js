@@ -43,8 +43,8 @@ qx.Class.define("qxapp.io.WatchDog", {
     const interval = 2000;
     this.__timer = new qx.event.Timer(interval);
 
-    window.addEventListener("online", this.__updateOnlineStatus);
-    window.addEventListener("offline", this.__updateOnlineStatus);
+    window.addEventListener("online", this.__updateOnlineStatus, this);
+    window.addEventListener("offline", this.__updateOnlineStatus, this);
   },
 
   properties: {
