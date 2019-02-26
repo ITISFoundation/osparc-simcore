@@ -62,5 +62,5 @@ then
     addgroup scu $GROUPNAME
 fi
 
-echo "Starting boot ..."
+
 su-exec scu "$@"

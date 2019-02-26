@@ -62,7 +62,7 @@ then
     addgroup scu $GROUPNAME
 fi
 
-echo "Starting boot ..."
+
 chown -R scu:scu /home/scu/input
 chown -R scu:scu /home/scu/output
 chown -R scu:scu /home/scu/log

@@ -43,5 +43,5 @@ then
 fi
 
 
-echo "Starting boot ..."
+
 su-exec scu "$@"
