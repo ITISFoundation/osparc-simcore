@@ -55,24 +55,21 @@ def osparc_api_specs_dir(osparc_simcore_root_dir):
 
 @pytest.fixture(scope='session')
 def python27_exec(osparc_simcore_root_dir, tmpdir_factory, here):
-    # Assumes already created with make .venv27
-    venv27 = osparc_simcore_root_dir / ".venv27"
+    # create its own virtualenv
+    venv27 = tmpdir_factory.mktemp("virtualenv") / ".venv27"
+    # TODO: how to split in command safely?
+    cmd = "virtualenv --python=python2 %s" % (venv27)
+    assert subprocess.check_call(
+        cmd.split()) == 0, "Unable to run %s" % cmd
 
-    if not venv27.exists():
-        # create its own virtualenv
-        venv27 = tmpdir_factory.mktemp("virtualenv") / ".venv27"
-        # TODO: how to split in command safely?
-        cmd = "virtualenv --python=python2 %s" % (venv27)
-        assert subprocess.check_call(
-            cmd.split()) == 0, "Unable to run %s" % cmd
+    # installs python2 requirements
+    pip_exec = venv27 / "bin" / "pip"
+    assert pip_exec.exists()
 
-        # installs python2 requirements
-        pip_exec = venv27 / "bin" / "pip"
-        assert pip_exec.exists()
-        requirements_py2 = here.parent / "requirements/py27.txt"
-        cmd = "{} install -r {}".format(pip_exec, requirements_py2)
-        assert subprocess.check_call(
-            cmd.split()) == 0, "Unable to run %s" % cmd
+    requirements_py2 = here.parent / "requirements/py27.txt"
+    cmd = "{} install -r {}".format(pip_exec, requirements_py2)
+    assert subprocess.check_call(
+        cmd.split()) == 0, "Unable to run %s" % cmd
 
     python27_exec = venv27 / "bin" / "python2.7"
     assert python27_exec.exists()
