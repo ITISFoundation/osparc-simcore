@@ -19,7 +19,8 @@ install() {
         npm install
         cd services/web/client
         npm install
-
+        node_modules/.bin/qx contrib update
+        node_modules/.bin/qx contrib install
     fi
 }
 
