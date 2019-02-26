@@ -41,7 +41,7 @@ qx.Class.define("qxapp.test.TestUtils", {
 
         got = qx.util.Base64.decode(qx.util.Base64.encode("foo:" + null)).split(":");
         this.assertIdentical(got[0], "foo");
-        this.assertIdentical(got[1], "null");
+        this.assertIdentical(got[1], "undefined");
       }
 
     }
