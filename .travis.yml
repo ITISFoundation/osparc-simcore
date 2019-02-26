@@ -2,7 +2,6 @@ dist: xenial
 env:
   global:
     - DOCKER_COMPOSE_VERSION=1.23.2
-    - DOCKER_GID=1042
 services:
   - docker
 addons:

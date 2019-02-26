@@ -2,12 +2,12 @@
 #
 
 # BOOTING application ---------------------------------------------
-echo "Booting in ${MY_BOOT_MODE} mode ..."
+echo "Booting in ${SC_BOOT_MODE} mode ..."
+echo "  User    :`id $(whoami)`"
+echo "  Workdir :`pwd`"
 
-if [[ ${MY_BUILD_TARGET} == "development" ]]
+if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
-  echo "  User    :`id $(whoami)`"
-  echo "  Workdir :`pwd`"
   echo "  Environment :"
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
 
@@ -15,7 +15,7 @@ then
   APP_CONFIG=server-docker-dev.yaml
 
   cd services/web/server
-  $MY_PIP install --user -r requirements/dev.txt
+  $SC_PIP install --user -r requirements/dev.txt
   cd /devel
 
   #------------
@@ -23,16 +23,16 @@ then
   python --version | sed 's/^/    /'
   which python | sed 's/^/    /'
   echo "  PIP :"
-  $MY_PIP list | sed 's/^/    /'
+  $SC_PIP list | sed 's/^/    /'
 
-elif [[ ${MY_BUILD_TARGET} == "production" ]]
+elif [[ ${SC_BUILD_TARGET} == "production" ]]
 then
   APP_CONFIG=server-docker-prod.yaml
 fi
 
 
 # RUNNING application ----------------------------------------
-if [[ ${BOOT_MODE} == "debug" ]]
+if [[ ${SC_BOOT_MODE} == "debug" ]]
 then
   echo "Debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
   echo "Running: import pdb, simcore_service_server.cli; pdb.run('simcore_service_server.cli.main([\'-c\',\'${APP_CONFIG}\'])')"

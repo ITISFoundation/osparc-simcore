@@ -1,77 +1,63 @@
 # author: Sylvain Anderegg
 
-# TODO: add flavours by combinging docker-compose files. Namely development, test and production.
 VERSION := $(shell uname -a)
 
-# SAN this is a hack so that docker-compose works in the linux virtual environment under Windows
+# SAN: this is a hack so that docker-compose works in the linux virtual environment under Windows
 WINDOWS_MODE=OFF
 ifneq (,$(findstring Microsoft,$(VERSION)))
 $(info    detected WSL)
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
-export RUN_DOCKER_ENGINE_ROOT=1
-# Windows does not have these things defined... but they are needed to execute a local swarm
-export DOCKER_GID=1042
-export HOST_GID=1000
+# SAN: Windows does not have these things defined... but they are needed to execute a local swarm
 WINDOWS_MODE=ON
 else ifeq ($(OS), Windows_NT)
 $(info    detected Powershell/CMD)
 export DOCKER_COMPOSE=docker-compose.exe
 export DOCKER=docker.exe
-export RUN_DOCKER_ENGINE_ROOT=1
-export DOCKER_GID=1042
-export HOST_GID=1000
 WINDOWS_MODE=ON
 else ifneq (,$(findstring Darwin,$(VERSION)))
 $(info    detected OSX)
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
-export RUN_DOCKER_ENGINE_ROOT=1
-export DOCKER_GID=1042
-export HOST_GID=1000
 else
 $(info    detected native linux)
-# TODO: DO NOT TOUCH THIS CONFIG --- (ask mguidon)
 export DOCKER_COMPOSE=docker-compose
 export DOCKER=docker
-export RUN_DOCKER_ENGINE_ROOT=0
-export DOCKER_GID=1042
-export HOST_GID=1000
-# TODO: DO NOT TOUCH THIS CONFIG --- (ask mguidon)
-# FIXME: DOCKER_GID and HOST_GID should be removed when issue #90 is resolved
-# TODO: Add a meaningfull call to retrieve the local docker group ID and the user ID in linux.
 endif
 
+export DOCKER_REGISTRY=masu.speag.com
+export SERVICES_VERSION=2.8.0
 
-PY_FILES = $(strip $(shell find services packages -iname '*.py' -not -path "*egg*" -not -path "*contrib*" -not -path "*-sdk/python*" -not -path "*generated_code*" -not -path "*datcore.py" -not -path "*web/server*"))
-
+PY_FILES := $(strip $(shell find services packages -iname '*.py' \
+											-not -path "*egg*" \
+											-not -path "*contrib*" \
+											-not -path "*-sdk/python*" \
+											-not -path "*generated_code*" \
+											-not -path "*datcore.py" \
+											-not -path "*web/server*"))
 TEMPCOMPOSE := $(shell mktemp)
 
 SERVICES_LIST := apihub director sidecar storage webserver
 CACHED_SERVICES_LIST := ${SERVICES_LIST} webclient
 DYNAMIC_SERVICE_FOLDERS_LIST := services/dy-jupyter services/dy-2Dgraph/use-cases services/dy-3dvis services/dy-modeling
+CLIENT_WEB_OUTPUT:=$(CURDIR)/services/web/client/source-output
+
 
 VCS_URL:=$(shell git config --get remote.origin.url)
 VCS_REF:=$(shell git rev-parse --short HEAD)
 VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 services/web/client)
 VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
-
-BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-PLATFORM_VERSION=3.38
-DOCKER_REGISTRY=masu.speag.com
-#DOCKER_REGISTRY=registry.osparc.io
-
 export VCS_URL
 export VCS_REF
 export VCS_REF_CLIENT
 export VCS_STATUS_CLIENT
+
+BUILD_DATE:=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 export BUILD_DATE
-export SERVICES_VERSION=2.8.0
-export DOCKER_REGISTRY=masu.speag.com
 
 
-## Tools
+## Tools ------------------------------------------------------------------------------------------------------
+#
 tools =
 
 ifeq ($(shell uname -s),Darwin)
@@ -87,7 +73,7 @@ endif
 
 ## ------------------------------------------------------------------------------------------------------
 .PHONY: all
-all: help
+all: help info
 ifdef tools
 	$(error "Can't find tools:${tools}")
 endif
@@ -113,10 +99,18 @@ build-devel: .env pull-cache .tmp-webclient-build
 rebuild-devel: .env .tmp-webclient-build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache --parallel
 
-.tmp-webclient-build:
-	# TODO: fixes having services_webclient:build present for services_webserver:production when
-	# targeting services_webserver:development
+# TODO: fixes having services_webclient:build present for services_webserver:production when
+# targeting services_webserver:development and
+.tmp-webclient-build: $(CLIENT_WEB_OUTPUT)
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
+
+# Ensures source-output folder always exists to avoid issues when mounting webclient->webserver dockers. Supports PowerShell
+$(CLIENT_WEB_OUTPUT):
+ifeq ($(OS), Windows_NT)
+	md $(CLIENT_WEB_OUTPUT)
+else
+	mkdir -p $(CLIENT_WEB_OUTPUT)
+endif
 
 
 .PHONY: build-client rebuild-client
@@ -140,7 +134,7 @@ up-swarm: .env
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
 
-up-swarm-devel: .env
+up-swarm-devel: .env $(CLIENT_WEB_OUTPUT)
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
@@ -256,11 +250,16 @@ create-staging-stack-file:
 .PHONY: info
 # target: info – Displays some parameters of makefile environments
 info:
-	@echo '+ vcs ref '
-	@echo '  - origin    : ${VCS_URL}'
-	@echo '  - all       : ${VCS_REF}'
-	@echo '  - web/client (${VCS_STATUS_CLIENT}): ${VCS_REF_CLIENT}'
-	@echo '+ date        : ${BUILD_DATE}'
+	@echo '+ VCS_* '
+	@echo '  - ULR                : ${VCS_URL}'
+	@echo '  - REF                : ${VCS_REF}'
+	@echo '  - (STATUS)REF_CLIENT : (${VCS_STATUS_CLIENT}) ${VCS_REF_CLIENT}'
+	@echo '+ BUILD_DATE           : ${BUILD_DATE}'
+	@echo '+ VERSION              : ${VERSION}'
+	@echo '+ WINDOWS_MODE         : ${WINDOWS_MODE}'
+	@echo '+ DOCKER_REGISTRY      : ${DOCKER_REGISTRY}'
+	@echo '+ SERVICES_VERSION     : ${SERVICES_VERSION}'
+	@echo '+ PY_FILES             : $(shell echo $(PY_FILES) | wc -w) files'
 
 
 .PHONY: pylint

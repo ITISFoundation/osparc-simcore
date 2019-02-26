@@ -23,7 +23,7 @@ from .director.config import APP_DIRECTOR_API_KEY
 from .reverse_proxy import setup_reverse_proxy
 from .reverse_proxy.abc import ServiceResolutionPolicy
 
-MY_CLIENT_SESSION = __name__ + ".session"
+THIS_CLIENT_SESSION = __name__ + ".session"
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class ServiceMonitor(ServiceResolutionPolicy):
 
     @property
     def session(self):
-        return self.app[MY_CLIENT_SESSION]
+        return self.app[THIS_CLIENT_SESSION]
 
     async def _request_info(self, service_identifier: str):
         data = {}
@@ -75,9 +75,9 @@ class ServiceMonitor(ServiceResolutionPolicy):
 
 
 async def _cleanup_ctx(app: web.Application):
-    app[MY_CLIENT_SESSION] = session = ClientSession(loop=app.loop)
-    yield 
-    session = app.get(MY_CLIENT_SESSION)
+    app[THIS_CLIENT_SESSION] = session = ClientSession(loop=app.loop)
+    yield
+    session = app.get(THIS_CLIENT_SESSION)
     if session:
         await session.close()
 

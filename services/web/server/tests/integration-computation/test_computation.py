@@ -80,7 +80,7 @@ def mock_workbench_adjacency_list(here):
 # ------------------------------------------
 
 async def test_check_health(docker_stack, client):
-    resp = await client.get("/v0/")
+    resp = await client.get("/%s/" % API_VERSION)
     payload = await resp.json()
 
     assert resp.status == 200, str(payload)
@@ -130,7 +130,7 @@ def _check_sleeper_services_completed(project_id, postgres_session):
 
 async def test_start_pipeline(sleeper_service, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session, celery_service):
     # import pdb; pdb.set_trace()
-    resp = await client.post("/v0/computation/pipeline/{}/start".format(project_id),
+    resp = await client.post("/{}/computation/pipeline/{}/start".format(API_VERSION, project_id),
         json = mock_workbench_payload,
     )
     assert resp.status == 200, str(await resp.text())
@@ -148,7 +148,7 @@ async def test_start_pipeline(sleeper_service, client, project_id:str, mock_work
     # _check_sleeper_services_completed(project_id, postgres_session)
 
 async def test_update_pipeline(docker_stack, client, project_id:str, mock_workbench_payload, mock_workbench_adjacency_list, postgres_session):
-    resp = await client.put("/v0/computation/pipeline/{}".format(project_id),
+    resp = await client.put("/{}/computation/pipeline/{}".format(API_VERSION, project_id),
         json = mock_workbench_payload,
     )
     assert resp.status == 204, str(await resp.text())
