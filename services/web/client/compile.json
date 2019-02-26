@@ -29,7 +29,7 @@
     },
     {
       "class": "qxl.apiviewer.Application",
-      "theme": "qxl.apiviewer.theme.Theme",
+      "theme": "qxl.apiviewer.Theme",
       "name": "apiviewer",
       "title": "Qooxdoo API Viewer",
       "environment": {
