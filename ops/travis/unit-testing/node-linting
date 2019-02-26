@@ -15,14 +15,7 @@ install() {
         npm install
         cd services/web/client
         npm install
-        node_modules/.bin/qx serve --machine-readable --target=build  --listen-port=8080 &
-        SERVER_PID=$!
-        while ! nc -z localhost 8080; do
-          sleep 1 # wait for 10 second before check again
-        done
-        node build-output/resource/qxl/testtapper/run.js http://localhost:8080/build/testtapper/
-        kill $SERVER_PID
-        rm build-output/*.json
+
     fi
 }
 
@@ -37,8 +30,15 @@ script() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
     then
         npm run linter
-        npm run qx compile --target=build
-        npm run qx
+        cd services/web/client
+        node_modules/.bin/qx serve --machine-readable --target=build  --listen-port=8080 &
+        SERVER_PID=$!
+        while ! nc -z localhost 8080; do
+          sleep 1 # wait for 10 second before check again
+        done
+        node build-output/resource/qxl/testtapper/run.js http://localhost:8080/build/testtapper/
+        kill $SERVER_PID
+        rm build-output/*.json
     else
         echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
     fi

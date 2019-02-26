@@ -1,9 +1,9 @@
 {
   "dependencies": {
     "cookie-parser": "^1.4.3",
-    "qooxdoo-sdk": "^6.0.0-alpha-20181212-7206734e",
-    "qxcompiler": "^0.2.22",
     "puppeteer": "^0.13",
+    "qooxdoo-sdk": "^6.0.0-alpha-20181212-7206734e",
+    "qxcompiler": "^0.2.73",
     "yargs": ""
   }
 }
