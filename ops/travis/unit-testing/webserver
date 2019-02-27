@@ -3,10 +3,10 @@
 # die on non 0 exit code
 set -e
 
-FOLDER_CHECKS="api/ webserver packages/ services/web"
+FOLDER_CHECKS=(api/ webserver packages/ services/web)
 
 before_install() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         bash ops/travis/helpers/install_docker_compose
         bash ops/travis/helpers/show_system_versions
@@ -14,7 +14,7 @@ before_install() {
 }
 
 install() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pip install --upgrade pip wheel setuptools && pip3 --version;
         pip3 install packages/s3wrapper[test];
@@ -25,7 +25,7 @@ install() {
 }
 
 before_script() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pip freeze
         make build
@@ -34,7 +34,7 @@ before_script() {
 }
 
 script() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pytest --cov=simcore_service_webserver -v -m "not travis" services/web/server/tests/unit
         pytest --cov=simcore_service_webserver -v services/web/server/tests/login
@@ -44,7 +44,7 @@ script() {
 }
 
 after_success() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         coveralls
     fi

@@ -3,17 +3,17 @@
 # die on non 0 exit code
 set -e
 
-FOLDER_CHECKS="js eslintrc json"
+FOLDER_CHECKS=(js eslintrc json)
 
 before_install() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         bash ops/travis/helpers/show_system_versions
     fi
 }
 
 install() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         npm install -g npm@latest
         npm install
@@ -25,14 +25,14 @@ install() {
 }
 
 before_script() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         eslint --version
     fi
 }
 
 script() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         npm run linter
         cd services/web/client
@@ -50,7 +50,7 @@ script() {
 }
 
 after_success() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         echo "linting successful"
     fi
