@@ -36,8 +36,12 @@ script() {
     then
         npm run linter
         cd services/web/client
-        node_modules/.bin/qx serve --machine-readable --target=build  --listen-port=8080 &
+        echo "Building build version"
+        node_modules/.bin/qx compile --machine-readable --target=build
+        echo "Building source version"
+        node_modules/.bin/qx serve --machine-readable --target=source  --listen-port=8080 &
         SERVER_PID=$!
+        echo "Waiting for build to complete"
         while ! nc -z localhost 8080; do
           sleep 1 # wait for 10 second before check again
         done
@@ -52,6 +56,8 @@ script() {
 after_success() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
+        cd services/web/client
+        node source-output/resource/qxl/testtapper/run.js http://localhost:8089/testtapper/
         echo "linting successful"
     fi
 }
