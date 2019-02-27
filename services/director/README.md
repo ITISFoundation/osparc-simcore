@@ -66,7 +66,7 @@ Using the main Makefile of the oSparc platform allows for testing the director:
   make up-swarm-devel
 ```
 
-Then open [director-swagger-ui](http://localhost:8001/apidoc/) to see the director API and try out the different routes.
+Then open [director-swagger-ui](http://localhost:8080/apidoc/) to see the director API and try out the different routes.
 
 ## code generation from REST API "server side"
 

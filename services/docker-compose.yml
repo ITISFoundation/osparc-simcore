@@ -32,15 +32,13 @@ services:
         - itisfoundation/director:staging-latest
         - services_director:latest
       target: production
-      args:
-        - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       labels:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "https://github.com/ITISFoundation/osparc-simcore"
         org.label-schema.vcs-ref: "${VCS_REF}"
     ports:
-      - '8001:8001'
+      - '8001:8080'
     environment:
     # on Windows follow http://www.computerperformance.co.uk/powershell/powershell_profile_ps1.htm
     # currently needs to set $Env:COMPOSE_CONVERT_WINDOWS_PATHS=1 in powershell to make this works
@@ -61,7 +59,6 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
-      - RUN_DOCKER_ENGINE_ROOT=${RUN_DOCKER_ENGINE_ROOT}
       - EXTRA_HOSTS_SUFFIX=osparc.io
       - PUBLISHED_HOST_NAME=${PUBLISHED_HOST_NAME}
     volumes:
@@ -160,8 +157,6 @@ services:
         - itisfoundation/sidecar:cache
         - itisfoundation/sidecar:staging-latest
         - services_sidecar:latest
-      args:
-        - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -191,7 +186,6 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
-      - RUN_DOCKER_ENGINE_ROOT=${RUN_DOCKER_ENGINE_ROOT}
       - REGISTRY_URL=${REGISTRY_URL}
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
@@ -211,8 +205,6 @@ services:
         - itisfoundation/storage:cache
         - itisfoundation/storage:staging-latest
         - services_storage:latest
-      args:
-        - DOCKER_GID_ARG=${DOCKER_GID:?Undefined docker gid in host}
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -235,7 +227,6 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - S3_SECURE=${S3_SECURE}
-      - RUN_DOCKER_ENGINE_ROOT=${RUN_DOCKER_ENGINE_ROOT}
       - BF_API_SECRET=${BF_API_SECRET}
       - BF_API_KEY=${BF_API_KEY}
     stdin_open: true
