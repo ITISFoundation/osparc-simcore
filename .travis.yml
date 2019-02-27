@@ -143,9 +143,9 @@ jobs:
       after_success:
         - bash ops/travis/unit-testing/python-linting after_success
 
-    # test node, linting ----------------------------------------------------------------------
+    # frontend testing ----------------------------------------------------------------------
     - stage: unit testing
-      name: node linting
+      name: front end testing
       language: node_js
       node_js:
         - "10"
@@ -158,15 +158,15 @@ jobs:
           - .npm
           - "node_modules"
       before_install:
-        - bash ops/travis/unit-testing/node-linting before_install
+        - bash ops/travis/unit-testing/frontend-testing before_install
       install:
-        - bash ops/travis/unit-testing/node-linting install
+        - bash ops/travis/unit-testing/frontend-testing install
       before_script:
-        - bash ops/travis/unit-testing/node-linting before_script
+        - bash ops/travis/unit-testing/frontend-testing before_script
       script:
-        - bash ops/travis/unit-testing/node-linting script
+        - bash ops/travis/unit-testing/frontend-testing script
       after_success:
-        - bash ops/travis/unit-testing/node-linting after_success
+        - bash ops/travis/unit-testing/frontend-testing after_success
 
       deploy:
         # https://docs.travis-ci.com/user/deployment/pages/
