@@ -71,7 +71,8 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
   events: {
     "nodeDoubleClicked": "qx.event.type.Data",
     "addNode": "qx.event.type.Event",
-    "removeNode": "qx.event.type.Data"
+    "removeNode": "qx.event.type.Data",
+    "changeSelectedNode": "qx.event.type.Data",
   },
 
   properties: {
@@ -132,16 +133,28 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
       return toolbar;
     },
 
+    __getOneSelectedRow: function() {
+      const selection = this.__tree.getSelection().toArray();
+      if (selection.length > 0) {
+        return selection[0];
+      }
+      return null;
+    },
+
     __buildTree: function() {
       let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
         openMode: "none"
       });
       tree.addListener("dbltap", e => {
-        let selection = this.__tree.getSelection();
-        let currentSelection = selection.toArray();
-        if (currentSelection.length > 0) {
-          let selectedRow = currentSelection[0];
-          this.fireDataEvent("nodeDoubleClicked", selectedRow.getNodeId());
+        const currentSelection = this.__getOneSelectedRow();
+        if (currentSelection) {
+          this.fireDataEvent("nodeDoubleClicked", currentSelection.getNodeId());
+        }
+      }, this);
+      tree.addListener('tap', e => {
+        const currentSelection = this.__getOneSelectedRow();
+        if (currentSelection) {
+          this.fireDataEvent("changeSelectedNode", currentSelection.getNodeId());
         }
       }, this);
       return tree;

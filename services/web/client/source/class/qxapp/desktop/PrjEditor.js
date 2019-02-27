@@ -180,6 +180,17 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
           this.nodeSelected(nodeId);
         }, this);
       });
+
+      const workbenchUI = this.__workbenchUI;
+      const treeView = this.__treeView;
+      treeView.addListener('changeSelectedNode', e => {
+        if (workbenchUI.getNodeUI(e.getData())) {
+          workbenchUI.getNodeUI(e.getData()).setActive(true);
+        }
+      });
+      workbenchUI.addListener('changeSelectedNode', e => {
+        treeView.nodeSelected(e.getData());
+      });
     },
 
     nodeSelected: function(nodeId) {
