@@ -105,6 +105,7 @@ jobs:
       after_success:
         - bash ops/travis/unit-testing/storage after_success
 
+
     # test python, apihub ----------------------------------------------------------------------
     - stage: unit testing
       name: apihub
@@ -147,7 +148,11 @@ jobs:
       name: node linting
       language: node_js
       node_js:
-        - "8"
+        - "10"
+      addons:
+        apt:
+          packages:
+            - libgconf-2-4
       cache:
         directories:
           - .npm
@@ -162,6 +167,20 @@ jobs:
         - bash ops/travis/unit-testing/node-linting script
       after_success:
         - bash ops/travis/unit-testing/node-linting after_success
+
+      deploy:
+        # https://docs.travis-ci.com/user/deployment/pages/
+        provider: pages
+        branch: master
+        github-token: $GH_PAGES_TOKEN # Set in travis-ci.org dashboard, marked secure
+        skip-cleanup: true
+        keep-history: false
+        local-dir: services/web/client/build-output
+        repo: /ITISFoundation/itisfoundation.github.io
+        verbose: true
+        on:
+          branch: master
+
 
     # integrate webserver in swarm -------------------------------------------------------------
     - stage: integration testing

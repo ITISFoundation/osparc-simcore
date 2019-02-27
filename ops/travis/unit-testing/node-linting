@@ -1,6 +1,9 @@
 #!/bin/bash
 
-FOLDER_CHECKS=".js .eslintrc"
+# die on non 0 exit code
+set -e
+
+FOLDER_CHECKS="js eslintrc json"
 
 before_install() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
@@ -13,10 +16,11 @@ install() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
     then
         npm install -g npm@latest
-        npm install --save-dev eslint
-        npm install --save-dev babel-eslint
-        npm install --save-dev eslint-config-qx
-        npm install --save-dev eslint-plugin-qx-rules
+        npm install
+        cd services/web/client
+        npm install
+        node_modules/.bin/qx contrib update
+        node_modules/.bin/qx contrib install
     fi
 }
 
@@ -31,6 +35,15 @@ script() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
     then
         npm run linter
+        cd services/web/client
+        node_modules/.bin/qx serve --machine-readable --target=build  --listen-port=8080 &
+        SERVER_PID=$!
+        while ! nc -z localhost 8080; do
+          sleep 1 # wait for 10 second before check again
+        done
+        node build-output/resource/qxl/testtapper/run.js --diag --verbose http://localhost:8080/build/testtapper/
+        kill $SERVER_PID
+        rm build-output/*.json
     else
         echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
     fi
