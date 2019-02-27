@@ -140,33 +140,32 @@ qx.Class.define("qxapp.Application", {
 
     __preventAutofillBrowserSyles: function() {
       const stylesheet = qx.ui.style.Stylesheet.getInstance();
-      if (qx.bom.client.Browser.getName() === 'chrome' && qx.bom.client.Browser.getVersion() >= 71) {
+      if (qx.bom.client.Browser.getName() === "chrome" && qx.bom.client.Browser.getVersion() >= 71) {
         stylesheet.addRule(
-          'input:-internal-autofill-previewed,' +
-          'input:-internal-autofill-selected,' +
-          'textarea:-internal-autofill-previewed,' +
-          'textarea:-internal-autofill-selected,' +
-          'select:-internal-autofill-previewed,' +
-          'select:-internal-autofill-selected',
+          "input:-internal-autofill-previewed," +
+          "input:-internal-autofill-selected," +
+          "textarea:-internal-autofill-previewed," +
+          "textarea:-internal-autofill-selected," +
+          "select:-internal-autofill-previewed," +
+          "select:-internal-autofill-selected",
 
-          'transition: background-color 0s linear 5000s, color 0s linear 5000s'
+          "transition: background-color 0s linear 5000s, color 0s linear 5000s"
+        );
+      } else if (qx.bom.client.Engine.getName() === "webkit") {
+        stylesheet.addRule(
+          "input:-webkit-autofill," +
+          "input:-webkit-autofill:hover," +
+          "input:-webkit-autofill:focus," +
+          "textarea:-webkit-autofill," +
+          "textarea:-webkit-autofill:hover," +
+          "textarea:-webkit-autofill:focus," +
+          "select:-webkit-autofill," +
+          "select:-webkit-autofill:hover," +
+          "select:-webkit-autofill:focus",
+
+          "transition: background-color 0s linear 5000s, color 0s linear 5000s"
         );
       }
-      else if (qx.bom.client.Engine.getName() === 'webkit') {
-        stylesheet.addRule(
-          'input:-webkit-autofill,' +
-          'input:-webkit-autofill:hover,' +
-          'input:-webkit-autofill:focus,' +
-          'textarea:-webkit-autofill,' +
-          'textarea:-webkit-autofill:hover,' +
-          'textarea:-webkit-autofill:focus,' +
-          'select:-webkit-autofill,' +
-          'select:-webkit-autofill:hover,' +
-          'select:-webkit-autofill:focus',
-
-          'transition: background-color 0s linear 5000s, color 0s linear 5000s'
-        );
-      }
-    },
+    }
   }
 });
