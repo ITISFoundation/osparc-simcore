@@ -153,7 +153,7 @@ async def reset_password(request: web.Request):
             raise web.HTTPUnauthorized(reason=cfg.MSG_USER_BANNED,
                     content_type='application/json') # 401
 
-        elif user['status'] == CONFIRMATION_PENDING:
+        if user['status'] == CONFIRMATION_PENDING:
             raise web.HTTPUnauthorized(reason=cfg.MSG_ACTIVATION_REQUIRED,
                     content_type='application/json') # 401
 
