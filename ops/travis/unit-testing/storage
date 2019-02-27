@@ -3,7 +3,7 @@
 # die on non 0 exit code
 set -e
 
-FOLDER_CHECKS="api\/ storage packages\/"
+FOLDER_CHECKS="api/ storage packages/"
 
 before_install() {
     if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];

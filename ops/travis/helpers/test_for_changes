@@ -11,11 +11,11 @@ if [ -z $TRAVIS ] || [ $TRAVIS = "false" ];
 then
     CHANGES=$(git --no-pager diff --name-only FETCH_HEAD $(git merge-base FETCH_HEAD master))
 else
-    CHANGES=$(git --no-pager diff --name-only $TRAVIS_COMMIT_RANGE) 
-fi    
+    CHANGES=$(git --no-pager diff --name-only $TRAVIS_COMMIT_RANGE)
+fi
 
 # look for changes
-for i in "${REGEXPS_TO_CHECK[@]}";
+for i in "-testing/ /helpers/ ${REGEXPS_TO_CHECK[@]}";
     do
         # echo "checking if last changes contain $i regexp..."
         if [ -n "$(grep "$i" <<< "$CHANGES")" ];
