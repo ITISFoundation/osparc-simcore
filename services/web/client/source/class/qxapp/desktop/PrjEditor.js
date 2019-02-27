@@ -184,8 +184,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       const workbenchUI = this.__workbenchUI;
       const treeView = this.__treeView;
       treeView.addListener("changeSelectedNode", e => {
-        if (workbenchUI.getNodeUI(e.getData())) {
-          workbenchUI.getNodeUI(e.getData()).setActive(true);
+        const node = workbenchUI.getNodeUI(e.getData());
+        if (node && node.classname.includes("NodeUI")) {
+          node.setActive(true);
         }
       });
       workbenchUI.addListener("changeSelectedNode", e => {
