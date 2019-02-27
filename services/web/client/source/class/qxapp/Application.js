@@ -152,7 +152,7 @@ qx.Class.define("qxapp.Application", {
           'transition: background-color 0s linear 5000s, color 0s linear 5000s'
         );
       }
-      if (qx.bom.client.Engine.getName() === 'webkit') {
+      else if (qx.bom.client.Engine.getName() === 'webkit') {
         stylesheet.addRule(
           'input:-webkit-autofill,' +
           'input:-webkit-autofill:hover,' +
