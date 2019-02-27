@@ -33,7 +33,7 @@ script() {
     then
         pytest --cov=simcore_service_storage -v -m "not travis" services/storage/tests
     else
-        echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
+        echo "No changes detected. Skipping unit-testing of storage."
     fi
 }
 
