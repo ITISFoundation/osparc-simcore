@@ -62,6 +62,26 @@ then
     addgroup scu $GROUPNAME
 fi
 
+
+
+# Appends docker group if socket is mounted
+DOCKER_MOUNT=/var/run/docker.sock
+
+stat $DOCKER_MOUNT &> /dev/null
+if [[ $? -eq 0 ]]
+then
+    GROUPID=$(stat -c %g $DOCKER_MOUNT)
+    GROUPNAME=docker
+
+    addgroup -g $GROUPID $GROUPNAME &> /dev/null
+    if [[ $? -gt 0 ]]
+    then
+        # if group already exists in container, then reuse name
+        GROUPNAME=$(getent group ${GROUPID} | cut -d: -f1)
+    fi
+    addgroup scu $GROUPNAME
+fi
+
 echo "Starting boot ..."
 chown -R scu:scu /home/scu/input
 chown -R scu:scu /home/scu/output

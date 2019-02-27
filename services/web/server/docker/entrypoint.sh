@@ -35,11 +35,11 @@ then
         else
             addgroup scu $GROUPNAME
         fi
-
+        
         deluser scu &> /dev/null
         adduser -u $USERID -G $GROUPNAME -D -s /bin/sh scu
     fi
 fi
 
-echo "Starting boot ..."
+
 su-exec scu "$@"

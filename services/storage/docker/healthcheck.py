@@ -19,19 +19,17 @@ Q&A:
 import os
 import sys
 
-try:
-    from urllib.request import urlopen
-except ImportError:
-    from urllib2 import urlopen
+from urllib.request import urlopen
 
 SUCCESS, UNHEALTHY = 0, 1
 
- # Disabled if boots with debugger
-if os.environ.get("SC_BOOT_MODE") == "debug":
-    print(SUCCESS)
-else:
-    ok = urlopen("{host}{baseurl}".format(
+# Disabled if boots with debugger
+ok = os.environ.get("SC_BOOT_MODE").lower() == "debug"
+
+# Queries host
+ok = ok or urlopen("{host}{baseurl}".format(
         host=sys.argv[1],
         baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")) # adds a base-path if defined in environ
         ).getcode() == 200
-    print(SUCCESS if ok else UNHEALTHY)
+
+sys.exit(SUCCESS if ok else UNHEALTHY)

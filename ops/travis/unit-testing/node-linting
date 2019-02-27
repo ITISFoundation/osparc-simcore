@@ -45,7 +45,7 @@ script() {
         kill $SERVER_PID
         rm build-output/*.json
     else
-        echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
+        echo "No changes detected. Skipping linting of node.js."
     fi
 }
 

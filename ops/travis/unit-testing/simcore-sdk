@@ -41,7 +41,7 @@ script() {
         pytest --cov=simcore_sdk -v packages/simcore-sdk/tests
         pytest --cov=servicelib -v packages/service-library/tests
     else
-        echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
+        echo "No changes detected. Skipping unit-testing of simcore-sdk."
     fi
 }
 

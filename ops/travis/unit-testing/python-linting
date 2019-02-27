@@ -40,7 +40,7 @@ script() {
     then
         make pylint
     else
-        echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
+        echo "No changes detected. Skipping linting of python code."
     fi
 }
 

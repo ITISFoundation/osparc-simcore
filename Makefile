@@ -40,6 +40,8 @@ TEMPCOMPOSE := $(shell mktemp)
 SERVICES_LIST := apihub director sidecar storage webserver
 CACHED_SERVICES_LIST := ${SERVICES_LIST} webclient
 DYNAMIC_SERVICE_FOLDERS_LIST := services/dy-jupyter services/dy-2Dgraph/use-cases services/dy-3dvis services/dy-modeling
+CLIENT_WEB_OUTPUT:=$(CURDIR)/services/web/client/source-output
+
 
 VCS_URL:=$(shell git config --get remote.origin.url)
 VCS_REF:=$(shell git rev-parse --short HEAD)
@@ -97,11 +99,18 @@ build-devel: .env pull-cache .tmp-webclient-build
 rebuild-devel: .env .tmp-webclient-build
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml build --no-cache --parallel
 
-.tmp-webclient-build:
-	# TODO: fixes having services_webclient:build present for services_webserver:production when
-	# targeting services_webserver:development and ensures source-output folder at host
-	mkdir -p services\web\client\source-output
+# TODO: fixes having services_webclient:build present for services_webserver:production when
+# targeting services_webserver:development and
+.tmp-webclient-build: $(CLIENT_WEB_OUTPUT)
 	${DOCKER_COMPOSE} -f services/docker-compose.yml build webclient
+
+# Ensures source-output folder always exists to avoid issues when mounting webclient->webserver dockers. Supports PowerShell
+$(CLIENT_WEB_OUTPUT):
+ifeq ($(OS), Windows_NT)
+	md $(CLIENT_WEB_OUTPUT)
+else
+	mkdir -p $(CLIENT_WEB_OUTPUT)
+endif
 
 
 .PHONY: build-client rebuild-client
@@ -125,7 +134,7 @@ up-swarm: .env
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
 
-up-swarm-devel: .env
+up-swarm-devel: .env $(CLIENT_WEB_OUTPUT)
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services

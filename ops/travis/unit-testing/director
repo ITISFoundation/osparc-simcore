@@ -33,7 +33,7 @@ script() {
     then
         pytest --cov=simcore_service_director -v services/director/tests
     else
-        echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
+        echo "No changes detected. Skipping unit-testing of director."
     fi
 }
 
