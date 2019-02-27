@@ -1,24 +1,47 @@
 #!/bin/sh
-echo "Activating python virtual env..."
-source $HOME/.venv/bin/activate
+#
 
-if [[ ${DEBUG} == "1" ]]
+# BOOTING application ---------------------------------------------
+echo "Booting in ${SC_BOOT_MODE} mode ..."
+
+
+if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
-  echo "Booting in development mode ..."
-  echo "DEBUG: User    :`id $(whoami)`"
-  echo "DEBUG: Workdir :`pwd`"
+  echo "  User    :`id $(whoami)`"
+  echo "  Workdir :`pwd`"
+  echo "  Environment :"
+  printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
+  #--------------------
 
-  cd $HOME/services/storage
-  $PIP install -r requirements/dev.txt
-  $PIP list
+  APP_CONFIG=docker-dev-config.yaml
 
-  cd $HOME/
-  simcore-service-storage --config docker-dev-config.yaml
-elif [[ ${DEBUG} == "2" ]]
+  cd services/storage
+  $SC_PIP install --user -r requirements/dev.txt
+  cd /devel
+
+  #--------------------
+  echo "  Python :"
+  python --version | sed 's/^/    /'
+  which python | sed 's/^/    /'
+  echo "  PIP :"
+  $SC_PIP list | sed 's/^/    /'
+
+
+elif [[ ${SC_BUILD_TARGET} == "production" ]]
 then
-  echo "Booting with debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
-  python -c "import pdb, simcore_service_storage.cli; pdb.run('simcore_service_storage.cli.main([\'-c\',\'docker-prod-config.yaml\'])')"
+  APP_CONFIG=docker-prod-config.yaml
+
+fi
+
+
+# RUNNING application ----------------------------------------
+if [[ ${SC_BOOT_MODE} == "debug" ]]
+then
+  echo "Debugger attached: https://docs.python.org/3.6/library/pdb.html#debugger-commands  ..."
+  echo "Running: import pdb, simcore_service_storage.cli; pdb.run('simcore_service_storage.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
+  python -c "import pdb, simcore_service_storage.cli; \
+             pdb.run('simcore_service_storage.cli.main([\'-c\',\'${APP_CONFIG}\'])')"
+
 else
-  echo "Booting in production mode ..."
-  simcore-service-storage --config docker-prod-config.yaml
+  simcore-service-storage --config $APP_CONFIG
 fi
