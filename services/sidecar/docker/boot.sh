@@ -12,12 +12,11 @@ then
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
   #--------------------
 
-  APP_CONFIG=config-host-dev.yaml
-  
-  cd services/director
+  cd services/sidecar
   $SC_PIP install --user -r requirements/dev.txt
   cd /devel
 
+  DEBUG_LEVEL=debug
   #--------------------
   echo "  Python :"
   python --version | sed 's/^/    /'
@@ -28,17 +27,18 @@ then
 
 elif [[ ${SC_BUILD_TARGET} == "production" ]]
 then
-  LOG_LEVEL=info
+  DEBUG_LEVEL=info
 fi
 
 
 # RUNNING application ----------------------------------------
 if [[ ${SC_BOOT_MODE} == "debug" ]]
 then
-  LOG_LEVEL=debug
+  # TODO: activate pdb??
+  DEBUG_LEVEL=debug
+  CONCURRENCY=1
 else
-  LOG_LEVEL=info
+  CONCURRENCY=2
 fi
 
-# FIXME: arguments were never wired!
-simcore-service-director --loglevel=$LOG_LEVEL
+celery worker --app sidecar.celery:app --concurrency ${CONCURRENCY} --loglevel=${DEBUG_LEVEL}

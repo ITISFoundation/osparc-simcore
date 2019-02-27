@@ -3,7 +3,7 @@
 
 Example of usage in a Dockerfile
 ```
-    COPY --chown=scu:scu docker/healthcheck.py healthcheck.py
+    COPY --chown=scu:scu docker/healthcheck.py docker/healthcheck.py
     HEALTHCHECK --interval=30s \
                 --timeout=30s \
                 --start-period=1s \
