@@ -146,7 +146,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
     "nodeDoubleClicked": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
     "removeLink": "qx.event.type.Data",
-    "changeSelectedNode": "qx.event.type.Data",
+    "changeSelectedNode": "qx.event.type.Data"
   },
 
   properties: {
@@ -851,7 +851,7 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
         const selectedColor = qxapp.theme.Color.colors["workbench-link-selected"];
         this.__svgWidget.updateColor(selectedLink.getRepresentation(), selectedColor);
       } else if (newID) {
-        this.fireDataEvent('changeSelectedNode', newID);
+        this.fireDataEvent("changeSelectedNode", newID);
       }
 
       this.__unlinkButton.setVisibility(this.__isSelectedItemALink(newID) ? "visible" : "excluded");

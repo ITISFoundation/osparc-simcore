@@ -72,7 +72,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
     "nodeDoubleClicked": "qx.event.type.Data",
     "addNode": "qx.event.type.Event",
     "removeNode": "qx.event.type.Data",
-    "changeSelectedNode": "qx.event.type.Data",
+    "changeSelectedNode": "qx.event.type.Data"
   },
 
   properties: {
@@ -151,7 +151,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
           this.fireDataEvent("nodeDoubleClicked", currentSelection.getNodeId());
         }
       }, this);
-      tree.addListener('tap', e => {
+      tree.addListener("tap", e => {
         const currentSelection = this.__getOneSelectedRow();
         if (currentSelection) {
           this.fireDataEvent("changeSelectedNode", currentSelection.getNodeId());
