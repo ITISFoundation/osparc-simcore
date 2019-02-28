@@ -43,7 +43,6 @@ then
 fi
 
 
-
 # Appends docker group if socket is mounted
 DOCKER_MOUNT=/var/run/docker.sock
 
@@ -61,6 +60,5 @@ then
     fi
     addgroup scu $GROUPNAME
 fi
-
 
 su-exec scu "$@"

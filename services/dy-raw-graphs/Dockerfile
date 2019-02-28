@@ -85,7 +85,7 @@ RUN pip3 install $HOME/packages/simcore-sdk &&\
     pip3 install $HOME/packages/s3wrapper && \
     pip3 install $HOME/services/storage/client-sdk/python
 
-RUN git clone https://github.com/ITISFoundation/raw.git
+RUN git clone https://github.com/ITISFoundation/raw.git --branch master-osparc
 WORKDIR $HOME/raw
 RUN npm install -g bower
 RUN bower install --allow-root

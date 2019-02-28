@@ -19,6 +19,7 @@ Q&A:
 import os
 import sys
 
+
 from urllib.request import urlopen
 
 SUCCESS, UNHEALTHY = 0, 1
@@ -33,3 +34,4 @@ ok = ok or urlopen("{host}{baseurl}".format(
         ).getcode() == 200
 
 sys.exit(SUCCESS if ok else UNHEALTHY)
+
