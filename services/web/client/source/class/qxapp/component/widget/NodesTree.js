@@ -134,9 +134,9 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
     },
 
     __getOneSelectedRow: function() {
-      const selection = this.__tree.getSelection().toArray();
-      if (selection.length > 0) {
-        return selection[0];
+      const selection = this.__tree.getSelection();
+      if (selection && selection.toArray().length > 0) {
+        return selection.toArray()[0];
       }
       return null;
     },
