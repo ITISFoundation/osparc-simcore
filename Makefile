@@ -126,15 +126,23 @@ rebuild-client: .env
 
 .PHONY: up up-devel up-swarm up-swarm-devel remove-intermediate-file down down-swarm
 # target: up, up-devel: – init swarm and deploys all core and tool services up [-devel suffix uses container in development mode]
+
+docker-swarm-check:
+	@if $${DOCKER} node ls > /dev/null 2>&1; then \
+		echo "The node is already part of a swarm, running $${DOCKER} swarm leave -f..."; \
+		echo "$${DOCKER} swarm leave -f"; \
+		$${DOCKER} swarm leave -f; \
+	fi;
+
 up: up-swarm
 up-devel: up-swarm-devel
 
-up-swarm: .env
+up-swarm: .env docker-swarm-check
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml ;
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
 
-up-swarm-devel: .env $(CLIENT_WEB_OUTPUT)
+up-swarm-devel: .env docker-swarm-check $(CLIENT_WEB_OUTPUT)
 	${DOCKER} swarm init
 	${DOCKER_COMPOSE} -f services/docker-compose.yml -f services/docker-compose.devel.yml -f services/docker-compose.tools.yml config > $(TEMPCOMPOSE).tmp-compose.yml
 	${DOCKER} stack deploy -c $(TEMPCOMPOSE).tmp-compose.yml services
