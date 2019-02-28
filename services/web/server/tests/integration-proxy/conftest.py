@@ -93,10 +93,8 @@ def devel_environ(env_devel_file) -> Dict[str, str]:
             if line and not line.startswith("#"):
                 key, value = line.split("=")
                 env_devel[key] = str(value)
-    # change some of the environ to accomodate the test case
-    if 'RUN_DOCKER_ENGINE_ROOT' in env_devel:
-        # ensure the test runs not as root if not under linux
-        env_devel['RUN_DOCKER_ENGINE_ROOT'] = '0' if os.name == 'posix' else '1'
+    # change some of the environ to accomodate the test case HERE
+    #  ...
     return env_devel
 
 

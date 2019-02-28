@@ -1,9 +1,11 @@
 #!/bin/bash
+# die on non 0 exit code
+set -e
 
-FOLDER_CHECKS="api\/ director packages\/"
+FOLDER_CHECKS=(api/ director packages/)
 
 before_install() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         bash ops/travis/helpers/install_docker_compose
         bash ops/travis/helpers/show_system_versions
@@ -11,7 +13,7 @@ before_install() {
 }
 
 install() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pip install --upgrade pip wheel setuptools && pip3 --version
         pushd services/director; pip3 install -r requirements/ci.txt; popd
@@ -19,7 +21,7 @@ install() {
 }
 
 before_script() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pip freeze
         docker images
@@ -27,16 +29,16 @@ before_script() {
 }
 
 script() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         pytest --cov=simcore_service_director -v services/director/tests
     else
-        echo "No changes detected. Skipping unit-testing of $FOLDERS_CHECKS ."
+        echo "No changes detected. Skipping unit-testing of director."
     fi
 }
 
 after_success() {
-    if [ -n "$(bash ops/travis/helpers/test_for_changes $FOLDER_CHECKS)" ];
+    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         coveralls
     fi

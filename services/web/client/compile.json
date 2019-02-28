@@ -2,11 +2,10 @@
   "targets": [
     {
       "type": "source",
-      "outputPath": "source-output"
-    },
-    {
-      "type": "hybrid",
-      "outputPath": "hybrid-output"
+      "outputPath": "source-output",
+      "bundle": {
+        "include": [ "qx.*" ]
+      }
     },
     {
       "type": "build",
@@ -14,9 +13,10 @@
     }
   ],
   "defaultTarget": "source",
-  "locales": ["en"],
+  "locales": [
+    "en"
+  ],
   "lint-check": true,
-
   "applications": [
     {
       "class": "qxapp.Application",
@@ -26,48 +26,76 @@
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load"
       ]
+    },
+    {
+      "class": "qxl.apiviewer.Application",
+      "theme": "qxl.apiviewer.Theme",
+      "name": "apiviewer",
+      "title": "Qooxdoo API Viewer",
+      "environment": {
+        "excludeFromAPIViewer": [
+          "qxl.*",
+          "q",
+          "qxWeb"
+        ]
+      },
+      "include": [
+        "qx.*"
+      ],
+      "exclude": [
+        "qx.test.*",
+        "qx.module.Blocker",
+        "qx.module.Placement"
+      ]
+    },
+    {
+      "class": "qxl.testtapper.Application",
+      "theme": "qxapp.theme.Theme",
+      "name": "testtapper",
+      "title": "Qooxdoo TestTAPper",
+      "include": [
+        "qxapp.test.*"
+      ],
+      "exclude": [
+        "qx.test.*",
+        "qx.module.Blocker",
+        "qx.module.Placement"
+      ]
     }
   ],
-
-  "libraries": [
-    "node_modules/qooxdoo-sdk/framework",
-    "."
-  ],
-
-  "common" : {
+  "common": {
     "add-css": [
       {
-        "uri" : "resource/jsontreeviewer/jsonTree.css"
+        "uri": "resource/jsontreeviewer/jsonTree.css"
       }
     ],
     "add-script": [
       {
-        "uri" : "resource/socketio/socket.io.js"
+        "uri": "resource/socketio/socket.io.js"
       },
       {
-        "uri" : "resource/three/*.js"
+        "uri": "resource/three/*.js"
       },
       {
-        "uri" : "resource/workbench/svg*.js"
+        "uri": "resource/workbench/svg*.js"
       },
       {
-        "uri" : "resource/jsondiffpatch/jsondiffpatch*.js"
+        "uri": "resource/jsondiffpatch/jsondiffpatch*.js"
       },
       {
-        "uri" : "resource/jsontreeviewer/jsonTree.js"
+        "uri": "resource/jsontreeviewer/jsonTree.js"
       },
       {
-        "uri" : "resource/plotly/plotly.min.js"
+        "uri": "resource/plotly/plotly.min.js"
       },
       {
-        "uri" : "resource/qxapp/*.png"
+        "uri": "resource/qxapp/*.png"
       },
       {
-        "uri" : "resource/qxapp/loading/*"
+        "uri": "resource/qxapp/loading/*"
       }
     ]
   },
-
   "eslintConfig": {
     "parserOptions": {
       "ecmaVersion": 2017,

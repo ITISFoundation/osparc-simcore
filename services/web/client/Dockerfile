@@ -1,4 +1,4 @@
-FROM node:8.9.2 as base-stage
+FROM node:10.15.1 as base-stage
 
 # Used to qx compile and/or serve (dev) client-side code
 
@@ -44,7 +44,7 @@ WORKDIR /home/scu
 # 1. installs qx-compiler (see specs in package.json)
 COPY --chown=scu:scu package*.json ./
 
-RUN npm install npm@latest && \
+RUN npm install -g npm@latest && \
     npm install
 
 # owned by scu now
