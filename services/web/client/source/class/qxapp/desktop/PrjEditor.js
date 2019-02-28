@@ -202,15 +202,15 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       this.__currentNodeId = nodeId;
       this.__treeView.nodeSelected(nodeId);
 
+      let widget;
       const workbench = this.getProject().getWorkbench();
       if (nodeId === "root") {
         this.__workbenchUI.loadModel();
-        this.showInMainView(this.__workbenchUI, nodeId);
+        widget = this.__workbenchUI;
       } else {
         let node = workbench.getNode(nodeId);
-
-        let widget;
         if (node.isContainer()) {
+          this.__workbenchUI.loadModel(node);
           widget = this.__workbenchUI;
         } else {
           this.__nodeView.setNode(node);
@@ -220,12 +220,8 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
             widget = this.__nodeView;
           }
         }
-        this.showInMainView(widget, nodeId);
-
-        if (node.isContainer()) {
-          this.__workbenchUI.loadModel(node);
-        }
       }
+      this.showInMainView(widget, nodeId);
 
       // Show screenshots in the ExtraView
       if (nodeId === "root") {
