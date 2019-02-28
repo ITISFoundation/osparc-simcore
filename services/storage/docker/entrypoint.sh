@@ -42,6 +42,29 @@ then
     fi
 fi
 
+stat $DEVEL_MOUNT &> /dev/null || \
+    (echo "ERROR: You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1) # FIXME: exit does not stop script
 
+USERID=$(stat -c %u $DEVEL_MOUNT)
+GROUPID=$(stat -c %g $DEVEL_MOUNT)
+GROUPNAME=$(getent group ${GROUPID} | cut -d: -f1)
 
+if [[ $USERID -eq 0 ]]
+then
+    addgroup scu root
+else
+    # take host's credentials in myu
+    if [[ -z "$GROUPNAME" ]]
+    then
+        GROUPNAME=myu
+        addgroup -g $GROUPID $GROUPNAME
+    else
+        addgroup scu $GROUPNAME
+    fi
+
+    deluser scu &> /dev/null
+    adduser -u $USERID -G $GROUPNAME -D -s /bin/sh scu
+fi
+
+echo "Starting boot ..."
 su-exec scu "$@"
