@@ -1,4 +1,4 @@
-hdiutil convert -format UDRW -o ~/Downloads/ubuntu-14.10-desktop-amd64 ~/Downloads/ubuntu-14.10-desktop-amd64.iso#!/bin/bash
+#!/bin/bash
 
 # die on non 0 exit code
 set -e
