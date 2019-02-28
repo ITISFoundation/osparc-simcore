@@ -27,7 +27,7 @@ To configure ESLint to use the project linter settings, you will have to first i
 ```
 npm install eslint
 # Qooxdoo rules
-npm install https://registry.npmjs.org/eslint-config-qx/-/eslint-config-qx-0.1.0.tgz
+npm install eslint-config-qx
 npm install babel-eslint
 ```
 
