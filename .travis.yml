@@ -158,15 +158,15 @@ jobs:
           - .npm
           - "node_modules"
       before_install:
-        - bash ops/travis/unit-testing/frontend-testing before_install
+        - bash ops/travis/unit-testing/frontend before_install
       install:
-        - bash ops/travis/unit-testing/frontend-testing install
+        - bash ops/travis/unit-testing/frontend install
       before_script:
-        - bash ops/travis/unit-testing/frontend-testing before_script
+        - bash ops/travis/unit-testing/frontend before_script
       script:
-        - bash ops/travis/unit-testing/frontend-testing script
+        - bash ops/travis/unit-testing/frontend script
       after_success:
-        - bash ops/travis/unit-testing/frontend-testing after_success
+        - bash ops/travis/unit-testing/frontend after_success
 
       deploy:
         # https://docs.travis-ci.com/user/deployment/pages/
