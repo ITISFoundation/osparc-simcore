@@ -274,7 +274,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         // controller
         let prjCtr = new qx.data.controller.List(userPrjArrayModel, this.__userProjectList, "name");
         const fromTemplate = false;
-        let delegate = this.__getDelegate(fromTemplate);
+        let delegate = this.__getDelegate(fromTemplate, this.__userProjectList);
         prjCtr.setDelegate(delegate);
       }, this);
 
@@ -325,7 +325,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
         // controller
         let prjCtr = new qx.data.controller.List(publicPrjArrayModel, this.__publicProjectList, "name");
         const fromTemplate = true;
-        let delegate = this.__getDelegate(fromTemplate);
+        let delegate = this.__getDelegate(fromTemplate, this.__publicProjectList);
         prjCtr.setDelegate(delegate);
       }, this);
 
@@ -352,7 +352,7 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
     /**
      * Delegates appearance and binding of each project item
      */
-    __getDelegate: function(fromTemplate) {
+    __getDelegate: function(fromTemplate, list) {
       const thumbnailWidth = 200;
       const thumbnailHeight = 120;
       const nThumbnails = 25;
@@ -369,6 +369,9 @@ qx.Class.define("qxapp.desktop.PrjBrowser", {
             } else {
               that.__newPrjBtnClkd(); // eslint-disable-line no-underscore-dangle
             }
+          });
+          item.addListener("tap", e => {
+            list.setSelection([item]); // eslint-disable-line no-underscore-dangle
           });
           return item;
         },
