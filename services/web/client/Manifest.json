@@ -1,32 +1,31 @@
 {
-  "info" :
-  {
-    "name" : "qxapp",
-
-    "summary" : "Front-end application for the oSPARC platform",
-    "description" : "",
-
-    "homepage" : "",
-
-    "license" : "MIT license",
-    "authors" : [
-  {
-    "name": "maiz",
-    "email": ""
-  }
-],
-
-    "version" : "1.0.0",
-    "qooxdoo-range": "^6.0.0"
+  "info": {
+    "name": "qxapp",
+    "summary": "Front-end application for the oSPARC platform",
+    "description": "",
+    "homepage": "",
+    "license": "MIT license",
+    "authors": [
+      {
+        "name": "maiz",
+        "email": ""
+      }
+    ],
+    "version": "1.0.0"
   },
-
-  "provides" :
-  {
-    "namespace"   : "qxapp",
-    "encoding"    : "utf-8",
-    "class"       : "source/class",
-    "resource"    : "source/resource",
-    "translation" : "source/translation",
-    "type"        : "application"
+  "provides": {
+    "namespace": "qxapp",
+    "encoding": "utf-8",
+    "class": "source/class",
+    "resource": "source/resource",
+    "translation": "source/translation",
+    "type": "application"
+  },
+  "requires": {
+    "qooxdoo-sdk": "^6.0.0-alpha",
+    "qooxdoo-compiler": "^0.2.73",
+    "qooxdoo/qxl.apiviewer": "^0.1.12",
+    "qooxdoo/qxl.versionlabel": "^0.1.2",
+    "qooxdoo/qxl.testtapper": "^0.1.0"
   }
 }
