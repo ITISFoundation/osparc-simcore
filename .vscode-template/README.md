@@ -11,6 +11,7 @@ The recommended extensions are:
 - Python extension
 - vscode-icons extension (cool icons on the file browser)
 - Babel JavaScript
+- ESLint JavaScript linter
 
 Install those with the following commands:
 ```
@@ -18,8 +19,17 @@ code --install-extension PeterJausovec.vscode-docker
 code --install-extension robertohuertasm.vscode-icons
 code --install-extension ms-python.python
 code --install-extension mgmcdermott.vscode-language-babel
+code --install-extension dbaeumer.vscode-eslint
 ```
 If VSCode was already running, you need to reload to see them installed. For that you can hit ``Ctrl+Shift+P`` and execute the command ``Reload Window``.
+
+To configure ESLint to use the project linter settings, you will have to first install npm (for that you will need NodeJs as well) and then issue the following commands:
+```
+npm install eslint
+# Qooxdoo rules
+npm install https://registry.npmjs.org/eslint-config-qx/-/eslint-config-qx-0.1.0.tgz
+npm install babel-eslint
+```
 
 ## Workarounds
 
