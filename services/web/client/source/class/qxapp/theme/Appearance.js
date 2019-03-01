@@ -47,6 +47,22 @@ qx.Theme.define("qxapp.theme.Appearance", {
         }
         return style;
       }
+    },
+    "titlebar": {
+      style: (state) => ({
+        height: 22,
+        padding: [0, 5]
+      })
+    },
+    "titlebar-label": {
+      style: (state) => ({
+        marginTop: 4
+      })
+    },
+    "titlebar-content": {
+      style: (state) => ({
+        padding: 4
+      })
     }
   }
 });
