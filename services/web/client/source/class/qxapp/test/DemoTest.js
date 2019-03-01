@@ -52,10 +52,12 @@ qx.Class.define("qxapp.test.DemoTest",
         this.assertInRange(3, 1, 10, "You must be kidding, 3 can never be outside [1,10]!");
       },
 
+      /*
       testFail: function() {
         var ab = 3;
         this.assertEquals(3, ab);
       },
+      */
 
       /*
       ---------------------- -----------------------------------------------------
@@ -96,13 +98,15 @@ qx.Class.define("qxapp.test.DemoTest",
 
         this.require(["chrome", "guiApp"]);
         this.debug("this is running");
-      },
+      }//  ,
 
       /*
       ---------------------- -----------------------------------------------------
         TESTS async
       ---------------------------------------------------------------------------
       */
+
+      /*
       "test: GET api/auth async": function() {
         this.useFakeXMLHttpRequest();
 
@@ -131,6 +135,6 @@ qx.Class.define("qxapp.test.DemoTest",
 
         this.assertEquals(fakeReq, req.getTransport().getRequest());
         this.wait(10000);
-      }
+      } */
     }
   });

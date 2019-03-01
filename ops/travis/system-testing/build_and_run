@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -e
 export DOCKER_IMAGE_PREFIX=itisfoundation/
 export DOCKER_IMAGE_TAG=staging-latest
 
