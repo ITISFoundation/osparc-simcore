@@ -47,7 +47,6 @@ script() {
         done
         node build-output/resource/qxl/testtapper/run.js --diag --verbose http://localhost:8080/build/testtapper/
         kill $SERVER_PID
-        rm build-output/*.json
     else
         echo "No changes detected. Skipping linting of node.js."
     fi
