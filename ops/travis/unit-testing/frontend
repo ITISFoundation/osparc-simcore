@@ -56,8 +56,6 @@ script() {
 after_success() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
-        cd services/web/client
-        node source-output/resource/qxl/testtapper/run.js http://localhost:8089/testtapper/
         echo "linting successful"
     fi
 }
