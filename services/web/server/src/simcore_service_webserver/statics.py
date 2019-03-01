@@ -21,7 +21,9 @@ log = logging.getLogger(__file__)
 def get_client_outdir(app: web.Application) -> Path:
     cfg = app[APP_CONFIG_KEY]["main"]
 
-    client_dir = Path(cfg["client_outdir"]).expanduser()
+    # pylint 2.3.0 produces 'E1101: Instance of 'Path' has no 'expanduser' member (no-member)' ONLY
+    # with the installed code and not with the development code!
+    client_dir = Path(cfg["client_outdir"]).expanduser() #pylint: disable=E1101
     if not client_dir.exists():
         txt = reason = "Front-end application is not available"
         if cfg["testing"]:
