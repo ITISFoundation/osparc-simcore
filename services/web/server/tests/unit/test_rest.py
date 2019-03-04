@@ -72,7 +72,7 @@ async def test_check_health(client):
 
 async def test_check_serve_root(client):
     resp = await client.get("/")
-    payload = await resp.json()
+    payload = await resp.text()
 
     assert resp.status == 200, str(payload)
     data, error = tuple(payload.get(k) for k in ('data', 'error'))
