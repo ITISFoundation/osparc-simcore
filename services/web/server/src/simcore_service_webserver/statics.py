@@ -14,6 +14,7 @@ from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
 
 INDEX_RESOURCE_NAME = "statics.index"
+APP_TO_BE_SERVED = "qxapp"
 
 log = logging.getLogger(__file__)
 
@@ -37,7 +38,7 @@ async def index(request: web.Request):
     """
     log.debug("index.request:\n %s", request)
 
-    index_path = get_client_outdir(request.app) / "index.html"
+    index_path = get_client_outdir(request.app) / APP_TO_BE_SERVED / "index.html"
     with index_path.open() as ofh:
         return web.Response(text=ofh.read(), content_type="text/html")
 
@@ -51,7 +52,7 @@ def setup_statics(app: web.Application):
         outdir = get_client_outdir(app)
 
         # Checks integrity of RIA source before serving
-        EXPECTED_FOLDERS = ('qxapp', 'resource', 'transpiled')
+        EXPECTED_FOLDERS = (APP_TO_BE_SERVED, 'resource', 'transpiled')
         folders = [x for x in outdir.iterdir() if x.is_dir()]
 
         for name in EXPECTED_FOLDERS:
