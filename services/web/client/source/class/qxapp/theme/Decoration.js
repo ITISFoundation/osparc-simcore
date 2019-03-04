@@ -35,6 +35,14 @@ qx.Theme.define("qxapp.theme.Decoration", {
         color: "#828282",
         width: 1
       }
+    },
+
+    "panelview-content": {
+      decorator: qx.ui.decoration.MSingleBorder,
+      style: {
+        width: 1,
+        color: "border"
+      }
     }
   }
 });

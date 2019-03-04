@@ -40,20 +40,16 @@ qx.Class.define("qxapp.desktop.PanelView", {
     this._add(this.__titleBar);
 
     if (title){
-      this.__titleLabel = new qx.ui.basic.Label(title)
-        .set({
-          appearance: "titlebar-label"
-        });
-      this.__titleBar.add(this.__titleLabel);
+      this.setTitle(title);
     }
 
     // Content
     if (content) {
-      content.setAppearance("titlebar-content");
+      content.setAppearance("panelview-content");
       this.setContent(content);
     }
 
-    // Atach handlers
+    // Attach handlers
     this.__attachEventHandlers();
   },
 
@@ -86,7 +82,13 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
     _applyContentVisibility: function(isVisible) {
       if (this.getContent()) {
-        this.getContent().setVisibility(isVisible ? "visible" : "excluded");
+        if (isVisible) {
+          this.getContent().setVisibility(isVisible ? "visible" : "excluded");
+          qx.bom.element.Animation.animateReverse(this.getContent().getContentElement().getDomElement(), toggleContentTransition);
+        } else {
+          qx.bom.element.Animation.animate(this.getContent().getContentElement().getDomElement(), toggleContentTransition);
+          setTimeout(() => this.getContent().setVisibility(isVisible ? "visible" : "excluded"), toggleContentTransition.duration - 10);
+        }
       }
     },
 
@@ -95,8 +97,11 @@ qx.Class.define("qxapp.desktop.PanelView", {
       if (contentIndex > -1) {
         this._removeAt(contentIndex);
       }
-      content.setAppearance("titlebar-content");
-      this._addAt(content, 1);
+      content.set({
+        appearance: "panelview-content",
+        decorator: "panelview-content"
+      });
+      this._addAt(content, 1, { flex: 1 });
     },
 
     _applyTitle: function(title) {
@@ -105,7 +110,8 @@ qx.Class.define("qxapp.desktop.PanelView", {
       } else {
         this.__titleLabel = new qx.ui.basic.Label(title)
           .set({
-            appearance: "titlebar-label"
+            appearance: "titlebar-label",
+            font: "title-14"
           });
         this.__titleBar.add(this.__titleLabel);
       }
@@ -119,3 +125,11 @@ qx.Class.define("qxapp.desktop.PanelView", {
   }
 
 });
+
+const toggleContentTransition = {
+  duration: 200,
+  timing: "ease-in",
+  keyFrames: {
+    100: { height : 0 }
+  }
+};

@@ -38,24 +38,18 @@ qx.Class.define("qxapp.desktop.SidePanel", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10, null, "separator-vertical"));
+    this._setLayout(new qx.ui.layout.VBox(0, null, "separator-vertical"));
 
-    let topView = new qx.ui.core.Widget();
-    let midView = new qx.ui.core.Widget();
-    let bottomView = new qx.ui.core.Widget();
+    let topView = new qxapp.desktop.PanelView("Service tree");
+    let midView = new qxapp.desktop.PanelView("Overview");
+    let bottomView = new qxapp.desktop.PanelView("Logger");
 
-    this._add(topView, {
-      height: "33%",
-      flex: 1
-    });
-    this._add(midView, {
-      height: "33%",
-      flex: 1
-    });
-    this._add(bottomView, {
-      height: "33%",
-      flex: 1
-    });
+    // panel.setContent(new qx.ui.basic.Label('Integer consectetur mi nec lectus elementum, in maximus dui tristique. Phasellus nec urna nec massa venenatis lacinia sit amet non lectus. Suspendisse sit amet dui malesuada, tincidunt ligula ut, ornare magna. Nullam erat quam, fringilla tempus eleifend ornare, pharetra molestie lectus. Pellentesque ac nibh vitae dui commodo sollicitudin. Fusce in nibh eu urna imperdiet efficitur ut vitae diam. Sed non sem quis justo aliquam tempus suscipit et tortor.')
+    //   .set({ rich: true }));
+
+    this._add(topView);
+    this._add(midView);
+    this._add(bottomView);
   },
 
   properties: {
@@ -82,24 +76,21 @@ qx.Class.define("qxapp.desktop.SidePanel", {
 
   members: {
     __applyTopView: function(newWidget) {
-      this.__replaceWidgetAt(newWidget, 0);
+      this._getChildren()[0].setContent(newWidget);
     },
 
     __applyMidView: function(newWidget) {
-      this.__replaceWidgetAt(newWidget, 1);
+      this._getChildren()[1].setContent(newWidget);
     },
 
     __applyBottomView: function(newWidget) {
-      this.__replaceWidgetAt(newWidget, 2);
+      this._getChildren()[2].setContent(newWidget);
     },
 
     __replaceWidgetAt: function(newWidget, indexOf) {
       if (this._indexOf(newWidget) !== indexOf) {
         this._removeAt(indexOf);
-        this._addAt(newWidget, indexOf, {
-          height: "33%",
-          flex: 1
-        });
+        this._addAt(newWidget, indexOf);
       }
     }
   }

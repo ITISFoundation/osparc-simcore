@@ -50,7 +50,7 @@ qx.Theme.define("qxapp.theme.Appearance", {
     },
     "titlebar": {
       style: (state) => ({
-        height: 22,
+        height: 24,
         padding: [0, 5]
       })
     },
@@ -59,9 +59,9 @@ qx.Theme.define("qxapp.theme.Appearance", {
         marginTop: 4
       })
     },
-    "titlebar-content": {
+    "panelview-content": {
       style: (state) => ({
-        padding: 4
+        margin: [0, 4, 4, 4]
       })
     }
   }
