@@ -118,10 +118,14 @@ def webserver_environ(devel_environ, services_docker_compose) -> Dict[str, str]:
     #   version tha loads only the subsystems under test. For that reason,
     #   the test webserver is built-up in webserver_service fixture that runs
     #   on the host.
-    environ['DIRECTOR_HOST'] = '127.0.0.1'
-    environ['POSTGRES_HOST'] = '127.0.0.1'
-    environ['STORAGE_HOST'] = '127.0.0.1'
-    environ['APIHUB_HOST'] = '127.0.0.1'
+    for name in core_services:
+        environ['%s_HOST' % name.upper()] = '127.0.0.1'
+        environ['%s_PORT' % name.upper()] = \
+            services_docker_compose['services'][name]['ports'][0].split(':')[
+            0]  # takes port exposed
+        # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
+    from pprint import pprint
+    pprint(environ)
 
     return environ
 
