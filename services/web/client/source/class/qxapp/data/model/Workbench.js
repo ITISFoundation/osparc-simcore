@@ -227,7 +227,6 @@ qx.Class.define("qxapp.data.model.Workbench", {
       const uuid = node.getNodeId();
       if (parentNode) {
         parentNode.addInnerNode(uuid, node);
-        node.setParentNodeId(parentNode.getNodeId());
       } else {
         this.__nodesTopLevel[uuid] = node;
       }

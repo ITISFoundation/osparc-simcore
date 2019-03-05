@@ -244,6 +244,7 @@ qx.Class.define("qxapp.data.model.Node", {
 
     addInnerNode: function(innerNodeId, innerNode) {
       this.__innerNodes[innerNodeId] = innerNode;
+      innerNode.setParentNodeId(this.getNodeId());
     },
 
     removeInnerNode: function(innerNodeId) {
