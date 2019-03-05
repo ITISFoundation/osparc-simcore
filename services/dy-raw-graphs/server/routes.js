@@ -127,12 +127,14 @@ function getOutput(request, response) {
   fs.readdir(outputsDir, (err, files) => {
     if (err) {
       console.log(err);
+      response.sendStatus("500");
       return;
     }
     if (files.length > 0) {
       fs.readFile(files[0], 'utf8', (err, data) => {
         if (err) {
           console.log(err);
+          response.sendStatus("500");
           return;
         }
         const cont = data.toString();
