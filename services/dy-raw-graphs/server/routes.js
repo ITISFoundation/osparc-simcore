@@ -131,7 +131,8 @@ function getOutput(request, response) {
       return;
     }
     if (files.length > 0) {
-      fs.readFile(files[0], 'utf8', (err, data) => {
+      const fileName = outputsDir + files[0];
+      fs.readFile(fileName, (err, data) => {
         if (err) {
           console.log(err);
           response.sendStatus("500");
@@ -140,8 +141,9 @@ function getOutput(request, response) {
         const cont = data.toString();
         response.send(cont);
       });
+    } else {
+      console.log('outdir is empty');
     }
-    console.log('outdir is empty');
   });
 }
 
