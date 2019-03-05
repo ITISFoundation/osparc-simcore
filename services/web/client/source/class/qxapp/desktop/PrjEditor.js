@@ -210,8 +210,12 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       } else {
         let node = workbench.getNode(nodeId);
         if (node.isContainer()) {
-          this.__workbenchUI.loadModel(node);
-          widget = this.__workbenchUI;
+          if (node.getMetaData().key.includes("dash-plot")) {
+            widget = new qxapp.component.widget.DashGrid(node);
+          } else {
+            this.__workbenchUI.loadModel(node);
+            widget = this.__workbenchUI;
+          }
         } else {
           this.__nodeView.setNode(node);
           if (node.getMetaData().key.includes("file-picker")) {
