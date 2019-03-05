@@ -177,6 +177,14 @@ qx.Class.define("qxapp.data.model.Workbench", {
       return node;
     },
 
+    cloneNode: function(nodeToClone) {
+      const key = nodeToClone.getKey();
+      const version = nodeToClone.getVersion();
+      const uuid = null;
+      let node = this.createNode(key, version, uuid, nodeToClone);
+      return node;
+    },
+
     __createNodes: function(workbenchData) {
       let keys = Object.keys(workbenchData);
       // Create first all the nodes
