@@ -38,7 +38,6 @@ script() {
         pushd services/web/client
         echo "Building build version"
         node_modules/.bin/qx compile --machine-readable --target=build
-        git clone
         echo "Building source version"
         node_modules/.bin/qx serve --machine-readable --target=source  --listen-port=8080 &
         SERVER_PID=$!
