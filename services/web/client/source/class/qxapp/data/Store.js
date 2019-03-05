@@ -142,6 +142,27 @@ qx.Class.define("qxapp.data.Store", {
           }
         }
       }, {
+        key: "simcore/services/dynamic/itis/dash-plot",
+        version: "1.0.0",
+        type: "container",
+        name: "2D plot - Multi",
+        description: "2D plot - Multi",
+        authors: [{
+          name: "Odei Maiz",
+          email: "maiz@itis.ethz.ch"
+        }],
+        contact: "maiz@itis.ethz.ch",
+        inputs: {},
+        outputs: {},
+        innerNodes: {
+          "inner1_raw": {
+            key: "simcore/services/dynamic/raw-graphs",
+            version: "2.8.0",
+            inputNodes: [],
+            outputNode: false
+          }
+        }
+      }, {
         key: "simcore/services/demodec/dynamic/itis/s4l/neuroman",
         version: "0.0.0",
         type: "dynamic",
