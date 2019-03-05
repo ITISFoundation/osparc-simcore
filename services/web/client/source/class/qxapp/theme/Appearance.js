@@ -49,19 +49,32 @@ qx.Theme.define("qxapp.theme.Appearance", {
       }
     },
     "titlebar": {
-      style: (state) => ({
+      style: state => ({
         height: 24,
         padding: [0, 5]
       })
     },
     "titlebar-label": {
-      style: (state) => ({
+      style: state => ({
         marginTop: 4
       })
     },
     "panelview-content": {
-      style: (state) => ({
+      style: state => ({
         margin: [0, 4, 4, 4]
+      })
+    },
+    "toolbar-textfield": {
+      include: "material-textfield",
+      style: state => ({
+        backgroundColor: "material-button-background",
+        marginTop: 8
+      })
+    },
+    "toolbar-label": {
+      style: state => ({
+        marginTop: 11,
+        marginRight: 3
       })
     }
   }

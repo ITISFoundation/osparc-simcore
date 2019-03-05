@@ -143,6 +143,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
 
     __buildTree: function() {
       let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+        decorator: "service-tree",
         openMode: "none"
       });
       tree.addListener("dbltap", e => {

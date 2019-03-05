@@ -43,6 +43,13 @@ qx.Theme.define("qxapp.theme.Decoration", {
         width: 1,
         color: "border"
       }
+    },
+
+    "service-tree": {
+      decorator: qx.ui.decoration.MSingleBorder,
+      style: {
+        width: 0
+      }
     }
   }
 });
