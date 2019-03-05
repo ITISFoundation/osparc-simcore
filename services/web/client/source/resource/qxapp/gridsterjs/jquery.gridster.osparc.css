@@ -1,0 +1,23 @@
+.gridster .gs-w {
+  background: #666666;
+  margin-bottom: "-10px";
+}
+.gridster .preview-holder {
+  background: #888888 !important;
+}
+.gridster ul {
+  background-color: #dddddd;
+}
+.gridster li {
+  font-weight: normal;
+}
+.gridster li header {
+  background: #444444;
+  display: block;
+  font-size: 16px;
+  line-height: normal;
+  padding: 2px 0 2px;
+  margin-bottom: 10px;
+  cursor: move;
+}
+/*# sourceMappingURL=demos/assets/css/demo.css.map */
