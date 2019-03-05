@@ -28,6 +28,7 @@ appRouter.get('/inputs', getInputFiles);
 
 appRouter.get('/retrieve', callInputRetriever);
 
+appRouter.get('/output', getOutput);
 appRouter.put('/output', setOutput);
 
 module.exports = appRouter;
@@ -117,6 +118,28 @@ function setOutput(request, response) {
     response.send({
       status: "ok"
     });
+  });
+}
+
+function getOutput(request, response) {
+  console.log('getOutput');
+  const outputsDir = '../outputs/';
+  fs.readdir(outputsDir, (err, files) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    if (files.length > 0) {
+      fs.readFile(files[0], 'utf8', (err, data) => {
+        if (err) {
+          console.log(err);
+          return;
+        }
+        const cont = data.toString();
+        response.send(cont);
+      });
+    }
+    console.log('outdir is empty');
   });
 }
 
