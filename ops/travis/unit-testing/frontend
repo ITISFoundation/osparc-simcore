@@ -57,7 +57,7 @@ script() {
 
 after_success() {
     # prepare documentation site ...
-    git clone --depth=1 https://github.com/ITISFoundation/itisfoundation.github.io.git
+    git clone --depth 1 https://github.com/ITISFoundation/itisfoundation.github.io.git
     rm -rf itisfoundation.github.io/.git
 
     # if we have old cruft hanging around, we should remove all this will
