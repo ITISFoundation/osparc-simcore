@@ -13,6 +13,8 @@ const spawn = require("child_process").spawn;
 
 let eventEmitter = new events.EventEmitter()
 
+appRouter.use(express.json())
+
 // handle every other route with index.html, which will contain
 // a script tag to your application's JavaScript file(s).
 appRouter.get('/', function (request, response) {
@@ -25,6 +27,9 @@ appRouter.get('/input', getInputFile);
 appRouter.get('/inputs', getInputFiles);
 
 appRouter.get('/retrieve', callInputRetriever);
+
+appRouter.get('/output', getOutput);
+appRouter.put('/output', setOutput);
 
 module.exports = appRouter;
 
@@ -94,5 +99,53 @@ function callInputRetriever(request, response) {
     }
   });
 }
+
+function setOutput(request, response) {
+  console.log('setOutput');
+  const outputsDir = '../outputs/';
+  if (!fs.existsSync(outputsDir)) {
+    fs.mkdirSync(outputsDir);
+  }
+  const outputFileName = outputsDir + "output.svg";
+  const svgCode = request.body.svgCode;
+  fs.writeFile(outputFileName, svgCode, err => {
+    if (err) {
+      console.log(err);
+      response.sendStatus("500");
+      return;
+    }
+    console.log("The file was saved!");
+    response.send({
+      status: "ok"
+    });
+  });
+}
+
+function getOutput(request, response) {
+  console.log('getOutput');
+  const outputsDir = '../outputs/';
+  fs.readdir(outputsDir, (err, files) => {
+    if (err) {
+      console.log(err);
+      response.sendStatus("500");
+      return;
+    }
+    if (files.length > 0) {
+      const fileName = outputsDir + files[0];
+      fs.readFile(fileName, (err, data) => {
+        if (err) {
+          console.log(err);
+          response.sendStatus("500");
+          return;
+        }
+        const cont = data.toString();
+        response.send(cont);
+      });
+    } else {
+      console.log('outdir is empty');
+    }
+  });
+}
+
 
 module.exports.eventEmitter = eventEmitter;

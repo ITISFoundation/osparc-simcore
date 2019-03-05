@@ -13,8 +13,8 @@ services:
         io.simcore.description: '{"description": "2D plots powered by RAW Graphs"}'
         io.simcore.authors: '{"authors": [{"name": "odeimaiz", "email": "maiz@itis.swiss", "affiliation": "ITIS Foundation"}]}'
         io.simcore.contact: '{"contact": "maiz@itis.swiss"}'
-        io.simcore.inputs: '{"inputs": {"input_1":{"label": "input 1", "displayOrder":0, "description": "Input 1", "type": "data:*/*"}}}'
-        io.simcore.outputs: '{"outputs": {}}'
+        io.simcore.inputs: '{"inputs": {"input_1": {"label": "input 1", "displayOrder": 0, "description": "Input 1", "type": "data:*/*"}}, {"input_2": {"label": "input 2", "displayOrder": 1, "description": "Input 2", "type": "data:*/*"}}, {"input_3": {"label": "input 3", "displayOrder": 2, "description": "Input 3", "type": "data:*/*"}}, {"input_4": {"label": "input 4", "displayOrder": 3, "description": "Input 4", "type": "data:*/*"}}, {"input_5": {"label": "input 5", "displayOrder": 4, "description": "Input 5", "type": "data:*/*"}}}'
+        io.simcore.outputs: '{"outputs": {"output_1":{"label": "Output Graph", "displayOrder":0, "description": "Output Graph", "type": "data:image/svg+xml"}}}'
         simcore.service.settings: '[{"name": "resources", "type": "Resources", "value": {"mem_limit":17179869184, "cpu_limit": 4000000000}}, {"name": "ports", "type": "int", "value": 4000}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}]'
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
