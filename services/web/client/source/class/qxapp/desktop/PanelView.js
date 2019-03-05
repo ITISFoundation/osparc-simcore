@@ -27,6 +27,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
     // Internal props
     this.__titleBar = null;
     this.__titleLabel = null;
+    this.__caret = null;
 
     // Layout
     const layout = new qx.ui.layout.VBox();
@@ -82,12 +83,16 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
     _applyContentVisibility: function(isVisible) {
       if (this.getContent()) {
+        this.__caret.setSource(this.getContentVisibility() ? lessCaret : moreCaret);
         if (isVisible) {
-          this.getContent().setVisibility(isVisible ? "visible" : "excluded");
-          qx.bom.element.Animation.animateReverse(this.getContent().getContentElement().getDomElement(), toggleContentTransition);
+          // BUGGY. Not using setTimeout causes weird rendering issue in QX. Using it causes a small flicker.
+          this.getContent().setVisibility("visible");
+          setTimeout(() => qx.bom.element.Animation.animateReverse(this.getContent().getContentElement().getDomElement(),
+            contentTransition(this.getContent().getContentElement().getDomElement().style.height)), 0);
         } else {
-          qx.bom.element.Animation.animate(this.getContent().getContentElement().getDomElement(), toggleContentTransition);
-          setTimeout(() => this.getContent().setVisibility(isVisible ? "visible" : "excluded"), toggleContentTransition.duration - 10);
+          qx.bom.element.Animation.animate(this.getContent().getContentElement().getDomElement(),
+            contentTransition(this.getContent().getContentElement().getDomElement().style.height));
+          setTimeout(() => this.getContent().setVisibility("excluded"), contentTransition().duration - 10);
         }
       }
     },
@@ -102,6 +107,13 @@ qx.Class.define("qxapp.desktop.PanelView", {
         decorator: "panelview-content"
       });
       this._addAt(content, 1, { flex: 1 });
+
+      if (this.__caret == null) {
+        this.__caret = new qx.ui.basic.Image(this.getContentVisibility() ? lessCaret : moreCaret).set({
+          marginTop: 2
+        });
+        this.__titleBar.add(this.__caret);
+      }
     },
 
     _applyTitle: function(title) {
@@ -126,10 +138,14 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
 });
 
-const toggleContentTransition = {
+const contentTransition = height => ({
   duration: 200,
   timing: "ease-in",
   keyFrames: {
-    100: { height : 0 }
+    0: { height: height },
+    100: { height: 0 }
   }
-};
+});
+
+const moreCaret = "@MaterialIcons/expand_more/20";
+const lessCaret = "@MaterialIcons/expand_less/20";
