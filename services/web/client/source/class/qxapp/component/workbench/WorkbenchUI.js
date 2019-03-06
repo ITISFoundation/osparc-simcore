@@ -249,13 +249,12 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       let nodeAId = data.contextNodeId;
       let portA = data.contextPort;
 
-      let node = this.getWorkbench().createNode(service.getKey(), service.getVersion());
-      node.populateNodeData();
       let parent = null;
       if (this.__currentModel.isContainer()) {
         parent = this.__currentModel;
       }
-      this.getWorkbench().addNode(node, parent);
+      let node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, null, parent);
+      node.populateNodeData();
 
       let nodeUI = this.__createNodeUI(node.getNodeId());
       this.__addNodeToWorkbench(nodeUI, pos);

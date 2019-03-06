@@ -159,7 +159,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
       }
     },
 
-    createNode: function(key, version, uuid, nodeData) {
+    createNode: function(key, version, uuid, nodeData, parent) {
       let existingNode = this.getNode(uuid);
       if (existingNode) {
         return existingNode;
@@ -174,6 +174,7 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (nodeData) {
         node.populateNodeData(nodeData);
       }
+      this.addNode(node, parent);
       return node;
     },
 
@@ -207,19 +208,16 @@ qx.Class.define("qxapp.data.model.Workbench", {
             continue;
           }
         }
-        let node = null;
+        let parentNode = null;
+        if (nodeData.parent) {
+          parentNode = this.getNode(nodeData.parent);
+        }
         if (nodeData.key) {
           // not container
-          node = this.createNode(nodeData.key, nodeData.version, nodeId);
+          this.createNode(nodeData.key, nodeData.version, nodeId, null, parentNode);
         } else {
           // container
-          node = this.createNode(null, null, nodeId, nodeData);
-        }
-        if (nodeData.parent) {
-          let parentModel = this.getNode(nodeData.parent);
-          this.addNode(node, parentModel);
-        } else {
-          this.addNode(node);
+          this.createNode(null, null, nodeId, nodeData, parentNode);
         }
       }
 

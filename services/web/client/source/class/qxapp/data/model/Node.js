@@ -31,9 +31,7 @@
  *
  * <pre class='javascript'>
  *   let node = new qxapp.data.model.Node(this, key, version, uuid);
- *   if (nodeData) {
- *     node.populateNodeData(nodeData);
- *   }
+ *   node.populateNodeData(nodeData);
  * </pre>
  */
 
@@ -186,8 +184,20 @@ qx.Class.define("qxapp.data.model.Node", {
       this.__logs.push(log);
     },
 
+    isInKey: function(str) {
+      if (this.getMetaData() === null) {
+        return false;
+      }
+      if (this.getKey() === null) {
+        return false;
+      }
+      return this.getKey().includes(str);
+    },
+
     isContainer: function() {
-      return (this.getKey() === null);
+      const hasKey = (this.getKey() === null);
+      const hasChildren = this.hasChildren();
+      return hasKey || hasChildren;
     },
 
     getMetaData: function() {
@@ -229,6 +239,14 @@ qx.Class.define("qxapp.data.model.Node", {
         }
       }
       return output;
+    },
+
+    hasChildren: function() {
+      const innerNodes = this.getInnerNodes();
+      if (innerNodes) {
+        return Object.keys(innerNodes).length > 0;
+      }
+      return false;
     },
 
     getInnerNodes: function(recursive = false) {
