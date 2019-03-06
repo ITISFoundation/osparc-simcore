@@ -307,7 +307,11 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
         allowShrinkX: true,
         allowShrinkY: true
       });
-      this.__sidePanel.setMidView(imageWidget);
+      const container = new qx.ui.container.Composite(new qx.ui.layout.Grow()).set({
+        height: 300
+      });
+      container.add(imageWidget);
+      this.__sidePanel.setMidView(container);
     },
 
     getLogger: function() {
