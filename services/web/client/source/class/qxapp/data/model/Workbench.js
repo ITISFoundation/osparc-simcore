@@ -175,6 +175,15 @@ qx.Class.define("qxapp.data.model.Workbench", {
         node.populateNodeData(nodeData);
       }
       this.addNode(node, parent);
+
+      if (node.getMetaData() && Object.prototype.hasOwnProperty.call(node.getMetaData(), "innerNodes")) {
+        for (const innerNodeKey in node.getMetaData()["innerNodes"]) {
+          const nodeMetaData = node.getMetaData()["innerNodes"][innerNodeKey];
+          let innerNode = this.createNode(nodeMetaData.key, nodeMetaData.version, null, null, node);
+          innerNode.populateNodeData();
+        }
+      }
+
       return node;
     },
 
