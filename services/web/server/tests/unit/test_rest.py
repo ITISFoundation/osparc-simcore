@@ -71,7 +71,7 @@ async def test_check_health(client):
     assert data['status'] == 'SERVICE_RUNNING'
 
 async def test_check_serve_root(client):
-    resp = await client.get("/")
+    resp = await client.get("/qxapp/index.html")
     payload = await resp.text()
 
     assert resp.status == 200, str(payload)
