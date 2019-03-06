@@ -37,12 +37,7 @@ async def index(request: web.Request):
     """
     log.debug("index.request:\n %s", request)
 
-<<<<<<< HEAD
-    index_path = get_client_outdir(request.app) / APP_TO_BE_SERVED / "index.html"
-    log.debug("Serving %s ...", index_path)
-=======
     index_path = get_client_outdir(request.app) / "index.html"
->>>>>>> parent of 6a3952b9... serve qxapp
     with index_path.open() as ofh:
         return web.Response(text=ofh.read(), content_type="text/html")
 
