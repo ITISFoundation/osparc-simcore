@@ -143,6 +143,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
 
     __buildTree: function() {
       let tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+        decorator: "service-tree",
         openMode: "none"
       });
       tree.addListener("dbltap", e => {
@@ -256,7 +257,7 @@ qx.Class.define("qxapp.component.widget.NodesTree", {
         let node = this.getWorkbench().getNode(nodeId);
         node.setLabel(newLabel);
       }, this);
-      const bounds = this.getLayoutParent().getBounds();
+      const bounds = this.getLayoutParent().getContentLocation();
       treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);
       treeItemRenamer.open();
     },
