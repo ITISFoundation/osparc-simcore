@@ -20,6 +20,7 @@
  * Display widget with a title bar and collapsible content.
  */
 qx.Class.define("qxapp.desktop.PanelView", {
+
   extend: qx.ui.core.Widget,
 
   construct: function(title, content) {
@@ -42,7 +43,10 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
     // Content
     if (content) {
-      content.setAppearance("panelview-content");
+      content.set({
+        appearance: "panelview-content",
+        decorator: "panelview-content"
+      });
       this.setContent(content);
     }
 
@@ -84,20 +88,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
     _applyContentVisibility: function(isVisible) {
       if (this.getContent()) {
         this.__caret.setSource(this.getContentVisibility() ? lessCaret : moreCaret);
-        if (isVisible) {
-          // BUGGY. Not using setTimeout causes weird rendering issue in QX. Using it causes a small flicker.
-          this.getContent().setVisibility("visible");
-          setTimeout(() => qx.bom.element.Animation.animateReverse(this.getContent().getContentElement()
-            .getDomElement(),
-          contentTransition(this.getContent().getContentElement()
-            .getDomElement().style.height)), 0);
-        } else {
-          qx.bom.element.Animation.animate(this.getContent().getContentElement()
-            .getDomElement(),
-          contentTransition(this.getContent().getContentElement()
-            .getDomElement().style.height));
-          setTimeout(() => this.getContent().setVisibility("excluded"), contentTransition().duration - 10);
-        }
+        this.getContent().setVisibility(isVisible ? "visible" : "excluded");
       }
     },
 
@@ -142,19 +133,6 @@ qx.Class.define("qxapp.desktop.PanelView", {
     }
   }
 
-});
-
-const contentTransition = height => ({
-  duration: 200,
-  timing: "ease-in",
-  keyFrames: {
-    0: {
-      height: height
-    },
-    100: {
-      height: 0
-    }
-  }
 });
 
 const moreCaret = "@MaterialIcons/expand_more/20";
