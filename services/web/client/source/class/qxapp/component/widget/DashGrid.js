@@ -20,7 +20,7 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
     }, this);
     mainView.add(addBtn);
 
-    let dashboradLayout = new qx.ui.layout.Canvas();
+    let dashboradLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
     let gridster = this.__gridterWr = new qxapp.wrapper.Gridster();
     gridster.addListener("widgetSelected", e => {
       const uuid = e.getData();
@@ -58,7 +58,7 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
   },
 
   properties: {
-    node: {
+    containerNode: {
       check: "qxapp.data.model.Node",
       nullable: true
     }

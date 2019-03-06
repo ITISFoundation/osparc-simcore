@@ -27,7 +27,7 @@ qx.Class.define("qxapp.component.widget.cell.Handler", {
     },
 
     getUuid: function() {
-      return this.getNode().getUuid();
+      return this.getNode().getNodeId();
     },
 
     getEditor: function() {
