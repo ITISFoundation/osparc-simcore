@@ -35,7 +35,7 @@ script() {
     if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
     then
         npm run linter
-        cd services/web/client
+        pushd services/web/client
         echo "Building build version"
         node_modules/.bin/qx compile --machine-readable --target=build
         echo "Building source version"
@@ -47,15 +47,31 @@ script() {
         done
         node build-output/resource/qxl/testtapper/run.js --diag --verbose http://localhost:8080/build/testtapper/
         kill $SERVER_PID
+        popd
     else
         echo "No changes detected. Skipping linting of node.js."
     fi
+
 }
 
 after_success() {
-    if bash ops/travis/helpers/test_for_changes "${FOLDER_CHECKS[@]}";
-    then
-        echo "linting successful"
+    # prepare documentation site ...
+    git clone --depth 1 https://github.com/ITISFoundation/itisfoundation.github.io.git
+    rm -rf itisfoundation.github.io/.git
+
+    # if we have old cruft hanging around, we should remove all this will
+    # only trigger once
+    if [ -d itisfoundation.github.io/transpiled ]; then
+      rm -rf itisfoundation.github.io/*
+    fi
+
+    # add the default homepage
+    cp -rp docs/webdocroot/* itisfoundation.github.io
+
+    # add our build
+    if [ -d services/web/client/output-build ]; then
+      rm -rf itisfoundation.github.io/frontend
+      cp -rp services/web/client/output-build itisfoundation.github.io/frontend
     fi
 }
 
