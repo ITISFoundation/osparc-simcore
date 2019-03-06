@@ -49,7 +49,7 @@ qx.Class.define("qxapp.desktop.SidePanel", {
 
     this._add(topView);
     this._add(midView);
-    this._add(bottomView);
+    this._add(bottomView, { flex: 1 });
   },
 
   properties: {
