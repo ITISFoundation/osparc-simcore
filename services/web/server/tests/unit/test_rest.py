@@ -70,16 +70,6 @@ async def test_check_health(client):
     assert data['name'] == 'simcore_service_webserver'
     assert data['status'] == 'SERVICE_RUNNING'
 
-async def test_check_serve_root(client):
-    resp = await client.get("/qxapp/index.html")
-    payload = await resp.text()
-
-    assert resp.status == 200, str(payload)
-    data, error = tuple(payload.get(k) for k in ('data', 'error'))
-
-    assert data
-    assert not error
-
 async def test_check_action(client):
     QUERY = 'value'
     ACTION = 'echo'
