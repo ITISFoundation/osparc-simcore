@@ -152,7 +152,38 @@ qx.Class.define("qxapp.data.Store", {
           email: "maiz@itis.ethz.ch"
         }],
         contact: "maiz@itis.ethz.ch",
-        inputs: {},
+        inputs: {
+          "input_1": {
+            "label": "input 1",
+            "displayOrder": 0,
+            "description": "Input 1",
+            "type": "data:*/*"
+          },
+          "input_2": {
+            "label": "input 2",
+            "displayOrder": 1,
+            "description": "Input 2",
+            "type": "data:*/*"
+          },
+          "input_3": {
+            "label": "input 3",
+            "displayOrder": 2,
+            "description": "Input 3",
+            "type": "data:*/*"
+          },
+          "input_4": {
+            "label": "input 4",
+            "displayOrder": 3,
+            "description": "Input 4",
+            "type": "data:*/*"
+          },
+          "input_5": {
+            "label": "input 5",
+            "displayOrder": 4,
+            "description": "Input 5",
+            "type": "data:*/*"
+          }
+        },
         outputs: {},
         innerNodes: {
           "inner1_raw": {
