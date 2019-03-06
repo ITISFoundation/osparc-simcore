@@ -176,7 +176,7 @@ jobs:
         github-token: $GH_PAGES_TOKEN
         skip-cleanup: true
         keep-history: false
-        local-dir: services/web/client/build-output
+        local-dir: itisfoundation.github.io
         repo: ITISFoundation/itisfoundation.github.io
         verbose: true
         on:
