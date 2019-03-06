@@ -107,18 +107,24 @@ qx.Class.define("qxapp.component.widget.logger.LoggerView", {
 
       toolbar.add(new qx.ui.toolbar.Separator());
 
-      toolbar.add(new qx.ui.basic.Label("Filter:").set({ appearance: "toolbar-label" }));
+      toolbar.add(new qx.ui.basic.Label("Filter:").set({
+        appearance: "toolbar-label"
+      }));
       this.__textfield = new qx.ui.form.TextField().set({
         appearance: "toolbar-textfield",
         liveUpdate: true
       });
-      toolbar.add(this.__textfield, { flex: 1 });
+      toolbar.add(this.__textfield, {
+        flex: 1
+      });
 
       const levelGroup = new qx.ui.toolbar.Part();
       const logButtons = [];
       for (let level in LOG_LEVEL) {
         const label = level.charAt(0).toUpperCase() + level.slice(1);
-        const button = new qx.ui.form.ToggleButton(label).set({ appearance: "toolbar-button" });
+        const button = new qx.ui.form.ToggleButton(label).set({
+          appearance: "toolbar-button"
+        });
         button.logLevel = LOG_LEVEL[level];
         levelGroup.add(button);
         logButtons.push(button);

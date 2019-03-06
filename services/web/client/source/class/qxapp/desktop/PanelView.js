@@ -14,6 +14,7 @@
      * Ignacio Pascual (ignapas)
 
 ************************************************************************ */
+/* eslint-disable no-use-before-define */
 
 /**
  * Display widget with a title bar and collapsible content.
@@ -23,11 +24,6 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
   construct: function(title, content) {
     this.base(arguments);
-
-    // Internal props
-    this.__titleBar = null;
-    this.__titleLabel = null;
-    this.__caret = null;
 
     // Layout
     const layout = new qx.ui.layout.VBox();
@@ -40,7 +36,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
       });
     this._add(this.__titleBar);
 
-    if (title){
+    if (title) {
       this.setTitle(title);
     }
 
@@ -77,6 +73,10 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
   members: {
 
+    __titleBar: null,
+    __titleLabel: null,
+    __caret: null,
+
     toggleContentVisibility: function() {
       this.setContentVisibility(!this.getContentVisibility());
     },
@@ -87,11 +87,15 @@ qx.Class.define("qxapp.desktop.PanelView", {
         if (isVisible) {
           // BUGGY. Not using setTimeout causes weird rendering issue in QX. Using it causes a small flicker.
           this.getContent().setVisibility("visible");
-          setTimeout(() => qx.bom.element.Animation.animateReverse(this.getContent().getContentElement().getDomElement(),
-            contentTransition(this.getContent().getContentElement().getDomElement().style.height)), 0);
+          setTimeout(() => qx.bom.element.Animation.animateReverse(this.getContent().getContentElement()
+            .getDomElement(),
+          contentTransition(this.getContent().getContentElement()
+            .getDomElement().style.height)), 0);
         } else {
-          qx.bom.element.Animation.animate(this.getContent().getContentElement().getDomElement(),
-            contentTransition(this.getContent().getContentElement().getDomElement().style.height));
+          qx.bom.element.Animation.animate(this.getContent().getContentElement()
+            .getDomElement(),
+          contentTransition(this.getContent().getContentElement()
+            .getDomElement().style.height));
           setTimeout(() => this.getContent().setVisibility("excluded"), contentTransition().duration - 10);
         }
       }
@@ -106,9 +110,11 @@ qx.Class.define("qxapp.desktop.PanelView", {
         appearance: "panelview-content",
         decorator: "panelview-content"
       });
-      this._addAt(content, 1, { flex: 1 });
+      this._addAt(content, 1, {
+        flex: 1
+      });
 
-      if (this.__caret == null) {
+      if (this.__caret === null) {
         this.__caret = new qx.ui.basic.Image(this.getContentVisibility() ? lessCaret : moreCaret).set({
           marginTop: 2
         });
@@ -129,7 +135,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
       }
     },
 
-    __attachEventHandlers() {
+    __attachEventHandlers: function() {
       this.__titleBar.addListener("tap", () => {
         this.toggleContentVisibility();
       }, this);
@@ -142,8 +148,12 @@ const contentTransition = height => ({
   duration: 200,
   timing: "ease-in",
   keyFrames: {
-    0: { height: height },
-    100: { height: 0 }
+    0: {
+      height: height
+    },
+    100: {
+      height: 0
+    }
   }
 });
 
