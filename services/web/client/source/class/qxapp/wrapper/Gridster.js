@@ -75,15 +75,15 @@ qx.Class.define("qxapp.wrapper.Gridster", {
       check: "Boolean"
     },
 
-    cellWidth: {
+    atomWidth: {
       nullable: false,
-      init: 50,
+      init: 25,
       check: "Number"
     },
 
-    cellHeight: {
+    atomHeight: {
       nullable: false,
-      init: 50,
+      init: 25,
       check: "Number"
     }
   },
@@ -146,14 +146,18 @@ qx.Class.define("qxapp.wrapper.Gridster", {
       let cellsList = qx.dom.Element.create("ul");
       gridsterPlaceholder.appendChild(cellsList);
 
+      const maxSize = this.__getMaxSize();
+      const nColsMax = maxSize.nColsMax;
+      const nRowsMax = maxSize.nRowsMax;
       this.__gridster = $(".gridster ul").gridster({
-        "widget_base_dimensions": [this.getCellWidth(), this.getCellHeight()],
+        "widget_base_dimensions": [this.getAtomWidth(), this.getAtomHeight()],
         "widget_margins": [5, 5],
-        "max_cols": 20,
+        "max_cols": nColsMax,
+        "max_rows": nRowsMax,
         // "helper": "clone",
         "resize": {
           "enabled": true,
-          "max_size": [500, 500]
+          "max_size": [nColsMax, nRowsMax]
         },
         "draggable": {
           "handle": "header"
@@ -162,9 +166,16 @@ qx.Class.define("qxapp.wrapper.Gridster", {
         .data("gridster");
     },
 
+    __getMaxSize: function() {
+      return {
+        nColsMax: Math.floor(this.getBounds().width/this.getAtomWidth()),
+        nRowsMax: Math.floor(this.getBounds().height/this.getAtomHeight())
+      };
+    },
+
     addWidget: function(cellOutput) {
       const html = this.self().buildHtmlCodeInList(cellOutput);
-      let jQueryElement = this.__gridster.add_widget(html, 8, 6);
+      let jQueryElement = this.__gridster.add_widget(html, 400/this.getAtomWidth(), 300/this.getAtomHeight());
       if (jQueryElement) {
         let htmlElement = jQueryElement.get(0);
         htmlElement.addEventListener("dblclick", e => {
