@@ -89,6 +89,7 @@ qx.Class.define("qxapp.wrapper.Gridster", {
   },
 
   events: {
+    "gridsterLibReady": "qx.event.type.Data",
     "widgetSelected": "qx.event.type.Data"
   },
 
@@ -118,11 +119,13 @@ qx.Class.define("qxapp.wrapper.Gridster", {
         console.log(gridsterPath + " loaded");
         this.setLibReady(true);
         this.__createEmptyLayout();
+        this.fireDataEvent("gridsterLibReady", true);
       }, this);
 
       dynLoader.addListener("failed", e => {
         let data = e.getData();
         console.error("failed to load " + data.script);
+        this.fireDataEvent("gridsterLibReady", false);
       }, this);
 
       dynLoader.start();

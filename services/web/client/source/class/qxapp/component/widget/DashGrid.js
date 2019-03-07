@@ -22,6 +22,15 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
 
     let dashboradLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
     let gridster = this.__gridterWr = new qxapp.wrapper.Gridster();
+    gridster.addListener(("gridsterLibReady"), e => {
+      let ready = e.getData();
+      if (ready) {
+        const innerNodes = containerNode.getInnerNodes();
+        for (const uuid in innerNodes) {
+          this.addNode(innerNodes[uuid]);
+        }
+      }
+    }, this);
     gridster.addListener("widgetSelected", e => {
       const uuid = e.getData();
       if (Object.prototype.hasOwnProperty.call(this.__cellEditors, uuid)) {
@@ -46,11 +55,6 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
       bottom: 0,
       left: 0
     });
-
-    const innerNodes = containerNode.getInnerNodes();
-    for (const uuid in innerNodes) {
-      this.addNode(innerNodes[uuid]);
-    }
   },
 
   events: {
