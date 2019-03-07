@@ -322,6 +322,8 @@ qx.Class.define("qxapp.data.model.Workbench", {
 
         // node generic
         let nodeEntry = workbench[node.getNodeId()] = {
+          key: node.getKey(),
+          version: node.getVersion(),
           label: node.getLabel(),
           inputs: node.getInputValues(), // can a container have inputs?
           inputNodes: node.getInputNodes(),
@@ -336,12 +338,6 @@ qx.Class.define("qxapp.data.model.Workbench", {
             x: node.getPosition().x,
             y: node.getPosition().y
           };
-        }
-
-        // node especific
-        if (!node.isContainer()) {
-          nodeEntry.key = node.getKey();
-          nodeEntry.version = node.getVersion();
         }
       }
       return workbench;
