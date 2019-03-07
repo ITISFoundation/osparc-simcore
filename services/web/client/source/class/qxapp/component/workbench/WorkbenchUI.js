@@ -256,6 +256,15 @@ qx.Class.define("qxapp.component.workbench.WorkbenchUI", {
       let node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, null, parent);
       node.populateNodeData();
 
+      const metaData = node.getMetaData();
+      if (metaData && Object.prototype.hasOwnProperty.call(metaData, "innerNodes")) {
+        const innerNodeMetaDatas = Object.values(metaData["innerNodes"]);
+        for (const innerNodeMetaData of innerNodeMetaDatas) {
+          let innerNode = this.getWorkbench().createNode(innerNodeMetaData.key, innerNodeMetaData.version, null, null, node);
+          innerNode.populateNodeData();
+        }
+      }
+
       let nodeUI = this.__createNodeUI(node.getNodeId());
       this.__addNodeToWorkbench(nodeUI, pos);
 
