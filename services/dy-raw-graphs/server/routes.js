@@ -143,6 +143,7 @@ function getOutput(request, response) {
       });
     } else {
       console.log('outdir is empty');
+      response.sendStatus("204");
     }
   });
 }
