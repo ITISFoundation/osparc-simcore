@@ -84,8 +84,9 @@ qx.Class.define("qxapp.data.model.Workbench", {
     getNodes: function(recursive = false) {
       let nodes = Object.assign({}, this.__nodesTopLevel);
       if (recursive) {
-        for (const nodeId in this.__nodesTopLevel) {
-          let innerNodes = this.__nodesTopLevel[nodeId].getInnerNodes(true);
+        let topLevelNodes = Object.values(this.__nodesTopLevel);
+        for (const topLevelNode of topLevelNodes) {
+          let innerNodes = topLevelNode.getInnerNodes(true);
           nodes = Object.assign(nodes, innerNodes);
         }
       }
@@ -113,8 +114,8 @@ qx.Class.define("qxapp.data.model.Workbench", {
 
     getConnectedLinks: function(nodeId) {
       let connectedLinks = [];
-      for (const linkId in this.__links) {
-        const link = this.__links[linkId];
+      const links = Object.values(this.__links);
+      for (const link of links) {
         if (link.getInputNodeId() === nodeId) {
           connectedLinks.push(link.getLinkId());
         }
@@ -130,11 +131,11 @@ qx.Class.define("qxapp.data.model.Workbench", {
       if (exists) {
         return this.__links[linkId];
       }
-      for (const id in this.__links) {
-        const link = this.__links[id];
+      const links = Object.values(this.__links);
+      for (const link of links) {
         if (link.getInputNodeId() === node1Id &&
           link.getOutputNodeId() === node2Id) {
-          return this.__links[id];
+          return link;
         }
       }
       return null;
@@ -177,8 +178,8 @@ qx.Class.define("qxapp.data.model.Workbench", {
       this.addNode(node, parent);
 
       if (node.getMetaData() && Object.prototype.hasOwnProperty.call(node.getMetaData(), "innerNodes")) {
-        for (const innerNodeKey in node.getMetaData()["innerNodes"]) {
-          const nodeMetaData = node.getMetaData()["innerNodes"][innerNodeKey];
+        const nodeMetaDatas = Object.values(node.getMetaData()["innerNodes"]);
+        for (const nodeMetaData of nodeMetaDatas) {
           let innerNode = this.createNode(nodeMetaData.key, nodeMetaData.version, null, null, node);
           innerNode.populateNodeData();
         }
@@ -303,16 +304,17 @@ qx.Class.define("qxapp.data.model.Workbench", {
 
     clearProgressData: function() {
       const allModels = this.getNodes(true);
-      for (const nodeId in allModels) {
-        allModels[nodeId].setProgress(0);
+      const nodes = Object.values(allModels);
+      for (const node of nodes) {
+        node.setProgress(0);
       }
     },
 
     serializeWorkbench: function(saveContainers = true, savePosition = true) {
       let workbench = {};
       const allModels = this.getNodes(true);
-      for (const nodeId in allModels) {
-        const node = allModels[nodeId];
+      const nodes = Object.values(allModels);
+      for (const node of nodes) {
         if (!saveContainers && node.isContainer()) {
           continue;
         }

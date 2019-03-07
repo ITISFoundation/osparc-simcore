@@ -25,9 +25,9 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
     gridster.addListener(("gridsterLibReady"), e => {
       let ready = e.getData();
       if (ready) {
-        const innerNodes = containerNode.getInnerNodes();
-        for (const uuid in innerNodes) {
-          this.addNode(innerNodes[uuid]);
+        const values = Object.values(containerNode.getInnerNodes());
+        for (const value of values) {
+          this.addNode(value);
         }
       }
     }, this);
