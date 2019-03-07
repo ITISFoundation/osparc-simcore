@@ -1,23 +1,26 @@
 .gridster .gs-w {
-  background: #666666;
+  background: #262626;
   margin-bottom: "-10px";
 }
 .gridster .preview-holder {
-  background: #888888 !important;
+  background: #666666 !important;
 }
 .gridster ul {
-  background-color: #dddddd;
+  background-color: #888888;
 }
 .gridster li {
   font-weight: normal;
 }
 .gridster li header {
-  background: #444444;
+  background: #343434;
   display: block;
   font-size: 16px;
   line-height: normal;
   padding: 2px 0 2px;
   margin-bottom: 10px;
   cursor: move;
+}
+.gridster li content {
+  filter: invert(85%);  
 }
 /*# sourceMappingURL=demos/assets/css/demo.css.map */
