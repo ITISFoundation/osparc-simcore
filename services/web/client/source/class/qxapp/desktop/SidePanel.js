@@ -38,7 +38,7 @@ qx.Class.define("qxapp.desktop.SidePanel", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(0, null, "separator-vertical"));
+    this._setLayout(new qx.ui.layout.VBox());
 
     let topView = new qxapp.desktop.PanelView("Service tree");
     let midView = new qxapp.desktop.PanelView("Overview");

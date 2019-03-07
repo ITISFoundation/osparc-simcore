@@ -102,7 +102,9 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       });
       this.__sidePanel.setMidView(extraView);
 
-      let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView();
+      let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView().set({
+        height: 200
+      });
       this.__sidePanel.setBottomView(loggerView);
 
       let workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(project.getWorkbench());

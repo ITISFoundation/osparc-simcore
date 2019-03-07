@@ -32,7 +32,8 @@ qx.Class.define("qxapp.desktop.PanelView", {
     // Title bar
     this.__titleBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
       .set({
-        appearance: "panelview-titlebar"
+        appearance: "panelview-titlebar",
+        decorator: "panelview-titlebar"
       });
     this._add(this.__titleBar);
 
@@ -43,6 +44,9 @@ qx.Class.define("qxapp.desktop.PanelView", {
     if (content) {
       this.setContent(content);
     }
+
+    // Transition effect
+    this.setDecorator("panelview-close-collapse-transition");
 
     // Attach handlers
     this.__attachEventHandlers();
@@ -80,6 +84,13 @@ qx.Class.define("qxapp.desktop.PanelView", {
     __titleLabel: null,
     __caret: null,
     __innerContainer: null,
+    __containerHeight: null,
+
+    __collapseTransitionDecorator: new qx.ui.decoration.Decorator().set({
+      transitionProperty: ["top", "bottom", "height"],
+      transitionDuration: "0.2s",
+      transitionTimingFunction: "ease-in"
+    }),
 
     toggleContentVisibility: function() {
       this.setContentVisibility(!this.getContentVisibility());
@@ -88,7 +99,13 @@ qx.Class.define("qxapp.desktop.PanelView", {
     _applyContentVisibility: function(isVisible) {
       if (this.getContent()) {
         this.__caret.setSource(this.getContentVisibility() ? this.self().LESS_CARET : this.self().MORE_CARET);
-        this.__innerContainer.setVisibility(isVisible ? "visible" : "excluded");
+        if (isVisible) {
+          this.__innerContainer.show();
+        }
+        this.__innerContainer.setDecorator(isVisible ?
+          "panelview-open-collapse-transition"
+          : "panelview-close-collapse-transition");
+        this.__innerContainer.setHeight(isVisible ? this.__containerHeight : 0);
       }
     },
 
@@ -96,17 +113,37 @@ qx.Class.define("qxapp.desktop.PanelView", {
       if (this.__innerContainer === null) {
         this.__innerContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
           appearance: "panelview-content",
-          decorator: "panelview-content"
+          decorator: "panelview-content",
+          minHeight: 0
         });
         this._addAt(this.__innerContainer, 1, {
           flex: 1
         });
+
+        this.__innerContainer.addListener("changeHeight", e => {
+          const height = e.getOldData();
+          if (height != 0) {
+            this.__containerHeight = height;
+          }
+        }, this);
+
+        this.__innerContainer.addListenerOnce("appear", () => {
+          this.__innerContainer.getContentElement().getDomElement()
+            .addEventListener("transitionend", () => {
+              this.__innerContainer.setDecorator("panelview-content");
+              if (this.__innerContainer.getHeight() === 0) {
+                this.__innerContainer.exclude();
+              } else {
+                this.__innerContainer.updateAppearance();
+              }
+            });
+        }, this);
       }
+
       this.__innerContainer.removeAll();
       this.__innerContainer.add(content, {
         top: 0,
         right: 0,
-        bottom: 0,
         left: 0
       });
 
