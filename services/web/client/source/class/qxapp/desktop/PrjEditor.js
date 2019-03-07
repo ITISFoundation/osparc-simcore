@@ -96,15 +96,10 @@ qx.Class.define("qxapp.desktop.PrjEditor", {
       }, this);
       this.__sidePanel.setTopView(treeView);
 
-      let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
-        minHeight: 200,
-        maxHeight: 500
-      });
+      let extraView = this.__extraView = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set();
       this.__sidePanel.setMidView(extraView);
 
-      let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView().set({
-        height: 200
-      });
+      let loggerView = this.__loggerView = new qxapp.component.widget.logger.LoggerView().set();
       this.__sidePanel.setBottomView(loggerView);
 
       let workbenchUI = this.__workbenchUI = new qxapp.component.workbench.WorkbenchUI(project.getWorkbench());
