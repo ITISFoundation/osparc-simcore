@@ -192,7 +192,8 @@ qx.Class.define("qxapp.data.model.Workbench", {
       const key = nodeToClone.getKey();
       const version = nodeToClone.getVersion();
       const uuid = null;
-      let node = this.createNode(key, version, uuid, nodeToClone);
+      const parentNode = this.getNode(nodeToClone.getParentNodeId());
+      let node = this.createNode(key, version, uuid, nodeToClone, parentNode);
       return node;
     },
 
