@@ -135,6 +135,7 @@ pytest.ini
 
 # Any output directory
 *output/
+itisfoundation.github.io/
 
 # backup files
 *~
@@ -142,4 +143,3 @@ pytest.ini
 
 # pylint-profile output
 prof/
-
