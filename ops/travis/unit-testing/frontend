@@ -69,9 +69,9 @@ after_success() {
     cp -rp docs/webdocroot/* itisfoundation.github.io
 
     # add our build
-    if [ -d services/web/client/output-build ]; then
+    if [ -d services/web/client/build-output ]; then
       rm -rf itisfoundation.github.io/frontend
-      cp -rp services/web/client/output-build itisfoundation.github.io/frontend
+      cp -rp services/web/client/build-output itisfoundation.github.io/frontend
     fi
 }
 
