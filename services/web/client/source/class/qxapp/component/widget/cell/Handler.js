@@ -39,12 +39,20 @@ qx.Class.define("qxapp.component.widget.cell.Handler", {
     },
 
     retrieveOutput: function() {
-      let outUrl = this.getServiceUrl().getNode() + "/output";
+      let outUrl = this.getNode().getServiceUrl() + "/output";
       outUrl = outUrl.replace("//output", "/output");
       let outReq = new qx.io.request.Xhr();
       outReq.addListener("success", e => {
         let data = e.getTarget().getResponse();
-        this.__output = data;
+        if (data === "") {
+          const width = 100;
+          const height = 100;
+          const backgroundColor = "cccccc";
+          const plusColor = 757575;
+          this.__output = "https://imgplaceholder.com/"+width+"x"+height+"/"+backgroundColor+"/"+plusColor+"/ion-plus-round";
+        } else {
+          this.__output = data;
+        }
         this.fireEvent("outputUpdated");
       }, this);
       outReq.set({
