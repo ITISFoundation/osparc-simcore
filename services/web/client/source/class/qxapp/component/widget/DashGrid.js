@@ -11,14 +11,14 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
     this.__cellEditors = {};
     this.__outputs = {};
     let stack = this.__stack = new qx.ui.container.Stack();
-    let mainView = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-    stack.add(mainView);
+    let gridView = this.__gridView = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    stack.add(gridView);
 
     let addBtn = new qx.ui.form.Button(this.tr("Add plot"));
     addBtn.addListener("execute", e => {
       this.addClonedNode();
     }, this);
-    mainView.add(addBtn);
+    gridView.add(addBtn);
 
     let dashboradLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
     let gridster = this.__gridterWr = new qxapp.wrapper.Gridster();
@@ -45,7 +45,7 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
       bottom: 0,
       left: 0
     });
-    mainView.add(dashboradLayout, {
+    gridView.add(dashboradLayout, {
       flex: 1
     });
 
@@ -70,7 +70,7 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
 
   members: {
     __stack: null,
-    __mainView: null,
+    __gridView: null,
     __cellEditors: null,
     __gridterWr: null,
 
@@ -107,7 +107,7 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
       let cellEditor = new qxapp.component.widget.cell.Editor(cellHandler);
       cellEditor.addListener("backToGrid", () => {
         cellHandler.retrieveOutput();
-        this.__stack.setSelection([this.__mainView]);
+        this.__stack.setSelection([this.__gridView]);
       }, this);
       this.__cellEditors[cellHandler.getUuid()] = cellEditor;
 
