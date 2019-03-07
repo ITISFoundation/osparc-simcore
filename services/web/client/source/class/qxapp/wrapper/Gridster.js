@@ -65,7 +65,9 @@ qx.Class.define("qxapp.wrapper.Gridster", {
   construct: function() {
     this.base(arguments);
 
-    this.__init();
+    this.addListenerOnce("appear", () => {
+      this.__init();
+    }, this);
   },
 
   properties: {
