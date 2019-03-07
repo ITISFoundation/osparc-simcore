@@ -79,8 +79,10 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
       if (parentNode) {
         let workbench = parentNode.getWorkbench();
         workbench.addNode(node, parentNode);
-
-        this.addWidget(node);
+        const success = this.addWidget(node);
+        if (!success) {
+          workbench.removeNode(node.getNodeId());
+        }
       }
     },
 
@@ -88,9 +90,14 @@ qx.Class.define("qxapp.component.widget.DashGrid", {
       let parentNode = this.getContainerNode();
       if (parentNode) {
         let workbench = parentNode.getWorkbench();
-        const baseNode = parentNode.getInnerNodes()["inner1_raw"];
-        let newNode = workbench.cloneNode(baseNode);
-        this.addNode(newNode);
+        const innerNodes = Object.values(parentNode.getInnerNodes());
+        if (innerNodes.length > 0) {
+          const node = workbench.cloneNode(innerNodes[0]);
+          const success = this.addWidget(node);
+          if (!success) {
+            workbench.removeNode(node.getNodeId());
+          }
+        }
       }
     },
 
