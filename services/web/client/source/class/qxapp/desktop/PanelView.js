@@ -36,16 +36,11 @@ qx.Class.define("qxapp.desktop.PanelView", {
       });
     this._add(this.__titleBar);
 
+    // Set if coming in the constructor arguments
     if (title) {
       this.setTitle(title);
     }
-
-    // Content
     if (content) {
-      content.set({
-        appearance: "panelview-content",
-        decorator: "panelview-content"
-      });
       this.setContent(content);
     }
 
@@ -84,6 +79,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
     __titleBar: null,
     __titleLabel: null,
     __caret: null,
+    __innerContainer: null,
 
     toggleContentVisibility: function() {
       this.setContentVisibility(!this.getContentVisibility());
@@ -92,21 +88,26 @@ qx.Class.define("qxapp.desktop.PanelView", {
     _applyContentVisibility: function(isVisible) {
       if (this.getContent()) {
         this.__caret.setSource(this.getContentVisibility() ? this.self().LESS_CARET : this.self().MORE_CARET);
-        this.getContent().setVisibility(isVisible ? "visible" : "excluded");
+        this.__innerContainer.setVisibility(isVisible ? "visible" : "excluded");
       }
     },
 
     _applyContent: function(content, oldContent) {
-      const contentIndex = this._indexOf(oldContent);
-      if (contentIndex > -1) {
-        this._removeAt(contentIndex);
+      if (this.__innerContainer === null) {
+        this.__innerContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
+          appearance: "panelview-content",
+          decorator: "panelview-content"
+        });
+        this._addAt(this.__innerContainer, 1, {
+          flex: 1
+        });
       }
-      content.set({
-        appearance: "panelview-content",
-        decorator: "panelview-content"
-      });
-      this._addAt(content, 1, {
-        flex: 1
+      this.__innerContainer.removeAll();
+      this.__innerContainer.add(content, {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
       });
 
       if (this.__caret === null) {
