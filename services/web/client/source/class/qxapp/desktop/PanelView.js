@@ -86,12 +86,6 @@ qx.Class.define("qxapp.desktop.PanelView", {
     __innerContainer: null,
     __containerHeight: null,
 
-    __collapseTransitionDecorator: new qx.ui.decoration.Decorator().set({
-      transitionProperty: ["top", "bottom", "height"],
-      transitionDuration: "0.2s",
-      transitionTimingFunction: "ease-in"
-    }),
-
     toggleContentVisibility: function() {
       this.setContentVisibility(!this.getContentVisibility());
     },
