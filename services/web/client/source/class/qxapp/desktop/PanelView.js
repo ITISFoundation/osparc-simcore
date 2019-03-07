@@ -96,9 +96,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
         if (isVisible) {
           this.__innerContainer.show();
         }
-        this.__innerContainer.setDecorator(isVisible ?
-          "panelview-open-collapse-transition"
-          : "panelview-close-collapse-transition");
+        this.__innerContainer.setDecorator(isVisible ? "panelview-open-collapse-transition" : "panelview-close-collapse-transition");
         this.__innerContainer.setHeight(isVisible ? this.__containerHeight : 0);
       }
     },
