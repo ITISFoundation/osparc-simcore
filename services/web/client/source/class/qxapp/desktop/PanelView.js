@@ -27,13 +27,12 @@ qx.Class.define("qxapp.desktop.PanelView", {
     this.base(arguments);
 
     // Layout
-    const layout = new qx.ui.layout.VBox();
-    this._setLayout(layout);
+    this._setLayout(new qx.ui.layout.VBox());
 
     // Title bar
     this.__titleBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
       .set({
-        appearance: "titlebar"
+        appearance: "panelview-titlebar"
       });
     this._add(this.__titleBar);
 
@@ -52,6 +51,11 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
     // Attach handlers
     this.__attachEventHandlers();
+  },
+
+  statics: {
+    MORE_CARET: "@MaterialIcons/expand_more/20",
+    LESS_CARET: "@MaterialIcons/expand_less/20"
   },
 
   properties: {
@@ -87,7 +91,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
 
     _applyContentVisibility: function(isVisible) {
       if (this.getContent()) {
-        this.__caret.setSource(this.getContentVisibility() ? lessCaret : moreCaret);
+        this.__caret.setSource(this.getContentVisibility() ? this.self().LESS_CARET : this.self().MORE_CARET);
         this.getContent().setVisibility(isVisible ? "visible" : "excluded");
       }
     },
@@ -106,7 +110,7 @@ qx.Class.define("qxapp.desktop.PanelView", {
       });
 
       if (this.__caret === null) {
-        this.__caret = new qx.ui.basic.Image(this.getContentVisibility() ? lessCaret : moreCaret).set({
+        this.__caret = new qx.ui.basic.Image(this.getContentVisibility() ? this.self().LESS_CARET : this.self().MORE_CARET).set({
           marginTop: 2
         });
         this.__titleBar.add(this.__caret);
@@ -114,12 +118,12 @@ qx.Class.define("qxapp.desktop.PanelView", {
     },
 
     _applyTitle: function(title) {
-      if (this.__titlelabel) {
+      if (this.__titleLabel) {
         this.__titleLabel.setValue(title);
       } else {
         this.__titleLabel = new qx.ui.basic.Label(title)
           .set({
-            appearance: "titlebar-label",
+            appearance: "panelview-titlebar-label",
             font: "title-14"
           });
         this.__titleBar.add(this.__titleLabel);
@@ -134,6 +138,3 @@ qx.Class.define("qxapp.desktop.PanelView", {
   }
 
 });
-
-const moreCaret = "@MaterialIcons/expand_more/20";
-const lessCaret = "@MaterialIcons/expand_less/20";

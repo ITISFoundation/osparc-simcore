@@ -44,9 +44,6 @@ qx.Class.define("qxapp.desktop.SidePanel", {
     let midView = new qxapp.desktop.PanelView("Overview");
     let bottomView = new qxapp.desktop.PanelView("Logger");
 
-    // panel.setContent(new qx.ui.basic.Label('Integer consectetur mi nec lectus elementum, in maximus dui tristique. Phasellus nec urna nec massa venenatis lacinia sit amet non lectus. Suspendisse sit amet dui malesuada, tincidunt ligula ut, ornare magna. Nullam erat quam, fringilla tempus eleifend ornare, pharetra molestie lectus. Pellentesque ac nibh vitae dui commodo sollicitudin. Fusce in nibh eu urna imperdiet efficitur ut vitae diam. Sed non sem quis justo aliquam tempus suscipit et tortor.')
-    //   .set({ rich: true }));
-
     this._add(topView);
     this._add(midView);
     this._add(bottomView, {
